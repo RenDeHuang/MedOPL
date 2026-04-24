@@ -1,0 +1,18 @@
+{
+  "name": "portal-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.13.1",
+    "redis": "^4.7.0"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "check": "node --check src/server.mjs",
+    "frontend:install": "npm --prefix frontend install",
+    "frontend:typecheck": "npm --prefix frontend run typecheck",
+    "frontend:build": "npm --prefix frontend run build",
+    "acceptance:console": "node ../../scripts/acceptance-portal-console.mjs"
+  }
+}

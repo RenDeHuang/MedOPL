@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codex-sandbox-__USER_ID__
+  namespace: __NAMESPACE__
+  labels:
+    app: codex-user-sandbox
+    customer_id: "__USER_ID__"
+    user_id: "__USER_ID__"
+    sandbox_class: "__SANDBOX_CLASS__"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: codex-user-sandbox
+      user_id: "__USER_ID__"
+  template:
+    metadata:
+      labels:
+        app: codex-user-sandbox
+        customer_id: "__USER_ID__"
+        user_id: "__USER_ID__"
+        sandbox_class: "__SANDBOX_CLASS__"
+    spec:
+      __IMAGE_PULL_SECRETS_BLOCK__
+      restartPolicy: Always
+      containers:
+        - name: codex-sandbox
+          image: "__SANDBOX_IMAGE__"
+          imagePullPolicy: IfNotPresent
+          command:
+            - "sh"
+            - "-lc"
+            - "mkdir -p /workspace-root && tail -f /dev/null"
+          env:
+            - name: USER_ID
+              value: "__USER_ID__"
+            - name: SANDBOX_CLASS
+              value: "__SANDBOX_CLASS__"
+          resources:
+            requests:
+              cpu: "__CPU_REQUEST__"
+              memory: "__MEMORY_REQUEST__"
+            limits:
+              cpu: "__CPU_LIMIT__"
+              memory: "__MEMORY_LIMIT__"
+          volumeMounts:
+            - name: workspace-root
+              mountPath: /workspace-root
+      volumes:
+        - name: workspace-root
+          persistentVolumeClaim:
+            claimName: codex-sandbox-__USER_ID__-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: codex-sandbox-__USER_ID__-pvc
+  namespace: __NAMESPACE__
+  labels:
+    app: codex-user-sandbox
+    user_id: "__USER_ID__"
+    sandbox_class: "__SANDBOX_CLASS__"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "__PVC_SIZE__"
+  storageClassName: "__STORAGE_CLASS__"

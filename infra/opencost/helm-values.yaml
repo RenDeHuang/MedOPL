@@ -1,0 +1,15 @@
+opencost:
+  exporter:
+    defaultClusterId: med-agent-v0
+    collectorDataSource:
+      enabled: true
+
+prometheus:
+  internal:
+    enabled: false
+
+ui:
+  enabled: true
+
+service:
+  type: ClusterIP

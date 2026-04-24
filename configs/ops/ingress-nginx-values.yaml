@@ -1,0 +1,12 @@
+controller:
+  replicaCount: 2
+  service:
+    type: LoadBalancer
+  metrics:
+    enabled: true
+  admissionWebhooks:
+    enabled: true
+  config:
+    proxy-body-size: "200m"
+    proxy-read-timeout: "3600"
+    proxy-send-timeout: "3600"

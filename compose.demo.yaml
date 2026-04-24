@@ -1,0 +1,48 @@
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./configs/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - portal
+      - opl-runtime-bridge
+      - billing-aggregator
+
+  portal:
+    image: node:22-alpine
+    working_dir: /workspace/services/portal
+    command: sh -c "npm ci && npm start"
+    environment:
+      PORT: 17080
+      PORTAL_STORAGE_MODE: ${PORTAL_STORAGE_MODE:-json}
+      PORTAL_OIDC_ENABLED: ${PORTAL_OIDC_ENABLED:-0}
+      OPL_RUNTIME_BRIDGE_URL: ${OPL_RUNTIME_BRIDGE_URL:-http://opl-runtime-bridge:8788}
+      OPL_WORKBENCH_URL: ${OPL_WORKBENCH_URL:-http://127.0.0.1:8080/opl/workbench}
+      BILLING_SERVICE_URL: ${BILLING_SERVICE_URL:-http://billing-aggregator:3001}
+    ports:
+      - "17080:17080"
+    volumes:
+      - .:/workspace
+
+  opl-runtime-bridge:
+    image: node:22-alpine
+    working_dir: /workspace/services/opl-runtime-bridge
+    command: sh -c "npm start"
+    environment:
+      PORT: 8788
+      OPL_RUNTIME_BRIDGE_PUBLIC_URL: http://127.0.0.1:8080/opl
+    ports:
+      - "8788:8788"
+    volumes:
+      - .:/workspace
+
+  billing-aggregator:
+    build:
+      context: ./adapters/billing-aggregator
+    environment:
+      PORT: 3001
+      OPENCOST_BASE_URL: ${OPENCOST_BASE_URL}
+    ports:
+      - "3001:3001"

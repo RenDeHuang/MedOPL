@@ -1,0 +1,23 @@
+server:
+  replicas: 3
+  dev:
+    enabled: false
+  ha:
+    enabled: true
+    raft:
+      enabled: true
+      setNodeId: true
+  standalone:
+    enabled: false
+  dataStorage:
+    enabled: true
+    size: 20Gi
+    storageClass: "alicloud-disk-essd"
+  auditStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: "alicloud-disk-essd"
+injector:
+  enabled: true
+ui:
+  enabled: true

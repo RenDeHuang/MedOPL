@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: med-autoscience-warmup-__WARMUP_ID__
+  labels:
+    app: med-autoscience-warmup
+    customer_id: "__CUSTOMER_ID__"
+    workspace_id: "__WORKSPACE_ID__"
+    workspace_session_id: "__WORKSPACE_SESSION_ID__"
+    runner_image_tag: "__RUNNER_IMAGE_TAG__"
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: med-autoscience-warmup
+        customer_id: "__CUSTOMER_ID__"
+        workspace_id: "__WORKSPACE_ID__"
+        workspace_session_id: "__WORKSPACE_SESSION_ID__"
+        runner_image_tag: "__RUNNER_IMAGE_TAG__"
+    spec:
+      __IMAGE_PULL_SECRETS_BLOCK__
+      restartPolicy: Never
+      containers:
+        - name: warmup
+          image: "__RUNNER_IMAGE__"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "__CPU_REQUEST__"
+              memory: "__MEMORY_REQUEST__"
+              __GPU_REQUEST_BLOCK__
+              __EPHEMERAL_STORAGE_REQUEST_BLOCK__
+            limits:
+              cpu: "__CPU_LIMIT__"
+              memory: "__MEMORY_LIMIT__"
+              __GPU_LIMIT_BLOCK__
+              __EPHEMERAL_STORAGE_LIMIT_BLOCK__
+          command:
+            - "sh"
+            - "-lc"
+            - "__WARMUP_COMMAND__"

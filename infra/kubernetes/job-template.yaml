@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: med-autoscience-__RUN_ID__
+  labels:
+    app: med-autoscience
+    customer_id: "__CUSTOMER_ID__"
+    user_id: "__USER_ID__"
+    workspace_id: "__WORKSPACE_ID__"
+    run_id: "__RUN_ID__"
+    workspace_session_id: "__WORKSPACE_SESSION_ID__"
+    group_id: "__GROUP_ID__"
+    policy_version: "__POLICY_VERSION__"
+    runner_image_tag: "__RUNNER_IMAGE_TAG__"
+spec:
+  template:
+    metadata:
+      labels:
+        app: med-autoscience
+        customer_id: "__CUSTOMER_ID__"
+        user_id: "__USER_ID__"
+        workspace_id: "__WORKSPACE_ID__"
+        run_id: "__RUN_ID__"
+        workspace_session_id: "__WORKSPACE_SESSION_ID__"
+        group_id: "__GROUP_ID__"
+        policy_version: "__POLICY_VERSION__"
+        runner_image_tag: "__RUNNER_IMAGE_TAG__"
+    spec:
+      __IMAGE_PULL_SECRETS_BLOCK__
+      restartPolicy: Never
+      containers:
+        - name: runner
+          image: "__RUNNER_IMAGE__"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "__CPU_REQUEST__"
+              memory: "__MEMORY_REQUEST__"
+              __GPU_REQUEST_BLOCK__
+              __EPHEMERAL_STORAGE_REQUEST_BLOCK__
+            limits:
+              cpu: "__CPU_LIMIT__"
+              memory: "__MEMORY_LIMIT__"
+              __GPU_LIMIT_BLOCK__
+              __EPHEMERAL_STORAGE_LIMIT_BLOCK__
+          env:
+            - name: CUSTOMER_ID
+              value: "__CUSTOMER_ID__"
+            - name: USER_ID
+              value: "__USER_ID__"
+            - name: WORKSPACE_ID
+              value: "__WORKSPACE_ID__"
+            - name: RUN_ID
+              value: "__RUN_ID__"
+            - name: WORKSPACE_SESSION_ID
+              value: "__WORKSPACE_SESSION_ID__"
+            - name: GROUP_ID
+              value: "__GROUP_ID__"
+            - name: POLICY_VERSION
+              value: "__POLICY_VERSION__"
+            - name: RUNNER_IMAGE_TAG
+              value: "__RUNNER_IMAGE_TAG__"
+          command:
+            - "sh"
+            - "-lc"
+            - "__RUNNER_COMMAND__"
