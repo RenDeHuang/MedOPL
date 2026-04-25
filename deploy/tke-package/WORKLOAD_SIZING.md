@@ -6,7 +6,7 @@
 
 | 镜像 | 工作负载类型 | 容器端口 | CPU request | CPU limit | 内存 request | 内存 limit |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v1` | Deployment | `17080` | `100m` | `400m` | `192Mi` | `384Mi` |
+| `uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v2` | Deployment | `17080` | `100m` | `400m` | `192Mi` | `384Mi` |
 | `uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v1` | Deployment | `8788` | `100m` | `400m` | `192Mi` | `384Mi` |
 | `uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v1` | Deployment | `13031` | `50m` | `200m` | `64Mi` | `128Mi` |
 | `uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1` | Deployment | `3000` | `200m` | `600m` | `256Mi` | `512Mi` |
