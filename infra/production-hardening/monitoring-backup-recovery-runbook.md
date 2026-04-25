@@ -6,7 +6,7 @@
 
 必须监控的对象：
 - Portal
-- OPL Runtime Bridge
+- Portal OPL Adapter
 - med-autoscience runner/orchestrator
 - OpenCost
 - Harbor
@@ -47,8 +47,8 @@
 重点排查顺序：
 1. Portal 页面是否能进入。
 2. workspace session 是否创建。
-3. OPL runtime bridge 是否创建 launch/runtime session。
-4. AionUI/OPL bootstrap 是否能拿到当前 session。
+3. Portal OPL Adapter 是否创建 launch context。
+4. OPL Web 是否通过 `/api/opl-launch/bootstrap` 拿到当前 session。
 5. med-autoscience runner 是否真正执行。
 6. artifact、trace、cost 是否回流。
 
@@ -56,7 +56,7 @@
 
 需要备份的内容：
 - `.runtime/portal/portal-db.json`
-- `.runtime/opl-runtime-bridge/*`
+- `.runtime/portal-opl-adapter/*`
 - MinIO buckets
 - OpenBao data / raft storage
 - Harbor metadata
@@ -65,7 +65,7 @@
 
 建议频率：
 - Portal DB：每日。
-- OPL runtime bridge records：每日。
+- Portal OPL Adapter records：每日。
 - MinIO：每日 + 每周整备份。
 - OpenBao：每日快照。
 - 配置文件：每次变更后立即备份。
@@ -83,11 +83,11 @@ Portal 恢复：
 3. 重启 Portal。
 4. 验证登录、账单、任务空间。
 
-OPL runtime bridge 恢复：
+Portal OPL Adapter 恢复：
 1. 恢复 launch/session/run/artifact/trace/cost records。
-2. 重启 bridge。
+2. 重启 Portal OPL Adapter。
 3. 验证 `/healthz`。
-4. 跑 `node scripts/smoke-test-opl-runtime-bridge.mjs`。
+4. 跑 `node scripts/smoke-test-portal-opl-adapter.mjs`。
 
 MinIO 恢复：
 1. 恢复 bucket。
@@ -106,7 +106,7 @@ OpenBao 恢复：
 
 - `node scripts/check-commercial-blockers.mjs`
 - 管理员页检查：
-  - OPL Runtime Bridge
+  - Portal OPL Adapter
   - Langfuse
   - Rancher
   - OpenCost
@@ -136,7 +136,7 @@ OpenBao 恢复：
 ### E. 备份
 
 - 确认 Portal DB 备份存在。
-- 确认 OPL runtime bridge records 备份存在。
+- 确认 Portal OPL Adapter records 备份存在。
 - 确认 MinIO 备份存在。
 - 确认 OpenBao 快照存在。
 - 抽样执行一次恢复演练。
@@ -144,10 +144,10 @@ OpenBao 恢复：
 ## 故障时的第一响应
 
 用户反馈“工作台打不开”：
-- 查 Portal `/portal/workbench` 与 `/portal/api/workbench/launch`。
-- 查 OPL Runtime Bridge `/healthz`。
+- 查 Portal `/portal/opl` 与 `/portal/api/opl/launch`。
+- 查 Portal OPL Adapter `/healthz`。
 - 查 launch token 是否创建。
-- 查 AionUI/OPL bootstrap 是否返回当前 session。
+- 查 OPL Web 是否调用 `/api/opl-launch/bootstrap` 并返回当前 session。
 
 用户反馈“跑了没结果”：
 - 查 runtime run 状态。

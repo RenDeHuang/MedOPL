@@ -1,0 +1,381 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal
+  template:
+    metadata:
+      labels:
+        app: portal
+    spec:
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: portal
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v2"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 17080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "192Mi"
+            limits:
+              cpu: "400m"
+              memory: "384Mi"
+          env:
+            - name: PORT
+              value: "17080"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 17080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 17080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal
+  namespace: portal-staging
+spec:
+  selector:
+    app: portal
+  ports:
+    - name: http
+      port: 17080
+      targetPort: 17080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal-opl-adapter
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal-opl-adapter
+  template:
+    metadata:
+      labels:
+        app: portal-opl-adapter
+    spec:
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: portal-opl-adapter
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8788
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "192Mi"
+            limits:
+              cpu: "400m"
+              memory: "384Mi"
+          env:
+            - name: PORT
+              value: "8788"
+            - name: PORTAL_OPL_ADAPTER_STATE_ROOT
+              value: "/app/.runtime/portal-opl-adapter"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8788
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal-opl-adapter
+  namespace: portal-staging
+spec:
+  selector:
+    app: portal-opl-adapter
+  ports:
+    - name: http
+      port: 8788
+      targetPort: 8788
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opl-web-upstream
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opl-web-upstream
+  template:
+    metadata:
+      labels:
+        app: opl-web-upstream
+    spec:
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: opl-web-upstream
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "600m"
+              memory: "512Mi"
+          env:
+            - name: PORT
+              value: "3000"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opl-web-upstream
+  namespace: portal-staging
+spec:
+  selector:
+    app: opl-web-upstream
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opl-web-gateway
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opl-web-gateway
+  template:
+    metadata:
+      labels:
+        app: opl-web-gateway
+    spec:
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: opl-web-gateway
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 13031
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          env:
+            - name: PORT
+              value: "13031"
+            - name: PORTAL_OPL_ADAPTER_URL
+              value: "http://portal-opl-adapter:8788"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 13031
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opl-web-gateway
+  namespace: portal-staging
+spec:
+  selector:
+    app: opl-web-gateway
+  ports:
+    - name: http
+      port: 13031
+      targetPort: 13031
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-aggregator
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-aggregator
+  template:
+    metadata:
+      labels:
+        app: billing-aggregator
+    spec:
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: billing-aggregator
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "150m"
+              memory: "128Mi"
+          env:
+            - name: PORT
+              value: "3001"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-aggregator
+  namespace: portal-staging
+spec:
+  selector:
+    app: billing-aggregator
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: med-autoscience-runner
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: med-autoscience-runner
+  template:
+    metadata:
+      labels:
+        app: med-autoscience-runner
+    spec:
+      serviceAccountName: med-autoscience-runner
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: med-autoscience-runner
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 18890
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          env:
+            - name: MED_AUTOSCIENCE_RUNNER_PORT
+              value: "18890"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 18890
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: med-autoscience-runner
+  namespace: portal-staging
+spec:
+  selector:
+    app: med-autoscience-runner
+  ports:
+    - name: http
+      port: 18890
+      targetPort: 18890
+

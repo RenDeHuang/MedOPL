@@ -1,0 +1,16 @@
+opencost:
+  exporter:
+    defaultClusterId: portal-tke-staging
+    collectorDataSource:
+      enabled: true
+
+prometheus:
+  internal:
+    enabled: false
+
+ui:
+  enabled: true
+
+service:
+  type: ClusterIP
+

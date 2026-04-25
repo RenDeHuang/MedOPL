@@ -241,7 +241,7 @@ function humanizeStatus(status?: string) {
 function workspaceMasHref(task?: string) {
   const params = new URLSearchParams();
   if (task) params.set("task", task);
-  return `/portal/workbench${params.toString() ? `?${params}` : ""}`;
+  return `/portal/opl${params.toString() ? `?${params}` : ""}`;
 }
 
 function downloadAllHref(kind: "inputs" | "outputs") {

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile, readdir, access, copyFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile, readdir, access, copyFile, stat } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { execFile } from "node:child_process";
 import http from "node:http";
@@ -53,6 +53,15 @@ function workspaceRoot(customerId, workspaceId) {
   return path.join(WORKSPACES_DIR, customerId, workspaceId);
 }
 
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    if (value === 0) return value;
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return "";
+}
+
 function k8sLabelSafe(value = "") {
   const safe = String(value || "")
     .toLowerCase()
@@ -64,6 +73,81 @@ function k8sLabelSafe(value = "") {
 
 function runFile(runId) {
   return path.join(RUNS_DIR, `${runId}.json`);
+}
+
+function guessContentType(fileName = "") {
+  const ext = path.extname(String(fileName || "")).toLowerCase();
+  if (ext === ".json") return "application/json";
+  if (ext === ".md") return "text/markdown";
+  if (ext === ".txt" || ext === ".log") return "text/plain";
+  if (ext === ".csv") return "text/csv";
+  if (ext === ".html") return "text/html";
+  if (ext === ".pdf") return "application/pdf";
+  if (ext === ".png") return "image/png";
+  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
+  if (ext === ".tsv") return "text/tab-separated-values";
+  return "application/octet-stream";
+}
+
+function buildWorkspaceObjectKey(customerId, workspaceId, kind, fileName) {
+  return `med-autoscience/${customerId}/${workspaceId}/${kind}/${fileName}`;
+}
+
+function normalizeRunIdentity(args = {}) {
+  const customerId = firstNonEmpty(args.customerId, args.portalUserId, args.userId) || "demo-customer";
+  const userId = firstNonEmpty(args.userId, args.customerId, args.portalUserId) || customerId;
+  return {
+    portalUserId: firstNonEmpty(args.portalUserId, customerId, userId),
+    customerId,
+    userId,
+    workspaceId: firstNonEmpty(args.workspaceId) || randomUUID(),
+    workspaceSessionId: firstNonEmpty(args.workspaceSessionId),
+    runtimeSessionId: firstNonEmpty(args.runtimeSessionId),
+    runId: firstNonEmpty(args.runId) || randomUUID(),
+    agentId: firstNonEmpty(args.agentId) || "mas",
+    toolName: firstNonEmpty(args.toolName) || "med-autoscience",
+    billingScope: firstNonEmpty(args.billingScope) || "run",
+    costCenter: firstNonEmpty(args.costCenter) || "research-foundry",
+  };
+}
+
+function mapJobStatusToRunnerState(status = {}) {
+  const active = Number(status.active || 0);
+  const succeeded = Number(status.succeeded || 0);
+  const failed = Number(status.failed || 0);
+  const conditions = Array.isArray(status.conditions) ? status.conditions : [];
+
+  if (failed > 0 || conditions.some((item) => item?.type === "Failed" && item?.status === "True")) {
+    return "failed";
+  }
+  if (succeeded > 0 || conditions.some((item) => item?.type === "Complete" && item?.status === "True")) {
+    return "succeeded";
+  }
+  if (active > 0) {
+    return "running";
+  }
+  return "submitted";
+}
+
+async function describeWorkspaceFiles(customerId, workspaceId, kind) {
+  const dirPath = path.join(workspaceRoot(customerId, workspaceId), kind);
+  await mkdir(dirPath, { recursive: true });
+  const names = await readdir(dirPath);
+  const items = [];
+  for (const name of names) {
+    const filePath = path.join(dirPath, name);
+    const meta = await stat(filePath);
+    if (!meta.isFile()) continue;
+    items.push({
+      name,
+      path: filePath,
+      sizeBytes: meta.size,
+      mtime: meta.mtime.toISOString(),
+      contentType: guessContentType(name),
+      objectKey: buildWorkspaceObjectKey(customerId, workspaceId, kind, name),
+    });
+  }
+  return items.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function writeJson(filePath, payload) {
@@ -373,9 +457,10 @@ async function ensureNamespace() {
 }
 
 async function createWorkspace(args = {}) {
-  const customerId = args.customerId || "demo-customer";
-  const userId = args.userId || "demo-user";
-  const workspaceId = args.workspaceId || randomUUID();
+  const identity = normalizeRunIdentity(args);
+  const customerId = identity.customerId;
+  const userId = identity.userId;
+  const workspaceId = identity.workspaceId;
   const root = workspaceRoot(customerId, workspaceId);
 
   for (const segment of ["inputs", "runtime", "logs", "outputs"]) {
@@ -383,9 +468,12 @@ async function createWorkspace(args = {}) {
   }
 
   const metadata = {
+    portalUserId: identity.portalUserId,
     customerId,
     userId,
     workspaceId,
+    workspaceSessionId: identity.workspaceSessionId,
+    runtimeSessionId: identity.runtimeSessionId,
     root,
     createdAt: new Date().toISOString()
   };
@@ -427,10 +515,20 @@ async function listWorkspaceInputFiles(workspaceRoot) {
 }
 
 async function startRun(args = {}) {
-  const customerId = args.customerId || "demo-customer";
-  const userId = args.userId || "demo-user";
-  const workspaceId = args.workspaceId || randomUUID();
-  const runId = args.runId || randomUUID();
+  const identity = normalizeRunIdentity(args);
+  const {
+    portalUserId,
+    customerId,
+    userId,
+    workspaceId,
+    workspaceSessionId,
+    runtimeSessionId,
+    runId,
+    agentId,
+    toolName,
+    billingScope,
+    costCenter,
+  } = identity;
 
   const policy = await ensureRuntimeStartAllowed(customerId);
   await ensureGroupRuntimePolicy({ customerId, workspaceId });
@@ -466,11 +564,17 @@ async function startRun(args = {}) {
     : "";
   const jobYaml = jobTemplate
     .replaceAll("__CUSTOMER_ID__", customerId)
+    .replaceAll("__PORTAL_USER_ID__", portalUserId)
     .replaceAll("__USER_ID__", userId)
     .replaceAll("__WORKSPACE_ID__", workspaceId)
+    .replaceAll("__RUNTIME_SESSION_ID__", runtimeSessionId)
     .replaceAll("__RUN_ID__", runId)
+    .replaceAll("__AGENT_ID__", agentId)
+    .replaceAll("__TOOL_NAME__", toolName)
+    .replaceAll("__BILLING_SCOPE__", billingScope)
+    .replaceAll("__COST_CENTER__", costCenter)
     .replaceAll("__RUNNER_IMAGE__", runnerImage)
-    .replaceAll("__WORKSPACE_SESSION_ID__", args.workspaceSessionId || "")
+    .replaceAll("__WORKSPACE_SESSION_ID__", workspaceSessionId)
     .replaceAll("__GROUP_ID__", groupIdLabel)
     .replaceAll("__POLICY_VERSION__", policyVersionLabel)
     .replaceAll("__RUNNER_IMAGE_TAG__", runnerImageTagLabel)
@@ -493,10 +597,16 @@ async function startRun(args = {}) {
 
   const runMetadata = {
     runId,
+    portalUserId,
     customerId,
     userId,
     workspaceId,
-    workspaceSessionId: args.workspaceSessionId || "",
+    workspaceSessionId,
+    runtimeSessionId,
+    agentId,
+    toolName,
+    billingScope,
+    costCenter,
     groupId: policy.groupId || "",
     policyVersion,
     runnerImage,
@@ -563,11 +673,23 @@ async function getRunStatus(args = {}) {
       failed: status.failed || 0,
       conditions: status.conditions || []
     };
+    runMetadata.status = mapJobStatusToRunnerState(status);
+    if (runMetadata.status === "running" && !runMetadata.startedAt) {
+      runMetadata.startedAt = new Date().toISOString();
+    }
+    if ((runMetadata.status === "succeeded" || runMetadata.status === "failed") && !runMetadata.finishedAt) {
+      runMetadata.finishedAt = new Date().toISOString();
+    }
   } catch (error) {
-    runMetadata.k8sStatus = `Unknown: ${String(error)}`;
+    runMetadata.k8sStatus = {
+      error: String(error.message || error),
+    };
+    runMetadata.status = ["queued", "submitted", "running", "succeeded", "failed"].includes(String(runMetadata.status || ""))
+      ? runMetadata.status
+      : "submitted";
   }
 
-  if (runMetadata.k8sStatus?.succeeded) {
+  if (runMetadata.status === "succeeded") {
     runMetadata.billingReconcile = await reconcileCustomerCosts(runMetadata.customerId || runMetadata.userId);
   }
 
@@ -612,21 +734,22 @@ async function getRunLogs(args = {}) {
 }
 
 async function listRunOutputs(args = {}) {
-  const customerId = args.customerId;
+  const customerId = firstNonEmpty(args.customerId, args.portalUserId, args.userId);
   const workspaceId = args.workspaceId;
   if (!customerId || !workspaceId) throw new Error("Missing customerId or workspaceId");
 
   const outputsDir = path.join(workspaceRoot(customerId, workspaceId), "outputs");
   await mkdir(outputsDir, { recursive: true });
-  const names = await syncWorkspaceDirToMinio(customerId, workspaceId, "outputs", outputsDir);
+  await syncWorkspaceDirToMinio(customerId, workspaceId, "outputs", outputsDir);
+  const items = await describeWorkspaceFiles(customerId, workspaceId, "outputs");
 
   return {
-    content: [{ type: "text", text: JSON.stringify(names, null, 2) }]
+    content: [{ type: "text", text: JSON.stringify(items, null, 2) }]
   };
 }
 
 async function listWorkspaceFiles(args = {}) {
-  const customerId = args.customerId;
+  const customerId = firstNonEmpty(args.customerId, args.portalUserId, args.userId);
   const workspaceId = args.workspaceId;
   if (!customerId || !workspaceId) throw new Error("Missing customerId or workspaceId");
 
@@ -636,8 +759,10 @@ async function listWorkspaceFiles(args = {}) {
   await mkdir(inputDir, { recursive: true });
   await mkdir(outputDir, { recursive: true });
 
-  const inputs = await syncWorkspaceDirToMinio(customerId, workspaceId, "inputs", inputDir);
-  const outputs = await syncWorkspaceDirToMinio(customerId, workspaceId, "outputs", outputDir);
+  await syncWorkspaceDirToMinio(customerId, workspaceId, "inputs", inputDir);
+  await syncWorkspaceDirToMinio(customerId, workspaceId, "outputs", outputDir);
+  const inputs = await describeWorkspaceFiles(customerId, workspaceId, "inputs");
+  const outputs = await describeWorkspaceFiles(customerId, workspaceId, "outputs");
 
   return {
     content: [{ type: "text", text: JSON.stringify({ workspaceId, inputs, outputs }, null, 2) }]

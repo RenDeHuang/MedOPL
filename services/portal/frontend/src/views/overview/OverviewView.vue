@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="MedOPL 统一门户" subtitle="Portal 后台控制面，AionUI 作为工作台入口">
+  <AppLayout title="MedOPL 统一门户" subtitle="Portal 后台控制面，OPL Web 作为工作台入口">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载总览...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -14,9 +14,9 @@
                     {{ payload.kpis.accountStatus === "active" ? "账户正常" : "账户异常" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">Portal 开户后，从这里进入 AionUI 工作台</h2>
+                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">Portal 开户后，从这里进入 OPL Web 工作台</h2>
                 <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  这里展示你的账户状态、任务空间、今日消耗、最近运行和当前会话。工作流执行入口在 AionUI。
+                  这里展示你的账户状态、任务空间、今日消耗、最近运行和当前会话。工作流执行入口在 OPL Web。
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -272,7 +272,7 @@ function nextPage(page: number, totalPages: number) {
   return Math.min(Number(totalPages || 1), Number(page || 1) + 1);
 }
 
-const workbenchHref = "/portal/workbench";
+const workbenchHref = "/portal/opl";
 let requestId = 0;
 
 async function load() {

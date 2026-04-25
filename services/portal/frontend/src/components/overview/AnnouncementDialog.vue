@@ -80,7 +80,7 @@
             </div>
             <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
               <div class="text-sm font-semibold text-gray-950 dark:text-white">文件结果</div>
-              <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">任务空间或 AionUI/OPL 的输出结果区显示可下载文件。</p>
+              <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">任务空间或 OPL Web 的输出结果区显示可下载文件。</p>
             </div>
           </div>
           <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
@@ -92,7 +92,7 @@
             </ul>
           </div>
           <div class="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-            开始前请先确认：结果分为会话结论与文件结果两类；文件结果可在任务空间或 AionUI/OPL 的输出结果入口查看和下载。
+            开始前请先确认：结果分为会话结论与文件结果两类；文件结果可在任务空间或 OPL Web 的输出结果入口查看和下载。
           </div>
         </div>
       </section>

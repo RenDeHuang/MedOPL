@@ -58,6 +58,7 @@ function normalizeWorkspaceSession(session) {
   const createdAt = String(session.createdAt || "").trim();
   const lastUsedAt = String(session.lastUsedAt || "").trim();
   const expiresAt = String(session.expiresAt || "").trim();
+  const sessionType = String(session.sessionType || "opl_session").trim() || "opl_session";
   if (!id || !userId || !workspaceId || !VALID_WORKSPACE_SESSION_STATUSES.has(status)) return null;
   if (!isValidDateValue(createdAt) || !isValidDateValue(lastUsedAt) || !isValidDateValue(expiresAt)) return null;
   return {
@@ -66,7 +67,7 @@ function normalizeWorkspaceSession(session) {
     userId,
     workspaceId,
     workspaceTitle: String(session.workspaceTitle || workspaceId).trim() || workspaceId,
-    sessionType: String(session.sessionType || "opl_workbench").trim() || "opl_workbench",
+    sessionType,
     status,
     source: String(session.source || "portal-workspace-entry").trim() || "portal-workspace-entry",
     createdAt: createdAt || new Date().toISOString(),

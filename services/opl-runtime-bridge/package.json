@@ -1,5 +1,5 @@
 {
-  "name": "opl-runtime-bridge",
+  "name": "portal-opl-adapter",
   "version": "0.1.0",
   "private": true,
   "type": "module",

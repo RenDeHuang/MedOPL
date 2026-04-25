@@ -1,0 +1,40 @@
+﻿apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-platform-config
+  namespace: portal-staging
+data:
+  NODE_ENV: "production"
+  PORTAL_STORAGE_MODE: "json"
+  PORTAL_DB_NAMESPACE: "portal"
+  PORTAL_OIDC_ENABLED: "0"
+  PORTAL_OIDC_ISSUER: ""
+  PORTAL_OIDC_CLIENT_ID: ""
+  PORTAL_OPL_ADAPTER_URL: "http://portal-opl-adapter:8788"
+  OPL_WEB_URL: "https://opl.example.com"
+  OPL_WEB_GATEWAY_PUBLIC_URL: "https://opl.example.com"
+  OPL_WEB_UPSTREAM_URL: "http://opl-web-upstream:3000"
+  OPL_WEBUI_AUTH_MODE: "none"
+  PORTAL_OPL_ADAPTER_PUBLIC_URL: "https://opl.example.com/portal-adapter"
+  OPL_RUNTIME_MODE: "acp"
+  OPL_ACP_RUNTIME_DIR: "/app/.runtime/one-person-lab-upstream"
+  OPL_ACP_RUNTIME_TIMEOUT_MS: "30000"
+  MED_AUTOSCIENCE_RUNNER_URL: "http://med-autoscience-runner:18890"
+  MED_AUTOSCIENCE_RUNNER_IMAGE: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-opl:opl-v1"
+  MED_AUTOSCIENCE_IMAGE_PULL_SECRET: "tcr-pull-secret"
+  MED_AUTOSCIENCE_RUNNER_COMMAND: "medautosci show-agent-entry-modes"
+  MED_AUTOSCIENCE_RUNNER_CPU_REQUEST: "100m"
+  MED_AUTOSCIENCE_RUNNER_CPU_LIMIT: "500m"
+  MED_AUTOSCIENCE_RUNNER_MEMORY_REQUEST: "256Mi"
+  MED_AUTOSCIENCE_RUNNER_MEMORY_LIMIT: "512Mi"
+  K8S_NAMESPACE: "portal-runtime-staging"
+  BILLING_SERVICE_URL: "http://billing-aggregator:3001"
+  OPENCOST_BASE_URL: ""
+  OPENCOST_UI_URL: ""
+  MINIO_API_URL: ""
+  MINIO_CONSOLE_URL: ""
+  HARBOR_URL: "https://uswccr.ccs.tencentyun.com"
+  HARBOR_API_URL: "https://uswccr.ccs.tencentyun.com"
+  HARBOR_ENABLED: "0"
+  LANGFUSE_URL: ""
+

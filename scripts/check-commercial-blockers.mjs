@@ -15,7 +15,7 @@ await addCheck("portal-health", async () => {
   return `status=${res.status}`;
 });
 
-await addCheck("opl-runtime-bridge-health", async () => {
+await addCheck("portal-opl-adapter-health", async () => {
   const res = await fetch("http://127.0.0.1:8788/healthz");
   if (!res.ok) throw new Error(`status=${res.status}`);
   return `status=${res.status}`;
