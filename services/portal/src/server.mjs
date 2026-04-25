@@ -9,6 +9,13 @@ import { randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import pg from "pg";
 import { createClient as createRedisClient } from "redis";
+import { createBillingClient } from "./integrations/billing-client.mjs";
+import { createHarborRegistryClient } from "./integrations/harbor-registry-client.mjs";
+import { createLangfuseTraceClient } from "./integrations/langfuse-trace-client.mjs";
+import { createMinioStorageClient } from "./integrations/minio-storage-client.mjs";
+import { createOplAdapterClient } from "./integrations/opl-adapter-client.mjs";
+import { createOplRoutes } from "./routes/opl.routes.mjs";
+import { createOplLaunchService } from "./services/opl-launch.service.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../../");
@@ -29,8 +36,8 @@ const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "json").tr
 const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "postgres://postgres:postgres@127.0.0.1:5432/med_meta").trim();
 const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "redis://127.0.0.1:6379").trim();
 const PORTAL_DB_NAMESPACE = String(process.env.PORTAL_DB_NAMESPACE || "portal").trim() || "portal";
-const OPL_RUNTIME_BRIDGE_URL = String(process.env.OPL_RUNTIME_BRIDGE_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
-const OPL_WORKBENCH_URL = String(process.env.OPL_WORKBENCH_URL || `${OPL_RUNTIME_BRIDGE_URL}/workbench`).replace(/\/$/, "");
+const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
+const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
 const OPL_RUNTIME_TIMEOUT_MS = Number(process.env.OPL_RUNTIME_TIMEOUT_MS || 10000);
 const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://127.0.0.1:13000";
 const OPENCOST_UI_URL = process.env.OPENCOST_UI_URL || "http://127.0.0.1:30090";
@@ -38,6 +45,7 @@ const KUBESPHERE_URL = process.env.KUBESPHERE_URL || "";
 const RANCHER_URL = process.env.RANCHER_URL || "https://127.0.0.1:30443";
 const HARBOR_URL = process.env.HARBOR_URL || "http://127.0.0.1:30095";
 const HARBOR_API_URL = process.env.HARBOR_API_URL || HARBOR_URL;
+const HARBOR_ENABLED = String(process.env.HARBOR_ENABLED || "").trim() === "1";
 const HARBOR_USERNAME = process.env.HARBOR_USERNAME || "admin";
 const HARBOR_PASSWORD = process.env.HARBOR_PASSWORD || "HarborAdmin123!";
 const MINIO_CONSOLE_URL = process.env.MINIO_CONSOLE_URL || "http://127.0.0.1:30092";
@@ -61,7 +69,6 @@ const PORTAL_OIDC_CLIENT_SECRET = process.env.PORTAL_OIDC_CLIENT_SECRET || "ddul
 const PORTAL_OIDC_REDIRECT_URI = process.env.PORTAL_OIDC_REDIRECT_URI || "http://127.0.0.1:17080/auth/oidc/callback";
 const PORTAL_OIDC_SCOPE = process.env.PORTAL_OIDC_SCOPE || "openid profile email";
 
-let minioAvailability = { checkedAt: 0, ok: false };
 let dbWriteChain = Promise.resolve();
 let pgPool = null;
 let redisClient = null;
@@ -119,7 +126,7 @@ function normalizeWorkspaceSessionValue(session) {
     userId,
     workspaceId,
     workspaceTitle: String(session.workspaceTitle || workspaceId).trim() || workspaceId,
-    sessionType: String(session.sessionType || "opl_workbench").trim() || "opl_workbench",
+    sessionType: String(session.sessionType || "opl_session").trim() || "opl_session",
     status,
     source: String(session.source || "portal-workspace-entry").trim() || "portal-workspace-entry",
     createdAt: createdAt || new Date().toISOString(),
@@ -160,8 +167,12 @@ function assertProductionSecret(name, value, defaults = []) {
 
 function validateProductionConfig() {
   assertProductionSecret("PORTAL_ADMIN_PASSWORD", adminSeed.password, ["Password1!"]);
-  assertProductionSecret("PORTAL_OIDC_CLIENT_SECRET", PORTAL_OIDC_CLIENT_SECRET, ["ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM"]);
-  assertProductionSecret("HARBOR_PASSWORD", HARBOR_PASSWORD, ["HarborAdmin123!"]);
+  if (PORTAL_OIDC_ENABLED) {
+    assertProductionSecret("PORTAL_OIDC_CLIENT_SECRET", PORTAL_OIDC_CLIENT_SECRET, ["ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM"]);
+  }
+  if (HARBOR_ENABLED) {
+    assertProductionSecret("HARBOR_PASSWORD", HARBOR_PASSWORD, ["HarborAdmin123!"]);
+  }
 }
 
 function slugify(value) {
@@ -315,6 +326,53 @@ function formatDateOnly(value) {
   if (Number.isNaN(date.getTime())) return "";
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
+
+const billingClient = createBillingClient({ billingServiceUrl: BILLING_SERVICE_URL });
+const minioStorageClient = createMinioStorageClient({
+  repoRoot,
+  portalWorkdir,
+  mcBinary,
+  minioApiUrl: MINIO_API_URL,
+  syncWorkspaceToMinioScriptRelative,
+  formatDateTime,
+});
+const harborRegistryClient = createHarborRegistryClient({
+  harborApiUrl: HARBOR_API_URL,
+  username: HARBOR_USERNAME,
+  password: HARBOR_PASSWORD,
+  formatDateTime,
+});
+const langfuseTraceClient = createLangfuseTraceClient({
+  repoRoot,
+  langfuseUrl: LANGFUSE_URL,
+  formatDateTime,
+});
+const oplAdapterClient = createOplAdapterClient({
+  adapterUrl: PORTAL_OPL_ADAPTER_URL,
+  oplWebUrl: OPL_WEB_URL,
+  timeoutMs: OPL_RUNTIME_TIMEOUT_MS,
+  formatDateTime,
+});
+const oplLaunchService = createOplLaunchService({
+  evaluateUserPolicy,
+  findTaskSpace,
+  ensureTaskSpace,
+  ensureWorkspaceSession,
+  createOplLaunch,
+  defaultTaskTitle,
+  logPortalEvent,
+  writeDb,
+});
+const handleOplRoutes = createOplRoutes({
+  appendCookie,
+  layoutV2,
+  oplLaunchService,
+  readBody,
+  sendHtml,
+  sendJson,
+  slugify,
+  workspaceSessionCookie,
+});
 
 function isRegistrationEnabled(db) {
   return db?.settings?.allowRegistration !== false;
@@ -1358,7 +1416,7 @@ async function ensureWorkspaceSession(db, user, taskSpace) {
     userId: user.id,
     workspaceId: taskSpace.slug,
     workspaceTitle: taskSpace.title,
-    sessionType: "opl_workbench",
+    sessionType: "opl_session",
     status: "active",
     source: "portal-workspace-entry",
     createdAt: new Date().toISOString(),
@@ -1468,7 +1526,7 @@ function layoutV2(title, body, user, options = {}) {
   const isAdminPage = page.startsWith("admin");
   const navItems = user ? [
     { href: "/portal", label: "首页", active: page === "overview" },
-    { href: "/portal/workbench", label: "工作台", active: page === "default" || page === "workspace" },
+    { href: "/portal/opl", label: "OPL 工作台", active: page === "default" || page === "workspace" },
     { href: "/portal/workspace", label: "任务空间", active: page === "workspace" },
     { href: "/portal/billing", label: "账单", active: page === "billing" },
     ...(user.role === "admin" ? [{ href: "/portal/admin", label: "管理后台", active: isAdminPage }] : []),
@@ -1740,212 +1798,35 @@ function readTracesRequestOptions(url) {
 }
 
 async function fetchBillingSummary(customerId, workspaceId = "", windowValue = "24h") {
-  try {
-    const url = new URL("/billing", BILLING_SERVICE_URL);
-    url.searchParams.set("window", windowValue);
-    if (customerId) url.searchParams.set("customer_id", customerId);
-    if (workspaceId) url.searchParams.set("workspace_id", workspaceId);
-    const response = await fetch(url, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!response.ok) return null;
-    const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-    if (!contentType.includes("application/json")) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  return billingClient.fetchSummary(customerId, workspaceId, windowValue);
 }
 
 async function ensureWorkspaceMinioSkeleton(userId, taskSlug, taskPath) {
-  const keepFiles = [
-    { kind: "inputs", filePath: path.join(taskPath, "inputs", ".keep") },
-    { kind: "outputs", filePath: path.join(taskPath, "outputs", ".keep") },
-  ];
-  for (const item of keepFiles) {
-    try {
-      if (!(await exists(item.filePath))) {
-        await writeFile(item.filePath, "", "utf8");
-      }
-      await syncWorkspaceFileToMinio(userId, taskSlug, item.kind, item.filePath, ".keep");
-    } catch (error) {
-      console.error("MinIO skeleton sync failed", error);
-    }
-  }
+  return minioStorageClient.ensureWorkspaceSkeleton(userId, taskSlug, taskPath);
 }
 
 async function fetchPendingSummary(customerId = "", workspaceId = "", windowValue = "168h") {
-  try {
-    const url = new URL("/pending", BILLING_SERVICE_URL);
-    url.searchParams.set("window", windowValue);
-    if (customerId) url.searchParams.set("customer_id", customerId);
-    if (workspaceId) url.searchParams.set("workspace_id", workspaceId);
-    const response = await fetch(url, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!response.ok) return null;
-    const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-    if (!contentType.includes("application/json")) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  return billingClient.fetchPendingSummary(customerId, workspaceId, windowValue);
 }
 
 async function fetchBillingStatus() {
-  try {
-    const response = await fetch(new URL("/status", BILLING_SERVICE_URL), {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!response.ok) return null;
-    const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-    if (!contentType.includes("application/json")) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  return billingClient.fetchStatus();
 }
 
 async function fetchMinioSummary() {
-  if (!(await exists(mcBinary))) {
-    return { available: false, mode: "status_only", note: "未找到 mc 工具" };
-  }
-  try {
-    await execFileAsync(mcBinary, ["alias", "set", "localminio", "http://127.0.0.1:30091", "minioadmin", "MinioAdmin123!"], { cwd: repoRoot, timeout: 15000 });
-    const { stdout } = await execFileAsync(mcBinary, ["ls", "--json", "--recursive", "localminio/workspaces"], { cwd: repoRoot, timeout: 30000, maxBuffer: 1024 * 1024 * 16 });
-    const lines = String(stdout || "").split(/\r?\n/).filter(Boolean);
-    const users = new Set();
-    const workspaces = new Set();
-    let objectCount = 0;
-    let latestWriteAt = "";
-    for (const line of lines) {
-      try {
-        const item = JSON.parse(line);
-        if (item.type !== "file" || !item.key) continue;
-        objectCount += 1;
-        const [userId, workspaceId] = String(item.key).split("/");
-        if (userId) users.add(userId);
-        if (userId && workspaceId) workspaces.add(`${userId}/${workspaceId}`);
-        const ts = String(item.lastModified || "");
-        if (ts && ts > latestWriteAt) latestWriteAt = ts;
-      } catch {}
-    }
-    return {
-      available: true,
-      mode: "live",
-      userCount: users.size,
-      workspaceCount: workspaces.size,
-      objectCount,
-      latestWriteAt: latestWriteAt ? formatDateTime(latestWriteAt) : "暂无",
-      note: "数据来自 MinIO 对象列表",
-    };
-  } catch (error) {
-    return { available: false, mode: "status_only", note: `MinIO 摘要未接入：${String(error.message || error)}` };
-  }
+  return minioStorageClient.fetchSummary();
 }
 
 async function fetchHarborSummary() {
-  if (!HARBOR_API_URL) {
-    return { available: false, mode: "status_only", note: "未配置 Harbor API URL" };
-  }
-  try {
-    const auth = Buffer.from(`${HARBOR_USERNAME}:${HARBOR_PASSWORD}`).toString("base64");
-    const projectsResponse = await fetch(new URL("/api/v2.0/projects?page_size=100", HARBOR_API_URL), {
-      headers: { Authorization: `Basic ${auth}` },
-    });
-    if (!projectsResponse.ok) {
-      return { available: false, mode: "status_only", note: `Harbor API 未授权：${projectsResponse.status}` };
-    }
-    const projects = await projectsResponse.json();
-    let repositoryCount = 0;
-    let artifactCount = 0;
-    let latestUpdate = "";
-    for (const project of projects) {
-      repositoryCount += Number(project.repo_count || 0);
-      const projectName = encodeURIComponent(project.name);
-      const reposResponse = await fetch(new URL(`/api/v2.0/projects/${projectName}/repositories?page_size=100`, HARBOR_API_URL), {
-        headers: { Authorization: `Basic ${auth}` },
-      });
-      if (!reposResponse.ok) continue;
-      const repos = await reposResponse.json();
-      for (const repo of repos) {
-        artifactCount += Number(repo.artifact_count || 0);
-        const updateTime = String(repo.update_time || repo.creation_time || "");
-        if (updateTime && updateTime > latestUpdate) latestUpdate = updateTime;
-      }
-    }
-    return {
-      available: true,
-      mode: "live",
-      projectCount: Array.isArray(projects) ? projects.length : 0,
-      repositoryCount,
-      artifactCount,
-      latestUpdateAt: latestUpdate ? formatDateTime(latestUpdate) : "暂无",
-      note: "数据来自 Harbor API",
-    };
-  } catch (error) {
-    return { available: false, mode: "status_only", note: `Harbor 摘要未接入：${String(error.message || error)}` };
-  }
+  return harborRegistryClient.fetchSummary();
 }
 
-async function createOplWorkbenchLaunch({ user, taskSpace, workspaceSession }) {
-  const response = await fetch(new URL("/api/launch-tokens", `${OPL_RUNTIME_BRIDGE_URL}/`), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    signal: AbortSignal.timeout(OPL_RUNTIME_TIMEOUT_MS),
-    body: JSON.stringify({
-      portalUserId: user.id,
-      portalUserEmail: user.email,
-      portalUserName: user.name,
-      workspaceId: workspaceSession.workspaceId,
-      workspaceTitle: taskSpace.title,
-      workspaceSessionId: workspaceSession.id,
-      sourceSurface: "portal-control-plane",
-    }),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload?.launchToken) {
-    throw new Error(payload?.error || `opl_launch_failed:${response.status}`);
-  }
-  return payload;
+async function createOplLaunch({ user, taskSpace, workspaceSession, requireRealOplWeb = false }) {
+  return oplAdapterClient.createLaunch({ user, taskSpace, workspaceSession, requireRealOplWeb });
 }
 
 async function fetchLangfuseSummary() {
-  const containers = ["medagentdemo-langfuse-clickhouse-1", "dify_bundle-langfuse-clickhouse-1"];
-  const candidates = [];
-  for (const container of containers) {
-    try {
-      const { stdout } = await execFileAsync("docker", ["exec", container, "clickhouse-client", "--query", "SELECT count(), max(timestamp) FROM traces"], {
-        cwd: repoRoot,
-        timeout: 30000,
-        maxBuffer: 1024 * 1024 * 8,
-      });
-      const [countText, maxTimestamp] = String(stdout || "").trim().split(/\s+/);
-      const traceCount = Number(countText || 0);
-      if (!Number.isFinite(traceCount)) continue;
-      candidates.push({
-        available: true,
-        mode: "live",
-        source: container,
-        traceCount,
-        latestTraceAt: maxTimestamp && !maxTimestamp.startsWith("1970-01-01") ? formatDateTime(maxTimestamp.replace(" ", "T")) : "暂无",
-        note: "数据来自 Langfuse ClickHouse",
-        rawLatestTraceAt: maxTimestamp || "",
-      });
-    } catch {}
-  }
-  if (candidates.length) {
-    candidates.sort((a, b) => {
-      if (Number(b.traceCount || 0) !== Number(a.traceCount || 0)) return Number(b.traceCount || 0) - Number(a.traceCount || 0);
-      return String(b.rawLatestTraceAt || "").localeCompare(String(a.rawLatestTraceAt || ""));
-    });
-    const { rawLatestTraceAt, ...selected } = candidates[0];
-    return selected;
-  }
-  return { available: false, mode: "status_only", note: "未接入 Langfuse 摘要查询" };
+  return langfuseTraceClient.fetchSummary();
 }
 
 function workspaceChatSessionsForUser(db, user, limit = 20) {
@@ -1969,108 +1850,20 @@ function workspaceChatSessionsForUser(db, user, limit = 20) {
     }));
 }
 
-async function resolveTraceContainer() {
-  const candidates = [];
-  for (const container of ["medagentdemo-langfuse-clickhouse-1", "dify_bundle-langfuse-clickhouse-1"]) {
-    try {
-      const { stdout } = await execFileAsync("docker", ["exec", container, "clickhouse-client", "--query", "SELECT count(), max(timestamp) FROM traces"], {
-        cwd: repoRoot,
-        timeout: 15000,
-        maxBuffer: 1024 * 1024,
-      });
-      const [countText, maxTimestamp] = String(stdout || "").trim().split(/\s+/);
-      candidates.push({ container, count: Number(countText || 0), latest: maxTimestamp || "" });
-    } catch {}
-  }
-  candidates.sort((a, b) => {
-    if (Number(b.count || 0) !== Number(a.count || 0)) return Number(b.count || 0) - Number(a.count || 0);
-    return String(b.latest || "").localeCompare(String(a.latest || ""));
-  });
-  return candidates[0]?.container || "";
-}
-
-async function queryClickhouseJsonRows(container, query) {
-  if (!container) return [];
-  try {
-    const { stdout } = await execFileAsync("docker", [
-      "exec",
-      container,
-      "clickhouse-client",
-      "--query",
-      `${query} FORMAT JSONEachRow`,
-    ], {
-      cwd: repoRoot,
-      timeout: 30000,
-      maxBuffer: 1024 * 1024 * 8,
-    });
-    return String(stdout || "")
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .map((line) => {
-        try {
-          return JSON.parse(line);
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
 async function fetchTraceRows({ userId = "", workspaceId = "", runId = "", limit = 20 } = {}) {
-  const container = await resolveTraceContainer();
-  if (!container) {
-    return { source: "langfuse_clickhouse", type: "status_only", rows: [], note: "Langfuse ClickHouse 不可用" };
-  }
-  const clauses = ["is_deleted = 0"];
-  if (userId) clauses.push(`user_id = '${String(userId).replaceAll("'", "''")}'`);
-  if (workspaceId) clauses.push(`mapContains(metadata, 'workspaceId') AND metadata['workspaceId'] = '${String(workspaceId).replaceAll("'", "''")}'`);
-  if (runId) clauses.push(`mapContains(metadata, 'runId') AND metadata['runId'] = '${String(runId).replaceAll("'", "''")}'`);
-  const rows = await queryClickhouseJsonRows(
-    container,
-    `SELECT id,timestamp,name,user_id,metadata,session_id FROM traces WHERE ${clauses.join(" AND ")} ORDER BY timestamp DESC LIMIT ${Number(limit || 20)}`,
-  );
-  return {
-    source: "langfuse_clickhouse",
-    type: "live",
-    rows: rows.map((item) => ({
-      traceId: item.id || "",
-      traceName: item.name || "",
-      userId: item.user_id || "",
-      workspaceId: item.metadata?.workspaceId || "",
-      workspaceSessionId: item.metadata?.workspaceSessionId || "",
-      runId: item.metadata?.runId || "",
-      model: item.metadata?.model || "",
-      sessionId: item.session_id || "",
-      tokenCount: Number(
-        item.metadata?.totalTokens ??
-        item.metadata?.tokenCount ??
-        item.metadata?.usage?.totalTokens ??
-        0,
-      ),
-      userAgent: item.metadata?.userAgent || item.metadata?.user_agent || "",
-      latencyMs: Number(
-        item.metadata?.latencyMs ??
-        item.metadata?.latency_ms ??
-        item.metadata?.durationMs ??
-        item.metadata?.duration_ms ??
-        0,
-      ),
-      inputPreview: String(
-        item.metadata?.inputText ??
-        item.metadata?.input ??
-        item.metadata?.prompt ??
-        item.metadata?.question ??
-        "",
-      ),
-      startedAt: item.timestamp ? formatDateTime(String(item.timestamp).replace(" ", "T")) : "",
-      status: String(item.metadata?.status || "recorded"),
-      url: LANGFUSE_URL ? `${LANGFUSE_URL}` : "",
-    })),
-    note: rows.length ? "数据来自 Langfuse traces" : "Langfuse 中未查询到匹配 trace",
-  };
+  return langfuseTraceClient.fetchTraceRows({ userId, workspaceId, runId, limit });
+}
+
+async function fetchOplAdapterRuns() {
+  return oplAdapterClient.fetchRuns();
+}
+
+async function fetchOplAdapterTraceRows({ userId = "", workspaceId = "", runId = "", limit = 200 } = {}) {
+  return oplAdapterClient.fetchTraceRows({ userId, workspaceId, runId, limit });
+}
+
+async function fetchOplAdapterCosts({ userId = "", workspaceId = "", runId = "" } = {}) {
+  return oplAdapterClient.fetchCosts({ userId, workspaceId, runId });
 }
 
 async function fetchWorkspaceStorageSnapshot(taskSpace) {
@@ -2096,76 +1889,11 @@ async function fetchWorkspaceStorageSnapshot(taskSpace) {
 }
 
 async function fetchWorkspaceMinioState(userId, taskSlug) {
-  if (!(await exists(mcBinary))) {
-    return { source: "minio_object_store", type: "status_only", available: false, synced: false, objects: 0, note: "未找到 mc 工具" };
-  }
-  try {
-    await execFileAsync(mcBinary, ["alias", "set", "localminio", "http://127.0.0.1:30091", "minioadmin", "MinioAdmin123!"], { cwd: repoRoot, timeout: 15000 });
-    const target = `localminio/workspaces/${userId}/${taskSlug}`;
-    const { stdout } = await execFileAsync(mcBinary, ["ls", "--json", "--recursive", target], { cwd: repoRoot, timeout: 30000, maxBuffer: 1024 * 1024 * 8 });
-    const rows = String(stdout || "").split(/\r?\n/).filter(Boolean);
-    let latestWriteAt = "";
-    for (const line of rows) {
-      try {
-        const item = JSON.parse(line);
-        const ts = String(item.lastModified || "");
-        if (ts && ts > latestWriteAt) latestWriteAt = ts;
-      } catch {}
-    }
-    return {
-      source: "minio_object_store",
-      type: "live",
-      available: true,
-      synced: rows.length > 0,
-      objects: rows.length,
-      latestWriteAt: latestWriteAt ? formatDateTime(latestWriteAt) : "",
-      note: "数据来自 MinIO 对象列表",
-    };
-  } catch (error) {
-    return { source: "minio_object_store", type: "status_only", available: false, synced: false, objects: 0, note: `MinIO 查询失败：${String(error.message || error)}` };
-  }
+  return minioStorageClient.fetchWorkspaceState(userId, taskSlug);
 }
 
 async function fetchHarborImageRows(limit = 50) {
-  if (!HARBOR_API_URL) {
-    return { source: "harbor_api", type: "status_only", rows: [], note: "未配置 Harbor API URL" };
-  }
-  try {
-    const auth = Buffer.from(`${HARBOR_USERNAME}:${HARBOR_PASSWORD}`).toString("base64");
-    const projectsResponse = await fetch(new URL("/api/v2.0/projects?page_size=100", HARBOR_API_URL), {
-      headers: { Authorization: `Basic ${auth}` },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!projectsResponse.ok) {
-      return { source: "harbor_api", type: "status_only", rows: [], note: `Harbor API 未授权：${projectsResponse.status}` };
-    }
-    const projects = await projectsResponse.json();
-    const rows = [];
-    for (const project of Array.isArray(projects) ? projects : []) {
-      const projectName = encodeURIComponent(project.name);
-      const reposResponse = await fetch(new URL(`/api/v2.0/projects/${projectName}/repositories?page_size=100`, HARBOR_API_URL), {
-        headers: { Authorization: `Basic ${auth}` },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!reposResponse.ok) continue;
-      const repos = await reposResponse.json();
-      for (const repo of Array.isArray(repos) ? repos : []) {
-        rows.push({
-          project: project.name,
-          repository: repo.name || "",
-          tag: "",
-          size: Number(repo.pull_count || 0),
-          pushedAt: formatDateTime(repo.update_time || repo.creation_time || ""),
-          status: "available",
-        });
-        if (rows.length >= limit) break;
-      }
-      if (rows.length >= limit) break;
-    }
-    return { source: "harbor_api", type: "live", rows, note: "数据来自 Harbor repository 列表" };
-  } catch (error) {
-    return { source: "harbor_api", type: "status_only", rows: [], note: `Harbor 查询失败：${String(error.message || error)}` };
-  }
+  return harborRegistryClient.fetchImageRows(limit);
 }
 
 async function probe(url) {
@@ -2212,19 +1940,7 @@ async function handleUpload(req, res, user) {
     const targetFile = path.join(inputDir, filename);
     await writeFile(targetFile, Buffer.from(content, "binary"));
     fileCount += 1;
-    try {
-      await execFileAsync("powershell.exe", [
-        "-ExecutionPolicy", "Bypass",
-        "-File", syncWorkspaceToMinioScriptRelative,
-        "-UserId", user.id,
-        "-TaskSlug", taskSpace.slug,
-        "-Kind", "inputs",
-        "-FilePath", targetFile,
-        "-RelativePath", filename,
-      ], { timeout: 120000, maxBuffer: 1024 * 1024, cwd: portalWorkdir });
-    } catch (error) {
-      console.error("MinIO sync failed", error);
-    }
+    await syncWorkspaceFileToMinio(user.id, taskSpace.slug, "inputs", targetFile, filename);
   }
   await logPortalEvent({ type: "workspace_input_uploaded", userId: user.id, workspaceId: taskSpace.slug, fileCount });
   await writeDb(db);
@@ -2233,29 +1949,7 @@ async function handleUpload(req, res, user) {
 }
 
 async function syncWorkspaceFileToMinio(userId, taskSlug, kind, filePath, relativePath = "") {
-  const now = Date.now();
-  if (now - minioAvailability.checkedAt > 10_000) {
-    try {
-      const probeResponse = await fetch(new URL("/minio/health/live", `${MINIO_API_URL}/`), { signal: AbortSignal.timeout(1500) });
-      minioAvailability = { checkedAt: now, ok: probeResponse.ok };
-    } catch {
-      minioAvailability = { checkedAt: now, ok: false };
-    }
-  }
-  if (!minioAvailability.ok) return;
-  try {
-    await execFileAsync("powershell.exe", [
-      "-ExecutionPolicy", "Bypass",
-      "-File", syncWorkspaceToMinioScriptRelative,
-      "-UserId", userId,
-      "-TaskSlug", taskSlug,
-      "-Kind", kind,
-      "-FilePath", filePath,
-      "-RelativePath", relativePath,
-    ], { timeout: 120000, maxBuffer: 1024 * 1024, cwd: portalWorkdir });
-  } catch (error) {
-    console.error("MinIO sync failed", error);
-  }
+  return minioStorageClient.syncWorkspaceFile(userId, taskSlug, kind, filePath, relativePath);
 }
 
 async function readDirSafe(dir) {
@@ -2810,7 +2504,7 @@ async function buildAdminOverviewPayload(db) {
     allRuns.push(...(await collectRunsForUser(item.id)).map((run) => ({ ...run, userId: item.id, userName: item.name, userEmail: item.email })));
   }
   const serviceStatuses = await Promise.all([
-    { name: "OPL Runtime Bridge", url: new URL("/healthz", `${OPL_RUNTIME_BRIDGE_URL}/`).toString() },
+    { name: "Portal OPL Adapter", url: new URL("/healthz", `${PORTAL_OPL_ADAPTER_URL}/`).toString() },
     { name: "Langfuse", url: LANGFUSE_URL },
     { name: "Rancher", url: RANCHER_URL },
     { name: "OpenCost", url: OPENCOST_UI_URL },
@@ -3089,9 +2783,11 @@ async function buildAdminOverviewPayload(db) {
       oplRuntime: {
         available: true,
         mode: "status_only",
-        bridgeUrl: OPL_RUNTIME_BRIDGE_URL,
-        workbenchUrl: OPL_WORKBENCH_URL,
-        note: "Portal 通过 OPL runtime bridge 打开 AionUI/OPL 工作台",
+        adapterUrl: PORTAL_OPL_ADAPTER_URL,
+        oplWebUrl: OPL_WEB_URL || "",
+        note: OPL_WEB_URL
+          ? "Portal 生成 launch context，并把用户带到真实 OPL Web；adapter 只负责内部合同转换"
+          : "未配置 OPL_WEB_URL，Portal 不会回退到旧工作台路径",
       },
       rancher: {
         available: Boolean(RANCHER_URL),
@@ -3902,6 +3598,7 @@ const server = http.createServer(async (req, res) => {
     res.end();
     return;
   }
+  if (await handleOplRoutes({ req, res, url, db, user })) return;
   if (req.method === "GET" && (url.pathname === "/portal/app" || url.pathname === "/portal/app/" || url.pathname.startsWith("/portal/app/"))) {
     await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");
     return;
@@ -3939,7 +3636,30 @@ const server = http.createServer(async (req, res) => {
     const targetUser = requestedUserId && user.role === "admin"
       ? (db.users.find((item) => item.id === requestedUserId) || user)
       : user;
-    const oplSessions = workspaceChatSessionsForUser(db, targetUser, Number(url.searchParams.get("limit") || 20));
+    const adapterRuns = await fetchOplAdapterRuns();
+    const runsByWorkspaceSession = new Map();
+    for (const run of adapterRuns.filter((item) => item.portalUserId === targetUser.id)) {
+      const key = run.workspaceSessionId || "";
+      if (!key) continue;
+      const current = runsByWorkspaceSession.get(key);
+      if (!current || String(run.createdAt || "").localeCompare(String(current.createdAt || "")) > 0) {
+        runsByWorkspaceSession.set(key, run);
+      }
+    }
+    const oplSessions = workspaceChatSessionsForUser(db, targetUser, Number(url.searchParams.get("limit") || 20))
+      .map((session) => {
+        const latestRun = runsByWorkspaceSession.get(session.workspaceSessionId);
+        return latestRun ? {
+          ...session,
+          runtimeSessionId: latestRun.runtimeSessionId || "",
+          runId: latestRun.runId || "",
+          runStatus: latestRun.status || "",
+          latencyMs: Number(latestRun.latencyMs || 0),
+          tokenCount: Number(latestRun.tokenCount || 0),
+          userAgent: latestRun.userAgent || "",
+          source: "portal_workspace_sessions + portal_opl_adapter",
+        } : session;
+      });
     const rows = [...oplSessions]
       .sort((a, b) => String(b.lastUsedAt || b.expiresAt || "").localeCompare(String(a.lastUsedAt || a.expiresAt || "")));
     const pagination = paginateRows(rows, requestOptions.page, normalizePageSize(requestOptions.pageSize || 5));
@@ -3957,7 +3677,7 @@ const server = http.createServer(async (req, res) => {
         totalPages: pagination.totalPages,
       },
       sources: {
-        opl: { source: "portal_workspace_sessions + opl-runtime-bridge", type: "live" },
+        opl: { source: "portal_workspace_sessions + portal_opl_adapter", type: "live" },
       },
     });
     return;
@@ -3985,15 +3705,39 @@ const server = http.createServer(async (req, res) => {
         type: "live",
       })));
     }
+    const adapterRuns = (await fetchOplAdapterRuns())
+      .filter((item) => {
+        if (requestedUserId && user.role === "admin") return item.portalUserId === requestedUserId;
+        return item.portalUserId === user.id;
+      })
+      .map((item) => ({
+        runId: item.runId || "",
+        workspaceId: item.workspaceId || "",
+        workspaceSessionId: item.workspaceSessionId || "",
+        runtimeSessionId: item.runtimeSessionId || "",
+        userId: item.portalUserId || "",
+        userName: "",
+        status: item.status || "",
+        startedAt: formatDateTime(item.createdAt || ""),
+        endedAt: item.finishedAt ? formatDateTime(item.finishedAt) : "",
+        source: "portal_opl_adapter",
+        type: "live",
+        latencyMs: Number(item.latencyMs || 0),
+        tokenCount: Number(item.tokenCount || 0),
+        userAgent: item.userAgent || "",
+        jobName: item.jobName || "",
+        namespace: item.namespace || "",
+      }));
+    runs.push(...adapterRuns);
     const filtered = runs
       .filter((item) => !workspaceId || item.workspaceId === workspaceId)
       .filter((item) => !runId || item.runId === runId)
       .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
     sendJson(res, {
       runs: filtered,
-      source: "runtime_events",
+      source: "runtime_events + portal_opl_adapter",
       type: "live",
-      note: "数据来自 runtime 事件与 Portal 运行记录",
+      note: "数据来自 runtime 事件、Portal 运行记录与 Portal OPL adapter",
     });
     return;
   }
@@ -4036,6 +3780,24 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/portal/api/costs/run") {
     const runId = String(url.searchParams.get("runId") || "").trim();
     const summary = await fetchBillingSummary(user.id, "", String(url.searchParams.get("window") || "168h"));
+    const adapterCost = (await fetchOplAdapterCosts({ userId: user.id, runId }))[0] || null;
+    if (adapterCost) {
+      sendJson(res, {
+        source: "portal_opl_adapter",
+        type: "live",
+        note: adapterCost.status === "pending" ? "run 成本已记录为 pending，等待 OpenCost/云账单对账" : "run 成本来自 Portal OPL adapter",
+        runId,
+        cost: {
+          cpuCost: adapterCost.cpuCost,
+          gpuCost: adapterCost.gpuCost,
+          storageCost: adapterCost.storageCost,
+          totalCost: adapterCost.totalCost,
+          pricingSource: adapterCost.pricingSource,
+          status: adapterCost.status,
+        },
+      });
+      return;
+    }
     const runCost = (summary?.items || []).find((item) => {
       const props = item?.properties || {};
       return props["label:run_id"] === runId || props.run_id === runId || item?.name === runId;
@@ -4102,7 +3864,15 @@ const server = http.createServer(async (req, res) => {
       runId,
       limit: parsePositiveInt(requestOptions.limit, 200),
     });
-    const filteredRows = (traces.rows || [])
+    const adapterTraces = await fetchOplAdapterTraceRows({
+      userId: userIdForTrace || (user.role === "admin" ? "" : user.id),
+      workspaceId,
+      runId,
+      limit: parsePositiveInt(requestOptions.limit, 200),
+    });
+    const mergedRows = [...(adapterTraces.rows || []), ...(traces.rows || [])]
+      .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
+    const filteredRows = mergedRows
       .filter((item) => !sessionId || String(item.sessionId || item.workspaceSessionId || "").includes(sessionId))
       .filter((item) => !statusFilter || String(item.status || "").toLowerCase().includes(statusFilter));
     const pagination = paginateRows(filteredRows, requestOptions.page, normalizePageSize(requestOptions.pageSize || 5));
@@ -4115,12 +3885,12 @@ const server = http.createServer(async (req, res) => {
         status: statusFilter,
       },
       summary: {
-        available: traces.type === "live",
-        mode: traces.type,
-        note: traces.note || "",
+        available: traces.type === "live" || adapterTraces.type === "live",
+        mode: adapterTraces.type === "live" ? "live" : traces.type,
+        note: adapterTraces.type === "live" ? adapterTraces.note : (traces.note || ""),
         traceCount: filteredRows.length,
         latestTraceAt: filteredRows[0]?.startedAt || "",
-        dataSource: traces.source,
+        dataSource: adapterTraces.type === "live" ? `${adapterTraces.source} + ${traces.source}` : traces.source,
       },
       items: pagination.rows,
       pagination: {
@@ -4155,36 +3925,6 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/portal/api/workspace") {
     const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
     sendJson(res, await buildWorkspacePayload(db, user, taskSlug));
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/workbench/launch") {
-    const bodyText = (await readBody(req)).toString("utf8");
-    const body = bodyText ? JSON.parse(bodyText) : {};
-    const taskSlug = slugify(body.task || body.workspaceId || user.currentTaskSlug || "default");
-    const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-    const policy = await evaluateUserPolicy(db, user);
-    const reasons = [
-      ...(!policy.allowMas ? ["当前分组不允许启动 MAS"] : []),
-      ...(policy.blocks || []),
-      ...(Number(wallet.balance || 0) <= 0 ? ["当前余额不足"] : []),
-    ];
-    if (reasons.length) {
-      sendJson(res, { ok: false, error: "workspace_launch_blocked", reasons }, 409);
-      return;
-    }
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-    const session = await ensureWorkspaceSession(db, user, taskSpace);
-    const launch = await createOplWorkbenchLaunch({ user, taskSpace, workspaceSession: session });
-    await logPortalEvent({
-      type: "opl_workbench_launch_created",
-      userId: user.id,
-      workspaceId: taskSpace.slug,
-      workspaceSessionId: session.id,
-      runtimeSessionId: launch.runtimeSessionId || "",
-      api: true,
-    });
-    await writeDb(db);
-    sendJson(res, { ok: true, workspace: taskSpace, workspaceSession: session, launch });
     return;
   }
   if (req.method === "GET" && url.pathname === "/portal/api/admin/overview") {
@@ -4335,59 +4075,6 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/portal")) {
     res.writeHead(302, { Location: "/portal/app/overview" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/workbench") {
-    const requestedTask = String(url.searchParams.get("task") || user.currentTaskSlug || "default").trim();
-    const taskSlug = slugify(requestedTask);
-    const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-    const policy = await evaluateUserPolicy(db, user);
-    if (!policy.allowMas) {
-      await logPortalEvent({ type: "policy_blocked_mas", userId: user.id, groupId: policy.group?.id || "", reasons: ["当前分组不允许启动 MAS"] });
-      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前分组不允许启动 MAS</h2><p class="hint">请联系管理员调整分组策略后再试。</p></div>`, user), 403);
-      return;
-    }
-    if (policy.blocked) {
-      await logPortalEvent({ type: "policy_blocked_mas", userId: user.id, groupId: policy.group?.id || "", reasons: policy.blocks });
-      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前账号暂时不能启动 MAS</h2><ul class="list">${policy.blocks.map((item) => `<li>${item}</li>`).join("")}</ul></div>`, user), 403);
-      return;
-    }
-    if (Number(wallet.balance || 0) <= 0) {
-      sendHtml(res, layoutV2("余额不足", `<div class="card"><h2>当前余额不足</h2><p class="hint">余额不足时不能启动新的 MAS。请先充值后再试。</p><p><a href="/portal/billing">去账单页查看余额</a></p></div>`, user), 402);
-      return;
-    }
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-    if (taskSpace.status !== "active") {
-      sendHtml(res, layoutV2("任务空间不可启动", `<div class="card"><h2>当前任务空间不可启动 MAS</h2><p class="hint">只有 active 状态的任务空间才能启动 MAS。</p><p><a href="/portal/workspace?task=${taskSpace.slug}">返回任务空间</a></p></div>`, user), 409);
-      return;
-    }
-    const session = await ensureWorkspaceSession(db, user, taskSpace);
-    let launch;
-    try {
-      launch = await createOplWorkbenchLaunch({ user, taskSpace, workspaceSession: session });
-    } catch (error) {
-      await logPortalEvent({
-        type: "opl_launch_failed",
-        userId: user.id,
-        workspaceId: taskSpace.slug,
-        workspaceSessionId: session.id,
-        error: String(error.message || error),
-      });
-      sendHtml(res, layoutV2("OPL 工作台不可用", `<div class="card"><h2>OPL 工作台暂时不可用</h2><p class="hint">${String(error.message || error)}</p></div>`, user), 502);
-      return;
-    }
-    await logPortalEvent({
-      type: "opl_workbench_launch_created",
-      userId: user.id,
-      workspaceId: taskSpace.slug,
-      workspaceSessionId: session.id,
-      runtimeSessionId: launch.runtimeSessionId || "",
-      bridgeUrl: OPL_RUNTIME_BRIDGE_URL,
-    });
-    appendCookie(res, `${workspaceSessionCookie()}=${session.id}; Path=/; HttpOnly; SameSite=Lax`);
-    await writeDb(db);
-    res.writeHead(302, { Location: launch.workbenchUrl || `${OPL_WORKBENCH_URL}?launch_token=${encodeURIComponent(launch.launchToken || "")}` });
     res.end();
     return;
   }

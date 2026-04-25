@@ -1,0 +1,14 @@
+﻿apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portal-platform-runtime
+  namespace: portal-staging
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "cfs"
+  resources:
+    requests:
+      storage: "20Gi"
+
+

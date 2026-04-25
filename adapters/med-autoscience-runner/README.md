@@ -5,9 +5,9 @@ Kubernetes manifest, policy, log, and output handling code.
 
 In v1 it is no longer the product entry. The product path is:
 
-`Portal -> AionUI/OPL -> OPL runtime -> med-autoscience`
+`Portal -> OPL Web -> OPL runtime -> med-autoscience`
 
-The runtime bridge/orchestrator should call this adapter internally. Do not expose this service
+The Portal OPL adapter or OPL runtime orchestrator should call this adapter internally. Do not expose this service
 as the user-facing workbench path.
 
 ## Scope

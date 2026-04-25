@@ -7,7 +7,7 @@
           <MetricCard label="分组数量" :value="payload.groups?.length ?? 0" hint="当前可用策略组" />
           <MetricCard label="启用分组" :value="activeCount" hint="未禁用的分组" />
           <MetricCard label="GPU 分组" :value="gpuCount" hint="GPU 配额大于 0" />
-          <MetricCard label="允许 MAS" :value="masCount" hint="允许进入 AionUI/OPL" />
+          <MetricCard label="允许 MAS" :value="masCount" hint="允许进入 OPL Web" />
         </section>
 
         <section class="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_1fr]">

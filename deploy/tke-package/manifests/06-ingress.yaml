@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portal
+  namespace: __NAMESPACE__
+spec:
+  ingressClassName: "__INGRESS_CLASS__"
+  tls:
+    - hosts:
+        - "__PORTAL_HOST__"
+      secretName: "__TLS_SECRET_NAME__"
+  rules:
+    - host: "__PORTAL_HOST__"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 17080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opl-web
+  namespace: __NAMESPACE__
+spec:
+  ingressClassName: "__INGRESS_CLASS__"
+  tls:
+    - hosts:
+        - "__OPL_HOST__"
+      secretName: "__TLS_SECRET_NAME__"
+  rules:
+    - host: "__OPL_HOST__"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: opl-web-gateway
+                port:
+                  number: 13031
+

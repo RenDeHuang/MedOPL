@@ -159,10 +159,10 @@ const userStatusLabel = computed(() => {
 const helpPages = [
   {
     title: "入口分工",
-    summary: "Portal 是后台控制面，AionUI 是工作台入口。",
+  summary: "Portal 是后台控制面，OPL Web 是工作台入口。",
     sections: [
       { title: "Portal", items: ["查看账户、任务空间、账单、轨迹。", "查看管理员总台、用户管理、Trace。"] },
-      { title: "AionUI", items: ["进入会话和工作流。", "在 workspace 内持续执行任务。"] },
+  { title: "OPL Web", items: ["进入会话和工作流。", "在 workspace 内持续执行任务。"] },
     ],
   },
   {

@@ -1,0 +1,47 @@
+﻿apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portal
+  namespace: portal-staging
+spec:
+  ingressClassName: "nginx"
+  tls:
+    - hosts:
+        - "portal.example.com"
+      secretName: "portal-tls"
+  rules:
+    - host: "portal.example.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 17080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opl-web
+  namespace: portal-staging
+spec:
+  ingressClassName: "nginx"
+  tls:
+    - hosts:
+        - "opl.example.com"
+      secretName: "portal-tls"
+  rules:
+    - host: "opl.example.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: opl-web-gateway
+                port:
+                  number: 13031
+
+

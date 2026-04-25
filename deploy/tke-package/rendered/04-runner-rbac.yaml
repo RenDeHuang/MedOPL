@@ -1,0 +1,35 @@
+﻿apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: med-autoscience-runner
+  namespace: portal-staging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: med-autoscience-runner-job-manager
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: med-autoscience-runner-job-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: med-autoscience-runner-job-manager
+subjects:
+  - kind: ServiceAccount
+    name: med-autoscience-runner
+    namespace: portal-staging
+
+
