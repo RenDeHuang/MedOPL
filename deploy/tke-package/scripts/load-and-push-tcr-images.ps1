@@ -1,7 +1,7 @@
 param(
   [string]$RegistryNamespace = "uswccr.ccs.tencentyun.com/gaofenglab",
   [string]$Username = "100047070895",
-  [string]$ImageTar = ".\images\opl-tke-images-opl-v1.tar",
+  [string]$ImageTar = ".\images\opl-tke-images-opl-v10.tar",
   [switch]$SkipLogin
 )
 
@@ -13,13 +13,14 @@ if (!(Test-Path $ImageTar)) {
 
 $sourceRepo = "uswccr.ccs.tencentyun.com/gaofenglab/opl"
 $images = @(
-  @{ Source = "$sourceRepo`:portal-opl-v1"; Target = "$RegistryNamespace/portal-opl:opl-v1" },
-  @{ Source = "$sourceRepo`:portal-opl-adapter-opl-v1"; Target = "$RegistryNamespace/portal-opl-adapter-opl:opl-v1" },
-  @{ Source = "$sourceRepo`:opl-web-gateway-opl-v1"; Target = "$RegistryNamespace/opl-web-gateway-opl:opl-v1" },
-  @{ Source = "$sourceRepo`:opl-web-opl-v1"; Target = "$RegistryNamespace/opl-web-opl:opl-v1" },
-  @{ Source = "$sourceRepo`:billing-aggregator-opl-v1"; Target = "$RegistryNamespace/billing-aggregator-opl:opl-v1" },
-  @{ Source = "$sourceRepo`:med-autoscience-runner-orchestrator-opl-v1"; Target = "$RegistryNamespace/med-autoscience-runner-orchestrator-opl:opl-v1" },
-  @{ Source = "$sourceRepo`:med-autoscience-runner-opl-v1"; Target = "$RegistryNamespace/med-autoscience-runner-opl:opl-v1" }
+  @{ Source = "$sourceRepo`:portal-opl-v10"; Target = "$RegistryNamespace/portal-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:portal-opl-adapter-opl-v10"; Target = "$RegistryNamespace/portal-opl-adapter-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:opl-web-gateway-opl-v10"; Target = "$RegistryNamespace/opl-web-gateway-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:opl-web-opl-v10"; Target = "$RegistryNamespace/opl-web-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:billing-aggregator-opl-v10"; Target = "$RegistryNamespace/billing-aggregator-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:resource-provisioner-opl-v10"; Target = "$RegistryNamespace/resource-provisioner-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:med-autoscience-runner-orchestrator-opl-v10"; Target = "$RegistryNamespace/med-autoscience-runner-orchestrator-opl:opl-v10" },
+  @{ Source = "$sourceRepo`:med-autoscience-runner-opl-v10"; Target = "$RegistryNamespace/med-autoscience-runner-opl:opl-v10" }
 )
 
 docker load -i $ImageTar

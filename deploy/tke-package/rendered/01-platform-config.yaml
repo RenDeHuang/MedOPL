@@ -5,7 +5,7 @@ metadata:
   namespace: portal-staging
 data:
   NODE_ENV: "production"
-  BUILD_SHA: "opl-v9"
+  BUILD_SHA: "opl-v10"
   BUILD_TIME: "2026-04-27T00:00:00Z"
   PORTAL_STORAGE_MODE: "json"
   PORTAL_DB_NAMESPACE: "portal"
