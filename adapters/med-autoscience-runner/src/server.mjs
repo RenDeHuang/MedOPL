@@ -184,6 +184,7 @@ function normalizeRunIdentity(args = {}) {
     billingScope: firstNonEmpty(args.billingScope) || "run",
     costCenter: firstNonEmpty(args.costCenter) || "research-foundry",
     serverPlanId: firstNonEmpty(args.serverPlanId, args.server_plan_id) || "default",
+    resourceOrderId: firstNonEmpty(args.resourceOrderId, args.resource_order_id),
     region: firstNonEmpty(args.region) || "",
     zone: firstNonEmpty(args.zone) || "",
     nodePool: firstNonEmpty(args.nodePool, args.node_pool) || "",
@@ -331,19 +332,13 @@ async function ensureRuntimeStartAllowedLegacy(customerId) {
 }
 
 async function reconcileCustomerCosts(customerId) {
-  if (!BILLING_RECONCILE_URL || !customerId) return null;
-
-  try {
-    const response = await fetch(BILLING_RECONCILE_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ customer_id: customerId, window: "7d" })
-    });
-    if (!response.ok) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  return {
+    status: "runner_noop",
+    customerId: customerId || "",
+    reconcileUrlConfigured: Boolean(BILLING_RECONCILE_URL),
+    reason: "runner_does_not_settle_billing",
+    note: "Runner only records runtime state. Billing settlement is handled outside the runner.",
+  };
 }
 
 async function ensureRuntimeStartAllowed(customerId) {
@@ -708,6 +703,7 @@ async function startRun(args = {}) {
     billingScope,
     costCenter,
     serverPlanId,
+    resourceOrderId,
     region,
     zone,
     nodePool,
@@ -786,6 +782,7 @@ async function startRun(args = {}) {
     .replaceAll("__BILLING_SCOPE__", billingScope)
     .replaceAll("__COST_CENTER__", costCenter)
     .replaceAll("__SERVER_PLAN_ID__", k8sLabelSafe(serverPlanId))
+    .replaceAll("__RESOURCE_ORDER_ID__", k8sLabelSafe(resourceOrderId || "pending"))
     .replaceAll("__REGION__", k8sLabelSafe(region || "default"))
     .replaceAll("__RUNTIME_CLASS_BLOCK__", runtimeClassBlock)
     .replaceAll("__NODE_SELECTOR_BLOCK__", nodeSelectorBlock ? `nodeSelector:\n${nodeSelectorBlock}` : "")
@@ -826,6 +823,7 @@ async function startRun(args = {}) {
     billingScope,
     costCenter,
     serverPlanId,
+    resourceOrderId,
     region,
     groupId: policy.groupId || "",
     policyVersion,

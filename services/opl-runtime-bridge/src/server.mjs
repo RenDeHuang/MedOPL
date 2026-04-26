@@ -43,6 +43,7 @@ const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknow
 const OPL_RUNTIME_MODE = String(process.env.OPL_RUNTIME_MODE || "unknown").trim() || "unknown";
 const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
 const RUNNER_URL = String(process.env.MED_AUTOSCIENCE_RUNNER_URL || "").replace(/\/$/, "");
+const PORTAL_INTERNAL_BASE_URL = String(process.env.PORTAL_INTERNAL_BASE_URL || "").replace(/\/$/, "");
 
 function buildStatusPayload() {
   return {
@@ -64,6 +65,7 @@ function buildStatusPayload() {
       adapterPublicUrl: BASE_URL,
       oplWebUrl: OPL_WEB_URL || null,
       runnerUrl: RUNNER_URL || null,
+      portalInternalBaseUrl: PORTAL_INTERNAL_BASE_URL || null,
       namespace: K8S_NAMESPACE,
       runnerImage: RUNNER_IMAGE || null,
     },
@@ -405,15 +407,60 @@ function runContextFromRuntime(runtimeSession, input, req) {
     provisionerPayload: input.provisionerPayload || input.provisioner_payload || runtimeSession.provisionerPayload || null,
     model: input.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),
+    estimatedHours: Number(input.estimatedHours ?? input.estimated_hours ?? 1),
+    resourceOrderId: String(input.resourceOrderId || input.resource_order_id || "").trim(),
     userAgent: req.headers["user-agent"] || "",
     runnerImage: input.runnerImage || input.runner_image || RUNNER_IMAGE,
     namespace: input.namespace || K8S_NAMESPACE,
   };
 }
 
+async function prepareRunResourceOrder(context) {
+  if (!PORTAL_INTERNAL_BASE_URL) {
+    throw new Error("PORTAL_INTERNAL_BASE_URL is required for resource order preparation");
+  }
+  const idempotencyKey = `${context.runId}:${context.workspaceSessionId || "no-workspace-session"}`;
+  const response = await fetch(new URL("/portal/internal/resource-orders/prepare-run", `${PORTAL_INTERNAL_BASE_URL}/`), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      tenantId: context.tenantId,
+      userId: context.userId,
+      workspaceId: context.workspaceId,
+      workspaceSessionId: context.workspaceSessionId,
+      runId: context.runId,
+      serverPlanId: context.serverPlanId,
+      estimatedHours: Number.isFinite(context.estimatedHours) && context.estimatedHours > 0 ? context.estimatedHours : 1,
+      idempotencyKey,
+    }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.ok || !String(payload.resourceOrderId || "").trim()) {
+    throw new Error(payload?.error || `resource_order_prepare_failed:${response.status}`);
+  }
+  return {
+    resourceOrderId: String(payload.resourceOrderId).trim(),
+    order: payload.order || null,
+    idempotencyKey,
+  };
+}
+
 async function submitRuntimeRun(state, runtimeSession, input, req) {
-  const context = runContextFromRuntime(runtimeSession, input, req);
+  const baseContext = runContextFromRuntime(runtimeSession, input, req);
   const startedAt = Date.now();
+  const prepared = await prepareRunResourceOrder(baseContext);
+  const context = {
+    ...baseContext,
+    resourceOrderId: prepared.resourceOrderId,
+    resourceOrder: prepared.order,
+    resourceOrderPrepareIdempotencyKey: prepared.idempotencyKey,
+  };
+  addRunAction(state, {
+    ...context,
+    actionType: "resource_order_prepared",
+    summary: "Portal resource order prepared before runner submission.",
+    status: "prepared",
+  });
   await createRunnerWorkspace(context);
   addRunAction(state, { ...context, actionType: "runner_workspace_created", summary: "Runner workspace created.", status: "succeeded" });
   const submitted = await submitRun(context);
