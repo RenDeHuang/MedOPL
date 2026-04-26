@@ -63,11 +63,18 @@ export interface OverviewPayload {
     activeTasks: number;
     workspaceCount: number;
     runCount: number;
+    frozenAmount?: number;
+    availableBalance?: number;
+    pendingCostToday?: number;
+    exactCostToday?: number;
+    pendingCostMonth?: number;
+    exactCostMonth?: number;
   };
   commercial: CommercialProfile;
   serverPlansSummary: ServerPlansSummary;
   selectedServerPlan?: SelectedServerPlan | null;
   onboarding: OnboardingPayload;
+  resourceOrders?: ResourceOrdersPayload;
   taskCards: Array<{
     slug: string;
     title: string;
@@ -444,6 +451,58 @@ export interface ServerPlansPayload {
   };
 }
 
+export interface ResourceOrderItem {
+  id: string;
+  status: string;
+  workspaceId: string;
+  workspaceTitle?: string;
+  runId?: string;
+  serverPlanId?: string;
+  serverPlanName?: string;
+  region?: string;
+  quotedAmount?: number;
+  frozenAmount?: number;
+  pendingCost?: number;
+  exactCost?: number;
+  currency?: string;
+  pricingSource?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ResourceOrdersPayload {
+  items: ResourceOrderItem[];
+  summary?: {
+    activeCount?: number;
+    frozenAmount?: number;
+    pendingAmount?: number;
+    exactAmount?: number;
+  };
+}
+
+export interface ResourceOrderQuoteInput {
+  workspaceId?: string;
+  workspaceSessionId?: string;
+  serverPlanId: string;
+  estimatedHours?: number;
+}
+
+export interface ResourceOrderFreezeInput {
+  quoteId?: string;
+  resourceOrderId?: string;
+  workspaceId?: string;
+  workspaceSessionId?: string;
+  serverPlanId?: string;
+  estimatedHours?: number;
+}
+
+export interface ResourceOrderMutationResult {
+  ok: boolean;
+  resourceOrderId?: string;
+  quoteId?: string;
+  order?: ResourceOrderItem | null;
+}
+
 export interface AnnouncementPayload {
   items: Array<{
     id: string;
@@ -613,6 +672,21 @@ export async function fetchBilling(params: BillingQuery = {}) {
 
 export async function fetchServerPlans() {
   const { data } = await apiClient.get<ServerPlansPayload>("/server-plans");
+  return data;
+}
+
+export async function fetchResourceOrders(params?: Record<string, string | number | undefined>) {
+  const { data } = await apiClient.get<ResourceOrdersPayload>("/resource-orders", { params });
+  return data;
+}
+
+export async function quoteResourceOrder(input: ResourceOrderQuoteInput) {
+  const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/quote", input);
+  return data;
+}
+
+export async function freezeResourceOrder(input: ResourceOrderFreezeInput) {
+  const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/freeze", input);
   return data;
 }
 

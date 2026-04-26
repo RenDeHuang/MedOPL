@@ -17,7 +17,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: portal
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v9"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v10"
           imagePullPolicy: Always
           ports:
             - containerPort: 17080
@@ -88,7 +88,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: portal-opl-adapter
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v9"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v10"
           imagePullPolicy: Always
           ports:
             - containerPort: 8788
@@ -207,7 +207,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: opl-web-gateway
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v9"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v10"
           imagePullPolicy: Always
           ports:
             - containerPort: 13031
@@ -267,7 +267,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: billing-aggregator
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v9"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v10"
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -332,7 +332,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: resource-provisioner
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/resource-provisioner-opl:opl-v9"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/resource-provisioner-opl:opl-v10"
           imagePullPolicy: Always
           ports:
             - containerPort: 18893
@@ -398,7 +398,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: med-autoscience-runner
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v9"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v10"
           imagePullPolicy: Always
           ports:
             - containerPort: 18890

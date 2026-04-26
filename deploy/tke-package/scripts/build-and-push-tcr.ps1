@@ -1,7 +1,7 @@
 param(
   [string]$RegistryNamespace = "uswccr.ccs.tencentyun.com/gaofenglab",
   [string]$Username = "100047070895",
-  [string]$Tag = "opl-v8",
+  [string]$Tag = "opl-v10",
   [switch]$SkipLogin,
   [switch]$SkipOplWeb,
   [string]$OplWebSource = ""

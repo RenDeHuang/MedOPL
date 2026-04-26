@@ -51,15 +51,16 @@ Copy-Item .\env\tke.env.example .\env\tke.env
 
 3. 镜像说明。
 
-当前 TCR 已经按服务拆成 7 个独立私有仓库，`env/tke.env.tcr-gaofenglab.example` 和包内 `env/tke.env` 默认使用这些分仓镜像：
+当前 TCR 已经按服务拆成 8 个独立私有仓库，`env/tke.env.tcr-gaofenglab.example` 和包内 `env/tke.env` 默认使用这些分仓镜像：
 
 ```powershell
-uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v4
-uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v1
-uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v2
+uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v10
+uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v10
+uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v10
 uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1
-uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v1
-uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v1
+uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v10
+uswccr.ccs.tencentyun.com/gaofenglab/resource-provisioner-opl:opl-v10
+uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v10
 uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-opl:opl-v1
 ```
 
@@ -117,5 +118,5 @@ kubectl -n portal-staging rollout status deploy/med-autoscience-runner
 - 这是 TKE staging 包，不是直接营业包。
 - Portal/runner 当前 MinIO 同步链路仍含 Windows/PowerShell 脚本假设；在 Linux 容器里要么先关闭 MinIO 强依赖，要么后续改成 S3/COS SDK 或 Linux mc 直接同步。
 - `med-autoscience-runner` 当前负责创建 TKE Job，但 runtime Job 的 artifact 共享卷和对象存储回传还需要继续生产化。
-- 计费在 OpenCost 没有真实数据前只能是 pending，不允许自动扣真实费用。
+- 计费在腾讯云真实账单未回补前只能是 pending，不允许把估算结果当最终扣费。
 - `OPL_WEBUI_AUTH_MODE=none` 是短期 launch token 模式；正式营业应升级为 token 换 OPL Web session 或 OIDC trust。
