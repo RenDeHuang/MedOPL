@@ -40,7 +40,7 @@ async function waitFor(url) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
-function startOplWebFixture() {
+function startOplWebFixture(calls) {
   return http.createServer((req, res) => {
     const url = new URL(req.url || "/", "http://opl-web.local");
     if (url.pathname === "/") {
@@ -52,6 +52,7 @@ function startOplWebFixture() {
       return;
     }
     if (url.pathname === "/api/auth/user") {
+      calls.upstreamAuthUser += 1;
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         success: true,
@@ -137,7 +138,8 @@ function createBrowserVm({ gatewayUrl }) {
   });
 }
 
-const oplServer = startOplWebFixture();
+const calls = { upstreamAuthUser: 0 };
+const oplServer = startOplWebFixture(calls);
 let gateway = null;
 
 try {
@@ -175,6 +177,7 @@ try {
   assert(auth.error === "unauthenticated", "direct entry auth error mismatch");
   assert(auth.portalLaunchRequired === true, "direct entry auth must require portal launch");
   assert(auth.portalPublicUrl === "https://portal.example.test", "direct entry auth must expose Portal URL");
+  assert(calls.upstreamAuthUser === 0, "direct entry auth must not proxy upstream OPL noauth user");
 
   const htmlResponse = await fetch(`${gatewayUrl}/`);
   const html = await htmlResponse.text();
@@ -197,6 +200,7 @@ try {
     verified: [
       "healthz_direct_entry_contract",
       "auth_user_401_without_launch_cookie",
+      "upstream_auth_user_not_used",
       "html_direct_entry_marker",
       "browser_direct_entry_state",
     ],

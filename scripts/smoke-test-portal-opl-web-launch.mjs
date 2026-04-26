@@ -68,8 +68,11 @@ async function loginPortal() {
 
 async function portalJson(path, options = {}) {
   const response = await fetch(`${portalUrl}${path}`, options);
-  const json = await response.json();
+  const contentType = response.headers.get("content-type") || "";
+  const raw = await response.text();
+  const json = contentType.includes("application/json") && raw ? JSON.parse(raw) : {};
   assert(response.ok, `${path} failed: ${JSON.stringify(json)}`);
+  assert(contentType.includes("application/json"), `${path} expected JSON, got ${response.status} ${contentType}: ${raw.slice(0, 200)}`);
   return json;
 }
 

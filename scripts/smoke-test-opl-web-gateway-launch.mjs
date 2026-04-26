@@ -48,7 +48,7 @@ async function waitFor(url) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
-function startOplWebFixture() {
+function startOplWebFixture(calls) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url || "/", "http://opl-web.local");
     if (url.pathname === "/") {
@@ -60,6 +60,7 @@ function startOplWebFixture() {
       return;
     }
     if (url.pathname === "/api/auth/user") {
+      calls.upstreamAuthUser += 1;
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         success: true,
@@ -266,8 +267,8 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
   };
 }
 
-const calls = { bootstrap: [], bind: [], runs: [], status: [], artifacts: [] };
-const oplServer = startOplWebFixture();
+const calls = { bootstrap: [], bind: [], runs: [], status: [], artifacts: [], upstreamAuthUser: 0 };
+const oplServer = startOplWebFixture(calls);
 const adapterServer = startAdapterFixture(calls);
 let gateway = null;
 
@@ -307,6 +308,8 @@ try {
   assert(portalUser.success === true, "gateway launch SSO auth user response failed");
   assert(portalUser.user.id === "portal-user-smoke", "gateway auth user did not resolve Portal user");
   assert(portalUser.user.username === "portal-smoke@example.test", "gateway auth user username should come from Portal email");
+  assert(portalUser.user.source === "portal-launch", "gateway auth user source must be Portal launch");
+  assert(calls.upstreamAuthUser === 0, "gateway auth user must not proxy upstream OPL noauth user");
   const bootstrapCallsBeforeScript = calls.bootstrap.length;
 
   const scriptResponse = await fetch(`${gatewayUrl}/portal-launch.js`);
@@ -380,6 +383,7 @@ try {
       "session_bind",
       "launch_token_removed_from_url",
       "launch_cookie_sso",
+      "upstream_auth_user_not_used",
       "stable_browser_run_api",
       "native_module_click_run_bridge",
     ],
