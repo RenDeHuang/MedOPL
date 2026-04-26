@@ -1,28 +1,51 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
+import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal";
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/overview" },
   { path: "/overview", component: () => import("@/views/overview/OverviewView.vue") },
   { path: "/workspace", component: () => import("@/views/workspace/WorkspaceView.vue") },
   { path: "/billing", component: () => import("@/views/billing/BillingView.vue") },
   { path: "/trace", component: () => import("@/views/trace/TraceView.vue") },
-  { path: "/admin/dashboard", component: () => import("@/views/admin/AdminDashboardView.vue") },
-  { path: "/admin/users", component: () => import("@/views/admin/AdminUsersView.vue") },
-  { path: "/admin/trace", component: () => import("@/views/admin/AdminTraceView.vue") },
-  { path: "/admin/user", component: () => import("@/views/admin/AdminUserPortraitView.vue") },
-  { path: "/admin/groups", component: () => import("@/views/admin/AdminGroupsView.vue") },
-  { path: "/admin/workspace", component: () => import("@/views/admin/AdminWorkspacePortraitView.vue") },
-  { path: "/admin/run", component: () => import("@/views/admin/AdminRunPortraitView.vue") },
-  { path: "/admin/billing-ops", component: () => import("@/views/admin/AdminBillingOpsView.vue") },
-  { path: "/admin/alerts", component: () => import("@/views/admin/AdminAlertsView.vue") },
-  { path: "/admin/usage", component: () => import("@/views/admin/AdminUsageView.vue") },
-  { path: "/admin/system", component: () => import("@/views/admin/AdminSystemView.vue") },
-  { path: "/admin/ops", component: () => import("@/views/admin/AdminOpsView.vue") },
-  { path: "/admin/sandboxes", component: () => import("@/views/admin/AdminSandboxesView.vue") },
-  { path: "/admin/audit", component: () => import("@/views/admin/AdminAuditView.vue") }
+  { path: "/admin/dashboard", component: () => import("@/views/admin/AdminDashboardView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/users", component: () => import("@/views/admin/AdminUsersView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/trace", component: () => import("@/views/admin/AdminTraceView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/user", component: () => import("@/views/admin/AdminUserPortraitView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/groups", component: () => import("@/views/admin/AdminGroupsView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/workspace", component: () => import("@/views/admin/AdminWorkspacePortraitView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/run", component: () => import("@/views/admin/AdminRunPortraitView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/billing-ops", component: () => import("@/views/admin/AdminBillingOpsView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/alerts", component: () => import("@/views/admin/AdminAlertsView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/usage", component: () => import("@/views/admin/AdminUsageView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/system", component: () => import("@/views/admin/AdminSystemView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/ops", component: () => import("@/views/admin/AdminOpsView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/sandboxes", component: () => import("@/views/admin/AdminSandboxesView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/audit", component: () => import("@/views/admin/AdminAuditView.vue"), meta: { requiresAdmin: true } }
 ];
 
-export default createRouter({
+let currentUserPromise: Promise<CurrentUserPayload | null> | null = null;
+
+async function loadCurrentUser() {
+  if (!currentUserPromise) {
+    currentUserPromise = fetchCurrentUser().catch(() => null);
+  }
+  return currentUserPromise;
+}
+
+const router = createRouter({
   history: createWebHistory("/portal/app/"),
   routes
 });
+
+router.beforeEach(async (to) => {
+  if (!to.matched.some((record) => record.meta.requiresAdmin)) {
+    return true;
+  }
+  const user = await loadCurrentUser();
+  if (user?.role === "admin") {
+    return true;
+  }
+  return "/overview";
+});
+
+export default router;

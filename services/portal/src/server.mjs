@@ -1467,6 +1467,101 @@ async function currentUser(req) {
   return { db, user: db.users.find((item) => item.id === session.userId) || null };
 }
 
+function normalizeAuthEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function findUserByEmail(db, email) {
+  const normalizedEmail = normalizeAuthEmail(email);
+  if (!normalizedEmail) return null;
+  return db.users.find((item) => normalizeAuthEmail(item.email) === normalizedEmail) || null;
+}
+
+function createPortalSession(db, user, authSource = user.authSource || "local") {
+  const sessionId = randomUUID();
+  db.sessions.push({
+    id: sessionId,
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+    authSource,
+  });
+  return sessionId;
+}
+
+async function createPortalUserRecord(db, form, { authSource = "local" } = {}) {
+  const name = String(form.name || "").trim();
+  const email = normalizeAuthEmail(form.email);
+  const password = String(form.password || "");
+
+  if (!name || !email || !password) {
+    return { ok: false, status: 400, message: "姓名、邮箱和密码不能为空。" };
+  }
+  if (password.length < 8) {
+    return { ok: false, status: 400, message: "密码至少需要 8 位。" };
+  }
+  if (findUserByEmail(db, email)) {
+    return { ok: false, status: 409, message: "该邮箱已存在，请直接登录。" };
+  }
+
+  const createdAt = new Date().toISOString();
+  const createdUser = {
+    id: randomUUID(),
+    email,
+    name,
+    role: "user",
+    status: "active",
+    currentTaskSlug: "default",
+    preferences: { theme: "light" },
+    passwordHash: hashPassword(password),
+    createdAt,
+    authSource,
+  };
+  db.users.push(createdUser);
+  db.wallets.push({
+    userId: createdUser.id,
+    balance: 0,
+    updatedAt: createdAt,
+  });
+  await ensureTaskSpace(db, createdUser, "default", defaultTaskTitle("default"));
+  return { ok: true, user: createdUser };
+}
+
+async function registerLocalPortalUser(db, form) {
+  if (PORTAL_OIDC_ENABLED) {
+    return { ok: false, status: 400, title: "注册不可用", message: "统一身份模式下不提供本地注册。" };
+  }
+  if (!isRegistrationEnabled(db)) {
+    return { ok: false, status: 403, title: "注册已关闭", message: "当前关闭自由注册，请联系管理员。" };
+  }
+
+  const result = await createPortalUserRecord(db, form, { authSource: "local" });
+  if (!result.ok) {
+    return { ...result, title: "注册失败" };
+  }
+  await logPortalEvent({
+    type: "user_registered",
+    userId: result.user.id,
+    operatorId: result.user.id,
+    email: result.user.email,
+  });
+  return { ok: true, user: result.user };
+}
+
+function localLoginBody(db, options = {}) {
+  const registrationEnabled = isRegistrationEnabled(db);
+  const note = options.note
+    ? `<p class="hint">${options.note}</p>`
+    : registrationEnabled
+      ? `<p class="hint">还没有账号？<a href="/register">注册新账号</a></p>`
+      : `<p class="hint">当前关闭自由注册，请联系管理员。</p>`;
+  return `<div class="hero"><h1>统一门户</h1></div><div class="card"><form method="post" action="/login"><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码" required /></p><p><button type="submit">登录</button></p></form>${note}</div>`;
+}
+
+function localRegisterBody(message = "") {
+  const messageBlock = message ? `<p class="hint">${message}</p>` : "";
+  return `<div class="hero"><h1>注册账号</h1></div><div class="card"><form method="post" action="/register"><p><input name="name" type="text" placeholder="姓名" required /></p><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码，至少 8 位" minlength="8" required /></p><p><button type="submit">创建账号</button></p></form>${messageBlock}<p class="hint"><a href="/login">返回登录</a></p></div>`;
+}
+
 function oidcStateCookie() {
   return "portal_oidc_state";
 }
@@ -3498,18 +3593,41 @@ const server = http.createServer(async (req, res) => {
   }
   const { db, user } = await currentUser(req);
   if (req.method === "GET" && url.pathname === "/register") {
-    res.writeHead(302, { Location: "/login" });
-    res.end();
+    if (PORTAL_OIDC_ENABLED) {
+      res.writeHead(302, { Location: "/login" });
+      res.end();
+      return;
+    }
+    if (!isRegistrationEnabled(db)) {
+      sendHtml(res, layoutV2("注册已关闭", localLoginBody(db), null), 403);
+      return;
+    }
+    sendHtml(res, layoutV2("注册", localRegisterBody(), null));
     return;
   }
   if (req.method === "POST" && url.pathname === "/register") {
-    res.writeHead(302, { Location: "/login" });
+    if (PORTAL_OIDC_ENABLED) {
+      res.writeHead(302, { Location: "/login" });
+      res.end();
+      return;
+    }
+    const form = parseForm((await readBody(req)).toString("utf8"));
+    const result = await registerLocalPortalUser(db, form);
+    if (!result.ok) {
+      const body = result.status === 403 ? localLoginBody(db, { note: result.message }) : localRegisterBody(result.message);
+      sendHtml(res, layoutV2(result.title, body, null), result.status);
+      return;
+    }
+    const sessionId = createPortalSession(db, result.user, "local");
+    await writeDb(db);
+    setCookie(res, "portal_session", sessionId);
+    res.writeHead(302, { Location: "/portal" });
     res.end();
     return;
   }
   if (req.method === "GET" && url.pathname === "/login") {
     if (!PORTAL_OIDC_ENABLED) {
-      sendHtml(res, layoutV2("登录", `<div class="hero"><h1>统一门户</h1></div><div class="card"><form method="post" action="/login"><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码" required /></p><p><button type="submit">登录</button></p></form></div>`, null));
+      sendHtml(res, layoutV2("登录", localLoginBody(db), null));
       return;
     }
     const loginHref = url.searchParams.get("force_login") === "1" ? "/auth/oidc/login?prompt=login" : "/auth/oidc/login";
@@ -3523,7 +3641,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const form = parseForm((await readBody(req)).toString("utf8"));
-    const found = db.users.find((item) => item.email === form.email);
+    const found = findUserByEmail(db, form.email);
     if (!found || !verifyPassword(form.password, found.passwordHash)) {
       sendHtml(res, layoutV2("登录失败", `<div class="card">账号或密码错误。</div>`, null), 401);
       return;
@@ -3532,8 +3650,7 @@ const server = http.createServer(async (req, res) => {
       sendHtml(res, layoutV2("登录失败", `<div class="card">当前账号已被禁用，请联系管理员。</div>`, null), 403);
       return;
     }
-    const sessionId = randomUUID();
-    db.sessions.push({ id: sessionId, userId: found.id, createdAt: new Date().toISOString() });
+    const sessionId = createPortalSession(db, found, "local");
     await writeDb(db);
     setCookie(res, "portal_session", sessionId);
     res.writeHead(302, { Location: "/portal" });
@@ -3875,15 +3992,15 @@ const server = http.createServer(async (req, res) => {
     const runId = String(requestOptions.runId || "").trim();
     const sessionId = String(requestOptions.sessionId || "").trim();
     const statusFilter = String(requestOptions.status || "").trim().toLowerCase();
-    const userIdForTrace = requestedUserId && user.role === "admin" ? requestedUserId : "";
+    const effectiveUserId = user.role === "admin" ? requestedUserId : user.id;
     const traces = await fetchTraceRows({
-      userId: userIdForTrace,
+      userId: effectiveUserId,
       workspaceId,
       runId,
       limit: parsePositiveInt(requestOptions.limit, 200),
     });
     const adapterTraces = await fetchOplAdapterTraceRows({
-      userId: userIdForTrace || (user.role === "admin" ? "" : user.id),
+      userId: effectiveUserId,
       workspaceId,
       runId,
       limit: parsePositiveInt(requestOptions.limit, 200),
@@ -3896,7 +4013,7 @@ const server = http.createServer(async (req, res) => {
     const pagination = paginateRows(filteredRows, requestOptions.page, normalizePageSize(requestOptions.pageSize || 5));
     sendJson(res, {
       filters: {
-        userId: userIdForTrace,
+        userId: effectiveUserId,
         workspaceId,
         runId,
         sessionId,
@@ -4729,10 +4846,6 @@ const server = http.createServer(async (req, res) => {
     }
     const form = parseForm((await readBody(req)).toString("utf8"));
     const redirectTo = String(form.redirectTo || "/portal/admin/users").trim();
-    if (db.users.find((item) => item.email === form.email)) {
-      sendHtml(res, layoutV2("创建失败", `<div class="card">邮箱已存在。</div>`, user), 400);
-      return;
-    }
     let identitySync = { synced: false, source: "portal_local_identity" };
     try {
       identitySync = await runZitadelAdminUser([
@@ -4746,12 +4859,13 @@ const server = http.createServer(async (req, res) => {
       sendHtml(res, layoutV2("创建失败", `<div class="card">ZITADEL 同步失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
       return;
     }
-    const id = randomUUID();
-    const created = { id, email: form.email, name: form.name, role: "user", status: "active", currentTaskSlug: "default", preferences: { theme: "light" }, passwordHash: hashPassword(form.password), createdAt: new Date().toISOString() };
-    db.users.push(created);
-    db.wallets.push({ userId: id, balance: 0, updatedAt: new Date().toISOString() });
-    await ensureTaskSpace(db, created, "default", defaultTaskTitle("default"));
-    await logPortalEvent({ type: "admin_created_user", userId: id, operatorId: user.id, email: created.email, authSource: identitySync.source });
+    const createdResult = await createPortalUserRecord(db, form, { authSource: identitySync.source });
+    if (!createdResult.ok) {
+      sendHtml(res, layoutV2("创建失败", `<div class="card">${createdResult.message}</div>`, user), createdResult.status || 400);
+      return;
+    }
+    const created = createdResult.user;
+    await logPortalEvent({ type: "admin_created_user", userId: created.id, operatorId: user.id, email: created.email, authSource: identitySync.source });
     await writeDb(db);
     res.writeHead(302, { Location: redirectTo });
     res.end();

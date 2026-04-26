@@ -6,7 +6,7 @@
       </div>
       <div>
         <div class="text-sm font-semibold text-gray-950 dark:text-white">MedOPL</div>
-        <div class="text-[11px] text-gray-500 dark:text-slate-400">Portal 控制面</div>
+        <div class="text-[11px] text-gray-500 dark:text-slate-400">Portal 控制台</div>
       </div>
     </div>
 
@@ -24,7 +24,7 @@
         </RouterLink>
       </div>
 
-      <div>
+      <div v-if="isAdmin">
         <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">管理后台</div>
         <RouterLink
           v-for="item in adminItems"
@@ -41,6 +41,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal";
+
+const currentUser = ref<CurrentUserPayload | null>(null);
+const isAdmin = computed(() => currentUser.value?.role === "admin");
+
 const userItems = [
   { to: "/overview", label: "总览" },
   { to: "/workspace", label: "任务空间" },
@@ -54,6 +60,14 @@ const adminItems = [
   { to: "/admin/users", label: "用户管理" },
   { to: "/admin/trace", label: "Trace" },
   { to: "/admin/billing-ops", label: "计费运维" },
-  { to: "/admin/sandboxes", label: "K8s运维与分发" },
+  { to: "/admin/sandboxes", label: "K8s 运维与分发" },
 ];
+
+onMounted(async () => {
+  try {
+    currentUser.value = await fetchCurrentUser();
+  } catch {
+    currentUser.value = null;
+  }
+});
 </script>
