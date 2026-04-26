@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="MedOPL 统一门户" subtitle="Portal 后台控制面，OPL Web 作为工作台入口">
+  <AppLayout title="MedOPL" subtitle="实验室、服务器和费用总览">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载总览...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -9,22 +9,18 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="max-w-2xl">
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-primary">统一门户</span>
+                  <span class="badge badge-primary">SaaS 工作台</span>
                   <span class="badge" :class="payload.kpis.accountStatus === 'active' ? 'badge-success' : 'badge-danger'">
                     {{ payload.kpis.accountStatus === "active" ? "账户正常" : "账户异常" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">Portal 开户后，从这里进入 OPL Web 工作台</h2>
-                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  这里展示你的账户状态、任务空间、今日消耗、最近运行和当前会话。工作流执行入口在 OPL Web。
-                </p>
+                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">进入实验室，按需选择算力</h2>
+                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">服务器价格来自腾讯云，运行费用按真实账单回补。</p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <a class="btn btn-primary" :href="workbenchHref">进入工作台</a>
                 <RouterLink class="btn btn-secondary" to="/servers">服务器与费用</RouterLink>
-                <RouterLink class="btn btn-secondary" to="/workspace">任务空间</RouterLink>
                 <RouterLink class="btn btn-secondary" to="/billing">账单</RouterLink>
-                <RouterLink class="btn btn-secondary" to="/trace">轨迹</RouterLink>
               </div>
             </div>
           </div>
@@ -32,10 +28,12 @@
           <div class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">账户状态</h2>
-                <p class="panel-subtitle">后台与工作台的统一入口状态。</p>
+                <h2 class="panel-title">账户</h2>
+                <p class="panel-subtitle">余额和运行权限。</p>
               </div>
-              <span class="badge badge-success">真实数据</span>
+              <span class="badge" :class="payload.commercial.canStartChargeableRun ? 'badge-success' : 'badge-warning'">
+                {{ payload.commercial.canStartChargeableRun ? "可运行" : "需充值" }}
+              </span>
             </div>
             <div class="mt-4 space-y-2.5 text-sm">
               <div class="muted-kv">
@@ -77,21 +75,21 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">商业化准入</h2>
-                <p class="panel-subtitle">进入实验室和收费运行分层控制。</p>
+                <h2 class="panel-title">实验室</h2>
+                <p class="panel-subtitle">Portal 账号直接进入同一个工作台。</p>
               </div>
               <span class="badge" :class="payload.commercial.canEnterWorkbench ? 'badge-success' : 'badge-danger'">
-                {{ payload.commercial.canEnterWorkbench ? "可进入工作台" : "账号受限" }}
+                {{ payload.commercial.canEnterWorkbench ? "可进入" : "账号受限" }}
               </span>
             </div>
             <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">账户状态</div>
-                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ commercialText(payload.commercial.accountStatus) }}</div>
+                <div class="text-xs text-gray-500 dark:text-slate-400">任务空间</div>
+                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ payload.kpis.workspaceCount }} 个</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">计费状态</div>
-                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ commercialText(payload.commercial.billingStatus) }}</div>
+                <div class="text-xs text-gray-500 dark:text-slate-400">最近运行</div>
+                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ payload.kpis.runCount }} 次</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
                 <div class="text-xs text-gray-500 dark:text-slate-400">收费运行</div>
@@ -100,9 +98,12 @@
                 </div>
               </div>
             </div>
-            <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">{{ payload.commercial.priceTransparency }}</p>
             <div v-if="payload.commercial.chargeBlockedReasons.length" class="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
               {{ payload.commercial.chargeBlockedReasons.join("；") }}
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a class="btn btn-primary" :href="workbenchHref">进入实验室</a>
+              <RouterLink class="btn btn-secondary" to="/workspace">任务空间</RouterLink>
             </div>
           </div>
 
@@ -110,7 +111,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">服务器与费用</h2>
-                <p class="panel-subtitle">价格来自腾讯云，扣费以账单回补为准。</p>
+                <p class="panel-subtitle">透明价格，按选择调度运行。</p>
               </div>
               <RouterLink class="btn btn-secondary" to="/servers">查看规格</RouterLink>
             </div>
@@ -132,34 +133,6 @@
                 <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.catalogCount }}</div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section class="card p-5">
-          <div class="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 class="panel-title">下一步</h2>
-              <p class="panel-subtitle">把新用户从注册带到第一次成功运行。</p>
-            </div>
-            <span class="badge badge-primary">{{ payload.onboarding.items.length }} 步</span>
-          </div>
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <component
-              :is="onboardingComponent(item.href)"
-              v-for="item in payload.onboarding.items"
-              :key="item.id"
-              :to="onboardingTo(item.href)"
-              :href="onboardingHref(item.href)"
-              class="rounded-2xl border border-gray-100 px-4 py-3 text-left transition hover:border-primary-200 hover:bg-primary-50/50 dark:border-slate-700 dark:hover:border-primary-900 dark:hover:bg-primary-900/10"
-            >
-              <div class="flex items-center justify-between gap-2">
-                <div class="font-medium text-gray-950 dark:text-white">{{ item.title }}</div>
-                <span class="badge" :class="item.state === 'done' ? 'badge-success' : item.state === 'attention' ? 'badge-warning' : 'badge-primary'">
-                  {{ commercialText(item.state) }}
-                </span>
-              </div>
-              <p class="mt-2 text-xs leading-5 text-gray-500 dark:text-slate-400">{{ item.description }}</p>
-            </component>
           </div>
         </section>
 
@@ -359,21 +332,6 @@ function commercialText(status?: string) {
     attention: "注意",
   };
   return labels[normalized] || status || "-";
-}
-
-function onboardingComponent(href?: string) {
-  if (!href) return "div";
-  return href.startsWith("/portal") ? "a" : "RouterLink";
-}
-
-function onboardingTo(href?: string) {
-  if (!href || href.startsWith("/portal")) return undefined;
-  return href;
-}
-
-function onboardingHref(href?: string) {
-  if (!href || !href.startsWith("/portal")) return undefined;
-  return href;
 }
 
 function routeQueryObject() {

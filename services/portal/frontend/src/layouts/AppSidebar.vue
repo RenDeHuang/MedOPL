@@ -12,7 +12,7 @@
 
     <nav class="flex-1 overflow-y-auto px-3 py-3">
       <div class="mb-5">
-        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">工作区</div>
+        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">实验室</div>
         <RouterLink
           v-for="item in userItems"
           :key="item.to"
@@ -25,7 +25,7 @@
       </div>
 
       <div v-if="isAdmin">
-        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">管理后台</div>
+        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">运营</div>
         <RouterLink
           v-for="item in adminItems"
           :key="item.to"
@@ -52,7 +52,6 @@ const userItems = [
   { to: "/workspace", label: "任务空间" },
   { to: "/servers", label: "服务器与费用" },
   { to: "/billing", label: "账单" },
-  { to: "/trace", label: "轨迹" },
 ];
 
 const adminItems = [
