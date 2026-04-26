@@ -106,6 +106,37 @@ function startBillingFixture(plan) {
   });
 }
 
+function startPortalInternalFixture() {
+  return http.createServer(async (req, res) => {
+    const url = new URL(req.url || "/", "http://fixture");
+    const send = (status, payload) => {
+      res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify(payload));
+    };
+    if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/prepare-run") {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+      const resourceOrderId = `order-${String(body.runId || "missing-run")}`;
+      send(200, {
+        ok: true,
+        resourceOrderId,
+        order: {
+          id: resourceOrderId,
+          status: "frozen",
+          workspaceId: body.workspaceId || "",
+          workspaceSessionId: body.workspaceSessionId || "",
+          serverPlanId: body.serverPlanId || "",
+          estimatedHours: Number(body.estimatedHours || 0),
+          idempotencyKey: body.idempotencyKey || "",
+        },
+      });
+      return;
+    }
+    send(404, { ok: false, error: "not_found" });
+  });
+}
+
 async function listen(server) {
   const port = await freePort();
   await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
@@ -191,6 +222,8 @@ async function main() {
   const runtimeRoot = await mkdtemp(path.join(tmpdir(), "opl-v8-chain-"));
   const billingServer = startBillingFixture(plan);
   const billingUrl = await listen(billingServer);
+  const portalInternalServer = startPortalInternalFixture();
+  const portalInternalUrl = await listen(portalInternalServer);
   const runnerPort = await freePort();
   const runnerUrl = `http://127.0.0.1:${runnerPort}`;
   const adapterPort = await freePort();
@@ -212,6 +245,7 @@ async function main() {
     PORTAL_OPL_ADAPTER_STATE_ROOT: path.join(runtimeRoot, "adapter-state"),
     OPL_WEB_URL: "http://127.0.0.1:19999/opl-web",
     MED_AUTOSCIENCE_RUNNER_URL: runnerUrl,
+    PORTAL_INTERNAL_BASE_URL: portalInternalUrl,
   });
   const portal = spawnService("portal", path.join(repoRoot, "services", "portal"), "src/server.mjs", {
     ...process.env,
@@ -264,11 +298,15 @@ async function main() {
     });
     const run = runResponse.run;
     assert(run.serverPlanId === plan.id, `run_server_plan_mismatch:${run.serverPlanId}`);
+    assert(run.resourceOrderId === `order-${run.runId}`, `run_resource_order_mismatch:${run.resourceOrderId}`);
     assert(run.runtimeClass === plan.runtimeClass, `run_runtime_class_mismatch:${run.runtimeClass}`);
     assert(run.nodePool === plan.nodePool, `run_node_pool_mismatch:${run.nodePool}`);
 
     const manifest = await readFile(run.manifestPath, "utf8");
     assert(manifest.includes(`server_plan_id: "${plan.id}"`), "manifest_missing_server_plan_label");
+    assert(manifest.includes(`resource_order_id: "${run.resourceOrderId}"`), "manifest_missing_resource_order_label");
+    assert(manifest.includes(`- name: RESOURCE_ORDER_ID`), "manifest_missing_resource_order_env_name");
+    assert(manifest.includes(`value: "${run.resourceOrderId}"`), "manifest_missing_resource_order_env_value");
     assert(manifest.includes(`runtimeClassName: "${plan.runtimeClass}"`), "manifest_missing_runtime_class");
     assert(manifest.includes(`cpu: "${plan.cpuRequest}"`), "manifest_missing_cpu_request");
     assert(manifest.includes(`memory: "${plan.memoryRequest}"`), "manifest_missing_memory_request");
@@ -289,6 +327,7 @@ async function main() {
     adapter.kill();
     runner.kill();
     billingServer.close();
+    portalInternalServer.close();
     await rm(runtimeRoot, { recursive: true, force: true }).catch(() => {});
   }
 }
