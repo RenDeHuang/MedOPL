@@ -1,4 +1,5 @@
 import http from "node:http";
+import https from "node:https";
 import { URL } from "node:url";
 
 const PORT = Number(process.env.PORT || process.env.OPL_WEB_GATEWAY_PORT || 18789);
@@ -14,10 +15,16 @@ const OPL_WEBUI_AUTH_MODE = String(process.env.OPL_WEBUI_AUTH_MODE || "unknown")
 const LAUNCH_SCRIPT_PATH = "/portal-launch.js";
 const ADAPTER_PREFIX = "/portal-adapter";
 const LAUNCH_COOKIE = "opl_portal_launch";
-const NATIVE_LOGIN_PATHS = String(process.env.OPL_NATIVE_LOGIN_PATHS || "/api/auth/signin,/api/auth/login,/auth/login,/login")
+const NATIVE_LOGIN_PATHS = String(process.env.OPL_NATIVE_LOGIN_PATHS || "/api/auth/signin,/api/auth/login,/api/v1/auths/signin,/api/v1/auths/login,/auth/login,/login")
   .split(",")
   .map((item) => item.trim())
   .filter(Boolean);
+const NATIVE_AUTH_USER_PATHS = new Set([
+  "/api/auth/user",
+  "/api/v1/auths/",
+  "/api/v1/auths/me",
+  "/api/v1/auths/user",
+]);
 
 function sendJson(res, status, payload) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
@@ -42,6 +49,15 @@ function parseCookies(cookieHeader = "") {
     cookies[rawName] = decodeURIComponent(rawValue.join("=") || "");
   }
   return cookies;
+}
+
+function resolveLaunchToken(req) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  const cookieToken = cookies[LAUNCH_COOKIE] || "";
+  if (cookieToken) return cookieToken;
+  const authorization = String(req.headers.authorization || "").trim();
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
 }
 
 function buildLaunchCookie(launchToken) {
@@ -71,6 +87,7 @@ function buildStatusPayload() {
       directEntryPolicy: "portal-native-login-or-launch",
       launchCookieName: LAUNCH_COOKIE,
       authUserWithoutLaunchStatus: 401,
+      websocketProxy: true,
       openFromPortalUrl: buildPortalContinueUrl(),
       nativeLoginPaths: NATIVE_LOGIN_PATHS,
     },
@@ -222,12 +239,27 @@ function normalizePortalUser(bootstrap) {
   };
 }
 
-async function handleAuthUser(req, res) {
-  const cookies = parseCookies(req.headers.cookie || "");
-  const launchToken = cookies[LAUNCH_COOKIE] || "";
+function buildOpenWebUiAuthPayload({ user, launchToken, bootstrap = {} }) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name || user.email || user.id,
+    role: "user",
+    profile_image_url: "",
+    token: launchToken,
+    token_type: "Bearer",
+    source: user.source || "portal-launch",
+    portal: bootstrap.portal || {},
+    workspace: bootstrap.workspace || {},
+  };
+}
+
+async function handleAuthUser(req, res, { openWebUi = false } = {}) {
+  const launchToken = resolveLaunchToken(req);
   if (!launchToken) {
     sendJson(res, 401, {
       success: false,
+      detail: "Not authenticated",
       error: "unauthenticated",
       ...buildDirectEntryState(),
     });
@@ -250,16 +282,19 @@ async function handleAuthUser(req, res) {
       return true;
     }
 
+    const payload = openWebUi
+      ? buildOpenWebUiAuthPayload({ user, launchToken, bootstrap })
+      : {
+          success: true,
+          user,
+          portal: bootstrap.portal || {},
+          workspace: bootstrap.workspace || {},
+        };
     res.writeHead(200, {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-cache, no-store, must-revalidate",
     });
-    res.end(JSON.stringify({
-      success: true,
-      user,
-      portal: bootstrap.portal || {},
-      workspace: bootstrap.workspace || {},
-    }, null, 2));
+    res.end(JSON.stringify(payload, null, 2));
     return true;
   } catch (error) {
     res.writeHead(error.status === 401 ? 401 : 502, {
@@ -284,6 +319,10 @@ function isNativeLoginRequest(req, url) {
 function wantsHtmlLoginResponse(req, contentType = "") {
   const accept = String(req.headers.accept || "").toLowerCase();
   return String(contentType || "").toLowerCase().includes("application/x-www-form-urlencoded") || accept.includes("text/html");
+}
+
+function isOpenWebUiAuthPath(pathname = "") {
+  return String(pathname || "").startsWith("/api/v1/auths/");
 }
 
 async function handleNativeLogin(req, res, url) {
@@ -337,21 +376,34 @@ async function handleNativeLogin(req, res, url) {
       "cache-control": "no-cache, no-store, must-revalidate",
       "set-cookie": cookie,
     });
-    res.end(JSON.stringify({
-      success: true,
-      user: {
-        id: login.user?.id || "",
-        username: login.user?.email || login.user?.name || "",
-        email: login.user?.email || "",
-        name: login.user?.name || login.user?.email || "",
-        source: "portal-native-login",
-      },
-      launchToken: login.launchToken,
-      launch: login.launch || {},
-      workspace: login.workspace || {},
-      workspaceSession: login.workspaceSession || {},
-      runtimeSession: login.runtimeSession || {},
-    }, null, 2));
+    const user = {
+      id: login.user?.id || "",
+      username: login.user?.email || login.user?.name || "",
+      email: login.user?.email || "",
+      name: login.user?.name || login.user?.email || "",
+      source: "portal-native-login",
+    };
+    const payload = isOpenWebUiAuthPath(url.pathname)
+      ? buildOpenWebUiAuthPayload({
+          user,
+          launchToken: login.launchToken,
+          bootstrap: {
+            portal: login.launch || {},
+            workspace: login.workspace || {},
+          },
+        })
+      : {
+          success: true,
+          user,
+          token: login.launchToken,
+          token_type: "Bearer",
+          launchToken: login.launchToken,
+          launch: login.launch || {},
+          workspace: login.workspace || {},
+          workspaceSession: login.workspaceSession || {},
+          runtimeSession: login.runtimeSession || {},
+        };
+    res.end(JSON.stringify(payload, null, 2));
     return true;
   } catch (error) {
     const status = Number(error.status || 502);
@@ -599,6 +651,69 @@ async function proxy(req, res, upstreamBase, prefix = "") {
   res.end();
 }
 
+function writeRawHttpResponse(socket, response, head = null) {
+  const statusCode = response.statusCode || 502;
+  const statusMessage = response.statusMessage || "Bad Gateway";
+  const lines = [`HTTP/1.1 ${statusCode} ${statusMessage}`];
+  for (const [key, value] of Object.entries(response.headers || {})) {
+    if (Array.isArray(value)) {
+      for (const item of value) lines.push(`${key}: ${item}`);
+    } else if (value !== undefined) {
+      lines.push(`${key}: ${value}`);
+    }
+  }
+  socket.write(`${lines.join("\r\n")}\r\n\r\n`);
+  if (head?.length) socket.write(head);
+}
+
+function writeUpgradeFailure(socket, statusCode, message) {
+  if (socket.destroyed) return;
+  socket.write([
+    `HTTP/1.1 ${statusCode} ${message}`,
+    "content-type: text/plain; charset=utf-8",
+    "connection: close",
+    "",
+    message,
+  ].join("\r\n"));
+  socket.destroy();
+}
+
+function proxyUpgrade(req, socket, head, upstreamBase, prefix = "") {
+  const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
+  const client = target.protocol === "https:" ? https : http;
+  const headers = sanitizeProxyHeaders(req.headers, target);
+  headers.connection = "Upgrade";
+  headers.upgrade = req.headers.upgrade || "websocket";
+
+  const upstream = client.request({
+    protocol: target.protocol,
+    hostname: target.hostname,
+    port: target.port || (target.protocol === "https:" ? 443 : 80),
+    method: req.method || "GET",
+    path: `${target.pathname}${target.search}`,
+    headers,
+  });
+
+  upstream.on("upgrade", (response, upstreamSocket, upstreamHead) => {
+    writeRawHttpResponse(socket, response, upstreamHead);
+    if (head?.length) upstreamSocket.write(head);
+    upstreamSocket.pipe(socket);
+    socket.pipe(upstreamSocket);
+  });
+
+  upstream.on("response", (response) => {
+    writeRawHttpResponse(socket, response);
+    response.resume();
+    socket.destroy();
+  });
+
+  upstream.on("error", (error) => {
+    writeUpgradeFailure(socket, 502, String(error.message || error));
+  });
+
+  upstream.end();
+}
+
 function portalLaunchClientScript() {
   return `
 const STATE_KEY = "portal.opl.launch";
@@ -651,7 +766,7 @@ function syncDirectEntryShell(state) {
     if (!document || typeof document.getElementById !== "function") return;
     const shell = document.getElementById("opl-portal-direct-entry");
     if (!shell) return;
-    shell.style.display = state && state.active ? "flex" : "none";
+    shell.style.display = state && state.active && shouldShowDirectEntryShell() ? "flex" : "none";
     if (typeof shell.querySelector !== "function") return;
     const link = shell.querySelector("[data-opl-portal-continue-link]");
     if (!link) return;
@@ -659,6 +774,50 @@ function syncDirectEntryShell(state) {
       link.setAttribute("href", state.openFromPortalUrl);
     }
   } catch {}
+}
+
+function shouldShowDirectEntryShell() {
+  try {
+    const hash = String(window.location.hash || "").toLowerCase();
+    const path = String(window.location.pathname || "").toLowerCase();
+    if (!hash || hash === "#" || hash === "#/") return true;
+    return hash.includes("login") || hash.includes("signin") || path.includes("login") || path.includes("auth");
+  } catch {
+    return true;
+  }
+}
+
+function refreshDirectEntryShell() {
+  syncDirectEntryShell(window.__OPL_PORTAL_DIRECT_ENTRY__ || DIRECT_ENTRY_DEFAULT);
+}
+
+function installDirectEntryRouteWatcher() {
+  const refreshSoon = () => setTimeout(refreshDirectEntryShell, 0);
+  try {
+    if (window.history && typeof window.history.pushState === "function") {
+      const pushState = window.history.pushState.bind(window.history);
+      window.history.pushState = (...args) => {
+        const result = pushState(...args);
+        refreshSoon();
+        return result;
+      };
+    }
+    if (window.history && typeof window.history.replaceState === "function") {
+      const replaceState = window.history.replaceState.bind(window.history);
+      window.history.replaceState = (...args) => {
+        const result = replaceState(...args);
+        refreshSoon();
+        return result;
+      };
+    }
+  } catch {}
+  if (typeof window.addEventListener === "function") {
+    window.addEventListener("hashchange", refreshDirectEntryShell);
+    window.addEventListener("popstate", refreshDirectEntryShell);
+  }
+  if (typeof window.setInterval === "function") {
+    window.setInterval(refreshDirectEntryShell, 1000);
+  }
 }
 
 function resolveInjectedDirectEntryFlag() {
@@ -761,6 +920,8 @@ function buildPortalApi() {
 }
 
 window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
+window.__OPL_PORTAL_REFRESH_DIRECT_ENTRY__ = refreshDirectEntryShell;
+installDirectEntryRouteWatcher();
 
 function resolveOplModuleClickTarget(event) {
   const target = event && event.target;
@@ -892,8 +1053,8 @@ const server = http.createServer(async (req, res) => {
       res.end(portalLaunchClientScript());
       return;
     }
-    if (req.method === "GET" && url.pathname === "/api/auth/user") {
-      if (await handleAuthUser(req, res)) return;
+    if (req.method === "GET" && NATIVE_AUTH_USER_PATHS.has(url.pathname)) {
+      if (await handleAuthUser(req, res, { openWebUi: isOpenWebUiAuthPath(url.pathname) })) return;
     }
     if (await handleNativeLogin(req, res, url)) return;
     if (url.pathname === ADAPTER_PREFIX || url.pathname.startsWith(`${ADAPTER_PREFIX}/`)) {
@@ -907,6 +1068,19 @@ const server = http.createServer(async (req, res) => {
       service: "opl-web-gateway",
       message: String(error.message || error),
     });
+  }
+});
+
+server.on("upgrade", (req, socket, head) => {
+  try {
+    const url = new URL(req.url || "/", BASE_URL);
+    if (url.pathname === ADAPTER_PREFIX || url.pathname.startsWith(`${ADAPTER_PREFIX}/`)) {
+      proxyUpgrade(req, socket, head, PORTAL_OPL_ADAPTER_URL, ADAPTER_PREFIX);
+      return;
+    }
+    proxyUpgrade(req, socket, head, OPL_WEB_UPSTREAM_URL);
+  } catch (error) {
+    writeUpgradeFailure(socket, 502, String(error.message || error));
   }
 });
 

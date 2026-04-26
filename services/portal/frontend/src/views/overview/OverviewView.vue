@@ -1,21 +1,27 @@
 <template>
-  <AppLayout title="MedOPL" subtitle="实验室、服务器和费用总览">
+  <AppLayout title="MedOPL" subtitle="实验室、任务空间、费用">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载总览...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
+
       <template v-else-if="payload">
-        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr]">
+        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.45fr_0.9fr]">
           <div class="card p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="max-w-2xl">
-                <div class="flex items-center gap-2">
-                  <span class="badge badge-primary">SaaS 工作台</span>
-                  <span class="badge" :class="payload.kpis.accountStatus === 'active' ? 'badge-success' : 'badge-danger'">
-                    {{ payload.kpis.accountStatus === "active" ? "账户正常" : "账户异常" }}
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="badge badge-primary">研究工作台</span>
+                  <span class="badge" :class="payload.commercial.canEnterWorkbench ? 'badge-success' : 'badge-danger'">
+                    {{ payload.commercial.canEnterWorkbench ? "可进入" : "账号受限" }}
+                  </span>
+                  <span class="badge" :class="payload.commercial.canStartChargeableRun ? 'badge-success' : 'badge-warning'">
+                    {{ payload.commercial.canStartChargeableRun ? "可运行" : "需充值或试用额度" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">进入实验室，按需选择算力</h2>
-                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">服务器价格来自腾讯云，运行费用按真实账单回补。</p>
+                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">进入实验室，按需使用算力</h2>
+                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                  任务空间保存数据，服务器按运行选择，费用以腾讯云账单回补为准。
+                </p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <a class="btn btn-primary" :href="workbenchHref">进入工作台</a>
@@ -29,19 +35,19 @@
             <div class="flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">账户</h2>
-                <p class="panel-subtitle">余额和运行权限。</p>
+                <p class="panel-subtitle">余额、试用和运行权限</p>
               </div>
               <span class="badge" :class="payload.commercial.canStartChargeableRun ? 'badge-success' : 'badge-warning'">
-                {{ payload.commercial.canStartChargeableRun ? "可运行" : "需充值" }}
+                {{ payload.commercial.canStartChargeableRun ? "可运行" : "待处理" }}
               </span>
             </div>
             <div class="mt-4 space-y-2.5 text-sm">
               <div class="muted-kv">
-                <span class="muted-kv-label">账户状态</span>
-                <span class="muted-kv-value">{{ payload.kpis.accountStatus === "active" ? "正常" : payload.kpis.accountStatus }}</span>
+                <span class="muted-kv-label">账号状态</span>
+                <span class="muted-kv-value">{{ commercialText(payload.kpis.accountStatus) }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">账户余额</span>
+                <span class="muted-kv-label">钱包余额</span>
                 <span class="muted-kv-value">{{ money(payload.kpis.balance) }}</span>
               </div>
               <div class="muted-kv">
@@ -52,68 +58,37 @@
                 <span class="muted-kv-label">权益状态</span>
                 <span class="muted-kv-value">{{ commercialText(payload.kpis.entitlementStatus) }}</span>
               </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">任务空间数</span>
-                <span class="muted-kv-value">{{ payload.kpis.workspaceCount }}</span>
-              </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">今日消耗</span>
-                <span class="muted-kv-value">{{ microMoney(payload.kpis.todayCost) }}</span>
-              </div>
             </div>
           </div>
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="账户余额" :value="money(payload.kpis.balance)" hint="钱包余额" />
-          <MetricCard label="任务空间" :value="payload.kpis.workspaceCount" hint="当前可见任务空间数" />
-          <MetricCard label="今日消耗" :value="microMoney(payload.kpis.todayCost)" hint="今日资源消耗" />
-          <MetricCard label="历史总消耗" :value="microMoney(payload.kpis.historicalCost)" hint="历史资源账单累计" />
+          <MetricCard label="余额" :value="money(payload.kpis.balance)" hint="可用于冻结和结算" />
+          <MetricCard label="任务空间" :value="payload.kpis.workspaceCount" hint="当前可用空间" />
+          <MetricCard label="今日费用" :value="microMoney(payload.kpis.todayCost)" hint="今日资源消耗" />
+          <MetricCard label="历史费用" :value="microMoney(payload.kpis.historicalCost)" hint="累计资源账单" />
+        </section>
+
+        <section v-if="payload.commercial.chargeBlockedReasons.length" class="card p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 class="panel-title">运行受限</h2>
+              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
+                {{ payload.commercial.chargeBlockedReasons.join("；") }}
+              </p>
+            </div>
+            <RouterLink class="btn btn-primary" to="/billing">查看账单</RouterLink>
+          </div>
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">实验室</h2>
-                <p class="panel-subtitle">Portal 账号直接进入同一个工作台。</p>
-              </div>
-              <span class="badge" :class="payload.commercial.canEnterWorkbench ? 'badge-success' : 'badge-danger'">
-                {{ payload.commercial.canEnterWorkbench ? "可进入" : "账号受限" }}
-              </span>
-            </div>
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">任务空间</div>
-                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ payload.kpis.workspaceCount }} 个</div>
-              </div>
-              <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">最近运行</div>
-                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ payload.kpis.runCount }} 次</div>
-              </div>
-              <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">收费运行</div>
-                <div class="mt-2 font-medium text-gray-950 dark:text-white">
-                  {{ payload.commercial.canStartChargeableRun ? "可启动" : "需充值或额度" }}
-                </div>
-              </div>
-            </div>
-            <div v-if="payload.commercial.chargeBlockedReasons.length" class="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-              {{ payload.commercial.chargeBlockedReasons.join("；") }}
-            </div>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <a class="btn btn-primary" :href="workbenchHref">进入实验室</a>
-              <RouterLink class="btn btn-secondary" to="/workspace">任务空间</RouterLink>
-            </div>
-          </div>
-
-          <div class="card p-5">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <div>
                 <h2 class="panel-title">服务器与费用</h2>
-                <p class="panel-subtitle">透明价格，按选择调度运行。</p>
+                <p class="panel-subtitle">透明价格，按选择运行。</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/servers">查看规格</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/servers">选择规格</RouterLink>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
@@ -129,57 +104,8 @@
                 <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ commercialText(payload.serverPlansSummary.priceStatus) }}</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">目录规格</div>
-                <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.catalogCount }}</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_1fr]">
-          <div class="card p-5">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h2 class="panel-title">最近运行</h2>
-                <p class="panel-subtitle">最近 5 条运行记录。</p>
-              </div>
-              <span class="badge badge-primary">{{ payload.latestRunsPagination.total }} 条</span>
-            </div>
-
-            <div class="table-shell">
-              <table class="text-sm">
-                <thead>
-                  <tr class="table-head">
-                    <th class="px-4 py-3">运行编号</th>
-                    <th class="px-4 py-3">任务空间</th>
-                    <th class="px-4 py-3">状态</th>
-                    <th class="px-4 py-3">时间</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in payload.latestRuns" :key="item.runId" class="table-row">
-                    <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-slate-300">{{ item.runId || "-" }}</td>
-                    <td class="px-4 py-3">
-                      <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceTitle || item.workspaceId || "-" }}</div>
-                      <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.workspaceId || "-" }}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.displayTime || "-" }}</td>
-                  </tr>
-                  <tr v-if="!payload.latestRuns.length">
-                    <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无运行记录</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="pager-bar">
-              <span>第 {{ payload.latestRunsPagination.page }} / {{ payload.latestRunsPagination.totalPages }} 页</span>
-              <div class="flex gap-2">
-                <RouterLink class="btn btn-secondary" :to="overviewQuery({ runs_page: previousPage(payload.latestRunsPagination.page) })">上一页</RouterLink>
-                <RouterLink class="btn btn-secondary" :to="overviewQuery({ runs_page: nextPage(payload.latestRunsPagination.page, payload.latestRunsPagination.totalPages) })">下一页</RouterLink>
+                <div class="text-xs text-gray-500 dark:text-slate-400">当前规格</div>
+                <div class="mt-2 font-medium text-gray-950 dark:text-white">{{ payload.selectedServerPlan?.name || "默认" }}</div>
               </div>
             </div>
           </div>
@@ -188,13 +114,12 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">任务空间</h2>
-                <p class="panel-subtitle">最近使用的任务空间。</p>
+                <p class="panel-subtitle">数据、trace 和运行记录都归属任务空间。</p>
               </div>
-              <span class="badge badge-warning">{{ payload.taskPagination.total }} 个</span>
+              <RouterLink class="btn btn-secondary" to="/workspace">查看空间</RouterLink>
             </div>
-
             <div class="space-y-2.5">
-              <div v-for="item in payload.taskCards" :key="item.slug" class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div v-for="item in payload.taskCards.slice(0, 3)" :key="item.slug" class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.slug }}</div>
@@ -207,15 +132,7 @@
                   <span>{{ item.updatedAt || "-" }}</span>
                 </div>
               </div>
-              <div v-if="!payload.taskCards.length" class="empty-state">当前还没有任务空间。</div>
-            </div>
-
-            <div class="pager-bar">
-              <span>第 {{ payload.taskPagination.page }} / {{ payload.taskPagination.totalPages }} 页</span>
-              <div class="flex gap-2">
-                <RouterLink class="btn btn-secondary" :to="overviewQuery({ tasks_page: previousPage(payload.taskPagination.page) })">上一页</RouterLink>
-                <RouterLink class="btn btn-secondary" :to="overviewQuery({ tasks_page: nextPage(payload.taskPagination.page, payload.taskPagination.totalPages) })">下一页</RouterLink>
-              </div>
+              <div v-if="!payload.taskCards.length" class="empty-state">还没有任务空间。</div>
             </div>
           </div>
         </section>
@@ -223,47 +140,46 @@
         <section class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 class="panel-title">当前会话</h2>
-              <p class="panel-subtitle">普通对话和任务空间会话统一展示。</p>
+              <h2 class="panel-title">最近运行</h2>
+              <p class="panel-subtitle">最近 5 条运行记录。</p>
             </div>
-            <span class="badge badge-primary">{{ sessionsPayload?.pagination?.total ?? 0 }} 条</span>
+            <span class="badge badge-primary">{{ payload.latestRunsPagination.total }} 条</span>
           </div>
 
           <div class="table-shell">
             <table class="text-sm">
               <thead>
                 <tr class="table-head">
-                  <th class="px-4 py-3">类型</th>
+                  <th class="px-4 py-3">运行编号</th>
                   <th class="px-4 py-3">任务空间</th>
                   <th class="px-4 py-3">状态</th>
-                  <th class="px-4 py-3">来源</th>
-                  <th class="px-4 py-3">最近使用</th>
+                  <th class="px-4 py-3">时间</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in sessionsPayload?.sessions || []" :key="item.sessionId" class="table-row">
+                <tr v-for="item in payload.latestRuns" :key="item.runId" class="table-row">
+                  <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-slate-300">{{ item.runId || "-" }}</td>
                   <td class="px-4 py-3">
-                    <span class="badge" :class="item.sessionType === 'mas' ? 'badge-primary' : 'badge-success'">
-                      {{ item.sessionType === "mas" ? "MAS" : "普通" }}
-                    </span>
+                    <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceTitle || item.workspaceId || "-" }}</div>
+                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.workspaceId || "-" }}</div>
                   </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.workspaceId || "-" }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.status || "-" }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.source || "-" }}</td>
-                  <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.lastUsedAt || "-" }}</td>
+                  <td class="px-4 py-3">
+                    <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.displayTime || "-" }}</td>
                 </tr>
-                <tr v-if="!(sessionsPayload?.sessions || []).length">
-                  <td colspan="5" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">当前暂无会话</td>
+                <tr v-if="!payload.latestRuns.length">
+                  <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无运行记录</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div class="pager-bar">
-            <span>第 {{ sessionsPayload?.pagination?.page || 1 }} / {{ sessionsPayload?.pagination?.totalPages || 1 }} 页</span>
+            <span>第 {{ payload.latestRunsPagination.page }} / {{ payload.latestRunsPagination.totalPages }} 页</span>
             <div class="flex gap-2">
-              <RouterLink class="btn btn-secondary" :to="overviewQuery({ sessions_page: previousPage(sessionsPayload?.pagination?.page || 1) })">上一页</RouterLink>
-              <RouterLink class="btn btn-secondary" :to="overviewQuery({ sessions_page: nextPage(sessionsPayload?.pagination?.page || 1, sessionsPayload?.pagination?.totalPages || 1) })">下一页</RouterLink>
+              <RouterLink class="btn btn-secondary" :to="overviewQuery({ runs_page: previousPage(payload.latestRunsPagination.page) })">上一页</RouterLink>
+              <RouterLink class="btn btn-secondary" :to="overviewQuery({ runs_page: nextPage(payload.latestRunsPagination.page, payload.latestRunsPagination.totalPages) })">下一页</RouterLink>
             </div>
           </div>
         </section>
@@ -277,21 +193,20 @@ import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { OverviewPayload, SessionsPayload } from "@/api/portal";
-import { fetchOverview, fetchSessions } from "@/api/portal";
+import type { OverviewPayload } from "@/api/portal";
+import { fetchOverview } from "@/api/portal";
 
 const route = useRoute();
 const loading = ref(true);
 const error = ref("");
 const payload = ref<OverviewPayload | null>(null);
-const sessionsPayload = ref<SessionsPayload | null>(null);
 
 function money(value: number | undefined) {
-  return `¥${Number(value || 0).toFixed(2)}`;
+  return `CNY ${Number(value || 0).toFixed(2)}`;
 }
 
 function microMoney(value: number | undefined) {
-  return `¥${Number(value || 0).toFixed(5)}`;
+  return `CNY ${Number(value || 0).toFixed(5)}`;
 }
 
 function statusBadge(status?: string) {
@@ -374,20 +289,12 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const [overviewData, sessionData] = await Promise.all([
-      fetchOverview({
-        tasks_page: readQueryValue("tasks_page"),
-        runs_page: readQueryValue("runs_page"),
-      }),
-      fetchSessions({
-        page: readQueryValue("sessions_page"),
-        page_size: 5,
-        limit: 50,
-      }),
-    ]);
+    const overviewData = await fetchOverview({
+      tasks_page: readQueryValue("tasks_page"),
+      runs_page: readQueryValue("runs_page"),
+    });
     if (current !== requestId) return;
     payload.value = overviewData;
-    sessionsPayload.value = sessionData;
   } catch (err: any) {
     if (current !== requestId) return;
     error.value = err?.message || "总览加载失败";

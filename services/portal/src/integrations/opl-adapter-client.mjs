@@ -83,6 +83,12 @@ export function createOplAdapterClient({
           gpuCount: Number(selectedServerPlan?.gpuCount ?? selectedServerPlan?.gpu ?? 0),
           storageRequest: selectedServerPlan?.storageRequest || "",
           storageLimit: selectedServerPlan?.storageLimit || "",
+          provisioningMode: selectedServerPlan?.provisioningMode || "schedule_to_node_pool",
+          tkeClusterId: selectedServerPlan?.tkeClusterId || "",
+          nodePoolId: selectedServerPlan?.nodePoolId || "",
+          nodePoolCreatePayload: selectedServerPlan?.nodePoolCreatePayload || null,
+          nodePoolScalePayload: selectedServerPlan?.nodePoolScalePayload || null,
+          provisionerPayload: selectedServerPlan?.provisionerPayload || null,
           selectedServerPlan,
         }),
       });

@@ -19,15 +19,23 @@
 - 更可能造成差异的，是运行配置、TKE manifest、Ingress、ConfigMap、Secret、启动顺序和旧进程残留。
 - 因此，v8 的核查重点应放在“运行态合同”和“部署态合同”，而不是继续猜镜像。
 
+## v8 本地收口结论
+
+- 服务器与费用：已做到客户选择 `server_plan` 后，Portal 把选择保存到任务空间，launch/runtime/runner 按同一 plan 生成 Job 资源、标签、runtimeClass、nodeSelector、tolerations。当前不是自动创建腾讯云 CVM 或新 TKE 节点；如果老板要“客户点了就自动扩容节点池/买云主机”，下一版需要独立的 `resource-provisioner` 模块。
+- OPL 原生登录：已支持 Portal 本地账号密码走 OPL 原生登录框，包括 OpenWebUI 常见的 `/api/v1/auths/signin` 和 `/api/v1/auths/` 合同。OIDC 账号没有本地密码 hash 时，不能凭空用“同一密码”登录，正确路径仍是 Portal/OIDC 登录后 launch。
+- 商业准入：进入工作台不再由余额裸值拦截；启动收费 run 由 wallet + trial credit 共同判断。余额和试用都没有时，才阻止新 run。
+- 部署态：v8 需要构建的镜像 tag 已渲染为 `opl-v8`；上游 `opl-web-opl` 和动态 runner 镜像保持 `opl-v1`，因为本轮没有改它们的源码。
+- 账单真实源：价格和账单仍由 `billing-aggregator` 聚合腾讯云价格/账单 API；没有腾讯云 Secret 时，本地只能验证合同和 UI，不能证明真实账单可拉取。
+
 ## 任务清单总表
 
 | 任务 | 目的 | 商业化逻辑 | 实现方式 | 测试方法 | 交付标准 | 当前 v8 是否达到 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 服务器与费用商业化 | 让客户透明选择服务器和价格，并把选择映射到集群资源 | 客户先看清规格、地域、价格、冻结金额，再决定是否开通；平台只负责把用户选择落实到真实资源 | `server_plans` 维护可售 SKU 白名单；Billing 负责价格来源和冻结依据；Portal 负责选择和展示；Runner/Orchestrator 负责把选中的规格变成 Job 资源和调度约束 | 选择某个 plan 后，检查生成的 Job 资源、节点选择、标签、运行时限制是否与 plan 一致；检查价格来源和更新时间；检查预扣与回补是否可对账 | 客户能在 Portal 看到可售规格、实时价格和冻结金额；下单后资源按所选规格进入集群；账单最终以腾讯云真实账单回补 | 未达到 |
-| Portal 总览商业化简洁 | 把首页从说明书改成 SaaS 控制台 | 首页要承载转化和操作，不承载工程解释；客户只关心余额、入口、近期运行、费用和下一步动作 | 收敛首页文案；保留账户、余额、试用、工作台入口、最近运行、今日费用；隐藏内部模块名和流程说明；管理员信息单独收口 | 首屏不出现长段工程说明；普通用户不看到内部架构词；桌面和移动端都能快速识别下一步动作 | 总览页可一眼扫描，用户可以直接进入工作台、查看费用和发起运行，不需要读说明书 | 未达到 |
+| 服务器与费用商业化 | 让客户透明选择服务器和价格，并把选择映射到集群资源 | 客户先看清规格、地域、价格、冻结金额，再决定是否开通；平台只负责把用户选择落实到真实资源 | `server_plans` 维护可售 SKU 白名单；Billing 负责价格来源和冻结依据；Portal 负责选择和展示；Runner/Orchestrator 负责把选中的规格变成 Job 资源和调度约束 | 选择某个 plan 后，检查生成的 Job 资源、节点选择、标签、运行时限制是否与 plan 一致；检查价格来源和更新时间；检查预扣与回补是否可对账 | 客户能在 Portal 看到可售规格、实时价格和冻结金额；下单后资源按所选规格进入集群；账单最终以腾讯云真实账单回补 | 部分达到：Job 调度已达成，自动买云主机未达成 |
+| Portal 总览商业化简洁 | 把首页从说明书改成 SaaS 控制台 | 首页要承载转化和操作，不承载工程解释；客户只关心余额、入口、近期运行、费用和下一步动作 | 收敛首页文案；保留账户、余额、试用、工作台入口、最近运行、今日费用；隐藏内部模块名和流程说明；管理员信息单独收口 | 首屏不出现长段工程说明；普通用户不看到内部架构词；桌面和移动端都能快速识别下一步动作 | 总览页可一眼扫描，用户可以直接进入工作台、查看费用和发起运行，不需要读说明书 | 已达到本地初版，仍需真人视觉验收 |
 | v7 本地与云端差异核查 | 证明同版本镜像和真实运行态不是一回事 | 商业化发布要求“版本、配置、入口、行为”都可解释；否则用户看到同 tag 但行为不同，会直接损害信任 | 固化镜像 digest、manifest、Ingress、ConfigMap、Secret、上游进程版本、健康检查字段；把运行态差异写入文档和状态页 | 对比本地与云上同 tag 的 digest；对比部署清单、环境变量、入口路径和上游进程状态；复现差异来源 | 报告能明确说明“镜像一致，但运行配置或旧进程不同”；后续可按字段继续定位 | 核查层面已达到，治理层面未达到 |
-| OPL 原生登录框接入 Portal 账号密码 | 让用户在 OPL 原生登录框也能用 Portal 账号 | 用户不应被迫记两套密码；直接登录入口必须与 Portal 身份一致，减少流失和支持成本 | Gateway 作为认证桥；原生登录请求转到 Portal 认证服务；认证通过后签发 launch/session；不把密码 hash 同步到 OPL，不共享用户表 | 在 OPL 原生登录框输入 Portal 邮箱密码，能够进入同一 Portal 用户上下文；错误密码应明确失败；OPL 不保存 Portal 密码 hash | OPL 原生登录页可用 Portal 账号密码登录；身份链路仍然低耦合；没有双用户库和密码同步 | 未达到 |
-| Portal 账号进入 OPL 后的任务空间、session trace、存储打通 | 让运行、审计、费用和文件都能回到同一主体 | 商业化 SaaS 必须回答“谁发起、属于哪个 workspace、产生了什么成本、产物在哪里” | Portal 侧维持 tenant/workspace/session；OPL 侧维持 runtime_session/run/trace/artifact；Gateway/Adapter 负责投影；存储按 tenant/workspace/session 分目录；动态 Job 带标签 | 从 Portal 进入 OPL 后发起运行，再从 run 反查 workspace、session、tenant；trace、artifact 和存储目录都能回到同一归属 | 每一条运行链路都可追溯；trace、artifact、run、存储与 tenant/workspace/session 一一对应；删除和迁移不互相污染 | 未达到 |
+| OPL 原生登录框接入 Portal 账号密码 | 让用户在 OPL 原生登录框也能用 Portal 账号 | 用户不应被迫记两套密码；直接登录入口必须与 Portal 身份一致，减少流失和支持成本 | Gateway 作为认证桥；原生登录请求转到 Portal 认证服务；认证通过后签发 launch/session；不把密码 hash 同步到 OPL，不共享用户表 | 在 OPL 原生登录框输入 Portal 邮箱密码，能够进入同一 Portal 用户上下文；错误密码应明确失败；OPL 不保存 Portal 密码 hash | OPL 原生登录页可用 Portal 账号密码登录；身份链路仍然低耦合；没有双用户库和密码同步 | 已达到本地账号；OIDC 无本地密码账号需走统一登录 |
+| Portal 账号进入 OPL 后的任务空间、session trace、存储打通 | 让运行、审计、费用和文件都能回到同一主体 | 商业化 SaaS 必须回答“谁发起、属于哪个 workspace、产生了什么成本、产物在哪里” | Portal 侧维持 tenant/workspace/session；OPL 侧维持 runtime_session/run/trace/artifact；Gateway/Adapter 负责投影；存储按 tenant/workspace/session 分目录；动态 Job 带标签 | 从 Portal 进入 OPL 后发起运行，再从 run 反查 workspace、session、tenant；trace、artifact 和存储目录都能回到同一归属 | 每一条运行链路都可追溯；trace、artifact、run、存储与 tenant/workspace/session 一一对应；删除和迁移不互相污染 | 部分达到：run/storage/Job 标签已通，完整 trace 还需实测上游 OPL |
 
 ## 1. 服务器与费用商业化
 

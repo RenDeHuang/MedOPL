@@ -17,6 +17,7 @@ const ADAPTER_WORKDIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 const SYNC_WORKSPACE_TO_MINIO_SCRIPT = path.join("..", "..", "scripts", "sync-workspace-file-to-minio.ps1");
 const MINIO_API_URL = process.env.MINIO_API_URL || "http://127.0.0.1:30091";
 const BILLING_RECONCILE_URL = (process.env.BILLING_RECONCILE_URL || "").trim();
+const RESOURCE_PROVISIONER_URL = (process.env.RESOURCE_PROVISIONER_URL || "").trim().replace(/\/$/, "");
 const KUBECTL_BIN = process.env.KUBECTL_BIN || "kubectl";
 const K8S_NAMESPACE = (process.env.K8S_NAMESPACE || "med-agent-demo").trim();
 const RUNNER_IMAGE = (process.env.MED_AUTOSCIENCE_RUNNER_IMAGE || "host.docker.internal:30095/library/med-autoscience-runner:local-test").trim();
@@ -113,7 +114,7 @@ function yamlIndentedMap(value = {}, indent = 8) {
 }
 
 function yamlIndentedTolerations(items = [], indent = 8) {
-  const rows = Array.isArray(items) ? items.filter((item) => item && typeof item === "object") : [];
+  const rows = uniqueK8sTolerations(items);
   if (!rows.length) return "";
   const padding = " ".repeat(indent);
   const childPadding = " ".repeat(indent + 2);
@@ -123,6 +124,25 @@ function yamlIndentedTolerations(items = [], indent = 8) {
     `${childPadding}value: ${yamlQuoted(item.value || "")}`,
     `${childPadding}effect: ${yamlQuoted(item.effect || "")}`,
   ].join("\n")).join("\n");
+}
+
+function uniqueK8sTolerations(items = []) {
+  const rows = Array.isArray(items) ? items.filter((item) => item && typeof item === "object") : [];
+  const seen = new Set();
+  const result = [];
+  for (const item of rows) {
+    const normalized = {
+      key: String(item.key || "").trim(),
+      operator: String(item.operator || "Equal").trim() || "Equal",
+      value: String(item.value || "").trim(),
+      effect: String(item.effect || "").trim(),
+    };
+    const fingerprint = JSON.stringify(normalized);
+    if (seen.has(fingerprint)) continue;
+    seen.add(fingerprint);
+    result.push(normalized);
+  }
+  return result;
 }
 
 function runFile(runId) {
@@ -170,6 +190,12 @@ function normalizeRunIdentity(args = {}) {
     runtimeClass: firstNonEmpty(args.runtimeClass, args.runtime_class) || "",
     nodeSelector: args.nodeSelector && typeof args.nodeSelector === "object" ? args.nodeSelector : {},
     tolerations: Array.isArray(args.tolerations) ? args.tolerations : [],
+    provisioningMode: firstNonEmpty(args.provisioningMode, args.provisioning_mode) || "schedule_to_node_pool",
+    tkeClusterId: firstNonEmpty(args.tkeClusterId, args.tke_cluster_id, args.clusterId, args.cluster_id),
+    nodePoolId: firstNonEmpty(args.nodePoolId, args.node_pool_id),
+    nodePoolCreatePayload: args.nodePoolCreatePayload || args.node_pool_create_payload || null,
+    nodePoolScalePayload: args.nodePoolScalePayload || args.node_pool_scale_payload || null,
+    provisionerPayload: args.provisionerPayload || args.provisioner_payload || null,
     cpuRequest: firstNonEmpty(args.cpuRequest, args.cpu_request),
     cpuLimit: firstNonEmpty(args.cpuLimit, args.cpu_limit),
     memoryRequest: firstNonEmpty(args.memoryRequest, args.memory_request),
@@ -252,6 +278,30 @@ function resolveGroupPolicy(portal, customerId = "") {
   };
 }
 
+function normalizeTrialEntitlement(value, createdAt = "") {
+  if (!value || typeof value !== "object") return null;
+  const totalCredit = Number(value.totalCredit || 0);
+  const remainingCredit = Number(value.remainingCredit ?? totalCredit);
+  const expiresAt = String(value.expiresAt || "").trim();
+  const status = String(value.status || "none").trim().toLowerCase();
+  const expired = expiresAt ? Date.parse(expiresAt) <= Date.now() : false;
+  return {
+    kind: String(value.kind || "trial_credit").trim() || "trial_credit",
+    status: expired && status === "trial_active" ? "trial_expired" : status,
+    totalCredit: Number.isFinite(totalCredit) && totalCredit > 0 ? totalCredit : 0,
+    remainingCredit: Number.isFinite(remainingCredit) && remainingCredit > 0 ? remainingCredit : 0,
+    createdAt: String(value.createdAt || createdAt || "").trim(),
+    expiresAt,
+  };
+}
+
+function activeTrialCredit(user) {
+  const trial = normalizeTrialEntitlement(user?.preferences?.commercial?.trialEntitlement, user?.createdAt || "");
+  if (!trial || trial.status !== "trial_active" || trial.remainingCredit <= 0) return 0;
+  if (trial.expiresAt && Date.parse(trial.expiresAt) <= Date.now()) return 0;
+  return trial.remainingCredit;
+}
+
 async function resolveWorkspaceSession(sessionId, userId = "") {
   if (!sessionId) return null;
   const session = await getWorkspaceSession(sessionId, userId);
@@ -271,9 +321,11 @@ async function ensureRuntimeStartAllowedLegacy(customerId) {
   if (!portal || !customerId) return;
 
   const wallet = portal.wallets?.find((item) => item.userId === customerId);
-  if (!wallet) return;
+  const user = portal.users?.find((item) => item.id === customerId);
+  const walletBalance = Number(wallet?.balance || 0);
+  const trialCredit = activeTrialCredit(user);
 
-  if (Number(wallet.balance || 0) <= 0) {
+  if (walletBalance + trialCredit <= 0) {
     throw new Error("余额不足，不能启动新的 runtime。请先充值后再运行研究任务。");
   }
 }
@@ -300,12 +352,13 @@ async function ensureRuntimeStartAllowed(customerId) {
   const wallet = await getWalletByUserId(customerId);
   const group = user?.groupId ? await getGroupById(user.groupId) : null;
   const policy = resolveGroupPolicy({ user, group }, customerId);
-  if (!wallet) return policy;
+  const walletBalance = Number(wallet?.balance || 0);
+  const trialCredit = activeTrialCredit(user);
 
-  if (Number(wallet.balance || 0) <= 0) {
+  if (walletBalance + trialCredit <= 0) {
     throw new Error("余额不足，不能启动新的 runtime。请先充值后再运行研究任务。");
   }
-  if (policy.balanceFloor > 0 && Number(wallet.balance || 0) < policy.balanceFloor) {
+  if (policy.balanceFloor > 0 && walletBalance < policy.balanceFloor && trialCredit <= 0) {
     throw new Error(`当前余额低于分组阈值 ${policy.balanceFloor}`);
   }
   if (!policy.allowMas) {
@@ -356,6 +409,59 @@ async function ensureGroupRuntimePolicy({ customerId }) {
     }
   }
   return policy;
+}
+
+function requiresExternalProvisioning(identity = {}) {
+  const mode = String(identity.provisioningMode || "schedule_to_node_pool").trim().toLowerCase();
+  return !["", "schedule_to_node_pool", "existing_node_pool"].includes(mode);
+}
+
+async function ensureProvisionedCapacity(identity = {}) {
+  if (!requiresExternalProvisioning(identity)) {
+    return {
+      status: "ready",
+      action: "schedule_to_node_pool",
+      details: {
+        nodeSelector: identity.nodeSelector || {},
+        tolerations: identity.tolerations || [],
+      },
+    };
+  }
+  if (!RESOURCE_PROVISIONER_URL) {
+    throw new Error("RESOURCE_PROVISIONER_URL 未配置，无法按所选规格自动开通集群资源。");
+  }
+  const response = await fetch(new URL("/resource-orders/ensure-capacity", `${RESOURCE_PROVISIONER_URL}/`), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      tenantId: identity.tenantId,
+      workspaceId: identity.workspaceId,
+      runId: identity.runId,
+      serverPlanId: identity.serverPlanId,
+      region: identity.region,
+      provisioningMode: identity.provisioningMode,
+      serverPlan: {
+        id: identity.serverPlanId,
+        region: identity.region,
+        zone: identity.zone,
+        nodePool: identity.nodePool,
+        runtimeClass: identity.runtimeClass,
+        nodeSelector: identity.nodeSelector,
+        tolerations: identity.tolerations,
+        provisioningMode: identity.provisioningMode,
+        tkeClusterId: identity.tkeClusterId,
+        nodePoolId: identity.nodePoolId,
+        nodePoolCreatePayload: identity.nodePoolCreatePayload,
+        nodePoolScalePayload: identity.nodePoolScalePayload,
+        provisionerPayload: identity.provisionerPayload,
+      },
+    }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.error || `resource_provisioning_failed:${response.status}`);
+  }
+  return payload.order || {};
 }
 
 async function warmupRunner({ workspaceId = "", workspaceSessionId = "", userId = "" }) {
@@ -505,7 +611,10 @@ async function resolvePortalTaskContext(userId) {
 }
 
 async function kubectl(args, options = {}) {
-  const result = await execFileAsync(KUBECTL_BIN, args, {
+  const isWindowsCommand = process.platform === "win32" && /\.(cmd|bat)$/i.test(KUBECTL_BIN);
+  const command = isWindowsCommand ? "cmd.exe" : KUBECTL_BIN;
+  const commandArgs = isWindowsCommand ? ["/d", "/s", "/c", KUBECTL_BIN, ...args] : args;
+  const result = await execFileAsync(command, commandArgs, {
     timeout: 30000,
     maxBuffer: 1024 * 1024,
     ...options
@@ -605,6 +714,12 @@ async function startRun(args = {}) {
     runtimeClass,
     nodeSelector,
     tolerations,
+    provisioningMode,
+    tkeClusterId,
+    nodePoolId,
+    nodePoolCreatePayload,
+    nodePoolScalePayload,
+    provisionerPayload,
     cpuRequest: explicitCpuRequest,
     cpuLimit: explicitCpuLimit,
     memoryRequest: explicitMemoryRequest,
@@ -639,13 +754,22 @@ async function startRun(args = {}) {
   const gpuCount = Number(explicitGpuCount ?? policy.gpuCount ?? 0);
   const storageRequest = explicitStorageRequest || policy.storageRequest || "";
   const storageLimit = explicitStorageLimit || policy.storageLimit || "";
+  const provisioningOrder = await ensureProvisionedCapacity(identity);
+  const provisionedNodeSelector = provisioningOrder?.details?.nodeSelector && typeof provisioningOrder.details.nodeSelector === "object"
+    ? provisioningOrder.details.nodeSelector
+    : {};
+  const provisionedTolerations = Array.isArray(provisioningOrder?.details?.tolerations)
+    ? provisioningOrder.details.tolerations
+    : [];
+  const effectiveNodeSelector = { ...nodeSelector, ...provisionedNodeSelector };
+  const effectiveTolerations = uniqueK8sTolerations([...tolerations, ...provisionedTolerations]);
   const gpuRequestBlock = gpuCount > 0 ? `nvidia.com/gpu: "${gpuCount}"` : "";
   const gpuLimitBlock = gpuCount > 0 ? `nvidia.com/gpu: "${gpuCount}"` : "";
   const storageRequestBlock = storageRequest ? `ephemeral-storage: "${storageRequest}"` : "";
   const storageLimitBlock = storageLimit ? `ephemeral-storage: "${storageLimit}"` : "";
   const runtimeClassBlock = runtimeClass ? `runtimeClassName: ${yamlQuoted(runtimeClass)}` : "";
-  const nodeSelectorBlock = yamlIndentedMap(nodeSelector, 8);
-  const tolerationsBlock = yamlIndentedTolerations(tolerations, 8);
+  const nodeSelectorBlock = yamlIndentedMap(effectiveNodeSelector, 8);
+  const tolerationsBlock = yamlIndentedTolerations(effectiveTolerations, 8);
   const imagePullSecretsBlock = process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET
     ? `imagePullSecrets:\n        - name: "${process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET}"`
     : "";
@@ -710,8 +834,15 @@ async function startRun(args = {}) {
     zone,
     nodePool,
     runtimeClass,
-    nodeSelector,
-    tolerations,
+    nodeSelector: effectiveNodeSelector,
+    tolerations: effectiveTolerations,
+    provisioningMode,
+    tkeClusterId,
+    nodePoolId,
+    nodePoolCreatePayload,
+    nodePoolScalePayload,
+    provisionerPayload,
+    provisioningOrder,
     cpuRequest,
     cpuLimit,
     memoryRequest,

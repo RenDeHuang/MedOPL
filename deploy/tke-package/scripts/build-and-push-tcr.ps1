@@ -1,7 +1,7 @@
 param(
   [string]$RegistryNamespace = "uswccr.ccs.tencentyun.com/gaofenglab",
   [string]$Username = "100047070895",
-  [string]$Tag = "opl-v1",
+  [string]$Tag = "opl-v8",
   [switch]$SkipLogin,
   [switch]$SkipOplWeb,
   [string]$OplWebSource = ""
@@ -29,6 +29,7 @@ $images = @(
   @{ Name = "portal-opl-adapter"; Dockerfile = ".\build\dockerfiles\opl-runtime-bridge.Dockerfile"; Image = "$RegistryNamespace/portal-opl-adapter-opl:$Tag" },
   @{ Name = "opl-web-gateway"; Dockerfile = ".\build\dockerfiles\opl-web-gateway.Dockerfile"; Image = "$RegistryNamespace/opl-web-gateway-opl:$Tag" },
   @{ Name = "billing-aggregator"; Dockerfile = ".\build\dockerfiles\billing-aggregator.Dockerfile"; Image = "$RegistryNamespace/billing-aggregator-opl:$Tag" },
+  @{ Name = "resource-provisioner"; Dockerfile = ".\build\dockerfiles\resource-provisioner.Dockerfile"; Image = "$RegistryNamespace/resource-provisioner-opl:$Tag" },
   @{ Name = "med-autoscience-runner-orchestrator"; Dockerfile = ".\build\dockerfiles\med-autoscience-runner-orchestrator.Dockerfile"; Image = "$RegistryNamespace/med-autoscience-runner-orchestrator-opl:$Tag" }
 )
 

@@ -22,7 +22,7 @@ spec:
           containers:
             - name: billing-reconcile
               image: "__BILLING_IMAGE__"
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: __IMAGE_PULL_POLICY__
               command:
                 - "node"
                 - "src/server.mjs"

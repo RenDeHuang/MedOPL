@@ -47,7 +47,7 @@ function startUpstreamFixture(calls) {
       res.end("<!doctype html><html><body><form method=\"post\" action=\"/login\"><input name=\"email\" /><input name=\"password\" /><button type=\"submit\">login</button></form></body></html>");
       return;
     }
-    if (req.method === "POST" && (url.pathname === "/login" || url.pathname === "/api/auth/signin")) {
+    if (req.method === "POST" && (url.pathname === "/login" || url.pathname === "/api/auth/signin" || url.pathname === "/api/v1/auths/signin")) {
       calls.upstreamLogin += 1;
       res.writeHead(500, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ success: false, error: "should_not_proxy_login" }));
@@ -246,7 +246,34 @@ async function main() {
     assert(formLogin.headers.get("location") === "/", "form login should redirect to root");
     assert((formLogin.headers.get("set-cookie") || "").includes("opl_portal_launch="), "form login should set launch cookie");
 
-    assert(calls.portalLogin === 3, `portal login bridge expected 3 calls, got ${calls.portalLogin}`);
+    const openWebUiLogin = await fetch(`${gatewayUrl}/api/v1/auths/signin`, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        email: "native-login@example.test",
+        password: "PortalPass123!",
+      }),
+      redirect: "manual",
+    });
+    assert(openWebUiLogin.status === 200, `open-webui login expected 200, got ${openWebUiLogin.status}`);
+    const openWebUiPayload = await openWebUiLogin.json();
+    assert(openWebUiPayload.email === "native-login@example.test", "open-webui login email mismatch");
+    assert(openWebUiPayload.token === "launch-native-123", "open-webui login should expose token");
+    assert(openWebUiPayload.token_type === "Bearer", "open-webui login should expose bearer token");
+    assert((openWebUiLogin.headers.get("set-cookie") || "").includes("opl_portal_launch="), "open-webui login should set launch cookie");
+
+    const openWebUiMe = await fetch(`${gatewayUrl}/api/v1/auths/`, {
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${openWebUiPayload.token}`,
+      },
+    });
+    assert(openWebUiMe.status === 200, `open-webui me expected 200, got ${openWebUiMe.status}`);
+    const openWebUiMePayload = await openWebUiMe.json();
+    assert(openWebUiMePayload.email === "native-login@example.test", "open-webui me email mismatch");
+    assert(openWebUiMePayload.token === "launch-native-123", "open-webui me should preserve bearer token");
+
+    assert(calls.portalLogin === 4, `portal login bridge expected 4 calls, got ${calls.portalLogin}`);
     assert(calls.upstreamLogin === 0, `upstream login should not be called, got ${calls.upstreamLogin}`);
     assert(calls.bootstrap.length >= 1, "bootstrap should be called at least once after native login");
   } finally {

@@ -9,19 +9,11 @@
       <div class="flex items-center gap-2">
         <span class="badge badge-success hidden sm:inline-flex">MedOPL</span>
 
-        <button
-          type="button"
-          class="btn btn-secondary min-w-[84px]"
-          @click="helpOpen = true"
-        >
-          使用说明
+        <button type="button" class="btn btn-secondary min-w-[72px]" @click="helpOpen = true">
+          帮助
         </button>
 
-        <button
-          type="button"
-          class="btn btn-secondary min-w-[84px]"
-          @click="announcementOpen = true"
-        >
+        <button type="button" class="btn btn-secondary min-w-[72px]" @click="announcementOpen = true">
           公告
           <span
             v-if="activeAnnouncementCount"
@@ -76,15 +68,15 @@
   <AnnouncementDialog
     v-model="helpOpen"
     v-model:page="helpPage"
-    title="Portal 使用说明"
-    description="先区分 Portal 与工作台，再看任务空间、账单和轨迹。"
+    title="帮助"
+    description="账户、任务空间、服务器费用和账单。"
     :pages="helpPages"
   />
 
   <BaseDialog
     v-model="announcementOpen"
     title="平台公告"
-    :description="activeAnnouncementCount ? `当前有 ${activeAnnouncementCount} 条活动公告。` : '当前暂无活动公告。'"
+    :description="activeAnnouncementCount ? `当前有 ${activeAnnouncementCount} 条公告。` : '当前暂无公告。'"
   >
     <div class="space-y-3">
       <div
@@ -103,7 +95,7 @@
           <span class="text-[11px] text-gray-400 dark:text-slate-500">{{ item.updatedAt || item.createdAt || "-" }}</span>
         </div>
       </div>
-      <div v-if="!announcements.length" class="empty-state">当前暂无活动公告。</div>
+      <div v-if="!announcements.length" class="empty-state">当前暂无公告。</div>
     </div>
   </BaseDialog>
 </template>
@@ -147,7 +139,7 @@ const currentUser = ref<CurrentUserState>({
 
 document.documentElement.dataset.theme = theme.value;
 
-const themeLabel = computed(() => theme.value === "dark" ? "切换浅色" : "切换深色");
+const themeLabel = computed(() => theme.value === "dark" ? "浅色" : "深色");
 const activeAnnouncementCount = computed(() => announcements.value.length);
 const userStatusLabel = computed(() => {
   const status = String(currentUser.value.status || "active").toLowerCase();
@@ -158,27 +150,27 @@ const userStatusLabel = computed(() => {
 
 const helpPages = [
   {
-    title: "入口分工",
-  summary: "Portal 是后台控制面，OPL Web 是工作台入口。",
+    title: "开始使用",
+    summary: "进入工作台，选择任务空间，开始一次运行。",
     sections: [
-      { title: "Portal", items: ["查看账户、任务空间、账单、轨迹。", "查看管理员总台、用户管理、Trace。"] },
-  { title: "OPL Web", items: ["进入会话和工作流。", "在 workspace 内持续执行任务。"] },
+      { title: "工作台", items: ["从总览或任务空间进入实验室。", "输出结果会回到当前任务空间。"] },
+      { title: "任务空间", items: ["保存输入、输出、trace 和运行记录。", "不同任务空间可以选择不同服务器规格。"] },
     ],
   },
   {
-    title: "任务空间与会话",
-    summary: "workspace 是资产容器，session 是执行轨迹。",
+    title: "费用",
+    summary: "价格透明，最终以腾讯云账单回补为准。",
     sections: [
-      { title: "任务空间", items: ["管理输入文件、输出文件和 run。", "归档后不再继续新执行。"] },
-      { title: "轨迹", items: ["查看 session、模型、时间、状态和延迟。", "管理员可在全局 Trace 中继续下钻。"] },
+      { title: "服务器", items: ["在服务器与费用页选择 CPU、GPU、地域和价格。", "运行前按报价和最小计费单元计算冻结金额。"] },
+      { title: "账单", items: ["运行中显示 pending cost。", "最终扣费来自腾讯云账单明细。"] },
     ],
   },
   {
-    title: "账单口径",
-    summary: "当前 Portal 先展示真实资源账单与未接入状态。",
+    title: "账户",
+    summary: "账号、余额和权限分开管理。",
     sections: [
-      { title: "已展示", items: ["CPU、GPU、存储。", "账户流水与 workspace/run 明细。"] },
-      { title: "未完全接入", items: ["VPN、流量、其他云成本。", "若未接云账单，会明确显示未接入状态。"] },
+      { title: "登录", items: ["Portal 账号可进入实验室。", "OPL 原生登录由 Gateway 接入 Portal 校验。"] },
+      { title: "余额", items: ["余额不足不影响进入工作台。", "收费运行会检查余额或试用额度。"] },
     ],
   },
 ];
@@ -201,7 +193,7 @@ async function loadCurrentUser() {
       status: String(payload.status || "active"),
     };
   } catch {
-    // Ignore user-info fetch failures in header.
+    // Header should not block the app if this small request fails.
   }
 }
 
@@ -232,7 +224,7 @@ async function toggleTheme() {
       credentials: "same-origin",
     });
   } catch {
-    // Ignore theme persistence errors.
+    // Theme persistence is non-critical.
   }
 }
 

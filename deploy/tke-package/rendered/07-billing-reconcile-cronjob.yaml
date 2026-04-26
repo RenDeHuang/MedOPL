@@ -21,8 +21,8 @@ spec:
             - name: "tcr-pull-secret"
           containers:
             - name: billing-reconcile
-              image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v6"
-              imagePullPolicy: IfNotPresent
+              image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v8"
+              imagePullPolicy: Always
               command:
                 - "node"
                 - "src/server.mjs"

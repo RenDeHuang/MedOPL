@@ -201,11 +201,13 @@ async function main() {
   const runner = spawnService("runner", path.join(repoRoot, "adapters", "med-autoscience-runner"), "src/server.mjs", {
     ...process.env,
     MED_AUTOSCIENCE_RUNNER_PORT: String(runnerPort),
+    PORTAL_STORAGE_MODE: "json",
     KUBECTL_BIN: fakeKubectl,
   });
   const adapter = spawnService("adapter", path.join(repoRoot, "services", "opl-runtime-bridge"), "src/server.mjs", {
     ...process.env,
     PORT: String(adapterPort),
+    PORTAL_STORAGE_MODE: "json",
     PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
     PORTAL_OPL_ADAPTER_STATE_ROOT: path.join(runtimeRoot, "adapter-state"),
     OPL_WEB_URL: "http://127.0.0.1:19999/opl-web",

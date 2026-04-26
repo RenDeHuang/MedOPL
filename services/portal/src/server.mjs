@@ -479,6 +479,11 @@ function normalizeServerPlanSelection(value) {
     nodeSelector: normalizeStringMap(value.nodeSelector),
     tolerations: normalizeTolerations(value.tolerations),
     provisioningMode: String(value.provisioningMode || "schedule_to_node_pool").trim() || "schedule_to_node_pool",
+    tkeClusterId: String(value.tkeClusterId || value.clusterId || "").trim(),
+    nodePoolId: String(value.nodePoolId || "").trim(),
+    nodePoolCreatePayload: value.nodePoolCreatePayload && typeof value.nodePoolCreatePayload === "object" ? value.nodePoolCreatePayload : null,
+    nodePoolScalePayload: value.nodePoolScalePayload && typeof value.nodePoolScalePayload === "object" ? value.nodePoolScalePayload : null,
+    provisionerPayload: value.provisionerPayload && typeof value.provisionerPayload === "object" ? value.provisionerPayload : null,
     selectedAt: String(value.selectedAt || "").trim(),
     selectionNote: String(value.selectionNote || "").trim(),
   };
@@ -516,6 +521,11 @@ function buildTaskSpaceServerPlanSelection(plan) {
     originalPrice: plan.originalPrice,
     selectedAt: new Date().toISOString(),
     provisioningMode: plan.provisioningMode,
+    tkeClusterId: plan.tkeClusterId,
+    nodePoolId: plan.nodePoolId,
+    nodePoolCreatePayload: plan.nodePoolCreatePayload,
+    nodePoolScalePayload: plan.nodePoolScalePayload,
+    provisionerPayload: plan.provisionerPayload,
     selectionNote: plan.selectionNote,
   });
 }

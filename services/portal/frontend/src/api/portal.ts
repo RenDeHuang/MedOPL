@@ -314,6 +314,11 @@ export interface SelectedServerPlan {
   nodeSelector: Record<string, string>;
   tolerations?: Array<{ key: string; operator: string; value: string; effect: string }>;
   provisioningMode?: string;
+  tkeClusterId?: string;
+  nodePoolId?: string;
+  nodePoolCreatePayload?: Record<string, unknown> | null;
+  nodePoolScalePayload?: Record<string, unknown> | null;
+  provisionerPayload?: Record<string, unknown> | null;
   selectedAt: string;
   selectionNote: string;
 }
@@ -406,6 +411,11 @@ export interface ServerPlanItem {
   discountPrice?: number;
   unitPrice?: number;
   provisioningMode?: string;
+  tkeClusterId?: string;
+  nodePoolId?: string;
+  nodePoolCreatePayload?: Record<string, unknown> | null;
+  nodePoolScalePayload?: Record<string, unknown> | null;
+  provisionerPayload?: Record<string, unknown> | null;
   selectionNote?: string;
   source?: string;
 }

@@ -17,8 +17,8 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: portal
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v7"
-          imagePullPolicy: IfNotPresent
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v8"
+          imagePullPolicy: Always
           ports:
             - containerPort: 17080
           resources:
@@ -88,8 +88,8 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: portal-opl-adapter
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v7"
-          imagePullPolicy: IfNotPresent
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v8"
+          imagePullPolicy: Always
           ports:
             - containerPort: 8788
           resources:
@@ -156,7 +156,7 @@ spec:
       containers:
         - name: opl-web-upstream
           image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           resources:
@@ -207,8 +207,8 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: opl-web-gateway
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v7"
-          imagePullPolicy: IfNotPresent
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v8"
+          imagePullPolicy: Always
           ports:
             - containerPort: 13031
           resources:
@@ -267,8 +267,8 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: billing-aggregator
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v6"
-          imagePullPolicy: IfNotPresent
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v8"
+          imagePullPolicy: Always
           ports:
             - containerPort: 3001
           resources:
@@ -316,6 +316,71 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: resource-provisioner
+  namespace: portal-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-provisioner
+  template:
+    metadata:
+      labels:
+        app: resource-provisioner
+    spec:
+      imagePullSecrets:
+        - name: "tcr-pull-secret"
+      containers:
+        - name: resource-provisioner
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/resource-provisioner-opl:opl-v8"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 18893
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "150m"
+              memory: "128Mi"
+          env:
+            - name: RESOURCE_PROVISIONER_PORT
+              value: "18893"
+          envFrom:
+            - configMapRef:
+                name: portal-platform-config
+            - secretRef:
+                name: portal-platform-secrets
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 18893
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resource-provisioner
+  namespace: portal-staging
+spec:
+  selector:
+    app: resource-provisioner
+  ports:
+    - name: http
+      port: 18893
+      targetPort: 18893
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: med-autoscience-runner
   namespace: portal-staging
 spec:
@@ -333,8 +398,8 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: med-autoscience-runner
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v7"
-          imagePullPolicy: IfNotPresent
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v8"
+          imagePullPolicy: Always
           ports:
             - containerPort: 18890
           resources:
