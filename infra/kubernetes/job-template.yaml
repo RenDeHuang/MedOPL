@@ -5,6 +5,7 @@ metadata:
   labels:
     app: med-autoscience
     portal_user_id: "__PORTAL_USER_ID__"
+    tenant_id: "__TENANT_ID__"
     customer_id: "__CUSTOMER_ID__"
     user_id: "__USER_ID__"
     workspace_id: "__WORKSPACE_ID__"
@@ -15,6 +16,8 @@ metadata:
     tool_name: "__TOOL_NAME__"
     billing_scope: "__BILLING_SCOPE__"
     cost_center: "__COST_CENTER__"
+    server_plan_id: "__SERVER_PLAN_ID__"
+    region: "__REGION__"
     group_id: "__GROUP_ID__"
     policy_version: "__POLICY_VERSION__"
     runner_image_tag: "__RUNNER_IMAGE_TAG__"
@@ -24,6 +27,7 @@ spec:
       labels:
         app: med-autoscience
         portal_user_id: "__PORTAL_USER_ID__"
+        tenant_id: "__TENANT_ID__"
         customer_id: "__CUSTOMER_ID__"
         user_id: "__USER_ID__"
         workspace_id: "__WORKSPACE_ID__"
@@ -34,6 +38,8 @@ spec:
         tool_name: "__TOOL_NAME__"
         billing_scope: "__BILLING_SCOPE__"
         cost_center: "__COST_CENTER__"
+        server_plan_id: "__SERVER_PLAN_ID__"
+        region: "__REGION__"
         group_id: "__GROUP_ID__"
         policy_version: "__POLICY_VERSION__"
         runner_image_tag: "__RUNNER_IMAGE_TAG__"
@@ -58,6 +64,8 @@ spec:
           env:
             - name: PORTAL_USER_ID
               value: "__PORTAL_USER_ID__"
+            - name: TENANT_ID
+              value: "__TENANT_ID__"
             - name: CUSTOMER_ID
               value: "__CUSTOMER_ID__"
             - name: USER_ID
@@ -78,6 +86,10 @@ spec:
               value: "__BILLING_SCOPE__"
             - name: COST_CENTER
               value: "__COST_CENTER__"
+            - name: SERVER_PLAN_ID
+              value: "__SERVER_PLAN_ID__"
+            - name: REGION
+              value: "__REGION__"
             - name: GROUP_ID
               value: "__GROUP_ID__"
             - name: POLICY_VERSION

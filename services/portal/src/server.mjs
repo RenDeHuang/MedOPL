@@ -2451,7 +2451,8 @@ async function buildBillingPayload(db, user, options = {}) {
       vpnCost: 0,
       trafficCost: 0,
       otherCloudCost: 0,
-      cloudSource: "not_connected",
+      cloudSource: billing?.cloudSource || billing?.source || "not_connected",
+      pricingSource: billing?.source || "unavailable",
     },
     taskCosts: taskPagination.rows,
     taskPagination: {
@@ -2809,6 +2810,7 @@ async function buildAdminOverviewPayload(db) {
     dbMode: storageMode() === "postgres_redis" ? "Postgres / Redis" : "portal-db.json",
     redisStatus: process.env.REDIS_URL ? "已配置" : "未接入",
     opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
+    tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
   };
 
   return {
@@ -2865,6 +2867,8 @@ async function buildAdminOverviewPayload(db) {
       lastAdjustmentCount: Number(billingStatus?.reconcileState?.lastAdjustmentCount || 0),
       lastError: billingStatus?.reconcileState?.lastError || "",
       opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
+      tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
+      pricingSourcePriority: billingStatus?.pricingSourcePriority || ["tencent_cloud_bill", "opencost_pending", "metering_pending"],
     },
     warningEvents,
     alerts,

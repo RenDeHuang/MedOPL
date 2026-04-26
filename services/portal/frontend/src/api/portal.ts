@@ -108,6 +108,7 @@ export interface BillingPayload {
     trafficCost: number;
     otherCloudCost: number;
     cloudSource: string;
+    pricingSource?: string;
   };
   summary: {
     selectedCost: number;

@@ -98,6 +98,7 @@ function normalizeRunIdentity(args = {}) {
   const userId = firstNonEmpty(args.userId, args.customerId, args.portalUserId) || customerId;
   return {
     portalUserId: firstNonEmpty(args.portalUserId, customerId, userId),
+    tenantId: firstNonEmpty(args.tenantId, args.tenant_id, args.portalUserId, customerId, userId),
     customerId,
     userId,
     workspaceId: firstNonEmpty(args.workspaceId) || randomUUID(),
@@ -108,6 +109,8 @@ function normalizeRunIdentity(args = {}) {
     toolName: firstNonEmpty(args.toolName) || "med-autoscience",
     billingScope: firstNonEmpty(args.billingScope) || "run",
     costCenter: firstNonEmpty(args.costCenter) || "research-foundry",
+    serverPlanId: firstNonEmpty(args.serverPlanId, args.server_plan_id) || "default",
+    region: firstNonEmpty(args.region) || "",
   };
 }
 
@@ -518,6 +521,7 @@ async function startRun(args = {}) {
   const identity = normalizeRunIdentity(args);
   const {
     portalUserId,
+    tenantId,
     customerId,
     userId,
     workspaceId,
@@ -528,6 +532,8 @@ async function startRun(args = {}) {
     toolName,
     billingScope,
     costCenter,
+    serverPlanId,
+    region,
   } = identity;
 
   const policy = await ensureRuntimeStartAllowed(customerId);
@@ -565,6 +571,7 @@ async function startRun(args = {}) {
   const jobYaml = jobTemplate
     .replaceAll("__CUSTOMER_ID__", customerId)
     .replaceAll("__PORTAL_USER_ID__", portalUserId)
+    .replaceAll("__TENANT_ID__", k8sLabelSafe(tenantId))
     .replaceAll("__USER_ID__", userId)
     .replaceAll("__WORKSPACE_ID__", workspaceId)
     .replaceAll("__RUNTIME_SESSION_ID__", runtimeSessionId)
@@ -573,6 +580,8 @@ async function startRun(args = {}) {
     .replaceAll("__TOOL_NAME__", toolName)
     .replaceAll("__BILLING_SCOPE__", billingScope)
     .replaceAll("__COST_CENTER__", costCenter)
+    .replaceAll("__SERVER_PLAN_ID__", k8sLabelSafe(serverPlanId))
+    .replaceAll("__REGION__", k8sLabelSafe(region || "default"))
     .replaceAll("__RUNNER_IMAGE__", runnerImage)
     .replaceAll("__WORKSPACE_SESSION_ID__", workspaceSessionId)
     .replaceAll("__GROUP_ID__", groupIdLabel)
@@ -598,6 +607,7 @@ async function startRun(args = {}) {
   const runMetadata = {
     runId,
     portalUserId,
+    tenantId,
     customerId,
     userId,
     workspaceId,
@@ -607,6 +617,8 @@ async function startRun(args = {}) {
     toolName,
     billingScope,
     costCenter,
+    serverPlanId,
+    region,
     groupId: policy.groupId || "",
     policyVersion,
     runnerImage,
