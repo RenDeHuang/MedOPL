@@ -54,9 +54,9 @@ Copy-Item .\env\tke.env.example .\env\tke.env
 当前 TCR 已经按服务拆成 7 个独立私有仓库，`env/tke.env.tcr-gaofenglab.example` 和包内 `env/tke.env` 默认使用这些分仓镜像：
 
 ```powershell
-uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v3
+uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v4
 uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v1
-uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v1
+uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v2
 uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1
 uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v1
 uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v1
