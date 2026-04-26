@@ -318,7 +318,7 @@ try {
   await waitFor(`${gatewayUrl}/healthz`);
   const directEntryHtmlResponse = await fetch(`${gatewayUrl}/`);
   const directEntryHtml = await directEntryHtmlResponse.text();
-  assert(directEntryHtml.includes("使用 Portal 继续"), "direct entry html must include Portal continue entry");
+  assert(directEntryHtml.includes("返回 Portal"), "direct entry html must include Portal continue entry");
   assert(directEntryHtml.includes("https://portal.example.test/portal/opl"), "direct entry html must link to Portal continue URL");
   assert(directEntryHtml.includes('meta name="opl-portal-direct-entry" content="1"'), "direct entry html must mark direct entry as true");
 
@@ -326,7 +326,7 @@ try {
   const unauthenticatedPayload = await unauthenticatedResponse.json();
   assert(unauthenticatedResponse.status === 401, "auth user without launch must return 401");
   assert(unauthenticatedPayload.portalLaunchRequired === true, "auth user without launch must require Portal launch");
-  assert(unauthenticatedPayload.reason === "portal_launch_required", "auth user without launch must expose direct entry reason");
+  assert(unauthenticatedPayload.reason === "portal_login_or_launch_required", "auth user without launch must expose direct entry reason");
 
   const htmlResponse = await fetch(`${gatewayUrl}/?launch_token=launch-token-smoke`);
   const setCookie = htmlResponse.headers.get("set-cookie") || "";

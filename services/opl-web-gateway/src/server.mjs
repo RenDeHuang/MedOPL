@@ -5,6 +5,8 @@ const PORT = Number(process.env.PORT || process.env.OPL_WEB_GATEWAY_PORT || 1878
 const OPL_WEB_UPSTREAM_URL = String(process.env.OPL_WEB_UPSTREAM_URL || process.env.OPL_WEB_URL || "http://127.0.0.1:13030").replace(/\/$/, "");
 const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
 const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").replace(/\/$/, "");
+const PORTAL_INTERNAL_URL = String(process.env.PORTAL_INTERNAL_URL || PORTAL_PUBLIC_URL || "http://127.0.0.1:17080").replace(/\/$/, "");
+const PORTAL_INTERNAL_AUTH_TOKEN = String(process.env.PORTAL_INTERNAL_AUTH_TOKEN || "").trim();
 const BASE_URL = String(process.env.OPL_WEB_GATEWAY_PUBLIC_URL || `http://127.0.0.1:${PORT}`).replace(/\/$/, "");
 const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
 const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
@@ -12,6 +14,10 @@ const OPL_WEBUI_AUTH_MODE = String(process.env.OPL_WEBUI_AUTH_MODE || "unknown")
 const LAUNCH_SCRIPT_PATH = "/portal-launch.js";
 const ADAPTER_PREFIX = "/portal-adapter";
 const LAUNCH_COOKIE = "opl_portal_launch";
+const NATIVE_LOGIN_PATHS = String(process.env.OPL_NATIVE_LOGIN_PATHS || "/api/auth/signin,/api/auth/login,/auth/login,/login")
+  .split(",")
+  .map((item) => item.trim())
+  .filter(Boolean);
 
 function sendJson(res, status, payload) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
@@ -60,18 +66,20 @@ function buildStatusPayload() {
       time: BUILD_TIME,
     },
     identity: {
-      ssoMode: "portal-launch-cookie",
+      ssoMode: "portal-identity-bridge",
       upstreamAuthMode: OPL_WEBUI_AUTH_MODE,
-      directEntryPolicy: "portal-launch-required",
+      directEntryPolicy: "portal-native-login-or-launch",
       launchCookieName: LAUNCH_COOKIE,
       authUserWithoutLaunchStatus: 401,
       openFromPortalUrl: buildPortalContinueUrl(),
+      nativeLoginPaths: NATIVE_LOGIN_PATHS,
     },
     runtime: {
       gatewayPublicUrl: BASE_URL,
       upstreamUrl: OPL_WEB_UPSTREAM_URL,
       portalAdapterUrl: PORTAL_OPL_ADAPTER_URL,
       portalPublicUrl: PORTAL_PUBLIC_URL || null,
+      portalInternalUrl: PORTAL_INTERNAL_URL || null,
     },
   };
 }
@@ -80,13 +88,13 @@ function buildDirectEntryState(overrides = {}) {
   return {
     active: true,
     authenticated: false,
-    authMode: "portal-launch",
+    authMode: "portal-identity-bridge",
     portalLaunchRequired: true,
     launchCookieName: LAUNCH_COOKIE,
     portalPublicUrl: PORTAL_PUBLIC_URL || null,
     openFromPortalUrl: buildPortalContinueUrl(),
-    reason: "portal_launch_required",
-    message: "Open OPL Web from Portal to start a launch session.",
+    reason: "portal_login_or_launch_required",
+    message: "Sign in with your Portal account or open OPL from Portal.",
     ...overrides,
   };
 }
@@ -139,6 +147,58 @@ async function fetchPortalBootstrap(launchToken) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(payload?.error || `portal_bootstrap_failed:${response.status}`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+  return payload;
+}
+
+function buildPortalInternalHeaders() {
+  return {
+    accept: "application/json",
+    ...(PORTAL_INTERNAL_AUTH_TOKEN ? { "x-portal-internal-token": PORTAL_INTERNAL_AUTH_TOKEN } : {}),
+  };
+}
+
+function parseLoginPayload(contentType = "", rawBody = "") {
+  const normalizedType = String(contentType || "").toLowerCase();
+  if (!rawBody) return {};
+  if (normalizedType.includes("application/json")) {
+    return JSON.parse(rawBody);
+  }
+  if (normalizedType.includes("application/x-www-form-urlencoded") || normalizedType.includes("multipart/form-data") || normalizedType.includes("text/plain")) {
+    return Object.fromEntries(new URLSearchParams(rawBody).entries());
+  }
+  try {
+    return JSON.parse(rawBody);
+  } catch {
+    return Object.fromEntries(new URLSearchParams(rawBody).entries());
+  }
+}
+
+function normalizeLoginCredentials(payload = {}) {
+  return {
+    email: String(payload.email || payload.username || payload.loginName || payload.identifier || "").trim(),
+    password: String(payload.password || payload.passcode || "").trim(),
+    task: String(payload.task || payload.workspaceId || payload.taskSlug || "").trim(),
+    redirectTo: String(payload.redirectTo || payload.redirect || "").trim(),
+  };
+}
+
+async function portalNativeLogin(credentials) {
+  const response = await fetch(new URL("/internal/opl/auth/login", `${PORTAL_INTERNAL_URL}/`), {
+    method: "POST",
+    headers: {
+      ...buildPortalInternalHeaders(),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+    redirect: "manual",
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.ok || !payload?.launchToken) {
+    const error = new Error(payload?.message || payload?.error || `portal_native_login_failed:${response.status}`);
     error.status = response.status;
     error.payload = payload;
     throw error;
@@ -217,11 +277,105 @@ async function handleAuthUser(req, res) {
   }
 }
 
+function isNativeLoginRequest(req, url) {
+  return String(req.method || "GET").toUpperCase() === "POST" && NATIVE_LOGIN_PATHS.includes(url.pathname);
+}
+
+function wantsHtmlLoginResponse(req, contentType = "") {
+  const accept = String(req.headers.accept || "").toLowerCase();
+  return String(contentType || "").toLowerCase().includes("application/x-www-form-urlencoded") || accept.includes("text/html");
+}
+
+async function handleNativeLogin(req, res, url) {
+  if (!isNativeLoginRequest(req, url)) return false;
+
+  const rawBodyBuffer = await readRequestBody(req);
+  const rawBody = rawBodyBuffer ? rawBodyBuffer.toString("utf8") : "";
+  const contentType = String(req.headers["content-type"] || "");
+  let payload = {};
+  try {
+    payload = parseLoginPayload(contentType, rawBody);
+  } catch {
+    sendJson(res, 400, {
+      success: false,
+      error: "invalid_request",
+      message: "login payload format is invalid",
+    });
+    return true;
+  }
+
+  const credentials = normalizeLoginCredentials(payload);
+  const htmlMode = wantsHtmlLoginResponse(req, contentType);
+  if (!credentials.email || !credentials.password) {
+    if (htmlMode) {
+      res.writeHead(401, { "content-type": "text/html; charset=utf-8" });
+      res.end("<!doctype html><html><body>账号或密码不能为空。</body></html>");
+      return true;
+    }
+    sendJson(res, 401, {
+      success: false,
+      error: "invalid_credentials",
+      message: "account and password are required",
+    });
+    return true;
+  }
+
+  try {
+    const login = await portalNativeLogin(credentials);
+    const cookie = buildLaunchCookie(login.launchToken);
+    if (htmlMode) {
+      res.writeHead(302, {
+        location: credentials.redirectTo || "/",
+        "set-cookie": cookie,
+        "cache-control": "no-cache, no-store, must-revalidate",
+      });
+      res.end();
+      return true;
+    }
+    res.writeHead(200, {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-cache, no-store, must-revalidate",
+      "set-cookie": cookie,
+    });
+    res.end(JSON.stringify({
+      success: true,
+      user: {
+        id: login.user?.id || "",
+        username: login.user?.email || login.user?.name || "",
+        email: login.user?.email || "",
+        name: login.user?.name || login.user?.email || "",
+        source: "portal-native-login",
+      },
+      launchToken: login.launchToken,
+      launch: login.launch || {},
+      workspace: login.workspace || {},
+      workspaceSession: login.workspaceSession || {},
+      runtimeSession: login.runtimeSession || {},
+    }, null, 2));
+    return true;
+  } catch (error) {
+    const status = Number(error.status || 502);
+    const result = {
+      success: false,
+      error: error.payload?.error || "portal_native_login_failed",
+      message: error.payload?.message || String(error.message || error),
+      reasons: error.payload?.reasons || [],
+    };
+    if (htmlMode) {
+      res.writeHead(status, { "content-type": "text/html; charset=utf-8" });
+      res.end(`<!doctype html><html><body>${escapeHtml(result.message)}</body></html>`);
+      return true;
+    }
+    sendJson(res, status, result);
+    return true;
+  }
+}
+
 function injectLaunchScript(html, directEntry) {
   if (html.includes(LAUNCH_SCRIPT_PATH)) return html;
   const metaTag = `<meta name="opl-portal-direct-entry" content="${directEntry ? "1" : "0"}">`;
   const scriptTag = `<script type="module" src="${LAUNCH_SCRIPT_PATH}"></script>`;
-  const directEntryMarkup = directEntry ? buildDirectEntryMarkup() : "";
+  const directEntryMarkup = directEntry ? buildNativeLoginEntryMarkup() : "";
   if (html.includes("</head>")) {
     html = html.replace("</head>", `    ${metaTag}\n    ${scriptTag}\n  </head>`);
   }
@@ -316,6 +470,89 @@ function buildDirectEntryMarkup() {
     <p class="opl-portal-entry__eyebrow">One Person Lab</p>
     <h1 class="opl-portal-entry__title">请先通过 Portal 打开工作台</h1>
     <p class="opl-portal-entry__copy">当前 OPL Web 不接受原生账号登录。请从 Portal 登录后继续，这样当前用户、workspace、session、trace 和存储归属都会绑定到 Portal 身份。</p>
+    ${button}
+    <p class="opl-portal-entry__hint">${continueUrl ? `继续入口：${escapeHtml(continueUrl)}` : "未配置 Portal 公开地址，请联系管理员设置 PORTAL_PUBLIC_URL。"}</p>
+  </div>
+</section>`;
+}
+
+function buildNativeLoginEntryMarkup() {
+  const continueUrl = buildPortalContinueUrl();
+  const button = continueUrl
+    ? `<a class="opl-portal-entry__button" data-opl-portal-continue-link href="${escapeHtml(continueUrl)}">返回 Portal</a>`
+    : `<span class="opl-portal-entry__button opl-portal-entry__button--disabled" data-opl-portal-continue-link>返回 Portal</span>`;
+  return `
+<section id="opl-portal-direct-entry" class="opl-portal-entry" aria-live="polite">
+  <style>
+    .opl-portal-entry {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 2147483647;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 0;
+      background: transparent;
+      pointer-events: none;
+      color: #e5eefc;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .opl-portal-entry__panel {
+      width: min(360px, calc(100vw - 32px));
+      padding: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.96);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.45);
+      pointer-events: auto;
+    }
+    .opl-portal-entry__eyebrow {
+      margin: 0 0 10px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #93c5fd;
+    }
+    .opl-portal-entry__title {
+      margin: 0 0 10px;
+      font-size: 18px;
+      line-height: 1.3;
+      color: #f8fafc;
+    }
+    .opl-portal-entry__copy {
+      margin: 0 0 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+    .opl-portal-entry__button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .opl-portal-entry__button--disabled {
+      background: #334155;
+      color: #cbd5e1;
+      cursor: default;
+    }
+    .opl-portal-entry__hint {
+      margin: 16px 0 0;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+  </style>
+  <div class="opl-portal-entry__panel">
+    <p class="opl-portal-entry__eyebrow">One Person Lab</p>
+    <h1 class="opl-portal-entry__title">使用 Portal 账号登录</h1>
+    <p class="opl-portal-entry__copy">可以直接在当前登录框输入 Portal 邮箱和密码，也可以回 Portal 进入工作台。</p>
     ${button}
     <p class="opl-portal-entry__hint">${continueUrl ? `继续入口：${escapeHtml(continueUrl)}` : "未配置 Portal 公开地址，请联系管理员设置 PORTAL_PUBLIC_URL。"}</p>
   </div>
@@ -658,6 +895,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/auth/user") {
       if (await handleAuthUser(req, res)) return;
     }
+    if (await handleNativeLogin(req, res, url)) return;
     if (url.pathname === ADAPTER_PREFIX || url.pathname.startsWith(`${ADAPTER_PREFIX}/`)) {
       await proxy(req, res, PORTAL_OPL_ADAPTER_URL, ADAPTER_PREFIX);
       return;
