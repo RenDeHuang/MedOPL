@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { access, readFile, readdir, writeFile, stat, mkdir, appendFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { createHash, createHmac, randomUUID } from "node:crypto";
-import pg from "pg";
 
 const PORT = Number(process.env.PORT || 3001);
 const OPENCOST_BASE_URL = (process.env.OPENCOST_BASE_URL || "").trim();
@@ -236,7 +235,7 @@ async function callTencentCloud({ endpoint, service, action, version, region, pa
 
 async function ensurePortalPool() {
   if (!portalPool) {
-    const { Pool } = pg;
+    const { Pool } = await import("pg");
     portalPool = new Pool({ connectionString: PORTAL_POSTGRES_URL });
   }
   return portalPool;
@@ -475,9 +474,9 @@ function parseGpuCount(manifest = "") {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-async function exactRequestedRunCosts(customerId = "", workspaceId = "") {
+async function pendingRequestedRunCosts(customerId = "", workspaceId = "") {
   const runs = await readRuns();
-  const exact = [];
+  const pending = [];
 
   for (const run of runs) {
     if (!isCompletedRun(run)) continue;
@@ -509,7 +508,7 @@ async function exactRequestedRunCosts(customerId = "", workspaceId = "") {
     const pvCost = storageGbDays * STORAGE_GB_DAY_RATE;
     const totalCost = cpuCost + gpuCost + pvCost;
 
-    exact.push({
+    pending.push({
       runId: run.runId,
       workspaceId: run.workspaceId || "unknown-workspace",
       customerId: run.customerId || run.userId || null,
@@ -519,7 +518,7 @@ async function exactRequestedRunCosts(customerId = "", workspaceId = "") {
       gpuCost,
       pvCost,
       totalCost,
-      pricingSource: "K8s requested resources exact",
+      pricingSource: "k8s_requested_resources_pending",
       breakdown: {
         durationHours,
         cpuCores,
@@ -529,7 +528,7 @@ async function exactRequestedRunCosts(customerId = "", workspaceId = "") {
     });
   }
 
-  return exact;
+  return pending;
 }
 
 function asEntries(data) {
@@ -667,6 +666,88 @@ function summaryFromEstimatedRuns(runs, customerId) {
   };
 }
 
+function zeroTotals() {
+  return { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
+}
+
+function buildUnavailableSummary(customerId = "", workspaceId = "", source = "unavailable", cloudSource = "not_connected") {
+  return {
+    customerId: customerId || null,
+    workspaceId: workspaceId || null,
+    source,
+    cloudSource,
+    itemCount: 0,
+    totals: zeroTotals(),
+    runs: [],
+    items: [],
+  };
+}
+
+function buildUnattributedSummary(items, customerId = "", workspaceId = "") {
+  const rows = Array.isArray(items) ? items : [];
+  const totals = rows.reduce((acc, item) => {
+    acc.cpuCost += Number(item.cpuCost || 0);
+    acc.gpuCost += Number(item.gpuCost || 0);
+    acc.pvCost += Number(item.pvCost || 0);
+    acc.totalCost += Number(item.totalCost || 0);
+    return acc;
+  }, zeroTotals());
+
+  return {
+    customerId: customerId || null,
+    workspaceId: workspaceId || null,
+    source: "tencent_cloud_bill_unattributed",
+    cloudSource: "tencent_cloud",
+    itemCount: rows.length,
+    totals,
+    runs: rows,
+    items: rows.map((item) => ({
+      name: item.runId,
+      start: item.start,
+      end: item.end,
+      cpuCost: item.cpuCost,
+      gpuCost: item.gpuCost,
+      pvCost: item.pvCost,
+      totalCost: item.totalCost,
+      pricingSource: item.pricingSource,
+      properties: item.properties,
+    })),
+  };
+}
+
+function buildBillingEnvelope({ customerId = "", workspaceId = "", exactSummary = null, pendingSummary = null, unattributedSummary = null }) {
+  const exact = exactSummary && Array.isArray(exactSummary.runs) && exactSummary.runs.length > 0
+    ? exactSummary
+    : null;
+  const pending = pendingSummary && Array.isArray(pendingSummary.runs) && pendingSummary.runs.length > 0
+    ? pendingSummary
+    : null;
+  const unattributed = unattributedSummary || buildUnattributedSummary([], customerId, workspaceId);
+  const chargeBasis = exact ? "exact" : (pending ? "pending" : "unavailable");
+  const primary = exact || pending || buildUnavailableSummary(customerId, workspaceId);
+
+  return {
+    customerId: customerId || null,
+    workspaceId: workspaceId || null,
+    source: primary.source,
+    cloudSource: primary.cloudSource,
+    chargeBasis,
+    exactAvailable: Boolean(exact),
+    settlement: {
+      ready: Boolean(exact),
+      mode: "exact_only",
+      reason: exact ? "tencent_cloud_bill" : "pending_exact_bill",
+    },
+    itemCount: primary.itemCount || 0,
+    totals: primary.totals || zeroTotals(),
+    runs: primary.runs || [],
+    items: primary.items || [],
+    exact: exact || buildUnavailableSummary(customerId, workspaceId, "exact_unavailable", TENCENT_BILLING_ENABLED ? "tencent_cloud_unmatched" : "not_connected"),
+    pending: pending || buildUnavailableSummary(customerId, workspaceId, "pending_unavailable", OPENCOST_BASE_URL ? "opencost_unmatched" : "local_metering_unmatched"),
+    unattributed,
+  };
+}
+
 async function fetchAllocation(windowValue, aggregateValue = "") {
   if (!OPENCOST_BASE_URL) {
     throw new Error("Missing OPENCOST_BASE_URL");
@@ -749,15 +830,9 @@ function normalizeTencentBillRow(row = {}) {
   };
 }
 
-function summaryFromTencentBillRows(rows, customerId = "", workspaceId = "") {
-  const normalized = rows.map(normalizeTencentBillRow).filter((item) => {
-    const customerOk = !customerId || item.customerId === customerId || item.properties.tags?.customer_id === customerId;
-    const workspaceOk = !workspaceId || item.workspaceId === workspaceId || item.properties.tags?.workspace_id === workspaceId;
-    return customerOk && workspaceOk;
-  });
-
+function groupTencentBillRuns(rows) {
   const grouped = new Map();
-  for (const item of normalized) {
+  for (const item of rows) {
     const key = item.runId || item.properties.resource_id || randomUUID();
     const current = grouped.get(key) || {
       runId: item.runId,
@@ -788,26 +863,35 @@ function summaryFromTencentBillRows(rows, customerId = "", workspaceId = "") {
     if (!current.end || String(item.end || "") > String(current.end)) current.end = item.end || current.end;
     grouped.set(key, current);
   }
+  return [...grouped.values()].sort((a, b) => Number(b.totalCost || 0) - Number(a.totalCost || 0));
+}
 
-  const runs = [...grouped.values()].sort((a, b) => Number(b.totalCost || 0) - Number(a.totalCost || 0));
-  const exactRunCount = runs.filter((item) => item.pricingSource === "tencent_cloud_bill").length;
-  const unattributedRunCount = runs.length - exactRunCount;
-  const totals = runs.reduce((acc, item) => {
+function summaryFromTencentBillRows(rows, customerId = "", workspaceId = "") {
+  const normalized = rows.map(normalizeTencentBillRow).filter((item) => {
+    const customerOk = !customerId || item.customerId === customerId || item.properties.tags?.customer_id === customerId;
+    const workspaceOk = !workspaceId || item.workspaceId === workspaceId || item.properties.tags?.workspace_id === workspaceId;
+    return customerOk && workspaceOk;
+  });
+
+  const exactRuns = groupTencentBillRuns(normalized.filter((item) => item.hasExactRunAttribution));
+  const unattributedRuns = groupTencentBillRuns(normalized.filter((item) => !item.hasExactRunAttribution));
+  const totals = exactRuns.reduce((acc, item) => {
     acc.totalCost += Number(item.totalCost || 0);
     return acc;
-  }, { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 });
+  }, zeroTotals());
+  const unattributed = buildUnattributedSummary(unattributedRuns, customerId, workspaceId);
 
   return {
     customerId: customerId || null,
     workspaceId: workspaceId || null,
-    source: exactRunCount > 0 ? "tencent_cloud_bill" : "tencent_cloud_bill_unattributed",
+    source: exactRuns.length > 0 ? "tencent_cloud_bill" : (unattributedRuns.length > 0 ? "tencent_cloud_bill_unattributed" : "tencent_cloud_bill"),
     cloudSource: "tencent_cloud",
-    itemCount: runs.length,
-    exactRunCount,
-    unattributedRunCount,
+    itemCount: exactRuns.length,
+    exactRunCount: exactRuns.length,
+    unattributedRunCount: unattributedRuns.length,
     totals,
-    runs,
-    items: runs.map((item) => ({
+    runs: exactRuns,
+    items: exactRuns.map((item) => ({
       name: item.runId,
       start: item.start,
       end: item.end,
@@ -818,6 +902,7 @@ function summaryFromTencentBillRows(rows, customerId = "", workspaceId = "") {
       pricingSource: item.pricingSource,
       properties: item.properties,
     })),
+    unattributed,
   };
 }
 
@@ -1196,7 +1281,7 @@ async function fetchExactSummary(customerId = "", workspaceId = "", windowValue 
   if (TENCENT_BILLING_ENABLED) {
     try {
       const tencentSummary = await fetchTencentBillSummary(customerId, workspaceId, windowValue);
-      if (tencentSummary.runs.length > 0 || TENCENT_BILLING_REQUIRED) {
+      if (tencentSummary.runs.length > 0 || tencentSummary.unattributed?.itemCount > 0 || TENCENT_BILLING_REQUIRED) {
         return tencentSummary;
       }
     } catch (error) {
@@ -1206,33 +1291,49 @@ async function fetchExactSummary(customerId = "", workspaceId = "", windowValue 
     }
   }
 
-  const aggregated = await fetchAllocation(windowValue, "label:customer_id,label:workspace_id,label:run_id");
-  const aggregatedSummary = summarize(asEntries(aggregated?.data), customerId, workspaceId);
-  if (aggregatedSummary.runs.length > 0) {
-    aggregatedSummary.source = "opencost_pending";
-    aggregatedSummary.cloudSource = "opencost";
-    return aggregatedSummary;
+  return buildUnavailableSummary(
+    customerId,
+    workspaceId,
+    "exact_unavailable",
+    TENCENT_BILLING_ENABLED ? "tencent_cloud_unmatched" : "not_connected",
+  );
+}
+
+async function fetchPendingSummary(customerId = "", workspaceId = "", windowValue = "7d") {
+  if (OPENCOST_BASE_URL) {
+    try {
+      const aggregated = await fetchAllocation(windowValue, "label:customer_id,label:workspace_id,label:run_id");
+      const aggregatedSummary = summarize(asEntries(aggregated?.data), customerId, workspaceId);
+      if (aggregatedSummary.runs.length > 0) {
+        aggregatedSummary.source = "opencost_pending";
+        aggregatedSummary.cloudSource = "opencost";
+        return aggregatedSummary;
+      }
+
+      const raw = await fetchAllocation(windowValue);
+      const rawSummary = summaryFromRawAllocations(asEntries(raw?.data), customerId, workspaceId);
+      if (rawSummary.runs.length > 0) {
+        rawSummary.source = "opencost_pending";
+        rawSummary.cloudSource = "opencost";
+        return rawSummary;
+      }
+    } catch {}
   }
 
-  const raw = await fetchAllocation(windowValue);
-  const rawSummary = summaryFromRawAllocations(asEntries(raw?.data), customerId, workspaceId);
-  if (rawSummary.runs.length > 0) {
-    rawSummary.source = "opencost_pending";
-    rawSummary.cloudSource = "opencost";
-    return rawSummary;
-  }
-
-  const k8sExact = await exactRequestedRunCosts(customerId, workspaceId);
-  if (k8sExact.length > 0) {
-    const summary = summaryFromEstimatedRuns(k8sExact, customerId);
+  const requestedPending = await pendingRequestedRunCosts(customerId, workspaceId);
+  if (requestedPending.length > 0) {
+    const summary = summaryFromEstimatedRuns(requestedPending, customerId);
     summary.source = "metering_pending";
     summary.cloudSource = "local_requested_resources";
     return summary;
   }
 
-  aggregatedSummary.source = "unavailable";
-  aggregatedSummary.cloudSource = TENCENT_BILLING_ENABLED ? "tencent_cloud_unmatched" : "not_connected";
-  return aggregatedSummary;
+  return buildUnavailableSummary(
+    customerId,
+    workspaceId,
+    "pending_unavailable",
+    OPENCOST_BASE_URL ? "opencost_unmatched" : "local_metering_unmatched",
+  );
 }
 
 function isCompletedRun(run) {
@@ -1258,19 +1359,9 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
   const db = await readPortalDb();
   if (!db) throw new Error("Missing portal DB");
 
-  let summary;
-  try {
-    summary = await fetchExactSummary(customerId || "", workspaceId || "", windowValue || "7d");
-  } catch {
-    const estimated = (await estimateRunCosts(customerId)).filter((item) => !workspaceId || item.workspaceId === workspaceId);
-    summary = summaryFromEstimatedRuns(estimated, customerId);
-  }
+  const summary = await fetchExactSummary(customerId || "", workspaceId || "", windowValue || "7d");
   const runs = await readRuns();
-  const exactMap = summary.source === "tencent_cloud_bill"
-    ? new Map(summary.runs.map((item) => [item.runId, { ...item, pricingSource: "tencent_cloud_bill" }]))
-    : new Map();
-  const estimatedRuns = (await estimateRunCosts(customerId)).filter((item) => !workspaceId || item.workspaceId === workspaceId);
-  const estimatedMap = new Map(estimatedRuns.map((item) => [item.runId, { ...item, pricingSource: "metering_pending" }]));
+  const exactMap = new Map((summary.runs || []).map((item) => [item.runId, { ...item, pricingSource: "tencent_cloud_bill" }]));
 
   const results = [];
   let exactCount = 0;
@@ -1284,20 +1375,18 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
   });
 
   for (const run of candidateRuns) {
-    const runCost = exactMap.get(run.runId) || estimatedMap.get(run.runId);
-    if (!runCost || !runCost.customerId) continue;
-    if (!isCompletedRun(run)) continue;
-
-    if (runCost.pricingSource !== "tencent_cloud_bill") {
+    const runCost = exactMap.get(run.runId);
+    if (!runCost || !runCost.customerId) {
       estimatedCount += 1;
       results.push({
-        runId: runCost.runId,
-        workspaceId: runCost.workspaceId,
+        runId: run.runId,
+        workspaceId: run.workspaceId || "",
         action: "pending_exact_bill",
-        pricingSource: runCost.pricingSource,
+        pricingSource: "exact_unavailable",
       });
       continue;
     }
+    if (!isCompletedRun(run)) continue;
 
     const wallet = db.wallets?.find((item) => item.userId === runCost.customerId);
     if (!wallet) continue;
@@ -1421,22 +1510,21 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
     exactCount,
     estimatedCount,
     adjustmentCount,
+    settlementMode: "exact_only",
+    unattributedSummary: summary.unattributed || buildUnattributedSummary([], customerId || "", workspaceId || ""),
     results
   };
 }
 
 async function listPendingRuns(customerId = "", workspaceId = "", windowValue = "7d") {
-  let summary;
+  const summary = await fetchExactSummary(customerId || "", workspaceId || "", windowValue || "7d");
+  let pendingSummary = buildUnavailableSummary(customerId || "", workspaceId || "", "pending_unavailable", "local_metering_unmatched");
   try {
-    summary = await fetchExactSummary(customerId || "", workspaceId || "", windowValue || "7d");
-  } catch {
-    summary = { runs: [], items: [], totals: { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 } };
-  }
+    pendingSummary = await fetchPendingSummary(customerId || "", workspaceId || "", windowValue || "7d");
+  } catch {}
 
   const runs = await readRuns();
-  const exactRunIds = summary.source === "tencent_cloud_bill"
-    ? new Set(summary.runs.map((item) => item.runId))
-    : new Set();
+  const exactRunIds = new Set((summary.runs || []).map((item) => item.runId));
   const db = await readPortalDb();
   const ledger = db?.ledger || [];
   const pending = runs
@@ -1453,7 +1541,7 @@ async function listPendingRuns(customerId = "", workspaceId = "", windowValue = 
       status: run.status || (isCompletedRun(run) ? "completed" : "unknown"),
       pendingHours: Math.max(0, ((Date.now()) - Date.parse(completionTimestamp(run) || run.createdAt || Date.now())) / 3600000),
       pricingSource: "metering pending",
-      chargeState: ledger.some((entry) => entry.runId === run.runId && entry.type === "resource_charge") ? "estimated_charged" : "unbilled"
+      chargeState: ledger.some((entry) => entry.runId === run.runId && entry.type === "resource_charge") ? "charged_from_exact_bill" : "unbilled"
     }))
     .sort((a, b) => Number(b.pendingHours || 0) - Number(a.pendingHours || 0));
 
@@ -1464,11 +1552,11 @@ async function listPendingRuns(customerId = "", workspaceId = "", windowValue = 
       customerId: item.customerId,
       pendingCount: 0,
       oldestPendingHours: 0,
-      estimatedChargedCount: 0,
+      chargedFromExactBillCount: 0,
     };
     currentUser.pendingCount += 1;
     currentUser.oldestPendingHours = Math.max(currentUser.oldestPendingHours, Number(item.pendingHours || 0));
-    if (item.chargeState === "estimated_charged") currentUser.estimatedChargedCount += 1;
+    if (item.chargeState === "charged_from_exact_bill") currentUser.chargedFromExactBillCount += 1;
     riskByUserMap.set(item.customerId, currentUser);
 
     const workspaceKey = `${item.customerId}:${item.workspaceId}`;
@@ -1477,11 +1565,11 @@ async function listPendingRuns(customerId = "", workspaceId = "", windowValue = 
       workspaceId: item.workspaceId,
       pendingCount: 0,
       oldestPendingHours: 0,
-      estimatedChargedCount: 0,
+      chargedFromExactBillCount: 0,
     };
     currentWorkspace.pendingCount += 1;
     currentWorkspace.oldestPendingHours = Math.max(currentWorkspace.oldestPendingHours, Number(item.pendingHours || 0));
-    if (item.chargeState === "estimated_charged") currentWorkspace.estimatedChargedCount += 1;
+    if (item.chargeState === "charged_from_exact_bill") currentWorkspace.chargedFromExactBillCount += 1;
     riskByWorkspaceMap.set(workspaceKey, currentWorkspace);
   }
 
@@ -1499,6 +1587,9 @@ async function listPendingRuns(customerId = "", workspaceId = "", windowValue = 
     pendingCount: pending.length,
     oldestPendingHours: pending[0] ? Number(pending[0].pendingHours.toFixed(2)) : 0,
     runs: pending,
+    pendingSummary,
+    exactSummary: summary,
+    unattributedSummary: summary.unattributed || buildUnattributedSummary([], customerId, workspaceId),
     riskByUser,
     riskByWorkspace
   };
@@ -1598,7 +1689,8 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 200, {
       ok: true,
       opencostBaseUrl: OPENCOST_BASE_URL || null,
-      pricingSourcePriority: ["tencent_cloud_bill", "opencost_pending", "metering_pending"],
+      exactSources: ["tencent_cloud_bill"],
+      pendingSources: ["opencost_pending", "metering_pending"],
       tencentBillingEnabled: TENCENT_BILLING_ENABLED,
       tencentBillingRequired: TENCENT_BILLING_REQUIRED,
       tencentPriceEnabled: TENCENT_PRICE_ENABLED,
@@ -1635,24 +1727,18 @@ const server = http.createServer(async (req, res) => {
     const windowValue = url.searchParams.get("window") || "7d";
     const customerId = url.searchParams.get("customer_id") || "";
     const workspaceId = url.searchParams.get("workspace_id") || "";
-    let summary;
+    const exactSummary = await fetchExactSummary(customerId, workspaceId, windowValue);
+    let pendingSummary = buildUnavailableSummary(customerId, workspaceId, "pending_unavailable", "local_metering_unmatched");
     try {
-      summary = await fetchExactSummary(customerId, workspaceId, windowValue);
-    } catch (error) {
-      if (!customerId) {
-        throw error;
-      }
-      summary = summaryFromEstimatedRuns(
-        (await estimateRunCosts(customerId)).filter((item) => !workspaceId || item.workspaceId === workspaceId),
-        customerId
-      );
-    }
-    if (customerId && summary.runs.length === 0) {
-      summary = summaryFromEstimatedRuns(
-        (await estimateRunCosts(customerId)).filter((item) => !workspaceId || item.workspaceId === workspaceId),
-        customerId
-      );
-    }
+      pendingSummary = await fetchPendingSummary(customerId, workspaceId, windowValue);
+    } catch {}
+    const summary = buildBillingEnvelope({
+      customerId,
+      workspaceId,
+      exactSummary,
+      pendingSummary,
+      unattributedSummary: exactSummary.unattributed || buildUnattributedSummary([], customerId, workspaceId),
+    });
 
     if ((req.headers.accept || "").includes("application/json")) {
       sendJson(res, 200, summary);
