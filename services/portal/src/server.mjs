@@ -77,6 +77,7 @@ const PORTAL_OIDC_CLIENT_ID = process.env.PORTAL_OIDC_CLIENT_ID || "368843754573
 const PORTAL_OIDC_CLIENT_SECRET = process.env.PORTAL_OIDC_CLIENT_SECRET || "ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM";
 const PORTAL_OIDC_REDIRECT_URI = process.env.PORTAL_OIDC_REDIRECT_URI || "http://127.0.0.1:17080/auth/oidc/callback";
 const PORTAL_OIDC_SCOPE = process.env.PORTAL_OIDC_SCOPE || "openid profile email";
+const PORTAL_INTERNAL_AUTH_TOKEN = String(process.env.PORTAL_INTERNAL_AUTH_TOKEN || "").trim();
 const PORTAL_IDENTITY_SYNC_MODE = String(process.env.PORTAL_IDENTITY_SYNC_MODE || (PORTAL_OIDC_ENABLED ? "zitadel" : "local")).trim().toLowerCase();
 const ZITADEL_ADMIN_USER_SCRIPT = path.join(repoRoot, "scripts", "zitadel-admin-user.mjs");
 
@@ -1900,6 +1901,62 @@ function findUserByEmail(db, email) {
   const normalizedEmail = normalizeAuthEmail(email);
   if (!normalizedEmail) return null;
   return db.users.find((item) => normalizeAuthEmail(item.email) === normalizedEmail) || null;
+}
+
+function sanitizePortalUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    status: user.status,
+    authSource: user.authSource || "local",
+  };
+}
+
+function authenticatePortalPasswordUser(db, email, password) {
+  const found = findUserByEmail(db, email);
+  if (!found) {
+    return {
+      ok: false,
+      status: 401,
+      error: "invalid_credentials",
+      message: "账号或密码错误。",
+    };
+  }
+  if (!found.passwordHash) {
+    return {
+      ok: false,
+      status: 409,
+      error: "password_login_unavailable",
+      message: "当前账号没有本地密码，请使用统一身份登录。",
+      user: found,
+    };
+  }
+  if (!verifyPassword(password, found.passwordHash)) {
+    return {
+      ok: false,
+      status: 401,
+      error: "invalid_credentials",
+      message: "账号或密码错误。",
+      user: found,
+    };
+  }
+  if (isBlockedUserStatus(found.status)) {
+    return {
+      ok: false,
+      status: 403,
+      error: "account_blocked",
+      message: "当前账号已被禁用，请联系管理员。",
+      user: found,
+    };
+  }
+  return { ok: true, user: found };
+}
+
+function portalInternalAuthAllowed(req) {
+  if (!PORTAL_INTERNAL_AUTH_TOKEN) return true;
+  return String(req.headers["x-portal-internal-token"] || "") === PORTAL_INTERNAL_AUTH_TOKEN;
 }
 
 function createPortalSession(db, user, authSource = user.authSource || "local") {
@@ -4103,6 +4160,78 @@ const server = http.createServer(async (req, res) => {
     setCookie(res, "portal_session", sessionId);
     res.writeHead(302, { Location: "/portal" });
     res.end();
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/internal/opl/auth/login") {
+    if (!portalInternalAuthAllowed(req)) {
+      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
+      return;
+    }
+    const bodyText = (await readBody(req)).toString("utf8");
+    let payload = {};
+    try {
+      payload = bodyText ? JSON.parse(bodyText) : {};
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json", message: "request body must be json" }, 400);
+      return;
+    }
+
+    const email = String(payload.email || payload.username || payload.loginName || "").trim();
+    const password = String(payload.password || "").trim();
+    const taskSlug = slugify(payload.task || payload.workspaceId || payload.taskSlug || "default");
+    if (!email || !password) {
+      sendJson(res, { ok: false, error: "invalid_credentials", message: "邮箱和密码不能为空。" }, 400);
+      return;
+    }
+
+    const authResult = authenticatePortalPasswordUser(db, email, password);
+    if (!authResult.ok) {
+      if (authResult.user) {
+        await logPortalEvent({
+          type: "opl_native_login_rejected",
+          userId: authResult.user.id,
+          source: "opl-web-gateway",
+          reason: authResult.error,
+        });
+      }
+      sendJson(res, {
+        ok: false,
+        error: authResult.error,
+        message: authResult.message,
+      }, authResult.status);
+      return;
+    }
+
+    const user = authResult.user;
+    const launchResult = await oplLaunchService.prepareLaunch({
+      db,
+      user,
+      taskSlug,
+      requireRealOplWeb: true,
+      source: "opl-native-login",
+    });
+    if (!launchResult.ok) {
+      sendJson(res, {
+        ok: false,
+        error: launchResult.error,
+        message: launchResult.message || "",
+        reasons: launchResult.reasons || [],
+      }, launchResult.status || 500);
+      return;
+    }
+
+    sendJson(res, {
+      ok: true,
+      user: sanitizePortalUser(user),
+      launchToken: launchResult.launch.launchToken || "",
+      launch: launchResult.launch,
+      workspace: launchResult.taskSpace,
+      workspaceSession: launchResult.workspaceSession,
+      runtimeSession: {
+        runtimeSessionId: launchResult.launch.runtimeSessionId || "",
+        oplSessionId: launchResult.launch.oplSessionId || "",
+      },
+    });
     return;
   }
   if (req.method === "GET" && url.pathname === "/auth/oidc/login") {
