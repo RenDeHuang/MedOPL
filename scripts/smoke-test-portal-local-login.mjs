@@ -149,6 +149,7 @@ async function main() {
           PORT: String(port),
           PORTAL_STORAGE_MODE: "json",
           PORTAL_OIDC_ENABLED: "0",
+          PORTAL_IDENTITY_SYNC_MODE: "local",
           PORTAL_ADMIN_EMAIL: adminEmail,
           PORTAL_ADMIN_PASSWORD: adminPassword,
           PORTAL_ADMIN_NAME: "ZITADEL Admin",

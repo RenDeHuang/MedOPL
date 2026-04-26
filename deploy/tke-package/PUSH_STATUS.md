@@ -9,7 +9,7 @@ TCR 登录账号：
 本轮产品上 TKE 需要的应用镜像共 7 个，已从原单仓库 tag 拆分到 7 个独立私有仓库。Portal 已升级到 v2，拆分后的远端镜像如下：
 
 ```text
-uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v2
+uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v3
 uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v1
 uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v1
 uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1
@@ -21,7 +21,7 @@ uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-opl:opl-v1
 远端 manifest digest：
 
 ```text
-portal-opl:opl-v2                                    sha256:405af32ee34c2d2e382706e98657414088fffe8bcd353f67dd8477f73e6a4980
+portal-opl:opl-v3                                    sha256:39243284e6f3970dfb40d68c4a678cb84adae84ad16f2d670cfb64f4e90242f1
 portal-opl-adapter-opl:opl-v1                        sha256:1334aa46d61ee779f49de4716e352c281a7f595f74273a52b9dd9331ecb6feed
 opl-web-gateway-opl:opl-v1                           sha256:79e34ec0cc9e655d398fe2f7aef430fa0d44f6ec2801e5b0254142d299eefa1a
 opl-web-opl:opl-v1                                   sha256:85703a854051bbb73df997f41e5ec9272a9eb4e8027c0791bca7b07aabc910e9

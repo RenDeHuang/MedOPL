@@ -177,6 +177,22 @@ function validateProductionConfig() {
   }
 }
 
+async function runZitadelAdminUser(args = []) {
+  if (PORTAL_IDENTITY_SYNC_MODE === "local") {
+    return { synced: false, source: "portal_local_identity" };
+  }
+  if (PORTAL_IDENTITY_SYNC_MODE !== "zitadel") {
+    throw new Error(`Unsupported PORTAL_IDENTITY_SYNC_MODE: ${PORTAL_IDENTITY_SYNC_MODE}`);
+  }
+  await access(ZITADEL_ADMIN_USER_SCRIPT, fsConstants.R_OK);
+  await execFileAsync("node", [ZITADEL_ADMIN_USER_SCRIPT, ...args], {
+    cwd: repoRoot,
+    timeout: 180000,
+    maxBuffer: 1024 * 1024 * 4,
+  });
+  return { synced: true, source: "zitadel_portal_sync" };
+}
+
 function slugify(value) {
   return String(value || "")
     .trim()
