@@ -30,7 +30,20 @@ if ($PortalHost) {
 if ($OplHost) {
   $gatewayHealth = Invoke-WebRequest -UseBasicParsing "https://$OplHost/healthz"
   Write-Host "OPL Gateway /healthz: $($gatewayHealth.StatusCode)"
+
+  try {
+    $authUser = Invoke-WebRequest -UseBasicParsing "https://$OplHost/api/auth/user"
+    throw "Expected OPL Gateway /api/auth/user without launch cookie to return 401, got $($authUser.StatusCode)."
+  } catch {
+    $statusCode = $null
+    if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+      $statusCode = [int]$_.Exception.Response.StatusCode
+    }
+    if ($statusCode -ne 401) {
+      throw "Expected OPL Gateway /api/auth/user without launch cookie to return 401, got $statusCode."
+    }
+    Write-Host "OPL Gateway /api/auth/user without launch cookie: 401"
+  }
 }
 
 Write-Host "TKE smoke verification finished."
-

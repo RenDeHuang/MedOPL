@@ -173,8 +173,14 @@ try {
   assert(artifacts.items?.some((item) => item.runId === run.run.runId), "adapter artifacts cannot see runner output");
 
   const sessions = await portalJson("/portal/api/sessions?page_size=5", { headers: { cookie } });
-  assert(sessions.sessions?.some((item) => item.workspaceSessionId === launch.workspaceSession.id), "Portal sessions cannot see workspace session");
-  assert(sessions.sessions?.some((item) => item.runtimeSessionId === launch.runtimeSession.runtimeSessionId), "Portal sessions cannot see runtime session");
+  assert(
+    sessions.sessions?.some((item) => item.workspaceSessionId === launch.workspaceSession.id),
+    `Portal sessions cannot see workspace session: ${JSON.stringify(sessions)}`,
+  );
+  assert(
+    sessions.sessions?.some((item) => item.runtimeSessionId === launch.runtimeSession.runtimeSessionId),
+    `Portal sessions cannot see runtime session: ${JSON.stringify(sessions)}`,
+  );
 
   const portalRuns = await portalJson(`/portal/api/runs?runId=${encodeURIComponent(run.run.runId)}`, { headers: { cookie } });
   assert(portalRuns.runs?.some((item) => item.runId === run.run.runId && item.source === "portal_opl_adapter"), "Portal runs cannot see adapter run");

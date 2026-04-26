@@ -48,7 +48,7 @@ async function waitFor(url) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
-function startOplWebFixture() {
+function startOplWebFixture(calls) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url || "/", "http://opl-web.local");
     if (url.pathname === "/") {
@@ -60,6 +60,7 @@ function startOplWebFixture() {
       return;
     }
     if (url.pathname === "/api/auth/user") {
+      calls.upstreamAuthUser += 1;
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         success: true,
@@ -216,6 +217,17 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
       if (!documentListeners.has(type)) documentListeners.set(type, []);
       documentListeners.get(type).push(listener);
     },
+    querySelector(selector) {
+      if (selector === 'meta[name="opl-portal-direct-entry"]') {
+        return {
+          getAttribute(name) {
+            if (name === "content") return "0";
+            return null;
+          },
+        };
+      }
+      return null;
+    },
     dispatchEvent(event) {
       for (const listener of documentListeners.get(event.type) || []) {
         listener(event);
@@ -255,8 +267,8 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
   };
 }
 
-const calls = { bootstrap: [], bind: [], runs: [], status: [], artifacts: [] };
-const oplServer = startOplWebFixture();
+const calls = { bootstrap: [], bind: [], runs: [], status: [], artifacts: [], upstreamAuthUser: 0 };
+const oplServer = startOplWebFixture(calls);
 const adapterServer = startAdapterFixture(calls);
 let gateway = null;
 
@@ -282,15 +294,12 @@ try {
   gateway.stderr.on("data", (chunk) => process.stderr.write(`[gateway] ${chunk}`));
 
   await waitFor(`${gatewayUrl}/healthz`);
-  const upstreamUserResponse = await fetch(`${gatewayUrl}/api/auth/user`);
-  const upstreamUser = await upstreamUserResponse.json();
-  assert(upstreamUser.user.source === "upstream-noauth", "gateway must not fake a Portal user without launch cookie");
-
   const htmlResponse = await fetch(`${gatewayUrl}/?launch_token=launch-token-smoke`);
   const setCookie = htmlResponse.headers.get("set-cookie") || "";
   assert(setCookie.includes("opl_portal_launch=launch-token-smoke"), "gateway did not set launch cookie");
   const html = await htmlResponse.text();
   assert(html.includes("/portal-launch.js"), "gateway did not inject portal launch script");
+  assert(html.includes('meta name="opl-portal-direct-entry" content="0"'), "launch html must mark direct entry as false");
 
   const portalUserResponse = await fetch(`${gatewayUrl}/api/auth/user`, {
     headers: { cookie: setCookie.split(";")[0] },
@@ -299,6 +308,8 @@ try {
   assert(portalUser.success === true, "gateway launch SSO auth user response failed");
   assert(portalUser.user.id === "portal-user-smoke", "gateway auth user did not resolve Portal user");
   assert(portalUser.user.username === "portal-smoke@example.test", "gateway auth user username should come from Portal email");
+  assert(portalUser.user.source === "portal-launch", "gateway auth user source must be Portal launch");
+  assert(calls.upstreamAuthUser === 0, "gateway auth user must not proxy upstream OPL noauth user");
   const bootstrapCallsBeforeScript = calls.bootstrap.length;
 
   const scriptResponse = await fetch(`${gatewayUrl}/portal-launch.js`);
@@ -316,6 +327,7 @@ try {
   ]);
 
   assert(detail.bootstrap.portal.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
+  assert(browser.window.__OPL_PORTAL_DIRECT_ENTRY__.active === false, "launch flow should clear direct entry state");
   assert(browser.window.__OPL_PORTAL__.bootstrap.portal.portalUserId === "portal-user-smoke", "stable browser API did not expose bootstrap");
   assert(calls.bootstrap.length === bootstrapCallsBeforeScript + 1, "adapter bootstrap was not called through gateway");
   assert(calls.bootstrap.at(-1).launchToken === "launch-token-smoke", "launch token was not forwarded");
@@ -371,6 +383,7 @@ try {
       "session_bind",
       "launch_token_removed_from_url",
       "launch_cookie_sso",
+      "upstream_auth_user_not_used",
       "stable_browser_run_api",
       "native_module_click_run_bridge",
     ],
