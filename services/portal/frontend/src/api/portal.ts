@@ -66,6 +66,7 @@ export interface OverviewPayload {
   };
   commercial: CommercialProfile;
   serverPlansSummary: ServerPlansSummary;
+  selectedServerPlan?: SelectedServerPlan | null;
   onboarding: OnboardingPayload;
   taskCards: Array<{
     slug: string;
@@ -179,6 +180,7 @@ export interface WorkspacePayload {
     slug: string;
     title: string;
     status: string;
+    serverPlan?: SelectedServerPlan | null;
     createdAt: string | null;
     archivedAt: string | null;
     deletedAt: string | null;
@@ -277,8 +279,43 @@ export interface CurrentUserPayload {
   billingStatus: string;
   entitlementStatus: string;
   commercial?: CommercialProfile;
+  selectedServerPlan?: SelectedServerPlan | null;
   initials: string;
   currentTaskSlug: string;
+}
+
+export interface SelectedServerPlan {
+  id: string;
+  name: string;
+  provider: string;
+  region: string;
+  zone: string;
+  instanceType: string;
+  cpu?: number;
+  memoryGb?: number;
+  gpu?: number;
+  currency: string;
+  priceStatus: string;
+  originalPrice?: number;
+  discountPrice: number;
+  unitPrice: number;
+  minBillableHours: number;
+  riskFactor: number;
+  reservationFloor: number;
+  cpuRequest: string;
+  cpuLimit: string;
+  memoryRequest: string;
+  memoryLimit: string;
+  gpuCount: number;
+  storageRequest: string;
+  storageLimit: string;
+  nodePool?: string;
+  runtimeClass: string;
+  nodeSelector: Record<string, string>;
+  tolerations?: Array<{ key: string; operator: string; value: string; effect: string }>;
+  provisioningMode?: string;
+  selectedAt: string;
+  selectionNote: string;
 }
 
 export interface TrialEntitlement {
@@ -316,6 +353,8 @@ export interface ServerPlansSummary {
   source: string;
   configured: boolean;
   priceEnabled: boolean;
+  discoveryEnabled?: boolean;
+  discoveredCount?: number;
   catalogCount: number;
   quotedCount: number;
   salableCount: number;
@@ -347,6 +386,15 @@ export interface ServerPlanItem {
   gpu: number;
   nodePool: string;
   runtimeClass: string;
+  nodeSelector?: Record<string, string>;
+  tolerations?: Array<{ key: string; operator: string; value: string; effect: string }>;
+  cpuRequest?: string;
+  cpuLimit?: string;
+  memoryRequest?: string;
+  memoryLimit?: string;
+  gpuCount?: number;
+  storageRequest?: string;
+  storageLimit?: string;
   minBillableHours: number;
   riskFactor: number;
   reservationFloor: number;
@@ -357,6 +405,9 @@ export interface ServerPlanItem {
   originalPrice?: number;
   discountPrice?: number;
   unitPrice?: number;
+  provisioningMode?: string;
+  selectionNote?: string;
+  source?: string;
 }
 
 export interface ServerPlansPayload {
@@ -364,8 +415,12 @@ export interface ServerPlansPayload {
   source: string;
   configured: boolean;
   priceEnabled: boolean;
+  discoveryEnabled?: boolean;
+  discoveredCount?: number;
   catalogCount: number;
   items: ServerPlanItem[];
+  selectedServerPlan?: SelectedServerPlan | null;
+  workspaceId?: string;
   note?: string;
   summary: ServerPlansSummary;
   commercial: CommercialProfile;
@@ -549,6 +604,11 @@ export async function fetchBilling(params: BillingQuery = {}) {
 export async function fetchServerPlans() {
   const { data } = await apiClient.get<ServerPlansPayload>("/server-plans");
   return data;
+}
+
+export async function selectServerPlan(input: { planId: string; task?: string }) {
+  const { data } = await apiClient.post("/server-plans/select", input);
+  return data as { ok: boolean; workspaceId: string; selectedServerPlan: SelectedServerPlan | null };
 }
 
 export async function fetchWorkspace(params: WorkspaceQuery = {}) {

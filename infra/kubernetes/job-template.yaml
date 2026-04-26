@@ -45,6 +45,9 @@ spec:
         runner_image_tag: "__RUNNER_IMAGE_TAG__"
     spec:
       __IMAGE_PULL_SECRETS_BLOCK__
+      __RUNTIME_CLASS_BLOCK__
+      __NODE_SELECTOR_BLOCK__
+      __TOLERATIONS_BLOCK__
       restartPolicy: Never
       containers:
         - name: runner

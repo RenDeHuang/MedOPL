@@ -86,6 +86,14 @@ function storageOwnerIdFrom(detail = {}) {
   return detail.storageOwnerId || detail.storage_owner_id || detail.storageOwner || detail.storage_owner || ownerIdFrom(detail);
 }
 
+function objectMapFrom(detail = {}) {
+  return detail && typeof detail === "object" && !Array.isArray(detail) ? detail : {};
+}
+
+function tolerationsFrom(detail = {}) {
+  return Array.isArray(detail) ? detail.filter((item) => item && typeof item === "object") : [];
+}
+
 function idChainFrom(detail = {}) {
   return {
     tenantId: tenantIdFrom(detail),
@@ -189,6 +197,20 @@ export function createRuntimeSession(state, input = {}) {
     projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     oplSessionId: input.oplSessionId || input.opl_session_id || "",
+    serverPlanId: input.serverPlanId || input.server_plan_id || "default",
+    region: input.region || "",
+    zone: input.zone || "",
+    nodePool: input.nodePool || input.node_pool || "",
+    runtimeClass: input.runtimeClass || input.runtime_class || "",
+    nodeSelector: objectMapFrom(input.nodeSelector),
+    tolerations: tolerationsFrom(input.tolerations),
+    cpuRequest: input.cpuRequest || input.cpu_request || "",
+    cpuLimit: input.cpuLimit || input.cpu_limit || "",
+    memoryRequest: input.memoryRequest || input.memory_request || "",
+    memoryLimit: input.memoryLimit || input.memory_limit || "",
+    gpuCount: Number(input.gpuCount ?? input.gpu_count ?? 0),
+    storageRequest: input.storageRequest || input.storage_request || "",
+    storageLimit: input.storageLimit || input.storage_limit || "",
     engine: input.engine || "opl-codex-default",
     status: input.status || "ready",
     namespace: input.namespace || "",
@@ -217,6 +239,20 @@ export function createRunRecord(state, input = {}) {
     kind: input.kind || "med-autoscience",
     agentId: input.agentId || input.agent_id || "mas",
     toolName: input.toolName || input.tool_name || "med-autoscience",
+    serverPlanId: input.serverPlanId || input.server_plan_id || "default",
+    region: input.region || "",
+    zone: input.zone || "",
+    nodePool: input.nodePool || input.node_pool || "",
+    runtimeClass: input.runtimeClass || input.runtime_class || "",
+    nodeSelector: objectMapFrom(input.nodeSelector),
+    tolerations: tolerationsFrom(input.tolerations),
+    cpuRequest: input.cpuRequest || input.cpu_request || "",
+    cpuLimit: input.cpuLimit || input.cpu_limit || "",
+    memoryRequest: input.memoryRequest || input.memory_request || "",
+    memoryLimit: input.memoryLimit || input.memory_limit || "",
+    gpuCount: Number(input.gpuCount ?? input.gpu_count ?? 0),
+    storageRequest: input.storageRequest || input.storage_request || "",
+    storageLimit: input.storageLimit || input.storage_limit || "",
     status: input.status || "submitted",
     runnerImage: input.runnerImage || input.runner_image || "",
     namespace: input.namespace || "",

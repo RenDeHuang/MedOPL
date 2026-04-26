@@ -1,16 +1,56 @@
 import pg from "pg";
 import { createClient as createRedisClient } from "redis";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "postgres://postgres:postgres@127.0.0.1:5432/med_meta").trim();
 const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "redis://127.0.0.1:6379").trim();
 const PORTAL_DB_NAMESPACE = String(process.env.PORTAL_DB_NAMESPACE || "portal").trim() || "portal";
+const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "postgres_redis").trim().toLowerCase();
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../");
+const portalRuntimeRoot = path.join(repoRoot, ".runtime", "portal");
+const portalJsonDbFile = path.join(portalRuntimeRoot, "portal-db.json");
 
 let pgPool = null;
 let redisClient = null;
 const VALID_WORKSPACE_SESSION_STATUSES = new Set(["active", "revoked", "archived", "deleted", "deleting"]);
 
+function storageMode() {
+  return PORTAL_STORAGE_MODE === "json" ? "json" : "postgres_redis";
+}
+
 function table(name) {
   return `${PORTAL_DB_NAMESPACE}_${name}`;
+}
+
+async function readJsonDb() {
+  try {
+    const raw = await readFile(portalJsonDbFile, "utf8");
+    const parsed = JSON.parse(raw);
+    return {
+      users: Array.isArray(parsed.users) ? parsed.users : [],
+      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+      wallets: Array.isArray(parsed.wallets) ? parsed.wallets : [],
+      workspaceSessions: Array.isArray(parsed.workspaceSessions) ? parsed.workspaceSessions : [],
+      userSandboxes: Array.isArray(parsed.userSandboxes) ? parsed.userSandboxes : [],
+      groups: Array.isArray(parsed.groups) ? parsed.groups : [],
+    };
+  } catch {
+    return {
+      users: [],
+      sessions: [],
+      wallets: [],
+      workspaceSessions: [],
+      userSandboxes: [],
+      groups: [],
+    };
+  }
+}
+
+async function writeJsonDb(db) {
+  await mkdir(portalRuntimeRoot, { recursive: true });
+  await writeFile(portalJsonDbFile, `${JSON.stringify(db, null, 2)}\n`, "utf8");
 }
 
 async function pool() {
@@ -91,6 +131,10 @@ async function quarantineWorkspaceSession(store, sessionId, raw, reason) {
 
 export async function getPortalUserById(userId) {
   if (!userId) return null;
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    return db.users.find((item) => item.id === userId) || null;
+  }
   const db = await pool();
   const res = await db.query(`SELECT * FROM ${table("users")} WHERE id = $1 LIMIT 1`, [userId]);
   const row = res.rows[0];
@@ -111,6 +155,10 @@ export async function getPortalUserById(userId) {
 
 export async function getPortalUserByEmail(email) {
   if (!email) return null;
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    return db.users.find((item) => String(item.email || "").toLowerCase() === String(email).toLowerCase()) || null;
+  }
   const db = await pool();
   const res = await db.query(`SELECT * FROM ${table("users")} WHERE lower(email) = lower($1) LIMIT 1`, [email]);
   const row = res.rows[0];
@@ -131,6 +179,10 @@ export async function getPortalUserByEmail(email) {
 
 export async function getWalletByUserId(userId) {
   if (!userId) return { balance: 0 };
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    return db.wallets.find((item) => item.userId === userId) || { userId, balance: 0 };
+  }
   const db = await pool();
   const res = await db.query(`SELECT * FROM ${table("wallets")} WHERE user_id = $1 LIMIT 1`, [userId]);
   const row = res.rows[0];
@@ -144,6 +196,10 @@ export async function getWalletByUserId(userId) {
 
 export async function getPortalSession(sessionId) {
   if (!sessionId) return null;
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    return db.sessions.find((item) => item.id === sessionId) || null;
+  }
   const store = await redis();
   const raw = await store.get(`${PORTAL_DB_NAMESPACE}:session:${sessionId}`);
   return raw ? safeJsonParse(raw) : null;
@@ -151,6 +207,14 @@ export async function getPortalSession(sessionId) {
 
 export async function getWorkspaceSession(sessionId, userId = "") {
   if (!sessionId) return null;
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    const session = normalizeWorkspaceSession(db.workspaceSessions.find((item) => item.id === sessionId));
+    if (!session) return null;
+    if (userId && session.userId !== userId) return null;
+    if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now()) return null;
+    return session;
+  }
   const store = await redis();
   const raw = await store.get(`${PORTAL_DB_NAMESPACE}:workspace_session:${sessionId}`);
   if (!raw) return null;
@@ -166,6 +230,17 @@ export async function getWorkspaceSession(sessionId, userId = "") {
 }
 
 export async function listActiveWorkspaceSessionsByUser(userId) {
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    return db.workspaceSessions
+      .map((item) => normalizeWorkspaceSession(item))
+      .filter(Boolean)
+      .filter((session) =>
+        session.userId === userId &&
+        session.status === "active" &&
+        (!session.expiresAt || Date.parse(session.expiresAt) > Date.now()),
+      );
+  }
   const store = await redis();
   const keys = await store.keys(`${PORTAL_DB_NAMESPACE}:workspace_session:*`);
   if (!keys.length) return [];
@@ -194,6 +269,15 @@ export async function listActiveWorkspaceSessionsByUser(userId) {
 }
 
 export async function upsertUserSandbox(record) {
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    db.userSandboxes = Array.isArray(db.userSandboxes) ? db.userSandboxes : [];
+    const index = db.userSandboxes.findIndex((item) => item.id === record.id);
+    if (index >= 0) db.userSandboxes[index] = { ...db.userSandboxes[index], ...record };
+    else db.userSandboxes.push({ ...record });
+    await writeJsonDb(db);
+    return;
+  }
   const db = await pool();
   await db.query(
     `INSERT INTO ${table("user_sandboxes")} (id,user_id,runtime_type,container_name,namespace,image_tag,status,last_workspace_id,last_run_id,last_error,last_active_at,updated_at,created_at)
@@ -230,6 +314,10 @@ export async function upsertUserSandbox(record) {
 
 export async function getGroupById(groupId) {
   if (!groupId) return null;
+  if (storageMode() === "json") {
+    const db = await readJsonDb();
+    return db.groups.find((item) => item.id === groupId) || null;
+  }
   const db = await pool();
   const res = await db.query(`SELECT * FROM ${table("groups")} WHERE id = $1 LIMIT 1`, [groupId]);
   const row = res.rows[0];

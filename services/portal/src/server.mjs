@@ -414,6 +414,118 @@ function buildCommercialProfile(db, user, options = {}) {
   };
 }
 
+function normalizeStringMap(value) {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try {
+      return normalizeStringMap(JSON.parse(value));
+    } catch {
+      return {};
+    }
+  }
+  if (typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, item]) => [String(key || "").trim(), String(item ?? "").trim()])
+      .filter(([key, item]) => key && item),
+  );
+}
+
+function normalizeTolerations(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => ({
+      key: String(item.key || "").trim(),
+      operator: String(item.operator || "Equal").trim() || "Equal",
+      value: String(item.value || "").trim(),
+      effect: String(item.effect || "").trim(),
+    }))
+    .filter((item) => item.key);
+}
+
+function normalizeServerPlanSelection(value) {
+  if (!value || typeof value !== "object") return null;
+  const id = String(value.id || value.serverPlanId || "").trim();
+  if (!id) return null;
+  return {
+    id,
+    name: String(value.name || id).trim() || id,
+    provider: String(value.provider || "tencent").trim() || "tencent",
+    region: String(value.region || "").trim(),
+    zone: String(value.zone || "").trim(),
+    instanceType: String(value.instanceType || "").trim(),
+    currency: String(value.currency || "CNY").trim() || "CNY",
+    priceStatus: String(value.priceStatus || "").trim(),
+    originalPrice: safePositiveNumber(value.originalPrice, 0),
+    discountPrice: safePositiveNumber(value.discountPrice, 0),
+    unitPrice: safePositiveNumber(value.unitPrice, 0),
+    minBillableHours: Math.max(1, Number(value.minBillableHours || 1)),
+    riskFactor: safePositiveNumber(value.riskFactor, 1),
+    reservationFloor: safePositiveNumber(value.reservationFloor, 0),
+    cpu: safePositiveNumber(value.cpu, 0),
+    memoryGb: safePositiveNumber(value.memoryGb || value.memory, 0),
+    gpu: safePositiveNumber(value.gpu, 0),
+    cpuRequest: String(value.cpuRequest || "").trim(),
+    cpuLimit: String(value.cpuLimit || "").trim(),
+    memoryRequest: String(value.memoryRequest || "").trim(),
+    memoryLimit: String(value.memoryLimit || "").trim(),
+    gpuCount: Number(value.gpuCount ?? value.gpu ?? 0),
+    storageRequest: String(value.storageRequest || "").trim(),
+    storageLimit: String(value.storageLimit || "").trim(),
+    nodePool: String(value.nodePool || "").trim(),
+    runtimeClass: String(value.runtimeClass || "").trim(),
+    nodeSelector: normalizeStringMap(value.nodeSelector),
+    tolerations: normalizeTolerations(value.tolerations),
+    provisioningMode: String(value.provisioningMode || "schedule_to_node_pool").trim() || "schedule_to_node_pool",
+    selectedAt: String(value.selectedAt || "").trim(),
+    selectionNote: String(value.selectionNote || "").trim(),
+  };
+}
+
+function buildTaskSpaceServerPlanSelection(plan) {
+  return normalizeServerPlanSelection({
+    id: plan.id,
+    name: plan.name,
+    provider: plan.provider,
+    region: plan.region,
+    zone: plan.zone,
+    instanceType: plan.instanceType,
+    currency: plan.currency,
+    priceStatus: plan.priceStatus,
+    discountPrice: plan.discountPrice,
+    unitPrice: plan.unitPrice,
+    minBillableHours: plan.minBillableHours,
+    riskFactor: plan.riskFactor,
+    reservationFloor: plan.reservationFloor,
+    cpuRequest: plan.cpuRequest,
+    cpuLimit: plan.cpuLimit,
+    memoryRequest: plan.memoryRequest,
+    memoryLimit: plan.memoryLimit,
+    cpu: plan.cpu,
+    memoryGb: plan.memoryGb,
+    gpu: plan.gpu,
+    gpuCount: plan.gpuCount ?? plan.gpu,
+    storageRequest: plan.storageRequest,
+    storageLimit: plan.storageLimit,
+    nodePool: plan.nodePool,
+    runtimeClass: plan.runtimeClass,
+    nodeSelector: plan.nodeSelector,
+    tolerations: plan.tolerations,
+    originalPrice: plan.originalPrice,
+    selectedAt: new Date().toISOString(),
+    provisioningMode: plan.provisioningMode,
+    selectionNote: plan.selectionNote,
+  });
+}
+
+function currentServerPlanSelection(taskSpace) {
+  return normalizeServerPlanSelection(taskSpace?.serverPlanSnapshot || {
+    id: taskSpace?.serverPlanId,
+    region: taskSpace?.serverPlanRegion,
+  });
+}
+
 function buildServerPlansFallback(note = "账单聚合服务暂不可用，服务器价格稍后刷新。") {
   return {
     ok: false,
@@ -439,6 +551,8 @@ function buildServerPlansSummary(payload) {
     source: String(payload?.source || "billing_aggregator"),
     configured: Boolean(payload?.configured),
     priceEnabled: Boolean(payload?.priceEnabled),
+    discoveryEnabled: Boolean(payload?.discoveryEnabled),
+    discoveredCount: Number(payload?.discoveredCount || 0),
     catalogCount: Number(payload?.catalogCount || items.length),
     quotedCount: quoted.length,
     salableCount: salable.length,
@@ -879,6 +993,9 @@ async function ensureStorageInfra() {
       title text NOT NULL,
       path text NOT NULL,
       status text NOT NULL,
+      server_plan_id text NOT NULL DEFAULT '',
+      server_plan_region text NOT NULL DEFAULT '',
+      server_plan_snapshot_json jsonb NOT NULL DEFAULT '{}'::jsonb,
       created_at timestamptz NOT NULL,
       updated_at timestamptz NOT NULL,
       archived_at timestamptz NULL,
@@ -939,6 +1056,9 @@ async function ensureStorageInfra() {
     ALTER TABLE ${pgTableName("groups")} ADD COLUMN IF NOT EXISTS gpu_count integer NOT NULL DEFAULT 0;
     ALTER TABLE ${pgTableName("groups")} ADD COLUMN IF NOT EXISTS storage_request text NOT NULL DEFAULT '';
     ALTER TABLE ${pgTableName("groups")} ADD COLUMN IF NOT EXISTS storage_limit text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_id text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_region text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_snapshot_json jsonb NOT NULL DEFAULT '{}'::jsonb;
   `);
 }
 
@@ -1148,6 +1268,21 @@ async function migrateDb(db) {
       taskSpace.updatedAt = taskSpace.createdAt;
       changed = true;
     }
+    const normalizedServerPlan = normalizeServerPlanSelection(taskSpace.serverPlanSnapshot);
+    if (JSON.stringify(normalizedServerPlan) !== JSON.stringify(taskSpace.serverPlanSnapshot || null)) {
+      taskSpace.serverPlanSnapshot = normalizedServerPlan;
+      changed = true;
+    }
+    const serverPlanId = normalizedServerPlan?.id || "";
+    const serverPlanRegion = normalizedServerPlan?.region || "";
+    if (String(taskSpace.serverPlanId || "") !== serverPlanId) {
+      taskSpace.serverPlanId = serverPlanId;
+      changed = true;
+    }
+    if (String(taskSpace.serverPlanRegion || "") !== serverPlanRegion) {
+      taskSpace.serverPlanRegion = serverPlanRegion;
+      changed = true;
+    }
   }
 
   delete db.workspaces;
@@ -1286,6 +1421,9 @@ async function readDb() {
       title: row.title,
       path: row.path,
       status: row.status,
+      serverPlanId: row.server_plan_id || "",
+      serverPlanRegion: row.server_plan_region || "",
+      serverPlanSnapshot: normalizeServerPlanSelection(row.server_plan_snapshot_json),
       createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
       updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
       archivedAt: row.archived_at instanceof Date ? row.archived_at.toISOString() : row.archived_at,
@@ -1376,8 +1514,20 @@ async function writeDb(db) {
       }
       await client.query(`DELETE FROM ${pgTableName("task_spaces")}`);
       for (const row of db.taskSpaces || []) {
-        await client.query(`INSERT INTO ${pgTableName("task_spaces")} (id,user_id,slug,title,path,status,created_at,updated_at,archived_at,deleted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [
-          row.id, row.userId, row.slug, row.title, row.path, row.status, row.createdAt || new Date().toISOString(), row.updatedAt || row.createdAt || new Date().toISOString(), row.archivedAt || null, row.deletedAt || null,
+        await client.query(`INSERT INTO ${pgTableName("task_spaces")} (id,user_id,slug,title,path,status,server_plan_id,server_plan_region,server_plan_snapshot_json,created_at,updated_at,archived_at,deleted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [
+          row.id,
+          row.userId,
+          row.slug,
+          row.title,
+          row.path,
+          row.status,
+          row.serverPlanId || "",
+          row.serverPlanRegion || "",
+          JSON.stringify(normalizeServerPlanSelection(row.serverPlanSnapshot) || {}),
+          row.createdAt || new Date().toISOString(),
+          row.updatedAt || row.createdAt || new Date().toISOString(),
+          row.archivedAt || null,
+          row.deletedAt || null,
         ]);
       }
       await client.query(`DELETE FROM ${pgTableName("user_sandboxes")}`);
@@ -1596,6 +1746,9 @@ async function ensureTaskSpace(db, user, slug = "default", title = "Default Task
     title: sanitizeTaskTitle(normalized, title),
     path: getTaskPath(user.id, normalized),
     status: "active",
+    serverPlanId: "",
+    serverPlanRegion: "",
+    serverPlanSnapshot: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -2594,6 +2747,7 @@ function netSpent(entries = []) {
 async function buildOverviewPayload(db, user, options = {}) {
   const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
   const tasks = listTaskSpacesForUser(db, user.id);
+  const currentTask = currentTaskSpaceForUser(db, user) || tasks[0] || null;
   const runs = await collectRunsForUser(user.id);
   const policy = await evaluateUserPolicy(db, user);
   const commercial = buildCommercialProfile(db, user, { wallet, policy });
@@ -2643,6 +2797,7 @@ async function buildOverviewPayload(db, user, options = {}) {
     },
     commercial,
     serverPlansSummary,
+    selectedServerPlan: currentServerPlanSelection(currentTask),
     onboarding: buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }),
     taskCards: taskPagination.rows,
     taskPagination: {
@@ -2822,6 +2977,7 @@ async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
       slug: current.slug,
       title: current.title,
       status: current.status,
+      serverPlan: currentServerPlanSelection(current),
       createdAt: current.createdAt || null,
       archivedAt: current.archivedAt || null,
       deletedAt: current.deletedAt || null,
@@ -4062,6 +4218,7 @@ const server = http.createServer(async (req, res) => {
       commercial,
       initials,
       currentTaskSlug: user.currentTaskSlug || "default",
+      selectedServerPlan: currentServerPlanSelection(currentTaskSpaceForUser(db, user)),
     });
     return;
   }
@@ -4357,15 +4514,64 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, await buildBillingPayload(db, user, readBillingRequestOptions(url)));
     return;
   }
+  if (req.method === "POST" && url.pathname === "/portal/api/server-plans/select") {
+    let payload = {};
+    try {
+      payload = JSON.parse((await readBody(req)).toString("utf8") || "{}");
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const taskSlug = slugify(payload.task || user.currentTaskSlug || "default");
+    const planId = String(payload.planId || payload.serverPlanId || "").trim();
+    if (!planId) {
+      sendJson(res, { ok: false, error: "server_plan_id_required" }, 400);
+      return;
+    }
+    const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
+    const plan = (Array.isArray(plansPayload.items) ? plansPayload.items : []).find((item) => String(item.id || "").trim() === planId);
+    if (!plan) {
+      sendJson(res, { ok: false, error: "server_plan_not_found" }, 404);
+      return;
+    }
+    if (!plan.salable) {
+      sendJson(res, { ok: false, error: "server_plan_not_salable", reason: plan.reason || plan.priceStatus || "" }, 409);
+      return;
+    }
+    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
+    const selection = buildTaskSpaceServerPlanSelection(plan);
+    taskSpace.serverPlanId = selection?.id || "";
+    taskSpace.serverPlanRegion = selection?.region || "";
+    taskSpace.serverPlanSnapshot = selection;
+    taskSpace.updatedAt = new Date().toISOString();
+    user.currentTaskSlug = taskSpace.slug;
+    await logPortalEvent({
+      type: "server_plan_selected",
+      userId: user.id,
+      workspaceId: taskSpace.slug,
+      detail: { serverPlanId: taskSpace.serverPlanId, region: taskSpace.serverPlanRegion },
+    });
+    await writeDb(db);
+    sendJson(res, {
+      ok: true,
+      workspaceId: taskSpace.slug,
+      selectedServerPlan: currentServerPlanSelection(taskSpace),
+    });
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/portal/api/server-plans") {
     const payload = await fetchServerPlans() || buildServerPlansFallback();
     const policy = await evaluateUserPolicy(db, user);
     const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
     const commercial = buildCommercialProfile(db, user, { wallet, policy });
+    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
+    const taskSpace = findTaskSpace(db, user.id, taskSlug) || null;
     sendJson(res, {
       ...payload,
       summary: buildServerPlansSummary(payload),
       commercial,
+      selectedServerPlan: currentServerPlanSelection(taskSpace),
+      workspaceId: taskSpace?.slug || taskSlug,
       freezePolicy: {
         source: "tencent_cloud_price",
         basis: "腾讯云 InquiryPriceRunInstances 实时报价 + 平台规格目录 + 最小计费单元",

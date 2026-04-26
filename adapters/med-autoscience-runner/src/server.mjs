@@ -101,6 +101,30 @@ function k8sLabelSafe(value = "") {
   return safe || "default";
 }
 
+function yamlQuoted(value = "") {
+  return `"${String(value ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function yamlIndentedMap(value = {}, indent = 8) {
+  const entries = Object.entries(value || {}).filter(([key, item]) => String(key || "").trim() && String(item ?? "").trim());
+  if (!entries.length) return "";
+  const padding = " ".repeat(indent);
+  return entries.map(([key, item]) => `${padding}${key}: ${yamlQuoted(item)}`).join("\n");
+}
+
+function yamlIndentedTolerations(items = [], indent = 8) {
+  const rows = Array.isArray(items) ? items.filter((item) => item && typeof item === "object") : [];
+  if (!rows.length) return "";
+  const padding = " ".repeat(indent);
+  const childPadding = " ".repeat(indent + 2);
+  return rows.map((item) => [
+    `${padding}- key: ${yamlQuoted(item.key || "")}`,
+    `${childPadding}operator: ${yamlQuoted(item.operator || "Equal")}`,
+    `${childPadding}value: ${yamlQuoted(item.value || "")}`,
+    `${childPadding}effect: ${yamlQuoted(item.effect || "")}`,
+  ].join("\n")).join("\n");
+}
+
 function runFile(runId) {
   return path.join(RUNS_DIR, `${runId}.json`);
 }
@@ -141,6 +165,18 @@ function normalizeRunIdentity(args = {}) {
     costCenter: firstNonEmpty(args.costCenter) || "research-foundry",
     serverPlanId: firstNonEmpty(args.serverPlanId, args.server_plan_id) || "default",
     region: firstNonEmpty(args.region) || "",
+    zone: firstNonEmpty(args.zone) || "",
+    nodePool: firstNonEmpty(args.nodePool, args.node_pool) || "",
+    runtimeClass: firstNonEmpty(args.runtimeClass, args.runtime_class) || "",
+    nodeSelector: args.nodeSelector && typeof args.nodeSelector === "object" ? args.nodeSelector : {},
+    tolerations: Array.isArray(args.tolerations) ? args.tolerations : [],
+    cpuRequest: firstNonEmpty(args.cpuRequest, args.cpu_request),
+    cpuLimit: firstNonEmpty(args.cpuLimit, args.cpu_limit),
+    memoryRequest: firstNonEmpty(args.memoryRequest, args.memory_request),
+    memoryLimit: firstNonEmpty(args.memoryLimit, args.memory_limit),
+    gpuCount: Number(args.gpuCount ?? args.gpu_count ?? 0),
+    storageRequest: firstNonEmpty(args.storageRequest, args.storage_request),
+    storageLimit: firstNonEmpty(args.storageLimit, args.storage_limit),
   };
 }
 
@@ -564,6 +600,18 @@ async function startRun(args = {}) {
     costCenter,
     serverPlanId,
     region,
+    zone,
+    nodePool,
+    runtimeClass,
+    nodeSelector,
+    tolerations,
+    cpuRequest: explicitCpuRequest,
+    cpuLimit: explicitCpuLimit,
+    memoryRequest: explicitMemoryRequest,
+    memoryLimit: explicitMemoryLimit,
+    gpuCount: explicitGpuCount,
+    storageRequest: explicitStorageRequest,
+    storageLimit: explicitStorageLimit,
   } = identity;
 
   const policy = await ensureRuntimeStartAllowed(customerId);
@@ -584,17 +632,20 @@ async function startRun(args = {}) {
   const policyVersionLabel = k8sLabelSafe(policyVersion);
   const groupIdLabel = k8sLabelSafe(policy.groupId || "default");
   const runnerImageTagLabel = k8sLabelSafe(runnerImageTag);
-  const cpuRequest = policy.cpuRequest || args.cpuRequest || RUNNER_CPU_REQUEST;
-  const cpuLimit = policy.cpuLimit || args.cpuLimit || RUNNER_CPU_LIMIT;
-  const memoryRequest = policy.memoryRequest || args.memoryRequest || RUNNER_MEMORY_REQUEST;
-  const memoryLimit = policy.memoryLimit || args.memoryLimit || RUNNER_MEMORY_LIMIT;
-  const gpuCount = Number(args.gpuCount ?? policy.gpuCount ?? 0);
-  const storageRequest = policy.storageRequest || args.storageRequest || "";
-  const storageLimit = policy.storageLimit || args.storageLimit || "";
+  const cpuRequest = explicitCpuRequest || policy.cpuRequest || RUNNER_CPU_REQUEST;
+  const cpuLimit = explicitCpuLimit || policy.cpuLimit || RUNNER_CPU_LIMIT;
+  const memoryRequest = explicitMemoryRequest || policy.memoryRequest || RUNNER_MEMORY_REQUEST;
+  const memoryLimit = explicitMemoryLimit || policy.memoryLimit || RUNNER_MEMORY_LIMIT;
+  const gpuCount = Number(explicitGpuCount ?? policy.gpuCount ?? 0);
+  const storageRequest = explicitStorageRequest || policy.storageRequest || "";
+  const storageLimit = explicitStorageLimit || policy.storageLimit || "";
   const gpuRequestBlock = gpuCount > 0 ? `nvidia.com/gpu: "${gpuCount}"` : "";
   const gpuLimitBlock = gpuCount > 0 ? `nvidia.com/gpu: "${gpuCount}"` : "";
   const storageRequestBlock = storageRequest ? `ephemeral-storage: "${storageRequest}"` : "";
   const storageLimitBlock = storageLimit ? `ephemeral-storage: "${storageLimit}"` : "";
+  const runtimeClassBlock = runtimeClass ? `runtimeClassName: ${yamlQuoted(runtimeClass)}` : "";
+  const nodeSelectorBlock = yamlIndentedMap(nodeSelector, 8);
+  const tolerationsBlock = yamlIndentedTolerations(tolerations, 8);
   const imagePullSecretsBlock = process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET
     ? `imagePullSecrets:\n        - name: "${process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET}"`
     : "";
@@ -612,6 +663,9 @@ async function startRun(args = {}) {
     .replaceAll("__COST_CENTER__", costCenter)
     .replaceAll("__SERVER_PLAN_ID__", k8sLabelSafe(serverPlanId))
     .replaceAll("__REGION__", k8sLabelSafe(region || "default"))
+    .replaceAll("__RUNTIME_CLASS_BLOCK__", runtimeClassBlock)
+    .replaceAll("__NODE_SELECTOR_BLOCK__", nodeSelectorBlock ? `nodeSelector:\n${nodeSelectorBlock}` : "")
+    .replaceAll("__TOLERATIONS_BLOCK__", tolerationsBlock ? `tolerations:\n${tolerationsBlock}` : "")
     .replaceAll("__RUNNER_IMAGE__", runnerImage)
     .replaceAll("__WORKSPACE_SESSION_ID__", workspaceSessionId)
     .replaceAll("__GROUP_ID__", groupIdLabel)
@@ -653,6 +707,11 @@ async function startRun(args = {}) {
     policyVersion,
     runnerImage,
     runnerImageTag,
+    zone,
+    nodePool,
+    runtimeClass,
+    nodeSelector,
+    tolerations,
     cpuRequest,
     cpuLimit,
     memoryRequest,

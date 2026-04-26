@@ -39,6 +39,10 @@ const TENCENT_PRICE_ENABLED = String(process.env.TENCENT_PRICE_ENABLED || "0") =
 const TENCENT_CVM_ENDPOINT = String(process.env.TENCENT_CVM_ENDPOINT || "cvm.tencentcloudapi.com").trim();
 const TENCENT_CVM_VERSION = String(process.env.TENCENT_CVM_VERSION || "2017-03-12").trim();
 const TENCENT_PRICE_IMAGE_ID = String(process.env.TENCENT_PRICE_IMAGE_ID || "").trim();
+const TENCENT_PLAN_DISCOVERY_ENABLED = String(process.env.TENCENT_PLAN_DISCOVERY_ENABLED || "").trim() === "1";
+const TENCENT_PLAN_DISCOVERY_ZONES = String(process.env.TENCENT_PLAN_DISCOVERY_ZONES || "").trim();
+const TENCENT_PLAN_DISCOVERY_CHARGE_TYPE = String(process.env.TENCENT_PLAN_DISCOVERY_CHARGE_TYPE || "POSTPAID_BY_HOUR").trim();
+const TENCENT_PLAN_DISCOVERY_MAX = Number(process.env.TENCENT_PLAN_DISCOVERY_MAX || 80);
 const SERVER_PLAN_CATALOG_JSON = String(process.env.SERVER_PLAN_CATALOG_JSON || "[]").trim();
 const TERMINAL_RUN_STATUSES = new Set(["succeeded", "failed", "cancelled", "canceled", "timed_out", "completed"]);
 const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "postgres_redis").trim().toLowerCase();
@@ -860,6 +864,47 @@ function serverPlanCatalog() {
   return Array.isArray(parsed) ? parsed : [];
 }
 
+function normalizeStringMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, entry]) => [String(key || "").trim(), String(entry ?? "").trim()])
+      .filter(([key, entry]) => key && entry),
+  );
+}
+
+function normalizeTolerations(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => ({
+      key: firstString(item.key),
+      operator: firstString(item.operator, "Equal"),
+      value: firstString(item.value),
+      effect: firstString(item.effect),
+    }))
+    .filter((item) => item.key);
+}
+
+function commaList(value = "") {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildTencentDiscoveryFilters() {
+  const filters = [
+    {
+      Name: "instance-charge-type",
+      Values: [TENCENT_PLAN_DISCOVERY_CHARGE_TYPE],
+    },
+  ];
+  const zones = commaList(TENCENT_PLAN_DISCOVERY_ZONES);
+  if (zones.length) filters.push({ Name: "zone", Values: zones });
+  return filters;
+}
+
 function normalizeTencentPrice(response = {}) {
   const price = response.Price || response.InstancePrice || response;
   const instancePrice = price.InstancePrice || price;
@@ -870,6 +915,85 @@ function normalizeTencentPrice(response = {}) {
     unitPrice: firstNumber(instancePrice.UnitPrice, price.UnitPrice, instancePrice.DiscountPrice, price.DiscountPrice),
     raw: response,
   };
+}
+
+function normalizeTencentDiscoveredPlan(item = {}) {
+  const zone = firstString(item.Zone, item.zone);
+  const instanceType = firstString(item.InstanceType, item.instanceType);
+  const cpu = firstNumber(item.CPU, item.Cpu, item.cpu);
+  const memoryGb = firstNumber(item.Memory, item.memory);
+  const gpu = firstNumber(item.Gpu, item.GPU, item.GpuCount, item.GPUCount, 0);
+  const price = normalizeTencentPrice({ Price: item.Price || item.InstancePrice || {} });
+  const status = firstString(item.Status, item.InstanceTypeState, "UNKNOWN");
+  const hasPrice = Boolean(price.unitPrice || price.discountPrice);
+  const salable = ["SELL", "SOLD"].includes(status.toUpperCase()) && hasPrice;
+  return {
+    id: `tencent-${zone}-${instanceType}`.replace(/[^a-zA-Z0-9._-]+/g, "-"),
+    name: firstString(item.TypeName, item.InstanceFamily, instanceType),
+    provider: "tencent",
+    region: TENCENT_CLOUD_REGION,
+    zone,
+    instanceType,
+    cpu,
+    memoryGb,
+    gpu,
+    gpuCount: gpu,
+    nodePool: "",
+    runtimeClass: "",
+    nodeSelector: {},
+    tolerations: [],
+    cpuRequest: cpu ? `${cpu * 1000}m` : "",
+    cpuLimit: cpu ? `${cpu * 1000}m` : "",
+    memoryRequest: memoryGb ? `${memoryGb}Gi` : "",
+    memoryLimit: memoryGb ? `${memoryGb}Gi` : "",
+    storageRequest: "",
+    storageLimit: "",
+    minBillableHours: 1,
+    riskFactor: 1.2,
+    reservationFloor: 0,
+    priceStatus: hasPrice ? "quoted" : "discovered",
+    salable,
+    reason: salable ? "" : (hasPrice ? status : "price_not_available"),
+    provisioningMode: "schedule_to_node_pool",
+    selectionNote: "腾讯云发现的可售规格；节点池和 runtimeClass 可由平台目录覆盖。",
+    source: "tencent_cloud_discovery",
+    ...price,
+  };
+}
+
+async function discoverTencentServerPlans() {
+  if (!TENCENT_PLAN_DISCOVERY_ENABLED) return [];
+  if (!tencentCloudConfigured()) return [];
+  const response = await callTencentCloud({
+    endpoint: TENCENT_CVM_ENDPOINT,
+    service: "cvm",
+    action: "DescribeZoneInstanceConfigInfos",
+    version: TENCENT_CVM_VERSION,
+    region: TENCENT_CLOUD_REGION,
+    payload: {
+      Filters: buildTencentDiscoveryFilters(),
+    },
+  });
+  const items = Array.isArray(response.InstanceTypeQuotaSet) ? response.InstanceTypeQuotaSet : [];
+  const limit = Number.isFinite(TENCENT_PLAN_DISCOVERY_MAX) && TENCENT_PLAN_DISCOVERY_MAX > 0 ? TENCENT_PLAN_DISCOVERY_MAX : 80;
+  return items
+    .map(normalizeTencentDiscoveredPlan)
+    .filter((item) => item.instanceType && item.zone)
+    .slice(0, limit);
+}
+
+function overlayCatalogOnDiscovered(discovered = [], catalog = []) {
+  const map = new Map(discovered.map((item) => [`${item.zone}:${item.instanceType}`, item]));
+  for (const plan of catalog) {
+    const key = `${plan.zone || ""}:${plan.instanceType || ""}`;
+    const current = key.trim() !== ":" ? map.get(key) : null;
+    if (current) {
+      map.set(key, { ...current, ...plan, id: firstString(plan.id, current.id), source: "tencent_cloud_discovery+platform_catalog" });
+    } else {
+      map.set(firstString(plan.id, plan.instanceType, randomUUID()), plan);
+    }
+  }
+  return Array.from(map.values());
 }
 
 async function quoteTencentServerPlan(plan) {
@@ -923,12 +1047,19 @@ async function quoteTencentServerPlan(plan) {
 }
 
 async function listServerPlans() {
-  const plans = serverPlanCatalog();
+  const catalog = serverPlanCatalog();
+  const discovered = await discoverTencentServerPlans();
+  const plans = TENCENT_PLAN_DISCOVERY_ENABLED
+    ? overlayCatalogOnDiscovered(discovered, catalog)
+    : catalog;
   const items = [];
   for (const plan of plans) {
-    const quote = plan.provider === "tencent" || !plan.provider
-      ? await quoteTencentServerPlan(plan)
-      : { priceStatus: "external_provider", salable: false, reason: "unsupported_provider" };
+    const hasCloudDiscoveryPrice = String(plan.source || "").startsWith("tencent_cloud_discovery") && plan.priceStatus;
+    const quote = hasCloudDiscoveryPrice
+      ? {}
+      : (plan.provider === "tencent" || !plan.provider
+        ? await quoteTencentServerPlan(plan)
+        : { priceStatus: "external_provider", salable: false, reason: "unsupported_provider" });
     items.push({
       id: firstString(plan.id, plan.serverPlanId, plan.instanceType),
       name: firstString(plan.name, plan.instanceType),
@@ -941,10 +1072,26 @@ async function listServerPlans() {
       gpu: Number(plan.gpu || plan.gpuCount || 0),
       nodePool: plan.nodePool || "",
       runtimeClass: plan.runtimeClass || "",
+      nodeSelector: normalizeStringMap(plan.nodeSelector),
+      tolerations: normalizeTolerations(plan.tolerations),
+      cpuRequest: firstString(plan.cpuRequest, plan.resources?.requests?.cpu),
+      cpuLimit: firstString(plan.cpuLimit, plan.resources?.limits?.cpu),
+      memoryRequest: firstString(plan.memoryRequest, plan.resources?.requests?.memory),
+      memoryLimit: firstString(plan.memoryLimit, plan.resources?.limits?.memory),
+      gpuCount: Number(plan.gpuCount ?? plan.gpu ?? 0),
+      storageRequest: firstString(plan.storageRequest, plan.resources?.requests?.["ephemeral-storage"]),
+      storageLimit: firstString(plan.storageLimit, plan.resources?.limits?.["ephemeral-storage"]),
       minBillableHours: Number(plan.minBillableHours || 1),
       riskFactor: Number(plan.riskFactor || 1.2),
       reservationFloor: Number(plan.reservationFloor || 0),
+      systemDisk: plan.systemDisk || null,
+      dataDisks: Array.isArray(plan.dataDisks) ? plan.dataDisks : [],
+      internetAccessible: plan.internetAccessible || null,
+      provisioningMode: firstString(plan.provisioningMode, "schedule_to_node_pool"),
+      selectionNote: firstString(plan.selectionNote, "选择后会按规格资源和节点选择器调度到集群。"),
+      source: plan.source || "platform_catalog",
       ...quote,
+      quotedAt: new Date().toISOString(),
     });
   }
   return {
@@ -952,7 +1099,9 @@ async function listServerPlans() {
     source: "tencent_cloud_price",
     configured: tencentCloudConfigured(),
     priceEnabled: TENCENT_PRICE_ENABLED,
-    catalogCount: plans.length,
+    discoveryEnabled: TENCENT_PLAN_DISCOVERY_ENABLED,
+    discoveredCount: discovered.length,
+    catalogCount: catalog.length,
     items,
   };
 }

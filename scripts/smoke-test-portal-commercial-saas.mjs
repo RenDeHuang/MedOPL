@@ -10,6 +10,7 @@ const portalRuntimeRoot = path.join(repoRoot, ".runtime", "portal");
 const portalEntrypoint = path.join(repoRoot, "services", "portal", "src", "server.mjs");
 const userEmail = `commercial-${Date.now()}@example.test`;
 const userPassword = "Commercial-SaaS-2026!";
+let adapterLaunchPayload = null;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -108,6 +109,14 @@ function startBillingFixture() {
           cpu: 1,
           memoryGb: 1,
           gpu: 0,
+          runtimeClass: "kata-qcloud",
+          nodeSelector: { "node.kubernetes.io/instance-type": "S5.SMALL1" },
+          cpuRequest: "1000m",
+          cpuLimit: "1000m",
+          memoryRequest: "1Gi",
+          memoryLimit: "1Gi",
+          storageRequest: "5Gi",
+          storageLimit: "10Gi",
           minBillableHours: 1,
           riskFactor: 1.2,
           reservationFloor: 0,
@@ -133,14 +142,19 @@ function startAdapterFixture() {
       return;
     }
     if (req.method === "POST" && url.pathname === "/api/opl-launch/tokens") {
-      const payload = {
-        launchId: "launch-commercial-smoke",
-        launchToken: "launch-token-commercial-smoke",
-        runtimeSessionId: "runtime-commercial-smoke",
-        oplSessionId: "opl-commercial-smoke",
-        bootstrapUrl: "/portal-adapter/api/opl-launch/bootstrap?launch_token=launch-token-commercial-smoke",
-      };
-      sendJson(res, 200, payload);
+      const chunks = [];
+      req.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      req.on("end", () => {
+        adapterLaunchPayload = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+        const payload = {
+          launchId: "launch-commercial-smoke",
+          launchToken: "launch-token-commercial-smoke",
+          runtimeSessionId: "runtime-commercial-smoke",
+          oplSessionId: "opl-commercial-smoke",
+          bootstrapUrl: "/portal-adapter/api/opl-launch/bootstrap?launch_token=launch-token-commercial-smoke",
+        };
+        sendJson(res, 200, payload);
+      });
       return;
     }
     if (url.pathname === "/api/runs" || url.pathname === "/api/trace-links" || url.pathname === "/api/cost-records") {
@@ -273,6 +287,15 @@ async function main() {
       assert(plans.freezePolicy?.finalBilling?.includes("腾讯云账单明细"), "freeze policy final billing missing");
       assert(plans.items?.[0]?.priceStatus === "quoted", `quoted server plan missing: ${plansResponse.body}`);
 
+      const selectResponse = await request(portalUrl, "/portal/api/server-plans/select", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie },
+        body: JSON.stringify({ planId: "s5-small", task: "default" }),
+      });
+      assert(selectResponse.status === 200, `server plan select expected 200, got ${selectResponse.status}: ${selectResponse.body}`);
+      const selected = JSON.parse(selectResponse.body || "{}");
+      assert(selected.selectedServerPlan?.id === "s5-small", `selected server plan missing: ${selectResponse.body}`);
+
       const launchResponse = await request(portalUrl, "/portal/api/opl/launch", {
         method: "POST",
         headers: { "content-type": "application/json", cookie },
@@ -281,6 +304,9 @@ async function main() {
       assert(launchResponse.status === 200, `trial zero-wallet launch should enter OPL, got ${launchResponse.status}: ${launchResponse.body}`);
       const launch = JSON.parse(launchResponse.body || "{}");
       assert(launch.ok === true && launch.launchToken, `launch token missing: ${launchResponse.body}`);
+      assert(adapterLaunchPayload?.serverPlanId === "s5-small", `launch server plan not forwarded: ${JSON.stringify(adapterLaunchPayload)}`);
+      assert(adapterLaunchPayload?.runtimeClass === "kata-qcloud", `launch runtimeClass not forwarded: ${JSON.stringify(adapterLaunchPayload)}`);
+      assert(adapterLaunchPayload?.nodeSelector?.["node.kubernetes.io/instance-type"] === "S5.SMALL1", `launch nodeSelector not forwarded: ${JSON.stringify(adapterLaunchPayload)}`);
 
       console.log(JSON.stringify({
         ok: true,
@@ -290,6 +316,7 @@ async function main() {
         billingStatus: me.billingStatus,
         entitlementStatus: me.entitlementStatus,
         serverPlanStatus: plans.items[0].priceStatus,
+        selectedServerPlanId: selected.selectedServerPlan?.id || "",
         launchToken: launch.launchToken,
       }, null, 2));
     });

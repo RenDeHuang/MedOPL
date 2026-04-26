@@ -385,6 +385,18 @@ function runContextFromRuntime(runtimeSession, input, req) {
     costCenter: input.costCenter || input.cost_center || "research-foundry",
     serverPlanId: input.serverPlanId || input.server_plan_id || runtimeSession.serverPlanId || "default",
     region: input.region || runtimeSession.region || "",
+    zone: input.zone || runtimeSession.zone || "",
+    nodePool: input.nodePool || input.node_pool || runtimeSession.nodePool || "",
+    runtimeClass: input.runtimeClass || input.runtime_class || runtimeSession.runtimeClass || "",
+    nodeSelector: (input.nodeSelector && typeof input.nodeSelector === "object" ? input.nodeSelector : runtimeSession.nodeSelector) || {},
+    tolerations: Array.isArray(input.tolerations) ? input.tolerations : (Array.isArray(runtimeSession.tolerations) ? runtimeSession.tolerations : []),
+    cpuRequest: input.cpuRequest || input.cpu_request || runtimeSession.cpuRequest || "",
+    cpuLimit: input.cpuLimit || input.cpu_limit || runtimeSession.cpuLimit || "",
+    memoryRequest: input.memoryRequest || input.memory_request || runtimeSession.memoryRequest || "",
+    memoryLimit: input.memoryLimit || input.memory_limit || runtimeSession.memoryLimit || "",
+    gpuCount: Number(input.gpuCount ?? input.gpu_count ?? runtimeSession.gpuCount ?? 0),
+    storageRequest: input.storageRequest || input.storage_request || runtimeSession.storageRequest || "",
+    storageLimit: input.storageLimit || input.storage_limit || runtimeSession.storageLimit || "",
     model: input.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),
     userAgent: req.headers["user-agent"] || "",
@@ -497,6 +509,7 @@ async function handleRequest(req, res) {
 
   if (req.method === "POST" && url.pathname === "/api/opl-launch/tokens") {
     const input = await readBody(req);
+    const selectedServerPlan = input.selectedServerPlan && typeof input.selectedServerPlan === "object" ? input.selectedServerPlan : {};
     const state = await readState();
     const workspace = upsertWorkspace(state, input);
     const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
@@ -510,6 +523,20 @@ async function handleRequest(req, res) {
       workspaceSessionId: workspaceSession.workspaceSessionId,
       namespace: K8S_NAMESPACE,
       image: RUNNER_IMAGE,
+      serverPlanId: input.serverPlanId || input.server_plan_id || selectedServerPlan.id || "default",
+      region: input.region || selectedServerPlan.region || "",
+      zone: input.zone || selectedServerPlan.zone || "",
+      nodePool: input.nodePool || input.node_pool || selectedServerPlan.nodePool || "",
+      runtimeClass: input.runtimeClass || input.runtime_class || selectedServerPlan.runtimeClass || "",
+      nodeSelector: input.nodeSelector || selectedServerPlan.nodeSelector || {},
+      tolerations: input.tolerations || selectedServerPlan.tolerations || [],
+      cpuRequest: input.cpuRequest || input.cpu_request || selectedServerPlan.cpuRequest || "",
+      cpuLimit: input.cpuLimit || input.cpu_limit || selectedServerPlan.cpuLimit || "",
+      memoryRequest: input.memoryRequest || input.memory_request || selectedServerPlan.memoryRequest || "",
+      memoryLimit: input.memoryLimit || input.memory_limit || selectedServerPlan.memoryLimit || "",
+      gpuCount: Number(input.gpuCount ?? input.gpu_count ?? selectedServerPlan.gpuCount ?? selectedServerPlan.gpu ?? 0),
+      storageRequest: input.storageRequest || input.storage_request || selectedServerPlan.storageRequest || "",
+      storageLimit: input.storageLimit || input.storage_limit || selectedServerPlan.storageLimit || "",
     });
     const portalContext = {
       portalUserId: input.portalUserId,
@@ -524,6 +551,8 @@ async function handleRequest(req, res) {
       workspaceSessionId: workspaceSession.workspaceSessionId,
       runtimeSessionId: runtimeSession.runtimeSessionId,
       sourceSurface: input.sourceSurface || "portal-control-plane",
+      serverPlanId: input.serverPlanId || input.server_plan_id || selectedServerPlan.id || "default",
+      region: input.region || selectedServerPlan.region || "",
     };
     try {
       await bindWorkspace(portalContext);
@@ -553,6 +582,20 @@ async function handleRequest(req, res) {
       workspacePath: portalContext.workspacePath || "",
       workspaceSessionId: workspaceSession.workspaceSessionId,
       runtimeSessionId: runtimeSession.runtimeSessionId,
+      serverPlanId: runtimeSession.serverPlanId || selectedServerPlan.id || "default",
+      region: runtimeSession.region || selectedServerPlan.region || "",
+      zone: runtimeSession.zone || selectedServerPlan.zone || "",
+      nodePool: runtimeSession.nodePool || selectedServerPlan.nodePool || "",
+      runtimeClass: runtimeSession.runtimeClass || selectedServerPlan.runtimeClass || "",
+      nodeSelector: runtimeSession.nodeSelector || selectedServerPlan.nodeSelector || {},
+      tolerations: runtimeSession.tolerations || selectedServerPlan.tolerations || [],
+      cpuRequest: runtimeSession.cpuRequest || selectedServerPlan.cpuRequest || "",
+      cpuLimit: runtimeSession.cpuLimit || selectedServerPlan.cpuLimit || "",
+      memoryRequest: runtimeSession.memoryRequest || selectedServerPlan.memoryRequest || "",
+      memoryLimit: runtimeSession.memoryLimit || selectedServerPlan.memoryLimit || "",
+      gpuCount: Number(runtimeSession.gpuCount ?? selectedServerPlan.gpuCount ?? selectedServerPlan.gpu ?? 0),
+      storageRequest: runtimeSession.storageRequest || selectedServerPlan.storageRequest || "",
+      storageLimit: runtimeSession.storageLimit || selectedServerPlan.storageLimit || "",
       source: "portal-control-plane",
       createdAt: nowIso(),
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),

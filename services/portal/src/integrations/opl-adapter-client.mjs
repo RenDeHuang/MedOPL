@@ -49,6 +49,7 @@ export function createOplAdapterClient({
     fetchJson,
 
     async createLaunch({ user, taskSpace, workspaceSession, requireRealOplWeb = false }) {
+      const selectedServerPlan = taskSpace.selectedServerPlan || taskSpace.selectedServerPlanSnapshot || taskSpace.serverPlanSnapshot || null;
       const response = await fetch(new URL("/api/opl-launch/tokens", `${normalizedAdapterUrl}/`), {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -68,6 +69,21 @@ export function createOplAdapterClient({
           workspacePath: taskSpace.path,
           workspaceSessionId: workspaceSession.id,
           sourceSurface: "portal-control-plane",
+          serverPlanId: selectedServerPlan?.id || "default",
+          region: selectedServerPlan?.region || "",
+          zone: selectedServerPlan?.zone || "",
+          nodePool: selectedServerPlan?.nodePool || "",
+          runtimeClass: selectedServerPlan?.runtimeClass || "",
+          nodeSelector: selectedServerPlan?.nodeSelector || {},
+          tolerations: selectedServerPlan?.tolerations || [],
+          cpuRequest: selectedServerPlan?.cpuRequest || "",
+          cpuLimit: selectedServerPlan?.cpuLimit || "",
+          memoryRequest: selectedServerPlan?.memoryRequest || "",
+          memoryLimit: selectedServerPlan?.memoryLimit || "",
+          gpuCount: Number(selectedServerPlan?.gpuCount ?? selectedServerPlan?.gpu ?? 0),
+          storageRequest: selectedServerPlan?.storageRequest || "",
+          storageLimit: selectedServerPlan?.storageLimit || "",
+          selectedServerPlan,
         }),
       });
       const payload = await response.json().catch(() => ({}));
