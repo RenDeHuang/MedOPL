@@ -462,3 +462,40 @@ B2B SaaS 的采购、账务和运行权限通常分离。没有清晰权限模�
 ## 结论
 
 v7 的重点不是“多做几个页面”，而是把商业化 SaaS 必须具备的责任边界补齐。只要身份、任务、存储、账单、权限和错误反馈都按模块边界做清楚，后续就能做到单模块故障不扩散、单模块替换不牵连、单模块迁移不崩盘。
+
+---
+
+## 本轮 v7 实施结果
+
+### 已完成
+
+- Portal 注册/登录用户可以通过 Portal launch token 进入 OPL，不同步密码到 OPL 原生账号体系。
+- Gateway 直达 OPL 时展示“使用 Portal 继续”，无 launch 的 `/api/auth/user` 返回 401，不再泄露 upstream noauth/admin。
+- Portal -> Adapter -> Gateway -> OPL bootstrap 显式贯通 `tenantId / portalUserId / workspaceId / workspaceSessionId / runtimeSessionId / oplSessionId`。
+- Runtime bridge 的 workspace、session、run、trace、artifact、cost 都补齐 tenant/owner/storage owner 字段，并按 Portal user + workspace/session scope 过滤。
+- 新注册和 OIDC 首次 provision 用户默认获得 trial entitlement，余额为 0 不再阻止进入工作台。
+- Portal API 拆出 `accountStatus / billingStatus / entitlementStatus / commercial`，进入工作台和收费运行分层控制。
+- 新增 Portal “服务器与费用”页面，展示腾讯云价格来源、冻结依据、最终账单来源和 OpenCost 的非最终扣费定位。
+- Portal 新增 `/portal/api/server-plans`，只聚合 billing-aggregator 返回结果，不在 Portal 内部实现腾讯云签名细节。
+- Runner 动态 Job 模板挂载 `/app/.runtime` 到 `portal-platform-runtime` PVC。
+- 新增 PVC 目录合同，明确单 PVC 是上线简化方案，并写清未来按模块迁移边界。
+- Portal、Gateway、Adapter、Runner orchestrator 的 `/healthz` 和 `/status` 返回 build、身份模式、计费模式、关键 URL 和存储摘要。
+
+### 已验证
+
+- `node scripts/smoke-test-portal-commercial-saas.mjs`
+- `node scripts/smoke-test-opl-web-gateway-launch.mjs`
+- `node scripts/smoke-test-opl-runtime-bridge-bootstrap.mjs`
+- `node scripts/smoke-test-portal-opl-web-launch.mjs`
+- `node scripts/smoke-test-portal-spa-access.mjs`
+- `npm --prefix services/portal run check`
+- `npm --prefix services/portal run frontend:typecheck`
+- `npm --prefix services/portal run frontend:build`
+- `powershell -ExecutionPolicy Bypass -File scripts/render-tke-manifests.ps1 -EnvFile env/tke.env.tcr-gaofenglab.example`
+- gstack browse 手工打开本地 Portal，完成注册，总览页显示 trial/商业准入，服务器与费用页显示腾讯云报价、冻结依据、最终账单来源。
+
+### 未在 v7 内完成
+
+- 真正的一等组织租户、团队角色和跨成员 RBAC 仍是后续版本。
+- 真实腾讯云账单扣费依赖生产环境配置 `TENCENT_CLOUD_SECRET_ID / TENCENT_CLOUD_SECRET_KEY / SERVER_PLAN_CATALOG_JSON`，本地验证使用 fixture 和接口合同。
+- billing-aggregator v6 已具备真实账单和询价连接器，本轮没有改其业务代码，只通过 Portal 增加产品化入口。

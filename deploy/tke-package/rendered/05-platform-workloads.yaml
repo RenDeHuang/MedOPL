@@ -17,7 +17,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: portal
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v4"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v7"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 17080
@@ -88,7 +88,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: portal-opl-adapter
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v1"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v7"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8788
@@ -207,7 +207,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: opl-web-gateway
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v2"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v7"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 13031
@@ -267,7 +267,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: billing-aggregator
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v1"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v6"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
@@ -333,7 +333,7 @@ spec:
         - name: "tcr-pull-secret"
       containers:
         - name: med-autoscience-runner
-          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v1"
+          image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v7"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18890

@@ -36,5 +36,9 @@ export function createBillingClient({ billingServiceUrl, timeoutMs = 3000 }) {
     fetchStatus() {
       return fetchJsonOrNull(new URL("/status", billingServiceUrl), timeoutMs);
     },
+
+    fetchServerPlans() {
+      return fetchJsonOrNull(new URL("/server-plans", billingServiceUrl), timeoutMs);
+    },
   };
 }

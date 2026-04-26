@@ -11,13 +11,12 @@ export function createOplLaunchService({
   async function buildLaunchBlockReasons(db, user) {
     const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
     const policy = await evaluateUserPolicy(db, user);
+    const accountBlocks = (policy.blocks || []).filter((item) => String(item || "").includes("账号已被禁用"));
     return {
       wallet,
       policy,
       reasons: [
-        ...(!policy.allowMas ? ["当前分组不允许启动 MAS"] : []),
-        ...(policy.blocks || []),
-        ...(Number(wallet.balance || 0) <= 0 ? ["当前余额不足"] : []),
+        ...accountBlocks,
       ],
     };
   }
@@ -42,7 +41,7 @@ export function createOplLaunchService({
         return {
           ok: false,
           error: "workspace_launch_blocked",
-          status: Number(wallet.balance || 0) <= 0 ? 402 : 403,
+          status: 403,
           reasons,
           policy,
           wallet,

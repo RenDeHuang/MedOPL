@@ -55,6 +55,8 @@ export interface OverviewQuery {
 export interface OverviewPayload {
   kpis: {
     accountStatus: string;
+    billingStatus: string;
+    entitlementStatus: string;
     balance: number;
     todayCost: number;
     historicalCost: number;
@@ -62,6 +64,9 @@ export interface OverviewPayload {
     workspaceCount: number;
     runCount: number;
   };
+  commercial: CommercialProfile;
+  serverPlansSummary: ServerPlansSummary;
+  onboarding: OnboardingPayload;
   taskCards: Array<{
     slug: string;
     title: string;
@@ -268,8 +273,110 @@ export interface CurrentUserPayload {
   email: string;
   role: string;
   status: string;
+  accountStatus: string;
+  billingStatus: string;
+  entitlementStatus: string;
+  commercial?: CommercialProfile;
   initials: string;
   currentTaskSlug: string;
+}
+
+export interface TrialEntitlement {
+  kind: string;
+  status: string;
+  source: string;
+  currency: string;
+  totalCredit: number;
+  remainingCredit: number;
+  createdAt: string;
+  expiresAt: string;
+  note: string;
+}
+
+export interface CommercialProfile {
+  accountStatus: string;
+  billingStatus: string;
+  entitlementStatus: string;
+  walletBalance: number;
+  balanceFloor: number;
+  canEnterWorkbench: boolean;
+  canStartChargeableRun: boolean;
+  chargeBlockedReasons: string[];
+  priceTransparency: string;
+  trialEntitlement: TrialEntitlement | null;
+  group: null | {
+    id: string;
+    name: string;
+    balanceFloor: number;
+    maxConcurrentRuns: number;
+  };
+}
+
+export interface ServerPlansSummary {
+  source: string;
+  configured: boolean;
+  priceEnabled: boolean;
+  catalogCount: number;
+  quotedCount: number;
+  salableCount: number;
+  priceStatus: string;
+  lowestHourlyPrice: number;
+  note: string;
+}
+
+export interface OnboardingPayload {
+  nextStepId: string;
+  items: Array<{
+    id: string;
+    title: string;
+    state: string;
+    href: string;
+    description: string;
+  }>;
+}
+
+export interface ServerPlanItem {
+  id: string;
+  name: string;
+  provider: string;
+  region: string;
+  zone: string;
+  instanceType: string;
+  cpu: number;
+  memoryGb: number;
+  gpu: number;
+  nodePool: string;
+  runtimeClass: string;
+  minBillableHours: number;
+  riskFactor: number;
+  reservationFloor: number;
+  priceStatus: string;
+  salable: boolean;
+  reason?: string;
+  currency?: string;
+  originalPrice?: number;
+  discountPrice?: number;
+  unitPrice?: number;
+}
+
+export interface ServerPlansPayload {
+  ok: boolean;
+  source: string;
+  configured: boolean;
+  priceEnabled: boolean;
+  catalogCount: number;
+  items: ServerPlanItem[];
+  note?: string;
+  summary: ServerPlansSummary;
+  commercial: CommercialProfile;
+  freezePolicy: {
+    source: string;
+    basis: string;
+    finalBilling: string;
+    minBillableHoursDefault: number;
+    pendingCostIntervalSeconds: number;
+    opencostRole: string;
+  };
 }
 
 export interface AnnouncementPayload {
@@ -436,6 +543,11 @@ export async function fetchOverview(params: OverviewQuery = {}) {
 
 export async function fetchBilling(params: BillingQuery = {}) {
   const { data } = await apiClient.get<BillingPayload>("/billing", { params });
+  return data;
+}
+
+export async function fetchServerPlans() {
+  const { data } = await apiClient.get<ServerPlansPayload>("/server-plans");
   return data;
 }
 

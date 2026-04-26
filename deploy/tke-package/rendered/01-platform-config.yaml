@@ -5,8 +5,11 @@ metadata:
   namespace: portal-staging
 data:
   NODE_ENV: "production"
+  BUILD_SHA: "opl-v7"
+  BUILD_TIME: "2026-04-26T00:00:00Z"
   PORTAL_STORAGE_MODE: "json"
   PORTAL_DB_NAMESPACE: "portal"
+  PORTAL_PUBLIC_URL: "https://portal.example.com"
   PORTAL_OIDC_ENABLED: "0"
   PORTAL_IDENTITY_SYNC_MODE: "local"
   PORTAL_OIDC_ISSUER: ""
@@ -32,6 +35,12 @@ data:
   BILLING_SERVICE_URL: "http://billing-aggregator:3001"
   OPENCOST_BASE_URL: ""
   OPENCOST_UI_URL: ""
+  TENCENT_BILLING_ENABLED: "1"
+  TENCENT_BILLING_REQUIRED: "0"
+  TENCENT_PRICE_ENABLED: "1"
+  TENCENT_CLOUD_REGION: "ap-guangzhou"
+  TENCENT_PRICE_IMAGE_ID: ""
+  SERVER_PLAN_CATALOG_JSON: '[]'
   MINIO_API_URL: ""
   MINIO_CONSOLE_URL: ""
   HARBOR_URL: "https://uswccr.ccs.tencentyun.com"

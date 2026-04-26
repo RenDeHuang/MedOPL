@@ -68,6 +68,8 @@ const adminSeed = {
   name: process.env.PORTAL_ADMIN_NAME || "ZITADEL Admin",
 };
 const PORTAL_ADMIN_SEED_BALANCE = Number(process.env.PORTAL_ADMIN_SEED_BALANCE || 100);
+const PORTAL_TRIAL_CREDIT_AMOUNT = Number(process.env.PORTAL_TRIAL_CREDIT_AMOUNT || 50);
+const PORTAL_TRIAL_VALID_DAYS = Number(process.env.PORTAL_TRIAL_VALID_DAYS || 14);
 
 const PORTAL_OIDC_ENABLED = String(process.env.PORTAL_OIDC_ENABLED || "1") !== "0";
 const PORTAL_OIDC_ISSUER = process.env.PORTAL_OIDC_ISSUER || "https://auth.localhost:18443";
@@ -286,6 +288,221 @@ function activeUserStatus(status = "active") {
 
 function isBlockedUserStatus(status = "active") {
   return ["disabled", "deleted"].includes(activeUserStatus(status));
+}
+
+function addDaysIso(base, days) {
+  const date = new Date(base || Date.now());
+  date.setDate(date.getDate() + Number(days || 0));
+  return date.toISOString();
+}
+
+function safePositiveNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function buildDefaultTrialEntitlement(createdAt = new Date().toISOString()) {
+  const amount = safePositiveNumber(PORTAL_TRIAL_CREDIT_AMOUNT, 50);
+  return {
+    kind: "trial_credit",
+    status: amount > 0 ? "trial_active" : "none",
+    source: "portal_signup_trial",
+    currency: "CNY",
+    totalCredit: amount,
+    remainingCredit: amount,
+    createdAt,
+    expiresAt: addDaysIso(createdAt, PORTAL_TRIAL_VALID_DAYS),
+    note: "新注册用户默认获得试用额度，可先进入实验室并完成首轮体验。",
+  };
+}
+
+function normalizeTrialEntitlement(value, { createdAt = "" } = {}) {
+  if (!value || typeof value !== "object") return null;
+  const status = String(value.status || "none").trim().toLowerCase();
+  const totalCredit = safePositiveNumber(value.totalCredit, 0);
+  const remainingCredit = safePositiveNumber(value.remainingCredit, totalCredit);
+  const expiresAt = String(value.expiresAt || "").trim();
+  const expired = expiresAt ? Date.parse(expiresAt) <= Date.now() : false;
+  return {
+    kind: String(value.kind || "trial_credit").trim() || "trial_credit",
+    status: expired && status === "trial_active" ? "trial_expired" : status,
+    source: String(value.source || "portal").trim() || "portal",
+    currency: String(value.currency || "CNY").trim() || "CNY",
+    totalCredit,
+    remainingCredit,
+    createdAt: String(value.createdAt || createdAt || "").trim() || createdAt || new Date().toISOString(),
+    expiresAt,
+    note: String(value.note || "").trim(),
+  };
+}
+
+function ensureUserCommercialState(user, { grantTrial = false } = {}) {
+  user.preferences = user.preferences && typeof user.preferences === "object" ? user.preferences : { theme: "light" };
+  user.preferences.commercial = user.preferences.commercial && typeof user.preferences.commercial === "object"
+    ? user.preferences.commercial
+    : {};
+  if (!("trialEntitlement" in user.preferences.commercial)) {
+    user.preferences.commercial.trialEntitlement = grantTrial ? buildDefaultTrialEntitlement(user.createdAt) : null;
+    return true;
+  }
+  const normalized = normalizeTrialEntitlement(user.preferences.commercial.trialEntitlement, { createdAt: user.createdAt });
+  if (JSON.stringify(normalized) !== JSON.stringify(user.preferences.commercial.trialEntitlement)) {
+    user.preferences.commercial.trialEntitlement = normalized;
+    return true;
+  }
+  return false;
+}
+
+function activeGroupForUser(db, user) {
+  return db.groups.find((item) =>
+    item.id === user.groupId &&
+    String(item.status || "active").toLowerCase() === "active",
+  ) || null;
+}
+
+function buildCommercialProfile(db, user, options = {}) {
+  const group = options.group ?? activeGroupForUser(db, user);
+  const wallet = options.wallet || db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
+  const policy = options.policy || null;
+  const trialEntitlement = normalizeTrialEntitlement(user.preferences?.commercial?.trialEntitlement, { createdAt: user.createdAt });
+  const trialActive = Boolean(
+    trialEntitlement &&
+    trialEntitlement.status === "trial_active" &&
+    trialEntitlement.remainingCredit > 0 &&
+    (!trialEntitlement.expiresAt || Date.parse(trialEntitlement.expiresAt) > Date.now())
+  );
+  const accountStatus = activeUserStatus(user.status);
+  const balance = Number(wallet.balance || 0);
+  const balanceFloor = Number(group?.balanceFloor || 0);
+  const policyBlocks = Array.isArray(policy?.blocks) ? policy.blocks : [];
+  const nonBillingBlocks = policyBlocks.filter((item) => !String(item).includes("余额低于分组门槛"));
+  let billingStatus = "wallet_available";
+  if (accountStatus !== "active") {
+    billingStatus = "account_blocked";
+  } else if (balanceFloor > 0 && balance < balanceFloor) {
+    billingStatus = trialActive ? "trial_only" : "below_balance_floor";
+  } else if (balance > 0) {
+    billingStatus = "wallet_available";
+  } else if (trialActive) {
+    billingStatus = "trial_only";
+  } else {
+    billingStatus = "payment_required";
+  }
+  return {
+    accountStatus,
+    billingStatus,
+    entitlementStatus: trialActive ? "trial_active" : (trialEntitlement?.status || "none"),
+    walletBalance: balance,
+    balanceFloor,
+    canEnterWorkbench: accountStatus === "active",
+    canStartChargeableRun: accountStatus === "active" && nonBillingBlocks.length === 0 && (balance > 0 || trialActive),
+    chargeBlockedReasons: [
+      ...nonBillingBlocks,
+      ...(balance > 0 || trialActive ? [] : ["收费运行前需要充值或试用额度"]),
+      ...(balanceFloor > 0 && balance < balanceFloor && !trialActive ? [`当前余额低于分组门槛（${balanceFloor.toFixed(2)}）`] : []),
+    ],
+    priceTransparency: "服务器价格来自腾讯云 CVM 实时报价；最终扣费以腾讯云账单明细回补为准。",
+    trialEntitlement,
+    group: group
+      ? {
+          id: group.id,
+          name: group.name,
+          balanceFloor,
+          maxConcurrentRuns: Number(group.maxConcurrentRuns || 0),
+        }
+      : null,
+  };
+}
+
+function buildServerPlansFallback(note = "账单聚合服务暂不可用，服务器价格稍后刷新。") {
+  return {
+    ok: false,
+    source: "billing_aggregator",
+    configured: false,
+    priceEnabled: false,
+    catalogCount: 0,
+    items: [],
+    note,
+  };
+}
+
+function buildServerPlansSummary(payload) {
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  const quoted = items.filter((item) => item.priceStatus === "quoted");
+  const salable = items.filter((item) => item.salable);
+  const lowestHourlyPrice = quoted.reduce((min, item) => {
+    const candidate = Number(item.discountPrice ?? item.unitPrice ?? 0);
+    if (!Number.isFinite(candidate) || candidate <= 0) return min;
+    return min === null || candidate < min ? candidate : min;
+  }, null);
+  return {
+    source: String(payload?.source || "billing_aggregator"),
+    configured: Boolean(payload?.configured),
+    priceEnabled: Boolean(payload?.priceEnabled),
+    catalogCount: Number(payload?.catalogCount || items.length),
+    quotedCount: quoted.length,
+    salableCount: salable.length,
+    priceStatus: quoted.length ? "quoted" : (items.length ? "pending" : "unavailable"),
+    lowestHourlyPrice: lowestHourlyPrice ?? 0,
+    note: String(payload?.note || "").trim(),
+  };
+}
+
+function buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }) {
+  const fundingReady = commercial.billingStatus === "wallet_available" || commercial.billingStatus === "trial_only";
+  const serverReady = serverPlansSummary.salableCount > 0 || serverPlansSummary.quotedCount > 0;
+  return {
+    nextStepId: !fundingReady
+      ? "funding"
+      : workspaceCount <= 0
+        ? "workspace"
+        : sessionCount <= 0
+          ? "launch"
+          : "server_plans",
+    items: [
+      {
+        id: "configure_key",
+        title: "配置模型 API Key",
+        state: "ready",
+        href: "",
+        description: "模型 API key 由用户自己的中转站承担；Portal 只负责平台资源、服务费和云账单透明化。",
+      },
+      {
+        id: "server_plans",
+        title: "查看服务器与费用",
+        state: serverReady ? "ready" : "attention",
+        href: "/servers",
+        description: serverReady
+          ? `已提供 ${serverPlansSummary.salableCount || serverPlansSummary.catalogCount} 个可售规格，展示腾讯云地域、规格、最小计费单元和冻结依据。`
+          : "服务器价格等待腾讯云报价刷新，可先查看规格目录和报价状态。",
+      },
+      {
+        id: "workspace",
+        title: "创建任务空间",
+        state: workspaceCount > 0 ? "done" : "ready",
+        href: "/workspace",
+        description: workspaceCount > 0 ? "已存在可用任务空间。" : "先创建任务空间，再进入实验室承载 session、trace 和文件存储。",
+      },
+      {
+        id: "launch",
+        title: "进入实验室",
+        state: sessionCount > 0 ? "done" : "ready",
+        href: "/portal/opl",
+        description: "余额不足不再阻止进入工作台；真正触发收费运行时，再按钱包或试用额度校验。",
+      },
+      {
+        id: "funding",
+        title: "充值或使用试用额度",
+        state: fundingReady ? "done" : "attention",
+        href: "/billing",
+        description: fundingReady
+          ? commercial.entitlementStatus === "trial_active"
+            ? "当前已有试用额度，可先体验再充值。"
+            : "当前钱包可用于收费运行。"
+          : "收费运行前需充值，或等待管理员发放试用权益。",
+      },
+    ],
+  };
 }
 
 function normalizeAnnouncementScope(scope = "all") {
@@ -846,6 +1063,9 @@ async function migrateDb(db) {
     }
     if (!("groupId" in user)) {
       user.groupId = "";
+      changed = true;
+    }
+    if (ensureUserCommercialState(user, { grantTrial: false })) {
       changed = true;
     }
   }
@@ -1568,6 +1788,7 @@ async function createPortalUserRecord(db, form, { authSource = "local" } = {}) {
     createdAt,
     authSource,
   };
+  ensureUserCommercialState(createdUser, { grantTrial: true });
   db.users.push(createdUser);
   db.wallets.push({
     userId: createdUser.id,
@@ -1978,6 +2199,10 @@ async function fetchBillingStatus() {
   return billingClient.fetchStatus();
 }
 
+async function fetchServerPlans() {
+  return billingClient.fetchServerPlans();
+}
+
 async function fetchMinioSummary() {
   return minioStorageClient.fetchSummary();
 }
@@ -2370,6 +2595,10 @@ async function buildOverviewPayload(db, user, options = {}) {
   const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
   const tasks = listTaskSpacesForUser(db, user.id);
   const runs = await collectRunsForUser(user.id);
+  const policy = await evaluateUserPolicy(db, user);
+  const commercial = buildCommercialProfile(db, user, { wallet, policy });
+  const serverPlans = await fetchServerPlans() || buildServerPlansFallback();
+  const serverPlansSummary = buildServerPlansSummary(serverPlans);
   const billing = await fetchBillingSummary(user.id, "", "168h");
   const items = billing?.items || [];
   const taskTitleMap = new Map(tasks.map((task) => [task.slug, task.title]));
@@ -2397,17 +2626,24 @@ async function buildOverviewPayload(db, user, options = {}) {
 
   const taskPagination = paginateRows(taskRows, options.tasksPage, 5);
   const latestRunsPagination = paginateRows(latestRunsAll, options.runsPage, 5);
+  const workspaceCount = tasks.filter((item) => !["deleted", "deleting"].includes(String(item.status || "").toLowerCase())).length;
+  const sessionCount = db.workspaceSessions.filter((item) => item.userId === user.id && item.status === "active").length;
 
   return {
     kpis: {
-      accountStatus: activeUserStatus(user.status),
+      accountStatus: commercial.accountStatus,
+      billingStatus: commercial.billingStatus,
+      entitlementStatus: commercial.entitlementStatus,
       balance: Number(wallet.balance || 0),
       todayCost: Number(todayCost.toFixed(5)),
       historicalCost: netSpent(db.ledger.filter((item) => item.userId === user.id)),
       activeTasks: tasks.filter((item) => item.status === "active").length,
-      workspaceCount: tasks.filter((item) => !["deleted", "deleting"].includes(String(item.status || "").toLowerCase())).length,
+      workspaceCount,
       runCount: runs.length,
     },
+    commercial,
+    serverPlansSummary,
+    onboarding: buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }),
     taskCards: taskPagination.rows,
     taskPagination: {
       page: taskPagination.page,
@@ -3756,6 +3992,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: new Date().toISOString(),
         authSource: "zitadel_oidc",
       };
+      ensureUserCommercialState(portalUser, { grantTrial: true });
       db.users.push(portalUser);
       db.wallets.push({ userId: portalUser.id, balance: 0, updatedAt: new Date().toISOString() });
       await ensureTaskSpace(db, portalUser, "default", defaultTaskTitle("default"));
@@ -3804,6 +4041,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && url.pathname === "/portal/api/me") {
+    const policy = await evaluateUserPolicy(db, user);
+    const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
+    const commercial = buildCommercialProfile(db, user, { wallet, policy });
     const initials = String(user.name || user.email || "?")
       .split(/[\s@._-]+/)
       .filter(Boolean)
@@ -3816,6 +4056,10 @@ const server = http.createServer(async (req, res) => {
       email: user.email,
       role: user.role,
       status: activeUserStatus(user.status),
+      accountStatus: commercial.accountStatus,
+      billingStatus: commercial.billingStatus,
+      entitlementStatus: commercial.entitlementStatus,
+      commercial,
       initials,
       currentTaskSlug: user.currentTaskSlug || "default",
     });
@@ -4113,6 +4357,26 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, await buildBillingPayload(db, user, readBillingRequestOptions(url)));
     return;
   }
+  if (req.method === "GET" && url.pathname === "/portal/api/server-plans") {
+    const payload = await fetchServerPlans() || buildServerPlansFallback();
+    const policy = await evaluateUserPolicy(db, user);
+    const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
+    const commercial = buildCommercialProfile(db, user, { wallet, policy });
+    sendJson(res, {
+      ...payload,
+      summary: buildServerPlansSummary(payload),
+      commercial,
+      freezePolicy: {
+        source: "tencent_cloud_price",
+        basis: "腾讯云 InquiryPriceRunInstances 实时报价 + 平台规格目录 + 最小计费单元",
+        finalBilling: "腾讯云账单明细 DescribeBillDetail 回补为最终真实扣费依据",
+        minBillableHoursDefault: 1,
+        pendingCostIntervalSeconds: 60,
+        opencostRole: "仅用于运行中近实时分摊观测，不作为最终扣费账单。",
+      },
+    });
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/portal/api/workspace") {
     const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
     sendJson(res, await buildWorkspacePayload(db, user, taskSlug));
@@ -4271,6 +4535,11 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/portal/billing") {
     res.writeHead(302, { Location: `/portal/app/billing${url.search || ""}` });
+    res.end();
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/portal/servers") {
+    res.writeHead(302, { Location: `/portal/app/servers${url.search || ""}` });
     res.end();
     return;
   }
