@@ -4,6 +4,7 @@ import { URL } from "node:url";
 const PORT = Number(process.env.PORT || process.env.OPL_WEB_GATEWAY_PORT || 18789);
 const OPL_WEB_UPSTREAM_URL = String(process.env.OPL_WEB_UPSTREAM_URL || process.env.OPL_WEB_URL || "http://127.0.0.1:13030").replace(/\/$/, "");
 const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
+const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").replace(/\/$/, "");
 const BASE_URL = String(process.env.OPL_WEB_GATEWAY_PUBLIC_URL || `http://127.0.0.1:${PORT}`).replace(/\/$/, "");
 const LAUNCH_SCRIPT_PATH = "/portal-launch.js";
 const ADAPTER_PREFIX = "/portal-adapter";
@@ -40,6 +41,21 @@ function buildLaunchCookie(launchToken) {
 
 function clearLaunchCookie() {
   return `${LAUNCH_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
+function buildDirectEntryState(overrides = {}) {
+  return {
+    active: true,
+    authenticated: false,
+    authMode: "portal-launch",
+    portalLaunchRequired: true,
+    launchCookieName: LAUNCH_COOKIE,
+    portalPublicUrl: PORTAL_PUBLIC_URL || null,
+    openFromPortalUrl: PORTAL_PUBLIC_URL || null,
+    reason: "portal_launch_required",
+    message: "Open OPL Web from Portal to start a launch session.",
+    ...overrides,
+  };
 }
 
 function appendSetCookie(headers, cookieValue) {
@@ -116,7 +132,14 @@ function normalizePortalUser(bootstrap) {
 async function handleAuthUser(req, res) {
   const cookies = parseCookies(req.headers.cookie || "");
   const launchToken = cookies[LAUNCH_COOKIE] || "";
-  if (!launchToken) return false;
+  if (!launchToken) {
+    sendJson(res, 401, {
+      success: false,
+      error: "unauthenticated",
+      ...buildDirectEntryState(),
+    });
+    return true;
+  }
 
   try {
     const bootstrap = await fetchPortalBootstrap(launchToken);
@@ -161,13 +184,14 @@ async function handleAuthUser(req, res) {
   }
 }
 
-function injectLaunchScript(html) {
+function injectLaunchScript(html, directEntry) {
   if (html.includes(LAUNCH_SCRIPT_PATH)) return html;
-  const tag = `<script type="module" src="${LAUNCH_SCRIPT_PATH}"></script>`;
+  const metaTag = `<meta name="opl-portal-direct-entry" content="${directEntry ? "1" : "0"}">`;
+  const scriptTag = `<script type="module" src="${LAUNCH_SCRIPT_PATH}"></script>`;
   if (html.includes("</head>")) {
-    return html.replace("</head>", `    ${tag}\n  </head>`);
+    return html.replace("</head>", `    ${metaTag}\n    ${scriptTag}\n  </head>`);
   }
-  return `${tag}\n${html}`;
+  return `${metaTag}\n${scriptTag}\n${html}`;
 }
 
 async function proxy(req, res, upstreamBase, prefix = "") {
@@ -183,10 +207,12 @@ async function proxy(req, res, upstreamBase, prefix = "") {
   const headers = copyHeaders(response.headers);
   const incoming = new URL(req.url || "/", BASE_URL);
   const launchToken = incoming.searchParams.get("launch_token") || "";
+  const hasLaunchCookie = Boolean(parseCookies(req.headers.cookie || "")[LAUNCH_COOKIE]);
+  const directEntry = !launchToken && !hasLaunchCookie;
   if (!prefix && launchToken) appendSetCookie(headers, buildLaunchCookie(launchToken));
   const contentType = response.headers.get("content-type") || "";
   if (contentType.includes("text/html")) {
-    const html = injectLaunchScript(await response.text());
+    const html = injectLaunchScript(await response.text(), directEntry);
     headers["content-type"] = contentType;
     headers["cache-control"] = "no-cache, no-store, must-revalidate";
     res.writeHead(response.status, headers);
@@ -212,6 +238,7 @@ function portalLaunchClientScript() {
   return `
 const STATE_KEY = "portal.opl.launch";
 const BOOTSTRAP_KEY = "portal.opl.bootstrap";
+const DIRECT_ENTRY_DEFAULT = ${JSON.stringify(buildDirectEntryState())};
 
 function readStoredState() {
   try {
@@ -241,6 +268,26 @@ function writeStoredBootstrap(bootstrap) {
   try {
     window.sessionStorage.setItem(BOOTSTRAP_KEY, JSON.stringify(bootstrap));
   } catch {}
+}
+
+function updateDirectEntryState(overrides = {}) {
+  const next = {
+    ...DIRECT_ENTRY_DEFAULT,
+    ...window.__OPL_PORTAL_DIRECT_ENTRY__,
+    ...overrides
+  };
+  window.__OPL_PORTAL_DIRECT_ENTRY__ = next;
+  return next;
+}
+
+function resolveInjectedDirectEntryFlag() {
+  try {
+    if (!document || typeof document.querySelector !== "function") return false;
+    const meta = document.querySelector('meta[name="opl-portal-direct-entry"]');
+    return Boolean(meta && typeof meta.getAttribute === "function" && meta.getAttribute("content") === "1");
+  } catch {
+    return false;
+  }
 }
 
 function stripLaunchQuery() {
@@ -290,7 +337,7 @@ async function fetchJson(url, options = {}) {
 function requireLaunchState() {
   const state = readStoredState();
   if (!state.launchToken) {
-    throw new Error("Portal launch token is not available.");
+    throw new Error("Portal launch token is not available. Open OPL Web from Portal.");
   }
   return state;
 }
@@ -384,8 +431,19 @@ function installNativeRunBridge() {
 window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
 
 async function initializePortalLaunch() {
+  const injectedDirectEntry = resolveInjectedDirectEntryFlag();
+  updateDirectEntryState({
+    active: injectedDirectEntry,
+    reason: injectedDirectEntry ? "portal_launch_required" : "portal_launch_pending"
+  });
   const state = resolveLaunchState();
-  if (!state) return;
+  if (!state) {
+    updateDirectEntryState({
+      active: true,
+      reason: injectedDirectEntry ? "portal_launch_required" : "portal_launch_missing"
+    });
+    return;
+  }
   const bootstrapUrl = state.adapterUrl + "/api/opl-launch/bootstrap?launch_token=" + encodeURIComponent(state.launchToken);
   const bootstrap = await fetchJson(bootstrapUrl);
   writeStoredBootstrap(bootstrap);
@@ -410,6 +468,11 @@ async function initializePortalLaunch() {
   window.__OPL_PORTAL_LAUNCH__ = { state, bootstrap, sessionBind };
   window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
   window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
+  updateDirectEntryState({
+    active: false,
+    authenticated: true,
+    reason: "portal_launch_active"
+  });
   installNativeRunBridge();
   window.dispatchEvent(new CustomEvent("opl:portal-launch-ready", {
     detail: window.__OPL_PORTAL_LAUNCH__
@@ -420,6 +483,12 @@ async function initializePortalLaunch() {
 initializePortalLaunch().catch((error) => {
   console.error("[opl-web-gateway] Portal launch initialization failed", error);
   window.__OPL_PORTAL_LAUNCH_ERROR__ = String(error && error.message ? error.message : error);
+  updateDirectEntryState({
+    active: true,
+    authenticated: false,
+    reason: "portal_launch_error",
+    error: window.__OPL_PORTAL_LAUNCH_ERROR__
+  });
   window.dispatchEvent(new CustomEvent("opl:portal-launch-error", {
     detail: window.__OPL_PORTAL_LAUNCH_ERROR__
   }));
@@ -437,6 +506,12 @@ const server = http.createServer(async (req, res) => {
         baseUrl: BASE_URL,
         upstream: OPL_WEB_UPSTREAM_URL,
         portalAdapter: PORTAL_OPL_ADAPTER_URL,
+        directEntry: {
+          portalLaunchRequired: true,
+          authUserWithoutLaunchStatus: 401,
+          launchCookieName: LAUNCH_COOKIE,
+          portalPublicUrl: PORTAL_PUBLIC_URL || null,
+        },
       });
       return;
     }

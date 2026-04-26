@@ -216,6 +216,17 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
       if (!documentListeners.has(type)) documentListeners.set(type, []);
       documentListeners.get(type).push(listener);
     },
+    querySelector(selector) {
+      if (selector === 'meta[name="opl-portal-direct-entry"]') {
+        return {
+          getAttribute(name) {
+            if (name === "content") return "0";
+            return null;
+          },
+        };
+      }
+      return null;
+    },
     dispatchEvent(event) {
       for (const listener of documentListeners.get(event.type) || []) {
         listener(event);
@@ -282,15 +293,12 @@ try {
   gateway.stderr.on("data", (chunk) => process.stderr.write(`[gateway] ${chunk}`));
 
   await waitFor(`${gatewayUrl}/healthz`);
-  const upstreamUserResponse = await fetch(`${gatewayUrl}/api/auth/user`);
-  const upstreamUser = await upstreamUserResponse.json();
-  assert(upstreamUser.user.source === "upstream-noauth", "gateway must not fake a Portal user without launch cookie");
-
   const htmlResponse = await fetch(`${gatewayUrl}/?launch_token=launch-token-smoke`);
   const setCookie = htmlResponse.headers.get("set-cookie") || "";
   assert(setCookie.includes("opl_portal_launch=launch-token-smoke"), "gateway did not set launch cookie");
   const html = await htmlResponse.text();
   assert(html.includes("/portal-launch.js"), "gateway did not inject portal launch script");
+  assert(html.includes('meta name="opl-portal-direct-entry" content="0"'), "launch html must mark direct entry as false");
 
   const portalUserResponse = await fetch(`${gatewayUrl}/api/auth/user`, {
     headers: { cookie: setCookie.split(";")[0] },
@@ -316,6 +324,7 @@ try {
   ]);
 
   assert(detail.bootstrap.portal.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
+  assert(browser.window.__OPL_PORTAL_DIRECT_ENTRY__.active === false, "launch flow should clear direct entry state");
   assert(browser.window.__OPL_PORTAL__.bootstrap.portal.portalUserId === "portal-user-smoke", "stable browser API did not expose bootstrap");
   assert(calls.bootstrap.length === bootstrapCallsBeforeScript + 1, "adapter bootstrap was not called through gateway");
   assert(calls.bootstrap.at(-1).launchToken === "launch-token-smoke", "launch token was not forwarded");
