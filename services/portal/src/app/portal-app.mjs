@@ -16,6 +16,23 @@ import { createMinioStorageClient } from "../integrations/minio-storage-client.m
 import { createOplAdapterClient } from "../integrations/opl-adapter-client.mjs";
 import { createOplRoutes } from "../routes/opl.routes.mjs";
 import { createOplLaunchService } from "../services/opl-launch.service.mjs";
+import {
+  ensureResourceOrderCollections,
+  freezeResourceOrder,
+  quoteResourceOrderFromPlan,
+  releaseResourceOrder,
+  resourceOrderPublicView,
+  resourceOrdersForUser,
+  transitionResourceOrder,
+  upsertQuotedResourceOrder,
+} from "../domain/resource-orders.mjs";
+import {
+  appendLedgerEntry,
+  ensureWallet,
+  moneyAmount,
+  normalizeLedgerEntries,
+  walletCommercialSnapshot,
+} from "../domain/wallet-ledger.mjs";
 
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 const __dirname = path.resolve(appDir, "..");
@@ -364,7 +381,7 @@ function activeGroupForUser(db, user) {
 
 function buildCommercialProfile(db, user, options = {}) {
   const group = options.group ?? activeGroupForUser(db, user);
-  const wallet = options.wallet || db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
+  const wallet = options.wallet || ensureWallet(db, user.id);
   const policy = options.policy || null;
   const trialEntitlement = normalizeTrialEntitlement(user.preferences?.commercial?.trialEntitlement, { createdAt: user.createdAt });
   const trialActive = Boolean(
@@ -374,7 +391,9 @@ function buildCommercialProfile(db, user, options = {}) {
     (!trialEntitlement.expiresAt || Date.parse(trialEntitlement.expiresAt) > Date.now())
   );
   const accountStatus = activeUserStatus(user.status);
+  const freezeSnapshot = walletCommercialSnapshot(db, user);
   const balance = Number(wallet.balance || 0);
+  const availableBalance = freezeSnapshot.availableBalance;
   const balanceFloor = Number(group?.balanceFloor || 0);
   const policyBlocks = Array.isArray(policy?.blocks) ? policy.blocks : [];
   const nonBillingBlocks = policyBlocks.filter((item) => !String(item).includes("余额低于分组门槛"));
@@ -383,7 +402,7 @@ function buildCommercialProfile(db, user, options = {}) {
     billingStatus = "account_blocked";
   } else if (balanceFloor > 0 && balance < balanceFloor) {
     billingStatus = trialActive ? "trial_only" : "below_balance_floor";
-  } else if (balance > 0) {
+  } else if (availableBalance > 0) {
     billingStatus = "wallet_available";
   } else if (trialActive) {
     billingStatus = "trial_only";
@@ -395,12 +414,15 @@ function buildCommercialProfile(db, user, options = {}) {
     billingStatus,
     entitlementStatus: trialActive ? "trial_active" : (trialEntitlement?.status || "none"),
     walletBalance: balance,
+    activeFreeze: freezeSnapshot.activeFreeze,
+    trialRemaining: freezeSnapshot.trialRemaining,
+    availableBalance,
     balanceFloor,
     canEnterWorkbench: accountStatus === "active",
-    canStartChargeableRun: accountStatus === "active" && nonBillingBlocks.length === 0 && (balance > 0 || trialActive),
+    canStartChargeableRun: accountStatus === "active" && nonBillingBlocks.length === 0 && availableBalance > 0,
     chargeBlockedReasons: [
       ...nonBillingBlocks,
-      ...(balance > 0 || trialActive ? [] : ["收费运行前需要充值或试用额度"]),
+      ...(availableBalance > 0 ? [] : ["收费运行前需要充值或试用额度"]),
       ...(balanceFloor > 0 && balance < balanceFloor && !trialActive ? [`当前余额低于分组门槛（${balanceFloor.toFixed(2)}）`] : []),
     ],
     priceTransparency: "服务器价格来自腾讯云 CVM 实时报价；最终扣费以腾讯云账单明细回补为准。",
@@ -859,6 +881,11 @@ function buildPortalHealthPayload() {
       required: TENCENT_BILLING_REQUIRED,
       serviceUrl: BILLING_SERVICE_URL || null,
     },
+    resourceOrders: {
+      enabled: true,
+      states: ["quoted", "frozen", "provisioning", "running", "released", "reconciling", "settled"],
+      exactBillingSource: "billing-aggregator:tencent_cloud_bill",
+    },
     runtime: {
       portalPublicUrl: PORTAL_PUBLIC_URL || null,
       oplWebUrl: OPL_WEB_URL || null,
@@ -947,6 +974,8 @@ async function ensureJsonDb() {
     ledger: [],
     taskSpaces: [],
     workspaceSessions: [],
+    resourceOrders: [],
+    resourceOrderEvents: [],
     userSandboxes: [],
     groups: [],
     settings: {
@@ -989,13 +1018,69 @@ async function ensureStorageInfra() {
     );
     CREATE TABLE IF NOT EXISTS ${pgTableName("ledger_entries")} (
       id text PRIMARY KEY,
+      tenant_id text NOT NULL DEFAULT '',
       user_id text NOT NULL,
       run_id text NOT NULL,
       workspace_id text NOT NULL,
+      order_id text NOT NULL DEFAULT '',
       type text NOT NULL,
       amount numeric NOT NULL,
+      currency text NOT NULL DEFAULT 'CNY',
+      source_type text NOT NULL DEFAULT '',
+      source_id text NOT NULL DEFAULT '',
+      idempotency_key text NOT NULL DEFAULT '',
       reason text NOT NULL,
       operator_id text NOT NULL,
+      created_at timestamptz NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS ${pgTableName("resource_orders")} (
+      id text PRIMARY KEY,
+      tenant_id text NOT NULL,
+      user_id text NOT NULL,
+      portal_user_id text NOT NULL,
+      workspace_id text NOT NULL,
+      workspace_session_id text NOT NULL,
+      run_id text NOT NULL,
+      status text NOT NULL,
+      server_plan_id text NOT NULL,
+      region text NOT NULL,
+      zone text NOT NULL,
+      cpu numeric NOT NULL,
+      memory_gb numeric NOT NULL,
+      gpu_type text NOT NULL,
+      gpu_count numeric NOT NULL,
+      storage_plan_id text NOT NULL,
+      storage_size_gb numeric NOT NULL,
+      retention_policy text NOT NULL,
+      estimated_hours numeric NOT NULL,
+      auto_stop_at text NOT NULL,
+      quote_id text NOT NULL,
+      freeze_id text NOT NULL,
+      provision_request_id text NOT NULL,
+      cloud_resource_ids_json jsonb NOT NULL,
+      currency text NOT NULL,
+      unit_price numeric NOT NULL,
+      min_billable_hours numeric NOT NULL,
+      risk_factor numeric NOT NULL,
+      quote_amount numeric NOT NULL,
+      freeze_amount numeric NOT NULL,
+      exact_cost numeric NULL,
+      pricing_source text NOT NULL,
+      price_updated_at text NOT NULL,
+      idempotency_key text NOT NULL,
+      failed_reason text NOT NULL,
+      created_at timestamptz NOT NULL,
+      updated_at timestamptz NOT NULL,
+      settled_at timestamptz NULL
+    );
+    CREATE TABLE IF NOT EXISTS ${pgTableName("resource_order_events")} (
+      id text PRIMARY KEY,
+      order_id text NOT NULL,
+      event_type text NOT NULL,
+      event_payload_json jsonb NOT NULL,
+      actor_type text NOT NULL,
+      actor_id text NOT NULL,
+      idempotency_key text NOT NULL,
       created_at timestamptz NOT NULL
     );
     CREATE TABLE IF NOT EXISTS ${pgTableName("task_spaces")} (
@@ -1071,6 +1156,12 @@ async function ensureStorageInfra() {
     ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_id text NOT NULL DEFAULT '';
     ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_region text NOT NULL DEFAULT '';
     ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_snapshot_json jsonb NOT NULL DEFAULT '{}'::jsonb;
+    ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS order_id text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'CNY';
+    ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_id text NOT NULL DEFAULT '';
+    ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS idempotency_key text NOT NULL DEFAULT '';
   `);
 }
 
@@ -1096,6 +1187,8 @@ function buildSeedDb() {
     ledger: [],
     taskSpaces: [],
     workspaceSessions: [],
+    resourceOrders: [],
+    resourceOrderEvents: [],
     userSandboxes: [],
     groups: [],
     settings: {
@@ -1108,11 +1201,25 @@ function buildSeedDb() {
 async function migrateDb(db) {
   let changed = false;
 
-  for (const key of ["users", "sessions", "wallets", "ledger", "workspaceSessions", "userSandboxes", "groups"]) {
+  for (const key of ["users", "sessions", "wallets", "ledger", "workspaceSessions", "resourceOrders", "resourceOrderEvents", "userSandboxes", "groups"]) {
     if (!Array.isArray(db[key])) {
       db[key] = [];
       changed = true;
     }
+  }
+
+  const resourceOrderStateBefore = JSON.stringify({
+    ledger: db.ledger,
+    resourceOrders: db.resourceOrders,
+    resourceOrderEvents: db.resourceOrderEvents,
+  });
+  ensureResourceOrderCollections(db);
+  if (JSON.stringify({
+    ledger: db.ledger,
+    resourceOrders: db.resourceOrders,
+    resourceOrderEvents: db.resourceOrderEvents,
+  }) !== resourceOrderStateBefore) {
+    changed = true;
   }
 
   if (!Array.isArray(db.taskSpaces)) {
@@ -1356,11 +1463,13 @@ async function readDb() {
     }
   }
 
-  const [usersRes, walletsRes, ledgerRes, taskSpacesRes, sandboxesRes, groupsRes, settingsRes, eventsRes] = await Promise.all([
+  const [usersRes, walletsRes, ledgerRes, taskSpacesRes, resourceOrdersRes, resourceOrderEventsRes, sandboxesRes, groupsRes, settingsRes, eventsRes] = await Promise.all([
     pool.query(`SELECT * FROM ${pgTableName("users")}`),
     pool.query(`SELECT * FROM ${pgTableName("wallets")}`),
     pool.query(`SELECT * FROM ${pgTableName("ledger_entries")}`),
     pool.query(`SELECT * FROM ${pgTableName("task_spaces")}`),
+    pool.query(`SELECT * FROM ${pgTableName("resource_orders")}`),
+    pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`),
     pool.query(`SELECT * FROM ${pgTableName("user_sandboxes")}`),
     pool.query(`SELECT * FROM ${pgTableName("groups")}`),
     pool.query(`SELECT * FROM ${pgTableName("portal_settings")}`),
@@ -1417,11 +1526,17 @@ async function readDb() {
     })),
     ledger: ledgerRes.rows.map((row) => ({
       id: row.id,
+      tenantId: row.tenant_id || row.user_id,
       userId: row.user_id,
       runId: row.run_id,
       workspaceId: row.workspace_id,
+      orderId: row.order_id || "",
       type: row.type,
       amount: Number(row.amount || 0),
+      currency: row.currency || "CNY",
+      sourceType: row.source_type || "",
+      sourceId: row.source_id || "",
+      idempotencyKey: row.idempotency_key || "",
       reason: row.reason,
       operatorId: row.operator_id,
       createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
@@ -1440,6 +1555,56 @@ async function readDb() {
       updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
       archivedAt: row.archived_at instanceof Date ? row.archived_at.toISOString() : row.archived_at,
       deletedAt: row.deleted_at instanceof Date ? row.deleted_at.toISOString() : row.deleted_at,
+    })),
+    resourceOrders: resourceOrdersRes.rows.map((row) => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      userId: row.user_id,
+      portalUserId: row.portal_user_id,
+      workspaceId: row.workspace_id,
+      workspaceSessionId: row.workspace_session_id,
+      runId: row.run_id,
+      status: row.status,
+      serverPlanId: row.server_plan_id,
+      region: row.region,
+      zone: row.zone,
+      cpu: Number(row.cpu || 0),
+      memoryGb: Number(row.memory_gb || 0),
+      gpuType: row.gpu_type || "",
+      gpuCount: Number(row.gpu_count || 0),
+      storagePlanId: row.storage_plan_id || "",
+      storageSizeGb: Number(row.storage_size_gb || 0),
+      retentionPolicy: row.retention_policy || "",
+      estimatedHours: Number(row.estimated_hours || 0),
+      autoStopAt: row.auto_stop_at || "",
+      quoteId: row.quote_id || "",
+      freezeId: row.freeze_id || "",
+      provisionRequestId: row.provision_request_id || "",
+      cloudResourceIds: row.cloud_resource_ids_json || [],
+      currency: row.currency || "CNY",
+      unitPrice: Number(row.unit_price || 0),
+      minBillableHours: Number(row.min_billable_hours || 1),
+      riskFactor: Number(row.risk_factor || 1),
+      quoteAmount: Number(row.quote_amount || 0),
+      freezeAmount: Number(row.freeze_amount || 0),
+      exactCost: row.exact_cost === null ? null : Number(row.exact_cost || 0),
+      pricingSource: row.pricing_source || "",
+      priceUpdatedAt: row.price_updated_at || "",
+      idempotencyKey: row.idempotency_key || "",
+      failedReason: row.failed_reason || "",
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+      updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+      settledAt: row.settled_at instanceof Date ? row.settled_at.toISOString() : row.settled_at,
+    })),
+    resourceOrderEvents: resourceOrderEventsRes.rows.map((row) => ({
+      id: row.id,
+      orderId: row.order_id,
+      eventType: row.event_type,
+      eventPayload: row.event_payload_json || {},
+      actorType: row.actor_type,
+      actorId: row.actor_id,
+      idempotencyKey: row.idempotency_key || "",
+      createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
     })),
     workspaceSessions,
     userSandboxes: sandboxesRes.rows.map((row) => ({
@@ -1519,9 +1684,23 @@ async function writeDb(db) {
         await client.query(`INSERT INTO ${pgTableName("wallets")} (user_id,balance,updated_at) VALUES ($1,$2,$3)`, [row.userId, Number(row.balance || 0), row.updatedAt || new Date().toISOString()]);
       }
       await client.query(`DELETE FROM ${pgTableName("ledger_entries")}`);
-      for (const row of db.ledger || []) {
-        await client.query(`INSERT INTO ${pgTableName("ledger_entries")} (id,user_id,run_id,workspace_id,type,amount,reason,operator_id,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, [
-          row.id, row.userId || "", row.runId || "", row.workspaceId || "", row.type || "", Number(row.amount || 0), row.reason || "", row.operatorId || "", row.createdAt || new Date().toISOString(),
+      for (const row of normalizeLedgerEntries(db.ledger || [])) {
+        await client.query(`INSERT INTO ${pgTableName("ledger_entries")} (id,tenant_id,user_id,run_id,workspace_id,order_id,type,amount,currency,source_type,source_id,idempotency_key,reason,operator_id,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`, [
+          row.id,
+          row.tenantId || row.userId || "",
+          row.userId || "",
+          row.runId || "",
+          row.workspaceId || "",
+          row.orderId || "",
+          row.type || "",
+          Number(row.amount || 0),
+          row.currency || "CNY",
+          row.sourceType || "",
+          row.sourceId || "",
+          row.idempotencyKey || "",
+          row.reason || "",
+          row.operatorId || "",
+          row.createdAt || new Date().toISOString(),
         ]);
       }
       await client.query(`DELETE FROM ${pgTableName("task_spaces")}`);
@@ -1540,6 +1719,62 @@ async function writeDb(db) {
           row.updatedAt || row.createdAt || new Date().toISOString(),
           row.archivedAt || null,
           row.deletedAt || null,
+        ]);
+      }
+      await client.query(`DELETE FROM ${pgTableName("resource_orders")}`);
+      for (const row of db.resourceOrders || []) {
+        await client.query(`INSERT INTO ${pgTableName("resource_orders")} (id,tenant_id,user_id,portal_user_id,workspace_id,workspace_session_id,run_id,status,server_plan_id,region,zone,cpu,memory_gb,gpu_type,gpu_count,storage_plan_id,storage_size_gb,retention_policy,estimated_hours,auto_stop_at,quote_id,freeze_id,provision_request_id,cloud_resource_ids_json,currency,unit_price,min_billable_hours,risk_factor,quote_amount,freeze_amount,exact_cost,pricing_source,price_updated_at,idempotency_key,failed_reason,created_at,updated_at,settled_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38)`, [
+          row.id,
+          row.tenantId || row.userId || "",
+          row.userId || "",
+          row.portalUserId || row.userId || "",
+          row.workspaceId || "",
+          row.workspaceSessionId || "",
+          row.runId || "",
+          row.status || "quoted",
+          row.serverPlanId || "",
+          row.region || "",
+          row.zone || "",
+          Number(row.cpu || 0),
+          Number(row.memoryGb || 0),
+          row.gpuType || "",
+          Number(row.gpuCount || 0),
+          row.storagePlanId || "",
+          Number(row.storageSizeGb || 0),
+          row.retentionPolicy || "",
+          Number(row.estimatedHours || 1),
+          row.autoStopAt || "",
+          row.quoteId || "",
+          row.freezeId || "",
+          row.provisionRequestId || "",
+          JSON.stringify(row.cloudResourceIds || []),
+          row.currency || "CNY",
+          Number(row.unitPrice || 0),
+          Number(row.minBillableHours || 1),
+          Number(row.riskFactor || 1),
+          Number(row.quoteAmount || 0),
+          Number(row.freezeAmount || 0),
+          row.exactCost === null || row.exactCost === undefined ? null : Number(row.exactCost || 0),
+          row.pricingSource || "",
+          row.priceUpdatedAt || "",
+          row.idempotencyKey || "",
+          row.failedReason || "",
+          row.createdAt || new Date().toISOString(),
+          row.updatedAt || row.createdAt || new Date().toISOString(),
+          row.settledAt || null,
+        ]);
+      }
+      await client.query(`DELETE FROM ${pgTableName("resource_order_events")}`);
+      for (const row of db.resourceOrderEvents || []) {
+        await client.query(`INSERT INTO ${pgTableName("resource_order_events")} (id,order_id,event_type,event_payload_json,actor_type,actor_id,idempotency_key,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, [
+          row.id,
+          row.orderId || "",
+          row.eventType || "",
+          JSON.stringify(row.eventPayload || {}),
+          row.actorType || "system",
+          row.actorId || "",
+          row.idempotencyKey || "",
+          row.createdAt || new Date().toISOString(),
         ]);
       }
       await client.query(`DELETE FROM ${pgTableName("user_sandboxes")}`);
@@ -2424,6 +2659,101 @@ async function fetchServerPlans() {
   return billingClient.fetchServerPlans();
 }
 
+async function readJsonBody(req) {
+  const bodyText = (await readBody(req)).toString("utf8");
+  if (!bodyText.trim()) return {};
+  return JSON.parse(bodyText);
+}
+
+function findResourceOrderUser(db, payload = {}) {
+  const userId = String(payload.userId || payload.portalUserId || payload.tenantId || payload.customerId || payload.customer_id || "").trim();
+  const email = normalizeAuthEmail(payload.email || payload.userEmail || payload.portalUserEmail);
+  return db.users.find((item) =>
+    (userId && item.id === userId) ||
+    (email && normalizeAuthEmail(item.email) === email),
+  ) || null;
+}
+
+function idempotencyKeyFor(req, prefix, user, workspaceId, payload = {}) {
+  const explicit = String(req.headers["x-idempotency-key"] || payload.idempotencyKey || payload.idempotency_key || "").trim();
+  if (explicit) return explicit;
+  const runId = String(payload.runId || payload.run_id || payload.runtimeRunId || "").trim();
+  const planId = String(payload.serverPlanId || payload.planId || "").trim();
+  return `${prefix}:${user.id}:${workspaceId}:${runId || planId || randomUUID()}`;
+}
+
+function selectServerPlan(plansPayload, planId = "") {
+  const items = Array.isArray(plansPayload?.items) ? plansPayload.items : [];
+  const normalizedPlanId = String(planId || "").trim();
+  return items.find((item) =>
+    String(item.id || "") === normalizedPlanId ||
+    String(item.serverPlanId || "") === normalizedPlanId ||
+    String(item.instanceType || "") === normalizedPlanId,
+  ) || (normalizedPlanId ? null : items.find((item) => item.salable) || items[0] || null);
+}
+
+async function resolveResourceOrderPlan(taskSpace, payload = {}) {
+  const requestedPlanId = String(payload.planId || payload.serverPlanId || taskSpace?.serverPlanId || "").trim();
+  const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
+  let plan = selectServerPlan(plansPayload, requestedPlanId);
+  if (!plan && taskSpace?.serverPlanSnapshot) {
+    plan = taskSpace.serverPlanSnapshot;
+  }
+  if (!plan && Array.isArray(plansPayload.items) && plansPayload.items.length === 1) {
+    plan = plansPayload.items[0];
+  }
+  return { plan, plansPayload };
+}
+
+async function createQuotedResourceOrder(db, user, req, payload = {}, options = {}) {
+  const taskSlug = slugify(payload.task || payload.taskSlug || payload.workspaceId || user.currentTaskSlug || "default");
+  const taskSpace = await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
+  const { plan, plansPayload } = await resolveResourceOrderPlan(taskSpace, payload);
+  if (!plan) {
+    return {
+      ok: false,
+      status: 409,
+      error: "server_plan_unavailable",
+      message: "当前任务空间还没有可用服务器规格，请先在服务器与费用页选择规格。",
+      plansSummary: buildServerPlansSummary(plansPayload),
+    };
+  }
+  const idempotencyKey = idempotencyKeyFor(req, options.idempotencyPrefix || "resource-order-quote", user, taskSpace.slug, {
+    ...payload,
+    serverPlanId: plan.id || payload.serverPlanId || payload.planId || "",
+  });
+  const quotedOrder = quoteResourceOrderFromPlan({
+    user,
+    workspace: taskSpace,
+    serverPlan: plan,
+    input: {
+      ...payload,
+      serverPlanId: plan.id || payload.serverPlanId || payload.planId || "",
+      workspaceSessionId: payload.workspaceSessionId || payload.workspace_session_id || "",
+      runId: payload.runId || payload.run_id || "",
+    },
+    idempotencyKey,
+  });
+  const upserted = upsertQuotedResourceOrder(db, quotedOrder);
+  return {
+    ok: true,
+    order: upserted.order,
+    created: upserted.created,
+    taskSpace,
+    plan,
+    plansSummary: buildServerPlansSummary(plansPayload),
+  };
+}
+
+function resourceOrderResponse(db, user, order) {
+  return {
+    ok: true,
+    resourceOrderId: order.id,
+    order: resourceOrderPublicView(order, db.resourceOrderEvents || []),
+    commercial: buildCommercialProfile(db, user),
+  };
+}
+
 async function fetchMinioSummary() {
   return minioStorageClient.fetchSummary();
 }
@@ -2806,10 +3136,12 @@ function withinDateRange(value, range) {
 }
 
 function netSpent(entries = []) {
-  return Number((-entries.reduce((sum, item) => {
-    if (!["resource_charge", "makeup_charge", "refund"].includes(item.type)) return sum;
-    return sum + Number(item.amount || 0);
-  }, 0)).toFixed(5));
+  return Number(entries.reduce((sum, item) => {
+    const amount = Math.abs(Number(item.amount || 0));
+    if (item.type === "resource_charge" || item.type === "makeup_charge") return sum + amount;
+    if (item.type === "refund") return sum - amount;
+    return sum;
+  }, 0).toFixed(5));
 }
 
 async function buildOverviewPayload(db, user, options = {}) {
@@ -2822,12 +3154,16 @@ async function buildOverviewPayload(db, user, options = {}) {
   const serverPlans = await fetchServerPlans() || buildServerPlansFallback();
   const serverPlansSummary = buildServerPlansSummary(serverPlans);
   const billing = await fetchBillingSummary(user.id, "", "168h");
+  const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
   const items = billing?.items || [];
+  const resourceOrders = resourceOrdersForUser(db, user.id);
   const taskTitleMap = new Map(tasks.map((task) => [task.slug, task.title]));
   const todayRange = rangeBounds("today");
   const todayCost = items
     .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, todayRange))
     .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0);
+  const pendingTotal = Number(pendingBilling?.totals?.totalCost || pendingBilling?.totalCost || 0);
+  const exactTotal = Number(billing?.totals?.totalCost || billing?.totalCost || 0);
 
   const taskRows = tasks.map((task) => ({
     slug: task.slug,
@@ -2857,15 +3193,21 @@ async function buildOverviewPayload(db, user, options = {}) {
       billingStatus: commercial.billingStatus,
       entitlementStatus: commercial.entitlementStatus,
       balance: Number(wallet.balance || 0),
+      activeFreeze: commercial.activeFreeze || 0,
+      availableBalance: commercial.availableBalance || 0,
       todayCost: Number(todayCost.toFixed(5)),
+      pendingCost: Number(pendingTotal.toFixed(5)),
+      exactCost: Number(exactTotal.toFixed(5)),
       historicalCost: netSpent(db.ledger.filter((item) => item.userId === user.id)),
       activeTasks: tasks.filter((item) => item.status === "active").length,
       workspaceCount,
       runCount: runs.length,
+      resourceOrderCount: resourceOrders.length,
     },
     commercial,
     serverPlansSummary,
     selectedServerPlan: currentServerPlanSelection(currentTask),
+    latestResourceOrders: resourceOrders.slice(0, 5).map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || [])),
     onboarding: buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }),
     taskCards: taskPagination.rows,
     taskPagination: {
@@ -2885,7 +3227,8 @@ async function buildOverviewPayload(db, user, options = {}) {
 }
 
 async function buildBillingPayload(db, user, options = {}) {
-  const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
+  const wallet = ensureWallet(db, user.id);
+  const commercial = buildCommercialProfile(db, user, { wallet });
   const pageSize = normalizePageSize(options.pageSize);
   const fromValue = String(options.from || "").trim();
   const toValue = String(options.to || "").trim();
@@ -2896,6 +3239,7 @@ async function buildBillingPayload(db, user, options = {}) {
   const normalizedTo = toValue || formatDateOnly(new Date());
   const range = rangeBounds(rangeKey, normalizedFrom, normalizedTo);
   const billing = await fetchBillingSummary(user.id, "", "720h");
+  const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
   const items = billing?.items || [];
   const runs = await collectRunsForUser(user.id);
   const filteredItems = items.filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, range));
@@ -2948,12 +3292,17 @@ async function buildBillingPayload(db, user, options = {}) {
   return {
     wallet: {
       balance: Number(wallet.balance || 0),
+      activeFreeze: commercial.activeFreeze || 0,
+      availableBalance: commercial.availableBalance || 0,
+      trialRemaining: commercial.trialRemaining || 0,
     },
     totals,
     summary: {
       selectedCost: Number(totals.totalCost.toFixed(5)),
       runCount: filteredRuns.length,
       workspaceCount: taskCostsAll.filter((item) => item.runCount > 0 || item.totalCost > 0).length,
+      pendingCost: Number((Number(pendingBilling?.totals?.totalCost || pendingBilling?.totalCost || 0)).toFixed(5)),
+      exactCost: Number((Number(billing?.totals?.totalCost || billing?.totalCost || totals.totalCost || 0)).toFixed(5)),
     },
     breakdown: {
       cpuCost: Number(totals.cpuCost.toFixed(5)),
@@ -4245,6 +4594,116 @@ const server = http.createServer(async (req, res) => {
     });
     return;
   }
+  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/prepare-run") {
+    if (!portalInternalAuthAllowed(req)) {
+      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
+      return;
+    }
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const portalUser = findResourceOrderUser(db, payload);
+    if (!portalUser) {
+      sendJson(res, { ok: false, error: "portal_user_not_found" }, 404);
+      return;
+    }
+    if (isBlockedUserStatus(portalUser.status)) {
+      sendJson(res, { ok: false, error: "account_blocked" }, 403);
+      return;
+    }
+    const quoted = await createQuotedResourceOrder(db, portalUser, req, payload, { idempotencyPrefix: "prepare-run" });
+    if (!quoted.ok) {
+      sendJson(res, quoted, quoted.status || 400);
+      return;
+    }
+    const frozen = freezeResourceOrder(db, {
+      user: portalUser,
+      order: quoted.order,
+      idempotencyKey: String(payload.freezeIdempotencyKey || `prepare-run-freeze:${quoted.order.id}`).trim(),
+    });
+    if (!frozen.ok) {
+      sendJson(res, frozen, frozen.status || 400);
+      return;
+    }
+    const provisioning = transitionResourceOrder(db, {
+      orderId: frozen.order.id,
+      status: "provisioning",
+      actorType: "runtime-bridge",
+      actorId: String(payload.runtimeSessionId || payload.workspaceSessionId || ""),
+      payload: {
+        runId: String(payload.runId || payload.run_id || ""),
+        workspaceSessionId: String(payload.workspaceSessionId || payload.workspace_session_id || ""),
+      },
+      idempotencyKey: `event:provisioning:${frozen.order.id}`,
+    });
+    await writeDb(db);
+    sendJson(res, resourceOrderResponse(db, portalUser, provisioning.order || frozen.order));
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/mark-running") {
+    if (!portalInternalAuthAllowed(req)) {
+      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
+      return;
+    }
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const orderId = String(payload.resourceOrderId || payload.orderId || "").trim();
+    const result = transitionResourceOrder(db, {
+      orderId,
+      status: "running",
+      actorType: "runner",
+      actorId: String(payload.runId || payload.runnerRunId || ""),
+      payload,
+      idempotencyKey: String(payload.idempotencyKey || `event:running:${orderId}`).trim(),
+    });
+    if (!result.ok) {
+      sendJson(res, result, result.status || 400);
+      return;
+    }
+    await writeDb(db);
+    sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/release") {
+    if (!portalInternalAuthAllowed(req)) {
+      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
+      return;
+    }
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const orderId = String(payload.resourceOrderId || payload.orderId || "").trim();
+    const order = db.resourceOrders?.find((item) => item.id === orderId);
+    const portalUser = order ? db.users.find((item) => item.id === order.userId) : null;
+    const result = releaseResourceOrder(db, {
+      user: portalUser,
+      orderId,
+      actorType: "runner",
+      actorId: String(payload.runId || ""),
+      payload,
+      idempotencyKey: String(payload.idempotencyKey || `freeze_release:${orderId}`).trim(),
+    });
+    if (!result.ok) {
+      sendJson(res, result, result.status || 400);
+      return;
+    }
+    await writeDb(db);
+    sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/auth/oidc/login") {
     const state = randomUUID();
     clearCookie(res, oidcStateCookie());
@@ -4652,6 +5111,69 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/portal/api/billing") {
     sendJson(res, await buildBillingPayload(db, user, readBillingRequestOptions(url)));
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/portal/api/resource-orders") {
+    ensureResourceOrderCollections(db);
+    const items = resourceOrdersForUser(db, user.id)
+      .map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || []));
+    sendJson(res, {
+      ok: true,
+      items,
+      commercial: buildCommercialProfile(db, user),
+      source: "portal_resource_order_state",
+    });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/quote") {
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const quoted = await createQuotedResourceOrder(db, user, req, payload, { idempotencyPrefix: "resource-order-quote" });
+    if (!quoted.ok) {
+      sendJson(res, quoted, quoted.status || 400);
+      return;
+    }
+    await writeDb(db);
+    sendJson(res, {
+      ...resourceOrderResponse(db, user, quoted.order),
+      selectedServerPlan: currentServerPlanSelection(quoted.taskSpace),
+      plansSummary: quoted.plansSummary,
+    });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/freeze") {
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    let order = db.resourceOrders?.find((item) => item.id === String(payload.orderId || payload.resourceOrderId || ""));
+    if (!order) {
+      const quoted = await createQuotedResourceOrder(db, user, req, payload, { idempotencyPrefix: "resource-order-freeze-quote" });
+      if (!quoted.ok) {
+        sendJson(res, quoted, quoted.status || 400);
+        return;
+      }
+      order = quoted.order;
+    }
+    const frozen = freezeResourceOrder(db, {
+      user,
+      order,
+      idempotencyKey: String(req.headers["x-idempotency-key"] || payload.idempotencyKey || `freeze_hold:${order.id}`).trim(),
+    });
+    if (!frozen.ok) {
+      sendJson(res, frozen, frozen.status || 400);
+      return;
+    }
+    await writeDb(db);
+    sendJson(res, resourceOrderResponse(db, user, frozen.order));
     return;
   }
   if (req.method === "POST" && url.pathname === "/portal/api/server-plans/select") {
@@ -5190,13 +5712,19 @@ const server = http.createServer(async (req, res) => {
     const signedAmount = actionType === "refund" ? Math.abs(amount) : -Math.abs(amount);
     wallet.balance += signedAmount;
     wallet.updatedAt = new Date().toISOString();
-    db.ledger.push({
+    appendLedgerEntry(db, {
       id: randomUUID(),
+      tenantId: targetUser.id,
       userId: targetUser.id,
       runId: String(form.runId || "").trim(),
       workspaceId: String(form.workspaceId || "").trim(),
+      orderId: String(form.orderId || "").trim(),
       type: actionType,
-      amount: signedAmount,
+      amount: Math.abs(amount),
+      currency: "CNY",
+      sourceType: "admin_adjustment",
+      sourceId: String(form.sourceId || "").trim(),
+      idempotencyKey: String(form.idempotencyKey || "").trim(),
       reason,
       createdAt: new Date().toISOString(),
       operatorId: user.id,
@@ -5718,7 +6246,18 @@ const server = http.createServer(async (req, res) => {
     }
     wallet.balance += amount;
     wallet.updatedAt = new Date().toISOString();
-    db.ledger.push({ id: randomUUID(), userId: form.userId, type: "topup", amount, createdAt: new Date().toISOString(), operatorId: user.id });
+    appendLedgerEntry(db, {
+      id: randomUUID(),
+      tenantId: form.userId,
+      userId: form.userId,
+      type: "topup",
+      amount,
+      currency: "CNY",
+      sourceType: "admin_topup",
+      reason: "admin_recharge",
+      createdAt: new Date().toISOString(),
+      operatorId: user.id,
+    });
     await logPortalEvent({ type: "wallet_topped_up", userId: form.userId, operatorId: user.id, amount });
     await writeDb(db);
     res.writeHead(302, { Location: redirectTo });
