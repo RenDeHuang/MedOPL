@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { access, readFile, readdir, writeFile, stat, mkdir, appendFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import pg from "pg";
 
 const PORT = Number(process.env.PORT || 3001);
@@ -24,6 +24,22 @@ const DEFAULT_GPU_COUNT = Number(process.env.DEFAULT_GPU_COUNT || "0");
 const AUTO_RECONCILE_ENABLED = String(process.env.AUTO_RECONCILE_ENABLED || "1") !== "0";
 const AUTO_RECONCILE_INTERVAL_MS = Number(process.env.AUTO_RECONCILE_INTERVAL_MS || "600000");
 const AUTO_RECONCILE_WINDOW = String(process.env.AUTO_RECONCILE_WINDOW || "168h").trim() || "168h";
+const BILLING_RECONCILE_ONCE = String(process.env.BILLING_RECONCILE_ONCE || "0") === "1";
+const TENCENT_CLOUD_SECRET_ID = String(process.env.TENCENT_CLOUD_SECRET_ID || "").trim();
+const TENCENT_CLOUD_SECRET_KEY = String(process.env.TENCENT_CLOUD_SECRET_KEY || "").trim();
+const TENCENT_CLOUD_TOKEN = String(process.env.TENCENT_CLOUD_TOKEN || "").trim();
+const TENCENT_CLOUD_REGION = String(process.env.TENCENT_CLOUD_REGION || "ap-guangzhou").trim();
+const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLED || "0") === "1";
+const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "0") === "1";
+const TENCENT_BILLING_ENDPOINT = String(process.env.TENCENT_BILLING_ENDPOINT || "billing.tencentcloudapi.com").trim();
+const TENCENT_BILLING_VERSION = String(process.env.TENCENT_BILLING_VERSION || "2018-07-09").trim();
+const TENCENT_BILLING_MAX_PAGES = Math.max(1, Number(process.env.TENCENT_BILLING_MAX_PAGES || 20));
+const TENCENT_BILLING_PAGE_SIZE = Math.min(100, Math.max(1, Number(process.env.TENCENT_BILLING_PAGE_SIZE || 100)));
+const TENCENT_PRICE_ENABLED = String(process.env.TENCENT_PRICE_ENABLED || "0") === "1";
+const TENCENT_CVM_ENDPOINT = String(process.env.TENCENT_CVM_ENDPOINT || "cvm.tencentcloudapi.com").trim();
+const TENCENT_CVM_VERSION = String(process.env.TENCENT_CVM_VERSION || "2017-03-12").trim();
+const TENCENT_PRICE_IMAGE_ID = String(process.env.TENCENT_PRICE_IMAGE_ID || "").trim();
+const SERVER_PLAN_CATALOG_JSON = String(process.env.SERVER_PLAN_CATALOG_JSON || "[]").trim();
 const TERMINAL_RUN_STATUSES = new Set(["succeeded", "failed", "cancelled", "canceled", "timed_out", "completed"]);
 const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "postgres_redis").trim().toLowerCase();
 const PORTAL_POSTGRES_URL = process.env.PORTAL_POSTGRES_URL || "postgres://postgres:postgres@127.0.0.1:5432/med_meta";
@@ -49,6 +65,169 @@ function storageMode() {
 
 function portalTable(name) {
   return `${PORTAL_DB_NAMESPACE}_${name}`;
+}
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function hmac(key, value, encoding) {
+  return createHmac("sha256", key).update(value).digest(encoding);
+}
+
+function tencentCloudConfigured() {
+  return Boolean(TENCENT_CLOUD_SECRET_ID && TENCENT_CLOUD_SECRET_KEY);
+}
+
+function parseJsonEnv(raw, fallback) {
+  if (!String(raw || "").trim()) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function parseWindowHours(windowValue = "168h") {
+  const raw = String(windowValue || "").trim().toLowerCase();
+  const match = raw.match(/^(\d+(?:\.\d+)?)(h|d)$/);
+  if (!match) return 168;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value <= 0) return 168;
+  return match[2] === "d" ? value * 24 : value;
+}
+
+function formatTencentTime(date) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return [
+    date.getUTCFullYear(),
+    "-",
+    pad(date.getUTCMonth() + 1),
+    "-",
+    pad(date.getUTCDate()),
+    " ",
+    pad(date.getUTCHours()),
+    ":",
+    pad(date.getUTCMinutes()),
+    ":",
+    pad(date.getUTCSeconds()),
+  ].join("");
+}
+
+function windowDateRange(windowValue = "168h") {
+  const end = new Date();
+  const begin = new Date(end.getTime() - parseWindowHours(windowValue) * 3_600_000);
+  return { begin, end };
+}
+
+function tencentMonthlyWindowRanges(windowValue = "168h") {
+  const { begin, end } = windowDateRange(windowValue);
+  const ranges = [];
+  let cursor = new Date(begin);
+
+  while (cursor.getTime() <= end.getTime()) {
+    const nextMonthStart = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1, 0, 0, 0));
+    const rangeEnd = new Date(Math.min(end.getTime(), nextMonthStart.getTime() - 1000));
+    ranges.push({
+      beginTime: formatTencentTime(cursor),
+      endTime: formatTencentTime(rangeEnd),
+    });
+    cursor = new Date(rangeEnd.getTime() + 1000);
+  }
+
+  return ranges;
+}
+
+function firstString(...values) {
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function firstNumber(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+function normalizeTags(rawTags) {
+  if (!rawTags) return {};
+  if (Array.isArray(rawTags)) {
+    return Object.fromEntries(rawTags.map((tag) => [
+      firstString(tag.TagKey, tag.Key, tag.tagKey, tag.key),
+      firstString(tag.TagValue, tag.Value, tag.tagValue, tag.value),
+    ]).filter(([key]) => key));
+  }
+  if (typeof rawTags === "object") {
+    return Object.fromEntries(Object.entries(rawTags).map(([key, value]) => [key, String(value ?? "")]));
+  }
+  return {};
+}
+
+async function callTencentCloud({ endpoint, service, action, version, region, payload = {} }) {
+  if (!tencentCloudConfigured()) {
+    const error = new Error("tencent_cloud_credentials_not_configured");
+    error.status = 503;
+    throw error;
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const date = new Date(timestamp * 1000).toISOString().slice(0, 10);
+  const body = JSON.stringify(payload);
+  const canonicalHeaders = `content-type:application/json; charset=utf-8\nhost:${endpoint}\nx-tc-action:${action.toLowerCase()}\n`;
+  const signedHeaders = "content-type;host;x-tc-action";
+  const canonicalRequest = [
+    "POST",
+    "/",
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    sha256(body),
+  ].join("\n");
+  const credentialScope = `${date}/${service}/tc3_request`;
+  const stringToSign = [
+    "TC3-HMAC-SHA256",
+    String(timestamp),
+    credentialScope,
+    sha256(canonicalRequest),
+  ].join("\n");
+  const secretDate = hmac(`TC3${TENCENT_CLOUD_SECRET_KEY}`, date);
+  const secretService = hmac(secretDate, service);
+  const secretSigning = hmac(secretService, "tc3_request");
+  const signature = hmac(secretSigning, stringToSign, "hex");
+  const authorization = `TC3-HMAC-SHA256 Credential=${TENCENT_CLOUD_SECRET_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  const headers = {
+    authorization,
+    "content-type": "application/json; charset=utf-8",
+    host: endpoint,
+    "x-tc-action": action,
+    "x-tc-region": region,
+    "x-tc-timestamp": String(timestamp),
+    "x-tc-version": version,
+  };
+  if (TENCENT_CLOUD_TOKEN) headers["x-tc-token"] = TENCENT_CLOUD_TOKEN;
+
+  const response = await fetch(`https://${endpoint}`, {
+    method: "POST",
+    headers,
+    body,
+  });
+  const result = await response.json().catch(() => ({}));
+  const apiError = result?.Response?.Error;
+  if (!response.ok || apiError) {
+    const error = new Error(apiError?.Message || `tencent_cloud_${action}_failed:${response.status}`);
+    error.status = response.status;
+    error.code = apiError?.Code || "";
+    error.payload = result;
+    throw error;
+  }
+  return result.Response || result;
 }
 
 async function ensurePortalPool() {
@@ -457,6 +636,8 @@ function summaryFromEstimatedRuns(runs, customerId) {
 
   return {
     customerId: customerId || null,
+    source: "metering_pending",
+    cloudSource: "local_metering",
     itemCount: runs.length,
     totals,
     runs,
@@ -499,6 +680,281 @@ async function fetchAllocation(windowValue, aggregateValue = "") {
   }
 
   return response.json();
+}
+
+function tencentBillRows(response) {
+  const rows =
+    response?.DetailSet ||
+    response?.DetailList ||
+    response?.BillDetailSet ||
+    response?.BillDetailList ||
+    response?.Response?.DetailSet ||
+    [];
+  return Array.isArray(rows) ? rows : [];
+}
+
+function normalizeTencentBillRow(row = {}) {
+  const tags = normalizeTags(row.Tags || row.Tag || row.ResourceTags || row.TagSet);
+  const tenantId = firstString(tags.tenant_id, tags.tenantId, tags.customer_id, tags.customerId, row.TenantId, row.CustomerId);
+  const workspaceId = firstString(tags.workspace_id, tags.workspaceId, row.WorkspaceId);
+  const runId = firstString(tags.run_id, tags.runId, row.RunId);
+  const hasExactRunAttribution = Boolean(tenantId && workspaceId && runId);
+  const resourceId = firstString(row.ResourceId, row.InstanceId, row.ResourceName, row.ResourceIdName);
+  const product = firstString(row.BusinessCodeName, row.ProductCodeName, row.ProductName, row.BusinessCode);
+  const component = firstString(row.ComponentCodeName, row.BillingItemCodeName, row.ComponentName, row.ItemName);
+  const region = firstString(row.RegionName, row.Region, row.RegionId);
+  const zone = firstString(row.ZoneName, row.Zone);
+  const cost = firstNumber(
+    row.RealTotalCost,
+    row.RealCost,
+    row.CashPayAmount,
+    row.TotalCost,
+    row.Cost,
+    row.BillAmount,
+  );
+
+  return {
+    runId: runId || resourceId || randomUUID(),
+    workspaceId: workspaceId || "unattributed",
+    customerId: tenantId || "",
+    tenantId: tenantId || "",
+    start: firstString(row.FeeBeginTime, row.BeginTime, row.SettleBeginTime, row.PayTime, row.CreatedTime),
+    end: firstString(row.FeeEndTime, row.EndTime, row.SettleEndTime, row.PayTime, row.CreatedTime),
+    cpuCost: 0,
+    gpuCost: 0,
+    pvCost: 0,
+    totalCost: cost,
+    pricingSource: hasExactRunAttribution ? "tencent_cloud_bill" : "tencent_cloud_bill_unattributed",
+    hasExactRunAttribution,
+    properties: {
+      pricing_source: hasExactRunAttribution ? "tencent_cloud_bill" : "tencent_cloud_bill_unattributed",
+      cloud_source: "tencent_cloud",
+      attribution_state: hasExactRunAttribution ? "run_attributed" : "unattributed",
+      tenant_id: tenantId,
+      customer_id: tenantId,
+      workspace_id: workspaceId,
+      run_id: runId,
+      resource_id: resourceId,
+      product,
+      component,
+      region,
+      zone,
+      tags,
+      raw: row,
+    },
+  };
+}
+
+function summaryFromTencentBillRows(rows, customerId = "", workspaceId = "") {
+  const normalized = rows.map(normalizeTencentBillRow).filter((item) => {
+    const customerOk = !customerId || item.customerId === customerId || item.properties.tags?.customer_id === customerId;
+    const workspaceOk = !workspaceId || item.workspaceId === workspaceId || item.properties.tags?.workspace_id === workspaceId;
+    return customerOk && workspaceOk;
+  });
+
+  const grouped = new Map();
+  for (const item of normalized) {
+    const key = item.runId || item.properties.resource_id || randomUUID();
+    const current = grouped.get(key) || {
+      runId: item.runId,
+      workspaceId: item.workspaceId,
+      customerId: item.customerId,
+      start: item.start,
+      end: item.end,
+      cpuCost: 0,
+      gpuCost: 0,
+      pvCost: 0,
+      totalCost: 0,
+      sources: [],
+      pricingSource: item.pricingSource,
+      hasExactRunAttribution: item.hasExactRunAttribution,
+      properties: {
+        pricing_source: item.pricingSource,
+        cloud_source: "tencent_cloud",
+        attribution_state: item.hasExactRunAttribution ? "run_attributed" : "unattributed",
+        customer_id: item.customerId,
+        tenant_id: item.tenantId,
+        workspace_id: item.workspaceId,
+        run_id: item.runId,
+      },
+    };
+    current.totalCost += Number(item.totalCost || 0);
+    current.sources.push(item.properties.resource_id || item.properties.product || "tencent_bill_detail");
+    if (!current.start || String(item.start || "") < String(current.start)) current.start = item.start || current.start;
+    if (!current.end || String(item.end || "") > String(current.end)) current.end = item.end || current.end;
+    grouped.set(key, current);
+  }
+
+  const runs = [...grouped.values()].sort((a, b) => Number(b.totalCost || 0) - Number(a.totalCost || 0));
+  const exactRunCount = runs.filter((item) => item.pricingSource === "tencent_cloud_bill").length;
+  const unattributedRunCount = runs.length - exactRunCount;
+  const totals = runs.reduce((acc, item) => {
+    acc.totalCost += Number(item.totalCost || 0);
+    return acc;
+  }, { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 });
+
+  return {
+    customerId: customerId || null,
+    workspaceId: workspaceId || null,
+    source: exactRunCount > 0 ? "tencent_cloud_bill" : "tencent_cloud_bill_unattributed",
+    cloudSource: "tencent_cloud",
+    itemCount: runs.length,
+    exactRunCount,
+    unattributedRunCount,
+    totals,
+    runs,
+    items: runs.map((item) => ({
+      name: item.runId,
+      start: item.start,
+      end: item.end,
+      cpuCost: item.cpuCost,
+      gpuCost: item.gpuCost,
+      pvCost: item.pvCost,
+      totalCost: item.totalCost,
+      pricingSource: item.pricingSource,
+      properties: item.properties,
+    })),
+  };
+}
+
+async function fetchTencentBillSummary(customerId = "", workspaceId = "", windowValue = "168h") {
+  if (!TENCENT_BILLING_ENABLED) {
+    const error = new Error("tencent_billing_disabled");
+    error.status = 503;
+    throw error;
+  }
+  const rows = [];
+  for (const range of tencentMonthlyWindowRanges(windowValue)) {
+    let rangeRows = 0;
+    for (let page = 0; page < TENCENT_BILLING_MAX_PAGES; page += 1) {
+      const response = await callTencentCloud({
+        endpoint: TENCENT_BILLING_ENDPOINT,
+        service: "billing",
+        action: "DescribeBillDetail",
+        version: TENCENT_BILLING_VERSION,
+        region: TENCENT_CLOUD_REGION,
+        payload: {
+          Offset: page * TENCENT_BILLING_PAGE_SIZE,
+          Limit: TENCENT_BILLING_PAGE_SIZE,
+          BeginTime: range.beginTime,
+          EndTime: range.endTime,
+        },
+      });
+      const billRows = tencentBillRows(response);
+      rows.push(...billRows);
+      rangeRows += billRows.length;
+      const total = Number(response.Total || response.TotalCount || 0);
+      if (!total || rangeRows >= total || billRows.length < TENCENT_BILLING_PAGE_SIZE) break;
+      if (page + 1 >= TENCENT_BILLING_MAX_PAGES && rangeRows < total) {
+        const error = new Error(`tencent_billing_detail_truncated:${rangeRows}/${total}`);
+        error.status = 502;
+        throw error;
+      }
+    }
+  }
+  return summaryFromTencentBillRows(rows, customerId, workspaceId);
+}
+
+function serverPlanCatalog() {
+  const parsed = parseJsonEnv(SERVER_PLAN_CATALOG_JSON, []);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+function normalizeTencentPrice(response = {}) {
+  const price = response.Price || response.InstancePrice || response;
+  const instancePrice = price.InstancePrice || price;
+  return {
+    currency: firstString(price.Currency, instancePrice.Currency, "CNY"),
+    originalPrice: firstNumber(instancePrice.OriginalPrice, price.OriginalPrice),
+    discountPrice: firstNumber(instancePrice.DiscountPrice, price.DiscountPrice, instancePrice.UnitPrice, price.UnitPrice),
+    unitPrice: firstNumber(instancePrice.UnitPrice, price.UnitPrice, instancePrice.DiscountPrice, price.DiscountPrice),
+    raw: response,
+  };
+}
+
+async function quoteTencentServerPlan(plan) {
+  if (!TENCENT_PRICE_ENABLED) {
+    return { priceStatus: "disabled", salable: false, reason: "tencent_price_disabled" };
+  }
+  if (!tencentCloudConfigured()) {
+    return { priceStatus: "not_configured", salable: false, reason: "tencent_cloud_credentials_not_configured" };
+  }
+  if (!plan.zone || !plan.instanceType) {
+    return { priceStatus: "invalid_plan", salable: false, reason: "zone_and_instanceType_required" };
+  }
+  const imageId = firstString(plan.imageId, TENCENT_PRICE_IMAGE_ID);
+  if (!imageId) {
+    return { priceStatus: "invalid_plan", salable: false, reason: "imageId_or_TENCENT_PRICE_IMAGE_ID_required" };
+  }
+  try {
+    const response = await callTencentCloud({
+      endpoint: TENCENT_CVM_ENDPOINT,
+      service: "cvm",
+      action: "InquiryPriceRunInstances",
+      version: TENCENT_CVM_VERSION,
+      region: plan.region || TENCENT_CLOUD_REGION,
+      payload: {
+        InstanceChargeType: plan.instanceChargeType || "POSTPAID_BY_HOUR",
+        Placement: { Zone: plan.zone },
+        InstanceType: plan.instanceType,
+        ImageId: imageId,
+        SystemDisk: plan.systemDisk || {
+          DiskType: plan.systemDiskType || "CLOUD_BSSD",
+          DiskSize: Number(plan.systemDiskSize || 50),
+        },
+        DataDisks: Array.isArray(plan.dataDisks) ? plan.dataDisks : [],
+        InternetAccessible: plan.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1 },
+        InstanceCount: 1,
+      },
+    });
+    return {
+      priceStatus: "quoted",
+      salable: true,
+      ...normalizeTencentPrice(response),
+    };
+  } catch (error) {
+    return {
+      priceStatus: "quote_failed",
+      salable: false,
+      reason: String(error.message || error),
+      code: error.code || "",
+    };
+  }
+}
+
+async function listServerPlans() {
+  const plans = serverPlanCatalog();
+  const items = [];
+  for (const plan of plans) {
+    const quote = plan.provider === "tencent" || !plan.provider
+      ? await quoteTencentServerPlan(plan)
+      : { priceStatus: "external_provider", salable: false, reason: "unsupported_provider" };
+    items.push({
+      id: firstString(plan.id, plan.serverPlanId, plan.instanceType),
+      name: firstString(plan.name, plan.instanceType),
+      provider: plan.provider || "tencent",
+      region: plan.region || TENCENT_CLOUD_REGION,
+      zone: plan.zone || "",
+      instanceType: plan.instanceType || "",
+      cpu: Number(plan.cpu || 0),
+      memoryGb: Number(plan.memoryGb || plan.memory || 0),
+      gpu: Number(plan.gpu || plan.gpuCount || 0),
+      nodePool: plan.nodePool || "",
+      runtimeClass: plan.runtimeClass || "",
+      minBillableHours: Number(plan.minBillableHours || 1),
+      riskFactor: Number(plan.riskFactor || 1.2),
+      reservationFloor: Number(plan.reservationFloor || 0),
+      ...quote,
+    });
+  }
+  return {
+    ok: true,
+    source: "tencent_cloud_price",
+    configured: tencentCloudConfigured(),
+    priceEnabled: TENCENT_PRICE_ENABLED,
+    catalogCount: plans.length,
+    items,
+  };
 }
 
 function labelValue(entry, key) {
@@ -583,23 +1039,45 @@ function summaryFromRawAllocations(entries, customerId = "", workspaceId = "") {
 }
 
 async function fetchExactSummary(customerId = "", workspaceId = "", windowValue = "7d") {
+  if (TENCENT_BILLING_ENABLED) {
+    try {
+      const tencentSummary = await fetchTencentBillSummary(customerId, workspaceId, windowValue);
+      if (tencentSummary.runs.length > 0 || TENCENT_BILLING_REQUIRED) {
+        return tencentSummary;
+      }
+    } catch (error) {
+      if (TENCENT_BILLING_REQUIRED) {
+        throw error;
+      }
+    }
+  }
+
   const aggregated = await fetchAllocation(windowValue, "label:customer_id,label:workspace_id,label:run_id");
   const aggregatedSummary = summarize(asEntries(aggregated?.data), customerId, workspaceId);
   if (aggregatedSummary.runs.length > 0) {
+    aggregatedSummary.source = "opencost_pending";
+    aggregatedSummary.cloudSource = "opencost";
     return aggregatedSummary;
   }
 
   const raw = await fetchAllocation(windowValue);
   const rawSummary = summaryFromRawAllocations(asEntries(raw?.data), customerId, workspaceId);
   if (rawSummary.runs.length > 0) {
+    rawSummary.source = "opencost_pending";
+    rawSummary.cloudSource = "opencost";
     return rawSummary;
   }
 
   const k8sExact = await exactRequestedRunCosts(customerId, workspaceId);
   if (k8sExact.length > 0) {
-    return summaryFromEstimatedRuns(k8sExact, customerId);
+    const summary = summaryFromEstimatedRuns(k8sExact, customerId);
+    summary.source = "metering_pending";
+    summary.cloudSource = "local_requested_resources";
+    return summary;
   }
 
+  aggregatedSummary.source = "unavailable";
+  aggregatedSummary.cloudSource = TENCENT_BILLING_ENABLED ? "tencent_cloud_unmatched" : "not_connected";
   return aggregatedSummary;
 }
 
@@ -634,9 +1112,11 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
     summary = summaryFromEstimatedRuns(estimated, customerId);
   }
   const runs = await readRuns();
-  const exactMap = new Map(summary.runs.map((item) => [item.runId, { ...item, pricingSource: "OpenCost aggregated" }]));
+  const exactMap = summary.source === "tencent_cloud_bill"
+    ? new Map(summary.runs.map((item) => [item.runId, { ...item, pricingSource: "tencent_cloud_bill" }]))
+    : new Map();
   const estimatedRuns = (await estimateRunCosts(customerId)).filter((item) => !workspaceId || item.workspaceId === workspaceId);
-  const estimatedMap = new Map(estimatedRuns.map((item) => [item.runId, { ...item, pricingSource: "metering pending" }]));
+  const estimatedMap = new Map(estimatedRuns.map((item) => [item.runId, { ...item, pricingSource: "metering_pending" }]));
 
   const results = [];
   let exactCount = 0;
@@ -653,6 +1133,17 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
     const runCost = exactMap.get(run.runId) || estimatedMap.get(run.runId);
     if (!runCost || !runCost.customerId) continue;
     if (!isCompletedRun(run)) continue;
+
+    if (runCost.pricingSource !== "tencent_cloud_bill") {
+      estimatedCount += 1;
+      results.push({
+        runId: runCost.runId,
+        workspaceId: runCost.workspaceId,
+        action: "pending_exact_bill",
+        pricingSource: runCost.pricingSource,
+      });
+      continue;
+    }
 
     const wallet = db.wallets?.find((item) => item.userId === runCost.customerId);
     if (!wallet) continue;
@@ -671,7 +1162,7 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
         workspaceId: runCost.workspaceId,
         type: "resource_charge",
         amount: -Number(runCost.totalCost || 0),
-        source: runCost.pricingSource === "OpenCost aggregated" ? "opencost" : "estimated",
+        source: "tencent_cloud",
         breakdown: {
           cpuCost: Number(runCost.cpuCost || 0),
           gpuCost: Number(runCost.gpuCost || 0),
@@ -681,11 +1172,7 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
         createdAt: new Date().toISOString()
       });
 
-      if (runCost.pricingSource === "OpenCost aggregated") {
-        exactCount += 1;
-      } else {
-        estimatedCount += 1;
-      }
+      exactCount += 1;
 
       results.push({
         runId: runCost.runId,
@@ -696,10 +1183,6 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
         pricingSource: runCost.pricingSource
       });
 
-      continue;
-    }
-
-    if (runCost.pricingSource !== "OpenCost aggregated") {
       continue;
     }
 
@@ -721,7 +1204,7 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
             workspaceId: runCost.workspaceId,
             type: "makeup_charge",
             amount: -Math.abs(delta),
-            reason: "auto_reconcile_opencost_delta",
+            reason: "auto_reconcile_tencent_bill_delta",
             source: "auto_reconcile",
             createdAt: new Date().toISOString(),
             breakdown: {
@@ -737,7 +1220,7 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
             workspaceId: runCost.workspaceId,
             type: "refund",
             amount: Math.abs(delta),
-            reason: "auto_reconcile_opencost_delta",
+            reason: "auto_reconcile_tencent_bill_delta",
             source: "auto_reconcile",
             createdAt: new Date().toISOString(),
             breakdown: {
@@ -797,7 +1280,9 @@ async function listPendingRuns(customerId = "", workspaceId = "", windowValue = 
   }
 
   const runs = await readRuns();
-  const exactRunIds = new Set(summary.runs.map((item) => item.runId));
+  const exactRunIds = summary.source === "tencent_cloud_bill"
+    ? new Set(summary.runs.map((item) => item.runId))
+    : new Set();
   const db = await readPortalDb();
   const ledger = db?.ledger || [];
   const pending = runs
@@ -925,7 +1410,22 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", "http://local");
 
   if (url.pathname === "/healthz") {
-    sendJson(res, 200, { ok: true, opencostBaseUrl: OPENCOST_BASE_URL || null });
+    sendJson(res, 200, {
+      ok: true,
+      opencostBaseUrl: OPENCOST_BASE_URL || null,
+      tencentBillingEnabled: TENCENT_BILLING_ENABLED,
+      tencentPriceEnabled: TENCENT_PRICE_ENABLED,
+      tencentCloudConfigured: tencentCloudConfigured(),
+    });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/server-plans") {
+    try {
+      sendJson(res, 200, await listServerPlans());
+    } catch (error) {
+      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+    }
     return;
   }
 
@@ -944,6 +1444,13 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 200, {
       ok: true,
       opencostBaseUrl: OPENCOST_BASE_URL || null,
+      pricingSourcePriority: ["tencent_cloud_bill", "opencost_pending", "metering_pending"],
+      tencentBillingEnabled: TENCENT_BILLING_ENABLED,
+      tencentBillingRequired: TENCENT_BILLING_REQUIRED,
+      tencentPriceEnabled: TENCENT_PRICE_ENABLED,
+      tencentCloudConfigured: tencentCloudConfigured(),
+      tencentRegion: TENCENT_CLOUD_REGION,
+      serverPlanCatalogCount: serverPlanCatalog().length,
       autoReconcileEnabled: AUTO_RECONCILE_ENABLED,
       autoReconcileIntervalMs: AUTO_RECONCILE_INTERVAL_MS,
       autoReconcileWindow: AUTO_RECONCILE_WINDOW,
@@ -1030,7 +1537,14 @@ async function runAutoReconcileLoop() {
   }
 }
 
-if (AUTO_RECONCILE_ENABLED) {
+if (BILLING_RECONCILE_ONCE) {
+  runAutoReconcileLoop()
+    .then(() => process.exit(reconcileState.lastError ? 1 : 0))
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+} else if (AUTO_RECONCILE_ENABLED) {
   setTimeout(() => {
     runAutoReconcileLoop().catch(() => {});
   }, 1500);

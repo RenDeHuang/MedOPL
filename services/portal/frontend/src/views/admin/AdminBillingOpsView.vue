@@ -1,10 +1,10 @@
 <template>
-  <AppLayout title="账单对账与调整" subtitle="OpenCost、待补记录与账单调整">
+  <AppLayout title="账单对账与调整" subtitle="腾讯云真实账单、待补记录与账单调整">
     <div class="space-y-6">
       <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载账单对账数据...</div>
       <template v-else>
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="OpenCost 接入" :value="payload.billingSync?.opencostLinked ? '已接入' : '未接入'" hint="成本来源状态" />
+          <MetricCard label="腾讯云账单" :value="payload.billingSync?.tencentBillingLinked ? '已接入' : '待接入'" hint="最终扣费来源" />
           <MetricCard label="自动对账" :value="payload.billingSync?.autoReconcileEnabled ? '开启' : '关闭'" hint="自动补齐开关" />
           <MetricCard label="待处理记录" :value="payload.pending?.count ?? 0" hint="待补齐或待人工确认" />
           <MetricCard label="最近调整" :value="payload.adjustments?.length ?? 0" hint="最近账单调整条数" />
@@ -54,13 +54,13 @@
             <div class="card p-6">
               <h2 class="panel-title">当前状态</h2>
               <div class="mt-4 space-y-3 text-sm">
-                <div class="muted-kv"><span class="muted-kv-label">OpenCost</span><span class="muted-kv-value">{{ payload.billingSync?.opencostLinked ? "已接入" : "未接入" }}</span></div>
+                <div class="muted-kv"><span class="muted-kv-label">腾讯云账单</span><span class="muted-kv-value">{{ payload.billingSync?.tencentBillingLinked ? "已接入" : "待接入" }}</span></div>
                 <div class="muted-kv"><span class="muted-kv-label">最近对账</span><span class="muted-kv-value">{{ payload.billingSync?.lastRunAt || "暂无" }}</span></div>
                 <div class="muted-kv"><span class="muted-kv-label">最近错误</span><span class="muted-kv-value">{{ payload.billingSync?.lastError || "无" }}</span></div>
                 <div class="muted-kv"><span class="muted-kv-label">最近调整数</span><span class="muted-kv-value">{{ payload.billingSync?.lastAdjustmentCount ?? 0 }}</span></div>
               </div>
               <p class="mt-4 text-sm leading-6 text-gray-500 dark:text-slate-400">
-                这里的“对账”是指把 OpenCost 成本、运行记录和账单条目做一致性校验。
+                这里的“对账”是指把腾讯云真实账单、运行记录和账单条目做一致性校验；OpenCost 只用于待回补期间的近实时参考。
               </p>
             </div>
 

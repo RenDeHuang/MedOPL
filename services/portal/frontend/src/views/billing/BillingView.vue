@@ -9,8 +9,8 @@
             <div class="max-w-2xl">
               <div class="flex items-center gap-2">
                 <span class="badge badge-primary">真实账单</span>
-                <span class="badge" :class="payload.breakdown.cloudSource === 'not_connected' ? 'badge-warning' : 'badge-success'">
-                  {{ payload.breakdown.cloudSource === "not_connected" ? "云账单未接入" : "云账单已接入" }}
+                <span class="badge" :class="payload.breakdown.cloudSource === 'tencent_cloud' ? 'badge-success' : 'badge-warning'">
+                  {{ payload.breakdown.cloudSource === "tencent_cloud" ? "腾讯云账单已接入" : "等待腾讯云账单" }}
                 </span>
               </div>
               <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">当前账户的资源成本与流水</h2>
@@ -33,9 +33,9 @@
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <MetricCard label="CPU 成本" :value="microMoney(payload.breakdown.cpuCost)" hint="OpenCost 聚合" />
-          <MetricCard label="GPU 成本" :value="microMoney(payload.breakdown.gpuCost)" hint="OpenCost 聚合" />
-          <MetricCard label="存储成本" :value="microMoney(payload.breakdown.storageCost)" hint="PVC / 存储类成本" />
+            <MetricCard label="CPU 成本" :value="microMoney(payload.breakdown.cpuCost)" :hint="componentCostHint" />
+          <MetricCard label="GPU 成本" :value="microMoney(payload.breakdown.gpuCost)" :hint="componentCostHint" />
+          <MetricCard label="存储成本" :value="microMoney(payload.breakdown.storageCost)" :hint="componentCostHint" />
           <MetricCard label="VPN 成本" :value="cloudValue(payload.breakdown.vpnCost)" :hint="cloudHint" />
           <MetricCard label="流量成本" :value="cloudValue(payload.breakdown.trafficCost)" :hint="cloudHint" />
           <MetricCard label="其他云成本" :value="cloudValue(payload.breakdown.otherCloudCost)" :hint="cloudHint" />
@@ -236,7 +236,13 @@ const error = ref("");
 const payload = ref<BillingPayload | null>(null);
 const filterDraft = reactive({ from: "", to: "" });
 
-const cloudHint = computed(() => payload.value?.breakdown.cloudSource === "not_connected" ? "当前仓库未接云账单" : "云账单聚合");
+const componentCostHint = computed(() => {
+  if (payload.value?.breakdown.cloudSource === "tencent_cloud") {
+    return "总额来自腾讯云，分项按账单组件回补";
+  }
+  return "OpenCost / 本地计量待腾讯云回补";
+});
+const cloudHint = computed(() => payload.value?.breakdown.cloudSource === "tencent_cloud" ? "腾讯云总账单已接入，专项分项待回补" : "等待腾讯云账单回补");
 const trendChartData = computed(() => {
   const trend = payload.value?.trend;
   if (!trend?.labels?.length) return null;
@@ -275,7 +281,7 @@ function microMoney(value: number | undefined) {
 }
 
 function cloudValue(value: number | undefined) {
-  return payload.value?.breakdown.cloudSource === "not_connected" ? "未接入" : microMoney(value);
+  return payload.value?.breakdown.cloudSource === "tencent_cloud" ? microMoney(value) : "待回补";
 }
 
 function humanizeStatus(status?: string) {

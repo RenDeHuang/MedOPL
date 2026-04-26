@@ -189,6 +189,7 @@ function runContextFromRuntime(runtimeSession, input, req) {
   const runId = input.runId || input.run_id || randomUUID();
   return {
     portalUserId: runtimeSession.portalUserId,
+    tenantId: input.tenantId || input.tenant_id || runtimeSession.tenantId || runtimeSession.portalUserId,
     customerId: runtimeSession.portalUserId,
     userId: runtimeSession.portalUserId,
     workspaceId: runtimeSession.workspaceId,
@@ -199,6 +200,8 @@ function runContextFromRuntime(runtimeSession, input, req) {
     toolName: input.toolName || input.tool_name || "med-autoscience",
     billingScope: input.billingScope || input.billing_scope || "run",
     costCenter: input.costCenter || input.cost_center || "research-foundry",
+    serverPlanId: input.serverPlanId || input.server_plan_id || runtimeSession.serverPlanId || "default",
+    region: input.region || runtimeSession.region || "",
     model: input.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),
     userAgent: req.headers["user-agent"] || "",
