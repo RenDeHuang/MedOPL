@@ -139,6 +139,7 @@ started.push(
       PORTAL_ADMIN_PASSWORD: process.env.PORTAL_ADMIN_PASSWORD || "Password1!",
       PORTAL_ADMIN_NAME: process.env.PORTAL_ADMIN_NAME || "ZITADEL Admin",
       PORTAL_OIDC_ENABLED: process.env.PORTAL_OIDC_ENABLED ?? "0",
+      PORTAL_IDENTITY_SYNC_MODE: process.env.PORTAL_IDENTITY_SYNC_MODE || "local",
       PORTAL_OIDC_ISSUER: process.env.PORTAL_OIDC_ISSUER || "https://auth.localhost:18443",
       PORTAL_OIDC_CLIENT_ID: process.env.PORTAL_OIDC_CLIENT_ID || "368843754573922307",
       PORTAL_OIDC_CLIENT_SECRET: process.env.PORTAL_OIDC_CLIENT_SECRET || "ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM",

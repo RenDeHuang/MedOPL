@@ -68,6 +68,8 @@ const PORTAL_OIDC_CLIENT_ID = process.env.PORTAL_OIDC_CLIENT_ID || "368843754573
 const PORTAL_OIDC_CLIENT_SECRET = process.env.PORTAL_OIDC_CLIENT_SECRET || "ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM";
 const PORTAL_OIDC_REDIRECT_URI = process.env.PORTAL_OIDC_REDIRECT_URI || "http://127.0.0.1:17080/auth/oidc/callback";
 const PORTAL_OIDC_SCOPE = process.env.PORTAL_OIDC_SCOPE || "openid profile email";
+const PORTAL_IDENTITY_SYNC_MODE = String(process.env.PORTAL_IDENTITY_SYNC_MODE || (PORTAL_OIDC_ENABLED ? "zitadel" : "local")).trim().toLowerCase();
+const ZITADEL_ADMIN_USER_SCRIPT = path.join(repoRoot, "scripts", "zitadel-admin-user.mjs");
 
 let dbWriteChain = Promise.resolve();
 let pgPool = null;
@@ -173,6 +175,22 @@ function validateProductionConfig() {
   if (HARBOR_ENABLED) {
     assertProductionSecret("HARBOR_PASSWORD", HARBOR_PASSWORD, ["HarborAdmin123!"]);
   }
+}
+
+async function runZitadelAdminUser(args = []) {
+  if (PORTAL_IDENTITY_SYNC_MODE === "local") {
+    return { synced: false, source: "portal_local_identity" };
+  }
+  if (PORTAL_IDENTITY_SYNC_MODE !== "zitadel") {
+    throw new Error(`Unsupported PORTAL_IDENTITY_SYNC_MODE: ${PORTAL_IDENTITY_SYNC_MODE}`);
+  }
+  await access(ZITADEL_ADMIN_USER_SCRIPT, fsConstants.R_OK);
+  await execFileAsync("node", [ZITADEL_ADMIN_USER_SCRIPT, ...args], {
+    cwd: repoRoot,
+    timeout: 180000,
+    maxBuffer: 1024 * 1024 * 4,
+  });
+  return { synced: true, source: "zitadel_portal_sync" };
 }
 
 function slugify(value) {
@@ -4715,18 +4733,14 @@ const server = http.createServer(async (req, res) => {
       sendHtml(res, layoutV2("创建失败", `<div class="card">邮箱已存在。</div>`, user), 400);
       return;
     }
+    let identitySync = { synced: false, source: "portal_local_identity" };
     try {
-        await execFileAsync("node", [
-          path.join(repoRoot, "scripts", "zitadel-admin-user.mjs"),
-          "create-user",
-          form.email,
-          form.name,
-          form.password,
-      ], {
-        cwd: repoRoot,
-        timeout: 180000,
-        maxBuffer: 1024 * 1024 * 4,
-      });
+      identitySync = await runZitadelAdminUser([
+        "create-user",
+        form.email,
+        form.name,
+        form.password,
+      ]);
     } catch (error) {
       const detail = String(error.stdout || error.stderr || error.message || error);
       sendHtml(res, layoutV2("创建失败", `<div class="card">ZITADEL 同步失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
@@ -4737,7 +4751,7 @@ const server = http.createServer(async (req, res) => {
     db.users.push(created);
     db.wallets.push({ userId: id, balance: 0, updatedAt: new Date().toISOString() });
     await ensureTaskSpace(db, created, "default", defaultTaskTitle("default"));
-    await logPortalEvent({ type: "admin_created_user", userId: id, operatorId: user.id, email: created.email, authSource: "zitadel_portal_sync" });
+    await logPortalEvent({ type: "admin_created_user", userId: id, operatorId: user.id, email: created.email, authSource: identitySync.source });
     await writeDb(db);
     res.writeHead(302, { Location: redirectTo });
     res.end();
@@ -4855,17 +4869,12 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-        await execFileAsync("node", [
-          path.join(repoRoot, "scripts", "zitadel-admin-user.mjs"),
-          "update-profile",
-          target.email,
-          nextEmail,
-          nextName,
-      ], {
-        cwd: repoRoot,
-        timeout: 180000,
-        maxBuffer: 1024 * 1024 * 4,
-      });
+      await runZitadelAdminUser([
+        "update-profile",
+        target.email,
+        nextEmail,
+        nextName,
+      ]);
     } catch (error) {
       const detail = String(error.stdout || error.stderr || error.message || error);
       sendHtml(res, layoutV2("同步失败", `<div class="card">ZITADEL 用户资料同步失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
@@ -4892,16 +4901,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-        await execFileAsync("node", [
-          path.join(repoRoot, "scripts", "zitadel-admin-user.mjs"),
-          "reset-password",
-          target.email,
-          password,
-      ], {
-        cwd: repoRoot,
-        timeout: 180000,
-        maxBuffer: 1024 * 1024 * 4,
-      });
+      await runZitadelAdminUser([
+        "reset-password",
+        target.email,
+        password,
+      ]);
     } catch (error) {
       const detail = String(error.stdout || error.stderr || error.message || error);
       sendHtml(res, layoutV2("同步失败", `<div class="card">ZITADEL 密码重置失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
@@ -4949,15 +4953,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-        await execFileAsync("node", [
-          path.join(repoRoot, "scripts", "zitadel-admin-user.mjs"),
-          "delete",
-          target.email,
-        ], {
-        cwd: repoRoot,
-        timeout: 180000,
-        maxBuffer: 1024 * 1024 * 4,
-      });
+      await runZitadelAdminUser([
+        "delete",
+        target.email,
+      ]);
     } catch (error) {
       const detail = String(error.stdout || error.stderr || error.message || error);
       sendHtml(res, layoutV2("同步失败", `<div class="card">ZITADEL 删除用户失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);

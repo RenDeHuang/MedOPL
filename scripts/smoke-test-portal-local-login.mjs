@@ -10,6 +10,9 @@ const portalRuntimeRoot = path.join(repoRoot, ".runtime", "portal");
 const portalEntrypoint = path.join(repoRoot, "services", "portal", "src", "server.mjs");
 const adminEmail = "zitadel-admin@zitadel.localhost";
 const adminPassword = "PortalAdmin-Smoke-2026!";
+const managedEmail = `portal-managed-${Date.now()}@example.test`;
+const managedPassword = "ManagedUser-Smoke-2026!";
+const managedNextPassword = "ManagedUser-Smoke-2026-Next!";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -75,6 +78,31 @@ function extractCookie(setCookie, name) {
   return "";
 }
 
+function formBody(values) {
+  return new URLSearchParams(values).toString();
+}
+
+async function postForm(baseUrl, pathname, values, cookie = "") {
+  const body = formBody(values);
+  return request(baseUrl, pathname, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "content-length": String(Buffer.byteLength(body)),
+      ...(cookie ? { cookie } : {}),
+    },
+    body,
+  });
+}
+
+async function login(baseUrl, email, password) {
+  const response = await postForm(baseUrl, "/login", { email, password });
+  assert(response.status === 302, `login for ${email} expected 302, got ${response.status}`);
+  const cookie = extractCookie(response.headers["set-cookie"], "portal_session");
+  assert(cookie, `portal_session cookie missing for ${email}`);
+  return { response, cookie };
+}
+
 async function waitForPortal(baseUrl, child) {
   for (let attempt = 0; attempt < 80; attempt += 1) {
     assert(child.exitCode === null, `portal_process_exited:${child.exitCode}`);
@@ -121,6 +149,7 @@ async function main() {
           PORT: String(port),
           PORTAL_STORAGE_MODE: "json",
           PORTAL_OIDC_ENABLED: "0",
+          PORTAL_IDENTITY_SYNC_MODE: "local",
           PORTAL_ADMIN_EMAIL: adminEmail,
           PORTAL_ADMIN_PASSWORD: adminPassword,
           PORTAL_ADMIN_NAME: "ZITADEL Admin",
@@ -138,37 +167,46 @@ async function main() {
 
       await waitForPortal(baseUrl, child);
 
-      const loginBody = new URLSearchParams({
-        email: adminEmail,
-        password: adminPassword,
-      }).toString();
-      const loginResponse = await request(baseUrl, "/login", {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-          "content-length": String(Buffer.byteLength(loginBody)),
-        },
-        body: loginBody,
-      });
-      assert(loginResponse.status === 302, `login expected 302, got ${loginResponse.status}`);
+      const { response: loginResponse, cookie: portalSession } = await login(baseUrl, adminEmail, adminPassword);
       assert(loginResponse.headers.location === "/portal", `login location mismatch: ${loginResponse.headers.location || ""}`);
 
-      const portalSession = extractCookie(loginResponse.headers["set-cookie"], "portal_session");
-      assert(portalSession, "portal_session cookie missing");
-
-      const portalResponse = await request(baseUrl, "/portal", {
+      const meResponse = await request(baseUrl, "/portal/api/me", {
         headers: { cookie: portalSession },
       });
-      assert(!String(portalResponse.headers.location || "").startsWith("/login"), "portal redirected back to login");
+      assert(meResponse.status === 200, `portal api me expected 200, got ${meResponse.status}`);
+      const mePayload = JSON.parse(meResponse.body || "{}");
+      assert(mePayload?.email === adminEmail, `portal api me email mismatch: ${meResponse.body}`);
 
-      const finalPath = portalResponse.status >= 300 && portalResponse.status < 400
-        ? String(portalResponse.headers.location || "/portal")
-        : "/portal";
-      const finalResponse = portalResponse.status === 200
-        ? portalResponse
-        : await request(baseUrl, finalPath, { headers: { cookie: portalSession } });
-      assert(finalResponse.status === 200, `portal final expected 200, got ${finalResponse.status}`);
-      assert(!String(finalResponse.headers.location || "").startsWith("/login"), "portal final redirected back to login");
+      const createResponse = await postForm(baseUrl, "/portal/admin/create-user", {
+        email: managedEmail,
+        name: "Managed Smoke User",
+        password: managedPassword,
+        redirectTo: "/portal/admin/users",
+      }, portalSession);
+      assert(createResponse.status === 302, `create user expected 302, got ${createResponse.status}: ${createResponse.body}`);
+
+      const { cookie: managedSession } = await login(baseUrl, managedEmail, managedPassword);
+      const managedMeResponse = await request(baseUrl, "/portal/api/me", {
+        headers: { cookie: managedSession },
+      });
+      assert(managedMeResponse.status === 200, `managed api me expected 200, got ${managedMeResponse.status}`);
+      const managedMe = JSON.parse(managedMeResponse.body || "{}");
+      assert(managedMe.email === managedEmail, `managed user email mismatch: ${managedMeResponse.body}`);
+
+      const usersResponse = await request(baseUrl, "/portal/api/admin/users", {
+        headers: { cookie: portalSession },
+      });
+      assert(usersResponse.status === 200, `admin users expected 200, got ${usersResponse.status}`);
+      const usersPayload = JSON.parse(usersResponse.body || "{}");
+      const managed = (usersPayload.users || usersPayload.items || []).find((item) => item.email === managedEmail);
+      assert(managed?.id, `managed user not found in admin users payload: ${usersResponse.body}`);
+
+      const resetResponse = await postForm(baseUrl, "/portal/admin/user-password", {
+        userId: managed.id,
+        password: managedNextPassword,
+      }, portalSession);
+      assert(resetResponse.status === 302, `reset password expected 302, got ${resetResponse.status}: ${resetResponse.body}`);
+      await login(baseUrl, managedEmail, managedNextPassword);
 
       console.log(JSON.stringify({
         ok: true,
@@ -176,9 +214,10 @@ async function main() {
         loginStatus: loginResponse.status,
         loginLocation: loginResponse.headers.location,
         cookie: "portal_session",
-        portalStatus: portalResponse.status,
-        finalPath,
-        finalStatus: finalResponse.status,
+        meStatus: meResponse.status,
+        userEmail: mePayload.email,
+        managedUserEmail: managedEmail,
+        managedPasswordReset: true,
       }, null, 2));
     });
   } catch (error) {

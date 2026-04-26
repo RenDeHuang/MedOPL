@@ -8,3 +8,4 @@ services/portal/frontend/dist/
 services/portal/frontend/node_modules/
 services/portal/node_modules/
 adapters/**/node_modules/
+.gstack/
