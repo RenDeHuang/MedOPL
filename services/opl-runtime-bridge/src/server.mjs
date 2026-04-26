@@ -13,6 +13,7 @@ import {
   ensureRuntime,
   nowIso,
   readState,
+  runtimeRoot,
   slugify,
   updateRunStatus,
   upsertWorkspace,
@@ -37,6 +38,37 @@ const LAUNCH_SECRET = process.env.OPL_LAUNCH_SECRET || "dev-opl-launch-secret-ch
 const RUNNER_IMAGE = process.env.MED_AUTOSCIENCE_RUNNER_IMAGE || "";
 const K8S_NAMESPACE = process.env.K8S_NAMESPACE || "med-agent-demo";
 const NODE_ENV = String(process.env.NODE_ENV || "development").toLowerCase();
+const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
+const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
+const OPL_RUNTIME_MODE = String(process.env.OPL_RUNTIME_MODE || "unknown").trim() || "unknown";
+const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
+const RUNNER_URL = String(process.env.MED_AUTOSCIENCE_RUNNER_URL || "").replace(/\/$/, "");
+
+function buildStatusPayload() {
+  return {
+    ok: true,
+    service: "portal-opl-adapter",
+    build: {
+      sha: BUILD_SHA,
+      time: BUILD_TIME,
+    },
+    identity: {
+      launchMode: "portal-launch-token",
+      runtimeMode: OPL_RUNTIME_MODE,
+    },
+    storage: {
+      stateRoot: runtimeRoot,
+      artifactsRoot,
+    },
+    runtime: {
+      adapterPublicUrl: BASE_URL,
+      oplWebUrl: OPL_WEB_URL || null,
+      runnerUrl: RUNNER_URL || null,
+      namespace: K8S_NAMESPACE,
+      runnerImage: RUNNER_IMAGE || null,
+    },
+  };
+}
 
 function signLaunchPayload(payload) {
   return createHmac("sha256", LAUNCH_SECRET).update(payload).digest("hex");
@@ -448,8 +480,8 @@ function bindOplSession(state, launch, input = {}) {
 
 async function handleRequest(req, res) {
   const url = new URL(req.url || "/", BASE_URL);
-  if (req.method === "GET" && url.pathname === "/healthz") {
-    sendJson(res, 200, { ok: true, service: "portal-opl-adapter", runtimeRoot: artifactsRoot });
+  if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
+    sendJson(res, 200, buildStatusPayload());
     return;
   }
 
@@ -678,5 +710,5 @@ http.createServer((req, res) => {
     sendJson(res, 500, { ok: false, error: String(error.message || error) });
   });
 }).listen(PORT, () => {
-  console.log(JSON.stringify({ ok: true, service: "portal-opl-adapter", port: PORT, baseUrl: BASE_URL }, null, 2));
+  console.log(JSON.stringify({ ...buildStatusPayload(), port: PORT }, null, 2));
 });

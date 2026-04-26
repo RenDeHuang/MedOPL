@@ -30,9 +30,39 @@ const WARMUP_JOB_TEMPLATE = path.resolve(path.dirname(fileURLToPath(import.meta.
 const IMAGE_PULL_SECRET = (process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET || "").trim();
 const WARMUP_COMMAND = (process.env.MED_AUTOSCIENCE_WARMUP_COMMAND || "echo warmup-ready").trim();
 const HTTP_PORT = Number(process.env.MED_AUTOSCIENCE_RUNNER_PORT || 0);
+const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
+const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
 const execFileAsync = promisify(execFile);
 let minioAvailability = { checkedAt: 0, ok: false };
 let runnerWarmupState = { image: "", readyAt: 0, details: null };
+
+function buildStatusPayload() {
+  return {
+    ok: true,
+    service: "med-autoscience-runner-orchestrator",
+    build: {
+      sha: BUILD_SHA,
+      time: BUILD_TIME,
+    },
+    runtime: {
+      mode: "job-orchestrator",
+      namespace: K8S_NAMESPACE,
+      runnerImage: RUNNER_IMAGE,
+      runnerCommand: RUNNER_COMMAND,
+      imagePullSecret: IMAGE_PULL_SECRET || null,
+      warmupMode: RUNNER_WARMUP_MODE,
+      billingReconcileUrl: BILLING_RECONCILE_URL || null,
+      minioApiUrl: MINIO_API_URL || null,
+    },
+    storage: {
+      rootDir: ROOT_DIR,
+      workspacesDir: WORKSPACES_DIR,
+      runsDir: RUNS_DIR,
+      indexDir: INDEX_DIR,
+      jobTemplate: JOB_TEMPLATE,
+    },
+  };
+}
 
 async function ensureDirectories() {
   await mkdir(WORKSPACES_DIR, { recursive: true });
@@ -827,8 +857,8 @@ async function startHttpServer() {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://local");
 
-    if (req.method === "GET" && url.pathname === "/healthz") {
-      sendJson(res, 200, { ok: true, mode: "internal-runner", namespace: K8S_NAMESPACE });
+    if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
+      sendJson(res, 200, buildStatusPayload());
       return;
     }
 
@@ -903,7 +933,7 @@ async function startHttpServer() {
   });
 
   server.listen(HTTP_PORT, () => {
-    console.log(`med-autoscience-runner internal api listening on :${HTTP_PORT}`);
+    console.log(JSON.stringify({ ...buildStatusPayload(), port: HTTP_PORT }, null, 2));
   });
 }
 

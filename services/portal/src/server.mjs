@@ -37,7 +37,10 @@ const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "postgres:
 const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "redis://127.0.0.1:6379").trim();
 const PORTAL_DB_NAMESPACE = String(process.env.PORTAL_DB_NAMESPACE || "portal").trim() || "portal";
 const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
+const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").replace(/\/$/, "");
 const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
+const OPL_RUNTIME_MODE = String(process.env.OPL_RUNTIME_MODE || "unknown").trim() || "unknown";
+const OPL_WEBUI_AUTH_MODE = String(process.env.OPL_WEBUI_AUTH_MODE || "unknown").trim() || "unknown";
 const OPL_RUNTIME_TIMEOUT_MS = Number(process.env.OPL_RUNTIME_TIMEOUT_MS || 10000);
 const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://127.0.0.1:13000";
 const OPENCOST_UI_URL = process.env.OPENCOST_UI_URL || "http://127.0.0.1:30090";
@@ -52,6 +55,10 @@ const MINIO_CONSOLE_URL = process.env.MINIO_CONSOLE_URL || "http://127.0.0.1:300
 const SHOW_LEGACY_KUBESPHERE = String(process.env.SHOW_LEGACY_KUBESPHERE || "").trim() === "1";
 const MINIO_API_URL = process.env.MINIO_API_URL || "http://127.0.0.1:30091";
 const BILLING_SERVICE_URL = process.env.BILLING_SERVICE_URL || "http://127.0.0.1:3311";
+const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLED || "").trim() === "1";
+const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "").trim() === "1";
+const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
+const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
 const mcBinary = path.join(repoRoot, ".runtime", "tools", "mc.exe");
 const execFileAsync = promisify(execFile);
 
@@ -489,6 +496,51 @@ function statSyncSafe(filePath) {
   } catch {
     return { size: 0, mtime: "-" };
   }
+}
+
+function buildPortalHealthPayload() {
+  return {
+    ok: true,
+    service: "portal",
+    build: {
+      sha: BUILD_SHA,
+      time: BUILD_TIME,
+    },
+    identity: {
+      ssoMode: PORTAL_OIDC_ENABLED ? "oidc" : "local",
+      identitySyncMode: PORTAL_IDENTITY_SYNC_MODE,
+      oplWebAuthMode: OPL_WEBUI_AUTH_MODE,
+    },
+    billing: {
+      mode: TENCENT_BILLING_ENABLED ? "tencent-cloud-billing" : "disabled",
+      required: TENCENT_BILLING_REQUIRED,
+      serviceUrl: BILLING_SERVICE_URL || null,
+    },
+    runtime: {
+      portalPublicUrl: PORTAL_PUBLIC_URL || null,
+      oplWebUrl: OPL_WEB_URL || null,
+      portalAdapterUrl: PORTAL_OPL_ADAPTER_URL || null,
+      oplRuntimeMode: OPL_RUNTIME_MODE,
+      timeoutMs: OPL_RUNTIME_TIMEOUT_MS,
+    },
+    storage: {
+      storageMode: storageMode(),
+      runtimeRoot,
+      dataFile: statSyncSafe(dataFile),
+      eventsFile: statSyncSafe(eventsFile),
+      medWorkspaceRoot,
+      medRunsRoot,
+      codexRuntimeRoot,
+      codexRuntimeEventsFile: statSyncSafe(codexRuntimeEventsFile),
+    },
+    links: {
+      minioApiUrl: MINIO_API_URL || null,
+      minioConsoleUrl: MINIO_CONSOLE_URL || null,
+      opencostUiUrl: OPENCOST_UI_URL || null,
+      harborUrl: HARBOR_URL || null,
+      langfuseUrl: LANGFUSE_URL || null,
+    },
+  };
 }
 
 async function withDbWriteLock(task) {
@@ -3579,8 +3631,8 @@ async function buildTracesApiPayload(options = {}) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", "http://local");
-  if (url.pathname === "/healthz") {
-    sendJson(res, { ok: true });
+  if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
+    sendJson(res, buildPortalHealthPayload());
     return;
   }
   if (req.method === "GET" && url.pathname.startsWith("/portal/app/assets/")) {

@@ -2,6 +2,10 @@ FROM kindest/node:v1.27.3 AS kubectl
 
 FROM node:20-alpine
 ENV NODE_ENV=production
+ARG BUILD_SHA=dev
+ARG BUILD_TIME=unknown
+ENV BUILD_SHA=$BUILD_SHA
+ENV BUILD_TIME=$BUILD_TIME
 COPY --from=kubectl /usr/bin/kubectl /usr/local/bin/kubectl
 WORKDIR /tmp/portal-deps
 COPY source/services/portal/package*.json ./

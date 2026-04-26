@@ -100,3 +100,10 @@ spec:
             - "sh"
             - "-lc"
             - "__RUNNER_COMMAND__"
+          volumeMounts:
+            - name: runtime
+              mountPath: /app/.runtime
+      volumes:
+        - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime

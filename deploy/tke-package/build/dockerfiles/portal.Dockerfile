@@ -7,6 +7,10 @@ RUN npm run build
 
 FROM node:20-alpine
 ENV NODE_ENV=production
+ARG BUILD_SHA=dev
+ARG BUILD_TIME=unknown
+ENV BUILD_SHA=$BUILD_SHA
+ENV BUILD_TIME=$BUILD_TIME
 WORKDIR /app/services/portal
 COPY source/services/portal/package*.json ./
 RUN npm ci --omit=dev

@@ -6,6 +6,9 @@ const OPL_WEB_UPSTREAM_URL = String(process.env.OPL_WEB_UPSTREAM_URL || process.
 const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
 const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").replace(/\/$/, "");
 const BASE_URL = String(process.env.OPL_WEB_GATEWAY_PUBLIC_URL || `http://127.0.0.1:${PORT}`).replace(/\/$/, "");
+const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
+const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
+const OPL_WEBUI_AUTH_MODE = String(process.env.OPL_WEBUI_AUTH_MODE || "unknown").trim() || "unknown";
 const LAUNCH_SCRIPT_PATH = "/portal-launch.js";
 const ADAPTER_PREFIX = "/portal-adapter";
 const LAUNCH_COOKIE = "opl_portal_launch";
@@ -46,6 +49,31 @@ function clearLaunchCookie() {
 function buildPortalContinueUrl() {
   if (!PORTAL_PUBLIC_URL) return null;
   return `${PORTAL_PUBLIC_URL}/portal/opl`;
+}
+
+function buildStatusPayload() {
+  return {
+    ok: true,
+    service: "opl-web-gateway",
+    build: {
+      sha: BUILD_SHA,
+      time: BUILD_TIME,
+    },
+    identity: {
+      ssoMode: "portal-launch-cookie",
+      upstreamAuthMode: OPL_WEBUI_AUTH_MODE,
+      directEntryPolicy: "portal-launch-required",
+      launchCookieName: LAUNCH_COOKIE,
+      authUserWithoutLaunchStatus: 401,
+      openFromPortalUrl: buildPortalContinueUrl(),
+    },
+    runtime: {
+      gatewayPublicUrl: BASE_URL,
+      upstreamUrl: OPL_WEB_UPSTREAM_URL,
+      portalAdapterUrl: PORTAL_OPL_ADAPTER_URL,
+      portalPublicUrl: PORTAL_PUBLIC_URL || null,
+    },
+  };
 }
 
 function buildDirectEntryState(overrides = {}) {
@@ -615,21 +643,8 @@ initializePortalLaunch().catch((error) => {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", BASE_URL);
-    if (req.method === "GET" && url.pathname === "/healthz") {
-      sendJson(res, 200, {
-        ok: true,
-        service: "opl-web-gateway",
-        baseUrl: BASE_URL,
-        upstream: OPL_WEB_UPSTREAM_URL,
-        portalAdapter: PORTAL_OPL_ADAPTER_URL,
-        directEntry: {
-          portalLaunchRequired: true,
-          authUserWithoutLaunchStatus: 401,
-          launchCookieName: LAUNCH_COOKIE,
-          portalPublicUrl: PORTAL_PUBLIC_URL || null,
-          openFromPortalUrl: buildPortalContinueUrl(),
-        },
-      });
+    if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
+      sendJson(res, 200, buildStatusPayload());
       return;
     }
     if (req.method === "GET" && url.pathname === LAUNCH_SCRIPT_PATH) {
@@ -659,11 +674,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(JSON.stringify({
-    ok: true,
-    service: "opl-web-gateway",
+    ...buildStatusPayload(),
     port: PORT,
-    baseUrl: BASE_URL,
-    upstream: OPL_WEB_UPSTREAM_URL,
-    portalAdapter: PORTAL_OPL_ADAPTER_URL,
   }, null, 2));
 });
