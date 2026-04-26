@@ -625,7 +625,7 @@ function summarize(entries, customerId, workspaceId = "") {
   };
 }
 
-function summaryFromEstimatedRuns(runs, customerId) {
+function summaryFromPendingRuns(runs, customerId) {
   const totals = runs.reduce(
     (acc, item) => {
       acc.cpuCost += Number(item.cpuCost || 0);
@@ -1322,7 +1322,7 @@ async function fetchPendingSummary(customerId = "", workspaceId = "", windowValu
 
   const requestedPending = await pendingRequestedRunCosts(customerId, workspaceId);
   if (requestedPending.length > 0) {
-    const summary = summaryFromEstimatedRuns(requestedPending, customerId);
+    const summary = summaryFromPendingRuns(requestedPending, customerId);
     summary.source = "metering_pending";
     summary.cloudSource = "local_requested_resources";
     return summary;

@@ -402,7 +402,7 @@ function buildCommercialProfile(db, user, options = {}) {
     billingStatus = "account_blocked";
   } else if (balanceFloor > 0 && balance < balanceFloor) {
     billingStatus = trialActive ? "trial_only" : "below_balance_floor";
-  } else if (availableBalance > 0) {
+  } else if (balance - freezeSnapshot.activeFreeze > 0) {
     billingStatus = "wallet_available";
   } else if (trialActive) {
     billingStatus = "trial_only";
@@ -3729,7 +3729,8 @@ async function buildAdminOverviewPayload(db) {
       lastError: billingStatus?.reconcileState?.lastError || "",
       opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
       tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
-      pricingSourcePriority: billingStatus?.pricingSourcePriority || ["tencent_cloud_bill", "opencost_pending", "metering_pending"],
+      exactSources: billingStatus?.exactSources || ["tencent_cloud_bill"],
+      pendingSources: billingStatus?.pendingSources || ["opencost_pending", "metering_pending"],
     },
     warningEvents,
     alerts,

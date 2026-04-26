@@ -196,7 +196,7 @@ exit /b 0
         workspaceTitle: "Lab A",
         workspaceSessionId: "ws-a",
         sourceSurface: "portal-control-plane",
-        serverPlanId: "gpu-a10-v8",
+        serverPlanId: "gpu-a10-v10",
         region: "ap-guangzhou",
         runtimeClass: "nvidia",
         nodeSelector: { "pool.medopl.ai/name": "gpu-pool-a10" },

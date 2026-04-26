@@ -181,7 +181,7 @@ async function ensurePortalWallet(userId, minBalance = 100) {
 
 async function main() {
   const plan = {
-    id: "gpu-a10-v8",
+    id: "gpu-a10-v10",
     name: "A10 24G",
     provider: "tencent",
     region: "ap-guangzhou",
@@ -219,7 +219,7 @@ async function main() {
     selectionNote: "选择后调度到 GPU 节点池。",
   };
 
-  const runtimeRoot = await mkdtemp(path.join(tmpdir(), "opl-v8-chain-"));
+  const runtimeRoot = await mkdtemp(path.join(tmpdir(), "opl-v10-chain-"));
   const billingServer = startBillingFixture(plan);
   const billingUrl = await listen(billingServer);
   const portalInternalServer = startPortalInternalFixture();
