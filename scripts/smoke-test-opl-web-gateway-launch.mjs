@@ -95,16 +95,37 @@ function startAdapterFixture(calls) {
           runtimeSessionId: "runtime-session-smoke",
         },
         portal: {
-          portalUserId: "portal-user-smoke",
-          portalUserEmail: "portal-smoke@example.test",
-          portalUserName: "Portal Smoke",
-          workspaceId: "workspace-smoke",
-          workspaceSessionId: "workspace-session-smoke",
-          runtimeSessionId: "runtime-session-smoke",
-        },
-        workspace: {
-          workspacePath: "C:\\\\tmp\\\\workspace-smoke",
-        },
+        portalUserId: "portal-user-smoke",
+        portalUserEmail: "portal-smoke@example.test",
+        portalUserName: "Portal Smoke",
+        tenantId: "tenant-smoke",
+        workspaceId: "workspace-smoke",
+        workspaceSessionId: "workspace-session-smoke",
+        runtimeSessionId: "runtime-session-smoke",
+      },
+      identity: {
+        portalUserId: "portal-user-smoke",
+        tenantId: "tenant-smoke",
+        workspaceId: "workspace-smoke",
+        workspaceSessionId: "workspace-session-smoke",
+        runtimeSessionId: "runtime-session-smoke",
+        oplSessionId: "opl-session-smoke",
+      },
+      ownership: {
+        workspaceOwnerId: "portal-user-smoke",
+        sessionOwnerId: "portal-user-smoke",
+        traceOwnerId: "portal-user-smoke",
+        artifactOwnerId: "portal-user-smoke",
+        storageOwnerId: "portal-user-smoke",
+      },
+      workspace: {
+        workspaceId: "workspace-smoke",
+        workspacePath: "C:\\\\tmp\\\\workspace-smoke",
+        inputOwner: "portal-user-smoke",
+        outputOwner: "portal-user-smoke",
+        storageOwner: "portal-user-smoke",
+        storageOwnerId: "portal-user-smoke",
+      },
       }));
       return;
     }
@@ -287,6 +308,7 @@ try {
       OPL_WEB_UPSTREAM_URL: `http://127.0.0.1:${oplPort}`,
       PORTAL_OPL_ADAPTER_URL: `http://127.0.0.1:${adapterPort}`,
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
+      PORTAL_PUBLIC_URL: "https://portal.example.test",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -294,6 +316,18 @@ try {
   gateway.stderr.on("data", (chunk) => process.stderr.write(`[gateway] ${chunk}`));
 
   await waitFor(`${gatewayUrl}/healthz`);
+  const directEntryHtmlResponse = await fetch(`${gatewayUrl}/`);
+  const directEntryHtml = await directEntryHtmlResponse.text();
+  assert(directEntryHtml.includes("使用 Portal 继续"), "direct entry html must include Portal continue entry");
+  assert(directEntryHtml.includes("https://portal.example.test/portal/opl"), "direct entry html must link to Portal continue URL");
+  assert(directEntryHtml.includes('meta name="opl-portal-direct-entry" content="1"'), "direct entry html must mark direct entry as true");
+
+  const unauthenticatedResponse = await fetch(`${gatewayUrl}/api/auth/user`);
+  const unauthenticatedPayload = await unauthenticatedResponse.json();
+  assert(unauthenticatedResponse.status === 401, "auth user without launch must return 401");
+  assert(unauthenticatedPayload.portalLaunchRequired === true, "auth user without launch must require Portal launch");
+  assert(unauthenticatedPayload.reason === "portal_launch_required", "auth user without launch must expose direct entry reason");
+
   const htmlResponse = await fetch(`${gatewayUrl}/?launch_token=launch-token-smoke`);
   const setCookie = htmlResponse.headers.get("set-cookie") || "";
   assert(setCookie.includes("opl_portal_launch=launch-token-smoke"), "gateway did not set launch cookie");
@@ -327,6 +361,9 @@ try {
   ]);
 
   assert(detail.bootstrap.portal.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
+  assert(detail.bootstrap.identity.tenantId === "tenant-smoke", "bootstrap identity tenantId was not exposed");
+  assert(detail.bootstrap.ownership.storageOwnerId === "portal-user-smoke", "bootstrap ownership storage owner was not exposed");
+  assert(detail.bootstrap.workspace.storageOwnerId === "portal-user-smoke", "bootstrap workspace storage owner was not exposed");
   assert(browser.window.__OPL_PORTAL_DIRECT_ENTRY__.active === false, "launch flow should clear direct entry state");
   assert(browser.window.__OPL_PORTAL__.bootstrap.portal.portalUserId === "portal-user-smoke", "stable browser API did not expose bootstrap");
   assert(calls.bootstrap.length === bootstrapCallsBeforeScript + 1, "adapter bootstrap was not called through gateway");
@@ -380,6 +417,8 @@ try {
       "html_script_injection",
       "same_origin_adapter_proxy",
       "bootstrap_fetch",
+      "bootstrap_identity_scope",
+      "direct_entry_portal_continue",
       "session_bind",
       "launch_token_removed_from_url",
       "launch_cookie_sso",

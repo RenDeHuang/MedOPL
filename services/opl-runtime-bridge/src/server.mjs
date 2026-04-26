@@ -103,8 +103,14 @@ function buildCallbacks() {
 }
 
 function localResources(state, launch) {
-  const workspaces = state.workspaces.filter((item) => item.portalUserId === launch.portalUserId);
-  const sessions = state.workspaceSessions.filter((item) => item.portalUserId === launch.portalUserId);
+  const workspaces = state.workspaces.filter((item) =>
+    item.portalUserId === launch.portalUserId &&
+    (!launch.workspaceId || item.workspaceId === launch.workspaceId)
+  );
+  const sessions = state.workspaceSessions.filter((item) =>
+    item.portalUserId === launch.portalUserId &&
+    (!launch.workspaceId || item.workspaceId === launch.workspaceId)
+  );
   return {
     system: { id: "local-opl-fixture-required", status: "fixture-only" },
     engines: [],
@@ -117,9 +123,95 @@ function localResources(state, launch) {
   };
 }
 
+function resolveTenantId(detail = {}, fallback = "") {
+  return detail.tenantId || detail.tenant_id || detail.portalUserId || detail.portal_user_id || fallback || "";
+}
+
+function resolveOwnerId(detail = {}, fallback = "") {
+  return detail.ownerId || detail.owner_id || detail.portalUserId || detail.portal_user_id || fallback || "";
+}
+
+function resolveStorageOwnerId(detail = {}, fallback = "") {
+  return detail.storageOwnerId || detail.storage_owner_id || detail.storageOwner || detail.storage_owner || resolveOwnerId(detail, fallback);
+}
+
+function buildScope(launch = {}, runtimeSession = {}) {
+  const portalUserId = launch.portalUserId || runtimeSession.portalUserId || "";
+  const ownerId = resolveOwnerId(runtimeSession, resolveOwnerId(launch, portalUserId));
+  const storageOwnerId = resolveStorageOwnerId(runtimeSession, resolveStorageOwnerId(launch, ownerId));
+  return {
+    portalUserId,
+    tenantId: resolveTenantId(runtimeSession, resolveTenantId(launch, portalUserId)),
+    ownerId,
+    storageOwnerId,
+    workspaceId: runtimeSession.workspaceId || launch.workspaceId || "",
+    workspaceTitle: launch.workspaceTitle || runtimeSession.workspaceTitle || runtimeSession.workspaceId || launch.workspaceId || "",
+    workspacePath: runtimeSession.workspacePath || launch.workspacePath || "",
+    workspaceSessionId: runtimeSession.workspaceSessionId || launch.workspaceSessionId || "",
+    runtimeSessionId: runtimeSession.runtimeSessionId || launch.runtimeSessionId || "",
+    oplSessionId: runtimeSession.oplSessionId || launch.oplSessionId || "",
+  };
+}
+
+function itemMatchesScope(item, scope) {
+  if (!item || typeof item !== "object") return false;
+  const ownerCandidates = [
+    item.portalUserId,
+    item.userId,
+    item.ownerId,
+    item.sessionOwnerId,
+    item.traceOwnerId,
+    item.artifactOwnerId,
+    item.storageOwnerId,
+    item.storageOwner,
+  ].filter(Boolean);
+  if (scope.portalUserId && ownerCandidates.length && !ownerCandidates.includes(scope.portalUserId)) {
+    return false;
+  }
+  if (scope.workspaceId && item.workspaceId && item.workspaceId !== scope.workspaceId) {
+    return false;
+  }
+  if (scope.workspaceSessionId && item.workspaceSessionId && item.workspaceSessionId !== scope.workspaceSessionId) {
+    return false;
+  }
+  if (scope.runtimeSessionId && item.runtimeSessionId && item.runtimeSessionId !== scope.runtimeSessionId) {
+    return false;
+  }
+  return true;
+}
+
+function withScope(item = {}, scope, overrides = {}) {
+  const ownerId = resolveOwnerId(item, scope.ownerId);
+  const storageOwnerId = resolveStorageOwnerId(item, scope.storageOwnerId || ownerId);
+  return {
+    ...item,
+    portalUserId: item.portalUserId || scope.portalUserId,
+    tenantId: resolveTenantId(item, scope.tenantId),
+    ownerId,
+    workspaceId: item.workspaceId || scope.workspaceId,
+    workspaceSessionId: item.workspaceSessionId || scope.workspaceSessionId,
+    runtimeSessionId: item.runtimeSessionId || scope.runtimeSessionId,
+    inputOwner: item.inputOwner || ownerId,
+    outputOwner: item.outputOwner || ownerId,
+    sessionOwnerId: item.sessionOwnerId || ownerId,
+    traceOwnerId: item.traceOwnerId || ownerId,
+    artifactOwnerId: item.artifactOwnerId || ownerId,
+    storageOwner: item.storageOwner || storageOwnerId,
+    storageOwnerId,
+    ...overrides,
+  };
+}
+
+function scopedCollection(items, scope, overrides = {}) {
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => itemMatchesScope(item, scope))
+    .map((item) => withScope(item, scope, overrides));
+}
+
 async function buildBootstrap(state, launch) {
   const runtimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === launch.runtimeSessionId);
   const context = runtimeSession || launch;
+  const scope = buildScope(launch, runtimeSession || {});
   let oplResources;
   try {
     oplResources = await getOplBootstrap(context);
@@ -130,41 +222,100 @@ async function buildBootstrap(state, launch) {
     addEvent(state, "opl_bootstrap_load_failed", { ...context, error: String(error.message || error) });
   }
 
-  const adapterRuns = state.runs.filter((item) => item.portalUserId === launch.portalUserId);
-  const adapterArtifacts = state.artifacts.filter((item) => item.portalUserId === launch.portalUserId);
-  const adapterProgress = state.events.filter((item) => item.portalUserId === launch.portalUserId).slice(-50);
+  const adapterRuns = scopedCollection(state.runs, scope);
+  const adapterArtifacts = scopedCollection(state.artifacts, scope);
+  const adapterProgress = scopedCollection(state.events.slice(-200), scope, {
+    sessionId: scope.runtimeSessionId || scope.workspaceSessionId,
+  }).slice(-50);
+  const runs = adapterRuns;
+  const runActions = scopedCollection(state.runActions, scope);
+  const traces = scopedCollection(state.traceLinks, scope);
+  const costs = scopedCollection(state.costRecords, scope);
+  const workspaces = scopedCollection(
+    oplResources.workspaces?.length ? oplResources.workspaces : state.workspaces,
+    scope,
+    { workspacePath: scope.workspacePath || undefined }
+  );
+  const sessions = scopedCollection(
+    oplResources.sessions?.length ? oplResources.sessions : state.workspaceSessions,
+    scope,
+    { oplSessionId: scope.oplSessionId || undefined }
+  );
+  const progress = scopedCollection([...(oplResources.progress || []), ...adapterProgress], scope, {
+    sessionId: scope.runtimeSessionId || scope.workspaceSessionId,
+  });
+  const artifacts = scopedCollection([...(oplResources.artifacts || []), ...adapterArtifacts], scope, {
+    workspacePath: scope.workspacePath || undefined,
+  });
+  const runtimeSessionView = runtimeSession ? withScope(runtimeSession, scope) : null;
 
   return {
     version: "v1",
     launch,
+    identity: {
+      portalUserId: scope.portalUserId,
+      tenantId: scope.tenantId,
+      workspaceId: scope.workspaceId,
+      workspaceSessionId: scope.workspaceSessionId,
+      runtimeSessionId: scope.runtimeSessionId,
+      oplSessionId: scope.oplSessionId,
+    },
+    ownership: {
+      workspaceOwnerId: scope.ownerId,
+      sessionOwnerId: scope.ownerId,
+      traceOwnerId: scope.ownerId,
+      artifactOwnerId: scope.ownerId,
+      storageOwnerId: scope.storageOwnerId,
+      inputOwner: scope.ownerId,
+      outputOwner: scope.ownerId,
+    },
     portal: {
-      portalUserId: launch.portalUserId || "",
-      userId: launch.portalUserId || "",
+      portalUserId: scope.portalUserId,
+      userId: scope.portalUserId,
+      tenantId: scope.tenantId,
+      ownerId: scope.ownerId,
       portalUserEmail: launch.portalUserEmail || "",
       userEmail: launch.portalUserEmail || "",
       portalUserName: launch.portalUserName || "",
       userName: launch.portalUserName || "",
-      workspaceId: launch.workspaceId || "",
-      workspaceSessionId: launch.workspaceSessionId || "",
-      runtimeSessionId: launch.runtimeSessionId || "",
+      workspaceId: scope.workspaceId,
+      workspaceSessionId: scope.workspaceSessionId,
+      runtimeSessionId: scope.runtimeSessionId,
     },
     entitlements: {
       agents: ["mas", "mag", "rca"],
       canStartRun: true,
     },
     workspace: {
-      workspaceId: launch.workspaceId || "",
-      workspaceTitle: launch.workspaceTitle || launch.workspaceId || "",
-      workspacePath: context.workspacePath || launch.workspacePath || "",
-      inputOwner: launch.portalUserId || "",
-      outputOwner: launch.portalUserId || "",
+      workspaceId: scope.workspaceId,
+      workspaceTitle: scope.workspaceTitle,
+      workspacePath: scope.workspacePath,
+      ownerId: scope.ownerId,
+      inputOwner: scope.ownerId,
+      outputOwner: scope.ownerId,
+      storageOwner: scope.storageOwnerId,
+      storageOwnerId: scope.storageOwnerId,
+    },
+    session: {
+      workspaceSessionId: scope.workspaceSessionId,
+      runtimeSessionId: scope.runtimeSessionId,
+      oplSessionId: scope.oplSessionId,
+      ownerId: scope.ownerId,
+      tenantId: scope.tenantId,
+      traceOwnerId: scope.ownerId,
+    },
+    storage: {
+      workspaceId: scope.workspaceId,
+      workspacePath: scope.workspacePath,
+      ownerId: scope.storageOwnerId,
+      tenantId: scope.tenantId,
     },
     callbacks: buildCallbacks(),
     system: oplResources.system,
     engines: oplResources.engines || [],
     modules: oplResources.modules || [],
     agents: oplResources.agents || [],
-    runtimeSession,
+    runtimeSession: runtimeSessionView,
     opl: {
       health: oplResources.health || null,
     },
@@ -173,15 +324,15 @@ async function buildBootstrap(state, launch) {
       engines: oplResources.engines || [],
       modules: oplResources.modules || [],
       agents: oplResources.agents || [],
-      workspaces: oplResources.workspaces?.length ? oplResources.workspaces : state.workspaces.filter((item) => item.portalUserId === launch.portalUserId),
-      sessions: oplResources.sessions?.length ? oplResources.sessions : state.workspaceSessions.filter((item) => item.portalUserId === launch.portalUserId),
-      progress: [...(oplResources.progress || []), ...adapterProgress],
-      artifacts: [...(oplResources.artifacts || []), ...adapterArtifacts],
+      workspaces,
+      sessions,
+      progress,
+      artifacts,
     },
-    runs: adapterRuns,
-    runActions: state.runActions.filter((item) => item.portalUserId === launch.portalUserId),
-    traces: state.traceLinks.filter((item) => item.portalUserId === launch.portalUserId),
-    costs: state.costRecords.filter((item) => item.portalUserId === launch.portalUserId),
+    runs,
+    runActions,
+    traces,
+    costs,
   };
 }
 
@@ -317,8 +468,12 @@ async function handleRequest(req, res) {
     const state = await readState();
     const workspace = upsertWorkspace(state, input);
     const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
-    const runtimeSession = createRuntimeSession(state, {
+  const runtimeSession = createRuntimeSession(state, {
       ...input,
+      tenantId: input.tenantId || input.tenant_id || input.portalUserId,
+      ownerId: input.ownerId || input.owner_id || input.portalUserId,
+      sessionOwnerId: input.sessionOwnerId || input.session_owner_id || input.portalUserId,
+      storageOwnerId: input.storageOwnerId || input.storage_owner_id || input.portalUserId,
       workspaceId: workspace.workspaceId,
       workspaceSessionId: workspaceSession.workspaceSessionId,
       namespace: K8S_NAMESPACE,
@@ -328,6 +483,8 @@ async function handleRequest(req, res) {
       portalUserId: input.portalUserId,
       portalUserEmail: input.portalUserEmail || "",
       portalUserName: input.portalUserName || "",
+      tenantId: input.tenantId || input.tenant_id || input.portalUserId,
+      ownerId: input.ownerId || input.owner_id || input.portalUserId,
       workspaceId: workspace.workspaceId,
       workspaceTitle: workspace.title,
       workspacePath: input.workspacePath || input.workspace_path || workspace.workspacePath || "",
@@ -351,6 +508,12 @@ async function handleRequest(req, res) {
     const launchRecord = {
       launchId: randomUUID(),
       portalUserId: input.portalUserId,
+      tenantId: input.tenantId || input.tenant_id || input.portalUserId,
+      ownerId: input.ownerId || input.owner_id || input.portalUserId,
+      sessionOwnerId: input.sessionOwnerId || input.session_owner_id || input.portalUserId,
+      traceOwnerId: input.traceOwnerId || input.trace_owner_id || input.portalUserId,
+      artifactOwnerId: input.artifactOwnerId || input.artifact_owner_id || input.portalUserId,
+      storageOwnerId: input.storageOwnerId || input.storage_owner_id || input.portalUserId,
       portalUserEmail: input.portalUserEmail || "",
       portalUserName: input.portalUserName || "",
       workspaceId: workspace.workspaceId,

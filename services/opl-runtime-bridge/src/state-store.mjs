@@ -74,8 +74,21 @@ function sanitizeState(state) {
   };
 }
 
+function tenantIdFrom(detail = {}) {
+  return detail.tenantId || detail.tenant_id || detail.portalUserId || detail.portal_user_id || "";
+}
+
+function ownerIdFrom(detail = {}) {
+  return detail.ownerId || detail.owner_id || detail.portalUserId || detail.portal_user_id || "";
+}
+
+function storageOwnerIdFrom(detail = {}) {
+  return detail.storageOwnerId || detail.storage_owner_id || detail.storageOwner || detail.storage_owner || ownerIdFrom(detail);
+}
+
 function idChainFrom(detail = {}) {
   return {
+    tenantId: tenantIdFrom(detail),
     portalUserId: detail.portalUserId || detail.portal_user_id || "",
     workspaceId: detail.workspaceId || detail.workspace_id || "",
     workspaceSessionId: detail.workspaceSessionId || detail.workspace_session_id || "",
@@ -97,6 +110,9 @@ export function addEvent(state, type, detail = {}) {
 export function upsertWorkspace(state, input = {}) {
   const portalUserId = input.portalUserId || input.portal_user_id || "";
   const workspaceId = slugify(input.workspaceId || input.workspace_id || "default");
+  const tenantId = tenantIdFrom(input) || portalUserId;
+  const ownerId = ownerIdFrom(input) || portalUserId;
+  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
   let workspace = state.workspaces.find((item) =>
     item.portalUserId === portalUserId &&
     item.workspaceId === workspaceId
@@ -104,10 +120,16 @@ export function upsertWorkspace(state, input = {}) {
   if (!workspace) {
     workspace = {
       workspaceId,
+      tenantId,
       portalUserId,
+      ownerId,
       title: input.workspaceTitle || input.workspace_title || workspaceId,
       workspacePath: input.workspacePath || input.workspace_path || "",
       projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
+      inputOwner: input.inputOwner || input.input_owner || ownerId,
+      outputOwner: input.outputOwner || input.output_owner || ownerId,
+      storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
+      storageOwnerId,
       status: "active",
       createdAt: nowIso(),
       updatedAt: nowIso(),
@@ -115,9 +137,15 @@ export function upsertWorkspace(state, input = {}) {
     state.workspaces.push(workspace);
     addEvent(state, "workspace_registered", { portalUserId, workspaceId });
   } else {
+    workspace.tenantId = tenantId;
+    workspace.ownerId = ownerId;
     workspace.title = input.workspaceTitle || input.workspace_title || workspace.title;
     workspace.workspacePath = input.workspacePath || input.workspace_path || workspace.workspacePath || "";
     workspace.projectId = input.projectId || input.project_id || input.moduleId || input.module_id || workspace.projectId || "";
+    workspace.inputOwner = input.inputOwner || input.input_owner || workspace.inputOwner || ownerId;
+    workspace.outputOwner = input.outputOwner || input.output_owner || workspace.outputOwner || ownerId;
+    workspace.storageOwner = input.storageOwner || input.storage_owner || workspace.storageOwner || storageOwnerId;
+    workspace.storageOwnerId = storageOwnerId;
     workspace.updatedAt = nowIso();
   }
   return workspace;
@@ -125,9 +153,13 @@ export function upsertWorkspace(state, input = {}) {
 
 export function createWorkspaceSession(state, input = {}) {
   const workspace = upsertWorkspace(state, input);
+  const ownerId = ownerIdFrom(input) || workspace.ownerId || workspace.portalUserId;
   const session = {
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || randomUUID(),
+    tenantId: tenantIdFrom(input) || workspace.tenantId || workspace.portalUserId,
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
+    sessionOwnerId: input.sessionOwnerId || input.session_owner_id || ownerId,
     workspaceId: workspace.workspaceId,
     workspacePath: input.workspacePath || input.workspace_path || workspace.workspacePath || "",
     projectId: input.projectId || input.project_id || workspace.projectId || "",
@@ -142,9 +174,16 @@ export function createWorkspaceSession(state, input = {}) {
 }
 
 export function createRuntimeSession(state, input = {}) {
+  const ownerId = ownerIdFrom(input);
+  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
   const runtimeSession = {
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || randomUUID(),
+    tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
+    sessionOwnerId: input.sessionOwnerId || input.session_owner_id || ownerId,
+    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
+    storageOwnerId,
     workspaceId: input.workspaceId || input.workspace_id || "default",
     workspacePath: input.workspacePath || input.workspace_path || "",
     projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
@@ -163,9 +202,15 @@ export function createRuntimeSession(state, input = {}) {
 }
 
 export function createRunRecord(state, input = {}) {
+  const ownerId = ownerIdFrom(input);
+  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
   const run = {
     runId: input.runId || input.run_id || randomUUID(),
+    tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
+    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
+    storageOwnerId,
     workspaceId: input.workspaceId || input.workspace_id || "default",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
@@ -203,10 +248,13 @@ export function updateRunStatus(state, runId, patch = {}) {
 }
 
 export function addRunAction(state, input = {}) {
+  const ownerId = ownerIdFrom(input);
   const action = {
     actionId: input.actionId || input.action_id || randomUUID(),
     runId: input.runId || input.run_id || "",
+    tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
@@ -222,10 +270,17 @@ export function addRunAction(state, input = {}) {
 }
 
 export function addArtifactRecord(state, input = {}) {
+  const ownerId = ownerIdFrom(input);
+  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
   const artifact = {
     artifactId: input.artifactId || input.artifact_id || randomUUID(),
     runId: input.runId || input.run_id || "",
+    tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
+    artifactOwnerId: input.artifactOwnerId || input.artifact_owner_id || ownerId,
+    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
+    storageOwnerId,
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
@@ -250,10 +305,14 @@ export function addArtifactRecord(state, input = {}) {
 }
 
 export function addTraceRecord(state, input = {}) {
+  const ownerId = ownerIdFrom(input);
   const trace = {
     traceId: input.traceId || input.trace_id || randomUUID(),
     runId: input.runId || input.run_id || "",
+    tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
+    traceOwnerId: input.traceOwnerId || input.trace_owner_id || ownerId,
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
@@ -272,10 +331,13 @@ export function addTraceRecord(state, input = {}) {
 }
 
 export function addCostRecord(state, input = {}) {
+  const ownerId = ownerIdFrom(input);
   const cost = {
     costRecordId: input.costRecordId || input.cost_record_id || randomUUID(),
     runId: input.runId || input.run_id || "",
+    tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
