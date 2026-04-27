@@ -1,294 +1,158 @@
-# OPL v12 真实腾讯云资源订单顺序与商业化 UI AI 开发文档 v1
+# OPL v12 真实腾讯云资源订单与商业化 UI AI 开发文档 v1
 
-日期：2026-04-27
-目标版本：`opl-v12`
-当前基线：`opl-v11`
+日期：2026-04-27  
+目标版本：`opl-v12`  
+基线版本：`opl-v11`
 
-## 1. 目标
+## 目标
 
-`opl-v12` 的目标不是再补一层说明页，而是把“真实腾讯云接入”“资源订单状态机”“商业化控制台 UI”“工作台启动路径”收束成一条可执行、可验证、可交付给 AI 开发代理直接落地的主链路。
+v12 的目标是把 v11 的“云状态可见”推进成“客户可选择服务器、可看到真实腾讯云报价、可创建订单独立 TKE 节点池、可追踪真实资源与账单”的商业化内测版。
 
-本轮核心目标只有四个：
+本版本不做支付网关。充值仍由线下转账和管理员入账完成。系统必须真实展示云接入状态，不能在缺少 Secret、TKE 权限、镜像 ID 或账单明细时伪造成已开通、已报价或已结算。
 
-- 把用户动作从“看服务器”升级为“创建资源订单并进入运行链路”。
-- 把 Portal 的商业化 UI 从状态展示升级为下单、冻结、开通、运行、结算的一体入口。
-- 把真实腾讯云配置只放在后端受控边界内，不把 Secret 和云厂商控制台心智暴露给前端。
-- 把 Portal、Billing、Resource Provisioner、Gateway、Runner 的职责彻底切清，避免继续互相越权。
+## 顶层原则
 
-## 2. 商业化目的
+模块内高聚合，模块间低耦合：
 
-`opl-v12` 服务的是“按次使用 AI 工作台算力”的商业化，而不是“长期租一台服务器”。
+- Portal 是 SaaS 控制面：用户、钱包、Resource Order、商业 UI、工作台入口。
+- Billing Aggregator 是账单聚合面：腾讯云报价、真实账单、COS 日对账、账单归因。
+- Resource Provisioner / Cloud Inventory 是资源开通面：TKE/CVM 查询、节点池创建、缩容、删除、状态回填。
+- Runner / Orchestrator 是执行面：只创建 Job、打资源标签、传递 `resource_order_id`。
+- Gateway 是身份桥接面：只负责 Portal 身份到 OPL Web 的登录桥接。
 
-用户真正购买的是一次可审计的资源订单：
+明确禁止：
 
-1. 在 Portal 选择规格、地域、存储、预计时长。
-2. 平台给出基于腾讯云可售目录和真实报价的 quote。
-3. 平台冻结余额。
-4. 平台开通或调度资源。
-5. 用户通过统一 Gateway 进入工作台。
-6. Runner 执行实际 run。
-7. 任务结束后释放计算资源。
-8. Billing 按腾讯云真实账单回补，多退少补。
+- Portal 不直连腾讯云 Secret。
+- Billing 不登录用户、不改订单状态。
+- Resource Provisioner 不扣费。
+- Runner 不扣费。
+- Gateway 不读 Portal DB。
 
-商业化上的意义是：
+## 固定云参数
 
-- 让价格来源透明，用户知道钱为何冻结、何时结算、为何退款或补扣。
-- 让“服务器选择”变成订单事实，而不是一页静态介绍。
-- 让工作台入口和账务入口统一，不再出现“能进工作台但无法对账”的断裂体验。
-- 让后续充值、预算、组织租户、发票、客服审计有稳定账务基础。
+本版本按用户提供的硅谷环境定制：
 
-## 3. v12 主链路
+- Region：`na-siliconvalley`
+- Zone：`na-siliconvalley-1`
+- TKE Cluster：`cls-ngiq693i`
+- Namespace：`opl-system`
+- VPC：`vpc-ahl6epyx`
+- Subnet：`subnet-mbehh5wi`、`subnet-r8mzuptu`
+- Security Group：`sg-6671l5we`
+- COS 账单 bucket：`opl-1410708315`
+- COS 账单 prefix：`daily/`
+- 分摊标签：`resource_order_id`、`run_id`、`server_plan_id`、`tenant_id`、`workspace_id`
 
-`opl-v12` 必须把资源订单顺序固定下来，后续实现和测试都围绕这条顺序展开：
+不写入文档、代码、YAML、镜像、日志摘要的内容：
 
-`draft -> quoted -> frozen -> provisioning -> launch_ready -> running -> released -> reconciling -> settled`
+- 腾讯云账号密码
+- `SecretId`
+- `SecretKey`
+- 可复用登录链接
 
-含义如下：
+## 商业化行为
 
-- `draft`：用户完成规格选择，但尚未报价。
-- `quoted`：Billing 已根据腾讯云价格目录返回报价和冻结建议。
-- `frozen`：Wallet/Ledger 已冻结金额，订单具备开通资格。
-- `provisioning`：Resource Provisioner 正在映射或开通 TKE 节点池/资源。
-- `launch_ready`：Gateway 已可签发 launch token，允许进入工作台。
-- `running`：Runner 已提交并运行真实任务。
-- `released`：计算资源已释放，等待最终账单回补。
-- `reconciling`：Billing 正在按腾讯云账单明细或账单文件归因与对账。
-- `settled`：完成多退少补，订单闭环。
+客户在 Portal 的“服务器与费用”页选择规格。初版可售规格：
 
-任何模块都不允许跳过冻结直接进入运行，也不允许把本地估算直接当作最终账单。
+- `cpu-2c4g`
+- `cpu-4c8g`
+- `cpu-8c16g`
+- `cpu-16c32g`
 
-## 4. 模块边界
+价格来自腾讯云实时询价或明确的腾讯云错误状态。冻结金额按“小时价 × 最小计费小时 × 风险系数”和平台保底金额计算。最终 exact cost 只能来自腾讯云 `DescribeBillDetail` 或 COS 账单文件。
 
-### 4.1 Portal
+每个订单独立 TKE 节点池：
 
-Portal 是商业控制面，负责：
+- 默认 `minNodes=0`
+- 默认 `maxNodes=2`
+- 允许缩容到 0
+- 允许删除节点池
+- 删除时必须让用户选择是否同时销毁 CVM，并明确说明后果
 
-- 用户、租户、workspace、会员关系、钱包展示、订单列表。
-- 商业化 UI：规格选择、价格来源展示、冻结确认、订单状态、退款/补扣结果。
-- 订单编排入口：发起 quote、freeze、launch。
-- 工作台统一入口，只展示业务投影，不直连腾讯云。
+删除节点池提示标准：
 
-Portal 不负责：
+- 选择销毁 CVM：节点池内实例会被释放，运行环境和节点本地数据不可恢复。
+- 选择保留 CVM：节点池删除后实例仍可能继续产生云资源费用。
 
-- 不直接调用腾讯云报价、账单、TKE API。
-- 不保存或展示腾讯云 Secret。
-- 不创建 Kubernetes Job。
-- 不决定最终账单事实。
+## 需要实现
 
-### 4.2 Billing
+### Billing Aggregator
 
-Billing 是报价与账单事实面，负责：
+- 完善 `GET /cloud/status`。
+- 完善 `GET /server-plans`，默认提供硅谷四档 CPU 白名单。
+- 新增 `GET /billing/cos/status`，展示 COS 账单投递配置状态。
+- 新增 `GET /billing/attribution?resourceOrderId=...`，返回账单归因、缺标签资源和 required tags。
+- 无腾讯云 Secret 时返回明确 not configured 状态，不伪造价格和账单。
 
-- 维护腾讯云可售规格与价格来源。
-- 输出 `quoted`、`pending`、`exact`、`adjusted` 成本语义。
-- 读取腾讯云真实账单明细或账单文件，完成对账和归因。
-- 输出订单冻结建议、最终结算建议、未归因账单告警。
+### Resource Provisioner / Cloud Inventory
 
-Billing 不负责：
+- 新增 `GET /cloud/resources`，聚合 TKE 节点池、CVM 实例、标签完整度。
+- 新增 `GET /cloud/node-pools`。
+- 新增 `GET /cloud/instances`。
+- 完善 `POST /resource-orders/ensure-capacity`，支持订单独立节点池。
+- 新增 `POST /resource-orders/scale-to-zero`。
+- 新增 `POST /resource-orders/delete-node-pool`，必须要求确认字段。
 
-- 不登录用户。
-- 不持有 Portal session。
-- 不启动任务或资源。
-- 不直接改写用户前端状态，只提供账务事实和对账结果。
+### Portal
 
-### 4.3 Resource Provisioner
-
-Resource Provisioner 是资源开通面，负责：
-
-- 按 `server_plan` 映射 TKE 节点池规格。
-- 使用给定的 `nodePoolCreatePayload` / `nodePoolScalePayload` 开通或扩缩容。
-- 回填资源开通状态、节点池标识、失败原因。
-- 明确区分“可报价”与“可自动开通”。
-
-Resource Provisioner 不负责：
-
-- 不报价。
-- 不冻结和结算。
-- 不做工作台登录桥接。
-- 不直接承载业务运行。
-
-### 4.4 Gateway
-
-Gateway 是身份桥接面，负责：
-
-- 接收 Portal 发放的 launch token。
-- 把 Portal 用户态映射成 OPL Web 可识别的会话。
-- 保证“进入工作台”只存在单一入口。
-- 屏蔽内部 upstream、旧路径、旧登录口。
-
-Gateway 不负责：
-
-- 不读 Portal DB。
-- 不管理钱包。
-- 不读取腾讯云账单。
-- 不触发资源开通。
-
-### 4.5 Runner
-
-Runner 是执行面，负责：
-
-- 根据订单上下文创建真实任务运行负载。
-- 写入 `tenant_id / workspace_id / run_id / resource_order_id / server_plan_id / region` 等关键标签。
-- 回写运行状态、开始时间、结束时间、资源映射关系。
-- 配合 Resource Provisioner 使用已准备好的节点池能力运行任务。
-
-Runner 不负责：
-
-- 不冻结余额。
-- 不做腾讯云账单计算。
-- 不管理用户会话。
-- 不决定退款或补扣。
-
-## 5. 给定腾讯云配置
-
-本节只记录实现依赖的配置项和能力边界，不记录任何 Secret 值，也不把 Secret 明文写入文档。云凭据由受控环境单独注入。
-
-对 AI 开发代理的强约束是：文档中出现的配置只能作为接口合同和部署前提，不得被实现成前端可见字段、调试日志或示例响应。
-
-### 5.1 已知非 Secret 配置
-
-- `TENCENT_CLOUD_REGION`
-  - 例如 `ap-guangzhou`，作为默认地域。
-- `TENCENT_PRICE_ENABLED`
-  - 控制是否启用真实腾讯云询价。
-- `TENCENT_BILLING_ENABLED`
-  - 控制是否启用真实腾讯云账单链路。
-- `TENCENT_PRICE_IMAGE_ID`
-  - 用于 CVM 询价所需镜像标识。
-- `SERVER_PLAN_CATALOG_JSON`
-  - 可售规格白名单，至少包含：
-  - `region`
-  - `zone`
-  - `instanceType`
-  - `cpu`
-  - `memory`
-  - `gpu`
-  - `systemDisk`
-  - `dataDisks`
-  - `minBillableHours`
-  - `riskFactor`
-  - `reservationFloor`
-  - `provisioningMode`
-- `TENCENT_TKE_CLUSTER_ID`
-  - 目标 TKE 集群标识。
-- 每个可售规格的 `nodePoolCreatePayload`
-  - 用于首建节点池。
-- 每个可售规格的 `nodePoolScalePayload`
-  - 用于扩缩容。
-
-### 5.2 权限与外部前提
-
-- Billing 侧必须具备：
-  - `DescribeBillDetail`
-  - 账单 COS 文件读取权限
-- Resource Provisioner 侧必须具备：
-  - `CreateClusterNodePool`
-  - `ModifyClusterNodePool`
-  - `DescribeClusterNodePools`
-  - `DeleteClusterNodePool` 或等效缩容权限
-
-### 5.3 标签与归因前提
-
-真实账单归因至少依赖以下标签：
-
-- `tenant_id`
-- `workspace_id`
-- `run_id`
-- `resource_order_id`
-- `server_plan_id`
-- `region`
-
-没有这些标签，就不能承诺最终账单可归因，也不能承诺稳定结算。
-
-## 6. 实现范围
-
-### 6.1 本轮必须完成
-
-- Portal 把“服务器与费用”升级为“资源订单与费用”主入口。
-- Portal 明确展示：
-  - 规格
-  - 地域
-  - 价格来源
-  - 冻结金额
-  - 是否可自动开通
-  - 当前订单状态
-- Billing 输出真实可售规格和报价状态，不允许在询价失败时伪造价格。
-- Billing 输出账单来源状态：
-  - `tencent_cloud_bill`
-  - `opencost_pending`
-  - `metering_pending`
-  - `adjusted`
-- Resource Provisioner 接受订单开通请求，回填 `provisioning` 成败。
-- Gateway 统一“进入工作台”入口，只接受 Portal 的 launch 合同。
-- Runner 补全资源订单上下文标签，保证后续可对账。
-- 文档与实现都明确：
-  - 可以 `quoted` 但不能 `provisioning`
-  - 可以 `provisioning` 但不能 `launch_ready`
-  - 可以 `running` 但不能 `settled`
-  - 各状态必须可解释
-
-### 6.2 本轮明确不做
-
-- 不接支付网关。
-- 不做自动开票、税务、合同。
-- 不做完整组织版 RBAC 重构。
-- 不做新的身份系统。
-- 不把 OPL Web 改造成商业控制台。
-- 不在前端或文档中暴露 Secret。
-- 不用本地假账单冒充腾讯云真实账单。
-
-## 7. 测试与交付标准
-
-### 7.1 接口与状态标准
-
-- `server plans` 接口在腾讯云询价关闭或失败时，必须明确返回不可售或未配置状态。
-- `cloud status` 接口必须区分：
-  - 已配置但未启用
-  - 已启用但最近失败
-  - 已启用且最近成功
-- 订单接口必须支持从 `draft` 到 `settled` 的显式状态推进，不允许隐式跳状态。
-- Launch 接口必须依赖订单处于 `launch_ready` 或其等效可启动状态。
-- 运行记录必须携带订单、规格、地域和租户标签。
-
-### 7.2 UI 标准
-
-- Portal 首页或资源订单页必须让用户看懂：
-  - 我选了什么
-  - 价格来自哪里
-  - 冻结了多少钱
-  - 现在能不能开通
-  - 订单处于哪一步
-  - 最终账单是否已回补
-- 不允许继续用大段说明文替代真实状态。
-- 不允许出现多个“进入工作台”入口指向不同链路。
-
-### 7.3 交付标准
-
-- 文档、接口、前端文案和状态机命名一致。
-- 没有 Secret 明文进入仓库、日志、前端响应、示例文档。
-- 对账前成本只能是 `pending` 类状态，不能显示为最终 `exact`。
-- 订单失败、开通失败、归因失败都有面向运营和用户的明确状态语义。
-
-## 8. 未完成商业化缺口
-
-即使完成 `opl-v12`，距离正式商业化仍有明显缺口：
-
-- 钱包账本仍缺完整冻结、释放、退款、补扣、审计幂等模型。
-- 未归因账单处理仍需要管理员工作流和告警面板。
-- 存储生命周期仍未形成独立订单和持续计费策略。
-- 预算上限、配额、组织租户、项目预算尚未完整落地。
-- Resource Provisioner 第一阶段大概率仍依赖预置节点池，不能视为完全自动化云资源供给。
-- 充值、支付、发票、税务、合同并未进入本轮范围。
-- 真实生产环境下的毛利分析、折扣策略、补贴策略尚未固化。
-
-## 9. 面向 AI 开发的执行要求
-
-AI 开发代理在实现 `opl-v12` 时，必须遵守以下约束：
-
-- 只在各模块既定边界内修改，不通过跨模块偷写逻辑绕过状态机。
-- 所有新增状态名、接口字段名、前端展示文案必须围绕资源订单主链路统一命名。
-- 任何真实腾讯云依赖都必须先判断是否具备配置和权限，再决定返回“可售”“可开通”还是“仅展示”。
-- 任何未对账成本都不能被写成最终账单。
-- 任何需要凭据的动作都只能发生在后端受控模块，不允许下沉到 Portal 前端或 Gateway。
-
-`opl-v12` 完成的判断标准不是“页面更像产品”，而是“真实腾讯云资源订单顺序、商业化 UI、工作台入口、运行归因、账单回补语义已经形成同一条闭环”。
+- 新增 `GET /portal/api/cloud/resources`，只透传 Resource Provisioner 的脱敏结果。
+- 新增 `POST /portal/api/resource-orders/provision`。
+- 新增 `POST /portal/api/resource-orders/release`。
+- 新增 `POST /portal/api/resource-orders/delete-node-pool`。
+- 总览页保留商业指标，不做说明书式文案。
+- 服务器页改成“选规格 + 看价格 + 下订单 + 看资源状态”的操作台。
+
+### Runtime Chain
+
+- Run 前通过 Portal 创建/冻结 Resource Order。
+- Portal 调 Resource Provisioner 准备资源。
+- Runner 创建 Job 时继续带标签：
+  - `tenant_id`
+  - `workspace_id`
+  - `run_id`
+  - `resource_order_id`
+  - `server_plan_id`
+
+## 测试标准
+
+后端：
+
+- `node --check` 覆盖 Portal、Billing、Resource Provisioner、Gateway、Runtime Bridge。
+- `smoke-test-billing-v12-cos-attribution.mjs`
+- `smoke-test-resource-provisioner-v12-contract.mjs`
+- 继续通过 v10/v11 的 Resource Order、冻结账本、exact-only settlement、Gateway login smoke。
+
+前端：
+
+- `npm --prefix services/portal run frontend:typecheck`
+- `npm --prefix services/portal run frontend:build`
+- 浏览器验证总览、服务器与费用、订单创建、节点池删除确认弹窗、工作台入口。
+
+真实腾讯云联调：
+
+- 无 Secret：必须显示未接入。
+- 有 Secret：能读 TKE 节点池、CVM 实例、COS 账单状态。
+- `RESOURCE_PROVISIONING_ENABLED=0`：只能只读，不能创建或删除节点池。
+- `RESOURCE_PROVISIONING_ENABLED=1`：才允许真实节点池生命周期操作。
+
+## 交付标准
+
+v12 达标条件：
+
+- Portal UI 像商业控制台，不像说明文档。
+- 客户能看到四档 CPU 规格、价格来源、冻结金额、账单来源。
+- 客户能看到真实云资源状态和标签完整度。
+- Resource Order 能走到 `quoted -> frozen -> provisioning`。
+- 开通成功后能回填 `nodePoolId` 或腾讯云 request id。
+- 没有真实腾讯云账单时不做 exact 扣费。
+- Secret 不进入 git、文档、YAML、镜像、日志摘要。
+
+## 仍未完成的正式商业化缺口
+
+- 真实支付充值入口。
+- 一等租户/组织/角色隔离。
+- Postgres/Redis/COS/CFS 生产迁移。
+- 大规模节点池策略和配额治理。
+- 完整失败回滚和人工处理队列。
+- CloudAudit 审计闭环。
+- 生产 OIDC、KMS、Secret Manager 完整治理。
