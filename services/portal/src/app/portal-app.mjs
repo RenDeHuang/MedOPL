@@ -2343,11 +2343,26 @@ async function findResourceOrderPlan(order) {
   return items.find((item) => String(item.id || "") === String(order.serverPlanId || "")) || {};
 }
 
-async function provisionResourceOrder(db, user, order, payload = {}) {
+async function provisionResourceOrder(db, user, order, payload = {}, options = {}) {
   const plan = await findResourceOrderPlan(order);
   const provisionerPayload = await resourceOrderProvisionInput(order, plan, payload);
   const provisioned = await resourceProvisionerClient.ensureCapacity(provisionerPayload);
   if (!provisioned?.ok) {
+    if (options.allowDisabledPending && String(provisioned?.error || "") === "resource_provisioning_disabled") {
+      const pending = transitionResourceOrder(db, {
+        orderId: order.id,
+        status: "provisioning",
+        actorType: "resource-provisioner",
+        actorId: "disabled",
+        payload: {
+          runId: provisionerPayload.runId,
+          provisioner: provisioned,
+          reason: "resource_provisioning_disabled",
+        },
+        idempotencyKey: `event:provision-pending:${order.id}:resource_provisioning_disabled`,
+      });
+      return { ok: true, provisioner: provisioned, order: pending.order || order };
+    }
     const failed = transitionResourceOrder(db, {
       orderId: order.id,
       status: "failed",
@@ -4255,7 +4270,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, frozen, frozen.status || 400);
       return;
     }
-    const provisioning = await provisionResourceOrder(db, portalUser, frozen.order, payload);
+    const provisioning = await provisionResourceOrder(db, portalUser, frozen.order, payload, { allowDisabledPending: true });
     await writeDb(db);
     sendJson(res, {
       ...resourceOrderResponse(db, portalUser, provisioning.order || frozen.order),
