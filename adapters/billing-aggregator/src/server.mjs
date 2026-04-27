@@ -1,6 +1,15 @@
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+if (!String(process.env.SERVER_PLAN_CATALOG_JSON || "").trim()) {
+  process.env.SERVER_PLAN_CATALOG_JSON = JSON.stringify([
+    { id: "cpu-2c4g", name: "CPU 2C4G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.MEDIUM4", cpu: 2, memoryGb: 4, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "20Gi", storageLimit: "100Gi" },
+    { id: "cpu-4c8g", name: "CPU 4C8G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.LARGE8", cpu: 4, memoryGb: 8, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "20Gi", storageLimit: "150Gi" },
+    { id: "cpu-8c16g", name: "CPU 8C16G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.2XLARGE16", cpu: 8, memoryGb: 16, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "40Gi", storageLimit: "200Gi" },
+    { id: "cpu-16c32g", name: "CPU 16C32G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.4XLARGE32", cpu: 16, memoryGb: 32, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "80Gi", storageLimit: "300Gi" }
+  ]);
+}
 import { access, readFile, readdir, writeFile, stat, mkdir, appendFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { createHash, createHmac, randomUUID } from "node:crypto";
@@ -42,6 +51,55 @@ const TENCENT_PLAN_DISCOVERY_ENABLED = String(process.env.TENCENT_PLAN_DISCOVERY
 const TENCENT_PLAN_DISCOVERY_ZONES = String(process.env.TENCENT_PLAN_DISCOVERY_ZONES || "").trim();
 const TENCENT_PLAN_DISCOVERY_CHARGE_TYPE = String(process.env.TENCENT_PLAN_DISCOVERY_CHARGE_TYPE || "POSTPAID_BY_HOUR").trim();
 const TENCENT_PLAN_DISCOVERY_MAX = Number(process.env.TENCENT_PLAN_DISCOVERY_MAX || 80);
+const TENCENT_COS_BILL_BUCKET = String(process.env.TENCENT_COS_BILL_BUCKET || "opl-1410708315").trim();
+const TENCENT_COS_BILL_REGION = String(process.env.TENCENT_COS_BILL_REGION || TENCENT_CLOUD_REGION).trim();
+const TENCENT_COS_BILL_PREFIX = String(process.env.TENCENT_COS_BILL_PREFIX || "daily/").trim();
+const TENCENT_REQUIRED_COST_TAGS = ["resource_order_id", "run_id", "server_plan_id", "tenant_id", "workspace_id"];
+
+function buildCosBillStatus() {
+  return {
+    ok: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_PREFIX),
+    source: "tencent_cloud_cos_bill_delivery",
+    bucket: TENCENT_COS_BILL_BUCKET,
+    region: TENCENT_COS_BILL_REGION,
+    prefix: TENCENT_COS_BILL_PREFIX,
+    deliveryConfigured: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_PREFIX),
+    note: "COS bill files are used for daily reconciliation. Exact cost must come from Tencent bill detail or COS bill files.",
+  };
+}
+
+function buildAttributionPayload(items = [], resourceOrderId = "") {
+  const normalizedResourceOrderId = String(resourceOrderId || "").trim();
+  const related = items.filter((item) => normalizedResourceOrderId && JSON.stringify(item || {}).includes(normalizedResourceOrderId));
+  const unattributed = items.filter((item) => {
+    const text = JSON.stringify(item || {});
+    return !TENCENT_REQUIRED_COST_TAGS.every((key) => text.includes(key));
+  });
+  const totalCost = related.reduce((sum, item) => sum + Number(item.totalCost || item.TotalCost || item.realTotalCost || item.RealTotalCost || 0), 0);
+  return {
+    ok: true,
+    source: "tencent_cloud_bill_attribution",
+    resourceOrderId: normalizedResourceOrderId,
+    requiredTags: TENCENT_REQUIRED_COST_TAGS,
+    relatedCount: related.length,
+    unattributedCount: unattributed.length,
+    totalCost: Number(totalCost.toFixed(5)),
+    items: related.slice(0, 100),
+    unattributed: unattributed.slice(0, 50),
+  };
+}
+
+async function collectAttributionItems(url) {
+  const customerId = String(url?.searchParams?.get("customer_id") || "").trim();
+  const workspaceId = String(url?.searchParams?.get("workspace_id") || "").trim();
+  const windowValue = String(url?.searchParams?.get("window") || "720h").trim() || "720h";
+  const exact = await fetchExactSummary(customerId, workspaceId, windowValue);
+  return [
+    ...(Array.isArray(exact?.runs) ? exact.runs : []),
+    ...(Array.isArray(exact?.items) ? exact.items : []),
+    ...(Array.isArray(exact?.unattributed?.items) ? exact.unattributed.items : []),
+  ];
+}
 const SERVER_PLAN_CATALOG_JSON = String(process.env.SERVER_PLAN_CATALOG_JSON || "[]").trim();
 const TERMINAL_RUN_STATUSES = new Set(["succeeded", "failed", "cancelled", "canceled", "timed_out", "completed"]);
 const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "postgres_redis").trim().toLowerCase();
@@ -1800,6 +1858,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && url.pathname === "/billing/cos/status") {
+    sendJson(res, 200, buildCosBillStatus());
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/billing/attribution") {
+    const resourceOrderId = String(url.searchParams.get("resourceOrderId") || url.searchParams.get("resource_order_id") || "").trim();
+    const items = await collectAttributionItems(url).catch(() => []);
+    sendJson(res, 200, buildAttributionPayload(items, resourceOrderId));
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/server-plans") {
     try {
       sendJson(res, 200, await listServerPlans());
