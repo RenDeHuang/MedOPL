@@ -11,6 +11,7 @@ import { createClient as createRedisClient } from "redis";
 import {
   adminSeed,
   BILLING_SERVICE_URL,
+  RESOURCE_PROVISIONER_URL,
   BUILD_SHA,
   BUILD_TIME,
   codexRuntimeEventsFile,
@@ -78,6 +79,7 @@ import {
   normalizeServerPlanSelection,
 } from "../domain/server-plans.mjs";
 import { createBillingClient } from "../integrations/billing-client.mjs";
+import { createResourceProvisionerClient } from "../integrations/resource-provisioner-client.mjs";
 import { createHarborRegistryClient } from "../integrations/harbor-registry-client.mjs";
 import { createLangfuseTraceClient } from "../integrations/langfuse-trace-client.mjs";
 import { createMinioStorageClient } from "../integrations/minio-storage-client.mjs";
@@ -353,6 +355,7 @@ function formatDateOnly(value) {
 }
 
 const billingClient = createBillingClient({ billingServiceUrl: BILLING_SERVICE_URL });
+const resourceProvisionerClient = createResourceProvisionerClient({ provisionerUrl: RESOURCE_PROVISIONER_URL });
 const minioStorageClient = createMinioStorageClient({
   repoRoot,
   portalWorkdir,
@@ -2302,6 +2305,88 @@ function resourceOrderResponse(db, user, order) {
   };
 }
 
+function findUserResourceOrder(db, user, orderId = "") {
+  const normalizedOrderId = String(orderId || "").trim();
+  if (!normalizedOrderId) return null;
+  ensureResourceOrderCollections(db);
+  return db.resourceOrders.find((item) =>
+    item.id === normalizedOrderId &&
+    (item.userId === user.id || item.tenantId === user.id || user.role === "admin")
+  ) || null;
+}
+
+async function resourceOrderProvisionInput(order, plan = {}, payload = {}) {
+  const runId = String(order.runId || payload.runId || payload.run_id || order.id).trim();
+  return {
+    tenantId: order.tenantId || order.userId,
+    userId: order.userId,
+    workspaceId: order.workspaceId,
+    workspaceSessionId: order.workspaceSessionId,
+    runId,
+    resourceOrderId: order.id,
+    serverPlanId: order.serverPlanId,
+    region: order.region || plan.region || "",
+    zone: order.zone || plan.zone || "",
+    provisioningMode: plan.provisioningMode || "tke_node_pool_create",
+    serverPlan: {
+      ...plan,
+      id: order.serverPlanId || plan.id || "",
+      region: order.region || plan.region || "",
+      zone: order.zone || plan.zone || "",
+    },
+  };
+}
+
+async function findResourceOrderPlan(order) {
+  const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
+  const items = Array.isArray(plansPayload.items) ? plansPayload.items : [];
+  return items.find((item) => String(item.id || "") === String(order.serverPlanId || "")) || {};
+}
+
+async function provisionResourceOrder(db, user, order, payload = {}) {
+  const plan = await findResourceOrderPlan(order);
+  const provisionerPayload = await resourceOrderProvisionInput(order, plan, payload);
+  const provisioned = await resourceProvisionerClient.ensureCapacity(provisionerPayload);
+  if (!provisioned?.ok) {
+    const failed = transitionResourceOrder(db, {
+      orderId: order.id,
+      status: "failed",
+      actorType: "resource-provisioner",
+      actorId: "ensure-capacity",
+      payload: {
+        error: provisioned?.error || "resource_provisioner_failed",
+        code: provisioned?.code || "",
+      },
+      idempotencyKey: `event:provision-failed:${order.id}:${provisioned?.code || provisioned?.error || "error"}`,
+    });
+    return { ok: false, status: provisioned?.status || 502, provisioner: provisioned, order: failed.order || order };
+  }
+  const provisionerOrder = provisioned.order || {};
+  const cloudResourceIds = [
+    provisionerOrder.nodePoolId,
+    ...(Array.isArray(provisionerOrder.instanceIds) ? provisionerOrder.instanceIds : []),
+  ].filter(Boolean);
+  const transitioned = transitionResourceOrder(db, {
+    orderId: order.id,
+    status: provisionerOrder.status === "ready" ? "running" : "provisioning",
+    actorType: "resource-provisioner",
+    actorId: String(provisionerOrder.requestId || provisionerOrder.nodePoolId || ""),
+    payload: {
+      runId: provisionerPayload.runId,
+      provisionRequestId: provisionerOrder.requestId || "",
+      nodePoolId: provisionerOrder.nodePoolId || "",
+      cloudResourceIds,
+      provisionerOrder,
+    },
+    idempotencyKey: `event:provisioned:${order.id}:${provisionerOrder.requestId || provisionerOrder.nodePoolId || "reused"}`,
+  });
+  if (transitioned.order) {
+    transitioned.order.provisionRequestId = String(provisionerOrder.requestId || transitioned.order.provisionRequestId || "").trim();
+    transitioned.order.cloudResourceIds = cloudResourceIds.length ? cloudResourceIds : transitioned.order.cloudResourceIds;
+  }
+  return { ok: true, provisioner: provisioned, order: transitioned.order || order };
+}
+
 async function fetchMinioSummary() {
   return minioStorageClient.fetchSummary();
 }
@@ -4170,19 +4255,12 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, frozen, frozen.status || 400);
       return;
     }
-    const provisioning = transitionResourceOrder(db, {
-      orderId: frozen.order.id,
-      status: "provisioning",
-      actorType: "runtime-bridge",
-      actorId: String(payload.runtimeSessionId || payload.workspaceSessionId || ""),
-      payload: {
-        runId: String(payload.runId || payload.run_id || ""),
-        workspaceSessionId: String(payload.workspaceSessionId || payload.workspace_session_id || ""),
-      },
-      idempotencyKey: `event:provisioning:${frozen.order.id}`,
-    });
+    const provisioning = await provisionResourceOrder(db, portalUser, frozen.order, payload);
     await writeDb(db);
-    sendJson(res, resourceOrderResponse(db, portalUser, provisioning.order || frozen.order));
+    sendJson(res, {
+      ...resourceOrderResponse(db, portalUser, provisioning.order || frozen.order),
+      provisioner: provisioning.provisioner || null,
+    }, provisioning.ok ? 200 : (provisioning.status || 502));
     return;
   }
   if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/mark-running") {
@@ -4715,6 +4793,132 @@ const server = http.createServer(async (req, res) => {
     }
     await writeDb(db);
     sendJson(res, resourceOrderResponse(db, user, frozen.order));
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/portal/api/cloud/resources") {
+    const resources = await resourceProvisionerClient.fetchCloudResources();
+    sendJson(res, {
+      ok: Boolean(resources?.ok),
+      source: "resource_provisioner",
+      resources,
+      resourceOrders: {
+        items: resourceOrdersForUser(db, user.id).slice(0, 20).map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || [])),
+      },
+    });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/provision") {
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
+    if (!order) {
+      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
+      return;
+    }
+    if (!["frozen", "provisioning"].includes(String(order.status || "").toLowerCase())) {
+      sendJson(res, { ok: false, error: "resource_order_must_be_frozen", status: order.status }, 409);
+      return;
+    }
+    const provisioned = await provisionResourceOrder(db, user, order, payload);
+    await writeDb(db);
+    sendJson(res, {
+      ...resourceOrderResponse(db, user, provisioned.order || order),
+      provisioner: provisioned.provisioner,
+    }, provisioned.ok ? 200 : (provisioned.status || 502));
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/release") {
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
+    if (!order) {
+      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
+      return;
+    }
+    let scaleResult = null;
+    if (payload.scaleToZero === true) {
+      scaleResult = await resourceProvisionerClient.scaleToZero({
+        resourceOrderId: order.id,
+        nodePoolId: payload.nodePoolId || order.cloudResourceIds?.[0] || "",
+        tenantId: order.tenantId,
+        workspaceId: order.workspaceId,
+        serverPlanId: order.serverPlanId,
+      });
+      if (!scaleResult?.ok) {
+        sendJson(res, { ok: false, error: "scale_to_zero_failed", provisioner: scaleResult }, scaleResult?.status || 502);
+        return;
+      }
+    }
+    const released = releaseResourceOrder(db, {
+      user,
+      orderId: order.id,
+      actorType: "portal",
+      actorId: user.id,
+      payload: { scaleToZero: payload.scaleToZero === true, scaleResult },
+      idempotencyKey: String(payload.idempotencyKey || `portal_release:${order.id}`).trim(),
+    });
+    if (!released.ok) {
+      sendJson(res, released, released.status || 400);
+      return;
+    }
+    await writeDb(db);
+    sendJson(res, { ...resourceOrderResponse(db, user, released.order), scaleResult });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/delete-node-pool") {
+    let payload = {};
+    try {
+      payload = await readJsonBody(req);
+    } catch {
+      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
+      return;
+    }
+    const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
+    if (!order) {
+      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
+      return;
+    }
+    if (payload.confirmDeleteNodePool !== true) {
+      sendJson(res, {
+        ok: false,
+        error: "delete_node_pool_confirmation_required",
+        message: "删除节点池前必须确认：销毁 CVM 会释放实例和节点本地数据；保留 CVM 会继续产生云资源费用。",
+      }, 409);
+      return;
+    }
+    const deleted = await resourceProvisionerClient.deleteNodePool({
+      resourceOrderId: order.id,
+      nodePoolId: payload.nodePoolId || order.cloudResourceIds?.[0] || "",
+      destroyCvmInstances: payload.destroyCvmInstances === true,
+      tenantId: order.tenantId,
+      workspaceId: order.workspaceId,
+      serverPlanId: order.serverPlanId,
+      confirmation: "delete-node-pool",
+    });
+    if (!deleted?.ok) {
+      sendJson(res, { ok: false, error: "delete_node_pool_failed", provisioner: deleted }, deleted?.status || 502);
+      return;
+    }
+    const transitioned = transitionResourceOrder(db, {
+      orderId: order.id,
+      status: "released",
+      actorType: "portal",
+      actorId: user.id,
+      payload: { deleteNodePool: deleted },
+      idempotencyKey: `event:delete-node-pool:${order.id}:${payload.destroyCvmInstances === true ? "destroy" : "retain"}`,
+    });
+    await writeDb(db);
+    sendJson(res, { ...resourceOrderResponse(db, user, transitioned.order || order), provisioner: deleted });
     return;
   }
   if (req.method === "POST" && url.pathname === "/portal/api/server-plans/select") {

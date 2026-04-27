@@ -532,10 +532,14 @@ export interface ResourceOrderItem {
   region?: string;
   quotedAmount?: number;
   frozenAmount?: number;
+  freezeAmount?: number;
   pendingCost?: number;
   exactCost?: number;
   currency?: string;
   pricingSource?: string;
+  provisionRequestId?: string;
+  cloudResourceIds?: string[];
+  failedReason?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -571,6 +575,28 @@ export interface ResourceOrderMutationResult {
   resourceOrderId?: string;
   quoteId?: string;
   order?: ResourceOrderItem | null;
+  provisioner?: unknown;
+}
+
+export interface CloudResourcesPayload {
+  ok: boolean;
+  source?: string;
+  resources: {
+    ok?: boolean;
+    reason?: string;
+    cluster?: Record<string, unknown> | null;
+    summary?: {
+      nodePoolCount?: number;
+      instanceCount?: number;
+      taggedInstanceCount?: number;
+      orderLinkedNodePoolCount?: number;
+    };
+    nodePools?: Array<Record<string, unknown>>;
+    instances?: Array<Record<string, unknown>>;
+  };
+  resourceOrders?: {
+    items: ResourceOrderItem[];
+  };
 }
 
 export interface AnnouncementPayload {
@@ -750,6 +776,11 @@ export async function fetchResourceOrders(params?: Record<string, string | numbe
   return data;
 }
 
+export async function fetchCloudResources() {
+  const { data } = await apiClient.get<CloudResourcesPayload>("/cloud/resources");
+  return data;
+}
+
 export async function quoteResourceOrder(input: ResourceOrderQuoteInput) {
   const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/quote", input);
   return data;
@@ -757,6 +788,26 @@ export async function quoteResourceOrder(input: ResourceOrderQuoteInput) {
 
 export async function freezeResourceOrder(input: ResourceOrderFreezeInput) {
   const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/freeze", input);
+  return data;
+}
+
+export async function provisionResourceOrder(input: { resourceOrderId: string; runId?: string }) {
+  const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/provision", input);
+  return data;
+}
+
+export async function releaseResourceOrder(input: { resourceOrderId: string; scaleToZero?: boolean }) {
+  const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/release", input);
+  return data;
+}
+
+export async function deleteResourceOrderNodePool(input: {
+  resourceOrderId: string;
+  nodePoolId?: string;
+  destroyCvmInstances: boolean;
+  confirmDeleteNodePool: boolean;
+}) {
+  const { data } = await apiClient.post<ResourceOrderMutationResult>("/resource-orders/delete-node-pool", input);
   return data;
 }
 
