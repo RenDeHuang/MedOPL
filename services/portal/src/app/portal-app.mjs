@@ -1,19 +1,101 @@
 ﻿import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { mkdir, readFile, writeFile, access, readdir, stat, appendFile, rename } from "node:fs/promises";
-import { constants as fsConstants, createReadStream, statSync } from "node:fs";
+import { constants as fsConstants, statSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import pg from "pg";
 import { createClient as createRedisClient } from "redis";
+import {
+  adminSeed,
+  BILLING_SERVICE_URL,
+  BUILD_SHA,
+  BUILD_TIME,
+  codexRuntimeEventsFile,
+  codexRuntimeRoot,
+  dataFile,
+  eventsFile,
+  frontendDistRoot,
+  HARBOR_API_URL,
+  HARBOR_ENABLED,
+  HARBOR_PASSWORD,
+  HARBOR_URL,
+  HARBOR_USERNAME,
+  KUBESPHERE_URL,
+  LANGFUSE_URL,
+  mcBinary,
+  medRunsRoot,
+  medWorkspaceRoot,
+  MINIO_API_URL,
+  MINIO_CONSOLE_URL,
+  OPENCOST_UI_URL,
+  OPL_RUNTIME_MODE,
+  OPL_RUNTIME_TIMEOUT_MS,
+  OPL_WEB_URL,
+  OPL_WEBUI_AUTH_MODE,
+  PORT,
+  portalWorkdir,
+  PORTAL_ADMIN_SEED_BALANCE,
+  PORTAL_DB_NAMESPACE,
+  PORTAL_IDENTITY_SYNC_MODE,
+  PORTAL_INTERNAL_AUTH_TOKEN,
+  PORTAL_OIDC_CLIENT_ID,
+  PORTAL_OIDC_CLIENT_SECRET,
+  PORTAL_OIDC_ENABLED,
+  PORTAL_OIDC_ISSUER,
+  PORTAL_OIDC_REDIRECT_URI,
+  PORTAL_OIDC_SCOPE,
+  PORTAL_OPL_ADAPTER_URL,
+  PORTAL_POSTGRES_URL,
+  PORTAL_PUBLIC_URL,
+  PORTAL_REDIS_URL,
+  PORTAL_STORAGE_MODE,
+  publicRoot,
+  RANCHER_URL,
+  repoRoot,
+  runtimeRoot,
+  SHOW_LEGACY_KUBESPHERE,
+  syncWorkspaceToMinioScriptRelative,
+  TENCENT_BILLING_ENABLED,
+  TENCENT_BILLING_REQUIRED,
+  validateProductionConfig,
+  ZITADEL_ADMIN_USER_SCRIPT,
+} from "../config/portal-config.mjs";
+import {
+  activeUserStatus,
+  buildCommercialProfile,
+  ensureUserCommercialState,
+  isBlockedUserStatus,
+} from "../domain/commercial-state.mjs";
+import {
+  buildOverviewOnboarding,
+  buildServerPlansFallback,
+  buildServerPlansSummary,
+  buildTaskSpaceServerPlanSelection,
+  currentServerPlanSelection,
+  normalizeServerPlanSelection,
+} from "../domain/server-plans.mjs";
 import { createBillingClient } from "../integrations/billing-client.mjs";
 import { createHarborRegistryClient } from "../integrations/harbor-registry-client.mjs";
 import { createLangfuseTraceClient } from "../integrations/langfuse-trace-client.mjs";
 import { createMinioStorageClient } from "../integrations/minio-storage-client.mjs";
 import { createOplAdapterClient } from "../integrations/opl-adapter-client.mjs";
+import {
+  appendCookie,
+  clearCookie,
+  guessContentType,
+  parseCookies,
+  parseForm,
+  readBody,
+  safeJsonForHtml,
+  sendFile,
+  sendHtml,
+  sendJson,
+  sendStaticAsset,
+  setCookie,
+} from "../lib/http.mjs";
 import { createOplRoutes } from "../routes/opl.routes.mjs";
 import { createOplLaunchService } from "../services/opl-launch.service.mjs";
 import {
@@ -31,89 +113,13 @@ import {
   ensureWallet,
   moneyAmount,
   normalizeLedgerEntries,
-  walletCommercialSnapshot,
 } from "../domain/wallet-ledger.mjs";
 
-const appDir = path.dirname(fileURLToPath(import.meta.url));
-const __dirname = path.resolve(appDir, "..");
-const repoRoot = path.resolve(__dirname, "../../../");
-const portalWorkdir = path.resolve(__dirname, "..");
-const publicRoot = path.join(__dirname, "public");
-const frontendDistRoot = path.join(portalWorkdir, "frontend", "dist");
-const runtimeRoot = path.join(repoRoot, ".runtime", "portal");
-const dataFile = path.join(runtimeRoot, "portal-db.json");
-const eventsFile = path.join(runtimeRoot, "events.jsonl");
-const medWorkspaceRoot = path.join(repoRoot, ".runtime", "med-autoscience", "workspaces");
-const medRunsRoot = path.join(repoRoot, ".runtime", "med-autoscience", "runs");
-const codexRuntimeRoot = path.join(repoRoot, ".runtime", "codex-runtime-gateway");
-const codexRuntimeEventsFile = path.join(codexRuntimeRoot, "events.jsonl");
-const syncWorkspaceToMinioScriptRelative = path.join("..", "..", "scripts", "sync-workspace-file-to-minio.ps1");
-
-const PORT = Number(process.env.PORT || 17080);
-const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "json").trim().toLowerCase();
-const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "postgres://postgres:postgres@127.0.0.1:5432/med_meta").trim();
-const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "redis://127.0.0.1:6379").trim();
-const PORTAL_DB_NAMESPACE = String(process.env.PORTAL_DB_NAMESPACE || "portal").trim() || "portal";
-const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
-const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").replace(/\/$/, "");
-const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
-const OPL_RUNTIME_MODE = String(process.env.OPL_RUNTIME_MODE || "unknown").trim() || "unknown";
-const OPL_WEBUI_AUTH_MODE = String(process.env.OPL_WEBUI_AUTH_MODE || "unknown").trim() || "unknown";
-const OPL_RUNTIME_TIMEOUT_MS = Number(process.env.OPL_RUNTIME_TIMEOUT_MS || 10000);
-const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://127.0.0.1:13000";
-const OPENCOST_UI_URL = process.env.OPENCOST_UI_URL || "http://127.0.0.1:30090";
-const KUBESPHERE_URL = process.env.KUBESPHERE_URL || "";
-const RANCHER_URL = process.env.RANCHER_URL || "https://127.0.0.1:30443";
-const HARBOR_URL = process.env.HARBOR_URL || "http://127.0.0.1:30095";
-const HARBOR_API_URL = process.env.HARBOR_API_URL || HARBOR_URL;
-const HARBOR_ENABLED = String(process.env.HARBOR_ENABLED || "").trim() === "1";
-const HARBOR_USERNAME = process.env.HARBOR_USERNAME || "admin";
-const HARBOR_PASSWORD = process.env.HARBOR_PASSWORD || "HarborAdmin123!";
-const MINIO_CONSOLE_URL = process.env.MINIO_CONSOLE_URL || "http://127.0.0.1:30092";
-const SHOW_LEGACY_KUBESPHERE = String(process.env.SHOW_LEGACY_KUBESPHERE || "").trim() === "1";
-const MINIO_API_URL = process.env.MINIO_API_URL || "http://127.0.0.1:30091";
-const BILLING_SERVICE_URL = process.env.BILLING_SERVICE_URL || "http://127.0.0.1:3311";
-const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLED || "").trim() === "1";
-const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "").trim() === "1";
-const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
-const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
-const mcBinary = path.join(repoRoot, ".runtime", "tools", "mc.exe");
 const execFileAsync = promisify(execFile);
-
-const adminSeed = {
-  email: process.env.PORTAL_ADMIN_EMAIL || "zitadel-admin@zitadel.localhost",
-  password: process.env.PORTAL_ADMIN_PASSWORD || "Password1!",
-  name: process.env.PORTAL_ADMIN_NAME || "ZITADEL Admin",
-};
-const PORTAL_ADMIN_SEED_BALANCE = Number(process.env.PORTAL_ADMIN_SEED_BALANCE || 100);
-const PORTAL_TRIAL_CREDIT_AMOUNT = Number(process.env.PORTAL_TRIAL_CREDIT_AMOUNT || 50);
-const PORTAL_TRIAL_VALID_DAYS = Number(process.env.PORTAL_TRIAL_VALID_DAYS || 14);
-
-const PORTAL_OIDC_ENABLED = String(process.env.PORTAL_OIDC_ENABLED || "1") !== "0";
-const PORTAL_OIDC_ISSUER = process.env.PORTAL_OIDC_ISSUER || "https://auth.localhost:18443";
-const PORTAL_OIDC_CLIENT_ID = process.env.PORTAL_OIDC_CLIENT_ID || "368843754573922307";
-const PORTAL_OIDC_CLIENT_SECRET = process.env.PORTAL_OIDC_CLIENT_SECRET || "ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM";
-const PORTAL_OIDC_REDIRECT_URI = process.env.PORTAL_OIDC_REDIRECT_URI || "http://127.0.0.1:17080/auth/oidc/callback";
-const PORTAL_OIDC_SCOPE = process.env.PORTAL_OIDC_SCOPE || "openid profile email";
-const PORTAL_INTERNAL_AUTH_TOKEN = String(process.env.PORTAL_INTERNAL_AUTH_TOKEN || "").trim();
-const PORTAL_IDENTITY_SYNC_MODE = String(process.env.PORTAL_IDENTITY_SYNC_MODE || (PORTAL_OIDC_ENABLED ? "zitadel" : "local")).trim().toLowerCase();
-const ZITADEL_ADMIN_USER_SCRIPT = path.join(repoRoot, "scripts", "zitadel-admin-user.mjs");
 
 let dbWriteChain = Promise.resolve();
 let pgPool = null;
 let redisClient = null;
-
-function normalizeBaseUrl(value, suffixes = []) {
-  const parsed = new URL(value);
-  for (const suffix of suffixes) {
-    if (parsed.pathname.endsWith(suffix)) {
-      parsed.pathname = parsed.pathname.slice(0, -suffix.length) || "/";
-      break;
-    }
-  }
-  if (!parsed.pathname) parsed.pathname = "/";
-  return parsed.toString().replace(/\/$/, "");
-}
 
 function hashPassword(password) {
   return scryptSync(password, "portal-salt-v1", 64).toString("hex");
@@ -184,24 +190,6 @@ async function quarantineWorkspaceSessionRedisValue(redis, key, raw, reason) {
   }), { EX: 7 * 24 * 60 * 60 }).catch(() => {});
   if (key) {
     await redis.del(key).catch(() => {});
-  }
-}
-
-function assertProductionSecret(name, value, defaults = []) {
-  if (String(process.env.NODE_ENV || "").toLowerCase() !== "production") return;
-  const normalized = String(value || "").trim();
-  if (!normalized || defaults.includes(normalized)) {
-    throw new Error(`production_config_invalid:${name}`);
-  }
-}
-
-function validateProductionConfig() {
-  assertProductionSecret("PORTAL_ADMIN_PASSWORD", adminSeed.password, ["Password1!"]);
-  if (PORTAL_OIDC_ENABLED) {
-    assertProductionSecret("PORTAL_OIDC_CLIENT_SECRET", PORTAL_OIDC_CLIENT_SECRET, ["ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM"]);
-  }
-  if (HARBOR_ENABLED) {
-    assertProductionSecret("HARBOR_PASSWORD", HARBOR_PASSWORD, ["HarborAdmin123!"]);
   }
 }
 
@@ -298,359 +286,6 @@ function humanizeStatus(status = "unknown") {
 function userTheme(user) {
   const theme = String(user?.preferences?.theme || "light").toLowerCase();
   return ["dark", "light"].includes(theme) ? theme : "light";
-}
-
-function activeUserStatus(status = "active") {
-  const normalized = String(status || "active").toLowerCase();
-  return ["disabled", "deleted"].includes(normalized) ? normalized : "active";
-}
-
-function isBlockedUserStatus(status = "active") {
-  return ["disabled", "deleted"].includes(activeUserStatus(status));
-}
-
-function addDaysIso(base, days) {
-  const date = new Date(base || Date.now());
-  date.setDate(date.getDate() + Number(days || 0));
-  return date.toISOString();
-}
-
-function safePositiveNumber(value, fallback = 0) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
-function buildDefaultTrialEntitlement(createdAt = new Date().toISOString()) {
-  const amount = safePositiveNumber(PORTAL_TRIAL_CREDIT_AMOUNT, 50);
-  return {
-    kind: "trial_credit",
-    status: amount > 0 ? "trial_active" : "none",
-    source: "portal_signup_trial",
-    currency: "CNY",
-    totalCredit: amount,
-    remainingCredit: amount,
-    createdAt,
-    expiresAt: addDaysIso(createdAt, PORTAL_TRIAL_VALID_DAYS),
-    note: "新注册用户默认获得试用额度，可先进入实验室并完成首轮体验。",
-  };
-}
-
-function normalizeTrialEntitlement(value, { createdAt = "" } = {}) {
-  if (!value || typeof value !== "object") return null;
-  const status = String(value.status || "none").trim().toLowerCase();
-  const totalCredit = safePositiveNumber(value.totalCredit, 0);
-  const remainingCredit = safePositiveNumber(value.remainingCredit, totalCredit);
-  const expiresAt = String(value.expiresAt || "").trim();
-  const expired = expiresAt ? Date.parse(expiresAt) <= Date.now() : false;
-  return {
-    kind: String(value.kind || "trial_credit").trim() || "trial_credit",
-    status: expired && status === "trial_active" ? "trial_expired" : status,
-    source: String(value.source || "portal").trim() || "portal",
-    currency: String(value.currency || "CNY").trim() || "CNY",
-    totalCredit,
-    remainingCredit,
-    createdAt: String(value.createdAt || createdAt || "").trim() || createdAt || new Date().toISOString(),
-    expiresAt,
-    note: String(value.note || "").trim(),
-  };
-}
-
-function ensureUserCommercialState(user, { grantTrial = false } = {}) {
-  user.preferences = user.preferences && typeof user.preferences === "object" ? user.preferences : { theme: "light" };
-  user.preferences.commercial = user.preferences.commercial && typeof user.preferences.commercial === "object"
-    ? user.preferences.commercial
-    : {};
-  if (!("trialEntitlement" in user.preferences.commercial)) {
-    user.preferences.commercial.trialEntitlement = grantTrial ? buildDefaultTrialEntitlement(user.createdAt) : null;
-    return true;
-  }
-  const normalized = normalizeTrialEntitlement(user.preferences.commercial.trialEntitlement, { createdAt: user.createdAt });
-  if (JSON.stringify(normalized) !== JSON.stringify(user.preferences.commercial.trialEntitlement)) {
-    user.preferences.commercial.trialEntitlement = normalized;
-    return true;
-  }
-  return false;
-}
-
-function activeGroupForUser(db, user) {
-  return db.groups.find((item) =>
-    item.id === user.groupId &&
-    String(item.status || "active").toLowerCase() === "active",
-  ) || null;
-}
-
-function buildCommercialProfile(db, user, options = {}) {
-  const group = options.group ?? activeGroupForUser(db, user);
-  const wallet = options.wallet || ensureWallet(db, user.id);
-  const policy = options.policy || null;
-  const trialEntitlement = normalizeTrialEntitlement(user.preferences?.commercial?.trialEntitlement, { createdAt: user.createdAt });
-  const trialActive = Boolean(
-    trialEntitlement &&
-    trialEntitlement.status === "trial_active" &&
-    trialEntitlement.remainingCredit > 0 &&
-    (!trialEntitlement.expiresAt || Date.parse(trialEntitlement.expiresAt) > Date.now())
-  );
-  const accountStatus = activeUserStatus(user.status);
-  const freezeSnapshot = walletCommercialSnapshot(db, user);
-  const balance = Number(wallet.balance || 0);
-  const availableBalance = freezeSnapshot.availableBalance;
-  const balanceFloor = Number(group?.balanceFloor || 0);
-  const policyBlocks = Array.isArray(policy?.blocks) ? policy.blocks : [];
-  const nonBillingBlocks = policyBlocks.filter((item) => !String(item).includes("余额低于分组门槛"));
-  let billingStatus = "wallet_available";
-  if (accountStatus !== "active") {
-    billingStatus = "account_blocked";
-  } else if (balanceFloor > 0 && balance < balanceFloor) {
-    billingStatus = trialActive ? "trial_only" : "below_balance_floor";
-  } else if (balance - freezeSnapshot.activeFreeze > 0) {
-    billingStatus = "wallet_available";
-  } else if (trialActive) {
-    billingStatus = "trial_only";
-  } else {
-    billingStatus = "payment_required";
-  }
-  return {
-    accountStatus,
-    billingStatus,
-    entitlementStatus: trialActive ? "trial_active" : (trialEntitlement?.status || "none"),
-    walletBalance: balance,
-    activeFreeze: freezeSnapshot.activeFreeze,
-    trialRemaining: freezeSnapshot.trialRemaining,
-    availableBalance,
-    balanceFloor,
-    canEnterWorkbench: accountStatus === "active",
-    canStartChargeableRun: accountStatus === "active" && nonBillingBlocks.length === 0 && availableBalance > 0,
-    chargeBlockedReasons: [
-      ...nonBillingBlocks,
-      ...(availableBalance > 0 ? [] : ["收费运行前需要充值或试用额度"]),
-      ...(balanceFloor > 0 && balance < balanceFloor && !trialActive ? [`当前余额低于分组门槛（${balanceFloor.toFixed(2)}）`] : []),
-    ],
-    priceTransparency: "服务器价格来自腾讯云 CVM 实时报价；最终扣费以腾讯云账单明细回补为准。",
-    trialEntitlement,
-    group: group
-      ? {
-          id: group.id,
-          name: group.name,
-          balanceFloor,
-          maxConcurrentRuns: Number(group.maxConcurrentRuns || 0),
-        }
-      : null,
-  };
-}
-
-function normalizeStringMap(value) {
-  if (!value) return {};
-  if (typeof value === "string") {
-    try {
-      return normalizeStringMap(JSON.parse(value));
-    } catch {
-      return {};
-    }
-  }
-  if (typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value)
-      .map(([key, item]) => [String(key || "").trim(), String(item ?? "").trim()])
-      .filter(([key, item]) => key && item),
-  );
-}
-
-function normalizeTolerations(value) {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
-    .map((item) => ({
-      key: String(item.key || "").trim(),
-      operator: String(item.operator || "Equal").trim() || "Equal",
-      value: String(item.value || "").trim(),
-      effect: String(item.effect || "").trim(),
-    }))
-    .filter((item) => item.key);
-}
-
-function normalizeServerPlanSelection(value) {
-  if (!value || typeof value !== "object") return null;
-  const id = String(value.id || value.serverPlanId || "").trim();
-  if (!id) return null;
-  return {
-    id,
-    name: String(value.name || id).trim() || id,
-    provider: String(value.provider || "tencent").trim() || "tencent",
-    region: String(value.region || "").trim(),
-    zone: String(value.zone || "").trim(),
-    instanceType: String(value.instanceType || "").trim(),
-    currency: String(value.currency || "CNY").trim() || "CNY",
-    priceStatus: String(value.priceStatus || "").trim(),
-    originalPrice: safePositiveNumber(value.originalPrice, 0),
-    discountPrice: safePositiveNumber(value.discountPrice, 0),
-    unitPrice: safePositiveNumber(value.unitPrice, 0),
-    minBillableHours: Math.max(1, Number(value.minBillableHours || 1)),
-    riskFactor: safePositiveNumber(value.riskFactor, 1),
-    reservationFloor: safePositiveNumber(value.reservationFloor, 0),
-    cpu: safePositiveNumber(value.cpu, 0),
-    memoryGb: safePositiveNumber(value.memoryGb || value.memory, 0),
-    gpu: safePositiveNumber(value.gpu, 0),
-    cpuRequest: String(value.cpuRequest || "").trim(),
-    cpuLimit: String(value.cpuLimit || "").trim(),
-    memoryRequest: String(value.memoryRequest || "").trim(),
-    memoryLimit: String(value.memoryLimit || "").trim(),
-    gpuCount: Number(value.gpuCount ?? value.gpu ?? 0),
-    storageRequest: String(value.storageRequest || "").trim(),
-    storageLimit: String(value.storageLimit || "").trim(),
-    nodePool: String(value.nodePool || "").trim(),
-    runtimeClass: String(value.runtimeClass || "").trim(),
-    nodeSelector: normalizeStringMap(value.nodeSelector),
-    tolerations: normalizeTolerations(value.tolerations),
-    provisioningMode: String(value.provisioningMode || "schedule_to_node_pool").trim() || "schedule_to_node_pool",
-    tkeClusterId: String(value.tkeClusterId || value.clusterId || "").trim(),
-    nodePoolId: String(value.nodePoolId || "").trim(),
-    nodePoolCreatePayload: value.nodePoolCreatePayload && typeof value.nodePoolCreatePayload === "object" ? value.nodePoolCreatePayload : null,
-    nodePoolScalePayload: value.nodePoolScalePayload && typeof value.nodePoolScalePayload === "object" ? value.nodePoolScalePayload : null,
-    provisionerPayload: value.provisionerPayload && typeof value.provisionerPayload === "object" ? value.provisionerPayload : null,
-    selectedAt: String(value.selectedAt || "").trim(),
-    selectionNote: String(value.selectionNote || "").trim(),
-  };
-}
-
-function buildTaskSpaceServerPlanSelection(plan) {
-  return normalizeServerPlanSelection({
-    id: plan.id,
-    name: plan.name,
-    provider: plan.provider,
-    region: plan.region,
-    zone: plan.zone,
-    instanceType: plan.instanceType,
-    currency: plan.currency,
-    priceStatus: plan.priceStatus,
-    discountPrice: plan.discountPrice,
-    unitPrice: plan.unitPrice,
-    minBillableHours: plan.minBillableHours,
-    riskFactor: plan.riskFactor,
-    reservationFloor: plan.reservationFloor,
-    cpuRequest: plan.cpuRequest,
-    cpuLimit: plan.cpuLimit,
-    memoryRequest: plan.memoryRequest,
-    memoryLimit: plan.memoryLimit,
-    cpu: plan.cpu,
-    memoryGb: plan.memoryGb,
-    gpu: plan.gpu,
-    gpuCount: plan.gpuCount ?? plan.gpu,
-    storageRequest: plan.storageRequest,
-    storageLimit: plan.storageLimit,
-    nodePool: plan.nodePool,
-    runtimeClass: plan.runtimeClass,
-    nodeSelector: plan.nodeSelector,
-    tolerations: plan.tolerations,
-    originalPrice: plan.originalPrice,
-    selectedAt: new Date().toISOString(),
-    provisioningMode: plan.provisioningMode,
-    tkeClusterId: plan.tkeClusterId,
-    nodePoolId: plan.nodePoolId,
-    nodePoolCreatePayload: plan.nodePoolCreatePayload,
-    nodePoolScalePayload: plan.nodePoolScalePayload,
-    provisionerPayload: plan.provisionerPayload,
-    selectionNote: plan.selectionNote,
-  });
-}
-
-function currentServerPlanSelection(taskSpace) {
-  return normalizeServerPlanSelection(taskSpace?.serverPlanSnapshot || {
-    id: taskSpace?.serverPlanId,
-    region: taskSpace?.serverPlanRegion,
-  });
-}
-
-function buildServerPlansFallback(note = "账单聚合服务暂不可用，服务器价格稍后刷新。") {
-  return {
-    ok: false,
-    source: "billing_aggregator",
-    configured: false,
-    priceEnabled: false,
-    catalogCount: 0,
-    items: [],
-    note,
-  };
-}
-
-function buildServerPlansSummary(payload) {
-  const items = Array.isArray(payload?.items) ? payload.items : [];
-  const quoted = items.filter((item) => item.priceStatus === "quoted");
-  const salable = items.filter((item) => item.salable);
-  const lowestHourlyPrice = quoted.reduce((min, item) => {
-    const candidate = Number(item.discountPrice ?? item.unitPrice ?? 0);
-    if (!Number.isFinite(candidate) || candidate <= 0) return min;
-    return min === null || candidate < min ? candidate : min;
-  }, null);
-  return {
-    source: String(payload?.source || "billing_aggregator"),
-    configured: Boolean(payload?.configured),
-    priceEnabled: Boolean(payload?.priceEnabled),
-    discoveryEnabled: Boolean(payload?.discoveryEnabled),
-    discoveredCount: Number(payload?.discoveredCount || 0),
-    catalogCount: Number(payload?.catalogCount || items.length),
-    quotedCount: quoted.length,
-    salableCount: salable.length,
-    priceStatus: quoted.length ? "quoted" : (items.length ? "pending" : "unavailable"),
-    lowestHourlyPrice: lowestHourlyPrice ?? 0,
-    note: String(payload?.note || "").trim(),
-  };
-}
-
-function buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }) {
-  const fundingReady = commercial.billingStatus === "wallet_available" || commercial.billingStatus === "trial_only";
-  const serverReady = serverPlansSummary.salableCount > 0 || serverPlansSummary.quotedCount > 0;
-  return {
-    nextStepId: !fundingReady
-      ? "funding"
-      : workspaceCount <= 0
-        ? "workspace"
-        : sessionCount <= 0
-          ? "launch"
-          : "server_plans",
-    items: [
-      {
-        id: "configure_key",
-        title: "配置模型 API Key",
-        state: "ready",
-        href: "",
-        description: "模型 API key 由用户自己的中转站承担；Portal 只负责平台资源、服务费和云账单透明化。",
-      },
-      {
-        id: "server_plans",
-        title: "查看服务器与费用",
-        state: serverReady ? "ready" : "attention",
-        href: "/servers",
-        description: serverReady
-          ? `已提供 ${serverPlansSummary.salableCount || serverPlansSummary.catalogCount} 个可售规格，展示腾讯云地域、规格、最小计费单元和冻结依据。`
-          : "服务器价格等待腾讯云报价刷新，可先查看规格目录和报价状态。",
-      },
-      {
-        id: "workspace",
-        title: "创建任务空间",
-        state: workspaceCount > 0 ? "done" : "ready",
-        href: "/workspace",
-        description: workspaceCount > 0 ? "已存在可用任务空间。" : "先创建任务空间，再进入实验室承载 session、trace 和文件存储。",
-      },
-      {
-        id: "launch",
-        title: "进入实验室",
-        state: sessionCount > 0 ? "done" : "ready",
-        href: "/portal/opl",
-        description: "余额不足不再阻止进入工作台；真正触发收费运行时，再按钱包或试用额度校验。",
-      },
-      {
-        id: "funding",
-        title: "充值或使用试用额度",
-        state: fundingReady ? "done" : "attention",
-        href: "/billing",
-        description: fundingReady
-          ? commercial.entitlementStatus === "trial_active"
-            ? "当前已有试用额度，可先体验再充值。"
-            : "当前钱包可用于收费运行。"
-          : "收费运行前需充值，或等待管理员发放试用权益。",
-      },
-    ],
-  };
 }
 
 function normalizeAnnouncementScope(scope = "all") {
@@ -814,13 +449,6 @@ function groupBillingByDay(items = [], days = 7) {
     gpu: labels.map((label) => Number(base[label].gpu.toFixed(5))),
     storage: labels.map((label) => Number(base[label].storage.toFixed(5))),
   };
-}
-
-function safeJsonForHtml(value) {
-  return JSON.stringify(value)
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026");
 }
 
 async function exists(file) {
@@ -1844,61 +1472,6 @@ async function logPortalEvent(event) {
   }
 }
 
-async function sendStaticAsset(res, filePath, contentType) {
-  if (!(await exists(filePath))) {
-    res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    res.end("not found");
-    return;
-  }
-  const body = await readFile(filePath);
-  res.writeHead(200, { "content-type": contentType, "cache-control": "no-cache" });
-  res.end(body);
-}
-
-function guessContentType(filePath) {
-  const ext = path.extname(String(filePath || "")).toLowerCase();
-  if (ext === ".js") return "application/javascript; charset=utf-8";
-  if (ext === ".css") return "text/css; charset=utf-8";
-  if (ext === ".html") return "text/html; charset=utf-8";
-  if (ext === ".json") return "application/json; charset=utf-8";
-  if (ext === ".svg") return "image/svg+xml";
-  if (ext === ".png") return "image/png";
-  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
-  if (ext === ".woff2") return "font/woff2";
-  return "application/octet-stream";
-}
-
-function parseCookies(header) {
-  const cookies = {};
-  for (const part of String(header || "").split(";")) {
-    const [key, ...rest] = part.trim().split("=");
-    if (!key) continue;
-    cookies[key] = rest.join("=");
-  }
-  return cookies;
-}
-
-function appendCookie(res, cookieValue) {
-  const current = res.getHeader("Set-Cookie");
-  if (!current) {
-    res.setHeader("Set-Cookie", cookieValue);
-    return;
-  }
-  if (Array.isArray(current)) {
-    res.setHeader("Set-Cookie", [...current, cookieValue]);
-    return;
-  }
-  res.setHeader("Set-Cookie", [current, cookieValue]);
-}
-
-function setCookie(res, name, value) {
-  appendCookie(res, `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`);
-}
-
-function clearCookie(res, name) {
-  appendCookie(res, `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
-}
-
 function getTaskPath(userId, taskSlug) {
   return path.join(medWorkspaceRoot, userId, taskSlug);
 }
@@ -2334,31 +1907,6 @@ async function fetchOidcUserInfo(accessToken) {
     "-H", `Authorization: Bearer ${accessToken}`,
     `${PORTAL_OIDC_ISSUER}/oidc/v1/userinfo`,
   ]);
-}
-
-function sendHtml(res, html, status = 200) {
-  res.writeHead(status, { "content-type": "text/html; charset=utf-8" });
-  res.end(html);
-}
-
-function sendJson(res, payload, status = 200) {
-  res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
-  res.end(JSON.stringify(payload, null, 2));
-}
-
-function parseForm(body) {
-  const params = new URLSearchParams(body);
-  const obj = {};
-  for (const [key, value] of params.entries()) obj[key] = value;
-  return obj;
-}
-
-async function readBody(req) {
-  const chunks = [];
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
 }
 
 function layoutV2(title, body, user, options = {}) {
@@ -2907,14 +2455,6 @@ async function createZipFromDir(sourceDir, outFile) {
     "-Command",
     `Compress-Archive -Path '${sourceDir}\\*' -DestinationPath '${outFile}' -Force`,
   ], { timeout: 60000, maxBuffer: 1024 * 1024 });
-}
-
-function sendFile(res, filePath, downloadName, contentType = "application/octet-stream") {
-  res.writeHead(200, {
-    "content-type": contentType,
-    "content-disposition": `attachment; filename="${downloadName}"`,
-  });
-  createReadStream(filePath).pipe(res);
 }
 
 async function collectRunsForUser(userId) {
