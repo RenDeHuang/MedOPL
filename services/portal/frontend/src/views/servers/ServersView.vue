@@ -1,29 +1,31 @@
 <template>
-  <AppLayout title="服务器与费用" subtitle="服务器选择、云成本、资源订单">
+  <AppLayout title="服务器与费用" subtitle="选择规格、开通资源、追踪账单">
     <div class="space-y-4">
-      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载服务器与费用...</div>
+      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载服务器资源...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
 
       <template v-else-if="payload">
-        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.85fr]">
+        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="card p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
-              <div class="max-w-2xl">
+              <div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="badge badge-primary">腾讯云状态</span>
+                  <span class="badge badge-primary">Silicon Valley</span>
                   <span class="badge" :class="readiness.realPriceReady ? 'badge-success' : 'badge-warning'">
-                    {{ readiness.realPriceReady ? "真实报价可用" : "报价未就绪" }}
+                    {{ readiness.realPriceReady ? "真实报价" : "报价未就绪" }}
                   </span>
                   <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
-                    {{ readiness.exactBillReady ? "真实账单可查" : "账单未就绪" }}
+                    {{ readiness.exactBillReady ? "真实账单" : "账单等待中" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">选择服务器规格</h2>
-                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">价格来自 Billing Aggregator；开通由 Resource Provisioner 执行。</p>
+                <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">按订单开通独立节点池</h2>
+                <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
+                  每个订单独享节点池，最大 2 个节点，支持缩容到 0。
+                </p>
               </div>
               <div class="flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="/portal/opl">进入工作台</a>
                 <RouterLink class="btn btn-secondary" to="/billing">账单</RouterLink>
-                <a class="btn btn-primary" href="/portal/opl">进入实验室</a>
               </div>
             </div>
           </div>
@@ -31,156 +33,130 @@
           <div class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">云资源状态</h2>
-                <p class="panel-subtitle">{{ cloudStatus?.region || "-" }}</p>
+                <h2 class="panel-title">云接入</h2>
+                <p class="panel-subtitle">{{ cloudStatus?.region || "na-siliconvalley" }}</p>
               </div>
               <span class="badge" :class="readiness.cloudAccountConnected ? 'badge-success' : 'badge-warning'">
-                {{ readiness.cloudAccountConnected ? "账号已接入" : "账号未接入" }}
+                {{ readiness.cloudAccountConnected ? "已接入" : "未接入" }}
               </span>
             </div>
             <div class="mt-4 space-y-2.5 text-sm">
               <div class="muted-kv">
-                <span class="muted-kv-label">默认规格</span>
-                <span class="muted-kv-value">{{ payload.selectedServerPlan?.name || "未选择" }}</span>
+                <span class="muted-kv-label">集群</span>
+                <span class="muted-kv-value">{{ clusterId }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">报价</span>
-                <span class="muted-kv-value">{{ readyText(readiness.realPriceReady, "真实报价", "未就绪") }}</span>
+                <span class="muted-kv-label">节点池</span>
+                <span class="muted-kv-value">{{ cloudSummary.nodePoolCount || 0 }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">账单</span>
-                <span class="muted-kv-value">{{ readyText(readiness.exactBillReady, "DescribeBillDetail", "未就绪") }}</span>
+                <span class="muted-kv-label">CVM</span>
+                <span class="muted-kv-value">{{ cloudSummary.instanceCount || 0 }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">开通</span>
-                <span class="muted-kv-value">{{ automaticProvisionCount }} 个自动开通规格</span>
+                <span class="muted-kv-label">标签完整</span>
+                <span class="muted-kv-value">{{ cloudSummary.taggedInstanceCount || 0 }}</span>
               </div>
             </div>
           </div>
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="可售规格" :value="payload.summary.salableCount" hint="允许客户直接选择" />
-          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="腾讯云询价成功" />
-          <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="已报价规格中的最低价" />
-          <MetricCard label="自动开通" :value="automaticProvisionCount" hint="需要 TKE 开通或扩容" />
+          <MetricCard label="可售规格" :value="payload.summary.salableCount" hint="CPU 白名单" />
+          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="腾讯云询价" />
+          <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="实时价" />
+          <MetricCard label="活跃订单" :value="activeOrderCount" hint="冻结/开通/运行" />
         </section>
 
-        <section class="card p-5">
-          <div class="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 class="panel-title">可选服务器</h2>
-              <p class="panel-subtitle">选择后写入任务空间，报价与冻结进入资源订单</p>
+        <section class="grid grid-cols-1 gap-4 xl:grid-cols-4">
+          <article
+            v-for="item in payload.items"
+            :key="item.id"
+            class="card p-5"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ item.name || item.id }}</h3>
+                <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.instanceType || "Tencent CVM" }}</p>
+              </div>
+              <span class="badge" :class="item.salable ? 'badge-success' : 'badge-warning'">
+                {{ item.salable ? "可售" : "不可售" }}
+              </span>
             </div>
-            <span class="badge badge-primary">{{ payload.items.length }} 个</span>
-          </div>
 
-          <div v-if="!payload.items.length" class="rounded-2xl border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500 dark:border-slate-700 dark:text-slate-400">
-            当前没有可售规格。接入腾讯云可售 SKU 后，这里会展示真实小时价、冻结金额和开通方式。
-          </div>
+            <div class="mt-4 space-y-2 text-sm">
+              <div class="muted-kv">
+                <span class="muted-kv-label">配置</span>
+                <span class="muted-kv-value">{{ item.cpu }}C / {{ item.memoryGb }}GB</span>
+              </div>
+              <div class="muted-kv">
+                <span class="muted-kv-label">地域</span>
+                <span class="muted-kv-value">{{ item.region || "-" }}</span>
+              </div>
+              <div class="muted-kv">
+                <span class="muted-kv-label">小时价</span>
+                <span class="muted-kv-value">{{ money(hourlyPrice(item)) }}</span>
+              </div>
+              <div class="muted-kv">
+                <span class="muted-kv-label">冻结</span>
+                <span class="muted-kv-value">{{ money(freezeAmount(item)) }}</span>
+              </div>
+              <div class="muted-kv">
+                <span class="muted-kv-label">订单</span>
+                <span class="muted-kv-value">{{ orderStatusText(latestOrderByPlan(item.id)?.status) }}</span>
+              </div>
+            </div>
 
-          <div v-else class="table-shell">
-            <table class="text-sm">
-              <thead>
-                <tr class="table-head">
-                  <th class="px-4 py-3">服务器</th>
-                  <th class="px-4 py-3">地域</th>
-                  <th class="px-4 py-3">配置</th>
-                  <th class="px-4 py-3">存储</th>
-                  <th class="px-4 py-3">小时价</th>
-                  <th class="px-4 py-3">冻结金额</th>
-                  <th class="px-4 py-3">价格来源</th>
-                  <th class="px-4 py-3">开通方式</th>
-                  <th class="px-4 py-3">订单</th>
-                  <th class="px-4 py-3">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in payload.items" :key="item.id" class="table-row">
-                  <td class="px-4 py-3">
-                    <div class="font-medium text-gray-950 dark:text-white">{{ item.name || item.instanceType || item.id }}</div>
-                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.instanceType || item.id }}</div>
-                  </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
-                    <div>{{ item.region || "-" }}</div>
-                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.zone || "-" }}</div>
-                  </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
-                    {{ item.cpu || 0 }}C / {{ item.memoryGb || 0 }}GB / {{ gpuLabel(item) }}
-                  </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
-                    {{ item.storageLimit || item.storageRequest || "-" }}
-                  </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ money(hourlyPrice(item)) }}</td>
-                  <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ money(freezeAmount(item)) }}</td>
-                  <td class="px-4 py-3">
-                    <div class="font-medium text-gray-950 dark:text-white">{{ sourceText(item) }}</div>
-                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.reason || payload.note || "-" }}</div>
-                  </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ provisioningText(item) }}</td>
-                  <td class="px-4 py-3">
-                    <span class="badge" :class="orderStatusBadge(latestOrderByPlan(item.id)?.status)">{{ orderStatusText(latestOrderByPlan(item.id)?.status) }}</span>
-                    <div v-if="latestOrderByPlan(item.id)?.id" class="mt-1 font-mono text-xs text-gray-500 dark:text-slate-400">
-                      {{ latestOrderByPlan(item.id)?.id }}
-                    </div>
-                  </td>
-                  <td class="px-4 py-3">
-                    <div class="flex flex-col gap-2">
-                      <button
-                        class="btn"
-                        :class="isSelected(item) ? 'btn-primary' : 'btn-secondary'"
-                        :disabled="!item.salable || selecting === item.id"
-                        @click="choosePlan(item)"
-                      >
-                        {{ isSelected(item) ? "默认规格" : selecting === item.id ? "保存中" : "设为默认" }}
-                      </button>
-                      <button
-                        class="btn btn-secondary"
-                        :disabled="!item.salable || quoting === item.id"
-                        @click="quotePlan(item)"
-                      >
-                        {{ quoting === item.id ? "报价中" : "报价" }}
-                      </button>
-                      <button
-                        class="btn btn-secondary"
-                        :disabled="!item.salable || freezing === item.id"
-                        @click="freezePlan(item)"
-                      >
-                        {{ freezing === item.id ? "冻结中" : "冻结" }}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <button class="btn btn-secondary" :disabled="!item.salable || selecting === item.id" @click="choosePlan(item)">
+                {{ isSelected(item) ? "已默认" : "设默认" }}
+              </button>
+              <button class="btn btn-secondary" :disabled="!item.salable || quoting === item.id" @click="quotePlan(item)">
+                {{ quoting === item.id ? "报价中" : "报价" }}
+              </button>
+              <button class="btn btn-secondary" :disabled="!item.salable || freezing === item.id" @click="freezePlan(item)">
+                {{ freezing === item.id ? "冻结中" : "冻结" }}
+              </button>
+              <button class="btn btn-primary" :disabled="!item.salable || provisioning === item.id" @click="provisionPlan(item)">
+                {{ provisioning === item.id ? "开通中" : "开通" }}
+              </button>
+            </div>
+            <p v-if="item.reason" class="mt-3 text-xs text-amber-700 dark:text-amber-300">{{ item.reason }}</p>
+          </article>
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">最近订单</h2>
-                <p class="panel-subtitle">资源订单状态入口</p>
+                <h2 class="panel-title">资源订单</h2>
+                <p class="panel-subtitle">报价、冻结、开通、释放</p>
               </div>
-              <span class="badge badge-primary">{{ orders.length }} 条</span>
+              <span class="badge badge-primary">{{ orders.length }}</span>
             </div>
+
             <div class="space-y-2.5">
               <div
-                v-for="item in orders.slice(0, 4)"
+                v-for="item in orders.slice(0, 6)"
                 :key="item.id"
-                class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700"
+                class="rounded-xl border border-gray-100 px-4 py-3 dark:border-slate-700"
               >
-                <div class="flex items-start justify-between gap-3">
+                <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.serverPlanName || item.serverPlanId || item.id }}</div>
-                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.workspaceTitle || item.workspaceId || "-" }}</div>
+                    <div class="mt-1 font-mono text-xs text-gray-500 dark:text-slate-400">{{ item.id }}</div>
                   </div>
                   <span class="badge" :class="orderStatusBadge(item.status)">{{ orderStatusText(item.status) }}</span>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-slate-400">
-                  <div>冻结 {{ money(item.frozenAmount) }}</div>
+                  <div>冻结 {{ money(item.freezeAmount ?? item.frozenAmount) }}</div>
                   <div>Exact {{ money(item.exactCost) }}</div>
+                  <div>节点池 {{ firstCloudResource(item) || "-" }}</div>
+                  <div>{{ item.pricingSource || "-" }}</div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="btn btn-secondary" :disabled="releasing === item.id" @click="releaseOrder(item, true)">缩容到 0</button>
+                  <button class="btn btn-secondary" @click="openDeleteDialog(item)">删除节点池</button>
                 </div>
               </div>
               <div v-if="!orders.length" class="empty-state">暂无资源订单</div>
@@ -190,32 +166,76 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">结算链路</h2>
-                <p class="panel-subtitle">冻结、pending、exact</p>
+                <h2 class="panel-title">云资源清单</h2>
+                <p class="panel-subtitle">TKE 节点池与 CVM 标签归因</p>
               </div>
-              <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
-                {{ readiness.exactBillReady ? "exact ready" : "exact pending" }}
-              </span>
+              <button class="btn btn-secondary" @click="reloadCloudResources">刷新</button>
             </div>
-            <div class="space-y-2.5 text-sm">
-              <div class="muted-kv">
-                <span class="muted-kv-label">冻结</span>
-                <span class="muted-kv-value">报价 x 最小计费单元</span>
+
+            <div v-if="!cloudResources?.resources?.ok" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+              {{ cloudResources?.resources?.reason || "云资源未接入" }}
+            </div>
+
+            <div class="mt-3 space-y-3">
+              <div
+                v-for="item in nodePools.slice(0, 5)"
+                :key="resourceKey(item)"
+                class="rounded-xl border border-gray-100 px-4 py-3 text-sm dark:border-slate-700"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <span class="font-medium text-gray-950 dark:text-white">{{ stringFrom(item, "name", "nodePoolId", "id") }}</span>
+                  <span class="badge badge-primary">NodePool</span>
+                </div>
+                <div class="mt-2 text-xs text-gray-500 dark:text-slate-400">{{ stringFrom(item, "status", "state") }}</div>
               </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">运行中</span>
-                <span class="muted-kv-value">pending 观测</span>
+              <div
+                v-for="item in instances.slice(0, 5)"
+                :key="resourceKey(item)"
+                class="rounded-xl border border-gray-100 px-4 py-3 text-sm dark:border-slate-700"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <span class="font-medium text-gray-950 dark:text-white">{{ stringFrom(item, "instanceName", "name", "instanceId", "id") }}</span>
+                  <span class="badge" :class="tagComplete(item) ? 'badge-success' : 'badge-warning'">
+                    {{ tagComplete(item) ? "标签完整" : "缺标签" }}
+                  </span>
+                </div>
+                <div class="mt-2 text-xs text-gray-500 dark:text-slate-400">{{ stringFrom(item, "instanceType", "status", "state") }}</div>
               </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">最终</span>
-                <span class="muted-kv-value">腾讯云账单明细</span>
-              </div>
-              <div v-if="cloudErrorText" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-                {{ cloudErrorText }}
-              </div>
+              <div v-if="!nodePools.length && !instances.length" class="empty-state">暂无可展示云资源</div>
             </div>
           </div>
         </section>
+
+        <section class="card p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="panel-title">结算规则</h2>
+              <p class="panel-subtitle">冻结按报价，最终扣费按腾讯云真实账单</p>
+            </div>
+            <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
+              {{ readiness.exactBillReady ? "exact ready" : "exact pending" }}
+            </span>
+          </div>
+        </section>
+
+        <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+          <div class="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900">
+            <h2 class="text-lg font-semibold text-gray-950 dark:text-white">删除节点池</h2>
+            <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
+              销毁 CVM 会释放节点池内实例，运行环境和节点本地数据不可恢复。保留 CVM 则节点池删除后实例仍可能继续产生云资源费用。
+            </p>
+            <label class="mt-4 flex items-center gap-2 text-sm text-gray-700 dark:text-slate-200">
+              <input v-model="destroyCvmInstances" type="checkbox" />
+              同时销毁 CVM 实例
+            </label>
+            <div class="mt-5 flex justify-end gap-2">
+              <button class="btn btn-secondary" @click="closeDeleteDialog">取消</button>
+              <button class="btn btn-primary" :disabled="deleting === deleteTarget.id" @click="confirmDeleteNodePool">
+                {{ deleting === deleteTarget.id ? "删除中" : "确认删除" }}
+              </button>
+            </div>
+          </div>
+        </div>
       </template>
     </div>
   </AppLayout>
@@ -226,16 +246,21 @@ import { computed, onMounted, ref } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import type {
+  CloudResourcesPayload,
   ResourceOrderItem,
   ResourceOrdersPayload,
   ServerPlanItem,
   ServerPlansPayload,
 } from "@/api/portal";
 import {
+  deleteResourceOrderNodePool,
+  fetchCloudResources,
   fetchResourceOrders,
   fetchServerPlans,
   freezeResourceOrder,
+  provisionResourceOrder,
   quoteResourceOrder,
+  releaseResourceOrder,
   selectServerPlan,
 } from "@/api/portal";
 
@@ -243,32 +268,31 @@ const loading = ref(true);
 const error = ref("");
 const payload = ref<ServerPlansPayload | null>(null);
 const ordersPayload = ref<ResourceOrdersPayload | null>(null);
+const cloudResources = ref<CloudResourcesPayload | null>(null);
 const selecting = ref("");
 const quoting = ref("");
 const freezing = ref("");
+const provisioning = ref("");
+const releasing = ref("");
+const deleting = ref("");
+const deleteTarget = ref<ResourceOrderItem | null>(null);
+const destroyCvmInstances = ref(false);
 
 const cloudStatus = computed(() => payload.value?.cloudStatus || payload.value?.summary?.cloudStatus || null);
 const readiness = computed(() => ({
   cloudAccountConnected: Boolean(cloudStatus.value?.readiness?.cloudAccountConnected ?? payload.value?.configured),
   realPriceReady: Boolean(cloudStatus.value?.readiness?.realPriceReady ?? (payload.value?.summary.quotedCount || 0) > 0),
   exactBillReady: Boolean(cloudStatus.value?.readiness?.exactBillReady),
-  serverPlansReady: Boolean(cloudStatus.value?.readiness?.serverPlansReady ?? (payload.value?.summary.salableCount || 0) > 0),
 }));
 const orders = computed<ResourceOrderItem[]>(() => ordersPayload.value?.items || []);
-const automaticProvisionCount = computed(() => Number(cloudStatus.value?.provisioning?.automaticProvisionCount || 0));
-const cloudErrorText = computed(() => {
-  const quote = cloudStatus.value?.price?.lastQuoteError?.message || "";
-  const bill = cloudStatus.value?.billing?.lastBillQueryError?.message || "";
-  const discovery = cloudStatus.value?.price?.lastDiscoveryError?.message || "";
-  return quote || bill || discovery || "";
-});
+const activeOrderCount = computed(() => orders.value.filter((item) => ["quoted", "frozen", "provisioning", "running", "reconciling"].includes(String(item.status || "").toLowerCase())).length);
+const cloudSummary = computed(() => cloudResources.value?.resources?.summary || {});
+const nodePools = computed(() => cloudResources.value?.resources?.nodePools || []);
+const instances = computed(() => cloudResources.value?.resources?.instances || []);
+const clusterId = computed(() => stringFrom(cloudResources.value?.resources?.cluster || {}, "clusterId", "id") || "cls-ngiq693i");
 
-function money(value: number | undefined) {
+function money(value: number | undefined | null) {
   return `CNY ${Number(value || 0).toFixed(2)}`;
-}
-
-function readyText(ready: boolean, yes: string, no: string) {
-  return ready ? yes : no;
 }
 
 function hourlyPrice(item: ServerPlanItem) {
@@ -276,20 +300,15 @@ function hourlyPrice(item: ServerPlanItem) {
 }
 
 function freezeAmount(item: ServerPlanItem) {
-  const base = hourlyPrice(item) * Math.max(1, Number(item.minBillableHours || 1)) * Math.max(1, Number(item.riskFactor || 1));
-  return Math.max(Number(item.reservationFloor || 0), base);
+  return Math.max(Number(item.reservationFloor || 0), hourlyPrice(item) * Math.max(1, Number(item.minBillableHours || 1)) * Math.max(1, Number(item.riskFactor || 1)));
 }
 
-function gpuLabel(item: ServerPlanItem) {
-  const count = Number(item.gpuCount ?? item.gpu ?? 0);
-  return count > 0 ? `${count} GPU` : "CPU";
+function isSelected(item: ServerPlanItem) {
+  return payload.value?.selectedServerPlan?.id === item.id;
 }
 
-function sourceText(item: ServerPlanItem) {
-  const source = String(item.source || payload.value?.source || "").toLowerCase();
-  if (source.includes("tencent")) return "腾讯云报价";
-  if (source.includes("catalog")) return "平台规格目录";
-  return item.priceStatus === "quoted" ? "账单聚合服务" : "等待同步";
+function latestOrderByPlan(planId?: string) {
+  return orders.value.find((item) => item.serverPlanId === planId);
 }
 
 function orderStatusBadge(status?: string) {
@@ -301,7 +320,6 @@ function orderStatusBadge(status?: string) {
 }
 
 function orderStatusText(status?: string) {
-  const normalized = String(status || "").toLowerCase();
   const labels: Record<string, string> = {
     quoted: "已报价",
     frozen: "已冻结",
@@ -313,97 +331,141 @@ function orderStatusText(status?: string) {
     failed: "失败",
     cancelled: "已取消",
   };
-  return labels[normalized] || "未下单";
+  return labels[String(status || "").toLowerCase()] || status || "无订单";
 }
 
-function provisioningText(item: ServerPlanItem) {
-  const mode = String(item.provisioningMode || "schedule_to_node_pool").toLowerCase();
-  if (mode === "tke_node_pool") return "自动开通节点池";
-  if (mode === "tke_node_pool_scale") return "自动扩容节点池";
-  if (mode === "cvm_instance") return "自动开通云主机";
-  return "调度到现有节点池";
+function firstCloudResource(item: ResourceOrderItem) {
+  return Array.isArray(item.cloudResourceIds) ? item.cloudResourceIds[0] : "";
 }
 
-function latestOrderByPlan(planId?: string) {
-  return orders.value.find((item) => item.serverPlanId === planId);
+function stringFrom(item: Record<string, unknown>, ...keys: string[]) {
+  for (const key of keys) {
+    const value = item?.[key];
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return "";
 }
 
-function isSelected(item: ServerPlanItem) {
-  return Boolean(item.id && payload.value?.selectedServerPlan?.id === item.id);
+function resourceKey(item: Record<string, unknown>) {
+  return stringFrom(item, "nodePoolId", "instanceId", "id", "name") || JSON.stringify(item).slice(0, 80);
 }
 
-async function loadOrders() {
+function tagComplete(item: Record<string, unknown>) {
+  const tags = item.tags;
+  const tagText = Array.isArray(tags)
+    ? tags.map((tag) => `${(tag as any).Key || (tag as any).key || ""}:${(tag as any).Value || (tag as any).value || ""}`).join(",")
+    : JSON.stringify(tags || {});
+  return ["tenant_id", "workspace_id", "run_id", "resource_order_id", "server_plan_id"].every((key) => tagText.includes(key));
+}
+
+async function load() {
+  loading.value = true;
+  error.value = "";
   try {
-    ordersPayload.value = await fetchResourceOrders({ limit: 8, workspaceId: payload.value?.workspaceId || "default" });
-  } catch {
-    ordersPayload.value = { items: [] };
+    const [plans, ordersData, cloudData] = await Promise.all([
+      fetchServerPlans(),
+      fetchResourceOrders({ limit: 20 }),
+      fetchCloudResources().catch(() => null),
+    ]);
+    payload.value = plans;
+    ordersPayload.value = ordersData;
+    cloudResources.value = cloudData;
+  } catch (err: any) {
+    error.value = err?.message || "服务器与费用加载失败";
+  } finally {
+    loading.value = false;
   }
 }
 
+async function reloadCloudResources() {
+  cloudResources.value = await fetchCloudResources();
+}
+
 async function choosePlan(item: ServerPlanItem) {
-  if (!item.salable || !item.id) return;
   selecting.value = item.id;
-  error.value = "";
   try {
-    const result = await selectServerPlan({ planId: item.id, task: payload.value?.workspaceId || "default" });
-    payload.value = {
-      ...(payload.value as ServerPlansPayload),
-      selectedServerPlan: result.selectedServerPlan,
-      workspaceId: result.workspaceId,
-    };
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : "服务器选择保存失败";
+    await selectServerPlan({ planId: item.id });
+    await load();
   } finally {
     selecting.value = "";
   }
 }
 
 async function quotePlan(item: ServerPlanItem) {
-  if (!item.salable || !item.id) return;
   quoting.value = item.id;
-  error.value = "";
   try {
-    await quoteResourceOrder({
-      workspaceId: payload.value?.workspaceId || "default",
-      serverPlanId: item.id,
-      estimatedHours: Math.max(1, Number(item.minBillableHours || 1)),
-    });
-    await loadOrders();
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : "资源报价失败";
+    await quoteResourceOrder({ serverPlanId: item.id, estimatedHours: 1 });
+    ordersPayload.value = await fetchResourceOrders({ limit: 20 });
   } finally {
     quoting.value = "";
   }
 }
 
 async function freezePlan(item: ServerPlanItem) {
-  if (!item.salable || !item.id) return;
   freezing.value = item.id;
-  error.value = "";
   try {
-    await freezeResourceOrder({
-      workspaceId: payload.value?.workspaceId || "default",
-      serverPlanId: item.id,
-      estimatedHours: Math.max(1, Number(item.minBillableHours || 1)),
-    });
-    await loadOrders();
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : "冻结资源订单失败";
+    await freezeResourceOrder({ serverPlanId: item.id, estimatedHours: 1 });
+    ordersPayload.value = await fetchResourceOrders({ limit: 20 });
   } finally {
     freezing.value = "";
   }
 }
 
-onMounted(async () => {
-  loading.value = true;
-  error.value = "";
+async function provisionPlan(item: ServerPlanItem) {
+  provisioning.value = item.id;
   try {
-    payload.value = await fetchServerPlans();
-    await loadOrders();
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : "服务器价格加载失败";
+    let order = latestOrderByPlan(item.id);
+    if (!order || String(order.status || "").toLowerCase() === "quoted") {
+      const frozen = await freezeResourceOrder({ resourceOrderId: order?.id, serverPlanId: item.id, estimatedHours: 1 });
+      order = frozen.order || order;
+    }
+    if (order?.id) {
+      await provisionResourceOrder({ resourceOrderId: order.id });
+    }
+    await load();
   } finally {
-    loading.value = false;
+    provisioning.value = "";
   }
+}
+
+async function releaseOrder(item: ResourceOrderItem, scaleToZero: boolean) {
+  releasing.value = item.id;
+  try {
+    await releaseResourceOrder({ resourceOrderId: item.id, scaleToZero });
+    await load();
+  } finally {
+    releasing.value = "";
+  }
+}
+
+function openDeleteDialog(item: ResourceOrderItem) {
+  deleteTarget.value = item;
+  destroyCvmInstances.value = false;
+}
+
+function closeDeleteDialog() {
+  deleteTarget.value = null;
+  destroyCvmInstances.value = false;
+}
+
+async function confirmDeleteNodePool() {
+  if (!deleteTarget.value) return;
+  deleting.value = deleteTarget.value.id;
+  try {
+    await deleteResourceOrderNodePool({
+      resourceOrderId: deleteTarget.value.id,
+      nodePoolId: firstCloudResource(deleteTarget.value),
+      destroyCvmInstances: destroyCvmInstances.value,
+      confirmDeleteNodePool: true,
+    });
+    closeDeleteDialog();
+    await load();
+  } finally {
+    deleting.value = "";
+  }
+}
+
+onMounted(() => {
+  void load();
 });
 </script>

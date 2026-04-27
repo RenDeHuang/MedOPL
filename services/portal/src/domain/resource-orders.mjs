@@ -270,8 +270,12 @@ export function resourceOrderPublicView(order, events = []) {
     estimatedHours: order.estimatedHours,
     quoteId: order.quoteId,
     freezeId: order.freezeId,
+    provisionRequestId: order.provisionRequestId,
+    cloudResourceIds: order.cloudResourceIds,
     currency: order.currency,
     unitPrice: order.unitPrice,
+    quotedAmount: order.quoteAmount,
+    frozenAmount: order.freezeAmount,
     quoteAmount: order.quoteAmount,
     freezeAmount: order.freezeAmount,
     exactCost: order.exactCost,
@@ -280,6 +284,7 @@ export function resourceOrderPublicView(order, events = []) {
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     settledAt: order.settledAt,
+    failedReason: order.failedReason,
     events: events
       .filter((event) => event.orderId === order.id)
       .sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || ""))),
