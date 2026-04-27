@@ -131,6 +131,17 @@ export function buildServerPlansFallback(note = "账单聚合服务暂不可用�
     catalogCount: 0,
     items: [],
     note,
+    cloudStatus: {
+      provider: "tencent_cloud",
+      credentialsConfigured: false,
+      readiness: {
+        cloudAccountConnected: false,
+        realPriceReady: false,
+        exactBillReady: false,
+        catalogReady: false,
+        serverPlansReady: false,
+      },
+    },
   };
 }
 
@@ -155,6 +166,7 @@ export function buildServerPlansSummary(payload) {
     priceStatus: quoted.length ? "quoted" : (items.length ? "pending" : "unavailable"),
     lowestHourlyPrice: lowestHourlyPrice ?? 0,
     note: String(payload?.note || "").trim(),
+    cloudStatus: payload?.cloudStatus || null,
   };
 }
 

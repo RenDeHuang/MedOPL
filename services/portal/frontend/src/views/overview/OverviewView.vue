@@ -18,10 +18,8 @@
                     {{ payload.serverPlansSummary.quotedCount > 0 ? "腾讯云报价已同步" : "等待腾讯云报价" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">余额、冻结、订单和运行都在这里</h2>
-                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  平台展示腾讯云报价、运行中 pending 成本和真实账单结算状态。工作台负责使用，控制台负责下单和计费。
-                </p>
+                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">实验室运营总览</h2>
+                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">账户、服务器、订单、运行成本集中管理。</p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <a class="btn btn-primary" :href="workbenchHref">进入工作台</a>
@@ -64,16 +62,16 @@
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="钱包余额" :value="money(payload.kpis.balance)" hint="账户余额" />
-          <MetricCard label="冻结金额" :value="money(frozenAmount)" hint="运行前冻结与预扣" />
+          <MetricCard label="冻结金额" :value="money(frozenAmount)" hint="运行前冻结" />
           <MetricCard label="可用额度" :value="money(availableBalance)" hint="余额 - 冻结 + 试用" />
-          <MetricCard label="活跃订单" :value="activeOrderCount" hint="frozen / provisioning / running" />
+          <MetricCard label="活跃订单" :value="activeOrderCount" hint="进行中的资源订单" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="今日 Pending" :value="money(pendingToday)" hint="运行中准实时成本" />
-          <MetricCard label="今日 Exact" :value="money(exactToday)" hint="腾讯云账单已确认" />
-          <MetricCard label="本月 Pending" :value="money(pendingMonth)" hint="本月运行中累计" />
-          <MetricCard label="本月 Exact" :value="money(exactMonth)" hint="本月已结算成本" />
+          <MetricCard label="今日 Pending" :value="money(pendingToday)" hint="运行中成本" />
+          <MetricCard label="今日 Exact" :value="money(exactToday)" hint="真实账单" />
+          <MetricCard label="本月 Pending" :value="money(pendingMonth)" hint="本月累计" />
+          <MetricCard label="本月 Exact" :value="money(exactMonth)" hint="已结算成本" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">

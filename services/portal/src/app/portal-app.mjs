@@ -4764,14 +4764,17 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/portal/api/server-plans") {
     const payload = await fetchServerPlans() || buildServerPlansFallback();
+    const billingStatus = await fetchBillingStatus();
+    const cloudStatus = payload.cloudStatus || billingStatus?.cloudStatus || null;
+    const enrichedPayload = { ...payload, cloudStatus };
     const policy = await evaluateUserPolicy(db, user);
     const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
     const commercial = buildCommercialProfile(db, user, { wallet, policy });
     const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
     const taskSpace = findTaskSpace(db, user.id, taskSlug) || null;
     sendJson(res, {
-      ...payload,
-      summary: buildServerPlansSummary(payload),
+      ...enrichedPayload,
+      summary: buildServerPlansSummary(enrichedPayload),
       commercial,
       selectedServerPlan: currentServerPlanSelection(taskSpace),
       workspaceId: taskSpace?.slug || taskSlug,

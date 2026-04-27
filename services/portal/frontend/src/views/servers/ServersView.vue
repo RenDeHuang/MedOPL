@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="服务器与费用" subtitle="客户可选规格、腾讯云价格、资源订单">
+  <AppLayout title="服务器与费用" subtitle="服务器选择、云成本、资源订单">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载服务器与费用...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -10,18 +10,16 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="max-w-2xl">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="badge badge-primary">腾讯云价格透明</span>
-                  <span class="badge" :class="payload.summary.quotedCount > 0 ? 'badge-success' : 'badge-warning'">
-                    {{ payload.summary.quotedCount > 0 ? "报价已同步" : "等待报价同步" }}
+                  <span class="badge badge-primary">腾讯云状态</span>
+                  <span class="badge" :class="readiness.realPriceReady ? 'badge-success' : 'badge-warning'">
+                    {{ readiness.realPriceReady ? "真实报价可用" : "报价未就绪" }}
                   </span>
-                  <span class="badge" :class="payload.configured ? 'badge-success' : 'badge-warning'">
-                    {{ payload.configured ? "云账号已接入" : "云账号未接入" }}
+                  <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
+                    {{ readiness.exactBillReady ? "真实账单可查" : "账单未就绪" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">客户先选规格，再冻结，再运行</h2>
-                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  这里展示地域、CPU/GPU/内存/存储、小时价、冻结金额和价格来源。运行时会按资源订单链路进入冻结和结算。
-                </p>
+                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">选择服务器规格</h2>
+                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">价格来自 Billing Aggregator；开通由 Resource Provisioner 执行。</p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <RouterLink class="btn btn-secondary" to="/billing">账单</RouterLink>
@@ -33,11 +31,11 @@
           <div class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">当前任务空间</h2>
-                <p class="panel-subtitle">{{ payload.workspaceId || "default" }}</p>
+                <h2 class="panel-title">云资源状态</h2>
+                <p class="panel-subtitle">{{ cloudStatus?.region || "-" }}</p>
               </div>
-              <span class="badge" :class="payload.selectedServerPlan ? 'badge-success' : 'badge-warning'">
-                {{ payload.selectedServerPlan ? "已有默认规格" : "等待选择" }}
+              <span class="badge" :class="readiness.cloudAccountConnected ? 'badge-success' : 'badge-warning'">
+                {{ readiness.cloudAccountConnected ? "账号已接入" : "账号未接入" }}
               </span>
             </div>
             <div class="mt-4 space-y-2.5 text-sm">
@@ -46,16 +44,16 @@
                 <span class="muted-kv-value">{{ payload.selectedServerPlan?.name || "未选择" }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">地域</span>
-                <span class="muted-kv-value">{{ payload.selectedServerPlan?.region || "-" }}</span>
+                <span class="muted-kv-label">报价</span>
+                <span class="muted-kv-value">{{ readyText(readiness.realPriceReady, "真实报价", "未就绪") }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">最低小时价</span>
-                <span class="muted-kv-value">{{ money(payload.summary.lowestHourlyPrice) }}</span>
+                <span class="muted-kv-label">账单</span>
+                <span class="muted-kv-value">{{ readyText(readiness.exactBillReady, "DescribeBillDetail", "未就绪") }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">价格来源</span>
-                <span class="muted-kv-value">{{ priceSourceLabel }}</span>
+                <span class="muted-kv-label">开通</span>
+                <span class="muted-kv-value">{{ automaticProvisionCount }} 个自动开通规格</span>
               </div>
             </div>
           </div>
@@ -63,9 +61,9 @@
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="可售规格" :value="payload.summary.salableCount" hint="允许客户直接选择" />
-          <MetricCard label="实时报价" :value="payload.summary.quotedCount" hint="腾讯云询价成功" />
+          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="腾讯云询价成功" />
           <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="已报价规格中的最低价" />
-          <MetricCard label="活跃订单" :value="activeOrderCount" hint="已报价 / 已冻结 / 运行中" />
+          <MetricCard label="自动开通" :value="automaticProvisionCount" hint="需要 TKE 开通或扩容" />
         </section>
 
         <section class="card p-5">
@@ -92,6 +90,7 @@
                   <th class="px-4 py-3">小时价</th>
                   <th class="px-4 py-3">冻结金额</th>
                   <th class="px-4 py-3">价格来源</th>
+                  <th class="px-4 py-3">开通方式</th>
                   <th class="px-4 py-3">订单</th>
                   <th class="px-4 py-3">操作</th>
                 </tr>
@@ -118,6 +117,7 @@
                     <div class="font-medium text-gray-950 dark:text-white">{{ sourceText(item) }}</div>
                     <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.reason || payload.note || "-" }}</div>
                   </td>
+                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ provisioningText(item) }}</td>
                   <td class="px-4 py-3">
                     <span class="badge" :class="orderStatusBadge(latestOrderByPlan(item.id)?.status)">{{ orderStatusText(latestOrderByPlan(item.id)?.status) }}</span>
                     <div v-if="latestOrderByPlan(item.id)?.id" class="mt-1 font-mono text-xs text-gray-500 dark:text-slate-400">
@@ -187,18 +187,32 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 gap-4">
-            <div class="card p-5">
-              <h2 class="panel-title">冻结依据</h2>
-              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">{{ payload.freezePolicy.basis }}</p>
+          <div class="card p-5">
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 class="panel-title">结算链路</h2>
+                <p class="panel-subtitle">冻结、pending、exact</p>
+              </div>
+              <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
+                {{ readiness.exactBillReady ? "exact ready" : "exact pending" }}
+              </span>
             </div>
-            <div class="card p-5">
-              <h2 class="panel-title">最终结算</h2>
-              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">{{ payload.freezePolicy.finalBilling }}</p>
-            </div>
-            <div class="card p-5">
-              <h2 class="panel-title">运行中成本</h2>
-              <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">{{ payload.freezePolicy.opencostRole }}</p>
+            <div class="space-y-2.5 text-sm">
+              <div class="muted-kv">
+                <span class="muted-kv-label">冻结</span>
+                <span class="muted-kv-value">报价 x 最小计费单元</span>
+              </div>
+              <div class="muted-kv">
+                <span class="muted-kv-label">运行中</span>
+                <span class="muted-kv-value">pending 观测</span>
+              </div>
+              <div class="muted-kv">
+                <span class="muted-kv-label">最终</span>
+                <span class="muted-kv-value">腾讯云账单明细</span>
+              </div>
+              <div v-if="cloudErrorText" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                {{ cloudErrorText }}
+              </div>
             </div>
           </div>
         </section>
@@ -233,19 +247,28 @@ const selecting = ref("");
 const quoting = ref("");
 const freezing = ref("");
 
-const priceSourceLabel = computed(() => {
-  if (!payload.value) return "-";
-  if (payload.value.source) return payload.value.source;
-  if (payload.value.configured && payload.value.priceEnabled) return "腾讯云实时报价";
-  if (payload.value.configured) return "云账号已接入";
-  return "未接入";
-});
-
+const cloudStatus = computed(() => payload.value?.cloudStatus || payload.value?.summary?.cloudStatus || null);
+const readiness = computed(() => ({
+  cloudAccountConnected: Boolean(cloudStatus.value?.readiness?.cloudAccountConnected ?? payload.value?.configured),
+  realPriceReady: Boolean(cloudStatus.value?.readiness?.realPriceReady ?? (payload.value?.summary.quotedCount || 0) > 0),
+  exactBillReady: Boolean(cloudStatus.value?.readiness?.exactBillReady),
+  serverPlansReady: Boolean(cloudStatus.value?.readiness?.serverPlansReady ?? (payload.value?.summary.salableCount || 0) > 0),
+}));
 const orders = computed<ResourceOrderItem[]>(() => ordersPayload.value?.items || []);
-const activeOrderCount = computed(() => orders.value.filter((item) => ["quoted", "frozen", "provisioning", "running", "reconciling"].includes(String(item.status || "").toLowerCase())).length);
+const automaticProvisionCount = computed(() => Number(cloudStatus.value?.provisioning?.automaticProvisionCount || 0));
+const cloudErrorText = computed(() => {
+  const quote = cloudStatus.value?.price?.lastQuoteError?.message || "";
+  const bill = cloudStatus.value?.billing?.lastBillQueryError?.message || "";
+  const discovery = cloudStatus.value?.price?.lastDiscoveryError?.message || "";
+  return quote || bill || discovery || "";
+});
 
 function money(value: number | undefined) {
   return `CNY ${Number(value || 0).toFixed(2)}`;
+}
+
+function readyText(ready: boolean, yes: string, no: string) {
+  return ready ? yes : no;
 }
 
 function hourlyPrice(item: ServerPlanItem) {

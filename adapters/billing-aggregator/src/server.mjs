@@ -59,6 +59,15 @@ let reconcileState = {
   lastError: "",
 };
 
+const cloudRuntimeState = {
+  lastDiscoveryAt: "",
+  lastDiscoveryError: null,
+  lastQuoteAt: "",
+  lastQuoteError: null,
+  lastBillQueryAt: "",
+  lastBillQueryError: null,
+};
+
 let reconcileLoopRunning = false;
 let portalPool = null;
 
@@ -80,6 +89,44 @@ function hmac(key, value, encoding) {
 
 function tencentCloudConfigured() {
   return Boolean(TENCENT_CLOUD_SECRET_ID && TENCENT_CLOUD_SECRET_KEY);
+}
+
+function scrubCloudErrorText(value) {
+  return String(value || "")
+    .replace(/AKID[A-Za-z0-9]+/g, "[redacted-secret-id]")
+    .replace(/(SecretId|SecretKey|TENCENT_CLOUD_SECRET_ID|TENCENT_CLOUD_SECRET_KEY)\s*[:=]\s*[^,\s"}]+/gi, "$1=[redacted]")
+    .slice(0, 500);
+}
+
+function sanitizeCloudError(error) {
+  if (!error) return null;
+  return {
+    message: scrubCloudErrorText(error.message || error),
+    code: scrubCloudErrorText(error.code || ""),
+    status: Number(error.status || 0),
+  };
+}
+
+function cloudErrorMessage(error) {
+  const sanitized = sanitizeCloudError(error);
+  if (!sanitized) return "";
+  return sanitized.code ? `${sanitized.code}:${sanitized.message}` : sanitized.message;
+}
+
+function markCloudState(kind, error = null) {
+  const now = new Date().toISOString();
+  if (kind === "discovery") {
+    cloudRuntimeState.lastDiscoveryAt = now;
+    cloudRuntimeState.lastDiscoveryError = sanitizeCloudError(error);
+  }
+  if (kind === "quote") {
+    cloudRuntimeState.lastQuoteAt = now;
+    cloudRuntimeState.lastQuoteError = sanitizeCloudError(error);
+  }
+  if (kind === "bill") {
+    cloudRuntimeState.lastBillQueryAt = now;
+    cloudRuntimeState.lastBillQueryError = sanitizeCloudError(error);
+  }
 }
 
 function parseJsonEnv(raw, fallback) {
@@ -1049,22 +1096,28 @@ function normalizeTencentDiscoveredPlan(item = {}) {
 async function discoverTencentServerPlans() {
   if (!TENCENT_PLAN_DISCOVERY_ENABLED) return [];
   if (!tencentCloudConfigured()) return [];
-  const response = await callTencentCloud({
-    endpoint: TENCENT_CVM_ENDPOINT,
-    service: "cvm",
-    action: "DescribeZoneInstanceConfigInfos",
-    version: TENCENT_CVM_VERSION,
-    region: TENCENT_CLOUD_REGION,
-    payload: {
-      Filters: buildTencentDiscoveryFilters(),
-    },
-  });
-  const items = Array.isArray(response.InstanceTypeQuotaSet) ? response.InstanceTypeQuotaSet : [];
-  const limit = Number.isFinite(TENCENT_PLAN_DISCOVERY_MAX) && TENCENT_PLAN_DISCOVERY_MAX > 0 ? TENCENT_PLAN_DISCOVERY_MAX : 80;
-  return items
-    .map(normalizeTencentDiscoveredPlan)
-    .filter((item) => item.instanceType && item.zone)
-    .slice(0, limit);
+  try {
+    const response = await callTencentCloud({
+      endpoint: TENCENT_CVM_ENDPOINT,
+      service: "cvm",
+      action: "DescribeZoneInstanceConfigInfos",
+      version: TENCENT_CVM_VERSION,
+      region: TENCENT_CLOUD_REGION,
+      payload: {
+        Filters: buildTencentDiscoveryFilters(),
+      },
+    });
+    const items = Array.isArray(response.InstanceTypeQuotaSet) ? response.InstanceTypeQuotaSet : [];
+    const limit = Number.isFinite(TENCENT_PLAN_DISCOVERY_MAX) && TENCENT_PLAN_DISCOVERY_MAX > 0 ? TENCENT_PLAN_DISCOVERY_MAX : 80;
+    markCloudState("discovery");
+    return items
+      .map(normalizeTencentDiscoveredPlan)
+      .filter((item) => item.instanceType && item.zone)
+      .slice(0, limit);
+  } catch (error) {
+    markCloudState("discovery", error);
+    throw error;
+  }
 }
 
 function overlayCatalogOnDiscovered(discovered = [], catalog = []) {
@@ -1083,16 +1136,20 @@ function overlayCatalogOnDiscovered(discovered = [], catalog = []) {
 
 async function quoteTencentServerPlan(plan) {
   if (!TENCENT_PRICE_ENABLED) {
+    markCloudState("quote", new Error("tencent_price_disabled"));
     return { priceStatus: "disabled", salable: false, reason: "tencent_price_disabled" };
   }
   if (!tencentCloudConfigured()) {
+    markCloudState("quote", new Error("tencent_cloud_credentials_not_configured"));
     return { priceStatus: "not_configured", salable: false, reason: "tencent_cloud_credentials_not_configured" };
   }
   if (!plan.zone || !plan.instanceType) {
+    markCloudState("quote", new Error("zone_and_instanceType_required"));
     return { priceStatus: "invalid_plan", salable: false, reason: "zone_and_instanceType_required" };
   }
   const imageId = firstString(plan.imageId, TENCENT_PRICE_IMAGE_ID);
   if (!imageId) {
+    markCloudState("quote", new Error("imageId_or_TENCENT_PRICE_IMAGE_ID_required"));
     return { priceStatus: "invalid_plan", salable: false, reason: "imageId_or_TENCENT_PRICE_IMAGE_ID_required" };
   }
   try {
@@ -1122,18 +1179,91 @@ async function quoteTencentServerPlan(plan) {
       ...normalizeTencentPrice(response),
     };
   } catch (error) {
+    markCloudState("quote", error);
     return {
       priceStatus: "quote_failed",
       salable: false,
-      reason: String(error.message || error),
+      reason: sanitizeCloudError(error)?.message || "tencent_quote_failed",
       code: error.code || "",
     };
   }
 }
 
+function buildTencentCloudStatus({ items = [], catalog = [], discovered = [] } = {}) {
+  const quotedCount = items.filter((item) => item.priceStatus === "quoted").length;
+  const salableCount = items.filter((item) => item.salable).length;
+  const automaticProvisionCount = items.filter((item) => {
+    const mode = String(item.provisioningMode || "").toLowerCase();
+    return ["tke_node_pool", "tke_node_pool_scale", "cvm_instance"].includes(mode);
+  }).length;
+  return {
+    provider: "tencent_cloud",
+    region: TENCENT_CLOUD_REGION,
+    tokenConfigured: Boolean(TENCENT_CLOUD_TOKEN),
+    price: {
+      enabled: TENCENT_PRICE_ENABLED,
+      imageConfigured: Boolean(TENCENT_PRICE_IMAGE_ID),
+      endpoint: TENCENT_CVM_ENDPOINT,
+      catalogConfigured: catalog.length > 0,
+      catalogCount: catalog.length,
+      discoveryEnabled: TENCENT_PLAN_DISCOVERY_ENABLED,
+      discoveryZonesConfigured: Boolean(TENCENT_PLAN_DISCOVERY_ZONES),
+      discoveredCount: discovered.length,
+      quotedCount,
+      salableCount,
+      lastDiscoveryAt: cloudRuntimeState.lastDiscoveryAt,
+      lastDiscoveryError: cloudRuntimeState.lastDiscoveryError,
+      lastQuoteAt: cloudRuntimeState.lastQuoteAt,
+      lastQuoteError: cloudRuntimeState.lastQuoteError,
+    },
+    billing: {
+      enabled: TENCENT_BILLING_ENABLED,
+      required: TENCENT_BILLING_REQUIRED,
+      endpoint: TENCENT_BILLING_ENDPOINT,
+      exactBillingSource: "DescribeBillDetail",
+      lastBillQueryAt: cloudRuntimeState.lastBillQueryAt,
+      lastBillQueryError: cloudRuntimeState.lastBillQueryError,
+    },
+    provisioning: {
+      source: "resource_provisioner",
+      automaticProvisionCount,
+      existingNodePoolCount: items.length - automaticProvisionCount,
+      note: automaticProvisionCount > 0
+        ? "存在需要 Resource Provisioner 调用 TKE 的可售规格。"
+        : "当前可售规格会调度到现有节点池；自动开通需要 nodePool payload。",
+    },
+    readiness: {
+      cloudAccountConnected: tencentCloudConfigured(),
+      realPriceReady: tencentCloudConfigured() && TENCENT_PRICE_ENABLED && Boolean(TENCENT_PRICE_IMAGE_ID) && quotedCount > 0,
+      exactBillReady: tencentCloudConfigured() && TENCENT_BILLING_ENABLED,
+      catalogReady: catalog.length > 0,
+      serverPlansReady: salableCount > 0,
+    },
+    credentialsConfigured: tencentCloudConfigured(),
+    priceEnabled: TENCENT_PRICE_ENABLED,
+    billingEnabled: TENCENT_BILLING_ENABLED,
+    billingRequired: TENCENT_BILLING_REQUIRED,
+    tencentRegion: TENCENT_CLOUD_REGION,
+    priceImageConfigured: Boolean(TENCENT_PRICE_IMAGE_ID),
+    catalogConfigured: catalog.length > 0,
+    discoveryEnabled: TENCENT_PLAN_DISCOVERY_ENABLED,
+    lastQuoteAt: cloudRuntimeState.lastQuoteAt,
+    lastQuoteError: cloudErrorMessage(cloudRuntimeState.lastQuoteError),
+    lastBillQueryAt: cloudRuntimeState.lastBillQueryAt,
+    lastBillQueryError: cloudErrorMessage(cloudRuntimeState.lastBillQueryError),
+    exactBillingSource: TENCENT_BILLING_ENABLED ? "tencent_cloud_bill" : "not_configured",
+    pendingSource: OPENCOST_BASE_URL ? "opencost_pending" : "metering_pending",
+  };
+}
+
 async function listServerPlans() {
   const catalog = serverPlanCatalog();
-  const discovered = await discoverTencentServerPlans();
+  let discovered = [];
+  try {
+    discovered = await discoverTencentServerPlans();
+  } catch {
+    discovered = [];
+  }
   const plans = TENCENT_PLAN_DISCOVERY_ENABLED
     ? overlayCatalogOnDiscovered(discovered, catalog)
     : catalog;
@@ -1145,6 +1275,7 @@ async function listServerPlans() {
       : (plan.provider === "tencent" || !plan.provider
         ? await quoteTencentServerPlan(plan)
         : { priceStatus: "external_provider", salable: false, reason: "unsupported_provider" });
+    if (quote.priceStatus === "quoted") markCloudState("quote");
     items.push({
       id: firstString(plan.id, plan.serverPlanId, plan.instanceType),
       name: firstString(plan.name, plan.instanceType),
@@ -1192,6 +1323,7 @@ async function listServerPlans() {
     discoveryEnabled: TENCENT_PLAN_DISCOVERY_ENABLED,
     discoveredCount: discovered.length,
     catalogCount: catalog.length,
+    cloudStatus: buildTencentCloudStatus({ items, catalog, discovered }),
     items,
   };
 }
@@ -1281,10 +1413,12 @@ async function fetchExactSummary(customerId = "", workspaceId = "", windowValue 
   if (TENCENT_BILLING_ENABLED) {
     try {
       const tencentSummary = await fetchTencentBillSummary(customerId, workspaceId, windowValue);
+      markCloudState("bill");
       if (tencentSummary.runs.length > 0 || tencentSummary.unattributed?.itemCount > 0 || TENCENT_BILLING_REQUIRED) {
         return tencentSummary;
       }
     } catch (error) {
+      markCloudState("bill", error);
       if (TENCENT_BILLING_REQUIRED) {
         throw error;
       }
@@ -1661,6 +1795,7 @@ const server = http.createServer(async (req, res) => {
       tencentBillingEnabled: TENCENT_BILLING_ENABLED,
       tencentPriceEnabled: TENCENT_PRICE_ENABLED,
       tencentCloudConfigured: tencentCloudConfigured(),
+      cloudStatus: buildTencentCloudStatus({ catalog: serverPlanCatalog() }),
     });
     return;
   }
@@ -1669,7 +1804,11 @@ const server = http.createServer(async (req, res) => {
     try {
       sendJson(res, 200, await listServerPlans());
     } catch (error) {
-      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+      sendJson(res, 502, {
+        ok: false,
+        error: cloudErrorMessage(error) || "server_plans_unavailable",
+        cloudStatus: buildTencentCloudStatus({ catalog: serverPlanCatalog() }),
+      });
     }
     return;
   }
@@ -1686,6 +1825,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/status") {
+    const cloudStatus = buildTencentCloudStatus({ catalog: serverPlanCatalog() });
     sendJson(res, 200, {
       ok: true,
       opencostBaseUrl: OPENCOST_BASE_URL || null,
@@ -1696,11 +1836,32 @@ const server = http.createServer(async (req, res) => {
       tencentPriceEnabled: TENCENT_PRICE_ENABLED,
       tencentCloudConfigured: tencentCloudConfigured(),
       tencentRegion: TENCENT_CLOUD_REGION,
+      credentialsConfigured: cloudStatus.credentialsConfigured,
+      priceEnabled: cloudStatus.priceEnabled,
+      billingEnabled: cloudStatus.billingEnabled,
+      billingRequired: cloudStatus.billingRequired,
+      priceImageConfigured: cloudStatus.priceImageConfigured,
+      catalogConfigured: cloudStatus.catalogConfigured,
+      lastQuoteAt: cloudStatus.lastQuoteAt,
+      lastQuoteError: cloudStatus.lastQuoteError,
+      lastBillQueryAt: cloudStatus.lastBillQueryAt,
+      lastBillQueryError: cloudStatus.lastBillQueryError,
+      exactBillingSource: cloudStatus.exactBillingSource,
+      pendingSource: cloudStatus.pendingSource,
       serverPlanCatalogCount: serverPlanCatalog().length,
+      cloudStatus,
       autoReconcileEnabled: AUTO_RECONCILE_ENABLED,
       autoReconcileIntervalMs: AUTO_RECONCILE_INTERVAL_MS,
       autoReconcileWindow: AUTO_RECONCILE_WINDOW,
       reconcileState,
+    });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/cloud/status") {
+    sendJson(res, 200, {
+      ok: true,
+      cloudStatus: buildTencentCloudStatus({ catalog: serverPlanCatalog() }),
     });
     return;
   }

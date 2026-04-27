@@ -282,7 +282,7 @@ async function main() {
       assert(overview.serverPlansSummary?.salableCount === 1, `server plan summary mismatch: ${overviewResponse.body}`);
 
       const plansResponse = await request(portalUrl, "/portal/api/server-plans", { headers: { cookie } });
-      assert(plansResponse.status === 200, `server plans expected 200, got ${plansResponse.status}`);
+      assert(plansResponse.status === 200, `server plans expected 200, got ${plansResponse.status}, location=${plansResponse.headers.location || ""}, body=${plansResponse.body}`);
       const plans = JSON.parse(plansResponse.body || "{}");
       assert(plans.freezePolicy?.finalBilling?.includes("腾讯云账单明细"), "freeze policy final billing missing");
       assert(plans.items?.[0]?.priceStatus === "quoted", `quoted server plan missing: ${plansResponse.body}`);

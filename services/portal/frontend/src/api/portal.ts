@@ -373,6 +373,7 @@ export interface ServerPlansSummary {
   priceStatus: string;
   lowestHourlyPrice: number;
   note: string;
+  cloudStatus?: TencentCloudStatus | null;
 }
 
 export interface OnboardingPayload {
@@ -427,6 +428,74 @@ export interface ServerPlanItem {
   source?: string;
 }
 
+export interface TencentCloudError {
+  message?: string;
+  code?: string;
+  status?: number;
+}
+
+export interface TencentCloudStatus {
+  provider?: string;
+  region?: string;
+  credentialsConfigured?: boolean;
+  tokenConfigured?: boolean;
+  priceEnabled?: boolean;
+  billingEnabled?: boolean;
+  billingRequired?: boolean;
+  tencentRegion?: string;
+  priceImageConfigured?: boolean;
+  catalogConfigured?: boolean;
+  discoveryEnabled?: boolean;
+  lastQuoteAt?: string;
+  lastQuoteError?: string;
+  lastBillQueryAt?: string;
+  lastBillQueryError?: string;
+  exactBillingSource?: string;
+  pendingSource?: string;
+  price?: {
+    enabled?: boolean;
+    imageConfigured?: boolean;
+    endpoint?: string;
+    catalogConfigured?: boolean;
+    catalogCount?: number;
+    discoveryEnabled?: boolean;
+    discoveryZonesConfigured?: boolean;
+    discoveredCount?: number;
+    quotedCount?: number;
+    salableCount?: number;
+    lastDiscoveryAt?: string;
+    lastDiscoveryError?: TencentCloudError | null;
+    lastQuoteAt?: string;
+    lastQuoteError?: TencentCloudError | null;
+  };
+  billing?: {
+    enabled?: boolean;
+    required?: boolean;
+    endpoint?: string;
+    exactBillingSource?: string;
+    lastBillQueryAt?: string;
+    lastBillQueryError?: TencentCloudError | null;
+  };
+  provisioning?: {
+    source?: string;
+    automaticProvisionCount?: number;
+    existingNodePoolCount?: number;
+    note?: string;
+  };
+  readiness?: {
+    cloudAccountConnected?: boolean;
+    realPriceReady?: boolean;
+    exactBillReady?: boolean;
+    catalogReady?: boolean;
+    serverPlansReady?: boolean;
+  };
+}
+
+export interface CloudStatusPayload {
+  ok: boolean;
+  cloudStatus: TencentCloudStatus;
+}
+
 export interface ServerPlansPayload {
   ok: boolean;
   source: string;
@@ -439,6 +508,7 @@ export interface ServerPlansPayload {
   selectedServerPlan?: SelectedServerPlan | null;
   workspaceId?: string;
   note?: string;
+  cloudStatus?: TencentCloudStatus | null;
   summary: ServerPlansSummary;
   commercial: CommercialProfile;
   freezePolicy: {
