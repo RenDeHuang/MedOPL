@@ -42,6 +42,7 @@ function extractInstanceIds(clusterInstances = []) {
   return clusterInstances
     .map((item) => item.InstanceId || item.InstanceIdSet?.[0] || item.NodeId || item.Instance?.InstanceId || "")
     .map((item) => String(item || "").trim())
+    .filter((item) => /^ins-[a-z0-9]+$/i.test(item))
     .filter(Boolean);
 }
 
