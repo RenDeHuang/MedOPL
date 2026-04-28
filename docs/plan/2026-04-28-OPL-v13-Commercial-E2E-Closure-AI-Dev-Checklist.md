@@ -308,7 +308,8 @@ v13 接入方式：
 部署边界：
 
 - Langfuse 是独立观测栈，不和 Portal 主进程混部署。
-- 可通过 Portal 域名下的受控路径或子域暴露，例如 `/portal/app/trace` 使用 Portal 原生 UI，`/observability/langfuse` 或内网域名只给管理员打开 Langfuse 原生控制台。
+- `trace.medopl.cn` 作为 Langfuse 管理员原生控制台入口，只给管理员/运维使用；客户侧仍走 Portal 原生 Agent Traces 页面。
+- Portal 可通过 `/portal/app/trace` 或 `/portal/app/traces` 暴露业务化 trace 视图；不要把 Langfuse 原生 UI 直接作为客户默认界面。
 - Portal 只展示业务化 trace 视图，不把 Langfuse UI iframe 作为默认客户界面，避免权限、会话、样式和多租户边界混乱。
 
 不做：
@@ -467,6 +468,7 @@ v13 接入方式：
   - Redis/Valkey：requests `100m CPU / 256Mi`，limits `500m CPU / 512Mi`，storage `5Gi`。
   - Trace retention：30 天。
   - Langfuse blob storage：复用 COS bucket `opl-1410708315`，prefix `langfuse/`，与 `daily/` 和 `workspaces/` 完全隔离。
+- 新增 `trace.medopl.cn` Ingress/TLS 配置，指向 Langfuse Web；该入口为管理员原生控制台，不承载普通客户的 trace 浏览。
 - Secret 只放 Kubernetes Secret：Langfuse salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。
 - 删除 Portal 对本地 Docker ClickHouse 容器名的依赖，改为调用 Langfuse API；Portal 不直查 ClickHouse。
 - Adapter 新增 trace emitter，并把 launch、message、run request、artifact metadata 转成统一 trace event。
@@ -620,6 +622,7 @@ v13 接入方式：
 - COS billing prefix：`daily/`。
 - COS workspace prefix：`workspaces/{tenant_id}/{workspace_id}/`。
 - COS Langfuse blob prefix：`langfuse/`。
+- Langfuse 管理员入口域名：`trace.medopl.cn`；客户侧仍使用 Portal Agent Traces 页面。
 - 节点池策略：每订单独立节点池，`minNodes=0`、`maxNodes=2`，允许缩容到 0。
 - 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS，已确认 fallback `ImageId=img-487zeit5`。
 - 网络连通性已确认。
@@ -633,8 +636,7 @@ v13 接入方式：
 
 仍需要你提供或在云侧完成：
 
-1. 自部署 Langfuse 域名和入口策略：例如 `trace.medopl.cn` 只给管理员，客户侧走 Portal Agent Traces 页面。
-2. 创建或允许自动生成 Langfuse 相关 Kubernetes Secret：salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。Secret 不进入 git、YAML、镜像或日志摘要。
-3. 校验 `tencent-provisioner-secret` 中 SecretKey 是否存在尾随空白；如果有，重新创建该 Secret。
-4. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
-5. 给 COS bucket/prefix 配好最小权限：Billing 只读 `daily/`；Workspace storage 读写 `workspaces/{tenant_id}/{workspace_id}/`；Langfuse 读写 `langfuse/`。
+1. 创建或允许自动生成 Langfuse 相关 Kubernetes Secret：salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。Secret 不进入 git、YAML、镜像或日志摘要。
+2. 校验 `tencent-provisioner-secret` 中 SecretKey 是否存在尾随空白；如果有，重新创建该 Secret。
+3. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
+4. 给 COS bucket/prefix 配好最小权限：Billing 只读 `daily/`；Workspace storage 读写 `workspaces/{tenant_id}/{workspace_id}/`；Langfuse 读写 `langfuse/`。
