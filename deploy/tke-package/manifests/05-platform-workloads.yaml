@@ -285,25 +285,25 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tencent-billing-secret
-                  key: TENCENTCLOUD_SECRET_ID
+                  key: TENCENT_CLOUD_SECRET_ID
                   optional: true
             - name: TENCENT_CLOUD_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-billing-secret
-                  key: TENCENTCLOUD_SECRET_KEY
+                  key: TENCENT_CLOUD_SECRET_KEY
                   optional: true
             - name: TENCENT_COS_SECRET_ID
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENTCLOUD_SECRET_ID
+                  key: TENCENT_CLOUD_SECRET_ID
                   optional: true
             - name: TENCENT_COS_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENTCLOUD_SECRET_KEY
+                  key: TENCENT_CLOUD_SECRET_KEY
                   optional: true
           envFrom:
             - configMapRef:
@@ -374,13 +374,13 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tencent-provisioner-secret
-                  key: TENCENTCLOUD_SECRET_ID
+                  key: TENCENT_CLOUD_SECRET_ID
                   optional: true
             - name: TENCENT_CLOUD_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-provisioner-secret
-                  key: TENCENTCLOUD_SECRET_KEY
+                  key: TENCENT_CLOUD_SECRET_KEY
                   optional: true
           envFrom:
             - configMapRef:
