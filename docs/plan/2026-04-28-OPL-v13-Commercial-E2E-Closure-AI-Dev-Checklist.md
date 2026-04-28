@@ -31,9 +31,11 @@ v13 的目标是把 v12 的“商业化内测入口版”推进到“可验收�
 - Portal workspace API 可以看到默认 workspace、文件列表、账单钱包和流水。
 - 当前 workspace 文件列表为空，未完成 OPL 文件上传到 Portal workspace 的端到端验证。
 - 当前真实腾讯云报价未完成，原因是缺少 `TENCENT_PRICE_IMAGE_ID` 或可自动发现的镜像 ID。
+- v13 指定公共镜像要求：硅谷区域 Ubuntu 22.04 LTS。实现上不在代码里硬编码 ImageId，而由 Billing/Provisioner 调腾讯云 CVM `DescribeImages` 按 Region、ImageName、ImageOsName 自动发现，并把选中的 ImageId 写入只读运行状态。
+- 用户已确认 TKE 到腾讯云 API/COS 的网络连通性，v13 不再把网络作为默认阻塞项；仍需在 smoke 中验证实际 API 调用。
 - 当前 Resource Provisioner 查询 TKE/CVM 返回 `fetch failed`，真实节点池未创建成功。
 - 当前 COS 接口只是 `/billing/cos/status` 配置状态，没有实现 COS List/Get/Parse 账单文件。
-- 当前 Langfuse trace 查询返回 `status_only`，ClickHouse/Langfuse 后端不可用。
+- 当前 Langfuse trace 查询返回 `status_only`，并且 `langfuse-trace-client.mjs` 仍按本地 Docker ClickHouse 容器查询，不适合 Langfuse Cloud。
 - 当前代码仍有大文件：`services/portal/src/app/portal-app.mjs`、`adapters/billing-aggregator/src/server.mjs`、`adapters/med-autoscience-runner/src/server.mjs`。
 
 ## 用户问题结论
@@ -62,11 +64,15 @@ v12 的 Portal workspace 文件读取路径是共享 runtime PVC：
 
 v13 要补齐：
 
+- 存储必须订单化/按需开通：用户未开通 workspace storage 时，Portal 和 OPL 都禁止上传文件，Runner 不写 output 文件，只允许纯对话/无文件任务。
+- 新增 Storage Order 或 Resource Order storage section：`storagePlanId`、`storageSizeGb`、`storageBackend=cos|cfs`、`retentionPolicy`、`status`。
+- COS 适合作为用户可购买的对象存储：按 tenant/workspace prefix 隔离，例如 `workspaces/{tenant_id}/{workspace_id}/inputs/` 和 `outputs/`。
+- CFS/PVC 适合作为运行时热目录：任务执行期间挂载或同步，任务结束后把 output 同步到 COS。
 - Portal 上传文件 API。
 - OPL 上传文件到 workspace inputs 的桥接。
 - Runner 输出文件写回 outputs。
 - Portal 下载单文件和 zip 打包下载。
-- 可选对象存储同步：COS 作为长期对象存储，CFS/PVC 作为运行时热存储。
+- 对象存储同步：COS 是商业存储账单来源，CFS/PVC 是 runtime scratch，不作为长期用户资产源。
 
 存储策略：
 
@@ -107,20 +113,13 @@ v13 目标：
 
 ### 5. session trace 后端如何可用？
 
-参考 Langfuse v3 自托管架构：
-
-- Langfuse Web：UI 和 API。
-- Langfuse Worker：异步处理 ingestion events。
-- Postgres：事务数据。
-- ClickHouse：traces、observations、scores。
-- Redis/Valkey：队列和缓存。
-- S3/Blob Store：原始 ingestion events、多模态附件、大文件。
+v13 采用 Langfuse Cloud，不在 TKE 集群内自建 Langfuse Web/Worker/Postgres/ClickHouse/Redis。Langfuse 的内部架构仍可作为事件模型参考，但生产边界要收敛成“平台只调用 Langfuse Cloud API”。
 
 v13 接入方式：
 
 - OPL Gateway/Adapter 在 launch、message、run start、run complete、artifact created 时生成 trace event。
-- Trace Gateway 或 Adapter 调 Langfuse ingestion API，写入 trace/span/observation。
-- Portal 只查询 Langfuse API/ClickHouse，不直接解析 OPL 页面状态。
+- Trace Gateway 或 Adapter 调 Langfuse Cloud ingestion API，写入 trace/span/observation。
+- Portal 只查询 Langfuse Cloud API，不直接解析 OPL 页面状态，也不依赖本地 ClickHouse 容器名。
 - trace 关键标签必须包括 `tenant_id`、`workspace_id`、`run_id`、`resource_order_id`、`portal_user_id`。
 
 验收标准：
@@ -132,9 +131,7 @@ v13 接入方式：
 参考：
 
 - https://langfuse.com/handbook/product-engineering/architecture
-- https://langfuse.com/self-hosting
-- https://langfuse.com/self-hosting/deployment/infrastructure/blobstorage
-- https://langfuse.com/self-hosting/deployment/infrastructure/clickhouse
+- https://langfuse.com/docs
 
 ### 6. 删除服务器、停止扣费如何实现？
 
@@ -163,14 +160,19 @@ v13 接入方式：
 必须在 v13 拆分：
 
 - `services/portal/src/app/portal-app.mjs`
-  - 当前聚合了 auth、admin、workspace、billing、resource order、storage、trace、HTML legacy routes、DB persistence。
+  - 当前约 5882 行，聚合了 auth、admin、workspace、billing、resource order、storage、trace、HTML legacy routes、DB persistence。
   - 应拆成 routes + domain + state + integrations。
 - `adapters/billing-aggregator/src/server.mjs`
-  - 当前聚合了 OpenCost pending、腾讯云签名、报价、账单查询、reconcile、HTML UI。
+  - 当前约 1862 行，聚合了 OpenCost pending、腾讯云签名、报价、账单查询、reconcile、HTML UI。
   - 应拆成 config、tencent-price、tencent-billing、cos-bill-reader、reconcile-ledger、routes。
 - `adapters/med-autoscience-runner/src/server.mjs`
-  - 当前聚合 runner API、Job metadata、artifact handling、billing reconcile placeholder。
+  - 当前约 1035 行，聚合 runner API、Job metadata、artifact handling、billing reconcile placeholder。
   - 应拆成 job-factory、metadata-store、artifact-store、routes、health。
+- `services/portal/frontend/src/api/portal.ts`
+  - 当前约 984 行，聚合所有 Portal 前端 API 类型和请求函数。
+  - 应拆成 `auth.api.ts`、`workspace.api.ts`、`billing.api.ts`、`resource-orders.api.ts`、`cloud.api.ts`、`traces.api.ts`。
+
+`$scan` 执行说明：本会话没有暴露 sentrux MCP 工具，且本机没有 `sentrux` 命令；已按 scan 目标做本地结构扫描，结论是 v13 必须至少拆生产热路径大文件，避免继续把新商业闭环堆回单文件。
 
 ## v13 模块边界
 
@@ -258,17 +260,30 @@ v13 接入方式：
 - 不决定价格。
 - 不直接操作钱包。
 
-### Langfuse Trace Stack
+### Langfuse Cloud Trace
 
 职责：
 
-- 接收 OPL/Runner trace。
+- 通过 Langfuse Cloud API 接收 OPL/Runner trace。
 - 存储和查询 session、message、run、artifact trace。
 
 不做：
 
 - 不作为业务 DB。
 - 不作为账单来源。
+
+## v13 八步闭环缺口矩阵
+
+| 步骤 | v12 状态 | v13 必须补齐 |
+| --- | --- | --- |
+| 创建用户 | 管理员创建用户可用 | smoke 固化创建用户和唯一邮箱，避免人工验证 |
+| 充值额度 | 管理员充值可用 | ledger 要区分充值、冻结、释放、最终扣费 |
+| 双域名登录 | Portal 登录、OPL native login 基本可用 | `portal.medopl.cn` 与 `opl.medopl.cn` 都纳入自动验收 |
+| 创建节点和选择存储 | Resource Order 有雏形，真实节点池未闭合 | 真实报价、冻结、每订单节点池、storage order 一起进入订单 |
+| OPL 工作与原始 runtime | upstream 未修改 | Gateway/Adapter 注入上下文，禁止改 upstream runtime |
+| 发消息和跑文件任务 | 文件端到端未闭合 | Adapter 文件桥接、Runner 读 inputs、写 outputs、trace emitter |
+| Portal 查看文件/账单/轨迹 | workspace 和 billing API 有雏形，trace 是 status only | COS workspace、COS 日账单、Langfuse Cloud trace 三条链路接通 |
+| 下载文件和删除服务器 | 下载、释放、删除、停止扣费未闭合 | Portal 下载 API、Provisioner scale/delete、Billing exact settlement、ledger refund/makeup |
 
 ## v13 开发任务
 
@@ -292,14 +307,18 @@ v13 接入方式：
 
 开发：
 
+- Portal 增加 `storageEntitlement` 判断：未开通 storage 的 workspace，上传按钮禁用，上传 API 返回 402/403 业务错误。
+- Adapter 文件桥接也必须检查 storage entitlement，不能绕过 Portal UI 直接上传。
 - Portal 新增 upload API：`POST /portal/api/workspace/files/upload`。
 - Adapter 新增 OPL 文件桥接 API：`POST /portal-adapter/api/workspace/files`。
-- Runner 输出统一写入 `outputs/`。
+- Runner 在没有 storage entitlement 时拒绝写 output artifact；有 entitlement 时输出统一写入 `outputs/` 并生成 artifact metadata。
 - Portal workspace 页面显示 inputs/outputs、大小、更新时间、下载链接。
-- 增加 COS sync worker，但不阻塞热路径。
+- 增加 COS sync worker，把 inputs/outputs 同步到 `workspaces/{tenant_id}/{workspace_id}/`；CFS/PVC 只作为 runtime scratch，不作为长期用户资产源。
 
 验收：
 
+- 未开通 storage 时，Portal 上传、OPL 上传桥接、Runner output 都被明确拒绝，且不产生对象存储费用。
+- 开通 storage 后，COS prefix 可见，账单标签可归因到 tenant/workspace。
 - 上传 `input.txt` 后 Portal storage API 显示 inputsCount=1。
 - OPL run 读取该文件并输出 `result.txt`。
 - Portal 可以下载单文件和 zip。
@@ -311,17 +330,25 @@ v13 接入方式：
 开发：
 
 - Billing 增加 `TENCENT_PRICE_IMAGE_ID` 自动发现：
-  - 优先从现有节点/节点池 OS/ImageId 读取。
+  - 优先按硅谷区域 Ubuntu 22.04 LTS 公共镜像调用 CVM `DescribeImages` 发现 ImageId。
+  - 其次从现有节点/节点池 OS/ImageId 读取。
   - 失败时阻塞报价，不伪造价格。
 - Billing `server-plans` 对四档 CPU 规格返回真实 `unitPrice`、`priceUpdatedAt`、`pricingSource=tencent_cloud_price`。
 - Provisioner 在只读云状态 OK 后才允许 `RESOURCE_PROVISIONING_ENABLED=1`。
 - Provisioner `ensure-capacity` 生成 TKE nodePool payload，含 VPC/Subnet/SG、labels、taints、min=0、max=2。
+- Provisioner 记录订单生命周期事件：`provision_requested`、`node_pool_created`、`instances_ready`、`scale_to_zero_requested`、`node_pool_deleted`、`provision_failed`，供 Portal 状态页和审计使用。
+- 跨模块接口必须有幂等键：`resourceOrderId` + `idempotencyKey`，重复调用不能重复创建节点池。
 
 验收：
 
 - `/server-plans` 四档规格价格非 0 且来源为腾讯云。
 - 创建订单后状态 `quoted -> frozen -> provisioning`。
 - TKE 控制台出现带 `resource_order_id` 的节点池。
+- 重复调用同一个订单的 provision API，不会创建第二个节点池。
+
+参考：
+
+- https://www.tencentcloud.com/document/api/213/33272
 
 ### D. COS 账单日对账
 
@@ -350,15 +377,19 @@ v13 接入方式：
 
 开发：
 
-- 部署或修复 Langfuse：Web、Worker、Postgres、ClickHouse、Redis、S3/COS。
-- Adapter 新增 trace emitter。
-- Runner 新增 run span emitter。
-- Portal trace client 支持 Langfuse API 优先，ClickHouse 查询作为运维视图。
+- 使用 Langfuse Cloud，不在本集群自建 Langfuse Web/Worker/Postgres/ClickHouse/Redis。
+- Secret 只放 Kubernetes Secret：`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_BASE_URL`。
+- 删除 Portal 对本地 Docker ClickHouse 容器名的依赖，改为 Langfuse Cloud API client。
+- Adapter 新增 trace emitter，并把 launch、message、run request、artifact metadata 转成统一 trace event。
+- Runtime Bridge 新增 trace publisher，只负责把领域事件发布到 Langfuse Cloud；不把 Langfuse SDK 直接扩散到 Gateway/Runner。
+- Runner 新增 run lifecycle event 输出，由 Runtime Bridge 或 Adapter 统一发布 run span 和 artifact event。
+- Portal trace client 只读 Langfuse API；ClickHouse 查询只保留在本地开发诊断脚本，不进入生产路径。
 
 验收：
 
 - 用户在 OPL 发消息后，Portal `/portal/api/traces` 返回 trace。
 - Trace 带 `tenant_id/workspace_id/session_id/run_id`。
+- `langfuse-trace-client.mjs` 不再出现 `docker exec`、本地 ClickHouse 容器名或生产路径 ClickHouse SQL。
 
 ### F. 删除服务器与停止扣费
 
@@ -449,10 +480,8 @@ v13 接入方式：
 
 ## 当前 v13 仍需要用户/云侧准备
 
-1. 一个硅谷一区可用的 CVM `ImageId`，或允许 Provisioner 从现有节点池自动发现。
-2. Pod 到 Tencent API/COS 的稳定出公网能力。
-3. Billing 使用的 COS 只读权限 Secret。
-4. COS `daily/` 下真实账单样例文件。
-5. Langfuse 栈的部署参数：Postgres、ClickHouse、Redis、S3/COS、Web/Worker URL、API keys。
-6. 确认测试创建/删除 TKE 节点池会产生费用，允许用测试订单执行。
-
+1. 允许 Billing/Provisioner 在 `na-siliconvalley` 自动发现 Ubuntu 22.04 LTS 公共镜像；如果自动发现失败，再提供一个硅谷一区可用的 CVM `ImageId`。
+2. 在 `opl-system` namespace 创建 Kubernetes Secret：腾讯云 Billing/COS/Provisioner 凭证、Langfuse Cloud `LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_BASE_URL`。Secret 不进入 git、YAML、镜像或日志摘要。
+3. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
+4. 给 COS bucket/prefix 配好最小权限：Billing 只读账单 prefix；Workspace storage 只读写 `workspaces/{tenant_id}/{workspace_id}/`。
+5. 确认测试创建/删除 TKE 节点池会产生费用，允许用测试订单执行。
