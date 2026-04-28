@@ -304,6 +304,12 @@ v13 接入方式：
 - 通过本地 Langfuse API 接收 OPL/Runner trace。
 - 存储和查询 session、message、run、artifact trace。
 
+部署边界：
+
+- Langfuse 是独立观测栈，不和 Portal 主进程混部署。
+- 可通过 Portal 域名下的受控路径或子域暴露，例如 `/portal/app/trace` 使用 Portal 原生 UI，`/observability/langfuse` 或内网域名只给管理员打开 Langfuse 原生控制台。
+- Portal 只展示业务化 trace 视图，不把 Langfuse UI iframe 作为默认客户界面，避免权限、会话、样式和多租户边界混乱。
+
 不做：
 
 - 不作为业务 DB。
@@ -321,6 +327,20 @@ v13 接入方式：
 - 不把 Langfuse 当作 Portal 用户库。
 - 不把完整对话正文复制进 Portal DB。
 - 不把 Secret、API key、原始云凭证写入 metadata。
+
+### Portal Agent Traces UI
+
+职责：
+
+- Portal SaaS 后台内置轨迹模块，面向客户和管理员提供业务化 trace 视图。
+- 使用 Portal 权限体系过滤 tenant/workspace/user/run，不直接暴露 Langfuse 管理权限。
+- UI 参考截图中的 Agent Traces 信息架构：概览、追踪列表、会话、用户、接入密钥、监控集成、AI 问答。
+
+不做：
+
+- 不在 Portal 里重建 Langfuse 的全部管理控制台。
+- 不让普通用户访问跨 tenant trace。
+- 不把 Langfuse 原生 API key 暴露给客户浏览器。
 
 ## v13 八步闭环缺口矩阵
 
@@ -442,6 +462,14 @@ v13 接入方式：
 - Runtime Bridge 新增 trace publisher，只负责把领域事件发布到本地 Langfuse；不把 Langfuse SDK 直接扩散到 Gateway/Runner。
 - Runner 新增 run lifecycle event 输出，由 Runtime Bridge 或 Adapter 统一发布 run span 和 artifact event。
 - Portal trace client 只读 Langfuse API；ClickHouse 查询只保留在运维诊断脚本，不进入 Portal 生产请求路径。
+- Portal 前端新增/优化“Agent Traces”模块：
+  - 用户侧路由：`/portal/app/trace` 或 `/portal/app/traces`，展示当前 tenant/workspace 范围内的 trace。
+  - 管理员路由：`/portal/app/admin/trace`，展示跨用户、跨 workspace 的运维视图。
+  - 侧边栏用户区增加“轨迹”；管理员区将 `Trace` 改成“Agent Traces”或“轨迹中心”。
+  - 页面结构参考截图：顶部项目/工作区选择器、tab 导航、概览指标、追踪列表、追踪详情分栏、span 树、输入/输出、metadata。
+  - 列表字段：时间、名称、traceId、状态、span 数、输入摘要、输出摘要、延迟、workspace、runId、resourceOrderId。
+  - 详情字段：span tree、model、token、latency、input/output、artifact links、COS object keys、错误信息、metadata。
+  - 普通用户只能看自己的 tenant/workspace；管理员可按 tenant/user/workspace/run 过滤。
 
 对话 metadata 处理：
 
@@ -458,6 +486,8 @@ v13 接入方式：
 - Trace 带 `tenant_id/workspace_id/session_id/run_id`。
 - `langfuse-trace-client.mjs` 不再出现 `docker exec`、固定本地 ClickHouse 容器名或 Portal 生产路径 ClickHouse SQL。
 - 10w+/day trace ingestion 压测有明确吞吐、队列积压、ClickHouse 写入和查询延迟指标。
+- Portal “Agent Traces” 页面满足截图中的核心体验：概览卡片、trace 列表、trace 详情分栏、span 树、输入/输出、metadata。
+- 普通用户无法通过 traceId 访问其他 tenant/workspace 的 trace。
 
 ### F. 删除服务器与停止扣费
 
@@ -503,6 +533,12 @@ v13 接入方式：
   - `metadata-store.mjs`
   - `artifact-store.mjs`
   - `routes.mjs`
+- Portal 前端 trace/API 拆：
+  - `services/portal/frontend/src/api/traces.api.ts`
+  - `services/portal/frontend/src/views/trace/TraceOverviewView.vue`
+  - `services/portal/frontend/src/views/trace/TraceListView.vue`
+  - `services/portal/frontend/src/views/trace/TraceDetailPane.vue`
+  - `services/portal/frontend/src/views/trace/TraceSpanTree.vue`
 
 验收：
 
@@ -534,6 +570,7 @@ v13 接入方式：
   - 查询 trace。
   - 验证 metadata 不包含 Secret/API key。
   - 验证 Portal trace 查询来自 Langfuse API，而不是直接 ClickHouse SQL。
+  - 验证普通用户无法读取其他 tenant/workspace trace。
 
 - `scripts/load-test-v13-langfuse-ingestion.mjs`
   - 模拟 10w+/day 等级的 ingestion 速率。
@@ -552,6 +589,7 @@ v13 接入方式：
 - 测试节点池具备 scale-to-zero，空闲时缩容到 0。
 - COS 至少读取到一个账单文件或明确显示“无文件但权限可用”。
 - 自部署 Langfuse trace 可写可查，并通过 10w+/day 等级的 ingestion 验证。
+- Portal Agent Traces 用户侧和管理员侧页面可用，权限隔离通过。
 - 删除节点池后订单状态和资源状态一致。
 
 ## 当前 v13 仍需要用户/云侧准备
@@ -562,7 +600,10 @@ v13 接入方式：
 - Cluster：`cls-ngiq693i`。
 - Namespace：`opl-system`。
 - VPC/Subnet/SG：`vpc-ahl6epyx`、`subnet-mbehh5wi` / `subnet-r8mzuptu`、`sg-6671l5we`。
-- COS bucket：`opl-1410708315`，prefix：`daily/`。
+- COS bucket：`opl-1410708315`。
+- COS endpoint：`https://opl-1410708315.cos.na-siliconvalley.myqcloud.com`。
+- COS billing prefix：`daily/`。
+- COS workspace prefix：`workspaces/{tenant_id}/{workspace_id}/`。
 - 节点池策略：每订单独立节点池，`minNodes=0`、`maxNodes=2`，允许缩容到 0。
 - 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS，已确认 fallback `ImageId=img-487zeit5`。
 - 网络连通性已确认。
@@ -574,7 +615,7 @@ v13 接入方式：
 
 仍需要你提供或在云侧完成：
 
-1. 自部署 Langfuse 参数：域名、Kubernetes namespace、存储类、Postgres/ClickHouse/Redis 资源规格、COS/S3 blob bucket/prefix、retention 天数、管理员账号初始化方式。
+1. 自部署 Langfuse 参数：域名、Kubernetes namespace、存储类、Postgres/ClickHouse/Redis 资源规格、COS/S3 blob bucket/prefix、retention 天数、管理员账号初始化方式。建议 Langfuse 原生控制台仅管理员可见，客户侧使用 Portal Agent Traces 页面。
 2. 创建 Langfuse 相关 Kubernetes Secret：salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。Secret 不进入 git、YAML、镜像或日志摘要。
 3. 校验 `tencent-provisioner-secret` 中 SecretKey 是否存在尾随空白；如果有，重新创建该 Secret。
 4. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
