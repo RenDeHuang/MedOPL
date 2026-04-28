@@ -58,6 +58,8 @@ metadata:
   namespace: langfuse-system
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: langfuse-postgres
@@ -127,6 +129,8 @@ metadata:
   namespace: langfuse-system
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: langfuse-clickhouse
@@ -203,6 +207,8 @@ metadata:
   namespace: langfuse-system
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: langfuse-redis
