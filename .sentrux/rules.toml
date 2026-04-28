@@ -1,0 +1,111 @@
+# OPL architecture rules for Sentrux.
+#
+# These rules intentionally start from the current v13 baseline so they can
+# catch regressions while the large legacy files are being split down.
+
+[constraints]
+min_quality = 0.69
+min_modularity = 0.80
+min_acyclicity = 1.00
+min_depth = 0.70
+min_equality = 0.35
+min_redundancy = 0.65
+max_cycles = 0
+max_upward_violations = 0
+no_god_files = true
+
+[[layers]]
+name = "shared"
+paths = [
+  "adapters/shared/*",
+  "adapters/resource-provisioner/src/config.mjs",
+  "adapters/resource-provisioner/src/http-utils.mjs",
+  "adapters/resource-provisioner/src/labels.mjs",
+  "services/portal/src/lib/*"
+]
+order = 4
+
+[[layers]]
+name = "domain"
+paths = [
+  "services/portal/src/domain/*",
+  "services/portal/src/state/*",
+  "adapters/resource-provisioner/src/store.mjs"
+]
+order = 3
+
+[[layers]]
+name = "integrations"
+paths = [
+  "services/portal/src/integrations/*",
+  "adapters/billing-aggregator/src/*",
+  "adapters/resource-provisioner/src/inventory.mjs",
+  "adapters/resource-provisioner/src/provisioner.mjs",
+  "adapters/resource-provisioner/src/server.mjs",
+  "adapters/resource-provisioner/src/tencent-cloud.mjs",
+  "services/opl-runtime-bridge/src/*"
+]
+order = 2
+
+[[layers]]
+name = "routes"
+paths = [
+  "services/portal/src/routes/*",
+  "services/portal/src/app/*",
+  "services/portal/src/server.mjs",
+  "services/opl-web-gateway/src/*",
+  "adapters/med-autoscience-runner/src/*"
+]
+order = 1
+
+[[layers]]
+name = "frontend"
+paths = [
+  "services/portal/frontend/src/*"
+]
+order = 0
+
+[[boundaries]]
+from = "services/portal/src/*"
+to = "adapters/resource-provisioner/src/tencent-cloud.mjs"
+reason = "Portal must call Resource Provisioner over DTO/API and must not hold Tencent cloud clients or secrets."
+
+[[boundaries]]
+from = "services/portal/src/*"
+to = "adapters/billing-aggregator/src/tencent-*.mjs"
+reason = "Portal must call Billing over DTO/API and must not read Tencent billing credentials."
+
+[[boundaries]]
+from = "adapters/billing-aggregator/src/*"
+to = "services/portal/src/*"
+reason = "Billing must not log users in, mutate Portal users, or import Portal internals."
+
+[[boundaries]]
+from = "adapters/resource-provisioner/src/*"
+to = "services/portal/src/domain/wallet-ledger.mjs"
+reason = "Provisioner creates cloud resources only; wallet and ledger remain in Portal."
+
+[[boundaries]]
+from = "adapters/med-autoscience-runner/src/*"
+to = "services/portal/src/domain/wallet-ledger.mjs"
+reason = "Runner creates jobs and artifacts only; it must not debit wallets."
+
+[[boundaries]]
+from = "services/opl-web-gateway/src/*"
+to = "services/portal/src/state/*"
+reason = "Gateway bridges auth by Portal API, not by reading Portal persistence."
+
+[[boundaries]]
+from = "services/opl-web-gateway/src/*"
+to = "services/portal/src/app/*"
+reason = "Gateway must not import Portal server internals."
+
+[[boundaries]]
+from = "services/portal/src/*"
+to = "services/opl-web-upstream/*"
+reason = "one-person-lab upstream is immutable; Portal must integrate through Gateway/Adapter/Runtime Bridge."
+
+[[boundaries]]
+from = "services/portal/src/*"
+to = "services/portal/src/integrations/langfuse-clickhouse*.mjs"
+reason = "Portal production trace queries must use Langfuse API, not direct ClickHouse access."
