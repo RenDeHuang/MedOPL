@@ -44,6 +44,7 @@ v13 的目标是把 v12 的“商业化内测入口版”推进到“可验收�
 - 当前 Resource Provisioner 查询 TKE/CVM 返回 `fetch failed`，真实节点池未创建成功。
 - 当前 COS 接口只是 `/billing/cos/status` 配置状态，没有实现 COS List/Get/Parse 账单文件。
 - 当前 Langfuse trace 查询返回 `status_only`，并且 `langfuse-trace-client.mjs` 仍按本地 Docker ClickHouse 容器查询；v13 改为生产级自部署 Langfuse，不采用 Cloud。
+- `$scan` 等价扫描结论：受控源码里有 `compose.langfuse.yaml`、Portal Langfuse/ClickHouse 查询代码和本地镜像缓存，但 TKE `opl-system` namespace 当前无 Langfuse/ClickHouse/Postgres/Redis 工作负载；现有云上平台镜像集中在 Portal、Gateway、Adapter、Billing、Provisioner、Runner，不包含 Langfuse 生产栈。
 - 当前代码仍有大文件：`services/portal/src/app/portal-app.mjs`、`adapters/billing-aggregator/src/server.mjs`、`adapters/med-autoscience-runner/src/server.mjs`。
 
 ## 当前卡点判断
@@ -456,6 +457,16 @@ v13 接入方式：
 开发：
 
 - 部署本地 Langfuse 栈：Langfuse Web、Langfuse Worker、Postgres、ClickHouse、Redis/Valkey、S3/COS blob storage。
+- 起步低配资源建议：
+  - namespace：`langfuse-system`，避免和 Portal 主业务 namespace 混在一起。
+  - storageClass：先用当前默认 `standard`，后续生产迁移到腾讯云 CBS/CFS 对应 StorageClass。
+  - Langfuse Web：1 replica，requests `250m CPU / 512Mi`，limits `1 CPU / 1Gi`。
+  - Langfuse Worker：1 replica，requests `500m CPU / 1Gi`，limits `2 CPU / 2Gi`。
+  - Postgres：requests `500m CPU / 1Gi`，storage `20Gi`。
+  - ClickHouse：requests `1 CPU / 2Gi`，limits `2 CPU / 4Gi`，storage `100Gi`。
+  - Redis/Valkey：requests `100m CPU / 256Mi`，limits `500m CPU / 512Mi`，storage `5Gi`。
+  - Trace retention：30 天。
+  - Langfuse blob storage：复用 COS bucket `opl-1410708315`，prefix `langfuse/`，与 `daily/` 和 `workspaces/` 完全隔离。
 - Secret 只放 Kubernetes Secret：Langfuse salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。
 - 删除 Portal 对本地 Docker ClickHouse 容器名的依赖，改为调用 Langfuse API；Portal 不直查 ClickHouse。
 - Adapter 新增 trace emitter，并把 launch、message、run request、artifact metadata 转成统一 trace event。
@@ -476,6 +487,10 @@ v13 接入方式：
 - Portal DB 保存业务索引：`tenant_id`、`workspace_id`、`portal_user_id`、`session_id`、`run_id`、`resource_order_id`、`storage_order_id`、`trace_id`、`artifact_ids`、`status`、`started_at`、`ended_at`。
 - Langfuse 保存观测数据：trace/span/observation、message input/output、token usage、latency、model、tool call、error、score。
 - COS 保存文件资产：inputs、outputs、artifact payload；Langfuse metadata 只保存 artifact id、COS object key、hash、size、content type。
+- COS prefix 分工：
+  - `daily/`：腾讯云账单投递。
+  - `workspaces/{tenant_id}/{workspace_id}/`：客户 workspace inputs/outputs/artifacts，删除 workspace 后进入 7 天回收窗口，之后物理清理。
+  - `langfuse/`：Langfuse 自部署栈的 blob storage，用于原始 ingestion events、多模态附件、大对象和导出，不存放客户 workspace 的权威文件副本。
 - metadata 必须带 `schema_version`，便于后续迁移。
 - metadata 禁止出现 Secret、API key、腾讯云凭证、用户模型中转站 key。
 - 删除 workspace 时：清理 COS prefix；Portal 删除或匿名化 workspace trace 索引；Langfuse trace 内容按 trace retention 策略删除或脱敏；账单 ledger 保留最小审计字段。
@@ -604,20 +619,22 @@ v13 接入方式：
 - COS endpoint：`https://opl-1410708315.cos.na-siliconvalley.myqcloud.com`。
 - COS billing prefix：`daily/`。
 - COS workspace prefix：`workspaces/{tenant_id}/{workspace_id}/`。
+- COS Langfuse blob prefix：`langfuse/`。
 - 节点池策略：每订单独立节点池，`minNodes=0`、`maxNodes=2`，允许缩容到 0。
 - 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS，已确认 fallback `ImageId=img-487zeit5`。
 - 网络连通性已确认。
 - 测试环境已授权真实创建/删除 TKE 节点池，需默认 scale-to-zero 控制成本。
-- Storage 商品口径：free quota = 0GB，min purchase = 10GB，retention = order lifecycle，删除 workspace 时清理 COS prefix。
+- Storage 商品口径：free quota = 0GB，min purchase = 10GB，retention = order lifecycle，删除 workspace 后 COS workspace 对象保留 7 天再清理。
+- Trace retention：30 天。
+- 当前默认 StorageClass：`standard`（`rancher.io/local-path`），起步可用；生产建议后续换腾讯云 CBS/CFS 对应 StorageClass。
 - K8s namespace `opl-system` 已创建。
 - K8s Secrets 已创建：`tencent-billing-secret`、`tencent-provisioner-secret`、`tencent-cos-secret`。文档不记录 Secret 值。
 - one-person-lab upstream URL：`https://github.com/gaofeng21cn/one-person-lab`，不得修改。
 
 仍需要你提供或在云侧完成：
 
-1. 自部署 Langfuse 参数：域名、Kubernetes namespace、存储类、Postgres/ClickHouse/Redis 资源规格、COS/S3 blob bucket/prefix、retention 天数、管理员账号初始化方式。建议 Langfuse 原生控制台仅管理员可见，客户侧使用 Portal Agent Traces 页面。
-2. 创建 Langfuse 相关 Kubernetes Secret：salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。Secret 不进入 git、YAML、镜像或日志摘要。
+1. 自部署 Langfuse 域名和入口策略：例如 `trace.medopl.cn` 只给管理员，客户侧走 Portal Agent Traces 页面。
+2. 创建或允许自动生成 Langfuse 相关 Kubernetes Secret：salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。Secret 不进入 git、YAML、镜像或日志摘要。
 3. 校验 `tencent-provisioner-secret` 中 SecretKey 是否存在尾随空白；如果有，重新创建该 Secret。
 4. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
-5. 给 COS bucket/prefix 配好最小权限：Billing 只读账单 prefix；Workspace storage 只读写 `workspaces/{tenant_id}/{workspace_id}/`。
-6. 确认 workspace 删除时是否允许立即物理删除 COS 对象；如果需要回收站，需要给出保留天数。
+5. 给 COS bucket/prefix 配好最小权限：Billing 只读 `daily/`；Workspace storage 读写 `workspaces/{tenant_id}/{workspace_id}/`；Langfuse 读写 `langfuse/`。
