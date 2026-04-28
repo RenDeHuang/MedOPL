@@ -37,23 +37,24 @@ v13 的目标是把 v12 的“商业化内测入口版”推进到“可验收�
 - OPL Web upstream 仍是 `opl-web-opl:opl-v1`，对应原始 one-person-lab Web，v12 未修改 upstream。
 - Portal workspace API 可以看到默认 workspace、文件列表、账单钱包和流水。
 - 当前 workspace 文件列表为空，未完成 OPL 文件上传到 Portal workspace 的端到端验证。
-- 当前真实腾讯云报价未完成，原因是缺少 `TENCENT_PRICE_IMAGE_ID` 或可自动发现的镜像 ID。
-- v13 指定公共镜像要求：硅谷区域 Ubuntu 22.04 LTS。实现上不在代码里硬编码 ImageId，而由 Billing/Provisioner 调腾讯云 CVM `DescribeImages` 按 Region、ImageName、ImageOsName 自动发现，并把选中的 ImageId 写入只读运行状态。
+- 当前真实腾讯云报价未完成，原因是 Billing/Provisioner 还没有把硅谷 Ubuntu 22.04 LTS 镜像 ID 接入报价和节点池 payload。
+- v13 指定公共镜像要求：硅谷区域 Ubuntu 22.04 LTS，已确认默认 fallback `ImageId=img-487zeit5`。实现上集中放在 Billing/Provisioner config，优先级为 env override -> Tencent `DescribeImages` 精确发现 -> 已确认 fallback `img-487zeit5`，避免在业务逻辑里散落硬编码。
 - 用户已确认 TKE 到腾讯云 API/COS 的网络连通性，v13 不再把网络作为默认阻塞项；仍需在 smoke 中验证实际 API 调用。
+- 用户已授权测试环境调用真实腾讯云 API 创建和删除 TKE 节点池；必须默认 `minNodes=0`、`maxNodes=2` 并启用 scale-to-zero 控制成本。
 - 当前 Resource Provisioner 查询 TKE/CVM 返回 `fetch failed`，真实节点池未创建成功。
 - 当前 COS 接口只是 `/billing/cos/status` 配置状态，没有实现 COS List/Get/Parse 账单文件。
-- 当前 Langfuse trace 查询返回 `status_only`，并且 `langfuse-trace-client.mjs` 仍按本地 Docker ClickHouse 容器查询，不适合 Langfuse Cloud。
+- 当前 Langfuse trace 查询返回 `status_only`，并且 `langfuse-trace-client.mjs` 仍按本地 Docker ClickHouse 容器查询；v13 改为生产级自部署 Langfuse，不采用 Cloud。
 - 当前代码仍有大文件：`services/portal/src/app/portal-app.mjs`、`adapters/billing-aggregator/src/server.mjs`、`adapters/med-autoscience-runner/src/server.mjs`。
 
 ## 当前卡点判断
 
 v13 的卡点不是“能不能登录”，而是商业闭环里的五个生产边界还没有闭合：
 
-1. **真实报价卡点**：Billing 已有报价入口，但缺硅谷 Ubuntu 22.04 LTS 公共镜像自动发现、报价缓存、报价失败阻断和 `server-plans` 真实价格验收。
-2. **真实开通卡点**：Provisioner 已有 TKE 节点池操作雏形，但缺订单生命周期事件、幂等契约、节点池创建后的状态回填和重复调用保护。
-3. **存储商品卡点**：workspace 文件目前偏 runtime/PVC 视角，缺 storage entitlement、COS workspace prefix、上传/下载/output gating 和 COS 同步。
+1. **真实报价卡点**：镜像 ID 已确认，但 Billing 还缺 `img-487zeit5` 默认 fallback、报价缓存、报价失败阻断和 `server-plans` 真实价格验收。
+2. **真实开通卡点**：Provisioner 已有 TKE 节点池操作雏形，但缺订单生命周期事件、幂等契约、节点池创建后的状态回填、重复调用保护和 scale-to-zero 成本保护。
+3. **存储商品卡点**：workspace 文件目前偏 runtime/PVC 视角，缺 storage entitlement、10GB 最小购买单元、COS workspace prefix、上传/下载/output gating、COS 同步和 workspace 删除清理。
 4. **账单 exact 卡点**：`DescribeBillDetail` 与 COS 日账单尚未形成统一 exact settlement；无完整标签的账单不能进入 run 级扣费。
-5. **Trace Cloud 卡点**：Portal trace 仍依赖本地 Docker ClickHouse 查询，缺 Langfuse Cloud API client 和 Adapter/Runtime Bridge 的 trace publisher。
+5. **自部署 Trace 卡点**：一天 10w+ 请求不适合依赖 Cloud 作为主要 trace 后端；需要生产级自部署 Langfuse Web/Worker/Postgres/ClickHouse/Redis/S3-or-COS，并定义对话 metadata 归属、保留周期和租户隔离。
 6. **可维护性卡点**：Portal、Billing、Runner 仍有大文件。继续在大文件里叠 v13 功能会破坏模块内高聚合，必须边实现边拆分。
 
 ## 用户问题结论
@@ -82,7 +83,10 @@ v12 的 Portal workspace 文件读取路径是共享 runtime PVC：
 
 v13 要补齐：
 
-- 存储必须订单化/按需开通：用户未开通 workspace storage 时，Portal 和 OPL 都禁止上传文件，Runner 不写 output 文件，只允许纯对话/无文件任务。
+- 存储必须订单化/按需开通：免费容量为 0，用户未开通 workspace storage 时，Portal 和 OPL 都禁止上传文件，Runner 不写 output 文件，只允许纯对话/无文件任务。
+- 最小购买容量为 10GB。
+- 存储保留时间随 Resource Order / Storage Order 生命周期。
+- 删除 workspace 时自动清理 COS 对应 prefix 的对象；清理动作必须幂等、可审计，失败时进入 `storage_cleanup_failed` 状态，不允许静默成功。
 - 新增 Storage Order 或 Resource Order storage section：`storagePlanId`、`storageSizeGb`、`storageBackend=cos|cfs`、`retentionPolicy`、`status`。
 - COS 适合作为用户可购买的对象存储：按 tenant/workspace prefix 隔离，例如 `workspaces/{tenant_id}/{workspace_id}/inputs/` 和 `outputs/`。
 - CFS/PVC 适合作为运行时热目录：任务执行期间挂载或同步，任务结束后把 output 同步到 COS。
@@ -131,14 +135,15 @@ v13 目标：
 
 ### 5. session trace 后端如何可用？
 
-v13 采用 Langfuse Cloud，不在 TKE 集群内自建 Langfuse Web/Worker/Postgres/ClickHouse/Redis。Langfuse 的内部架构仍可作为事件模型参考，但生产边界要收敛成“平台只调用 Langfuse Cloud API”。
+v13 采用本地自部署 Langfuse，不采用 Langfuse Cloud。原因是日请求量约 10w+，需要把 trace 成本、数据保留、脱敏策略和查询性能掌握在平台内。Langfuse 的 Web/Worker/Postgres/ClickHouse/Redis/S3-or-COS 作为独立观测栈部署，不进入 Portal、Billing、Provisioner、Runner 的业务职责。
 
 v13 接入方式：
 
 - OPL Gateway/Adapter 在 launch、message、run start、run complete、artifact created 时生成 trace event。
-- Trace Gateway 或 Adapter 调 Langfuse Cloud ingestion API，写入 trace/span/observation。
-- Portal 只查询 Langfuse Cloud API，不直接解析 OPL 页面状态，也不依赖本地 ClickHouse 容器名。
+- Trace Publisher 调本地 Langfuse ingestion API，写入 trace/span/observation。
+- Portal 只查询 Langfuse API，不直接解析 OPL 页面状态，也不直接查 ClickHouse。
 - trace 关键标签必须包括 `tenant_id`、`workspace_id`、`run_id`、`resource_order_id`、`portal_user_id`。
+- Portal 业务库只保存 trace 索引和业务 metadata，不保存完整对话正文；完整 trace 内容、span、observation 归 Langfuse 管理。
 
 验收标准：
 
@@ -150,6 +155,9 @@ v13 接入方式：
 
 - https://langfuse.com/handbook/product-engineering/architecture
 - https://langfuse.com/docs
+- https://langfuse.com/self-hosting
+- https://langfuse.com/self-hosting/deployment/infrastructure/clickhouse
+- https://langfuse.com/self-hosting/configuration/scaling
 
 ### 6. 删除服务器、停止扣费如何实现？
 
@@ -289,17 +297,30 @@ v13 接入方式：
 - 不决定价格。
 - 不直接操作钱包。
 
-### Langfuse Cloud Trace
+### Self-hosted Langfuse Trace
 
 职责：
 
-- 通过 Langfuse Cloud API 接收 OPL/Runner trace。
+- 通过本地 Langfuse API 接收 OPL/Runner trace。
 - 存储和查询 session、message、run、artifact trace。
 
 不做：
 
 - 不作为业务 DB。
 - 不作为账单来源。
+
+### Trace Metadata Contract
+
+职责：
+
+- 定义 Portal、Adapter、Runtime Bridge、Runner、Langfuse 之间共享的 trace metadata schema。
+- 关联业务对象：tenant、workspace、session、run、resource order、storage order、artifact、billing tag。
+
+不做：
+
+- 不把 Langfuse 当作 Portal 用户库。
+- 不把完整对话正文复制进 Portal DB。
+- 不把 Secret、API key、原始云凭证写入 metadata。
 
 ## v13 八步闭环缺口矩阵
 
@@ -311,7 +332,7 @@ v13 接入方式：
 | 创建节点和选择存储 | Resource Order 有雏形，真实节点池未闭合 | 真实报价、冻结、每订单节点池、storage order 一起进入订单 |
 | OPL 工作与原始 runtime | upstream 未修改 | Gateway/Adapter 注入上下文，禁止改 upstream runtime |
 | 发消息和跑文件任务 | 文件端到端未闭合 | Adapter 文件桥接、Runner 读 inputs、写 outputs、trace emitter |
-| Portal 查看文件/账单/轨迹 | workspace 和 billing API 有雏形，trace 是 status only | COS workspace、COS 日账单、Langfuse Cloud trace 三条链路接通 |
+| Portal 查看文件/账单/轨迹 | workspace 和 billing API 有雏形，trace 是 status only | COS workspace、COS 日账单、自部署 Langfuse trace 三条链路接通 |
 | 下载文件和删除服务器 | 下载、释放、删除、停止扣费未闭合 | Portal 下载 API、Provisioner scale/delete、Billing exact settlement、ledger refund/makeup |
 
 ## v13 开发任务
@@ -337,6 +358,8 @@ v13 接入方式：
 开发：
 
 - Portal 增加 `storageEntitlement` 判断：未开通 storage 的 workspace，上传按钮禁用，上传 API 返回 402/403 业务错误。
+- Storage policy 固定为：free quota = 0GB，min purchase = 10GB，retention = order lifecycle。
+- 删除 workspace 时触发 COS prefix cleanup：`workspaces/{tenant_id}/{workspace_id}/`。
 - Adapter 文件桥接也必须检查 storage entitlement，不能绕过 Portal UI 直接上传。
 - Portal 新增 upload API：`POST /portal/api/workspace/files/upload`。
 - Adapter 新增 OPL 文件桥接 API：`POST /portal-adapter/api/workspace/files`。
@@ -351,6 +374,7 @@ v13 接入方式：
 - 上传 `input.txt` 后 Portal storage API 显示 inputsCount=1。
 - OPL run 读取该文件并输出 `result.txt`。
 - Portal 可以下载单文件和 zip。
+- 删除 workspace 后，COS prefix 清空或进入可审计的 cleanup failed 状态。
 
 ### C. 真实服务器报价与节点创建
 
@@ -359,21 +383,26 @@ v13 接入方式：
 开发：
 
 - Billing 增加 `TENCENT_PRICE_IMAGE_ID` 自动发现：
-  - 优先按硅谷区域 Ubuntu 22.04 LTS 公共镜像调用 CVM `DescribeImages` 发现 ImageId。
-  - 其次从现有节点/节点池 OS/ImageId 读取。
+  - 优先读取 env override。
+  - 其次按硅谷区域 Ubuntu 22.04 LTS 公共镜像调用 CVM `DescribeImages` 发现 ImageId。
+  - 再其次使用已确认 fallback `img-487zeit5`。
   - 失败时阻塞报价，不伪造价格。
+- Billing `/server-plans` 和 Provisioner `/cloud/status` 必须返回 `imageId`、`imageSource`、`imageRegion`，让运维能确认当前报价使用的镜像来源。
 - Billing `server-plans` 对四档 CPU 规格返回真实 `unitPrice`、`priceUpdatedAt`、`pricingSource=tencent_cloud_price`。
 - Provisioner 在只读云状态 OK 后才允许 `RESOURCE_PROVISIONING_ENABLED=1`。
-- Provisioner `ensure-capacity` 生成 TKE nodePool payload，含 VPC/Subnet/SG、labels、taints、min=0、max=2。
+- Provisioner `ensure-capacity` 生成 TKE nodePool payload，含 VPC/Subnet/SG、labels、taints、min=0、max=2、imageId=`img-487zeit5` 或发现值。
+- Provisioner 默认写入 scale-to-zero 策略：节点池空闲时可缩容到 0，运行前再扩容。
 - Provisioner 记录订单生命周期事件：`provision_requested`、`node_pool_created`、`instances_ready`、`scale_to_zero_requested`、`node_pool_deleted`、`provision_failed`，供 Portal 状态页和审计使用。
 - 跨模块接口必须有幂等键：`resourceOrderId` + `idempotencyKey`，重复调用不能重复创建节点池。
 
 验收：
 
 - `/server-plans` 四档规格价格非 0 且来源为腾讯云。
+- `/server-plans` 展示 `imageId=img-487zeit5` 或腾讯云发现值，且 `imageSource` 清楚。
 - 创建订单后状态 `quoted -> frozen -> provisioning`。
 - TKE 控制台出现带 `resource_order_id` 的节点池。
 - 重复调用同一个订单的 provision API，不会创建第二个节点池。
+- 测试节点池空闲后能缩容到 0。
 
 参考：
 
@@ -400,25 +429,35 @@ v13 接入方式：
 - 无 exact bill 不生成最终扣费。
 - 有 exact bill 后订单进入 settled。
 
-### E. Langfuse Session Trace
+### E. Self-hosted Langfuse Session Trace
 
 目的：Portal 能看到 OPL 对话轨迹和 run trace。
 
 开发：
 
-- 使用 Langfuse Cloud，不在本集群自建 Langfuse Web/Worker/Postgres/ClickHouse/Redis。
-- Secret 只放 Kubernetes Secret：`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_BASE_URL`。
-- 删除 Portal 对本地 Docker ClickHouse 容器名的依赖，改为 Langfuse Cloud API client。
+- 部署本地 Langfuse 栈：Langfuse Web、Langfuse Worker、Postgres、ClickHouse、Redis/Valkey、S3/COS blob storage。
+- Secret 只放 Kubernetes Secret：Langfuse salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。
+- 删除 Portal 对本地 Docker ClickHouse 容器名的依赖，改为调用 Langfuse API；Portal 不直查 ClickHouse。
 - Adapter 新增 trace emitter，并把 launch、message、run request、artifact metadata 转成统一 trace event。
-- Runtime Bridge 新增 trace publisher，只负责把领域事件发布到 Langfuse Cloud；不把 Langfuse SDK 直接扩散到 Gateway/Runner。
+- Runtime Bridge 新增 trace publisher，只负责把领域事件发布到本地 Langfuse；不把 Langfuse SDK 直接扩散到 Gateway/Runner。
 - Runner 新增 run lifecycle event 输出，由 Runtime Bridge 或 Adapter 统一发布 run span 和 artifact event。
-- Portal trace client 只读 Langfuse API；ClickHouse 查询只保留在本地开发诊断脚本，不进入生产路径。
+- Portal trace client 只读 Langfuse API；ClickHouse 查询只保留在运维诊断脚本，不进入 Portal 生产请求路径。
+
+对话 metadata 处理：
+
+- Portal DB 保存业务索引：`tenant_id`、`workspace_id`、`portal_user_id`、`session_id`、`run_id`、`resource_order_id`、`storage_order_id`、`trace_id`、`artifact_ids`、`status`、`started_at`、`ended_at`。
+- Langfuse 保存观测数据：trace/span/observation、message input/output、token usage、latency、model、tool call、error、score。
+- COS 保存文件资产：inputs、outputs、artifact payload；Langfuse metadata 只保存 artifact id、COS object key、hash、size、content type。
+- metadata 必须带 `schema_version`，便于后续迁移。
+- metadata 禁止出现 Secret、API key、腾讯云凭证、用户模型中转站 key。
+- 删除 workspace 时：清理 COS prefix；Portal 删除或匿名化 workspace trace 索引；Langfuse trace 内容按 trace retention 策略删除或脱敏；账单 ledger 保留最小审计字段。
 
 验收：
 
 - 用户在 OPL 发消息后，Portal `/portal/api/traces` 返回 trace。
 - Trace 带 `tenant_id/workspace_id/session_id/run_id`。
-- `langfuse-trace-client.mjs` 不再出现 `docker exec`、本地 ClickHouse 容器名或生产路径 ClickHouse SQL。
+- `langfuse-trace-client.mjs` 不再出现 `docker exec`、固定本地 ClickHouse 容器名或 Portal 生产路径 ClickHouse SQL。
+- 10w+/day trace ingestion 压测有明确吞吐、队列积压、ClickHouse 写入和查询延迟指标。
 
 ### F. 删除服务器与停止扣费
 
@@ -493,6 +532,13 @@ v13 接入方式：
 - `scripts/smoke-test-v13-langfuse-trace.mjs`
   - 发送 trace。
   - 查询 trace。
+  - 验证 metadata 不包含 Secret/API key。
+  - 验证 Portal trace 查询来自 Langfuse API，而不是直接 ClickHouse SQL。
+
+- `scripts/load-test-v13-langfuse-ingestion.mjs`
+  - 模拟 10w+/day 等级的 ingestion 速率。
+  - 输出吞吐、失败率、队列积压、ClickHouse 写入延迟、Portal 查询延迟。
+  - 不写真实用户敏感正文，使用合成 message。
 
 ## v13 推云前标准
 
@@ -503,8 +549,9 @@ v13 接入方式：
 - `opl.medopl.cn/healthz` 返回 `sha=opl-v13`。
 - 真实报价非 0。
 - 真实 TKE nodePool 创建成功。
+- 测试节点池具备 scale-to-zero，空闲时缩容到 0。
 - COS 至少读取到一个账单文件或明确显示“无文件但权限可用”。
-- Langfuse trace 可写可查。
+- 自部署 Langfuse trace 可写可查，并通过 10w+/day 等级的 ingestion 验证。
 - 删除节点池后订单状态和资源状态一致。
 
 ## 当前 v13 仍需要用户/云侧准备
@@ -517,16 +564,19 @@ v13 接入方式：
 - VPC/Subnet/SG：`vpc-ahl6epyx`、`subnet-mbehh5wi` / `subnet-r8mzuptu`、`sg-6671l5we`。
 - COS bucket：`opl-1410708315`，prefix：`daily/`。
 - 节点池策略：每订单独立节点池，`minNodes=0`、`maxNodes=2`，允许缩容到 0。
-- 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS。
+- 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS，已确认 fallback `ImageId=img-487zeit5`。
 - 网络连通性已确认。
+- 测试环境已授权真实创建/删除 TKE 节点池，需默认 scale-to-zero 控制成本。
+- Storage 商品口径：free quota = 0GB，min purchase = 10GB，retention = order lifecycle，删除 workspace 时清理 COS prefix。
+- K8s namespace `opl-system` 已创建。
+- K8s Secrets 已创建：`tencent-billing-secret`、`tencent-provisioner-secret`、`tencent-cos-secret`。文档不记录 Secret 值。
 - one-person-lab upstream URL：`https://github.com/gaofeng21cn/one-person-lab`，不得修改。
 
 仍需要你提供或在云侧完成：
 
-1. Langfuse Cloud 项目参数：`LANGFUSE_BASE_URL`、public key、secret key，放 Kubernetes Secret，不发到 git/文档/镜像。
-2. 允许 Billing/Provisioner 在 `na-siliconvalley` 自动发现 Ubuntu 22.04 LTS 公共镜像；如果自动发现失败，再提供一个硅谷一区可用的 CVM `ImageId`。
-3. 在 `opl-system` namespace 创建或允许创建 Kubernetes Secret：腾讯云 Billing/COS/Provisioner 凭证、Langfuse Cloud 凭证。Secret 不进入 git、YAML、镜像或日志摘要。
+1. 自部署 Langfuse 参数：域名、Kubernetes namespace、存储类、Postgres/ClickHouse/Redis 资源规格、COS/S3 blob bucket/prefix、retention 天数、管理员账号初始化方式。
+2. 创建 Langfuse 相关 Kubernetes Secret：salt/encryption/auth secrets、Postgres/ClickHouse/Redis 凭证、Langfuse API keys。Secret 不进入 git、YAML、镜像或日志摘要。
+3. 校验 `tencent-provisioner-secret` 中 SecretKey 是否存在尾随空白；如果有，重新创建该 Secret。
 4. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
 5. 给 COS bucket/prefix 配好最小权限：Billing 只读账单 prefix；Workspace storage 只读写 `workspaces/{tenant_id}/{workspace_id}/`。
-6. 明确 storage 商品口径：免费容量是否为 0、最小购买容量、保留时间、删除 workspace 时是否删除 COS 对象。
-7. 确认测试创建/删除 TKE 节点池会产生费用，允许用测试订单执行。
+6. 确认 workspace 删除时是否允许立即物理删除 COS 对象；如果需要回收站，需要给出保留天数。
