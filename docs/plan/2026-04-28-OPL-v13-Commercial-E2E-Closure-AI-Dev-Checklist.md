@@ -21,6 +21,13 @@ v13 的目标是把 v12 的“商业化内测入口版”推进到“可验收�
 - 模块间低耦合：Portal 不直连腾讯云 Secret，Billing 不登录用户，Provisioner 不扣费，Runner 不决定价格，Gateway 不读 Portal DB。
 - 一个模块挂了不影响另一个模块的基本可用性：例如 Billing 不可用时用户仍可登录和查看 workspace，但不能显示真实结算；Provisioner 不可用时不能开节点，但 Portal/OPL 登录不应失败。
 
+硬边界：
+
+- `https://github.com/gaofeng21cn/one-person-lab` 是 upstream OPL 产品代码，v13 不修改它的 Web、runtime、任务执行逻辑或依赖。
+- `opl-web-opl` 继续视为原始 OPL Web 镜像；如果需要登录、文件、trace、订单上下文，只能通过 Gateway、Adapter、Runtime Bridge、Runner 外围模块注入或桥接。
+- 禁止把 Portal 逻辑、腾讯云逻辑、账单逻辑、Langfuse 逻辑写进 OPL upstream。
+- 任何 AI 开发任务如果发现必须改 OPL upstream 才能完成，应标记为设计冲突，回到 Gateway/Adapter/Runtime Bridge 方案，不允许直接修改 upstream。
+
 ## 当前 v12 事实
 
 - `portal.medopl.cn` 可以登录 Portal。
@@ -37,6 +44,17 @@ v13 的目标是把 v12 的“商业化内测入口版”推进到“可验收�
 - 当前 COS 接口只是 `/billing/cos/status` 配置状态，没有实现 COS List/Get/Parse 账单文件。
 - 当前 Langfuse trace 查询返回 `status_only`，并且 `langfuse-trace-client.mjs` 仍按本地 Docker ClickHouse 容器查询，不适合 Langfuse Cloud。
 - 当前代码仍有大文件：`services/portal/src/app/portal-app.mjs`、`adapters/billing-aggregator/src/server.mjs`、`adapters/med-autoscience-runner/src/server.mjs`。
+
+## 当前卡点判断
+
+v13 的卡点不是“能不能登录”，而是商业闭环里的五个生产边界还没有闭合：
+
+1. **真实报价卡点**：Billing 已有报价入口，但缺硅谷 Ubuntu 22.04 LTS 公共镜像自动发现、报价缓存、报价失败阻断和 `server-plans` 真实价格验收。
+2. **真实开通卡点**：Provisioner 已有 TKE 节点池操作雏形，但缺订单生命周期事件、幂等契约、节点池创建后的状态回填和重复调用保护。
+3. **存储商品卡点**：workspace 文件目前偏 runtime/PVC 视角，缺 storage entitlement、COS workspace prefix、上传/下载/output gating 和 COS 同步。
+4. **账单 exact 卡点**：`DescribeBillDetail` 与 COS 日账单尚未形成统一 exact settlement；无完整标签的账单不能进入 run 级扣费。
+5. **Trace Cloud 卡点**：Portal trace 仍依赖本地 Docker ClickHouse 查询，缺 Langfuse Cloud API client 和 Adapter/Runtime Bridge 的 trace publisher。
+6. **可维护性卡点**：Portal、Billing、Runner 仍有大文件。继续在大文件里叠 v13 功能会破坏模块内高聚合，必须边实现边拆分。
 
 ## 用户问题结论
 
@@ -173,6 +191,17 @@ v13 接入方式：
   - 应拆成 `auth.api.ts`、`workspace.api.ts`、`billing.api.ts`、`resource-orders.api.ts`、`cloud.api.ts`、`traces.api.ts`。
 
 `$scan` 执行说明：本会话没有暴露 sentrux MCP 工具，且本机没有 `sentrux` 命令；已按 scan 目标做本地结构扫描，结论是 v13 必须至少拆生产热路径大文件，避免继续把新商业闭环堆回单文件。
+
+## AI 开发执行协议
+
+每条 v13 开发线在改代码前必须先做结构阅读，且必须记录证据：
+
+1. 优先使用 `$scan`：按 `C:\Users\Administrator\.codex\skills\scan\SKILL.md` 调用 sentrux `scan` 获取 overview；需要细节时继续调用 `architecture`、`coupling`、`cycles`、`hottest`、`test_gaps`。
+2. 如果当前工具环境没有 sentrux MCP 或 `sentrux` 命令，不能伪造 scan 分数，也不能把本地行数统计写成 scan 结果；只能记录为“scan 工具不可用”，并附本地结构清单作为辅助证据。
+3. 开发前必须确认写入范围：Portal、Billing、Provisioner、Adapter/Runtime Bridge、Runner、Gateway 各司其职；禁止跨模块偷懒直连。
+4. 每个模块只暴露稳定 DTO/API，不共享内部数据库表、Secret、SDK client 或文件路径。
+5. 每个模块失败时要有明确降级边界：例如 Billing 失败只影响真实报价/结算，不能影响 Portal 登录；Provisioner 失败只影响开节点，不能影响 OPL 登录。
+6. 每次合并前必须跑对应 smoke 和类型/语法检查，并记录未验证项；没有真实云凭证或真实账单时，不得声称真实报价、真实开通或 exact 结算已完成。
 
 ## v13 模块边界
 
@@ -480,8 +509,24 @@ v13 接入方式：
 
 ## 当前 v13 仍需要用户/云侧准备
 
-1. 允许 Billing/Provisioner 在 `na-siliconvalley` 自动发现 Ubuntu 22.04 LTS 公共镜像；如果自动发现失败，再提供一个硅谷一区可用的 CVM `ImageId`。
-2. 在 `opl-system` namespace 创建 Kubernetes Secret：腾讯云 Billing/COS/Provisioner 凭证、Langfuse Cloud `LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_BASE_URL`。Secret 不进入 git、YAML、镜像或日志摘要。
-3. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
-4. 给 COS bucket/prefix 配好最小权限：Billing 只读账单 prefix；Workspace storage 只读写 `workspaces/{tenant_id}/{workspace_id}/`。
-5. 确认测试创建/删除 TKE 节点池会产生费用，允许用测试订单执行。
+你已提供并确认的内容：
+
+- Region/Zone：`na-siliconvalley` / `na-siliconvalley-1`。
+- Cluster：`cls-ngiq693i`。
+- Namespace：`opl-system`。
+- VPC/Subnet/SG：`vpc-ahl6epyx`、`subnet-mbehh5wi` / `subnet-r8mzuptu`、`sg-6671l5we`。
+- COS bucket：`opl-1410708315`，prefix：`daily/`。
+- 节点池策略：每订单独立节点池，`minNodes=0`、`maxNodes=2`，允许缩容到 0。
+- 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS。
+- 网络连通性已确认。
+- one-person-lab upstream URL：`https://github.com/gaofeng21cn/one-person-lab`，不得修改。
+
+仍需要你提供或在云侧完成：
+
+1. Langfuse Cloud 项目参数：`LANGFUSE_BASE_URL`、public key、secret key，放 Kubernetes Secret，不发到 git/文档/镜像。
+2. 允许 Billing/Provisioner 在 `na-siliconvalley` 自动发现 Ubuntu 22.04 LTS 公共镜像；如果自动发现失败，再提供一个硅谷一区可用的 CVM `ImageId`。
+3. 在 `opl-system` namespace 创建或允许创建 Kubernetes Secret：腾讯云 Billing/COS/Provisioner 凭证、Langfuse Cloud 凭证。Secret 不进入 git、YAML、镜像或日志摘要。
+4. COS `daily/` 下放入至少一个真实账单样例文件，或确认投递已经开启但当前周期还没有文件。
+5. 给 COS bucket/prefix 配好最小权限：Billing 只读账单 prefix；Workspace storage 只读写 `workspaces/{tenant_id}/{workspace_id}/`。
+6. 明确 storage 商品口径：免费容量是否为 0、最小购买容量、保留时间、删除 workspace 时是否删除 COS 对象。
+7. 确认测试创建/删除 TKE 节点池会产生费用，允许用测试订单执行。
