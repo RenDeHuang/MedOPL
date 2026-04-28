@@ -11,6 +11,9 @@ stringData:
   ENCRYPTION_KEY: "__LANGFUSE_ENCRYPTION_KEY__"
   POSTGRES_PASSWORD: "__LANGFUSE_POSTGRES_PASSWORD__"
   CLICKHOUSE_PASSWORD: "__LANGFUSE_CLICKHOUSE_PASSWORD__"
+  LANGFUSE_INIT_USER_PASSWORD: "__LANGFUSE_INIT_USER_PASSWORD__"
+  LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "__LANGFUSE_PUBLIC_KEY__"
+  LANGFUSE_INIT_PROJECT_SECRET_KEY: "__LANGFUSE_SECRET_KEY__"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -67,6 +70,10 @@ spec:
         - name: postgres
           image: postgres:15-alpine
           env:
+            - name: TZ
+              value: UTC
+            - name: PGTZ
+              value: UTC
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -84,6 +91,16 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -119,6 +136,18 @@ spec:
       containers:
         - name: clickhouse
           image: clickhouse/clickhouse-server:24.8
+          env:
+            - name: TZ
+              value: UTC
+            - name: CLICKHOUSE_DB
+              value: default
+            - name: CLICKHOUSE_USER
+              value: clickhouse
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: CLICKHOUSE_PASSWORD
           ports:
             - containerPort: 8123
             - containerPort: 9000
@@ -132,6 +161,18 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/clickhouse
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8123
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8123
+            initialDelaySeconds: 60
+            periodSeconds: 20
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -172,6 +213,9 @@ spec:
         - name: redis
           image: redis:7-alpine
           args: ["redis-server", "--appendonly", "yes"]
+          env:
+            - name: TZ
+              value: UTC
           ports:
             - containerPort: 6379
           resources:
@@ -184,6 +228,16 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -211,13 +265,29 @@ data:
   DATABASE_URL: "postgresql://postgres:$(POSTGRES_PASSWORD)@langfuse-postgres:5432/postgres"
   CLICKHOUSE_URL: "http://langfuse-clickhouse:8123"
   CLICKHOUSE_MIGRATION_URL: "clickhouse://langfuse-clickhouse:9000"
+  CLICKHOUSE_USER: "clickhouse"
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
   REDIS_HOST: "langfuse-redis"
+  REDIS_PORT: "6379"
+  TELEMETRY_ENABLED: "false"
+  LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
   LANGFUSE_S3_EVENT_UPLOAD_BUCKET: "opl-1410708315"
   LANGFUSE_S3_EVENT_UPLOAD_PREFIX: "langfuse/"
   LANGFUSE_S3_EVENT_UPLOAD_REGION: "na-siliconvalley"
   LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: "https://opl-1410708315.cos.na-siliconvalley.myqcloud.com"
   LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "false"
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: "opl-1410708315"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: "langfuse/media/"
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: "na-siliconvalley"
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: "https://opl-1410708315.cos.na-siliconvalley.myqcloud.com"
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "false"
   LANGFUSE_RETENTION_DAYS: "30"
+  LANGFUSE_INIT_ORG_ID: "medopl"
+  LANGFUSE_INIT_ORG_NAME: "MedOPL"
+  LANGFUSE_INIT_PROJECT_ID: "medopl-production"
+  LANGFUSE_INIT_PROJECT_NAME: "MedOPL Production"
+  LANGFUSE_INIT_USER_EMAIL: "trace-admin@medopl.cn"
+  LANGFUSE_INIT_USER_NAME: "MedOPL Trace Admin"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -245,6 +315,8 @@ spec:
             - secretRef:
                 name: langfuse-secrets
           env:
+            - name: TZ
+              value: UTC
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -252,12 +324,27 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
               value: "postgresql://postgres:$(POSTGRES_PASSWORD)@langfuse-postgres:5432/postgres"
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: CLICKHOUSE_PASSWORD
             - name: LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
                   key: TENCENTCLOUD_SECRET_ID
             - name: LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENTCLOUD_SECRET_KEY
+            - name: LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENTCLOUD_SECRET_ID
+            - name: LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
@@ -269,6 +356,22 @@ spec:
             limits:
               cpu: "1"
               memory: 1Gi
+          startupProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 20
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -294,6 +397,8 @@ spec:
             - secretRef:
                 name: langfuse-secrets
           env:
+            - name: TZ
+              value: UTC
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -301,6 +406,31 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
               value: "postgresql://postgres:$(POSTGRES_PASSWORD)@langfuse-postgres:5432/postgres"
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secrets
+                  key: CLICKHOUSE_PASSWORD
+            - name: LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENTCLOUD_SECRET_ID
+            - name: LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENTCLOUD_SECRET_KEY
+            - name: LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENTCLOUD_SECRET_ID
+            - name: LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENTCLOUD_SECRET_KEY
           resources:
             requests:
               cpu: 500m
