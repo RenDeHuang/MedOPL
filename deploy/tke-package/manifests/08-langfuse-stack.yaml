@@ -49,7 +49,7 @@ spec:
   storageClassName: __LANGFUSE_STORAGE_CLASS__
   resources:
     requests:
-      storage: 5Gi
+      storage: 10Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -74,6 +74,8 @@ spec:
               value: UTC
             - name: PGTZ
               value: UTC
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
