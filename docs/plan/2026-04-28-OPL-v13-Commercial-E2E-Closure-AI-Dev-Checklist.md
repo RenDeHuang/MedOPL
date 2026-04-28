@@ -334,9 +334,26 @@ v13 接入方式：
 
 职责：
 
-- Portal SaaS 后台内置轨迹模块，面向客户和管理员提供业务化 trace 视图。
+- Portal SaaS 后台内置轨迹模块，面向客户提供“实验记录/会话轨迹”，面向管理员提供“Agent Traces”运维视图。
 - 使用 Portal 权限体系过滤 tenant/workspace/user/run，不直接暴露 Langfuse 管理权限。
 - UI 参考截图中的 Agent Traces 信息架构：概览、追踪列表、会话、用户、接入密钥、监控集成、AI 问答。
+- 用户端只能查看自己的 tenant/workspace/session/run/artifact/billing trace，不能跨 tenant、跨 workspace、跨用户查询。
+- 用户端不展示原始 Langfuse 调试台；展示的是可理解、可追溯、可对账的业务轨迹。
+- 管理员端可以按 tenant、workspace、user、session、run、resource order 过滤，用于客服排障、成本核查和运行审计。
+
+用户端“会话轨迹/实验记录”展示：
+
+- 会话列表：会话标题、workspace、最近时间、状态、消息数、运行次数、输入文件数、输出文件数、pending cost、exact cost、资源订单状态。
+- 会话详情：时间线、用户消息、助手回复摘要、文件上传、任务启动、任务完成、artifact 生成、下载记录、服务器释放/删除、账单回补。
+- 运行详情：runId、resourceOrderId、serverPlanId、storageOrderId、节点池状态、输入文件、输出文件、运行状态、错误摘要、开始/结束时间。
+- 文件详情：文件名、大小、类型、COS object key、hash、上传时间、输出来源、下载入口。
+- 费用详情：冻结金额、pending cost、exact cost、退款/补扣、腾讯云账单归因状态。
+- 可暴露的技术信息：traceId、span 数、模型名称、token 用量、延迟、错误摘要；这些信息默认折叠，不作为首屏主体。
+
+用户端禁止展示：
+
+- system prompt、内部 tool call 原始参数、Secret/API key、中转站 key、腾讯云凭证、原始错误栈、跨租户 trace、Langfuse 原生 API key。
+- 不能把 traceId 当作越权读取入口；所有 trace/detail API 必须重新校验 Portal RBAC 和 tenant/workspace 归属。
 
 不做：
 
@@ -476,13 +493,15 @@ v13 接入方式：
 - Runner 新增 run lifecycle event 输出，由 Runtime Bridge 或 Adapter 统一发布 run span 和 artifact event。
 - Portal trace client 只读 Langfuse API；ClickHouse 查询只保留在运维诊断脚本，不进入 Portal 生产请求路径。
 - Portal 前端新增/优化“Agent Traces”模块：
-  - 用户侧路由：`/portal/app/trace` 或 `/portal/app/traces`，展示当前 tenant/workspace 范围内的 trace。
+  - 用户侧路由：`/portal/app/trace` 或 `/portal/app/traces`，产品名优先用“实验记录”或“会话轨迹”，展示当前 tenant/workspace 范围内的业务轨迹。
   - 管理员路由：`/portal/app/admin/trace`，展示跨用户、跨 workspace 的运维视图。
   - 侧边栏用户区增加“轨迹”；管理员区将 `Trace` 改成“Agent Traces”或“轨迹中心”。
   - 页面结构参考截图：顶部项目/工作区选择器、tab 导航、概览指标、追踪列表、追踪详情分栏、span 树、输入/输出、metadata。
-  - 列表字段：时间、名称、traceId、状态、span 数、输入摘要、输出摘要、延迟、workspace、runId、resourceOrderId。
-  - 详情字段：span tree、model、token、latency、input/output、artifact links、COS object keys、错误信息、metadata。
-  - 普通用户只能看自己的 tenant/workspace；管理员可按 tenant/user/workspace/run 过滤。
+  - 用户端列表字段：时间、会话标题、workspace、状态、消息数、运行数、文件数、pending cost、exact cost、最近 artifact、资源订单状态。
+  - 用户端详情字段：会话时间线、消息摘要、输入文件、输出文件、run 状态、下载入口、费用明细、账单归因、资源释放状态。
+  - 管理员端列表字段：时间、名称、traceId、状态、span 数、输入摘要、输出摘要、延迟、tenant、user、workspace、runId、resourceOrderId。
+  - 管理员端详情字段：span tree、model、token、latency、input/output、artifact links、COS object keys、错误信息、metadata。
+  - 普通用户只能看自己的 tenant/workspace/session/run；管理员可按 tenant/user/workspace/session/run 过滤。
 
 对话 metadata 处理：
 
@@ -501,6 +520,8 @@ v13 接入方式：
 
 - 用户在 OPL 发消息后，Portal `/portal/api/traces` 返回 trace。
 - Trace 带 `tenant_id/workspace_id/session_id/run_id`。
+- 普通用户只能看到自己的会话轨迹；用其他 tenant/workspace/session/traceId 请求详情必须返回 403 或 404。
+- 用户端首屏展示业务化实验记录：会话、文件、运行、费用、下载入口和资源状态，而不是 Langfuse 原生技术调试台。
 - `langfuse-trace-client.mjs` 不再出现 `docker exec`、固定本地 ClickHouse 容器名或 Portal 生产路径 ClickHouse SQL。
 - 10w+/day trace ingestion 压测有明确吞吐、队列积压、ClickHouse 写入和查询延迟指标。
 - Portal “Agent Traces” 页面满足截图中的核心体验：概览卡片、trace 列表、trace 详情分栏、span 树、输入/输出、metadata。
