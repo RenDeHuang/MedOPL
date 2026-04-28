@@ -11,7 +11,7 @@ function sha1(value) {
 function encodeCos(value) {
   return encodeURIComponent(String(value || ""))
     .replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
-    .toLowerCase();
+    .replace(/%[0-9a-f]{2}/gi, (encoded) => encoded.toUpperCase());
 }
 
 function normalizeEndpoint({ bucket, region, endpoint }) {
