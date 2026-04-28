@@ -54,6 +54,7 @@ const TENCENT_PLAN_DISCOVERY_ENABLED = String(process.env.TENCENT_PLAN_DISCOVERY
 const TENCENT_PLAN_DISCOVERY_ZONES = String(process.env.TENCENT_PLAN_DISCOVERY_ZONES || "").trim();
 const TENCENT_PLAN_DISCOVERY_CHARGE_TYPE = String(process.env.TENCENT_PLAN_DISCOVERY_CHARGE_TYPE || "POSTPAID_BY_HOUR").trim();
 const TENCENT_PLAN_DISCOVERY_MAX = Number(process.env.TENCENT_PLAN_DISCOVERY_MAX || 80);
+const SERVER_PLAN_CACHE_TTL_MS = Math.max(0, Number(process.env.SERVER_PLAN_CACHE_TTL_MS || 300000));
 const TENCENT_COS_BILL_BUCKET = String(process.env.TENCENT_COS_BILL_BUCKET || "opl-1410708315").trim();
 const TENCENT_COS_BILL_REGION = String(process.env.TENCENT_COS_BILL_REGION || TENCENT_CLOUD_REGION).trim();
 const TENCENT_COS_BILL_PREFIX = String(process.env.TENCENT_COS_BILL_PREFIX || "daily/").trim();
@@ -238,6 +239,10 @@ const cloudRuntimeState = {
   lastQuoteError: null,
   lastBillQueryAt: "",
   lastBillQueryError: null,
+};
+let serverPlanCache = {
+  expiresAt: 0,
+  payload: null,
 };
 
 let reconcileLoopRunning = false;
@@ -1438,6 +1443,16 @@ function buildTencentCloudStatus({ items = [], catalog = [], discovered = [] } =
 }
 
 async function listServerPlans() {
+  if (serverPlanCache.payload && SERVER_PLAN_CACHE_TTL_MS > 0 && Date.now() < serverPlanCache.expiresAt) {
+    return {
+      ...serverPlanCache.payload,
+      cache: {
+        hit: true,
+        ttlMs: SERVER_PLAN_CACHE_TTL_MS,
+        expiresAt: new Date(serverPlanCache.expiresAt).toISOString(),
+      },
+    };
+  }
   const catalog = serverPlanCatalog();
   let discovered = [];
   try {
@@ -1496,7 +1511,7 @@ async function listServerPlans() {
       quotedAt: new Date().toISOString(),
     });
   }
-  return {
+  const payload = {
     ok: true,
     source: "tencent_cloud_price",
     configured: tencentCloudConfigured(),
@@ -1507,6 +1522,13 @@ async function listServerPlans() {
     cloudStatus: buildTencentCloudStatus({ items, catalog, discovered }),
     items,
   };
+  if (SERVER_PLAN_CACHE_TTL_MS > 0 && items.some((item) => item.priceStatus === "quoted")) {
+    serverPlanCache = {
+      expiresAt: Date.now() + SERVER_PLAN_CACHE_TTL_MS,
+      payload,
+    };
+  }
+  return payload;
 }
 
 function labelValue(entry, key) {

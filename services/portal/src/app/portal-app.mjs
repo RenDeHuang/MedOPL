@@ -10,6 +10,7 @@ import pg from "pg";
 import { createClient as createRedisClient } from "redis";
 import {
   adminSeed,
+  BILLING_SERVICE_TIMEOUT_MS,
   BILLING_SERVICE_URL,
   RESOURCE_PROVISIONER_URL,
   BUILD_SHA,
@@ -361,7 +362,10 @@ function formatDateOnly(value) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-const billingClient = createBillingClient({ billingServiceUrl: BILLING_SERVICE_URL });
+const billingClient = createBillingClient({
+  billingServiceUrl: BILLING_SERVICE_URL,
+  timeoutMs: BILLING_SERVICE_TIMEOUT_MS,
+});
 const resourceProvisionerClient = createResourceProvisionerClient({ provisionerUrl: RESOURCE_PROVISIONER_URL });
 const minioStorageClient = createMinioStorageClient({
   repoRoot,

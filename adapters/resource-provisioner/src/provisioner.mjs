@@ -14,7 +14,7 @@ import {
 } from "./config.mjs";
 import { appendLabels, appendTags, firstString, labelValue } from "./labels.mjs";
 import { readOrders, writeOrders } from "./store.mjs";
-import { callTke } from "./tencent-cloud.mjs";
+import { callTag, callTke } from "./tencent-cloud.mjs";
 
 function parseObjectString(value, fieldName) {
   if (!value) return null;
@@ -168,6 +168,22 @@ function buildScaleToZeroPayload(input = {}) {
   };
 }
 
+async function ensureCloudTags(tags = []) {
+  const items = tags
+    .filter((tag) => tag?.Key && tag?.Value)
+    .slice(0, 9)
+    .map((tag) => ({ TagKey: tag.Key, TagValue: tag.Value }));
+  if (!items.length) return;
+  try {
+    await callTag("CreateTags", { Tags: items });
+  } catch (error) {
+    const code = String(error.code || "");
+    const message = String(error.message || "");
+    if (/exist|duplicate/i.test(`${code} ${message}`)) return;
+    throw error;
+  }
+}
+
 export async function ensureCapacity(input) {
   const context = buildProvisionContext(input);
   if (!context.tenantId || !context.workspaceId || !context.runId) {
@@ -196,6 +212,7 @@ export async function ensureCapacity(input) {
       throw error;
     }
     const payload = buildCreateNodePoolPayload(context);
+    await ensureCloudTags(payload.Tags);
     const response = await callTke("CreateClusterNodePool", payload, context.region);
     order = {
       id: randomUUID(),

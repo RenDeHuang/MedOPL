@@ -46,6 +46,7 @@ export const MINIO_CONSOLE_URL = process.env.MINIO_CONSOLE_URL || "http://127.0.
 export const SHOW_LEGACY_KUBESPHERE = String(process.env.SHOW_LEGACY_KUBESPHERE || "").trim() === "1";
 export const MINIO_API_URL = process.env.MINIO_API_URL || "http://127.0.0.1:30091";
 export const BILLING_SERVICE_URL = process.env.BILLING_SERVICE_URL || "http://127.0.0.1:3311";
+export const BILLING_SERVICE_TIMEOUT_MS = Number(process.env.BILLING_SERVICE_TIMEOUT_MS || 20000);
 export const RESOURCE_PROVISIONER_URL = process.env.RESOURCE_PROVISIONER_URL || "http://127.0.0.1:18893";
 export const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLED || "").trim() === "1";
 export const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "").trim() === "1";

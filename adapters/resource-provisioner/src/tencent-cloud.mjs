@@ -93,3 +93,14 @@ export function callCvm(action, payload = {}, region = TENCENT_CLOUD_REGION) {
     payload,
   });
 }
+
+export function callTag(action, payload = {}) {
+  return callTencentCloud({
+    endpoint: "tag.intl.tencentcloudapi.com",
+    service: "tag",
+    action,
+    version: "2018-08-13",
+    region: "",
+    payload,
+  });
+}

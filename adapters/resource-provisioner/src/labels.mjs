@@ -19,14 +19,18 @@ export function labelValue(value) {
     .slice(0, 63) || "unknown";
 }
 
+export function cloudTagValue(value) {
+  return labelValue(value).replace(/[^a-z0-9]+/g, "").slice(0, 24) || "unknown";
+}
+
 export function appendTags(payload, context) {
   const existing = arrayFrom(payload.Tags);
   const tags = [
-    { Key: "tenant_id", Value: context.tenantId },
-    { Key: "workspace_id", Value: context.workspaceId },
-    { Key: "run_id", Value: context.runId },
-    { Key: "server_plan_id", Value: context.serverPlanId },
-    { Key: "resource_order_id", Value: context.resourceOrderId },
+    { Key: "tenantid", Value: cloudTagValue(context.tenantId) },
+    { Key: "workspaceid", Value: cloudTagValue(context.workspaceId) },
+    { Key: "runid", Value: cloudTagValue(context.runId) },
+    { Key: "serverplanid", Value: cloudTagValue(context.serverPlanId) },
+    { Key: "resourceorderid", Value: cloudTagValue(context.resourceOrderId) },
   ].filter((item) => item.Value);
   return [...existing, ...tags.filter((tag) => !existing.some((item) => item.Key === tag.Key))];
 }
