@@ -1325,25 +1325,28 @@ async function quoteTencentServerPlan(plan) {
     return { priceStatus: "invalid_plan", salable: false, reason: "imageId_or_TENCENT_PRICE_IMAGE_ID_required" };
   }
   try {
+    const payload = {
+      InstanceChargeType: plan.instanceChargeType || "POSTPAID_BY_HOUR",
+      Placement: { Zone: plan.zone },
+      InstanceType: plan.instanceType,
+      ImageId: imageId,
+      SystemDisk: plan.systemDisk || {
+        DiskType: plan.systemDiskType || "CLOUD_BSSD",
+        DiskSize: Number(plan.systemDiskSize || 50),
+      },
+      InternetAccessible: plan.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1 },
+      InstanceCount: 1,
+    };
+    if (Array.isArray(plan.dataDisks) && plan.dataDisks.length > 0) {
+      payload.DataDisks = plan.dataDisks;
+    }
     const response = await callTencentCloud({
       endpoint: TENCENT_CVM_ENDPOINT,
       service: "cvm",
       action: "InquiryPriceRunInstances",
       version: TENCENT_CVM_VERSION,
       region: plan.region || TENCENT_CLOUD_REGION,
-      payload: {
-        InstanceChargeType: plan.instanceChargeType || "POSTPAID_BY_HOUR",
-        Placement: { Zone: plan.zone },
-        InstanceType: plan.instanceType,
-        ImageId: imageId,
-        SystemDisk: plan.systemDisk || {
-          DiskType: plan.systemDiskType || "CLOUD_BSSD",
-          DiskSize: Number(plan.systemDiskSize || 50),
-        },
-        DataDisks: Array.isArray(plan.dataDisks) ? plan.dataDisks : [],
-        InternetAccessible: plan.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1 },
-        InstanceCount: 1,
-      },
+      payload,
     });
     return {
       priceStatus: "quoted",

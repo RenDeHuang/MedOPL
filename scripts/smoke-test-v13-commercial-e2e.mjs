@@ -22,7 +22,7 @@ function assertConfigured(value, name) {
 
 function splitSetCookie(headerValue) {
   return String(headerValue || "")
-    .split(/,(?=[^ ;]+=)/)
+    .split(/,\s*(?=[^ ;]+=)/)
     .map((item) => item.split(";")[0])
     .filter(Boolean);
 }
