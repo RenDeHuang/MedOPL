@@ -308,7 +308,7 @@ v13 接入方式：
 部署边界：
 
 - Langfuse 是独立观测栈，不和 Portal 主进程混部署。
-- `trace.medopl.cn` 作为 Langfuse 管理员原生控制台入口，只给管理员/运维使用；客户侧仍走 Portal 原生 Agent Traces 页面。
+- `trace.medopl.cn` 作为 Langfuse 管理员原生控制台入口，只给管理员/运维使用；客户侧仍走 Portal 原生“会话轨迹”页面。
 - Portal 可通过 `/portal/app/trace` 或 `/portal/app/traces` 暴露业务化 trace 视图；不要把 Langfuse 原生 UI 直接作为客户默认界面。
 - Portal 只展示业务化 trace 视图，不把 Langfuse UI iframe 作为默认客户界面，避免权限、会话、样式和多租户边界混乱。
 
@@ -330,18 +330,25 @@ v13 接入方式：
 - 不把完整对话正文复制进 Portal DB。
 - 不把 Secret、API key、原始云凭证写入 metadata。
 
-### Portal Agent Traces UI
+### Portal 会话轨迹 / Agent Traces UI
 
 职责：
 
-- Portal SaaS 后台内置轨迹模块，面向客户提供“实验记录/会话轨迹”，面向管理员提供“Agent Traces”运维视图。
+- Portal SaaS 后台内置轨迹模块，面向客户提供“会话轨迹”，面向管理员提供“Agent Traces”运维视图。
 - 使用 Portal 权限体系过滤 tenant/workspace/user/run，不直接暴露 Langfuse 管理权限。
 - UI 参考截图中的 Agent Traces 信息架构：概览、追踪列表、会话、用户、接入密钥、监控集成、AI 问答。
 - 用户端只能查看自己的 tenant/workspace/session/run/artifact/billing trace，不能跨 tenant、跨 workspace、跨用户查询。
 - 用户端不展示原始 Langfuse 调试台；展示的是可理解、可追溯、可对账的业务轨迹。
 - 管理员端可以按 tenant、workspace、user、session、run、resource order 过滤，用于客服排障、成本核查和运行审计。
 
-用户端“会话轨迹/实验记录”展示：
+用户端“会话轨迹”产品定义：
+
+- 客户打开这个页面时，核心问题不是“trace 怎么调试”，而是“我刚才做了什么、用了哪些文件、任务有没有跑完、结果在哪里、花了多少钱、还能不能复现”。
+- “会话轨迹”是客户可理解的业务时间线，不是 Langfuse 原生观测台。
+- 首屏优先展示业务闭环：会话、文件、运行、结果、费用、资源状态；技术 trace 字段默认折叠。
+- 页面必须支持按 workspace、会话状态、运行状态、时间范围筛选；后续可再加文件名、runId、resourceOrderId 搜索。
+
+用户端“会话轨迹”展示：
 
 - 会话列表：会话标题、workspace、最近时间、状态、消息数、运行次数、输入文件数、输出文件数、pending cost、exact cost、资源订单状态。
 - 会话详情：时间线、用户消息、助手回复摘要、文件上传、任务启动、任务完成、artifact 生成、下载记录、服务器释放/删除、账单回补。
@@ -349,6 +356,15 @@ v13 接入方式：
 - 文件详情：文件名、大小、类型、COS object key、hash、上传时间、输出来源、下载入口。
 - 费用详情：冻结金额、pending cost、exact cost、退款/补扣、腾讯云账单归因状态。
 - 可暴露的技术信息：traceId、span 数、模型名称、token 用量、延迟、错误摘要；这些信息默认折叠，不作为首屏主体。
+
+用户端会话状态：
+
+- `active`：会话正在进行，可继续对话或启动运行。
+- `running`：会话关联任务正在运行，显示节点/运行/pending cost。
+- `completed`：会话任务已完成，有结果文件或最终回复。
+- `failed`：会话任务失败，显示客户可读错误和重试入口。
+- `released`：资源已释放或缩容到 0，费用进入等待 exact 回补。
+- `settled`：腾讯云 exact bill 已回补，费用已结算。
 
 用户端禁止展示：
 
@@ -492,10 +508,10 @@ v13 接入方式：
 - Runtime Bridge 新增 trace publisher，只负责把领域事件发布到本地 Langfuse；不把 Langfuse SDK 直接扩散到 Gateway/Runner。
 - Runner 新增 run lifecycle event 输出，由 Runtime Bridge 或 Adapter 统一发布 run span 和 artifact event。
 - Portal trace client 只读 Langfuse API；ClickHouse 查询只保留在运维诊断脚本，不进入 Portal 生产请求路径。
-- Portal 前端新增/优化“Agent Traces”模块：
-  - 用户侧路由：`/portal/app/trace` 或 `/portal/app/traces`，产品名优先用“实验记录”或“会话轨迹”，展示当前 tenant/workspace 范围内的业务轨迹。
+- Portal 前端新增/优化“会话轨迹 / Agent Traces”模块：
+  - 用户侧路由：`/portal/app/trace` 或 `/portal/app/traces`，产品名统一为“会话轨迹”，展示当前 tenant/workspace 范围内的业务轨迹。
   - 管理员路由：`/portal/app/admin/trace`，展示跨用户、跨 workspace 的运维视图。
-  - 侧边栏用户区增加“轨迹”；管理员区将 `Trace` 改成“Agent Traces”或“轨迹中心”。
+  - 侧边栏用户区增加“会话轨迹”；管理员区将 `Trace` 改成“Agent Traces”或“轨迹中心”。
   - 页面结构参考截图：顶部项目/工作区选择器、tab 导航、概览指标、追踪列表、追踪详情分栏、span 树、输入/输出、metadata。
   - 用户端列表字段：时间、会话标题、workspace、状态、消息数、运行数、文件数、pending cost、exact cost、最近 artifact、资源订单状态。
   - 用户端详情字段：会话时间线、消息摘要、输入文件、输出文件、run 状态、下载入口、费用明细、账单归因、资源释放状态。
@@ -521,10 +537,10 @@ v13 接入方式：
 - 用户在 OPL 发消息后，Portal `/portal/api/traces` 返回 trace。
 - Trace 带 `tenant_id/workspace_id/session_id/run_id`。
 - 普通用户只能看到自己的会话轨迹；用其他 tenant/workspace/session/traceId 请求详情必须返回 403 或 404。
-- 用户端首屏展示业务化实验记录：会话、文件、运行、费用、下载入口和资源状态，而不是 Langfuse 原生技术调试台。
+- 用户端首屏展示业务化会话轨迹：会话、文件、运行、费用、下载入口和资源状态，而不是 Langfuse 原生技术调试台。
 - `langfuse-trace-client.mjs` 不再出现 `docker exec`、固定本地 ClickHouse 容器名或 Portal 生产路径 ClickHouse SQL。
 - 10w+/day trace ingestion 压测有明确吞吐、队列积压、ClickHouse 写入和查询延迟指标。
-- Portal “Agent Traces” 页面满足截图中的核心体验：概览卡片、trace 列表、trace 详情分栏、span 树、输入/输出、metadata。
+- Portal 管理员侧 Agent Traces 页面满足截图中的核心体验：概览卡片、trace 列表、trace 详情分栏、span 树、输入/输出、metadata；用户侧“会话轨迹”满足业务时间线、文件、运行、费用、下载入口。
 - 普通用户无法通过 traceId 访问其他 tenant/workspace 的 trace。
 
 ### F. 删除服务器与停止扣费
@@ -627,7 +643,7 @@ v13 接入方式：
 - 测试节点池具备 scale-to-zero，空闲时缩容到 0。
 - COS 至少读取到一个账单文件或明确显示“无文件但权限可用”。
 - 自部署 Langfuse trace 可写可查，并通过 10w+/day 等级的 ingestion 验证。
-- Portal Agent Traces 用户侧和管理员侧页面可用，权限隔离通过。
+- Portal 用户侧“会话轨迹”和管理员侧 Agent Traces 页面可用，权限隔离通过。
 - 删除节点池后订单状态和资源状态一致。
 
 ## 当前 v13 仍需要用户/云侧准备
@@ -643,7 +659,7 @@ v13 接入方式：
 - COS billing prefix：`daily/`。
 - COS workspace prefix：`workspaces/{tenant_id}/{workspace_id}/`。
 - COS Langfuse blob prefix：`langfuse/`。
-- Langfuse 管理员入口域名：`trace.medopl.cn`；客户侧仍使用 Portal Agent Traces 页面。
+- Langfuse 管理员入口域名：`trace.medopl.cn`；客户侧仍使用 Portal 原生“会话轨迹”页面。
 - 节点池策略：每订单独立节点池，`minNodes=0`、`maxNodes=2`，允许缩容到 0。
 - 公共镜像要求：硅谷区域 Ubuntu 22.04 LTS，已确认 fallback `ImageId=img-487zeit5`。
 - 网络连通性已确认。
