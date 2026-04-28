@@ -1,11 +1,11 @@
 <template>
-  <AppLayout title="Trace" subtitle="管理员查看全局 session / trace / run 关联">
+  <AppLayout title="Agent Traces" subtitle="管理员查看全局 session / trace / run 关联">
     <div class="space-y-4">
-      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载 Trace...</div>
+      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载 Agent Traces...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Trace 总数" :value="payload.pagination.total" hint="当前筛选命中数" />
+          <MetricCard label="Agent Traces" :value="payload.pagination.total" hint="当前筛选命中数" />
           <MetricCard label="用户维度" :value="userCount" hint="命中 trace 的用户数" />
           <MetricCard label="Workspace" :value="workspaceCount" hint="命中 trace 的 workspace 数" />
           <MetricCard label="平均延迟" :value="latencyLabel" hint="仅统计已记录延迟" />
@@ -39,7 +39,7 @@
         <section class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 class="panel-title">全局 Trace 列表</h2>
+              <h2 class="panel-title">全局 Agent Traces</h2>
               <p class="panel-subtitle">参考 Langfuse 视角，对齐用户、workspace、run、模型和延迟。</p>
             </div>
             <span class="badge badge-primary">{{ payload.summary.traceCount || 0 }} 条</span>
@@ -103,7 +103,7 @@ import { useRoute, useRouter } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import type { TracesPayload } from "@/api/portal";
-import { fetchTraces } from "@/api/portal";
+import { fetchAdminAgentTraces } from "@/api/portal";
 
 const route = useRoute();
 const router = useRouter();
@@ -195,7 +195,7 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const data = await fetchTraces({
+    const data = await fetchAdminAgentTraces({
       userId: readQueryValue("userId"),
       workspaceId: readQueryValue("workspaceId"),
       sessionId: readQueryValue("sessionId"),
@@ -214,7 +214,7 @@ async function load() {
     filters.status = String(readQueryValue("status") || "");
   } catch (err: any) {
     if (current !== requestId) return;
-    error.value = err?.message || "Trace 加载失败";
+    error.value = err?.message || "Agent Traces 加载失败";
   } finally {
     if (current === requestId) loading.value = false;
   }

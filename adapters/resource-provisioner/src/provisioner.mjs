@@ -7,6 +7,7 @@ import {
   TENCENT_TKE_MAX_NODES,
   TENCENT_TKE_MIN_NODES,
   TENCENT_TKE_NODE_IMAGE_ID,
+  TENCENT_TKE_NODE_IMAGE_SOURCE,
   TENCENT_TKE_ZONE,
   TENCENT_VPC_ID,
   TENCENT_CLOUD_REGION,
@@ -210,6 +211,8 @@ export async function ensureCapacity(input) {
       mode: context.mode,
       nodePoolId: response.NodePoolId || payload.NodePoolId || "",
       requestId: response.RequestId || "",
+      imageId: TENCENT_TKE_NODE_IMAGE_ID,
+      imageSource: TENCENT_TKE_NODE_IMAGE_SOURCE,
       details: {
         nodeSelector: {
           ...(context.plan.nodeSelector || {}),
@@ -235,6 +238,17 @@ export async function scaleToZero(input = {}) {
   }
   const payload = buildScaleToZeroPayload(input);
   const response = await callTke("ModifyClusterNodePool", payload, TENCENT_CLOUD_REGION);
+  const state = await readOrders();
+  const order = state.orders.find((item) =>
+    (input.resourceOrderId && item.resourceOrderId === input.resourceOrderId) ||
+    (payload.NodePoolId && item.nodePoolId === payload.NodePoolId)
+  );
+  if (order) {
+    order.status = "scaled_to_zero";
+    order.updatedAt = new Date().toISOString();
+    order.scaleToZeroRequestId = response.RequestId || "";
+    await writeOrders(state);
+  }
   return {
     ok: true,
     action: "ModifyClusterNodePool",
@@ -267,6 +281,17 @@ export async function deleteNodePool(input = {}) {
     KeepInstance: !destroyCvmInstances,
   };
   const response = await callTke("DeleteClusterNodePool", payload, TENCENT_CLOUD_REGION);
+  const state = await readOrders();
+  const order = state.orders.find((item) =>
+    (input.resourceOrderId && item.resourceOrderId === input.resourceOrderId) ||
+    (nodePoolId && item.nodePoolId === nodePoolId)
+  );
+  if (order) {
+    order.status = "deleted";
+    order.updatedAt = new Date().toISOString();
+    order.deleteRequestId = response.RequestId || "";
+    await writeOrders(state);
+  }
   return {
     ok: true,
     action: "DeleteClusterNodePool",

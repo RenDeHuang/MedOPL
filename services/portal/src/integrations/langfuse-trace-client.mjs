@@ -1,164 +1,163 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+function compactObject(value = {}) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined && item !== null && item !== ""),
+  );
+}
 
-const execFileAsync = promisify(execFile);
+function authHeader(publicKey, secretKey) {
+  if (!publicKey || !secretKey) return "";
+  return `Basic ${Buffer.from(`${publicKey}:${secretKey}`, "utf8").toString("base64")}`;
+}
 
-const DEFAULT_CLICKHOUSE_CONTAINERS = [
-  "medagentdemo-langfuse-clickhouse-1",
-  "dify_bundle-langfuse-clickhouse-1",
-];
+function normalizeTimestamp(value, formatDateTime) {
+  if (!value) return "";
+  return formatDateTime(String(value).replace(" ", "T"));
+}
 
-function escapeClickhouseString(value) {
-  return String(value).replaceAll("'", "''");
+function metadataFromTrace(item = {}) {
+  const metadata = item.metadata || item.meta || {};
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
+}
+
+function normalizeTraceRow(item = {}, { langfuseUrl = "", formatDateTime }) {
+  const metadata = metadataFromTrace(item);
+  const traceId = String(item.id || item.traceId || item.trace_id || "");
+  const projectId = item.projectId || item.project_id || metadata.projectId || "";
+  return {
+    traceId,
+    traceName: String(item.name || item.traceName || item.trace_name || ""),
+    userId: String(item.userId || item.user_id || metadata.portalUserId || metadata.userId || ""),
+    tenantId: String(metadata.tenantId || metadata.tenant_id || item.tenantId || item.tenant_id || ""),
+    workspaceId: String(metadata.workspaceId || metadata.workspace_id || item.workspaceId || item.workspace_id || ""),
+    workspaceSessionId: String(metadata.workspaceSessionId || metadata.workspace_session_id || ""),
+    runtimeSessionId: String(metadata.runtimeSessionId || metadata.runtime_session_id || ""),
+    runId: String(metadata.runId || metadata.run_id || item.runId || item.run_id || ""),
+    resourceOrderId: String(metadata.resourceOrderId || metadata.resource_order_id || ""),
+    serverPlanId: String(metadata.serverPlanId || metadata.server_plan_id || ""),
+    model: String(metadata.model || item.model || ""),
+    sessionId: String(item.sessionId || item.session_id || metadata.sessionId || metadata.session_id || ""),
+    tokenCount: Number(metadata.totalTokens ?? metadata.tokenCount ?? metadata.usage?.totalTokens ?? 0),
+    userAgent: String(metadata.userAgent || metadata.user_agent || ""),
+    latencyMs: Number(metadata.latencyMs ?? metadata.latency_ms ?? metadata.durationMs ?? metadata.duration_ms ?? 0),
+    inputPreview: String(metadata.inputText ?? metadata.input ?? metadata.prompt ?? metadata.question ?? ""),
+    outputPreview: String(metadata.outputText ?? metadata.output ?? metadata.answer ?? ""),
+    startedAt: normalizeTimestamp(item.timestamp || item.createdAt || item.created_at, formatDateTime),
+    updatedAt: normalizeTimestamp(item.updatedAt || item.updated_at, formatDateTime),
+    status: String(metadata.status || item.status || "recorded"),
+    url: langfuseUrl && traceId
+      ? `${langfuseUrl.replace(/\/$/, "")}${projectId ? `/project/${projectId}` : ""}/traces/${traceId}`
+      : "",
+    source: "langfuse_api",
+  };
 }
 
 export function createLangfuseTraceClient({
-  repoRoot,
   langfuseUrl,
+  publicKey = "",
+  secretKey = "",
+  projectId = "",
   formatDateTime,
-  containers = DEFAULT_CLICKHOUSE_CONTAINERS,
+  timeoutMs = 10000,
 }) {
-  async function inspectContainer(container, timeout = 30000, maxBuffer = 1024 * 1024 * 8) {
-    const { stdout } = await execFileAsync(
-      "docker",
-      ["exec", container, "clickhouse-client", "--query", "SELECT count(), max(timestamp) FROM traces"],
-      { cwd: repoRoot, timeout, maxBuffer },
-    );
-    const [countText, maxTimestamp] = String(stdout || "").trim().split(/\s+/);
-    return {
-      container,
-      count: Number(countText || 0),
-      latest: maxTimestamp || "",
-    };
+  const baseUrl = String(langfuseUrl || "").replace(/\/$/, "");
+  const authorization = authHeader(publicKey, secretKey);
+
+  function configured() {
+    return Boolean(baseUrl && authorization);
   }
 
-  async function resolveTraceContainer() {
-    const candidates = [];
-    for (const container of containers) {
-      try {
-        candidates.push(await inspectContainer(container, 15000, 1024 * 1024));
-      } catch {}
+  async function fetchPublicJson(pathname, search = {}) {
+    if (!configured()) {
+      const error = new Error("langfuse_api_not_configured");
+      error.code = "LANGFUSE_NOT_CONFIGURED";
+      throw error;
     }
-    candidates.sort((a, b) => {
-      if (Number(b.count || 0) !== Number(a.count || 0)) return Number(b.count || 0) - Number(a.count || 0);
-      return String(b.latest || "").localeCompare(String(a.latest || ""));
+    const url = new URL(pathname, `${baseUrl}/`);
+    for (const [key, value] of Object.entries(compactObject(search))) {
+      url.searchParams.set(key, String(value));
+    }
+    const response = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        authorization,
+      },
+      signal: AbortSignal.timeout(timeoutMs),
     });
-    return candidates[0]?.container || "";
-  }
-
-  async function queryClickhouseJsonRows(container, query) {
-    if (!container) return [];
-    try {
-      const { stdout } = await execFileAsync("docker", [
-        "exec",
-        container,
-        "clickhouse-client",
-        "--query",
-        `${query} FORMAT JSONEachRow`,
-      ], {
-        cwd: repoRoot,
-        timeout: 30000,
-        maxBuffer: 1024 * 1024 * 8,
-      });
-      return String(stdout || "")
-        .split(/\r?\n/)
-        .filter(Boolean)
-        .map((line) => {
-          try {
-            return JSON.parse(line);
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean);
-    } catch {
-      return [];
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(`langfuse_api_failed:${response.status}`);
+      error.status = response.status;
+      error.payload = payload;
+      throw error;
     }
+    return payload;
   }
 
   return {
+    configured,
+
     async fetchSummary() {
-      const candidates = [];
-      for (const container of containers) {
-        try {
-          const item = await inspectContainer(container);
-          if (!Number.isFinite(item.count)) continue;
-          candidates.push({
-            available: true,
-            mode: "live",
-            source: container,
-            traceCount: item.count,
-            latestTraceAt: item.latest && !item.latest.startsWith("1970-01-01")
-              ? formatDateTime(item.latest.replace(" ", "T"))
-              : "暂无",
-            note: "数据来自 Langfuse ClickHouse",
-            rawLatestTraceAt: item.latest,
-          });
-        } catch {}
+      if (!configured()) {
+        return { available: false, mode: "status_only", note: "Langfuse API 未配置" };
       }
-      if (candidates.length) {
-        candidates.sort((a, b) => {
-          if (Number(b.traceCount || 0) !== Number(a.traceCount || 0)) return Number(b.traceCount || 0) - Number(a.traceCount || 0);
-          return String(b.rawLatestTraceAt || "").localeCompare(String(a.rawLatestTraceAt || ""));
+      try {
+        const payload = await fetchPublicJson("/api/public/traces", {
+          limit: 1,
+          page: 1,
+          projectId,
         });
-        const { rawLatestTraceAt, ...selected } = candidates[0];
-        return selected;
+        const rows = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload.items) ? payload.items : []);
+        const latest = rows[0] || {};
+        return {
+          available: true,
+          mode: "live",
+          source: "langfuse_api",
+          traceCount: Number(payload.meta?.totalItems ?? payload.totalCount ?? payload.count ?? rows.length),
+          latestTraceAt: normalizeTimestamp(latest.timestamp || latest.createdAt || latest.created_at, formatDateTime) || "暂无",
+          note: "数据来自 Langfuse Public API",
+        };
+      } catch (error) {
+        return {
+          available: false,
+          mode: "status_only",
+          source: "langfuse_api",
+          note: `Langfuse API 查询失败：${String(error.message || error)}`,
+        };
       }
-      return { available: false, mode: "status_only", note: "未接入 Langfuse 摘要查询" };
     },
 
     async fetchTraceRows({ userId = "", workspaceId = "", runId = "", limit = 20 } = {}) {
-      const container = await resolveTraceContainer();
-      if (!container) {
-        return { source: "langfuse_clickhouse", type: "status_only", rows: [], note: "Langfuse ClickHouse 不可用" };
+      if (!configured()) {
+        return { source: "langfuse_api", type: "status_only", rows: [], note: "Langfuse API 未配置" };
       }
-      const clauses = ["is_deleted = 0"];
-      if (userId) clauses.push(`user_id = '${escapeClickhouseString(userId)}'`);
-      if (workspaceId) clauses.push(`mapContains(metadata, 'workspaceId') AND metadata['workspaceId'] = '${escapeClickhouseString(workspaceId)}'`);
-      if (runId) clauses.push(`mapContains(metadata, 'runId') AND metadata['runId'] = '${escapeClickhouseString(runId)}'`);
-      const rows = await queryClickhouseJsonRows(
-        container,
-        `SELECT id,timestamp,name,user_id,metadata,session_id FROM traces WHERE ${clauses.join(" AND ")} ORDER BY timestamp DESC LIMIT ${Number(limit || 20)}`,
-      );
-      return {
-        source: "langfuse_clickhouse",
-        type: "live",
-        rows: rows.map((item) => ({
-          traceId: item.id || "",
-          traceName: item.name || "",
-          userId: item.user_id || "",
-          workspaceId: item.metadata?.workspaceId || "",
-          workspaceSessionId: item.metadata?.workspaceSessionId || "",
-          runId: item.metadata?.runId || "",
-          model: item.metadata?.model || "",
-          sessionId: item.session_id || "",
-          tokenCount: Number(
-            item.metadata?.totalTokens ??
-            item.metadata?.tokenCount ??
-            item.metadata?.usage?.totalTokens ??
-            0,
-          ),
-          userAgent: item.metadata?.userAgent || item.metadata?.user_agent || "",
-          latencyMs: Number(
-            item.metadata?.latencyMs ??
-            item.metadata?.latency_ms ??
-            item.metadata?.durationMs ??
-            item.metadata?.duration_ms ??
-            0,
-          ),
-          inputPreview: String(
-            item.metadata?.inputText ??
-            item.metadata?.input ??
-            item.metadata?.prompt ??
-            item.metadata?.question ??
-            "",
-          ),
-          startedAt: item.timestamp ? formatDateTime(String(item.timestamp).replace(" ", "T")) : "",
-          status: String(item.metadata?.status || "recorded"),
-          url: langfuseUrl ? `${langfuseUrl}` : "",
-        })),
-        note: rows.length ? "数据来自 Langfuse traces" : "Langfuse 中未查询到匹配 trace",
-      };
+      try {
+        const payload = await fetchPublicJson("/api/public/traces", {
+          limit: Math.min(100, Math.max(1, Number(limit || 20))),
+          page: 1,
+          userId,
+          projectId,
+        });
+        const rawRows = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload.items) ? payload.items : []);
+        const rows = rawRows
+          .map((item) => normalizeTraceRow(item, { langfuseUrl: baseUrl, formatDateTime }))
+          .filter((item) => !userId || item.userId === userId)
+          .filter((item) => !workspaceId || item.workspaceId === workspaceId)
+          .filter((item) => !runId || item.runId === runId)
+          .slice(0, Math.min(100, Math.max(1, Number(limit || 20))));
+        return {
+          source: "langfuse_api",
+          type: rows.length ? "live" : "status_only",
+          rows,
+          note: rows.length ? "数据来自 Langfuse Public API" : "Langfuse 中未查询到匹配 trace",
+        };
+      } catch (error) {
+        return {
+          source: "langfuse_api",
+          type: "status_only",
+          rows: [],
+          note: `Langfuse API 查询失败：${String(error.message || error)}`,
+        };
+      }
     },
   };
 }

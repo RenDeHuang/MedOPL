@@ -13,6 +13,7 @@ if (!String(process.env.SERVER_PLAN_CATALOG_JSON || "").trim()) {
 import { access, readFile, readdir, writeFile, stat, mkdir, appendFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { createHash, createHmac, randomUUID } from "node:crypto";
+import { buildCosBillReader } from "./cos-bill-reader.mjs";
 
 const PORT = Number(process.env.PORT || 3001);
 const OPENCOST_BASE_URL = (process.env.OPENCOST_BASE_URL || "").trim();
@@ -33,10 +34,11 @@ const AUTO_RECONCILE_ENABLED = String(process.env.AUTO_RECONCILE_ENABLED || "1")
 const AUTO_RECONCILE_INTERVAL_MS = Number(process.env.AUTO_RECONCILE_INTERVAL_MS || "600000");
 const AUTO_RECONCILE_WINDOW = String(process.env.AUTO_RECONCILE_WINDOW || "168h").trim() || "168h";
 const BILLING_RECONCILE_ONCE = String(process.env.BILLING_RECONCILE_ONCE || "0") === "1";
-const TENCENT_CLOUD_SECRET_ID = String(process.env.TENCENT_CLOUD_SECRET_ID || "").trim();
-const TENCENT_CLOUD_SECRET_KEY = String(process.env.TENCENT_CLOUD_SECRET_KEY || "").trim();
+const TENCENT_CLOUD_SECRET_ID = String(process.env.TENCENT_CLOUD_SECRET_ID || process.env.TENCENTCLOUD_SECRET_ID || "").trim();
+const TENCENT_CLOUD_SECRET_KEY = String(process.env.TENCENT_CLOUD_SECRET_KEY || process.env.TENCENTCLOUD_SECRET_KEY || "").trim();
 const TENCENT_CLOUD_TOKEN = String(process.env.TENCENT_CLOUD_TOKEN || "").trim();
-const TENCENT_CLOUD_REGION = String(process.env.TENCENT_CLOUD_REGION || "ap-guangzhou").trim();
+const TENCENT_DEFAULT_IMAGE_ID = "img-487zeit5";
+const TENCENT_CLOUD_REGION = String(process.env.TENCENT_CLOUD_REGION || "na-siliconvalley").trim();
 const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLED || "0") === "1";
 const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "0") === "1";
 const TENCENT_BILLING_ENDPOINT = String(process.env.TENCENT_BILLING_ENDPOINT || "billing.tencentcloudapi.com").trim();
@@ -46,7 +48,8 @@ const TENCENT_BILLING_PAGE_SIZE = Math.min(100, Math.max(1, Number(process.env.T
 const TENCENT_PRICE_ENABLED = String(process.env.TENCENT_PRICE_ENABLED || "0") === "1";
 const TENCENT_CVM_ENDPOINT = String(process.env.TENCENT_CVM_ENDPOINT || "cvm.tencentcloudapi.com").trim();
 const TENCENT_CVM_VERSION = String(process.env.TENCENT_CVM_VERSION || "2017-03-12").trim();
-const TENCENT_PRICE_IMAGE_ID = String(process.env.TENCENT_PRICE_IMAGE_ID || "").trim();
+const TENCENT_PRICE_IMAGE_ID = String(process.env.TENCENT_PRICE_IMAGE_ID || TENCENT_DEFAULT_IMAGE_ID).trim();
+const TENCENT_PRICE_IMAGE_SOURCE = process.env.TENCENT_PRICE_IMAGE_ID ? "env" : "siliconvalley_ubuntu_22_04_fallback";
 const TENCENT_PLAN_DISCOVERY_ENABLED = String(process.env.TENCENT_PLAN_DISCOVERY_ENABLED || "").trim() === "1";
 const TENCENT_PLAN_DISCOVERY_ZONES = String(process.env.TENCENT_PLAN_DISCOVERY_ZONES || "").trim();
 const TENCENT_PLAN_DISCOVERY_CHARGE_TYPE = String(process.env.TENCENT_PLAN_DISCOVERY_CHARGE_TYPE || "POSTPAID_BY_HOUR").trim();
@@ -54,18 +57,129 @@ const TENCENT_PLAN_DISCOVERY_MAX = Number(process.env.TENCENT_PLAN_DISCOVERY_MAX
 const TENCENT_COS_BILL_BUCKET = String(process.env.TENCENT_COS_BILL_BUCKET || "opl-1410708315").trim();
 const TENCENT_COS_BILL_REGION = String(process.env.TENCENT_COS_BILL_REGION || TENCENT_CLOUD_REGION).trim();
 const TENCENT_COS_BILL_PREFIX = String(process.env.TENCENT_COS_BILL_PREFIX || "daily/").trim();
+const TENCENT_COS_BILL_ENDPOINT = String(process.env.TENCENT_COS_BILL_ENDPOINT || "").trim();
+const TENCENT_COS_SECRET_ID = String(process.env.TENCENT_COS_SECRET_ID || process.env.TENCENT_COS_BILL_SECRET_ID || "").trim();
+const TENCENT_COS_SECRET_KEY = String(process.env.TENCENT_COS_SECRET_KEY || process.env.TENCENT_COS_BILL_SECRET_KEY || "").trim();
 const TENCENT_REQUIRED_COST_TAGS = ["resource_order_id", "run_id", "server_plan_id", "tenant_id", "workspace_id"];
+
+const cosBillReader = buildCosBillReader({
+  bucket: TENCENT_COS_BILL_BUCKET,
+  region: TENCENT_COS_BILL_REGION,
+  prefix: TENCENT_COS_BILL_PREFIX,
+  endpoint: TENCENT_COS_BILL_ENDPOINT,
+  secretId: TENCENT_COS_SECRET_ID || TENCENT_CLOUD_SECRET_ID,
+  secretKey: TENCENT_COS_SECRET_KEY || TENCENT_CLOUD_SECRET_KEY,
+});
 
 function buildCosBillStatus() {
   return {
     ok: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_PREFIX),
+    credentialsConfigured: cosBillReader.configured(),
     source: "tencent_cloud_cos_bill_delivery",
     bucket: TENCENT_COS_BILL_BUCKET,
     region: TENCENT_COS_BILL_REGION,
     prefix: TENCENT_COS_BILL_PREFIX,
+    endpoint: cosBillReader.endpoint,
     deliveryConfigured: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_PREFIX),
     note: "COS bill files are used for daily reconciliation. Exact cost must come from Tencent bill detail or COS bill files.",
   };
+}
+
+function firstNonEmpty(...values) {
+  return values.map((value) => String(value ?? "").trim()).find(Boolean) || "";
+}
+
+function billTagValue(row = {}, key = "") {
+  const camel = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  const pascal = camel.charAt(0).toUpperCase() + camel.slice(1);
+  const tagKeys = [
+    key,
+    camel,
+    pascal,
+    `tag:${key}`,
+    `Tag:${key}`,
+    `tag_${key}`,
+    `Tag_${key}`,
+  ];
+  for (const candidate of tagKeys) {
+    const value = firstNonEmpty(row[candidate], row.tags?.[candidate], row.Tags?.[candidate], row.tags?.[key], row.Tags?.[key]);
+    if (value) return value;
+  }
+  return "";
+}
+
+function rowHasRequiredCostTags(row = {}) {
+  return TENCENT_REQUIRED_COST_TAGS.every((key) => Boolean(billTagValue(row, key)));
+}
+
+function normalizeCosBillRow(row = {}) {
+  const totalCost = Number(row.totalCost || row.TotalCost || row.RealTotalCost || row.realTotalCost || row.Cost || row.cost || 0);
+  return {
+    ...row,
+    totalCost,
+    resourceOrderId: billTagValue(row, "resource_order_id"),
+    runId: billTagValue(row, "run_id"),
+    serverPlanId: billTagValue(row, "server_plan_id"),
+    tenantId: billTagValue(row, "tenant_id"),
+    workspaceId: billTagValue(row, "workspace_id"),
+    attributed: rowHasRequiredCostTags(row),
+    pricingSource: "tencent_cos_daily_bill",
+  };
+}
+
+async function buildCosBillFilesPayload() {
+  const status = buildCosBillStatus();
+  try {
+    const files = await cosBillReader.listFiles({ maxKeys: 50 });
+    return {
+      ...status,
+      readable: true,
+      lastReadAt: new Date().toISOString(),
+      fileCount: files.length,
+      files,
+    };
+  } catch (error) {
+    return {
+      ...status,
+      readable: false,
+      lastReadAt: new Date().toISOString(),
+      error: String(error.message || error),
+      errorStatus: error.status || null,
+    };
+  }
+}
+
+async function buildCosBillReconcilePayload() {
+  const status = buildCosBillStatus();
+  try {
+    const parsed = await cosBillReader.parseLatestFile();
+    const rows = parsed.rows.map(normalizeCosBillRow);
+    const attributed = rows.filter((row) => row.attributed);
+    const unattributed = rows.filter((row) => !row.attributed);
+    return {
+      ...status,
+      ok: true,
+      reconciled: attributed.length > 0,
+      exactSource: "tencent_cos_daily_bill",
+      lastReadAt: new Date().toISOString(),
+      latestFile: parsed.latest,
+      parsedRowCount: rows.length,
+      attributedCount: attributed.length,
+      unattributedCount: unattributed.length,
+      totalCost: Number(attributed.reduce((sum, row) => sum + Number(row.totalCost || 0), 0).toFixed(5)),
+      items: attributed.slice(0, 200),
+      unattributed: unattributed.slice(0, 100),
+    };
+  } catch (error) {
+    return {
+      ...status,
+      ok: false,
+      reconciled: false,
+      lastReadAt: new Date().toISOString(),
+      error: String(error.message || error),
+      errorStatus: error.status || null,
+    };
+  }
 }
 
 function buildAttributionPayload(items = [], resourceOrderId = "") {
@@ -1234,6 +1348,9 @@ async function quoteTencentServerPlan(plan) {
     return {
       priceStatus: "quoted",
       salable: true,
+      imageId,
+      imageSource: plan.imageId ? "server_plan" : TENCENT_PRICE_IMAGE_SOURCE,
+      imageRegion: plan.region || TENCENT_CLOUD_REGION,
       ...normalizeTencentPrice(response),
     };
   } catch (error) {
@@ -1252,7 +1369,7 @@ function buildTencentCloudStatus({ items = [], catalog = [], discovered = [] } =
   const salableCount = items.filter((item) => item.salable).length;
   const automaticProvisionCount = items.filter((item) => {
     const mode = String(item.provisioningMode || "").toLowerCase();
-    return ["tke_node_pool", "tke_node_pool_scale", "cvm_instance"].includes(mode);
+    return ["tke_node_pool", "tke_node_pool_create", "tke_node_pool_scale", "cvm_instance"].includes(mode);
   }).length;
   return {
     provider: "tencent_cloud",
@@ -1261,6 +1378,9 @@ function buildTencentCloudStatus({ items = [], catalog = [], discovered = [] } =
     price: {
       enabled: TENCENT_PRICE_ENABLED,
       imageConfigured: Boolean(TENCENT_PRICE_IMAGE_ID),
+      imageId: TENCENT_PRICE_IMAGE_ID,
+      imageSource: TENCENT_PRICE_IMAGE_SOURCE,
+      imageRegion: TENCENT_CLOUD_REGION,
       endpoint: TENCENT_CVM_ENDPOINT,
       catalogConfigured: catalog.length > 0,
       catalogCount: catalog.length,
@@ -1859,7 +1979,33 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/billing/cos/status") {
-    sendJson(res, 200, buildCosBillStatus());
+    const status = buildCosBillStatus();
+    try {
+      const files = cosBillReader.configured() ? await cosBillReader.listFiles({ maxKeys: 5 }) : [];
+      sendJson(res, 200, {
+        ...status,
+        readable: cosBillReader.configured(),
+        latestFile: files[0] || null,
+        fileCount: files.length,
+        lastReadAt: cosBillReader.configured() ? new Date().toISOString() : "",
+      });
+    } catch (error) {
+      sendJson(res, 200, {
+        ...status,
+        readable: false,
+        lastReadAt: new Date().toISOString(),
+        error: String(error.message || error),
+        errorStatus: error.status || null,
+      });
+    }
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/billing/cos/files") {
+    sendJson(res, 200, await buildCosBillFilesPayload());
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/billing/cos/reconcile") {
+    sendJson(res, 200, await buildCosBillReconcilePayload());
     return;
   }
   if (req.method === "GET" && url.pathname === "/billing/attribution") {

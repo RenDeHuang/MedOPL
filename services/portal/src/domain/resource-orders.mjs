@@ -52,7 +52,7 @@ export function normalizeResourceOrder(order = {}) {
     gpuType: String(order.gpuType || order.gpu_type || "").trim(),
     gpuCount: Number(order.gpuCount || order.gpu_count || order.gpu || 0),
     storagePlanId: String(order.storagePlanId || order.storage_plan_id || "workspace-default").trim() || "workspace-default",
-    storageSizeGb: Number(order.storageSizeGb || order.storage_size_gb || 20),
+    storageSizeGb: Number(order.storageSizeGb ?? order.storage_size_gb ?? 0),
     retentionPolicy: String(order.retentionPolicy || order.retention_policy || "retain").trim() || "retain",
     estimatedHours: Number(order.estimatedHours || order.estimated_hours || 1),
     autoStopAt: String(order.autoStopAt || order.auto_stop_at || "").trim(),
@@ -121,7 +121,7 @@ export function quoteResourceOrderFromPlan({ user, workspace, serverPlan, input 
     gpuType: serverPlan?.gpuType || serverPlan?.gpuModel || "",
     gpuCount: serverPlan?.gpuCount ?? serverPlan?.gpu ?? 0,
     storagePlanId: input.storagePlanId || "workspace-default",
-    storageSizeGb: input.storageSizeGb || parseStorageGi(serverPlan?.storageRequest || serverPlan?.storageLimit || "20Gi"),
+    storageSizeGb: Math.max(10, Number(input.storageSizeGb || parseStorageGi(serverPlan?.storageRequest || serverPlan?.storageLimit || "10Gi"))),
     retentionPolicy: input.retentionPolicy || "retain",
     estimatedHours,
     autoStopAt: input.autoStopAt || "",
@@ -328,10 +328,10 @@ function normalizeCloudResourceIds(value) {
 function parseStorageGi(value) {
   const text = String(value || "").trim().toLowerCase();
   const match = text.match(/^([0-9.]+)\s*(gi|gib|gb|mi|mib|mb)?$/);
-  if (!match) return 20;
+  if (!match) return 10;
   const amount = Number(match[1]);
-  if (!Number.isFinite(amount) || amount <= 0) return 20;
+  if (!Number.isFinite(amount) || amount <= 0) return 10;
   const unit = match[2] || "gi";
-  if (unit.startsWith("m")) return Math.ceil(amount / 1024);
-  return Math.ceil(amount);
+  if (unit.startsWith("m")) return Math.max(10, Math.ceil(amount / 1024));
+  return Math.max(10, Math.ceil(amount));
 }

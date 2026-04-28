@@ -31,6 +31,7 @@ import {
   listOutputs,
   submitRun,
 } from "./runner-client.mjs";
+import { createLangfusePublisher } from "./langfuse-publisher.mjs";
 
 const PORT = Number(process.env.PORT || 8788);
 const BASE_URL = String(process.env.PORTAL_OPL_ADAPTER_PUBLIC_URL || `http://127.0.0.1:${PORT}`).replace(/\/$/, "");
@@ -44,6 +45,7 @@ const OPL_RUNTIME_MODE = String(process.env.OPL_RUNTIME_MODE || "unknown").trim(
 const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
 const RUNNER_URL = String(process.env.MED_AUTOSCIENCE_RUNNER_URL || "").replace(/\/$/, "");
 const PORTAL_INTERNAL_BASE_URL = String(process.env.PORTAL_INTERNAL_BASE_URL || "").replace(/\/$/, "");
+const langfusePublisher = createLangfusePublisher();
 
 function buildStatusPayload() {
   return {
@@ -68,6 +70,10 @@ function buildStatusPayload() {
       portalInternalBaseUrl: PORTAL_INTERNAL_BASE_URL || null,
       namespace: K8S_NAMESPACE,
       runnerImage: RUNNER_IMAGE || null,
+    },
+    trace: {
+      publisherConfigured: langfusePublisher.configured(),
+      provider: "langfuse_api",
     },
   };
 }
@@ -474,8 +480,10 @@ async function submitRuntimeRun(state, runtimeSession, input, req) {
     model: context.model,
   });
   addRunAction(state, { ...run, actionType: "runner_run_submitted", summary: "med-autoscience runner accepted run.", status: run.status });
-  addTraceRecord(state, {
+  await publishTraceEvent(state, {
     ...run,
+    eventType: "run_started",
+    traceName: "OPL run started",
     status: run.status,
     latencyMs: run.latencyMs,
     model: context.model,
@@ -506,7 +514,7 @@ async function syncRunnerRun(state, run, runStatus = null) {
   if (isTerminal(patched.status)) {
     const outputs = await listOutputs(patched);
     for (const output of outputs) {
-      addArtifactRecord(state, {
+      const artifact = addArtifactRecord(state, {
         ...patched,
         name: output.name || "",
         objectKey: output.objectKey || output.object_key || "",
@@ -514,7 +522,20 @@ async function syncRunnerRun(state, run, runStatus = null) {
         sizeBytes: output.sizeBytes || output.size_bytes || 0,
         contentType: output.contentType || output.content_type || "application/octet-stream",
       });
+      await publishTraceEvent(state, {
+        ...patched,
+        ...artifact,
+        eventType: "artifact_created",
+        traceName: "OPL artifact created",
+        status: patched.status,
+      });
     }
+    await publishTraceEvent(state, {
+      ...patched,
+      eventType: patched.status === "failed" ? "run_failed" : "run_completed",
+      traceName: "OPL run completed",
+      status: patched.status,
+    });
   }
   return patched;
 }
@@ -541,6 +562,28 @@ function bindOplSession(state, launch, input = {}) {
     source: "opl-web",
   });
   return runtimeSession;
+}
+
+async function publishTraceEvent(state, event = {}) {
+  const trace = addTraceRecord(state, {
+    ...event,
+    traceName: event.traceName || event.eventType || event.type || "opl-session",
+    status: event.status || "recorded",
+  });
+  try {
+    const published = await langfusePublisher.publishTraceEvent({ ...trace, ...event });
+    addEvent(state, published.ok ? "trace_event_published" : "trace_event_publish_skipped", {
+      ...trace,
+      status: published.ok ? "published" : "skipped",
+      reason: published.reason || published.error || "",
+    });
+  } catch (error) {
+    addEvent(state, "trace_event_publish_failed", {
+      ...trace,
+      error: String(error.message || error),
+    });
+  }
+  return trace;
 }
 
 async function handleRequest(req, res) {
@@ -670,6 +713,12 @@ async function handleRequest(req, res) {
     const bootstrapUrl = `${BASE_URL}/api/opl-launch/bootstrap?launch_token=${encodeURIComponent(launchToken)}`;
     state.launchTokens.push({ ...launchRecord, launchToken, oplWebUrl, bootstrapUrl });
     addEvent(state, "opl_launch_created", launchRecord);
+    await publishTraceEvent(state, {
+      ...launchRecord,
+      eventType: "launch",
+      traceName: "OPL launch",
+      status: "active",
+    });
     await writeState(state);
     sendJson(res, 200, {
       ok: true,
@@ -799,6 +848,18 @@ async function handleRequest(req, res) {
   if (req.method === "GET" && url.pathname === "/api/trace-links") {
     const state = await readState();
     sendJson(res, 200, { ok: true, items: state.traceLinks, runActions: state.runActions });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/internal/trace-events") {
+    const input = await readBody(req);
+    const state = await readState();
+    const trace = await publishTraceEvent(state, {
+      ...input,
+      eventType: input.eventType || input.type || "runtime_event",
+    });
+    await writeState(state);
+    sendJson(res, 200, { ok: true, trace });
     return;
   }
 

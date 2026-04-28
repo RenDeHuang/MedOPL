@@ -58,7 +58,7 @@
           <MetricCard label="输入文件" :value="payload.counts.inputs" hint="inputs 文件数" />
           <MetricCard label="输出文件" :value="payload.counts.outputs" hint="outputs 文件数" />
           <MetricCard label="运行次数" :value="payload.counts.runs" hint="当前空间 run 总数" />
-          <MetricCard label="最近会话" :value="payload.activeSession?.id || '未建立'" hint="按 session 进入工作台" />
+          <MetricCard label="存储状态" :value="payload.storageEntitlement?.enabled ? `${payload.storageEntitlement.storageSizeGb}GB` : '未开通'" hint="免费容量为 0，最小 10GB" />
         </section>
 
         <section class="card p-5">
@@ -125,7 +125,9 @@
                 <h2 class="panel-title">输入文件</h2>
                 <p class="panel-subtitle">当前空间 inputs。</p>
               </div>
-              <button class="btn btn-secondary" type="button" @click="triggerUpload">上传文件</button>
+              <button class="btn btn-secondary" type="button" :disabled="!payload.storageEntitlement?.enabled" @click="triggerUpload">
+                {{ payload.storageEntitlement?.enabled ? "上传文件" : "先开通存储" }}
+              </button>
               <form class="hidden" method="post" :action="uploadAction" enctype="multipart/form-data">
                 <input ref="uploadInput" class="hidden" name="file" type="file" @change="submitUpload" />
               </form>
@@ -138,6 +140,7 @@
                 </div>
               </div>
               <div v-if="!payload.files.length" class="empty-state">当前没有输入文件。</div>
+              <div v-if="!payload.storageEntitlement?.enabled" class="empty-state">当前 workspace 未开通对象存储，不能上传输入文件或保存输出文件。</div>
             </div>
           </div>
 

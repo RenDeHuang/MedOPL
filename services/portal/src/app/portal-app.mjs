@@ -24,6 +24,9 @@ import {
   HARBOR_PASSWORD,
   HARBOR_URL,
   HARBOR_USERNAME,
+  LANGFUSE_PROJECT_ID,
+  LANGFUSE_PUBLIC_KEY,
+  LANGFUSE_SECRET_KEY,
   KUBESPHERE_URL,
   LANGFUSE_URL,
   mcBinary,
@@ -373,6 +376,9 @@ const harborRegistryClient = createHarborRegistryClient({
 const langfuseTraceClient = createLangfuseTraceClient({
   repoRoot,
   langfuseUrl: LANGFUSE_URL,
+  publicKey: LANGFUSE_PUBLIC_KEY,
+  secretKey: LANGFUSE_SECRET_KEY,
+  projectId: LANGFUSE_PROJECT_ID,
   formatDateTime,
 });
 const oplAdapterClient = createOplAdapterClient({
@@ -2477,6 +2483,32 @@ async function fetchWorkspaceStorageSnapshot(taskSpace) {
   };
 }
 
+function workspaceStorageEntitlement(db, user, workspaceId) {
+  ensureResourceOrderCollections(db);
+  const activeStatuses = new Set(["frozen", "provisioning", "running", "released", "reconciling", "settled"]);
+  const orders = (db.resourceOrders || [])
+    .filter((order) => (order.userId === user.id || order.tenantId === user.id) && order.workspaceId === workspaceId)
+    .filter((order) => activeStatuses.has(String(order.status || "").toLowerCase()))
+    .filter((order) => Number(order.storageSizeGb || 0) >= 10)
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+  const order = orders[0] || null;
+  return {
+    enabled: Boolean(order),
+    status: order ? "active" : "disabled",
+    freeQuotaGb: 0,
+    minimumPurchaseGb: 10,
+    storageBackend: "cos",
+    retentionPolicy: "order_lifecycle",
+    cosPrefix: `workspaces/${user.tenantId || user.id}/${workspaceId}/`,
+    resourceOrderId: order?.id || "",
+    storagePlanId: order?.storagePlanId || "",
+    storageSizeGb: Number(order?.storageSizeGb || 0),
+    message: order
+      ? "对象存储已随订单开通。"
+      : "免费容量为 0；上传文件和保存输出前必须先开通至少 10GB 存储。",
+  };
+}
+
 async function fetchWorkspaceMinioState(userId, taskSlug) {
   return minioStorageClient.fetchWorkspaceState(userId, taskSlug);
 }
@@ -2513,6 +2545,11 @@ async function handleUpload(req, res, user) {
   const taskSpace = await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
   if (taskSpace.status !== "active") {
     sendHtml(res, layoutV2("任务空间不可上传", `<div class="card"><h2>当前任务空间不可上传</h2><p class="hint">只有 active 状态的任务空间才能继续上传文件与发起新运行。</p></div>`, user), 409);
+    return;
+  }
+  const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
+  if (!entitlement.enabled) {
+    sendHtml(res, layoutV2("存储未开通", `<div class="card"><h2>请先开通存储</h2><p class="hint">免费容量为 0。上传输入文件和保存输出文件前，需要在“服务器与费用”开通至少 10GB 对象存储。</p></div>`, user), 402);
     return;
   }
 
@@ -3007,6 +3044,7 @@ async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
   const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
   const events = (await readPortalEvents(200)).filter((event) => event.userId === user.id && (!event.workspaceId || event.workspaceId === current.slug));
   const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
+  const storageEntitlement = workspaceStorageEntitlement(db, user, current.slug);
   const runPagination = paginateRows(runs, options.runsPage, 5);
   const filePagination = paginateRows(files, options.inputsPage, 5);
   const outputPagination = paginateRows(outputs, options.outputsPage, 5);
@@ -3035,6 +3073,7 @@ async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
       title: current.title,
       status: current.status,
       serverPlan: currentServerPlanSelection(current),
+      storageEntitlement,
       createdAt: current.createdAt || null,
       archivedAt: current.archivedAt || null,
       deletedAt: current.deletedAt || null,
@@ -3046,6 +3085,7 @@ async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
       completedRuns: runs.filter((run) => isRunTerminal(run)).length,
     },
     costs: totals,
+    storageEntitlement,
     runStatus: summarizeRunStatus(runs),
     activeSession: activeSession ? {
       id: activeSession.id,
@@ -4079,6 +4119,129 @@ async function buildTracesApiPayload(options = {}) {
   };
 }
 
+async function fetchMergedTraceRowsForPortalUser(user, options = {}) {
+  const requestOptions = {
+    userId: user?.role === "admin" ? String(options.userId || "").trim() : user.id,
+    workspaceId: String(options.workspaceId || "").trim(),
+    runId: String(options.runId || "").trim(),
+    sessionId: String(options.sessionId || "").trim(),
+    status: String(options.status || "").trim().toLowerCase(),
+    limit: parsePositiveInt(options.limit, 200),
+  };
+  const [langfuseRows, adapterRows] = await Promise.all([
+    fetchTraceRows({
+      userId: requestOptions.userId,
+      workspaceId: requestOptions.workspaceId,
+      runId: requestOptions.runId,
+      limit: requestOptions.limit,
+    }),
+    fetchOplAdapterTraceRows({
+      userId: requestOptions.userId,
+      workspaceId: requestOptions.workspaceId,
+      runId: requestOptions.runId,
+      limit: requestOptions.limit,
+    }),
+  ]);
+  const rows = [...(adapterRows.rows || []), ...(langfuseRows.rows || [])]
+    .filter((item) => !requestOptions.sessionId || String(item.sessionId || item.workspaceSessionId || "").includes(requestOptions.sessionId))
+    .filter((item) => !requestOptions.status || String(item.status || "").toLowerCase().includes(requestOptions.status))
+    .sort((a, b) => String(b.startedAt || b.createdAt || "").localeCompare(String(a.startedAt || a.createdAt || "")));
+  return {
+    rows,
+    filters: requestOptions,
+    sources: {
+      adapter: adapterRows,
+      langfuse: langfuseRows,
+    },
+  };
+}
+
+async function enrichSessionTraceRow(db, user, row = {}) {
+  const workspaceId = String(row.workspaceId || "").trim();
+  const runId = String(row.runId || "").trim();
+  const taskSpace = workspaceId ? findTaskSpace(db, row.userId || user.id, workspaceId) : null;
+  const storage = taskSpace ? await fetchWorkspaceStorageSnapshot(taskSpace) : null;
+  const billing = runId
+    ? await fetchBillingSummary(row.userId || user.id, workspaceId, "168h").catch(() => null)
+    : null;
+  const relatedCosts = (billing?.items || []).filter((item) =>
+    (!runId || item.runId === runId) &&
+    (!workspaceId || item.workspaceId === workspaceId)
+  );
+  const pendingCost = relatedCosts
+    .filter((item) => String(item.status || item.pricingSource || "").toLowerCase().includes("pending"))
+    .reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+  const exactCost = relatedCosts
+    .filter((item) => String(item.status || item.pricingSource || "").toLowerCase().includes("exact") || String(item.pricingSource || "").includes("tencent"))
+    .reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+  return {
+    ...row,
+    title: row.traceName || row.sessionId || row.workspaceSessionId || row.runId || "会话",
+    businessStatus: row.status || "recorded",
+    files: {
+      inputsCount: storage?.inputsCount || 0,
+      outputsCount: storage?.outputsCount || 0,
+      latestOutputs: (storage?.outputs || []).slice(0, 5).map((item) => ({
+        name: item.name,
+        size: item.size || item.sizeBytes || 0,
+        downloadUrl: `/portal/workspace/download-file?task=${encodeURIComponent(workspaceId)}&kind=outputs&file=${encodeURIComponent(item.name)}`,
+      })),
+    },
+    billing: {
+      pendingCost: Number(pendingCost.toFixed(5)),
+      exactCost: Number(exactCost.toFixed(5)),
+      source: billing?.source || "billing_aggregator",
+    },
+  };
+}
+
+async function buildSessionTracesApiPayload(db, user, options = {}) {
+  const merged = await fetchMergedTraceRowsForPortalUser(user, options);
+  const pagination = paginateRows(merged.rows, options.page, normalizePageSize(options.pageSize || 10));
+  const items = await Promise.all(pagination.rows.map((row) => enrichSessionTraceRow(db, user, row)));
+  return {
+    filters: merged.filters,
+    summary: {
+      available: merged.sources.adapter.type === "live" || merged.sources.langfuse.type === "live",
+      mode: merged.sources.adapter.type === "live" ? "live" : merged.sources.langfuse.type,
+      traceCount: merged.rows.length,
+      latestTraceAt: merged.rows[0]?.startedAt || "",
+      dataSource: `${merged.sources.adapter.source || "portal_opl_adapter"} + ${merged.sources.langfuse.source || "langfuse_api"}`,
+    },
+    items,
+    pagination: {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: pagination.total,
+      totalPages: pagination.totalPages,
+    },
+    dataSource: "portal_session_traces",
+    note: "用户侧只返回当前账号可见的会话、文件、运行、费用和资源状态索引；不暴露 Langfuse key 或原始内部参数。",
+  };
+}
+
+async function buildSessionTraceDetailPayload(db, user, sessionId) {
+  const payload = await buildSessionTracesApiPayload(db, user, { sessionId, limit: 200, pageSize: 200 });
+  const item = payload.items.find((row) =>
+    String(row.sessionId || row.workspaceSessionId || row.traceId || "") === String(sessionId || "")
+  ) || payload.items[0];
+  if (!item) return null;
+  const events = (await readPortalEvents(500)).filter((event) =>
+    event.userId === (item.userId || user.id) &&
+    (!item.workspaceId || event.workspaceId === item.workspaceId) &&
+    (!item.runId || event.runId === item.runId)
+  );
+  return {
+    ...item,
+    timeline: events.map((event) => ({
+      type: event.type,
+      occurredAt: event.occurredAt,
+      workspaceId: event.workspaceId || item.workspaceId,
+      runId: event.runId || item.runId,
+    })),
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", "http://local");
   if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
@@ -4571,8 +4734,10 @@ const server = http.createServer(async (req, res) => {
     const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     const storage = await fetchWorkspaceStorageSnapshot(taskSpace);
     const minio = await fetchWorkspaceMinioState(user.id, taskSpace.slug);
+    const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
     sendJson(res, {
       workspaceId: taskSpace.slug,
+      entitlement,
       storage,
       minio,
     });
@@ -4673,6 +4838,30 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/portal/api/traces/summary") {
     const summary = await fetchLangfuseSummary();
     sendJson(res, summary);
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/portal/api/session-traces") {
+    const requestOptions = readTracesRequestOptions(url);
+    sendJson(res, await buildSessionTracesApiPayload(db, user, requestOptions));
+    return;
+  }
+  const sessionTraceDetailMatch = url.pathname.match(/^\/portal\/api\/session-traces\/([^/]+)$/);
+  if (req.method === "GET" && sessionTraceDetailMatch) {
+    const detail = await buildSessionTraceDetailPayload(db, user, decodeURIComponent(sessionTraceDetailMatch[1]));
+    if (!detail) {
+      sendJson(res, { ok: false, error: "session_trace_not_found" }, 404);
+      return;
+    }
+    sendJson(res, detail);
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/portal/api/admin/agent-traces") {
+    if (user.role !== "admin") {
+      sendJson(res, { error: "forbidden" }, 403);
+      return;
+    }
+    const requestOptions = readTracesRequestOptions(url);
+    sendJson(res, await buildSessionTracesApiPayload(db, user, requestOptions));
     return;
   }
   if (req.method === "GET" && url.pathname === "/portal/api/traces") {

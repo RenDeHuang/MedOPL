@@ -182,12 +182,27 @@ export interface WorkspaceQuery {
   outputs_page?: PortalQueryValue;
 }
 
+export interface StorageEntitlementPayload {
+  enabled: boolean;
+  status: "disabled" | "active" | string;
+  freeQuotaGb: number;
+  minimumPurchaseGb: number;
+  storageBackend: string;
+  retentionPolicy: string;
+  cosPrefix: string;
+  resourceOrderId: string;
+  storagePlanId: string;
+  storageSizeGb: number;
+  message: string;
+}
+
 export interface WorkspacePayload {
   workspace: {
     slug: string;
     title: string;
     status: string;
     serverPlan?: SelectedServerPlan | null;
+    storageEntitlement?: StorageEntitlementPayload;
     createdAt: string | null;
     archivedAt: string | null;
     deletedAt: string | null;
@@ -204,6 +219,7 @@ export interface WorkspacePayload {
     pvCost: number;
     totalCost: number;
   };
+  storageEntitlement?: StorageEntitlementPayload;
   runStatus: {
     running: number;
     completed: number;
@@ -658,6 +674,7 @@ export interface RunsPayload {
 
 export interface WorkspaceStoragePayload {
   workspaceId: string;
+  entitlement?: StorageEntitlementPayload;
   storage: {
     inputsCount: number;
     outputsCount: number;
@@ -737,10 +754,15 @@ export interface TracesPayload {
   items: Array<{
     traceId: string;
     traceName: string;
+    title?: string;
     userId: string;
+    tenantId?: string;
     workspaceId: string;
     workspaceSessionId: string;
+    runtimeSessionId?: string;
     runId: string;
+    resourceOrderId?: string;
+    serverPlanId?: string;
     model: string;
     sessionId: string;
     tokenCount: number;
@@ -748,13 +770,27 @@ export interface TracesPayload {
     latencyMs: number;
     inputPreview: string;
     startedAt: string;
+    updatedAt?: string;
     status: string;
+    businessStatus?: string;
     url: string;
+    files?: {
+      inputsCount: number;
+      outputsCount: number;
+      latestOutputs?: Array<{ name: string; size: number; downloadUrl: string }>;
+    };
+    billing?: {
+      pendingCost: number;
+      exactCost: number;
+      source: string;
+    };
   }>;
   pagination: PortalPagination;
   dataSource: string;
   note?: string;
 }
+
+export type SessionTracesPayload = TracesPayload;
 
 export async function fetchOverview(params: OverviewQuery = {}) {
   const { data } = await apiClient.get<OverviewPayload>("/overview", { params });
@@ -878,6 +914,16 @@ export async function fetchTraceSummary() {
 
 export async function fetchTraces(params?: Record<string, string | number | undefined>) {
   const { data } = await apiClient.get<TracesPayload>("/traces", { params });
+  return data;
+}
+
+export async function fetchSessionTraces(params?: Record<string, string | number | undefined>) {
+  const { data } = await apiClient.get<SessionTracesPayload>("/session-traces", { params });
+  return data;
+}
+
+export async function fetchAdminAgentTraces(params?: Record<string, string | number | undefined>) {
+  const { data } = await apiClient.get<SessionTracesPayload>("/admin/agent-traces", { params });
   return data;
 }
 

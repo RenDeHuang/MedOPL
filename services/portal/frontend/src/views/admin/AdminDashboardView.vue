@@ -81,7 +81,7 @@
               </div>
               <div class="grid gap-2">
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/users">用户管理</RouterLink>
-                <RouterLink class="btn btn-secondary justify-start" to="/admin/trace">Trace</RouterLink>
+                <RouterLink class="btn btn-secondary justify-start" to="/admin/trace">Agent Traces</RouterLink>
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/billing-ops">计费运维</RouterLink>
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/sandboxes">K8s运维与分发</RouterLink>
               </div>

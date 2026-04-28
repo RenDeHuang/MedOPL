@@ -9,6 +9,8 @@ import {
   TENCENT_TKE_CLUSTER_ID,
   TENCENT_TKE_ENDPOINT,
   TENCENT_TKE_MAX_NODES,
+  TENCENT_TKE_NODE_IMAGE_ID,
+  TENCENT_TKE_NODE_IMAGE_SOURCE,
   TENCENT_TKE_ZONE,
   runtimeRoot,
   tencentCloudConfigured,
@@ -33,6 +35,8 @@ async function handleRequest(req, res) {
         clusterConfigured: Boolean(TENCENT_TKE_CLUSTER_ID),
         clusterId: TENCENT_TKE_CLUSTER_ID,
         maxNodes: TENCENT_TKE_MAX_NODES,
+        imageId: TENCENT_TKE_NODE_IMAGE_ID,
+        imageSource: TENCENT_TKE_NODE_IMAGE_SOURCE,
       },
     });
     return;
