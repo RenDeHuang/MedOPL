@@ -14,9 +14,56 @@ function normalizeTimestamp(value, formatDateTime) {
   return formatDateTime(String(value).replace(" ", "T"));
 }
 
+function firstValue(...values) {
+  return values.find((value) => value !== undefined && value !== null && value !== "") ?? "";
+}
+
 function metadataFromTrace(item = {}) {
   const metadata = item.metadata || item.meta || {};
   return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
+}
+
+function traceIdentityFields(item, metadata) {
+  return {
+    userId: String(firstValue(item.userId, item.user_id, metadata.portalUserId, metadata.userId)),
+    tenantId: String(firstValue(metadata.tenantId, metadata.tenant_id, item.tenantId, item.tenant_id)),
+    workspaceId: String(firstValue(metadata.workspaceId, metadata.workspace_id, item.workspaceId, item.workspace_id)),
+    workspaceSessionId: String(firstValue(metadata.workspaceSessionId, metadata.workspace_session_id)),
+    runtimeSessionId: String(firstValue(metadata.runtimeSessionId, metadata.runtime_session_id)),
+    sessionId: String(firstValue(item.sessionId, item.session_id, metadata.sessionId, metadata.session_id)),
+  };
+}
+
+function traceRuntimeFields(item, metadata) {
+  return {
+    runId: String(firstValue(metadata.runId, metadata.run_id, item.runId, item.run_id)),
+    resourceOrderId: String(firstValue(metadata.resourceOrderId, metadata.resource_order_id)),
+    serverPlanId: String(firstValue(metadata.serverPlanId, metadata.server_plan_id)),
+    model: String(firstValue(metadata.model, item.model)),
+    status: String(firstValue(metadata.status, item.status, "recorded")),
+  };
+}
+
+function traceUsageFields(metadata) {
+  return {
+    tokenCount: Number(firstValue(metadata.totalTokens, metadata.tokenCount, metadata.usage?.totalTokens, 0)),
+    userAgent: String(firstValue(metadata.userAgent, metadata.user_agent)),
+    latencyMs: Number(firstValue(metadata.latencyMs, metadata.latency_ms, metadata.durationMs, metadata.duration_ms, 0)),
+    inputPreview: String(firstValue(metadata.inputText, metadata.input, metadata.prompt, metadata.question)),
+    outputPreview: String(firstValue(metadata.outputText, metadata.output, metadata.answer)),
+  };
+}
+
+function traceTimingFields(item, formatDateTime) {
+  return {
+    startedAt: normalizeTimestamp(item.timestamp || item.createdAt || item.created_at, formatDateTime),
+    updatedAt: normalizeTimestamp(item.updatedAt || item.updated_at, formatDateTime),
+  };
+}
+
+function traceUrl({ langfuseUrl = "", projectId = "", traceId = "" }) {
+  if (!langfuseUrl || !traceId) return "";
+  return `${langfuseUrl.replace(/\/$/, "")}${projectId ? `/project/${projectId}` : ""}/traces/${traceId}`;
 }
 
 function normalizeTraceRow(item = {}, { langfuseUrl = "", formatDateTime }) {
@@ -26,28 +73,37 @@ function normalizeTraceRow(item = {}, { langfuseUrl = "", formatDateTime }) {
   return {
     traceId,
     traceName: String(item.name || item.traceName || item.trace_name || ""),
-    userId: String(item.userId || item.user_id || metadata.portalUserId || metadata.userId || ""),
-    tenantId: String(metadata.tenantId || metadata.tenant_id || item.tenantId || item.tenant_id || ""),
-    workspaceId: String(metadata.workspaceId || metadata.workspace_id || item.workspaceId || item.workspace_id || ""),
-    workspaceSessionId: String(metadata.workspaceSessionId || metadata.workspace_session_id || ""),
-    runtimeSessionId: String(metadata.runtimeSessionId || metadata.runtime_session_id || ""),
-    runId: String(metadata.runId || metadata.run_id || item.runId || item.run_id || ""),
-    resourceOrderId: String(metadata.resourceOrderId || metadata.resource_order_id || ""),
-    serverPlanId: String(metadata.serverPlanId || metadata.server_plan_id || ""),
-    model: String(metadata.model || item.model || ""),
-    sessionId: String(item.sessionId || item.session_id || metadata.sessionId || metadata.session_id || ""),
-    tokenCount: Number(metadata.totalTokens ?? metadata.tokenCount ?? metadata.usage?.totalTokens ?? 0),
-    userAgent: String(metadata.userAgent || metadata.user_agent || ""),
-    latencyMs: Number(metadata.latencyMs ?? metadata.latency_ms ?? metadata.durationMs ?? metadata.duration_ms ?? 0),
-    inputPreview: String(metadata.inputText ?? metadata.input ?? metadata.prompt ?? metadata.question ?? ""),
-    outputPreview: String(metadata.outputText ?? metadata.output ?? metadata.answer ?? ""),
-    startedAt: normalizeTimestamp(item.timestamp || item.createdAt || item.created_at, formatDateTime),
-    updatedAt: normalizeTimestamp(item.updatedAt || item.updated_at, formatDateTime),
-    status: String(metadata.status || item.status || "recorded"),
-    url: langfuseUrl && traceId
-      ? `${langfuseUrl.replace(/\/$/, "")}${projectId ? `/project/${projectId}` : ""}/traces/${traceId}`
-      : "",
+    ...traceIdentityFields(item, metadata),
+    ...traceRuntimeFields(item, metadata),
+    ...traceUsageFields(metadata),
+    ...traceTimingFields(item, formatDateTime),
+    url: traceUrl({ langfuseUrl, projectId, traceId }),
     source: "langfuse_api",
+  };
+}
+
+function extractTraceRows(payload = {}) {
+  return Array.isArray(payload.data) ? payload.data : (Array.isArray(payload.items) ? payload.items : []);
+}
+
+function normalizedTraceLimit(limit) {
+  return Math.min(100, Math.max(1, Number(limit || 20)));
+}
+
+function filterTraceRows(rows = [], { userId = "", workspaceId = "", runId = "", limit = 20 } = {}) {
+  return rows
+    .filter((item) => !userId || item.userId === userId)
+    .filter((item) => !workspaceId || item.workspaceId === workspaceId)
+    .filter((item) => !runId || item.runId === runId)
+    .slice(0, normalizedTraceLimit(limit));
+}
+
+function summarizeTracePayload(payload, formatDateTime) {
+  const rows = extractTraceRows(payload);
+  const latest = rows[0] || {};
+  return {
+    traceCount: Number(payload.meta?.totalItems ?? payload.totalCount ?? payload.count ?? rows.length),
+    latestTraceAt: normalizeTimestamp(latest.timestamp || latest.createdAt || latest.created_at, formatDateTime) || "暂无",
   };
 }
 
@@ -84,13 +140,11 @@ export function createLangfuseTraceClient({
       signal: AbortSignal.timeout(timeoutMs),
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new Error(`langfuse_api_failed:${response.status}`);
-      error.status = response.status;
-      error.payload = payload;
-      throw error;
-    }
-    return payload;
+    if (response.ok) return payload;
+    const error = new Error(`langfuse_api_failed:${response.status}`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
 
   return {
@@ -106,14 +160,11 @@ export function createLangfuseTraceClient({
           page: 1,
           projectId,
         });
-        const rows = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload.items) ? payload.items : []);
-        const latest = rows[0] || {};
         return {
           available: true,
           mode: "live",
           source: "langfuse_api",
-          traceCount: Number(payload.meta?.totalItems ?? payload.totalCount ?? payload.count ?? rows.length),
-          latestTraceAt: normalizeTimestamp(latest.timestamp || latest.createdAt || latest.created_at, formatDateTime) || "暂无",
+          ...summarizeTracePayload(payload, formatDateTime),
           note: "数据来自 Langfuse Public API",
         };
       } catch (error) {
@@ -132,18 +183,15 @@ export function createLangfuseTraceClient({
       }
       try {
         const payload = await fetchPublicJson("/api/public/traces", {
-          limit: Math.min(100, Math.max(1, Number(limit || 20))),
+          limit: normalizedTraceLimit(limit),
           page: 1,
           userId,
           projectId,
         });
-        const rawRows = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload.items) ? payload.items : []);
-        const rows = rawRows
-          .map((item) => normalizeTraceRow(item, { langfuseUrl: baseUrl, formatDateTime }))
-          .filter((item) => !userId || item.userId === userId)
-          .filter((item) => !workspaceId || item.workspaceId === workspaceId)
-          .filter((item) => !runId || item.runId === runId)
-          .slice(0, Math.min(100, Math.max(1, Number(limit || 20))));
+        const rows = filterTraceRows(
+          extractTraceRows(payload).map((item) => normalizeTraceRow(item, { langfuseUrl: baseUrl, formatDateTime })),
+          { userId, workspaceId, runId, limit },
+        );
         return {
           source: "langfuse_api",
           type: rows.length ? "live" : "status_only",

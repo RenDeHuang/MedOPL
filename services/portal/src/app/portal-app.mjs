@@ -114,6 +114,10 @@ import {
   upsertQuotedResourceOrder,
 } from "../domain/resource-orders.mjs";
 import {
+  buildSessionTraceDetailPayload as buildSessionTraceDetailDomainPayload,
+  buildSessionTracesApiPayload as buildSessionTracesDomainApiPayload,
+} from "../domain/session-traces.mjs";
+import {
   appendLedgerEntry,
   ensureWallet,
   moneyAmount,
@@ -4119,127 +4123,24 @@ async function buildTracesApiPayload(options = {}) {
   };
 }
 
-async function fetchMergedTraceRowsForPortalUser(user, options = {}) {
-  const requestOptions = {
-    userId: user?.role === "admin" ? String(options.userId || "").trim() : user.id,
-    workspaceId: String(options.workspaceId || "").trim(),
-    runId: String(options.runId || "").trim(),
-    sessionId: String(options.sessionId || "").trim(),
-    status: String(options.status || "").trim().toLowerCase(),
-    limit: parsePositiveInt(options.limit, 200),
-  };
-  const [langfuseRows, adapterRows] = await Promise.all([
-    fetchTraceRows({
-      userId: requestOptions.userId,
-      workspaceId: requestOptions.workspaceId,
-      runId: requestOptions.runId,
-      limit: requestOptions.limit,
-    }),
-    fetchOplAdapterTraceRows({
-      userId: requestOptions.userId,
-      workspaceId: requestOptions.workspaceId,
-      runId: requestOptions.runId,
-      limit: requestOptions.limit,
-    }),
-  ]);
-  const rows = [...(adapterRows.rows || []), ...(langfuseRows.rows || [])]
-    .filter((item) => !requestOptions.sessionId || String(item.sessionId || item.workspaceSessionId || "").includes(requestOptions.sessionId))
-    .filter((item) => !requestOptions.status || String(item.status || "").toLowerCase().includes(requestOptions.status))
-    .sort((a, b) => String(b.startedAt || b.createdAt || "").localeCompare(String(a.startedAt || a.createdAt || "")));
-  return {
-    rows,
-    filters: requestOptions,
-    sources: {
-      adapter: adapterRows,
-      langfuse: langfuseRows,
-    },
-  };
-}
-
-async function enrichSessionTraceRow(db, user, row = {}) {
-  const workspaceId = String(row.workspaceId || "").trim();
-  const runId = String(row.runId || "").trim();
-  const taskSpace = workspaceId ? findTaskSpace(db, row.userId || user.id, workspaceId) : null;
-  const storage = taskSpace ? await fetchWorkspaceStorageSnapshot(taskSpace) : null;
-  const billing = runId
-    ? await fetchBillingSummary(row.userId || user.id, workspaceId, "168h").catch(() => null)
-    : null;
-  const relatedCosts = (billing?.items || []).filter((item) =>
-    (!runId || item.runId === runId) &&
-    (!workspaceId || item.workspaceId === workspaceId)
-  );
-  const pendingCost = relatedCosts
-    .filter((item) => String(item.status || item.pricingSource || "").toLowerCase().includes("pending"))
-    .reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
-  const exactCost = relatedCosts
-    .filter((item) => String(item.status || item.pricingSource || "").toLowerCase().includes("exact") || String(item.pricingSource || "").includes("tencent"))
-    .reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
-  return {
-    ...row,
-    title: row.traceName || row.sessionId || row.workspaceSessionId || row.runId || "会话",
-    businessStatus: row.status || "recorded",
-    files: {
-      inputsCount: storage?.inputsCount || 0,
-      outputsCount: storage?.outputsCount || 0,
-      latestOutputs: (storage?.outputs || []).slice(0, 5).map((item) => ({
-        name: item.name,
-        size: item.size || item.sizeBytes || 0,
-        downloadUrl: `/portal/workspace/download-file?task=${encodeURIComponent(workspaceId)}&kind=outputs&file=${encodeURIComponent(item.name)}`,
-      })),
-    },
-    billing: {
-      pendingCost: Number(pendingCost.toFixed(5)),
-      exactCost: Number(exactCost.toFixed(5)),
-      source: billing?.source || "billing_aggregator",
-    },
-  };
-}
+const sessionTraceDependencies = {
+  fetchTraceRows,
+  fetchOplAdapterTraceRows,
+  fetchWorkspaceStorageSnapshot,
+  fetchBillingSummary,
+  findTaskSpace,
+  readPortalEvents,
+  paginateRows,
+  normalizePageSize,
+  parsePositiveInt,
+};
 
 async function buildSessionTracesApiPayload(db, user, options = {}) {
-  const merged = await fetchMergedTraceRowsForPortalUser(user, options);
-  const pagination = paginateRows(merged.rows, options.page, normalizePageSize(options.pageSize || 10));
-  const items = await Promise.all(pagination.rows.map((row) => enrichSessionTraceRow(db, user, row)));
-  return {
-    filters: merged.filters,
-    summary: {
-      available: merged.sources.adapter.type === "live" || merged.sources.langfuse.type === "live",
-      mode: merged.sources.adapter.type === "live" ? "live" : merged.sources.langfuse.type,
-      traceCount: merged.rows.length,
-      latestTraceAt: merged.rows[0]?.startedAt || "",
-      dataSource: `${merged.sources.adapter.source || "portal_opl_adapter"} + ${merged.sources.langfuse.source || "langfuse_api"}`,
-    },
-    items,
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-      totalPages: pagination.totalPages,
-    },
-    dataSource: "portal_session_traces",
-    note: "用户侧只返回当前账号可见的会话、文件、运行、费用和资源状态索引；不暴露 Langfuse key 或原始内部参数。",
-  };
+  return buildSessionTracesDomainApiPayload(sessionTraceDependencies, db, user, options);
 }
 
 async function buildSessionTraceDetailPayload(db, user, sessionId) {
-  const payload = await buildSessionTracesApiPayload(db, user, { sessionId, limit: 200, pageSize: 200 });
-  const item = payload.items.find((row) =>
-    String(row.sessionId || row.workspaceSessionId || row.traceId || "") === String(sessionId || "")
-  ) || payload.items[0];
-  if (!item) return null;
-  const events = (await readPortalEvents(500)).filter((event) =>
-    event.userId === (item.userId || user.id) &&
-    (!item.workspaceId || event.workspaceId === item.workspaceId) &&
-    (!item.runId || event.runId === item.runId)
-  );
-  return {
-    ...item,
-    timeline: events.map((event) => ({
-      type: event.type,
-      occurredAt: event.occurredAt,
-      workspaceId: event.workspaceId || item.workspaceId,
-      runId: event.runId || item.runId,
-    })),
-  };
+  return buildSessionTraceDetailDomainPayload(sessionTraceDependencies, db, user, sessionId);
 }
 
 const server = http.createServer(async (req, res) => {

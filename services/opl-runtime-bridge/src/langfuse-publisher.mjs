@@ -12,6 +12,66 @@ function cleanMetadata(value = {}) {
   );
 }
 
+function firstValue(...values) {
+  return values.find((value) => value !== undefined && value !== null && value !== "") ?? "";
+}
+
+function traceIdForEvent(event = {}) {
+  return String(firstValue(event.traceId, event.trace_id, event.runId, event.run_id, randomUUID()));
+}
+
+function metadataForEvent(event = {}) {
+  return cleanMetadata({
+    schema_version: "opl.trace.v13",
+    tenantId: firstValue(event.tenantId, event.tenant_id),
+    workspaceId: firstValue(event.workspaceId, event.workspace_id),
+    workspaceSessionId: firstValue(event.workspaceSessionId, event.workspace_session_id),
+    runtimeSessionId: firstValue(event.runtimeSessionId, event.runtime_session_id),
+    runId: firstValue(event.runId, event.run_id),
+    resourceOrderId: firstValue(event.resourceOrderId, event.resource_order_id),
+    serverPlanId: firstValue(event.serverPlanId, event.server_plan_id),
+    status: firstValue(event.status, "recorded"),
+    model: firstValue(event.model, "opl-runtime"),
+    eventType: firstValue(event.eventType, event.type, "runtime_event"),
+    artifactId: firstValue(event.artifactId, event.artifact_id),
+    artifactName: firstValue(event.name, event.artifactName),
+  });
+}
+
+function ingestionBodyForEvent(event = {}) {
+  const traceId = traceIdForEvent(event);
+  return {
+    traceId,
+    body: {
+      batch: [{
+        id: randomUUID(),
+        type: "trace-create",
+        timestamp: firstValue(event.timestamp, event.occurredAt, event.createdAt, new Date().toISOString()),
+        body: {
+          id: traceId,
+          name: firstValue(event.traceName, event.name, "opl-session"),
+          userId: firstValue(event.portalUserId, event.portal_user_id, event.userId, event.user_id),
+          sessionId: firstValue(event.workspaceSessionId, event.workspace_session_id, event.sessionId, event.session_id),
+          metadata: metadataForEvent(event),
+        },
+      }],
+    },
+  };
+}
+
+async function postIngestion({ normalizedBaseUrl, authorization, timeoutMs, body }) {
+  return fetch(new URL("/api/public/ingestion", `${normalizedBaseUrl}/`), {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      authorization,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+}
+
 export function createLangfusePublisher({
   baseUrl = process.env.LANGFUSE_URL || "",
   publicKey = process.env.LANGFUSE_PUBLIC_KEY || "",
@@ -27,47 +87,8 @@ export function createLangfusePublisher({
 
   async function publishTraceEvent(event = {}) {
     if (!configured()) return { ok: false, skipped: true, reason: "langfuse_not_configured" };
-    const traceId = String(event.traceId || event.trace_id || event.runId || event.run_id || randomUUID());
-    const timestamp = event.timestamp || event.occurredAt || event.createdAt || new Date().toISOString();
-    const metadata = cleanMetadata({
-      schema_version: "opl.trace.v13",
-      tenantId: event.tenantId || event.tenant_id || "",
-      workspaceId: event.workspaceId || event.workspace_id || "",
-      workspaceSessionId: event.workspaceSessionId || event.workspace_session_id || "",
-      runtimeSessionId: event.runtimeSessionId || event.runtime_session_id || "",
-      runId: event.runId || event.run_id || "",
-      resourceOrderId: event.resourceOrderId || event.resource_order_id || "",
-      serverPlanId: event.serverPlanId || event.server_plan_id || "",
-      status: event.status || "recorded",
-      model: event.model || "opl-runtime",
-      eventType: event.eventType || event.type || "runtime_event",
-      artifactId: event.artifactId || event.artifact_id || "",
-      artifactName: event.name || event.artifactName || "",
-    });
-    const body = {
-      batch: [{
-        id: randomUUID(),
-        type: "trace-create",
-        timestamp,
-        body: {
-          id: traceId,
-          name: event.traceName || event.name || "opl-session",
-          userId: event.portalUserId || event.portal_user_id || event.userId || event.user_id || "",
-          sessionId: event.workspaceSessionId || event.workspace_session_id || event.sessionId || event.session_id || "",
-          metadata,
-        },
-      }],
-    };
-    const response = await fetch(new URL("/api/public/ingestion", `${normalizedBaseUrl}/`), {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        authorization,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const { traceId, body } = ingestionBodyForEvent(event);
+    const response = await postIngestion({ normalizedBaseUrl, authorization, timeoutMs, body });
     if (!response.ok) {
       return { ok: false, status: response.status, error: `langfuse_ingestion_failed:${response.status}` };
     }

@@ -28,33 +28,43 @@ function canonicalQuery(params = {}) {
     .join("&");
 }
 
-function cosAuthorization({ method, pathname, params, host, secretId, secretKey, now = Math.floor(Date.now() / 1000) }) {
-  const signTime = `${now};${now + 600}`;
-  const headerList = "host";
-  const urlParamList = Object.entries(params || {})
+function signedUrlParamList(params = {}) {
+  return Object.entries(params || {})
     .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .map(([key]) => String(key).toLowerCase())
     .sort()
     .join(";");
+}
+
+function signedHttpString({ method, pathname, params, host }) {
   const headerString = `host=${encodeCos(host)}`;
-  const httpString = [
+  return [
     String(method || "GET").toLowerCase(),
     pathname || "/",
     canonicalQuery(params),
     headerString,
     "",
   ].join("\n");
+}
+
+function cosSignature({ method, pathname, params, host, secretKey, signTime }) {
+  const httpString = signedHttpString({ method, pathname, params, host });
   const stringToSign = ["sha1", signTime, sha1(httpString), ""].join("\n");
   const signKey = hmacSha1(secretKey, signTime);
-  const signature = hmacSha1(signKey, stringToSign);
+  return hmacSha1(signKey, stringToSign);
+}
+
+function cosAuthorization({ method, pathname, params, host, secretId, secretKey, now = Math.floor(Date.now() / 1000) }) {
+  const signTime = `${now};${now + 600}`;
+  const headerList = "host";
   return [
     "q-sign-algorithm=sha1",
     `q-ak=${secretId}`,
     `q-sign-time=${signTime}`,
     `q-key-time=${signTime}`,
     `q-header-list=${headerList}`,
-    `q-url-param-list=${urlParamList}`,
-    `q-signature=${signature}`,
+    `q-url-param-list=${signedUrlParamList(params)}`,
+    `q-signature=${cosSignature({ method, pathname, params, host, secretKey, signTime })}`,
   ].join("&");
 }
 
@@ -98,55 +108,91 @@ function parseDelimitedRows(text) {
   });
 }
 
-export function buildCosBillReader(config = {}) {
+function normalizeReaderConfig(config = {}) {
   const bucket = String(config.bucket || "").trim();
   const region = String(config.region || "").trim();
   const prefix = String(config.prefix || "daily/").trim();
-  const secretId = String(config.secretId || "").trim();
-  const secretKey = String(config.secretKey || "").trim();
-  const endpoint = normalizeEndpoint({ bucket, region, endpoint: config.endpoint });
+  return {
+    bucket,
+    region,
+    prefix,
+    secretId: String(config.secretId || "").trim(),
+    secretKey: String(config.secretKey || "").trim(),
+    endpoint: normalizeEndpoint({ bucket, region, endpoint: config.endpoint }),
+    maxKeys: Number(config.maxKeys || 20),
+    timeoutMs: Number(config.timeoutMs || 30000),
+  };
+}
+
+function isReaderConfigured(readerConfig) {
+  return Boolean(
+    readerConfig.bucket &&
+    readerConfig.region &&
+    readerConfig.prefix &&
+    readerConfig.secretId &&
+    readerConfig.secretKey,
+  );
+}
+
+function ensureReaderConfigured(readerConfig) {
+  if (isReaderConfigured(readerConfig)) return;
+  const error = new Error("cos_bill_reader_not_configured");
+  error.code = "COS_NOT_CONFIGURED";
+  throw error;
+}
+
+async function requestCosObject(readerConfig, { pathname = "/", params = {} } = {}) {
+  ensureReaderConfigured(readerConfig);
+  const query = canonicalQuery(params);
+  const url = `https://${readerConfig.endpoint}${pathname}${query ? `?${query}` : ""}`;
+  const authorization = cosAuthorization({
+    method: "GET",
+    pathname,
+    params,
+    host: readerConfig.endpoint,
+    secretId: readerConfig.secretId,
+    secretKey: readerConfig.secretKey,
+  });
+  const response = await fetch(url, {
+    headers: {
+      authorization,
+      host: readerConfig.endpoint,
+    },
+    signal: AbortSignal.timeout(readerConfig.timeoutMs),
+  });
+  const text = await response.text();
+  if (response.ok) return text;
+  const error = new Error(`cos_bill_request_failed:${response.status}`);
+  error.status = response.status;
+  error.body = text.slice(0, 500);
+  throw error;
+}
+
+function latestNonEmptyFile(files = []) {
+  return files
+    .filter((item) => item.size > 0)
+    .sort((a, b) => String(b.lastModified || "").localeCompare(String(a.lastModified || "")))[0] || null;
+}
+
+function parseBillRows(key, body) {
+  if (String(key || "").endsWith(".json") || String(body || "").trim().startsWith("[")) {
+    const rows = JSON.parse(body);
+    return Array.isArray(rows) ? rows : [];
+  }
+  return parseDelimitedRows(body);
+}
+
+export function buildCosBillReader(config = {}) {
+  const readerConfig = normalizeReaderConfig(config);
 
   function configured() {
-    return Boolean(bucket && region && prefix && secretId && secretKey);
-  }
-
-  async function requestCos({ pathname = "/", params = {} } = {}) {
-    if (!configured()) {
-      const error = new Error("cos_bill_reader_not_configured");
-      error.code = "COS_NOT_CONFIGURED";
-      throw error;
-    }
-    const query = canonicalQuery(params);
-    const url = `https://${endpoint}${pathname}${query ? `?${query}` : ""}`;
-    const authorization = cosAuthorization({
-      method: "GET",
-      pathname,
-      params,
-      host: endpoint,
-      secretId,
-      secretKey,
-    });
-    const response = await fetch(url, {
-      headers: {
-        authorization,
-        host: endpoint,
-      },
-      signal: AbortSignal.timeout(Number(config.timeoutMs || 30000)),
-    });
-    const text = await response.text();
-    if (!response.ok) {
-      const error = new Error(`cos_bill_request_failed:${response.status}`);
-      error.status = response.status;
-      error.body = text.slice(0, 500);
-      throw error;
-    }
-    return text;
+    return isReaderConfigured(readerConfig);
   }
 
   async function listFiles({ maxKeys = 20 } = {}) {
-    const xml = await requestCos({
+    const xml = await requestCosObject(readerConfig, {
       params: {
-        prefix,
+        prefix: readerConfig.prefix,
         "max-keys": String(maxKeys),
       },
     });
@@ -155,33 +201,28 @@ export function buildCosBillReader(config = {}) {
 
   async function readFile(key) {
     const normalizedKey = String(key || "").trim();
-    if (!normalizedKey || !normalizedKey.startsWith(prefix)) {
+    if (!normalizedKey || !normalizedKey.startsWith(readerConfig.prefix)) {
       const error = new Error("cos_bill_key_outside_prefix");
       error.status = 422;
       throw error;
     }
-    return requestCos({ pathname: `/${normalizedKey.split("/").map(encodeURIComponent).join("/")}` });
+    return requestCosObject(readerConfig, { pathname: `/${normalizedKey.split("/").map(encodeURIComponent).join("/")}` });
   }
 
   async function parseLatestFile() {
-    const files = await listFiles({ maxKeys: Number(config.maxKeys || 20) });
-    const latest = files
-      .filter((item) => item.size > 0)
-      .sort((a, b) => String(b.lastModified || "").localeCompare(String(a.lastModified || "")))[0];
+    const files = await listFiles({ maxKeys: readerConfig.maxKeys });
+    const latest = latestNonEmptyFile(files);
     if (!latest) return { files, latest: null, rows: [] };
     const body = await readFile(latest.key);
-    const rows = latest.key.endsWith(".json") || body.trim().startsWith("[")
-      ? JSON.parse(body)
-      : parseDelimitedRows(body);
-    return { files, latest, rows: Array.isArray(rows) ? rows : [] };
+    return { files, latest, rows: parseBillRows(latest.key, body) };
   }
 
   return {
     configured,
-    endpoint,
-    bucket,
-    region,
-    prefix,
+    endpoint: readerConfig.endpoint,
+    bucket: readerConfig.bucket,
+    region: readerConfig.region,
+    prefix: readerConfig.prefix,
     listFiles,
     readFile,
     parseLatestFile,
