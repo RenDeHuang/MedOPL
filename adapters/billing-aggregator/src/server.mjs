@@ -62,6 +62,13 @@ const TENCENT_COS_BILL_ENDPOINT = String(process.env.TENCENT_COS_BILL_ENDPOINT |
 const TENCENT_COS_SECRET_ID = String(process.env.TENCENT_COS_SECRET_ID || process.env.TENCENT_COS_BILL_SECRET_ID || "").trim();
 const TENCENT_COS_SECRET_KEY = String(process.env.TENCENT_COS_SECRET_KEY || process.env.TENCENT_COS_BILL_SECRET_KEY || "").trim();
 const TENCENT_REQUIRED_COST_TAGS = ["resource_order_id", "run_id", "server_plan_id", "tenant_id", "workspace_id"];
+const TENCENT_COST_TAG_ALIASES = {
+  resource_order_id: ["resourceorderid", "resource-order-id"],
+  run_id: ["runid", "run-id"],
+  server_plan_id: ["serverplanid", "server-plan-id"],
+  tenant_id: ["tenantid", "tenant-id"],
+  workspace_id: ["workspaceid", "workspace-id"],
+};
 
 const cosBillReader = buildCosBillReader({
   bucket: TENCENT_COS_BILL_BUCKET,
@@ -95,6 +102,7 @@ function billTagValue(row = {}, key = "") {
   const pascal = camel.charAt(0).toUpperCase() + camel.slice(1);
   const tagKeys = [
     key,
+    ...(TENCENT_COST_TAG_ALIASES[key] || []),
     camel,
     pascal,
     `tag:${key}`,
