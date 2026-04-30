@@ -72,6 +72,17 @@ export function normalizeLoginCredentials(payload = {}) {
     password: String(payload.password || payload.passcode || "").trim(),
     task: String(payload.task || payload.workspaceId || payload.taskSlug || "").trim(),
     redirectTo: String(payload.redirectTo || payload.redirect || "").trim(),
+    apiKey: String(
+      payload.apiKey ||
+      payload.api_key ||
+      payload.experimentalBearerToken ||
+      payload.experimental_bearer_token ||
+      payload.providerApiKey ||
+      payload.provider_api_key ||
+      payload.gflabtoken ||
+      payload.gflabToken ||
+      ""
+    ).trim(),
   };
 }
 

@@ -5,9 +5,11 @@ import { setTimeout as sleep } from "node:timers/promises";
 const oplPort = Number(process.env.OPL_PRODUCT_API_FIXTURE_TEST_PORT || 18915);
 const runnerPort = Number(process.env.MED_RUNNER_FIXTURE_TEST_PORT || 18925);
 const adapterPort = Number(process.env.PORTAL_OPL_ADAPTER_TEST_PORT || 18793);
+const portalPort = Number(process.env.PORTAL_INTERNAL_FIXTURE_TEST_PORT || 18935);
 const oplUrl = `http://127.0.0.1:${oplPort}`;
 const runnerUrl = `http://127.0.0.1:${runnerPort}`;
 const adapterUrl = `http://127.0.0.1:${adapterPort}`;
+const portalUrl = `http://127.0.0.1:${portalPort}`;
 const oplWebUrl = process.env.OPL_WEB_TEST_URL || process.env.OPL_WEB_URL || "http://127.0.0.1:19999/opl-web";
 const adapterStateRoot = `.runtime/test-opl-launch-adapter-${adapterPort}-${Date.now()}`;
 
@@ -66,10 +68,14 @@ async function post(url, body, headers = {}) {
 taskkillPort(oplPort);
 taskkillPort(runnerPort);
 taskkillPort(adapterPort);
+taskkillPort(portalPort);
 await sleep(250);
 rmSync(adapterStateRoot, { recursive: true, force: true });
 rmSync(".runtime/med-autoscience-runner-fixture", { recursive: true, force: true });
 
+const portal = spawnService("portal-fixture", "node", ["scripts/fixtures/portal-internal-resource-order-fixture.mjs"], {
+  env: { ...process.env, PORT: String(portalPort) },
+});
 const opl = spawnService("opl-fixture", "node", ["scripts/fixtures/opl-product-api-fixture.mjs"], {
   env: { ...process.env, PORT: String(oplPort) },
 });
@@ -83,6 +89,7 @@ const adapter = spawnService("opl-adapter", "node", ["src/server.mjs"], {
     PORT: String(adapterPort),
     PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
     PORTAL_OPL_ADAPTER_STATE_ROOT: adapterStateRoot,
+    PORTAL_INTERNAL_BASE_URL: portalUrl,
     OPL_PRODUCT_API_URL: oplUrl,
     OPL_WEB_URL: oplWebUrl,
     MED_AUTOSCIENCE_RUNNER_URL: runnerUrl,
@@ -90,6 +97,7 @@ const adapter = spawnService("opl-adapter", "node", ["src/server.mjs"], {
 });
 
 try {
+  await waitFor(`${portalUrl}/healthz`, "Portal internal fixture");
   await waitFor(`${oplUrl}/healthz`, "OPL Product API fixture");
   await waitFor(`${runnerUrl}/healthz`, "med-autoscience runner fixture");
   await waitFor(`${adapterUrl}/healthz`, "Portal OPL adapter");
@@ -135,6 +143,7 @@ try {
     runId: "opl-launch-adapter-smoke-run",
   }, { "user-agent": "opl-launch-adapter-smoke" });
   assert(run.run?.runId === "opl-launch-adapter-smoke-run", "run id mismatch");
+  assert(run.run?.resourceOrderId === "ro-opl-launch-adapter-smoke-run", "resource order must be prepared before runner submission");
   assert(["submitted", "running", "queued"].includes(run.run?.status), "run should start with a non-terminal submitted state");
 
   const statusUrl = bootstrap.callbacks.runStatus.replace("{runId}", encodeURIComponent(run.run.runId));
@@ -154,6 +163,7 @@ try {
     callbacksPresent: Boolean(bootstrap.callbacks.startRun && bootstrap.callbacks.runStatus && bootstrap.callbacks.artifacts),
     oplSessionId: sessionBind.runtimeSession.oplSessionId,
     runId: run.run.runId,
+    resourceOrderId: run.run.resourceOrderId,
     status: status.run.status,
     artifactCount: artifacts.items.length,
   }, null, 2));
@@ -161,4 +171,5 @@ try {
   adapter.kill();
   runner.kill();
   opl.kill();
+  portal.kill();
 }

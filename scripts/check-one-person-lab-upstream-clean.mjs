@@ -1,44 +1,37 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-function fail(message) {
-  console.error(message);
-  process.exit(1);
-}
+const repoRoot = process.cwd();
 
-function findDefaultUpstream(startDir) {
-  let current = path.resolve(startDir);
-  while (true) {
+function findUpstreamPath() {
+  if (process.env.ONE_PERSON_LAB_UPSTREAM_PATH) {
+    return path.resolve(process.env.ONE_PERSON_LAB_UPSTREAM_PATH);
+  }
+
+  let current = repoRoot;
+  for (;;) {
     const candidate = path.join(current, ".runtime", "one-person-lab-upstream");
     if (existsSync(candidate)) return candidate;
-    const next = path.dirname(current);
-    if (next === current) return null;
-    current = next;
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
   }
+
+  return path.resolve(repoRoot, ".runtime", "one-person-lab-upstream");
 }
 
-const repoRoot = process.cwd();
-const upstreamPath = process.env.ONE_PERSON_LAB_UPSTREAM_PATH
-  ? path.resolve(repoRoot, process.env.ONE_PERSON_LAB_UPSTREAM_PATH)
-  : findDefaultUpstream(repoRoot);
+const upstreamPath = findUpstreamPath();
 
-if (!upstreamPath || !existsSync(upstreamPath)) {
-  fail("one-person-lab upstream path not found");
+let status = "";
+try {
+  status = execFileSync("git", ["-C", upstreamPath, "status", "--short"], { encoding: "utf8" });
+} catch (error) {
+  throw new Error(`failed to inspect one-person-lab upstream at ${upstreamPath}: ${error.message}`);
 }
 
-const status = spawnSync("git", ["status", "--short"], {
-  cwd: upstreamPath,
-  encoding: "utf8",
-});
-
-if (status.status !== 0) {
-  fail(`git status failed in one-person-lab upstream: ${status.stderr || status.stdout}`);
+if (status.trim()) {
+  throw new Error(`one-person-lab upstream must remain unmodified:\n${status}`);
 }
 
-const output = String(status.stdout || "").trim();
-if (output) {
-  fail(`one-person-lab upstream is not clean:\n${output}`);
-}
-
-console.log("one-person-lab upstream clean");
+console.log(JSON.stringify({ ok: true, upstreamPath, clean: true }, null, 2));

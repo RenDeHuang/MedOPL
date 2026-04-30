@@ -3,8 +3,30 @@ import { buildDirectEntryState } from "./config.mjs";
 export function portalLaunchClientScript() {
   return `
 const STATE_KEY = "portal.opl.launch";
-const BOOTSTRAP_KEY = "portal.opl.bootstrap";
-const DIRECT_ENTRY_DEFAULT = ${JSON.stringify(buildDirectEntryState())};
+const BOOTSTRAP_KEY = "portal.opl.bootstrap";
+
+const DIRECT_ENTRY_DISMISS_KEY = "portal.opl.directEntryDismissed";
+
+const PROVIDER_KEY_SESSION_KEY = "portal.opl.providerApiKey";
+
+const NATIVE_LOGIN_PATHS = [
+
+  "/api/auth/signin",
+
+  "/api/auth/login",
+
+  "/api/v1/auths/signin",
+
+  "/api/v1/auths/login",
+
+  "/auth/login",
+
+  "/login"
+
+];
+
+const OPL_MODULE_IDS = ["mas", "mag", "rca"];
+const DIRECT_ENTRY_DEFAULT = ${JSON.stringify(buildDirectEntryState())};
 
 function readStoredState() {
   try {
@@ -49,31 +71,127 @@ function updateDirectEntryState(overrides = {}) {
 
 function syncDirectEntryShell(state) {
   try {
-    if (!document || typeof document.getElementById !== "function") return;
-    const shell = document.getElementById("opl-portal-direct-entry");
+    const shell = resolveDirectEntryShell();
     if (!shell) return;
-    shell.style.display = state && state.active && shouldShowDirectEntryShell() ? "flex" : "none";
-    if (typeof shell.querySelector !== "function") return;
-    const link = shell.querySelector("[data-opl-portal-continue-link]");
-    if (!link) return;
-    if (state && state.openFromPortalUrl && typeof link.setAttribute === "function") {
-      link.setAttribute("href", state.openFromPortalUrl);
-    }
+    shell.style.display = state && state.active && shouldShowDirectEntryShell() && !isDirectEntryDismissed() ? "flex" : "none";
+    updateDirectEntryContinueLink(shell, state);
   } catch {}
 }
 
-function shouldShowDirectEntryShell() {
-  try {
-    const hash = String(window.location.hash || "").toLowerCase();
-    const path = String(window.location.pathname || "").toLowerCase();
-    if (!hash || hash === "#" || hash === "#/") return true;
-    return hash.includes("login") || hash.includes("signin") || path.includes("login") || path.includes("auth");
+function resolveDirectEntryShell() {
+
+  if (!document || typeof document.getElementById !== "function") return null;
+
+  return document.getElementById("opl-portal-direct-entry");
+
+}
+
+
+
+function updateDirectEntryContinueLink(shell, state) {
+
+  if (!shell || typeof shell.querySelector !== "function") return;
+
+  const link = shell.querySelector("[data-opl-portal-continue-link]");
+
+  if (link && state && state.openFromPortalUrl && typeof link.setAttribute === "function") {
+
+    link.setAttribute("href", state.openFromPortalUrl);
+
+  }
+
+}
+
+
+
+function isDirectEntryDismissed() {
+
+  try {
+
+    return window.sessionStorage.getItem(DIRECT_ENTRY_DISMISS_KEY) === "1";
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+
+function dismissDirectEntryShell() {
+
+  try {
+
+    window.sessionStorage.setItem(DIRECT_ENTRY_DISMISS_KEY, "1");
+
+  } catch {}
+
+  syncDirectEntryShell(window.__OPL_PORTAL_DIRECT_ENTRY__ || DIRECT_ENTRY_DEFAULT);
+
+}
+
+
+
+function installDirectEntryDismissHandler() {
+
+  if (typeof document === "undefined" || typeof document.addEventListener !== "function") return;
+
+  document.addEventListener("click", (event) => {
+
+    const target = event && event.target;
+
+    const dismiss = target && typeof target.closest === "function" ? target.closest("[data-opl-portal-dismiss]") : null;
+
+    if (!dismiss) return;
+
+    event.preventDefault();
+
+    dismissDirectEntryShell();
+
+  }, true);
+
+}
+
+
+
+function shouldShowDirectEntryShell() {
+  const hash = safeLowerLocationValue(window.location && window.location.hash);
+
+  const path = safeLowerLocationValue(window.location && window.location.pathname);
+
+  return isEmptyRouteHash(hash) || hasAuthRouteMarker(hash, path);
+}
+
+
+
+function safeLowerLocationValue(value) {
+
+  try {
+    return String(value || "").toLowerCase();
   } catch {
-    return true;
+    return "";
   }
 }
 
-function refreshDirectEntryShell() {
+function isEmptyRouteHash(hash) {
+
+  return !hash || hash === "#" || hash === "#/";
+
+}
+
+
+
+function hasAuthRouteMarker(hash, path) {
+
+  return hash.includes("login") || hash.includes("signin") || path.includes("login") || path.includes("auth");
+
+}
+
+
+
+function refreshDirectEntryShell() {
   syncDirectEntryShell(window.__OPL_PORTAL_DIRECT_ENTRY__ || DIRECT_ENTRY_DEFAULT);
 }
 
@@ -160,7 +278,373 @@ async function fetchJson(url, options = {}) {
   return payload;
 }
 
-function requireLaunchState() {
+function isNativeLoginUrl(input) {
+
+  try {
+
+    const value = typeof input === "string" ? input : input && input.url;
+
+    if (!value) return false;
+
+    const url = new URL(value, window.location.origin);
+
+    return NATIVE_LOGIN_PATHS.includes(url.pathname);
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+
+function normalizeProviderKey(value) {
+
+  return String(value || "").trim();
+
+}
+
+
+
+function writeProviderKey(value) {
+
+  const normalized = normalizeProviderKey(value);
+
+  try {
+
+    if (normalized) window.sessionStorage.setItem(PROVIDER_KEY_SESSION_KEY, normalized);
+
+  } catch {}
+
+  return normalized;
+
+}
+
+
+
+function readProviderKey(container) {
+
+  try {
+
+    const root = container && typeof container.querySelector === "function" ? container : document;
+
+    const input = root.querySelector('[name="apiKey"], [name="providerApiKey"], [name="experimentalBearerToken"], [name="gflabtoken"], [data-opl-provider-key]');
+
+    const fromInput = normalizeProviderKey(input && input.value);
+
+    if (fromInput) return writeProviderKey(fromInput);
+
+    return normalizeProviderKey(window.sessionStorage.getItem(PROVIDER_KEY_SESSION_KEY));
+
+  } catch {
+
+    return "";
+
+  }
+
+}
+
+
+
+function ensureProviderKeyInput(form) {
+
+  try {
+
+    if (!form || typeof form.querySelector !== "function") return;
+
+    if (!form.querySelector('input[type="password"], input[name="password"]')) return;
+
+    if (form.querySelector("[data-opl-provider-key-field]")) return;
+
+    const passwordInput = form.querySelector('input[type="password"], input[name="password"]');
+
+    if (!passwordInput || !passwordInput.parentNode) return;
+
+    const field = document.createElement("div");
+
+    field.className = "opl-portal-provider-key-field";
+
+    field.setAttribute("data-opl-provider-key-field", "1");
+
+    const label = document.createElement("label");
+
+    label.textContent = "gflabtoken API key";
+
+    const input = document.createElement("input");
+
+    input.type = "password";
+
+    input.name = "apiKey";
+
+    input.autocomplete = "off";
+
+    input.placeholder = "来源于 gflabtoken.cn";
+
+    input.setAttribute("data-opl-provider-key", "1");
+
+    input.value = readProviderKey() || "";
+
+    input.addEventListener("input", () => writeProviderKey(input.value));
+
+    field.appendChild(label);
+
+    field.appendChild(input);
+
+    const host = passwordInput.closest("label, div, fieldset") || passwordInput;
+
+    host.insertAdjacentElement("afterend", field);
+
+  } catch {}
+
+}
+
+
+
+function scanProviderKeyForms() {
+
+  try {
+
+    if (!document || typeof document.querySelectorAll !== "function") return;
+
+    document.querySelectorAll("form").forEach((form) => ensureProviderKeyInput(form));
+
+  } catch {}
+
+}
+
+
+
+function installProviderKeyFieldObserver() {
+
+  scanProviderKeyForms();
+
+  installProviderKeyInputHandler();
+
+  installProviderKeySubmitGuard();
+
+  installProviderKeyMutationObserver();
+
+}
+
+
+
+function installProviderKeyInputHandler() {
+
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+
+    document.addEventListener("input", (event) => {
+
+      const target = event && event.target;
+
+      if (target && typeof target.matches === "function" && target.matches("[data-opl-provider-key]")) {
+
+        writeProviderKey(target.value);
+
+      }
+
+    }, true);
+
+  }
+
+}
+
+
+
+function installProviderKeySubmitGuard() {
+
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+
+    document.addEventListener("submit", (event) => {
+
+      const form = event && event.target;
+
+      if (!form || typeof form.querySelector !== "function") return;
+
+      if (!form.querySelector('input[type="password"], input[name="password"]')) return;
+
+      const key = readProviderKey(form);
+
+      if (key) return;
+
+      const input = form.querySelector("[data-opl-provider-key]");
+
+      if (input && typeof input.setCustomValidity === "function") {
+
+        input.setCustomValidity("请输入 gflabtoken API key 后再进入 OPL。");
+
+        if (typeof input.reportValidity === "function") input.reportValidity();
+
+      }
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+    }, true);
+
+  }
+
+}
+
+
+
+function installProviderKeyMutationObserver() {
+
+  try {
+
+    if (typeof MutationObserver === "function" && document && document.documentElement) {
+
+      const observer = new MutationObserver(() => scanProviderKeyForms());
+
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+
+    }
+
+  } catch {}
+
+}
+
+
+
+function appendProviderKeyToLoginRequest(init = {}, providerKey = "") {
+
+  const key = normalizeProviderKey(providerKey);
+
+  const next = { ...init };
+
+  const headers = new Headers(init.headers || {});
+
+  const body = init.body;
+
+  if (body instanceof FormData) {
+
+    return appendProviderKeyBody(next, body, key);
+
+  }
+
+  if (body instanceof URLSearchParams) {
+
+    return appendProviderKeyBody(next, body, key);
+
+  }
+
+  if (typeof body === "string" && body.trim()) {
+
+    return appendProviderKeyStringBody(next, headers, body, key);
+
+  }
+
+  return appendProviderKeyJsonBody(next, headers, {}, key);
+
+}
+
+
+
+function appendProviderKeyBody(next, body, key) {
+
+  body.set("apiKey", key);
+
+  body.set("providerApiKey", key);
+
+  next.body = body;
+
+  return next;
+
+}
+
+
+
+function appendProviderKeyStringBody(next, headers, body, key) {
+
+  const contentType = String(headers.get("content-type") || "").toLowerCase();
+
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+
+    const params = new URLSearchParams(body);
+
+    appendProviderKeyBody(next, params, key);
+
+    next.body = params.toString();
+
+    return next;
+
+  }
+
+  try {
+
+    return appendProviderKeyJsonBody(next, headers, JSON.parse(body), key);
+
+  } catch {
+
+    return appendProviderKeyJsonBody(next, headers, {}, key);
+
+  }
+
+}
+
+
+
+function appendProviderKeyJsonBody(next, headers, body, key) {
+
+  next.body = JSON.stringify({ ...body, apiKey: key, providerApiKey: key, experimentalBearerToken: key });
+
+  headers.set("content-type", "application/json");
+
+  next.headers = headers;
+
+  return next;
+}
+
+
+
+function installNativeLoginFetchBridge() {
+
+  if (window.__OPL_PORTAL_NATIVE_LOGIN_FETCH_BRIDGE_INSTALLED__) return;
+
+  if (typeof window.fetch !== "function") return;
+
+  window.__OPL_PORTAL_NATIVE_LOGIN_FETCH_BRIDGE_INSTALLED__ = true;
+
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = (input, init = {}) => {
+
+    if (!isNativeLoginUrl(input)) return nativeFetch(input, init);
+
+    const providerKey = readProviderKey(document);
+
+    if (!providerKey) {
+
+      return Promise.resolve(new Response(JSON.stringify({
+
+        ok: false,
+
+        error: "provider_api_key_required",
+
+        message: "gflabtoken API key is required before entering OPL."
+
+      }), {
+
+        status: 400,
+
+        headers: { "content-type": "application/json; charset=utf-8" }
+
+      }));
+
+    }
+
+
+    return nativeFetch(input, appendProviderKeyToLoginRequest(init, providerKey));
+
+  };
+
+}
+
+
+
+function requireLaunchState() {
   const state = readStoredState();
   if (!state.launchToken) {
     throw new Error("Portal launch token is not available. Open OPL Web from Portal.");
@@ -207,26 +691,52 @@ function buildPortalApi() {
 
 window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
 window.__OPL_PORTAL_REFRESH_DIRECT_ENTRY__ = refreshDirectEntryShell;
-installDirectEntryRouteWatcher();
+installDirectEntryDismissHandler();
+
+installProviderKeyFieldObserver();
+
+installNativeLoginFetchBridge();
+
+installDirectEntryRouteWatcher();
 
 function resolveOplModuleClickTarget(event) {
-  const target = event && event.target;
-  const closest = target && typeof target.closest === "function"
-    ? target.closest('[data-testid^="opl-module-pill-"], [data-opl-module-id]')
-    : null;
+  const closest = resolveOplModuleElement(event);
   if (!closest || typeof closest.getAttribute !== "function") return null;
-  const moduleId = String(
-    closest.getAttribute("data-opl-module-id") ||
-    String(closest.getAttribute("data-testid") || "").replace(/^opl-module-pill-/, "")
-  ).toLowerCase();
-  if (!["mas", "mag", "rca"].includes(moduleId)) return null;
+  const moduleId = resolveOplModuleId(closest);
+  if (!OPL_MODULE_IDS.includes(moduleId)) return null;
   return {
     moduleId,
     label: String(closest.textContent || moduleId).trim()
   };
 }
 
-function dispatchPortalRunEvent(type, detail) {
+function resolveOplModuleElement(event) {
+
+  const target = event && event.target;
+
+  return target && typeof target.closest === "function"
+
+    ? target.closest('[data-testid^="opl-module-pill-"], [data-opl-module-id]')
+
+    : null;
+
+}
+
+
+
+function resolveOplModuleId(element) {
+
+  const explicitId = element.getAttribute("data-opl-module-id");
+
+  const testId = String(element.getAttribute("data-testid") || "").replace(/^opl-module-pill-/, "");
+
+  return String(explicitId || testId).toLowerCase();
+
+}
+
+
+
+function dispatchPortalRunEvent(type, detail) {
   try {
     window.dispatchEvent(new CustomEvent(type, { detail }));
   } catch {}

@@ -48,7 +48,6 @@ export function createGflabProviderConfig({ userId = "", workspaceId = "", apiKe
       ownerUserId: userId,
       workspaceId,
       secretFingerprint: providerKeyFingerprint(normalizedKey),
-      experimentalBearerToken: normalizedKey,
     },
   };
 }
