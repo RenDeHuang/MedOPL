@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 
 const PORT = Number(process.env.MED_AUTOSCIENCE_RUNNER_FIXTURE_PORT || process.env.PORT || 18920);
-const root = path.resolve(".runtime", "med-autoscience-runner-fixture");
+const root = path.resolve(process.env.MED_AUTOSCIENCE_RUNNER_FIXTURE_ROOT || path.join(".runtime", "med-autoscience-runner-fixture"));
 const workspaces = new Map();
 const runs = new Map();
 
