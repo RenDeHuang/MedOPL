@@ -319,9 +319,13 @@ export interface SelectedServerPlan {
   gpu?: number;
   currency: string;
   priceStatus: string;
+  availabilityStatus?: string;
+  statusCategory?: string;
+  soldOutReason?: string;
   originalPrice?: number;
   discountPrice: number;
   unitPrice: number;
+  hourlyPrice?: number;
   minBillableHours: number;
   riskFactor: number;
   reservationFloor: number;
@@ -342,6 +346,7 @@ export interface SelectedServerPlan {
   nodePoolCreatePayload?: Record<string, unknown> | null;
   nodePoolScalePayload?: Record<string, unknown> | null;
   provisionerPayload?: Record<string, unknown> | null;
+  canOrder?: boolean;
   selectedAt: string;
   selectionNote: string;
 }
@@ -428,12 +433,17 @@ export interface ServerPlanItem {
   riskFactor: number;
   reservationFloor: number;
   priceStatus: string;
+  availabilityStatus?: string;
+  statusCategory?: string;
+  soldOutReason?: string;
   salable: boolean;
+  canOrder?: boolean;
   reason?: string;
   currency?: string;
   originalPrice?: number;
   discountPrice?: number;
   unitPrice?: number;
+  hourlyPrice?: number;
   provisioningMode?: string;
   tkeClusterId?: string;
   nodePoolId?: string;

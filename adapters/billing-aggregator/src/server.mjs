@@ -1210,14 +1210,29 @@ function commaList(value = "") {
     .filter(Boolean);
 }
 
-function buildTencentDiscoveryFilters() {
+function parseOptionalNumber(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeServerPlanQuery(input = {}) {
+  return {
+    region: firstString(input.region),
+    zone: firstString(input.zone),
+    cpu: parseOptionalNumber(input.cpu),
+    memoryGb: parseOptionalNumber(input.memoryGb ?? input.memory),
+  };
+}
+
+function buildTencentDiscoveryFilters(query = {}) {
   const filters = [
     {
       Name: "instance-charge-type",
       Values: [TENCENT_PLAN_DISCOVERY_CHARGE_TYPE],
     },
   ];
-  const zones = commaList(TENCENT_PLAN_DISCOVERY_ZONES);
+  const zones = commaList(firstString(query.zone, TENCENT_PLAN_DISCOVERY_ZONES));
   if (zones.length) filters.push({ Name: "zone", Values: zones });
   return filters;
 }
@@ -1234,21 +1249,36 @@ function normalizeTencentPrice(response = {}) {
   };
 }
 
-function normalizeTencentDiscoveredPlan(item = {}) {
+function hasSoldOutMarker(statusCategory = "", soldOutReason = "") {
+  const category = String(statusCategory || "").trim().toLowerCase();
+  const reason = String(soldOutReason || "").trim();
+  return Boolean(
+    reason ||
+    category.includes("sold") ||
+    category.includes("out") ||
+    category.includes("stock") ||
+    category.includes("insufficient")
+  );
+}
+
+function normalizeTencentDiscoveredPlan(item = {}, region = TENCENT_CLOUD_REGION) {
   const zone = firstString(item.Zone, item.zone);
   const instanceType = firstString(item.InstanceType, item.instanceType);
   const cpu = firstNumber(item.CPU, item.Cpu, item.cpu);
   const memoryGb = firstNumber(item.Memory, item.memory);
   const gpu = firstNumber(item.Gpu, item.GPU, item.GpuCount, item.GPUCount, 0);
   const price = normalizeTencentPrice({ Price: item.Price || item.InstancePrice || {} });
-  const status = firstString(item.Status, item.InstanceTypeState, "UNKNOWN");
+  const availabilityStatus = firstString(item.Status, item.InstanceTypeState, "UNKNOWN").toUpperCase();
+  const statusCategory = firstString(item.StatusCategory, item.StatusCategoryName);
+  const soldOutReason = firstString(item.SoldOutReason);
+  const hourlyPrice = firstNumber(price.discountPrice, price.unitPrice, price.originalPrice);
   const hasPrice = Boolean(price.unitPrice || price.discountPrice);
-  const salable = ["SELL", "SOLD"].includes(status.toUpperCase()) && hasPrice;
+  const canOrder = availabilityStatus === "SELL" && hasPrice && !hasSoldOutMarker(statusCategory, soldOutReason);
   return {
     id: `tencent-${zone}-${instanceType}`.replace(/[^a-zA-Z0-9._-]+/g, "-"),
     name: firstString(item.TypeName, item.InstanceFamily, instanceType),
     provider: "tencent",
-    region: TENCENT_CLOUD_REGION,
+    region,
     zone,
     instanceType,
     cpu,
@@ -1269,34 +1299,42 @@ function normalizeTencentDiscoveredPlan(item = {}) {
     riskFactor: 1.2,
     reservationFloor: 0,
     priceStatus: hasPrice ? "quoted" : "discovered",
-    salable,
-    reason: salable ? "" : (hasPrice ? status : "price_not_available"),
+    availabilityStatus,
+    statusCategory,
+    soldOutReason,
+    hourlyPrice,
+    canOrder,
+    salable: canOrder,
+    reason: canOrder ? "" : firstString(soldOutReason, statusCategory, hasPrice ? availabilityStatus : "price_not_available"),
     provisioningMode: "schedule_to_node_pool",
     selectionNote: "腾讯云发现的可售规格；节点池和 runtimeClass 可由平台目录覆盖。",
     source: "tencent_cloud_discovery",
+    pricingSource: "tencent_cloud_zone_instance_catalog",
+    priceUpdatedAt: new Date().toISOString(),
     ...price,
   };
 }
 
-async function discoverTencentServerPlans() {
+async function discoverTencentServerPlans(query = {}) {
   if (!TENCENT_PLAN_DISCOVERY_ENABLED) return [];
   if (!tencentCloudConfigured()) return [];
+  const targetRegion = firstString(query.region, TENCENT_CLOUD_REGION);
   try {
     const response = await callTencentCloud({
       endpoint: TENCENT_CVM_ENDPOINT,
       service: "cvm",
       action: "DescribeZoneInstanceConfigInfos",
       version: TENCENT_CVM_VERSION,
-      region: TENCENT_CLOUD_REGION,
+      region: targetRegion,
       payload: {
-        Filters: buildTencentDiscoveryFilters(),
+        Filters: buildTencentDiscoveryFilters(query),
       },
     });
     const items = Array.isArray(response.InstanceTypeQuotaSet) ? response.InstanceTypeQuotaSet : [];
     const limit = Number.isFinite(TENCENT_PLAN_DISCOVERY_MAX) && TENCENT_PLAN_DISCOVERY_MAX > 0 ? TENCENT_PLAN_DISCOVERY_MAX : 80;
     markCloudState("discovery");
     return items
-      .map(normalizeTencentDiscoveredPlan)
+      .map((item) => normalizeTencentDiscoveredPlan(item, targetRegion))
       .filter((item) => item.instanceType && item.zone)
       .slice(0, limit);
   } catch (error) {
@@ -1317,6 +1355,15 @@ function overlayCatalogOnDiscovered(discovered = [], catalog = []) {
     }
   }
   return Array.from(map.values());
+}
+
+function planMatchesQuery(plan, query = {}) {
+  const normalized = normalizeServerPlanQuery(query);
+  if (normalized.region && String(plan.region || "").trim() !== normalized.region) return false;
+  if (normalized.zone && String(plan.zone || "").trim() !== normalized.zone) return false;
+  if (normalized.cpu !== null && Number(plan.cpu || 0) !== normalized.cpu) return false;
+  if (normalized.memoryGb !== null && Number(plan.memoryGb || plan.memory || 0) !== normalized.memoryGb) return false;
+  return true;
 }
 
 async function quoteTencentServerPlan(plan) {
@@ -1382,7 +1429,7 @@ async function quoteTencentServerPlan(plan) {
 
 function buildTencentCloudStatus({ items = [], catalog = [], discovered = [] } = {}) {
   const quotedCount = items.filter((item) => item.priceStatus === "quoted").length;
-  const salableCount = items.filter((item) => item.salable).length;
+  const salableCount = items.filter((item) => item.salable || item.canOrder).length;
   const automaticProvisionCount = items.filter((item) => {
     const mode = String(item.provisioningMode || "").toLowerCase();
     return ["tke_node_pool", "tke_node_pool_create", "tke_node_pool_scale", "cvm_instance"].includes(mode);
@@ -1450,21 +1497,34 @@ function buildTencentCloudStatus({ items = [], catalog = [], discovered = [] } =
   };
 }
 
-async function listServerPlans() {
-  if (serverPlanCache.payload && SERVER_PLAN_CACHE_TTL_MS > 0 && Date.now() < serverPlanCache.expiresAt) {
-    return {
-      ...serverPlanCache.payload,
-      cache: {
-        hit: true,
-        ttlMs: SERVER_PLAN_CACHE_TTL_MS,
-        expiresAt: new Date(serverPlanCache.expiresAt).toISOString(),
-      },
+function filterServerPlansPayload(payload, query = {}, options = {}) {
+  const normalized = normalizeServerPlanQuery(query);
+  const items = Array.isArray(payload?.items) ? payload.items.filter((item) => planMatchesQuery(item, normalized)) : [];
+  const result = {
+    ...payload,
+    items,
+    candidateCount: items.length,
+    orderableCount: items.filter((item) => item.canOrder || item.salable).length,
+    filter: normalized,
+  };
+  if (options.cacheHit) {
+    result.cache = {
+      hit: true,
+      ttlMs: SERVER_PLAN_CACHE_TTL_MS,
+      expiresAt: new Date(serverPlanCache.expiresAt).toISOString(),
     };
+  }
+  return result;
+}
+
+async function listServerPlans(query = {}) {
+  if (serverPlanCache.payload && SERVER_PLAN_CACHE_TTL_MS > 0 && Date.now() < serverPlanCache.expiresAt) {
+    return filterServerPlansPayload(serverPlanCache.payload, query, { cacheHit: true });
   }
   const catalog = serverPlanCatalog();
   let discovered = [];
   try {
-    discovered = await discoverTencentServerPlans();
+    discovered = await discoverTencentServerPlans(query);
   } catch {
     discovered = [];
   }
@@ -1480,11 +1540,29 @@ async function listServerPlans() {
         ? await quoteTencentServerPlan(plan)
         : { priceStatus: "external_provider", salable: false, reason: "unsupported_provider" });
     if (quote.priceStatus === "quoted") markCloudState("quote");
+    const availabilityStatus = firstString(plan.availabilityStatus, plan.status, quote.availabilityStatus).toUpperCase();
+    const statusCategory = firstString(plan.statusCategory, quote.statusCategory);
+    const soldOutReason = firstString(plan.soldOutReason, quote.soldOutReason);
+    const hourlyPrice = firstNumber(
+      quote.discountPrice,
+      quote.unitPrice,
+      quote.originalPrice,
+      plan.hourlyPrice,
+      plan.discountPrice,
+      plan.unitPrice,
+      plan.originalPrice,
+    );
+    const hasPrice = hourlyPrice > 0;
+    const canOrder = hasSoldOutMarker(statusCategory, soldOutReason)
+      ? false
+      : availabilityStatus
+        ? availabilityStatus === "SELL" && hasPrice
+        : Boolean((plan.canOrder ?? plan.salable ?? quote.salable) && hasPrice);
     items.push({
       id: firstString(plan.id, plan.serverPlanId, plan.instanceType),
       name: firstString(plan.name, plan.instanceType),
       provider: plan.provider || "tencent",
-      region: plan.region || TENCENT_CLOUD_REGION,
+      region: plan.region || firstString(query.region, TENCENT_CLOUD_REGION),
       zone: plan.zone || "",
       instanceType: plan.instanceType || "",
       cpu: Number(plan.cpu || 0),
@@ -1515,13 +1593,23 @@ async function listServerPlans() {
       provisioningMode: firstString(plan.provisioningMode, "schedule_to_node_pool"),
       selectionNote: firstString(plan.selectionNote, "选择后会按规格资源和节点选择器调度到集群。"),
       source: plan.source || "platform_catalog",
+      availabilityStatus,
+      statusCategory,
+      soldOutReason,
+      hourlyPrice,
+      canOrder,
       ...quote,
+      salable: canOrder,
+      currency: firstString(quote.currency, plan.currency, "CNY"),
+      pricingSource: firstString(quote.priceStatus === "quoted" ? "tencent_cloud_inquiry_price_run_instances" : "", plan.pricingSource, plan.source, "tencent_cloud_catalog"),
+      reason: canOrder ? "" : firstString(soldOutReason, quote.reason, plan.reason, statusCategory, availabilityStatus, "server_plan_unavailable"),
+      priceUpdatedAt: new Date().toISOString(),
       quotedAt: new Date().toISOString(),
     });
   }
   const payload = {
     ok: true,
-    source: "tencent_cloud_price",
+    source: discovered.length > 0 ? "tencent_cloud_live_catalog" : "tencent_cloud_platform_catalog",
     configured: tencentCloudConfigured(),
     priceEnabled: TENCENT_PRICE_ENABLED,
     discoveryEnabled: TENCENT_PLAN_DISCOVERY_ENABLED,
@@ -1536,7 +1624,7 @@ async function listServerPlans() {
       payload,
     };
   }
-  return payload;
+  return filterServerPlansPayload(payload, query);
 }
 
 function labelValue(entry, key) {
@@ -2049,7 +2137,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/server-plans") {
     try {
-      sendJson(res, 200, await listServerPlans());
+      sendJson(res, 200, await listServerPlans({
+        region: url.searchParams.get("region") || "",
+        zone: url.searchParams.get("zone") || "",
+        cpu: url.searchParams.get("cpu") || "",
+        memoryGb: url.searchParams.get("memoryGb") || url.searchParams.get("memory") || "",
+      }));
     } catch (error) {
       sendJson(res, 502, {
         ok: false,

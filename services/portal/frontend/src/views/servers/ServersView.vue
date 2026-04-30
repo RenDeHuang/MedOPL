@@ -1,7 +1,7 @@
 <template>
-  <AppLayout title="服务器与费用" subtitle="选择规格、开通资源、追踪账单">
+  <AppLayout title="服务器与费用" subtitle="浏览腾讯云真实 SKU、筛选规格、完成报价与下单">
     <div class="space-y-4">
-      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载服务器资源...</div>
+      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载服务器商品目录...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
 
       <template v-else-if="payload">
@@ -10,22 +10,22 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="badge badge-primary">Silicon Valley</span>
+                  <span class="badge badge-primary">{{ primaryRegionLabel }}</span>
                   <span class="badge" :class="readiness.realPriceReady ? 'badge-success' : 'badge-warning'">
-                    {{ readiness.realPriceReady ? "真实报价" : "报价未就绪" }}
+                    {{ readiness.realPriceReady ? "实时价格就绪" : "价格待刷新" }}
                   </span>
                   <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
-                    {{ readiness.exactBillReady ? "真实账单" : "账单等待中" }}
+                    {{ readiness.exactBillReady ? "真实账单就绪" : "账单待同步" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">按订单开通独立节点池</h2>
-                <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
-                  每个订单独享节点池，最大 2 个节点，支持缩容到 0。
+                <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">腾讯云真实 SKU 商品目录</h2>
+                <p class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-slate-300">
+                  目录数据来自 Billing Aggregator，门户只消费聚合结果，不直接读取腾讯云凭据。不可售规格保留展示，但会禁用报价、冻结和下单。
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <a class="btn btn-primary" href="/portal/opl">进入工作台</a>
-                <RouterLink class="btn btn-secondary" to="/billing">账单</RouterLink>
+                <RouterLink class="btn btn-secondary" to="/billing">查看账单</RouterLink>
               </div>
             </div>
           </div>
@@ -62,67 +62,118 @@
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="可售规格" :value="payload.summary.salableCount" hint="CPU 白名单" />
-          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="腾讯云询价" />
-          <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="实时价" />
-          <MetricCard label="活跃订单" :value="activeOrderCount" hint="冻结/开通/运行" />
+          <MetricCard label="可售规格" :value="payload.summary.salableCount" hint="可执行下单" />
+          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="腾讯云实时报价" />
+          <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="按 SKU 实时返回" />
+          <MetricCard label="活跃订单" :value="activeOrderCount" hint="报价/冻结/开通/运行中" />
         </section>
 
-        <section class="grid grid-cols-1 gap-4 xl:grid-cols-4">
-          <article
-            v-for="item in payload.items"
-            :key="item.id"
-            class="card p-5"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ item.name || item.id }}</h3>
-                <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.instanceType || "Tencent CVM" }}</p>
-              </div>
-              <span class="badge" :class="item.salable ? 'badge-success' : 'badge-warning'">
-                {{ item.salable ? "可售" : "不可售" }}
-              </span>
+        <section class="card p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 class="panel-title">服务器商品目录</h2>
+              <p class="panel-subtitle">
+                来源：{{ payload.source }}，共 {{ catalogPagination.total }} 个规格，当前第 {{ catalogPagination.page }}/{{ catalogPagination.totalPages }} 页
+              </p>
             </div>
+            <div class="grid min-w-[280px] grid-cols-1 gap-2 sm:grid-cols-2">
+              <label class="text-sm text-gray-600 dark:text-slate-300">
+                <span class="mb-1 block">CPU</span>
+                <select v-model="cpuFilter" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950" @change="resetCatalogPage">
+                  <option value="">全部</option>
+                  <option v-for="value in filterOptions.cpu" :key="`cpu-${value}`" :value="String(value)">{{ value }} 核</option>
+                </select>
+              </label>
+              <label class="text-sm text-gray-600 dark:text-slate-300">
+                <span class="mb-1 block">内存</span>
+                <select v-model="memoryFilter" class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950" @change="resetCatalogPage">
+                  <option value="">全部</option>
+                  <option v-for="value in filterOptions.memoryGb" :key="`memory-${value}`" :value="String(value)">{{ value }} GB</option>
+                </select>
+              </label>
+            </div>
+          </div>
 
-            <div class="mt-4 space-y-2 text-sm">
-              <div class="muted-kv">
-                <span class="muted-kv-label">配置</span>
-                <span class="muted-kv-value">{{ item.cpu }}C / {{ item.memoryGb }}GB</span>
-              </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">地域</span>
-                <span class="muted-kv-value">{{ item.region || "-" }}</span>
-              </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">小时价</span>
-                <span class="muted-kv-value">{{ money(hourlyPrice(item)) }}</span>
-              </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">冻结</span>
-                <span class="muted-kv-value">{{ money(freezeAmount(item)) }}</span>
-              </div>
-              <div class="muted-kv">
-                <span class="muted-kv-label">订单</span>
-                <span class="muted-kv-value">{{ orderStatusText(latestOrderByPlan(item.id)?.status) }}</span>
-              </div>
-            </div>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-100 px-4 py-3 text-sm text-gray-600 dark:border-slate-800 dark:text-slate-300">
+            <span>筛选后 {{ filteredPlans.length }} 个规格，每页固定 4 个。</span>
+            <span v-if="cpuFilter || memoryFilter">
+              条件：
+              <span v-if="cpuFilter">CPU {{ cpuFilter }} 核</span>
+              <span v-if="cpuFilter && memoryFilter"> / </span>
+              <span v-if="memoryFilter">内存 {{ memoryFilter }} GB</span>
+            </span>
+          </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-2">
-              <button class="btn btn-secondary" :disabled="!item.salable || selecting === item.id" @click="choosePlan(item)">
-                {{ isSelected(item) ? "已默认" : "设默认" }}
-              </button>
-              <button class="btn btn-secondary" :disabled="!item.salable || quoting === item.id" @click="quotePlan(item)">
-                {{ quoting === item.id ? "报价中" : "报价" }}
-              </button>
-              <button class="btn btn-secondary" :disabled="!item.salable || freezing === item.id" @click="freezePlan(item)">
-                {{ freezing === item.id ? "冻结中" : "冻结" }}
-              </button>
-              <button class="btn btn-primary" :disabled="!item.salable || provisioning === item.id" @click="provisionPlan(item)">
-                {{ provisioning === item.id ? "开通中" : "开通" }}
-              </button>
-            </div>
-            <p v-if="item.reason" class="mt-3 text-xs text-amber-700 dark:text-amber-300">{{ item.reason }}</p>
-          </article>
+          <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-4">
+            <article
+              v-for="item in visiblePlans"
+              :key="item.id"
+              class="card p-5"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ item.name || item.id }}</h3>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.instanceType || "Tencent CVM" }}</p>
+                </div>
+                <span class="badge" :class="isOrderable(item) ? 'badge-success' : 'badge-warning'">
+                  {{ isOrderable(item) ? "可下单" : "不可售" }}
+                </span>
+              </div>
+
+              <div class="mt-4 space-y-2 text-sm">
+                <div class="muted-kv">
+                  <span class="muted-kv-label">配置</span>
+                  <span class="muted-kv-value">{{ item.cpu }}C / {{ item.memoryGb }}GB</span>
+                </div>
+                <div class="muted-kv">
+                  <span class="muted-kv-label">地域/可用区</span>
+                  <span class="muted-kv-value">{{ item.region || "-" }} / {{ item.zone || "-" }}</span>
+                </div>
+                <div class="muted-kv">
+                  <span class="muted-kv-label">库存状态</span>
+                  <span class="muted-kv-value">{{ availabilityLabel(item) || "-" }}</span>
+                </div>
+                <div class="muted-kv">
+                  <span class="muted-kv-label">小时价</span>
+                  <span class="muted-kv-value">{{ money(hourlyPrice(item), item.currency) }}</span>
+                </div>
+                <div class="muted-kv">
+                  <span class="muted-kv-label">冻结金额</span>
+                  <span class="muted-kv-value">{{ money(freezeAmount(item), item.currency) }}</span>
+                </div>
+                <div class="muted-kv">
+                  <span class="muted-kv-label">订单</span>
+                  <span class="muted-kv-value">{{ orderStatusText(latestOrderByPlan(item.id)?.status) }}</span>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button class="btn btn-secondary" :disabled="!isOrderable(item) || selecting === item.id" @click="choosePlan(item)">
+                  {{ isSelected(item) ? "已默认" : "设为默认" }}
+                </button>
+                <button class="btn btn-secondary" :disabled="!isOrderable(item) || quoting === item.id" @click="quotePlan(item)">
+                  {{ quoting === item.id ? "报价中" : "报价" }}
+                </button>
+                <button class="btn btn-secondary" :disabled="!isOrderable(item) || freezing === item.id" @click="freezePlan(item)">
+                  {{ freezing === item.id ? "冻结中" : "冻结" }}
+                </button>
+                <button class="btn btn-primary" :disabled="!isOrderable(item) || provisioning === item.id" @click="provisionPlan(item)">
+                  {{ provisioning === item.id ? "开通中" : "下单" }}
+                </button>
+              </div>
+              <p v-if="planDisabledReasonText(item)" class="mt-3 text-xs text-amber-700 dark:text-amber-300">{{ planDisabledReasonText(item) }}</p>
+            </article>
+          </div>
+
+          <div v-if="!visiblePlans.length" class="empty-state mt-4">当前筛选条件下没有规格。</div>
+
+          <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+            <button class="btn btn-secondary" :disabled="catalogPagination.page <= 1" @click="goToCatalogPage(catalogPagination.page - 1)">上一页</button>
+            <span class="min-w-[88px] text-center text-sm text-gray-500 dark:text-slate-400">
+              {{ catalogPagination.page }} / {{ catalogPagination.totalPages }}
+            </span>
+            <button class="btn btn-secondary" :disabled="catalogPagination.page >= catalogPagination.totalPages" @click="goToCatalogPage(catalogPagination.page + 1)">下一页</button>
+          </div>
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
@@ -149,8 +200,8 @@
                   <span class="badge" :class="orderStatusBadge(item.status)">{{ orderStatusText(item.status) }}</span>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-slate-400">
-                  <div>冻结 {{ money(item.freezeAmount ?? item.frozenAmount) }}</div>
-                  <div>Exact {{ money(item.exactCost) }}</div>
+                  <div>冻结 {{ money(item.freezeAmount ?? item.frozenAmount, item.currency) }}</div>
+                  <div>Exact {{ money(item.exactCost, item.currency) }}</div>
                   <div>节点池 {{ firstCloudResource(item) || "-" }}</div>
                   <div>{{ item.pricingSource || "-" }}</div>
                 </div>
@@ -210,7 +261,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 class="panel-title">结算规则</h2>
-              <p class="panel-subtitle">冻结按报价，最终扣费按腾讯云真实账单</p>
+              <p class="panel-subtitle">冻结按报价，最终扣费按腾讯云真实账单回补</p>
             </div>
             <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
               {{ readiness.exactBillReady ? "exact ready" : "exact pending" }}
@@ -222,7 +273,7 @@
           <div class="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900">
             <h2 class="text-lg font-semibold text-gray-950 dark:text-white">删除节点池</h2>
             <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
-              销毁 CVM 会释放节点池内实例，运行环境和节点本地数据不可恢复。保留 CVM 则节点池删除后实例仍可能继续产生云资源费用。
+              销毁 CVM 会释放节点池内实例，运行环境和节点本地数据不可恢复。保留 CVM 时，节点池删除后实例仍可能继续产生云资源费用。
             </p>
             <label class="mt-4 flex items-center gap-2 text-sm text-gray-700 dark:text-slate-200">
               <input v-model="destroyCvmInstances" type="checkbox" />
@@ -263,6 +314,16 @@ import {
   releaseResourceOrder,
   selectServerPlan,
 } from "@/api/portal";
+import {
+  SERVER_PLAN_PAGE_SIZE,
+  collectServerPlanFilterOptions,
+  filterServerPlans,
+  paginateServerPlans,
+  planAvailabilityLabel,
+  planCanOrder,
+  planDisabledReason,
+  planHourlyPrice,
+} from "./server-plan-catalog";
 
 const loading = ref(true);
 const error = ref("");
@@ -277,7 +338,11 @@ const releasing = ref("");
 const deleting = ref("");
 const deleteTarget = ref<ResourceOrderItem | null>(null);
 const destroyCvmInstances = ref(false);
+const cpuFilter = ref("");
+const memoryFilter = ref("");
+const catalogPage = ref(1);
 
+const serverPlanItems = computed<ServerPlanItem[]>(() => payload.value?.items || []);
 const cloudStatus = computed(() => payload.value?.cloudStatus || payload.value?.summary?.cloudStatus || null);
 const readiness = computed(() => ({
   cloudAccountConnected: Boolean(cloudStatus.value?.readiness?.cloudAccountConnected ?? payload.value?.configured),
@@ -290,17 +355,44 @@ const cloudSummary = computed(() => cloudResources.value?.resources?.summary || 
 const nodePools = computed(() => cloudResources.value?.resources?.nodePools || []);
 const instances = computed(() => cloudResources.value?.resources?.instances || []);
 const clusterId = computed(() => stringFrom(cloudResources.value?.resources?.cluster || {}, "clusterId", "id") || "cls-ngiq693i");
+const primaryRegionLabel = computed(() => {
+  const region = cloudStatus.value?.region || serverPlanItems.value[0]?.region || "na-siliconvalley";
+  return region === "na-siliconvalley" ? "Silicon Valley" : region;
+});
+const filterOptions = computed(() => collectServerPlanFilterOptions(serverPlanItems.value));
+const filteredPlans = computed(() => filterServerPlans(serverPlanItems.value, {
+  cpu: cpuFilter.value,
+  memoryGb: memoryFilter.value,
+}));
+const pagedCatalog = computed(() => paginateServerPlans(filteredPlans.value, catalogPage.value, SERVER_PLAN_PAGE_SIZE));
+const visiblePlans = computed<ServerPlanItem[]>(() => pagedCatalog.value.items as ServerPlanItem[]);
+const catalogPagination = computed(() => pagedCatalog.value.pagination);
 
-function money(value: number | undefined | null) {
-  return `CNY ${Number(value || 0).toFixed(2)}`;
+function money(value: number | undefined | null, currency = "CNY") {
+  return `${currency || "CNY"} ${Number(value || 0).toFixed(2)}`;
 }
 
 function hourlyPrice(item: ServerPlanItem) {
-  return Number(item.discountPrice ?? item.unitPrice ?? item.originalPrice ?? 0);
+  return planHourlyPrice(item);
 }
 
 function freezeAmount(item: ServerPlanItem) {
-  return Math.max(Number(item.reservationFloor || 0), hourlyPrice(item) * Math.max(1, Number(item.minBillableHours || 1)) * Math.max(1, Number(item.riskFactor || 1)));
+  return Math.max(
+    Number(item.reservationFloor || 0),
+    hourlyPrice(item) * Math.max(1, Number(item.minBillableHours || 1)) * Math.max(1, Number(item.riskFactor || 1)),
+  );
+}
+
+function isOrderable(item: ServerPlanItem) {
+  return planCanOrder(item);
+}
+
+function availabilityLabel(item: ServerPlanItem) {
+  return planAvailabilityLabel(item);
+}
+
+function planDisabledReasonText(item: ServerPlanItem) {
+  return planDisabledReason(item);
 }
 
 function isSelected(item: ServerPlanItem) {
@@ -353,9 +445,18 @@ function resourceKey(item: Record<string, unknown>) {
 function tagComplete(item: Record<string, unknown>) {
   const tags = item.tags;
   const tagText = Array.isArray(tags)
-    ? tags.map((tag) => `${(tag as any).Key || (tag as any).key || ""}:${(tag as any).Value || (tag as any).value || ""}`).join(",")
+    ? tags.map((tag) => `${(tag as Record<string, unknown>).Key || (tag as Record<string, unknown>).key || ""}:${(tag as Record<string, unknown>).Value || (tag as Record<string, unknown>).value || ""}`).join(",")
     : JSON.stringify(tags || {});
   return ["tenantid", "workspaceid", "runid", "resourceorderid", "serverplanid"].every((key) => tagText.includes(key));
+}
+
+function resetCatalogPage() {
+  catalogPage.value = 1;
+}
+
+function goToCatalogPage(page: number) {
+  const totalPages = catalogPagination.value.totalPages;
+  catalogPage.value = Math.min(Math.max(1, page), totalPages);
 }
 
 async function load() {
@@ -370,8 +471,9 @@ async function load() {
     payload.value = plans;
     ordersPayload.value = ordersData;
     cloudResources.value = cloudData;
-  } catch (err: any) {
-    error.value = err?.message || "服务器与费用加载失败";
+    goToCatalogPage(1);
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : "服务器与费用加载失败";
   } finally {
     loading.value = false;
   }
