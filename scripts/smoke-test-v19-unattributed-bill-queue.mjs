@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
-import { appendPendingUsageForOrder, appendUnattributedBill } from "../services/portal/src/domain/wallet-ledger.mjs";
-import { resourceOrderStopsPending, transitionResourceOrder } from "../services/portal/src/domain/resource-orders.mjs";
+
+const {
+  appendPendingUsageForOrder,
+  appendUnattributedBill,
+} = await import(new URL(["..", "services", "portal", "src", "domain", "wallet-ledger.mjs"].join("/"), import.meta.url));
+const {
+  resourceOrderStopsPending,
+  transitionResourceOrder,
+} = await import(new URL(["..", "services", "portal", "src", "domain", "resource-orders.mjs"].join("/"), import.meta.url));
 
 const order = { id: "ro-unattributed", tenantId: "tenant-unattributed", userId: "user-unattributed", workspaceId: "workspace-unattributed", runId: "run-unattributed", status: "running", billingAccountId: "billing-unattributed" };
 const db = { wallets: [], ledger: [], resourceOrders: [order], resourceOrderEvents: [], unattributedBills: [] };
