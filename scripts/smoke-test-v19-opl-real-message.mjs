@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
-import { rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -11,7 +12,9 @@ const oplUrl = `http://127.0.0.1:${oplPort}`;
 const runnerUrl = `http://127.0.0.1:${runnerPort}`;
 const adapterUrl = `http://127.0.0.1:${adapterPort}`;
 const portalUrl = `http://127.0.0.1:${portalPort}`;
-const stateRoot = path.resolve(`.runtime/test-v19-opl-real-message-${adapterPort}-${Date.now()}`);
+const testRoot = mkdtempSync(path.join(tmpdir(), "opl-v19-real-message-"));
+const stateRoot = path.join(testRoot, "adapter-state");
+const runnerRoot = path.join(testRoot, "runner-fixture");
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -50,7 +53,6 @@ function postJson(url, body, headers = {}) {
   });
 }
 
-rmSync(stateRoot, { recursive: true, force: true });
 let portal = null;
 let opl = null;
 let runner = null;
@@ -64,7 +66,7 @@ try {
     env: { ...process.env, PORT: String(oplPort) },
   });
   runner = spawnService("runner-fixture", "node", ["scripts/fixtures/med-autoscience-runner-fixture.mjs"], {
-    env: { ...process.env, PORT: String(runnerPort) },
+    env: { ...process.env, PORT: String(runnerPort), MED_AUTOSCIENCE_RUNNER_FIXTURE_ROOT: runnerRoot },
   });
   adapter = spawnService("opl-adapter", "node", ["src/server.mjs"], {
     cwd: "services/opl-runtime-bridge",
@@ -142,4 +144,5 @@ try {
   if (runner) runner.kill();
   if (opl) opl.kill();
   if (portal) portal.kill();
+  rmSync(testRoot, { recursive: true, force: true });
 }

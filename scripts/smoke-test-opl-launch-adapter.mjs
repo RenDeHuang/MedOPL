@@ -1,5 +1,7 @@
 import { execSync, spawn } from "node:child_process";
-import { rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const oplPort = Number(process.env.OPL_PRODUCT_API_FIXTURE_TEST_PORT || 18915);
@@ -11,7 +13,9 @@ const runnerUrl = `http://127.0.0.1:${runnerPort}`;
 const adapterUrl = `http://127.0.0.1:${adapterPort}`;
 const portalUrl = `http://127.0.0.1:${portalPort}`;
 const oplWebUrl = process.env.OPL_WEB_TEST_URL || process.env.OPL_WEB_URL || "http://127.0.0.1:19999/opl-web";
-const adapterStateRoot = `.runtime/test-opl-launch-adapter-${adapterPort}-${Date.now()}`;
+const testRoot = mkdtempSync(path.join(tmpdir(), "opl-launch-adapter-"));
+const adapterStateRoot = path.join(testRoot, "adapter-state");
+const runnerFixtureRoot = path.join(testRoot, "runner-fixture");
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -70,8 +74,6 @@ taskkillPort(runnerPort);
 taskkillPort(adapterPort);
 taskkillPort(portalPort);
 await sleep(250);
-rmSync(adapterStateRoot, { recursive: true, force: true });
-rmSync(".runtime/med-autoscience-runner-fixture", { recursive: true, force: true });
 
 const portal = spawnService("portal-fixture", "node", ["scripts/fixtures/portal-internal-resource-order-fixture.mjs"], {
   env: { ...process.env, PORT: String(portalPort) },
@@ -80,7 +82,7 @@ const opl = spawnService("opl-fixture", "node", ["scripts/fixtures/opl-product-a
   env: { ...process.env, PORT: String(oplPort) },
 });
 const runner = spawnService("runner-fixture", "node", ["scripts/fixtures/med-autoscience-runner-fixture.mjs"], {
-  env: { ...process.env, PORT: String(runnerPort) },
+  env: { ...process.env, PORT: String(runnerPort), MED_AUTOSCIENCE_RUNNER_FIXTURE_ROOT: runnerFixtureRoot },
 });
 const adapter = spawnService("opl-adapter", "node", ["src/server.mjs"], {
   cwd: "services/opl-runtime-bridge",
@@ -172,4 +174,5 @@ try {
   runner.kill();
   opl.kill();
   portal.kill();
+  rmSync(testRoot, { recursive: true, force: true });
 }
