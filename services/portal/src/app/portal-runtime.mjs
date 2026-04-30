@@ -137,6 +137,7 @@ import {
   ensureWorkspaceStorageCollections,
   issueWorkspaceTransferToken,
   listWorkspaceFiles,
+  markWorkspaceStorageDeleting,
   readWorkspaceTransferToken,
   recordWorkspaceFile,
   resolveWorkspaceStorageEntitlement,
@@ -502,6 +503,12 @@ async function markTaskSpaceDeleted(db, user, taskSpace) {
   taskSpace.status = "deleted";
   taskSpace.deletedAt = new Date().toISOString();
   taskSpace.updatedAt = taskSpace.deletedAt;
+  const storageRetention = markWorkspaceStorageDeleting(db, {
+    user,
+    workspaceId: taskSpace.slug,
+    deletedAt: taskSpace.deletedAt,
+    retentionDays: 7,
+  });
   db.workspaceSessions = db.workspaceSessions.map((item) => {
     if (item.userId === user.id && item.workspaceId === taskSpace.slug && item.status === "active") {
       return { ...item, status: "revoked", revokedAt: new Date().toISOString() };
@@ -512,7 +519,13 @@ async function markTaskSpaceDeleted(db, user, taskSpace) {
     const fallback = listTaskSpacesForUser(db, user.id).find((item) => item.slug !== taskSpace.slug && item.status === "active");
     user.currentTaskSlug = fallback?.slug || "default";
   }
-  await logPortalEvent({ type: "workspace_deleted", userId: user.id, workspaceId: taskSpace.slug, title: taskSpace.title });
+  await logPortalEvent({
+    type: "workspace_deleted",
+    userId: user.id,
+    workspaceId: taskSpace.slug,
+    title: taskSpace.title,
+    storageRetention,
+  });
 }
 
 function workspaceSessionCookie() {
