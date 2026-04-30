@@ -2,13 +2,20 @@ import { randomUUID } from "node:crypto";
 
 export const LEDGER_TYPES = new Set([
   "topup",
+  "preauth_hold",
+  "preauth_release",
   "freeze_hold",
   "freeze_release",
   "resource_charge",
   "refund",
   "makeup_charge",
+  "manual_adjustment",
   "adjustment",
 ]);
+
+const PREAUTH_HOLD_TYPES = new Set(["preauth_hold", "freeze_hold"]);
+const PREAUTH_RELEASE_TYPES = new Set(["preauth_release", "freeze_release"]);
+const PREAUTH_SETTLEMENT_TYPES = new Set(["resource_charge", "makeup_charge"]);
 
 export function moneyAmount(value, fallback = 0) {
   const parsed = Number(value);
@@ -78,9 +85,9 @@ export function activeFreezeByOrder(db, userId = "") {
   for (const entry of entries) {
     if (!entry.orderId) continue;
     const current = byOrder.get(entry.orderId) || 0;
-    if (entry.type === "freeze_hold") {
+    if (PREAUTH_HOLD_TYPES.has(entry.type)) {
       byOrder.set(entry.orderId, moneyAmount(current + Math.abs(entry.amount)));
-    } else if (entry.type === "freeze_release" || entry.type === "resource_charge") {
+    } else if (PREAUTH_RELEASE_TYPES.has(entry.type) || PREAUTH_SETTLEMENT_TYPES.has(entry.type)) {
       byOrder.set(entry.orderId, moneyAmount(current - Math.abs(entry.amount)));
     }
   }
@@ -110,7 +117,7 @@ export function walletCommercialSnapshot(db, user) {
   };
 }
 
-export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_order_freeze" }) {
+export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_order_preauth_hold" }) {
   const freezeAmount = moneyAmount(amount, 0);
   if (!user?.id || !order?.id || freezeAmount <= 0) {
     return { ok: false, error: "invalid_freeze_request", status: 400 };
@@ -131,19 +138,19 @@ export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "
     workspaceId: order.workspaceId,
     runId: order.runId || "",
     orderId: order.id,
-    type: "freeze_hold",
+    type: "preauth_hold",
     amount: freezeAmount,
     currency: order.currency || "CNY",
     sourceType: "quote",
     sourceId: order.quoteId || order.id,
-    idempotencyKey: idempotencyKey || `freeze_hold:${order.id}`,
+    idempotencyKey: idempotencyKey || `preauth_hold:${order.id}`,
     reason,
     operatorId: user.id,
   });
   return { ok: true, entry: result.entry, created: result.created, snapshot: walletCommercialSnapshot(db, user) };
 }
 
-export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_order_release" }) {
+export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_order_preauth_release" }) {
   const byOrder = activeFreezeByOrder(db, user?.id || order?.tenantId || order?.userId || "");
   const activeAmount = byOrder.get(order.id) || 0;
   const releaseAmount = moneyAmount(Math.min(activeAmount, moneyAmount(amount, activeAmount)), 0);
@@ -156,12 +163,12 @@ export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey 
     workspaceId: order.workspaceId,
     runId: order.runId || "",
     orderId: order.id,
-    type: "freeze_release",
+    type: "preauth_release",
     amount: releaseAmount,
     currency: order.currency || "CNY",
     sourceType: "resource_order",
     sourceId: order.id,
-    idempotencyKey: idempotencyKey || `freeze_release:${order.id}`,
+    idempotencyKey: idempotencyKey || `preauth_release:${order.id}`,
     reason,
     operatorId: user?.id || "system",
   });
@@ -172,6 +179,12 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
   const chargeAmount = moneyAmount(exactCost, 0);
   if (!order?.id || chargeAmount < 0) {
     return { ok: false, error: "invalid_exact_charge", status: 400 };
+  }
+  const chargeIdempotencyKey = idempotencyKey || `resource_charge:${order.id}:${sourceId || "exact"}`;
+  db.ledger = normalizeLedgerEntries(db.ledger);
+  const existing = db.ledger.find((entry) => entry.idempotencyKey === chargeIdempotencyKey);
+  if (existing) {
+    return { ok: true, chargedAmount: chargeAmount, entry: existing, wallet: ensureWallet(db, order.userId || user?.id || ""), created: false };
   }
   const wallet = ensureWallet(db, order.userId || user?.id || "");
   wallet.balance = moneyAmount(wallet.balance - chargeAmount, 0);
@@ -187,9 +200,9 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
     currency: order.currency || "CNY",
     sourceType: "tencent_bill",
     sourceId,
-    idempotencyKey: idempotencyKey || `resource_charge:${order.id}:${sourceId || "exact"}`,
+    idempotencyKey: chargeIdempotencyKey,
     reason: "resource_order_exact_bill_settlement",
     operatorId: "billing-aggregator",
   });
-  return { ok: true, chargedAmount: chargeAmount, entry: result.entry, wallet };
+  return { ok: true, chargedAmount: chargeAmount, entry: result.entry, wallet, created: result.created };
 }

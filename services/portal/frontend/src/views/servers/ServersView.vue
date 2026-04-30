@@ -355,7 +355,7 @@ function tagComplete(item: Record<string, unknown>) {
   const tagText = Array.isArray(tags)
     ? tags.map((tag) => `${(tag as any).Key || (tag as any).key || ""}:${(tag as any).Value || (tag as any).value || ""}`).join(",")
     : JSON.stringify(tags || {});
-  return ["tenant_id", "workspace_id", "run_id", "resource_order_id", "server_plan_id"].every((key) => tagText.includes(key));
+  return ["tenantid", "workspaceid", "runid", "resourceorderid", "serverplanid"].every((key) => tagText.includes(key));
 }
 
 async function load() {

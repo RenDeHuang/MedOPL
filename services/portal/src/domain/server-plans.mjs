@@ -43,9 +43,12 @@ export function normalizeServerPlanSelection(value) {
     instanceType: String(value.instanceType || "").trim(),
     currency: String(value.currency || "CNY").trim() || "CNY",
     priceStatus: String(value.priceStatus || "").trim(),
+    availabilityStatus: String(value.availabilityStatus || "").trim(),
     originalPrice: safePositiveNumber(value.originalPrice, 0),
     discountPrice: safePositiveNumber(value.discountPrice, 0),
     unitPrice: safePositiveNumber(value.unitPrice, 0),
+    quoteAmount: safePositiveNumber(value.quoteAmount, 0),
+    preauthAmount: safePositiveNumber(value.preauthAmount, 0),
     minBillableHours: Math.max(1, Number(value.minBillableHours || 1)),
     riskFactor: safePositiveNumber(value.riskFactor, 1),
     reservationFloor: safePositiveNumber(value.reservationFloor, 0),
@@ -69,6 +72,10 @@ export function normalizeServerPlanSelection(value) {
     nodePoolCreatePayload: value.nodePoolCreatePayload && typeof value.nodePoolCreatePayload === "object" ? value.nodePoolCreatePayload : null,
     nodePoolScalePayload: value.nodePoolScalePayload && typeof value.nodePoolScalePayload === "object" ? value.nodePoolScalePayload : null,
     provisionerPayload: value.provisionerPayload && typeof value.provisionerPayload === "object" ? value.provisionerPayload : null,
+    canOrder: Boolean(value.canOrder),
+    matrixKey: String(value.matrixKey || "").trim(),
+    pricingSource: String(value.pricingSource || "").trim(),
+    priceUpdatedAt: String(value.priceUpdatedAt || "").trim(),
     selectedAt: String(value.selectedAt || "").trim(),
     selectionNote: String(value.selectionNote || "").trim(),
   };
@@ -86,6 +93,8 @@ export function buildTaskSpaceServerPlanSelection(plan) {
     priceStatus: plan.priceStatus,
     discountPrice: plan.discountPrice,
     unitPrice: plan.unitPrice,
+    quoteAmount: plan.quoteAmount,
+    preauthAmount: plan.preauthAmount,
     minBillableHours: plan.minBillableHours,
     riskFactor: plan.riskFactor,
     reservationFloor: plan.reservationFloor,
@@ -111,6 +120,10 @@ export function buildTaskSpaceServerPlanSelection(plan) {
     nodePoolCreatePayload: plan.nodePoolCreatePayload,
     nodePoolScalePayload: plan.nodePoolScalePayload,
     provisionerPayload: plan.provisionerPayload,
+    canOrder: plan.canOrder,
+    matrixKey: plan.matrixKey,
+    pricingSource: plan.pricingSource,
+    priceUpdatedAt: plan.priceUpdatedAt,
     selectionNote: plan.selectionNote,
   });
 }
@@ -129,6 +142,9 @@ export function buildServerPlansFallback(note = "账单聚合服务暂不可用�
     configured: false,
     priceEnabled: false,
     catalogCount: 0,
+    candidateCount: 0,
+    orderableCount: 0,
+    availabilityBreakdown: {},
     items: [],
     note,
     cloudStatus: {
@@ -148,7 +164,7 @@ export function buildServerPlansFallback(note = "账单聚合服务暂不可用�
 export function buildServerPlansSummary(payload) {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   const quoted = items.filter((item) => item.priceStatus === "quoted");
-  const salable = items.filter((item) => item.salable);
+  const salable = items.filter((item) => item.salable || item.canOrder);
   const lowestHourlyPrice = quoted.reduce((min, item) => {
     const candidate = Number(item.discountPrice ?? item.unitPrice ?? 0);
     if (!Number.isFinite(candidate) || candidate <= 0) return min;
@@ -160,9 +176,12 @@ export function buildServerPlansSummary(payload) {
     priceEnabled: Boolean(payload?.priceEnabled),
     discoveryEnabled: Boolean(payload?.discoveryEnabled),
     discoveredCount: Number(payload?.discoveredCount || 0),
+    candidateCount: Number(payload?.candidateCount || items.length),
     catalogCount: Number(payload?.catalogCount || items.length),
     quotedCount: quoted.length,
     salableCount: salable.length,
+    orderableCount: Number(payload?.orderableCount || salable.length),
+    availabilityBreakdown: payload?.availabilityBreakdown || {},
     priceStatus: quoted.length ? "quoted" : (items.length ? "pending" : "unavailable"),
     lowestHourlyPrice: lowestHourlyPrice ?? 0,
     note: String(payload?.note || "").trim(),

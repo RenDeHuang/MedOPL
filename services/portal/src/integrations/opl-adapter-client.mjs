@@ -48,7 +48,15 @@ export function createOplAdapterClient({
     normalizeLaunchPayload,
     fetchJson,
 
-    async createLaunch({ user, taskSpace, workspaceSession, requireRealOplWeb = false }) {
+    async createLaunch({
+      user,
+      taskSpace,
+      workspaceSession,
+      requireRealOplWeb = false,
+      providerConfig = null,
+      providerConfigSecretRef = "",
+      storageEntitlement = null,
+    }) {
       const selectedServerPlan = taskSpace.selectedServerPlan || taskSpace.selectedServerPlanSnapshot || taskSpace.serverPlanSnapshot || null;
       const response = await fetch(new URL("/api/opl-launch/tokens", `${normalizedAdapterUrl}/`), {
         method: "POST",
@@ -89,6 +97,9 @@ export function createOplAdapterClient({
           nodePoolCreatePayload: selectedServerPlan?.nodePoolCreatePayload || null,
           nodePoolScalePayload: selectedServerPlan?.nodePoolScalePayload || null,
           provisionerPayload: selectedServerPlan?.provisionerPayload || null,
+          providerConfig,
+          providerConfigSecretRef,
+          storageEntitlement,
           selectedServerPlan,
         }),
       });

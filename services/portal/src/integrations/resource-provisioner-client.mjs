@@ -75,6 +75,11 @@ export function createResourceProvisionerClient({ provisionerUrl, timeoutMs = 50
       return postJsonOrNull(new URL("/resource-orders/ensure-capacity", `${baseUrl}/`), input, timeoutMs);
     },
 
+    startProvision(input) {
+      if (!baseUrl) return Promise.resolve({ ok: false, error: "resource_provisioner_url_not_configured" });
+      return postJsonOrNull(new URL("/resource-orders/provision-async", `${baseUrl}/`), input, timeoutMs);
+    },
+
     scaleToZero(input) {
       if (!baseUrl) return Promise.resolve({ ok: false, error: "resource_provisioner_url_not_configured" });
       return postJsonOrNull(new URL("/resource-orders/scale-to-zero", `${baseUrl}/`), input, timeoutMs);

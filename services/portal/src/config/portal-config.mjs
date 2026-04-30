@@ -82,6 +82,19 @@ function assertProductionSecret(name, value, defaults = []) {
 
 export function validateProductionConfig() {
   assertProductionSecret("PORTAL_ADMIN_PASSWORD", adminSeed.password, ["Password1!"]);
+  if (String(process.env.NODE_ENV || "").toLowerCase() === "production") {
+    if (PORTAL_STORAGE_MODE !== "postgres_redis") {
+      throw new Error("production_config_invalid:PORTAL_STORAGE_MODE_must_be_postgres_redis");
+    }
+    assertProductionSecret("PORTAL_POSTGRES_URL", PORTAL_POSTGRES_URL, [
+      "postgres://postgres:postgres@127.0.0.1:5432/med_meta",
+      "postgres://user:password@postgres.example.internal:5432/portal",
+    ]);
+    assertProductionSecret("PORTAL_REDIS_URL", PORTAL_REDIS_URL, [
+      "redis://127.0.0.1:6379",
+      "redis://redis.example.internal:6379",
+    ]);
+  }
   if (PORTAL_OIDC_ENABLED) {
     assertProductionSecret("PORTAL_OIDC_CLIENT_SECRET", PORTAL_OIDC_CLIENT_SECRET, ["ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM"]);
   }

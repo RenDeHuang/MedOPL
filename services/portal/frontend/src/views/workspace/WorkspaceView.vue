@@ -62,6 +62,43 @@
         </section>
 
         <section class="card p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="badge" :class="storageEntitlement.enabled ? 'badge-success' : 'badge-warning'">
+                  {{ storageEntitlement.enabled ? "已开通 COS" : "未开通存储" }}
+                </span>
+                <span class="badge badge-primary">最小 10GB</span>
+              </div>
+              <h2 class="mt-3 panel-title">对象存储</h2>
+              <p class="mt-2 panel-subtitle">
+                未购买存储时不能上传输入文件，也不能保存 OPL 输出文件。开通后文件写入当前 workspace 的 COS prefix。
+              </p>
+            </div>
+            <div class="w-full max-w-xl">
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
+                <button
+                  v-for="size in storageOptions"
+                  :key="size"
+                  class="btn"
+                  :class="selectedStorageSize === size ? 'btn-primary' : 'btn-secondary'"
+                  type="button"
+                  @click="selectedStorageSize = size"
+                >
+                  {{ size }}GB
+                </button>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-slate-300">
+                <span>当前容量：{{ storageEntitlement.enabled ? `${storageEntitlement.storageSizeGb}GB` : "0GB" }}</span>
+                <button class="btn btn-primary" type="button" :disabled="orderingStorage" @click="orderStorage">
+                  {{ orderingStorage ? "处理中" : storageEntitlement.enabled ? "调整容量" : "开通存储" }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 class="panel-title">任务空间列表</h2>
@@ -174,13 +211,16 @@ import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import type { WorkspacePayload } from "@/api/portal";
-import { fetchWorkspace } from "@/api/portal";
+import { createStorageOrder, fetchWorkspace } from "@/api/portal";
 
 const route = useRoute();
 const loading = ref(true);
 const error = ref("");
 const payload = ref<WorkspacePayload | null>(null);
 const uploadInput = ref<HTMLInputElement | null>(null);
+const storageOptions = [10, 20, 50, 100, 200, 500];
+const selectedStorageSize = ref(10);
+const orderingStorage = ref(false);
 
 const currentTask = computed(() => {
   const value = route.query.task;
@@ -190,6 +230,19 @@ const currentTask = computed(() => {
 const isActiveWorkspace = computed(() => String(payload.value?.workspace.status || "").toLowerCase() === "active");
 const isArchivedWorkspace = computed(() => String(payload.value?.workspace.status || "").toLowerCase() === "archived");
 const uploadAction = computed(() => `/portal/workspace/upload?task=${encodeURIComponent(payload.value?.workspace.slug || currentTask.value || "default")}`);
+const storageEntitlement = computed(() => payload.value?.storageEntitlement || payload.value?.workspace.storageEntitlement || {
+  enabled: false,
+  status: "disabled",
+  freeQuotaGb: 0,
+  minimumPurchaseGb: 10,
+  storageBackend: "cos",
+  retentionPolicy: "order_lifecycle",
+  cosPrefix: "",
+  resourceOrderId: "",
+  storagePlanId: "",
+  storageSizeGb: 0,
+  message: "storage_required",
+});
 
 function routeQueryObject() {
   const query: Record<string, string> = {};
@@ -266,6 +319,25 @@ function triggerUpload() {
   uploadInput.value?.click();
 }
 
+async function orderStorage() {
+  if (!payload.value) return;
+  orderingStorage.value = true;
+  error.value = "";
+  try {
+    const size = Math.max(10, Number(selectedStorageSize.value || 10));
+    await createStorageOrder({
+      task: payload.value.workspace.slug || currentTask.value,
+      storageSizeGb: size,
+      storagePlanId: `cos-${size}gb`,
+    });
+    await load();
+  } catch (err: any) {
+    error.value = err?.message || "存储开通失败";
+  } finally {
+    orderingStorage.value = false;
+  }
+}
+
 let requestId = 0;
 
 async function load() {
@@ -282,6 +354,7 @@ async function load() {
     });
     if (current !== requestId) return;
     payload.value = data;
+    selectedStorageSize.value = Math.max(10, Number(data.storageEntitlement?.storageSizeGb || data.workspace.storageEntitlement?.storageSizeGb || selectedStorageSize.value || 10));
   } catch (err: any) {
     if (current !== requestId) return;
     error.value = err?.message || "任务空间加载失败";

@@ -1,1 +1,1 @@
-import "./app/portal-app.mjs";
+import "./app/portal-runtime.mjs";

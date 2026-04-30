@@ -688,6 +688,58 @@ export interface WorkspaceStoragePayload {
     note?: string;
     objects?: Array<{ key: string; size: number }>;
   };
+  metadata?: WorkspaceFileRecord[];
+}
+
+export interface StorageOrderPayload {
+  workspaceId: string;
+  order: {
+    id: string;
+    status: string;
+    storagePlanId: string;
+    storageSizeGb: number;
+    storageBackend: string;
+    retentionPolicy: string;
+    cosPrefix: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  entitlement: StorageEntitlementPayload;
+}
+
+export interface WorkspaceFileRecord {
+  id: string;
+  tenantId: string;
+  userId: string;
+  workspaceId: string;
+  runId?: string;
+  kind: "inputs" | "outputs" | "artifacts" | string;
+  name: string;
+  relativePath: string;
+  storageKey: string;
+  localPath: string;
+  sizeBytes: number;
+  checksum: string;
+  contentType: string;
+  status: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceFileTransferPayload {
+  workspaceId: string;
+  provider: string;
+  method: "GET" | "POST" | string;
+  expiresAt: string;
+  url: string;
+  file: {
+    kind: "inputs" | "outputs" | "artifacts" | string;
+    name: string;
+    relativePath: string;
+    storageKey?: string;
+    contentType?: string;
+  };
 }
 
 export interface CostsSummaryPayload {
@@ -879,6 +931,31 @@ export async function fetchRuns(params?: Record<string, string | number | undefi
 
 export async function fetchWorkspaceStorage(params?: Record<string, string | number | undefined>) {
   const { data } = await apiClient.get<WorkspaceStoragePayload>("/workspace/storage", { params });
+  return data;
+}
+
+export async function fetchStorageEntitlement(params?: Record<string, string | number | undefined>) {
+  const { data } = await apiClient.get<{ workspaceId: string; entitlement: StorageEntitlementPayload }>("/storage/entitlement", { params });
+  return data;
+}
+
+export async function createStorageOrder(input: { task?: string; workspaceId?: string; storageSizeGb: number; storagePlanId?: string }) {
+  const { data } = await apiClient.post<StorageOrderPayload>("/storage/orders", input);
+  return data;
+}
+
+export async function createWorkspaceFileUploadUrl(input: { task?: string; workspaceId?: string; kind?: "inputs" | "outputs"; fileName: string; relativePath?: string }) {
+  const { data } = await apiClient.post<WorkspaceFileTransferPayload>("/workspace/files/upload-url", input);
+  return data;
+}
+
+export async function createWorkspaceFileDownloadUrl(params: { task?: string; workspaceId?: string; kind?: "inputs" | "outputs"; file: string; relativePath?: string }) {
+  const { data } = await apiClient.get<WorkspaceFileTransferPayload>("/workspace/files/download-url", {
+    params: {
+      ...params,
+      relativePath: params.relativePath || params.file,
+    },
+  });
   return data;
 }
 
