@@ -44,7 +44,7 @@ It has passed many local and contract-level checks, but the default cloud path h
 
 ## P0 Checklist Before v19 Can Be Rolled
 
-- [ ] Fix `billing-reconcile` CronJob image and command so it runs the current reconcile path, not stale `opl-v14`.
+- [x] Fix `billing-reconcile` CronJob image and command so it runs the current reconcile path, not stale `opl-v14`.
 - [ ] Add or restore a dedicated live TKE create/delete cleanup script with `try/finally`.
 - [ ] Run live TKE create/delete cleanup and record no residual node pools, CVMs, Pods, Jobs, or PVC artifacts.
 - [ ] Run live `/server-plans` discovery with Tencent Cloud credentials and prove `source=tencent_cloud_live_catalog`.

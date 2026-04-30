@@ -26,6 +26,7 @@ spec:
               command:
                 - "node"
                 - "src/server.mjs"
+                - "reconcile"
               env:
                 - name: PORT
                   value: "0"
@@ -36,6 +37,8 @@ spec:
                     name: portal-platform-config
                 - secretRef:
                     name: portal-platform-secrets
+                - secretRef:
+                    name: portal-postgres-redis
               volumeMounts:
                 - name: runtime
                   mountPath: /app/.runtime
