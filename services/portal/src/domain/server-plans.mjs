@@ -44,9 +44,12 @@ export function normalizeServerPlanSelection(value) {
     currency: String(value.currency || "CNY").trim() || "CNY",
     priceStatus: String(value.priceStatus || "").trim(),
     availabilityStatus: String(value.availabilityStatus || "").trim(),
+    statusCategory: String(value.statusCategory || "").trim(),
+    soldOutReason: String(value.soldOutReason || value.reason || "").trim(),
     originalPrice: safePositiveNumber(value.originalPrice, 0),
     discountPrice: safePositiveNumber(value.discountPrice, 0),
     unitPrice: safePositiveNumber(value.unitPrice, 0),
+    hourlyPrice: safePositiveNumber(value.hourlyPrice ?? value.discountPrice ?? value.unitPrice, 0),
     quoteAmount: safePositiveNumber(value.quoteAmount, 0),
     preauthAmount: safePositiveNumber(value.preauthAmount, 0),
     minBillableHours: Math.max(1, Number(value.minBillableHours || 1)),
@@ -91,8 +94,12 @@ export function buildTaskSpaceServerPlanSelection(plan) {
     instanceType: plan.instanceType,
     currency: plan.currency,
     priceStatus: plan.priceStatus,
+    availabilityStatus: plan.availabilityStatus,
+    statusCategory: plan.statusCategory,
+    soldOutReason: plan.soldOutReason,
     discountPrice: plan.discountPrice,
     unitPrice: plan.unitPrice,
+    hourlyPrice: plan.hourlyPrice,
     quoteAmount: plan.quoteAmount,
     preauthAmount: plan.preauthAmount,
     minBillableHours: plan.minBillableHours,
@@ -166,7 +173,7 @@ export function buildServerPlansSummary(payload) {
   const quoted = items.filter((item) => item.priceStatus === "quoted");
   const salable = items.filter((item) => item.salable || item.canOrder);
   const lowestHourlyPrice = quoted.reduce((min, item) => {
-    const candidate = Number(item.discountPrice ?? item.unitPrice ?? 0);
+    const candidate = Number(item.hourlyPrice ?? item.discountPrice ?? item.unitPrice ?? 0);
     if (!Number.isFinite(candidate) || candidate <= 0) return min;
     return min === null || candidate < min ? candidate : min;
   }, null);
