@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { activeFreezeAmount, appendLedgerEntry, holdFreezeForOrder, normalizeLedgerEntry } from "../services/portal/src/domain/wallet-ledger.mjs";
+
+const {
+  activeFreezeAmount,
+  appendLedgerEntry,
+  holdFreezeForOrder,
+  normalizeLedgerEntry,
+} = await import(new URL(["..", "services", "portal", "src", "domain", "wallet-ledger.mjs"].join("/"), import.meta.url));
 
 const db = { wallets: [{ userId: "user-ledger-a", balance: 500 }], ledger: [] };
 const user = { id: "user-ledger-a" };
