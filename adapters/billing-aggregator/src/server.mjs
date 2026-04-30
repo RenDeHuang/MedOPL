@@ -1,6 +1,12 @@
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  applyExactChargeForOrder,
+  applySettlementAdjustmentForOrder,
+  normalizeLedgerEntries,
+  normalizeResourceOrder,
+} from "./ledger-contract.mjs";
 
 if (!String(process.env.SERVER_PLAN_CATALOG_JSON || "").trim()) {
   process.env.SERVER_PLAN_CATALOG_JSON = JSON.stringify([
@@ -34,6 +40,9 @@ const AUTO_RECONCILE_ENABLED = String(process.env.AUTO_RECONCILE_ENABLED || "1")
 const AUTO_RECONCILE_INTERVAL_MS = Number(process.env.AUTO_RECONCILE_INTERVAL_MS || "600000");
 const AUTO_RECONCILE_WINDOW = String(process.env.AUTO_RECONCILE_WINDOW || "168h").trim() || "168h";
 const BILLING_RECONCILE_ONCE = String(process.env.BILLING_RECONCILE_ONCE || "0") === "1";
+const BILLING_RECONCILE_CUSTOMER_ID = String(process.env.BILLING_RECONCILE_CUSTOMER_ID || "").trim();
+const BILLING_RECONCILE_WORKSPACE_ID = String(process.env.BILLING_RECONCILE_WORKSPACE_ID || "").trim();
+const BILLING_RECONCILE_WINDOW = String(process.env.BILLING_RECONCILE_WINDOW || AUTO_RECONCILE_WINDOW).trim() || AUTO_RECONCILE_WINDOW;
 const TENCENT_CLOUD_SECRET_ID = String(process.env.TENCENT_CLOUD_SECRET_ID || process.env.TENCENTCLOUD_SECRET_ID || "").trim();
 const TENCENT_CLOUD_SECRET_KEY = String(process.env.TENCENT_CLOUD_SECRET_KEY || process.env.TENCENTCLOUD_SECRET_KEY || "").trim();
 const TENCENT_CLOUD_TOKEN = String(process.env.TENCENT_CLOUD_TOKEN || "").trim();
@@ -92,6 +101,68 @@ function buildCosBillStatus() {
     note: "COS bill files are used for daily reconciliation. Exact cost must come from Tencent bill detail or COS bill files.",
   };
 }
+
+function parseCli(argv = []) {
+  const args = [...argv];
+  const command = args[0] && !String(args[0]).startsWith("-") ? String(args.shift()).trim().toLowerCase() : "";
+  const options = {
+    customerId: "",
+    workspaceId: "",
+    window: "",
+    help: false,
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = String(args[index] || "").trim();
+    const next = String(args[index + 1] || "").trim();
+    if (!token) continue;
+    if (token === "--help" || token === "-h") {
+      options.help = true;
+      continue;
+    }
+    if (token === "--customer-id" || token === "--customer") {
+      options.customerId = next;
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("--customer-id=") || token.startsWith("--customer=")) {
+      options.customerId = token.split("=").slice(1).join("=").trim();
+      continue;
+    }
+    if (token === "--workspace-id" || token === "--workspace") {
+      options.workspaceId = next;
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("--workspace-id=") || token.startsWith("--workspace=")) {
+      options.workspaceId = token.split("=").slice(1).join("=").trim();
+      continue;
+    }
+    if (token === "--window") {
+      options.window = next;
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("--window=")) {
+      options.window = token.split("=").slice(1).join("=").trim();
+      continue;
+    }
+    throw new Error(`Unknown billing-aggregator argument: ${token}`);
+  }
+
+  return { command, options };
+}
+
+const cliArgs = parseCli(process.argv.slice(2));
+if (cliArgs.command && !new Set(["serve", "reconcile", "billing-reconcile"]).has(cliArgs.command)) {
+  throw new Error(`Unsupported billing-aggregator command: ${cliArgs.command}`);
+}
+const BILLING_RECONCILE_COMMAND = new Set(["reconcile", "billing-reconcile"]).has(cliArgs.command) || BILLING_RECONCILE_ONCE;
+const BILLING_RECONCILE_TARGET = {
+  customerId: cliArgs.options.customerId || BILLING_RECONCILE_CUSTOMER_ID,
+  workspaceId: cliArgs.options.workspaceId || BILLING_RECONCILE_WORKSPACE_ID,
+  window: cliArgs.options.window || BILLING_RECONCILE_WINDOW,
+};
 
 function firstNonEmpty(...values) {
   return values.map((value) => String(value ?? "").trim()).find(Boolean) || "";
@@ -501,9 +572,10 @@ async function parseBody(req) {
 async function readPortalDb() {
   if (storageMode() === "postgres_redis") {
     const pool = await ensurePortalPool();
-    const [walletsRes, ledgerRes] = await Promise.all([
+    const [walletsRes, ledgerRes, resourceOrdersRes] = await Promise.all([
       pool.query(`SELECT * FROM ${portalTable("wallets")}`),
       pool.query(`SELECT * FROM ${portalTable("ledger_entries")} ORDER BY created_at ASC`),
+      pool.query(`SELECT * FROM ${portalTable("resource_orders")}`),
     ]);
     return {
       wallets: walletsRes.rows.map((row) => ({
@@ -511,21 +583,71 @@ async function readPortalDb() {
         balance: Number(row.balance || 0),
         updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
       })),
-      ledger: ledgerRes.rows.map((row) => ({
+      ledger: normalizeLedgerEntries(ledgerRes.rows.map((row) => ({
         id: row.id,
+        tenantId: row.tenant_id || row.user_id,
         userId: row.user_id,
         runId: row.run_id,
         workspaceId: row.workspace_id,
+        orderId: row.order_id || "",
         type: row.type,
         amount: Number(row.amount || 0),
+        currency: row.currency || "CNY",
+        sourceType: row.source_type || "",
+        sourceId: row.source_id || "",
+        idempotencyKey: row.idempotency_key || "",
         reason: row.reason || "",
         operatorId: row.operator_id || "",
         createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
-      })),
+      }))),
+      resourceOrders: resourceOrdersRes.rows.map((row) => normalizeResourceOrder({
+        id: row.id,
+        tenantId: row.tenant_id,
+        userId: row.user_id,
+        portalUserId: row.portal_user_id,
+        workspaceId: row.workspace_id,
+        workspaceSessionId: row.workspace_session_id,
+        runId: row.run_id,
+        billingAccountId: row.portal_user_id || row.user_id || row.tenant_id,
+        status: row.status,
+        serverPlanId: row.server_plan_id,
+        region: row.region,
+        zone: row.zone,
+        cpu: row.cpu,
+        memoryGb: row.memory_gb,
+        gpuType: row.gpu_type,
+        gpuCount: row.gpu_count,
+        storagePlanId: row.storage_plan_id,
+        storageSizeGb: row.storage_size_gb,
+        retentionPolicy: row.retention_policy,
+        estimatedHours: row.estimated_hours,
+        autoStopAt: row.auto_stop_at,
+        quoteId: row.quote_id,
+        freezeId: row.freeze_id,
+        provisionRequestId: row.provision_request_id,
+        cloudResourceIds: row.cloud_resource_ids_json || [],
+        currency: row.currency || "CNY",
+        unitPrice: Number(row.unit_price || 0),
+        minBillableHours: Number(row.min_billable_hours || 1),
+        riskFactor: Number(row.risk_factor || 1),
+        quoteAmount: Number(row.quote_amount || 0),
+        freezeAmount: Number(row.freeze_amount || 0),
+        exactCost: row.exact_cost === null ? null : Number(row.exact_cost || 0),
+        pricingSource: row.pricing_source || "",
+        priceUpdatedAt: row.price_updated_at || "",
+        idempotencyKey: row.idempotency_key || "",
+        failedReason: row.failed_reason || "",
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+        updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+        settledAt: row.settled_at instanceof Date ? row.settled_at.toISOString() : row.settled_at,
+      })).filter(Boolean),
     };
   }
   if (!(await exists(portalDbFile))) return null;
-  return JSON.parse(await readFile(portalDbFile, "utf8"));
+  const db = JSON.parse(await readFile(portalDbFile, "utf8"));
+  db.ledger = normalizeLedgerEntries(db.ledger || []);
+  db.resourceOrders = (Array.isArray(db.resourceOrders) ? db.resourceOrders : []).map((row) => normalizeResourceOrder(row)).filter(Boolean);
+  return db;
 }
 
 async function writePortalDb(db) {
@@ -548,15 +670,21 @@ async function writePortalDb(db) {
       for (const row of db.ledger || []) {
         if (existing.has(row.id)) continue;
         await client.query(
-          `INSERT INTO ${portalTable("ledger_entries")} (id,user_id,run_id,workspace_id,type,amount,reason,operator_id,created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+          `INSERT INTO ${portalTable("ledger_entries")} (id,tenant_id,user_id,run_id,workspace_id,order_id,type,amount,currency,source_type,source_id,idempotency_key,reason,operator_id,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
           [
             row.id,
+            row.tenantId || row.userId || "",
             row.userId || "",
             row.runId || "",
             row.workspaceId || "",
+            row.resourceOrderId || row.orderId || "",
             row.type || "",
             Number(row.amount || 0),
+            row.currency || "CNY",
+            row.sourceType || "",
+            row.sourceId || "",
+            row.idempotencyKey || "",
             row.reason || "",
             row.operatorId || "",
             row.createdAt || new Date().toISOString(),
@@ -1012,10 +1140,12 @@ function tencentBillRows(response) {
 
 function normalizeTencentBillRow(row = {}) {
   const tags = normalizeTags(row.Tags || row.Tag || row.ResourceTags || row.TagSet);
+  const resourceOrderId = firstString(tags.resource_order_id, tags.resourceOrderId, row.ResourceOrderId);
+  const serverPlanId = firstString(tags.server_plan_id, tags.serverPlanId, row.ServerPlanId);
   const tenantId = firstString(tags.tenant_id, tags.tenantId, tags.customer_id, tags.customerId, row.TenantId, row.CustomerId);
   const workspaceId = firstString(tags.workspace_id, tags.workspaceId, row.WorkspaceId);
   const runId = firstString(tags.run_id, tags.runId, row.RunId);
-  const hasExactRunAttribution = Boolean(tenantId && workspaceId && runId);
+  const hasExactRunAttribution = Boolean(resourceOrderId && serverPlanId && tenantId && workspaceId && runId);
   const resourceId = firstString(row.ResourceId, row.InstanceId, row.ResourceName, row.ResourceIdName);
   const product = firstString(row.BusinessCodeName, row.ProductCodeName, row.ProductName, row.BusinessCode);
   const component = firstString(row.ComponentCodeName, row.BillingItemCodeName, row.ComponentName, row.ItemName);
@@ -1032,6 +1162,8 @@ function normalizeTencentBillRow(row = {}) {
 
   return {
     runId: runId || resourceId || randomUUID(),
+    resourceOrderId: resourceOrderId || "",
+    serverPlanId: serverPlanId || "",
     workspaceId: workspaceId || "unattributed",
     customerId: tenantId || "",
     tenantId: tenantId || "",
@@ -1047,6 +1179,8 @@ function normalizeTencentBillRow(row = {}) {
       pricing_source: hasExactRunAttribution ? "tencent_cloud_bill" : "tencent_cloud_bill_unattributed",
       cloud_source: "tencent_cloud",
       attribution_state: hasExactRunAttribution ? "run_attributed" : "unattributed",
+      resource_order_id: resourceOrderId,
+      server_plan_id: serverPlanId,
       tenant_id: tenantId,
       customer_id: tenantId,
       workspace_id: workspaceId,
@@ -1068,8 +1202,11 @@ function groupTencentBillRuns(rows) {
     const key = item.runId || item.properties.resource_id || randomUUID();
     const current = grouped.get(key) || {
       runId: item.runId,
+      resourceOrderId: item.resourceOrderId,
+      serverPlanId: item.serverPlanId,
       workspaceId: item.workspaceId,
       customerId: item.customerId,
+      tenantId: item.tenantId,
       start: item.start,
       end: item.end,
       cpuCost: 0,
@@ -1083,6 +1220,8 @@ function groupTencentBillRuns(rows) {
         pricing_source: item.pricingSource,
         cloud_source: "tencent_cloud",
         attribution_state: item.hasExactRunAttribution ? "run_attributed" : "unattributed",
+        resource_order_id: item.resourceOrderId,
+        server_plan_id: item.serverPlanId,
         customer_id: item.customerId,
         tenant_id: item.tenantId,
         workspace_id: item.workspaceId,
@@ -1781,10 +1920,65 @@ function isCompletedRun(run) {
 }
 
 function systemLedgerEntriesForRun(db, runId) {
-  return (db.ledger || []).filter((entry) => {
+  return normalizeLedgerEntries(db?.ledger || []).filter((entry) => {
     if (entry.runId !== runId) return false;
-    if (entry.type === "resource_charge") return true;
-    return entry.source === "auto_reconcile" && (entry.type === "refund" || entry.type === "makeup_charge");
+    if (entry.type === "exact_resource_charge") return true;
+    return entry.sourceType === "auto_reconcile" && (entry.type === "refund" || entry.type === "makeup_charge");
+  });
+}
+
+function systemLedgerNetCharge(entries = []) {
+  return Number(entries.reduce((sum, entry) => {
+    const amount = Math.abs(Number(entry.amount || 0));
+    if (entry.type === "exact_resource_charge" || entry.type === "makeup_charge") {
+      return sum + amount;
+    }
+    if (entry.type === "refund") {
+      return sum - amount;
+    }
+    return sum;
+  }, 0).toFixed(6));
+}
+
+function exactSettlementSourceId(runCost = {}) {
+  return `tencent_cloud_bill:${String(runCost.resourceOrderId || runCost.runId || "unknown").trim()}`;
+}
+
+function resolveResourceOrderForReconcile(db, run, runCost) {
+  const orders = Array.isArray(db?.resourceOrders) ? db.resourceOrders : [];
+  const resourceOrderId = String(runCost?.resourceOrderId || "").trim();
+  if (resourceOrderId) {
+    const direct = orders.find((item) => item.id === resourceOrderId);
+    if (direct) return direct;
+  }
+
+  const runId = String(runCost?.runId || run?.runId || "").trim();
+  const workspaceId = String(runCost?.workspaceId || run?.workspaceId || "").trim();
+  const customerId = String(runCost?.customerId || run?.customerId || run?.userId || "").trim();
+  const matchByRun = orders.filter((item) => item.runId === runId && item.workspaceId === workspaceId && [item.userId, item.portalUserId, item.tenantId].includes(customerId));
+  if (matchByRun.length === 1) {
+    return matchByRun[0];
+  }
+
+  if (!resourceOrderId || !runId || !workspaceId || !customerId) {
+    return null;
+  }
+
+  return normalizeResourceOrder({
+    id: resourceOrderId,
+    tenantId: String(runCost?.tenantId || customerId).trim() || customerId,
+    userId: customerId,
+    portalUserId: customerId,
+    workspaceId,
+    runId,
+    billingAccountId: customerId,
+    status: "reconciling",
+    serverPlanId: String(runCost?.serverPlanId || "").trim(),
+    currency: "CNY",
+    pricingSource: String(runCost?.pricingSource || "tencent_cloud_bill").trim(),
+    priceUpdatedAt: new Date().toISOString(),
+    createdAt: String(run?.createdAt || new Date().toISOString()).trim(),
+    updatedAt: new Date().toISOString(),
   });
 }
 
@@ -1822,30 +2016,36 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
     if (!isCompletedRun(run)) continue;
 
     const wallet = db.wallets?.find((item) => item.userId === runCost.customerId);
-    if (!wallet) continue;
+    if (!wallet) {
+      results.push({
+        runId: run.runId,
+        workspaceId: run.workspaceId || "",
+        action: "wallet_missing",
+        pricingSource: runCost.pricingSource,
+      });
+      continue;
+    }
+
+    const order = resolveResourceOrderForReconcile(db, run, runCost);
+    if (!order) {
+      results.push({
+        runId: run.runId,
+        workspaceId: run.workspaceId || "",
+        action: "resource_order_missing",
+        pricingSource: runCost.pricingSource,
+      });
+      continue;
+    }
 
     const systemEntries = systemLedgerEntriesForRun(db, runCost.runId);
-    const baseCharge = systemEntries.find((entry) => entry.type === "resource_charge");
+    const baseCharge = systemEntries.find((entry) => entry.type === "exact_resource_charge");
 
     if (!baseCharge) {
-      wallet.balance = Number(wallet.balance || 0) - Number(runCost.totalCost || 0);
-      wallet.updatedAt = new Date().toISOString();
-
-      db.ledger.push({
-        id: randomUUID(),
-        userId: runCost.customerId,
-        runId: runCost.runId,
-        workspaceId: runCost.workspaceId,
-        type: "resource_charge",
-        amount: -Number(runCost.totalCost || 0),
-        source: "tencent_cloud",
-        breakdown: {
-          cpuCost: Number(runCost.cpuCost || 0),
-          gpuCost: Number(runCost.gpuCost || 0),
-          pvCost: Number(runCost.pvCost || 0),
-          totalCost: Number(runCost.totalCost || 0)
-        },
-        createdAt: new Date().toISOString()
+      applyExactChargeForOrder(db, {
+        user: { id: runCost.customerId },
+        order,
+        exactCost: Number(runCost.totalCost || 0),
+        sourceId: exactSettlementSourceId(runCost),
       });
 
       exactCount += 1;
@@ -1862,7 +2062,7 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
       continue;
     }
 
-    const currentNetCharge = -systemEntries.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+    const currentNetCharge = systemLedgerNetCharge(systemEntries);
     const targetNetCharge = Number(runCost.totalCost || 0);
     const delta = Number((targetNetCharge - currentNetCharge).toFixed(6));
 
@@ -1871,51 +2071,22 @@ async function reconcileCharges(customerId, workspaceId, windowValue) {
       continue;
     }
 
-    const entry =
-      delta > 0
-        ? {
-            id: randomUUID(),
-            userId: runCost.customerId,
-            runId: runCost.runId,
-            workspaceId: runCost.workspaceId,
-            type: "makeup_charge",
-            amount: -Math.abs(delta),
-            reason: "auto_reconcile_tencent_bill_delta",
-            source: "auto_reconcile",
-            createdAt: new Date().toISOString(),
-            breakdown: {
-              targetTotalCost: targetNetCharge,
-              previousNetCharge: currentNetCharge,
-              delta: Math.abs(delta)
-            }
-          }
-        : {
-            id: randomUUID(),
-            userId: runCost.customerId,
-            runId: runCost.runId,
-            workspaceId: runCost.workspaceId,
-            type: "refund",
-            amount: Math.abs(delta),
-            reason: "auto_reconcile_tencent_bill_delta",
-            source: "auto_reconcile",
-            createdAt: new Date().toISOString(),
-            breakdown: {
-              targetTotalCost: targetNetCharge,
-              previousNetCharge: currentNetCharge,
-              delta: Math.abs(delta)
-            }
-          };
-
-    wallet.balance = Number(wallet.balance || 0) + Number(entry.amount || 0);
-    wallet.updatedAt = new Date().toISOString();
-    db.ledger.push(entry);
+    const adjustmentType = delta > 0 ? "makeup_charge" : "refund";
+    applySettlementAdjustmentForOrder(db, {
+      user: { id: runCost.customerId },
+      order,
+      type: adjustmentType,
+      amount: Math.abs(delta),
+      sourceId: `${exactSettlementSourceId(runCost)}:${targetNetCharge.toFixed(2)}`,
+      reason: "auto_reconcile_tencent_bill_delta",
+    });
     exactCount += 1;
     adjustmentCount += 1;
 
     results.push({
       runId: runCost.runId,
       workspaceId: runCost.workspaceId,
-      action: entry.type,
+      action: adjustmentType,
       adjustment: Math.abs(delta),
       targetTotalCost: targetNetCharge,
       previousNetCharge: currentNetCharge,
@@ -1974,7 +2145,7 @@ async function listPendingRuns(customerId = "", workspaceId = "", windowValue = 
       status: run.status || (isCompletedRun(run) ? "completed" : "unknown"),
       pendingHours: Math.max(0, ((Date.now()) - Date.parse(completionTimestamp(run) || run.createdAt || Date.now())) / 3600000),
       pricingSource: "metering pending",
-      chargeState: ledger.some((entry) => entry.runId === run.runId && entry.type === "resource_charge") ? "charged_from_exact_bill" : "unbilled"
+      chargeState: systemLedgerEntriesForRun({ ledger }, run.runId).some((entry) => entry.type === "exact_resource_charge") ? "charged_from_exact_bill" : "unbilled"
     }))
     .sort((a, b) => Number(b.pendingHours || 0) - Number(a.pendingHours || 0));
 
@@ -2253,9 +2424,29 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`billing-aggregator listening on :${PORT}`);
-});
+function printCliUsage() {
+  console.log([
+    "Usage:",
+    "  node src/server.mjs",
+    "  node src/server.mjs reconcile [--customer-id <id>] [--workspace-id <id>] [--window <range>]",
+  ].join("\n"));
+}
+
+async function runSingleReconcile({ customerId = "", workspaceId = "", windowValue = AUTO_RECONCILE_WINDOW } = {}) {
+  try {
+    return await reconcileCharges(customerId, workspaceId, windowValue);
+  } catch (error) {
+    reconcileState = {
+      ...reconcileState,
+      lastRunAt: new Date().toISOString(),
+      lastWindow: windowValue || AUTO_RECONCILE_WINDOW,
+      lastScope: workspaceId ? `workspace:${workspaceId}` : (customerId || "all"),
+      lastError: String(error),
+    };
+    await logRuntimeEvent({ type: "billing_reconcile_failed", error: String(error), ...reconcileState });
+    throw error;
+  }
+}
 
 async function runAutoReconcileLoop() {
   if (!AUTO_RECONCILE_ENABLED || reconcileLoopRunning) {
@@ -2263,29 +2454,38 @@ async function runAutoReconcileLoop() {
   }
   reconcileLoopRunning = true;
   try {
-    await reconcileCharges("", "", AUTO_RECONCILE_WINDOW);
-  } catch (error) {
-    reconcileState = {
-      ...reconcileState,
-      lastRunAt: new Date().toISOString(),
-      lastWindow: AUTO_RECONCILE_WINDOW,
-      lastScope: "all",
-      lastError: String(error),
-    };
-    await logRuntimeEvent({ type: "billing_reconcile_failed", error: String(error), ...reconcileState });
+    await runSingleReconcile({ windowValue: AUTO_RECONCILE_WINDOW });
   } finally {
     reconcileLoopRunning = false;
   }
 }
 
-if (BILLING_RECONCILE_ONCE) {
-  runAutoReconcileLoop()
-    .then(() => process.exit(reconcileState.lastError ? 1 : 0))
+if (cliArgs.options.help) {
+  printCliUsage();
+  process.exit(0);
+}
+
+if (BILLING_RECONCILE_COMMAND) {
+  runSingleReconcile({
+    customerId: BILLING_RECONCILE_TARGET.customerId,
+    workspaceId: BILLING_RECONCILE_TARGET.workspaceId,
+    windowValue: BILLING_RECONCILE_TARGET.window,
+  })
+    .then((result) => {
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(reconcileState.lastError ? 1 : 0);
+    })
     .catch((error) => {
       console.error(error);
       process.exit(1);
     });
-} else if (AUTO_RECONCILE_ENABLED) {
+} else {
+  server.listen(PORT, () => {
+    console.log(`billing-aggregator listening on :${PORT}`);
+  });
+}
+
+if (!BILLING_RECONCILE_COMMAND && AUTO_RECONCILE_ENABLED) {
   setTimeout(() => {
     runAutoReconcileLoop().catch(() => {});
   }, 1500);

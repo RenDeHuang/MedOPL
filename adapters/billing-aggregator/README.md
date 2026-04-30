@@ -7,8 +7,9 @@ contract that Portal can consume.
 Cost source priority:
 
 1. `tencent_cloud_bill` - Tencent Cloud bill detail or COS bill import. This is
-   the final billing source when bill rows carry `tenant_id`, `workspace_id`,
-   and `run_id` cloud resource tags.
+   the final billing source only when bill rows carry
+   `resource_order_id`, `run_id`, `server_plan_id`, `tenant_id`, and
+   `workspace_id` cloud resource tags.
 2. `tencent_cloud_bill_unattributed` - real Tencent Cloud bill rows that cannot
    be attributed to a run. These rows are visible for operations, but they are
    not used for per-run wallet reconciliation.
@@ -66,6 +67,21 @@ SERVER_PLAN_CATALOG_JSON=[{"id":"cpu-standard-gz","name":"CPU standard","region"
   configured.
 - `POST /reconcile` - writes ledger adjustments only when exact Tencent Cloud
   bill data is available.
+
+## CLI
+
+- `node src/server.mjs reconcile` - one-shot reconcile CLI for CronJob / Job use.
+- `npm run reconcile` - same entrypoint via package script.
+
+The one-shot CLI accepts `--customer-id`, `--workspace-id`, and `--window`.
+It prints the reconcile JSON payload to stdout and exits non-zero on failure.
+When exact bill data is present, ledger writes follow the Portal commercial
+ledger contract:
+
+- first exact settlement writes `exact_resource_charge`
+- T+1 delta writes `refund` or `makeup_charge`
+- ledger rows carry `order_id`, `source_id`, `source_type`, and
+  `idempotency_key`
 
 `DescribeBillDetail` windows are split by month before calling Tencent Cloud, so
 weekly reconcile jobs remain valid across month boundaries.
