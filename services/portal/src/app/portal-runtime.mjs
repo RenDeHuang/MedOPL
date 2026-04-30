@@ -122,6 +122,11 @@ import {
   upsertQuotedResourceOrder,
 } from "./portal-runtime-domain.mjs";
 import {
+  adminScopeResult,
+  isAdminUser,
+  resourceBelongsToUser,
+} from "./portal-runtime-domain.mjs";
+import {
   buildSessionTraceDetailPayload as buildSessionTraceDetailDomainPayload,
   buildSessionTracesApiPayload as buildSessionTracesDomainApiPayload,
 } from "./portal-runtime-domain.mjs";
@@ -942,10 +947,7 @@ function findUserResourceOrder(db, user, orderId = "") {
   const normalizedOrderId = String(orderId || "").trim();
   if (!normalizedOrderId) return null;
   ensureResourceOrderCollections(db);
-  return db.resourceOrders.find((item) =>
-    item.id === normalizedOrderId &&
-    (item.userId === user.id || item.tenantId === user.id || user.role === "admin")
-  ) || null;
+  return db.resourceOrders.find((item) => item.id === normalizedOrderId && resourceBelongsToUser(item, user)) || null;
 }
 
 async function resourceOrderProvisionInput(order, plan = {}, payload = {}) {
@@ -3575,8 +3577,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && url.pathname === "/portal/api/admin/agent-traces") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
+    const adminScope = adminScopeResult(user);
+    if (!adminScope.ok) {
+      sendJson(res, { error: adminScope.error }, adminScope.status);
       return;
     }
     const requestOptions = readTracesRequestOptions(url);
@@ -3584,13 +3587,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && url.pathname === "/portal/api/traces") {
+    const adminScope = adminScopeResult(user);
+    if (!adminScope.ok) {
+      sendJson(res, { error: adminScope.error, use: "/portal/api/session-traces" }, adminScope.status);
+      return;
+    }
     const requestOptions = readTracesRequestOptions(url);
     const requestedUserId = String(requestOptions.userId || "").trim();
     const workspaceId = String(requestOptions.workspaceId || "").trim();
     const runId = String(requestOptions.runId || "").trim();
     const sessionId = String(requestOptions.sessionId || "").trim();
     const statusFilter = String(requestOptions.status || "").trim().toLowerCase();
-    const effectiveUserId = user.role === "admin" ? requestedUserId : user.id;
+    const effectiveUserId = requestedUserId;
     const traces = await fetchTraceRows({
       userId: effectiveUserId,
       workspaceId,
@@ -3719,6 +3727,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && url.pathname === "/portal/api/cloud/resources") {
+    if (!isAdminUser(user)) {
+      sendJson(res, {
+        ok: false,
+        error: "forbidden_admin_scope_required",
+        use: "/portal/api/resource-orders",
+      }, 403);
+      return;
+    }
     const resources = await resourceProvisionerClient.fetchCloudResources();
     sendJson(res, {
       ok: Boolean(resources?.ok),
