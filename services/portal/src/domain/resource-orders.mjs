@@ -20,6 +20,13 @@ export const RESOURCE_ORDER_STATUSES = new Set([
   "cancelled",
 ]);
 
+export const RESOURCE_ORDER_PENDING_STOP_STATUSES = new Set([
+  "released",
+  "settled",
+  "failed",
+  "cancelled",
+]);
+
 export function ensureResourceOrderCollections(db) {
   if (!Array.isArray(db.resourceOrders)) db.resourceOrders = [];
   if (!Array.isArray(db.resourceOrderEvents)) db.resourceOrderEvents = [];
@@ -45,6 +52,7 @@ export function normalizeResourceOrder(order = {}) {
     workspaceId,
     workspaceSessionId: String(order.workspaceSessionId || order.workspace_session_id || "").trim(),
     runId: String(order.runId || order.run_id || "").trim(),
+    billingAccountId: String(order.billingAccountId || order.billing_account_id || userId).trim() || userId,
     status: RESOURCE_ORDER_STATUSES.has(status) ? status : "quoted",
     serverPlanId: String(order.serverPlanId || order.server_plan_id || "").trim(),
     region: String(order.region || "").trim(),
@@ -75,6 +83,7 @@ export function normalizeResourceOrder(order = {}) {
     createdAt: String(order.createdAt || order.created_at || now).trim() || now,
     updatedAt: String(order.updatedAt || order.updated_at || now).trim() || now,
     settledAt: String(order.settledAt || order.settled_at || "").trim(),
+    pendingStoppedAt: String(order.pendingStoppedAt || order.pending_stopped_at || "").trim(),
     failedReason: String(order.failedReason || order.failed_reason || "").trim(),
   };
 }
@@ -116,6 +125,7 @@ export function quoteResourceOrderFromPlan({ user, workspace, serverPlan, input 
     workspaceId: workspace.slug,
     workspaceSessionId: input.workspaceSessionId || "",
     runId: input.runId || "",
+    billingAccountId: input.billingAccountId || user.id,
     status: "quoted",
     serverPlanId: serverPlan?.id || input.serverPlanId || "",
     region: serverPlan?.region || "",
@@ -213,8 +223,12 @@ export function transitionResourceOrder(db, { orderId, status, actorType = "syst
   target.status = nextStatus;
   if (payload.runId) target.runId = String(payload.runId);
   if (payload.workspaceSessionId) target.workspaceSessionId = String(payload.workspaceSessionId);
+  if (payload.billingAccountId) target.billingAccountId = String(payload.billingAccountId);
   if (payload.cloudResourceIds) target.cloudResourceIds = normalizeCloudResourceIds(payload.cloudResourceIds);
   if (nextStatus === "settled") target.settledAt = new Date().toISOString();
+  if (RESOURCE_ORDER_PENDING_STOP_STATUSES.has(nextStatus)) {
+    target.pendingStoppedAt = String(payload.pendingStoppedAt || payload.pending_stopped_at || new Date().toISOString());
+  }
   if (nextStatus === "failed") target.failedReason = String(payload.reason || payload.error || "");
   target.updatedAt = new Date().toISOString();
   appendResourceOrderEvent(db, {
@@ -249,6 +263,7 @@ export function releaseResourceOrder(db, { user, orderId, actorType = "runtime",
       releasedAmount: released.releasedAmount,
       preauthReleaseDeferred: !releasePreauth,
       settlementMode: "preauth_then_t1_exact",
+      pendingStoppedAt: payload.pendingStoppedAt || new Date().toISOString(),
     },
     idempotencyKey: `event:released:${target.id}`,
   });
@@ -273,6 +288,8 @@ export function resourceOrderPublicView(order, events = []) {
     status: order.status,
     tenantId: order.tenantId,
     userId: order.userId,
+    billingAccountId: order.billingAccountId,
+    resourceOrderId: order.id,
     workspaceId: order.workspaceId,
     workspaceSessionId: order.workspaceSessionId,
     runId: order.runId,
@@ -311,6 +328,7 @@ export function resourceOrderPublicView(order, events = []) {
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     settledAt: order.settledAt,
+    pendingStoppedAt: order.pendingStoppedAt,
     failedReason: order.failedReason,
     events: events
       .filter((event) => event.orderId === order.id)
@@ -323,6 +341,12 @@ export function resourceOrdersForUser(db, userId) {
   return db.resourceOrders
     .filter((order) => order.userId === userId || order.tenantId === userId)
     .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+}
+
+export function resourceOrderStopsPending(order = {}) {
+  if (!order || typeof order !== "object") return false;
+  if (String(order.pendingStoppedAt || "").trim()) return true;
+  return RESOURCE_ORDER_PENDING_STOP_STATUSES.has(String(order.status || "").trim().toLowerCase());
 }
 
 function normalizeObject(value) {

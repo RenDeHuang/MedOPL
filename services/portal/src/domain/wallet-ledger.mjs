@@ -3,19 +3,38 @@ import { randomUUID } from "node:crypto";
 export const LEDGER_TYPES = new Set([
   "topup",
   "preauth_hold",
+  "pending_usage",
+  "exact_resource_charge",
   "preauth_release",
-  "freeze_hold",
-  "freeze_release",
-  "resource_charge",
   "refund",
   "makeup_charge",
   "manual_adjustment",
-  "adjustment",
 ]);
 
-const PREAUTH_HOLD_TYPES = new Set(["preauth_hold", "freeze_hold"]);
-const PREAUTH_RELEASE_TYPES = new Set(["preauth_release", "freeze_release"]);
-const PREAUTH_SETTLEMENT_TYPES = new Set(["resource_charge", "makeup_charge"]);
+const LEDGER_TYPE_ALIASES = new Map([
+  ["freeze_hold", "preauth_hold"],
+  ["freeze_release", "preauth_release"],
+  ["resource_charge", "exact_resource_charge"],
+  ["adjustment", "manual_adjustment"],
+]);
+
+const PREAUTH_HOLD_TYPES = new Set(["preauth_hold"]);
+const PREAUTH_RELEASE_TYPES = new Set(["preauth_release"]);
+const PREAUTH_SETTLEMENT_TYPES = new Set(["exact_resource_charge", "makeup_charge"]);
+
+function orderLedgerContext(user, order = {}) {
+  const userId = order.userId || user?.id || "";
+  const tenantId = order.tenantId || user?.id || userId;
+  return {
+    tenantId,
+    userId,
+    workspaceId: order.workspaceId,
+    runId: order.runId || "",
+    resourceOrderId: order.id,
+    billingAccountId: order.billingAccountId || tenantId || userId,
+    currency: order.currency || "CNY",
+  };
+}
 
 export function moneyAmount(value, fallback = 0) {
   const parsed = Number(value);
@@ -25,18 +44,32 @@ export function moneyAmount(value, fallback = 0) {
 
 export function normalizeLedgerEntry(entry = {}) {
   const createdAt = String(entry.createdAt || entry.created_at || "").trim() || new Date().toISOString();
-  const type = String(entry.type || "").trim() || "adjustment";
+  const rawType = String(entry.type || "").trim() || "manual_adjustment";
+  const type = LEDGER_TYPE_ALIASES.get(rawType) || rawType;
+  const resourceOrderId = String(entry.resourceOrderId || entry.resource_order_id || entry.orderId || entry.order_id || "").trim();
+  const billingAccountId = String(
+    entry.billingAccountId
+    || entry.billing_account_id
+    || entry.userId
+    || entry.user_id
+    || entry.tenantId
+    || entry.tenant_id
+    || ""
+  ).trim();
+  const sourceType = String(entry.sourceType || entry.source_type || entry.source || "").trim();
   return {
     id: String(entry.id || randomUUID()),
     tenantId: String(entry.tenantId || entry.tenant_id || entry.userId || entry.user_id || "").trim(),
     userId: String(entry.userId || entry.user_id || entry.tenantId || entry.tenant_id || "").trim(),
     workspaceId: String(entry.workspaceId || entry.workspace_id || "").trim(),
     runId: String(entry.runId || entry.run_id || "").trim(),
-    orderId: String(entry.orderId || entry.order_id || "").trim(),
-    type: LEDGER_TYPES.has(type) ? type : type,
+    resourceOrderId,
+    orderId: resourceOrderId,
+    billingAccountId,
+    type: LEDGER_TYPES.has(type) ? type : "manual_adjustment",
     amount: moneyAmount(entry.amount, 0),
     currency: String(entry.currency || "CNY").trim() || "CNY",
-    sourceType: String(entry.sourceType || entry.source_type || "").trim(),
+    sourceType,
     sourceId: String(entry.sourceId || entry.source_id || "").trim(),
     idempotencyKey: String(entry.idempotencyKey || entry.idempotency_key || "").trim(),
     reason: String(entry.reason || "").trim(),
@@ -71,6 +104,39 @@ export function appendLedgerEntry(db, entry) {
   return { entry: normalized, created: true };
 }
 
+export function appendUnattributedBill(db, bill = {}) {
+  db.unattributedBills = Array.isArray(db.unattributedBills) ? db.unattributedBills : [];
+  const idempotencyKey = String(bill.idempotencyKey || bill.idempotency_key || bill.billId || bill.bill_id || bill.sourceId || bill.source_id || randomUUID()).trim();
+  const existing = db.unattributedBills.find((item) => item.idempotencyKey === idempotencyKey);
+  if (existing) return { bill: existing, created: false };
+  const queued = normalizeBillQueueRecord({
+    ...bill,
+    id: String(bill.id || randomUUID()),
+    idempotencyKey,
+  });
+  db.unattributedBills.push(queued);
+  return { bill: queued, created: true };
+}
+
+function normalizeBillQueueRecord(bill = {}) {
+  return {
+    id: String(bill.id || randomUUID()),
+    idempotencyKey: String(bill.idempotencyKey || bill.idempotency_key || "").trim(),
+    sourceType: String(bill.sourceType || bill.source_type || "cos_daily_bill").trim() || "cos_daily_bill",
+    sourceId: String(bill.sourceId || bill.source_id || bill.billId || bill.bill_id || "").trim(),
+    reason: String(bill.reason || "missing_required_cost_tags").trim(),
+    tenantId: String(bill.tenantId || bill.tenant_id || "").trim(),
+    workspaceId: String(bill.workspaceId || bill.workspace_id || "").trim(),
+    resourceOrderId: String(bill.resourceOrderId || bill.resource_order_id || bill.orderId || bill.order_id || "").trim(),
+    runId: String(bill.runId || bill.run_id || "").trim(),
+    serverPlanId: String(bill.serverPlanId || bill.server_plan_id || "").trim(),
+    amount: moneyAmount(bill.amount, 0),
+    currency: String(bill.currency || "CNY").trim() || "CNY",
+    raw: bill.raw && typeof bill.raw === "object" ? bill.raw : {},
+    createdAt: String(bill.createdAt || bill.created_at || "").trim() || new Date().toISOString(),
+  };
+}
+
 export function trialRemainingForUser(user) {
   const entitlement = user?.preferences?.commercial?.trialEntitlement;
   if (!entitlement || entitlement.status !== "trial_active") return 0;
@@ -83,16 +149,16 @@ export function activeFreezeByOrder(db, userId = "") {
     .filter((entry) => !userId || entry.userId === userId || entry.tenantId === userId);
   const byOrder = new Map();
   for (const entry of entries) {
-    if (!entry.orderId) continue;
-    const current = byOrder.get(entry.orderId) || 0;
+    if (!entry.resourceOrderId) continue;
+    const current = byOrder.get(entry.resourceOrderId) || 0;
     if (PREAUTH_HOLD_TYPES.has(entry.type)) {
-      byOrder.set(entry.orderId, moneyAmount(current + Math.abs(entry.amount)));
+      byOrder.set(entry.resourceOrderId, moneyAmount(current + Math.abs(entry.amount)));
     } else if (PREAUTH_RELEASE_TYPES.has(entry.type) || PREAUTH_SETTLEMENT_TYPES.has(entry.type)) {
-      byOrder.set(entry.orderId, moneyAmount(current - Math.abs(entry.amount)));
+      byOrder.set(entry.resourceOrderId, moneyAmount(current - Math.abs(entry.amount)));
     }
   }
-  for (const [orderId, amount] of byOrder.entries()) {
-    byOrder.set(orderId, Math.max(0, moneyAmount(amount)));
+  for (const [resourceOrderId, amount] of byOrder.entries()) {
+    byOrder.set(resourceOrderId, Math.max(0, moneyAmount(amount)));
   }
   return byOrder;
 }
@@ -133,14 +199,9 @@ export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "
     };
   }
   const result = appendLedgerEntry(db, {
-    tenantId: user.id,
-    userId: user.id,
-    workspaceId: order.workspaceId,
-    runId: order.runId || "",
-    orderId: order.id,
+    ...orderLedgerContext(user, order),
     type: "preauth_hold",
     amount: freezeAmount,
-    currency: order.currency || "CNY",
     sourceType: "quote",
     sourceId: order.quoteId || order.id,
     idempotencyKey: idempotencyKey || `preauth_hold:${order.id}`,
@@ -158,14 +219,9 @@ export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey 
     return { ok: true, releasedAmount: 0, skipped: true };
   }
   const result = appendLedgerEntry(db, {
-    tenantId: order.tenantId || user?.id || order.userId || "",
-    userId: order.userId || user?.id || "",
-    workspaceId: order.workspaceId,
-    runId: order.runId || "",
-    orderId: order.id,
+    ...orderLedgerContext(user, order),
     type: "preauth_release",
     amount: releaseAmount,
-    currency: order.currency || "CNY",
     sourceType: "resource_order",
     sourceId: order.id,
     idempotencyKey: idempotencyKey || `preauth_release:${order.id}`,
@@ -180,7 +236,7 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
   if (!order?.id || chargeAmount < 0) {
     return { ok: false, error: "invalid_exact_charge", status: 400 };
   }
-  const chargeIdempotencyKey = idempotencyKey || `resource_charge:${order.id}:${sourceId || "exact"}`;
+  const chargeIdempotencyKey = idempotencyKey || `exact_resource_charge:${order.id}:${sourceId || "exact"}`;
   db.ledger = normalizeLedgerEntries(db.ledger);
   const existing = db.ledger.find((entry) => entry.idempotencyKey === chargeIdempotencyKey);
   if (existing) {
@@ -190,14 +246,9 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
   wallet.balance = moneyAmount(wallet.balance - chargeAmount, 0);
   wallet.updatedAt = new Date().toISOString();
   const result = appendLedgerEntry(db, {
-    tenantId: order.tenantId || user?.id || order.userId || "",
-    userId: order.userId || user?.id || "",
-    workspaceId: order.workspaceId,
-    runId: order.runId || "",
-    orderId: order.id,
-    type: "resource_charge",
+    ...orderLedgerContext(user, order),
+    type: "exact_resource_charge",
     amount: chargeAmount,
-    currency: order.currency || "CNY",
     sourceType: "tencent_bill",
     sourceId,
     idempotencyKey: chargeIdempotencyKey,
@@ -205,4 +256,71 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
     operatorId: "billing-aggregator",
   });
   return { ok: true, chargedAmount: chargeAmount, entry: result.entry, wallet, created: result.created };
+}
+
+export function appendPendingUsageForOrder(db, {
+  user,
+  order,
+  pendingCost,
+  sourceId = "",
+  idempotencyKey = "",
+  sourceType = "pending_metering",
+  reason = "resource_order_pending_usage",
+}) {
+  const amount = moneyAmount(pendingCost, 0);
+  if (order?.pendingStoppedAt || ["released", "settled", "failed", "cancelled"].includes(String(order?.status || "").toLowerCase())) {
+    return { ok: true, skipped: true, reason: "pending_stopped", amount: 0 };
+  }
+  if (!order?.id || amount <= 0) {
+    return { ok: false, error: "invalid_pending_usage", status: 400 };
+  }
+  const result = appendLedgerEntry(db, {
+    ...orderLedgerContext(user, order),
+    type: "pending_usage",
+    amount,
+    sourceType,
+    sourceId: sourceId || order.runId || order.id,
+    idempotencyKey: idempotencyKey || `pending_usage:${order.id}:${sourceId || order.runId || "pending"}:${amount.toFixed(2)}`,
+    reason,
+    operatorId: "billing-aggregator",
+  });
+  return { ok: true, amount, entry: result.entry, created: result.created };
+}
+
+export function applySettlementAdjustmentForOrder(db, {
+  user,
+  order,
+  type,
+  amount,
+  sourceId = "",
+  idempotencyKey = "",
+  reason = "resource_order_exact_bill_delta",
+}) {
+  const normalizedType = LEDGER_TYPE_ALIASES.get(String(type || "").trim()) || String(type || "").trim();
+  const adjustmentAmount = moneyAmount(amount, 0);
+  if (!order?.id || adjustmentAmount <= 0 || !["refund", "makeup_charge"].includes(normalizedType)) {
+    return { ok: false, error: "invalid_settlement_adjustment", status: 400 };
+  }
+  const adjustmentIdempotencyKey = idempotencyKey || `${normalizedType}:${order.id}:${sourceId || "delta"}:${adjustmentAmount.toFixed(2)}`;
+  db.ledger = normalizeLedgerEntries(db.ledger);
+  const existing = db.ledger.find((entry) => entry.idempotencyKey === adjustmentIdempotencyKey);
+  if (existing) {
+    return { ok: true, amount: adjustmentAmount, entry: existing, wallet: ensureWallet(db, order.userId || user?.id || ""), created: false };
+  }
+  const wallet = ensureWallet(db, order.userId || user?.id || "");
+  wallet.balance = normalizedType === "refund"
+    ? moneyAmount(wallet.balance + adjustmentAmount, 0)
+    : moneyAmount(wallet.balance - adjustmentAmount, 0);
+  wallet.updatedAt = new Date().toISOString();
+  const result = appendLedgerEntry(db, {
+    ...orderLedgerContext(user, order),
+    type: normalizedType,
+    amount: adjustmentAmount,
+    sourceType: "auto_reconcile",
+    sourceId: sourceId || order.runId || order.id,
+    idempotencyKey: adjustmentIdempotencyKey,
+    reason,
+    operatorId: "billing-aggregator",
+  });
+  return { ok: true, amount: adjustmentAmount, entry: result.entry, wallet, created: result.created };
 }
