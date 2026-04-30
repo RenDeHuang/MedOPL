@@ -76,7 +76,7 @@ async function measureHttp(target) {
         method: "GET",
         timeout: Number(process.env.ENTRY_PERF_TIMEOUT_MS || 15000),
         headers: {
-          "user-agent": "opl-v17-entry-performance-check/1.0",
+          "user-agent": "opl-v19-entry-performance-check/1.0",
           accept: "*/*",
         },
       },

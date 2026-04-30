@@ -1,5 +1,7 @@
 import dns from "node:dns/promises";
 import { execFile } from "node:child_process";
+import net from "node:net";
+import tls from "node:tls";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -22,19 +24,78 @@ function hostsFromArgs(args) {
 }
 
 function healthPathForHost(host) {
-  return String(host || "").toLowerCase() === "trace.medopl.cn"
+  return hostParts(host).hostname.toLowerCase() === "trace.medopl.cn"
     ? "/api/public/health"
     : "/healthz";
+}
+
+function hostParts(host, defaultPort = 443) {
+  const raw = String(host || "").trim();
+  const [hostname, portValue = ""] = raw.split(":");
+  const port = Number(portValue || defaultPort);
+  return { raw, hostname, port: Number.isFinite(port) && port > 0 ? port : defaultPort };
+}
+
+function probeTcp(host, port) {
+  const started = Date.now();
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port, timeout: 8000 });
+    socket.once("connect", () => {
+      const elapsedMs = Date.now() - started;
+      socket.destroy();
+      resolve({ ok: true, port, elapsedMs });
+    });
+    socket.once("timeout", () => {
+      socket.destroy();
+      resolve({ ok: false, port, error: "tcp_timeout", elapsedMs: Date.now() - started });
+    });
+    socket.once("error", (error) => {
+      resolve({ ok: false, port, error: String(error.code || error.message || error), elapsedMs: Date.now() - started });
+    });
+  });
+}
+
+function probeTls(host, port) {
+  const started = Date.now();
+  return new Promise((resolve) => {
+    const socket = tls.connect({ host, port, servername: host, timeout: 10000, rejectUnauthorized: false });
+    socket.once("secureConnect", () => {
+      const cert = socket.getPeerCertificate();
+      const elapsedMs = Date.now() - started;
+      socket.destroy();
+      resolve({
+        ok: true,
+        port,
+        authorized: socket.authorized,
+        authorizationError: socket.authorizationError || "",
+        subject: cert?.subject || {},
+        validFrom: cert?.valid_from || "",
+        validTo: cert?.valid_to || "",
+        elapsedMs,
+      });
+    });
+    socket.once("timeout", () => {
+      socket.destroy();
+      resolve({ ok: false, port, error: "tls_timeout", elapsedMs: Date.now() - started });
+    });
+    socket.once("error", (error) => {
+      resolve({ ok: false, port, error: String(error.code || error.message || error), elapsedMs: Date.now() - started });
+    });
+  });
 }
 
 async function probeUrl(url) {
   const started = Date.now();
   try {
     const response = await fetch(url, { redirect: "manual" });
+    const text = await response.text().catch(() => "");
     return {
       ok: response.status >= 200 && response.status < 500,
       status: response.status,
       location: response.headers.get("location") || "",
+      contentType: response.headers.get("content-type") || "",
+      contentLength: text.length,
+      contentSample: text.slice(0, 160),
       elapsedMs: Date.now() - started,
     };
   } catch (error) {
@@ -48,13 +109,18 @@ async function probeUrl(url) {
 
 async function checkHost(host) {
   const healthPath = healthPathForHost(host);
-  const dnsResult = await dns.resolve4(host).then(
+  const parsed = hostParts(host);
+  const httpParts = hostParts(host, 80);
+  const dnsResult = await dns.resolve4(parsed.hostname).then(
     (addresses) => ({ ok: true, addresses }),
     (error) => ({ ok: false, error: String(error.code || error.message || error) }),
   );
+  const tcp80 = await probeTcp(httpParts.hostname, httpParts.port);
+  const tcp443 = await probeTcp(parsed.hostname, parsed.port);
+  const tls443 = process.argv.includes("--http-only") ? null : await probeTls(parsed.hostname, parsed.port);
   const http = await probeUrl(`http://${host}${healthPath}`);
-  const https = await probeUrl(`https://${host}${healthPath}`);
-  return { host, healthPath, dns: dnsResult, http, https };
+  const https = process.argv.includes("--http-only") ? null : await probeUrl(`https://${host}${healthPath}`);
+  return { host, hostname: parsed.hostname, healthPath, dns: dnsResult, tcp80, tcp443, tls443, http, https };
 }
 
 async function kubectlJson(args) {
@@ -139,7 +205,13 @@ for (const host of hosts) {
 }
 const k8s = summarizeK8s(await kubectlJson(args));
 
-const failed = hostResults.some((item) => !item.dns.ok || !item.https.ok || Number(item.https.status || 0) >= 500)
+const httpOnly = args.has("http-only");
+const failed = hostResults.some((item) =>
+  !item.dns.ok ||
+  !item.tcp80.ok ||
+  (!httpOnly && (!item.tcp443.ok || !item.tls443?.ok || !item.https?.ok || Number(item.https?.status || 0) >= 500)) ||
+  (item.http && Number(item.http.status || 0) >= 500)
+)
   || (k8s && !k8s.ok);
 
 console.log(JSON.stringify({
