@@ -114,6 +114,40 @@ billing-reconcile-manual-v19-20260501-0129-6q24f Completed
 - 真实腾讯云账单可读取，但当前账单行缺少完整 `resource_order_id / run_id / server_plan_id / tenant_id / workspace_id` 标签，进入 unattributed 路径。
 - 本次没有生成用户级 exact charge、refund 或 makeup charge；这符合“缺完整标签不扣用户”的规则。
 
+### 自动 CronJob
+
+Job：`billing-reconcile-29626170`
+
+调度时间：`2026-05-01 01:30:00 +08:00`
+
+结果：成功。
+
+状态：
+
+```text
+Complete 1/1
+```
+
+日志摘要：
+
+```json
+{
+  "settlementMode": "exact_only",
+  "reconciledCount": 0,
+  "exactCount": 0,
+  "estimatedCount": 0,
+  "adjustmentCount": 0,
+  "unattributedItemCount": 9,
+  "resultsCount": 0
+}
+```
+
+解释：
+
+- CronJob 自然调度已经使用新镜像和显式 `reconcile` 入口。
+- CronJob 可成功读取 Portal PostgreSQL 配置并完成一次对账。
+- 当前真实账单仍缺完整成本标签，因此只证明 CronJob 健康和 unattributed 路径，不证明可归因 exact settlement。
+
 ## 当前仍未关闭的 P0
 
 - live COS exact bill reconcile 还没有完成“可归因 daily bill -> exact ledger”的证据。
