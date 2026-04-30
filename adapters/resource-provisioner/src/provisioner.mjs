@@ -150,6 +150,10 @@ function buildCreateNodePoolPayload(context) {
   return payload;
 }
 
+export function previewCreateNodePoolPayload(input = {}) {
+  return buildCreateNodePoolPayload(buildProvisionContext(input));
+}
+
 function buildScaleToZeroPayload(input = {}) {
   const nodePoolId = firstString(input.nodePoolId, input.node_pool_id);
   if (!nodePoolId) {

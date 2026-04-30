@@ -22,7 +22,7 @@ function hmac(key, value, encoding) {
 export function sanitizeTencentError(error) {
   return {
     message: String(error?.message || error || "tencent_cloud_error")
-      .replace(/(SecretId|SecretKey|TENCENT_CLOUD_SECRET_ID|TENCENT_CLOUD_SECRET_KEY)\s*[:=]\s*[^,\s"}]+/gi, "$1=[redacted]"),
+      .replace(/(SecretId|SecretKey|Token|authorization|x-tc-token|TENCENT_CLOUD_SECRET_ID|TENCENT_CLOUD_SECRET_KEY|TENCENT_CLOUD_TOKEN)\s*[:=]\s*[^,\s"}]+/gi, "$1=[redacted]"),
     code: String(error?.code || "").trim(),
     status: Number(error?.status || 0) || undefined,
   };
