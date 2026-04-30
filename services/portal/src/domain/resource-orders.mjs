@@ -6,6 +6,8 @@ import {
   releaseFreezeForOrder,
 } from "./wallet-ledger.mjs";
 
+const DEFAULT_PREAUTH_BUFFER_RATIO = 0.2;
+
 export const RESOURCE_ORDER_STATUSES = new Set([
   "quoted",
   "frozen",
@@ -100,8 +102,10 @@ export function quoteResourceOrderFromPlan({ user, workspace, serverPlan, input 
   const billableHours = Math.max(estimatedHours, minBillableHours);
   const unitPrice = moneyAmount(serverPlan?.discountPrice ?? serverPlan?.unitPrice ?? serverPlan?.hourlyPrice ?? 0, 0);
   const riskFactor = Math.max(1, Number(serverPlan?.riskFactor || 1));
+  const preauthBufferRatio = resolvePreauthBufferRatio(serverPlan, input);
   const reservationFloor = moneyAmount(serverPlan?.reservationFloor || 0, 0);
   const quoteAmount = moneyAmount(Math.max(reservationFloor, unitPrice * billableHours * riskFactor), 0);
+  const preauthAmount = moneyAmount(Math.max(quoteAmount, quoteAmount * (1 + preauthBufferRatio)), 0);
   const now = new Date().toISOString();
   const quoteId = `quote_${randomUUID()}`;
   return normalizeResourceOrder({
@@ -131,7 +135,7 @@ export function quoteResourceOrderFromPlan({ user, workspace, serverPlan, input 
     minBillableHours,
     riskFactor,
     quoteAmount,
-    freezeAmount: quoteAmount,
+    freezeAmount: preauthAmount,
     pricingSource: serverPlan?.pricingSource || serverPlan?.source || serverPlan?.priceStatus || "billing_aggregator_quote",
     priceUpdatedAt: serverPlan?.priceUpdatedAt || serverPlan?.updatedAt || now,
     idempotencyKey,
@@ -152,6 +156,8 @@ export function upsertQuotedResourceOrder(db, order) {
     eventType: "quoted",
     eventPayload: {
       quoteAmount: order.quoteAmount,
+      preauthAmount: order.freezeAmount,
+      preauthBufferRatio: resolvePreauthBufferRatio({}, {}),
       serverPlanId: order.serverPlanId,
       estimatedHours: order.estimatedHours,
       pricingSource: order.pricingSource,
@@ -173,7 +179,7 @@ export function freezeResourceOrder(db, { user, order, idempotencyKey = "" }) {
     user,
     order: target,
     amount: target.freezeAmount,
-    idempotencyKey: idempotencyKey || `freeze_hold:${target.id}`,
+    idempotencyKey: idempotencyKey || `preauth_hold:${target.id}`,
   });
   if (!held.ok) return held;
   target.status = "frozen";
@@ -182,7 +188,13 @@ export function freezeResourceOrder(db, { user, order, idempotencyKey = "" }) {
   appendResourceOrderEvent(db, {
     orderId: target.id,
     eventType: "frozen",
-    eventPayload: { freezeAmount: target.freezeAmount, ledgerEntryId: held.entry.id },
+    eventPayload: {
+      preauthAmount: target.freezeAmount,
+      freezeAmount: target.freezeAmount,
+      quoteAmount: target.quoteAmount,
+      settlementMode: "preauth_then_t1_exact",
+      ledgerEntryId: held.entry.id,
+    },
     actorType: "portal",
     actorId: user.id,
     idempotencyKey: `event:frozen:${target.id}`,
@@ -216,21 +228,28 @@ export function transitionResourceOrder(db, { orderId, status, actorType = "syst
   return { ok: true, order: target };
 }
 
-export function releaseResourceOrder(db, { user, orderId, actorType = "runtime", actorId = "", payload = {}, idempotencyKey = "" }) {
+export function releaseResourceOrder(db, { user, orderId, actorType = "runtime", actorId = "", payload = {}, idempotencyKey = "", releasePreauth = false }) {
   const target = db.resourceOrders.find((item) => item.id === orderId);
   if (!target) return { ok: false, status: 404, error: "resource_order_not_found" };
-  const released = releaseFreezeForOrder(db, {
-    user,
-    order: target,
-    amount: target.freezeAmount,
-    idempotencyKey: idempotencyKey || `freeze_release:${target.id}`,
-  });
+  const released = releasePreauth
+    ? releaseFreezeForOrder(db, {
+        user,
+        order: target,
+        amount: target.freezeAmount,
+        idempotencyKey: idempotencyKey || `preauth_release:${target.id}`,
+      })
+    : { ok: true, releasedAmount: 0, skipped: true };
   const transitioned = transitionResourceOrder(db, {
     orderId,
     status: "released",
     actorType,
     actorId,
-    payload: { ...payload, releasedAmount: released.releasedAmount },
+    payload: {
+      ...payload,
+      releasedAmount: released.releasedAmount,
+      preauthReleaseDeferred: !releasePreauth,
+      settlementMode: "preauth_then_t1_exact",
+    },
     idempotencyKey: `event:released:${target.id}`,
   });
   return { ...transitioned, releasedAmount: released.releasedAmount };
@@ -278,6 +297,14 @@ export function resourceOrderPublicView(order, events = []) {
     frozenAmount: order.freezeAmount,
     quoteAmount: order.quoteAmount,
     freezeAmount: order.freezeAmount,
+    preauthAmount: order.freezeAmount,
+    settlementMode: "preauth_then_t1_exact",
+    settlementPolicy: {
+      mode: "preauth_then_t1_exact",
+      exactSource: "tencent_bill_detail_or_cos_daily_bill",
+      pendingSource: "opencost_or_local_metering",
+      releasePolicy: "release_unused_preauth_after_exact_bill",
+    },
     exactCost: order.exactCost,
     pricingSource: order.pricingSource,
     priceUpdatedAt: order.priceUpdatedAt,
@@ -334,4 +361,21 @@ function parseStorageGi(value) {
   const unit = match[2] || "gi";
   if (unit.startsWith("m")) return Math.max(10, Math.ceil(amount / 1024));
   return Math.max(10, Math.ceil(amount));
+}
+
+function resolvePreauthBufferRatio(serverPlan = {}, input = {}) {
+  const candidates = [
+    input.preauthBufferRatio,
+    input.preauth_buffer_ratio,
+    serverPlan.preauthBufferRatio,
+    serverPlan.preauth_buffer_ratio,
+    process.env.PORTAL_PREAUTH_BUFFER_RATIO,
+    DEFAULT_PREAUTH_BUFFER_RATIO,
+  ];
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null || candidate === "") continue;
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  }
+  return DEFAULT_PREAUTH_BUFFER_RATIO;
 }

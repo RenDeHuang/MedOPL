@@ -1,9 +1,16 @@
+export {
+  createGflabProviderConfig,
+  normalizeProviderApiKey,
+  redactProviderConfig,
+} from "../domain/provider-config.mjs";
+
 export function createOplLaunchService({
   evaluateUserPolicy,
   findTaskSpace,
   ensureTaskSpace,
   ensureWorkspaceSession,
   createOplLaunch,
+  resolveStorageEntitlement,
   defaultTaskTitle,
   logPortalEvent,
   writeDb,
@@ -28,6 +35,8 @@ export function createOplLaunchService({
       taskSlug,
       requireRealOplWeb = true,
       source = "portal-api",
+      providerConfig = null,
+      providerConfigSecretRef = "",
     }) {
       const { wallet, policy, reasons } = await buildLaunchBlockReasons(db, user);
       if (reasons.length) {
@@ -64,6 +73,9 @@ export function createOplLaunchService({
       }
 
       const workspaceSession = await ensureWorkspaceSession(db, user, taskSpace);
+      const storageEntitlement = typeof resolveStorageEntitlement === "function"
+        ? resolveStorageEntitlement(db, user, taskSpace.slug)
+        : null;
       let launch;
       try {
         launch = await createOplLaunch({
@@ -71,6 +83,9 @@ export function createOplLaunchService({
           taskSpace,
           workspaceSession,
           requireRealOplWeb,
+          providerConfig,
+          providerConfigSecretRef,
+          storageEntitlement,
         });
       } catch (error) {
         await logPortalEvent({

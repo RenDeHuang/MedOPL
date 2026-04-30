@@ -156,6 +156,28 @@ function startAdapterFixture() {
   return server;
 }
 
+function startResourceProvisionerFixture() {
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url || "/", "http://fixture");
+    if (url.pathname === "/healthz") {
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+    if (req.method === "POST" && url.pathname === "/resource-orders/provision-async") {
+      sendJson(res, 200, {
+        ok: true,
+        order: {
+          status: "accepted",
+          requestId: "provision-request-resource-order-smoke",
+        },
+      });
+      return;
+    }
+    sendJson(res, 404, { ok: false, error: "not_found" });
+  });
+  return server;
+}
+
 function extractCookie(setCookie, name) {
   const headers = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
   for (const header of headers) {
@@ -236,8 +258,10 @@ async function main() {
   assert(await exists(portalEntrypoint), `portal entrypoint missing: ${portalEntrypoint}`);
   const billingServer = startBillingFixture();
   const adapterServer = startAdapterFixture();
+  const resourceProvisionerServer = startResourceProvisionerFixture();
   const billingUrl = await listen(billingServer);
   const adapterUrl = await listen(adapterServer);
+  const resourceProvisionerUrl = await listen(resourceProvisionerServer);
   const portalPort = await freePort();
   const portalUrl = `http://127.0.0.1:${portalPort}`;
   let portal = null;
@@ -255,6 +279,7 @@ async function main() {
           PORTAL_ALLOW_REGISTRATION: "1",
           PORTAL_INTERNAL_AUTH_TOKEN: "resource-order-internal-token",
           BILLING_SERVICE_URL: billingUrl,
+          RESOURCE_PROVISIONER_URL: resourceProvisionerUrl,
           PORTAL_OPL_ADAPTER_URL: adapterUrl,
           OPL_WEB_URL: "http://127.0.0.1:19999/opl-web",
         },
@@ -281,7 +306,8 @@ async function main() {
       const quote = JSON.parse(quoteResponse.body || "{}");
       assert(quote.resourceOrderId, `quote resourceOrderId missing: ${quoteResponse.body}`);
       assert(quote.order?.status === "quoted", `quote status mismatch: ${quoteResponse.body}`);
-      assert(quote.order?.freezeAmount === 0.13, `freeze amount should use quoted plan and risk factor: ${quoteResponse.body}`);
+      assert(quote.order?.quoteAmount === 0.13, `quote amount should use quoted plan and risk factor: ${quoteResponse.body}`);
+      assert(quote.order?.freezeAmount === 0.16, `preauth amount should include default 20% buffer: ${quoteResponse.body}`);
 
       const freezeResponse = await postJson(portalUrl, "/portal/api/resource-orders/freeze", {
         orderId: quote.resourceOrderId,
@@ -289,8 +315,8 @@ async function main() {
       assert(freezeResponse.status === 200, `freeze expected 200, got ${freezeResponse.status}: ${freezeResponse.body}`);
       const frozen = JSON.parse(freezeResponse.body || "{}");
       assert(frozen.order?.status === "frozen", `freeze status mismatch: ${freezeResponse.body}`);
-      assert(frozen.commercial?.activeFreeze === 0.13, `active freeze missing: ${freezeResponse.body}`);
-      assert(frozen.commercial?.availableBalance === 49.87, `available balance mismatch: ${freezeResponse.body}`);
+      assert(frozen.commercial?.activeFreeze === 0.16, `active preauth missing: ${freezeResponse.body}`);
+      assert(frozen.commercial?.availableBalance === 49.84, `available balance mismatch: ${freezeResponse.body}`);
 
       const ordersResponse = await request(portalUrl, "/portal/api/resource-orders", { headers: { cookie } });
       assert(ordersResponse.status === 200, `orders expected 200, got ${ordersResponse.status}: ${ordersResponse.body}`);
@@ -324,6 +350,7 @@ async function main() {
     portal?.kill();
     billingServer.close();
     adapterServer.close();
+    resourceProvisionerServer.close();
   }
 }
 
