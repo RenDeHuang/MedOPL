@@ -163,16 +163,24 @@ function localResources(state, launch) {
   };
 }
 
+function firstNonEmpty(values = []) {
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (normalized) return normalized;
+  }
+  return "";
+}
+
 function resolveTenantId(detail = {}, fallback = "") {
-  return detail.tenantId || detail.tenant_id || detail.portalUserId || detail.portal_user_id || fallback || "";
+  return firstNonEmpty([detail.tenantId, detail.tenant_id, detail.portalUserId, detail.portal_user_id, fallback]);
 }
 
 function resolveOwnerId(detail = {}, fallback = "") {
-  return detail.ownerId || detail.owner_id || detail.portalUserId || detail.portal_user_id || fallback || "";
+  return firstNonEmpty([detail.ownerId, detail.owner_id, detail.portalUserId, detail.portal_user_id, fallback]);
 }
 
 function resolveStorageOwnerId(detail = {}, fallback = "") {
-  return detail.storageOwnerId || detail.storage_owner_id || detail.storageOwner || detail.storage_owner || resolveOwnerId(detail, fallback);
+  return firstNonEmpty([detail.storageOwnerId, detail.storage_owner_id, detail.storageOwner, detail.storage_owner]) || resolveOwnerId(detail, fallback);
 }
 
 function buildScope(launch = {}, runtimeSession = {}) {
@@ -326,6 +334,17 @@ async function buildBootstrap(state, launch) {
       agents: ["mas", "mag", "rca"],
       canStartRun: true,
     },
+    provider: {
+      providerConfigured: Boolean(runtimeSession?.providerConfigured),
+      providerConfigStatus: runtimeSession?.providerConfigStatus || (runtimeSession?.providerConfigured ? "configured" : "missing"),
+      providerName: runtimeSession?.providerName || "",
+      providerBaseUrl: runtimeSession?.providerBaseUrl || "",
+      modelProvider: runtimeSession?.modelProvider || "",
+      model: runtimeSession?.model || "",
+      modelReasoningEffort: runtimeSession?.modelReasoningEffort || "",
+      serviceTier: runtimeSession?.serviceTier || "",
+      sandboxMode: runtimeSession?.sandboxMode || "",
+    },
     workspace: {
       workspaceId: scope.workspaceId,
       workspaceTitle: scope.workspaceTitle,
@@ -418,6 +437,15 @@ function runContextFromRuntime(runtimeSession, input, req) {
     userAgent: req.headers["user-agent"] || "",
     runnerImage: input.runnerImage || input.runner_image || RUNNER_IMAGE,
     namespace: input.namespace || K8S_NAMESPACE,
+    providerConfigured: Boolean(runtimeSession.providerConfigured),
+    providerConfigStatus: runtimeSession.providerConfigStatus || (runtimeSession.providerConfigured ? "configured" : "missing"),
+    providerConfigSecretRef: runtimeSession.providerConfigSecretRef || "",
+    providerName: runtimeSession.providerName || "",
+    providerBaseUrl: runtimeSession.providerBaseUrl || "",
+    modelProvider: runtimeSession.modelProvider || "",
+    modelReasoningEffort: runtimeSession.modelReasoningEffort || "",
+    serviceTier: runtimeSession.serviceTier || "",
+    sandboxMode: runtimeSession.sandboxMode || "",
   };
 }
 

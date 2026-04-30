@@ -61,33 +61,54 @@ export async function writeState(state) {
 function sanitizeState(state) {
   return {
     ...state,
-    costRecords: Array.isArray(state.costRecords)
-      ? state.costRecords.map((item) => {
-          if (item?.pricingSource !== "contract-zero-cost") return item;
-          return {
-            ...item,
-            pricingSource: "legacy-contract-fixture",
-            status: item.status === "exact" ? "legacy_fixture" : item.status,
-          };
-        })
-      : [],
+    costRecords: normalizeCostRecords(state.costRecords),
   };
 }
 
+function normalizeCostRecords(records) {
+  return Array.isArray(records) ? records.map(normalizeCostRecord) : [];
+}
+
+function normalizeCostRecord(item) {
+  return item?.pricingSource === "contract-zero-cost"
+    ? normalizeLegacyContractCost(item)
+    : item;
+}
+
+function normalizeLegacyContractCost(item) {
+  return {
+    ...item,
+    pricingSource: "legacy-contract-fixture",
+    status: normalizeLegacyContractCostStatus(item.status),
+  };
+}
+
+function normalizeLegacyContractCostStatus(status) {
+  return status === "exact" ? "legacy_fixture" : status;
+}
+
 function tenantIdFrom(detail = {}) {
-  return detail.tenantId || detail.tenant_id || detail.portalUserId || detail.portal_user_id || "";
+  return firstString([detail.tenantId, detail.tenant_id, detail.portalUserId, detail.portal_user_id]);
 }
 
 function ownerIdFrom(detail = {}) {
-  return detail.ownerId || detail.owner_id || detail.portalUserId || detail.portal_user_id || "";
+  return firstString([detail.ownerId, detail.owner_id, detail.portalUserId, detail.portal_user_id]);
 }
 
 function storageOwnerIdFrom(detail = {}) {
-  return detail.storageOwnerId || detail.storage_owner_id || detail.storageOwner || detail.storage_owner || ownerIdFrom(detail);
+  return firstString([detail.storageOwnerId, detail.storage_owner_id, detail.storageOwner, detail.storage_owner]) || ownerIdFrom(detail);
 }
 
 function objectMapFrom(detail = {}) {
   return detail && typeof detail === "object" && !Array.isArray(detail) ? detail : {};
+}
+
+function firstString(values = []) {
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (normalized) return normalized;
+  }
+  return "";
 }
 
 function tolerationsFrom(detail = {}) {
@@ -184,6 +205,24 @@ export function createWorkspaceSession(state, input = {}) {
 export function createRuntimeSession(state, input = {}) {
   const ownerId = ownerIdFrom(input);
   const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
+  const rawProviderConfig = objectMapFrom(input.providerConfig || input.provider_config);
+  const providerConfigSecretRef = firstString([
+    input.providerConfigSecretRef,
+    input.provider_config_secret_ref,
+    rawProviderConfig.providerConfigSecretRef,
+  ]);
+  const providerConfigStatus = firstString([
+    input.providerConfigStatus,
+    input.provider_config_status,
+    rawProviderConfig.providerConfigStatus,
+  ]) || (providerConfigSecretRef ? "configured" : "missing");
+  const providerConfigured = [
+    input.providerConfigured,
+    input.provider_configured,
+    rawProviderConfig.providerConfigured,
+    rawProviderConfig.providerConfigStatus === "configured",
+    providerConfigSecretRef,
+  ].some(Boolean);
   const runtimeSession = {
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || randomUUID(),
     tenantId: tenantIdFrom(input),
@@ -221,6 +260,17 @@ export function createRuntimeSession(state, input = {}) {
     status: input.status || "ready",
     namespace: input.namespace || "",
     image: input.image || "",
+    providerConfigured,
+    providerConfigStatus,
+    providerConfigSecretRef,
+    providerName: firstString([input.providerName, input.provider_name, rawProviderConfig.providerName]),
+    providerBaseUrl: firstString([rawProviderConfig.providerBaseUrl, input.providerBaseUrl, input.provider_base_url]),
+    modelProvider: firstString([rawProviderConfig.modelProvider, input.modelProvider, input.model_provider]),
+    model: firstString([rawProviderConfig.model, input.model]),
+    modelReasoningEffort: firstString([rawProviderConfig.modelReasoningEffort, input.modelReasoningEffort, input.model_reasoning_effort]),
+    serviceTier: firstString([rawProviderConfig.serviceTier, input.serviceTier, input.service_tier]),
+    sandboxMode: firstString([rawProviderConfig.sandboxMode, input.sandboxMode, input.sandbox_mode]),
+    secretFingerprint: firstString([rawProviderConfig.secretFingerprint, input.secretFingerprint, input.secret_fingerprint]),
     createdAt: nowIso(),
     warmedAt: nowIso(),
   };
