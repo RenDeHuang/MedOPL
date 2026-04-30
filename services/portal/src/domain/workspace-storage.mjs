@@ -24,6 +24,25 @@ function storageOrderCosPrefix(tenantId, workspaceId) {
   return `workspaces/${String(tenantId || "").trim()}/${String(workspaceId || "").trim()}/`;
 }
 
+function workspaceOwnerMatches(item = {}, context = {}) {
+  return item.workspaceId === context.workspaceId && (item.userId === context.userId || item.tenantId === context.tenantId);
+}
+
+function canMarkStorageOrderDeleting(order = {}, context = {}) {
+  return workspaceOwnerMatches(order, context) && !["deleted", "cancelled"].includes(String(order.status || "").toLowerCase());
+}
+
+function canMarkWorkspaceFileDeleting(file = {}, context = {}) {
+  return workspaceOwnerMatches(file, context) && String(file.status || "").toLowerCase() !== "deleted";
+}
+
+function applyRetentionMarker(item, deletedAt, cleanupAfterAt) {
+  item.status = "deleting";
+  item.deletedAt = deletedAt;
+  item.updatedAt = deletedAt;
+  item.retentionCleanupAfterAt = cleanupAfterAt;
+}
+
 export function buildWorkspaceStorageKey(tenantId, workspaceId, kind, relativePath) {
   const normalizedKind = normalizeWorkspaceKind(kind);
   const normalizedRelativePath = safeRelativePath(relativePath);
@@ -63,6 +82,7 @@ export function normalizeStorageOrder(order = {}) {
     createdAt: String(order.createdAt || order.created_at || now).trim() || now,
     updatedAt: String(order.updatedAt || order.updated_at || now).trim() || now,
     deletedAt: String(order.deletedAt || order.deleted_at || "").trim(),
+    retentionCleanupAfterAt: String(order.retentionCleanupAfterAt || order.retention_cleanup_after_at || "").trim(),
   };
 }
 
@@ -96,13 +116,14 @@ export function normalizeWorkspaceFileRecord(record = {}) {
     createdAt: String(record.createdAt || record.created_at || now).trim() || now,
     updatedAt: String(record.updatedAt || record.updated_at || now).trim() || now,
     deletedAt: String(record.deletedAt || record.deleted_at || "").trim(),
+    retentionCleanupAfterAt: String(record.retentionCleanupAfterAt || record.retention_cleanup_after_at || "").trim(),
   };
 }
 
 export function resolveWorkspaceStorageEntitlement(db, user, workspaceId) {
   ensureWorkspaceStorageCollections(db);
   const tenantId = String(user?.tenantId || user?.id || "").trim();
-  const activeStatuses = new Set(["active", "deleting"]);
+  const activeStatuses = new Set(["active"]);
   const order = (db.storageOrders || [])
     .filter((item) => item.workspaceId === workspaceId)
     .filter((item) => item.userId === user.id || item.tenantId === tenantId)
@@ -125,6 +146,48 @@ export function resolveWorkspaceStorageEntitlement(db, user, workspaceId) {
   };
 }
 
+export function markWorkspaceStorageDeleting(db, { user, workspaceId, deletedAt = "", retentionDays = 7 } = {}) {
+  ensureWorkspaceStorageCollections(db);
+  const tenantId = String(user?.tenantId || user?.id || "").trim();
+  const userId = String(user?.id || "").trim();
+  const context = { tenantId, userId, workspaceId: String(workspaceId || "").trim() };
+  const now = String(deletedAt || "").trim() || new Date().toISOString();
+  const cleanupAfterAt = new Date(Date.parse(now) + Math.max(1, Number(retentionDays || 7)) * 24 * 60 * 60 * 1000).toISOString();
+  let storageOrderCount = 0;
+  let fileCount = 0;
+  for (const order of db.storageOrders || []) {
+    if (canMarkStorageOrderDeleting(order, context)) {
+      applyRetentionMarker(order, now, cleanupAfterAt);
+      storageOrderCount += 1;
+    }
+  }
+  for (const file of db.workspaceFiles || []) {
+    if (canMarkWorkspaceFileDeleting(file, context)) {
+      applyRetentionMarker(file, now, cleanupAfterAt);
+      fileCount += 1;
+    }
+  }
+  return { ok: true, storageOrderCount, fileCount, deletedAt: now, cleanupAfterAt };
+}
+
+export function workspaceStorageCleanupCandidates(db, { now = new Date().toISOString(), retentionDays = 7 } = {}) {
+  ensureWorkspaceStorageCollections(db);
+  const nowMs = Date.parse(String(now || ""));
+  const retentionMs = Math.max(1, Number(retentionDays || 7)) * 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(nowMs)) return { storageOrders: [], workspaceFiles: [] };
+  function cleanupDue(item) {
+    if (String(item.status || "").toLowerCase() !== "deleting") return false;
+    const cleanupAfterAt = Date.parse(String(item.retentionCleanupAfterAt || ""));
+    if (Number.isFinite(cleanupAfterAt)) return cleanupAfterAt <= nowMs;
+    const deletedAt = Date.parse(String(item.deletedAt || ""));
+    return Number.isFinite(deletedAt) && deletedAt + retentionMs <= nowMs;
+  }
+  return {
+    storageOrders: (db.storageOrders || []).filter(cleanupDue),
+    workspaceFiles: (db.workspaceFiles || []).filter(cleanupDue),
+  };
+}
+
 export function createOrUpdateStorageOrder(db, input = {}) {
   ensureWorkspaceStorageCollections(db);
   const normalized = normalizeStorageOrder(input);
@@ -144,6 +207,7 @@ export function createOrUpdateStorageOrder(db, input = {}) {
     existing.sourceType = normalized.sourceType;
     existing.updatedAt = new Date().toISOString();
     existing.deletedAt = "";
+    existing.retentionCleanupAfterAt = "";
     return { ok: true, created: false, order: existing };
   }
   db.storageOrders.push(normalized);

@@ -355,7 +355,8 @@ export function createPortalStore({
         source_type text NOT NULL,
         created_at timestamptz NOT NULL,
         updated_at timestamptz NOT NULL,
-        deleted_at timestamptz NULL
+        deleted_at timestamptz NULL,
+        retention_cleanup_after_at text NOT NULL DEFAULT ''
       );
       CREATE TABLE IF NOT EXISTS ${pgTableName("workspace_files")} (
         id text PRIMARY KEY,
@@ -375,7 +376,8 @@ export function createPortalStore({
         source text NOT NULL,
         created_at timestamptz NOT NULL,
         updated_at timestamptz NOT NULL,
-        deleted_at timestamptz NULL
+        deleted_at timestamptz NULL,
+        retention_cleanup_after_at text NOT NULL DEFAULT ''
       );
       CREATE TABLE IF NOT EXISTS ${pgTableName("task_spaces")} (
         id text PRIMARY KEY,
@@ -450,6 +452,8 @@ export function createPortalStore({
       ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_region text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_snapshot_json jsonb NOT NULL DEFAULT '{}'::jsonb;
+      ALTER TABLE ${pgTableName("storage_orders")} ADD COLUMN IF NOT EXISTS retention_cleanup_after_at text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS retention_cleanup_after_at text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS order_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'CNY';
@@ -911,6 +915,7 @@ export function createPortalStore({
         createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
         updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
         deletedAt: row.deleted_at instanceof Date ? row.deleted_at.toISOString() : row.deleted_at,
+        retentionCleanupAfterAt: row.retention_cleanup_after_at || "",
       })),
       workspaceFiles: workspaceFilesRes.rows.map((row) => ({
         id: row.id,
@@ -931,6 +936,7 @@ export function createPortalStore({
         createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
         updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
         deletedAt: row.deleted_at instanceof Date ? row.deleted_at.toISOString() : row.deleted_at,
+        retentionCleanupAfterAt: row.retention_cleanup_after_at || "",
       })),
       workspaceSessions,
       userSandboxes: sandboxesRes.rows.map((row) => ({
@@ -1102,7 +1108,7 @@ export function createPortalStore({
         }
         await client.query(`DELETE FROM ${pgTableName("storage_orders")}`);
         for (const row of db.storageOrders || []) {
-          await client.query(`INSERT INTO ${pgTableName("storage_orders")} (id,tenant_id,user_id,workspace_id,status,storage_plan_id,storage_size_gb,storage_backend,retention_policy,cos_prefix,source_type,created_at,updated_at,deleted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, [
+          await client.query(`INSERT INTO ${pgTableName("storage_orders")} (id,tenant_id,user_id,workspace_id,status,storage_plan_id,storage_size_gb,storage_backend,retention_policy,cos_prefix,source_type,created_at,updated_at,deleted_at,retention_cleanup_after_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`, [
             row.id,
             row.tenantId || row.userId || "",
             row.userId || "",
@@ -1117,11 +1123,12 @@ export function createPortalStore({
             row.createdAt || new Date().toISOString(),
             row.updatedAt || row.createdAt || new Date().toISOString(),
             row.deletedAt || null,
+            row.retentionCleanupAfterAt || "",
           ]);
         }
         await client.query(`DELETE FROM ${pgTableName("workspace_files")}`);
         for (const row of db.workspaceFiles || []) {
-          await client.query(`INSERT INTO ${pgTableName("workspace_files")} (id,tenant_id,user_id,workspace_id,run_id,kind,name,relative_path,storage_key,local_path,size_bytes,checksum,content_type,status,source,created_at,updated_at,deleted_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`, [
+          await client.query(`INSERT INTO ${pgTableName("workspace_files")} (id,tenant_id,user_id,workspace_id,run_id,kind,name,relative_path,storage_key,local_path,size_bytes,checksum,content_type,status,source,created_at,updated_at,deleted_at,retention_cleanup_after_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`, [
             row.id,
             row.tenantId || row.userId || "",
             row.userId || "",
@@ -1140,6 +1147,7 @@ export function createPortalStore({
             row.createdAt || new Date().toISOString(),
             row.updatedAt || row.createdAt || new Date().toISOString(),
             row.deletedAt || null,
+            row.retentionCleanupAfterAt || "",
           ]);
         }
         await client.query(`DELETE FROM ${pgTableName("user_sandboxes")}`);
