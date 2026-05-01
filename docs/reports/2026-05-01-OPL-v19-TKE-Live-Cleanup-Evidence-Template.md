@@ -9,8 +9,9 @@ Script: `scripts/live-test-v19-tke-create-delete-cleanup.mjs`
 - `RUN_TKE_LIVE=1`
 - `RESOURCE_PROVISIONING_ENABLED=1`
 - Tencent Cloud credentials configured in shell only, not recorded here
+- `TKE_LIVE_KUBECTL_BIN` points to the executable used by the script; in WSL this can be `/mnt/c/DockerDesktopBin/kubectl.exe`
 - `TKE_LIVE_KUBECONFIG` path recorded, but kubeconfig token content not copied
-- `TKE_LIVE_KUBE_SERVER_OVERRIDE` recorded when the kubeconfig server needs override
+- `TKE_LIVE_KUBE_SERVER_OVERRIDE` recorded when the kubeconfig server needs override; current required value: `https://lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443`
 
 ## Test Labels
 
@@ -31,8 +32,9 @@ TKE_LIVE_RESOURCE_ORDER_ID=test-... \
 TKE_LIVE_RUN_ID=test-... \
 TKE_LIVE_SERVER_PLAN_ID=... \
 TKE_LIVE_INSTANCE_TYPE=... \
-TKE_LIVE_KUBECONFIG=/path/to/kubeconfig \
-TKE_LIVE_KUBE_SERVER_OVERRIDE=https://... \
+TKE_LIVE_KUBECTL_BIN=/mnt/c/DockerDesktopBin/kubectl.exe \
+TKE_LIVE_KUBECONFIG='/mnt/c/Users/Administrator/Downloads/cls-ngiq693i-config (1)' \
+TKE_LIVE_KUBE_SERVER_OVERRIDE=https://lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443 \
 node scripts/live-test-v19-tke-create-delete-cleanup.mjs
 ```
 
@@ -48,14 +50,16 @@ TKE_LIVE_RESOURCE_ORDER_ID=test-... \
 TKE_LIVE_RUN_ID=test-... \
 TKE_LIVE_SERVER_PLAN_ID=... \
 TKE_LIVE_NODE_POOL_ID=np-... \
-TKE_LIVE_KUBECONFIG=/path/to/kubeconfig \
-TKE_LIVE_KUBE_SERVER_OVERRIDE=https://... \
+TKE_LIVE_KUBECTL_BIN=/mnt/c/DockerDesktopBin/kubectl.exe \
+TKE_LIVE_KUBECONFIG='/mnt/c/Users/Administrator/Downloads/cls-ngiq693i-config (1)' \
+TKE_LIVE_KUBE_SERVER_OVERRIDE=https://lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443 \
 node scripts/live-test-v19-tke-create-delete-cleanup.mjs
 ```
 
 ## Captured Evidence
 
 - Evidence JSON path under `.runtime/resource-provisioner/live-tke-create-delete-cleanup/`
+- `kubectlBinary=`
 - Created `nodePoolId=`
 - Create `requestId=`
 - Node pool tags confirmed:

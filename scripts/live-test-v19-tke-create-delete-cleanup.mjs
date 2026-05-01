@@ -244,6 +244,7 @@ function buildExecution(context) {
   const clusterId = readEnv("TKE_LIVE_CLUSTER_ID", TENCENT_TKE_CLUSTER_ID);
   const region = readEnv("TKE_LIVE_REGION", TENCENT_CLOUD_REGION);
   const zone = readEnv("TKE_LIVE_ZONE", TENCENT_TKE_ZONE);
+  const kubectlBinary = readEnv("TKE_LIVE_KUBECTL_BIN", "kubectl");
   const createPayloadOverride = parseJsonEnv("TKE_LIVE_NODE_POOL_CREATE_PAYLOAD_JSON");
   const instanceType = cleanupOnly || createPayloadOverride ? "" : requiredEnv("TKE_LIVE_INSTANCE_TYPE");
   const expectedTags = expectedTagSet(context);
@@ -299,6 +300,7 @@ function buildExecution(context) {
     expectedTags,
     expectedLabels,
     expectedMinimumInstances,
+    kubectlBinary,
     kubeconfigPath,
     kubeServerOverride,
     requireKubectl,
@@ -356,6 +358,7 @@ async function collectKubectlResources(context, execution, stage) {
       required: false,
       stage,
       reason: "kubectl_evidence_not_required",
+      kubectlBinary: execution.kubectlBinary,
       selector: execution.kubeSelector,
       itemCount: 0,
       items: [],
@@ -366,7 +369,7 @@ async function collectKubectlResources(context, execution, stage) {
   if (execution.kubeServerOverride) args.push(`--server=${execution.kubeServerOverride}`);
   args.push("get", "pods,jobs,pvc", "--all-namespaces", "-l", execution.kubeSelector, "-o", "json");
   try {
-    const { stdout } = await execFileAsync("kubectl", args, {
+    const { stdout } = await execFileAsync(execution.kubectlBinary, args, {
       env: { ...process.env, KUBECONFIG: execution.kubeconfigPath },
       maxBuffer: 32 * 1024 * 1024,
     });
@@ -376,6 +379,7 @@ async function collectKubectlResources(context, execution, stage) {
       available: true,
       required: execution.requireKubectl,
       stage,
+      kubectlBinary: execution.kubectlBinary,
       kubeconfigPath: execution.kubeconfigPath,
       serverOverride: execution.kubeServerOverride || "",
       selector: execution.kubeSelector,
@@ -385,6 +389,7 @@ async function collectKubectlResources(context, execution, stage) {
   } catch (error) {
     fail(`kubectl_${stage}_failed`, {
       details: {
+        kubectlBinary: execution.kubectlBinary,
         message: String(error?.message || error || "kubectl_failed"),
         stderr: String(error?.stderr || "").trim(),
       },
@@ -407,6 +412,7 @@ function buildCleanupCommand(context, execution, nodePoolId = "") {
     `TKE_LIVE_ZONE=${shellQuote(execution.zone)}`,
   ];
   if (nodePoolId) envs.push(`TKE_LIVE_NODE_POOL_ID=${shellQuote(nodePoolId)}`);
+  if (execution.kubectlBinary) envs.push(`TKE_LIVE_KUBECTL_BIN=${shellQuote(execution.kubectlBinary)}`);
   if (execution.kubeconfigPath) envs.push(`TKE_LIVE_KUBECONFIG=${shellQuote(execution.kubeconfigPath)}`);
   if (execution.kubeServerOverride) envs.push(`TKE_LIVE_KUBE_SERVER_OVERRIDE=${shellQuote(execution.kubeServerOverride)}`);
   return `${envs.join(" ")} node scripts/live-test-v19-tke-create-delete-cleanup.mjs`;
@@ -522,6 +528,7 @@ async function main() {
     expectedMinimumInstances: execution.expectedMinimumInstances,
     kubeconfig: {
       required: execution.requireKubectl,
+      kubectlBinary: execution.kubectlBinary,
       path: execution.kubeconfigPath || "",
       serverOverride: execution.kubeServerOverride || "",
       selector: execution.kubeSelector,
