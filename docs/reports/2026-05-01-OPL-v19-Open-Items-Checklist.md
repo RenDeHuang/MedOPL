@@ -16,10 +16,10 @@ It has passed many local and contract-level checks, but the default cloud path h
    Cloud Deployments are still on `opl-v18` for the platform services, and `opl-web-opl` remains on upstream `opl-v1`.
 
 2. Live TKE create/delete is only partially proven.
-   On 2026-05-01, live testing proved labeled TKE node pool create/delete cleanup and no residual node pools, CVMs, Pods, Jobs, or PVCs for `0501a` through `0501d`. The gate still fails because `MinSize=1` and `DesiredCapacity=1` did not produce a matching CVM instance within the wait window. Evidence: `docs/reports/2026-05-01-OPL-v19-TKE-Live-Cleanup-Evidence.md`.
+   On 2026-05-01, live testing proved labeled TKE node pool create/delete cleanup and no residual node pools, CVMs, AS groups, Pods, Jobs, or PVCs for `0501a` through `0501f`. The gate still fails because `MinSize=1` and `DesiredCapacity=1` produced a normal node pool and AS group, but did not produce a matching CVM instance or AS scaling activity within the wait window. Evidence: `docs/reports/2026-05-01-OPL-v19-TKE-Live-Cleanup-Evidence.md`.
 
-3. Exact bill reconciliation is unhealthy on cloud.
-   Read-only cluster inspection found `billing-reconcile` still using `billing-aggregator-opl:opl-v14`, and recent reconcile Jobs are failing. This blocks commercial billing acceptance.
+3. Billing reconcile is fixed, but exact bill attribution still needs live data.
+   `billing-reconcile` has been moved to the current billing image and successful manual/automatic Jobs have been recorded. The remaining billing blocker is not CronJob health; it is live COS `daily/` exact bill availability and attribution.
 
 4. COS daily exact bill回补 has not been proven.
    Local settlement smoke passed, but there is no successful live evidence from a real COS `daily/` bill file producing idempotent refund or makeup charge.
@@ -27,8 +27,8 @@ It has passed many local and contract-level checks, but the default cloud path h
 5. Full live user E2E is missing.
    The required path has not been captured end to end: create user, recharge, login Portal and OPL, buy storage, select a sellable SKU, preauth, provision, run OPL message, produce artifact, see trace/bill/file, download, delete server, stop pending cost.
 
-6. PostgreSQL/Redis production cutover still needs restart recovery proof.
-   Product compose defaults to `postgres_redis`, but cloud Portal must still show `PORTAL_STORAGE_MODE=postgres_redis` and prove state survives Pod restart.
+6. PostgreSQL/Redis production cutover still needs state recovery proof.
+   Cloud Portal is configured with `PORTAL_STORAGE_MODE=postgres_redis`, references `portal-postgres-redis`, and recovered `/healthz` after an authorized Pod restart. The missing proof is user, wallet, order, workspace file, trace, and session state equality across restart with a real live fixture.
 
 7. Live Tencent Cloud SKU quote is captured from production credentials and cloud `billing-aggregator-opl`.
    On 2026-05-01, the WSL2 live smoke used `tencent-billing-secret` and proved `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 35 orderable SKUs. The cloud Deployment was then updated to `opl-v19-live-gates-20260501-a438432` and returned `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 34 orderable SKUs. Evidence: `docs/reports/2026-05-01-OPL-v19-Live-SKU-Quote-Evidence.md`.
@@ -46,15 +46,16 @@ It has passed many local and contract-level checks, but the default cloud path h
 
 - [x] Fix `billing-reconcile` CronJob image and command so it runs the current reconcile path, not stale `opl-v14`.
 - [x] Add or restore a dedicated live TKE create/delete cleanup script with `try/finally`.
-- [ ] Run live TKE create/delete cleanup and record no residual node pools, CVMs, Pods, Jobs, or PVC artifacts.
+- [x] Run live TKE create/delete cleanup and record no residual node pools, CVMs, AS groups, Pods, Jobs, or PVC artifacts.
 - [x] Record partial live TKE evidence: labeled node pool create/delete cleanup and final no-residue proof.
 - [ ] Prove live TKE creates at least one matching CVM instance before cleanup.
 - [x] Run live `/server-plans` discovery with Tencent Cloud credentials and prove `source=tencent_cloud_live_catalog`.
 - [x] Prove sellable SKUs have non-zero prices and unsellable SKUs are disabled.
 - [x] Build and deploy a cloud billing aggregator image containing the SKU stock-status fix before relying on the cloud `/server-plans` endpoint.
-- [ ] Switch cloud Portal to `PORTAL_STORAGE_MODE=postgres_redis`.
+- [x] Confirm cloud Portal is running with `PORTAL_STORAGE_MODE=postgres_redis`.
 - [ ] Run migration into TencentDB PostgreSQL and Redis without writing secrets into git or YAML.
-- [ ] Restart Portal Pod and prove user, wallet, order, workspace, file metadata, and ledger state survive.
+- [x] Restart Portal Pod and prove Deployment readiness and `/healthz` recovery.
+- [ ] Prove user, wallet, order, workspace, file metadata, trace/session, and ledger state survive Portal restart with a real live fixture.
 - [ ] Run live COS `daily/` reconcile when a real bill file exists.
 - [ ] Prove repeated reconcile is idempotent and does not double-charge.
 - [ ] Complete one full live user E2E with screenshots or JSON evidence.

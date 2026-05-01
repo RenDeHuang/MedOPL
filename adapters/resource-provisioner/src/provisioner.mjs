@@ -187,11 +187,7 @@ function buildScaleToZeroPayload(input = {}) {
   return {
     ClusterId: firstString(input.clusterId, input.tkeClusterId, TENCENT_TKE_CLUSTER_ID),
     NodePoolId: nodePoolId,
-    AutoScalingGroupPara: JSON.stringify({
-      MinSize: 0,
-      DesiredCapacity: 0,
-      MaxSize: TENCENT_TKE_MAX_NODES,
-    }),
+    DesiredCapacity: 0,
   };
 }
 
@@ -281,7 +277,7 @@ export async function scaleToZero(input = {}) {
     throw error;
   }
   const payload = buildScaleToZeroPayload(input);
-  const response = await callTke("ModifyClusterNodePool", payload, TENCENT_CLOUD_REGION);
+  const response = await callTke("ModifyNodePoolDesiredCapacityAboutAsg", payload, TENCENT_CLOUD_REGION);
   const state = await readOrders();
   const order = state.orders.find((item) =>
     (input.resourceOrderId && item.resourceOrderId === input.resourceOrderId) ||
@@ -295,7 +291,7 @@ export async function scaleToZero(input = {}) {
   }
   return {
     ok: true,
-    action: "ModifyClusterNodePool",
+    action: "ModifyNodePoolDesiredCapacityAboutAsg",
     requestId: response.RequestId || "",
     nodePoolId: payload.NodePoolId,
   };

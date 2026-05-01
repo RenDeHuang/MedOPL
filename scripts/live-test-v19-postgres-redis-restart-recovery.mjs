@@ -11,8 +11,7 @@ import { loginPortalOidc } from "./lib/portal-oidc-playwright.mjs";
 const execFileAsync = promisify(execFile);
 const kubectlExecTimeoutMs = 45_000;
 const kubectlMaxBuffer = 8 * 1024 * 1024;
-const defaultSecretNames = [
-  "portal-postgres-redis-secret",
+const defaultAuxSecretNames = [
   "secret-portal",
   "secret-opl",
   "secret-trace",
@@ -173,7 +172,7 @@ async function execKubectl(config, args, options = {}) {
     config.kubeServerOverride,
     ...args,
   ];
-  const { stdout } = await execFileAsync("kubectl", finalArgs, {
+  const { stdout } = await execFileAsync(config.kubectlBin, finalArgs, {
     encoding: "utf8",
     timeout: options.timeoutMs || kubectlExecTimeoutMs,
     maxBuffer: options.maxBuffer || kubectlMaxBuffer,
@@ -414,7 +413,7 @@ async function inspectPortalDeployment(config) {
   await kubectlRolloutStatus(config, 30_000);
   const container = pickContainer(config, current.deployment);
   const referencedSecretNames = secretRefNames(container);
-  const databaseSecretReferenced = referencedSecretNames.includes("portal-postgres-redis-secret");
+  const databaseSecretReferenced = referencedSecretNames.includes(config.databaseSecretName);
   const storageMode = await resolveEnvValue(config, container, "PORTAL_STORAGE_MODE", configMapCache);
   assert(storageMode.found, "PORTAL_STORAGE_MODE_env_missing");
   assert(storageMode.value === "postgres_redis", `PORTAL_STORAGE_MODE_not_postgres_redis:${storageMode.value || storageMode.source}`);
@@ -425,7 +424,7 @@ async function inspectPortalDeployment(config) {
     postgresUrl = {
       found: true,
       source: "envFromSecretRef",
-      secretName: "portal-postgres-redis-secret",
+      secretName: config.databaseSecretName,
       value: "",
     };
   }
@@ -433,7 +432,7 @@ async function inspectPortalDeployment(config) {
     redisUrl = {
       found: true,
       source: "envFromSecretRef",
-      secretName: "portal-postgres-redis-secret",
+      secretName: config.databaseSecretName,
       value: "",
     };
   }
@@ -442,7 +441,7 @@ async function inspectPortalDeployment(config) {
   assert(postgresUrl.source !== "literal", "PORTAL_POSTGRES_URL_must_not_be_literal");
   assert(redisUrl.source !== "literal", "PORTAL_REDIS_URL_must_not_be_literal");
 
-  assert(databaseSecretReferenced, "portal-postgres-redis-secret_not_referenced_by_portal_container");
+  assert(databaseSecretReferenced, `${config.databaseSecretName}_not_referenced_by_portal_container`);
 
   const secretChecks = [];
   for (const secretName of config.secretNames) {
@@ -750,6 +749,7 @@ function buildConfig() {
     skip("RUN_PORTAL_RECOVERY_LIVE!=1");
   }
 
+  const databaseSecretName = String(process.env.PORTAL_RECOVERY_DATABASE_SECRET_NAME || "portal-postgres-redis").trim() || "portal-postgres-redis";
   const config = {
     baseUrl: trimTrailingSlash(process.env.PORTAL_BASE_URL || "https://portal.medopl.cn"),
     loginMode: String(process.env.PORTAL_TEST_LOGIN || "oidc").trim().toLowerCase(),
@@ -762,9 +762,11 @@ function buildConfig() {
     workspaceSessionId: String(process.env.PORTAL_RECOVERY_WORKSPACE_SESSION_ID || "").trim(),
     namespace: String(process.env.PORTAL_NAMESPACE || "default").trim() || "default",
     deployment: String(process.env.PORTAL_DEPLOYMENT || "portal-opl").trim() || "portal-opl",
+    kubectlBin: String(process.env.PORTAL_RECOVERY_KUBECTL_BIN || process.env.KUBECTL_BIN || "kubectl").trim() || "kubectl",
     kubeconfig: String(process.env.KUBECONFIG || "/mnt/c/Users/Administrator/Downloads/cls-ngiq693i-config (1)").trim(),
     kubeServerOverride: String(process.env.KUBE_SERVER_OVERRIDE || "https://lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443").trim(),
-    secretNames: splitCsv(process.env.PORTAL_RECOVERY_SECRET_NAMES, defaultSecretNames),
+    databaseSecretName,
+    secretNames: splitCsv(process.env.PORTAL_RECOVERY_SECRET_NAMES, [databaseSecretName, ...defaultAuxSecretNames]),
     portalHealthTimeoutMs: positiveInt(process.env.PORTAL_RECOVERY_HEALTH_TIMEOUT_MS, 180_000),
     restartObservationTimeoutMs: positiveInt(process.env.PORTAL_RECOVERY_WAIT_TIMEOUT_MS, 20 * 60 * 1000),
     pollMs: positiveInt(process.env.PORTAL_RECOVERY_POLL_MS, 4_000),

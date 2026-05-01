@@ -438,7 +438,10 @@ async function performCleanup(context, execution, requestedNodePoolId = "") {
   try {
     const beforeCleanup = await captureTargetedState(context, execution, requestedNodePoolId);
     result.beforeCleanup = summarizeSnapshot(beforeCleanup);
-    const resolvedNodePoolId = requestedNodePoolId || beforeCleanup.matchedNodePools[0]?.nodePoolId || "";
+    const requestedNodePool = requestedNodePoolId
+      ? beforeCleanup.matchedNodePools.find((item) => item.nodePoolId === requestedNodePoolId)
+      : null;
+    const resolvedNodePoolId = requestedNodePool?.nodePoolId || beforeCleanup.matchedNodePools[0]?.nodePoolId || "";
     result.resolvedNodePoolId = resolvedNodePoolId;
     result.cleanupCommand = buildCleanupCommand(context, execution, resolvedNodePoolId);
 

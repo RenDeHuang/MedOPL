@@ -21,11 +21,12 @@ Step 4 尚未通过。
   - `serverplanid`
   - `resourceorderid`
 - 删除请求可以释放 node pool。
-- 失败轮次结束后，`0501a`、`0501b`、`0501c`、`0501d` 均无 node pool、CVM、Pod、Job、PVC 残留。
+- 失败轮次结束后，`0501a`、`0501b`、`0501c`、`0501d`、`0501f` 均无 node pool、CVM、AS group、Pod、Job、PVC 残留。
 
 仍未通过的原因：
 
 - `0501d` 使用 `MinSize=1`、`DesiredCapacity=1` 后，node pool `np-qceybpqk` 在 15 分钟内保持 `normal`，但没有出现匹配 CVM instance。
+- `0501f` 进一步证明 TKE 已创建关联 AS group 和 launch configuration；AS group 曾达到 `DesiredCapacity=1`、`MinSize=1`、`MaxSize=1`，但 `InstanceCount=0` 且没有 scaling activities。
 - 因此还不能证明“真实计算资源创建 + CVM 清理”闭环。
 
 ## 真实云上数据
@@ -60,6 +61,7 @@ Secret 明文没有写入文档、git、日志或镜像。
 - 空的 `LaunchConfigurePara.DataDisks=[]` 不再发送。
 - 空的 `InstanceAdvancedSettings.DataDisks=[]` 不再发送。
 - 在 VPC network 场景下，如果 `AutoScalingGroupPara.SubnetIds` 已存在，则不发送 `AutoScalingGroupPara.Zones`。
+- `scaleToZero` 改为调用 TKE `ModifyNodePoolDesiredCapacityAboutAsg`，不再向 `ModifyClusterNodePool` 发送无效的 `AutoScalingGroupPara`。
 
 这些修复均有本地 contract 锁定。
 
@@ -131,6 +133,54 @@ node scripts/check-v18-module-boundaries.mjs
 }
 ```
 
+### 0501f
+
+- 目标：`test-ro-v19-0501f`
+- Node pool：`np-lq7am8bw`
+- AS group：`asg-il3o01p0`
+- Evidence JSON：
+  - `.runtime/resource-provisioner/live-tke-create-delete-cleanup/2026-05-01T02-26-54-326Z.json`
+- 结果：完整脚本返回 `ok=false`，cleanup 成功，无残留。
+- 失败原因：
+  - `create_instances_timeout`
+  - node pool 已创建，状态 `normal`
+  - node pool 标签完整
+  - AS group 已创建，状态 `NORMAL`
+  - AS group 曾为 `DesiredCapacity=1`、`MinSize=1`、`MaxSize=1`
+  - AS group `InstanceCount=0`、`InServiceInstanceCount=0`
+  - AS group 没有 scaling activities
+  - `ModifyNodePoolDesiredCapacityAboutAsg` 可改变 desired，但仍没有触发 CVM 创建
+- 删除验证：
+  - `matchedNodePools=[]`
+  - `matchedClusterInstances=[]`
+  - `matchedCvm=[]`
+  - `matchedAsg=[]`
+  - Kubernetes `pods/jobs/pvc` itemCount 为 0
+
+额外诊断结论：
+
+```json
+{
+  "nodePoolId": "np-lq7am8bw",
+  "autoScalingGroupId": "asg-il3o01p0",
+  "asGroupObserved": {
+    "desiredCapacity": 1,
+    "minSize": 1,
+    "maxSize": 1,
+    "instanceCount": 0,
+    "inServiceInstanceCount": 0,
+    "activities": []
+  },
+  "finalResiduals": {
+    "matchedNodePools": [],
+    "matchedClusterInstances": [],
+    "matchedCvm": [],
+    "matchedAsg": [],
+    "kubernetesItemCount": 0
+  }
+}
+```
+
 node pool 标签摘要：
 
 ```json
@@ -184,6 +234,7 @@ cleanup 摘要：
 - `test-ro-v19-0501b`
 - `test-ro-v19-0501c`
 - `test-ro-v19-0501d`
+- `test-ro-v19-0501f`
 
 结果：
 
@@ -195,7 +246,8 @@ cleanup 摘要：
     "0501a": 0,
     "0501b": 0,
     "0501c": 0,
-    "0501d": 0
+    "0501d": 0,
+    "0501f": 0
   }
 }
 ```
@@ -215,4 +267,3 @@ cleanup 摘要：
 ## 下一步
 
 继续查明为什么 TKE node pool 已 `normal` 但没有生成 CVM instance。不能把 Step 4 标为通过，也不能把 v19 标为可滚云正式版本。
-

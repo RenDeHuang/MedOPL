@@ -56,8 +56,8 @@ node scripts/live-test-v19-postgres-redis-restart-recovery.mjs
 Expected result:
 
 - Confirms `PORTAL_STORAGE_MODE=postgres_redis`.
-- Confirms `portal-postgres-redis-secret` is referenced without reading secret values.
-- Confirms `portal-postgres-redis-secret`, `secret-portal`, `secret-opl`, and `secret-trace` exist.
+- Confirms `portal-postgres-redis` is referenced without reading secret values.
+- Confirms `portal-postgres-redis`, `secret-portal`, `secret-opl`, and `secret-trace` exist.
 - Captures baseline user, wallet, order, file metadata, trace, and session evidence.
 
 ### 2. Manual restart in another terminal
@@ -114,7 +114,7 @@ node scripts/live-test-v19-postgres-redis-restart-recovery.mjs
 - `PORTAL_STORAGE_MODE`:
 - Portal container referenced secrets:
 - Secret presence check:
-  - `portal-postgres-redis-secret`
+  - `portal-postgres-redis`
   - `secret-portal`
   - `secret-opl`
   - `secret-trace`

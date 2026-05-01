@@ -235,8 +235,39 @@ async function writeEvidence(payload) {
 }
 
 async function main() {
-  const config = buildConfig();
   const startedAt = new Date().toISOString();
+  let config;
+  try {
+    config = buildConfig();
+  } catch (error) {
+    const evidence = {
+      ok: false,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      script: "scripts/live-test-v19-cos-exact-bill-reconcile.mjs",
+      branchHint: "codex/opl-v19",
+      billingBaseUrl: "",
+      cosExpectation: {},
+      target: {},
+      preflight: {},
+      cosReconcile: {},
+      reconcileRuns: [],
+      diagnostics: {
+        error: String(error?.message || error),
+        details: error?.details || {},
+      },
+    };
+    const evidencePath = await writeEvidence(evidence);
+    console.error(JSON.stringify({
+      ok: false,
+      evidencePath,
+      error: evidence.diagnostics.error,
+      diagnostics: evidence.diagnostics,
+    }, null, 2));
+    process.exitCode = 1;
+    return;
+  }
+
   const evidence = {
     ok: false,
     startedAt,
