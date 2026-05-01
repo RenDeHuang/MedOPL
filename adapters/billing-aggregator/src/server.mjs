@@ -1391,13 +1391,24 @@ function normalizeTencentPrice(response = {}) {
 function hasSoldOutMarker(statusCategory = "", soldOutReason = "") {
   const category = String(statusCategory || "").trim().toLowerCase();
   const reason = String(soldOutReason || "").trim();
-  return Boolean(
-    reason ||
-    category.includes("sold") ||
-    category.includes("out") ||
-    category.includes("stock") ||
-    category.includes("insufficient")
-  );
+  if (reason) return true;
+  const normalized = category.replace(/[^a-z0-9]+/g, "");
+  if (["enoughstock", "normalstock", "instock"].includes(normalized)) return false;
+  return [
+    "soldout",
+    "stockout",
+    "outofstock",
+    "nostock",
+    "understock",
+    "insufficient",
+    "shortage",
+    "inventoryshortage",
+  ].some((marker) => normalized.includes(marker))
+    || category.includes("sold out")
+    || category.includes("out of stock")
+    || category.includes("库存不足")
+    || category.includes("无库存")
+    || category.includes("售罄");
 }
 
 function normalizeTencentDiscoveredPlan(item = {}, region = TENCENT_CLOUD_REGION) {

@@ -124,6 +124,18 @@ function validateContract(payload) {
   }
 }
 
+function assertStockStatusOrdering(items) {
+  const enoughStock = items.find((item) => item.statusCategory === "EnoughStock");
+  assert(enoughStock, "enough_stock_fixture_missing");
+  assert(enoughStock.availabilityStatus === "SELL", "enough_stock_fixture_status_mismatch");
+  assert(enoughStock.hourlyPrice > 0, "enough_stock_fixture_price_missing");
+  assert(enoughStock.canOrder === true, "enough_stock_should_be_orderable");
+
+  const soldOut = items.find((item) => item.statusCategory === "SoldOut");
+  assert(soldOut, "soldout_fixture_missing");
+  assert(soldOut.canOrder === false, "soldout_should_not_be_orderable");
+}
+
 async function main() {
   const port = await freePort();
   const baseUrl = `http://127.0.0.1:${port}`;
@@ -154,6 +166,7 @@ async function main() {
     validateContract(payload);
     assert(payload.items.every((item) => item.region === "na-siliconvalley"), "region_filter_mismatch");
     assert(payload.items.every((item) => item.zone === "na-siliconvalley-1"), "zone_filter_mismatch");
+    assertStockStatusOrdering(payload.items);
 
     if (!credentialsConfigured) {
       console.log(JSON.stringify({
