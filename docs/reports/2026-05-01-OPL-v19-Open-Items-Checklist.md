@@ -15,8 +15,8 @@ It has passed many local and contract-level checks, but the default cloud path h
 1. v19 has not been rolled to cloud.
    Cloud Deployments are still on `opl-v18` for the platform services, and `opl-web-opl` remains on upstream `opl-v1`.
 
-2. Live TKE create/delete is not proven.
-   The branch does not yet have completed evidence that a real order can create a dedicated node pool, run a labeled task, delete or scale it to zero, and leave no orphan TKE/CVM resources.
+2. Live TKE create/delete is only partially proven.
+   On 2026-05-01, live testing proved labeled TKE node pool create/delete cleanup and no residual node pools, CVMs, Pods, Jobs, or PVCs for `0501a` through `0501d`. The gate still fails because `MinSize=1` and `DesiredCapacity=1` did not produce a matching CVM instance within the wait window. Evidence: `docs/reports/2026-05-01-OPL-v19-TKE-Live-Cleanup-Evidence.md`.
 
 3. Exact bill reconciliation is unhealthy on cloud.
    Read-only cluster inspection found `billing-reconcile` still using `billing-aggregator-opl:opl-v14`, and recent reconcile Jobs are failing. This blocks commercial billing acceptance.
@@ -45,8 +45,10 @@ It has passed many local and contract-level checks, but the default cloud path h
 ## P0 Checklist Before v19 Can Be Rolled
 
 - [x] Fix `billing-reconcile` CronJob image and command so it runs the current reconcile path, not stale `opl-v14`.
-- [ ] Add or restore a dedicated live TKE create/delete cleanup script with `try/finally`.
+- [x] Add or restore a dedicated live TKE create/delete cleanup script with `try/finally`.
 - [ ] Run live TKE create/delete cleanup and record no residual node pools, CVMs, Pods, Jobs, or PVC artifacts.
+- [x] Record partial live TKE evidence: labeled node pool create/delete cleanup and final no-residue proof.
+- [ ] Prove live TKE creates at least one matching CVM instance before cleanup.
 - [x] Run live `/server-plans` discovery with Tencent Cloud credentials and prove `source=tencent_cloud_live_catalog`.
 - [x] Prove sellable SKUs have non-zero prices and unsellable SKUs are disabled.
 - [x] Build and deploy a cloud billing aggregator image containing the SKU stock-status fix before relying on the cloud `/server-plans` endpoint.

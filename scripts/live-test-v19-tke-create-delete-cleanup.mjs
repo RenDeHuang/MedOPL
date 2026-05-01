@@ -366,6 +366,7 @@ async function collectKubectlResources(context, execution, stage) {
   }
   if (!execution.kubeconfigPath) fail("TKE_LIVE_KUBECONFIG_required");
   const args = [];
+  args.push(`--kubeconfig=${execution.kubeconfigPath}`);
   if (execution.kubeServerOverride) args.push(`--server=${execution.kubeServerOverride}`);
   args.push("get", "pods,jobs,pvc", "--all-namespaces", "-l", execution.kubeSelector, "-o", "json");
   try {

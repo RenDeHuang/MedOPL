@@ -6,8 +6,6 @@ import {
   TENCENT_TKE_CLUSTER_ID,
   TENCENT_TKE_MAX_NODES,
   TENCENT_TKE_MIN_NODES,
-  TENCENT_TKE_NODE_IMAGE_ID,
-  TENCENT_TKE_NODE_IMAGE_SOURCE,
   TENCENT_TKE_ZONE,
   TENCENT_VPC_ID,
   TENCENT_CLOUD_REGION,
@@ -82,14 +80,8 @@ function defaultNodePoolName(context) {
 function defaultCreateNodePoolPayload(context) {
   const plan = context.plan;
   const instanceType = firstString(plan.instanceType, plan.InstanceType);
-  const imageId = firstString(plan.imageId, plan.ImageId, TENCENT_TKE_NODE_IMAGE_ID);
   if (!instanceType) {
     const error = new Error("node_pool_instance_type_required");
-    error.status = 422;
-    throw error;
-  }
-  if (!imageId) {
-    const error = new Error("node_pool_image_id_required");
     error.status = 422;
     throw error;
   }
@@ -104,17 +96,15 @@ function defaultCreateNodePoolPayload(context) {
       MinSize: TENCENT_TKE_MIN_NODES,
       MaxSize: Math.min(TENCENT_TKE_MAX_NODES, Math.max(1, Number(plan.maxNodes || TENCENT_TKE_MAX_NODES))),
       DesiredCapacity: 0,
-      Zones: [firstString(plan.zone, TENCENT_TKE_ZONE)],
     }),
     LaunchConfigurePara: JSON.stringify({
       InstanceType: instanceType,
-      ImageId: imageId,
+      InstanceChargeType: firstString(plan.instanceChargeType, plan.InstanceChargeType, "POSTPAID_BY_HOUR"),
       SecurityGroupIds: [TENCENT_SECURITY_GROUP_ID],
       SystemDisk: {
         DiskType: firstString(plan.systemDiskType, "CLOUD_PREMIUM"),
         DiskSize: Math.max(50, Number(plan.systemDiskSize || 50)),
       },
-      DataDisks: plan.dataDisks || [],
       InternetAccessible: {
         PublicIpAssigned: false,
       },
@@ -122,9 +112,39 @@ function defaultCreateNodePoolPayload(context) {
     InstanceAdvancedSettings: {
       MountTarget: "",
       DockerGraphPath: "/var/lib/docker",
-      DataDisks: [],
     },
   };
+}
+
+function normalizeAutoScalingGroupPara(payload) {
+  const autoScaling = parseObjectString(payload.AutoScalingGroupPara, "auto_scaling_group_para") || {};
+  if (Array.isArray(autoScaling.SubnetIds) && autoScaling.SubnetIds.length > 0) {
+    delete autoScaling.Zones;
+  }
+  payload.AutoScalingGroupPara = JSON.stringify(autoScaling);
+  return payload;
+}
+
+function normalizeLaunchConfigurePara(payload) {
+  const launchConfig = parseObjectString(payload.LaunchConfigurePara, "launch_configure_para") || {};
+  if (Object.hasOwn(launchConfig, "ImageId")) {
+    delete launchConfig.ImageId;
+  }
+  if (Array.isArray(launchConfig.DataDisks) && launchConfig.DataDisks.length === 0) {
+    delete launchConfig.DataDisks;
+  }
+  launchConfig.InstanceChargeType = firstString(launchConfig.InstanceChargeType, "POSTPAID_BY_HOUR");
+  payload.LaunchConfigurePara = JSON.stringify(launchConfig);
+  return payload;
+}
+
+function normalizeInstanceAdvancedSettings(payload) {
+  const settings = parseObjectString(payload.InstanceAdvancedSettings, "instance_advanced_settings") || {};
+  if (Array.isArray(settings.DataDisks) && settings.DataDisks.length === 0) {
+    delete settings.DataDisks;
+  }
+  payload.InstanceAdvancedSettings = settings;
+  return payload;
 }
 
 function buildCreateNodePoolPayload(context) {
@@ -137,6 +157,9 @@ function buildCreateNodePoolPayload(context) {
   payload.ClusterId = firstString(payload.ClusterId, plan.tkeClusterId, plan.clusterId, TENCENT_TKE_CLUSTER_ID);
   payload.Name = firstString(payload.Name, plan.nodePoolName, defaultNodePoolName(context));
   payload.EnableAutoscale = payload.EnableAutoscale !== undefined ? Boolean(payload.EnableAutoscale) : true;
+  normalizeAutoScalingGroupPara(payload);
+  normalizeLaunchConfigurePara(payload);
+  normalizeInstanceAdvancedSettings(payload);
   payload.Tags = appendTags(payload, context);
   payload.Labels = appendLabels(payload, context);
 
@@ -232,8 +255,8 @@ export async function ensureCapacity(input) {
       mode: context.mode,
       nodePoolId: response.NodePoolId || payload.NodePoolId || "",
       requestId: response.RequestId || "",
-      imageId: TENCENT_TKE_NODE_IMAGE_ID,
-      imageSource: TENCENT_TKE_NODE_IMAGE_SOURCE,
+      imageId: "",
+      imageSource: "tke_create_node_pool_cluster_default",
       details: {
         nodeSelector: {
           ...(context.plan.nodeSelector || {}),
