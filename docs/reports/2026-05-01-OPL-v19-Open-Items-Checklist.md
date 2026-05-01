@@ -30,8 +30,8 @@ It has passed many local and contract-level checks, but the default cloud path h
 6. PostgreSQL/Redis production cutover still needs restart recovery proof.
    Product compose defaults to `postgres_redis`, but cloud Portal must still show `PORTAL_STORAGE_MODE=postgres_redis` and prove state survives Pod restart.
 
-7. Live Tencent Cloud SKU quote is captured from production credentials, but the cloud Deployment still needs the patched image before the cloud endpoint can be marked complete.
-   On 2026-05-01, the WSL2 live smoke used `tencent-billing-secret` and proved `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 35 orderable SKUs. Evidence: `docs/reports/2026-05-01-OPL-v19-Live-SKU-Quote-Evidence.md`.
+7. Live Tencent Cloud SKU quote is captured from production credentials and cloud `billing-aggregator-opl`.
+   On 2026-05-01, the WSL2 live smoke used `tencent-billing-secret` and proved `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 35 orderable SKUs. The cloud Deployment was then updated to `opl-v19-live-gates-20260501-a438432` and returned `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 34 orderable SKUs. Evidence: `docs/reports/2026-05-01-OPL-v19-Live-SKU-Quote-Evidence.md`.
 
 8. Sentrux quality does not meet the stricter v19 plan target.
    Current integrated branch is `quality_signal=6901` with `check_rules=pass`, but the v19 plan target was `quality_signal >= 6988`. Rules pass, but the stricter quality target is not satisfied.
@@ -49,7 +49,7 @@ It has passed many local and contract-level checks, but the default cloud path h
 - [ ] Run live TKE create/delete cleanup and record no residual node pools, CVMs, Pods, Jobs, or PVC artifacts.
 - [x] Run live `/server-plans` discovery with Tencent Cloud credentials and prove `source=tencent_cloud_live_catalog`.
 - [x] Prove sellable SKUs have non-zero prices and unsellable SKUs are disabled.
-- [ ] Build and deploy a cloud billing aggregator image containing the SKU stock-status fix before relying on the cloud `/server-plans` endpoint.
+- [x] Build and deploy a cloud billing aggregator image containing the SKU stock-status fix before relying on the cloud `/server-plans` endpoint.
 - [ ] Switch cloud Portal to `PORTAL_STORAGE_MODE=postgres_redis`.
 - [ ] Run migration into TencentDB PostgreSQL and Redis without writing secrets into git or YAML.
 - [ ] Restart Portal Pod and prove user, wallet, order, workspace, file metadata, and ledger state survive.

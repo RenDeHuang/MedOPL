@@ -12,6 +12,8 @@
 
 这不等于 v19 可滚云。它只关闭了账单 reconcile CronJob 健康这一项 P0 阻塞。live COS exact bill 归因、full user E2E、TKE cleanup、Portal restart recovery 等 P0 仍需继续验证。
 
+2026-05-01 追加验证：`billing-aggregator-opl` Deployment 为 Step 3 live SKU 修复滚动到 `opl-v19-live-gates-20260501-a438432` 后，`billing-reconcile` CronJob 也同步到同一镜像，并再次创建手动 Job 成功完成。该追加验证证明 SKU 修复镜像没有破坏一次性 reconcile 入口。
+
 ## 本次修复
 
 - 代码提交：`17b6e03 Fix v19 billing reconcile one-shot entry`
@@ -147,6 +149,26 @@ Complete 1/1
 - CronJob 自然调度已经使用新镜像和显式 `reconcile` 入口。
 - CronJob 可成功读取 Portal PostgreSQL 配置并完成一次对账。
 - 当前真实账单仍缺完整成本标签，因此只证明 CronJob 健康和 unattributed 路径，不证明可归因 exact settlement。
+
+### SKU 修复镜像后的手动 Job
+
+- 镜像：`uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v19-live-gates-20260501-a438432`
+- Digest：`sha256:b94619825c7a3d8c38e86baa416e014b2e947b9096fba284745108411f1aea89`
+- CronJob：`default/billing-reconcile`
+- Command：`["node","src/server.mjs","reconcile"]`
+- `envFrom`：
+  - `tencent-billing-secret`
+  - `portal-postgres-redis`
+- Job：`billing-reconcile-manual-v19-20260501-0105`
+- Completion：`2026-05-01T01:06:34Z`
+- Succeeded：`1`
+
+日志结论：
+
+- Job 成功完成。
+- `settlementMode` 仍为 `exact_only`。
+- 返回 `results=[]`。
+- 账单条目仍以 `tencent_cloud_bill_unattributed` 为主，说明真实云资源还缺完整业务归因标签。
 
 ## 当前仍未关闭的 P0
 
