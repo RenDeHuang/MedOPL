@@ -375,6 +375,8 @@ async function main() {
     evidence.cosReconcile = {
       ok: Boolean(cosReconcile?.ok),
       reconciled: Boolean(cosReconcile?.reconciled),
+      preview: Boolean(cosReconcile?.preview),
+      hasAttributableRows: Boolean(cosReconcile?.hasAttributableRows),
       exactSource: String(cosReconcile?.exactSource || ""),
       latestFile: cosReconcile?.latestFile || selectedFile,
       parsedRowCount: Number(cosReconcile?.parsedRowCount || 0),

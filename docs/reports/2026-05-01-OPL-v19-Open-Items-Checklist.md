@@ -12,23 +12,23 @@ It has passed many local and contract-level checks, but the default cloud path h
 
 ## Why v19 Is Not Complete
 
-1. v19 has not been rolled to cloud.
-   Cloud Deployments are still on `opl-v18` for the platform services, and `opl-web-opl` remains on upstream `opl-v1`.
+1. v19 has only been partially rolled to cloud.
+   `billing-aggregator-opl`, `resource-provisioner-opl`, and `portal-opl` have been rolled for live gate closure. Other platform services are still on older images, and `opl-web-opl` remains on upstream `opl-v1`. This is not a full v19 rollout.
 
-2. Live TKE create/delete is only partially proven.
-   On 2026-05-01, live testing proved labeled TKE node pool create/delete cleanup and no residual node pools, CVMs, AS groups, Pods, Jobs, or PVCs for `0501a` through `0501f`. The gate still fails because `MinSize=1` and `DesiredCapacity=1` produced a normal node pool and AS group, but did not produce a matching CVM instance or AS scaling activity within the wait window. Evidence: `docs/reports/2026-05-01-OPL-v19-TKE-Live-Cleanup-Evidence.md`.
+2. Live TKE create/delete cleanup is now proven.
+   On 2026-05-01, `0501h` created a labeled TKE node pool, created real CVM `ins-h4uz5mky`, reached `RUNNING`, and then cleaned up to zero residual node pools, CVMs, AS groups, Pods, Jobs, and PVCs. The earlier blocker `[19045] CVM not support the required disk` was resolved by using `CLOUD_BSSD` as the default system disk type. Evidence: `docs/reports/2026-05-01-OPL-v19-TKE-Live-Cleanup-Evidence.md`.
 
 3. Billing reconcile is fixed, but exact bill attribution still needs live data.
-   `billing-reconcile` has been moved to the current billing image and successful manual/automatic Jobs have been recorded. The remaining billing blocker is not CronJob health; it is live COS `daily/` exact bill availability and attribution.
+   `billing-reconcile` has been moved to the pgfix billing image and successful manual Jobs have been recorded after the COS zip/root prefix repair. The remaining billing blocker is not CronJob health; it is a live bill object containing complete v19 cost tags.
 
-4. COS daily exact bill回补 has not been proven.
-   Local settlement smoke passed, but there is no successful live evidence from a real COS `daily/` bill file producing idempotent refund or makeup charge.
+4. COS exact bill回补 has not been proven.
+   The real bucket `opl-1410708315` is readable and root-level Tencent billing zip files can be parsed. The current latest parsed file has 1865 rows, but none of the rows contains complete `tenant_id / workspace_id / resource_order_id / run_id / server_plan_id` values, so no idempotent refund or makeup charge can be proven yet.
 
 5. Full live user E2E is missing.
    The required path has not been captured end to end: create user, recharge, login Portal and OPL, buy storage, select a sellable SKU, preauth, provision, run OPL message, produce artifact, see trace/bill/file, download, delete server, stop pending cost.
 
-6. PostgreSQL/Redis production cutover still needs state recovery proof.
-   Cloud Portal is configured with `PORTAL_STORAGE_MODE=postgres_redis`, references `portal-postgres-redis`, and recovered `/healthz` after an authorized Pod restart. The missing proof is user, wallet, order, workspace file, trace, and session state equality across restart with a real live fixture.
+6. PostgreSQL/Redis production cutover proof is complete for the v19 Portal gate.
+   `portal-opl` was rolled to `opl-v19-portal-recovery-20260501-79051d7`, uses `PORTAL_STORAGE_MODE=postgres_redis`, references `portal-postgres-redis`, and passed real fixture self-bootstrap plus user, wallet, order, workspace file, trace, and session state equality across restart.
 
 7. Live Tencent Cloud SKU quote is captured from production credentials and cloud `billing-aggregator-opl`.
    On 2026-05-01, the WSL2 live smoke used `tencent-billing-secret` and proved `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 35 orderable SKUs. The cloud Deployment was then updated to `opl-v19-live-gates-20260501-a438432` and returned `source=tencent_cloud_live_catalog`, 80 discovered SKUs, 80 non-zero prices, and 34 orderable SKUs. Evidence: `docs/reports/2026-05-01-OPL-v19-Live-SKU-Quote-Evidence.md`.
@@ -48,15 +48,16 @@ It has passed many local and contract-level checks, but the default cloud path h
 - [x] Add or restore a dedicated live TKE create/delete cleanup script with `try/finally`.
 - [x] Run live TKE create/delete cleanup and record no residual node pools, CVMs, AS groups, Pods, Jobs, or PVC artifacts.
 - [x] Record partial live TKE evidence: labeled node pool create/delete cleanup and final no-residue proof.
-- [ ] Prove live TKE creates at least one matching CVM instance before cleanup.
+- [x] Prove live TKE creates at least one matching CVM instance before cleanup.
 - [x] Run live `/server-plans` discovery with Tencent Cloud credentials and prove `source=tencent_cloud_live_catalog`.
 - [x] Prove sellable SKUs have non-zero prices and unsellable SKUs are disabled.
 - [x] Build and deploy a cloud billing aggregator image containing the SKU stock-status fix before relying on the cloud `/server-plans` endpoint.
 - [x] Confirm cloud Portal is running with `PORTAL_STORAGE_MODE=postgres_redis`.
 - [ ] Run migration into TencentDB PostgreSQL and Redis without writing secrets into git or YAML.
 - [x] Restart Portal Pod and prove Deployment readiness and `/healthz` recovery.
-- [ ] Prove user, wallet, order, workspace, file metadata, trace/session, and ledger state survive Portal restart with a real live fixture.
-- [ ] Run live COS `daily/` reconcile when a real bill file exists.
+- [x] Prove user, wallet, order, workspace, file metadata, trace/session, and ledger state survive Portal restart with a real live fixture on current live Portal.
+- [x] Rerun Portal restart recovery after `portal-opl` is on a v19 image.
+- [ ] Run live COS reconcile when a real bill file contains complete v19 cost tags.
 - [ ] Prove repeated reconcile is idempotent and does not double-charge.
 - [ ] Complete one full live user E2E with screenshots or JSON evidence.
 - [ ] Verify deleting server stops pending cost growth.

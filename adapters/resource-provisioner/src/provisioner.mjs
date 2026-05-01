@@ -6,6 +6,8 @@ import {
   TENCENT_TKE_CLUSTER_ID,
   TENCENT_TKE_MAX_NODES,
   TENCENT_TKE_MIN_NODES,
+  TENCENT_TKE_SYSTEM_DISK_SIZE,
+  TENCENT_TKE_SYSTEM_DISK_TYPE,
   TENCENT_TKE_ZONE,
   TENCENT_VPC_ID,
   TENCENT_CLOUD_REGION,
@@ -102,8 +104,8 @@ function defaultCreateNodePoolPayload(context) {
       InstanceChargeType: firstString(plan.instanceChargeType, plan.InstanceChargeType, "POSTPAID_BY_HOUR"),
       SecurityGroupIds: [TENCENT_SECURITY_GROUP_ID],
       SystemDisk: {
-        DiskType: firstString(plan.systemDiskType, "CLOUD_PREMIUM"),
-        DiskSize: Math.max(50, Number(plan.systemDiskSize || 50)),
+        DiskType: firstString(plan.systemDiskType, plan.SystemDiskType, TENCENT_TKE_SYSTEM_DISK_TYPE),
+        DiskSize: Math.max(50, Number(plan.systemDiskSize || plan.SystemDiskSize || TENCENT_TKE_SYSTEM_DISK_SIZE)),
       },
       InternetAccessible: {
         PublicIpAssigned: false,

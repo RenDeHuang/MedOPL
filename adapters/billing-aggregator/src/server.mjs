@@ -66,7 +66,9 @@ const TENCENT_PLAN_DISCOVERY_MAX = Number(process.env.TENCENT_PLAN_DISCOVERY_MAX
 const SERVER_PLAN_CACHE_TTL_MS = Math.max(0, Number(process.env.SERVER_PLAN_CACHE_TTL_MS || 300000));
 const TENCENT_COS_BILL_BUCKET = String(process.env.TENCENT_COS_BILL_BUCKET || "opl-1410708315").trim();
 const TENCENT_COS_BILL_REGION = String(process.env.TENCENT_COS_BILL_REGION || TENCENT_CLOUD_REGION).trim();
-const TENCENT_COS_BILL_PREFIX = String(process.env.TENCENT_COS_BILL_PREFIX || "daily/").trim();
+const TENCENT_COS_BILL_PREFIX = Object.prototype.hasOwnProperty.call(process.env, "TENCENT_COS_BILL_PREFIX")
+  ? String(process.env.TENCENT_COS_BILL_PREFIX || "").trim()
+  : "daily/";
 const TENCENT_COS_BILL_ENDPOINT = String(process.env.TENCENT_COS_BILL_ENDPOINT || "").trim();
 const TENCENT_COS_SECRET_ID = String(process.env.TENCENT_COS_SECRET_ID || process.env.TENCENT_COS_BILL_SECRET_ID || "").trim();
 const TENCENT_COS_SECRET_KEY = String(process.env.TENCENT_COS_SECRET_KEY || process.env.TENCENT_COS_BILL_SECRET_KEY || "").trim();
@@ -90,14 +92,14 @@ const cosBillReader = buildCosBillReader({
 
 function buildCosBillStatus() {
   return {
-    ok: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_PREFIX),
+    ok: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_REGION),
     credentialsConfigured: cosBillReader.configured(),
     source: "tencent_cloud_cos_bill_delivery",
     bucket: TENCENT_COS_BILL_BUCKET,
     region: TENCENT_COS_BILL_REGION,
     prefix: TENCENT_COS_BILL_PREFIX,
     endpoint: cosBillReader.endpoint,
-    deliveryConfigured: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_PREFIX),
+    deliveryConfigured: Boolean(TENCENT_COS_BILL_BUCKET && TENCENT_COS_BILL_REGION),
     note: "COS bill files are used for daily reconciliation. Exact cost must come from Tencent bill detail or COS bill files.",
   };
 }
@@ -165,7 +167,16 @@ const BILLING_RECONCILE_TARGET = {
 };
 
 function firstNonEmpty(...values) {
-  return values.map((value) => String(value ?? "").trim()).find(Boolean) || "";
+  return values
+    .map((value) => String(value ?? "").trim().replace(/^"(.*)"$/s, "$1").trim())
+    .find((value) => value && value !== "-" && value.toLowerCase() !== "null" && value.toLowerCase() !== "n/a") || "";
+}
+
+function moneyNumber(value, fallback = 0) {
+  const normalized = String(value ?? "").trim().replace(/,/g, "");
+  if (!normalized) return fallback;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function billTagValue(row = {}, key = "") {
@@ -181,6 +192,10 @@ function billTagValue(row = {}, key = "") {
     `tag_${key}`,
     `Tag_${key}`,
   ];
+  for (const alias of TENCENT_COST_TAG_ALIASES[key] || []) {
+    tagKeys.push(`标签键:${alias}`, `标签:${alias}`, `标签键:${alias.toLowerCase()}`, `标签:${alias.toLowerCase()}`);
+  }
+  tagKeys.push(`标签键:${key}`, `标签:${key}`, `标签键:${camel}`, `标签:${camel}`, `标签键:${pascal}`, `标签:${pascal}`);
   for (const candidate of tagKeys) {
     const value = firstNonEmpty(row[candidate], row.tags?.[candidate], row.Tags?.[candidate], row.tags?.[key], row.Tags?.[key]);
     if (value) return value;
@@ -193,7 +208,17 @@ function rowHasRequiredCostTags(row = {}) {
 }
 
 function normalizeCosBillRow(row = {}) {
-  const totalCost = Number(row.totalCost || row.TotalCost || row.RealTotalCost || row.realTotalCost || row.Cost || row.cost || 0);
+  const totalCost = moneyNumber(firstNonEmpty(
+    row.totalCost,
+    row.TotalCost,
+    row.RealTotalCost,
+    row.realTotalCost,
+    row.Cost,
+    row.cost,
+    row["优惠后总价(元)"],
+    row["现金支付(元)"],
+    row["原价(元)"],
+  ));
   return {
     ...row,
     totalCost,
@@ -239,7 +264,9 @@ async function buildCosBillReconcilePayload() {
     return {
       ...status,
       ok: true,
-      reconciled: attributed.length > 0,
+      reconciled: false,
+      preview: true,
+      hasAttributableRows: attributed.length > 0,
       exactSource: "tencent_cos_daily_bill",
       lastReadAt: new Date().toISOString(),
       latestFile: parsed.latest,

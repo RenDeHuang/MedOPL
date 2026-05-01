@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
+import https from "node:https";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -52,6 +53,27 @@ function requiredEnv(name) {
   const value = String(process.env[name] || "").trim();
   assert(value, `${name}_required`);
   return value;
+}
+
+async function loadFixtureEnvFile() {
+  const filePath = String(process.env.PORTAL_RECOVERY_FIXTURE_FILE || "").trim();
+  if (!filePath) return {};
+  const raw = await readFile(filePath, "utf8");
+  const parsed = JSON.parse(raw || "{}");
+  const env = parsed && typeof parsed.env === "object" && parsed.env ? parsed.env : {};
+  const loaded = Object.fromEntries(
+    Object.entries(env)
+      .map(([key, value]) => [String(key), String(value || "").trim()])
+      .filter(([, value]) => value !== ""),
+  );
+  const secretFiles = parsed && typeof parsed.secretFiles === "object" && parsed.secretFiles ? parsed.secretFiles : {};
+  for (const [key, secretPath] of Object.entries(secretFiles)) {
+    if (process.env[key]) continue;
+    if (!secretPath) continue;
+    const secretValue = String(await readFile(String(secretPath), "utf8")).trim();
+    if (secretValue) loaded[String(key)] = secretValue;
+  }
+  return loaded;
 }
 
 function stableJson(value) {
@@ -164,7 +186,144 @@ function withJsonOutput(stdout = "") {
   }
 }
 
+async function kubectlAvailable(config) {
+  if (typeof config._kubectlAvailable === "boolean") return config._kubectlAvailable;
+  try {
+    await execFileAsync(config.kubectlBin, ["version", "--client"], {
+      encoding: "utf8",
+      timeout: 5_000,
+      maxBuffer: 256 * 1024,
+    });
+    config._kubectlAvailable = true;
+  } catch (error) {
+    if (error?.code === "ENOENT" || /spawn .* ENOENT/i.test(String(error?.message || ""))) {
+      config._kubectlAvailable = false;
+    } else {
+      throw error;
+    }
+  }
+  return config._kubectlAvailable;
+}
+
+function parseKubeconfigValue(text, key) {
+  const pattern = new RegExp(`^\\s*${key}:\\s*(\\S+)\\s*$`, "m");
+  const matched = text.match(pattern);
+  assert(matched?.[1], `kubeconfig_${key}_missing`);
+  return matched[1].trim();
+}
+
+async function kubeApiClient(config) {
+  if (config._kubeApiClient) return config._kubeApiClient;
+  const kubeconfigText = await readFile(config.kubeconfig, "utf8");
+  const caData = parseKubeconfigValue(kubeconfigText, "certificate-authority-data");
+  const certData = parseKubeconfigValue(kubeconfigText, "client-certificate-data");
+  const keyData = parseKubeconfigValue(kubeconfigText, "client-key-data");
+  const server = config.kubeServerOverride || parseKubeconfigValue(kubeconfigText, "server");
+  config._kubeApiClient = {
+    server,
+    tls: {
+      ca: Buffer.from(caData, "base64"),
+      cert: Buffer.from(certData, "base64"),
+      key: Buffer.from(keyData, "base64"),
+      rejectUnauthorized: true,
+    },
+  };
+  return config._kubeApiClient;
+}
+
+async function kubeApiRequest(config, pathname, options = {}) {
+  const client = await kubeApiClient(config);
+  const url = new URL(pathname, client.server);
+  if (options.query) {
+    for (const [key, value] of Object.entries(options.query)) {
+      if (value != null && value !== "") url.searchParams.set(key, String(value));
+    }
+  }
+  const method = options.method || "GET";
+  const body = options.body == null ? null : String(options.body);
+  const headers = {
+    accept: "application/json",
+    ...(options.headers || {}),
+  };
+  if (body != null && !headers["content-length"]) {
+    headers["content-length"] = String(Buffer.byteLength(body));
+  }
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, {
+      ...client.tls,
+      method,
+      headers,
+      timeout: options.timeoutMs || kubectlExecTimeoutMs,
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      res.on("end", () => {
+        const bodyText = Buffer.concat(chunks).toString("utf8");
+        let json = null;
+        try {
+          json = bodyText ? JSON.parse(bodyText) : null;
+        } catch {}
+        resolve({
+          status: res.statusCode || 0,
+          headers: res.headers,
+          bodyText,
+          json,
+        });
+      });
+    });
+    req.on("error", (error) => reject(error));
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    if (body != null) req.write(body);
+    req.end();
+  });
+}
+
+function parseNamespaceArgs(args) {
+  if (args[0] === "-n" && args[1]) {
+    return {
+      namespace: args[1],
+      rest: args.slice(2),
+    };
+  }
+  return {
+    namespace: "default",
+    rest: [...args],
+  };
+}
+
+async function kubectlJsonViaApi(config, args) {
+  const { namespace, rest } = parseNamespaceArgs(args);
+  assert(rest[0] === "get", `unsupported_kube_api_get:${rest.join(" ")}`);
+  if (rest[1] === "deployment" && rest[2]) {
+    const result = await kubeApiRequest(config, `/apis/apps/v1/namespaces/${namespace}/deployments/${rest[2]}`);
+    assert(result.status === 200, `kube_api_get_deployment_failed:${result.status}:${result.bodyText.slice(0, 240)}`);
+    return result.json;
+  }
+  if (rest[1] === "pods") {
+    const labelSelector = rest[2] === "-l" ? rest[3] || "" : "";
+    const result = await kubeApiRequest(config, `/api/v1/namespaces/${namespace}/pods`, {
+      query: labelSelector ? { labelSelector } : {},
+    });
+    assert(result.status === 200, `kube_api_get_pods_failed:${result.status}:${result.bodyText.slice(0, 240)}`);
+    return result.json;
+  }
+  if (rest[1] === "configmap" && rest[2]) {
+    const result = await kubeApiRequest(config, `/api/v1/namespaces/${namespace}/configmaps/${rest[2]}`);
+    assert(result.status === 200, `kube_api_get_configmap_failed:${result.status}:${result.bodyText.slice(0, 240)}`);
+    return result.json;
+  }
+  if (rest[1] === "secret" && rest[2]) {
+    const result = await kubeApiRequest(config, `/api/v1/namespaces/${namespace}/secrets/${rest[2]}`);
+    assert(result.status === 200, `kube_api_get_secret_failed:${result.status}:${result.bodyText.slice(0, 240)}`);
+    return result.json;
+  }
+  throw new Error(`unsupported_kube_api_args:${rest.join(" ")}`);
+}
+
 async function execKubectl(config, args, options = {}) {
+  if (!await kubectlAvailable(config)) {
+    throw new Error("kubectl_unavailable");
+  }
   const finalArgs = [
     "--kubeconfig",
     config.kubeconfig,
@@ -181,10 +340,17 @@ async function execKubectl(config, args, options = {}) {
 }
 
 async function kubectlJson(config, args, options = {}) {
+  if (!await kubectlAvailable(config)) {
+    return kubectlJsonViaApi(config, args);
+  }
   return withJsonOutput(await execKubectl(config, [...args, "-o", "json"], options));
 }
 
 async function kubectlRolloutStatus(config, timeoutMs) {
+  if (!await kubectlAvailable(config)) {
+    await waitForDeploymentReady(config, timeoutMs);
+    return "kube_api_wait_ready";
+  }
   return execKubectl(config, [
     "-n",
     config.namespace,
@@ -196,6 +362,29 @@ async function kubectlRolloutStatus(config, timeoutMs) {
 }
 
 async function kubectlSecretMetadata(config, name) {
+  if (!await kubectlAvailable(config)) {
+    try {
+      const secret = await kubectlJsonViaApi(config, [
+        "-n",
+        config.namespace,
+        "get",
+        "secret",
+        name,
+      ]);
+      return {
+        ok: Boolean(secret?.metadata?.name),
+        name: String(secret?.metadata?.name || name),
+        type: String(secret?.type || ""),
+        uid: String(secret?.metadata?.uid || ""),
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        name,
+        error: String(error.message || error),
+      };
+    }
+  }
   try {
     const raw = await execKubectl(config, [
       "-n",
@@ -378,6 +567,33 @@ async function resolveConfigMapValue(config, name, key, cache) {
   return value;
 }
 
+async function restartDeploymentViaApi(config) {
+  const body = JSON.stringify({
+    spec: {
+      template: {
+        metadata: {
+          annotations: {
+            "kubectl.kubernetes.io/restartedAt": new Date().toISOString(),
+          },
+        },
+      },
+    },
+  });
+  const result = await kubeApiRequest(
+    config,
+    `/apis/apps/v1/namespaces/${config.namespace}/deployments/${config.deployment}`,
+    {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/strategic-merge-patch+json",
+      },
+      body,
+      timeoutMs: kubectlExecTimeoutMs,
+    },
+  );
+  assert(result.status >= 200 && result.status < 300, `kube_api_restart_failed:${result.status}:${result.bodyText.slice(0, 240)}`);
+}
+
 async function resolveEnvValue(config, container, name, configMapCache) {
   const entry = envEntryMap(container).get(name);
   if (!entry) return { found: false, source: "missing", value: "" };
@@ -489,6 +705,34 @@ async function waitForPortalHealth(config) {
     await sleep(config.pollMs);
   }
   throw new Error(`portal_healthz_unavailable:${lastStatus}`);
+}
+
+async function readPortalHealth(config) {
+  const response = await fetch(`${config.baseUrl}/healthz`, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(15_000),
+  });
+  const bodyText = await response.text();
+  assert(response.status === 200, `portal_healthz_unexpected_status:${response.status}:${bodyText.slice(0, 240)}`);
+  let json = null;
+  try {
+    json = bodyText ? JSON.parse(bodyText) : null;
+  } catch {}
+  assert(json?.ok === true, `portal_healthz_payload_invalid:${bodyText.slice(0, 240)}`);
+  return {
+    build: {
+      sha: String(json?.build?.sha || ""),
+      time: String(json?.build?.time || ""),
+    },
+    identity: {
+      ssoMode: String(json?.identity?.ssoMode || ""),
+      identitySyncMode: String(json?.identity?.identitySyncMode || ""),
+      oplWebAuthMode: String(json?.identity?.oplWebAuthMode || ""),
+    },
+    storage: {
+      storageMode: String(json?.storage?.storageMode || ""),
+    },
+  };
 }
 
 async function apiJson(config, pathname, cookie, timeoutMs = 30_000) {
@@ -709,13 +953,17 @@ function diffObjects(before, after, prefix = "") {
 async function waitForManualOrScriptedRestart(config, beforePods) {
   const beforeSet = podUidSet(beforePods);
   if (config.allowKubectlRestart) {
-    await execKubectl(config, [
-      "-n",
-      config.namespace,
-      "rollout",
-      "restart",
-      `deployment/${config.deployment}`,
-    ]);
+    if (await kubectlAvailable(config)) {
+      await execKubectl(config, [
+        "-n",
+        config.namespace,
+        "rollout",
+        "restart",
+        `deployment/${config.deployment}`,
+      ]);
+    } else {
+      await restartDeploymentViaApi(config);
+    }
   } else {
     console.error([
       "waiting_for_manual_restart",
@@ -744,35 +992,44 @@ async function waitForManualOrScriptedRestart(config, beforePods) {
   throw new Error(`portal_restart_not_observed:${stableJson(lastPods)}`);
 }
 
-function buildConfig() {
+async function buildConfig() {
   if (String(process.env.RUN_PORTAL_RECOVERY_LIVE || "").trim() !== "1") {
     skip("RUN_PORTAL_RECOVERY_LIVE!=1");
   }
 
-  const databaseSecretName = String(process.env.PORTAL_RECOVERY_DATABASE_SECRET_NAME || "portal-postgres-redis").trim() || "portal-postgres-redis";
+  const fixtureEnv = await loadFixtureEnvFile();
+  const envValue = (name, fallback = "") => String(process.env[name] || fixtureEnv[name] || fallback).trim();
+  const requiredSetting = (name) => {
+    const value = envValue(name);
+    assert(value, `${name}_required`);
+    return value;
+  };
+
+  const databaseSecretName = envValue("PORTAL_RECOVERY_DATABASE_SECRET_NAME", "portal-postgres-redis") || "portal-postgres-redis";
   const config = {
-    baseUrl: trimTrailingSlash(process.env.PORTAL_BASE_URL || "https://portal.medopl.cn"),
-    loginMode: String(process.env.PORTAL_TEST_LOGIN || "oidc").trim().toLowerCase(),
-    userEmail: requiredEnv("PORTAL_RECOVERY_USER_EMAIL"),
-    userPassword: requiredEnv("PORTAL_RECOVERY_USER_PASSWORD"),
-    workspaceId: requiredEnv("PORTAL_RECOVERY_WORKSPACE_ID"),
-    resourceOrderId: String(process.env.PORTAL_RECOVERY_RESOURCE_ORDER_ID || "").trim(),
-    fileRelativePath: String(process.env.PORTAL_RECOVERY_FILE_RELATIVE_PATH || "").trim(),
-    traceSessionId: String(process.env.PORTAL_RECOVERY_TRACE_SESSION_ID || "").trim(),
-    workspaceSessionId: String(process.env.PORTAL_RECOVERY_WORKSPACE_SESSION_ID || "").trim(),
-    namespace: String(process.env.PORTAL_NAMESPACE || "default").trim() || "default",
-    deployment: String(process.env.PORTAL_DEPLOYMENT || "portal-opl").trim() || "portal-opl",
-    kubectlBin: String(process.env.PORTAL_RECOVERY_KUBECTL_BIN || process.env.KUBECTL_BIN || "kubectl").trim() || "kubectl",
-    kubeconfig: String(process.env.KUBECONFIG || "/mnt/c/Users/Administrator/Downloads/cls-ngiq693i-config (1)").trim(),
-    kubeServerOverride: String(process.env.KUBE_SERVER_OVERRIDE || "https://lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443").trim(),
+    baseUrl: trimTrailingSlash(envValue("PORTAL_BASE_URL", "https://portal.medopl.cn")),
+    loginMode: envValue("PORTAL_TEST_LOGIN", "oidc").toLowerCase(),
+    userEmail: requiredSetting("PORTAL_RECOVERY_USER_EMAIL"),
+    userPassword: requiredSetting("PORTAL_RECOVERY_USER_PASSWORD"),
+    workspaceId: requiredSetting("PORTAL_RECOVERY_WORKSPACE_ID"),
+    resourceOrderId: envValue("PORTAL_RECOVERY_RESOURCE_ORDER_ID"),
+    fileRelativePath: envValue("PORTAL_RECOVERY_FILE_RELATIVE_PATH"),
+    traceSessionId: envValue("PORTAL_RECOVERY_TRACE_SESSION_ID"),
+    workspaceSessionId: envValue("PORTAL_RECOVERY_WORKSPACE_SESSION_ID"),
+    namespace: envValue("PORTAL_NAMESPACE", "default") || "default",
+    deployment: envValue("PORTAL_DEPLOYMENT", "portal-opl") || "portal-opl",
+    kubectlBin: envValue("PORTAL_RECOVERY_KUBECTL_BIN", process.env.KUBECTL_BIN || "kubectl") || "kubectl",
+    kubeconfig: envValue("PORTAL_RECOVERY_KUBECONFIG", envValue("KUBECONFIG", "/mnt/c/Users/Administrator/Downloads/cls-ngiq693i-config (1)")),
+    kubeServerOverride: envValue("PORTAL_RECOVERY_KUBE_SERVER_OVERRIDE", envValue("KUBE_SERVER_OVERRIDE", "https://lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443")),
     databaseSecretName,
-    secretNames: splitCsv(process.env.PORTAL_RECOVERY_SECRET_NAMES, [databaseSecretName, ...defaultAuxSecretNames]),
-    portalHealthTimeoutMs: positiveInt(process.env.PORTAL_RECOVERY_HEALTH_TIMEOUT_MS, 180_000),
-    restartObservationTimeoutMs: positiveInt(process.env.PORTAL_RECOVERY_WAIT_TIMEOUT_MS, 20 * 60 * 1000),
-    pollMs: positiveInt(process.env.PORTAL_RECOVERY_POLL_MS, 4_000),
-    loginTimeoutMs: positiveInt(process.env.PORTAL_RECOVERY_LOGIN_TIMEOUT_MS, 120_000),
-    expectPostRestart: String(process.env.PORTAL_RECOVERY_EXPECT_POST_RESTART || "").trim() === "1",
-    allowKubectlRestart: String(process.env.PORTAL_RECOVERY_ALLOW_KUBECTL_RESTART || "").trim() === "1",
+    secretNames: splitCsv(envValue("PORTAL_RECOVERY_SECRET_NAMES"), [databaseSecretName, ...defaultAuxSecretNames]),
+    portalHealthTimeoutMs: positiveInt(envValue("PORTAL_RECOVERY_HEALTH_TIMEOUT_MS"), 180_000),
+    restartObservationTimeoutMs: positiveInt(envValue("PORTAL_RECOVERY_WAIT_TIMEOUT_MS"), 20 * 60 * 1000),
+    pollMs: positiveInt(envValue("PORTAL_RECOVERY_POLL_MS"), 4_000),
+    loginTimeoutMs: positiveInt(envValue("PORTAL_RECOVERY_LOGIN_TIMEOUT_MS"), 120_000),
+    expectPostRestart: envValue("PORTAL_RECOVERY_EXPECT_POST_RESTART") === "1",
+    allowKubectlRestart: envValue("PORTAL_RECOVERY_ALLOW_KUBECTL_RESTART") === "1",
+    fixtureFile: envValue("PORTAL_RECOVERY_FIXTURE_FILE"),
   };
 
   if (String(process.env.PORTAL_IGNORE_TLS_ERRORS || "1").trim() === "1") {
@@ -787,9 +1044,10 @@ function buildConfig() {
 }
 
 async function main() {
-  const config = buildConfig();
+  const config = await buildConfig();
   const cluster = await inspectPortalDeployment(config);
   await waitForPortalHealth(config);
+  const portalHealth = await readPortalHealth(config);
   const cookie = await createPortalSessionCookie({
     baseUrl: config.baseUrl,
     loginMode: config.loginMode,
@@ -805,6 +1063,8 @@ async function main() {
       skipped: true,
       reason: "PORTAL_RECOVERY_EXPECT_POST_RESTART!=1",
       liveGuard: "pass",
+      fixtureFile: config.fixtureFile || null,
+      portalHealth,
       cluster,
       baseline: baseline.snapshot,
       nextAction: {
@@ -829,6 +1089,8 @@ async function main() {
     ok: true,
     skipped: false,
     gate: "portal_postgres_redis_restart_recovery",
+    fixtureFile: config.fixtureFile || null,
+    portalHealth,
     cluster: {
       ...cluster,
       postRestart: restart,

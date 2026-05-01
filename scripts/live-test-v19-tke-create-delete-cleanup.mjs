@@ -230,6 +230,10 @@ function buildKubeSelector(context) {
   ].join(",");
 }
 
+function buildScaleTriggerName(context) {
+  return `v19-scale-${labelValue(context.resourceOrderId).slice(0, 42)}`.replace(/-+$/g, "");
+}
+
 function buildContext() {
   const tenantId = assertLabelSafe("TKE_LIVE_TENANT_ID", requiredEnv("TKE_LIVE_TENANT_ID"), { requireTestPrefix: true });
   const workspaceId = assertLabelSafe("TKE_LIVE_WORKSPACE_ID", requiredEnv("TKE_LIVE_WORKSPACE_ID"), { requireTestPrefix: true });
@@ -254,6 +258,7 @@ function buildExecution(context) {
   const requireKubectl = parseBooleanEnv("TKE_LIVE_REQUIRE_KUBECTL", true);
   const requestedNodePoolIdRaw = readEnv("TKE_LIVE_NODE_POOL_ID");
   const requestedNodePoolId = requestedNodePoolIdRaw ? assertLabelSafe("TKE_LIVE_NODE_POOL_ID", requestedNodePoolIdRaw) : "";
+  const scaleTriggerEnabled = parseBooleanEnv("TKE_LIVE_CREATE_SCALE_TRIGGER", false);
 
   const serverPlan = {
     id: context.serverPlanId,
@@ -286,6 +291,7 @@ function buildExecution(context) {
   const previewPayload = cleanupOnly ? null : previewCreateNodePoolPayload(provisionInput);
   const autoScaling = cleanupOnly ? {} : parseObjectField(previewPayload.AutoScalingGroupPara, "preview_auto_scaling_group_para");
   const expectedMinimumInstances = Math.max(
+    scaleTriggerEnabled ? 1 : 0,
     0,
     Number(autoScaling.DesiredCapacity || 0),
     Number(autoScaling.MinSize || 0),
@@ -305,6 +311,12 @@ function buildExecution(context) {
     kubeServerOverride,
     requireKubectl,
     kubeSelector: buildKubeSelector(context),
+    scaleTrigger: {
+      enabled: scaleTriggerEnabled,
+      namespace: readEnv("TKE_LIVE_SCALE_TRIGGER_NAMESPACE", "default"),
+      name: readEnv("TKE_LIVE_SCALE_TRIGGER_NAME", buildScaleTriggerName(context)),
+      image: readEnv("TKE_LIVE_SCALE_TRIGGER_IMAGE", "busybox:1.36"),
+    },
     requestedNodePoolId,
     pollIntervalMs: parseNumberEnv("TKE_LIVE_POLL_INTERVAL_MS", 10_000),
     createTimeoutMs: parseNumberEnv("TKE_LIVE_CREATE_TIMEOUT_MS", 15 * 60 * 1000),
@@ -398,6 +410,107 @@ async function collectKubectlResources(context, execution, stage) {
   }
 }
 
+function kubectlBaseArgs(execution) {
+  if (!execution.kubeconfigPath) fail("TKE_LIVE_KUBECONFIG_required");
+  const args = [`--kubeconfig=${execution.kubeconfigPath}`];
+  if (execution.kubeServerOverride) args.push(`--server=${execution.kubeServerOverride}`);
+  return args;
+}
+
+async function runKubectl(execution, args, label) {
+  try {
+    const { stdout, stderr } = await execFileAsync(execution.kubectlBinary, [...kubectlBaseArgs(execution), ...args], {
+      env: { ...process.env, KUBECONFIG: execution.kubeconfigPath },
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    return {
+      ok: true,
+      label,
+      stdout: String(stdout || "").trim(),
+      stderr: String(stderr || "").trim(),
+    };
+  } catch (error) {
+    fail(`kubectl_${label}_failed`, {
+      details: {
+        kubectlBinary: execution.kubectlBinary,
+        args,
+        message: String(error?.message || error || "kubectl_failed"),
+        stderr: String(error?.stderr || "").trim(),
+      },
+    });
+  }
+}
+
+async function createScaleTriggerPod(context, execution) {
+  if (!execution.scaleTrigger.enabled) return { enabled: false };
+  if (!execution.kubeconfigPath) fail("TKE_LIVE_KUBECONFIG_required");
+  const labels = expectedLabelSet(context);
+  const labelArg = Object.entries(labels).map(([key, value]) => `${key}=${value}`).join(",");
+  const overrides = {
+    apiVersion: "v1",
+    metadata: {
+      labels,
+    },
+    spec: {
+      nodeSelector: labels,
+      restartPolicy: "Never",
+      terminationGracePeriodSeconds: 0,
+      containers: [{
+        name: "scale-trigger",
+        image: execution.scaleTrigger.image,
+        command: ["/bin/sh", "-c", "sleep 3600"],
+        resources: {
+          requests: {
+            cpu: "100m",
+            memory: "128Mi",
+          },
+        },
+      }],
+    },
+  };
+  const result = await runKubectl(execution, [
+    "run",
+    execution.scaleTrigger.name,
+    "-n",
+    execution.scaleTrigger.namespace,
+    `--image=${execution.scaleTrigger.image}`,
+    "--restart=Never",
+    "--labels",
+    labelArg,
+    "--overrides",
+    JSON.stringify(overrides),
+  ], "create_scale_trigger");
+  return {
+    enabled: true,
+    namespace: execution.scaleTrigger.namespace,
+    name: execution.scaleTrigger.name,
+    image: execution.scaleTrigger.image,
+    selector: execution.kubeSelector,
+    nodeSelector: labels,
+    result,
+  };
+}
+
+async function deleteScaleTriggerPods(context, execution) {
+  if (!execution.scaleTrigger.enabled) return { enabled: false };
+  if (!execution.kubeconfigPath) fail("TKE_LIVE_KUBECONFIG_required");
+  const result = await runKubectl(execution, [
+    "delete",
+    "pods",
+    "-n",
+    execution.scaleTrigger.namespace,
+    "-l",
+    execution.kubeSelector,
+    "--ignore-not-found=true",
+    "--wait=false",
+  ], "delete_scale_trigger");
+  return {
+    enabled: true,
+    selector: execution.kubeSelector,
+    result,
+  };
+}
+
 function buildCleanupCommand(context, execution, nodePoolId = "") {
   const envs = [
     "RUN_TKE_LIVE=1",
@@ -416,6 +529,7 @@ function buildCleanupCommand(context, execution, nodePoolId = "") {
   if (execution.kubectlBinary) envs.push(`TKE_LIVE_KUBECTL_BIN=${shellQuote(execution.kubectlBinary)}`);
   if (execution.kubeconfigPath) envs.push(`TKE_LIVE_KUBECONFIG=${shellQuote(execution.kubeconfigPath)}`);
   if (execution.kubeServerOverride) envs.push(`TKE_LIVE_KUBE_SERVER_OVERRIDE=${shellQuote(execution.kubeServerOverride)}`);
+  if (execution.scaleTrigger.enabled) envs.push("TKE_LIVE_CREATE_SCALE_TRIGGER=1");
   return `${envs.join(" ")} node scripts/live-test-v19-tke-create-delete-cleanup.mjs`;
 }
 
@@ -432,6 +546,8 @@ async function performCleanup(context, execution, requestedNodePoolId = "") {
     scaleToZeroError: null,
     scaleToZeroWaitError: null,
     deleteNodePool: null,
+    scaleTriggerDelete: null,
+    scaleTriggerDeleteError: null,
     cleanupCommand: "",
   };
 
@@ -447,10 +563,21 @@ async function performCleanup(context, execution, requestedNodePoolId = "") {
 
     if (!resolvedNodePoolId) {
       result.finalState = result.beforeCleanup;
+      try {
+        result.scaleTriggerDelete = await deleteScaleTriggerPods(context, execution);
+      } catch (error) {
+        result.scaleTriggerDeleteError = serializeError(error);
+      }
       result.kubernetesAfterDelete = await collectKubectlResources(context, execution, "after-delete");
       if (result.beforeCleanup.matchedInstances.length > 0) fail("cleanup_node_pool_id_unresolved", { cleanupResult: result });
       if (result.kubernetesAfterDelete.itemCount > 0) fail("post_delete_kubernetes_resources_remain", { cleanupResult: result });
       return result;
+    }
+
+    try {
+      result.scaleTriggerDelete = await deleteScaleTriggerPods(context, execution);
+    } catch (error) {
+      result.scaleTriggerDeleteError = serializeError(error);
     }
 
     try {
@@ -580,6 +707,25 @@ async function main() {
       const nodePool = nodePoolSnapshot.matchedNodePools.find((item) => item.nodePoolId === nodePoolId) || nodePoolSnapshot.matchedNodePools[0];
       verifyNodePool(nodePool, execution.expectedTags, execution.expectedLabels, nodePoolId);
 
+      const scaleTrigger = await createScaleTriggerPod(context, execution);
+      evidence.create = {
+        request: {
+          order: {
+            id: String(createResult.order?.id || "").trim(),
+            requestId: String(createResult.order?.requestId || "").trim(),
+            nodePoolId,
+            status: String(createResult.order?.status || "").trim(),
+            resourceOrderId: String(createResult.order?.resourceOrderId || "").trim(),
+            runId: String(createResult.order?.runId || "").trim(),
+          },
+        },
+        nodePool: summarizeNodePool(nodePool),
+        nodePoolSnapshot: summarizeSnapshot(nodePoolSnapshot),
+        scaleTrigger,
+        instanceSnapshot: null,
+        kubernetesAfterCreate: null,
+      };
+
       let instanceSnapshot = nodePoolSnapshot;
       if (execution.expectedMinimumInstances > 0) {
         instanceSnapshot = await waitForSnapshot(
@@ -595,22 +741,8 @@ async function main() {
       verifyInstances(instanceSnapshot.matchedInstances, execution.expectedTags);
 
       const kubernetesAfterCreate = await collectKubectlResources(context, execution, "after-create");
-      evidence.create = {
-        request: {
-          order: {
-            id: String(createResult.order?.id || "").trim(),
-            requestId: String(createResult.order?.requestId || "").trim(),
-            nodePoolId,
-            status: String(createResult.order?.status || "").trim(),
-            resourceOrderId: String(createResult.order?.resourceOrderId || "").trim(),
-            runId: String(createResult.order?.runId || "").trim(),
-          },
-        },
-        nodePool: summarizeNodePool(nodePool),
-        nodePoolSnapshot: summarizeSnapshot(nodePoolSnapshot),
-        instanceSnapshot: summarizeSnapshot(instanceSnapshot),
-        kubernetesAfterCreate,
-      };
+      evidence.create.instanceSnapshot = summarizeSnapshot(instanceSnapshot);
+      evidence.create.kubernetesAfterCreate = kubernetesAfterCreate;
     }
   } catch (error) {
     terminalError = error;

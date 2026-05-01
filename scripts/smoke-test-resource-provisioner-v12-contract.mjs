@@ -34,7 +34,28 @@ assert.equal(launchConfig.ImageId, undefined, "CreateClusterNodePool payload mus
 assert.equal(launchConfig.DataDisks, undefined, "CreateClusterNodePool payload must not send empty LaunchConfigurePara.DataDisks");
 assert.equal(launchConfig.InstanceType, "MA5.MEDIUM16");
 assert.equal(launchConfig.InstanceChargeType, "POSTPAID_BY_HOUR");
+assert.equal(launchConfig.SystemDisk?.DiskType, "CLOUD_BSSD", "CreateClusterNodePool payload should default to the live-supported TKE system disk type");
+assert.equal(launchConfig.SystemDisk?.DiskSize, 50, "CreateClusterNodePool payload should keep a 50GB system disk by default");
 assert.equal(preview.InstanceAdvancedSettings.DataDisks, undefined, "CreateClusterNodePool payload must not send empty InstanceAdvancedSettings.DataDisks");
+
+const diskOverridePreview = previewCreateNodePoolPayload({
+  tenantId: "tenant-a",
+  workspaceId: "workspace-a",
+  runId: "run-preview-disk-override",
+  resourceOrderId: "order-preview-disk-override",
+  serverPlanId: "cpu-2c4g",
+  provisioningMode: "tke_node_pool_create",
+  serverPlan: {
+    id: "cpu-2c4g",
+    provisioningMode: "tke_node_pool_create",
+    instanceType: "MA5.MEDIUM16",
+    systemDiskType: "CLOUD_SSD",
+    systemDiskSize: 80,
+  },
+});
+const diskOverrideLaunchConfig = JSON.parse(diskOverridePreview.LaunchConfigurePara);
+assert.equal(diskOverrideLaunchConfig.SystemDisk?.DiskType, "CLOUD_SSD", "server plan must be able to override system disk type");
+assert.equal(diskOverrideLaunchConfig.SystemDisk?.DiskSize, 80, "server plan must be able to override system disk size");
 
 const ready = await ensureCapacity({
   tenantId: "tenant-a",

@@ -5,6 +5,20 @@ Branch: `codex/opl-v19`
 
 ## Evidence Captured In This Pass
 
+### 2026-05-01 Live Gate Update
+
+The original 2026-04-30 evidence is now stale for several gates. Current live state on 2026-05-01:
+
+- `billing-aggregator-opl` is on `opl-v19-coszip-root-pgfix-20260501-79051d7`.
+- `billing-reconcile` CronJob is on the same pgfix image and manual Job `billing-reconcile-manual-pgfix-20260501061659` completed successfully.
+- `resource-provisioner-opl` is on `opl-v19-tke-disk-20260501-79051d7`.
+- Live TKE create/delete cleanup passed for `test-ro-v19-0501h`; real CVM `ins-h4uz5mky` reached `RUNNING` and cleanup left no node pool, CVM, ASG, Pod, Job, or PVC residue.
+- `portal-opl` is on `opl-v19-portal-recovery-20260501-79051d7`.
+- Portal PostgreSQL/Redis restart recovery passed on v19 with fixture `test-v19-momjzcpx-abbc19`; user, wallet, order, workspace file, trace, and session snapshots matched before/after restart.
+- Production entry health is still up after the partial live gate rollout: Portal health 200, OPL health 200, Trace health 200.
+
+This is still not a full live user E2E pass. It closes Step 2, Step 4, and Step 6, but Step 5 and Step 7 remain incomplete.
+
 ### Read-Only Kubernetes Evidence
 
 The provided kubeconfig still points at `https://medopl.cn`, which currently resets the Kubernetes API connection. The newer endpoint `lb-952pntps-mahtufc86zw9ksjo.clb.usw-tencentclb.com:443` reaches the TKE API when used as the kubectl server override.
@@ -65,12 +79,10 @@ Latency signal:
 
 ## Evidence Not Captured Yet
 
-- Live TKE create/delete cleanup.
-- Live COS exact daily bill reconcile from a real `daily/` file.
+- Live COS exact bill reconcile from a real bill row with complete v19 tags.
 - Full live user E2E using a newly created test account.
-- Live Portal PostgreSQL/Redis restart recovery.
-- Live non-zero Tencent Cloud SKU quote from production credentials.
 - Browser screenshot evidence for Portal workspace file, billing, and session trace pages.
+- T+1 exact bill refund/makeup for the Step 4 tagged TKE resource.
 
 ## Required Live E2E Script Shape
 
@@ -95,4 +107,4 @@ The next live run must prove:
 
 ## Rollout Gate
 
-Do not roll v19 until every item above has evidence and cleanup proof.
+Do not roll the remaining v19 services or call v19 complete until every remaining item above has evidence and cleanup proof.

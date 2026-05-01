@@ -34,6 +34,8 @@ export const TENCENT_TKE_NODE_IMAGE_SOURCE = process.env.TENCENT_TKE_NODE_IMAGE_
   : (process.env.TENCENT_PRICE_IMAGE_ID ? "env:TENCENT_PRICE_IMAGE_ID" : "siliconvalley_ubuntu_22_04_fallback");
 export const TENCENT_TKE_MAX_NODES = Math.max(1, Number(process.env.TENCENT_TKE_MAX_NODES || 2));
 export const TENCENT_TKE_MIN_NODES = Math.max(0, Number(process.env.TENCENT_TKE_MIN_NODES || 0));
+export const TENCENT_TKE_SYSTEM_DISK_TYPE = String(process.env.TENCENT_TKE_SYSTEM_DISK_TYPE || "CLOUD_BSSD").trim();
+export const TENCENT_TKE_SYSTEM_DISK_SIZE = Math.max(50, Number(process.env.TENCENT_TKE_SYSTEM_DISK_SIZE || 50));
 
 export const COST_TAG_KEYS = ["resource_order_id", "run_id", "server_plan_id", "tenant_id", "workspace_id"];
 

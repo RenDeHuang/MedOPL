@@ -14,6 +14,8 @@
 
 2026-05-01 追加验证：`billing-aggregator-opl` Deployment 为 Step 3 live SKU 修复滚动到 `opl-v19-live-gates-20260501-a438432` 后，`billing-reconcile` CronJob 也同步到同一镜像，并再次创建手动 Job 成功完成。该追加验证证明 SKU 修复镜像没有破坏一次性 reconcile 入口。
 
+2026-05-01 二次追加验证：COS zip/root prefix 修复镜像 `opl-v19-coszip-root-20260501-79051d7` 暴露出 Dockerfile 没有安装 `pg` 依赖，手动 Job 启动时报 `ERR_MODULE_NOT_FOUND`。当前工作区已修复 `adapters/billing-aggregator/Dockerfile`，新增 Dockerfile dependency smoke，构建并推送 `opl-v19-coszip-root-pgfix-20260501-79051d7`。Deployment 与 CronJob 已切到该镜像，手动 Job `billing-reconcile-manual-pgfix-20260501061659` 已成功完成。至此 Step 2 的 CronJob 健康 gate 重新关闭；剩余阻塞转移到 Step 5 的真实账单标签归因。
+
 ## 本次修复
 
 - 代码提交：`17b6e03 Fix v19 billing reconcile one-shot entry`
@@ -170,10 +172,37 @@ Complete 1/1
 - 返回 `results=[]`。
 - 账单条目仍以 `tencent_cloud_bill_unattributed` 为主，说明真实云资源还缺完整业务归因标签。
 
+### COS zip/root prefix pgfix 镜像后的手动 Job
+
+- 根因：`adapters/billing-aggregator/Dockerfile` 只复制 `package.json` 和 `src`，没有执行 `npm ci --omit=dev`，因此镜像内缺少 `pg`。
+- 修复：Dockerfile 改为复制 `package*.json` 并安装生产依赖；新增 `scripts/smoke-test-billing-aggregator-dockerfile-deps.mjs` 锁定该构建要求。
+- 镜像：`uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v19-coszip-root-pgfix-20260501-79051d7`
+- Digest：`sha256:1b0bfb64ae53dfbab347ceaa3a4bc0cd996c3a2a3800f5d22e90f3d0d7e286fa`
+- Deployment rollout：`deployment/billing-aggregator-opl` 成功。
+- CronJob：`default/billing-reconcile` 已切到同一镜像。
+- Job：`billing-reconcile-manual-pgfix-20260501061659`
+- 结果：`Complete`，`succeeded=1`。
+
+验证命令：
+
+```bash
+node scripts/smoke-test-billing-aggregator-dockerfile-deps.mjs
+docker run --rm uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v19-coszip-root-pgfix-20260501-79051d7 node -e "require('pg'); console.log('pg import ok')"
+kubectl -n default rollout status deployment/billing-aggregator-opl --timeout=180s
+kubectl -n default create job --from=cronjob/billing-reconcile billing-reconcile-manual-pgfix-20260501061659
+kubectl -n default wait --for=condition=complete job/billing-reconcile-manual-pgfix-20260501061659 --timeout=180s
+kubectl -n default logs job/billing-reconcile-manual-pgfix-20260501061659 --tail=200
+```
+
+日志结论：
+
+- Job 已能加载 `pg` 并成功退出。
+- 当前真实账单仍无完整 v19 成本标签，因此没有用户级 exact settlement；未归因账单继续进入 unattributed 路径。
+
 ## 当前仍未关闭的 P0
 
 - live COS exact bill reconcile 还没有完成“可归因 daily bill -> exact ledger”的证据。
 - full user E2E 还没有证明从 create 到 delete 到 T+1 exact bill 的闭环。
-- TKE create/delete cleanup gate 还未真实运行。
-- Portal PostgreSQL/Redis restart recovery gate 还未真实运行。
+- TKE create/delete cleanup gate 仍在 live 验证中。
+- Portal PostgreSQL/Redis restart recovery 已在 v18 live 上预演通过，但 v19 Portal 尚未上云，不能记为 Step 6 通过。
 - v19 主服务仍未滚云，当前只修了 `billing-reconcile` CronJob。
