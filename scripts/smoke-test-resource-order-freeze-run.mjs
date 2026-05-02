@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
 import { tmpdir } from "node:os";
@@ -117,6 +117,41 @@ function startPortalInternalFixture() {
   };
 }
 
+function startResourceProvisionerFixture() {
+  const requests = [];
+  return {
+    requests,
+    server: http.createServer(async (req, res) => {
+      const url = new URL(req.url || "/", "http://fixture");
+      const send = (status, payload) => {
+        res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(payload));
+      };
+      if (req.method === "POST" && url.pathname === "/resource-orders/ensure-capacity") {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+        requests.push(body);
+        send(200, {
+          ok: true,
+          reused: false,
+          order: {
+            id: `provision-${String(body.runId || "missing-run")}`,
+            status: "ready",
+            nodePoolId: "np-smoke",
+            details: {
+              nodeSelector: { "gaofenglab/resource-order-id": body.resourceOrderId || "" },
+              tolerations: [],
+            },
+          },
+        });
+        return;
+      }
+      send(404, { ok: false, error: "not_found" });
+    }),
+  };
+}
+
 async function listen(server) {
   const port = await freePort();
   await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
@@ -125,14 +160,17 @@ async function listen(server) {
 
 async function main() {
   const runtimeRoot = await mkdtemp(path.join(tmpdir(), "opl-v10-resource-order-"));
-  const kubectlFixture = path.join(runtimeRoot, "fake-kubectl-resource-order.cmd");
-  await writeFile(kubectlFixture, `@echo off
+  const kubectlLog = path.join(runtimeRoot, "kubectl-commands.log");
+  const kubectlFixture = path.join(runtimeRoot, process.platform === "win32" ? "fake-kubectl-resource-order.cmd" : "fake-kubectl-resource-order.sh");
+  if (process.platform === "win32") {
+    await writeFile(kubectlFixture, `@echo off
 setlocal
+echo %*>>"%KUBECTL_COMMAND_LOG%"
 
 if "%1"=="get" (
   if "%2"=="namespace" (
-    echo {"kind":"Namespace","metadata":{"name":"%3"}}
-    exit /b 0
+    echo Error from server (Forbidden): namespaces "%3" is forbidden 1>&2
+    exit /b 1
   )
   if "%2"=="job" (
     echo {"status":{"succeeded":1}}
@@ -142,8 +180,8 @@ if "%1"=="get" (
 
 if "%1"=="create" (
   if "%2"=="namespace" (
-    echo namespace/%3 created
-    exit /b 0
+    echo create namespace should not be attempted 1>&2
+    exit /b 44
   )
 )
 
@@ -155,8 +193,40 @@ if "%1"=="apply" (
 echo ok
 exit /b 0
 `, "utf8");
+  } else {
+    await writeFile(kubectlFixture, `#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "$*" >>"$KUBECTL_COMMAND_LOG"
+
+if [ "\${1:-}" = "get" ] && [ "\${2:-}" = "namespace" ]; then
+  echo "Error from server (Forbidden): namespaces \\"\${3:-}\\" is forbidden" >&2
+  exit 1
+fi
+
+if [ "\${1:-}" = "get" ] && [ "\${2:-}" = "job" ]; then
+  echo '{"status":{"succeeded":1}}'
+  exit 0
+fi
+
+if [ "\${1:-}" = "create" ] && [ "\${2:-}" = "namespace" ]; then
+  echo "create namespace should not be attempted" >&2
+  exit 44
+fi
+
+if [ "\${1:-}" = "apply" ]; then
+  echo job.batch/fake-job configured
+  exit 0
+fi
+
+echo ok
+exit 0
+`, "utf8");
+    await chmod(kubectlFixture, 0o755);
+  }
   const portalInternal = startPortalInternalFixture();
   const portalInternalUrl = await listen(portalInternal.server);
+  const resourceProvisioner = startResourceProvisionerFixture();
+  const resourceProvisionerUrl = await listen(resourceProvisioner.server);
   const runnerPort = await freePort();
   const runnerUrl = `http://127.0.0.1:${runnerPort}`;
   const adapterPort = await freePort();
@@ -167,7 +237,9 @@ exit /b 0
     MED_AUTOSCIENCE_RUNNER_PORT: String(runnerPort),
     PORTAL_STORAGE_MODE: "json",
     KUBECTL_BIN: kubectlFixture,
+    KUBECTL_COMMAND_LOG: kubectlLog,
     BILLING_RECONCILE_URL: "http://127.0.0.1:9/reconcile",
+    RESOURCE_PROVISIONER_URL: resourceProvisionerUrl,
   });
   const adapter = spawnService("adapter", path.join(repoRoot, "services", "opl-runtime-bridge"), "src/server.mjs", {
     ...process.env,
@@ -197,6 +269,7 @@ exit /b 0
         workspaceSessionId: "ws-a",
         sourceSurface: "portal-control-plane",
         serverPlanId: "gpu-a10-v10",
+        instanceType: "SA3.LARGE8",
         region: "ap-guangzhou",
         runtimeClass: "nvidia",
         nodeSelector: { "pool.medopl.ai/name": "gpu-pool-a10" },
@@ -207,6 +280,7 @@ exit /b 0
         memoryLimit: "32Gi",
         storageRequest: "20Gi",
         storageLimit: "50Gi",
+        provisioningMode: "tke_node_pool_create",
       }),
     });
     const launchToken = tokenResponse.launchToken;
@@ -229,6 +303,9 @@ exit /b 0
     assert(portalInternal.preparedOrders.length === 1, `prepare_run_call_count:${portalInternal.preparedOrders.length}`);
     assert(portalInternal.preparedOrders[0].status === "frozen", `prepare_run_status:${portalInternal.preparedOrders[0].status}`);
     assert(portalInternal.preparedOrders[0].estimatedHours === 2, `prepare_run_estimated_hours:${portalInternal.preparedOrders[0].estimatedHours}`);
+    assert(resourceProvisioner.requests.length === 1, `resource_provisioner_call_count:${resourceProvisioner.requests.length}`);
+    assert(resourceProvisioner.requests[0].resourceOrderId === "order-run-resource-order-smoke", `resource_provisioner_resource_order_missing:${JSON.stringify(resourceProvisioner.requests[0])}`);
+    assert(resourceProvisioner.requests[0].serverPlan?.instanceType === "SA3.LARGE8", `resource_provisioner_instance_type_missing:${JSON.stringify(resourceProvisioner.requests[0].serverPlan || null)}`);
 
     const manifest = await readFile(run.manifestPath, "utf8");
     assert(manifest.includes('resource_order_id: "order-run-resource-order-smoke"'), "manifest_missing_resource_order_label");
@@ -237,6 +314,11 @@ exit /b 0
 
     const statusResponse = await requestJson(`${runnerUrl}/api/runs/${encodeURIComponent(run.runId)}/status`);
     assert(statusResponse.run?.billingReconcile?.status === "runner_noop", `runner_should_not_reconcile:${JSON.stringify(statusResponse.run?.billingReconcile || null)}`);
+
+    const kubectlCommands = await readFile(kubectlLog, "utf8");
+    assert(kubectlCommands.includes("get namespace med-agent-demo"), `namespace_check_missing:${kubectlCommands}`);
+    assert(!kubectlCommands.includes("create namespace"), `namespace_create_must_not_run:${kubectlCommands}`);
+    assert(kubectlCommands.includes("apply -n med-agent-demo"), `job_apply_missing:${kubectlCommands}`);
 
     console.log(JSON.stringify({
       ok: true,
@@ -249,6 +331,7 @@ exit /b 0
     adapter.kill();
     runner.kill();
     portalInternal.server.close();
+    resourceProvisioner.server.close();
     await rm(runtimeRoot, { recursive: true, force: true }).catch(() => {});
   }
 }

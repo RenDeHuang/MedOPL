@@ -27,6 +27,7 @@ const RUNNER_MEMORY_REQUEST = (process.env.MED_AUTOSCIENCE_RUNNER_MEMORY_REQUEST
 const RUNNER_CPU_LIMIT = (process.env.MED_AUTOSCIENCE_RUNNER_CPU_LIMIT || "500m").trim();
 const RUNNER_MEMORY_LIMIT = (process.env.MED_AUTOSCIENCE_RUNNER_MEMORY_LIMIT || "256Mi").trim();
 const RUNNER_WARMUP_MODE = (process.env.MED_AUTOSCIENCE_WARMUP_MODE || "local").trim().toLowerCase();
+const CREATE_NAMESPACE = (process.env.MED_AUTOSCIENCE_CREATE_NAMESPACE || "").trim() === "1";
 const WARMUP_JOB_TEMPLATE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../infra/kubernetes/warmup-job-template.yaml");
 const IMAGE_PULL_SECRET = (process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET || "").trim();
 const WARMUP_COMMAND = (process.env.MED_AUTOSCIENCE_WARMUP_COMMAND || "echo warmup-ready").trim();
@@ -184,6 +185,7 @@ function normalizeRunIdentity(args = {}) {
     billingScope: firstNonEmpty(args.billingScope) || "run",
     costCenter: firstNonEmpty(args.costCenter) || "research-foundry",
     serverPlanId: firstNonEmpty(args.serverPlanId, args.server_plan_id) || "default",
+    instanceType: firstNonEmpty(args.instanceType, args.instance_type, args.InstanceType),
     resourceOrderId: firstNonEmpty(args.resourceOrderId, args.resource_order_id),
     region: firstNonEmpty(args.region) || "",
     zone: firstNonEmpty(args.zone) || "",
@@ -432,11 +434,13 @@ async function ensureProvisionedCapacity(identity = {}) {
       tenantId: identity.tenantId,
       workspaceId: identity.workspaceId,
       runId: identity.runId,
+      resourceOrderId: identity.resourceOrderId,
       serverPlanId: identity.serverPlanId,
       region: identity.region,
       provisioningMode: identity.provisioningMode,
       serverPlan: {
         id: identity.serverPlanId,
+        instanceType: identity.instanceType,
         region: identity.region,
         zone: identity.zone,
         nodePool: identity.nodePool,
@@ -624,8 +628,24 @@ async function kubectl(args, options = {}) {
 async function ensureNamespace() {
   try {
     await kubectl(["get", "namespace", K8S_NAMESPACE]);
-  } catch {
-    await kubectl(["create", "namespace", K8S_NAMESPACE]);
+    return;
+  } catch (error) {
+    const message = [
+      error?.message,
+      error?.stdout,
+      error?.stderr,
+    ].filter(Boolean).join("\n");
+    if (/forbidden|cannot get resource "namespaces"|is forbidden/i.test(message)) {
+      return;
+    }
+    if (/notfound|not found|notfound/i.test(message)) {
+      if (CREATE_NAMESPACE) {
+        await kubectl(["create", "namespace", K8S_NAMESPACE]);
+        return;
+      }
+      throw new Error(`namespace_not_found:${K8S_NAMESPACE}; set MED_AUTOSCIENCE_CREATE_NAMESPACE=1 to allow creation`);
+    }
+    throw error;
   }
 }
 
@@ -703,6 +723,7 @@ async function startRun(args = {}) {
     billingScope,
     costCenter,
     serverPlanId,
+    instanceType,
     resourceOrderId,
     region,
     zone,
@@ -782,6 +803,8 @@ async function startRun(args = {}) {
     .replaceAll("__BILLING_SCOPE__", billingScope)
     .replaceAll("__COST_CENTER__", costCenter)
     .replaceAll("__SERVER_PLAN_ID__", k8sLabelSafe(serverPlanId))
+    .replaceAll("__INSTANCE_TYPE_LABEL__", k8sLabelSafe(instanceType || "unknown"))
+    .replaceAll("__INSTANCE_TYPE__", instanceType || "")
     .replaceAll("__RESOURCE_ORDER_ID__", k8sLabelSafe(resourceOrderId || "pending"))
     .replaceAll("__REGION__", k8sLabelSafe(region || "default"))
     .replaceAll("__RUNTIME_CLASS_BLOCK__", runtimeClassBlock)
@@ -823,6 +846,7 @@ async function startRun(args = {}) {
     billingScope,
     costCenter,
     serverPlanId,
+    instanceType,
     resourceOrderId,
     region,
     groupId: policy.groupId || "",

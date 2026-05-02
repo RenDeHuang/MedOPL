@@ -7,6 +7,8 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import { chooseSalableServerPlan } from "./live-prepare-v19-portal-recovery-fixture.mjs";
+
 const execFileAsync = promisify(execFile);
 const repoRoot = process.cwd();
 const portalRuntimeRoot = path.join(repoRoot, ".runtime", "portal");
@@ -126,6 +128,67 @@ function startBillingFixture() {
   });
 }
 
+const planChoicePayload = {
+  items: [
+    {
+      id: "tencent-na-siliconvalley-1-MA5.MEDIUM16",
+      salable: true,
+      canOrder: true,
+      provisioningMode: "schedule_to_node_pool",
+      cpuRequest: "2000m",
+      memoryRequest: "16Gi",
+    },
+    {
+      id: "cpu-2c4g",
+      salable: true,
+      canOrder: true,
+      provisioningMode: "tke_node_pool_create",
+      cpuRequest: "1000m",
+      memoryRequest: "2Gi",
+      hourlyPrice: 0.39,
+    },
+  ],
+};
+assert(
+  chooseSalableServerPlan(planChoicePayload).id === "cpu-2c4g",
+  "live fixture should prefer an executable TKE node-pool-create plan over an oversize live catalog entry",
+);
+assert(
+  chooseSalableServerPlan(planChoicePayload, "tencent-na-siliconvalley-1-MA5.MEDIUM16").id === "tencent-na-siliconvalley-1-MA5.MEDIUM16",
+  "explicit preferred server plan must still be honored",
+);
+
+function startProvisionerFixture() {
+  return http.createServer(async (req, res) => {
+    const url = new URL(req.url || "/", "http://provisioner-fixture");
+    if (req.method === "POST" && url.pathname === "/resource-orders/provision-async") {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const payload = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+      sendJson(res, 202, {
+        ok: true,
+        accepted: true,
+        order: {
+          id: `provisioner-${payload.resourceOrderId || payload.runId || "smoke"}`,
+          status: "ready",
+          action: "schedule_to_node_pool",
+          resourceOrderId: payload.resourceOrderId || "",
+          runId: payload.runId || "",
+          serverPlanId: payload.serverPlanId || "",
+          nodePoolId: "np-prepare-smoke",
+          requestId: "req-prepare-smoke",
+        },
+      });
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/cloud/resources") {
+      sendJson(res, 200, { ok: true, summary: {}, nodePools: [], instances: [] });
+      return;
+    }
+    sendJson(res, 404, { error: "not_found" });
+  });
+}
+
 async function waitFor(url, label) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     try {
@@ -158,22 +221,28 @@ async function main() {
   const adminPassword = "PortalRecoveryPrepare-2026!";
   const portalPort = await freePort();
   const oplPort = await freePort();
+  const gatewayPort = await freePort();
   const runnerPort = await freePort();
   const adapterPort = await freePort();
   const billingPort = await freePort();
+  const provisionerPort = await freePort();
   const isolatedMinioPort = await freePort();
   const stateRoot = path.join(os.tmpdir(), `portal-recovery-prepare-adapter-${Date.now()}`);
   const portalUrl = `http://127.0.0.1:${portalPort}`;
   const oplUrl = `http://127.0.0.1:${oplPort}`;
+  const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
   const runnerUrl = `http://127.0.0.1:${runnerPort}`;
   const adapterUrl = `http://127.0.0.1:${adapterPort}`;
   const billingUrl = `http://127.0.0.1:${billingPort}`;
+  const provisionerUrl = `http://127.0.0.1:${provisionerPort}`;
 
   let portal = null;
   let opl = null;
+  let gateway = null;
   let runner = null;
   let adapter = null;
   let billingServer = null;
+  let provisionerServer = null;
 
   let failure = null;
   await withIsolatedPortalRuntime(async () => {
@@ -183,9 +252,25 @@ async function main() {
         billingServer.once("error", reject);
         billingServer.listen(billingPort, "127.0.0.1", resolve);
       });
+      provisionerServer = startProvisionerFixture();
+      await new Promise((resolve, reject) => {
+        provisionerServer.once("error", reject);
+        provisionerServer.listen(provisionerPort, "127.0.0.1", resolve);
+      });
       opl = spawnService("opl-fixture", "node", ["scripts/fixtures/opl-product-api-fixture.mjs"], {
         cwd: repoRoot,
         env: { ...process.env, PORT: String(oplPort) },
+      });
+      gateway = spawnService("opl-gateway", "node", ["src/server.mjs"], {
+        cwd: path.join(repoRoot, "services", "opl-web-gateway"),
+        env: {
+          ...process.env,
+          PORT: String(gatewayPort),
+          OPL_WEB_UPSTREAM_URL: oplUrl,
+          PORTAL_INTERNAL_URL: portalUrl,
+          PORTAL_OPL_ADAPTER_URL: adapterUrl,
+          PORTAL_PUBLIC_URL: portalUrl,
+        },
       });
       runner = spawnService("runner-fixture", "node", ["scripts/fixtures/med-autoscience-runner-fixture.mjs"], {
         cwd: repoRoot,
@@ -198,6 +283,7 @@ async function main() {
           PORT: String(adapterPort),
           PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
           PORTAL_OPL_ADAPTER_STATE_ROOT: stateRoot,
+          PORTAL_INTERNAL_BASE_URL: portalUrl,
           OPL_PRODUCT_API_URL: oplUrl,
           OPL_WEB_URL: "http://127.0.0.1:19999/opl-web",
           MED_AUTOSCIENCE_RUNNER_URL: runnerUrl,
@@ -216,6 +302,7 @@ async function main() {
           PORTAL_ADMIN_NAME: "Portal Recovery Admin",
           PORTAL_OPL_ADAPTER_URL: adapterUrl,
           BILLING_SERVICE_URL: billingUrl,
+          RESOURCE_PROVISIONER_URL: provisionerUrl,
           MINIO_API_URL: `http://127.0.0.1:${isolatedMinioPort}`,
           MINIO_CONSOLE_URL: `http://127.0.0.1:${isolatedMinioPort}`,
           OPL_WEB_URL: "http://127.0.0.1:19999/opl-web",
@@ -223,6 +310,7 @@ async function main() {
       });
 
       await waitFor(`${oplUrl}/healthz`, "opl_fixture");
+      await waitFor(`${gatewayUrl}/healthz`, "opl_gateway");
       await waitFor(`${runnerUrl}/healthz`, "runner_fixture");
       await waitFor(`${adapterUrl}/healthz`, "opl_adapter");
       await waitFor(`${portalUrl}/healthz`, "portal");
@@ -233,11 +321,15 @@ async function main() {
           ...process.env,
           RUN_PORTAL_RECOVERY_LIVE: "1",
           PORTAL_BASE_URL: portalUrl,
+          OPL_BASE_URL: gatewayUrl,
           PORTAL_TEST_LOGIN: "local",
           PORTAL_ADMIN_LOGIN_MODE: "local",
           PORTAL_ADMIN_EMAIL: adminEmail,
           PORTAL_ADMIN_PASSWORD: adminPassword,
           PORTAL_RECOVERY_PREPARE_TRACE: "1",
+          PORTAL_RECOVERY_START_OPL_RUN: "1",
+          PORTAL_RECOVERY_OPL_NATIVE_LOGIN: "1",
+          GFLABTOKEN: "smoke-gflabtoken-provider-key",
           PORTAL_RECOVERY_PREPARE_TIMEOUT_MS: "30000",
           PORTAL_RECOVERY_SERVER_PLAN_ID: "",
         },
@@ -254,9 +346,25 @@ async function main() {
       assert(stored.env?.PORTAL_RECOVERY_USER_EMAIL?.startsWith("test-"), "fixture_email_prefix_missing");
       assert(stored.env?.PORTAL_RECOVERY_WORKSPACE_ID?.startsWith("test-"), "fixture_workspace_prefix_missing");
       assert(stored.env?.PORTAL_RECOVERY_RESOURCE_ORDER_ID, "fixture_resource_order_missing");
+      assert(stored.env?.PORTAL_RECOVERY_RUN_ID, "fixture_run_id_missing");
+      assert(stored.env?.PORTAL_RECOVERY_SERVER_PLAN_ID, "fixture_server_plan_id_missing");
       assert(stored.env?.PORTAL_RECOVERY_FILE_RELATIVE_PATH, "fixture_file_relative_path_missing");
       assert(stored.env?.PORTAL_RECOVERY_TRACE_SESSION_ID, "fixture_trace_session_missing");
       assert(stored.env?.PORTAL_RECOVERY_WORKSPACE_SESSION_ID, "fixture_workspace_session_missing");
+      assert(stored.attributionTarget?.tenant_id, "fixture_attribution_tenant_id_missing");
+      assert(stored.attributionTarget?.workspace_id === stored.env.PORTAL_RECOVERY_WORKSPACE_ID, "fixture_attribution_workspace_id_mismatch");
+      assert(stored.attributionTarget?.resource_order_id === stored.env.PORTAL_RECOVERY_RESOURCE_ORDER_ID, "fixture_attribution_resource_order_id_mismatch");
+      assert(stored.attributionTarget?.run_id === stored.env.PORTAL_RECOVERY_RUN_ID, "fixture_attribution_run_id_mismatch");
+      assert(stored.attributionTarget?.server_plan_id === stored.env.PORTAL_RECOVERY_SERVER_PLAN_ID, "fixture_attribution_server_plan_id_mismatch");
+      assert(stored.prepared?.oplRun?.runId === stored.env.PORTAL_RECOVERY_RUN_ID, "fixture_opl_run_id_mismatch");
+      assert(stored.prepared?.oplRun?.status === "succeeded", `fixture_opl_run_not_succeeded:${stored.prepared?.oplRun?.status || ""}`);
+      assert(Number(stored.prepared?.oplRun?.artifactCount || 0) > 0, "fixture_opl_artifact_missing");
+      assert(stored.opl?.baseUrl === gatewayUrl, "fixture_opl_base_url_mismatch");
+      assert(stored.opl?.loginMode === "native", "fixture_opl_native_login_missing");
+      assert(stored.opl?.providerKeySource === "gflabtoken", "fixture_provider_key_source_must_be_gflabtoken");
+      assert(stored.opl?.providerConfigured === true, "fixture_provider_must_be_configured");
+      assert(stored.opl?.providerName === "gflab", "fixture_provider_name_mismatch");
+      assert(!JSON.stringify(stored).includes("smoke-gflabtoken-provider-key"), "fixture_must_not_persist_provider_key");
       assert(stored.secretFiles?.PORTAL_RECOVERY_USER_PASSWORD, "fixture_password_file_missing");
       assert(await exists(stored.secretFiles.PORTAL_RECOVERY_USER_PASSWORD), "fixture_password_file_not_written");
 
@@ -265,26 +373,31 @@ async function main() {
         fixtureFile: payload.fixtureFile,
         workspaceId: stored.env.PORTAL_RECOVERY_WORKSPACE_ID,
         resourceOrderId: stored.env.PORTAL_RECOVERY_RESOURCE_ORDER_ID,
+        runId: stored.env.PORTAL_RECOVERY_RUN_ID,
+        serverPlanId: stored.env.PORTAL_RECOVERY_SERVER_PLAN_ID,
         traceSessionId: stored.env.PORTAL_RECOVERY_TRACE_SESSION_ID,
       }, null, 2));
     } catch (error) {
       failure = error;
       throw error;
     } finally {
-      for (const service of [portal, adapter, runner, opl]) {
+      for (const service of [portal, adapter, runner, opl, gateway]) {
         if (service?.child && service.child.exitCode === null) service.child.kill("SIGTERM");
       }
       if (billingServer) {
         await new Promise((resolve) => billingServer.close(resolve));
       }
+      if (provisionerServer) {
+        await new Promise((resolve) => provisionerServer.close(resolve));
+      }
       await sleep(1000);
-      for (const service of [portal, adapter, runner, opl]) {
+      for (const service of [portal, adapter, runner, opl, gateway]) {
         if (service?.child && service.child.exitCode === null) service.child.kill("SIGKILL");
       }
       await rm(stateRoot, { recursive: true, force: true }).catch(() => {});
       if (failure) {
         const logs = Object.fromEntries(
-          [portal, adapter, runner, opl]
+          [portal, adapter, runner, opl, gateway]
             .filter(Boolean)
             .map((service) => [service.label, service.readLogs()]),
         );

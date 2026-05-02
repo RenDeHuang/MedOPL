@@ -1005,7 +1005,7 @@ async function buildConfig() {
     return value;
   };
 
-  const databaseSecretName = envValue("PORTAL_RECOVERY_DATABASE_SECRET_NAME", "portal-postgres-redis") || "portal-postgres-redis";
+  const databaseSecretName = envValue("PORTAL_RECOVERY_DATABASE_SECRET_NAME", "portal-postgres-redis-secret") || "portal-postgres-redis-secret";
   const config = {
     baseUrl: trimTrailingSlash(envValue("PORTAL_BASE_URL", "https://portal.medopl.cn")),
     loginMode: envValue("PORTAL_TEST_LOGIN", "oidc").toLowerCase(),

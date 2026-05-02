@@ -17,6 +17,7 @@ metadata:
     billing_scope: "__BILLING_SCOPE__"
     cost_center: "__COST_CENTER__"
     server_plan_id: "__SERVER_PLAN_ID__"
+    instance_type: "__INSTANCE_TYPE_LABEL__"
     resource_order_id: "__RESOURCE_ORDER_ID__"
     region: "__REGION__"
     group_id: "__GROUP_ID__"
@@ -40,6 +41,7 @@ spec:
         billing_scope: "__BILLING_SCOPE__"
         cost_center: "__COST_CENTER__"
         server_plan_id: "__SERVER_PLAN_ID__"
+        instance_type: "__INSTANCE_TYPE_LABEL__"
         resource_order_id: "__RESOURCE_ORDER_ID__"
         region: "__REGION__"
         group_id: "__GROUP_ID__"
@@ -93,6 +95,8 @@ spec:
               value: "__COST_CENTER__"
             - name: SERVER_PLAN_ID
               value: "__SERVER_PLAN_ID__"
+            - name: INSTANCE_TYPE
+              value: "__INSTANCE_TYPE__"
             - name: RESOURCE_ORDER_ID
               value: "__RESOURCE_ORDER_ID__"
             - name: REGION

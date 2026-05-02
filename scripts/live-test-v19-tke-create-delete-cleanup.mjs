@@ -14,9 +14,10 @@ import {
   tencentCloudConfigured,
 } from "../adapters/resource-provisioner/src/config.mjs";
 import { describeClusterInstances, describeNodePools } from "../adapters/resource-provisioner/src/inventory.mjs";
-import { cloudTagValue, labelValue } from "../adapters/resource-provisioner/src/labels.mjs";
 import { deleteNodePool, ensureCapacity, previewCreateNodePoolPayload, scaleToZero } from "../adapters/resource-provisioner/src/provisioner.mjs";
 import { sanitizeTencentError } from "../adapters/resource-provisioner/src/tencent-cloud.mjs";
+import { liveCloudTagValue, liveLabelValue } from "./lib/v19-live-labels.mjs";
+import { validateLiveTkeContext } from "./lib/v19-live-tke-context.mjs";
 
 const execFileAsync = promisify(execFile);
 const evidenceDir = path.join(runtimeRoot, "live-tke-create-delete-cleanup");
@@ -65,7 +66,7 @@ function parseJsonEnv(name) {
 
 function assertLabelSafe(name, value, { requireTestPrefix = false } = {}) {
   if (!value) fail(`${name}_required`);
-  if (labelValue(value) !== value) fail(`${name}_must_be_lowercase_label_safe`);
+  if (liveLabelValue(value) !== value) fail(`${name}_must_be_lowercase_label_safe`);
   if (requireTestPrefix && !value.startsWith("test-")) fail(`${name}_must_start_with_test-`);
   return value;
 }
@@ -89,21 +90,21 @@ function shellQuote(value) {
 
 function expectedTagSet(context) {
   return {
-    tenantid: cloudTagValue(context.tenantId),
-    workspaceid: cloudTagValue(context.workspaceId),
-    runid: cloudTagValue(context.runId),
-    serverplanid: cloudTagValue(context.serverPlanId),
-    resourceorderid: cloudTagValue(context.resourceOrderId),
+    tenantid: liveCloudTagValue(context.tenantId),
+    workspaceid: liveCloudTagValue(context.workspaceId),
+    runid: liveCloudTagValue(context.runId),
+    serverplanid: liveCloudTagValue(context.serverPlanId),
+    resourceorderid: liveCloudTagValue(context.resourceOrderId),
   };
 }
 
 function expectedLabelSet(context) {
   return {
-    "gaofenglab/tenant-id": labelValue(context.tenantId),
-    "gaofenglab/workspace-id": labelValue(context.workspaceId),
-    "gaofenglab/run-id": labelValue(context.runId),
-    "gaofenglab/server-plan-id": labelValue(context.serverPlanId),
-    "gaofenglab/resource-order-id": labelValue(context.resourceOrderId),
+    "gaofenglab/tenant-id": liveLabelValue(context.tenantId),
+    "gaofenglab/workspace-id": liveLabelValue(context.workspaceId),
+    "gaofenglab/run-id": liveLabelValue(context.runId),
+    "gaofenglab/server-plan-id": liveLabelValue(context.serverPlanId),
+    "gaofenglab/resource-order-id": liveLabelValue(context.resourceOrderId),
   };
 }
 
@@ -223,24 +224,25 @@ function verifyInstances(instances, expectedTags) {
 
 function buildKubeSelector(context) {
   return [
-    `gaofenglab/tenant-id=${labelValue(context.tenantId)}`,
-    `gaofenglab/workspace-id=${labelValue(context.workspaceId)}`,
-    `gaofenglab/run-id=${labelValue(context.runId)}`,
-    `gaofenglab/resource-order-id=${labelValue(context.resourceOrderId)}`,
+    `gaofenglab/tenant-id=${liveLabelValue(context.tenantId)}`,
+    `gaofenglab/workspace-id=${liveLabelValue(context.workspaceId)}`,
+    `gaofenglab/run-id=${liveLabelValue(context.runId)}`,
+    `gaofenglab/resource-order-id=${liveLabelValue(context.resourceOrderId)}`,
   ].join(",");
 }
 
 function buildScaleTriggerName(context) {
-  return `v19-scale-${labelValue(context.resourceOrderId).slice(0, 42)}`.replace(/-+$/g, "");
+  return `v19-scale-${liveLabelValue(context.resourceOrderId).slice(0, 42)}`.replace(/-+$/g, "");
 }
 
 function buildContext() {
-  const tenantId = assertLabelSafe("TKE_LIVE_TENANT_ID", requiredEnv("TKE_LIVE_TENANT_ID"), { requireTestPrefix: true });
-  const workspaceId = assertLabelSafe("TKE_LIVE_WORKSPACE_ID", requiredEnv("TKE_LIVE_WORKSPACE_ID"), { requireTestPrefix: true });
-  const resourceOrderId = assertLabelSafe("TKE_LIVE_RESOURCE_ORDER_ID", requiredEnv("TKE_LIVE_RESOURCE_ORDER_ID"), { requireTestPrefix: true });
-  const runId = assertLabelSafe("TKE_LIVE_RUN_ID", requiredEnv("TKE_LIVE_RUN_ID"), { requireTestPrefix: true });
-  const serverPlanId = assertLabelSafe("TKE_LIVE_SERVER_PLAN_ID", requiredEnv("TKE_LIVE_SERVER_PLAN_ID"));
-  return { tenantId, workspaceId, resourceOrderId, runId, serverPlanId };
+  return validateLiveTkeContext({
+    tenantId: requiredEnv("TKE_LIVE_TENANT_ID"),
+    workspaceId: requiredEnv("TKE_LIVE_WORKSPACE_ID"),
+    resourceOrderId: requiredEnv("TKE_LIVE_RESOURCE_ORDER_ID"),
+    runId: requiredEnv("TKE_LIVE_RUN_ID"),
+    serverPlanId: requiredEnv("TKE_LIVE_SERVER_PLAN_ID"),
+  });
 }
 
 function buildExecution(context) {

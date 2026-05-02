@@ -1,9 +1,14 @@
+import { execFile } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+
+import { matchesCosTargetItem } from "./lib/v19-live-e2e-contract.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+const execFileAsync = promisify(execFile);
 const evidenceDir = path.join(repoRoot, ".runtime", "cos-exact-bill-reconcile");
 const requiredTagKeys = ["resource_order_id", "run_id", "server_plan_id", "tenant_id", "workspace_id"];
 const tagAliases = {
@@ -50,10 +55,14 @@ function trimTrailingSlash(value) {
 function sanitizeUrl(value) {
   const text = String(value || "").trim();
   if (!text) return "";
-  const parsed = new URL(text);
-  parsed.username = "";
-  parsed.password = "";
-  return parsed.toString();
+  try {
+    const parsed = new URL(text);
+    parsed.username = "";
+    parsed.password = "";
+    return parsed.toString();
+  } catch {
+    return text;
+  }
 }
 
 function pickFirst(...values) {
@@ -145,6 +154,28 @@ function targetResult(results = [], runId, workspaceId) {
   }) || null;
 }
 
+function requiredConfig(value, name) {
+  const normalized = String(value || "").trim();
+  assert(normalized, `${name}_required`);
+  return normalized;
+}
+
+function normalizeKubeconfigForKubectl(kubeconfig, kubectlBin) {
+  const value = requiredConfig(kubeconfig, "COS_LIVE_KUBECONFIG");
+  if (/\.exe$/i.test(String(kubectlBin || "")) && value.startsWith("/mnt/c/")) {
+    return value.replace(/^\/mnt\/c\//, "C:\\").replace(/\//g, "\\");
+  }
+  return value;
+}
+
+function kubectlBaseArgs(config) {
+  const kubeconfig = normalizeKubeconfigForKubectl(config.kubeconfig, config.kubectlBin);
+  const args = [`--kubeconfig=${kubeconfig}`];
+  if (config.kubeServerOverride) args.push(`--server=${config.kubeServerOverride}`);
+  if (config.kubeInsecureSkipTlsVerify) args.push("--insecure-skip-tls-verify=true");
+  return args;
+}
+
 async function fetchJson(url, options = {}, timeoutMs = 30_000) {
   const response = await fetch(url, {
     ...options,
@@ -171,6 +202,70 @@ async function fetchJson(url, options = {}, timeoutMs = 30_000) {
   return json;
 }
 
+async function fetchJsonViaKubectlExec(config, requestPath, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  const deployment = requiredConfig(config.billingDeployment, "COS_LIVE_BILLING_DEPLOYMENT");
+  const namespace = requiredConfig(config.billingNamespace, "COS_LIVE_BILLING_NAMESPACE");
+  const port = requiredConfig(config.billingPort, "COS_LIVE_BILLING_PORT");
+  const args = [
+    ...kubectlBaseArgs(config),
+    "exec",
+    "-n",
+    namespace,
+    `deploy/${deployment}`,
+    "--",
+    "wget",
+    "-qO-",
+  ];
+  if (method !== "GET") {
+    args.push("--header=Content-Type: application/json");
+  }
+  if (options.body !== undefined) {
+    args.push(`--post-data=${String(options.body)}`);
+  }
+  args.push(`http://127.0.0.1:${port}${requestPath}`);
+
+  let stdout = "";
+  let stderr = "";
+  try {
+    const result = await execFileAsync(config.kubectlBin, args, {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        KUBECONFIG: normalizeKubeconfigForKubectl(config.kubeconfig, config.kubectlBin),
+      },
+      encoding: "utf8",
+      timeout: config.timeoutMs,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    stdout = result.stdout;
+    stderr = result.stderr;
+  } catch (error) {
+    fail("kubectl_exec_request_failed", {
+      path: requestPath,
+      stderr: String(error?.stderr || stderr || error?.message || "").slice(0, 1000),
+      stdoutPreview: String(error?.stdout || stdout || "").slice(0, 500),
+    });
+  }
+
+  try {
+    return stdout ? JSON.parse(stdout) : null;
+  } catch {
+    fail("kubectl_exec_json_parse_failed", {
+      path: requestPath,
+      stdoutPreview: String(stdout || "").slice(0, 1000),
+      stderrPreview: String(stderr || "").slice(0, 1000),
+    });
+  }
+}
+
+async function requestJson(config, requestPath, options = {}) {
+  if (config.httpTransport === "kubectl_exec") {
+    return fetchJsonViaKubectlExec(config, requestPath, options);
+  }
+  return fetchJson(`${config.billingBaseUrl}${requestPath}`, options, config.timeoutMs);
+}
+
 function buildConfig() {
   const runCosLive = readEnv("RUN_COS_LIVE");
   if (runCosLive !== "1") {
@@ -182,13 +277,20 @@ function buildConfig() {
     process.exit(1);
   }
 
+  const httpTransport = readEnv("COS_LIVE_HTTP_TRANSPORT", "http");
+  assert(new Set(["http", "kubectl_exec"]).has(httpTransport), "COS_LIVE_HTTP_TRANSPORT_invalid", {
+    value: httpTransport,
+  });
+
   const billingBaseUrl = trimTrailingSlash(
     readEnv("COS_LIVE_BILLING_BASE_URL")
       || readEnv("BILLING_BASE_URL")
       || readEnv("BILLING_SERVICE_URL")
       || readEnv("BILLING_RECONCILE_URL").replace(/\/reconcile\/?$/, ""),
   );
-  assert(billingBaseUrl, "billing_base_url_required");
+  if (httpTransport === "http") {
+    assert(billingBaseUrl, "billing_base_url_required");
+  }
 
   const bucket = readEnv("COS_LIVE_BILL_BUCKET", readEnv("TENCENT_COS_BILL_BUCKET"));
   const region = readEnv("COS_LIVE_BILL_REGION", readEnv("TENCENT_COS_BILL_REGION"));
@@ -211,7 +313,15 @@ function buildConfig() {
   const timeoutMs = parsePositiveInt("COS_LIVE_TIMEOUT_MS", 30_000);
 
   return {
+    httpTransport,
     billingBaseUrl,
+    billingDeployment: readEnv("COS_LIVE_BILLING_DEPLOYMENT", "billing-aggregator-opl"),
+    billingNamespace: readEnv("COS_LIVE_BILLING_NAMESPACE", "default"),
+    billingPort: readEnv("COS_LIVE_BILLING_PORT", "3001"),
+    kubectlBin: readEnv("COS_LIVE_KUBECTL_BIN", "kubectl"),
+    kubeconfig: readEnv("COS_LIVE_KUBECONFIG", readEnv("KUBECONFIG")),
+    kubeServerOverride: readEnv("COS_LIVE_KUBE_SERVER_OVERRIDE"),
+    kubeInsecureSkipTlsVerify: readEnv("COS_LIVE_KUBE_INSECURE_SKIP_TLS_VERIFY", "0") === "1",
     bucket,
     region,
     prefix,
@@ -274,7 +384,15 @@ async function main() {
     finishedAt: "",
     script: "scripts/live-test-v19-cos-exact-bill-reconcile.mjs",
     branchHint: "codex/opl-v19",
-    billingBaseUrl: sanitizeUrl(config.billingBaseUrl),
+    httpTransport: config.httpTransport,
+    billingBaseUrl: sanitizeUrl(config.billingBaseUrl || `kubectl_exec://${config.billingNamespace}/${config.billingDeployment}:${config.billingPort}`),
+    kubectlTarget: config.httpTransport === "kubectl_exec" ? {
+      deployment: config.billingDeployment,
+      namespace: config.billingNamespace,
+      port: config.billingPort,
+      kubeServerOverride: config.kubeServerOverride,
+      kubeInsecureSkipTlsVerify: config.kubeInsecureSkipTlsVerify,
+    } : null,
     cosExpectation: {
       bucket: config.bucket,
       region: config.region,
@@ -297,12 +415,14 @@ async function main() {
   };
 
   try {
-    const cosStatus = await fetchJson(`${config.billingBaseUrl}/billing/cos/status`, {}, config.timeoutMs);
-    const cosFiles = await fetchJson(`${config.billingBaseUrl}/billing/cos/files`, {}, config.timeoutMs);
-    const cosReconcile = await fetchJson(`${config.billingBaseUrl}/billing/cos/reconcile`, {
+    const cosStatus = await requestJson(config, "/billing/cos/status");
+    const cosFiles = await requestJson(config, "/billing/cos/files");
+    const cosReconcile = await requestJson(config, "/billing/cos/reconcile", {
       method: "POST",
-      body: "{}",
-    }, config.timeoutMs);
+      body: JSON.stringify(config.objectKey
+        ? { objectKey: config.objectKey, COS_LIVE_BILL_OBJECT_KEY: config.objectKey }
+        : (config.prefix ? { prefix: config.prefix } : {})),
+    });
 
     evidence.preflight = {
       cosStatus: {
@@ -362,15 +482,16 @@ async function main() {
 
     const attributedItems = Array.isArray(cosReconcile?.items) ? cosReconcile.items : [];
     const unattributedItems = Array.isArray(cosReconcile?.unattributed) ? cosReconcile.unattributed : [];
+    const target = {
+      tenantId: config.tenantId,
+      workspaceId: config.workspaceId,
+      resourceOrderId: config.resourceOrderId,
+      runId: config.runId,
+      serverPlanId: config.serverPlanId,
+    };
     const matchedItem = attributedItems
       .map(normalizeCosItem)
-      .find((item) => (
-        item.tenantId === config.tenantId
-        && item.workspaceId === config.workspaceId
-        && item.resourceOrderId === config.resourceOrderId
-        && item.runId === config.runId
-        && item.serverPlanId === config.serverPlanId
-      )) || null;
+      .find((item) => matchesCosTargetItem(item, target)) || null;
 
     evidence.cosReconcile = {
       ok: Boolean(cosReconcile?.ok),
@@ -420,16 +541,21 @@ async function main() {
       customer_id: config.tenantId,
       workspace_id: config.workspaceId,
       window: config.windowValue,
+      ...(config.objectKey ? {
+        objectKey: config.objectKey,
+        COS_LIVE_BILL_OBJECT_KEY: config.objectKey,
+      } : {}),
+      ...(!config.objectKey && config.prefix ? { prefix: config.prefix } : {}),
     });
 
-    const first = await fetchJson(`${config.billingBaseUrl}/reconcile`, {
+    const first = await requestJson(config, "/reconcile", {
       method: "POST",
       body: reconcileBody,
-    }, config.timeoutMs);
-    const second = await fetchJson(`${config.billingBaseUrl}/reconcile`, {
+    });
+    const second = await requestJson(config, "/reconcile", {
       method: "POST",
       body: reconcileBody,
-    }, config.timeoutMs);
+    });
 
     const firstTarget = targetResult(first?.results, config.runId, config.workspaceId);
     const secondTarget = targetResult(second?.results, config.runId, config.workspaceId);

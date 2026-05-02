@@ -13,7 +13,14 @@ import {
   TENCENT_CLOUD_REGION,
 } from "./config.mjs";
 import { appendLabels, appendTags, firstString, labelValue } from "./labels.mjs";
-import { readOrders, writeOrders } from "./store.mjs";
+import {
+  buildProvisionResourceMapping,
+  findProvisionResourceMapping,
+  markProvisionResourceCleanup,
+  readOrders,
+  upsertProvisionResourceMapping,
+  writeOrders,
+} from "./store.mjs";
 import { callTag, callTke } from "./tencent-cloud.mjs";
 
 function parseObjectString(value, fieldName) {
@@ -56,6 +63,7 @@ function idempotencyKey(context) {
 }
 
 function readyOrder(context, details = {}) {
+  const now = new Date().toISOString();
   return {
     id: randomUUID(),
     idempotencyKey: idempotencyKey(context),
@@ -69,14 +77,42 @@ function readyOrder(context, details = {}) {
     region: context.region,
     mode: context.mode,
     details,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    resourceMappingId: "",
+    billingStartedAt: now,
+    billingStoppedAt: "",
+    cleanupStatus: "active",
+    cleanupEvidenceId: "",
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
 function defaultNodePoolName(context) {
   const order = labelValue(context.resourceOrderId || context.runId).slice(0, 16);
   return `opl-${labelValue(context.serverPlanId)}-${order}`;
+}
+
+function numberInRange(value, fallback, { min = 0, max = Number.MAX_SAFE_INTEGER } = {}) {
+  if (String(value ?? "").trim() === "") {
+    return Math.min(max, Math.max(min, fallback));
+  }
+  const parsed = Number(value);
+  const number = Number.isFinite(parsed) ? parsed : fallback;
+  return Math.min(max, Math.max(min, number));
+}
+
+function desiredCapacityFrom(plan = {}, fallback = 1) {
+  const rawDesired = [
+    plan.desiredNodes,
+    plan.desired_nodes,
+    plan.initialDesiredNodes,
+    plan.initial_desired_nodes,
+  ].find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+  return numberInRange(
+    rawDesired,
+    fallback,
+    { min: 0, max: TENCENT_TKE_MAX_NODES },
+  );
 }
 
 function defaultCreateNodePoolPayload(context) {
@@ -97,7 +133,7 @@ function defaultCreateNodePoolPayload(context) {
       SubnetIds: TENCENT_SUBNET_IDS,
       MinSize: TENCENT_TKE_MIN_NODES,
       MaxSize: Math.min(TENCENT_TKE_MAX_NODES, Math.max(1, Number(plan.maxNodes || TENCENT_TKE_MAX_NODES))),
-      DesiredCapacity: 0,
+      DesiredCapacity: desiredCapacityFrom(plan, 1),
     }),
     LaunchConfigurePara: JSON.stringify({
       InstanceType: instanceType,
@@ -160,6 +196,11 @@ function buildCreateNodePoolPayload(context) {
   payload.Name = firstString(payload.Name, plan.nodePoolName, defaultNodePoolName(context));
   payload.EnableAutoscale = payload.EnableAutoscale !== undefined ? Boolean(payload.EnableAutoscale) : true;
   normalizeAutoScalingGroupPara(payload);
+  const autoScaling = parseObjectString(payload.AutoScalingGroupPara, "auto_scaling_group_para") || {};
+  if (autoScaling.DesiredCapacity === undefined && autoScaling.DesiredNodesNum === undefined) {
+    autoScaling.DesiredCapacity = desiredCapacityFrom(plan, 1);
+    payload.AutoScalingGroupPara = JSON.stringify(autoScaling);
+  }
   normalizeLaunchConfigurePara(payload);
   normalizeInstanceAdvancedSettings(payload);
   payload.Tags = appendTags(payload, context);
@@ -179,18 +220,27 @@ export function previewCreateNodePoolPayload(input = {}) {
   return buildCreateNodePoolPayload(buildProvisionContext(input));
 }
 
-function buildScaleToZeroPayload(input = {}) {
+function buildScaleNodePoolPayload(input = {}, desiredFallback = 0) {
   const nodePoolId = firstString(input.nodePoolId, input.node_pool_id);
   if (!nodePoolId) {
     const error = new Error("node_pool_id_required");
     error.status = 422;
     throw error;
   }
+  const desiredCapacity = numberInRange(
+    firstString(input.desiredCapacity, input.desired_capacity, input.desiredNodes, input.desired_nodes),
+    desiredFallback,
+    { min: 0, max: TENCENT_TKE_MAX_NODES },
+  );
   return {
     ClusterId: firstString(input.clusterId, input.tkeClusterId, TENCENT_TKE_CLUSTER_ID),
     NodePoolId: nodePoolId,
-    DesiredCapacity: 0,
+    DesiredCapacity: desiredCapacity,
   };
+}
+
+export function previewScaleNodePoolPayload(input = {}) {
+  return buildScaleNodePoolPayload(input, 0);
 }
 
 async function ensureCloudTags(tags = []) {
@@ -224,11 +274,28 @@ export async function ensureCapacity(input) {
 
   const mode = context.mode.toLowerCase();
   let order;
+  let mapping;
   if (mode === "schedule_to_node_pool" || mode === "existing_node_pool") {
     order = readyOrder(context, {
       nodePool: context.plan.nodePool || "",
       nodeSelector: context.plan.nodeSelector || {},
       tolerations: context.plan.tolerations || [],
+    });
+    mapping = buildProvisionResourceMapping({
+      context,
+      nodePoolId: context.plan.nodePoolId || context.plan.nodePool || "",
+      requestId: "",
+      createdAt: order.createdAt,
+      billingStartedAt: order.billingStartedAt,
+      cloudResources: {
+        nodeNames: context.plan.nodeNames || [],
+        cvmInstanceIds: context.plan.cvmInstanceIds || [],
+        podNames: context.plan.podNames || [],
+        jobNames: context.plan.jobNames || [],
+        pvcNames: context.plan.pvcNames || [],
+        cosKeys: context.plan.cosKeys || [],
+        ledgerIds: context.plan.ledgerIds || [],
+      },
     });
   } else {
     if (!PROVISIONING_ENABLED) {
@@ -239,6 +306,7 @@ export async function ensureCapacity(input) {
     const payload = buildCreateNodePoolPayload(context);
     await ensureCloudTags(payload.Tags);
     const response = await callTke("CreateClusterNodePool", payload, context.region);
+    const now = new Date().toISOString();
     order = {
       id: randomUUID(),
       idempotencyKey: key,
@@ -255,6 +323,11 @@ export async function ensureCapacity(input) {
       requestId: response.RequestId || "",
       imageId: "",
       imageSource: "tke_create_node_pool_cluster_default",
+      resourceMappingId: "",
+      billingStartedAt: now,
+      billingStoppedAt: "",
+      cleanupStatus: "active",
+      cleanupEvidenceId: "",
       details: {
         nodeSelector: {
           ...(context.plan.nodeSelector || {}),
@@ -262,23 +335,42 @@ export async function ensureCapacity(input) {
         },
         tolerations: context.plan.tolerations || [],
       },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
+    mapping = buildProvisionResourceMapping({
+      context: {
+        ...context,
+        clusterId: payload.ClusterId,
+      },
+      nodePoolId: order.nodePoolId,
+      requestId: order.requestId,
+      createdAt: now,
+      billingStartedAt: now,
+      cloudResources: {
+        ledgerIds: context.plan.ledgerIds || [],
+      },
+    });
   }
 
+  const persistedMapping = upsertProvisionResourceMapping(state, mapping);
+  order.resourceMappingId = persistedMapping.id;
   state.orders.unshift(order);
   await writeOrders(state);
   return { order, reused: false };
 }
 
 export async function scaleToZero(input = {}) {
+  return scaleNodePool({ ...input, desiredCapacity: 0 });
+}
+
+export async function scaleNodePool(input = {}) {
   if (!PROVISIONING_ENABLED) {
     const error = new Error("resource_provisioning_disabled");
     error.status = 503;
     throw error;
   }
-  const payload = buildScaleToZeroPayload(input);
+  const payload = buildScaleNodePoolPayload(input, 0);
   const response = await callTke("ModifyNodePoolDesiredCapacityAboutAsg", payload, TENCENT_CLOUD_REGION);
   const state = await readOrders();
   const order = state.orders.find((item) =>
@@ -286,9 +378,11 @@ export async function scaleToZero(input = {}) {
     (payload.NodePoolId && item.nodePoolId === payload.NodePoolId)
   );
   if (order) {
-    order.status = "scaled_to_zero";
+    order.status = payload.DesiredCapacity === 0 ? "scaled_to_zero" : `scaled_to_${payload.DesiredCapacity}`;
     order.updatedAt = new Date().toISOString();
-    order.scaleToZeroRequestId = response.RequestId || "";
+    order.scaleRequestId = response.RequestId || "";
+    if (payload.DesiredCapacity === 0) order.scaleToZeroRequestId = response.RequestId || "";
+    order.desiredCapacity = payload.DesiredCapacity;
     await writeOrders(state);
   }
   return {
@@ -296,6 +390,7 @@ export async function scaleToZero(input = {}) {
     action: "ModifyNodePoolDesiredCapacityAboutAsg",
     requestId: response.RequestId || "",
     nodePoolId: payload.NodePoolId,
+    desiredCapacity: payload.DesiredCapacity,
   };
 }
 
@@ -328,10 +423,33 @@ export async function deleteNodePool(input = {}) {
     (input.resourceOrderId && item.resourceOrderId === input.resourceOrderId) ||
     (nodePoolId && item.nodePoolId === nodePoolId)
   );
+  const billingStoppedAt = new Date().toISOString();
+  let mapping = findProvisionResourceMapping(state, {
+    resourceOrderId: firstString(input.resourceOrderId, input.resource_order_id),
+    nodePoolId,
+    runId: firstString(input.runId, input.run_id),
+  });
+  if (mapping) {
+    const index = state.resourceMappings.findIndex((item) => item.id === mapping.id);
+    mapping = markProvisionResourceCleanup(mapping, {
+      status: "delete_requested",
+      requestId: response.RequestId || "",
+      cleanupEvidenceId: firstString(input.cleanupEvidenceId, input.cleanup_evidence_id),
+      billingStoppedAt,
+      remaining: input.cleanupRemaining || input.cleanup_remaining || {},
+    });
+    if (index >= 0) state.resourceMappings[index] = mapping;
+  }
   if (order) {
     order.status = "deleted";
-    order.updatedAt = new Date().toISOString();
+    order.updatedAt = billingStoppedAt;
     order.deleteRequestId = response.RequestId || "";
+    order.billingStoppedAt = billingStoppedAt;
+    order.cleanupStatus = "delete_requested";
+    order.cleanupEvidenceId = firstString(input.cleanupEvidenceId, input.cleanup_evidence_id);
+    if (mapping) order.resourceMappingId = mapping.id;
+    await writeOrders(state);
+  } else if (mapping) {
     await writeOrders(state);
   }
   return {
@@ -339,6 +457,9 @@ export async function deleteNodePool(input = {}) {
     action: "DeleteClusterNodePool",
     requestId: response.RequestId || "",
     nodePoolId,
+    resourceMappingId: mapping?.id || "",
+    billingStoppedAt,
+    cleanupStatus: mapping?.cleanupStatus || "delete_requested",
     destroyCvmInstances,
     warning: destroyCvmInstances
       ? "CVM instances are released with the node pool."

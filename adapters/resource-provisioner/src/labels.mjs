@@ -26,6 +26,7 @@ export function cloudTagValue(value) {
 export function appendTags(payload, context) {
   const existing = arrayFrom(payload.Tags);
   const tags = [
+    { Key: "nodepoolrole", Value: "runtime" },
     { Key: "tenantid", Value: cloudTagValue(context.tenantId) },
     { Key: "workspaceid", Value: cloudTagValue(context.workspaceId) },
     { Key: "runid", Value: cloudTagValue(context.runId) },
@@ -38,6 +39,7 @@ export function appendTags(payload, context) {
 export function appendLabels(payload, context) {
   const existing = arrayFrom(payload.Labels);
   const labels = [
+    { Name: "gaofenglab/node-pool-role", Value: "runtime" },
     { Name: "gaofenglab/tenant-id", Value: labelValue(context.tenantId) },
     { Name: "gaofenglab/workspace-id", Value: labelValue(context.workspaceId) },
     { Name: "gaofenglab/run-id", Value: labelValue(context.runId) },

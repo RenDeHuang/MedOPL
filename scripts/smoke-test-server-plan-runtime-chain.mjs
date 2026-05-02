@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,6 @@ import net from "node:net";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
-const fakeKubectl = path.join(repoRoot, "scripts", "fixtures", "fake-kubectl-success.cmd");
 const portalDbFile = path.join(repoRoot, ".runtime", "portal", "portal-db.json");
 
 function assert(condition, message) {
@@ -17,6 +16,15 @@ function assert(condition, message) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function k8sLabelSafe(value = "") {
+  const safe = String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 63);
+  return safe || "default";
 }
 
 async function freePort() {
@@ -143,6 +151,61 @@ async function listen(server) {
   return `http://127.0.0.1:${port}`;
 }
 
+async function createFakeKubectl(runtimeRoot) {
+  const filePath = path.join(runtimeRoot, process.platform === "win32" ? "fake-kubectl-success.cmd" : "fake-kubectl-success.sh");
+  if (process.platform === "win32") {
+    await writeFile(filePath, `@echo off
+setlocal
+
+if "%1"=="get" (
+  if "%2"=="namespace" (
+    echo {"kind":"Namespace","metadata":{"name":"%3"}}
+    exit /b 0
+  )
+)
+
+if "%1"=="create" (
+  if "%2"=="namespace" (
+    echo namespace/%3 created
+    exit /b 0
+  )
+)
+
+if "%1"=="apply" (
+  echo job.batch/fake-job configured
+  exit /b 0
+)
+
+echo ok
+exit /b 0
+`, "utf8");
+  } else {
+    await writeFile(filePath, `#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "\${1:-}" = "get" ] && [ "\${2:-}" = "namespace" ]; then
+  printf '{"kind":"Namespace","metadata":{"name":"%s"}}\\n' "\${3:-}"
+  exit 0
+fi
+
+if [ "\${1:-}" = "create" ] && [ "\${2:-}" = "namespace" ]; then
+  printf 'namespace/%s created\\n' "\${3:-}"
+  exit 0
+fi
+
+if [ "\${1:-}" = "apply" ]; then
+  echo job.batch/fake-job configured
+  exit 0
+fi
+
+echo ok
+exit 0
+`, "utf8");
+    await chmod(filePath, 0o755);
+  }
+  return filePath;
+}
+
 async function loginPortal(baseUrl) {
   const body = new URLSearchParams({
     email: process.env.PORTAL_ADMIN_EMAIL || "zitadel-admin@zitadel.localhost",
@@ -220,6 +283,7 @@ async function main() {
   };
 
   const runtimeRoot = await mkdtemp(path.join(tmpdir(), "opl-v10-chain-"));
+  const fakeKubectl = await createFakeKubectl(runtimeRoot);
   const billingServer = startBillingFixture(plan);
   const billingUrl = await listen(billingServer);
   const portalInternalServer = startPortalInternalFixture();
@@ -298,15 +362,19 @@ async function main() {
     });
     const run = runResponse.run;
     assert(run.serverPlanId === plan.id, `run_server_plan_mismatch:${run.serverPlanId}`);
+    assert(run.instanceType === plan.instanceType, `run_instance_type_mismatch:${run.instanceType}`);
     assert(run.resourceOrderId === `order-${run.runId}`, `run_resource_order_mismatch:${run.resourceOrderId}`);
     assert(run.runtimeClass === plan.runtimeClass, `run_runtime_class_mismatch:${run.runtimeClass}`);
     assert(run.nodePool === plan.nodePool, `run_node_pool_mismatch:${run.nodePool}`);
 
     const manifest = await readFile(run.manifestPath, "utf8");
     assert(manifest.includes(`server_plan_id: "${plan.id}"`), "manifest_missing_server_plan_label");
+    assert(manifest.includes(`instance_type: "${k8sLabelSafe(plan.instanceType)}"`), "manifest_missing_instance_type_label");
     assert(manifest.includes(`resource_order_id: "${run.resourceOrderId}"`), "manifest_missing_resource_order_label");
     assert(manifest.includes(`- name: RESOURCE_ORDER_ID`), "manifest_missing_resource_order_env_name");
     assert(manifest.includes(`value: "${run.resourceOrderId}"`), "manifest_missing_resource_order_env_value");
+    assert(manifest.includes(`- name: INSTANCE_TYPE`), "manifest_missing_instance_type_env_name");
+    assert(manifest.includes(`value: "${plan.instanceType}"`), "manifest_missing_instance_type_env_value");
     assert(manifest.includes(`runtimeClassName: "${plan.runtimeClass}"`), "manifest_missing_runtime_class");
     assert(manifest.includes(`cpu: "${plan.cpuRequest}"`), "manifest_missing_cpu_request");
     assert(manifest.includes(`memory: "${plan.memoryRequest}"`), "manifest_missing_memory_request");

@@ -2,8 +2,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-export const runtimeRoot = path.join(repoRoot, ".runtime", "resource-provisioner");
-export const ordersFile = path.join(runtimeRoot, "orders.json");
+export const runtimeRoot = String(process.env.RESOURCE_PROVISIONER_RUNTIME_ROOT || path.join(repoRoot, ".runtime", "resource-provisioner")).trim();
+export const ordersFile = String(process.env.RESOURCE_PROVISIONER_ORDERS_FILE || path.join(runtimeRoot, "orders.json")).trim();
 
 export const PORT = Number(process.env.RESOURCE_PROVISIONER_PORT || process.env.PORT || 18893);
 export const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";

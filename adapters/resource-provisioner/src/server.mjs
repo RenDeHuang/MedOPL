@@ -17,8 +17,13 @@ import {
 } from "./config.mjs";
 import { cloudResources } from "./inventory.mjs";
 import { readBody, sendJson } from "./http-utils.mjs";
-import { deleteNodePool, ensureCapacity, scaleToZero } from "./provisioner.mjs";
-import { readOrders } from "./store.mjs";
+import { deleteNodePool, ensureCapacity, scaleNodePool, scaleToZero } from "./provisioner.mjs";
+import {
+  observeProvisionResourceMappingResources,
+  readOrders,
+  updateProvisionResourceMappingCleanup,
+  writeOrders,
+} from "./store.mjs";
 
 async function handleRequest(req, res) {
   const url = new URL(req.url || "/", `http://127.0.0.1:${PORT}`);
@@ -69,9 +74,28 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/resource-orders/provision-async") {
+    try {
+      const result = await ensureCapacity(await readBody(req));
+      sendJson(res, 202, { ok: true, accepted: true, ...result });
+    } catch (error) {
+      sendJson(res, error.status || 500, { ok: false, accepted: false, error: String(error.message || error), code: error.code || "" });
+    }
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/resource-orders/scale-to-zero") {
     try {
       sendJson(res, 200, await scaleToZero(await readBody(req)));
+    } catch (error) {
+      sendJson(res, error.status || 500, { ok: false, error: String(error.message || error), code: error.code || "" });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/resource-orders/scale-node-pool") {
+    try {
+      sendJson(res, 200, await scaleNodePool(await readBody(req)));
     } catch (error) {
       sendJson(res, error.status || 500, { ok: false, error: String(error.message || error), code: error.code || "" });
     }
@@ -90,6 +114,52 @@ async function handleRequest(req, res) {
   if (req.method === "GET" && url.pathname === "/resource-orders") {
     const state = await readOrders();
     sendJson(res, 200, { ok: true, items: state.orders.slice(0, 100) });
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/resource-mappings") {
+    const state = await readOrders();
+    const filters = {
+      tenantId: String(url.searchParams.get("tenantId") || "").trim(),
+      workspaceId: String(url.searchParams.get("workspaceId") || "").trim(),
+      resourceOrderId: String(url.searchParams.get("resourceOrderId") || "").trim(),
+      runId: String(url.searchParams.get("runId") || "").trim(),
+      nodePoolId: String(url.searchParams.get("nodePoolId") || "").trim(),
+      cleanupStatus: String(url.searchParams.get("cleanupStatus") || "").trim(),
+    };
+    const items = (state.resourceMappings || [])
+      .filter((item) => !filters.tenantId || item.tenantId === filters.tenantId)
+      .filter((item) => !filters.workspaceId || item.workspaceId === filters.workspaceId)
+      .filter((item) => !filters.resourceOrderId || item.resourceOrderId === filters.resourceOrderId)
+      .filter((item) => !filters.runId || item.runId === filters.runId)
+      .filter((item) => !filters.nodePoolId || item.nodePoolId === filters.nodePoolId)
+      .filter((item) => !filters.cleanupStatus || item.cleanupStatus === filters.cleanupStatus)
+      .slice(0, 100);
+    sendJson(res, 200, { ok: true, items, filters });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/resource-mappings/mark-cleanup") {
+    const state = await readOrders();
+    const mapping = updateProvisionResourceMappingCleanup(state, await readBody(req));
+    if (!mapping) {
+      sendJson(res, 404, { ok: false, error: "resource_mapping_not_found" });
+      return;
+    }
+    await writeOrders(state);
+    sendJson(res, 200, { ok: true, mapping });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/resource-mappings/observe-resources") {
+    const state = await readOrders();
+    const mapping = observeProvisionResourceMappingResources(state, await readBody(req));
+    if (!mapping) {
+      sendJson(res, 404, { ok: false, error: "resource_mapping_not_found" });
+      return;
+    }
+    await writeOrders(state);
+    sendJson(res, 200, { ok: true, mapping });
     return;
   }
 

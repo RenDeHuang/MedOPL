@@ -38,6 +38,14 @@ function prepareTraceEnabled() {
   return String(process.env.PORTAL_RECOVERY_PREPARE_TRACE || "").trim() === "1";
 }
 
+function startOplRunEnabled() {
+  return String(process.env.PORTAL_RECOVERY_START_OPL_RUN || "").trim() === "1";
+}
+
+function oplNativeLoginEnabled() {
+  return String(process.env.PORTAL_RECOVERY_OPL_NATIVE_LOGIN || "").trim() === "1";
+}
+
 function traceStep(label, details = {}) {
   if (!prepareTraceEnabled()) return;
   const safeDetails = Object.fromEntries(
@@ -281,6 +289,7 @@ function makeFixtureIdentity() {
     email,
     name: `test ${slug}`,
     password: randomPassword(),
+    runId: `test-run-${slug}`.slice(0, 63).replace(/-+$/g, ""),
     fileRelativePath: `fixtures/${slug}/input.txt`,
     fileContents: [
       "portal recovery fixture",
@@ -418,7 +427,7 @@ async function uploadWorkspaceFile(config, userCookie, workspaceId, fixture) {
   return json;
 }
 
-function chooseSalableServerPlan(payload, preferredPlanId = "") {
+export function chooseSalableServerPlan(payload, preferredPlanId = "") {
   const items = Array.isArray(payload?.items) ? payload.items : [];
   if (preferredPlanId) {
     const matched = items.find((item) => String(item.id || "") === preferredPlanId);
@@ -428,7 +437,13 @@ function chooseSalableServerPlan(payload, preferredPlanId = "") {
   }
   const salable = items.filter((item) => item?.salable === true);
   assert(salable.length > 0, "salable_server_plan_missing");
-  return salable[0];
+  const executableTkePlan = salable.find((item) =>
+    String(item.provisioningMode || "") === "tke_node_pool_create" &&
+    Number(item.hourlyPrice || item.discountPrice || item.unitPrice || 0) > 0 &&
+    String(item.cpuRequest || "").trim() &&
+    String(item.memoryRequest || "").trim()
+  );
+  return executableTkePlan || salable[0];
 }
 
 async function selectServerPlan(config, userCookie, workspaceId, planId) {
@@ -442,7 +457,7 @@ async function selectServerPlan(config, userCookie, workspaceId, planId) {
   });
 }
 
-async function createFrozenOrder(config, userCookie, workspaceId, plan) {
+async function createFrozenOrder(config, userCookie, workspaceId, plan, runId) {
   const quote = await apiJson(config, "/portal/api/resource-orders/quote", userCookie, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -450,6 +465,7 @@ async function createFrozenOrder(config, userCookie, workspaceId, plan) {
       workspaceId,
       task: workspaceId,
       serverPlanId: plan.id,
+      runId,
       storagePlanId: "workspace-default",
       storageSizeGb: config.storageSizeGb,
       estimatedHours: 1,
@@ -478,6 +494,110 @@ async function createLaunchTrace(config, userCookie, workspaceId) {
   assert(payload?.launchToken, `opl_launch_token_missing:${stableJson(payload)}`);
   assert(String(payload?.workspace?.slug || payload?.workspaceId || workspaceId) === workspaceId, `opl_launch_workspace_mismatch:${stableJson(payload)}`);
   return payload;
+}
+
+async function createOplNativeLaunch(config, fixture, workspaceId) {
+  assert(config.providerApiKey, "GFLABTOKEN_required_for_opl_native_login");
+  const payload = await postJsonAbsolute(`${config.oplBaseUrl}/api/auth/login`, {
+    email: fixture.email,
+    password: fixture.password,
+    apiKey: config.providerApiKey,
+    task: workspaceId,
+  }, config.pollTimeoutMs, { accept: "application/json" });
+  assert(payload?.success === true || payload?.ok === true, `opl_native_login_failed:${stableJson(payload)}`);
+  assert(payload?.launchToken, `opl_native_launch_token_missing:${stableJson(payload)}`);
+  assert(payload?.launch?.bootstrapUrl, `opl_native_bootstrap_url_missing:${stableJson(payload)}`);
+  return {
+    launchPayload: payload,
+    evidence: {
+      baseUrl: config.oplBaseUrl,
+      loginMode: "native",
+      providerKeySource: "gflabtoken",
+      providerConfigured: true,
+      providerName: "gflab",
+      providerBaseUrl: "https://gflabtoken.cn/",
+      workspaceId: String(payload?.workspace?.slug || payload?.workspace?.workspaceId || workspaceId || ""),
+      workspaceSessionId: String(payload?.workspaceSession?.id || payload?.workspaceSession?.workspaceSessionId || ""),
+      runtimeSessionId: String(payload?.runtimeSession?.runtimeSessionId || payload?.launch?.runtimeSessionId || ""),
+      source: "opl-web-gateway-native-login",
+    },
+  };
+}
+
+async function postJsonAbsolute(url, body, timeoutMs = 60_000, headers = {}) {
+  const { response, bodyText, json } = await requestJson(url, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body: JSON.stringify(body || {}),
+    timeoutMs,
+  });
+  assert(response.status >= 200 && response.status < 300, `absolute_post_failed:${url}:${summarizeStatus(response.status, bodyText)}`);
+  return json;
+}
+
+async function getJsonAbsolute(url, timeoutMs = 60_000) {
+  const { response, bodyText, json } = await requestJson(url, { timeoutMs });
+  assert(response.status >= 200 && response.status < 300, `absolute_get_failed:${url}:${summarizeStatus(response.status, bodyText)}`);
+  return json;
+}
+
+function terminalRunStatus(status = "") {
+  return ["succeeded", "failed", "cancelled", "timeout"].includes(String(status || "").toLowerCase());
+}
+
+async function startOplRun(config, launchPayload, fixture) {
+  const bootstrapUrl = String(launchPayload?.launch?.bootstrapUrl || launchPayload?.bootstrapUrl || "").trim();
+  assert(bootstrapUrl, `opl_bootstrap_url_missing:${stableJson(launchPayload)}`);
+  const bootstrap = await getJsonAbsolute(bootstrapUrl, config.pollTimeoutMs);
+  assert(bootstrap?.callbacks?.sessionBind, `opl_session_bind_callback_missing:${stableJson(bootstrap)}`);
+  assert(bootstrap?.callbacks?.startRun, `opl_start_run_callback_missing:${stableJson(bootstrap)}`);
+  assert(bootstrap?.callbacks?.runStatus, `opl_run_status_callback_missing:${stableJson(bootstrap)}`);
+  assert(bootstrap?.callbacks?.artifacts, `opl_artifacts_callback_missing:${stableJson(bootstrap)}`);
+
+  const oplSessionId = `opl-${fixture.runId}`.slice(0, 63).replace(/-+$/g, "");
+  const bound = await postJsonAbsolute(bootstrap.callbacks.sessionBind, {
+    launchToken: launchPayload.launchToken,
+    oplSessionId,
+    status: "active",
+  }, config.pollTimeoutMs);
+  assert(bound?.runtimeSession?.oplSessionId === oplSessionId, `opl_session_bind_mismatch:${stableJson(bound)}`);
+
+  const run = await postJsonAbsolute(bootstrap.callbacks.startRun, {
+    launchToken: launchPayload.launchToken,
+    runId: fixture.runId,
+    agentId: "mas",
+    toolName: "v19-live-e2e",
+    source: "v19-live-e2e",
+    input: { message: "Generate a v19 live E2E artifact." },
+    model: "gpt-5.4",
+    tokenCount: 42,
+  }, config.pollTimeoutMs, { "user-agent": "v19-live-e2e" });
+  assert(run?.run?.runId === fixture.runId, `opl_run_id_mismatch:${stableJson(run)}`);
+
+  const statusUrl = String(bootstrap.callbacks.runStatus).replace("{runId}", encodeURIComponent(fixture.runId));
+  const status = await poll(config, async () => {
+    const payload = await getJsonAbsolute(statusUrl, config.pollTimeoutMs);
+    assert(payload?.run?.runId === fixture.runId, `opl_status_run_id_mismatch:${stableJson(payload)}`);
+    assert(terminalRunStatus(payload.run.status), `opl_run_not_terminal:${payload.run.status || ""}`);
+    return payload;
+  }, "opl_run_status");
+
+  assert(status.run.status === "succeeded", `opl_run_not_succeeded:${stableJson(status)}`);
+  const artifactsUrl = String(bootstrap.callbacks.artifacts).replace("{runId}", encodeURIComponent(fixture.runId));
+  const artifacts = await getJsonAbsolute(artifactsUrl, config.pollTimeoutMs);
+  const items = Array.isArray(artifacts?.items) ? artifacts.items : [];
+  assert(items.length > 0, `opl_artifact_missing:${stableJson(artifacts)}`);
+  return {
+    runId: fixture.runId,
+    status: status.run.status,
+    artifactCount: items.length,
+    artifacts: items.map((item) => ({
+      name: String(item.name || ""),
+      objectKey: String(item.objectKey || item.object_key || ""),
+      sizeBytes: Number(item.sizeBytes || item.size_bytes || 0),
+      contentType: String(item.contentType || item.content_type || ""),
+    })),
+  };
 }
 
 async function traceAdapterTraceAvailability(launchPayload = {}, workspaceId = "", userId = "") {
@@ -540,8 +660,12 @@ async function collectFixtureState(config, userCookie, workspaceId) {
   return { me, billing, workspaceStorage, orders, sessions, traces };
 }
 
-function resolvePreparedIdentifiers(state, workspaceId, relativePath, workspaceSessionId = "") {
-  const order = (state.orders?.items || []).find((item) => String(item.workspaceId || "") === workspaceId);
+function resolvePreparedIdentifiers(state, workspaceId, relativePath, workspaceSessionId = "", runId = "") {
+  const orders = (state.orders?.items || []).filter((item) => String(item.workspaceId || "") === workspaceId);
+  const order = orders.find((item) =>
+    String(item.runId || "") === runId &&
+    ["running", "provisioning"].includes(String(item.status || "").toLowerCase())
+  ) || orders.find((item) => String(item.runId || "") === runId) || orders[0];
   assert(order, `prepared_resource_order_missing:${workspaceId}`);
   const file = (state.workspaceStorage?.metadata || []).find((item) => String(item.relativePath || "") === relativePath);
   assert(file, `prepared_workspace_file_missing:${relativePath}`);
@@ -561,13 +685,16 @@ function resolvePreparedIdentifiers(state, workspaceId, relativePath, workspaceS
   assert(session, `prepared_workspace_session_missing:${workspaceId}`);
   return {
     resourceOrderId: String(order.id || order.resourceOrderId || ""),
+    runId: String(order.runId || ""),
+    serverPlanId: String(order.serverPlanId || ""),
+    tenantId: String(order.tenantId || state.me?.id || ""),
     fileRelativePath: String(file.relativePath || ""),
     traceSessionId: String(trace.sessionId || trace.workspaceSessionId || trace.runId || ""),
     workspaceSessionId: String(session.workspaceSessionId || session.sessionId || ""),
   };
 }
 
-async function writeFixtureFile(config, fixture, prepared, state) {
+async function writeFixtureFile(config, fixture, prepared, state, oplRun = null, oplEvidence = null) {
   const runtimeDir = path.join(process.cwd(), ".runtime", "portal", "live-recovery-fixtures");
   await mkdir(runtimeDir, { recursive: true });
   const filePath = path.join(runtimeDir, `${fixture.slug}.json`);
@@ -583,9 +710,26 @@ async function writeFixtureFile(config, fixture, prepared, state) {
       PORTAL_RECOVERY_USER_EMAIL: fixture.email,
       PORTAL_RECOVERY_WORKSPACE_ID: prepared.workspaceId,
       PORTAL_RECOVERY_RESOURCE_ORDER_ID: prepared.resourceOrderId,
+      PORTAL_RECOVERY_RUN_ID: prepared.runId,
+      PORTAL_RECOVERY_SERVER_PLAN_ID: prepared.serverPlanId,
       PORTAL_RECOVERY_FILE_RELATIVE_PATH: prepared.fileRelativePath,
       PORTAL_RECOVERY_TRACE_SESSION_ID: prepared.traceSessionId,
       PORTAL_RECOVERY_WORKSPACE_SESSION_ID: prepared.workspaceSessionId,
+    },
+    attributionTarget: {
+      tenant_id: prepared.tenantId,
+      workspace_id: prepared.workspaceId,
+      resource_order_id: prepared.resourceOrderId,
+      run_id: prepared.runId,
+      server_plan_id: prepared.serverPlanId,
+    },
+    opl: oplEvidence || {
+      baseUrl: config.oplBaseUrl,
+      loginMode: "portal_launch",
+      providerKeySource: "none",
+      providerConfigured: false,
+      providerName: "",
+      source: "portal-api-launch",
     },
     secretFiles: {
       PORTAL_RECOVERY_USER_PASSWORD: secretPath,
@@ -593,13 +737,17 @@ async function writeFixtureFile(config, fixture, prepared, state) {
     prepared: {
       userId: String(state.me?.id || ""),
       userEmail: fixture.email,
+      tenantId: prepared.tenantId,
       workspaceId: prepared.workspaceId,
       resourceOrderId: prepared.resourceOrderId,
+      runId: prepared.runId,
+      serverPlanId: prepared.serverPlanId,
       fileRelativePath: prepared.fileRelativePath,
       traceSessionId: prepared.traceSessionId,
       workspaceSessionId: prepared.workspaceSessionId,
       walletBalance: Number(state.billing?.wallet?.balance || 0),
       traceCount: Array.isArray(state.traces?.items) ? state.traces.items.length : 0,
+      oplRun,
     },
   };
   await writeFile(filePath, `${stableJson(payload)}\n`, "utf8");
@@ -608,8 +756,15 @@ async function writeFixtureFile(config, fixture, prepared, state) {
 
 function buildConfig() {
   assert(String(process.env.RUN_PORTAL_RECOVERY_LIVE || "").trim() === "1", "RUN_PORTAL_RECOVERY_LIVE_must_equal_1");
+  const oplNativeLogin = oplNativeLoginEnabled();
+  const providerApiKey = optionalEnv(
+    "PORTAL_RECOVERY_GFLABTOKEN",
+    optionalEnv("GFLABTOKEN", optionalEnv("gflabtoken", optionalEnv("GFLAB_TOKEN"))),
+  );
+  if (oplNativeLogin) assert(providerApiKey, "GFLABTOKEN_required_for_opl_native_login");
   return {
     baseUrl: trimTrailingSlash(optionalEnv("PORTAL_BASE_URL", "https://portal.medopl.cn")),
+    oplBaseUrl: trimTrailingSlash(optionalEnv("OPL_BASE_URL", "https://opl.medopl.cn")),
     adminLoginMode: optionalEnv("PORTAL_ADMIN_LOGIN_MODE", optionalEnv("PORTAL_TEST_LOGIN", "oidc")).toLowerCase(),
     userLoginMode: optionalEnv("PORTAL_TEST_LOGIN", "oidc").toLowerCase(),
     adminEmail: requiredEnv("PORTAL_ADMIN_EMAIL"),
@@ -620,6 +775,9 @@ function buildConfig() {
     preferredServerPlanId: optionalEnv("PORTAL_RECOVERY_SERVER_PLAN_ID"),
     pollMs: positiveInt(process.env.PORTAL_RECOVERY_POLL_MS, 3_000),
     pollTimeoutMs: positiveInt(process.env.PORTAL_RECOVERY_PREPARE_TIMEOUT_MS, 180_000),
+    startOplRun: startOplRunEnabled(),
+    oplNativeLogin,
+    providerApiKey,
   };
 }
 
@@ -627,6 +785,7 @@ async function main() {
   const config = buildConfig();
   const fixture = makeFixtureIdentity();
   fixture.email = assertTestScopedEmail(fixture.email);
+  fixture.runId = assertTestScopedWorkspaceId(fixture.runId);
   traceStep("fixture_identity_created", { email: fixture.email, workspaceId: fixture.slug });
   const adminCookie = await ensureAdminSession(config);
   traceStep("admin_session_ready", { loginMode: config.adminLoginMode });
@@ -666,11 +825,23 @@ async function main() {
   traceStep("server_plan_selected", { workspaceId, serverPlanId: selectedPlan.id });
   await selectServerPlan(config, userCookie, workspaceId, selectedPlan.id);
   traceStep("server_plan_saved", { workspaceId, serverPlanId: selectedPlan.id });
-  const frozenOrder = await createFrozenOrder(config, userCookie, workspaceId, selectedPlan);
-  traceStep("resource_order_frozen", { workspaceId, resourceOrderId: frozenOrder?.order?.id || frozenOrder?.resourceOrderId || "" });
-  const launch = await createLaunchTrace(config, userCookie, workspaceId);
-  traceStep("opl_launch_created", { workspaceId });
+  const frozenOrder = await createFrozenOrder(config, userCookie, workspaceId, selectedPlan, fixture.runId);
+  traceStep("resource_order_frozen", { workspaceId, runId: fixture.runId, resourceOrderId: frozenOrder?.order?.id || frozenOrder?.resourceOrderId || "" });
+  const portalLaunch = config.oplNativeLogin ? null : await createLaunchTrace(config, userCookie, workspaceId);
+  let launch = portalLaunch;
+  let oplEvidence = null;
+  if (config.oplNativeLogin) {
+    const nativeLaunch = await createOplNativeLaunch(config, fixture, workspaceId);
+    launch = nativeLaunch.launchPayload;
+    oplEvidence = nativeLaunch.evidence;
+    traceStep("opl_native_login_created", { workspaceId, providerKeySource: "gflabtoken" });
+  } else {
+    oplEvidence = null;
+    traceStep("opl_launch_created", { workspaceId });
+  }
   await traceAdapterTraceAvailability(launch, workspaceId, String(me?.id || ""));
+  const oplRun = config.startOplRun ? await startOplRun(config, launch, fixture) : null;
+  if (oplRun) traceStep("opl_run_completed", { workspaceId, runId: oplRun.runId, artifactCount: oplRun.artifactCount });
 
   const workspaceSessionId = String(
     launch?.workspaceSession?.id ||
@@ -680,11 +851,11 @@ async function main() {
   const state = await poll(config, async () => {
     traceStep("fixture_state_poll", { workspaceId, workspaceSessionId });
     const snapshot = await collectFixtureState(config, userCookie, workspaceId);
-    const prepared = resolvePreparedIdentifiers(snapshot, workspaceId, fixture.fileRelativePath, workspaceSessionId);
+    const prepared = resolvePreparedIdentifiers(snapshot, workspaceId, fixture.fileRelativePath, workspaceSessionId, fixture.runId);
     return { snapshot, prepared };
   }, "portal_fixture_prepare");
 
-  const stored = await writeFixtureFile(config, fixture, { ...state.prepared, workspaceId }, state.snapshot);
+  const stored = await writeFixtureFile(config, fixture, { ...state.prepared, workspaceId }, state.snapshot, oplRun, oplEvidence);
   traceStep("fixture_file_written", { fixtureFile: stored.filePath, workspaceId });
   const preview = { ...stored.payload.env, PORTAL_RECOVERY_USER_PASSWORD: "***redacted***" };
 
@@ -699,28 +870,32 @@ async function main() {
     workspaceId,
     resourceOrderStatus: String(frozenOrder?.order?.status || ""),
     serverPlanId: selectedPlan.id,
+    runId: fixture.runId,
+    opl: stored.payload.opl,
     previewEnv: preview,
     nextCommand: `RUN_PORTAL_RECOVERY_LIVE=1 PORTAL_RECOVERY_FIXTURE_FILE=${JSON.stringify(stored.filePath)} node scripts/live-test-v19-postgres-redis-restart-recovery.mjs`,
   }, null, 2));
 }
 
-main().catch((error) => {
-  const message = String(error.message || error);
-  const blocker = message.startsWith("oidc_identity_admin_blocked:")
-    ? {
-        ok: false,
-        blocker: "oidc_identity_admin_blocked",
-        detail: message.slice("oidc_identity_admin_blocked:".length),
-        required: [
-          "PORTAL_ADMIN_EMAIL",
-          "PORTAL_ADMIN_PASSWORD",
-          "deployed /portal/admin/create-user with working OIDC identity sync",
-        ],
-      }
-    : {
-        ok: false,
-        error: message,
-      };
-  console.error(JSON.stringify(blocker, null, 2));
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    const message = String(error.message || error);
+    const blocker = message.startsWith("oidc_identity_admin_blocked:")
+      ? {
+          ok: false,
+          blocker: "oidc_identity_admin_blocked",
+          detail: message.slice("oidc_identity_admin_blocked:".length),
+          required: [
+            "PORTAL_ADMIN_EMAIL",
+            "PORTAL_ADMIN_PASSWORD",
+            "deployed /portal/admin/create-user with working OIDC identity sync",
+          ],
+        }
+      : {
+          ok: false,
+          error: message,
+        };
+    console.error(JSON.stringify(blocker, null, 2));
+    process.exitCode = 1;
+  });
+}
