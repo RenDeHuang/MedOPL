@@ -34,6 +34,19 @@ try {
   for (const id of ["cpu-2c4g", "cpu-4c8g", "cpu-8c16g", "cpu-16c32g"]) {
     assert.equal(ids.has(id), true, `${id} must be in v12 salable catalog`);
   }
+  const cpu2c4g = (plans.items || []).find((item) => item.id === "cpu-2c4g");
+  assert.equal(cpu2c4g.memoryGb, 4, "cpu-2c4g should keep hardware memory in product shape");
+  assert.equal(cpu2c4g.cpuRequest, "1000m", "cpu-2c4g runner cpu request must fit TKE allocatable CPU after daemonsets");
+  assert.equal(cpu2c4g.cpuLimit, "2", "cpu-2c4g runner cpu limit should keep the 2C product ceiling");
+  assert.equal(cpu2c4g.memoryRequest, "2Gi", "cpu-2c4g runner request must fit TKE allocatable memory");
+  assert.equal(cpu2c4g.memoryLimit, "3Gi", "cpu-2c4g runner limit must leave TKE node system headroom");
+  assert.equal(cpu2c4g.nodeSelector?.["gaofenglab/node-pool-role"], "runtime", "server plans must schedule user jobs to the runtime node pool");
+  assert.deepEqual(cpu2c4g.tolerations?.[0], {
+    key: "gaofenglab/node-pool-role",
+    operator: "Equal",
+    value: "runtime",
+    effect: "NoSchedule",
+  }, "server plans must tolerate the runtime node pool taint when present");
 
   console.log("billing v12 cos attribution smoke passed");
 } finally {

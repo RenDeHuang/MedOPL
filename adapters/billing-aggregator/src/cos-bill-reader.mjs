@@ -438,6 +438,21 @@ export function buildCosBillReader(config = {}) {
     return { files, latest, rows: parseBillRows(latest.key, body) };
   }
 
+  async function parseFile(key) {
+    const normalizedKey = String(key || "").trim();
+    if (!normalizedKey) {
+      const error = new Error("cos_bill_key_required");
+      error.status = 422;
+      throw error;
+    }
+    const body = await readFile(normalizedKey);
+    return {
+      files: [],
+      latest: { key: normalizedKey },
+      rows: parseBillRows(normalizedKey, body),
+    };
+  }
+
   return {
     configured,
     endpoint: readerConfig.endpoint,
@@ -446,6 +461,7 @@ export function buildCosBillReader(config = {}) {
     prefix: readerConfig.prefix,
     listFiles,
     readFile,
+    parseFile,
     parseLatestFile,
   };
 }

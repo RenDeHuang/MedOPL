@@ -3,8 +3,11 @@ import { strict as assert } from "node:assert";
 
 const dockerfile = readFileSync("adapters/billing-aggregator/Dockerfile", "utf8");
 const packageJson = JSON.parse(readFileSync("adapters/billing-aggregator/package.json", "utf8"));
+const serverSource = readFileSync("adapters/billing-aggregator/src/server.mjs", "utf8");
 
 assert(packageJson.dependencies?.pg, "billing aggregator package.json must declare pg");
+assert.match(serverSource, /BILLING_REPO_ROOT/, "billing server must allow explicit runtime repo root in container");
+assert.match(dockerfile, /BILLING_REPO_ROOT=\/app/, "billing image must set BILLING_REPO_ROOT=/app");
 assert(
   /COPY\s+package\*\.json\s+\.\//.test(dockerfile) || /COPY\s+package\.json\s+package-lock\.json\s+\.\//.test(dockerfile),
   "billing aggregator Dockerfile must copy package-lock.json with package.json",
