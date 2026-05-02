@@ -13,6 +13,13 @@ spec:
       labels:
         app: portal
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
       containers:
@@ -31,11 +38,64 @@ spec:
           env:
             - name: PORT
               value: "17080"
+            - name: PORTAL_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_POSTGRES_URL
+            - name: PORTAL_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_REDIS_URL
+            - name: PORTAL_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_ADMIN_EMAIL
+            - name: PORTAL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_ADMIN_PASSWORD
+            - name: PORTAL_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_OIDC_CLIENT_SECRET
+            - name: PORTAL_INTERNAL_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_INTERNAL_AUTH_TOKEN
+                  optional: true
+            - name: HARBOR_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: HARBOR_USERNAME
+                  optional: true
+            - name: HARBOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: HARBOR_PASSWORD
+                  optional: true
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_PUBLIC_KEY
+                  optional: true
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_SECRET_KEY
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -84,6 +144,13 @@ spec:
       labels:
         app: portal-opl-adapter
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
       containers:
@@ -104,11 +171,38 @@ spec:
               value: "8788"
             - name: PORTAL_OPL_ADAPTER_STATE_ROOT
               value: "/app/.runtime/portal-opl-adapter"
+            - name: OPL_LAUNCH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: secret-opl
+                  key: OPL_LAUNCH_SECRET
+            - name: OPL_ACP_RUNTIME_COMMAND_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: secret-opl
+                  key: OPL_ACP_RUNTIME_COMMAND_JSON
+                  optional: true
+            - name: MED_AUTOSCIENCE_RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: secret-opl
+                  key: MED_AUTOSCIENCE_RUNNER_TOKEN
+                  optional: true
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_PUBLIC_KEY
+                  optional: true
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_SECRET_KEY
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -151,6 +245,13 @@ spec:
       labels:
         app: opl-web-upstream
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
       containers:
@@ -172,8 +273,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
 ---
 apiVersion: v1
 kind: Service
@@ -203,6 +302,13 @@ spec:
       labels:
         app: opl-web-gateway
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
       containers:
@@ -226,8 +332,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           readinessProbe:
             httpGet:
               path: /healthz
@@ -263,6 +367,13 @@ spec:
       labels:
         app: billing-aggregator
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
       containers:
@@ -281,6 +392,16 @@ spec:
           env:
             - name: PORT
               value: "3001"
+            - name: PORTAL_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_POSTGRES_URL
+            - name: PORTAL_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_REDIS_URL
             - name: TENCENT_CLOUD_SECRET_ID
               valueFrom:
                 secretKeyRef:
@@ -305,11 +426,15 @@ spec:
                   name: tencent-cos-secret
                   key: TENCENT_CLOUD_SECRET_KEY
                   optional: true
+            - name: TENCENT_CLOUD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-billing-secret
+                  key: TENCENT_CLOUD_TOKEN
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -352,6 +477,13 @@ spec:
       labels:
         app: resource-provisioner
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
       containers:
@@ -382,11 +514,15 @@ spec:
                   name: tencent-provisioner-secret
                   key: TENCENT_CLOUD_SECRET_KEY
                   optional: true
+            - name: TENCENT_CLOUD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-provisioner-secret
+                  key: TENCENT_CLOUD_TOKEN
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -429,6 +565,13 @@ spec:
       labels:
         app: med-autoscience-runner
     spec:
+      nodeSelector:
+        gaofenglab/node-pool-role: "platform"
+      tolerations:
+        - key: "gaofenglab/node-pool-role"
+          operator: "Equal"
+          value: "platform"
+          effect: "NoSchedule"
       serviceAccountName: med-autoscience-runner
       imagePullSecrets:
         - name: "__IMAGE_PULL_SECRET__"
@@ -451,8 +594,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime

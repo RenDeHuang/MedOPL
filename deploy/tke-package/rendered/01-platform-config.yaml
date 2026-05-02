@@ -26,7 +26,7 @@ data:
   MED_AUTOSCIENCE_RUNNER_URL: "http://med-autoscience-runner:18890"
   RESOURCE_PROVISIONER_URL: "http://resource-provisioner:18893"
   MED_AUTOSCIENCE_RUNNER_IMAGE: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-opl:opl-v1"
-  MED_AUTOSCIENCE_IMAGE_PULL_SECRET: "tcr-pull-secret"
+  MED_AUTOSCIENCE_IMAGE_PULL_SECRET: "gaofeng-tcr-key"
   MED_AUTOSCIENCE_RUNNER_COMMAND: "medautosci show-agent-entry-modes"
   MED_AUTOSCIENCE_RUNNER_CPU_REQUEST: "100m"
   MED_AUTOSCIENCE_RUNNER_CPU_LIMIT: "500m"
@@ -56,4 +56,3 @@ data:
   HARBOR_API_URL: "https://uswccr.ccs.tencentyun.com"
   HARBOR_ENABLED: "0"
   LANGFUSE_URL: ""
-

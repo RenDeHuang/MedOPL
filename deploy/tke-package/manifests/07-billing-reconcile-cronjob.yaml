@@ -17,6 +17,13 @@ spec:
             app: billing-reconcile
         spec:
           restartPolicy: Never
+          nodeSelector:
+            gaofenglab/node-pool-role: "platform"
+          tolerations:
+            - key: "gaofenglab/node-pool-role"
+              operator: "Equal"
+              value: "platform"
+              effect: "NoSchedule"
           imagePullSecrets:
             - name: "__IMAGE_PULL_SECRET__"
           containers:
@@ -32,13 +39,49 @@ spec:
                   value: "0"
                 - name: BILLING_RECONCILE_ONCE
                   value: "1"
+                - name: PORTAL_POSTGRES_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: portal-postgres-redis-secret
+                      key: PORTAL_POSTGRES_URL
+                - name: PORTAL_REDIS_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: portal-postgres-redis-secret
+                      key: PORTAL_REDIS_URL
+                - name: TENCENT_CLOUD_SECRET_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: tencent-billing-secret
+                      key: TENCENT_CLOUD_SECRET_ID
+                      optional: true
+                - name: TENCENT_CLOUD_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: tencent-billing-secret
+                      key: TENCENT_CLOUD_SECRET_KEY
+                      optional: true
+                - name: TENCENT_CLOUD_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: tencent-billing-secret
+                      key: TENCENT_CLOUD_TOKEN
+                      optional: true
+                - name: TENCENT_COS_SECRET_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: tencent-cos-secret
+                      key: TENCENT_CLOUD_SECRET_ID
+                      optional: true
+                - name: TENCENT_COS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: tencent-cos-secret
+                      key: TENCENT_CLOUD_SECRET_KEY
+                      optional: true
               envFrom:
                 - configMapRef:
                     name: portal-platform-config
-                - secretRef:
-                    name: portal-platform-secrets
-                - secretRef:
-                    name: portal-postgres-redis
               volumeMounts:
                 - name: runtime
                   mountPath: /app/.runtime

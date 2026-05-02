@@ -14,7 +14,7 @@ spec:
         app: portal
     spec:
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: portal
           image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl:opl-v10"
@@ -31,11 +31,46 @@ spec:
           env:
             - name: PORT
               value: "17080"
+            - name: PORTAL_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_POSTGRES_URL
+            - name: PORTAL_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_REDIS_URL
+            - name: PORTAL_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_ADMIN_EMAIL
+            - name: PORTAL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_ADMIN_PASSWORD
+            - name: PORTAL_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_OIDC_CLIENT_SECRET
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_PUBLIC_KEY
+                  optional: true
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_SECRET_KEY
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -85,7 +120,7 @@ spec:
         app: portal-opl-adapter
     spec:
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: portal-opl-adapter
           image: "uswccr.ccs.tencentyun.com/gaofenglab/portal-opl-adapter-opl:opl-v10"
@@ -104,11 +139,38 @@ spec:
               value: "8788"
             - name: PORTAL_OPL_ADAPTER_STATE_ROOT
               value: "/app/.runtime/portal-opl-adapter"
+            - name: OPL_LAUNCH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: secret-opl
+                  key: OPL_LAUNCH_SECRET
+            - name: OPL_ACP_RUNTIME_COMMAND_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: secret-opl
+                  key: OPL_ACP_RUNTIME_COMMAND_JSON
+                  optional: true
+            - name: MED_AUTOSCIENCE_RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: secret-opl
+                  key: MED_AUTOSCIENCE_RUNNER_TOKEN
+                  optional: true
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_PUBLIC_KEY
+                  optional: true
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: secret-trace
+                  key: LANGFUSE_SECRET_KEY
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -152,7 +214,7 @@ spec:
         app: opl-web-upstream
     spec:
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: opl-web-upstream
           image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-opl:opl-v1"
@@ -172,8 +234,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
 ---
 apiVersion: v1
 kind: Service
@@ -204,7 +264,7 @@ spec:
         app: opl-web-gateway
     spec:
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: opl-web-gateway
           image: "uswccr.ccs.tencentyun.com/gaofenglab/opl-web-gateway-opl:opl-v10"
@@ -226,8 +286,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           readinessProbe:
             httpGet:
               path: /healthz
@@ -264,7 +322,7 @@ spec:
         app: billing-aggregator
     spec:
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: billing-aggregator
           image: "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v10"
@@ -281,11 +339,49 @@ spec:
           env:
             - name: PORT
               value: "3001"
+            - name: PORTAL_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_POSTGRES_URL
+            - name: PORTAL_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_REDIS_URL
+            - name: TENCENT_CLOUD_SECRET_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-billing-secret
+                  key: TENCENT_CLOUD_SECRET_ID
+                  optional: true
+            - name: TENCENT_CLOUD_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-billing-secret
+                  key: TENCENT_CLOUD_SECRET_KEY
+                  optional: true
+            - name: TENCENT_COS_SECRET_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENT_CLOUD_SECRET_ID
+                  optional: true
+            - name: TENCENT_COS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-cos-secret
+                  key: TENCENT_CLOUD_SECRET_KEY
+                  optional: true
+            - name: TENCENT_CLOUD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-billing-secret
+                  key: TENCENT_CLOUD_TOKEN
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -329,7 +425,7 @@ spec:
         app: resource-provisioner
     spec:
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: resource-provisioner
           image: "uswccr.ccs.tencentyun.com/gaofenglab/resource-provisioner-opl:opl-v10"
@@ -346,11 +442,27 @@ spec:
           env:
             - name: RESOURCE_PROVISIONER_PORT
               value: "18893"
+            - name: TENCENT_CLOUD_SECRET_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-provisioner-secret
+                  key: TENCENT_CLOUD_SECRET_ID
+                  optional: true
+            - name: TENCENT_CLOUD_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-provisioner-secret
+                  key: TENCENT_CLOUD_SECRET_KEY
+                  optional: true
+            - name: TENCENT_CLOUD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tencent-provisioner-secret
+                  key: TENCENT_CLOUD_TOKEN
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -395,7 +507,7 @@ spec:
     spec:
       serviceAccountName: med-autoscience-runner
       imagePullSecrets:
-        - name: "tcr-pull-secret"
+        - name: "gaofeng-tcr-key"
       containers:
         - name: med-autoscience-runner
           image: "uswccr.ccs.tencentyun.com/gaofenglab/med-autoscience-runner-orchestrator-opl:opl-v10"
@@ -415,8 +527,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-platform-config
-            - secretRef:
-                name: portal-platform-secrets
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
@@ -443,4 +553,3 @@ spec:
     - name: http
       port: 18890
       targetPort: 18890
-
