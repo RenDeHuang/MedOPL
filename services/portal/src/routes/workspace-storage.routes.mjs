@@ -1,8 +1,12 @@
+import { createWorkspaceUploadSupport, fileNameFrom } from "./workspace-storage-upload-support.mjs";
+
 export function createWorkspaceStorageRoutes({
+  buildWorkspaceFileChecksum,
   buildWorkspaceStorageKey,
   createOrUpdateStorageOrder,
   defaultTaskTitle,
   ensureTaskSpace,
+  exists,
   fetchWorkspaceMinioState,
   fetchWorkspaceStorageSnapshot,
   findTaskSpace,
@@ -10,11 +14,20 @@ export function createWorkspaceStorageRoutes({
   issueWorkspaceTransferToken,
   listWorkspaceFiles,
   logPortalEvent,
+  path,
   readBody,
+  readDb,
+  readWorkspaceTransferToken,
+  recordWorkspaceFile,
   safeRelativePath,
+  sendFile,
   sendJson,
   slugify,
+  stat,
+  mkdir,
+  syncWorkspaceFileToMinio,
   workspaceStorageEntitlement,
+  writeFile,
   writeDb,
 }) {
   async function readJsonBody(req, res) {
@@ -31,9 +44,21 @@ export function createWorkspaceStorageRoutes({
     return findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
   }
 
-  function fileNameFrom(relativePath) {
-    return relativePath.split(/[\\/]/).pop() || relativePath;
-  }
+  const {
+    persistWorkspaceUpload,
+    readMultipartFiles,
+  } = createWorkspaceUploadSupport({
+    buildWorkspaceFileChecksum,
+    buildWorkspaceStorageKey,
+    guessContentType,
+    mkdir,
+    path,
+    recordWorkspaceFile,
+    safeRelativePath,
+    stat,
+    syncWorkspaceFileToMinio,
+    writeFile,
+  });
 
   async function handleWorkspaceStorageSnapshot({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/workspace/storage") return false;
@@ -198,12 +223,87 @@ export function createWorkspaceStorageRoutes({
     return true;
   }
 
+  async function handleSignedUpload({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/workspace/files/upload-signed") return false;
+    const tokenPayload = readWorkspaceTransferToken(url.searchParams.get("token") || "", "upload");
+    if (!tokenPayload || tokenPayload.userId !== user.id) {
+      sendJson(res, { error: "invalid_or_expired_transfer_token" }, 403);
+      return true;
+    }
+    const taskSpace = findTaskSpace(db, user.id, tokenPayload.workspaceId) || await ensureTaskSpace(db, user, tokenPayload.workspaceId, defaultTaskTitle(tokenPayload.workspaceId));
+    const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
+    if (!entitlement.enabled) {
+      sendJson(res, { error: "storage_entitlement_required", entitlement }, 402);
+      return true;
+    }
+    const contentType = String(req.headers["content-type"] || "");
+    const boundaryMatch = contentType.match(/boundary=(.+)$/);
+    if (!boundaryMatch) {
+      sendJson(res, { error: "multipart_boundary_missing" }, 400);
+      return true;
+    }
+    const files = readMultipartFiles(await readBody(req), boundaryMatch[1]);
+    const matched = files.find((item) => item.relativePath === tokenPayload.relativePath) || files[0];
+    if (!matched) {
+      sendJson(res, { error: "file_missing" }, 400);
+      return true;
+    }
+    const saved = await persistWorkspaceUpload({
+      db,
+      user,
+      taskSpace,
+      kind: tokenPayload.kind,
+      file: {
+        ...matched,
+        relativePath: tokenPayload.relativePath,
+        name: tokenPayload.fileName || matched.name,
+      },
+    });
+    if (!saved.ok) {
+      sendJson(res, { error: saved.error || "workspace_upload_failed" }, saved.status || 400);
+      return true;
+    }
+    await logPortalEvent({ type: "workspace_input_uploaded", userId: user.id, workspaceId: taskSpace.slug, fileCount: 1, fileName: saved.file.name });
+    await writeDb(db);
+    sendJson(res, {
+      ok: true,
+      workspaceId: taskSpace.slug,
+      file: saved.file,
+    });
+    return true;
+  }
+
+  async function handleSignedDownload({ req, res, url, user }) {
+    if (req.method !== "GET" || url.pathname !== "/portal/workspace/files/download-signed") return false;
+    const tokenPayload = readWorkspaceTransferToken(url.searchParams.get("token") || "", "download");
+    if (!tokenPayload || tokenPayload.userId !== user.id) {
+      sendJson(res, { error: "invalid_or_expired_transfer_token" }, 403);
+      return true;
+    }
+    const taskSpace = findTaskSpace(await readDb(), user.id, tokenPayload.workspaceId);
+    if (!taskSpace) {
+      sendJson(res, { error: "workspace_not_found" }, 404);
+      return true;
+    }
+    const kind = tokenPayload.kind === "outputs" ? "outputs" : "inputs";
+    const relativePath = safeRelativePath(tokenPayload.relativePath || "");
+    const fullPath = path.join(taskSpace.path, kind, relativePath);
+    if (!(await exists(fullPath))) {
+      sendJson(res, { error: "file_not_found" }, 404);
+      return true;
+    }
+    sendFile(res, fullPath, tokenPayload.fileName || fileNameFrom(relativePath), guessContentType(relativePath));
+    return true;
+  }
+
   return async function handleWorkspaceStorageRoutes(context) {
     if (await handleWorkspaceStorageSnapshot(context)) return true;
     if (await handleEntitlement(context)) return true;
     if (await handleStorageOrder(context)) return true;
     if (await handleUploadUrl(context)) return true;
     if (await handleDownloadUrl(context)) return true;
+    if (await handleSignedUpload(context)) return true;
+    if (await handleSignedDownload(context)) return true;
     return false;
   };
 }

@@ -1,13 +1,10 @@
 ﻿import http from "node:http";
-import os from "node:os";
 import path from "node:path";
-import { mkdir, readFile, writeFile, access, readdir, stat, appendFile, rename } from "node:fs/promises";
+import { mkdir, readFile, writeFile, access, readdir, stat, rename } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
-import pg from "pg";
-import { createClient as createRedisClient } from "redis";
 import {
   adminSeed,
   BILLING_SERVICE_TIMEOUT_MS,
@@ -17,8 +14,6 @@ import {
   BUILD_TIME,
   codexRuntimeEventsFile,
   codexRuntimeRoot,
-  dataFile,
-  eventsFile,
   frontendDistRoot,
   HARBOR_API_URL,
   HARBOR_ENABLED,
@@ -43,7 +38,6 @@ import {
   PORT,
   portalWorkdir,
   PORTAL_ADMIN_SEED_BALANCE,
-  PORTAL_DB_NAMESPACE,
   PORTAL_IDENTITY_SYNC_MODE,
   PORTAL_INTERNAL_AUTH_TOKEN,
   PORTAL_OIDC_CLIENT_ID,
@@ -53,13 +47,11 @@ import {
   PORTAL_OIDC_REDIRECT_URI,
   PORTAL_OIDC_SCOPE,
   PORTAL_OPL_ADAPTER_URL,
-  PORTAL_POSTGRES_URL,
   PORTAL_PUBLIC_URL,
-  PORTAL_REDIS_URL,
-  PORTAL_STORAGE_MODE,
   publicRoot,
   RANCHER_URL,
   repoRoot,
+  RESOURCE_PROVISIONER_TIMEOUT_MS,
   runtimeRoot,
   SHOW_LEGACY_KUBESPHERE,
   syncWorkspaceToMinioScriptRelative,
@@ -69,27 +61,58 @@ import {
   ZITADEL_ADMIN_USER_SCRIPT,
 } from "./portal-runtime-config.mjs";
 import {
-  activeUserStatus,
-  buildCommercialProfile,
-  ensureUserCommercialState,
-  isBlockedUserStatus,
-} from "./portal-runtime-domain.mjs";
+  findUserByEmail,
+  normalizeAuthEmail,
+  sanitizePortalUser,
+} from "./portal-auth-runtime-handler.mjs";
+import { createPortalBillingExportRoutes } from "../routes/portal-billing-export.routes.mjs";
+import { createPortalAdminOpsRoutes } from "../routes/admin-ops.routes.mjs";
+import { createPortalAdminUserRoutes } from "../routes/admin-user.routes.mjs";
+import { createPortalLegacyRedirectRoutes } from "../routes/portal-legacy-redirect.routes.mjs";
+import { createPortalTaskSpaceRoutes } from "../routes/task-space.routes.mjs";
 import {
+  activeUserStatus,
+  adminScopeResult,
+  announcementRows,
+  appendLedgerEntry,
+  buildCommercialProfile,
   buildOverviewOnboarding,
   buildServerPlansFallback,
   buildServerPlansSummary,
-  buildTaskSpaceServerPlanSelection,
+  buildWorkspaceFileChecksum,
+  buildWorkspaceStorageKey,
+  createGflabProviderConfig,
+  createOrUpdateStorageOrder,
   currentServerPlanSelection,
-  normalizeServerPlanSelection,
+  defaultTaskTitle,
+  ensureUserCommercialState,
+  ensureWallet,
+  formatDateOnly,
+  formatDateTime,
+  humanizeStatus,
+  isBlockedUserStatus,
+  issueWorkspaceTransferToken,
+  listWorkspaceFiles,
+  markWorkspaceStorageDeleting,
+  moneyAmount,
+  normalizeProviderApiKey,
+  readWorkspaceTransferToken,
+  recordWorkspaceFile,
+  redactProviderConfig,
+  resolveWorkspaceStorageEntitlement,
+  sandboxStatusLabel,
+  sanitizeTaskTitle,
+  slugify,
+  taskStatusClass,
+  taskStatusLabel,
+  userTheme,
+  visibleAnnouncementRows,
 } from "./portal-runtime-domain.mjs";
-import { createBillingClient } from "./portal-runtime-wiring.mjs";
-import { createResourceProvisionerClient } from "./portal-runtime-wiring.mjs";
-import { createHarborRegistryClient } from "./portal-runtime-wiring.mjs";
-import { createLangfuseTraceClient } from "./portal-runtime-wiring.mjs";
-import { createMinioStorageClient } from "./portal-runtime-wiring.mjs";
-import { createOplAdapterClient } from "./portal-runtime-wiring.mjs";
-import { createWorkspaceStorageRoutes } from "./portal-runtime-wiring.mjs";
-import { createPortalLayout } from "./portal-layout.mjs";
+import { createPortalRuntimeBootstrap } from "./portal-runtime-bootstrap.mjs";
+import { createPortalHttpDispatcher } from "./portal-http-dispatcher.mjs";
+import { createPortalIdentitySecurityRuntime } from "./portal-identity-security-runtime.mjs";
+import { createPortalRuntimeObservability } from "./portal-runtime-observability.mjs";
+import { createPortalWorkspaceRuntime } from "./portal-workspace-runtime.mjs";
 import {
   appendCookie,
   clearCookie,
@@ -104,104 +127,81 @@ import {
   sendStaticAsset,
   setCookie,
 } from "./portal-runtime-http.mjs";
-import { createOplRoutes } from "./portal-runtime-wiring.mjs";
-import {
-  createGflabProviderConfig,
-  createOplLaunchService,
-  normalizeProviderApiKey,
-  redactProviderConfig,
-} from "./portal-runtime-wiring.mjs";
-import {
-  ensureResourceOrderCollections,
-  freezeResourceOrder,
-  quoteResourceOrderFromPlan,
-  releaseResourceOrder,
-  resourceOrderPublicView,
-  resourceOrdersForUser,
-  transitionResourceOrder,
-  upsertQuotedResourceOrder,
-} from "./portal-runtime-domain.mjs";
-import {
-  adminScopeResult,
-  isAdminUser,
-  resourceBelongsToUser,
-} from "./portal-runtime-domain.mjs";
-import {
-  buildSessionTraceDetailPayload as buildSessionTraceDetailDomainPayload,
-  buildSessionTracesApiPayload as buildSessionTracesDomainApiPayload,
-} from "./portal-runtime-domain.mjs";
-import {
-  buildWorkspaceFileChecksum,
-  buildWorkspaceStorageKey,
-  createOrUpdateStorageOrder,
-  ensureWorkspaceStorageCollections,
-  issueWorkspaceTransferToken,
-  listWorkspaceFiles,
-  markWorkspaceStorageDeleting,
-  readWorkspaceTransferToken,
-  recordWorkspaceFile,
-  resolveWorkspaceStorageEntitlement,
-} from "./portal-runtime-domain.mjs";
-import {
-  appendLedgerEntry,
-  ensureWallet,
-  moneyAmount,
-  normalizeLedgerEntries,
-} from "./portal-runtime-domain.mjs";
-import { hashPassword, verifyPassword } from "./portal-runtime-domain.mjs";
-import {
-  announcementRows,
-  defaultTaskTitle,
-  formatDateOnly,
-  formatDateTime,
-  humanizeStatus,
-  normalizeAnnouncementRecord,
-  sandboxStatusLabel,
-  sanitizeTaskTitle,
-  slugify,
-  taskStatusClass,
-  taskStatusLabel,
-  userTheme,
-  visibleAnnouncementRows,
-} from "./portal-runtime-domain.mjs";
-import { createPortalStore } from "./portal-runtime-wiring.mjs";
 
-const { layoutV2, layout } = createPortalLayout({ safeJsonForHtml, userTheme });
+const {
+  layoutV2,
+  layout,
+  portalStore,
+  clients: {
+    billingClient,
+    resourceProvisionerClient,
+    minioStorageClient,
+    harborRegistryClient,
+    langfuseTraceClient,
+  oplAdapterClient,
+  },
+  createOplLaunchService,
+  createAuthRuntimeHandler,
+  createFeatureRuntimeHandlers,
+  createApiRuntimeHandlers,
+  createPageRuntimePayloads,
+  createServerPlanRuntimeHandler,
+} = createPortalRuntimeBootstrap({
+  layout: { safeJsonForHtml, userTheme },
+  store: {
+    atomicWriteJson,
+    exists,
+    sanitizeTaskTitle,
+    getTaskPath,
+  },
+  clients: {
+    billingServiceUrl: BILLING_SERVICE_URL,
+    billingTimeoutMs: BILLING_SERVICE_TIMEOUT_MS,
+    formatDateTime,
+    harborApiUrl: HARBOR_API_URL,
+    harborPassword: HARBOR_PASSWORD,
+    harborUsername: HARBOR_USERNAME,
+    langfuseProjectId: LANGFUSE_PROJECT_ID,
+    langfusePublicKey: LANGFUSE_PUBLIC_KEY,
+    langfuseSecretKey: LANGFUSE_SECRET_KEY,
+    langfuseUrl: LANGFUSE_URL,
+    mcBinary,
+    minioApiUrl: MINIO_API_URL,
+    oplRuntimeTimeoutMs: OPL_RUNTIME_TIMEOUT_MS,
+    oplWebUrl: OPL_WEB_URL,
+    portalOplAdapterUrl: PORTAL_OPL_ADAPTER_URL,
+    portalWorkdir,
+    provisionerTimeoutMs: RESOURCE_PROVISIONER_TIMEOUT_MS,
+    provisionerUrl: RESOURCE_PROVISIONER_URL,
+    repoRoot,
+    syncWorkspaceToMinioScriptRelative,
+  },
+});
 
 const execFileAsync = promisify(execFile);
 
-let dbWriteChain = Promise.resolve();
-let pgPool = null;
-let redisClient = null;
-
-async function runZitadelAdminUser(args = []) {
-  if (PORTAL_IDENTITY_SYNC_MODE === "local") {
-    return { synced: false, source: "portal_local_identity" };
-  }
-  if (PORTAL_IDENTITY_SYNC_MODE !== "zitadel") {
-    throw new Error(`Unsupported PORTAL_IDENTITY_SYNC_MODE: ${PORTAL_IDENTITY_SYNC_MODE}`);
-  }
-  await access(ZITADEL_ADMIN_USER_SCRIPT, fsConstants.R_OK);
-  await execFileAsync("node", [ZITADEL_ADMIN_USER_SCRIPT, ...args], {
-    cwd: repoRoot,
-    timeout: 180000,
-    maxBuffer: 1024 * 1024 * 4,
-  });
-  return { synced: true, source: "zitadel_portal_sync" };
-}
-
-const portalStore = createPortalStore({
-  atomicWriteJson,
-  exists,
-  hashPassword,
-  normalizeAnnouncementRecord,
-  normalizeLedgerEntries,
-  normalizeServerPlanSelection,
-  ensureResourceOrderCollections,
-  ensureUserCommercialState,
-  ensureWorkspaceStorageCollections,
-  sanitizeTaskTitle,
-  getTaskPath,
+const {
+  buildAdminSecuritySummary,
+  exchangeOidcCode,
+  fetchOidcUserInfo,
+  runZitadelAdminUser,
+} = createPortalIdentitySecurityRuntime({
+  env: {
+    adminSeed,
+    HARBOR_PASSWORD,
+    PORTAL_IDENTITY_SYNC_MODE,
+    PORTAL_OIDC_CLIENT_ID,
+    PORTAL_OIDC_CLIENT_SECRET,
+    PORTAL_OIDC_ISSUER,
+    PORTAL_OIDC_REDIRECT_URI,
+    PORTAL_OIDC_SCOPE,
+    ZITADEL_ADMIN_USER_SCRIPT,
+  },
+  deps: {
+    access: (file) => access(file, fsConstants.R_OK),
+    execFileAsync,
+    repoRoot,
+  },
 });
 
 const {
@@ -214,39 +214,95 @@ const {
   writeDb,
 } = portalStore;
 
-const billingClient = createBillingClient({
-  billingServiceUrl: BILLING_SERVICE_URL,
-  timeoutMs: BILLING_SERVICE_TIMEOUT_MS,
+const {
+  fetchBillingStatus,
+  fetchBillingSummary,
+  fetchHarborSummary,
+  fetchLangfuseSummary,
+  fetchMinioSummary,
+  fetchOplAdapterCosts,
+  fetchOplAdapterRuns,
+  fetchOplAdapterTraceRows,
+  fetchPendingSummary,
+  fetchServerPlans,
+  fetchTraceRows,
+  probe,
+  readBillingRequestOptions,
+  readOverviewRequestOptions,
+  readSessionsRequestOptions,
+  readTracesRequestOptions,
+  runtimePerformanceSummary,
+  workspaceChatSessionsForUser,
+} = createPortalRuntimeObservability({
+  billingClient,
+  codexRuntimeEventsFile,
+  codexRuntimeRoot,
+  harborRegistryClient,
+  langfuseTraceClient,
+  minioStorageClient,
+  oplAdapterClient,
+  path,
+  readFile,
+  readdir,
 });
-const resourceProvisionerClient = createResourceProvisionerClient({ provisionerUrl: RESOURCE_PROVISIONER_URL });
-const minioStorageClient = createMinioStorageClient({
-  repoRoot,
-  portalWorkdir,
-  mcBinary,
-  minioApiUrl: MINIO_API_URL,
-  syncWorkspaceToMinioScriptRelative,
-  formatDateTime,
+
+const {
+  archiveTaskSpace,
+  collectRunsForTask,
+  collectRunsForUser,
+  currentTaskSpaceForUser,
+  evaluateUserPolicy,
+  fetchWorkspaceMinioState,
+  fetchWorkspaceStorageSnapshot,
+  findTaskSpace,
+  handleUpload,
+  hasActiveRuns,
+  hasActiveWorkspaceSession,
+  isRunTerminal,
+  latestActiveWorkspaceSession,
+  listFilesRecursive,
+  listTaskSpacesForUser,
+  markTaskSpaceDeleted,
+  nextTaskSlug,
+  readWorkspaceSession,
+  restoreTaskSpace,
+  safeRelativePath,
+  syncWorkspaceFileToMinio,
+  workspaceSessionCookie,
+  workspaceStorageEntitlement,
+  ensureTaskSpace,
+  ensureWorkspaceSession,
+} = createPortalWorkspaceRuntime({
+  buildWorkspaceFileChecksum,
+  buildWorkspaceStorageKey,
+  codexRuntimeEventsFile,
+  defaultTaskTitle,
+  exists,
+  getTaskPath,
+  guessContentType,
+  isBlockedUserStatus,
+  layoutV2,
+  logPortalEvent,
+  markWorkspaceStorageDeleting,
+  medRunsRoot,
+  minioStorageClient,
+  mkdir,
+  path,
+  randomUUID,
+  readBody,
+  readDb,
+  readFile,
+  readdir,
+  recordWorkspaceFile,
+  resolveWorkspaceStorageEntitlement,
+  sanitizeTaskTitle,
+  sendHtml,
+  slugify,
+  stat,
+  writeDb,
+  writeFile,
 });
-const harborRegistryClient = createHarborRegistryClient({
-  harborApiUrl: HARBOR_API_URL,
-  username: HARBOR_USERNAME,
-  password: HARBOR_PASSWORD,
-  formatDateTime,
-});
-const langfuseTraceClient = createLangfuseTraceClient({
-  repoRoot,
-  langfuseUrl: LANGFUSE_URL,
-  publicKey: LANGFUSE_PUBLIC_KEY,
-  secretKey: LANGFUSE_SECRET_KEY,
-  projectId: LANGFUSE_PROJECT_ID,
-  formatDateTime,
-});
-const oplAdapterClient = createOplAdapterClient({
-  adapterUrl: PORTAL_OPL_ADAPTER_URL,
-  oplWebUrl: OPL_WEB_URL,
-  timeoutMs: OPL_RUNTIME_TIMEOUT_MS,
-  formatDateTime,
-});
+
 const oplLaunchService = createOplLaunchService({
   evaluateUserPolicy,
   findTaskSpace,
@@ -258,87 +314,96 @@ const oplLaunchService = createOplLaunchService({
   logPortalEvent,
   writeDb,
 });
-const handleOplRoutes = createOplRoutes({
+const {
+  handleOplRoutes,
+  handleResourceOrderRoutes,
+  handleWorkspaceStorageRoutes,
+} = createFeatureRuntimeHandlers({
   appendCookie,
-  layoutV2,
-  oplLaunchService,
-  readBody,
-  sendHtml,
-  sendJson,
-  slugify,
-  workspaceSessionCookie,
-});
-const handleWorkspaceStorageRoutes = createWorkspaceStorageRoutes({
+  buildWorkspaceFileChecksum,
   buildWorkspaceStorageKey,
   createOrUpdateStorageOrder,
   defaultTaskTitle,
   ensureTaskSpace,
+  exists,
+  fetchServerPlans,
   fetchWorkspaceMinioState,
   fetchWorkspaceStorageSnapshot,
   findTaskSpace,
   guessContentType,
   issueWorkspaceTransferToken,
+  layoutV2,
   listWorkspaceFiles,
   logPortalEvent,
+  mkdir,
+  normalizeAuthEmail,
+  oplLaunchService,
+  path,
+  portalInternalAuthAllowed,
   readBody,
+  readDb,
+  readJsonBody,
+  readWorkspaceTransferToken,
+  recordWorkspaceFile,
+  resourceProvisionerClient,
   safeRelativePath,
+  sendFile,
+  sendHtml,
   sendJson,
   slugify,
+  stat,
+  syncWorkspaceFileToMinio,
   workspaceStorageEntitlement,
+  writeFile,
   writeDb,
 });
 
-function isRegistrationEnabled(db) {
-  return db?.settings?.allowRegistration !== false;
-}
+const handleAuthRoutes = createAuthRuntimeHandler({
+  clearCookie,
+  createGflabProviderConfig,
+  defaultTaskTitle,
+  ensureTaskSpace,
+  ensureUserCommercialState,
+  exchangeOidcCode,
+  fetchOidcUserInfo,
+  isBlockedUserStatus,
+  layoutV2,
+  logPortalEvent,
+  normalizeProviderApiKey,
+  oplLaunchService,
+  parseCookies,
+  parseForm,
+  portalInternalAuthAllowed,
+  portalOidc: {
+    clientId: PORTAL_OIDC_CLIENT_ID,
+    clientSecret: PORTAL_OIDC_CLIENT_SECRET,
+    enabled: PORTAL_OIDC_ENABLED,
+    issuer: PORTAL_OIDC_ISSUER,
+    redirectUri: PORTAL_OIDC_REDIRECT_URI,
+    scope: PORTAL_OIDC_SCOPE,
+  },
+  readBody,
+  redactProviderConfig,
+  sendHtml,
+  sendJson,
+  setCookie,
+  writeDb,
+});
 
-function userStatusLabel(status = "active") {
-  return String(status || "active").toLowerCase() === "disabled" ? "已禁用" : "正常";
-}
-
-function chartDateKey(value) {
-  const date = new Date(value || Date.now());
-  return Number.isNaN(date.getTime()) ? new Date().toISOString().slice(0, 10) : date.toISOString().slice(0, 10);
-}
-
-function seriesForRecentDays(days) {
-  const labels = [];
-  for (let i = days - 1; i >= 0; i -= 1) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    labels.push(d.toISOString().slice(0, 10));
-  }
-  return labels;
-}
-
-function summarizeRunStatus(runs = []) {
-  return runs.reduce((acc, run) => {
-    const key = isRunTerminal(run) ? "completed" : "running";
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, { running: 0, completed: 0 });
-}
-
-function groupBillingByDay(items = [], days = 7) {
-  const labels = seriesForRecentDays(days);
-  const base = Object.fromEntries(labels.map((label) => [label, { total: 0, cpu: 0, gpu: 0, storage: 0 }]));
-  for (const item of items) {
-    const key = chartDateKey(item?.end || item?.start || item?.createdAt);
-    if (!base[key]) continue;
-    base[key].total += Number(item?.totalCost || 0);
-    base[key].cpu += Number(item?.cpuCost || 0);
-    base[key].gpu += Number(item?.gpuCost || 0);
-    base[key].storage += Number(item?.pvCost || 0);
-  }
-  return {
-    labels,
-    total: labels.map((label) => Number(base[label].total.toFixed(5))),
-    cpu: labels.map((label) => Number(base[label].cpu.toFixed(5))),
-    gpu: labels.map((label) => Number(base[label].gpu.toFixed(5))),
-    storage: labels.map((label) => Number(base[label].storage.toFixed(5))),
-  };
-}
+const handlePortalAdminUserRoutes = createPortalAdminUserRoutes({
+  activeUserStatus,
+  appendLedgerEntry,
+  defaultTaskTitle,
+  ensureTaskSpace,
+  ensureUserCommercialState,
+  layoutV2,
+  logPortalEvent,
+  parseForm,
+  readBody,
+  runZitadelAdminUser,
+  sendHtml,
+  writeDb,
+});
 
 async function exists(file) {
   try {
@@ -372,219 +437,6 @@ function getTaskPath(userId, taskSlug) {
   return path.join(medWorkspaceRoot, userId, taskSlug);
 }
 
-function nextTaskSlug(db, userId, requestedTitle) {
-  const baseSlug = slugify(requestedTitle || "task");
-  const existing = new Set(
-    db.taskSpaces.filter((item) => item.userId === userId).map((item) => item.slug),
-  );
-  if (!existing.has(baseSlug)) return baseSlug;
-  let counter = 2;
-  while (existing.has(`${baseSlug}-${counter}`)) counter += 1;
-  return `${baseSlug}-${counter}`;
-}
-
-function safeRelativePath(value) {
-  const normalized = path.normalize(String(value || "")).replace(/^([/\\])+/, "");
-  if (!normalized || normalized === "." || normalized.startsWith("..") || path.isAbsolute(normalized)) return "";
-  return normalized;
-}
-
-async function listFilesRecursive(rootDir, currentDir = rootDir, prefix = "") {
-  try {
-    const entries = await readdir(currentDir, { withFileTypes: true });
-    const files = [];
-    for (const entry of entries) {
-      if (entry.name.startsWith(".")) continue;
-      const relative = prefix ? path.join(prefix, entry.name) : entry.name;
-      const fullPath = path.join(currentDir, entry.name);
-      if (entry.isDirectory()) {
-        files.push(...(await listFilesRecursive(rootDir, fullPath, relative)));
-      } else if (entry.isFile()) {
-        files.push({ name: relative.replaceAll("\\", "/"), fullPath });
-      }
-    }
-    return files.sort((a, b) => a.name.localeCompare(b.name));
-  } catch {
-    return [];
-  }
-}
-
-function listTaskSpacesForUser(db, userId) {
-  return db.taskSpaces
-    .filter((item) => item.userId === userId && item.status !== "deleted")
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
-    .map((item) => ({
-      ...item,
-      title: sanitizeTaskTitle(item.slug || "default", item.title || ""),
-    }));
-}
-
-function findTaskSpace(db, userId, slug) {
-  const normalized = slugify(slug || "default");
-  return db.taskSpaces.find((item) => item.userId === userId && item.slug === normalized) || null;
-}
-
-function currentTaskSpaceForUser(db, user) {
-  return findTaskSpace(db, user.id, user.currentTaskSlug || "default");
-}
-
-function isRunTerminal(run) {
-  const status = String(run?.status || "").toLowerCase();
-  if (["succeeded", "failed", "cancelled", "timed_out", "completed"].includes(status)) return true;
-  if (run?.k8sStatus?.succeeded) return true;
-  const conditions = Array.isArray(run?.k8sStatus?.conditions) ? run.k8sStatus.conditions : [];
-  return conditions.some((item) => ["Complete", "Failed"].includes(item?.type) && item?.status === "True");
-}
-
-async function hasActiveRuns(userId, workspaceId) {
-  const runs = await collectRunsForTask(userId, workspaceId);
-  return runs.some((run) => !isRunTerminal(run));
-}
-
-function hasActiveWorkspaceSession(db, userId, workspaceId) {
-  const now = Date.now();
-  return db.workspaceSessions.some((item) =>
-    item.userId === userId &&
-    item.workspaceId === workspaceId &&
-    item.status === "active" &&
-    (!item.expiresAt || Date.parse(item.expiresAt) > now),
-  );
-}
-
-async function ensureTaskSpace(db, user, slug = "default", title = "Default Task") {
-  const normalized = slugify(slug);
-  const existing = db.taskSpaces.find((item) => item.userId === user.id && item.slug === normalized);
-  if (existing) return existing;
-  const taskSpace = {
-    id: randomUUID(),
-    userId: user.id,
-    slug: normalized,
-    title: sanitizeTaskTitle(normalized, title),
-    path: getTaskPath(user.id, normalized),
-    status: "active",
-    serverPlanId: "",
-    serverPlanRegion: "",
-    serverPlanSnapshot: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  db.taskSpaces.push(taskSpace);
-  await mkdir(path.join(taskSpace.path, "inputs"), { recursive: true });
-  await mkdir(path.join(taskSpace.path, "outputs"), { recursive: true });
-  await mkdir(path.join(taskSpace.path, "logs"), { recursive: true });
-  await mkdir(path.join(taskSpace.path, "runtime"), { recursive: true });
-  await mkdir(path.join(taskSpace.path, "work"), { recursive: true });
-  await ensureWorkspaceMinioSkeleton(user.id, taskSpace.slug, taskSpace.path);
-  if (!user.currentTaskSlug) user.currentTaskSlug = taskSpace.slug;
-  await logPortalEvent({ type: "workspace_created", userId: user.id, workspaceId: taskSpace.slug, title: taskSpace.title });
-  return taskSpace;
-}
-
-async function archiveTaskSpace(db, user, taskSpace) {
-  taskSpace.status = "archived";
-  taskSpace.archivedAt = new Date().toISOString();
-  taskSpace.updatedAt = taskSpace.archivedAt;
-  if (user.currentTaskSlug === taskSpace.slug) {
-    const fallback = listTaskSpacesForUser(db, user.id).find((item) => item.slug !== taskSpace.slug && item.status === "active");
-    user.currentTaskSlug = fallback?.slug || "default";
-  }
-  await logPortalEvent({ type: "workspace_archived", userId: user.id, workspaceId: taskSpace.slug, title: taskSpace.title });
-}
-
-async function restoreTaskSpace(db, user, taskSpace) {
-  taskSpace.status = "active";
-  delete taskSpace.archivedAt;
-  taskSpace.updatedAt = new Date().toISOString();
-  user.currentTaskSlug = taskSpace.slug;
-  await logPortalEvent({ type: "workspace_restored", userId: user.id, workspaceId: taskSpace.slug, title: taskSpace.title });
-}
-
-async function markTaskSpaceDeleted(db, user, taskSpace) {
-  taskSpace.status = "deleted";
-  taskSpace.deletedAt = new Date().toISOString();
-  taskSpace.updatedAt = taskSpace.deletedAt;
-  const storageRetention = markWorkspaceStorageDeleting(db, {
-    user,
-    workspaceId: taskSpace.slug,
-    deletedAt: taskSpace.deletedAt,
-    retentionDays: 7,
-  });
-  db.workspaceSessions = db.workspaceSessions.map((item) => {
-    if (item.userId === user.id && item.workspaceId === taskSpace.slug && item.status === "active") {
-      return { ...item, status: "revoked", revokedAt: new Date().toISOString() };
-    }
-    return item;
-  });
-  if (user.currentTaskSlug === taskSpace.slug) {
-    const fallback = listTaskSpacesForUser(db, user.id).find((item) => item.slug !== taskSpace.slug && item.status === "active");
-    user.currentTaskSlug = fallback?.slug || "default";
-  }
-  await logPortalEvent({
-    type: "workspace_deleted",
-    userId: user.id,
-    workspaceId: taskSpace.slug,
-    title: taskSpace.title,
-    storageRetention,
-  });
-}
-
-function workspaceSessionCookie() {
-  return "workspace_session";
-}
-
-function clearWorkspaceSession(res) {
-  clearCookie(res, workspaceSessionCookie());
-}
-
-function readWorkspaceSession(db, sessionId, userId = "") {
-  if (!sessionId) return null;
-  const now = Date.now();
-  const match = db.workspaceSessions.find((item) => item.id === sessionId && item.status === "active");
-  if (!match) return null;
-  if (match.expiresAt && Date.parse(match.expiresAt) <= now) return null;
-  if (userId && match.userId !== userId) return null;
-  return match;
-}
-
-async function ensureWorkspaceSession(db, user, taskSpace) {
-  const active = db.workspaceSessions.find((item) =>
-    item.userId === user.id &&
-    item.workspaceId === taskSpace.slug &&
-    item.status === "active" &&
-    (!item.expiresAt || Date.parse(item.expiresAt) > Date.now()),
-  );
-  if (active) {
-    active.lastUsedAt = new Date().toISOString();
-    return active;
-  }
-  const session = {
-    id: randomUUID(),
-    userId: user.id,
-    workspaceId: taskSpace.slug,
-    workspaceTitle: taskSpace.title,
-    sessionType: "opl_session",
-    status: "active",
-    source: "portal-workspace-entry",
-    createdAt: new Date().toISOString(),
-    lastUsedAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
-  };
-  db.workspaceSessions.push(session);
-  await logPortalEvent({ type: "workspace_session_created", userId: user.id, workspaceId: taskSpace.slug, workspaceSessionId: session.id });
-  return session;
-}
-
-function latestActiveWorkspaceSession(db, userId, workspaceId) {
-  return db.workspaceSessions
-    .filter((item) =>
-      item.userId === userId &&
-      item.workspaceId === workspaceId &&
-      item.status === "active" &&
-      (!item.expiresAt || Date.parse(item.expiresAt) > Date.now()),
-    )
-    .sort((a, b) => String(b.lastUsedAt || b.createdAt || "").localeCompare(String(a.lastUsedAt || a.createdAt || "")))[0] || null;
-}
-
 async function currentUser(req) {
   const db = await readDb();
   const cookies = parseCookies(req.headers.cookie);
@@ -595,470 +447,15 @@ async function currentUser(req) {
   return { db, user: db.users.find((item) => item.id === session.userId) || null };
 }
 
-function normalizeAuthEmail(email) {
-  return String(email || "").trim().toLowerCase();
-}
-
-function findUserByEmail(db, email) {
-  const normalizedEmail = normalizeAuthEmail(email);
-  if (!normalizedEmail) return null;
-  return db.users.find((item) => normalizeAuthEmail(item.email) === normalizedEmail) || null;
-}
-
-function sanitizePortalUser(user) {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    status: user.status,
-    authSource: user.authSource || "local",
-  };
-}
-
-function authenticatePortalPasswordUser(db, email, password) {
-  const found = findUserByEmail(db, email);
-  if (!found) {
-    return {
-      ok: false,
-      status: 401,
-      error: "invalid_credentials",
-      message: "账号或密码错误。",
-    };
-  }
-  if (!found.passwordHash) {
-    return {
-      ok: false,
-      status: 409,
-      error: "password_login_unavailable",
-      message: "当前账号没有本地密码，请使用统一身份登录。",
-      user: found,
-    };
-  }
-  if (!verifyPassword(password, found.passwordHash)) {
-    return {
-      ok: false,
-      status: 401,
-      error: "invalid_credentials",
-      message: "账号或密码错误。",
-      user: found,
-    };
-  }
-  if (isBlockedUserStatus(found.status)) {
-    return {
-      ok: false,
-      status: 403,
-      error: "account_blocked",
-      message: "当前账号已被禁用，请联系管理员。",
-      user: found,
-    };
-  }
-  return { ok: true, user: found };
-}
-
 function portalInternalAuthAllowed(req) {
   if (!PORTAL_INTERNAL_AUTH_TOKEN) return true;
   return String(req.headers["x-portal-internal-token"] || "") === PORTAL_INTERNAL_AUTH_TOKEN;
-}
-
-function createPortalSession(db, user, authSource = user.authSource || "local") {
-  const sessionId = randomUUID();
-  db.sessions.push({
-    id: sessionId,
-    userId: user.id,
-    createdAt: new Date().toISOString(),
-    authSource,
-  });
-  return sessionId;
-}
-
-async function createPortalUserRecord(db, form, { authSource = "local" } = {}) {
-  const name = String(form.name || "").trim();
-  const email = normalizeAuthEmail(form.email);
-  const password = String(form.password || "");
-
-  if (!name || !email || !password) {
-    return { ok: false, status: 400, message: "姓名、邮箱和密码不能为空。" };
-  }
-  if (password.length < 8) {
-    return { ok: false, status: 400, message: "密码至少需要 8 位。" };
-  }
-  if (findUserByEmail(db, email)) {
-    return { ok: false, status: 409, message: "该邮箱已存在，请直接登录。" };
-  }
-
-  const createdAt = new Date().toISOString();
-  const createdUser = {
-    id: randomUUID(),
-    email,
-    name,
-    role: "user",
-    status: "active",
-    currentTaskSlug: "default",
-    preferences: { theme: "light" },
-    passwordHash: hashPassword(password),
-    createdAt,
-    authSource,
-  };
-  ensureUserCommercialState(createdUser, { grantTrial: true });
-  db.users.push(createdUser);
-  db.wallets.push({
-    userId: createdUser.id,
-    balance: 0,
-    updatedAt: createdAt,
-  });
-  await ensureTaskSpace(db, createdUser, "default", defaultTaskTitle("default"));
-  return { ok: true, user: createdUser };
-}
-
-async function registerLocalPortalUser(db, form) {
-  if (PORTAL_OIDC_ENABLED) {
-    return { ok: false, status: 400, title: "注册不可用", message: "统一身份模式下不提供本地注册。" };
-  }
-  if (!isRegistrationEnabled(db)) {
-    return { ok: false, status: 403, title: "注册已关闭", message: "当前关闭自由注册，请联系管理员。" };
-  }
-
-  const result = await createPortalUserRecord(db, form, { authSource: "local" });
-  if (!result.ok) {
-    return { ...result, title: "注册失败" };
-  }
-  await logPortalEvent({
-    type: "user_registered",
-    userId: result.user.id,
-    operatorId: result.user.id,
-    email: result.user.email,
-  });
-  return { ok: true, user: result.user };
-}
-
-function localLoginBody(db, options = {}) {
-  const registrationEnabled = isRegistrationEnabled(db);
-  const note = options.note
-    ? `<p class="hint">${options.note}</p>`
-    : registrationEnabled
-      ? `<p class="hint">还没有账号？<a href="/register">注册新账号</a></p>`
-      : `<p class="hint">当前关闭自由注册，请联系管理员。</p>`;
-  return `<div class="hero"><h1>统一门户</h1></div><div class="card"><form method="post" action="/login"><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码" required /></p><p><button type="submit">登录</button></p></form>${note}</div>`;
-}
-
-function localRegisterBody(message = "") {
-  const messageBlock = message ? `<p class="hint">${message}</p>` : "";
-  return `<div class="hero"><h1>注册账号</h1></div><div class="card"><form method="post" action="/register"><p><input name="name" type="text" placeholder="姓名" required /></p><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码，至少 8 位" minlength="8" required /></p><p><button type="submit">创建账号</button></p></form>${messageBlock}<p class="hint"><a href="/login">返回登录</a></p></div>`;
-}
-
-function oidcStateCookie() {
-  return "portal_oidc_state";
-}
-
-function buildOidcAuthorizeUrl(state, prompt = "") {
-  const url = new URL("/oauth/v2/authorize", `${PORTAL_OIDC_ISSUER}/`);
-  url.searchParams.set("client_id", PORTAL_OIDC_CLIENT_ID);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", PORTAL_OIDC_SCOPE);
-  url.searchParams.set("redirect_uri", PORTAL_OIDC_REDIRECT_URI);
-  url.searchParams.set("state", state);
-  if (prompt) url.searchParams.set("prompt", prompt);
-  return url.toString();
-}
-
-async function curlJson(args = []) {
-  const { stdout } = await execFileAsync("curl.exe", ["-k", "-sS", ...args], {
-    cwd: repoRoot,
-    timeout: 60000,
-    maxBuffer: 1024 * 1024 * 4,
-  });
-  return JSON.parse(String(stdout || "{}"));
-}
-
-async function exchangeOidcCode(code) {
-  const form = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: PORTAL_OIDC_REDIRECT_URI,
-  }).toString();
-  return curlJson([
-    "-u", `${PORTAL_OIDC_CLIENT_ID}:${PORTAL_OIDC_CLIENT_SECRET}`,
-    "-H", "content-type: application/x-www-form-urlencoded",
-    "-d", form,
-    `${PORTAL_OIDC_ISSUER}/oauth/v2/token`,
-  ]);
-}
-
-async function fetchOidcUserInfo(accessToken) {
-  return curlJson([
-    "-H", `Authorization: Bearer ${accessToken}`,
-    `${PORTAL_OIDC_ISSUER}/oidc/v1/userinfo`,
-  ]);
-}
-
-function readBillingRequestOptions(url) {
-  return {
-    from: url.searchParams.get("from"),
-    to: url.searchParams.get("to"),
-    pageSize: url.searchParams.get("page_size"),
-    tasksPage: url.searchParams.get("tasks_page"),
-    ledgerPage: url.searchParams.get("ledger_page"),
-    runsPage: url.searchParams.get("runs_page"),
-  };
-}
-
-function readOverviewRequestOptions(url) {
-  return {
-    tasksPage: url.searchParams.get("tasks_page"),
-    runsPage: url.searchParams.get("runs_page"),
-  };
-}
-
-function readWorkspaceRequestOptions(url) {
-  return {
-    task: url.searchParams.get("task"),
-    tasksPage: url.searchParams.get("tasks_page"),
-    runsPage: url.searchParams.get("runs_page"),
-    inputsPage: url.searchParams.get("inputs_page"),
-    outputsPage: url.searchParams.get("outputs_page"),
-  };
-}
-
-function readSessionsRequestOptions(url) {
-  return {
-    page: url.searchParams.get("page"),
-    pageSize: url.searchParams.get("page_size"),
-    limit: url.searchParams.get("limit"),
-  };
-}
-
-function readTracesRequestOptions(url) {
-  return {
-    userId: url.searchParams.get("userId"),
-    workspaceId: url.searchParams.get("workspaceId"),
-    runId: url.searchParams.get("runId"),
-    sessionId: url.searchParams.get("sessionId"),
-    status: url.searchParams.get("status"),
-    page: url.searchParams.get("page"),
-    pageSize: url.searchParams.get("page_size"),
-    limit: url.searchParams.get("limit"),
-  };
-}
-
-async function fetchBillingSummary(customerId, workspaceId = "", windowValue = "24h") {
-  return billingClient.fetchSummary(customerId, workspaceId, windowValue);
-}
-
-async function ensureWorkspaceMinioSkeleton(userId, taskSlug, taskPath) {
-  return minioStorageClient.ensureWorkspaceSkeleton(userId, taskSlug, taskPath);
-}
-
-async function fetchPendingSummary(customerId = "", workspaceId = "", windowValue = "168h") {
-  return billingClient.fetchPendingSummary(customerId, workspaceId, windowValue);
-}
-
-async function fetchBillingStatus() {
-  return billingClient.fetchStatus();
-}
-
-async function fetchServerPlans() {
-  return billingClient.fetchServerPlans();
 }
 
 async function readJsonBody(req) {
   const bodyText = (await readBody(req)).toString("utf8");
   if (!bodyText.trim()) return {};
   return JSON.parse(bodyText);
-}
-
-function findResourceOrderUser(db, payload = {}) {
-  const userId = String(payload.userId || payload.portalUserId || payload.tenantId || payload.customerId || payload.customer_id || "").trim();
-  const email = normalizeAuthEmail(payload.email || payload.userEmail || payload.portalUserEmail);
-  return db.users.find((item) =>
-    (userId && item.id === userId) ||
-    (email && normalizeAuthEmail(item.email) === email),
-  ) || null;
-}
-
-function idempotencyKeyFor(req, prefix, user, workspaceId, payload = {}) {
-  const explicit = String(req.headers["x-idempotency-key"] || payload.idempotencyKey || payload.idempotency_key || "").trim();
-  if (explicit) return explicit;
-  const runId = String(payload.runId || payload.run_id || payload.runtimeRunId || "").trim();
-  const planId = String(payload.serverPlanId || payload.planId || "").trim();
-  return `${prefix}:${user.id}:${workspaceId}:${runId || planId || randomUUID()}`;
-}
-
-function selectServerPlan(plansPayload, planId = "") {
-  const items = Array.isArray(plansPayload?.items) ? plansPayload.items : [];
-  const normalizedPlanId = String(planId || "").trim();
-  return items.find((item) =>
-    String(item.id || "") === normalizedPlanId ||
-    String(item.serverPlanId || "") === normalizedPlanId ||
-    String(item.instanceType || "") === normalizedPlanId,
-  ) || (normalizedPlanId ? null : items.find((item) => item.salable) || items[0] || null);
-}
-
-async function resolveResourceOrderPlan(taskSpace, payload = {}) {
-  const requestedPlanId = String(payload.planId || payload.serverPlanId || taskSpace?.serverPlanId || "").trim();
-  const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
-  let plan = selectServerPlan(plansPayload, requestedPlanId);
-  if (!plan && taskSpace?.serverPlanSnapshot) {
-    plan = taskSpace.serverPlanSnapshot;
-  }
-  if (!plan && Array.isArray(plansPayload.items) && plansPayload.items.length === 1) {
-    plan = plansPayload.items[0];
-  }
-  return { plan, plansPayload };
-}
-
-async function createQuotedResourceOrder(db, user, req, payload = {}, options = {}) {
-  const taskSlug = slugify(payload.task || payload.taskSlug || payload.workspaceId || user.currentTaskSlug || "default");
-  const taskSpace = await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-  const { plan, plansPayload } = await resolveResourceOrderPlan(taskSpace, payload);
-  if (!plan) {
-    return {
-      ok: false,
-      status: 409,
-      error: "server_plan_unavailable",
-      message: "当前任务空间还没有可用服务器规格，请先在服务器与费用页选择规格。",
-      plansSummary: buildServerPlansSummary(plansPayload),
-    };
-  }
-  const idempotencyKey = idempotencyKeyFor(req, options.idempotencyPrefix || "resource-order-quote", user, taskSpace.slug, {
-    ...payload,
-    serverPlanId: plan.id || payload.serverPlanId || payload.planId || "",
-  });
-  const quotedOrder = quoteResourceOrderFromPlan({
-    user,
-    workspace: taskSpace,
-    serverPlan: plan,
-    input: {
-      ...payload,
-      serverPlanId: plan.id || payload.serverPlanId || payload.planId || "",
-      workspaceSessionId: payload.workspaceSessionId || payload.workspace_session_id || "",
-      runId: payload.runId || payload.run_id || "",
-    },
-    idempotencyKey,
-  });
-  const upserted = upsertQuotedResourceOrder(db, quotedOrder);
-  return {
-    ok: true,
-    order: upserted.order,
-    created: upserted.created,
-    taskSpace,
-    plan,
-    plansSummary: buildServerPlansSummary(plansPayload),
-  };
-}
-
-function resourceOrderResponse(db, user, order) {
-  return {
-    ok: true,
-    resourceOrderId: order.id,
-    order: resourceOrderPublicView(order, db.resourceOrderEvents || []),
-    commercial: buildCommercialProfile(db, user),
-  };
-}
-
-function findUserResourceOrder(db, user, orderId = "") {
-  const normalizedOrderId = String(orderId || "").trim();
-  if (!normalizedOrderId) return null;
-  ensureResourceOrderCollections(db);
-  return db.resourceOrders.find((item) => item.id === normalizedOrderId && resourceBelongsToUser(item, user)) || null;
-}
-
-async function resourceOrderProvisionInput(order, plan = {}, payload = {}) {
-  const runId = String(order.runId || payload.runId || payload.run_id || order.id).trim();
-  return {
-    tenantId: order.tenantId || order.userId,
-    userId: order.userId,
-    workspaceId: order.workspaceId,
-    workspaceSessionId: order.workspaceSessionId,
-    runId,
-    resourceOrderId: order.id,
-    serverPlanId: order.serverPlanId,
-    region: order.region || plan.region || "",
-    zone: order.zone || plan.zone || "",
-    provisioningMode: plan.provisioningMode || "tke_node_pool_create",
-    serverPlan: {
-      ...plan,
-      id: order.serverPlanId || plan.id || "",
-      region: order.region || plan.region || "",
-      zone: order.zone || plan.zone || "",
-    },
-  };
-}
-
-async function findResourceOrderPlan(order) {
-  const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
-  const items = Array.isArray(plansPayload.items) ? plansPayload.items : [];
-  return items.find((item) => String(item.id || "") === String(order.serverPlanId || "")) || {};
-}
-
-async function provisionResourceOrder(db, user, order, payload = {}, options = {}) {
-  const plan = await findResourceOrderPlan(order);
-  const provisionerPayload = await resourceOrderProvisionInput(order, plan, payload);
-  const pending = transitionResourceOrder(db, {
-    orderId: order.id,
-    status: "provisioning",
-    actorType: "resource-provisioner",
-    actorId: "provision-async",
-    payload: {
-      runId: provisionerPayload.runId,
-      async: true,
-    },
-    idempotencyKey: `event:provisioning:${order.id}:${provisionerPayload.runId || "default"}`,
-  });
-  if (!pending.ok) {
-    return { ok: false, status: pending.status || 400, provisioner: null, order };
-  }
-
-  const provisioned = await resourceProvisionerClient.startProvision(provisionerPayload);
-  if (!provisioned?.ok) {
-    if (options.allowDisabledPending && String(provisioned?.error || "") === "resource_provisioning_disabled") {
-      return { ok: true, provisioner: provisioned, order: pending.order || order };
-    }
-    const failed = transitionResourceOrder(db, {
-      orderId: order.id,
-      status: "failed",
-      actorType: "resource-provisioner",
-      actorId: "provision-async",
-      payload: {
-        error: provisioned?.error || "resource_provisioner_failed",
-        code: provisioned?.code || "",
-      },
-      idempotencyKey: `event:provision-failed:${order.id}:${provisioned?.code || provisioned?.error || "error"}`,
-    });
-    return { ok: false, status: provisioned?.status || 502, provisioner: provisioned, order: failed.order || pending.order || order };
-  }
-
-  const provisionerOrder = provisioned.order || {};
-  if (provisionerOrder.status === "ready") {
-    const ready = transitionResourceOrder(db, {
-      orderId: order.id,
-      status: "running",
-      actorType: "resource-provisioner",
-      actorId: String(provisionerOrder.requestId || provisionerOrder.nodePoolId || ""),
-      payload: {
-        runId: provisionerPayload.runId,
-        provisionRequestId: provisionerOrder.requestId || "",
-        nodePoolId: provisionerOrder.nodePoolId || "",
-        cloudResourceIds: [provisionerOrder.nodePoolId].filter(Boolean),
-        provisionerOrder,
-      },
-      idempotencyKey: `event:provisioned:${order.id}:${provisionerOrder.requestId || provisionerOrder.nodePoolId || "ready"}`,
-    });
-    return { ok: true, provisioner: provisioned, order: ready.order || pending.order || order };
-  }
-
-  if (pending.order) {
-    pending.order.provisionRequestId = String(provisionerOrder.requestId || provisionerOrder.id || pending.order.provisionRequestId || "").trim();
-  }
-  return { ok: true, provisioner: provisioned, order: pending.order || order };
-}
-
-async function fetchMinioSummary() {
-  return minioStorageClient.fetchSummary();
-}
-
-async function fetchHarborSummary() {
-  return harborRegistryClient.fetchSummary();
 }
 
 async function createOplLaunch({
@@ -1081,265 +478,8 @@ async function createOplLaunch({
   });
 }
 
-async function fetchLangfuseSummary() {
-  return langfuseTraceClient.fetchSummary();
-}
-
-function workspaceChatSessionsForUser(db, user, limit = 20) {
-  return (db.workspaceSessions || [])
-    .filter((item) => item.userId === user.id)
-    .sort((a, b) => String(b.lastUsedAt || b.createdAt || "").localeCompare(String(a.lastUsedAt || a.createdAt || "")))
-    .slice(0, limit)
-    .map((item) => ({
-      sessionId: item.id,
-      sessionType: "mas",
-      source: "portal_workspace_sessions",
-      type: "live",
-      userId: item.userId,
-      userName: user.name || user.email || "",
-      email: user.email || "",
-      workspaceId: item.workspaceId || "",
-      workspaceSessionId: item.id,
-      lastUsedAt: item.lastUsedAt || item.createdAt || "",
-      expiresAt: item.expiresAt || "",
-      status: item.status || "unknown",
-    }));
-}
-
-async function fetchTraceRows({ userId = "", workspaceId = "", runId = "", limit = 20 } = {}) {
-  return langfuseTraceClient.fetchTraceRows({ userId, workspaceId, runId, limit });
-}
-
-async function fetchOplAdapterRuns() {
-  return oplAdapterClient.fetchRuns();
-}
-
-async function fetchOplAdapterTraceRows({ userId = "", workspaceId = "", runId = "", limit = 200 } = {}) {
-  return oplAdapterClient.fetchTraceRows({ userId, workspaceId, runId, limit });
-}
-
-async function fetchOplAdapterCosts({ userId = "", workspaceId = "", runId = "" } = {}) {
-  return oplAdapterClient.fetchCosts({ userId, workspaceId, runId });
-}
-
-async function fetchWorkspaceStorageSnapshot(taskSpace) {
-  const inputDir = path.join(taskSpace.path, "inputs");
-  const outputDir = path.join(taskSpace.path, "outputs");
-  await mkdir(inputDir, { recursive: true });
-  await mkdir(outputDir, { recursive: true });
-  const files = await listFilesRecursive(inputDir);
-  const outputs = await listFilesRecursive(outputDir);
-  const inputBytes = (await Promise.all(files.map((item) => stat(item.fullPath).then((meta) => meta.size).catch(() => 0)))).reduce((sum, item) => sum + item, 0);
-  const outputBytes = (await Promise.all(outputs.map((item) => stat(item.fullPath).then((meta) => meta.size).catch(() => 0)))).reduce((sum, item) => sum + item, 0);
-  return {
-    source: "workspace_file_system",
-    type: "live",
-    workspaceId: taskSpace.slug,
-    inputsCount: files.length,
-    outputsCount: outputs.length,
-    inputBytes,
-    outputBytes,
-    files,
-    outputs,
-  };
-}
-
-function workspaceStorageEntitlement(db, user, workspaceId) {
-  return resolveWorkspaceStorageEntitlement(db, user, workspaceId);
-}
-
-function readMultipartFiles(body, boundary) {
-  const text = body.toString("binary");
-  const parts = text.split(`--${boundary}`).filter((part) => part.includes("filename="));
-  const files = [];
-  for (const part of parts) {
-    const filenameMatch = part.match(/filename="([^"]+)"/i);
-    if (!filenameMatch) continue;
-    const relativePath = safeRelativePath(filenameMatch[1]);
-    if (!relativePath) continue;
-    const contentTypeMatch = part.match(/Content-Type:\s*([^\r\n]+)/i);
-    const splitIndex = part.indexOf("\r\n\r\n");
-    if (splitIndex === -1) continue;
-    const content = part.slice(splitIndex + 4, part.lastIndexOf("\r\n"));
-    files.push({
-      name: relativePath.split(/[\\/]/).pop() || relativePath,
-      relativePath,
-      contentType: String(contentTypeMatch?.[1] || guessContentType(relativePath) || "application/octet-stream").trim(),
-      buffer: Buffer.from(content, "binary"),
-    });
-  }
-  return files;
-}
-
-async function persistWorkspaceUpload({ db, user, taskSpace, kind = "inputs", file }) {
-  const normalizedKind = String(kind || "inputs").toLowerCase() === "outputs" ? "outputs" : "inputs";
-  const targetDir = path.join(taskSpace.path, normalizedKind);
-  const relativePath = safeRelativePath(file.relativePath || file.name || "");
-  if (!relativePath) return { ok: false, status: 400, error: "invalid_relative_path" };
-  const targetFile = path.join(targetDir, relativePath);
-  await mkdir(path.dirname(targetFile), { recursive: true });
-  await writeFile(targetFile, file.buffer);
-  const meta = await stat(targetFile);
-  const tenantId = user.tenantId || user.id;
-  const recorded = recordWorkspaceFile(db, {
-    tenantId,
-    userId: user.id,
-    workspaceId: taskSpace.slug,
-    kind: normalizedKind,
-    name: file.name || relativePath.split(/[\\/]/).pop() || relativePath,
-    relativePath,
-    storageKey: buildWorkspaceStorageKey(tenantId, taskSpace.slug, normalizedKind, relativePath),
-    localPath: targetFile,
-    sizeBytes: Number(meta.size || file.buffer.length || 0),
-    checksum: buildWorkspaceFileChecksum(file.buffer),
-    contentType: file.contentType || guessContentType(relativePath) || "application/octet-stream",
-    status: "active",
-    source: "portal_upload",
-  });
-  await syncWorkspaceFileToMinio(user.id, taskSpace.slug, normalizedKind, targetFile, relativePath);
-  return {
-    ok: true,
-    file: recorded.file,
-    localPath: targetFile,
-  };
-}
-
-async function handleSignedUpload(req, res, user) {
-  const url = new URL(req.url || "/", "http://local");
-  const tokenPayload = readWorkspaceTransferToken(url.searchParams.get("token") || "", "upload");
-  if (!tokenPayload || tokenPayload.userId !== user.id) {
-    sendJson(res, { error: "invalid_or_expired_transfer_token" }, 403);
-    return;
-  }
-  const { db } = await currentUser(req);
-  const taskSpace = findTaskSpace(db, user.id, tokenPayload.workspaceId) || await ensureTaskSpace(db, user, tokenPayload.workspaceId, defaultTaskTitle(tokenPayload.workspaceId));
-  const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
-  if (!entitlement.enabled) {
-    sendJson(res, { error: "storage_entitlement_required", entitlement }, 402);
-    return;
-  }
-  const contentType = String(req.headers["content-type"] || "");
-  const boundaryMatch = contentType.match(/boundary=(.+)$/);
-  if (!boundaryMatch) {
-    sendJson(res, { error: "multipart_boundary_missing" }, 400);
-    return;
-  }
-  const files = readMultipartFiles(await readBody(req), boundaryMatch[1]);
-  const matched = files.find((item) => item.relativePath === tokenPayload.relativePath) || files[0];
-  if (!matched) {
-    sendJson(res, { error: "file_missing" }, 400);
-    return;
-  }
-  const saved = await persistWorkspaceUpload({
-    db,
-    user,
-    taskSpace,
-    kind: tokenPayload.kind,
-    file: {
-      ...matched,
-      relativePath: tokenPayload.relativePath,
-      name: tokenPayload.fileName || matched.name,
-    },
-  });
-  if (!saved.ok) {
-    sendJson(res, { error: saved.error || "workspace_upload_failed" }, saved.status || 400);
-    return;
-  }
-  await logPortalEvent({ type: "workspace_input_uploaded", userId: user.id, workspaceId: taskSpace.slug, fileCount: 1, fileName: saved.file.name });
-  await writeDb(db);
-  sendJson(res, {
-    ok: true,
-    workspaceId: taskSpace.slug,
-    file: saved.file,
-  });
-}
-
-async function handleSignedDownload(req, res, user) {
-  const url = new URL(req.url || "/", "http://local");
-  const tokenPayload = readWorkspaceTransferToken(url.searchParams.get("token") || "", "download");
-  if (!tokenPayload || tokenPayload.userId !== user.id) {
-    sendJson(res, { error: "invalid_or_expired_transfer_token" }, 403);
-    return;
-  }
-  const taskSpace = findTaskSpace(await readDb(), user.id, tokenPayload.workspaceId);
-  if (!taskSpace) {
-    sendJson(res, { error: "workspace_not_found" }, 404);
-    return;
-  }
-  const kind = tokenPayload.kind === "outputs" ? "outputs" : "inputs";
-  const relativePath = safeRelativePath(tokenPayload.relativePath || "");
-  const fullPath = path.join(taskSpace.path, kind, relativePath);
-  if (!(await exists(fullPath))) {
-    sendJson(res, { error: "file_not_found" }, 404);
-    return;
-  }
-  sendFile(res, fullPath, tokenPayload.fileName || relativePath.split(/[\\/]/).pop() || relativePath, guessContentType(relativePath));
-}
-
-async function fetchWorkspaceMinioState(userId, taskSlug) {
-  return minioStorageClient.fetchWorkspaceState(userId, taskSlug);
-}
-
 async function fetchHarborImageRows(limit = 50) {
   return harborRegistryClient.fetchImageRows(limit);
-}
-
-async function probe(url) {
-  if (!url) return { ok: false, status: "未配置" };
-  const startedAt = Date.now();
-  try {
-    const response = await fetch(url, { redirect: "manual" });
-    return { ok: true, status: String(response.status), responseMs: Date.now() - startedAt };
-  } catch {
-    return { ok: false, status: "不可达", responseMs: Date.now() - startedAt };
-  }
-}
-
-async function handleUpload(req, res, user) {
-  const url = new URL(req.url || "/", "http://local");
-  const taskSlug = slugify(url.searchParams.get("task") || "default");
-  const contentType = String(req.headers["content-type"] || "");
-  const match = contentType.match(/boundary=(.+)$/);
-  if (!match) {
-    sendHtml(res, layoutV2("上传失败", `<div class="card">上传请求缺少 multipart boundary。</div>`, user), 400);
-    return;
-  }
-
-  const files = readMultipartFiles(await readBody(req), match[1]);
-  const { db } = await currentUser(req);
-  const taskSpace = await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-  if (taskSpace.status !== "active") {
-    sendHtml(res, layoutV2("任务空间不可上传", `<div class="card"><h2>当前任务空间不可上传</h2><p class="hint">只有 active 状态的任务空间才能继续上传文件与发起新运行。</p></div>`, user), 409);
-    return;
-  }
-  const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
-  if (!entitlement.enabled) {
-    sendHtml(res, layoutV2("存储未开通", `<div class="card"><h2>请先开通存储</h2><p class="hint">免费容量为 0。上传输入文件和保存输出文件前，需要在“服务器与费用”开通至少 10GB 对象存储。</p></div>`, user), 402);
-    return;
-  }
-
-  let fileCount = 0;
-  for (const file of files) {
-    const saved = await persistWorkspaceUpload({ db, user, taskSpace, kind: "inputs", file });
-    if (!saved.ok) continue;
-    fileCount += 1;
-  }
-  await logPortalEvent({ type: "workspace_input_uploaded", userId: user.id, workspaceId: taskSpace.slug, fileCount });
-  await writeDb(db);
-  res.writeHead(302, { Location: `/portal/workspace?task=${encodeURIComponent(taskSpace.slug)}` });
-  res.end();
-}
-
-async function syncWorkspaceFileToMinio(userId, taskSlug, kind, filePath, relativePath = "") {
-  return minioStorageClient.syncWorkspaceFile(userId, taskSlug, kind, filePath, relativePath);
-}
-
-async function readDirSafe(dir) {
-  try {
-    return await readdir(dir);
-  } catch {
-    return [];
-  }
 }
 
 async function createZipFromDir(sourceDir, outFile) {
@@ -1350,3708 +490,225 @@ async function createZipFromDir(sourceDir, outFile) {
   ], { timeout: 60000, maxBuffer: 1024 * 1024 });
 }
 
-async function collectRunsForUser(userId) {
-  const items = [];
-  const files = await readDirSafe(medRunsRoot);
-  for (const file of files) {
-    if (!file.endsWith(".json")) continue;
-    try {
-      const json = JSON.parse(await readFile(path.join(medRunsRoot, file), "utf8"));
-      if (json.userId === userId || json.customerId === userId) items.push(json);
-    } catch {}
-  }
-  if (await exists(codexRuntimeEventsFile)) {
-    try {
-      const raw = await readFile(codexRuntimeEventsFile, "utf8");
-      const lines = raw.split(/\r?\n/).filter(Boolean);
-      for (const line of lines) {
-        try {
-          const event = JSON.parse(line);
-          if (event.type !== "codex_runtime_run") continue;
-          if (event.portalUserId !== userId) continue;
-          items.push({
-            runId: event.runId,
-            userId: event.portalUserId,
-            customerId: event.portalUserId,
-            workspaceId: event.workspaceId,
-            workspaceSessionId: event.workspaceSessionId || "",
-            status: Number(event.exitCode || 0) === 0 ? "completed" : "failed",
-            exitCode: Number(event.exitCode || 0),
-            createdAt: event.occurredAt,
-            source: "codex_runtime",
-            stdoutFile: event.stdoutFile || "",
-            stderrFile: event.stderrFile || "",
-          });
-        } catch {}
-      }
-    } catch {}
-  }
-  const deduped = new Map();
-  for (const item of items) {
-    const key = item?.runId || randomUUID();
-    const existing = deduped.get(key);
-    if (!existing || String(item.createdAt || "") > String(existing.createdAt || "")) {
-      deduped.set(key, item);
-    }
-  }
-  const merged = [...deduped.values()];
-  merged.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  return merged;
-}
-
-async function evaluateUserPolicy(db, user) {
-  const group = db.groups.find((item) =>
-    item.id === user.groupId &&
-    String(item.status || "active").toLowerCase() === "active",
-  ) || null;
-  const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-  const concurrentRuns = (await collectRunsForUser(user.id)).filter((run) => !isRunTerminal(run)).length;
-  const workspaceCount = db.taskSpaces.filter((item) =>
-    item.userId === user.id &&
-    !["deleted", "deleting"].includes(String(item.status || "").toLowerCase()),
-  ).length;
-
-  const allowMas = group ? group.allowMas !== false : true;
-  let allowWorkspaceCreate = group ? group.allowWorkspaceCreate !== false : true;
-  const blocks = [];
-
-  if (isBlockedUserStatus(user.status)) {
-    blocks.push("当前账号已被禁用");
-  }
-
-  if (group) {
-    const balanceFloor = Number(group.balanceFloor || 0);
-    if (balanceFloor > 0 && Number(wallet.balance || 0) < balanceFloor) {
-      blocks.push(`当前余额低于分组门槛（${balanceFloor.toFixed(2)}）`);
-    }
-
-    const maxConcurrentRuns = Number(group.maxConcurrentRuns || 0);
-    if (maxConcurrentRuns > 0 && concurrentRuns >= maxConcurrentRuns) {
-      blocks.push(`已达到分组并发运行上限（${maxConcurrentRuns}）`);
-    }
-
-    const maxWorkspaces = Number(group.maxWorkspaces || 0);
-    if (maxWorkspaces > 0 && workspaceCount >= maxWorkspaces) {
-      allowWorkspaceCreate = false;
-    }
-  }
-
-  return {
-    group,
-    wallet,
-    concurrentRuns,
-    workspaceCount,
-    allowMas,
-    allowWorkspaceCreate,
-    blocks,
-    blocked: blocks.length > 0,
-  };
-}
-
 function groupNameById(db, groupId = "") {
   if (!groupId) return "";
   const group = db.groups.find((item) => item.id === groupId);
   return group?.name || "";
 }
 
-async function collectRunsForTask(userId, workspaceId) {
-  const runs = await collectRunsForUser(userId);
-  return runs.filter((item) => item.workspaceId === workspaceId);
-}
-
-function summarizeTaskRuns(runs) {
-  const latestRun = runs[0] || null;
-  const completed = runs.filter((run) => isRunTerminal(run)).length;
-  return { latestRun, totalRuns: runs.length, completed };
-}
-
 function money(value) {
   return Number(value || 0).toFixed(2);
 }
 
-function microMoney(value) {
-  return Number(value || 0).toFixed(5);
-}
-
-function csvEscape(value) {
-  const text = String(value ?? "");
-  if (/[",\r\n]/.test(text)) {
-    return `"${text.replaceAll('"', '""')}"`;
-  }
-  return text;
-}
-
-function parseHourWindow(value) {
-  const raw = String(value || "").trim();
-  if (!/^\d+h$/.test(raw)) return null;
-  const hours = Number(raw.slice(0, -1));
-  return Number.isFinite(hours) && hours > 0 ? hours : null;
-}
-
-function withinHourWindow(isoString, hours) {
-  if (!hours) return true;
-  const ts = Date.parse(String(isoString || ""));
-  if (!Number.isFinite(ts)) return false;
-  return ts >= Date.now() - hours * 60 * 60 * 1000;
-}
-
-function parsePositiveInt(value, fallback) {
-  const parsed = Number.parseInt(String(value || ""), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function normalizePageSize(value) {
-  const parsed = parsePositiveInt(value, 5);
-  return [5, 10, 20].includes(parsed) ? parsed : 5;
-}
-
-function paginateRows(rows = [], pageValue = 1, pageSizeValue = 5) {
-  const total = rows.length;
-  const pageSize = normalizePageSize(pageSizeValue);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const page = Math.min(Math.max(parsePositiveInt(pageValue, 1), 1), totalPages);
-  const start = (page - 1) * pageSize;
-  return {
-    rows: rows.slice(start, start + pageSize),
-    page,
-    pageSize,
-    total,
-    totalPages,
-  };
-}
-
-function taskCostSummary(taskSlug, runs, billingItems) {
-  const runIds = new Set(runs.filter((run) => run.workspaceId === taskSlug).map((run) => run.runId));
-  const related = billingItems.filter((item) => {
-    const runId = item?.properties?.["label:run_id"] || item?.properties?.run_id || "";
-    return runIds.has(runId);
-  });
-  return related.reduce((acc, item) => {
-    acc.cpuCost += Number(item?.cpuCost || 0);
-    acc.gpuCost += Number(item?.gpuCost || 0);
-    acc.pvCost += Number(item?.pvCost || 0);
-    acc.totalCost += Number(item?.totalCost || 0);
-    return acc;
-  }, { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 });
-}
-
-function rangeBounds(rangeKey = "today", fromValue = "", toValue = "") {
-  const now = new Date();
-  if (rangeKey === "custom") {
-    const from = new Date(String(fromValue || ""));
-    const to = new Date(String(toValue || ""));
-    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return { start: null, end: null };
-    to.setHours(23, 59, 59, 999);
-    return { start: from, end: to };
-  }
-  if (rangeKey === "30d") {
-    const start = new Date(now);
-    start.setDate(start.getDate() - 29);
-    start.setHours(0, 0, 0, 0);
-    return { start, end: now };
-  }
-  if (rangeKey === "7d") {
-    const start = new Date(now);
-    start.setDate(start.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    return { start, end: now };
-  }
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  return { start, end: now };
-}
-
-function withinDateRange(value, range) {
-  if (!range?.start || !range?.end) return true;
-  const ts = Date.parse(String(value || ""));
-  if (!Number.isFinite(ts)) return false;
-  return ts >= range.start.getTime() && ts <= range.end.getTime();
-}
-
-function netSpent(entries = []) {
-  return Number(entries.reduce((sum, item) => {
-    const amount = Math.abs(Number(item.amount || 0));
-    if (item.type === "resource_charge" || item.type === "makeup_charge") return sum + amount;
-    if (item.type === "refund") return sum - amount;
-    return sum;
-  }, 0).toFixed(5));
-}
-
-async function buildOverviewPayload(db, user, options = {}) {
-  const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-  const tasks = listTaskSpacesForUser(db, user.id);
-  const currentTask = currentTaskSpaceForUser(db, user) || tasks[0] || null;
-  const runs = await collectRunsForUser(user.id);
-  const policy = await evaluateUserPolicy(db, user);
-  const commercial = buildCommercialProfile(db, user, { wallet, policy });
-  const serverPlans = await fetchServerPlans() || buildServerPlansFallback();
-  const serverPlansSummary = buildServerPlansSummary(serverPlans);
-  const billing = await fetchBillingSummary(user.id, "", "168h");
-  const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
-  const items = billing?.items || [];
-  const resourceOrders = resourceOrdersForUser(db, user.id);
-  const taskTitleMap = new Map(tasks.map((task) => [task.slug, task.title]));
-  const todayRange = rangeBounds("today");
-  const todayCost = items
-    .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, todayRange))
-    .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0);
-  const pendingTotal = Number(pendingBilling?.totals?.totalCost || pendingBilling?.totalCost || 0);
-  const exactTotal = Number(billing?.totals?.totalCost || billing?.totalCost || 0);
-
-  const taskRows = tasks.map((task) => ({
-    slug: task.slug,
-    title: task.title,
-    status: task.status,
-    runCount: runs.filter((run) => run.workspaceId === task.slug).length,
-    updatedAt: formatDateTime(task.updatedAt || task.createdAt || ""),
-  }));
-
-  const latestRunsAll = runs.map((run) => ({
-    runId: run.runId,
-    workspaceId: run.workspaceId,
-    workspaceTitle: taskTitleMap.get(run.workspaceId) || run.workspaceId || "-",
-    status: isRunTerminal(run) ? "completed" : (run.status || "running"),
-    createdAt: run.createdAt || "",
-    displayTime: formatDateTime(run.createdAt || ""),
-  }));
-
-  const taskPagination = paginateRows(taskRows, options.tasksPage, 5);
-  const latestRunsPagination = paginateRows(latestRunsAll, options.runsPage, 5);
-  const workspaceCount = tasks.filter((item) => !["deleted", "deleting"].includes(String(item.status || "").toLowerCase())).length;
-  const sessionCount = db.workspaceSessions.filter((item) => item.userId === user.id && item.status === "active").length;
-
-  return {
-    kpis: {
-      accountStatus: commercial.accountStatus,
-      billingStatus: commercial.billingStatus,
-      entitlementStatus: commercial.entitlementStatus,
-      balance: Number(wallet.balance || 0),
-      activeFreeze: commercial.activeFreeze || 0,
-      availableBalance: commercial.availableBalance || 0,
-      todayCost: Number(todayCost.toFixed(5)),
-      pendingCost: Number(pendingTotal.toFixed(5)),
-      exactCost: Number(exactTotal.toFixed(5)),
-      historicalCost: netSpent(db.ledger.filter((item) => item.userId === user.id)),
-      activeTasks: tasks.filter((item) => item.status === "active").length,
-      workspaceCount,
-      runCount: runs.length,
-      resourceOrderCount: resourceOrders.length,
-    },
-    commercial,
-    serverPlansSummary,
-    selectedServerPlan: currentServerPlanSelection(currentTask),
-    latestResourceOrders: resourceOrders.slice(0, 5).map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || [])),
-    onboarding: buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }),
-    taskCards: taskPagination.rows,
-    taskPagination: {
-      page: taskPagination.page,
-      pageSize: taskPagination.pageSize,
-      total: taskPagination.total,
-      totalPages: taskPagination.totalPages,
-    },
-    latestRuns: latestRunsPagination.rows,
-    latestRunsPagination: {
-      page: latestRunsPagination.page,
-      pageSize: latestRunsPagination.pageSize,
-      total: latestRunsPagination.total,
-      totalPages: latestRunsPagination.totalPages,
-    },
-  };
-}
-
-async function buildBillingPayload(db, user, options = {}) {
-  const wallet = ensureWallet(db, user.id);
-  const commercial = buildCommercialProfile(db, user, { wallet });
-  const pageSize = normalizePageSize(options.pageSize);
-  const fromValue = String(options.from || "").trim();
-  const toValue = String(options.to || "").trim();
-  const rangeKey = fromValue || toValue ? "custom" : "30d";
-  const fallbackStart = new Date();
-  fallbackStart.setDate(fallbackStart.getDate() - 29);
-  const normalizedFrom = fromValue || formatDateOnly(fallbackStart);
-  const normalizedTo = toValue || formatDateOnly(new Date());
-  const range = rangeBounds(rangeKey, normalizedFrom, normalizedTo);
-  const billing = await fetchBillingSummary(user.id, "", "720h");
-  const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
-  const items = billing?.items || [];
-  const runs = await collectRunsForUser(user.id);
-  const filteredItems = items.filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, range));
-  const filteredRuns = runs.filter((run) => withinDateRange(run.createdAt || "", range));
-  const filteredLedger = db.ledger
-    .filter((item) => item.userId === user.id)
-    .filter((item) => withinDateRange(item.createdAt || "", range))
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  const totals = filteredItems.reduce((acc, item) => {
-    acc.cpuCost += Number(item?.cpuCost || 0);
-    acc.gpuCost += Number(item?.gpuCost || 0);
-    acc.pvCost += Number(item?.pvCost || 0);
-    acc.totalCost += Number(item?.totalCost || 0);
-    return acc;
-  }, { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 });
-
-  const taskCostsAll = listTaskSpacesForUser(db, user.id).map((task) => {
-    const taskTotals = taskCostSummary(task.slug, filteredRuns, filteredItems);
-    return {
-      slug: task.slug,
-      title: task.title,
-      totalCost: Number(taskTotals.totalCost || 0),
-      cpuCost: Number(taskTotals.cpuCost || 0),
-      gpuCost: Number(taskTotals.gpuCost || 0),
-      storageCost: Number(taskTotals.pvCost || 0),
-      runCount: filteredRuns.filter((run) => run.workspaceId === task.slug).length,
-    };
-  }).sort((a, b) => b.totalCost - a.totalCost);
-
-  const allRunCosts = filteredRuns.map((run) => {
-    const related = filteredItems.find((item) => item?.properties?.["label:run_id"] === run.runId || item?.properties?.run_id === run.runId || item?.name?.includes(run.runId));
-    const pricingSource = related?.properties?.["label:pricing_source"] || related?.properties?.pricing_source || (related ? "OpenCost aggregated" : "metering pending");
-    return {
-      runId: run.runId,
-      workspaceId: run.workspaceId,
-      cpuCost: Number(related?.cpuCost || 0),
-      gpuCost: Number(related?.gpuCost || 0),
-      storageCost: Number(related?.pvCost || 0),
-      totalCost: Number(related?.totalCost || 0),
-      startedAt: related?.start || run.createdAt || "",
-      endedAt: related?.end || "",
-      pricingSource,
-      runStatus: run.status || (isRunTerminal(run) ? "completed" : "running"),
-    };
-  }).sort((a, b) => String(b.endedAt || b.startedAt || "").localeCompare(String(a.endedAt || a.startedAt || "")));
-
-  const taskPagination = paginateRows(taskCostsAll, options.tasksPage, pageSize);
-  const ledgerPagination = paginateRows(filteredLedger, options.ledgerPage, pageSize);
-  const runPagination = paginateRows(allRunCosts, options.runsPage, pageSize);
-  return {
-    wallet: {
-      balance: Number(wallet.balance || 0),
-      activeFreeze: commercial.activeFreeze || 0,
-      availableBalance: commercial.availableBalance || 0,
-      trialRemaining: commercial.trialRemaining || 0,
-    },
-    totals,
-    summary: {
-      selectedCost: Number(totals.totalCost.toFixed(5)),
-      runCount: filteredRuns.length,
-      workspaceCount: taskCostsAll.filter((item) => item.runCount > 0 || item.totalCost > 0).length,
-      pendingCost: Number((Number(pendingBilling?.totals?.totalCost || pendingBilling?.totalCost || 0)).toFixed(5)),
-      exactCost: Number((Number(billing?.totals?.totalCost || billing?.totalCost || totals.totalCost || 0)).toFixed(5)),
-    },
-    breakdown: {
-      cpuCost: Number(totals.cpuCost.toFixed(5)),
-      gpuCost: Number(totals.gpuCost.toFixed(5)),
-      storageCost: Number(totals.pvCost.toFixed(5)),
-      vpnCost: 0,
-      trafficCost: 0,
-      otherCloudCost: 0,
-      cloudSource: billing?.cloudSource || billing?.source || "not_connected",
-      pricingSource: billing?.source || "unavailable",
-    },
-    taskCosts: taskPagination.rows,
-    taskPagination: {
-      page: taskPagination.page,
-      pageSize: taskPagination.pageSize,
-      total: taskPagination.total,
-      totalPages: taskPagination.totalPages,
-    },
-    runCosts: runPagination.rows,
-    runPagination: {
-      page: runPagination.page,
-      pageSize: runPagination.pageSize,
-      total: runPagination.total,
-      totalPages: runPagination.totalPages,
-    },
-    ledger: ledgerPagination.rows,
-    ledgerPagination: {
-      page: ledgerPagination.page,
-      pageSize: ledgerPagination.pageSize,
-      total: ledgerPagination.total,
-      totalPages: ledgerPagination.totalPages,
-    },
-    filter: {
-      range: rangeKey,
-      from: normalizedFrom,
-      to: normalizedTo,
-    },
-    trend: groupBillingByDay(filteredItems, 7),
-    todayCost: Number(filteredItems
-      .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, rangeBounds("today")))
-      .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0)
-      .toFixed(5)),
-  };
-}
-
-async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
-  const currentTask = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-  const current = {
-    ...currentTask,
-    title: sanitizeTaskTitle(currentTask.slug || "default", currentTask.title || ""),
-  };
-  const allTasks = listTaskSpacesForUser(db, user.id);
-  const inputDir = path.join(current.path, "inputs");
-  const outputDir = path.join(current.path, "outputs");
-  await mkdir(inputDir, { recursive: true });
-  await mkdir(outputDir, { recursive: true });
-  const files = await listFilesRecursive(inputDir);
-  const outputs = await listFilesRecursive(outputDir);
-  const userRuns = await collectRunsForUser(user.id);
-  const runs = userRuns.filter((item) => item.workspaceId === current.slug);
-  const billing = await fetchBillingSummary(user.id, current.slug, "168h");
-  const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-  const events = (await readPortalEvents(200)).filter((event) => event.userId === user.id && (!event.workspaceId || event.workspaceId === current.slug));
-  const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
-  const storageEntitlement = workspaceStorageEntitlement(db, user, current.slug);
-  const runPagination = paginateRows(runs, options.runsPage, 5);
-  const filePagination = paginateRows(files, options.inputsPage, 5);
-  const outputPagination = paginateRows(outputs, options.outputsPage, 5);
-  const taskPagination = paginateRows(allTasks, options.tasksPage, 5);
-  const billingAll = await fetchBillingSummary(user.id, "", "168h");
-  const pagedTasks = taskPagination.rows;
-  const taskCards = await Promise.all(pagedTasks.map(async (task) => {
-    const taskFiles = await listFilesRecursive(path.join(task.path, "inputs"));
-    const taskOutputs = await listFilesRecursive(path.join(task.path, "outputs"));
-    const taskRuns = userRuns.filter((run) => run.workspaceId === task.slug);
-    const taskTotals = taskCostSummary(task.slug, userRuns, billingAll?.items || []);
-    return {
-      slug: task.slug,
-      title: task.title,
-      status: task.status,
-      inputs: taskFiles.length,
-      outputs: taskOutputs.length,
-      runs: taskRuns.length,
-      totalCost: Number(taskTotals.totalCost || 0),
-      updatedAt: formatDateTime(task.updatedAt || task.createdAt || ""),
-    };
-  }));
-  return {
-    workspace: {
-      slug: current.slug,
-      title: current.title,
-      status: current.status,
-      serverPlan: currentServerPlanSelection(current),
-      storageEntitlement,
-      createdAt: current.createdAt || null,
-      archivedAt: current.archivedAt || null,
-      deletedAt: current.deletedAt || null,
-    },
-    counts: {
-      inputs: files.length,
-      outputs: outputs.length,
-      runs: runs.length,
-      completedRuns: runs.filter((run) => isRunTerminal(run)).length,
-    },
-    costs: totals,
-    storageEntitlement,
-    runStatus: summarizeRunStatus(runs),
-    activeSession: activeSession ? {
-      id: activeSession.id,
-      createdAt: activeSession.createdAt || null,
-      lastUsedAt: activeSession.lastUsedAt || null,
-      expiresAt: activeSession.expiresAt || null,
-    } : null,
-    recentRuns: runPagination.rows.map((run) => ({
-      runId: run.runId,
-      status: isRunTerminal(run) ? "completed" : (run.status || "running"),
-      createdAt: formatDateTime(run.createdAt || ""),
-    })),
-    eventTimeline: events.slice(0, 16).map((event) => ({
-      type: event.type,
-      occurredAt: event.occurredAt,
-      workspaceId: event.workspaceId || current.slug,
-    })),
-    distribution: {
-      inputBytes: (await Promise.all(files.map((item) => stat(item.fullPath).then((meta) => meta.size).catch(() => 0)))).reduce((sum, item) => sum + item, 0),
-      outputBytes: (await Promise.all(outputs.map((item) => stat(item.fullPath).then((meta) => meta.size).catch(() => 0)))).reduce((sum, item) => sum + item, 0),
-    },
-    tasks: taskCards,
-    tasksPageRows: taskCards,
-    tasksPagination: {
-      page: taskPagination.page,
-      pageSize: taskPagination.pageSize,
-      total: taskPagination.total,
-      totalPages: taskPagination.totalPages,
-    },
-    taskTreemap: taskCards.map((task) => ({
-      name: task.title,
-      value: Number((task.totalCost || 0) + task.inputs + task.outputs + task.runs) || 0.001,
-      task,
-    })),
-    files: filePagination.rows,
-    filesPagination: {
-      page: filePagination.page,
-      pageSize: filePagination.pageSize,
-      total: filePagination.total,
-      totalPages: filePagination.totalPages,
-    },
-    outputs: outputPagination.rows,
-    outputsPagination: {
-      page: outputPagination.page,
-      pageSize: outputPagination.pageSize,
-      total: outputPagination.total,
-      totalPages: outputPagination.totalPages,
-    },
-    runsPagination: {
-      page: runPagination.page,
-      pageSize: runPagination.pageSize,
-      total: runPagination.total,
-      totalPages: runPagination.totalPages,
-    },
-  };
-}
-
-async function buildAdminOverviewPayload(db) {
-  const users = db.users.filter((item) => item.role !== "admin" && activeUserStatus(item.status) !== "deleted");
-  const billing = await fetchBillingSummary("", "", "168h");
-  const items = billing?.items || [];
-  const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-  const pending = await fetchPendingSummary("", "", "168h");
-  const billingStatus = await fetchBillingStatus();
-  const tasks = db.taskSpaces.filter((item) => item.status !== "deleted");
-  const groups = Array.isArray(db.groups) ? db.groups : [];
-  const todayRange = rangeBounds("today");
-  const recentEvents = await readPortalEvents(240);
-  const allRuns = [];
-  for (const item of users) {
-    allRuns.push(...(await collectRunsForUser(item.id)).map((run) => ({ ...run, userId: item.id, userName: item.name, userEmail: item.email })));
-  }
-  const serviceStatuses = await Promise.all([
-    { name: "Portal OPL Adapter", url: new URL("/healthz", `${PORTAL_OPL_ADAPTER_URL}/`).toString() },
-    { name: "Langfuse", url: LANGFUSE_URL },
-    { name: "Rancher", url: RANCHER_URL },
-    { name: "OpenCost", url: OPENCOST_UI_URL },
-    { name: "Harbor", url: HARBOR_URL },
-    { name: "MinIO", url: MINIO_CONSOLE_URL },
-  ].filter((item) => item.url).map(async (item) => ({ ...item, probe: await probe(item.url) })));
-  const [minioSummary, harborSummary, langfuseSummary] = await Promise.all([
-    fetchMinioSummary(),
-    fetchHarborSummary(),
-    fetchLangfuseSummary(),
-  ]);
-  const securitySummary = securityConfigSummary();
-  const performanceSummary = await runtimePerformanceSummary();
-
-  const topUsers = users.map((item) => {
-    const userItems = items.filter((entry) => {
-      const props = entry?.properties || {};
-      return props["label:customer_id"] === item.id || props.customer_id === item.id;
-    });
-    return {
-      userId: item.id,
-      name: item.name,
-      email: item.email,
-      totalCost: userItems.reduce((sum, entry) => sum + Number(entry?.totalCost || 0), 0),
-      balance: Number((db.wallets.find((wallet) => wallet.userId === item.id)?.balance) || 0),
-      status: item.status || "active",
-      groupId: item.groupId || "",
-    };
-  }).sort((a, b) => b.totalCost - a.totalCost).slice(0, 10);
-
-  const recentUsage = allRuns
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
-    .slice(0, 12)
-    .map((run) => ({
-      runId: run.runId,
-      userId: run.userId,
-      userName: run.userName,
-      workspaceId: run.workspaceId || "-",
-      status: isRunTerminal(run) ? "completed" : (run.status || "running"),
-      createdAt: formatDateTime(run.createdAt || ""),
-    }));
-  const usageRows = allRuns
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
-    .map((run) => {
-      const relatedItem = items.find((entry) => entry?.properties?.["label:run_id"] === run.runId || entry?.properties?.run_id === run.runId || entry?.name?.includes(run.runId));
-      return {
-        runId: run.runId,
-        userId: run.userId,
-        userName: run.userName,
-        workspaceId: run.workspaceId || "-",
-        status: isRunTerminal(run) ? "completed" : (run.status || "running"),
-        createdAt: formatDateTime(run.createdAt || ""),
-        cpuCost: Number(relatedItem?.cpuCost || 0),
-        gpuCost: Number(relatedItem?.gpuCost || 0),
-        storageCost: Number(relatedItem?.pvCost || 0),
-        vpnCost: 0,
-        trafficCost: 0,
-        otherCloudCost: 0,
-        totalCost: Number(relatedItem?.totalCost || 0),
-      };
-    });
-
-  const warningEvents = recentEvents
-    .filter((event) => /fail|error|denied|blocked|pending|reconcile/i.test(String(event.type || "")))
-    .slice(0, 12);
-  const lowBalanceUsers = users
-    .map((entry) => {
-      const wallet = db.wallets.find((wallet) => wallet.userId === entry.id) || { balance: 0 };
-      return { userId: entry.id, name: entry.name, email: entry.email, balance: Number(wallet.balance || 0) };
-    })
-    .filter((entry) => entry.balance <= 0)
-    .slice(0, 12);
-  const failedRuns = allRuns
-    .filter((run) => String(run.status || "").toLowerCase() === "failed")
-    .slice(0, 12)
-    .map((run) => ({
-      runId: run.runId,
-      userId: run.userId,
-      userName: run.userName,
-      workspaceId: run.workspaceId || "-",
-      createdAt: formatDateTime(run.createdAt || ""),
-    }));
-  const unavailableServices = serviceStatuses.filter((item) => !item.probe.ok);
-  const traceMissingRuns = allRuns
-    .filter((run) => isRunTerminal(run))
-    .slice(0, 40)
-    .filter((run) => !(langfuseSummary?.available) ? false : true);
-  const traceRows = langfuseSummary?.available ? (await fetchTraceRows({ limit: 200 })).rows || [] : [];
-  const tracedRunIds = new Set(traceRows.map((item) => item.runId).filter(Boolean));
-  const traceMissingAlerts = traceMissingRuns
-    .filter((run) => run.runId && !tracedRunIds.has(run.runId))
-    .slice(0, 12)
-    .map((run) => ({
-      severity: "warning",
-      category: "trace",
-      userId: run.userId,
-      runId: run.runId,
-      workspaceId: run.workspaceId || "-",
-      title: "Run 缺少 Trace",
-      detail: `${run.runId} 已完成但未找到 Langfuse trace`,
-      occurredAt: formatDateTime(run.createdAt || ""),
-      action: `/portal/admin/run?runId=${run.runId}`,
-    }));
-  const securityAlerts = securitySummary.checks
-    .filter((item) => !item.healthy)
-    .map((item) => ({
-      severity: "danger",
-      category: "security",
-      title: `安全配置未收口：${item.key}`,
-      detail: item.detail,
-      occurredAt: "",
-      action: `/portal/admin/system`,
-    }));
-  const performanceAlerts = [];
-  if (performanceSummary.warmupTimeoutCount > 0) {
-    performanceAlerts.push({
-      severity: "warning",
-      category: "performance",
-      title: "MAS warmup 存在超时",
-      detail: `最近检测到 ${performanceSummary.warmupTimeoutCount} 次 warmup 超时`,
-      occurredAt: "",
-      action: `/portal/admin/ops`,
-    });
-  }
-  if (Number(performanceSummary.masFirstReplyApproxMs || 0) > 20000) {
-    performanceAlerts.push({
-      severity: "warning",
-      category: "performance",
-      title: "MAS 首次回复偏慢",
-      detail: `最近成功样本平均约 ${performanceSummary.masFirstReplyApproxMs} ms`,
-      occurredAt: "",
-      action: `/portal/admin/ops`,
-    });
-  }
-  const alerts = [
-    ...securityAlerts,
-    ...performanceAlerts,
-    ...unavailableServices.map((item) => ({
-      severity: "danger",
-      category: "system",
-      title: `${item.name} 不可达`,
-      detail: `当前状态 ${item.probe.status}`,
-      occurredAt: "",
-      action: `/portal/admin/system`,
-    })),
-    ...traceMissingAlerts,
-    ...failedRuns.map((run) => ({
-      severity: "danger",
-      category: "run",
-      title: `${run.userName} 有失败运行`,
-      userId: run.userId,
-      runId: run.runId,
-      workspaceId: run.workspaceId,
-      detail: `失败 run：${run.runId}`,
-      occurredAt: run.createdAt,
-      action: `/portal/admin/run?runId=${run.runId}`,
-    })),
-    ...(pending?.runs || []).slice(0, 12).map((item) => ({
-      severity: "warning",
-      category: "pending",
-      userId: item.customerId,
-      runId: item.runId,
-      workspaceId: item.workspaceId || "-",
-      title: `Pending 计量待补齐`,
-      detail: `${Number(item.pendingHours || 0).toFixed(2)} 小时未补齐`,
-      occurredAt: formatDateTime(item.completedAt || item.createdAt || ""),
-      action: `/portal/admin/billing-ops`,
-    })),
-    ...lowBalanceUsers.map((entry) => ({
-      severity: "warning",
-      category: "balance",
-      title: `${entry.name} 余额不足`,
-      userId: entry.userId,
-      detail: `当前余额 ${money(entry.balance)}`,
-      occurredAt: "",
-      action: `/portal/admin/user?userId=${entry.userId}`,
-    })),
-  ].slice(0, 40);
-
-  const systemMetrics = {
-    hostname: os.hostname(),
-    cpuCores: os.cpus().length,
-    totalMemoryGb: Number((os.totalmem() / 1024 / 1024 / 1024).toFixed(1)),
-    freeMemoryGb: Number((os.freemem() / 1024 / 1024 / 1024).toFixed(1)),
-    uptimeHours: Number((os.uptime() / 3600).toFixed(1)),
-    concurrentRuns: allRuns.filter((run) => !isRunTerminal(run)).length,
-    activeSandboxes: db.userSandboxes.filter((item) => !["terminated", "error"].includes(String(item.status || "").toLowerCase())).length,
-    activeWorkspaceSessions: db.workspaceSessions.filter((item) => item.status === "active" && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())).length,
-    dbMode: storageMode() === "postgres_redis" ? "Postgres / Redis" : "portal-db.json",
-    redisStatus: process.env.REDIS_URL ? "已配置" : "未接入",
-    opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
-    tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
-  };
-
-  return {
-    kpis: {
-      totalUsers: users.length,
-      activeUsers: users.filter((item) => activeUserStatus(item.status) === "active").length,
-      disabledUsers: users.filter((item) => activeUserStatus(item.status) !== "active").length,
-      activeTasks: tasks.filter((item) => item.status === "active").length,
-      archivedTasks: tasks.filter((item) => item.status === "archived").length,
-      totalCost: Number(totals.totalCost || 0),
-      workspaceTotal: tasks.length,
-      todayRuns: allRuns.filter((run) => withinDateRange(run.createdAt || "", todayRange)).length,
-      todayNewUsers: users.filter((item) => withinDateRange(item.createdAt || "", todayRange)).length,
-      todayNewWorkspaces: tasks.filter((item) => withinDateRange(item.createdAt || "", todayRange)).length,
-      totalRuns: allRuns.length,
-      averageResponseMs: Number(performanceSummary.masFirstReplyApproxMs || 0),
-      todayTotalCost: Number(items
-        .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, todayRange))
-        .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0)
-        .toFixed(5)),
-      historicalTotalCost: Number(totals.totalCost || 0),
-    },
-    pending: {
-      count: Number(pending?.pendingCount || 0),
-      oldestPendingHours: Number(pending?.oldestPendingHours || 0),
-      riskByUser: Array.isArray(pending?.riskByUser) ? pending.riskByUser.slice(0, 8) : [],
-      riskByWorkspace: Array.isArray(pending?.riskByWorkspace) ? pending.riskByWorkspace.slice(0, 8) : [],
-    },
-    trend: groupBillingByDay(items, 7),
-    totals,
-    topUsers,
-    recentUsage,
-    groups: groups.map((group) => ({
-      ...group,
-      memberCount: users.filter((user) => user.groupId === group.id).length,
-    })),
-    usageRows,
-    ledgerSummary: {
-      topup: db.ledger.filter((item) => item.type === "topup").reduce((sum, item) => sum + Number(item.amount || 0), 0),
-      resourceCharge: db.ledger.filter((item) => item.type === "resource_charge").reduce((sum, item) => sum + Number(item.amount || 0), 0),
-      refund: db.ledger.filter((item) => item.type === "refund").reduce((sum, item) => sum + Number(item.amount || 0), 0),
-      makeupCharge: db.ledger.filter((item) => item.type === "makeup_charge").reduce((sum, item) => sum + Number(item.amount || 0), 0),
-      entryCount: db.ledger.length,
-    },
-    pendingRuns: Array.isArray(pending?.runs) ? pending.runs.slice(0, 12) : [],
-    billingSync: {
-      autoReconcileEnabled: Boolean(billingStatus?.autoReconcileEnabled),
-      autoReconcileWindow: billingStatus?.autoReconcileWindow || "168h",
-      lastRunAt: billingStatus?.reconcileState?.lastRunAt || "",
-      lastScope: billingStatus?.reconcileState?.lastScope || "all",
-      lastReconciledCount: Number(billingStatus?.reconcileState?.lastReconciledCount || 0),
-      lastExactCount: Number(billingStatus?.reconcileState?.lastExactCount || 0),
-      lastEstimatedCount: Number(billingStatus?.reconcileState?.lastEstimatedCount || 0),
-      lastAdjustmentCount: Number(billingStatus?.reconcileState?.lastAdjustmentCount || 0),
-      lastError: billingStatus?.reconcileState?.lastError || "",
-      opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
-      tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
-      exactSources: billingStatus?.exactSources || ["tencent_cloud_bill"],
-      pendingSources: billingStatus?.pendingSources || ["opencost_pending", "metering_pending"],
-    },
-    warningEvents,
-    alerts,
-    auditRows: recentEvents.map((event) => ({
-      type: event.type,
-      userId: event.userId || "",
-      operatorId: event.operatorId || "",
-      workspaceId: event.workspaceId || "",
-      occurredAt: formatDateTime(event.occurredAt),
-      detail: JSON.stringify(event).slice(0, 240),
-    })),
-    systemMetrics,
-    summaries: {
-      opencost: {
-        available: true,
-        mode: "live",
-        cpuCost: Number(totals.cpuCost || 0),
-        gpuCost: Number(totals.gpuCost || 0),
-        storageCost: Number(totals.pvCost || 0),
-        totalCost: Number(totals.totalCost || 0),
-        note: "数据来自 OpenCost / 账单聚合",
-      },
-      minio: minioSummary,
-      harbor: {
-        ...harborSummary,
-        imageTagCount: new Set(db.userSandboxes.map((item) => item.imageTag).filter(Boolean)).size,
-      },
-      langfuse: langfuseSummary,
-      oplRuntime: {
-        available: true,
-        mode: "status_only",
-        adapterUrl: PORTAL_OPL_ADAPTER_URL,
-        oplWebUrl: OPL_WEB_URL || "",
-        note: OPL_WEB_URL
-          ? "Portal 生成 launch context，并把用户带到真实 OPL Web；adapter 只负责内部合同转换"
-          : "未配置 OPL_WEB_URL，Portal 不会回退到旧工作台路径",
-      },
-      rancher: {
-        available: Boolean(RANCHER_URL),
-        mode: "status_only",
-        note: RANCHER_URL ? "当前仅展示入口与可达状态" : "未配置 Rancher 入口",
-      },
-      security: securitySummary,
-      performance: performanceSummary,
-    },
-    sandboxes: db.userSandboxes
-      .map((item) => {
-        const targetUser = db.users.find((user) => user.id === item.userId) || {};
-        return {
-          ...item,
-          userName: targetUser.name || targetUser.email || item.userId,
-          updatedAtLabel: formatDateTime(item.updatedAt || item.lastActiveAt || item.createdAt || ""),
-        };
-      })
-      .sort((a, b) => String(b.updatedAt || b.lastActiveAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.lastActiveAt || a.createdAt || ""))),
-    serviceStatuses: serviceStatuses.map((item) => ({ name: item.name, status: item.probe.status, ok: item.probe.ok, responseMs: item.probe.responseMs || null })),
-  };
-}
-
-function buildAdminUsersApiPayload(db, payload, options = {}) {
-  const workspaceFilter = String(options.workspace || "").trim().toLowerCase();
-  const idFilter = String(options.userId || "").trim().toLowerCase();
-  const usernameFilter = String(options.username || "").trim().toLowerCase();
-  const emailFilter = String(options.email || "").trim().toLowerCase();
-  const keywordFilter = String(options.q || "").trim().toLowerCase();
-  const users = db.users
-    .filter((item) => item.role !== "admin")
-    .filter((item) => activeUserStatus(item.status) !== "deleted")
-    .map((item) => {
-      const wallet = db.wallets.find((entry) => entry.userId === item.id) || { balance: 0 };
-      const taskSpaces = db.taskSpaces.filter((task) => task.userId === item.id && String(task.status || "").toLowerCase() !== "deleted");
-      const workspaceSessions = db.workspaceSessions.filter((session) => session.userId === item.id);
-      const latestWorkspaceSessionAt = workspaceSessions
-        .map((session) => String(session.lastUsedAt || session.createdAt || ""))
-        .sort((a, b) => b.localeCompare(a))[0] || "";
-      const latestPortalSessionAt = db.sessions
-        .filter((session) => session.userId === item.id)
-        .map((session) => String(session.createdAt || ""))
-        .sort((a, b) => b.localeCompare(a))[0] || "";
-      const latestTaskAt = taskSpaces
-        .map((task) => String(task.updatedAt || task.createdAt || ""))
-        .sort((a, b) => b.localeCompare(a))[0] || "";
-      const lastActiveAt = [latestPortalSessionAt, latestWorkspaceSessionAt, latestTaskAt, String(item.createdAt || "")]
-        .filter(Boolean)
-        .sort((a, b) => b.localeCompare(a))[0] || "";
-      const lastUsedAt = [latestWorkspaceSessionAt, latestTaskAt]
-        .filter(Boolean)
-        .sort((a, b) => b.localeCompare(a))[0] || "";
-      return {
-        ...item,
-        status: activeUserStatus(item.status),
-        balance: Number(wallet.balance || 0),
-        taskCount: taskSpaces.length,
-        groupName: groupNameById(db, item.groupId || ""),
-        lastActiveAt: lastActiveAt ? formatDateTime(lastActiveAt) : "",
-        lastUsedAt: lastUsedAt ? formatDateTime(lastUsedAt) : "",
-        workspaceSlugs: taskSpaces.map((task) => task.slug),
-      };
-    })
-    .filter((item) => {
-      const haystack = `${item.id} ${item.name} ${item.email} ${(item.workspaceSlugs || []).join(" ")}`.toLowerCase();
-      if (workspaceFilter && !(item.workspaceSlugs || []).some((slug) => String(slug || "").toLowerCase().includes(workspaceFilter))) return false;
-      if (idFilter && !String(item.id || "").toLowerCase().includes(idFilter)) return false;
-      if (usernameFilter && !String(item.name || "").toLowerCase().includes(usernameFilter)) return false;
-      if (emailFilter && !String(item.email || "").toLowerCase().includes(emailFilter)) return false;
-      if (keywordFilter && !haystack.includes(keywordFilter)) return false;
-      return true;
-    })
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  const pagination = paginateRows(users, options.page, normalizePageSize(options.pageSize || 5));
-  const financeRows = db.ledger
-    .filter((item) => ["topup", "refund", "makeup_charge"].includes(item.type))
-    .slice()
-    .reverse()
-    .slice(0, 50)
-    .map((item) => {
-      const targetUser = db.users.find((user) => user.id === item.userId) || {};
-      return {
-        id: item.id,
-        userId: item.userId,
-        userName: targetUser.name || item.userId,
-        type: item.type,
-        amount: Number(item.amount || 0),
-        createdAt: item.createdAt,
-        reason: item.reason || "",
-      };
-    });
-  return {
-    items: pagination.rows,
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-      totalPages: pagination.totalPages,
-    },
-    allowRegistration: isRegistrationEnabled(db),
-    financeRows,
-    groups: db.groups.map((group) => ({ id: group.id, name: group.name })),
-    kpis: payload.kpis,
-  };
-}
-
-function buildAdminGroupsApiPayload(db, payload) {
-  return {
-    groups: payload.groups || [],
-    users: db.users
-      .filter((item) => item.role !== "admin")
-      .map((item) => ({ id: item.id, name: item.name, email: item.email, groupId: item.groupId || "" })),
-  };
-}
-
-function buildAdminUsageApiPayload(payload, options = {}) {
-  const pagination = paginateRows(payload.usageRows || [], options.page, normalizePageSize(options.pageSize || 10));
-  return {
-    items: pagination.rows,
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-      totalPages: pagination.totalPages,
-    },
-  };
-}
-
-function buildAdminBillingOpsApiPayload(db, payload) {
-  return {
-    billingSync: payload.billingSync,
-    pending: payload.pending,
-    pendingRuns: payload.pendingRuns || [],
-    warningEvents: payload.warningEvents || [],
-    summaries: payload.summaries,
-    users: db.users.filter((item) => item.role !== "admin").map((item) => ({ id: item.id, name: item.name, email: item.email })),
-    workspaces: db.taskSpaces.filter((item) => item.status !== "deleted").map((item) => ({ slug: item.slug, title: sanitizeTaskTitle(item.slug, item.title) })),
-    adjustments: db.ledger
-      .filter((item) => item.type === "refund" || item.type === "makeup_charge")
-      .slice(-20)
-      .reverse()
-      .map((item) => {
-        const targetUser = db.users.find((entry) => entry.id === item.userId) || {};
-        return {
-          type: item.type,
-          userId: item.userId,
-          userName: targetUser.name || item.userId,
-          amount: Number(item.amount || 0),
-          runId: item.runId || "",
-          workspaceId: item.workspaceId || "",
-          reason: item.reason || "",
-          createdAt: item.createdAt,
-        };
-      }),
-  };
-}
-
-function buildAdminSystemApiPayload(payload) {
-  return {
-    serviceStatuses: payload.serviceStatuses || [],
-    summaries: payload.summaries || {},
-    systemMetrics: payload.systemMetrics || {},
-  };
-}
-
-function buildAdminOpsApiPayload(payload) {
-  return {
-    serviceStatuses: payload.serviceStatuses || [],
-    systemMetrics: payload.systemMetrics || {},
-    pending: payload.pending || {},
-    warningEvents: payload.warningEvents || [],
-    alerts: payload.alerts || [],
-    summaries: payload.summaries || {},
-  };
-}
-
-function buildAdminSandboxesApiPayload(payload) {
-  return {
-    items: payload.sandboxes || [],
-  };
-}
-
-function buildAdminAuditApiPayload(payload, options = {}) {
-  const pagination = paginateRows(payload.auditRows || [], options.page, normalizePageSize(options.pageSize || 10));
-  return {
-    items: pagination.rows,
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-      totalPages: pagination.totalPages,
-    },
-  };
-}
-
-async function buildAdminUserPortraitApiPayload(db, userId = "") {
-  const user = db.users.find((item) => item.id === userId && item.role !== "admin");
-  if (!user) return null;
-
-  const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-  const group = db.groups.find((item) => item.id === user.groupId) || null;
-  const runs = (await collectRunsForUser(user.id))
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  const recentRuns = runs.slice(0, 8).map((run) => ({
-    runId: run.runId || "",
-    workspaceId: run.workspaceId || "",
-    workspaceTitle: sanitizeTaskTitle(run.workspaceId || "", run.workspaceTitle || run.workspaceId || ""),
-    status: isRunTerminal(run) ? "已完成" : humanizeStatus(run.status || "running"),
-    createdAtLabel: formatDateTime(run.createdAt || ""),
-  }));
-
-  const billing = await fetchBillingSummary(user.id, "", "168h");
-  const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-  const sessions = (db.sessions || [])
-    .filter((session) => session.userId === user.id)
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
-    .slice(0, 8)
-    .map((session) => ({
-      sessionId: session.id,
-      sessionType: "portal",
-      source: session.authSource || "portal_session",
-      type: "live",
-      userId: user.id,
-      userName: user.name || user.email || "",
-      email: user.email || "",
-      workspaceId: "",
-      workspaceSessionId: "",
-      lastUsedAt: session.createdAt || "",
-      expiresAt: "",
-      status: "active",
-    }));
-  const workspaceSessions = workspaceChatSessionsForUser(db, user, 8);
-  const workspaces = listTaskSpacesForUser(db, user.id).slice(0, 8).map((item) => ({
-    slug: item.slug,
-    title: item.title,
-    status: humanizeStatus(item.status),
-    link: `/admin/workspace?userId=${encodeURIComponent(user.id)}&workspaceId=${encodeURIComponent(item.slug)}`,
-  }));
-  const userTraceRows = await fetchTraceRows({ userId: user.id, limit: 20 });
-
-  return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      balanceLabel: money(Number(wallet.balance || 0)),
-      groupName: group?.name || "",
-      createdAtLabel: formatDateTime(user.createdAt || ""),
-    },
-    recentRuns,
-    costs: {
-      cpuCost: Number(totals.cpuCost || 0),
-      gpuCost: Number(totals.gpuCost || 0),
-      storageCost: Number(totals.pvCost || 0),
-      totalCost: Number(totals.totalCost || 0),
-    },
-    sessions: [...sessions, ...workspaceSessions].sort((a, b) => String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""))).slice(0, 10),
-    workspaces,
-    trace: {
-      source: userTraceRows.source,
-      type: userTraceRows.type,
-      count: Array.isArray(userTraceRows.rows) ? userTraceRows.rows.length : 0,
-      latest: Array.isArray(userTraceRows.rows) && userTraceRows.rows.length ? userTraceRows.rows[0].startedAt || "" : "",
-      rows: userTraceRows.rows || [],
-    },
-  };
-}
-
-async function buildAdminWorkspacePortraitApiPayload(db, userId = "", workspaceId = "") {
-  const user = db.users.find((item) => item.id === userId);
-  if (!user) return null;
-  const taskSpace = db.taskSpaces.find((item) => item.userId === userId && item.slug === workspaceId);
-  if (!taskSpace) return null;
-
-  const recentRuns = (await collectRunsForTask(userId, workspaceId))
-    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
-    .slice(0, 8)
-    .map((run) => ({
-      runId: run.runId || "",
-      status: isRunTerminal(run) ? "已完成" : humanizeStatus(run.status || "running"),
-      createdAtLabel: formatDateTime(run.createdAt || ""),
-    }));
-
-  const activeSession = latestActiveWorkspaceSession(db, userId, workspaceId);
-  const billing = await fetchBillingSummary(userId, workspaceId, "168h");
-  const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-  const storage = await fetchWorkspaceStorageSnapshot(taskSpace);
-  const minio = await fetchWorkspaceMinioState(userId, workspaceId);
-  const traces = await fetchTraceRows({ workspaceId, limit: 20 });
-
-  return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
-    workspace: {
-      slug: taskSpace.slug,
-      title: taskSpace.title,
-      status: taskSpace.status,
-      statusLabel: humanizeStatus(taskSpace.status),
-    },
-    activeSession: activeSession ? {
-      id: activeSession.id,
-      createdAt: activeSession.createdAt || "",
-      lastUsedAt: activeSession.lastUsedAt || "",
-      expiresAt: activeSession.expiresAt || "",
-    } : null,
-    recentRuns,
-    costs: {
-      cpuCost: Number(totals.cpuCost || 0),
-      gpuCost: Number(totals.gpuCost || 0),
-      storageCost: Number(totals.pvCost || 0),
-      totalCost: Number(totals.totalCost || 0),
-    },
-    storage: {
-      source: storage.source,
-      type: storage.type,
-      inputsCount: storage.inputsCount,
-      outputsCount: storage.outputsCount,
-      inputBytes: storage.inputBytes,
-      outputBytes: storage.outputBytes,
-      outputs: (storage.outputs || []).slice(0, 10),
-      files: (storage.files || []).slice(0, 10),
-    },
-    minio,
-    trace: {
-      source: traces.source,
-      type: traces.type,
-      count: Array.isArray(traces.rows) ? traces.rows.length : 0,
-      rows: traces.rows || [],
-    },
-  };
-}
-
-async function buildAdminRunPortraitApiPayload(db, runId = "") {
-  if (!runId) return null;
-  const runs = [];
-  for (const user of db.users) {
-    runs.push(...(await collectRunsForUser(user.id)).map((run) => ({ ...run, user })));
-  }
-  const run = runs.find((item) => item.runId === runId);
-  if (!run) return null;
-
-  const billing = await fetchBillingSummary(run.user.id, run.workspaceId || "", "168h");
-  const billedRun = (billing?.items || []).find((item) => {
-    const props = item?.properties || {};
-    return props["label:run_id"] === runId || props.run_id === runId || String(item?.name || "").includes(runId);
-  });
-  const traces = await fetchTraceRows({ runId, limit: 20 });
-  const taskSpace = db.taskSpaces.find((item) => item.userId === run.user.id && item.slug === run.workspaceId);
-  const storage = taskSpace ? await fetchWorkspaceStorageSnapshot(taskSpace) : null;
-  const relatedOutputs = (storage?.outputs || []).filter((item) => item.name.includes(runId)).slice(0, 10);
-  const workspaceSession = run.workspaceSessionId ? readWorkspaceSession(db, run.workspaceSessionId, run.user.id) : null;
-
-  return {
-    run: {
-      runId,
-      userId: run.user.id,
-      userName: run.user.name || run.user.email || run.user.id,
-      userEmail: run.user.email || "",
-      workspaceId: run.workspaceId || "",
-      workspaceTitle: sanitizeTaskTitle(run.workspaceId || "", run.workspaceTitle || run.workspaceId || ""),
-      workspaceSessionId: run.workspaceSessionId || "",
-      status: isRunTerminal(run) ? "已完成" : humanizeStatus(run.status || "running"),
-      source: run.source || "",
-    },
-    billing: {
-      cpuCost: Number(billedRun?.cpuCost || 0),
-      gpuCost: Number(billedRun?.gpuCost || 0),
-      storageCost: Number(billedRun?.pvCost || 0),
-      totalCost: Number(billedRun?.totalCost || 0),
-      pricingSource: String(billedRun?.properties?.pricing_source || billedRun?.properties?.["label:pricing_source"] || billedRun?.pricingSource || "未标注"),
-      start: formatDateTime(billedRun?.start || run.createdAt || ""),
-      end: formatDateTime(billedRun?.end || ""),
-    },
-    workspaceSession: workspaceSession ? {
-      id: workspaceSession.id,
-      status: workspaceSession.status,
-      lastUsedAt: formatDateTime(workspaceSession.lastUsedAt || ""),
-      expiresAt: formatDateTime(workspaceSession.expiresAt || ""),
-    } : null,
-    outputs: relatedOutputs,
-    trace: {
-      source: traces.source,
-      type: traces.type,
-      count: Array.isArray(traces.rows) ? traces.rows.length : 0,
-      rows: traces.rows || [],
-      available: Array.isArray(traces.rows) && traces.rows.length > 0,
-    },
-  };
-}
-
-function securityConfigSummary() {
-  const checks = [
-    {
-      key: "PORTAL_ADMIN_PASSWORD",
-      healthy: adminSeed.password !== "Password1!",
-      detail: adminSeed.password !== "Password1!" ? "已覆盖默认管理员密码" : "仍在使用默认管理员密码",
-    },
-    {
-      key: "PORTAL_OIDC_CLIENT_SECRET",
-      healthy: PORTAL_OIDC_CLIENT_SECRET !== "ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM",
-      detail: PORTAL_OIDC_CLIENT_SECRET !== "ddulXe78YePwKC2fYyVATNutBJS50BPhnSJutOxmplWm4chYeOiyusvwxUbx8iFM" ? "OIDC client secret 已覆盖默认值" : "OIDC client secret 仍为默认值",
-    },
-    {
-      key: "HARBOR_PASSWORD",
-      healthy: HARBOR_PASSWORD !== "HarborAdmin123!",
-      detail: HARBOR_PASSWORD !== "HarborAdmin123!" ? "Harbor 密码已覆盖默认值" : "Harbor 密码仍为默认值",
-    },
-    {
-      key: "JWT_REFRESH_SECRET",
-      healthy: String(process.env.JWT_REFRESH_SECRET || "").trim() !== "" && String(process.env.JWT_REFRESH_SECRET || "").trim() !== "replace-this-jwt-refresh-secret-64chars",
-      detail: String(process.env.JWT_REFRESH_SECRET || "").trim() && String(process.env.JWT_REFRESH_SECRET || "").trim() !== "replace-this-jwt-refresh-secret-64chars" ? "JWT refresh secret 已配置" : "JWT refresh secret 缺失或仍为默认值",
-    },
-  ];
-  const unhealthy = checks.filter((item) => !item.healthy);
-  return {
-    healthy: unhealthy.length === 0,
-    failedCount: unhealthy.length,
-    checks,
-  };
-}
-
-async function runtimePerformanceSummary() {
-  const runsDir = path.join(codexRuntimeRoot, "sessions");
-  let eventRows = [];
-  try {
-    const raw = await readFile(codexRuntimeEventsFile, "utf8");
-    eventRows = raw.split(/\r?\n/).filter(Boolean).slice(-400).map((line) => safeJsonParse(line)).filter(Boolean);
-  } catch {}
-  let files = [];
-  try {
-    files = await readdir(runsDir);
-  } catch {}
-  const metas = [];
-  for (const file of files.filter((name) => name.endsWith(".json")).slice(-200)) {
-    try {
-      const parsed = JSON.parse(await readFile(path.join(runsDir, file), "utf8"));
-      metas.push(parsed);
-    } catch {}
-  }
-  const byRunId = new Map(metas.map((item) => [String(item.runId || ""), item]));
-  const runtimeEvents = eventRows
-    .filter((item) => item.type === "codex_runtime_run")
-    .slice()
-    .reverse();
-  const completed = runtimeEvents.map((item) => {
-    const meta = byRunId.get(String(item.runId || ""));
-    const startedAt = Date.parse(String(meta?.createdAt || ""));
-    const endedAt = Date.parse(String(item.occurredAt || ""));
-    const durationMs = Number.isFinite(startedAt) && Number.isFinite(endedAt) ? Math.max(0, endedAt - startedAt) : null;
-    return {
-      runId: item.runId || "",
-      workspaceId: item.workspaceId || "",
-      workspaceSessionId: item.workspaceSessionId || "",
-      exitCode: typeof item.exitCode === "number" ? item.exitCode : Number(item.exitCode || 0),
-      durationMs,
-      occurredAt: item.occurredAt || "",
-    };
-  }).filter((item) => item.durationMs != null);
-  const successful = completed.filter((item) => item.exitCode === 0);
-  const latestMas = successful.slice(-10);
-  const avgMas = latestMas.length ? Math.round(latestMas.reduce((sum, item) => sum + Number(item.durationMs || 0), 0) / latestMas.length) : null;
-  const warmups = eventRows.filter((item) => item.type === "codex_runtime_warmup").slice(-20);
-  const slowWarmups = warmups.filter((item) => !item.runnerWarmup?.ok || String(item.runnerWarmup?.detail || "").toLowerCase().includes("timeout"));
-  return {
-    masFirstReplyApproxMs: avgMas,
-    latestSuccessfulMasRuns: latestMas.slice(-5).reverse(),
-    warmupTimeoutCount: slowWarmups.length,
-    totalSuccessfulMasRuns: successful.length,
-  };
-}
-
-async function collectAllRunsWithUsers(db) {
-  const rows = [];
-  for (const user of db.users.filter((item) => item.role !== "admin")) {
-    const runs = await collectRunsForUser(user.id);
-    rows.push(...runs.map((run) => ({ ...run, userId: user.id, userName: user.name || user.email || user.id, userEmail: user.email || "" })));
-  }
-  rows.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  return rows;
-}
-
-function buildSessionsApiPayload(db) {
-  const ordinarySessions = (db.sessions || []).map((session) => {
-    const user = db.users.find((entry) => entry.id === session.userId) || {};
-    return {
-      sessionId: session.id,
-      sessionType: "ordinary",
-      userId: session.userId || "",
-      userName: user.name || user.email || session.userId || "",
-      userEmail: user.email || "",
-      workspaceId: "",
-      workspaceSessionId: "",
-      lastUsedAt: session.createdAt || "",
-      status: "active",
-      source: session.authSource || "portal_session",
-    };
-  });
-  const workspaceSessions = (db.workspaceSessions || []).map((session) => {
-    const user = db.users.find((entry) => entry.id === session.userId) || {};
-    return {
-      sessionId: session.id,
-      sessionType: "mas",
-      userId: session.userId || "",
-      userName: user.name || user.email || session.userId || "",
-      userEmail: user.email || "",
-      workspaceId: session.workspaceId || "",
-      workspaceSessionId: session.id,
-      lastUsedAt: session.lastUsedAt || session.createdAt || "",
-      status: session.status || "active",
-      source: session.source || "workspace_session",
-    };
-  });
-  const items = [...workspaceSessions, ...ordinarySessions].sort((a, b) => String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || "")));
-  return {
-    items,
-    summary: {
-      ordinary: ordinarySessions.filter((item) => item.status === "active").length,
-      mas: workspaceSessions.filter((item) => item.status === "active").length,
-      total: items.length,
-    },
-    dataSource: {
-      ordinary: "portal sessions",
-      mas: "workspace sessions",
-    },
-  };
-}
-
-async function buildRunsApiPayload(db, options = {}) {
-  const runs = await collectAllRunsWithUsers(db);
-  const filtered = runs.filter((item) => {
-    if (options.runId && item.runId !== options.runId) return false;
-    if (options.userId && item.userId !== options.userId) return false;
-    if (options.workspaceId && item.workspaceId !== options.workspaceId) return false;
-    return true;
-  });
-  const pagination = paginateRows(filtered, options.page, normalizePageSize(options.pageSize || 10));
-  return {
-    items: pagination.rows.map((run) => ({
-      runId: run.runId || "",
-      userId: run.userId || "",
-      userName: run.userName || "",
-      userEmail: run.userEmail || "",
-      workspaceId: run.workspaceId || "",
-      workspaceSessionId: run.workspaceSessionId || "",
-      status: isRunTerminal(run) ? "completed" : (run.status || "running"),
-      createdAt: run.createdAt || "",
-      source: run.source || "",
-    })),
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-      totalPages: pagination.totalPages,
-    },
-    dataSource: "runtime events + run artifacts",
-  };
-}
-
-async function buildWorkspaceStorageApiPayload(db, user, taskSlug) {
-  const task = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-  const payload = await buildWorkspacePayload(db, user, task.slug);
-  return {
-    workspaceId: payload.workspace.slug,
-    inputsCount: payload.counts.inputs,
-    outputsCount: payload.counts.outputs,
-    inputBytes: payload.distribution.inputBytes,
-    outputBytes: payload.distribution.outputBytes,
-    minioSynced: true,
-    lastSyncAt: new Date().toISOString(),
-    dataSource: "workspace filesystem + minio sync pipeline",
-  };
-}
-
-async function buildCostsSummaryApiPayload() {
-  const billing = await fetchBillingSummary("", "", "168h");
-  const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-  return {
-    cpuCost: Number(totals.cpuCost || 0),
-    gpuCost: Number(totals.gpuCost || 0),
-    storageCost: Number(totals.pvCost || 0),
-    totalCost: Number(totals.totalCost || 0),
-    pricingSource: billing ? "opencost_aggregated" : "unavailable",
-    dataSource: "billing-aggregator / OpenCost",
-  };
-}
-
-async function buildWorkspaceCostsApiPayload(workspaceId = "") {
-  const billing = await fetchBillingSummary("", workspaceId, "168h");
-  const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-  return {
-    workspaceId,
-    cpuCost: Number(totals.cpuCost || 0),
-    gpuCost: Number(totals.gpuCost || 0),
-    storageCost: Number(totals.pvCost || 0),
-    totalCost: Number(totals.totalCost || 0),
-    pricingSource: billing ? "opencost_aggregated" : "unavailable",
-    dataSource: "billing-aggregator / OpenCost",
-  };
-}
-
-async function buildRunCostsApiPayload(runId = "") {
-  const billing = await fetchBillingSummary("", "", "168h");
-  const match = (billing?.items || []).find((item) => {
-    const props = item?.properties || {};
-    return props["label:run_id"] === runId || props.run_id === runId || String(item?.name || "").includes(runId);
-  });
-  return {
-    runId,
-    workspaceId: String(match?.properties?.["label:workspace_id"] || match?.properties?.workspace_id || ""),
-    customerId: String(match?.properties?.["label:customer_id"] || match?.properties?.customer_id || ""),
-    cpuCost: Number(match?.cpuCost || 0),
-    gpuCost: Number(match?.gpuCost || 0),
-    storageCost: Number(match?.pvCost || 0),
-    totalCost: Number(match?.totalCost || 0),
-    pricingSource: String(match?.properties?.pricing_source || match?.properties?.["label:pricing_source"] || "unavailable"),
-    dataSource: match ? "billing-aggregator / OpenCost" : "unavailable",
-  };
-}
-
-async function buildRegistrySummaryApiPayload(db) {
-  const harbor = await fetchHarborSummary();
-  return {
-    ...harbor,
-    imageTagCount: new Set((db.userSandboxes || []).map((item) => item.imageTag).filter(Boolean)).size,
-    dataSource: harbor.available ? "Harbor API" : "Harbor probe",
-  };
-}
-
-async function buildRegistryImagesApiPayload(db) {
-  const items = (db.userSandboxes || [])
-    .map((item) => ({
-      userId: item.userId,
-      containerName: item.containerName || "",
-      namespace: item.namespace || "",
-      imageTag: item.imageTag || "",
-      status: item.status || "",
-      lastWorkspaceId: item.lastWorkspaceId || "",
-      updatedAt: item.updatedAt || item.lastActiveAt || "",
-    }))
-    .filter((item) => item.imageTag)
-    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
-  return {
-    items,
-    dataSource: "user sandboxes + Harbor naming",
-  };
-}
-
-async function buildTraceSummaryApiPayload() {
-  const summary = await fetchLangfuseSummary();
-  return {
-    ...summary,
-    dataSource: summary.available ? "Langfuse ClickHouse" : "trace summary unavailable",
-  };
-}
-
-async function buildTracesApiPayload(options = {}) {
-  const summary = await fetchLangfuseSummary();
-  return {
-    filters: {
-      userId: options.userId || "",
-      workspaceId: options.workspaceId || "",
-      runId: options.runId || "",
-    },
-    summary,
-    items: [],
-    dataSource: summary.available ? "Langfuse summary only; detailed trace drill-down pending" : "unavailable",
-  };
-}
-
-const sessionTraceDependencies = {
-  fetchTraceRows,
-  fetchOplAdapterTraceRows,
-  fetchWorkspaceStorageSnapshot,
+const {
+  buildBillingPayload,
+  buildOverviewPayload,
+  buildWorkspacePayload,
+} = createPageRuntimePayloads({
+  buildCommercialProfile,
+  buildOverviewOnboarding,
+  buildServerPlansFallback,
+  buildServerPlansSummary,
+  collectRunsForUser,
+  currentServerPlanSelection,
+  currentTaskSpaceForUser,
+  defaultTaskTitle,
+  ensureTaskSpace,
+  ensureWallet,
+  evaluateUserPolicy,
   fetchBillingSummary,
+  fetchPendingSummary,
+  fetchServerPlans,
   findTaskSpace,
+  formatDateOnly,
+  formatDateTime,
+  isRunTerminal,
+  latestActiveWorkspaceSession,
+  listFilesRecursive,
+  listTaskSpacesForUser,
+  mkdir,
+  path,
   readPortalEvents,
-  paginateRows,
-  normalizePageSize,
-  parsePositiveInt,
-};
-
-async function buildSessionTracesApiPayload(db, user, options = {}) {
-  return buildSessionTracesDomainApiPayload(sessionTraceDependencies, db, user, options);
-}
-
-async function buildSessionTraceDetailPayload(db, user, sessionId) {
-  return buildSessionTraceDetailDomainPayload(sessionTraceDependencies, db, user, sessionId);
-}
-
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url || "/", "http://local");
-  if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
-    sendJson(res, buildPortalHealthPayload());
-    return;
-  }
-  if (req.method === "GET" && url.pathname.startsWith("/portal/app/assets/")) {
-    const relative = url.pathname.replace("/portal/app/assets/", "");
-    const filePath = path.join(frontendDistRoot, "assets", relative);
-    await sendStaticAsset(res, filePath, guessContentType(filePath));
-    return;
-  }
-  if (req.method === "GET" && url.pathname.startsWith("/assets/")) {
-    const relative = url.pathname.replace("/assets/", "");
-    const filePath = path.join(frontendDistRoot, "assets", relative);
-    await sendStaticAsset(res, filePath, guessContentType(filePath));
-    return;
-  }
-  const { db, user } = await currentUser(req);
-  if (req.method === "GET" && url.pathname === "/register") {
-    if (PORTAL_OIDC_ENABLED) {
-      res.writeHead(302, { Location: "/login" });
-      res.end();
-      return;
-    }
-    if (!isRegistrationEnabled(db)) {
-      sendHtml(res, layoutV2("注册已关闭", localLoginBody(db), null), 403);
-      return;
-    }
-    sendHtml(res, layoutV2("注册", localRegisterBody(), null));
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/register") {
-    if (PORTAL_OIDC_ENABLED) {
-      res.writeHead(302, { Location: "/login" });
-      res.end();
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const result = await registerLocalPortalUser(db, form);
-    if (!result.ok) {
-      const body = result.status === 403 ? localLoginBody(db, { note: result.message }) : localRegisterBody(result.message);
-      sendHtml(res, layoutV2(result.title, body, null), result.status);
-      return;
-    }
-    const sessionId = createPortalSession(db, result.user, "local");
-    await writeDb(db);
-    setCookie(res, "portal_session", sessionId);
-    res.writeHead(302, { Location: "/portal" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/login") {
-    if (!PORTAL_OIDC_ENABLED) {
-      sendHtml(res, layoutV2("登录", localLoginBody(db), null));
-      return;
-    }
-    const loginHref = url.searchParams.get("force_login") === "1" ? "/auth/oidc/login?prompt=login" : "/auth/oidc/login";
-    sendHtml(res, layoutV2("统一登录", `<div class="hero"><h1>统一登录</h1></div><div class="card"><p><a href="${loginHref}">使用统一账号登录</a></p><p class="hint">${isRegistrationEnabled(db) ? "如需新账号，请先在统一身份侧注册。" : "当前关闭自由注册，请联系管理员。"}</p></div>`, null));
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/login") {
-    if (PORTAL_OIDC_ENABLED) {
-      res.writeHead(302, { Location: "/auth/oidc/login" });
-      res.end();
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const found = findUserByEmail(db, form.email);
-    if (!found || !verifyPassword(form.password, found.passwordHash)) {
-      sendHtml(res, layoutV2("登录失败", `<div class="card">账号或密码错误。</div>`, null), 401);
-      return;
-    }
-    if (isBlockedUserStatus(found.status)) {
-      sendHtml(res, layoutV2("登录失败", `<div class="card">当前账号已被禁用，请联系管理员。</div>`, null), 403);
-      return;
-    }
-    const sessionId = createPortalSession(db, found, "local");
-    await writeDb(db);
-    setCookie(res, "portal_session", sessionId);
-    res.writeHead(302, { Location: "/portal" });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/internal/opl/auth/login") {
-    if (!portalInternalAuthAllowed(req)) {
-      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
-      return;
-    }
-    const bodyText = (await readBody(req)).toString("utf8");
-    let payload = {};
-    try {
-      payload = bodyText ? JSON.parse(bodyText) : {};
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json", message: "request body must be json" }, 400);
-      return;
-    }
-
-    const email = String(payload.email || payload.username || payload.loginName || "").trim();
-    const password = String(payload.password || "").trim();
-    const taskSlug = slugify(payload.task || payload.workspaceId || payload.taskSlug || "default");
-    const providerApiKey = normalizeProviderApiKey(
-      payload.apiKey ||
-      payload.api_key ||
-      payload.experimentalBearerToken ||
-      payload.experimental_bearer_token ||
-      payload.providerApiKey ||
-      payload.provider_api_key ||
-      payload.gflabtoken ||
-      payload.gflabToken ||
-      ""
-    );
-    if (!email || !password) {
-      sendJson(res, { ok: false, error: "invalid_credentials", message: "邮箱和密码不能为空。" }, 400);
-      return;
-    }
-    if (!providerApiKey) {
-      sendJson(res, {
-        ok: false,
-        error: "provider_api_key_required",
-        message: "请输入 gflabtoken API key 后再进入 OPL。",
-      }, 400);
-      return;
-    }
-
-    const authResult = authenticatePortalPasswordUser(db, email, password);
-    if (!authResult.ok) {
-      if (authResult.user) {
-        await logPortalEvent({
-          type: "opl_native_login_rejected",
-          userId: authResult.user.id,
-          source: "opl-web-gateway",
-          reason: authResult.error,
-        });
-      }
-      sendJson(res, {
-        ok: false,
-        error: authResult.error,
-        message: authResult.message,
-      }, authResult.status);
-      return;
-    }
-
-    const user = authResult.user;
-    const providerConfigResult = createGflabProviderConfig({
-      userId: user.id,
-      workspaceId: taskSlug,
-      apiKey: providerApiKey,
-    });
-    if (!providerConfigResult.ok) {
-      sendJson(res, {
-        ok: false,
-        error: providerConfigResult.error,
-        message: providerConfigResult.message,
-      }, 400);
-      return;
-    }
-    const launchResult = await oplLaunchService.prepareLaunch({
-      db,
-      user,
-      taskSlug,
-      requireRealOplWeb: true,
-      source: "opl-native-login",
-      providerConfig: providerConfigResult.providerConfig,
-      providerConfigSecretRef: providerConfigResult.providerConfigSecretRef,
-    });
-    if (!launchResult.ok) {
-      sendJson(res, {
-        ok: false,
-        error: launchResult.error,
-        message: launchResult.message || "",
-        reasons: launchResult.reasons || [],
-      }, launchResult.status || 500);
-      return;
-    }
-
-    sendJson(res, {
-      ok: true,
-      user: sanitizePortalUser(user),
-      launchToken: launchResult.launch.launchToken || "",
-      launch: launchResult.launch,
-      workspace: launchResult.taskSpace,
-      workspaceSession: launchResult.workspaceSession,
-      runtimeSession: {
-        runtimeSessionId: launchResult.launch.runtimeSessionId || "",
-        oplSessionId: launchResult.launch.oplSessionId || "",
-      },
-      ...redactProviderConfig(providerConfigResult),
-    });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/prepare-run") {
-    if (!portalInternalAuthAllowed(req)) {
-      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
-      return;
-    }
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const portalUser = findResourceOrderUser(db, payload);
-    if (!portalUser) {
-      sendJson(res, { ok: false, error: "portal_user_not_found" }, 404);
-      return;
-    }
-    if (isBlockedUserStatus(portalUser.status)) {
-      sendJson(res, { ok: false, error: "account_blocked" }, 403);
-      return;
-    }
-    const quoted = await createQuotedResourceOrder(db, portalUser, req, payload, { idempotencyPrefix: "prepare-run" });
-    if (!quoted.ok) {
-      sendJson(res, quoted, quoted.status || 400);
-      return;
-    }
-    const frozen = freezeResourceOrder(db, {
-      user: portalUser,
-      order: quoted.order,
-      idempotencyKey: String(payload.freezeIdempotencyKey || `prepare-run-freeze:${quoted.order.id}`).trim(),
-    });
-    if (!frozen.ok) {
-      sendJson(res, frozen, frozen.status || 400);
-      return;
-    }
-    const provisioning = await provisionResourceOrder(db, portalUser, frozen.order, payload, { allowDisabledPending: true });
-    await writeDb(db);
-    sendJson(res, {
-      ...resourceOrderResponse(db, portalUser, provisioning.order || frozen.order),
-      provisioner: provisioning.provisioner || null,
-    }, provisioning.ok ? 200 : (provisioning.status || 502));
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/mark-running") {
-    if (!portalInternalAuthAllowed(req)) {
-      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
-      return;
-    }
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const orderId = String(payload.resourceOrderId || payload.orderId || "").trim();
-    const result = transitionResourceOrder(db, {
-      orderId,
-      status: "running",
-      actorType: "runner",
-      actorId: String(payload.runId || payload.runnerRunId || ""),
-      payload,
-      idempotencyKey: String(payload.idempotencyKey || `event:running:${orderId}`).trim(),
-    });
-    if (!result.ok) {
-      sendJson(res, result, result.status || 400);
-      return;
-    }
-    await writeDb(db);
-    sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/provisioning-result") {
-    if (!portalInternalAuthAllowed(req)) {
-      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
-      return;
-    }
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const orderId = String(payload.resourceOrderId || payload.orderId || "").trim();
-    const rawStatus = String(payload.status || "").trim().toLowerCase();
-    const nextStatus = ["success", "succeeded", "ready", "running"].includes(rawStatus) ? "running" : rawStatus;
-    if (!["running", "failed"].includes(nextStatus)) {
-      sendJson(res, { ok: false, error: "invalid_provisioning_result_status" }, 400);
-      return;
-    }
-    const nodePoolId = String(payload.nodePoolId || payload.node_pool_id || "").trim();
-    const cloudResourceIds = [
-      nodePoolId,
-      ...(Array.isArray(payload.cloudResourceIds) ? payload.cloudResourceIds : []),
-    ].map((item) => String(item || "").trim()).filter(Boolean);
-    const result = transitionResourceOrder(db, {
-      orderId,
-      status: nextStatus,
-      actorType: "resource-provisioner",
-      actorId: String(payload.provisionerOrderId || payload.requestId || nodePoolId || ""),
-      payload: {
-        ...payload,
-        nodePoolId,
-        cloudResourceIds,
-        reason: payload.reason || payload.error || "",
-      },
-      idempotencyKey: String(payload.idempotencyKey || `event:provisioning-result:${orderId}:${nextStatus}:${payload.requestId || nodePoolId || payload.reason || ""}`).trim(),
-    });
-    if (!result.ok) {
-      sendJson(res, result, result.status || 400);
-      return;
-    }
-    if (nextStatus === "running" && result.order) {
-      result.order.provisionRequestId = String(payload.requestId || payload.provisionRequestId || result.order.provisionRequestId || "").trim();
-      result.order.cloudResourceIds = cloudResourceIds.length ? cloudResourceIds : result.order.cloudResourceIds;
-    }
-    if (nextStatus === "failed") {
-      await logPortalEvent({
-        type: "resource_order_provision_failed",
-        userId: result.order?.userId || "",
-        workspaceId: result.order?.workspaceId || "",
-        runId: result.order?.runId || payload.runId || "",
-        resourceOrderId: orderId,
-        reason: payload.reason || payload.error || "provisioning_failed",
-      });
-    }
-    await writeDb(db);
-    sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/internal/resource-orders/release") {
-    if (!portalInternalAuthAllowed(req)) {
-      sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
-      return;
-    }
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const orderId = String(payload.resourceOrderId || payload.orderId || "").trim();
-    const order = db.resourceOrders?.find((item) => item.id === orderId);
-    const portalUser = order ? db.users.find((item) => item.id === order.userId) : null;
-    const result = releaseResourceOrder(db, {
-      user: portalUser,
-      orderId,
-      actorType: "runner",
-      actorId: String(payload.runId || ""),
-      payload,
-      idempotencyKey: String(payload.idempotencyKey || `preauth_release_deferred:${orderId}`).trim(),
-    });
-    if (!result.ok) {
-      sendJson(res, result, result.status || 400);
-      return;
-    }
-    await writeDb(db);
-    sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/auth/oidc/login") {
-    const state = randomUUID();
-    clearCookie(res, oidcStateCookie());
-    setCookie(res, oidcStateCookie(), state);
-    const prompt = url.searchParams.get("prompt") === "login" ? "login" : "";
-    res.writeHead(302, { Location: buildOidcAuthorizeUrl(state, prompt) });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/auth/oidc/callback") {
-    const cookies = parseCookies(req.headers.cookie);
-    const state = String(url.searchParams.get("state") || "");
-    const code = String(url.searchParams.get("code") || "");
-    if (!state || !code || cookies[oidcStateCookie()] !== state) {
-      sendHtml(res, layoutV2("登录失败", `<div class="card">统一登录校验失败，请重试。</div>`, null), 400);
-      return;
-    }
-    const token = await exchangeOidcCode(code);
-    const accessToken = String(token.access_token || "");
-    if (!accessToken) {
-      sendHtml(res, layoutV2("登录失败", `<div class="card">无法完成统一登录，请稍后再试。</div>`, null), 502);
-      return;
-    }
-    const profile = await fetchOidcUserInfo(accessToken);
-    const email = String(profile.email || profile.preferred_username || "").toLowerCase();
-    if (!email) {
-      sendHtml(res, layoutV2("登录失败", `<div class="card">统一身份没有返回可用邮箱。</div>`, null), 400);
-      return;
-    }
-    let portalUser = db.users.find((item) => String(item.email || "").toLowerCase() === email);
-    if (!portalUser) {
-      portalUser = {
-        id: randomUUID(),
-        email,
-        name: String(profile.name || profile.preferred_username || email).trim(),
-        role: "user",
-        status: "active",
-        currentTaskSlug: "default",
-        preferences: { theme: "light" },
-        passwordHash: "",
-        createdAt: new Date().toISOString(),
-        authSource: "zitadel_oidc",
-      };
-      ensureUserCommercialState(portalUser, { grantTrial: true });
-      db.users.push(portalUser);
-      db.wallets.push({ userId: portalUser.id, balance: 0, updatedAt: new Date().toISOString() });
-      await ensureTaskSpace(db, portalUser, "default", defaultTaskTitle("default"));
-      await logPortalEvent({ type: "user_provisioned_from_zitadel", userId: portalUser.id, email });
-    }
-    if (isBlockedUserStatus(portalUser.status)) {
-      sendHtml(res, layoutV2("登录失败", `<div class="card">当前账号已被禁用，请联系管理员。</div>`, null), 403);
-      return;
-    }
-    const sessionId = randomUUID();
-    db.sessions.push({ id: sessionId, userId: portalUser.id, createdAt: new Date().toISOString(), authSource: "zitadel_oidc" });
-    await writeDb(db);
-    clearCookie(res, oidcStateCookie());
-    setCookie(res, "portal_session", sessionId);
-    res.writeHead(302, { Location: "/portal" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/logout") {
-    clearCookie(res, "portal_session");
-    clearCookie(res, oidcStateCookie());
-    clearCookie(res, "workspace_session");
-    clearCookie(res, "refreshToken");
-    clearCookie(res, "token_provider");
-    res.writeHead(302, { Location: "/login?force_login=1" });
-    res.end();
-    return;
-  }
-  if (!user) {
-    res.writeHead(302, { Location: "/login" });
-    res.end();
-    return;
-  }
-  if (await handleOplRoutes({ req, res, url, db, user })) return;
-  if (await handleWorkspaceStorageRoutes({ req, res, url, db, user })) return;
-  if (req.method === "GET" && (url.pathname === "/portal/app" || url.pathname === "/portal/app/" || url.pathname.startsWith("/portal/app/"))) {
-    await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/announcements") {
-    const showAll = user.role === "admin" && String(url.searchParams.get("mode") || "").toLowerCase() === "all";
-    sendJson(res, {
-      items: showAll ? announcementRows(db) : visibleAnnouncementRows(db, user),
-      source: "portal_settings",
-      type: "live",
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/me") {
-    const policy = await evaluateUserPolicy(db, user);
-    const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-    const commercial = buildCommercialProfile(db, user, { wallet, policy });
-    const initials = String(user.name || user.email || "?")
-      .split(/[\s@._-]+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() || "")
-      .join("") || "U";
-    sendJson(res, {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      status: activeUserStatus(user.status),
-      accountStatus: commercial.accountStatus,
-      billingStatus: commercial.billingStatus,
-      entitlementStatus: commercial.entitlementStatus,
-      commercial,
-      initials,
-      currentTaskSlug: user.currentTaskSlug || "default",
-      selectedServerPlan: currentServerPlanSelection(currentTaskSpaceForUser(db, user)),
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/sessions") {
-    const requestOptions = readSessionsRequestOptions(url);
-    const requestedUserId = String(url.searchParams.get("userId") || "").trim();
-    const targetUser = requestedUserId && user.role === "admin"
-      ? (db.users.find((item) => item.id === requestedUserId) || user)
-      : user;
-    const adapterRuns = await fetchOplAdapterRuns();
-    const runsByWorkspaceSession = new Map();
-    for (const run of adapterRuns.filter((item) => item.portalUserId === targetUser.id)) {
-      const key = run.workspaceSessionId || "";
-      if (!key) continue;
-      const current = runsByWorkspaceSession.get(key);
-      if (!current || String(run.createdAt || "").localeCompare(String(current.createdAt || "")) > 0) {
-        runsByWorkspaceSession.set(key, run);
-      }
-    }
-    const oplSessions = workspaceChatSessionsForUser(db, targetUser, Number(url.searchParams.get("limit") || 20))
-      .map((session) => {
-        const latestRun = runsByWorkspaceSession.get(session.workspaceSessionId);
-        return latestRun ? {
-          ...session,
-          runtimeSessionId: latestRun.runtimeSessionId || "",
-          runId: latestRun.runId || "",
-          runStatus: latestRun.status || "",
-          latencyMs: Number(latestRun.latencyMs || 0),
-          tokenCount: Number(latestRun.tokenCount || 0),
-          userAgent: latestRun.userAgent || "",
-          source: "portal_workspace_sessions + portal_opl_adapter",
-        } : session;
-      });
-    const rows = [...oplSessions]
-      .sort((a, b) => String(b.lastUsedAt || b.expiresAt || "").localeCompare(String(a.lastUsedAt || a.expiresAt || "")));
-    const pagination = paginateRows(rows, requestOptions.page, normalizePageSize(requestOptions.pageSize || 5));
-    sendJson(res, {
-      user: {
-        id: targetUser.id,
-        name: targetUser.name,
-        email: targetUser.email,
-      },
-      sessions: pagination.rows,
-      pagination: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        total: pagination.total,
-        totalPages: pagination.totalPages,
-      },
-      sources: {
-        opl: { source: "portal_workspace_sessions + portal_opl_adapter", type: "live" },
-      },
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/runs") {
-    const requestedUserId = String(url.searchParams.get("userId") || "").trim();
-    const workspaceId = String(url.searchParams.get("workspaceId") || "").trim();
-    const runId = String(url.searchParams.get("runId") || "").trim();
-    const targetUsers = requestedUserId && user.role === "admin"
-      ? db.users.filter((item) => item.id === requestedUserId)
-      : [user];
-    const runs = [];
-    for (const targetUser of targetUsers) {
-      const rows = await collectRunsForUser(targetUser.id);
-      runs.push(...rows.map((item) => ({
-        runId: item.runId || "",
-        workspaceId: item.workspaceId || "",
-        workspaceSessionId: item.workspaceSessionId || "",
-        userId: targetUser.id,
-        userName: targetUser.name || targetUser.email || "",
-        status: isRunTerminal(item) ? "completed" : (item.status || "running"),
-        startedAt: formatDateTime(item.createdAt || ""),
-        endedAt: isRunTerminal(item) ? formatDateTime(item.completedAt || item.createdAt || "") : "",
-        source: item.source || "runtime_events",
-        type: "live",
-      })));
-    }
-    const adapterRuns = (await fetchOplAdapterRuns())
-      .filter((item) => {
-        if (requestedUserId && user.role === "admin") return item.portalUserId === requestedUserId;
-        return item.portalUserId === user.id;
-      })
-      .map((item) => ({
-        runId: item.runId || "",
-        workspaceId: item.workspaceId || "",
-        workspaceSessionId: item.workspaceSessionId || "",
-        runtimeSessionId: item.runtimeSessionId || "",
-        userId: item.portalUserId || "",
-        userName: "",
-        status: item.status || "",
-        startedAt: formatDateTime(item.createdAt || ""),
-        endedAt: item.finishedAt ? formatDateTime(item.finishedAt) : "",
-        source: "portal_opl_adapter",
-        type: "live",
-        latencyMs: Number(item.latencyMs || 0),
-        tokenCount: Number(item.tokenCount || 0),
-        userAgent: item.userAgent || "",
-        jobName: item.jobName || "",
-        namespace: item.namespace || "",
-      }));
-    runs.push(...adapterRuns);
-    const filtered = runs
-      .filter((item) => !workspaceId || item.workspaceId === workspaceId)
-      .filter((item) => !runId || item.runId === runId)
-      .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
-    sendJson(res, {
-      runs: filtered,
-      source: "runtime_events + portal_opl_adapter",
-      type: "live",
-      note: "数据来自 runtime 事件、Portal 运行记录与 Portal OPL adapter",
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/costs/summary") {
-    const summary = await fetchBillingSummary(user.id, "", String(url.searchParams.get("window") || "168h"));
-    sendJson(res, {
-      source: "billing_aggregator",
-      type: summary ? "live" : "status_only",
-      note: summary ? "数据来自账单聚合接口" : "账单聚合接口不可用",
-      totals: summary?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 },
-      items: summary?.items || [],
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/costs/workspace") {
-    const workspaceId = String(url.searchParams.get("workspaceId") || url.searchParams.get("task") || "").trim();
-    const summary = await fetchBillingSummary(user.id, workspaceId, String(url.searchParams.get("window") || "168h"));
-    sendJson(res, {
-      source: "billing_aggregator",
-      type: summary ? "live" : "status_only",
-      note: summary ? "数据来自 workspace 维度账单聚合接口" : "workspace 账单聚合接口不可用",
-      workspaceId,
-      totals: summary?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 },
-      items: summary?.items || [],
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/costs/run") {
-    const runId = String(url.searchParams.get("runId") || "").trim();
-    const summary = await fetchBillingSummary(user.id, "", String(url.searchParams.get("window") || "168h"));
-    const adapterCost = (await fetchOplAdapterCosts({ userId: user.id, runId }))[0] || null;
-    if (adapterCost) {
-      sendJson(res, {
-        source: "portal_opl_adapter",
-        type: "live",
-        note: adapterCost.status === "pending" ? "run 成本已记录为 pending，等待 OpenCost/云账单对账" : "run 成本来自 Portal OPL adapter",
-        runId,
-        cost: {
-          cpuCost: adapterCost.cpuCost,
-          gpuCost: adapterCost.gpuCost,
-          storageCost: adapterCost.storageCost,
-          totalCost: adapterCost.totalCost,
-          pricingSource: adapterCost.pricingSource,
-          status: adapterCost.status,
-        },
-      });
-      return;
-    }
-    const runCost = (summary?.items || []).find((item) => {
-      const props = item?.properties || {};
-      return props["label:run_id"] === runId || props.run_id === runId || item?.name === runId;
-    }) || null;
-    if (!runCost) {
-      sendJson(res, {
-        source: "billing_aggregator",
-        type: "status_only",
-        note: "未找到对应 run 成本记录",
-        runId,
-        cost: null,
-      });
-      return;
-    }
-    sendJson(res, {
-      source: "billing_aggregator",
-      type: "live",
-      note: "数据来自 run 维度账单聚合结果",
-      runId,
-      cost: {
-        cpuCost: Number(runCost.cpuCost || 0),
-        gpuCost: Number(runCost.gpuCost || 0),
-        storageCost: Number(runCost.pvCost || runCost.storageCost || 0),
-        totalCost: Number(runCost.totalCost || 0),
-        pricingSource: runCost?.properties?.pricing_source || runCost?.properties?.["label:pricing_source"] || "aggregated",
-      },
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/registry/summary") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const summary = await fetchHarborSummary();
-    sendJson(res, summary);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/registry/images") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const images = await fetchHarborImageRows(Number(url.searchParams.get("limit") || 50));
-    sendJson(res, images);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/traces/summary") {
-    const summary = await fetchLangfuseSummary();
-    sendJson(res, summary);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/session-traces") {
-    const requestOptions = readTracesRequestOptions(url);
-    sendJson(res, await buildSessionTracesApiPayload(db, user, requestOptions));
-    return;
-  }
-  const sessionTraceDetailMatch = url.pathname.match(/^\/portal\/api\/session-traces\/([^/]+)$/);
-  if (req.method === "GET" && sessionTraceDetailMatch) {
-    const detail = await buildSessionTraceDetailPayload(db, user, decodeURIComponent(sessionTraceDetailMatch[1]));
-    if (!detail) {
-      sendJson(res, { ok: false, error: "session_trace_not_found" }, 404);
-      return;
-    }
-    sendJson(res, detail);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/agent-traces") {
-    const adminScope = adminScopeResult(user);
-    if (!adminScope.ok) {
-      sendJson(res, { error: adminScope.error }, adminScope.status);
-      return;
-    }
-    const requestOptions = readTracesRequestOptions(url);
-    sendJson(res, await buildSessionTracesApiPayload(db, user, requestOptions));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/traces") {
-    const adminScope = adminScopeResult(user);
-    if (!adminScope.ok) {
-      sendJson(res, { error: adminScope.error, use: "/portal/api/session-traces" }, adminScope.status);
-      return;
-    }
-    const requestOptions = readTracesRequestOptions(url);
-    const requestedUserId = String(requestOptions.userId || "").trim();
-    const workspaceId = String(requestOptions.workspaceId || "").trim();
-    const runId = String(requestOptions.runId || "").trim();
-    const sessionId = String(requestOptions.sessionId || "").trim();
-    const statusFilter = String(requestOptions.status || "").trim().toLowerCase();
-    const effectiveUserId = requestedUserId;
-    const traces = await fetchTraceRows({
-      userId: effectiveUserId,
-      workspaceId,
-      runId,
-      limit: parsePositiveInt(requestOptions.limit, 200),
-    });
-    const adapterTraces = await fetchOplAdapterTraceRows({
-      userId: effectiveUserId,
-      workspaceId,
-      runId,
-      limit: parsePositiveInt(requestOptions.limit, 200),
-    });
-    const mergedRows = [...(adapterTraces.rows || []), ...(traces.rows || [])]
-      .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
-    const filteredRows = mergedRows
-      .filter((item) => !sessionId || String(item.sessionId || item.workspaceSessionId || "").includes(sessionId))
-      .filter((item) => !statusFilter || String(item.status || "").toLowerCase().includes(statusFilter));
-    const pagination = paginateRows(filteredRows, requestOptions.page, normalizePageSize(requestOptions.pageSize || 5));
-    sendJson(res, {
-      filters: {
-        userId: effectiveUserId,
-        workspaceId,
-        runId,
-        sessionId,
-        status: statusFilter,
-      },
-      summary: {
-        available: traces.type === "live" || adapterTraces.type === "live",
-        mode: adapterTraces.type === "live" ? "live" : traces.type,
-        note: adapterTraces.type === "live" ? adapterTraces.note : (traces.note || ""),
-        traceCount: filteredRows.length,
-        latestTraceAt: filteredRows[0]?.startedAt || "",
-        dataSource: adapterTraces.type === "live" ? `${adapterTraces.source} + ${traces.source}` : traces.source,
-      },
-      items: pagination.rows,
-      pagination: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        total: pagination.total,
-        totalPages: pagination.totalPages,
-      },
-      dataSource: traces.source,
-      note: traces.note || "",
-    });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/theme") {
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const theme = ["dark", "light"].includes(String(form.theme || "").toLowerCase()) ? String(form.theme).toLowerCase() : "light";
-    user.preferences = user.preferences || {};
-    user.preferences.theme = theme;
-    await writeDb(db);
-    await logPortalEvent({ type: "theme_changed", userId: user.id, theme });
-    sendJson(res, { ok: true, theme });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/overview") {
-    sendJson(res, await buildOverviewPayload(db, user, readOverviewRequestOptions(url)));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/billing") {
-    sendJson(res, await buildBillingPayload(db, user, readBillingRequestOptions(url)));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/resource-orders") {
-    ensureResourceOrderCollections(db);
-    const items = resourceOrdersForUser(db, user.id)
-      .map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || []));
-    sendJson(res, {
-      ok: true,
-      items,
-      commercial: buildCommercialProfile(db, user),
-      source: "portal_resource_order_state",
-    });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/quote") {
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const quoted = await createQuotedResourceOrder(db, user, req, payload, { idempotencyPrefix: "resource-order-quote" });
-    if (!quoted.ok) {
-      sendJson(res, quoted, quoted.status || 400);
-      return;
-    }
-    await writeDb(db);
-    sendJson(res, {
-      ...resourceOrderResponse(db, user, quoted.order),
-      selectedServerPlan: currentServerPlanSelection(quoted.taskSpace),
-      plansSummary: quoted.plansSummary,
-    });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/freeze") {
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    let order = db.resourceOrders?.find((item) => item.id === String(payload.orderId || payload.resourceOrderId || ""));
-    if (!order) {
-      const quoted = await createQuotedResourceOrder(db, user, req, payload, { idempotencyPrefix: "resource-order-freeze-quote" });
-      if (!quoted.ok) {
-        sendJson(res, quoted, quoted.status || 400);
-        return;
-      }
-      order = quoted.order;
-    }
-    const frozen = freezeResourceOrder(db, {
-      user,
-      order,
-      idempotencyKey: String(req.headers["x-idempotency-key"] || payload.idempotencyKey || `preauth_hold:${order.id}`).trim(),
-    });
-    if (!frozen.ok) {
-      sendJson(res, frozen, frozen.status || 400);
-      return;
-    }
-    await writeDb(db);
-    sendJson(res, resourceOrderResponse(db, user, frozen.order));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/cloud/resources") {
-    if (!isAdminUser(user)) {
-      sendJson(res, {
-        ok: false,
-        error: "forbidden_admin_scope_required",
-        use: "/portal/api/resource-orders",
-      }, 403);
-      return;
-    }
-    const resources = await resourceProvisionerClient.fetchCloudResources();
-    sendJson(res, {
-      ok: Boolean(resources?.ok),
-      source: "resource_provisioner",
-      resources,
-      resourceOrders: {
-        items: resourceOrdersForUser(db, user.id).slice(0, 20).map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || [])),
-      },
-    });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/provision") {
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
-    if (!order) {
-      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
-      return;
-    }
-    if (!["frozen", "provisioning"].includes(String(order.status || "").toLowerCase())) {
-      sendJson(res, { ok: false, error: "resource_order_must_be_frozen", status: order.status }, 409);
-      return;
-    }
-    const provisioned = await provisionResourceOrder(db, user, order, payload);
-    await writeDb(db);
-    sendJson(res, {
-      ...resourceOrderResponse(db, user, provisioned.order || order),
-      provisioner: provisioned.provisioner,
-    }, provisioned.ok ? 200 : (provisioned.status || 502));
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/release") {
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
-    if (!order) {
-      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
-      return;
-    }
-    let scaleResult = null;
-    if (payload.scaleToZero === true) {
-      scaleResult = await resourceProvisionerClient.scaleToZero({
-        resourceOrderId: order.id,
-        nodePoolId: payload.nodePoolId || order.cloudResourceIds?.[0] || "",
-        tenantId: order.tenantId,
-        workspaceId: order.workspaceId,
-        serverPlanId: order.serverPlanId,
-      });
-      if (!scaleResult?.ok) {
-        sendJson(res, { ok: false, error: "scale_to_zero_failed", provisioner: scaleResult }, scaleResult?.status || 502);
-        return;
-      }
-    }
-    const released = releaseResourceOrder(db, {
-      user,
-      orderId: order.id,
-      actorType: "portal",
-      actorId: user.id,
-      payload: { scaleToZero: payload.scaleToZero === true, scaleResult },
-      idempotencyKey: String(payload.idempotencyKey || `portal_release:${order.id}`).trim(),
-    });
-    if (!released.ok) {
-      sendJson(res, released, released.status || 400);
-      return;
-    }
-    await writeDb(db);
-    sendJson(res, { ...resourceOrderResponse(db, user, released.order), scaleResult });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/resource-orders/delete-node-pool") {
-    let payload = {};
-    try {
-      payload = await readJsonBody(req);
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
-    if (!order) {
-      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
-      return;
-    }
-    if (payload.confirmDeleteNodePool !== true) {
-      sendJson(res, {
-        ok: false,
-        error: "delete_node_pool_confirmation_required",
-        message: "删除节点池前必须确认：销毁 CVM 会释放实例和节点本地数据；保留 CVM 会继续产生云资源费用。",
-      }, 409);
-      return;
-    }
-    const deleted = await resourceProvisionerClient.deleteNodePool({
-      resourceOrderId: order.id,
-      nodePoolId: payload.nodePoolId || order.cloudResourceIds?.[0] || "",
-      destroyCvmInstances: payload.destroyCvmInstances === true,
-      tenantId: order.tenantId,
-      workspaceId: order.workspaceId,
-      serverPlanId: order.serverPlanId,
-      confirmation: "delete-node-pool",
-    });
-    if (!deleted?.ok) {
-      sendJson(res, { ok: false, error: "delete_node_pool_failed", provisioner: deleted }, deleted?.status || 502);
-      return;
-    }
-    const transitioned = transitionResourceOrder(db, {
-      orderId: order.id,
-      status: "released",
-      actorType: "portal",
-      actorId: user.id,
-      payload: { deleteNodePool: deleted },
-      idempotencyKey: `event:delete-node-pool:${order.id}:${payload.destroyCvmInstances === true ? "destroy" : "retain"}`,
-    });
-    await writeDb(db);
-    sendJson(res, { ...resourceOrderResponse(db, user, transitioned.order || order), provisioner: deleted });
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/api/server-plans/select") {
-    let payload = {};
-    try {
-      payload = JSON.parse((await readBody(req)).toString("utf8") || "{}");
-    } catch {
-      sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
-      return;
-    }
-    const taskSlug = slugify(payload.task || user.currentTaskSlug || "default");
-    const planId = String(payload.planId || payload.serverPlanId || "").trim();
-    if (!planId) {
-      sendJson(res, { ok: false, error: "server_plan_id_required" }, 400);
-      return;
-    }
-    const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
-    const plan = (Array.isArray(plansPayload.items) ? plansPayload.items : []).find((item) => String(item.id || "").trim() === planId);
-    if (!plan) {
-      sendJson(res, { ok: false, error: "server_plan_not_found" }, 404);
-      return;
-    }
-    if (!plan.salable) {
-      sendJson(res, { ok: false, error: "server_plan_not_salable", reason: plan.reason || plan.priceStatus || "" }, 409);
-      return;
-    }
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-    const selection = buildTaskSpaceServerPlanSelection(plan);
-    taskSpace.serverPlanId = selection?.id || "";
-    taskSpace.serverPlanRegion = selection?.region || "";
-    taskSpace.serverPlanSnapshot = selection;
-    taskSpace.updatedAt = new Date().toISOString();
-    user.currentTaskSlug = taskSpace.slug;
-    await logPortalEvent({
-      type: "server_plan_selected",
-      userId: user.id,
-      workspaceId: taskSpace.slug,
-      detail: { serverPlanId: taskSpace.serverPlanId, region: taskSpace.serverPlanRegion },
-    });
-    await writeDb(db);
-    sendJson(res, {
-      ok: true,
-      workspaceId: taskSpace.slug,
-      selectedServerPlan: currentServerPlanSelection(taskSpace),
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/server-plans") {
-    const payload = await fetchServerPlans() || buildServerPlansFallback();
-    const billingStatus = await fetchBillingStatus();
-    const cloudStatus = payload.cloudStatus || billingStatus?.cloudStatus || null;
-    const enrichedPayload = { ...payload, cloudStatus };
-    const policy = await evaluateUserPolicy(db, user);
-    const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
-    const commercial = buildCommercialProfile(db, user, { wallet, policy });
-    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || null;
-    sendJson(res, {
-      ...enrichedPayload,
-      summary: buildServerPlansSummary(enrichedPayload),
-      commercial,
-      selectedServerPlan: currentServerPlanSelection(taskSpace),
-      workspaceId: taskSpace?.slug || taskSlug,
-      freezePolicy: {
-        source: "tencent_cloud_price",
-        basis: "腾讯云 InquiryPriceRunInstances 实时报价 + 平台规格目录 + 最小计费单元",
-        finalBilling: "腾讯云账单明细 DescribeBillDetail 回补为最终真实扣费依据",
-        minBillableHoursDefault: 1,
-        pendingCostIntervalSeconds: 60,
-        opencostRole: "仅用于运行中近实时分摊观测，不作为最终扣费账单。",
-      },
-    });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/workspace") {
-    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
-    sendJson(res, await buildWorkspacePayload(db, user, taskSlug));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/overview") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    sendJson(res, await buildAdminOverviewPayload(db));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/users") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminUsersApiPayload(db, payload, {
-      page: url.searchParams.get("page"),
-      pageSize: url.searchParams.get("page_size"),
-      q: url.searchParams.get("q"),
-      workspace: url.searchParams.get("workspace"),
-      userId: url.searchParams.get("userId"),
-      username: url.searchParams.get("username"),
-      email: url.searchParams.get("email"),
-    }));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/groups") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminGroupsApiPayload(db, payload));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/usage") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminUsageApiPayload(payload, {
-      page: url.searchParams.get("page"),
-      pageSize: url.searchParams.get("page_size"),
-    }));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/billing-ops") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminBillingOpsApiPayload(db, payload));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/system") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminSystemApiPayload(payload));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/ops") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminOpsApiPayload(payload));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/sandboxes") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminSandboxesApiPayload(payload));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/audit") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, buildAdminAuditApiPayload(payload, {
-      page: url.searchParams.get("page"),
-      pageSize: url.searchParams.get("page_size"),
-    }));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/alerts") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const payload = await buildAdminOverviewPayload(db);
-    sendJson(res, { alerts: payload.alerts || [] });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/user") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const userId = String(url.searchParams.get("userId") || "");
-    const payload = await buildAdminUserPortraitApiPayload(db, userId);
-    if (!payload) {
-      sendJson(res, { error: "not_found" }, 404);
-      return;
-    }
-    sendJson(res, payload);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/workspace") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const userId = String(url.searchParams.get("userId") || "");
-    const workspaceId = String(url.searchParams.get("workspaceId") || "");
-    const payload = await buildAdminWorkspacePortraitApiPayload(db, userId, workspaceId);
-    if (!payload) {
-      sendJson(res, { error: "not_found" }, 404);
-      return;
-    }
-    sendJson(res, payload);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/api/admin/run") {
-    if (user.role !== "admin") {
-      sendJson(res, { error: "forbidden" }, 403);
-      return;
-    }
-    const runId = String(url.searchParams.get("runId") || "");
-    const payload = await buildAdminRunPortraitApiPayload(db, runId);
-    if (!payload) {
-      sendJson(res, { error: "not_found" }, 404);
-      return;
-    }
-    sendJson(res, payload);
-    return;
-  }
-  if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/portal")) {
-    res.writeHead(302, { Location: "/portal/app/overview" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/billing") {
-    res.writeHead(302, { Location: `/portal/app/billing${url.search || ""}` });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/servers") {
-    res.writeHead(302, { Location: `/portal/app/servers${url.search || ""}` });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/billing/export.csv") {
-    const payload = await buildBillingPayload(db, user, readBillingRequestOptions(url));
-    const lines = [
-      ["runId", "workspaceId", "runStatus", "cpuCost", "gpuCost", "storageCost", "totalCost", "startedAt", "endedAt", "pricingSource"].join(","),
-      ...payload.runCosts.map((item) => [
-        csvEscape(item.runId),
-        csvEscape(item.workspaceId),
-        csvEscape(item.runStatus),
-        csvEscape(microMoney(item.cpuCost)),
-        csvEscape(microMoney(item.gpuCost)),
-        csvEscape(microMoney(item.storageCost)),
-        csvEscape(microMoney(item.totalCost)),
-        csvEscape(item.startedAt || ""),
-        csvEscape(item.endedAt || ""),
-        csvEscape(item.pricingSource),
-      ].join(",")),
-    ];
-    res.writeHead(200, {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"portal-billing-export.csv\"",
-    });
-    res.end(lines.join("\n"));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/billing/tasks-export.csv") {
-    const payload = await buildBillingPayload(db, user, readBillingRequestOptions(url));
-    const lines = [
-      ["workspaceSlug", "workspaceTitle", "runCount", "cpuCost", "gpuCost", "storageCost", "totalCost"].join(","),
-      ...payload.taskCosts.map((item) => [
-        csvEscape(item.slug),
-        csvEscape(item.title),
-        csvEscape(item.runCount),
-        csvEscape(microMoney(item.cpuCost)),
-        csvEscape(microMoney(item.gpuCost)),
-        csvEscape(microMoney(item.storageCost)),
-        csvEscape(microMoney(item.totalCost)),
-      ].join(",")),
-    ];
-    res.writeHead(200, {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"portal-billing-tasks-export.csv\"",
-    });
-    res.end(lines.join("\n"));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/workspace") {
-    res.writeHead(302, { Location: `/portal/app/workspace${url.search || ""}` });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/dashboard" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/dashboard") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/dashboard" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/alerts") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/alerts" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/users") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/users" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/groups") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/groups" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/usage") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/usage" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/billing-ops") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/billing-ops" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/system") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/system" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/ops") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/ops" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/sandboxes") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/sandboxes" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/audit") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/app/admin/audit" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/user") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: `/portal/app/admin/user${url.search || ""}` });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/workspace") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: `/portal/app/admin/workspace${url.search || ""}` });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/run") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: `/portal/app/admin/run${url.search || ""}` });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/ledger-export.csv") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const billing = await fetchBillingSummary("", "", "168h");
-    const items = billing?.items || [];
-    const windowHours = parseHourWindow(url.searchParams.get("window"));
-    const lines = [
-      ["entryId", "type", "userId", "userName", "userEmail", "runId", "workspaceId", "amount", "createdAt", "operatorId", "reason", "pricingSource"].join(","),
-      ...db.ledger.filter((entry) => withinHourWindow(entry.createdAt, windowHours)).map((entry) => {
-        const targetUser = db.users.find((item) => item.id === entry.userId) || {};
-        const related = items.find((item) => item?.properties?.["label:run_id"] === entry.runId || item?.properties?.run_id === entry.runId || item?.name?.includes(entry.runId || ""));
-        const pricingSource = related ? "OpenCost aggregated" : (entry.type === "resource_charge" ? "metering pending" : "manual ledger");
-        return [
-          csvEscape(entry.id),
-          csvEscape(entry.type),
-          csvEscape(entry.userId),
-          csvEscape(targetUser.name || ""),
-          csvEscape(targetUser.email || ""),
-          csvEscape(entry.runId || ""),
-          csvEscape(entry.workspaceId || ""),
-          csvEscape(entry.amount),
-          csvEscape(entry.createdAt || ""),
-          csvEscape(entry.operatorId || ""),
-          csvEscape(entry.reason || ""),
-          csvEscape(pricingSource),
-        ].join(",");
-      }),
-    ];
-    res.writeHead(200, {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"portal-admin-ledger-export.csv\"",
-    });
-    res.end(lines.join("\n"));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/user-summary-export.csv") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const billing = await fetchBillingSummary("", "", "168h");
-    const items = billing?.items || [];
-    const windowHours = parseHourWindow(url.searchParams.get("window"));
-    const users = db.users.filter((item) => item.role !== "admin");
-    const lines = [
-      ["userId", "name", "email", "status", "taskCount", "balance", "ledgerTopup", "ledgerResourceCharge", "opencostTotalCost"].join(","),
-      ...users.map((entry) => {
-        const taskCount = db.taskSpaces.filter((item) => item.userId === entry.id && item.status !== "deleted").length;
-        const balance = Number((db.wallets.find((wallet) => wallet.userId === entry.id)?.balance) || 0);
-        const topup = db.ledger.filter((item) => item.userId === entry.id && item.type === "topup" && withinHourWindow(item.createdAt, windowHours)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        const resourceCharge = db.ledger.filter((item) => item.userId === entry.id && item.type === "resource_charge" && withinHourWindow(item.createdAt, windowHours)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        const opencostTotal = items.filter((item) => {
-          const props = item?.properties || {};
-          return props["label:customer_id"] === entry.id || props.customer_id === entry.id;
-        }).filter((item) => withinHourWindow(item?.end || item?.start, windowHours)).reduce((sum, item) => sum + Number(item?.totalCost || 0), 0);
-        return [
-          csvEscape(entry.id),
-          csvEscape(entry.name || ""),
-          csvEscape(entry.email || ""),
-          csvEscape(entry.status || "active"),
-          csvEscape(taskCount),
-          csvEscape(money(balance)),
-          csvEscape(money(topup)),
-          csvEscape(money(resourceCharge)),
-          csvEscape(microMoney(opencostTotal)),
-        ].join(",");
-      }),
-    ];
-    res.writeHead(200, {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"portal-admin-user-summary-export.csv\"",
-    });
-    res.end(lines.join("\n"));
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/pending-export.csv") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const pending = await fetchPendingSummary("", "", "168h");
-    const lines = [
-      ["runId", "customerId", "userName", "userEmail", "workspaceId", "completedAt", "pendingHours", "pricingSource"].join(","),
-      ...(pending?.runs || []).map((item) => {
-        const targetUser = db.users.find((entry) => entry.id === item.customerId) || {};
-        return [
-          csvEscape(item.runId),
-          csvEscape(item.customerId),
-          csvEscape(targetUser.name || ""),
-          csvEscape(targetUser.email || ""),
-          csvEscape(item.workspaceId || ""),
-          csvEscape(item.completedAt || item.createdAt || ""),
-          csvEscape(Number(item.pendingHours || 0).toFixed(2)),
-          csvEscape(item.pricingSource || "metering pending"),
-        ].join(",");
-      }),
-    ];
-    res.writeHead(200, {
-      "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"portal-admin-pending-export.csv\"",
-    });
-    res.end(lines.join("\n"));
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/ledger-adjust") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const actionType = String(form.actionType || "").trim();
-    const targetUser = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    const wallet = db.wallets.find((item) => item.userId === form.userId);
-    const amount = Number(form.amount || 0);
-    const reason = String(form.reason || "").trim();
-    const redirectTo = String(form.redirectTo || "/portal/admin/billing-ops").trim();
-    if (!targetUser || !wallet || !["refund", "makeup_charge"].includes(actionType) || !Number.isFinite(amount) || amount <= 0 || !reason) {
-      sendHtml(res, layoutV2("账务调整失败", `<div class="card">参数错误，请检查用户、动作类型、金额和原因。</div>`, user), 400);
-      return;
-    }
-    const signedAmount = actionType === "refund" ? Math.abs(amount) : -Math.abs(amount);
-    wallet.balance += signedAmount;
-    wallet.updatedAt = new Date().toISOString();
-    appendLedgerEntry(db, {
-      id: randomUUID(),
-      tenantId: targetUser.id,
-      userId: targetUser.id,
-      runId: String(form.runId || "").trim(),
-      workspaceId: String(form.workspaceId || "").trim(),
-      orderId: String(form.orderId || "").trim(),
-      type: actionType,
-      amount: Math.abs(amount),
-      currency: "CNY",
-      sourceType: "admin_adjustment",
-      sourceId: String(form.sourceId || "").trim(),
-      idempotencyKey: String(form.idempotencyKey || "").trim(),
-      reason,
-      createdAt: new Date().toISOString(),
-      operatorId: user.id,
-    });
-    await logPortalEvent({
-      type: "ledger_adjusted",
-      userId: targetUser.id,
-      operatorId: user.id,
-      actionType,
-      amount: signedAmount,
-      runId: String(form.runId || "").trim(),
-      workspaceId: String(form.workspaceId || "").trim(),
-      reason,
-    });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/reconcile-billing") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const scopeType = String(form.scopeType || "all").trim();
-    const windowValue = String(form.window || "24h").trim();
-    const redirectTo = String(form.redirectTo || "/portal/admin/billing-ops").trim();
-    const targetUser = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    const workspace = db.taskSpaces.find((item) => item.slug === form.workspaceId);
-    const requestBody = { window: windowValue };
-    if (scopeType === "user" && targetUser) {
-      requestBody.customer_id = targetUser.id;
-    }
-    if (scopeType === "workspace" && workspace) {
-      requestBody.customer_id = workspace.userId;
-      requestBody.workspace_id = workspace.slug;
-    }
-    let result = null;
-    try {
-      const response = await fetch(new URL("/reconcile", BILLING_SERVICE_URL), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      result = await response.json().catch(() => ({ error: `status=${response.status}` }));
-      if (!response.ok) {
-        throw new Error(result?.error || `billing_reconcile_failed:${response.status}`);
-      }
-    } catch (error) {
-      sendHtml(res, layoutV2("补齐失败", `<div class="card"><h2>账单补齐失败</h2><p class="hint">${String(error)}</p></div>`, user), 500);
-      return;
-    }
-    await logPortalEvent({
-      type: "billing_reconcile_triggered",
-      userId: user.id,
-      scopeType,
-      targetUserId: targetUser?.id || "",
-      workspaceId: workspace?.slug || "",
-      window: windowValue,
-      reconciledCount: Number(result?.reconciledCount || 0),
-    });
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/docs/pricing-rules") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/admin" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/admin/docs/final-gap") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    res.writeHead(302, { Location: "/portal/admin" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/workspace-session/current") {
-    const cookies = parseCookies(req.headers.cookie);
-    const session = readWorkspaceSession(db, cookies[workspaceSessionCookie()], user.id);
-    sendJson(res, { ok: Boolean(session), workspaceSession: session });
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/tasks/switch") {
-    const taskSlug = slugify(url.searchParams.get("task") || "default");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-    if (taskSpace.status === "active") user.currentTaskSlug = taskSpace.slug;
-    await writeDb(db);
-    res.writeHead(302, { Location: `/portal/workspace?task=${taskSlug}` });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/tasks/create") {
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const policy = await evaluateUserPolicy(db, user);
-    if (!policy.allowWorkspaceCreate) {
-      await logPortalEvent({ type: "policy_blocked_workspace_create", userId: user.id, groupId: policy.group?.id || "", reasons: ["当前分组不允许创建任务空间"] });
-      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前分组不允许创建新任务空间</h2><p class="hint">请联系管理员调整分组策略。</p></div>`, user), 403);
-      return;
-    }
-    if (policy.blocked) {
-      await logPortalEvent({ type: "policy_blocked_workspace_create", userId: user.id, groupId: policy.group?.id || "", reasons: policy.blocks });
-      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前账号暂时不能创建任务空间</h2><ul class="list">${policy.blocks.map((item) => `<li>${item}</li>`).join("")}</ul></div>`, user), 403);
-      return;
-    }
-    const title = String(form.title || "").trim() || "New Task";
-    const slug = nextTaskSlug(db, user.id, title);
-    await ensureTaskSpace(db, user, slug, title);
-    await writeDb(db);
-    res.writeHead(302, { Location: `/portal/workspace?task=${slug}` });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/tasks/archive") {
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const taskSlug = slugify(form.task || user.currentTaskSlug || "default");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug);
-    if (!taskSpace) {
-      sendHtml(res, layoutV2("任务空间不存在", `<div class="card">未找到目标任务空间。</div>`, user), 404);
-      return;
-    }
-    if (taskSpace.status !== "active") {
-      sendHtml(res, layoutV2("无法归档", `<div class="card">只有 active 状态的任务空间可以归档。</div>`, user), 409);
-      return;
-    }
-    await archiveTaskSpace(db, user, taskSpace);
-    await writeDb(db);
-    res.writeHead(302, { Location: `/portal/workspace?task=${taskSpace.slug}` });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/tasks/restore") {
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const taskSlug = slugify(form.task || "default");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug);
-    if (!taskSpace) {
-      sendHtml(res, layoutV2("任务空间不存在", `<div class="card">未找到目标任务空间。</div>`, user), 404);
-      return;
-    }
-    if (taskSpace.status !== "archived") {
-      sendHtml(res, layoutV2("无法恢复", `<div class="card">只有 archived 状态的任务空间可以恢复。</div>`, user), 409);
-      return;
-    }
-    await restoreTaskSpace(db, user, taskSpace);
-    await writeDb(db);
-    res.writeHead(302, { Location: `/portal/workspace?task=${taskSpace.slug}` });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/tasks/delete") {
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const taskSlug = slugify(form.task || "default");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug);
-    if (!taskSpace) {
-      sendHtml(res, layoutV2("任务空间不存在", `<div class="card">未找到目标任务空间。</div>`, user), 404);
-      return;
-    }
-    if (await hasActiveRuns(user.id, taskSpace.slug)) {
-      sendHtml(res, layoutV2("无法删除", `<div class="card">当前任务空间仍有运行中的任务，暂时不能删除。</div>`, user), 409);
-      return;
-    }
-    if (hasActiveWorkspaceSession(db, user.id, taskSpace.slug)) {
-      sendHtml(res, layoutV2("无法删除", `<div class="card">当前任务空间仍绑定活跃 MAS 会话，请等待会话过期后再删除。</div>`, user), 409);
-      return;
-    }
-    await markTaskSpaceDeleted(db, user, taskSpace);
-    await writeDb(db);
-    res.writeHead(302, { Location: "/portal/workspace" });
-    res.end();
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/workspace/download-file") {
-    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
-    const kind = url.searchParams.get("kind") === "outputs" ? "outputs" : "inputs";
-    const file = safeRelativePath(url.searchParams.get("file") || "");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-    const fullPath = path.join(taskSpace.path, kind, file);
-    if (!(await exists(fullPath))) {
-      sendHtml(res, layoutV2("文件不存在", `<div class="card">未找到要下载的文件。</div>`, user), 404);
-      return;
-    }
-    sendFile(res, fullPath, file);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/workspace/files/download-signed") {
-    await handleSignedDownload(req, res, user);
-    return;
-  }
-  if (req.method === "GET" && url.pathname === "/portal/workspace/download-all") {
-    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
-    const kind = url.searchParams.get("kind") === "outputs" ? "outputs" : "inputs";
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
-    const sourceDir = path.join(taskSpace.path, kind);
-    await mkdir(sourceDir, { recursive: true });
-    const zipPath = path.join(runtimeRoot, `${user.id}-${taskSlug}-${kind}.zip`);
-    await createZipFromDir(sourceDir, zipPath);
-    sendFile(res, zipPath, `${taskSlug}-${kind}.zip`, "application/zip");
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/workspace/upload") {
-    await handleUpload(req, res, user);
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/workspace/files/upload-signed") {
-    await handleSignedUpload(req, res, user);
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/settings") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/admin/users").trim();
-    db.settings.allowRegistration = form.allowRegistration === "1";
-    await logPortalEvent({ type: "portal_settings_updated", userId: user.id, allowRegistration: db.settings.allowRegistration });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/announcements/save") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/alerts").trim();
-    const title = String(form.title || "").trim();
-    const content = String(form.content || "").trim();
-    if (!title || !content) {
-      sendHtml(res, layoutV2("公告保存失败", `<div class="card">标题和内容不能为空。</div>`, user), 400);
-      return;
-    }
-    db.settings.announcements = Array.isArray(db.settings.announcements) ? db.settings.announcements : [];
-    const announcementId = String(form.id || "").trim();
-    const rows = db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean);
-    const nextRecord = normalizeAnnouncementRecord({
-      id: announcementId || randomUUID(),
-      title,
-      content,
-      scope: form.scope || "all",
-      status: form.status || "active",
-      pinned: form.pinned === "1",
-      createdAt: rows.find((item) => item.id === announcementId)?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      operatorId: user.id,
-    });
-    if (!nextRecord) {
-      sendHtml(res, layoutV2("公告保存失败", `<div class="card">公告格式无效。</div>`, user), 400);
-      return;
-    }
-    const nextRows = rows.filter((item) => item.id !== nextRecord.id);
-    if (nextRecord.pinned) {
-      for (const row of nextRows) row.pinned = false;
-    }
-    nextRows.push(nextRecord);
-    db.settings.announcements = nextRows.map(normalizeAnnouncementRecord).filter(Boolean);
-    await logPortalEvent({ type: "announcement_saved", userId: user.id, announcementId: nextRecord.id, title: nextRecord.title });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/announcements/toggle") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/alerts").trim();
-    const announcementId = String(form.id || "").trim();
-    const action = String(form.actionType || "").trim();
-    const rows = Array.isArray(db.settings.announcements) ? db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean) : [];
-    const target = rows.find((item) => item.id === announcementId);
-    if (!target) {
-      sendHtml(res, layoutV2("公告操作失败", `<div class="card">未找到目标公告。</div>`, user), 404);
-      return;
-    }
-    if (action === "pin") {
-      for (const row of rows) row.pinned = row.id === target.id;
-    } else if (action === "activate") {
-      target.status = "active";
-    } else if (action === "deactivate") {
-      target.status = "inactive";
-    } else {
-      sendHtml(res, layoutV2("公告操作失败", `<div class="card">不支持的公告动作。</div>`, user), 400);
-      return;
-    }
-    target.updatedAt = new Date().toISOString();
-    target.operatorId = user.id;
-    db.settings.announcements = rows.map(normalizeAnnouncementRecord).filter(Boolean);
-    await logPortalEvent({ type: "announcement_toggled", userId: user.id, announcementId: target.id, action });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/announcements/delete") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/alerts").trim();
-    const announcementId = String(form.id || "").trim();
-    const rows = Array.isArray(db.settings.announcements) ? db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean) : [];
-    db.settings.announcements = rows.filter((item) => item.id !== announcementId);
-    await logPortalEvent({ type: "announcement_deleted", userId: user.id, announcementId });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/create-user") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/admin/users").trim();
-    let identitySync = { synced: false, source: "portal_local_identity" };
-    try {
-      identitySync = await runZitadelAdminUser([
-        "create-user",
-        form.email,
-        form.name,
-        form.password,
-      ]);
-    } catch (error) {
-      const detail = String(error.stdout || error.stderr || error.message || error);
-      sendHtml(res, layoutV2("创建失败", `<div class="card">ZITADEL 同步失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
-      return;
-    }
-    const createdResult = await createPortalUserRecord(db, form, { authSource: identitySync.source });
-    if (!createdResult.ok) {
-      sendHtml(res, layoutV2("创建失败", `<div class="card">${createdResult.message}</div>`, user), createdResult.status || 400);
-      return;
-    }
-    const created = createdResult.user;
-    await logPortalEvent({ type: "admin_created_user", userId: created.id, operatorId: user.id, email: created.email, authSource: identitySync.source });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/update-user") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/users").trim();
-    const target = db.users.find((item) => item.id === form.userId && item.role !== "admin" && activeUserStatus(item.status) !== "deleted");
-    if (!target) {
-      sendHtml(res, layoutV2("更新失败", `<div class="card">未找到目标用户。</div>`, user), 404);
-      return;
-    }
-    const nextEmail = String(form.email || target.email || "").trim().toLowerCase();
-    const nextName = String(form.name || target.name || "").trim();
-    const nextPassword = String(form.password || "").trim();
-    if (!nextEmail || !nextName) {
-      sendHtml(res, layoutV2("更新失败", `<div class="card">用户名和邮箱不能为空。</div>`, user), 400);
-      return;
-    }
-    const duplicated = db.users.find((item) => item.id !== target.id && String(item.email || "").toLowerCase() === nextEmail);
-    if (duplicated) {
-      sendHtml(res, layoutV2("更新失败", `<div class="card">邮箱已被其他账户占用。</div>`, user), 400);
-      return;
-    }
-    target.email = nextEmail;
-    target.name = nextName;
-    if (nextPassword) target.passwordHash = hashPassword(nextPassword);
-    await logPortalEvent({ type: "user_profile_updated", userId: target.id, operatorId: user.id, email: target.email, name: target.name });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/groups/create") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/admin/groups").trim();
-    const name = String(form.name || "").trim();
-    if (!name) {
-      sendHtml(res, layoutV2("创建失败", `<div class="card">分组名称不能为空。</div>`, user), 400);
-      return;
-    }
-    if (db.groups.some((group) => String(group.name || "").toLowerCase() === name.toLowerCase())) {
-      sendHtml(res, layoutV2("创建失败", `<div class="card">分组名称已存在。</div>`, user), 400);
-      return;
-    }
-    db.groups.push({
-      id: randomUUID(),
-      name,
-      plan: String(form.plan || "").trim(),
-      status: String(form.status || "active").trim(),
-      balanceFloor: Number(form.balanceFloor || 0),
-      maxWorkspaces: Number(form.maxWorkspaces || 0),
-      maxConcurrentRuns: Number(form.maxConcurrentRuns || 0),
-      cpuRequest: String(form.cpuRequest || "").trim(),
-      cpuLimit: String(form.cpuLimit || "").trim(),
-      memoryRequest: String(form.memoryRequest || "").trim(),
-      memoryLimit: String(form.memoryLimit || "").trim(),
-      gpuCount: Number(form.gpuCount || 0),
-      storageRequest: String(form.storageRequest || "").trim(),
-      storageLimit: String(form.storageLimit || "").trim(),
-      allowMas: form.allowMas === "1",
-      allowWorkspaceCreate: form.allowWorkspaceCreate === "1",
-      createdAt: new Date().toISOString(),
-    });
-    await logPortalEvent({ type: "group_created", userId: user.id, groupName: name });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/groups/assign") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/admin/groups").trim();
-    const target = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    const group = db.groups.find((item) => item.id === form.groupId);
-    if (!target || !group) {
-      sendHtml(res, layoutV2("分配失败", `<div class="card">用户或分组不存在。</div>`, user), 400);
-      return;
-    }
-    target.groupId = group.id;
-    await logPortalEvent({ type: "group_assigned", userId: target.id, operatorId: user.id, groupId: group.id });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/user-profile") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const target = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    const nextEmail = String(form.email || "").trim().toLowerCase();
-    const nextName = String(form.name || "").trim();
-    if (!target || !nextEmail || !nextName) {
-      sendHtml(res, layoutV2("保存失败", `<div class="card">参数不完整。</div>`, user), 400);
-      return;
-    }
-    if (db.users.some((item) => item.id !== target.id && String(item.email || "").toLowerCase() === nextEmail)) {
-      sendHtml(res, layoutV2("保存失败", `<div class="card">邮箱已存在。</div>`, user), 400);
-      return;
-    }
-    try {
-      await runZitadelAdminUser([
-        "update-profile",
-        target.email,
-        nextEmail,
-        nextName,
-      ]);
-    } catch (error) {
-      const detail = String(error.stdout || error.stderr || error.message || error);
-      sendHtml(res, layoutV2("同步失败", `<div class="card">ZITADEL 用户资料同步失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
-      return;
-    }
-    target.name = nextName;
-    target.email = nextEmail;
-    await logPortalEvent({ type: "user_profile_updated", userId: target.id, operatorId: user.id, email: nextEmail });
-    await writeDb(db);
-    res.writeHead(302, { Location: `/portal/admin/user?userId=${target.id}` });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/user-password") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const target = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    const password = String(form.password || "").trim();
-    if (!target || password.length < 8) {
-      sendHtml(res, layoutV2("保存失败", `<div class="card">密码至少 8 位。</div>`, user), 400);
-      return;
-    }
-    try {
-      await runZitadelAdminUser([
-        "reset-password",
-        target.email,
-        password,
-      ]);
-    } catch (error) {
-      const detail = String(error.stdout || error.stderr || error.message || error);
-      sendHtml(res, layoutV2("同步失败", `<div class="card">ZITADEL 密码重置失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
-      return;
-    }
-    target.passwordHash = hashPassword(password);
-    await logPortalEvent({ type: "user_password_reset", userId: target.id, operatorId: user.id });
-    await writeDb(db);
-    res.writeHead(302, { Location: `/portal/admin/user?userId=${target.id}` });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/recharge") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/admin/users").trim();
-    const amount = Number(form.amount || 0);
-    const wallet = db.wallets.find((item) => item.userId === form.userId);
-    if (!wallet || !Number.isFinite(amount) || amount <= 0) {
-      sendHtml(res, layoutV2("充值失败", `<div class="card">参数错误</div>`, user), 400);
-      return;
-    }
-    wallet.balance += amount;
-    wallet.updatedAt = new Date().toISOString();
-    appendLedgerEntry(db, {
-      id: randomUUID(),
-      tenantId: form.userId,
-      userId: form.userId,
-      type: "topup",
-      amount,
-      currency: "CNY",
-      sourceType: "admin_topup",
-      reason: "admin_recharge",
-      createdAt: new Date().toISOString(),
-      operatorId: user.id,
-    });
-    await logPortalEvent({ type: "wallet_topped_up", userId: form.userId, operatorId: user.id, amount });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/user-delete") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const target = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    const confirmEmail = String(form.confirmEmail || "").trim().toLowerCase();
-    if (!target || confirmEmail !== String(target.email || "").toLowerCase()) {
-      sendHtml(res, layoutV2("删除失败", `<div class="card">确认邮箱不匹配。</div>`, user), 400);
-      return;
-    }
-    try {
-      await runZitadelAdminUser([
-        "delete",
-        target.email,
-      ]);
-    } catch (error) {
-      const detail = String(error.stdout || error.stderr || error.message || error);
-      sendHtml(res, layoutV2("同步失败", `<div class="card">ZITADEL 删除用户失败。<br/><code>${detail.slice(0, 400)}</code></div>`, user), 502);
-      return;
-    }
-    db.users = db.users.filter((item) => item.id !== target.id);
-    db.sessions = db.sessions.filter((item) => item.userId !== target.id);
-    db.wallets = db.wallets.filter((item) => item.userId !== target.id);
-    db.workspaceSessions = db.workspaceSessions.filter((item) => item.userId !== target.id);
-    db.userSandboxes = db.userSandboxes.filter((item) => item.userId !== target.id);
-    db.taskSpaces = db.taskSpaces.filter((item) => item.userId !== target.id);
-    await logPortalEvent({ type: "user_deleted", userId: target.id, operatorId: user.id, email: target.email });
-    await writeDb(db);
-    res.writeHead(302, { Location: "/portal/admin" });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/toggle-user") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/admin").trim();
-    const target = db.users.find((item) => item.id === form.userId);
-    if (!target || target.role === "admin") {
-      sendHtml(res, layoutV2("操作失败", `<div class="card">目标用户不存在或不可操作。</div>`, user), 400);
-      return;
-    }
-    target.status = target.status === "disabled" ? "active" : "disabled";
-    await logPortalEvent({ type: "user_status_changed", userId: target.id, operatorId: user.id, status: target.status });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  if (req.method === "POST" && url.pathname === "/portal/admin/delete-user") {
-    if (user.role !== "admin") {
-      sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
-      return;
-    }
-    const form = parseForm((await readBody(req)).toString("utf8"));
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/users").trim();
-    const target = db.users.find((item) => item.id === form.userId && item.role !== "admin");
-    if (!target) {
-      sendHtml(res, layoutV2("删除失败", `<div class="card">未找到目标用户。</div>`, user), 404);
-      return;
-    }
-    target.status = "deleted";
-    target.deletedAt = new Date().toISOString();
-    db.sessions = db.sessions.filter((session) => session.userId !== target.id);
-    for (const session of db.workspaceSessions.filter((entry) => entry.userId === target.id)) {
-      session.status = "deleted";
-      session.lastUsedAt = new Date().toISOString();
-    }
-    await logPortalEvent({ type: "user_deleted", userId: target.id, operatorId: user.id });
-    await writeDb(db);
-    res.writeHead(302, { Location: redirectTo });
-    res.end();
-    return;
-  }
-  sendHtml(res, layoutV2("未找到", `<div class="card">未找到对应页面。</div>`, user), 404);
+  sanitizeTaskTitle,
+  stat,
+  workspaceStorageEntitlement,
 });
+
+const {
+  buildCostsSummaryApiPayload,
+  buildRegistryImagesApiPayload,
+  buildRegistrySummaryApiPayload,
+  buildRunCostsApiPayload,
+  buildRunsApiPayload,
+  buildSessionsApiPayload,
+  buildTraceSummaryApiPayload,
+  buildTracesApiPayload,
+  buildWorkspaceCostsApiPayload,
+  buildWorkspaceStorageApiPayload,
+  handlePortalAdminApiRoutes,
+  handlePortalApiRoutes,
+} = createApiRuntimeHandlers({
+  activeUserStatus,
+  adminScopeResult,
+  announcementRows,
+  buildAdminSecuritySummary,
+  buildCommercialProfile,
+  buildWorkspacePayload,
+  collectRunsForTask,
+  collectRunsForUser,
+  currentServerPlanSelection,
+  currentTaskSpaceForUser,
+  evaluateUserPolicy,
+  fetchBillingStatus,
+  fetchBillingSummary,
+  fetchHarborImageRows,
+  fetchHarborSummary,
+  fetchLangfuseSummary,
+  fetchMinioSummary,
+  fetchOplAdapterCosts,
+  fetchOplAdapterRuns,
+  fetchOplAdapterTraceRows,
+  fetchPendingSummary,
+  fetchTraceRows,
+  fetchWorkspaceMinioState,
+  fetchWorkspaceStorageSnapshot,
+  findTaskSpace,
+  formatDateTime,
+  humanizeStatus,
+  isRunTerminal,
+  latestActiveWorkspaceSession,
+  listTaskSpacesForUser,
+  money,
+  probe,
+  readPortalEvents,
+  readSessionsRequestOptions,
+  readTracesRequestOptions,
+  readWorkspaceSession,
+  redisConfigured: Boolean(process.env.REDIS_URL),
+  runtimePerformanceSummary,
+  sanitizeTaskTitle,
+  sendJson,
+  storageMode,
+  urls: {
+    harborUrl: HARBOR_URL,
+    langfuseUrl: LANGFUSE_URL,
+    minioConsoleUrl: MINIO_CONSOLE_URL,
+    opencostUiUrl: OPENCOST_UI_URL,
+    oplWebUrl: OPL_WEB_URL,
+    portalOplAdapterUrl: PORTAL_OPL_ADAPTER_URL,
+    rancherUrl: RANCHER_URL,
+  },
+  visibleAnnouncementRows,
+  workspaceChatSessionsForUser,
+});
+
+const handleServerPlanRoutes = createServerPlanRuntimeHandler({
+  defaultTaskTitle,
+  ensureTaskSpace,
+  evaluateUserPolicy,
+  fetchBillingStatus,
+  fetchServerPlans,
+  findTaskSpace,
+  logPortalEvent,
+  readBody,
+  sendJson,
+  slugify,
+  writeDb,
+});
+const handlePortalBillingExportRoutes = createPortalBillingExportRoutes({
+  appendLedgerEntry,
+  billingServiceUrl: BILLING_SERVICE_URL,
+  buildBillingPayload,
+  fetchBillingSummary,
+  fetchPendingSummary,
+  layoutV2,
+  logPortalEvent,
+  parseForm,
+  readBillingRequestOptions,
+  readBody,
+  sendHtml,
+  writeDb,
+});
+const handlePortalTaskSpaceRoutes = createPortalTaskSpaceRoutes({
+  archiveTaskSpace,
+  createZipFromDir,
+  defaultTaskTitle,
+  ensureTaskSpace,
+  evaluateUserPolicy,
+  exists,
+  findTaskSpace,
+  handleUpload,
+  hasActiveRuns,
+  hasActiveWorkspaceSession,
+  layoutV2,
+  logPortalEvent,
+  markTaskSpaceDeleted,
+  mkdir,
+  nextTaskSlug,
+  parseCookies,
+  parseForm,
+  path,
+  readBody,
+  readWorkspaceSession,
+  restoreTaskSpace,
+  runtimeRoot,
+  safeRelativePath,
+  sendFile,
+  sendHtml,
+  sendJson,
+  slugify,
+  workspaceSessionCookie,
+  writeDb,
+});
+const handlePortalAdminOpsRoutes = createPortalAdminOpsRoutes({
+  layoutV2,
+  logPortalEvent,
+  parseForm,
+  readBody,
+  runZitadelAdminUser,
+  sendHtml,
+  writeDb,
+});
+const handlePortalLegacyRedirectRoutes = createPortalLegacyRedirectRoutes({
+  layoutV2,
+  sendHtml,
+});
+
+const dispatchPortalHttpRequest = createPortalHttpDispatcher({
+  buildBillingPayload,
+  buildOverviewPayload,
+  buildPortalHealthPayload,
+  buildWorkspacePayload,
+  currentUser,
+  frontendDistRoot,
+  guessContentType,
+  handleAuthRoutes,
+  handleOplRoutes,
+  handlePortalAdminApiRoutes,
+  handlePortalAdminOpsRoutes,
+  handlePortalAdminUserRoutes,
+  handlePortalApiRoutes,
+  handlePortalBillingExportRoutes,
+  handlePortalLegacyRedirectRoutes,
+  handlePortalTaskSpaceRoutes,
+  handleResourceOrderRoutes,
+  handleServerPlanRoutes,
+  handleWorkspaceStorageRoutes,
+  layoutV2,
+  logPortalEvent,
+  parseForm,
+  path,
+  readBillingRequestOptions,
+  readBody,
+  readOverviewRequestOptions,
+  sendHtml,
+  sendJson,
+  sendStaticAsset,
+  slugify,
+  writeDb,
+});
+
+const server = http.createServer(dispatchPortalHttpRequest);
 
 ensureStorageInfra().then(() => {
   validateProductionConfig();
@@ -5059,5 +716,3 @@ ensureStorageInfra().then(() => {
     console.log(`portal listening on :${PORT}`);
   });
 });
-
-

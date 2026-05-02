@@ -78,6 +78,7 @@ export function createOplAdapterClient({
           workspaceSessionId: workspaceSession.id,
           sourceSurface: "portal-control-plane",
           serverPlanId: selectedServerPlan?.id || "default",
+          instanceType: selectedServerPlan?.instanceType || selectedServerPlan?.InstanceType || "",
           region: selectedServerPlan?.region || "",
           zone: selectedServerPlan?.zone || "",
           nodePool: selectedServerPlan?.nodePool || "",
