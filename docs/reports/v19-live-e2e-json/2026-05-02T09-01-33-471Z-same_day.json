@@ -1,0 +1,567 @@
+{
+  "ok": true,
+  "phase": "same_day",
+  "startedAt": "2026-05-02T08:59:42.780Z",
+  "fixtureFile": "/home/dev/projects/platform-v19/.runtime/portal/live-recovery-fixtures/test-v19-moo3vbjk-180c83.json",
+  "target": {
+    "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+    "workspaceId": "test-v19-moo3vbjk-180c83",
+    "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+    "runId": "test-run-test-v19-moo3vbjk-180c83",
+    "serverPlanId": "cpu-2c4g"
+  },
+  "cosTarget": {
+    "COS_LIVE_EXPECT_TENANT_ID": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+    "COS_LIVE_EXPECT_WORKSPACE_ID": "test-v19-moo3vbjk-180c83",
+    "COS_LIVE_EXPECT_RESOURCE_ORDER_ID": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+    "COS_LIVE_EXPECT_RUN_ID": "test-run-test-v19-moo3vbjk-180c83",
+    "COS_LIVE_EXPECT_SERVER_PLAN_ID": "cpu-2c4g",
+    "COS_LIVE_EXPECT_TENANT_TAG_VALUE": "aeb7ec00b2604f4d9446b051",
+    "COS_LIVE_EXPECT_WORKSPACE_TAG_VALUE": "testv19moo3vbjk180c83",
+    "COS_LIVE_EXPECT_RESOURCE_ORDER_TAG_VALUE": "b8ce0d6cee7c45a48a94d3cc",
+    "COS_LIVE_EXPECT_RUN_TAG_VALUE": "testruntestv19moo3vbjk18",
+    "COS_LIVE_EXPECT_SERVER_PLAN_TAG_VALUE": "cpu2c4g"
+  },
+  "preparedFixture": {
+    "ok": false,
+    "reused": true
+  },
+  "recoveryBaseline": null,
+  "tkeGate": {
+    "ok": true,
+    "stdout": {
+      "ok": true,
+      "mode": "resource_provisioner_via_kubectl",
+      "kubernetesBeforeDelete": {
+        "selector": "tenant_id=aeb7ec00-b260-4f4d-9446-b051e45ecbf5,workspace_id=test-v19-moo3vbjk-180c83,resource_order_id=b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58,run_id=test-run-test-v19-moo3vbjk-180c83,server_plan_id=cpu-2c4g",
+        "itemCount": 2,
+        "items": [
+          {
+            "kind": "Job",
+            "namespace": "default",
+            "name": "med-autoscience-test-run-test-v19-moo3vbjk-180c83",
+            "phase": "SuccessCriteriaMet",
+            "labels": {
+              "agent_id": "mas",
+              "app": "med-autoscience",
+              "billing_scope": "run",
+              "cost_center": "research-foundry",
+              "customer_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "group_id": "default",
+              "instance_type": "sa5.medium4",
+              "policy_version": "default",
+              "portal_user_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "region": "na-siliconvalley",
+              "resource_order_id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+              "run_id": "test-run-test-v19-moo3vbjk-180c83",
+              "runner_image_tag": "opl-v1",
+              "runtime_session_id": "b27503a2-5a1d-4d46-b63f-b188f17fa14e",
+              "server_plan_id": "cpu-2c4g",
+              "tenant_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "tool_name": "v19-live-e2e",
+              "user_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "workspace_id": "test-v19-moo3vbjk-180c83",
+              "workspace_session_id": "db85d025-7a26-46ff-ab47-1564adabdb89"
+            }
+          },
+          {
+            "kind": "Pod",
+            "namespace": "default",
+            "name": "med-autoscience-test-run-test-v19-moo3vbjk-180c83-szsk8",
+            "phase": "Succeeded",
+            "labels": {
+              "agent_id": "mas",
+              "app": "med-autoscience",
+              "batch.kubernetes.io/controller-uid": "086635e1-5dca-45dd-923b-f2a8ed7983ee",
+              "batch.kubernetes.io/job-name": "med-autoscience-test-run-test-v19-moo3vbjk-180c83",
+              "billing_scope": "run",
+              "controller-uid": "086635e1-5dca-45dd-923b-f2a8ed7983ee",
+              "cost_center": "research-foundry",
+              "customer_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "group_id": "default",
+              "instance_type": "sa5.medium4",
+              "job-name": "med-autoscience-test-run-test-v19-moo3vbjk-180c83",
+              "policy_version": "default",
+              "portal_user_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "region": "na-siliconvalley",
+              "resource_order_id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+              "run_id": "test-run-test-v19-moo3vbjk-180c83",
+              "runner_image_tag": "opl-v1",
+              "runtime_session_id": "b27503a2-5a1d-4d46-b63f-b188f17fa14e",
+              "server_plan_id": "cpu-2c4g",
+              "tenant_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "tool_name": "v19-live-e2e",
+              "user_id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "workspace_id": "test-v19-moo3vbjk-180c83",
+              "workspace_session_id": "db85d025-7a26-46ff-ab47-1564adabdb89"
+            }
+          }
+        ]
+      },
+      "provisionerBeforeDelete": {
+        "expectedTags": {
+          "tenantid": "aeb7ec00b2604f4d9446b051",
+          "workspaceid": "testv19moo3vbjk180c83",
+          "resourceorderid": "b8ce0d6cee7c45a48a94d3cc",
+          "runid": "testruntestv19moo3vbjk18",
+          "serverplanid": "cpu2c4g"
+        },
+        "resourceOrderCount": 1,
+        "resourceOrders": [
+          {
+            "id": "5772168a-c93d-4105-abe6-fdd3e9dcffc7",
+            "status": "provisioning",
+            "nodePoolId": "np-g45p2542",
+            "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "runId": "test-run-test-v19-moo3vbjk-180c83",
+            "serverPlanId": "cpu-2c4g"
+          }
+        ],
+        "nodePools": [
+          {
+            "nodePoolId": "np-g45p2542",
+            "status": "normal",
+            "clusterId": "cls-ngiq693i",
+            "labels": {
+              "gaofenglab/node-pool-role": "runtime",
+              "gaofenglab/tenant-id": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "gaofenglab/workspace-id": "test-v19-moo3vbjk-180c83",
+              "gaofenglab/run-id": "test-run-test-v19-moo3vbjk-180c83",
+              "gaofenglab/server-plan-id": "cpu-2c4g",
+              "gaofenglab/resource-order-id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58"
+            },
+            "tags": {
+              "nodepoolrole": "runtime",
+              "tenantid": "aeb7ec00b2604f4d9446b051",
+              "workspaceid": "testv19moo3vbjk180c83",
+              "runid": "testruntestv19moo3vbjk18",
+              "serverplanid": "cpu2c4g",
+              "resourceorderid": "b8ce0d6cee7c45a48a94d3cc"
+            }
+          }
+        ],
+        "instances": [
+          {
+            "instanceId": "ins-cq3svd4q",
+            "status": "RUNNING",
+            "nodePoolId": "np-g45p2542",
+            "clusterId": "cls-ngiq693i",
+            "tags": {
+              "nodepoolrole": "runtime",
+              "resourceorderid": "b8ce0d6cee7c45a48a94d3cc",
+              "runid": "testruntestv19moo3vbjk18",
+              "serverplanid": "cpu2c4g",
+              "tenantid": "aeb7ec00b2604f4d9446b051",
+              "tencentcloud:autoscaling:auto-scaling-group-id": "asg-n89rrpcq",
+              "workspaceid": "testv19moo3vbjk180c83"
+            }
+          }
+        ]
+      },
+      "billingBeforeDelete": {
+        "observedAt": "2026-05-02T08:59:51.765Z",
+        "service": {
+          "deployment": "billing-aggregator-opl",
+          "namespace": "default",
+          "port": "3001"
+        },
+        "summary": {
+          "chargeBasis": "pending",
+          "source": "metering_pending",
+          "exactSource": "exact_unavailable",
+          "pendingSource": "metering_pending",
+          "exactTotal": 0,
+          "pendingTotal": 0.004648866824817132,
+          "targetTotalCost": 0.004648866825,
+          "targetItemCount": 1,
+          "targetItems": [
+            {
+              "runId": "test-run-test-v19-moo3vbjk-180c83",
+              "workspaceId": "test-v19-moo3vbjk-180c83",
+              "customerId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "totalCost": 0.004648866824817132,
+              "cpuCost": 0.004648866666666667,
+              "gpuCost": 0,
+              "pvCost": 1.5815046477924896e-10,
+              "pricingSource": "k8s_requested_resources_pending",
+              "start": "2026-05-02T08:56:14.534Z",
+              "end": "2026-05-02T08:58:34Z"
+            }
+          ]
+        }
+      },
+      "resourceMappingBeforeDelete": {
+        "observedAt": "2026-05-02T08:59:47.335Z",
+        "query": {
+          "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58"
+        },
+        "items": [
+          {
+            "id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+            "workspaceId": "test-v19-moo3vbjk-180c83",
+            "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "runId": "test-run-test-v19-moo3vbjk-180c83",
+            "serverPlanId": "cpu-2c4g",
+            "region": "na-siliconvalley",
+            "nodePoolId": "np-g45p2542",
+            "clusterId": "cls-ngiq693i",
+            "nodePoolIds": [
+              "np-g45p2542"
+            ],
+            "nodeNames": [],
+            "cvmInstanceIds": [],
+            "podNames": [],
+            "jobNames": [],
+            "pvcNames": [],
+            "cosKeys": [],
+            "ledgerIds": [],
+            "createRequestId": "142a30fc-0eae-4e6a-8117-2b954fda5c18",
+            "deleteRequestId": "",
+            "billingStartedAt": "2026-05-02T08:56:14.055Z",
+            "billingStoppedAt": "",
+            "cleanupStatus": "active",
+            "cleanupEvidenceId": "",
+            "cleanupRemaining": {
+              "nodePools": 0,
+              "instances": 0,
+              "pods": 0,
+              "jobs": 0,
+              "pvcs": 0,
+              "cosKeys": 0
+            },
+            "createdAt": "2026-05-02T08:56:14.055Z",
+            "updatedAt": "2026-05-02T08:56:14.055Z"
+          }
+        ]
+      },
+      "observeResources": {
+        "ok": true,
+        "mapping": {
+          "id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+          "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+          "workspaceId": "test-v19-moo3vbjk-180c83",
+          "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+          "runId": "test-run-test-v19-moo3vbjk-180c83",
+          "serverPlanId": "cpu-2c4g",
+          "region": "na-siliconvalley",
+          "nodePoolId": "np-g45p2542",
+          "clusterId": "cls-ngiq693i",
+          "nodePoolIds": [
+            "np-g45p2542"
+          ],
+          "nodeNames": [
+            "ins-cq3svd4q"
+          ],
+          "cvmInstanceIds": [
+            "ins-cq3svd4q"
+          ],
+          "podNames": [
+            "med-autoscience-test-run-test-v19-moo3vbjk-180c83-szsk8"
+          ],
+          "jobNames": [
+            "med-autoscience-test-run-test-v19-moo3vbjk-180c83"
+          ],
+          "pvcNames": [],
+          "cosKeys": [],
+          "ledgerIds": [],
+          "createRequestId": "142a30fc-0eae-4e6a-8117-2b954fda5c18",
+          "deleteRequestId": "",
+          "billingStartedAt": "2026-05-02T08:56:14.055Z",
+          "billingStoppedAt": "",
+          "cleanupStatus": "active",
+          "cleanupEvidenceId": "",
+          "cleanupRemaining": {
+            "nodePools": 0,
+            "instances": 0,
+            "pods": 0,
+            "jobs": 0,
+            "pvcs": 0,
+            "cosKeys": 0
+          },
+          "createdAt": "2026-05-02T08:56:14.055Z",
+          "updatedAt": "2026-05-02T08:59:51.767Z",
+          "lastObservedAt": "2026-05-02T08:59:51.767Z"
+        }
+      },
+      "resourceMappingAfterObserve": {
+        "observedAt": "2026-05-02T08:59:57.528Z",
+        "query": {
+          "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58"
+        },
+        "items": [
+          {
+            "id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+            "workspaceId": "test-v19-moo3vbjk-180c83",
+            "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "runId": "test-run-test-v19-moo3vbjk-180c83",
+            "serverPlanId": "cpu-2c4g",
+            "region": "na-siliconvalley",
+            "nodePoolId": "np-g45p2542",
+            "clusterId": "cls-ngiq693i",
+            "nodePoolIds": [
+              "np-g45p2542"
+            ],
+            "nodeNames": [
+              "ins-cq3svd4q"
+            ],
+            "cvmInstanceIds": [
+              "ins-cq3svd4q"
+            ],
+            "podNames": [
+              "med-autoscience-test-run-test-v19-moo3vbjk-180c83-szsk8"
+            ],
+            "jobNames": [
+              "med-autoscience-test-run-test-v19-moo3vbjk-180c83"
+            ],
+            "pvcNames": [],
+            "cosKeys": [],
+            "ledgerIds": [],
+            "createRequestId": "142a30fc-0eae-4e6a-8117-2b954fda5c18",
+            "deleteRequestId": "",
+            "billingStartedAt": "2026-05-02T08:56:14.055Z",
+            "billingStoppedAt": "",
+            "cleanupStatus": "active",
+            "cleanupEvidenceId": "",
+            "cleanupRemaining": {
+              "nodePools": 0,
+              "instances": 0,
+              "pods": 0,
+              "jobs": 0,
+              "pvcs": 0,
+              "cosKeys": 0
+            },
+            "createdAt": "2026-05-02T08:56:14.055Z",
+            "updatedAt": "2026-05-02T08:59:51.767Z",
+            "lastObservedAt": "2026-05-02T08:59:51.767Z"
+          }
+        ]
+      },
+      "kubernetesDelete": {
+        "selector": "tenant_id=aeb7ec00-b260-4f4d-9446-b051e45ecbf5,workspace_id=test-v19-moo3vbjk-180c83,resource_order_id=b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58,run_id=test-run-test-v19-moo3vbjk-180c83,server_plan_id=cpu-2c4g",
+        "deleted": [
+          {
+            "namespace": "default",
+            "name": "med-autoscience-test-run-test-v19-moo3vbjk-180c83",
+            "stdout": "job.batch \"med-autoscience-test-run-test-v19-moo3vbjk-180c83\" deleted from default namespace\n"
+          }
+        ]
+      },
+      "deleteNodePools": [
+        {
+          "nodePoolId": "np-g45p2542",
+          "result": {
+            "ok": true,
+            "action": "DeleteClusterNodePool",
+            "requestId": "ab9c2367-1246-4de3-b6b5-8cca76c63be7",
+            "nodePoolId": "np-g45p2542",
+            "resourceMappingId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "billingStoppedAt": "2026-05-02T09:00:46.585Z",
+            "cleanupStatus": "delete_requested",
+            "destroyCvmInstances": true,
+            "warning": "CVM instances are released with the node pool."
+          }
+        }
+      ],
+      "finalState": {
+        "kubernetes": {
+          "selector": "tenant_id=aeb7ec00-b260-4f4d-9446-b051e45ecbf5,workspace_id=test-v19-moo3vbjk-180c83,resource_order_id=b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58,run_id=test-run-test-v19-moo3vbjk-180c83,server_plan_id=cpu-2c4g",
+          "itemCount": 0,
+          "items": []
+        },
+        "provisioner": {
+          "expectedTags": {
+            "tenantid": "aeb7ec00b2604f4d9446b051",
+            "workspaceid": "testv19moo3vbjk180c83",
+            "resourceorderid": "b8ce0d6cee7c45a48a94d3cc",
+            "runid": "testruntestv19moo3vbjk18",
+            "serverplanid": "cpu2c4g"
+          },
+          "resourceOrderCount": 1,
+          "resourceOrders": [
+            {
+              "id": "5772168a-c93d-4105-abe6-fdd3e9dcffc7",
+              "status": "deleted",
+              "nodePoolId": "np-g45p2542",
+              "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+              "runId": "test-run-test-v19-moo3vbjk-180c83",
+              "serverPlanId": "cpu-2c4g"
+            }
+          ],
+          "nodePools": [],
+          "instances": []
+        }
+      },
+      "markCleanup": {
+        "ok": true,
+        "mapping": {
+          "id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+          "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+          "workspaceId": "test-v19-moo3vbjk-180c83",
+          "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+          "runId": "test-run-test-v19-moo3vbjk-180c83",
+          "serverPlanId": "cpu-2c4g",
+          "region": "na-siliconvalley",
+          "nodePoolId": "np-g45p2542",
+          "clusterId": "cls-ngiq693i",
+          "nodePoolIds": [
+            "np-g45p2542"
+          ],
+          "nodeNames": [
+            "ins-cq3svd4q"
+          ],
+          "cvmInstanceIds": [
+            "ins-cq3svd4q"
+          ],
+          "podNames": [
+            "med-autoscience-test-run-test-v19-moo3vbjk-180c83-szsk8"
+          ],
+          "jobNames": [
+            "med-autoscience-test-run-test-v19-moo3vbjk-180c83"
+          ],
+          "pvcNames": [],
+          "cosKeys": [],
+          "ledgerIds": [],
+          "createRequestId": "142a30fc-0eae-4e6a-8117-2b954fda5c18",
+          "deleteRequestId": "ab9c2367-1246-4de3-b6b5-8cca76c63be7",
+          "billingStartedAt": "2026-05-02T08:56:14.055Z",
+          "billingStoppedAt": "2026-05-02T09:00:43.758Z",
+          "cleanupStatus": "deleted",
+          "cleanupEvidenceId": "same-day-b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+          "cleanupRemaining": {
+            "nodePools": 0,
+            "instances": 0,
+            "pods": 0,
+            "jobs": 0,
+            "pvcs": 0,
+            "cosKeys": 0
+          },
+          "createdAt": "2026-05-02T08:56:14.055Z",
+          "updatedAt": "2026-05-02T09:00:43.758Z",
+          "lastObservedAt": "2026-05-02T08:59:51.767Z"
+        }
+      },
+      "resourceMappingAfterCleanup": {
+        "observedAt": "2026-05-02T09:00:50.777Z",
+        "query": {
+          "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58"
+        },
+        "items": [
+          {
+            "id": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+            "workspaceId": "test-v19-moo3vbjk-180c83",
+            "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "runId": "test-run-test-v19-moo3vbjk-180c83",
+            "serverPlanId": "cpu-2c4g",
+            "region": "na-siliconvalley",
+            "nodePoolId": "np-g45p2542",
+            "clusterId": "cls-ngiq693i",
+            "nodePoolIds": [
+              "np-g45p2542"
+            ],
+            "nodeNames": [
+              "ins-cq3svd4q"
+            ],
+            "cvmInstanceIds": [
+              "ins-cq3svd4q"
+            ],
+            "podNames": [
+              "med-autoscience-test-run-test-v19-moo3vbjk-180c83-szsk8"
+            ],
+            "jobNames": [
+              "med-autoscience-test-run-test-v19-moo3vbjk-180c83"
+            ],
+            "pvcNames": [],
+            "cosKeys": [],
+            "ledgerIds": [],
+            "createRequestId": "142a30fc-0eae-4e6a-8117-2b954fda5c18",
+            "deleteRequestId": "ab9c2367-1246-4de3-b6b5-8cca76c63be7",
+            "billingStartedAt": "2026-05-02T08:56:14.055Z",
+            "billingStoppedAt": "2026-05-02T09:00:43.758Z",
+            "cleanupStatus": "deleted",
+            "cleanupEvidenceId": "same-day-b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+            "cleanupRemaining": {
+              "nodePools": 0,
+              "instances": 0,
+              "pods": 0,
+              "jobs": 0,
+              "pvcs": 0,
+              "cosKeys": 0
+            },
+            "createdAt": "2026-05-02T08:56:14.055Z",
+            "updatedAt": "2026-05-02T09:00:43.758Z",
+            "lastObservedAt": "2026-05-02T08:59:51.767Z"
+          }
+        ]
+      },
+      "billingAfterCleanup": {
+        "observedAt": "2026-05-02T09:00:57.429Z",
+        "service": {
+          "deployment": "billing-aggregator-opl",
+          "namespace": "default",
+          "port": "3001"
+        },
+        "summary": {
+          "chargeBasis": "pending",
+          "source": "metering_pending",
+          "exactSource": "exact_unavailable",
+          "pendingSource": "metering_pending",
+          "exactTotal": 0,
+          "pendingTotal": 0.004648866824817132,
+          "targetTotalCost": 0.004648866825,
+          "targetItemCount": 1,
+          "targetItems": [
+            {
+              "runId": "test-run-test-v19-moo3vbjk-180c83",
+              "workspaceId": "test-v19-moo3vbjk-180c83",
+              "customerId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "totalCost": 0.004648866824817132,
+              "cpuCost": 0.004648866666666667,
+              "gpuCost": 0,
+              "pvCost": 1.5815046477924896e-10,
+              "pricingSource": "k8s_requested_resources_pending",
+              "start": "2026-05-02T08:56:14.534Z",
+              "end": "2026-05-02T08:58:34Z"
+            }
+          ]
+        }
+      },
+      "billingStableAfterCleanup": {
+        "observedAt": "2026-05-02T09:01:33.470Z",
+        "service": {
+          "deployment": "billing-aggregator-opl",
+          "namespace": "default",
+          "port": "3001"
+        },
+        "summary": {
+          "chargeBasis": "pending",
+          "source": "metering_pending",
+          "exactSource": "exact_unavailable",
+          "pendingSource": "metering_pending",
+          "exactTotal": 0,
+          "pendingTotal": 0.004648866824817132,
+          "targetTotalCost": 0.004648866825,
+          "targetItemCount": 1,
+          "targetItems": [
+            {
+              "runId": "test-run-test-v19-moo3vbjk-180c83",
+              "workspaceId": "test-v19-moo3vbjk-180c83",
+              "customerId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+              "totalCost": 0.004648866824817132,
+              "cpuCost": 0.004648866666666667,
+              "gpuCost": 0,
+              "pvCost": 1.5815046477924896e-10,
+              "pricingSource": "k8s_requested_resources_pending",
+              "start": "2026-05-02T08:56:14.534Z",
+              "end": "2026-05-02T08:58:34Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "warnings": [],
+  "completedAt": "2026-05-02T09:01:33.471Z"
+}

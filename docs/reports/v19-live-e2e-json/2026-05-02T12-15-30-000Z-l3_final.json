@@ -1,0 +1,98 @@
+{
+  "ok": true,
+  "phase": "l3_final",
+  "observedAt": "2026-05-02T12:15:30.000Z",
+  "target": {
+    "tenantId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+    "customerId": "aeb7ec00-b260-4f4d-9446-b051e45ecbf5",
+    "workspaceId": "test-v19-moo3vbjk-180c83",
+    "runId": "test-run-test-v19-moo3vbjk-180c83",
+    "resourceOrderId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+    "serverPlanId": "cpu-2c4g",
+    "nodePoolId": "np-g45p2542",
+    "cvmInstanceId": "ins-cq3svd4q",
+    "billingStartedAt": "2026-05-02T08:56:14.055Z",
+    "billingStoppedAt": "2026-05-02T09:00:43.758Z",
+    "l3ExactWaitMinutes": 120,
+    "earliestExactWriteAt": "2026-05-02T11:00:43.758Z",
+    "queryBeginTime": "2026-05-02 16:56:14",
+    "queryEndTime": "2026-05-02 19:00:43"
+  },
+  "deployment": {
+    "billingAggregatorImage": "uswccr.ccs.tencentyun.com/gaofenglab/billing-aggregator-opl:opl-v19-l3-final-20260502-eb06918",
+    "billingAggregatorDigest": "sha256:5b04900f266c54451525f230097e6613621dba78800b9c3ba6578c27e04198e2",
+    "billingRepoRoot": "/app",
+    "resourceProvisionerUrl": "http://resource-provisioner:18893"
+  },
+  "exactBill": {
+    "source": "DescribeBillDetail",
+    "exactRunCount": 1,
+    "matchedResourceId": "ins-cq3svd4q",
+    "resourceMappingId": "b8ce0d6c-ee7c-45a4-8a94-d3cc5cecff58",
+    "resourceMappingUnique": true,
+    "totalCost": 0,
+    "pricingSource": "tencent_cloud_bill",
+    "billRows": [
+      {
+        "resourceId": "ins-cq3svd4q",
+        "product": "云服务器CVM",
+        "cost": 0,
+        "begin": "2026-05-02 16:56:37",
+        "end": "2026-05-02 17:00:55"
+      }
+    ]
+  },
+  "reconcile": {
+    "first": {
+      "reconciledCount": 1,
+      "exactCount": 1,
+      "estimatedCount": 0,
+      "adjustmentCount": 0,
+      "settlementMode": "exact_only",
+      "targetAction": "unattributed",
+      "reason": "exact_bill_zero_cost",
+      "targetTotalCost": 0,
+      "matchedResourceId": "ins-cq3svd4q"
+    },
+    "second": {
+      "reconciledCount": 1,
+      "exactCount": 1,
+      "estimatedCount": 0,
+      "adjustmentCount": 0,
+      "settlementMode": "exact_only",
+      "targetAction": "unattributed",
+      "reason": "exact_bill_zero_cost",
+      "targetTotalCost": 0,
+      "matchedResourceId": "ins-cq3svd4q"
+    }
+  },
+  "ledger": {
+    "exactLedgerCount": 0,
+    "ledgerCountForTarget": 1,
+    "targetLedgerTypes": [
+      "preauth_hold"
+    ],
+    "walletBalance": 1000,
+    "noErroneousExactCharge": true
+  },
+  "assertions": {
+    "onePersonLabUpstreamClean": true,
+    "l3WindowReached": true,
+    "resourceMappingUnique": true,
+    "describeBillDetailMatchedTarget": true,
+    "settlementModeExactOnly": true,
+    "targetSettledAsZeroCostUnattributed": true,
+    "chargedLedgerWritten": false,
+    "walletNotDebitedForZeroCost": true,
+    "idempotentSecond": true,
+    "commercialChargeClosed": false
+  },
+  "commercialAcceptance": {
+    "sameDayMainFlow": "passed",
+    "l3DescribeBillDetailPlus120Min": "matched_target_with_zero_cost",
+    "cosT1AuditReplay": "pending",
+    "cvmResourceAttribution": "resource_id_mapping_unique",
+    "cvmTagResourcesP0BeforeGA": true,
+    "blockingReason": "Tencent L3 exact rows for the target resource are present and attributable, but RealTotalCost is 0; no commercial debit can be proven from this run."
+  }
+}

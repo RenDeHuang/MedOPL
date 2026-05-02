@@ -17,7 +17,7 @@ The original 2026-04-30 evidence is now stale for several gates. Current live st
 - Portal PostgreSQL/Redis restart recovery passed on v19 with fixture `test-v19-momjzcpx-abbc19`; user, wallet, order, workspace file, trace, and session snapshots matched before/after restart.
 - Production entry health is still up after the partial live gate rollout: Portal health 200, OPL health 200, Trace health 200.
 
-This is still not a full live user E2E pass. It closes Step 2, Step 4, and Step 6, but Step 5 and Step 7 remain incomplete.
+This section is superseded by the 2026-05-02 current-status report. The gate is now split into Step 5A/7A same-day evidence and Step 5B/7B T+1 evidence: same-day preauth, pending, cleanup, and full-user E2E have evidence, but T+1 exact settlement still requires a real COS zip row that can be attributed either by complete v19 tags or by a unique `ResourceId/InstanceId -> resource mapping` match. Step 9 is also split: Step 9A can only call the branch a `controlled live candidate`; Step 9B is required before `commercialization complete`.
 
 ### Read-Only Kubernetes Evidence
 
@@ -79,8 +79,8 @@ Latency signal:
 
 ## Evidence Not Captured Yet
 
-- Live COS exact bill reconcile from a real bill row with complete v19 tags.
-- Full live user E2E using a newly created test account.
+- Step 5B/7B COS exact bill reconcile from a real bill row with complete v19 tags, or from a real bill row whose resource ID uniquely matches the platform resource mapping.
+- Full live user E2E is now captured as Step 7A same-day evidence, but Step 7B T+1 bill evidence is still pending.
 - Browser screenshot evidence for Portal workspace file, billing, and session trace pages.
 - T+1 exact bill refund/makeup for the Step 4 tagged TKE resource.
 
@@ -103,8 +103,8 @@ The next live run must prove:
 13. User can download the artifact.
 14. Delete server triggers scale-to-zero or node pool deletion.
 15. Pending cost stops growing after deletion.
-16. T+1 exact bill later produces refund or makeup charge.
+16. T+1 exact bill later produces charge, refund, or makeup charge, and the second reconcile proves idempotency.
 
 ## Rollout Gate
 
-Do not roll the remaining v19 services or call v19 complete until every remaining item above has evidence and cleanup proof.
+Do not call v19 commercialization complete until Step 5B/7B and Step 9B have evidence. Same-day evidence may only support controlled live candidate rollout language, and release, assessment, live evidence, and current status documents must use the same wording.
