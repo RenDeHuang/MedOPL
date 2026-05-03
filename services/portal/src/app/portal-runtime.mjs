@@ -47,6 +47,7 @@ import {
   PORTAL_OIDC_REDIRECT_URI,
   PORTAL_OIDC_SCOPE,
   PORTAL_OPL_ADAPTER_URL,
+  PORTAL_OPL_PROVIDER_SECRET_ROOT,
   PORTAL_PUBLIC_URL,
   publicRoot,
   RANCHER_URL,
@@ -65,41 +66,43 @@ import {
   normalizeAuthEmail,
   sanitizePortalUser,
 } from "./portal-auth-runtime-handler.mjs";
-import { createPortalBillingExportRoutes } from "../routes/portal-billing-export.routes.mjs";
-import { createPortalAdminOpsRoutes } from "../routes/admin-ops.routes.mjs";
-import { createPortalAdminUserRoutes } from "../routes/admin-user.routes.mjs";
-import { createPortalLegacyRedirectRoutes } from "../routes/portal-legacy-redirect.routes.mjs";
-import { createPortalTaskSpaceRoutes } from "../routes/task-space.routes.mjs";
 import {
   activeUserStatus,
   adminScopeResult,
-  announcementRows,
   appendLedgerEntry,
   buildCommercialProfile,
   buildOverviewOnboarding,
   buildServerPlansFallback,
   buildServerPlansSummary,
-  buildWorkspaceFileChecksum,
-  buildWorkspaceStorageKey,
-  createGflabProviderConfig,
-  createOrUpdateStorageOrder,
   currentServerPlanSelection,
-  defaultTaskTitle,
   ensureUserCommercialState,
   ensureWallet,
-  formatDateOnly,
-  formatDateTime,
-  humanizeStatus,
   isBlockedUserStatus,
+  moneyAmount,
+} from "./portal-commercial-domain.mjs";
+import {
+  buildWorkspaceFileChecksum,
+  buildWorkspaceStorageKey,
+  createOrUpdateStorageOrder,
   issueWorkspaceTransferToken,
   listWorkspaceFiles,
   markWorkspaceStorageDeleting,
-  moneyAmount,
-  normalizeProviderApiKey,
   readWorkspaceTransferToken,
   recordWorkspaceFile,
-  redactProviderConfig,
   resolveWorkspaceStorageEntitlement,
+} from "./portal-storage-domain.mjs";
+import {
+  createGflabProviderConfig,
+  normalizeProviderApiKey,
+  redactProviderConfig,
+} from "./portal-lab-domain.mjs";
+import { createProviderSecretStore } from "../domain/provider-secret-store.mjs";
+import {
+  announcementRows,
+  defaultTaskTitle,
+  formatDateOnly,
+  formatDateTime,
+  humanizeStatus,
   sandboxStatusLabel,
   sanitizeTaskTitle,
   slugify,
@@ -107,7 +110,7 @@ import {
   taskStatusLabel,
   userTheme,
   visibleAnnouncementRows,
-} from "./portal-runtime-domain.mjs";
+} from "./portal-presentation-domain.mjs";
 import { createPortalRuntimeBootstrap } from "./portal-runtime-bootstrap.mjs";
 import { createPortalHttpDispatcher } from "./portal-http-dispatcher.mjs";
 import { createPortalIdentitySecurityRuntime } from "./portal-identity-security-runtime.mjs";
@@ -127,6 +130,7 @@ import {
   sendStaticAsset,
   setCookie,
 } from "./portal-runtime-http.mjs";
+import { createPortalRuntimeRouteWiring } from "./portal-runtime-route-wiring.mjs";
 
 const {
   layoutV2,
@@ -309,12 +313,14 @@ const oplLaunchService = createOplLaunchService({
   ensureTaskSpace,
   ensureWorkspaceSession,
   createOplLaunch,
+  providerSecretStore: createProviderSecretStore({ secretsRoot: PORTAL_OPL_PROVIDER_SECRET_ROOT }),
   resolveStorageEntitlement: workspaceStorageEntitlement,
   defaultTaskTitle,
   logPortalEvent,
   writeDb,
 });
 const {
+  handleLabPackageRoutes,
   handleOplRoutes,
   handleResourceOrderRoutes,
   handleWorkspaceStorageRoutes,
@@ -387,21 +393,6 @@ const handleAuthRoutes = createAuthRuntimeHandler({
   sendHtml,
   sendJson,
   setCookie,
-  writeDb,
-});
-
-const handlePortalAdminUserRoutes = createPortalAdminUserRoutes({
-  activeUserStatus,
-  appendLedgerEntry,
-  defaultTaskTitle,
-  ensureTaskSpace,
-  ensureUserCommercialState,
-  layoutV2,
-  logPortalEvent,
-  parseForm,
-  readBody,
-  runZitadelAdminUser,
-  sendHtml,
   writeDb,
 });
 
@@ -480,14 +471,6 @@ async function createOplLaunch({
 
 async function fetchHarborImageRows(limit = 50) {
   return harborRegistryClient.fetchImageRows(limit);
-}
-
-async function createZipFromDir(sourceDir, outFile) {
-  await execFileAsync("powershell", [
-    "-NoProfile",
-    "-Command",
-    `Compress-Archive -Path '${sourceDir}\\*' -DestinationPath '${outFile}' -Force`,
-  ], { timeout: 60000, maxBuffer: 1024 * 1024 });
 }
 
 function groupNameById(db, groupId = "") {
@@ -615,27 +598,25 @@ const handleServerPlanRoutes = createServerPlanRuntimeHandler({
   slugify,
   writeDb,
 });
-const handlePortalBillingExportRoutes = createPortalBillingExportRoutes({
+const {
+  handlePortalAdminUserRoutes,
+  handlePortalBillingExportRoutes,
+  handlePortalTaskSpaceRoutes,
+  handlePortalAdminOpsRoutes,
+  handlePortalLegacyRedirectRoutes,
+} = createPortalRuntimeRouteWiring({
+  activeUserStatus,
   appendLedgerEntry,
   billingServiceUrl: BILLING_SERVICE_URL,
   buildBillingPayload,
-  fetchBillingSummary,
-  fetchPendingSummary,
-  layoutV2,
-  logPortalEvent,
-  parseForm,
-  readBillingRequestOptions,
-  readBody,
-  sendHtml,
-  writeDb,
-});
-const handlePortalTaskSpaceRoutes = createPortalTaskSpaceRoutes({
   archiveTaskSpace,
-  createZipFromDir,
   defaultTaskTitle,
   ensureTaskSpace,
+  ensureUserCommercialState,
   evaluateUserPolicy,
   exists,
+  fetchBillingSummary,
+  fetchPendingSummary,
   findTaskSpace,
   handleUpload,
   hasActiveRuns,
@@ -648,9 +629,11 @@ const handlePortalTaskSpaceRoutes = createPortalTaskSpaceRoutes({
   parseCookies,
   parseForm,
   path,
+  readBillingRequestOptions,
   readBody,
   readWorkspaceSession,
   restoreTaskSpace,
+  runZitadelAdminUser,
   runtimeRoot,
   safeRelativePath,
   sendFile,
@@ -659,19 +642,6 @@ const handlePortalTaskSpaceRoutes = createPortalTaskSpaceRoutes({
   slugify,
   workspaceSessionCookie,
   writeDb,
-});
-const handlePortalAdminOpsRoutes = createPortalAdminOpsRoutes({
-  layoutV2,
-  logPortalEvent,
-  parseForm,
-  readBody,
-  runZitadelAdminUser,
-  sendHtml,
-  writeDb,
-});
-const handlePortalLegacyRedirectRoutes = createPortalLegacyRedirectRoutes({
-  layoutV2,
-  sendHtml,
 });
 
 const dispatchPortalHttpRequest = createPortalHttpDispatcher({
@@ -683,6 +653,7 @@ const dispatchPortalHttpRequest = createPortalHttpDispatcher({
   frontendDistRoot,
   guessContentType,
   handleAuthRoutes,
+  handleLabPackageRoutes,
   handleOplRoutes,
   handlePortalAdminApiRoutes,
   handlePortalAdminOpsRoutes,

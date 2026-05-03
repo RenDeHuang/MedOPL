@@ -1,14 +1,14 @@
 <template>
-  <AppLayout title="会话轨迹" subtitle="查看自己的会话、文件、运行、费用和资源状态">
+  <AppLayout title="轨迹" subtitle="查看自己的会话、上传文件、下载结果、任务编号与费用">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载会话轨迹...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="会话数" :value="payload.pagination.total" hint="当前筛选命中总数" />
-          <MetricCard label="运行数" :value="runCount" hint="关联 run 的会话" />
-          <MetricCard label="输出文件" :value="outputCount" hint="可在任务空间下载" />
-          <MetricCard label="已结算" :value="exactCostLabel" hint="仅统计 exact cost" />
+          <MetricCard label="任务编号数" :value="runCount" hint="关联任务编号的会话" />
+          <MetricCard label="下载结果" :value="outputCount" hint="可在工作空间下载" />
+          <MetricCard label="T+1 校准金额" :value="exactCostLabel" hint="仅统计 T+1 校准金额" />
         </section>
 
         <section class="card p-5">
@@ -18,7 +18,7 @@
               <p class="panel-subtitle">用户侧只返回当前账号可见数据。</p>
             </div>
             <div class="grid gap-3 md:grid-cols-3">
-              <input v-model.trim="filters.workspaceId" class="input" type="text" placeholder="workspace" />
+              <input v-model.trim="filters.workspaceId" class="input" type="text" placeholder="工作空间" />
               <input v-model.trim="filters.sessionId" class="input" type="text" placeholder="session" />
               <select v-model="filters.status" class="input">
                 <option value="">全部状态</option>
@@ -51,8 +51,8 @@
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">会话</th>
-                  <th class="px-4 py-3">workspace</th>
-                  <th class="px-4 py-3">run</th>
+                  <th class="px-4 py-3">工作空间</th>
+                  <th class="px-4 py-3">任务编号</th>
                   <th class="px-4 py-3">文件</th>
                   <th class="px-4 py-3">费用</th>
                   <th class="px-4 py-3">状态</th>
@@ -71,7 +71,7 @@
                     {{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出
                   </td>
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
-                    pending ¥{{ money(item.billing?.pendingCost) }} / exact ¥{{ money(item.billing?.exactCost) }}
+                    运行中预扣 ¥{{ money(item.billing?.pendingCost) }} / T+1 校准 ¥{{ money(item.billing?.exactCost) }}
                   </td>
                   <td class="px-4 py-3">
                     <span class="badge" :class="statusBadge(item.businessStatus || item.status)">{{ item.businessStatus || item.status || "recorded" }}</span>

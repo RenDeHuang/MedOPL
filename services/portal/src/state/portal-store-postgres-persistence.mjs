@@ -2,6 +2,10 @@ import {
   loadRedisPortalSessions,
   writeRedisPortalSessions,
 } from "./portal-store-redis-sessions.mjs";
+import {
+  readPortalPostgresLabSnapshot,
+  writePortalPostgresLabSnapshot,
+} from "./portal-store-postgres-lab-persistence.mjs";
 
 function toIso(value) {
   return value instanceof Date ? value.toISOString() : value;
@@ -14,7 +18,7 @@ export async function readPortalPostgresSnapshot({
   namespace,
   normalizeServerPlanSelection,
 }) {
-  const [usersRes, walletsRes, ledgerRes, taskSpacesRes, resourceOrdersRes, resourceOrderEventsRes, storageOrdersRes, workspaceFilesRes, sandboxesRes, groupsRes, settingsRes, eventsRes] = await Promise.all([
+  const [usersRes, walletsRes, ledgerRes, taskSpacesRes, resourceOrdersRes, resourceOrderEventsRes, storageOrdersRes, workspaceFilesRes, labSnapshot, sandboxesRes, groupsRes, settingsRes, eventsRes] = await Promise.all([
     pool.query(`SELECT * FROM ${pgTableName("users")}`),
     pool.query(`SELECT * FROM ${pgTableName("wallets")}`),
     pool.query(`SELECT * FROM ${pgTableName("ledger_entries")}`),
@@ -23,6 +27,7 @@ export async function readPortalPostgresSnapshot({
     pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`),
     pool.query(`SELECT * FROM ${pgTableName("storage_orders")}`),
     pool.query(`SELECT * FROM ${pgTableName("workspace_files")}`),
+    readPortalPostgresLabSnapshot({ pool, pgTableName }),
     pool.query(`SELECT * FROM ${pgTableName("user_sandboxes")}`),
     pool.query(`SELECT * FROM ${pgTableName("groups")}`),
     pool.query(`SELECT * FROM ${pgTableName("portal_settings")}`),
@@ -171,6 +176,7 @@ export async function readPortalPostgresSnapshot({
       deletedAt: toIso(row.deleted_at),
       retentionCleanupAfterAt: row.retention_cleanup_after_at || "",
     })),
+    ...labSnapshot,
     workspaceSessions,
     userSandboxes: sandboxesRes.rows.map((row) => ({
       id: row.id,
@@ -419,6 +425,7 @@ export async function writePortalPostgresSnapshot({
         row.retentionCleanupAfterAt || "",
       ]);
     }
+    await writePortalPostgresLabSnapshot({ client, pgTableName, db });
     await client.query(`DELETE FROM ${pgTableName("user_sandboxes")}`);
     for (const row of db.userSandboxes || []) {
       await client.query(`INSERT INTO ${pgTableName("user_sandboxes")} (id,user_id,runtime_type,container_name,namespace,image_tag,status,last_workspace_id,last_run_id,last_error,last_active_at,updated_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, [

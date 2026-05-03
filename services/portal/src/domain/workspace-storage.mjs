@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { resolveWorkspaceLabStorageEntitlement } from "./lab-entitlements.mjs";
 
 export const STORAGE_ORDER_STATUSES = new Set(["active", "deleting", "deleted", "cleanup_failed", "cancelled"]);
 export const WORKSPACE_FILE_KINDS = new Set(["inputs", "outputs", "artifacts"]);
@@ -123,6 +124,13 @@ export function normalizeWorkspaceFileRecord(record = {}) {
 export function resolveWorkspaceStorageEntitlement(db, user, workspaceId) {
   ensureWorkspaceStorageCollections(db);
   const tenantId = String(user?.tenantId || user?.id || "").trim();
+  const cosPrefix = storageOrderCosPrefix(tenantId, workspaceId);
+  const labStorage = resolveWorkspaceLabStorageEntitlement(db, { user, workspaceId, tenantId, cosPrefix });
+  if (labStorage) return labStorage;
+  return resolveStorageOrderEntitlement(db, { user, workspaceId, tenantId, cosPrefix });
+}
+
+function resolveStorageOrderEntitlement(db, { user, workspaceId, tenantId, cosPrefix }) {
   const activeStatuses = new Set(["active"]);
   const order = (db.storageOrders || [])
     .filter((item) => item.workspaceId === workspaceId)
@@ -136,10 +144,16 @@ export function resolveWorkspaceStorageEntitlement(db, user, workspaceId) {
     minimumPurchaseGb: 10,
     storageBackend: "cos",
     retentionPolicy: order?.retentionPolicy || "order_lifecycle",
-    cosPrefix: order?.cosPrefix || storageOrderCosPrefix(tenantId, workspaceId),
+    cosPrefix: order?.cosPrefix || cosPrefix,
     resourceOrderId: "",
     storagePlanId: order?.storagePlanId || "",
     storageSizeGb: order?.storageSizeGb || 0,
+    sourceType: order ? "portal_storage_order" : "none",
+    gates: {
+      canUpload: Boolean(order),
+      canRun: Boolean(order),
+      canDownload: true,
+    },
     message: order
       ? `已开通 ${order.storageSizeGb}GB 对象存储，可上传输入并保留输出。`
       : "免费容量为 0；至少购买 10GB 后才能上传输入文件和保存输出文件。",

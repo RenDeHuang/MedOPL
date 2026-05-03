@@ -207,11 +207,14 @@ export function observeProvisionResourceMappingResources(state, input = {}) {
 
 export function findProvisionResourceMapping(state, { resourceOrderId = "", nodePoolId = "", runId = "" } = {}) {
   const mappings = Array.isArray(state.resourceMappings) ? state.resourceMappings : [];
-  return mappings.find((item) =>
-    (resourceOrderId && item.resourceOrderId === resourceOrderId) ||
-    (nodePoolId && item.nodePoolId === nodePoolId) ||
-    (runId && item.runId === runId)
-  ) || null;
+  const hasLookup = Boolean(resourceOrderId || nodePoolId || runId);
+  if (!hasLookup) return null;
+  return mappings.find((item) => {
+    if (resourceOrderId && item.resourceOrderId !== resourceOrderId) return false;
+    if (nodePoolId && item.nodePoolId !== nodePoolId) return false;
+    if (runId && item.runId !== runId) return false;
+    return true;
+  }) || null;
 }
 
 export function updateProvisionResourceMappingCleanup(state, input = {}) {

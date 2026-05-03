@@ -373,22 +373,22 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_ID
+                  key: TENCENT_COS_SECRET_ID
             - name: LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_KEY
+                  key: TENCENT_COS_SECRET_KEY
             - name: LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_ID
+                  key: TENCENT_COS_SECRET_ID
             - name: LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_KEY
+                  key: TENCENT_COS_SECRET_KEY
           resources:
             requests:
               cpu: 250m
@@ -465,22 +465,22 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_ID
+                  key: TENCENT_COS_SECRET_ID
             - name: LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_KEY
+                  key: TENCENT_COS_SECRET_KEY
             - name: LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_ID
+                  key: TENCENT_COS_SECRET_ID
             - name: LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: tencent-cos-secret
-                  key: TENCENT_CLOUD_SECRET_KEY
+                  key: TENCENT_COS_SECRET_KEY
           resources:
             requests:
               cpu: 500m

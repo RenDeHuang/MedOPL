@@ -12,9 +12,19 @@ import {
   listOutputs,
   submitRun,
 } from "./runner-client.mjs";
+import { usableServerPlanId } from "./server-plan-ids.mjs";
 
 function isTerminal(status = "") {
   return ["succeeded", "failed", "cancelled", "timed_out"].includes(String(status || "").toLowerCase());
+}
+
+function preparedPlanContext(order = {}) {
+  return {
+    serverPlanId: usableServerPlanId(order.serverPlanId, order.server_plan_id),
+    instanceType: String(order.instanceType || order.instance_type || order.InstanceType || "").trim(),
+    region: String(order.region || "").trim(),
+    zone: String(order.zone || "").trim(),
+  };
 }
 
 export function createRunApi({
@@ -38,7 +48,7 @@ export function createRunApi({
       toolName: input.toolName || input.tool_name || "med-autoscience",
       billingScope: input.billingScope || input.billing_scope || "run",
       costCenter: input.costCenter || input.cost_center || "research-foundry",
-      serverPlanId: input.serverPlanId || input.server_plan_id || runtimeSession.serverPlanId || "default",
+      serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id, runtimeSession.serverPlanId),
       instanceType: input.instanceType || input.instance_type || input.InstanceType || runtimeSession.instanceType || "",
       region: input.region || runtimeSession.region || "",
       zone: input.zone || runtimeSession.zone || "",
@@ -105,6 +115,7 @@ export function createRunApi({
       resourceOrderId: String(payload.resourceOrderId).trim(),
       order: payload.order || null,
       idempotencyKey,
+      planContext: preparedPlanContext(payload.order || {}),
     };
   }
 
@@ -114,6 +125,7 @@ export function createRunApi({
     const prepared = await prepareRunResourceOrder(baseContext);
     const context = {
       ...baseContext,
+      ...Object.fromEntries(Object.entries(prepared.planContext).filter(([, value]) => value)),
       resourceOrderId: prepared.resourceOrderId,
       resourceOrder: prepared.order,
       resourceOrderPrepareIdempotencyKey: prepared.idempotencyKey,

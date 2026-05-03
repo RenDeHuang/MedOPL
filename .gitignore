@@ -4,6 +4,12 @@ dist/
 *.tsbuildinfo
 *.log
 .env
+deploy/tke-package/env/tke.env
+deploy/tke-package/env/*.local
+deploy/tke-package/source/
+deploy/tke-package/rendered-local-check/
+deploy/tke-package/rendered-v20-local/
+deploy/tke-package/rendered-v20.*-local/
 services/portal/frontend/dist/
 services/portal/frontend/node_modules/
 services/portal/node_modules/

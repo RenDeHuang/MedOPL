@@ -610,6 +610,10 @@ async function performCleanup(context, execution, requestedNodePoolId = "") {
       clusterId: execution.clusterId,
       nodePoolId: resolvedNodePoolId,
       resourceOrderId: context.resourceOrderId,
+      runId: context.runId,
+      tenantId: context.tenantId,
+      workspaceId: context.workspaceId,
+      serverPlanId: context.serverPlanId,
       destroyCvmInstances: true,
       confirmation: "delete-node-pool",
     });

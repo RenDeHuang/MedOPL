@@ -666,17 +666,27 @@ function buildPortalApi() {
       writeStoredBootstrap(bootstrap);
       return bootstrap;
     },
-    async startRun(input = {}) {
-      const state = requireLaunchState();
-      return fetchJson(state.adapterUrl + "/api/opl-launch/runs", {
-        method: "POST",
-        body: JSON.stringify({
+    async startRun(input = {}) {
+      const state = requireLaunchState();
+      return fetchJson(state.adapterUrl + "/api/opl-launch/runs", {
+        method: "POST",
+        body: JSON.stringify({
           ...input,
-          launchToken: input.launchToken || input.launch_token || state.launchToken
-        })
-      });
-    },
-    async getRunStatus(runId) {
+          launchToken: input.launchToken || input.launch_token || state.launchToken
+        })
+      });
+    },
+    async sendMessage(input = {}) {
+      const state = requireLaunchState();
+      return fetchJson(state.adapterUrl + "/api/opl-launch/messages", {
+        method: "POST",
+        body: JSON.stringify({
+          ...input,
+          launchToken: input.launchToken || input.launch_token || state.launchToken
+        })
+      });
+    },
+    async getRunStatus(runId) {
       if (!runId) throw new Error("runId is required.");
       const state = requireLaunchState();
       return fetchJson(state.adapterUrl + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/status");

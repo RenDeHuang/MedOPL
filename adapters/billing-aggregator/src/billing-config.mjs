@@ -1,4 +1,13 @@
 const TENCENT_DEFAULT_IMAGE_ID = "img-487zeit5";
+const DEFAULT_REPO_ROOT = new URL("../../..", import.meta.url).pathname;
+const BILLING_CLI_VALUE_OPTIONS = new Map([
+  ["--customer-id", "customerId"],
+  ["--customer", "customerId"],
+  ["--workspace-id", "workspaceId"],
+  ["--workspace", "workspaceId"],
+  ["--window", "window"],
+]);
+const BILLING_CLI_HELP_OPTIONS = new Set(["--help", "-h"]);
 
 function defaultServerPlanCatalog() {
   const runtimeNodePoolScheduling = {
@@ -22,55 +31,72 @@ function ensureServerPlanCatalogEnv(env) {
   return defaultCatalog;
 }
 
+function firstConfiguredEnv(env, names) {
+  for (const name of names) {
+    const value = String(env[name] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
 export function parseBillingCli(argv = []) {
   const args = [...argv];
   const command = args[0] && !String(args[0]).startsWith("-") ? String(args.shift()).trim().toLowerCase() : "";
-  const options = {
-    customerId: "",
-    workspaceId: "",
-    window: "",
-    help: false,
-  };
+  const options = defaultBillingCliOptions();
 
   for (let index = 0; index < args.length; index += 1) {
     const token = String(args[index] || "").trim();
     const next = String(args[index + 1] || "").trim();
     if (!token) continue;
-    if (token === "--help" || token === "-h") {
-      options.help = true;
-      continue;
-    }
-    if (token === "--customer-id" || token === "--customer") {
-      options.customerId = next;
-      index += 1;
-      continue;
-    }
-    if (token.startsWith("--customer-id=") || token.startsWith("--customer=")) {
-      options.customerId = token.split("=").slice(1).join("=").trim();
-      continue;
-    }
-    if (token === "--workspace-id" || token === "--workspace") {
-      options.workspaceId = next;
-      index += 1;
-      continue;
-    }
-    if (token.startsWith("--workspace-id=") || token.startsWith("--workspace=")) {
-      options.workspaceId = token.split("=").slice(1).join("=").trim();
-      continue;
-    }
-    if (token === "--window") {
-      options.window = next;
-      index += 1;
-      continue;
-    }
-    if (token.startsWith("--window=")) {
-      options.window = token.split("=").slice(1).join("=").trim();
+    const consumedNext = applyBillingCliOption(options, token, next);
+    if (consumedNext !== null) {
+      index += consumedNext;
       continue;
     }
     throw new Error(`Unknown billing-aggregator argument: ${token}`);
   }
 
   return { command, options };
+}
+
+function defaultBillingCliOptions() {
+  return {
+    customerId: "",
+    workspaceId: "",
+    window: "",
+    help: false,
+  };
+}
+
+function applyBillingCliOption(options, token, next) {
+  if (BILLING_CLI_HELP_OPTIONS.has(token)) {
+    options.help = true;
+    return 0;
+  }
+  const directOption = BILLING_CLI_VALUE_OPTIONS.get(token);
+  if (directOption) {
+    options[directOption] = next;
+    return 1;
+  }
+  return applyBillingCliAssignment(options, token);
+}
+
+function applyBillingCliAssignment(options, token) {
+  const assignment = parseBillingCliAssignment(token);
+  if (!assignment) return null;
+  const optionName = BILLING_CLI_VALUE_OPTIONS.get(assignment.name);
+  if (!optionName) return null;
+  options[optionName] = assignment.value;
+  return 0;
+}
+
+function parseBillingCliAssignment(token) {
+  const separatorIndex = token.indexOf("=");
+  if (separatorIndex < 1) return null;
+  return {
+    name: token.slice(0, separatorIndex),
+    value: token.slice(separatorIndex + 1).trim(),
+  };
 }
 
 export function readBillingRuntimeConfig({
@@ -93,6 +119,7 @@ export function readBillingRuntimeConfig({
 
   const config = {
     PORT: Number(env.PORT || 3001),
+    repoRoot: String(env.BILLING_REPO_ROOT || DEFAULT_REPO_ROOT).trim(),
     OPENCOST_BASE_URL: String(env.OPENCOST_BASE_URL || "").trim(),
     CPU_CORE_HOUR_RATE: Number(env.CPU_CORE_HOUR_RATE || "0.12"),
     GPU_HOUR_RATE: Number(env.GPU_HOUR_RATE || "2.00"),
@@ -108,8 +135,8 @@ export function readBillingRuntimeConfig({
     BILLING_RECONCILE_WINDOW,
     RESOURCE_PROVISIONER_URL: String(env.RESOURCE_PROVISIONER_URL || "").trim(),
     RESOURCE_PROVISIONER_TIMEOUT_MS: Number(env.RESOURCE_PROVISIONER_TIMEOUT_MS || 20000),
-    TENCENT_CLOUD_SECRET_ID: String(env.TENCENT_CLOUD_SECRET_ID || env.TENCENTCLOUD_SECRET_ID || "").trim(),
-    TENCENT_CLOUD_SECRET_KEY: String(env.TENCENT_CLOUD_SECRET_KEY || env.TENCENTCLOUD_SECRET_KEY || "").trim(),
+    TENCENT_CLOUD_SECRET_ID: firstConfiguredEnv(env, ["TENCENT_BILLING_SECRET_ID", "TENCENT_CLOUD_SECRET_ID", "TENCENTCLOUD_SECRET_ID"]),
+    TENCENT_CLOUD_SECRET_KEY: firstConfiguredEnv(env, ["TENCENT_BILLING_SECRET_KEY", "TENCENT_CLOUD_SECRET_KEY", "TENCENTCLOUD_SECRET_KEY"]),
     TENCENT_CLOUD_TOKEN: String(env.TENCENT_CLOUD_TOKEN || "").trim(),
     TENCENT_DEFAULT_IMAGE_ID,
     TENCENT_CLOUD_REGION,

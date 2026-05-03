@@ -1,4 +1,5 @@
 import os from "node:os";
+import { buildUserBillingSummary, normalizeLedgerEntries } from "../domain/wallet-ledger.mjs";
 import {
   buildAdminAlerts,
   buildAdminAuditRows,
@@ -30,6 +31,135 @@ function defaultUrls(urls = {}) {
     oplWebUrl: urls.oplWebUrl || "",
     portalOplAdapterUrl: urls.portalOplAdapterUrl || "",
     rancherUrl: urls.rancherUrl || "",
+  };
+}
+
+function userTenantId(user = {}) {
+  return String(user.tenantId || user.id || "").trim();
+}
+
+function userDisplayName(user = {}) {
+  return String(user.name || user.email || user.id || "").trim();
+}
+
+function userLedgerEntries(db, user = {}) {
+  const tenantId = userTenantId(user);
+  const userId = String(user.id || "").trim();
+  return normalizeLedgerEntries(db.ledger || [])
+    .filter((entry) => entry.userId === userId || entry.tenantId === tenantId || entry.billingAccountId === userId || entry.billingAccountId === tenantId)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+function activeResourceOrdersForUser(db, user = {}) {
+  const tenantId = userTenantId(user);
+  const userId = String(user.id || "").trim();
+  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
+    .filter((item) => item.userId === userId || item.tenantId === tenantId)
+    .filter((item) => !["released", "settled", "failed", "cancelled", "deleted"].includes(String(item.status || "").toLowerCase()));
+}
+
+function customerBillingRiskStatus(risk = {}) {
+  if (risk.status === "healthy") return "healthy";
+  if (risk.severity === "warning") return "warning";
+  if (risk.status === "suspended") return "suspended";
+  return "blocked";
+}
+
+function currentPackageName(db, user = {}) {
+  const tenantId = userTenantId(user);
+  const userId = String(user.id || "").trim();
+  const subscription = (Array.isArray(db.labSubscriptions) ? db.labSubscriptions : [])
+    .filter((item) => item.userId === userId || item.tenantId === tenantId)
+    .filter((item) => item.status !== "cancelled")
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")))[0];
+  if (!subscription) return "";
+  return subscription.packageId === "starter" ? "入门套餐" : subscription.packageId === "pro" ? "进阶套餐" : subscription.packageId;
+}
+
+function customerAccountingRow(db, user, { now }) {
+  const summary = buildUserBillingSummary(db, { user, now, nextPaidActionCents: 0 });
+  const entries = userLedgerEntries(db, user);
+  const lastRecharge = entries.find((entry) => entry.type === "topup");
+  const lastSpend = entries.find((entry) => ["subscription_daily_charge", "pending_usage", "exact_resource_charge", "makeup_charge"].includes(entry.type));
+  return {
+    tenantId: userTenantId(user),
+    userId: user.id,
+    displayName: userDisplayName(user),
+    email: user.email || "",
+    packageName: currentPackageName(db, user),
+    balanceCents: summary.balanceCents,
+    availableBalanceCents: summary.availableBalanceCents,
+    frozenAmountCents: summary.frozenWeeklyAmountCents,
+    todaySpendCents: summary.todaySpendCents,
+    monthSpendCents: summary.monthSpendCents,
+    totalSpendCents: summary.totalSpendCents,
+    rechargeTotalCents: summary.rechargeTotalCents,
+    runningResourceCount: activeResourceOrdersForUser(db, user).length,
+    billingRiskStatus: customerBillingRiskStatus(summary.risk),
+    lastRechargeAt: lastRecharge?.createdAt || "",
+    lastSpendAt: lastSpend?.createdAt || "",
+  };
+}
+
+function sumCustomerCents(customers = [], key) {
+  return customers.reduce((sum, item) => sum + Number(item[key] || 0), 0);
+}
+
+function customerAccountingSummary(db, customers = []) {
+  return {
+    customerCount: customers.length,
+    activeCustomerCount: customers.filter((item) => item.runningResourceCount > 0).length,
+    todaySpendCents: sumCustomerCents(customers, "todaySpendCents"),
+    monthSpendCents: sumCustomerCents(customers, "monthSpendCents"),
+    pendingExactCents: customers.reduce((sum, item) => sum + pendingExactForCustomer(db, item.userId, item.tenantId), 0),
+    unattributedBillRowCount: Array.isArray(db.unattributedBills) ? db.unattributedBills.length : 0,
+  };
+}
+
+function userScopedRows(db, collectionKey, userId, tenantId) {
+  const rows = Array.isArray(db[collectionKey]) ? db[collectionKey] : [];
+  return rows.filter((item) => item.userId === userId || item.tenantId === tenantId);
+}
+
+export function buildAdminCustomerAccountingPayload(db, { now = new Date().toISOString() } = {}) {
+  const users = (Array.isArray(db.users) ? db.users : []).filter((item) => item.role !== "admin");
+  const customers = users.map((user) => customerAccountingRow(db, user, { now }));
+  return {
+    customers,
+    summary: customerAccountingSummary(db, customers),
+  };
+}
+
+function pendingExactForCustomer(db, userId = "", tenantId = "") {
+  return normalizeLedgerEntries(db.ledger || [])
+    .filter((entry) => entry.type === "pending_usage")
+    .filter((entry) => entry.userId === userId || entry.tenantId === tenantId)
+    .reduce((sum, entry) => sum + Math.round(Number(entry.amount || 0) * 100), 0);
+}
+
+export function buildAdminCustomerAccountingDetailPayload(db, tenantIdOrUserId = "", { now = new Date().toISOString() } = {}) {
+  const targetId = String(tenantIdOrUserId || "").trim();
+  const user = (Array.isArray(db.users) ? db.users : []).find((item) => item.id === targetId || userTenantId(item) === targetId);
+  if (!user) return null;
+  const summary = buildUserBillingSummary(db, { user, now, nextPaidActionCents: 0 });
+  const entries = userLedgerEntries(db, user);
+  const tenantId = userTenantId(user);
+  const userId = String(user.id || "").trim();
+  return {
+    tenantId,
+    userId,
+    displayName: userDisplayName(user),
+    wallet: {
+      balanceCents: summary.balanceCents,
+      availableBalanceCents: summary.availableBalanceCents,
+      frozenAmountCents: summary.frozenWeeklyAmountCents,
+    },
+    recharges: entries.filter((entry) => entry.type === "topup"),
+    ledger: entries,
+    activeResourceOrders: activeResourceOrdersForUser(db, user),
+    historicalRuns: userScopedRows(db, "runs", userId, tenantId),
+    workspaceFiles: userScopedRows(db, "workspaceFiles", userId, tenantId),
+    sessionTraces: userScopedRows(db, "workspaceSessions", userId, tenantId),
   };
 }
 
@@ -447,6 +577,8 @@ export function createPortalAdminApiPayloads(deps) {
   return {
     buildAdminAuditApiPayload,
     buildAdminBillingOpsApiPayload,
+    buildAdminCustomerAccountingPayload,
+    buildAdminCustomerAccountingDetailPayload,
     buildAdminGroupsApiPayload,
     buildAdminOpsApiPayload,
     buildAdminOverviewPayload,

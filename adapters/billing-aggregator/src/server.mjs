@@ -37,6 +37,7 @@ import { applyResourceAttributionToRows } from "./resource-attribution.mjs";
 const config = readBillingRuntimeConfig();
 const {
   PORT,
+  repoRoot: configuredRepoRoot,
   OPENCOST_BASE_URL,
   CPU_CORE_HOUR_RATE,
   GPU_HOUR_RATE,
@@ -85,7 +86,7 @@ const {
   cliArgs,
 } = config;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(process.env.BILLING_REPO_ROOT || path.resolve(__dirname, "../../../"));
+const repoRoot = path.resolve(configuredRepoRoot || path.resolve(__dirname, "../../../"));
 const portalDbFile = path.join(repoRoot, ".runtime", "portal", "portal-db.json");
 const medRunsRoot = path.join(repoRoot, ".runtime", "med-autoscience", "runs");
 const medWorkspacesRoot = path.join(repoRoot, ".runtime", "med-autoscience", "workspaces");

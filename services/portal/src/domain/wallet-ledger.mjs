@@ -6,6 +6,9 @@ export const LEDGER_TYPES = new Set([
   "pending_usage",
   "exact_resource_charge",
   "preauth_release",
+  "subscription_weekly_freeze",
+  "subscription_daily_charge",
+  "subscription_freeze_release",
   "refund",
   "makeup_charge",
   "manual_adjustment",
@@ -40,6 +43,201 @@ export function moneyAmount(value, fallback = 0) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.round(parsed * 100) / 100;
+}
+
+function toCents(value = 0) {
+  return Math.round(moneyAmount(value, 0) * 100);
+}
+
+function ledgerBelongsToUser(entry, user = {}) {
+  const userId = String(user?.id || "").trim();
+  const tenantId = String(user?.tenantId || userId).trim();
+  return entry.userId === userId || entry.tenantId === tenantId || entry.billingAccountId === tenantId || entry.billingAccountId === userId;
+}
+
+function isSameMonth(iso = "", now = new Date().toISOString()) {
+  return String(iso || "").slice(0, 7) === String(now || "").slice(0, 7);
+}
+
+function isSameDay(iso = "", now = new Date().toISOString()) {
+  return String(iso || "").slice(0, 10) === String(now || "").slice(0, 10);
+}
+
+const SPEND_TYPES = new Set(["subscription_daily_charge", "pending_usage", "exact_resource_charge", "makeup_charge"]);
+const RECHARGE_TYPES = new Set(["topup"]);
+const SUBSCRIPTION_FREEZE_TYPES = new Set(["subscription_weekly_freeze", "subscription_daily_charge", "subscription_freeze_release"]);
+
+function activeSubscriptionFreezeCents(entries = []) {
+  return toCents(entries
+    .filter((entry) => SUBSCRIPTION_FREEZE_TYPES.has(entry.type))
+    .reduce((sum, entry) => {
+      const amount = Math.abs(Number(entry.amount || 0));
+      if (entry.type === "subscription_weekly_freeze") return sum + amount;
+      return sum - amount;
+    }, 0));
+}
+
+function walletRiskContext({ balanceCents, frozenWeeklyAmountCents, nextPaidActionCents = 0, existingOutputs = false }) {
+  return {
+    balanceCents,
+    frozenWeeklyAmountCents,
+    nextPaidActionCents,
+    existingOutputs,
+    availableAfterFreeze: Math.max(0, balanceCents - frozenWeeklyAmountCents),
+    coverageCents: balanceCents + frozenWeeklyAmountCents,
+  };
+}
+
+function isHealthyWalletRisk(context) {
+  return context.balanceCents > context.frozenWeeklyAmountCents
+    && (context.nextPaidActionCents <= 0 || context.availableAfterFreeze >= context.nextPaidActionCents);
+}
+
+function isLowBalanceFreezeCovered(context) {
+  return context.balanceCents >= context.frozenWeeklyAmountCents && context.frozenWeeklyAmountCents > 0;
+}
+
+function isInsufficientForNextAction(context) {
+  return context.coverageCents > 0 && context.coverageCents < context.nextPaidActionCents;
+}
+
+function walletRechargeFloor(context) {
+  return Math.max(context.nextPaidActionCents, context.frozenWeeklyAmountCents);
+}
+
+function healthyWalletRisk() {
+  return {
+    status: "healthy",
+    severity: "ok",
+    copy: "余额充足，可以继续运行任务。",
+    requiredRechargeCents: 0,
+    canStartNewPaidWork: true,
+    canDownloadExistingOutputs: true,
+  };
+}
+
+function lowBalanceWalletRisk(context) {
+  return {
+    status: "low_available_balance_freeze_covers_current_week",
+    severity: "warning",
+    copy: "当前余额偏低，但本周服务还能继续。建议充值，避免下周无法继续运行或启动新任务。",
+    requiredRechargeCents: walletRechargeFloor(context),
+    canStartNewPaidWork: false,
+    canDownloadExistingOutputs: true,
+  };
+}
+
+function insufficientWalletRisk(context) {
+  return {
+    status: "insufficient_for_next_paid_action",
+    severity: "blocked",
+    copy: "当前余额不足以启动新的付费任务，请先充值。已有结果仍可下载。",
+    requiredRechargeCents: Math.max(0, context.nextPaidActionCents - context.coverageCents),
+    canStartNewPaidWork: false,
+    canDownloadExistingOutputs: true,
+  };
+}
+
+function downloadOnlyWalletRisk(context) {
+  return {
+    status: "grace_download_only",
+    severity: "blocked",
+    copy: "当前只能下载已有结果，不能启动新的付费任务。请充值后继续使用。",
+    requiredRechargeCents: walletRechargeFloor(context),
+    canStartNewPaidWork: false,
+    canDownloadExistingOutputs: true,
+  };
+}
+
+function suspendedWalletRisk(context) {
+  return {
+    status: "suspended",
+    severity: "blocked",
+    copy: "当前余额不足，服务已暂停。请充值后继续使用。",
+    requiredRechargeCents: walletRechargeFloor(context),
+    canStartNewPaidWork: false,
+    canDownloadExistingOutputs: false,
+  };
+}
+
+const WALLET_RISK_CASES = [
+  [isHealthyWalletRisk, healthyWalletRisk],
+  [isLowBalanceFreezeCovered, lowBalanceWalletRisk],
+  [isInsufficientForNextAction, insufficientWalletRisk],
+  [(context) => context.existingOutputs, downloadOnlyWalletRisk],
+];
+
+function evaluateWalletRisk(input) {
+  const context = walletRiskContext(input);
+  const [, buildRisk = suspendedWalletRisk] = WALLET_RISK_CASES.find(([matches]) => matches(context)) || [];
+  return buildRisk(context);
+}
+
+function ledgerEntriesForUser(db, user) {
+  return normalizeLedgerEntries(db?.ledger || []).filter((entry) => ledgerBelongsToUser(entry, user));
+}
+
+function entriesOfTypes(entries = [], types = new Set()) {
+  return entries.filter((entry) => types.has(entry.type));
+}
+
+function sumEntryCents(entries = []) {
+  return entries.reduce((sum, entry) => sum + toCents(entry.amount), 0);
+}
+
+function pendingUsageSummary(entry = {}) {
+  return {
+    id: entry.id,
+    resourceOrderId: entry.resourceOrderId,
+    runId: entry.runId,
+    plainType: "运行中预扣",
+    copy: "这次任务正在按运行中费用预扣，最终金额会在 T+1 账单回来后校准。",
+    amountCents: toCents(entry.amount),
+    status: "waiting_exact_bill",
+    createdAt: entry.createdAt,
+  };
+}
+
+function exactSettlementSummary(pending = []) {
+  return {
+    status: pending.length > 0 ? "waiting_t_plus_1" : "settled_or_no_pending",
+    copy: pending.length > 0 ? "最终金额会在腾讯云 T+1 账单回来后校准。" : "当前没有等待 T+1 校准的运行费用。",
+  };
+}
+
+export function buildUserBillingSummary(db, {
+  user,
+  now = new Date().toISOString(),
+  nextPaidActionCents = 0,
+} = {}) {
+  const normalizedEntries = ledgerEntriesForUser(db, user);
+  const wallet = ensureWallet(db, user?.id || "");
+  const balanceCents = toCents(wallet.balance);
+  const frozenWeeklyAmountCents = Math.max(0, activeSubscriptionFreezeCents(normalizedEntries));
+  const spendEntries = entriesOfTypes(normalizedEntries, SPEND_TYPES);
+  const rechargeEntries = entriesOfTypes(normalizedEntries, RECHARGE_TYPES);
+  const todaySpendCents = sumEntryCents(spendEntries.filter((entry) => isSameDay(entry.createdAt, now)));
+  const monthSpendCents = sumEntryCents(spendEntries.filter((entry) => isSameMonth(entry.createdAt, now)));
+  const totalSpendCents = sumEntryCents(spendEntries);
+  const rechargeTotalCents = sumEntryCents(rechargeEntries);
+  const pending = entriesOfTypes(normalizedEntries, new Set(["pending_usage"])).map(pendingUsageSummary);
+  return {
+    balanceCents,
+    availableBalanceCents: Math.max(0, balanceCents - frozenWeeklyAmountCents),
+    frozenWeeklyAmountCents,
+    todaySpendCents,
+    monthSpendCents,
+    totalSpendCents,
+    rechargeTotalCents,
+    risk: evaluateWalletRisk({
+      balanceCents,
+      frozenWeeklyAmountCents,
+      nextPaidActionCents,
+      existingOutputs: pending.length > 0,
+    }),
+    pending,
+    exactSettlement: exactSettlementSummary(pending),
+  };
 }
 
 export function normalizeLedgerEntry(entry = {}) {

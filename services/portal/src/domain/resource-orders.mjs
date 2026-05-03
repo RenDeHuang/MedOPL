@@ -84,6 +84,7 @@ export function normalizeResourceOrder(order = {}) {
     updatedAt: String(order.updatedAt || order.updated_at || now).trim() || now,
     settledAt: String(order.settledAt || order.settled_at || "").trim(),
     pendingStoppedAt: String(order.pendingStoppedAt || order.pending_stopped_at || "").trim(),
+    billingStoppedAt: String(order.billingStoppedAt || order.billing_stopped_at || "").trim(),
     failedReason: String(order.failedReason || order.failed_reason || "").trim(),
   };
 }
@@ -283,6 +284,14 @@ export function appendResourceOrderEvent(db, event) {
 }
 
 export function resourceOrderPublicView(order, events = []) {
+  const releasedAt = String(order.pendingStoppedAt || order.billingStoppedAt || "").trim();
+  const billingStopped = Boolean(releasedAt) || RESOURCE_ORDER_PENDING_STOP_STATUSES.has(String(order.status || "").trim().toLowerCase());
+  const billingStoppedAt = releasedAt;
+  const usageEndAt = billingStoppedAt || new Date().toISOString();
+  const usageMinutes = Math.max(0, Math.floor((Date.parse(usageEndAt) - Date.parse(String(order.createdAt || usageEndAt))) / 60000) || 0);
+  const plainStatus = String(order.status || "").trim().toLowerCase() === "released"
+    ? "已释放，停止计费"
+    : String(order.status || "");
   return {
     id: order.id,
     status: order.status,
@@ -325,10 +334,18 @@ export function resourceOrderPublicView(order, events = []) {
     exactCost: order.exactCost,
     pricingSource: order.pricingSource,
     priceUpdatedAt: order.priceUpdatedAt,
+    serverNo: order.id,
+    taskNo: order.runId || order.workspaceSessionId || order.id,
+    plainStatus,
+    usageMinutes,
+    billingStopped,
+    billingStoppedAt,
+    releasedAt,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     settledAt: order.settledAt,
     pendingStoppedAt: order.pendingStoppedAt,
+    billingStoppedAtRaw: order.billingStoppedAt,
     failedReason: order.failedReason,
     events: events
       .filter((event) => event.orderId === order.id)

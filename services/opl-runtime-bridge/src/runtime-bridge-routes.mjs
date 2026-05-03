@@ -1,6 +1,7 @@
 import { createLangfusePublisher } from "./langfuse-publisher.mjs";
 import { addEvent, addTraceRecord, ensureRuntime, readState, writeState } from "./state-store.mjs";
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
+import { createMessageApi } from "./runtime-bridge-messages.mjs";
 import { createRunApi } from "./runtime-bridge-runs.mjs";
 
 function readConfig() {
@@ -82,169 +83,230 @@ export function createRuntimeBridgeRuntime() {
     k8sNamespace: config.k8sNamespace,
     publishTraceEvent,
   });
+  const messageApi = createMessageApi({
+    publishTraceEvent,
+  });
+
+  function launchTokenFrom(input = {}, url) {
+    return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "";
+  }
+
+  function runtimeSessionByLaunch(state, launch) {
+    return state.runtimeSessions.find((item) => item.runtimeSessionId === launch.runtimeSessionId) || null;
+  }
+
+  async function readLaunchRuntimeSession(input, url, res) {
+    const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url));
+    if (!launch) {
+      sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
+      return null;
+    }
+    const state = await readState();
+    const runtimeSession = runtimeSessionByLaunch(state, launch);
+    if (!runtimeSession) {
+      sendJson(res, 404, { ok: false, error: "runtime_session_not_found" });
+      return null;
+    }
+    return { launch, state, runtimeSession };
+  }
+
+  async function handleHealth(_req, res) {
+    sendJson(res, 200, launchApi.buildStatusPayload());
+  }
+
+  async function handleWorkbenchRetired(_req, res) {
+    sendRetired(res, "adapter /workbench dev projection 已退场；请打开 OPL_WEB_URL，并由 OPL Web 使用 launch token 拉 bootstrap。", "OPL_WEB_URL");
+  }
+
+  async function handleLegacyLaunchTokensRetired(_req, res) {
+    sendRetired(res, "旧 /api/launch-tokens 已退场；Portal 现在通过 /api/opl-launch/tokens 签发 OPL Web launch。", "/api/opl-launch/tokens");
+  }
+
+  async function handleIssueLaunchToken(req, res) {
+    sendJson(res, 200, await launchApi.issueLaunchToken(await readBody(req)));
+  }
+
+  async function handleWorkbenchBootstrapRetired(_req, res) {
+    sendRetired(res, "旧 /api/workbench/bootstrap 已退场；OPL Web 必须使用 /api/opl-launch/bootstrap。", "/api/opl-launch/bootstrap");
+  }
+
+  async function handleBootstrap(_req, res, url) {
+    const launch = launchApi.verifyLaunchToken(url.searchParams.get("launch_token") || "");
+    if (!launch) {
+      sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
+      return;
+    }
+    const state = await readState();
+    const bootstrap = await launchApi.buildBootstrap(state, launch);
+    await writeState(state);
+    sendJson(res, 200, bootstrap);
+  }
+
+  async function handleRuntimeRun(req, res, url) {
+    const input = await readBody(req);
+    const resolved = await readLaunchRuntimeSession(input, url, res);
+    if (!resolved) return;
+    const { state, runtimeSession } = resolved;
+    try {
+      const run = await runApi.submitRuntimeRun(state, runtimeSession, input, req);
+      await writeState(state);
+      sendJson(res, 200, { ok: true, run });
+    } catch (error) {
+      addEvent(state, "runner_run_failed", { ...runtimeSession, error: String(error.message || error) });
+      await writeState(state);
+      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+    }
+  }
+
+  async function handleMessage(req, res, url) {
+    const input = await readBody(req);
+    const resolved = await readLaunchRuntimeSession(input, url, res);
+    if (!resolved) return;
+    const { state, runtimeSession } = resolved;
+    try {
+      const message = await messageApi.submitMessage(state, runtimeSession, input, req);
+      await writeState(state);
+      sendJson(res, 200, { ok: true, ...message });
+    } catch (error) {
+      addEvent(state, "opl_message_reply_failed", { ...runtimeSession, error: String(error.message || error) });
+      await writeState(state);
+      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+    }
+  }
+
+  async function handleBindSession(req, res, url) {
+    const input = await readBody(req);
+    const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url));
+    if (!launch) {
+      sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
+      return;
+    }
+    const state = await readState();
+    const runtimeSession = launchApi.bindOplSession(state, launch, input);
+    if (!runtimeSession) {
+      sendJson(res, 404, { ok: false, error: "runtime_session_not_found" });
+      return;
+    }
+    await writeState(state);
+    sendJson(res, 200, { ok: true, runtimeSession });
+  }
+
+  async function handleRuntimeSessionsRetired(_req, res) {
+    sendRetired(res, "旧 /api/runtime-sessions 已退场；runtime/session 由 OPL Web 与 OPL runtime 管理，Portal 只通过 launch/bootstrap 绑定。", "/api/opl-launch/sessions/bind");
+  }
+
+  async function handleRuntimeSessionRunsRetired(_req, res) {
+    sendRetired(res, "旧 /api/runtime-sessions/:id/runs 已退场；run 必须由 OPL Web 携带 launch token 调 /api/opl-launch/runs。", "/api/opl-launch/runs");
+  }
+
+  async function handleRunStatus(_req, res, _url, match) {
+    const state = await readState();
+    const run = state.runs.find((item) => item.runId === match[1]);
+    if (!run) {
+      sendJson(res, 404, { ok: false, error: "run_not_found" });
+      return;
+    }
+    const synced = await runApi.syncRunnerRun(state, run);
+    await writeState(state);
+    sendJson(res, 200, { ok: true, run: synced || run });
+  }
+
+  async function handleRunArtifacts(_req, res, _url, match) {
+    const state = await readState();
+    const run = state.runs.find((item) => item.runId === match[1]);
+    if (!run) {
+      sendJson(res, 404, { ok: false, error: "run_not_found" });
+      return;
+    }
+    await runApi.syncRunnerRun(state, run).catch((error) => {
+      addEvent(state, "runner_artifact_sync_failed", { ...run, error: String(error.message || error) });
+      return null;
+    });
+    await writeState(state);
+    sendJson(res, 200, { ok: true, items: state.artifacts.filter((item) => item.runId === match[1]) });
+  }
+
+  async function handleRunsList(_req, res) {
+    const state = await readState();
+    sendJson(res, 200, { ok: true, items: state.runs });
+  }
+
+  async function handleArtifactsList(_req, res) {
+    const state = await readState();
+    sendJson(res, 200, { ok: true, items: state.artifacts });
+  }
+
+  async function handleTraceLinks(_req, res) {
+    const state = await readState();
+    sendJson(res, 200, { ok: true, items: state.traceLinks, runActions: state.runActions });
+  }
+
+  async function handleTraceEvents(req, res) {
+    const input = await readBody(req);
+    const state = await readState();
+    const trace = await publishTraceEvent(state, {
+      ...input,
+      eventType: input.eventType || input.type || "runtime_event",
+    });
+    await writeState(state);
+    sendJson(res, 200, { ok: true, trace });
+  }
+
+  async function handleCostRecords(_req, res) {
+    const state = await readState();
+    sendJson(res, 200, { ok: true, items: state.costRecords });
+  }
+
+  const exactHandlers = new Map([
+    ["GET /healthz", handleHealth],
+    ["GET /status", handleHealth],
+    ["GET /workbench", handleWorkbenchRetired],
+    ["POST /api/launch-tokens", handleLegacyLaunchTokensRetired],
+    ["POST /api/opl-launch/tokens", handleIssueLaunchToken],
+    ["GET /api/workbench/bootstrap", handleWorkbenchBootstrapRetired],
+    ["GET /api/opl-launch/bootstrap", handleBootstrap],
+    ["POST /api/opl-launch/runs", handleRuntimeRun],
+    ["POST /api/opl-launch/messages", handleMessage],
+    ["POST /api/opl-launch/sessions/bind", handleBindSession],
+    ["POST /api/runtime-sessions", handleRuntimeSessionsRetired],
+    ["GET /api/runs", handleRunsList],
+    ["GET /api/artifacts", handleArtifactsList],
+    ["GET /api/trace-links", handleTraceLinks],
+    ["POST /internal/trace-events", handleTraceEvents],
+    ["GET /api/cost-records", handleCostRecords],
+  ]);
+
+  const dynamicHandlers = [
+    { method: "POST", pattern: /^\/api\/runtime-sessions\/([^/]+)\/runs$/, handler: handleRuntimeSessionRunsRetired },
+    { method: "GET", pattern: /^\/api\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
+    { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
+    { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/artifacts$/, handler: handleRunArtifacts },
+  ];
+
+  function routeKey(req, url) {
+    return `${req.method || ""} ${url.pathname}`;
+  }
+
+  function matchDynamicHandler(req, url) {
+    for (const route of dynamicHandlers) {
+      const match = route.method === req.method ? url.pathname.match(route.pattern) : null;
+      if (match) return { ...route, match };
+    }
+    return null;
+  }
 
   async function handleRequest(req, res) {
     const url = new URL(req.url || "/", config.baseUrl);
-    if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
-      sendJson(res, 200, launchApi.buildStatusPayload());
+    const handler = exactHandlers.get(routeKey(req, url));
+    if (handler) {
+      await handler(req, res, url);
       return;
     }
-
-    if (req.method === "GET" && url.pathname === "/workbench") {
-      sendRetired(res, "adapter /workbench dev projection 已退场；请打开 OPL_WEB_URL，并由 OPL Web 使用 launch token 拉 bootstrap。", "OPL_WEB_URL");
+    const dynamicHandler = matchDynamicHandler(req, url);
+    if (dynamicHandler) {
+      await dynamicHandler.handler(req, res, url, dynamicHandler.match);
       return;
     }
-
-    if (req.method === "POST" && url.pathname === "/api/launch-tokens") {
-      sendRetired(res, "旧 /api/launch-tokens 已退场；Portal 现在通过 /api/opl-launch/tokens 签发 OPL Web launch。", "/api/opl-launch/tokens");
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/opl-launch/tokens") {
-      const input = await readBody(req);
-      sendJson(res, 200, await launchApi.issueLaunchToken(input));
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/workbench/bootstrap") {
-      sendRetired(res, "旧 /api/workbench/bootstrap 已退场；OPL Web 必须使用 /api/opl-launch/bootstrap。", "/api/opl-launch/bootstrap");
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/opl-launch/bootstrap") {
-      const launch = launchApi.verifyLaunchToken(url.searchParams.get("launch_token") || "");
-      if (!launch) {
-        sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
-        return;
-      }
-      const state = await readState();
-      const bootstrap = await launchApi.buildBootstrap(state, launch);
-      await writeState(state);
-      sendJson(res, 200, bootstrap);
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/opl-launch/runs") {
-      const input = await readBody(req);
-      const launch = launchApi.verifyLaunchToken(input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "");
-      if (!launch) {
-        sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
-        return;
-      }
-      const state = await readState();
-      const runtimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === launch.runtimeSessionId);
-      if (!runtimeSession) {
-        sendJson(res, 404, { ok: false, error: "runtime_session_not_found" });
-        return;
-      }
-      try {
-        const run = await runApi.submitRuntimeRun(state, runtimeSession, input, req);
-        await writeState(state);
-        sendJson(res, 200, { ok: true, run });
-      } catch (error) {
-        addEvent(state, "runner_run_failed", { ...runtimeSession, error: String(error.message || error) });
-        await writeState(state);
-        sendJson(res, 502, { ok: false, error: String(error.message || error) });
-      }
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/opl-launch/sessions/bind") {
-      const input = await readBody(req);
-      const launch = launchApi.verifyLaunchToken(input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "");
-      if (!launch) {
-        sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
-        return;
-      }
-      const state = await readState();
-      const runtimeSession = launchApi.bindOplSession(state, launch, input);
-      if (!runtimeSession) {
-        sendJson(res, 404, { ok: false, error: "runtime_session_not_found" });
-        return;
-      }
-      await writeState(state);
-      sendJson(res, 200, { ok: true, runtimeSession });
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/runtime-sessions") {
-      sendRetired(res, "旧 /api/runtime-sessions 已退场；runtime/session 由 OPL Web 与 OPL runtime 管理，Portal 只通过 launch/bootstrap 绑定。", "/api/opl-launch/sessions/bind");
-      return;
-    }
-
-    const runMatch = url.pathname.match(/^\/api\/runtime-sessions\/([^/]+)\/runs$/);
-    if (req.method === "POST" && runMatch) {
-      sendRetired(res, "旧 /api/runtime-sessions/:id/runs 已退场；run 必须由 OPL Web 携带 launch token 调 /api/opl-launch/runs。", "/api/opl-launch/runs");
-      return;
-    }
-
-    const statusMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/status$/) || url.pathname.match(/^\/api\/opl-launch\/runs\/([^/]+)\/status$/);
-    if (req.method === "GET" && statusMatch) {
-      const state = await readState();
-      const run = state.runs.find((item) => item.runId === statusMatch[1]);
-      if (!run) {
-        sendJson(res, 404, { ok: false, error: "run_not_found" });
-        return;
-      }
-      const synced = await runApi.syncRunnerRun(state, run);
-      await writeState(state);
-      sendJson(res, 200, { ok: true, run: synced || run });
-      return;
-    }
-
-    const artifactsMatch = url.pathname.match(/^\/api\/opl-launch\/runs\/([^/]+)\/artifacts$/);
-    if (req.method === "GET" && artifactsMatch) {
-      const state = await readState();
-      const run = state.runs.find((item) => item.runId === artifactsMatch[1]);
-      if (!run) {
-        sendJson(res, 404, { ok: false, error: "run_not_found" });
-        return;
-      }
-      await runApi.syncRunnerRun(state, run).catch((error) => {
-        addEvent(state, "runner_artifact_sync_failed", { ...run, error: String(error.message || error) });
-        return null;
-      });
-      await writeState(state);
-      sendJson(res, 200, { ok: true, items: state.artifacts.filter((item) => item.runId === artifactsMatch[1]) });
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/runs") {
-      const state = await readState();
-      sendJson(res, 200, { ok: true, items: state.runs });
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/artifacts") {
-      const state = await readState();
-      sendJson(res, 200, { ok: true, items: state.artifacts });
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/trace-links") {
-      const state = await readState();
-      sendJson(res, 200, { ok: true, items: state.traceLinks, runActions: state.runActions });
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/internal/trace-events") {
-      const input = await readBody(req);
-      const state = await readState();
-      const trace = await publishTraceEvent(state, {
-        ...input,
-        eventType: input.eventType || input.type || "runtime_event",
-      });
-      await writeState(state);
-      sendJson(res, 200, { ok: true, trace });
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/cost-records") {
-      const state = await readState();
-      sendJson(res, 200, { ok: true, items: state.costRecords });
-      return;
-    }
-
     sendJson(res, 404, { ok: false, error: "not_found", path: url.pathname });
   }
 

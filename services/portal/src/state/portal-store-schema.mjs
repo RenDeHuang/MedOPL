@@ -130,6 +130,54 @@ export function createPortalStoreSchema({
         deleted_at timestamptz NULL,
         retention_cleanup_after_at text NOT NULL DEFAULT ''
       );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("lab_subscriptions")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        package_id text NOT NULL,
+        status text NOT NULL,
+        compute_tier text NOT NULL,
+        included_storage_gb numeric NOT NULL,
+        daily_price numeric NOT NULL,
+        weekly_freeze_amount numeric NOT NULL,
+        current_freeze_id text NOT NULL,
+        grace_started_at text NOT NULL,
+        cleanup_after_at text NOT NULL,
+        backing_server_plan_id text NOT NULL,
+        idempotency_key text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("lab_package_events")} (
+        id text PRIMARY KEY,
+        subscription_id text NOT NULL,
+        event_type text NOT NULL,
+        event_payload_json jsonb NOT NULL,
+        actor_type text NOT NULL,
+        actor_id text NOT NULL,
+        idempotency_key text NOT NULL,
+        created_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("lab_storage_addons")} (
+        id text PRIMARY KEY,
+        subscription_id text NOT NULL,
+        storage_gb numeric NOT NULL,
+        daily_price numeric NOT NULL,
+        status text NOT NULL,
+        idempotency_key text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("lab_daily_charges")} (
+        id text PRIMARY KEY,
+        subscription_id text NOT NULL,
+        charge_date text NOT NULL,
+        amount numeric NOT NULL,
+        ledger_entry_id text NOT NULL,
+        idempotency_key text NOT NULL,
+        created_at timestamptz NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS ${pgTableName("task_spaces")} (
         id text PRIMARY KEY,
         user_id text NOT NULL,

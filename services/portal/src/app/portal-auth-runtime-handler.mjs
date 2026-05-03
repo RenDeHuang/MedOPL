@@ -348,6 +348,11 @@ export function createPortalAuthRuntimeHandler({
         source: "opl-native-login",
         providerConfig: providerConfigResult.providerConfig,
         providerConfigSecretRef: providerConfigResult.providerConfigSecretRef,
+        providerKeyPayload: {
+          provider: "gflabtoken",
+          source: "user_input",
+          apiKey: providerApiKey,
+        },
       });
       if (!launchResult.ok) {
         sendJson(res, {

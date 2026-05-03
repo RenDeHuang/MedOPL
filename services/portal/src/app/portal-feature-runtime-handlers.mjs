@@ -1,4 +1,5 @@
 import { createOplRoutes } from "../routes/opl.routes.mjs";
+import { createLabPackageRoutes } from "../routes/lab-package.routes.mjs";
 import { createResourceOrderRoutes } from "../routes/resource-order.routes.mjs";
 import { createWorkspaceStorageRoutes } from "../routes/workspace-storage.routes.mjs";
 
@@ -42,6 +43,11 @@ export function createPortalFeatureRuntimeHandlers({
   writeFile,
   writeDb,
 }) {
+  const handleLabPackageRoutes = createLabPackageRoutes({
+    readBody,
+    sendJson,
+    writeDb,
+  });
   const handleOplRoutes = createOplRoutes({
     appendCookie,
     layoutV2,
@@ -97,6 +103,7 @@ export function createPortalFeatureRuntimeHandlers({
   });
 
   return {
+    handleLabPackageRoutes,
     handleOplRoutes,
     handleResourceOrderRoutes,
     handleWorkspaceStorageRoutes,

@@ -12,6 +12,8 @@ export function createPortalAdminApiRoutes({
   buildAdminUserPortraitApiPayload,
   buildAdminUsersApiPayload,
   buildAdminWorkspacePortraitApiPayload,
+  buildAdminCustomerAccountingPayload,
+  buildAdminCustomerAccountingDetailPayload,
 }) {
   async function requireAdmin({ res, user }) {
     if (user.role === "admin") return true;
@@ -57,6 +59,20 @@ export function createPortalAdminApiRoutes({
     }
     if (url.pathname === "/portal/api/admin/billing-ops") {
       await withOverview(db, (payload) => sendJson(res, buildAdminBillingOpsApiPayload(db, payload)));
+      return true;
+    }
+    if (url.pathname === "/portal/api/admin/customer-accounting") {
+      sendJson(res, buildAdminCustomerAccountingPayload(db));
+      return true;
+    }
+    if (url.pathname === "/portal/api/admin/customer-accounting/detail") {
+      const tenantId = String(url.searchParams.get("tenantId") || url.searchParams.get("userId") || "");
+      const payload = buildAdminCustomerAccountingDetailPayload(db, tenantId);
+      if (!payload) {
+        sendJson(res, { error: "not_found" }, 404);
+        return true;
+      }
+      sendJson(res, payload);
       return true;
     }
     if (url.pathname === "/portal/api/admin/system") {

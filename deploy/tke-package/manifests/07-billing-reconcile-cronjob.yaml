@@ -53,13 +53,13 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       name: tencent-billing-secret
-                      key: TENCENT_CLOUD_SECRET_ID
+                      key: TENCENT_BILLING_SECRET_ID
                       optional: true
                 - name: TENCENT_CLOUD_SECRET_KEY
                   valueFrom:
                     secretKeyRef:
                       name: tencent-billing-secret
-                      key: TENCENT_CLOUD_SECRET_KEY
+                      key: TENCENT_BILLING_SECRET_KEY
                       optional: true
                 - name: TENCENT_CLOUD_TOKEN
                   valueFrom:
@@ -71,13 +71,13 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       name: tencent-cos-secret
-                      key: TENCENT_CLOUD_SECRET_ID
+                      key: TENCENT_COS_SECRET_ID
                       optional: true
                 - name: TENCENT_COS_SECRET_KEY
                   valueFrom:
                     secretKeyRef:
                       name: tencent-cos-secret
-                      key: TENCENT_CLOUD_SECRET_KEY
+                      key: TENCENT_COS_SECRET_KEY
                       optional: true
               envFrom:
                 - configMapRef:

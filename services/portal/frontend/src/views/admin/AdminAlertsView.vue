@@ -5,8 +5,8 @@
       <template v-else>
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="余额风险" :value="balanceAlerts" hint="余额不足账户" />
-          <MetricCard label="失败运行" :value="runAlerts" hint="需要排查的运行" />
-          <MetricCard label="系统异常" :value="systemAlerts" hint="服务可用性异常" />
+          <MetricCard label="账单归因失败" :value="billingAlerts" hint="等待管理员核查" />
+          <MetricCard label="资源释放失败" :value="resourceAlerts" hint="需要确认停止计费" />
           <MetricCard label="活动公告" :value="announcements.length" hint="当前对用户可见的公告" />
         </section>
 
@@ -97,7 +97,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">告警列表</h2>
-                <p class="panel-subtitle">每条告警都对应真实来源。</p>
+                <p class="panel-subtitle">只保留需要处理的提醒：低余额、账单归因失败、资源释放失败、OPL key 无效、精准账单导入失败。</p>
               </div>
             </div>
             <div class="space-y-2.5">
@@ -135,8 +135,8 @@ const alerts = computed(() => alertsPayload.value?.alerts || []);
 const allAnnouncements = computed(() => announcementsPayload.value?.items || []);
 const announcements = computed(() => allAnnouncements.value.filter((item: any) => item.status === "active"));
 const balanceAlerts = computed(() => alerts.value.filter((item: any) => item.category === "balance").length);
-const runAlerts = computed(() => alerts.value.filter((item: any) => item.category === "run").length);
-const systemAlerts = computed(() => alerts.value.filter((item: any) => item.category === "system").length);
+const billingAlerts = computed(() => alerts.value.filter((item: any) => item.category === "billing" || item.kind === "billing_attribution_failed").length);
+const resourceAlerts = computed(() => alerts.value.filter((item: any) => item.category === "resource" || item.kind === "resource_cleanup_failed").length);
 
 onMounted(async () => {
   const [alertRows, announcementRows] = await Promise.all([

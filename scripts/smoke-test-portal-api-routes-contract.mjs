@@ -17,6 +17,7 @@ const db = {
     { id: "admin-1", name: "Admin", email: "admin@example.test", role: "admin" },
   ],
   wallets: [{ userId: "user-1", balance: 10 }],
+  ledger: [{ userId: "user-1", type: "topup", amount: 10, createdAt: "2026-05-01T00:00:00.000Z" }],
   announcements: [{ id: "a1", title: "Hello" }],
 };
 
@@ -40,6 +41,11 @@ const route = createPortalApiRoutes({
   buildCommercialProfile: () => ({ accountStatus: "active", billingStatus: "funded", entitlementStatus: "active" }),
   buildSessionTraceDetailPayload: async (_targetDb, _user, sessionId) => sessionId === "trace-1" ? { sessionId } : null,
   buildSessionTracesApiPayload: async () => ({ items: [{ sessionId: "trace-1" }] }),
+  buildUserBillingSummary: (targetDb, { user }) => ({
+    balanceCents: Number((targetDb.wallets.find((item) => item.userId === user.id)?.balance || 0) * 100),
+    risk: { status: "healthy" },
+    exactSettlement: { status: "settled_or_no_pending" },
+  }),
   collectRunsForUser: async () => [{ runId: "run-1", workspaceId: "analysis", status: "completed", createdAt: "2026-05-01T00:00:00.000Z" }],
   currentServerPlanSelection: () => ({ id: "cpu-2c4g" }),
   currentTaskSpaceForUser: () => ({ slug: "analysis" }),
@@ -124,6 +130,12 @@ assert(result.res.payload.runs.some((item) => item.runId === "adapter-run-1"));
 result = await request("/portal/api/costs/run?runId=adapter-run-1");
 assert.equal(result.res.payload.source, "portal_opl_adapter");
 assert.equal(result.res.payload.cost.totalCost, 6);
+
+result = await request("/portal/api/billing/me/summary");
+assert.equal(result.handled, true);
+assert.equal(result.res.payload.balanceCents, 1000);
+assert.ok("risk" in result.res.payload);
+assert.ok("exactSettlement" in result.res.payload);
 
 result = await request("/portal/api/registry/summary", db.users[1]);
 assert.equal(result.res.payload.available, true);

@@ -11,6 +11,7 @@ import {
   withinDateRange,
 } from "./portal-page-payloads.mjs";
 import { createPortalSessionTracePayloads } from "./portal-session-trace-payloads.mjs";
+import { buildUserBillingSummary } from "../domain/wallet-ledger.mjs";
 
 export function createPortalApiRuntimeHandlers({
   activeUserStatus,
@@ -151,6 +152,7 @@ export function createPortalApiRuntimeHandlers({
     readSessionsRequestOptions,
     readTracesRequestOptions,
     sendJson,
+    buildUserBillingSummary,
     visibleAnnouncementRows,
     workspaceChatSessionsForUser,
   });

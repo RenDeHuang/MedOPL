@@ -49,19 +49,19 @@ const isAdmin = computed(() => currentUser.value?.role === "admin");
 
 const userItems = [
   { to: "/overview", label: "总览" },
-  { to: "/workspace", label: "任务空间" },
-  { to: "/trace", label: "会话轨迹" },
-  { to: "/servers", label: "服务器与费用" },
+  { to: "/packages", label: "套餐" },
+  { to: "/workspace", label: "工作空间" },
   { to: "/billing", label: "账单" },
+  { to: "/trace", label: "轨迹" },
 ];
 
 const adminItems = [
-  { to: "/admin/dashboard", label: "运行总台" },
-  { to: "/admin/alerts", label: "公告与告警" },
+  { to: "/admin/dashboard", label: "运行资源" },
+  { to: "/admin/billing-ops", label: "客户账务" },
+  { to: "/admin/usage", label: "账单归因" },
   { to: "/admin/users", label: "用户管理" },
-  { to: "/admin/trace", label: "Agent Traces" },
-  { to: "/admin/billing-ops", label: "计费运维" },
-  { to: "/admin/sandboxes", label: "K8s 运维与分发" },
+  { to: "/admin/system", label: "系统状态" },
+  { to: "/admin/ops", label: "云资源状态" },
 ];
 
 onMounted(async () => {

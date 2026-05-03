@@ -104,3 +104,41 @@ export function findUserResourceOrder(db, user, orderId = "") {
   ensureResourceOrderCollections(db);
   return db.resourceOrders.find((item) => item.id === normalizedOrderId && resourceBelongsToUser(item, user)) || null;
 }
+
+export function resolveOrderNodePoolId(order = {}) {
+  const cloudResourceIds = order?.cloudResourceIds;
+  if (Array.isArray(cloudResourceIds)) {
+    const first = String(cloudResourceIds[0] || "").trim();
+    return first || "";
+  }
+  if (cloudResourceIds && typeof cloudResourceIds === "object") {
+    const byField = String(cloudResourceIds.nodePoolId || cloudResourceIds.node_pool_id || "").trim();
+    if (byField) return byField;
+    const first = Object.values(cloudResourceIds).map((value) => String(value || "").trim()).find(Boolean);
+    return first || "";
+  }
+  return "";
+}
+
+export function resolveOrderNodePoolMutation(order = {}, payload = {}, actionLabel = "操作") {
+  const orderNodePoolId = resolveOrderNodePoolId(order);
+  const requestedNodePoolId = String(payload.nodePoolId || payload.node_pool_id || "").trim();
+  const nodePoolId = orderNodePoolId || requestedNodePoolId;
+  if (!nodePoolId) {
+    return {
+      ok: false,
+      status: 422,
+      error: "resource_order_node_pool_missing",
+      message: `订单缺少节点池标识，无法${actionLabel}。`,
+    };
+  }
+  if (requestedNodePoolId && orderNodePoolId && requestedNodePoolId !== orderNodePoolId) {
+    return {
+      ok: false,
+      status: 409,
+      error: "resource_order_node_pool_mismatch",
+      message: "请求节点池与订单记录不一致，拒绝执行。",
+    };
+  }
+  return { ok: true, nodePoolId };
+}

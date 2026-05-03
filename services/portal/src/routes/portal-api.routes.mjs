@@ -25,6 +25,7 @@ export function createPortalApiRoutes({
   readSessionsRequestOptions,
   readTracesRequestOptions,
   sendJson,
+  buildUserBillingSummary,
   visibleAnnouncementRows,
   workspaceChatSessionsForUser,
 }) {
@@ -261,6 +262,12 @@ export function createPortalApiRoutes({
     return false;
   }
 
+  async function handleBillingSummary({ req, res, url, db, user }) {
+    if (req.method !== "GET" || url.pathname !== "/portal/api/billing/me/summary") return false;
+    sendJson(res, buildUserBillingSummary(db, { user }));
+    return true;
+  }
+
   async function handleRegistry({ req, res, url, user }) {
     if (req.method !== "GET") return false;
     if (url.pathname !== "/portal/api/registry/summary" && url.pathname !== "/portal/api/registry/images") return false;
@@ -374,6 +381,7 @@ export function createPortalApiRoutes({
     if (await handleMe(context)) return true;
     if (await handleSessions(context)) return true;
     if (await handleRuns(context)) return true;
+    if (await handleBillingSummary(context)) return true;
     if (await handleCosts(context)) return true;
     if (await handleRegistry(context)) return true;
     if (await handleTraces(context)) return true;

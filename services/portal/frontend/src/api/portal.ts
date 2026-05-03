@@ -752,6 +752,53 @@ export interface WorkspaceFileTransferPayload {
   };
 }
 
+export interface LabPackagePlan {
+  id: string;
+  name: string;
+  computePower: string;
+  storageCapacityGb: number;
+  dailyDebit: number;
+  weeklyFreeze: number;
+  gracePeriodDays: number;
+  currency: string;
+}
+
+export interface LabPackagesPayload {
+  items: LabPackagePlan[];
+  source?: string;
+}
+
+export interface LabSubscriptionPayload {
+  status: string;
+  currentPackageId: string | null;
+  currentPackageName: string | null;
+  balance: number;
+  frozenAmount: number;
+  currency: string;
+}
+
+export interface LabEntitlementPayload {
+  canEnterLab: boolean;
+  canUpgrade: boolean;
+  canExpandStorage: boolean;
+  message?: string;
+}
+
+export interface LabPackageMutationInput {
+  packageId: string;
+  workspaceId?: string;
+  subscriptionId?: string;
+  idempotencyKey?: string;
+}
+
+export interface LabStorageAddonInput {
+  subscriptionId?: string;
+  workspaceId?: string;
+  storageGb?: number;
+  addStorageGb?: number;
+  idempotencyKey?: string;
+}
+
 export interface CostsSummaryPayload {
   source: string;
   type: string;
@@ -1006,6 +1053,36 @@ export async function fetchTraces(params?: Record<string, string | number | unde
 
 export async function fetchSessionTraces(params?: Record<string, string | number | undefined>) {
   const { data } = await apiClient.get<SessionTracesPayload>("/session-traces", { params });
+  return data;
+}
+
+export async function fetchLabPackages() {
+  const { data } = await apiClient.get<LabPackagesPayload>("/lab-packages");
+  return data;
+}
+
+export async function fetchLabSubscription() {
+  const { data } = await apiClient.get<LabSubscriptionPayload>("/lab-subscription");
+  return data;
+}
+
+export async function fetchLabEntitlement() {
+  const { data } = await apiClient.get<LabEntitlementPayload>("/lab-entitlement");
+  return data;
+}
+
+export async function activateLabPackage(input: LabPackageMutationInput) {
+  const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>("/lab-packages/activate", input);
+  return data;
+}
+
+export async function upgradeLabPackage(input: LabPackageMutationInput) {
+  const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>("/lab-packages/upgrade", input);
+  return data;
+}
+
+export async function purchaseLabStorageAddon(input: LabStorageAddonInput) {
+  const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>("/lab-storage/addons", input);
   return data;
 }
 

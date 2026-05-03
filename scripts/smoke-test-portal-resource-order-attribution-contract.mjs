@@ -147,10 +147,125 @@ assert.deepEqual(payload.cosKeys, [
   "workspaces/tenant-1/analysis/inputs/input.txt",
 ], "provision_payload_must_include_workspace_storage_prefix_and_file_keys");
 
+const deleteProvisionerCalls = [];
+const scaleProvisionerCalls = [];
+const routeWithDeleteGuard = createResourceOrderRoutes({
+  defaultTaskTitle: (slug) => `Task ${slug}`,
+  ensureTaskSpace: async () => db.taskSpaces[0],
+  fetchServerPlans: async () => ({ ok: true, items: [plan] }),
+  logPortalEvent: async () => {},
+  normalizeAuthEmail: (value) => String(value || "").trim().toLowerCase(),
+  portalInternalAuthAllowed: () => true,
+  readJsonBody,
+  resourceProvisionerClient: {
+    startProvision: async () => ({ ok: true }),
+    fetchCloudResources: async () => ({ ok: true }),
+    scaleToZero: async (input) => {
+      scaleProvisionerCalls.push(input);
+      return { ok: true };
+    },
+    deleteNodePool: async (input) => {
+      deleteProvisionerCalls.push(input);
+      return { ok: true };
+    },
+  },
+  sendJson,
+  slugify: (value) => String(value || "").toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/^-|-$/g, "") || "default",
+  writeDb: async () => {},
+});
+
+db.resourceOrders.push({
+  id: "order-delete-a",
+  tenantId: "tenant-1",
+  userId: "tenant-1",
+  workspaceId: "analysis",
+  status: "running",
+  serverPlanId: "cpu-2c4g",
+  cloudResourceIds: ["np-a"],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+db.resourceOrders.push({
+  id: "order-delete-b",
+  tenantId: "tenant-1",
+  userId: "tenant-1",
+  workspaceId: "analysis",
+  status: "running",
+  serverPlanId: "cpu-2c4g",
+  cloudResourceIds: ["np-b"],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+db.resourceOrders.push({
+  id: "order-delete-no-pool",
+  tenantId: "tenant-1",
+  userId: "tenant-1",
+  workspaceId: "analysis",
+  status: "running",
+  serverPlanId: "cpu-2c4g",
+  cloudResourceIds: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+async function requestDelete(body) {
+  const context = createRequest("POST", "/portal/api/resource-orders/delete-node-pool", body);
+  const handled = await routeWithDeleteGuard({ ...context, db, user });
+  return { handled, res: context.res };
+}
+
+const wrongNodePoolDelete = await requestDelete({
+  resourceOrderId: "order-delete-a",
+  nodePoolId: "np-b",
+  confirmDeleteNodePool: true,
+});
+assert.equal(wrongNodePoolDelete.handled, true, "delete_route_must_handle_wrong_nodepool_request");
+assert.equal(wrongNodePoolDelete.res.statusCode, 409, "delete_must_reject_mismatched_nodepool");
+
+const missingNodePoolDelete = await requestDelete({
+  resourceOrderId: "order-delete-no-pool",
+  confirmDeleteNodePool: true,
+});
+assert.equal(missingNodePoolDelete.handled, true, "delete_route_must_handle_missing_nodepool_request");
+assert.equal(missingNodePoolDelete.res.statusCode, 422, "delete_must_reject_when_nodepool_missing_in_payload_and_order");
+assert.equal(deleteProvisionerCalls.length, 0, "delete_negative_cases_must_not_call_provisioner");
+
+async function requestRelease(body) {
+  const context = createRequest("POST", "/portal/api/resource-orders/release", body);
+  const handled = await routeWithDeleteGuard({ ...context, db, user });
+  return { handled, res: context.res };
+}
+
+const wrongNodePoolRelease = await requestRelease({
+  resourceOrderId: "order-delete-a",
+  nodePoolId: "np-b",
+  scaleToZero: true,
+});
+assert.equal(wrongNodePoolRelease.handled, true, "release_route_must_handle_wrong_nodepool_request");
+assert.equal(wrongNodePoolRelease.res.statusCode, 409, "release_must_reject_mismatched_nodepool");
+
+const missingNodePoolRelease = await requestRelease({
+  resourceOrderId: "order-delete-no-pool",
+  scaleToZero: true,
+});
+assert.equal(missingNodePoolRelease.handled, true, "release_route_must_handle_missing_nodepool_request");
+assert.equal(missingNodePoolRelease.res.statusCode, 422, "release_must_reject_when_nodepool_missing_in_payload_and_order");
+assert.equal(scaleProvisionerCalls.length, 0, "release_negative_cases_must_not_call_provisioner");
+
 console.log(JSON.stringify({
   ok: true,
   resourceOrderId: freeze.res.payload.resourceOrderId,
   ledgerIds: payload.ledgerIds,
   cosKeys: payload.cosKeys,
+  deleteGuardChecks: {
+    wrongNodePoolStatus: wrongNodePoolDelete.res.statusCode,
+    missingNodePoolStatus: missingNodePoolDelete.res.statusCode,
+    deleteProvisionerCalls: deleteProvisionerCalls.length,
+    wrongScaleNodePoolStatus: wrongNodePoolRelease.res.statusCode,
+    missingScaleNodePoolStatus: missingNodePoolRelease.res.statusCode,
+    scaleProvisionerCalls: scaleProvisionerCalls.length,
+  },
   writes: writes.length,
 }, null, 2));

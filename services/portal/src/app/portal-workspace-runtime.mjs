@@ -265,6 +265,24 @@ export function createPortalWorkspaceRuntime({
     return resolveWorkspaceStorageEntitlement(db, user, workspaceId);
   }
 
+  function workspaceUploadBlock(entitlement) {
+    if (!entitlement.enabled) {
+      return {
+        title: "存储未开通",
+        html: `<div class="card"><h2>请先开通存储</h2><p class="hint">免费容量为 0。上传输入文件和保存输出文件前，需要在“服务器与费用”开通至少 10GB 对象存储。</p></div>`,
+        status: 402,
+      };
+    }
+    if (entitlement.gates && entitlement.gates.canUpload === false) {
+      return {
+        title: "当前不可上传",
+        html: `<div class="card"><h2>当前不可上传</h2><p class="hint">当前实验室套餐处于只读或存储已满状态，可以先下载已有文件或完成扩容。</p></div>`,
+        status: 409,
+      };
+    }
+    return null;
+  }
+
   async function fetchWorkspaceMinioState(userId, taskSlug) {
     return minioStorageClient.fetchWorkspaceState(userId, taskSlug);
   }
@@ -424,8 +442,9 @@ export function createPortalWorkspaceRuntime({
       return;
     }
     const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
-    if (!entitlement.enabled) {
-      sendHtml(res, layoutV2("存储未开通", `<div class="card"><h2>请先开通存储</h2><p class="hint">免费容量为 0。上传输入文件和保存输出文件前，需要在“服务器与费用”开通至少 10GB 对象存储。</p></div>`, user), 402);
+    const uploadBlock = workspaceUploadBlock(entitlement);
+    if (uploadBlock) {
+      sendHtml(res, layoutV2(uploadBlock.title, uploadBlock.html, user), uploadBlock.status);
       return;
     }
 

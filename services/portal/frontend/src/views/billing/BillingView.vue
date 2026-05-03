@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="账单" subtitle="钱包余额、今日消费、趋势、workspace 成本与账户流水">
+  <AppLayout title="账单" subtitle="钱包余额、运行中预扣、T+1 校准与账户流水">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单数据...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -15,7 +15,7 @@
               </div>
               <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">当前账户的资源成本与流水</h2>
               <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                当前优先展示 CPU、GPU、存储等已接入账单。VPN、流量和其他云成本如果未接云账单，会明确标记为未接入。
+                当前优先展示 CPU、GPU、存储等成本。运行中预扣金额会在 T+1 校准后更新为最终金额。
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -26,7 +26,7 @@
 
           <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="钱包余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
-            <MetricCard label="今日消费" :value="microMoney(payload.todayCost)" hint="今日真实资源消费" />
+            <MetricCard label="今日 T+1 校准" :value="microMoney(payload.todayCost)" hint="今日 T+1 校准后资源消费" />
             <MetricCard label="窗口总计" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口总成本" />
             <MetricCard label="账户流水" :value="payload.ledgerPagination.total" hint="当前窗口内流水数" />
           </div>
@@ -86,8 +86,8 @@
         <section class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 class="panel-title">任务空间成本明细</h2>
-              <p class="panel-subtitle">按 workspace 查看 CPU、GPU、存储和总成本。</p>
+              <h2 class="panel-title">工作空间成本明细</h2>
+              <p class="panel-subtitle">按工作空间查看 CPU、GPU、存储和总成本。</p>
             </div>
             <span class="badge badge-warning">{{ payload.taskPagination.total }} 项</span>
           </div>
@@ -96,8 +96,8 @@
             <table class="text-sm">
               <thead>
                 <tr class="table-head">
-                  <th class="px-4 py-3">任务空间</th>
-                  <th class="px-4 py-3">run</th>
+                  <th class="px-4 py-3">工作空间</th>
+                  <th class="px-4 py-3">任务编号数</th>
                   <th class="px-4 py-3">CPU</th>
                   <th class="px-4 py-3">GPU</th>
                   <th class="px-4 py-3">存储</th>
@@ -137,7 +137,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">运行明细</h2>
-                <p class="panel-subtitle">单次运行的状态、计价来源与总成本。</p>
+                <p class="panel-subtitle">单次任务的状态、计价来源与总成本。</p>
               </div>
               <span class="badge badge-primary">{{ payload.runPagination.total }} 条</span>
             </div>
@@ -146,8 +146,8 @@
               <table class="text-sm">
                 <thead>
                   <tr class="table-head">
-                    <th class="px-4 py-3">运行编号</th>
-                    <th class="px-4 py-3">任务空间</th>
+                    <th class="px-4 py-3">任务编号</th>
+                    <th class="px-4 py-3">工作空间</th>
                     <th class="px-4 py-3">状态</th>
                     <th class="px-4 py-3">计价来源</th>
                     <th class="px-4 py-3">总成本</th>

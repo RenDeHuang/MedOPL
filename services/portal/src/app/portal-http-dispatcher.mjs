@@ -7,6 +7,7 @@ export function createPortalHttpDispatcher({
   frontendDistRoot,
   guessContentType,
   handleAuthRoutes,
+  handleLabPackageRoutes,
   handleOplRoutes,
   handlePortalAdminApiRoutes,
   handlePortalAdminOpsRoutes,
@@ -58,6 +59,7 @@ export function createPortalHttpDispatcher({
       return;
     }
     if (await handleOplRoutes({ req, res, url, db, user })) return;
+    if (await handleLabPackageRoutes({ req, res, url, db, user })) return;
     if (await handleWorkspaceStorageRoutes({ req, res, url, db, user })) return;
     if (req.method === "GET" && (url.pathname === "/portal/app" || url.pathname === "/portal/app/" || url.pathname.startsWith("/portal/app/"))) {
       await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");

@@ -77,4 +77,25 @@ await assert.rejects(
   /delete_node_pool_confirmation_required/,
 );
 
+await assert.rejects(
+  () => deleteNodePool({
+    confirmation: "delete-node-pool",
+    nodePoolId: "np-test",
+  }),
+  /delete_node_pool_binding_fields_required/,
+);
+
+await assert.rejects(
+  () => deleteNodePool({
+    confirmation: "delete-node-pool",
+    tenantId: "tenant-a",
+    workspaceId: "workspace-a",
+    serverPlanId: "cpu-2c4g",
+    resourceOrderId: "order-a",
+    runId: "run-a",
+    nodePoolId: "np-test",
+  }),
+  /delete_node_pool_mapping_not_found/,
+);
+
 console.log("resource provisioner v12 contract smoke passed");

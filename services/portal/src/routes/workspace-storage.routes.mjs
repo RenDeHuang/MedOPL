@@ -44,6 +44,12 @@ export function createWorkspaceStorageRoutes({
     return findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
   }
 
+  function storageUploadError(entitlement) {
+    if (!entitlement.enabled) return "storage_entitlement_required";
+    if (entitlement.gates && entitlement.gates.canUpload === false) return "workspace_storage_upload_not_allowed";
+    return "";
+  }
+
   const {
     persistWorkspaceUpload,
     readMultipartFiles,
@@ -146,8 +152,9 @@ export function createWorkspaceStorageRoutes({
     }
 
     const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
-    if (!entitlement.enabled) {
-      sendJson(res, { error: "storage_entitlement_required", entitlement }, 402);
+    const uploadError = storageUploadError(entitlement);
+    if (uploadError) {
+      sendJson(res, { error: uploadError, entitlement }, uploadError === "storage_entitlement_required" ? 402 : 409);
       return true;
     }
 
@@ -232,8 +239,9 @@ export function createWorkspaceStorageRoutes({
     }
     const taskSpace = findTaskSpace(db, user.id, tokenPayload.workspaceId) || await ensureTaskSpace(db, user, tokenPayload.workspaceId, defaultTaskTitle(tokenPayload.workspaceId));
     const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);
-    if (!entitlement.enabled) {
-      sendJson(res, { error: "storage_entitlement_required", entitlement }, 402);
+    const uploadError = storageUploadError(entitlement);
+    if (uploadError) {
+      sendJson(res, { error: uploadError, entitlement }, uploadError === "storage_entitlement_required" ? 402 : 409);
       return true;
     }
     const contentType = String(req.headers["content-type"] || "");

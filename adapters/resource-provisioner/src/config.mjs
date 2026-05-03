@@ -9,9 +9,17 @@ export const PORT = Number(process.env.RESOURCE_PROVISIONER_PORT || process.env.
 export const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
 export const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
 
+function firstConfiguredEnv(names) {
+  for (const name of names) {
+    const value = String(process.env[name] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
 export const PROVISIONING_ENABLED = String(process.env.RESOURCE_PROVISIONING_ENABLED || "0") === "1";
-export const TENCENT_CLOUD_SECRET_ID = String(process.env.TENCENT_CLOUD_SECRET_ID || process.env.TENCENTCLOUD_SECRET_ID || "").trim();
-export const TENCENT_CLOUD_SECRET_KEY = String(process.env.TENCENT_CLOUD_SECRET_KEY || process.env.TENCENTCLOUD_SECRET_KEY || "").trim();
+export const TENCENT_CLOUD_SECRET_ID = firstConfiguredEnv(["TENCENT_TKE_SECRET_ID", "TENCENT_BILLING_SECRET_ID", "TENCENT_CLOUD_SECRET_ID", "TENCENTCLOUD_SECRET_ID"]);
+export const TENCENT_CLOUD_SECRET_KEY = firstConfiguredEnv(["TENCENT_TKE_SECRET_KEY", "TENCENT_BILLING_SECRET_KEY", "TENCENT_CLOUD_SECRET_KEY", "TENCENTCLOUD_SECRET_KEY"]);
 export const TENCENT_CLOUD_TOKEN = String(process.env.TENCENT_CLOUD_TOKEN || "").trim();
 export const TENCENT_CLOUD_REGION = String(process.env.TENCENT_CLOUD_REGION || "na-siliconvalley").trim();
 export const TENCENT_TKE_ENDPOINT = String(process.env.TENCENT_TKE_ENDPOINT || "tke.intl.tencentcloudapi.com").trim();

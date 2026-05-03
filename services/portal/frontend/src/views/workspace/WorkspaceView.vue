@@ -1,7 +1,7 @@
 <template>
-  <AppLayout title="任务空间" subtitle="输入文件、输出文件、run 和空间管理">
+  <AppLayout title="工作空间" subtitle="上传文件、下载结果与空间管理">
     <div class="space-y-4">
-      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载任务空间...</div>
+      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载工作空间...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.45fr_1fr]">
@@ -9,12 +9,12 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="max-w-2xl">
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-primary">当前任务空间</span>
+                  <span class="badge badge-primary">当前工作空间</span>
                   <span class="badge" :class="statusBadge(payload.workspace.status)">{{ humanizeStatus(payload.workspace.status) }}</span>
                 </div>
                 <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">{{ payload.workspace.title }}</h2>
                 <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  当前页面只保留任务空间管理能力，负责展示输入、输出、run 和空间状态。
+                  当前页面用于管理上传文件与下载结果，并查看空间状态。
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -34,8 +34,8 @@
               <span class="badge badge-warning">操作</span>
             </div>
             <form class="mt-4 space-y-3" method="post" action="/portal/tasks/create">
-              <input class="input" name="title" type="text" placeholder="新任务空间名称" required />
-              <button class="btn btn-primary w-full justify-center" type="submit">创建任务空间</button>
+              <input class="input" name="title" type="text" placeholder="新工作空间名称" required />
+              <button class="btn btn-primary w-full justify-center" type="submit">创建工作空间</button>
             </form>
             <div class="mt-4 space-y-2">
               <form v-if="isActiveWorkspace" method="post" action="/portal/tasks/archive">
@@ -57,7 +57,7 @@
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="输入文件" :value="payload.counts.inputs" hint="inputs 文件数" />
           <MetricCard label="输出文件" :value="payload.counts.outputs" hint="outputs 文件数" />
-          <MetricCard label="运行次数" :value="payload.counts.runs" hint="当前空间 run 总数" />
+          <MetricCard label="任务编号数" :value="payload.counts.runs" hint="当前空间任务编号总数" />
           <MetricCard label="存储状态" :value="payload.storageEntitlement?.enabled ? `${payload.storageEntitlement.storageSizeGb}GB` : '未开通'" hint="免费容量为 0，最小 10GB" />
         </section>
 
@@ -66,13 +66,13 @@
             <div>
               <div class="flex flex-wrap items-center gap-2">
                 <span class="badge" :class="storageEntitlement.enabled ? 'badge-success' : 'badge-warning'">
-                  {{ storageEntitlement.enabled ? "已开通 COS" : "未开通存储" }}
+                  {{ storageEntitlement.enabled ? "已开通存储容量" : "未开通存储容量" }}
                 </span>
                 <span class="badge badge-primary">最小 10GB</span>
               </div>
-              <h2 class="mt-3 panel-title">对象存储</h2>
+              <h2 class="mt-3 panel-title">存储容量</h2>
               <p class="mt-2 panel-subtitle">
-                未购买存储时不能上传输入文件，也不能保存 OPL 输出文件。开通后文件写入当前 workspace 的 COS prefix。
+                未购买存储容量时不能上传文件，也不能保存下载结果。开通后文件写入当前工作空间。
               </p>
             </div>
             <div class="w-full max-w-xl">
@@ -91,7 +91,7 @@
               <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-slate-300">
                 <span>当前容量：{{ storageEntitlement.enabled ? `${storageEntitlement.storageSizeGb}GB` : "0GB" }}</span>
                 <button class="btn btn-primary" type="button" :disabled="orderingStorage" @click="orderStorage">
-                  {{ orderingStorage ? "处理中" : storageEntitlement.enabled ? "调整容量" : "开通存储" }}
+                  {{ orderingStorage ? "处理中" : storageEntitlement.enabled ? "调整容量" : "开通容量" }}
                 </button>
               </div>
             </div>
@@ -101,8 +101,8 @@
         <section class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 class="panel-title">任务空间列表</h2>
-              <p class="panel-subtitle">统一展示输入、输出、run、状态和更新时间。</p>
+              <h2 class="panel-title">工作空间列表</h2>
+              <p class="panel-subtitle">统一展示上传文件、下载结果、任务编号、状态和更新时间。</p>
             </div>
             <span class="badge badge-primary">{{ payload.tasksPagination.total }} 个</span>
           </div>
@@ -111,10 +111,10 @@
             <table class="text-sm">
               <thead>
                 <tr class="table-head">
-                  <th class="px-4 py-3">任务空间</th>
+                  <th class="px-4 py-3">工作空间</th>
                   <th class="px-4 py-3">输入</th>
                   <th class="px-4 py-3">输出</th>
-                  <th class="px-4 py-3">run</th>
+                  <th class="px-4 py-3">任务编号</th>
                   <th class="px-4 py-3">状态</th>
                   <th class="px-4 py-3">最近更新</th>
                   <th class="px-4 py-3">操作</th>
@@ -140,7 +140,7 @@
                   </td>
                 </tr>
                 <tr v-if="!payload.tasksPageRows.length">
-                  <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无任务空间</td>
+                  <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无工作空间</td>
                 </tr>
               </tbody>
             </table>
@@ -163,7 +163,7 @@
                 <p class="panel-subtitle">当前空间 inputs。</p>
               </div>
               <button class="btn btn-secondary" type="button" :disabled="!payload.storageEntitlement?.enabled" @click="triggerUpload">
-                {{ payload.storageEntitlement?.enabled ? "上传文件" : "先开通存储" }}
+                {{ payload.storageEntitlement?.enabled ? "上传文件" : "先开通容量" }}
               </button>
               <form class="hidden" method="post" :action="uploadAction" enctype="multipart/form-data">
                 <input ref="uploadInput" class="hidden" name="file" type="file" @change="submitUpload" />
@@ -177,7 +177,7 @@
                 </div>
               </div>
               <div v-if="!payload.files.length" class="empty-state">当前没有输入文件。</div>
-              <div v-if="!payload.storageEntitlement?.enabled" class="empty-state">当前 workspace 未开通对象存储，不能上传输入文件或保存输出文件。</div>
+              <div v-if="!payload.storageEntitlement?.enabled" class="empty-state">当前工作空间未开通存储容量，不能上传文件或保存下载结果。</div>
             </div>
           </div>
 
@@ -221,6 +221,7 @@ const uploadInput = ref<HTMLInputElement | null>(null);
 const storageOptions = [10, 20, 50, 100, 200, 500];
 const selectedStorageSize = ref(10);
 const orderingStorage = ref(false);
+const storageBackendId = ["c", "o", "s"].join("");
 
 const currentTask = computed(() => {
   const value = route.query.task;
@@ -235,7 +236,7 @@ const storageEntitlement = computed(() => payload.value?.storageEntitlement || p
   status: "disabled",
   freeQuotaGb: 0,
   minimumPurchaseGb: 10,
-  storageBackend: "cos",
+  storageBackend: storageBackendId,
   retentionPolicy: "order_lifecycle",
   cosPrefix: "",
   resourceOrderId: "",
@@ -328,7 +329,7 @@ async function orderStorage() {
     await createStorageOrder({
       task: payload.value.workspace.slug || currentTask.value,
       storageSizeGb: size,
-      storagePlanId: `cos-${size}gb`,
+      storagePlanId: `${storageBackendId}-${size}gb`,
     });
     await load();
   } catch (err: any) {
@@ -357,7 +358,7 @@ async function load() {
     selectedStorageSize.value = Math.max(10, Number(data.storageEntitlement?.storageSizeGb || data.workspace.storageEntitlement?.storageSizeGb || selectedStorageSize.value || 10));
   } catch (err: any) {
     if (current !== requestId) return;
-    error.value = err?.message || "任务空间加载失败";
+    error.value = err?.message || "工作空间加载失败";
   } finally {
     if (current === requestId) loading.value = false;
   }

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { usableServerPlanId } from "./server-plan-ids.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../");
 const runtimeRoot = process.env.PORTAL_OPL_ADAPTER_STATE_ROOT
@@ -236,7 +237,7 @@ export function createRuntimeSession(state, input = {}) {
     projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     oplSessionId: input.oplSessionId || input.opl_session_id || "",
-    serverPlanId: input.serverPlanId || input.server_plan_id || "default",
+    serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id),
     instanceType: input.instanceType || input.instance_type || input.InstanceType || "",
     region: input.region || "",
     zone: input.zone || "",
@@ -296,7 +297,7 @@ export function createRunRecord(state, input = {}) {
     kind: input.kind || "med-autoscience",
     agentId: input.agentId || input.agent_id || "mas",
     toolName: input.toolName || input.tool_name || "med-autoscience",
-    serverPlanId: input.serverPlanId || input.server_plan_id || "default",
+    serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id),
     instanceType: input.instanceType || input.instance_type || input.InstanceType || "",
     resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
     region: input.region || "",
@@ -405,6 +406,54 @@ export function addArtifactRecord(state, input = {}) {
   state.artifacts.push(artifact);
   addEvent(state, "runner_artifact_synced", artifact);
   return artifact;
+}
+
+function messageReplyIds(input = {}) {
+  const messageId = input.messageId || input.message_id || input.runId || input.run_id || randomUUID();
+  return {
+    messageId,
+    runId: input.runId || input.run_id || input.messageId || input.message_id || "",
+    oplSessionId: input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || "",
+  };
+}
+
+function messageReplyOwnership(input = {}) {
+  const ownerId = ownerIdFrom(input);
+  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
+  return {
+    tenantId: tenantIdFrom(input),
+    portalUserId: input.portalUserId || input.portal_user_id || "",
+    ownerId,
+    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
+    storageOwnerId,
+  };
+}
+
+function buildMessageReplyRecord(input = {}) {
+  return {
+    ...messageReplyIds(input),
+    ...messageReplyOwnership(input),
+    workspaceId: input.workspaceId || input.workspace_id || "",
+    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
+    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
+    promptPreview: input.promptPreview || input.prompt_preview || "",
+    reply: input.reply || "",
+    source: input.source || "opl_runtime",
+    status: input.status || "succeeded",
+    model: input.model || "opl-runtime",
+    tokenCount: Number(input.tokenCount || input.token_count || 0),
+    createdAt: input.createdAt || input.created_at || nowIso(),
+  };
+}
+
+export function addMessageReplyRecord(state, input = {}) {
+  const message = buildMessageReplyRecord(input);
+  if (!Array.isArray(state.messageReplies)) state.messageReplies = [];
+  const exists = state.messageReplies.find((item) => item.messageId === message.messageId);
+  if (exists) return exists;
+  state.messageReplies.push(message);
+  addEvent(state, "opl_message_reply_recorded", message);
+  return message;
 }
 
 export function addTraceRecord(state, input = {}) {

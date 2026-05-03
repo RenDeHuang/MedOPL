@@ -22,6 +22,14 @@ import {
   writeOrders,
 } from "./store.mjs";
 import { callTag, callTke } from "./tencent-cloud.mjs";
+import {
+  assertDeleteBindingMatch,
+  assertDeleteBindingRequired,
+  findOrderByBinding,
+  hasBindingScope,
+  matchesBinding,
+  nodePoolBindingFromInput,
+} from "./bindings.mjs";
 
 function parseObjectString(value, fieldName) {
   if (!value) return null;
@@ -371,12 +379,29 @@ export async function scaleNodePool(input = {}) {
     throw error;
   }
   const payload = buildScaleNodePoolPayload(input, 0);
-  const response = await callTke("ModifyNodePoolDesiredCapacityAboutAsg", payload, TENCENT_CLOUD_REGION);
   const state = await readOrders();
-  const order = state.orders.find((item) =>
-    (input.resourceOrderId && item.resourceOrderId === input.resourceOrderId) ||
-    (payload.NodePoolId && item.nodePoolId === payload.NodePoolId)
-  );
+  const scaleBinding = nodePoolBindingFromInput(input, payload.NodePoolId);
+  if (hasBindingScope(scaleBinding)) {
+    const mapping = findProvisionResourceMapping(state, {
+      resourceOrderId: scaleBinding.resourceOrderId,
+      nodePoolId: scaleBinding.nodePoolId,
+      runId: scaleBinding.runId,
+    });
+    if (!mapping || !matchesBinding(mapping, scaleBinding)) {
+      const error = new Error("scale_node_pool_binding_mismatch");
+      error.status = 409;
+      throw error;
+    }
+  }
+  const response = await callTke("ModifyNodePoolDesiredCapacityAboutAsg", payload, TENCENT_CLOUD_REGION);
+  const order = findOrderByBinding(state.orders, {
+    resourceOrderId: scaleBinding.resourceOrderId,
+    nodePoolId: scaleBinding.nodePoolId,
+    runId: scaleBinding.runId,
+    tenantId: scaleBinding.tenantId,
+    workspaceId: scaleBinding.workspaceId,
+    serverPlanId: scaleBinding.serverPlanId,
+  });
   if (order) {
     order.status = payload.DesiredCapacity === 0 ? "scaled_to_zero" : `scaled_to_${payload.DesiredCapacity}`;
     order.updatedAt = new Date().toISOString();
@@ -411,6 +436,24 @@ export async function deleteNodePool(input = {}) {
     error.status = 422;
     throw error;
   }
+  const deleteBinding = nodePoolBindingFromInput(input, nodePoolId);
+  assertDeleteBindingRequired(deleteBinding);
+  const state = await readOrders();
+  const mapping = findProvisionResourceMapping(state, {
+    resourceOrderId: deleteBinding.resourceOrderId,
+    nodePoolId: deleteBinding.nodePoolId,
+    runId: deleteBinding.runId,
+  });
+  const order = findOrderByBinding(state.orders, {
+    resourceOrderId: deleteBinding.resourceOrderId,
+    nodePoolId: deleteBinding.nodePoolId,
+    runId: deleteBinding.runId,
+    tenantId: deleteBinding.tenantId,
+    workspaceId: deleteBinding.workspaceId,
+    serverPlanId: deleteBinding.serverPlanId,
+  });
+  assertDeleteBindingMatch(mapping, order, deleteBinding);
+
   const destroyCvmInstances = input.destroyCvmInstances === true || input.destroy_cvm_instances === true;
   const payload = {
     ClusterId: firstString(input.clusterId, input.tkeClusterId, TENCENT_TKE_CLUSTER_ID),
@@ -418,27 +461,18 @@ export async function deleteNodePool(input = {}) {
     KeepInstance: !destroyCvmInstances,
   };
   const response = await callTke("DeleteClusterNodePool", payload, TENCENT_CLOUD_REGION);
-  const state = await readOrders();
-  const order = state.orders.find((item) =>
-    (input.resourceOrderId && item.resourceOrderId === input.resourceOrderId) ||
-    (nodePoolId && item.nodePoolId === nodePoolId)
-  );
   const billingStoppedAt = new Date().toISOString();
-  let mapping = findProvisionResourceMapping(state, {
-    resourceOrderId: firstString(input.resourceOrderId, input.resource_order_id),
-    nodePoolId,
-    runId: firstString(input.runId, input.run_id),
-  });
-  if (mapping) {
-    const index = state.resourceMappings.findIndex((item) => item.id === mapping.id);
-    mapping = markProvisionResourceCleanup(mapping, {
+  let updatedMapping = mapping;
+  if (updatedMapping) {
+    const index = state.resourceMappings.findIndex((item) => item.id === updatedMapping.id);
+    updatedMapping = markProvisionResourceCleanup(updatedMapping, {
       status: "delete_requested",
       requestId: response.RequestId || "",
       cleanupEvidenceId: firstString(input.cleanupEvidenceId, input.cleanup_evidence_id),
       billingStoppedAt,
       remaining: input.cleanupRemaining || input.cleanup_remaining || {},
     });
-    if (index >= 0) state.resourceMappings[index] = mapping;
+    if (index >= 0) state.resourceMappings[index] = updatedMapping;
   }
   if (order) {
     order.status = "deleted";
@@ -447,9 +481,9 @@ export async function deleteNodePool(input = {}) {
     order.billingStoppedAt = billingStoppedAt;
     order.cleanupStatus = "delete_requested";
     order.cleanupEvidenceId = firstString(input.cleanupEvidenceId, input.cleanup_evidence_id);
-    if (mapping) order.resourceMappingId = mapping.id;
+    if (updatedMapping) order.resourceMappingId = updatedMapping.id;
     await writeOrders(state);
-  } else if (mapping) {
+  } else if (updatedMapping) {
     await writeOrders(state);
   }
   return {
@@ -457,9 +491,9 @@ export async function deleteNodePool(input = {}) {
     action: "DeleteClusterNodePool",
     requestId: response.RequestId || "",
     nodePoolId,
-    resourceMappingId: mapping?.id || "",
+    resourceMappingId: updatedMapping?.id || "",
     billingStoppedAt,
-    cleanupStatus: mapping?.cleanupStatus || "delete_requested",
+    cleanupStatus: updatedMapping?.cleanupStatus || "delete_requested",
     destroyCvmInstances,
     warning: destroyCvmInstances
       ? "CVM instances are released with the node pool."

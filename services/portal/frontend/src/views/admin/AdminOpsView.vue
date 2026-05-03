@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="运维监控" subtitle="服务状态、并发、性能与异常事件">
+  <AppLayout title="云资源状态" subtitle="服务器编号、任务编号、释放证据与停止计费状态">
     <div class="space-y-6">
       <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载运维数据...</div>
       <template v-else>
@@ -7,7 +7,7 @@
           <MetricCard label="并发运行" :value="payload.systemMetrics?.concurrentRuns ?? 0" hint="当前未结束 runs" />
           <MetricCard label="活跃沙箱" :value="payload.systemMetrics?.activeSandboxes ?? 0" hint="当前运行中或活跃沙箱" />
           <MetricCard label="活跃 Session" :value="payload.systemMetrics?.activeWorkspaceSessions ?? 0" hint="当前 workspace session" />
-          <MetricCard label="告警事件" :value="payload.alerts?.length ?? 0" hint="当前活跃告警数量" />
+          <MetricCard label="停止计费" :value="stoppedBillingCount" hint="已释放服务器" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -20,8 +20,8 @@
           <div class="card p-6">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <h2 class="panel-title">服务状态</h2>
-                <p class="panel-subtitle">展示当前探测结果、来源边界与响应时间。</p>
+                <h2 class="panel-title">云资源状态</h2>
+                <p class="panel-subtitle">展示服务器编号、任务编号、释放证据和停止计费结果。</p>
               </div>
               <RouterLink class="btn btn-secondary" to="/admin/system">系统入口</RouterLink>
             </div>
@@ -30,10 +30,10 @@
               <table class="text-sm">
                 <thead>
                   <tr class="table-head">
-                    <th class="px-4 py-3">服务</th>
+                    <th class="px-4 py-3">资源</th>
                     <th class="px-4 py-3">状态</th>
-                    <th class="px-4 py-3">探测结果</th>
-                    <th class="px-4 py-3">响应时间</th>
+                    <th class="px-4 py-3">释放证据</th>
+                    <th class="px-4 py-3">停止计费</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -42,8 +42,9 @@
                     <td class="px-4 py-3">
                       <span class="badge" :class="item.ok ? 'badge-success' : 'badge-danger'">{{ item.ok ? "可用" : "异常" }}</span>
                     </td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.status || "-" }}</td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ responseLabel(item.responseMs) }}</td>
+                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.status || "服务器编号 / 任务编号" }}</td>
+                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.cleanupEvidence || "等待释放证据" }}</td>
+                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.billingStopped ? "已停止计费" : "运行中" }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -90,6 +91,8 @@ const masReplyLabel = computed(() => {
   const value = Number(payload.value?.summaries?.performance?.masFirstReplyApproxMs || 0);
   return value ? `${value} ms` : "-";
 });
+
+const stoppedBillingCount = computed(() => (payload.value?.serviceStatuses || []).filter((item: any) => item.billingStopped).length);
 
 function responseLabel(value: number | null | undefined) {
   if (value == null || Number.isNaN(Number(value))) return "-";

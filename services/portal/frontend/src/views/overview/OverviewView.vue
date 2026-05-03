@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="MedOPL" subtitle="实验室控制台">
+  <AppLayout title="MedOPL" subtitle="普通用户总览">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载总览...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -18,12 +18,12 @@
                     {{ payload.serverPlansSummary.quotedCount > 0 ? "腾讯云报价已同步" : "等待腾讯云报价" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">实验室运营总览</h2>
-                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">账户、服务器、订单、运行成本集中管理。</p>
+                <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">账户与任务总览</h2>
+                <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">查看套餐存储容量、工作空间任务和账单状态。</p>
               </div>
               <div class="flex flex-wrap gap-2">
                 <a class="btn btn-primary" :href="workbenchHref">进入工作台</a>
-                <RouterLink class="btn btn-secondary" to="/servers">服务器与费用</RouterLink>
+                <RouterLink class="btn btn-secondary" to="/packages">套餐与扩容</RouterLink>
                 <RouterLink class="btn btn-secondary" to="/billing">账单</RouterLink>
               </div>
             </div>
@@ -62,16 +62,16 @@
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="钱包余额" :value="money(payload.kpis.balance)" hint="账户余额" />
-          <MetricCard label="冻结金额" :value="money(frozenAmount)" hint="运行前冻结" />
+          <MetricCard label="运行中预扣" :value="money(frozenAmount)" hint="运行中预扣金额" />
           <MetricCard label="可用额度" :value="money(availableBalance)" hint="余额 - 冻结 + 试用" />
           <MetricCard label="活跃订单" :value="activeOrderCount" hint="进行中的资源订单" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="今日 Pending" :value="money(pendingToday)" hint="运行中成本" />
-          <MetricCard label="今日 Exact" :value="money(exactToday)" hint="真实账单" />
-          <MetricCard label="本月 Pending" :value="money(pendingMonth)" hint="本月累计" />
-          <MetricCard label="本月 Exact" :value="money(exactMonth)" hint="已结算成本" />
+          <MetricCard label="今日运行中预扣" :value="money(pendingToday)" hint="今日运行中预扣" />
+          <MetricCard label="今日 T+1 校准" :value="money(exactToday)" hint="今日 T+1 校准后金额" />
+          <MetricCard label="本月运行中预扣" :value="money(pendingMonth)" hint="本月累计运行中预扣" />
+          <MetricCard label="本月 T+1 校准" :value="money(exactMonth)" hint="本月累计 T+1 校准后金额" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
@@ -81,7 +81,7 @@
                 <h2 class="panel-title">最近订单</h2>
                 <p class="panel-subtitle">报价、冻结、运行、结算状态</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/servers">继续下单</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/packages">去扩容</RouterLink>
             </div>
             <div class="space-y-2.5">
               <div
@@ -93,7 +93,7 @@
                   <div>
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceTitle || item.workspaceId || item.id }}</div>
                     <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      {{ item.serverPlanName || item.serverPlanId || "未命名规格" }} · {{ item.region || "-" }}
+                      服务器编号 {{ item.serverPlanId || "-" }} · {{ item.serverPlanName || "未命名规格" }} · {{ item.region || "-" }}
                     </div>
                   </div>
                   <span class="badge" :class="orderStatusBadge(item.status)">{{ orderStatusText(item.status) }}</span>
@@ -111,7 +111,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">最近运行</h2>
-                <p class="panel-subtitle">最近 5 条运行记录</p>
+                <p class="panel-subtitle">最近 5 条任务编号记录</p>
               </div>
               <span class="badge badge-primary">{{ payload.latestRunsPagination.total }} 条</span>
             </div>
@@ -125,7 +125,7 @@
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceTitle || item.workspaceId || "-" }}</div>
-                    <div class="mt-1 font-mono text-xs text-gray-500 dark:text-slate-400">{{ item.runId || "-" }}</div>
+                    <div class="mt-1 font-mono text-xs text-gray-500 dark:text-slate-400">任务编号 {{ item.runId || "-" }}</div>
                   </div>
                   <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
                 </div>
@@ -148,14 +148,14 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">服务器价格</h2>
-                <p class="panel-subtitle">客户可见的规格和腾讯云报价状态</p>
+                <h2 class="panel-title">套餐容量</h2>
+                <p class="panel-subtitle">查看可用规格、套餐存储容量与扩容入口</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/servers">查看全部</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/packages">查看套餐</RouterLink>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">可售规格</div>
+                <div class="text-xs text-gray-500 dark:text-slate-400">可选规格</div>
                 <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.salableCount }}</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
@@ -176,10 +176,10 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">任务空间</h2>
-                <p class="panel-subtitle">session、trace、文件存储都归属任务空间</p>
+                <h2 class="panel-title">工作空间</h2>
+                <p class="panel-subtitle">上传文件、下载结果与任务编号都归属工作空间</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/workspace">查看空间</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/workspace">查看工作空间</RouterLink>
             </div>
             <div class="space-y-2.5">
               <div

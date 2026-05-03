@@ -4,6 +4,7 @@ import {
   getAcpBootstrap,
   hasOplAcpRuntime,
   initializeAcpRuntime,
+  promptAcpRuntime,
 } from "./opl-acp-runtime-client.mjs";
 
 const PRODUCT_API_URL = String(process.env.OPL_PRODUCT_API_URL || "").replace(/\/$/, "");
@@ -306,6 +307,80 @@ export async function createSession(portalContext) {
       message: "真实 OPL 的 /api/opl/sessions 是 domain ask/session 创建入口；Portal launch 阶段不伪造 goal，因此延后到实际 run/ask 时创建。",
     };
   }
+}
+
+function readPromptText(input = {}) {
+  const prompt = input.prompt || input.message || input.text || input.content || input.input?.message || "";
+  const normalized = String(prompt || "").trim();
+  if (!normalized) {
+    throw new Error("opl_message_prompt_required");
+  }
+  return normalized;
+}
+
+function inputSessionId(input = {}) {
+  return input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || input.runtimeSessionId || input.runtime_session_id || "";
+}
+
+function inputMessageId(input = {}) {
+  return input.messageId || input.message_id || "";
+}
+
+async function sendMessageViaAcp(input, prompt) {
+  const result = await promptAcpRuntime({
+    sessionId: inputSessionId(input),
+    prompt,
+    cwd: input.workspacePath || input.workspace_path || "",
+    runtimeEnv: input.runtimeEnv || input.runtime_env || {},
+  });
+  return {
+    messageId: inputMessageId(input),
+    sessionId: result.session_id || "",
+    runtimeSessionId: result.runtime_session_id || "",
+    reply: result.response,
+    source: "opl_acp_runtime",
+    stopReason: result.stop_reason || "end_turn",
+  };
+}
+
+function normalizeProductMessage(record = {}, payload = {}) {
+  const reply = String(record.reply || record.response || record.text || record.content || "").trim();
+  if (!reply) {
+    throw new Error("opl_message_empty_reply");
+  }
+  return {
+    ...record,
+    messageId: record.messageId || record.message_id || payload.messageId || payload.message_id || "",
+    sessionId: record.sessionId || record.session_id || payload.oplSessionId || payload.opl_session_id || "",
+    runtimeSessionId: record.runtimeSessionId || record.runtime_session_id || payload.runtimeSessionId || payload.runtime_session_id || "",
+    reply,
+    source: record.source || "opl_product_api",
+    stopReason: record.stopReason || record.stop_reason || "end_turn",
+  };
+}
+
+async function sendMessageViaProductApi(input, prompt) {
+  const payload = {
+    ...input,
+    message: prompt,
+  };
+  const result = await requestFirstAvailable([
+    "/api/opl/messages",
+    "/api/opl/sessions/messages",
+    "/api/opl/chat/messages",
+  ], {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  const record = firstFrom(result, "message", ["message", "reply", "response"]);
+  return normalizeProductMessage(record, payload);
+}
+
+export async function sendMessage(input = {}) {
+  const prompt = readPromptText(input);
+  return useAcpRuntime()
+    ? sendMessageViaAcp(input, prompt)
+    : sendMessageViaProductApi(input, prompt);
 }
 
 export async function listSessions(context = {}) {

@@ -11,6 +11,10 @@ export const frontendDistRoot = path.join(portalWorkdir, "frontend", "dist");
 export const runtimeRoot = path.join(repoRoot, ".runtime", "portal");
 export const dataFile = path.join(runtimeRoot, "portal-db.json");
 export const eventsFile = path.join(runtimeRoot, "events.jsonl");
+export const PORTAL_OPL_PROVIDER_SECRET_ROOT = String(
+  process.env.PORTAL_OPL_PROVIDER_SECRET_ROOT ||
+  path.join(repoRoot, ".runtime", "portal-opl-adapter", "provider-secrets"),
+).trim();
 export const medWorkspaceRoot = path.join(repoRoot, ".runtime", "med-autoscience", "workspaces");
 export const medRunsRoot = path.join(repoRoot, ".runtime", "med-autoscience", "runs");
 export const codexRuntimeRoot = path.join(repoRoot, ".runtime", "codex-runtime-gateway");

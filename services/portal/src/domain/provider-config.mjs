@@ -49,6 +49,11 @@ export function createGflabProviderConfig({ userId = "", workspaceId = "", apiKe
       workspaceId,
       secretFingerprint: providerKeyFingerprint(normalizedKey),
     },
+    providerSecret: {
+      provider: "gflabtoken",
+      source: "user_input",
+      apiKey: normalizedKey,
+    },
   };
 }
 

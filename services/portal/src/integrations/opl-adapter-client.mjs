@@ -6,6 +6,15 @@ export function createOplAdapterClient({
 }) {
   const normalizedAdapterUrl = String(adapterUrl || "").replace(/\/$/, "");
   const normalizedOplWebUrl = String(oplWebUrl || "").replace(/\/$/, "");
+  const runtimeUrl = "https://github.com/gaofeng21cn/one-person-lab";
+
+  function usableServerPlanId(...values) {
+    for (const value of values) {
+      const normalized = String(value || "").trim();
+      if (normalized && normalized !== "default") return normalized;
+    }
+    return "";
+  }
 
   function buildConfiguredOplWebUrl(launchToken, bootstrapUrl = "") {
     if (!normalizedOplWebUrl) return "";
@@ -25,6 +34,7 @@ export function createOplAdapterClient({
       ...payload,
       oplWebUrl: oplWebLaunchUrl,
       portalAdapterUrl: normalizedAdapterUrl,
+      runtimeUrl: payload.runtimeUrl || runtimeUrl,
     };
   }
 
@@ -55,6 +65,8 @@ export function createOplAdapterClient({
       requireRealOplWeb = false,
       providerConfig = null,
       providerConfigSecretRef = "",
+      providerKeyPayload = null,
+      sourceSurface = "portal-control-plane",
       storageEntitlement = null,
     }) {
       const selectedServerPlan = taskSpace.selectedServerPlan || taskSpace.selectedServerPlanSnapshot || taskSpace.serverPlanSnapshot || null;
@@ -76,8 +88,8 @@ export function createOplAdapterClient({
           workspaceTitle: taskSpace.title,
           workspacePath: taskSpace.path,
           workspaceSessionId: workspaceSession.id,
-          sourceSurface: "portal-control-plane",
-          serverPlanId: selectedServerPlan?.id || "default",
+          sourceSurface,
+          serverPlanId: usableServerPlanId(selectedServerPlan?.id),
           instanceType: selectedServerPlan?.instanceType || selectedServerPlan?.InstanceType || "",
           region: selectedServerPlan?.region || "",
           zone: selectedServerPlan?.zone || "",
@@ -100,8 +112,15 @@ export function createOplAdapterClient({
           provisionerPayload: selectedServerPlan?.provisionerPayload || null,
           providerConfig,
           providerConfigSecretRef,
+          providerKeyPayload: providerKeyPayload
+            ? {
+              provider: String(providerKeyPayload.provider || "").trim(),
+              source: String(providerKeyPayload.source || "").trim(),
+            }
+            : null,
           storageEntitlement,
           selectedServerPlan,
+          runtimeUrl,
         }),
       });
       const payload = await response.json().catch(() => ({}));

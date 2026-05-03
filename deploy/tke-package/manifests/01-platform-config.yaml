@@ -15,6 +15,7 @@ data:
   PORTAL_OIDC_ISSUER: "__PORTAL_OIDC_ISSUER__"
   PORTAL_OIDC_CLIENT_ID: "__PORTAL_OIDC_CLIENT_ID__"
   PORTAL_OPL_ADAPTER_URL: "http://portal-opl-adapter:8788"
+  PORTAL_OPL_PROVIDER_SECRET_ROOT: "/app/.runtime/portal-opl-adapter/provider-secrets"
   OPL_WEB_URL: "https://__OPL_HOST__"
   OPL_WEB_GATEWAY_PUBLIC_URL: "https://__OPL_HOST__"
   OPL_WEB_UPSTREAM_URL: "__OPL_WEB_UPSTREAM_URL__"

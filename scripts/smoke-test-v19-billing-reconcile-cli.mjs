@@ -114,8 +114,8 @@ mkdirSync(path.dirname(portalDbPath), { recursive: true });
 mkdirSync(path.dirname(runFilePath), { recursive: true });
 mkdirSync(workspaceDir, { recursive: true });
 
-const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-const updatedAt = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+const createdAt = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+const updatedAt = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
 
 writeFileSync(manifestPath, [
   "apiVersion: batch/v1",
@@ -139,6 +139,8 @@ writeFileSync(runFilePath, JSON.stringify({
   manifestPath,
   createdAt,
   updatedAt,
+  billingStartedAt: createdAt,
+  billingStoppedAt: updatedAt,
   status: "succeeded",
   k8sStatus: {
     succeeded: true,

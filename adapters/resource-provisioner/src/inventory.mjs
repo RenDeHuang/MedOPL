@@ -3,6 +3,22 @@ import { callCvm, callTke, sanitizeTencentError } from "./tencent-cloud.mjs";
 
 const REQUIRED_CLOUD_TAG_KEYS = COST_TAG_KEYS.map((key) => key.replaceAll("_", ""));
 
+function stringValue(value) {
+  return String(value ?? "").trim();
+}
+
+function uniqueStrings(...values) {
+  const seen = new Set();
+  const items = [];
+  for (const value of values.flat(Infinity)) {
+    const text = stringValue(value);
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    items.push(text);
+  }
+  return items;
+}
+
 export function metadataMap(items = []) {
   if (!Array.isArray(items)) return {};
   return Object.fromEntries(
@@ -162,6 +178,7 @@ export async function cloudResources() {
       },
       nodePools,
       instances,
+      adminStatuses: buildDeleteVisibilityAdminStatuses({ instances, nodePools }),
       updatedAt: new Date().toISOString(),
     };
   } catch (error) {
@@ -175,4 +192,32 @@ export async function cloudResources() {
       instances: [],
     };
   }
+}
+
+export function buildDeleteVisibilityAdminStatuses({ resourceMappings = [], instances = [], nodePools = [] } = {}) {
+  if (!Array.isArray(resourceMappings)) return [];
+  const instanceIds = new Set(instances.map((item) => stringValue(item.instanceId || item.id)).filter(Boolean));
+  const nodePoolIds = new Set(nodePools.map((item) => stringValue(item.nodePoolId || item.id)).filter(Boolean));
+  return resourceMappings.map((mapping) => {
+    const cvmInstanceIds = uniqueStrings(mapping.cvmInstanceIds, mapping.cvmInstanceId, mapping.instanceIds, mapping.instanceId);
+    const nodePoolId = stringValue(mapping.nodePoolId || mapping.node_pool_id);
+    return {
+      tenantId: stringValue(mapping.tenantId || mapping.tenant_id),
+      workspaceId: stringValue(mapping.workspaceId || mapping.workspace_id),
+      resourceOrderId: stringValue(mapping.resourceOrderId || mapping.resource_order_id),
+      runId: stringValue(mapping.runId || mapping.run_id),
+      nodePoolId,
+      cvmInstanceIds,
+      cleanupStatus: stringValue(mapping.cleanupStatus || mapping.cleanup_status || "active"),
+      cleanupEvidence: {
+        id: stringValue(mapping.cleanupEvidenceId || mapping.cleanup_evidence_id),
+        billingStoppedAt: stringValue(mapping.billingStoppedAt || mapping.billing_stopped_at),
+        remaining: mapping.cleanupRemaining || mapping.cleanup_remaining || {},
+      },
+      presentInCloud: {
+        nodePool: nodePoolId ? nodePoolIds.has(nodePoolId) : false,
+        cvmInstances: cvmInstanceIds.filter((id) => instanceIds.has(id)),
+      },
+    };
+  });
 }

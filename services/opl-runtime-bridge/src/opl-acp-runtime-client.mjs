@@ -26,11 +26,27 @@ function runtimeCommand() {
   }
 
   const runtimeDir = configuredRuntimeDir ? path.resolve(repoRoot, configuredRuntimeDir) : defaultRuntimeDir;
-  const sourceCliPath = path.join(runtimeDir, "src", "cli.ts");
-  const builtCliPath = path.join(runtimeDir, "dist", "cli.js");
-  const cliPath = fs.existsSync(sourceCliPath) ? sourceCliPath : builtCliPath;
-  if (!fs.existsSync(cliPath)) {
-    throw new Error(`OPL ACP runtime CLI not found. Set OPL_ACP_RUNTIME_DIR or OPL_ACP_RUNTIME_COMMAND_JSON. Checked: ${sourceCliPath}, ${builtCliPath}`);
+  const candidateRuntimeDirs = [
+    runtimeDir,
+    path.join(runtimeDir, "one-person-lab-upstream"),
+  ];
+  const checkedPaths = [];
+  let cliPath = "";
+  for (const candidateRuntimeDir of candidateRuntimeDirs) {
+    const sourceCliPath = path.join(candidateRuntimeDir, "src", "cli.ts");
+    const builtCliPath = path.join(candidateRuntimeDir, "dist", "cli.js");
+    checkedPaths.push(sourceCliPath, builtCliPath);
+    if (fs.existsSync(sourceCliPath)) {
+      cliPath = sourceCliPath;
+      break;
+    }
+    if (fs.existsSync(builtCliPath)) {
+      cliPath = builtCliPath;
+      break;
+    }
+  }
+  if (!cliPath) {
+    throw new Error(`OPL ACP runtime CLI not found. Set OPL_ACP_RUNTIME_DIR or OPL_ACP_RUNTIME_COMMAND_JSON. Checked: ${checkedPaths.join(", ")}`);
   }
   return {
     command: process.execPath,
@@ -40,11 +56,14 @@ function runtimeCommand() {
   };
 }
 
-async function runAcpRequests(requests) {
+async function runAcpRequests(requests, { env = {} } = {}) {
   const { command, args } = runtimeCommand();
   const child = spawn(command, args, {
     cwd: repoRoot,
-    env: process.env,
+    env: {
+      ...process.env,
+      ...env,
+    },
     stdio: ["pipe", "pipe", "pipe"],
     shell: false,
   });
@@ -92,13 +111,13 @@ function assertOk(response, label) {
   throw new Error(`${label}:${error}`);
 }
 
-export async function initializeAcpRuntime() {
-  const responses = await runAcpRequests([{ id: "initialize", command: "initialize" }]);
+export async function initializeAcpRuntime(options = {}) {
+  const responses = await runAcpRequests([{ id: "initialize", command: "initialize" }], options);
   return assertOk(responseById(responses, "initialize"), "acp_initialize").result || {};
 }
 
 export async function bindAcpWorkspace(context = {}) {
-  await initializeAcpRuntime();
+  await initializeAcpRuntime({ env: context.runtimeEnv || context.runtime_env || {} });
   return {
     id: context.workspaceId || context.workspace_id || "",
     workspaceId: context.workspaceId || context.workspace_id || "",
@@ -142,7 +161,7 @@ export async function createAcpSession(context = {}) {
         },
       },
     },
-  ]);
+  ], { env: context.runtimeEnv || context.runtime_env || {} });
   const result = assertOk(responseById(responses, "session_create"), "acp_session_create").result || {};
   return {
     id: result.session_id || sessionId,
@@ -153,12 +172,44 @@ export async function createAcpSession(context = {}) {
   };
 }
 
+export async function promptAcpRuntime({
+  sessionId = "",
+  prompt = "",
+  cwd = "",
+  runtimeEnv = {},
+} = {}) {
+  const normalizedPrompt = String(prompt || "").trim();
+  if (!normalizedPrompt) {
+    throw new Error("OPL ACP prompt is required");
+  }
+  const payload = {
+    session_id: String(sessionId || "").trim() || undefined,
+    prompt: normalizedPrompt,
+    cwd: String(cwd || "").trim() || undefined,
+  };
+  const responses = await runAcpRequests([
+    { id: "initialize", command: "initialize" },
+    { id: "prompt", command: "prompt", payload },
+  ], { env: runtimeEnv });
+  const result = assertOk(responseById(responses, "prompt"), "acp_prompt").result || {};
+  const reply = String(result.response || result.reply || result.text || "").trim();
+  if (!reply) {
+    throw new Error("acp_prompt_empty_reply");
+  }
+  return {
+    ...result,
+    response: reply,
+    session_id: String(result.session_id || sessionId || "").trim(),
+    runtime_session_id: String(result.runtime_session_id || "").trim(),
+  };
+}
+
 export async function getAcpBootstrap(context = {}) {
   const responses = await runAcpRequests([
     { id: "initialize", command: "initialize" },
     { id: "session_list", command: "session_list", payload: { limit: 20 } },
     { id: "session_ledger", command: "session_ledger", payload: { limit: 20 } },
-  ]);
+  ], { env: context.runtimeEnv || context.runtime_env || {} });
   const initialized = assertOk(responseById(responses, "initialize"), "acp_initialize").result || {};
   const sessions = assertOk(responseById(responses, "session_list"), "acp_session_list").result || {};
   const ledger = assertOk(responseById(responses, "session_ledger"), "acp_session_ledger").result || {};

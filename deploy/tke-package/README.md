@@ -80,18 +80,29 @@ $env:TCR_PASSWORD="<TCR 访问密码>"
 
 OPL Web 原生 UI 镜像由脚本从 `opl-aion-shell` 源码构建；构建参考见 `build/dockerfiles/opl-web-upstream.Dockerfile.reference`。
 
-4. 渲染 YAML：
+4. 渲染 YAML。
+
+Windows/PowerShell 环境：
 
 ```powershell
 .\scripts\render-tke-manifests.ps1 -EnvFile .\env\tke.env -TemplateDir .\manifests -OutDir .\rendered
 ```
 
-如果包里已经存在 `rendered/`，它只代表本地语法验证产物。正式部署前必须先编辑 `env/tke.env`，再重新渲染。
+WSL/Linux 环境：
+
+```bash
+node deploy/tke-package/scripts/render-tke-manifests.mjs \
+  --env-file deploy/tke-package/env/tke.env \
+  --template-dir deploy/tke-package/manifests \
+  --out-dir deploy/tke-package/rendered-local-check
+```
+
+如果包里已经存在 `rendered/`，它只代表占位符语法验证产物。正式部署前必须先编辑 `env/tke.env`，再重新渲染到 `rendered-local-check/` 或其他已忽略目录，避免把真实 secret 写入 Git 跟踪文件。
 
 5. 应用到 TKE：
 
 ```powershell
-kubectl apply -f .\rendered
+kubectl apply -f .\rendered-local-check
 kubectl -n portal-staging rollout status deploy/portal
 kubectl -n portal-staging rollout status deploy/portal-opl-adapter
 kubectl -n portal-staging rollout status deploy/opl-web-gateway

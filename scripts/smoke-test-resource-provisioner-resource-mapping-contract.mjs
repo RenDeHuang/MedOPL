@@ -123,4 +123,16 @@ assert.deepEqual(observed.ledgerIds, ["ledger-preauth", "ledger-pending"]);
 assert.equal(observed.lastObservedAt, "2026-05-02T00:06:00.000Z");
 assert.equal(state.resourceMappings[0].lastObservedAt, "2026-05-02T00:06:00.000Z");
 
+const notObserved = observeProvisionResourceMappingResources(state, {
+  resourceOrderId: "ro-v19-mismatch",
+  nodePoolId: "np-v19",
+  runId: "run-v19",
+  cloudResources: {
+    clusterId: "cls-v19",
+  },
+  observedAt: "2026-05-02T00:07:00.000Z",
+});
+assert.equal(notObserved, null);
+assert.equal(state.resourceMappings[0].lastObservedAt, "2026-05-02T00:06:00.000Z");
+
 console.log(JSON.stringify({ ok: true, contract: "resource_provisioner_resource_mapping" }, null, 2));

@@ -16,6 +16,7 @@ import {
   getBootstrap as getOplBootstrap,
   getOplWebUrl,
 } from "./opl-client.mjs";
+import { usableServerPlanId } from "./server-plan-ids.mjs";
 
 function firstNonEmpty(values = []) {
   for (const value of values) {
@@ -216,6 +217,7 @@ export function createLaunchApi({
     return {
       bootstrap: `${baseUrl}/api/opl-launch/bootstrap`,
       sessionBind: `${baseUrl}/api/opl-launch/sessions/bind`,
+      message: `${baseUrl}/api/opl-launch/messages`,
       startRun: `${baseUrl}/api/opl-launch/runs`,
       runStatus: `${baseUrl}/api/opl-launch/runs/{runId}/status`,
       artifacts: `${baseUrl}/api/opl-launch/runs/{runId}/artifacts`,
@@ -394,7 +396,7 @@ export function createLaunchApi({
       workspaceSessionId: workspaceSession.workspaceSessionId,
       namespace: k8sNamespace,
       image: runnerImage,
-      serverPlanId: input.serverPlanId || input.server_plan_id || selectedServerPlan.id || "default",
+      serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id, selectedServerPlan.id),
       instanceType: input.instanceType || input.instance_type || input.InstanceType || selectedServerPlan.instanceType || selectedServerPlan.InstanceType || "",
       region: input.region || selectedServerPlan.region || "",
       zone: input.zone || selectedServerPlan.zone || "",
@@ -429,7 +431,7 @@ export function createLaunchApi({
       workspaceSessionId: workspaceSession.workspaceSessionId,
       runtimeSessionId: runtimeSession.runtimeSessionId,
       sourceSurface: input.sourceSurface || "portal-control-plane",
-      serverPlanId: input.serverPlanId || input.server_plan_id || selectedServerPlan.id || "default",
+      serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id, selectedServerPlan.id),
       instanceType: input.instanceType || input.instance_type || input.InstanceType || selectedServerPlan.instanceType || selectedServerPlan.InstanceType || "",
       region: input.region || selectedServerPlan.region || "",
     };
@@ -461,7 +463,7 @@ export function createLaunchApi({
       workspacePath: portalContext.workspacePath || "",
       workspaceSessionId: workspaceSession.workspaceSessionId,
       runtimeSessionId: runtimeSession.runtimeSessionId,
-      serverPlanId: runtimeSession.serverPlanId || selectedServerPlan.id || "default",
+      serverPlanId: usableServerPlanId(runtimeSession.serverPlanId, selectedServerPlan.id),
       instanceType: runtimeSession.instanceType || selectedServerPlan.instanceType || selectedServerPlan.InstanceType || "",
       region: runtimeSession.region || selectedServerPlan.region || "",
       zone: runtimeSession.zone || selectedServerPlan.zone || "",

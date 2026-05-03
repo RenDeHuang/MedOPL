@@ -9,6 +9,7 @@ export function createPortalStoreMigrations({
   normalizeLedgerEntries,
   normalizeServerPlanSelection,
   ensureResourceOrderCollections,
+  ensureLabSubscriptionCollections,
   ensureUserCommercialState,
   ensureWorkspaceStorageCollections,
   sanitizeTaskTitle,
@@ -40,6 +41,10 @@ export function createPortalStoreMigrations({
       resourceOrderEvents: [],
       storageOrders: [],
       workspaceFiles: [],
+      labSubscriptions: [],
+      labPackageEvents: [],
+      labStorageAddons: [],
+      labDailyCharges: [],
       userSandboxes: [],
       groups: [],
       settings: {
@@ -51,7 +56,7 @@ export function createPortalStoreMigrations({
 
   async function migrateDb(db) {
     let changed = false;
-    for (const key of ["users", "sessions", "wallets", "ledger", "workspaceSessions", "resourceOrders", "resourceOrderEvents", "storageOrders", "workspaceFiles", "userSandboxes", "groups"]) {
+    for (const key of ["users", "sessions", "wallets", "ledger", "workspaceSessions", "resourceOrders", "resourceOrderEvents", "storageOrders", "workspaceFiles", "labSubscriptions", "labPackageEvents", "labStorageAddons", "labDailyCharges", "userSandboxes", "groups"]) {
       if (!Array.isArray(db[key])) {
         db[key] = [];
         changed = true;
@@ -79,6 +84,21 @@ export function createPortalStoreMigrations({
       storageOrders: db.storageOrders,
       workspaceFiles: db.workspaceFiles,
     }) !== workspaceStorageStateBefore) {
+      changed = true;
+    }
+    const labSubscriptionStateBefore = JSON.stringify({
+      labSubscriptions: db.labSubscriptions,
+      labPackageEvents: db.labPackageEvents,
+      labStorageAddons: db.labStorageAddons,
+      labDailyCharges: db.labDailyCharges,
+    });
+    ensureLabSubscriptionCollections(db);
+    if (JSON.stringify({
+      labSubscriptions: db.labSubscriptions,
+      labPackageEvents: db.labPackageEvents,
+      labStorageAddons: db.labStorageAddons,
+      labDailyCharges: db.labDailyCharges,
+    }) !== labSubscriptionStateBefore) {
       changed = true;
     }
     if (!Array.isArray(db.taskSpaces)) {

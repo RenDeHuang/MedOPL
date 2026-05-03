@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import path from "node:path";
 
 const SENSITIVE_NAME_PATTERN = /(SECRET|TOKEN|PASSWORD|API_KEY|ACCESS_KEY|CLIENT_SECRET|DATABASE_URL|POSTGRES_URL|REDIS_URL)/;
 const EXPECTED_IMAGE_PULL_SECRET = "gaofeng-tcr-key";
@@ -236,6 +238,43 @@ function ensureNoSensitiveLiteralEnvByName(document, label) {
   }
 }
 
+function ensureEnvSecretKeyRefKey(document, label, envName, expectedKey) {
+  const pattern = new RegExp(
+    `- name:\\s*${envName}\\n\\s+valueFrom:\\n\\s+secretKeyRef:\\n(?:\\s+name:\\s*[^\\n]+\\n)?\\s+key:\\s*${expectedKey}(\\n|$)`,
+    "m",
+  );
+  assert(pattern.test(document), `${label} env ${envName} must reference secret key ${expectedKey}`);
+}
+
+function listYamlFiles(root) {
+  return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(root, entry.name);
+    if (entry.isDirectory()) return listYamlFiles(file);
+    return entry.isFile() && /\.ya?ml$/.test(entry.name) ? [file] : [];
+  });
+}
+
+function envKeysFromExample(file) {
+  return new Set(
+    readFileSync(file, "utf8")
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/g)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#") && line.includes("="))
+      .map((line) => line.split("=")[0].trim())
+      .filter(Boolean),
+  );
+}
+
+function manifestPlaceholders(root) {
+  const keys = new Set();
+  for (const file of listYamlFiles(root)) {
+    const source = readFileSync(file, "utf8");
+    for (const match of source.matchAll(/__([A-Z0-9_]+)__/g)) keys.add(match[1]);
+  }
+  return keys;
+}
+
 for (const check of CHECKS) {
   const raw = readFileSync(check.file, "utf8");
   const document = findDocument(raw, check.kind, check.name);
@@ -245,6 +284,48 @@ for (const check of CHECKS) {
   ensureForbiddenSecretRefs(document, label, check.forbiddenSecretRefs);
   ensureNoSensitiveLiteralValues(document, label, check.sensitiveEnvNames, check.allowEnvFromSecrets || null);
   ensureNoSensitiveLiteralEnvByName(document, label);
+
+  if (
+    check.file === "deploy/tke-package/manifests/05-platform-workloads.yaml" &&
+    check.kind === "Deployment" &&
+    check.name === "billing-aggregator"
+  ) {
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_CLOUD_SECRET_ID", "TENCENT_BILLING_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_CLOUD_SECRET_KEY", "TENCENT_BILLING_SECRET_KEY");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_COS_SECRET_ID", "TENCENT_COS_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_COS_SECRET_KEY", "TENCENT_COS_SECRET_KEY");
+  }
+
+  if (
+    check.file === "deploy/tke-package/manifests/05-platform-workloads.yaml" &&
+    check.kind === "Deployment" &&
+    check.name === "resource-provisioner"
+  ) {
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_CLOUD_SECRET_ID", "TENCENT_BILLING_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_CLOUD_SECRET_KEY", "TENCENT_BILLING_SECRET_KEY");
+  }
+
+  if (
+    check.file === "deploy/tke-package/manifests/07-billing-reconcile-cronjob.yaml" &&
+    check.kind === "CronJob" &&
+    check.name === "billing-reconcile"
+  ) {
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_CLOUD_SECRET_ID", "TENCENT_BILLING_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_CLOUD_SECRET_KEY", "TENCENT_BILLING_SECRET_KEY");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_COS_SECRET_ID", "TENCENT_COS_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "TENCENT_COS_SECRET_KEY", "TENCENT_COS_SECRET_KEY");
+  }
+
+  if (
+    check.file === "deploy/tke-package/manifests/08-langfuse-stack.yaml" &&
+    check.kind === "Deployment" &&
+    (check.name === "langfuse-web" || check.name === "langfuse-worker")
+  ) {
+    ensureEnvSecretKeyRefKey(document, label, "LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID", "TENCENT_COS_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY", "TENCENT_COS_SECRET_KEY");
+    ensureEnvSecretKeyRefKey(document, label, "LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID", "TENCENT_COS_SECRET_ID");
+    ensureEnvSecretKeyRefKey(document, label, "LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY", "TENCENT_COS_SECRET_KEY");
+  }
 }
 
 const recoveryScript = readFileSync("scripts/live-test-v19-postgres-redis-restart-recovery.mjs", "utf8");
@@ -270,7 +351,70 @@ for (const file of [
     `${file} must default IMAGE_PULL_SECRET to ${EXPECTED_IMAGE_PULL_SECRET}`,
   );
   assert.doesNotMatch(source, /^IMAGE_PULL_SECRET=tcr-pull-secret$/m, `${file} must not default to old tcr-pull-secret`);
+  assert.match(source, /^TENCENT_BILLING_SECRET_ID=$/m, `${file} must define TENCENT_BILLING_SECRET_ID`);
+  assert.match(source, /^TENCENT_BILLING_SECRET_KEY=$/m, `${file} must define TENCENT_BILLING_SECRET_KEY`);
+  assert.match(source, /^TENCENT_COS_SECRET_ID=$/m, `${file} must define TENCENT_COS_SECRET_ID`);
+  assert.match(source, /^TENCENT_COS_SECRET_KEY=$/m, `${file} must define TENCENT_COS_SECRET_KEY`);
+  assert.doesNotMatch(source, /^TENCENT_CLOUD_SECRET_ID=$/m, `${file} must not define legacy TENCENT_CLOUD_SECRET_ID placeholder`);
+  assert.doesNotMatch(source, /^TENCENT_CLOUD_SECRET_KEY=$/m, `${file} must not define legacy TENCENT_CLOUD_SECRET_KEY placeholder`);
+
+  const envKeys = envKeysFromExample(file);
+  const missing = [...manifestPlaceholders("deploy/tke-package/manifests")].filter((key) => !envKeys.has(key)).sort();
+  assert.deepEqual(missing, [], `${file} must define every manifest placeholder`);
 }
+
+const secretsExample = readFileSync("deploy/tke-package/manifests/02-platform-secrets.example.yaml", "utf8");
+const billingSecretDoc = findDocument(secretsExample, "Secret", "tencent-billing-secret");
+assert(billingSecretDoc, "deploy/tke-package/manifests/02-platform-secrets.example.yaml Secret/tencent-billing-secret not found");
+assert.match(
+  billingSecretDoc,
+  /TENCENT_BILLING_SECRET_ID:\s*"__TENCENT_BILLING_SECRET_ID__"/,
+  "tencent-billing-secret must use TENCENT_BILLING_SECRET_ID placeholder",
+);
+assert.match(
+  billingSecretDoc,
+  /TENCENT_BILLING_SECRET_KEY:\s*"__TENCENT_BILLING_SECRET_KEY__"/,
+  "tencent-billing-secret must use TENCENT_BILLING_SECRET_KEY placeholder",
+);
+assert.doesNotMatch(
+  billingSecretDoc,
+  /TENCENT_CLOUD_SECRET_ID:\s*"__TENCENT_CLOUD_SECRET_ID__"/,
+  "tencent-billing-secret must not use legacy TENCENT_CLOUD_SECRET_ID placeholder",
+);
+assert.doesNotMatch(
+  billingSecretDoc,
+  /TENCENT_CLOUD_SECRET_KEY:\s*"__TENCENT_CLOUD_SECRET_KEY__"/,
+  "tencent-billing-secret must not use legacy TENCENT_CLOUD_SECRET_KEY placeholder",
+);
+
+const cosSecretDoc = findDocument(secretsExample, "Secret", "tencent-cos-secret");
+assert(cosSecretDoc, "deploy/tke-package/manifests/02-platform-secrets.example.yaml Secret/tencent-cos-secret not found");
+assert.match(
+  cosSecretDoc,
+  /TENCENT_COS_SECRET_ID:\s*"__TENCENT_COS_SECRET_ID__"/,
+  "tencent-cos-secret must use TENCENT_COS_SECRET_ID placeholder",
+);
+assert.match(
+  cosSecretDoc,
+  /TENCENT_COS_SECRET_KEY:\s*"__TENCENT_COS_SECRET_KEY__"/,
+  "tencent-cos-secret must use TENCENT_COS_SECRET_KEY placeholder",
+);
+assert.doesNotMatch(
+  cosSecretDoc,
+  /TENCENT_CLOUD_SECRET_ID:\s*"__TENCENT_CLOUD_SECRET_ID__"/,
+  "tencent-cos-secret must not use legacy TENCENT_CLOUD_SECRET_ID placeholder",
+);
+assert.doesNotMatch(
+  cosSecretDoc,
+  /TENCENT_CLOUD_SECRET_KEY:\s*"__TENCENT_CLOUD_SECRET_KEY__"/,
+  "tencent-cos-secret must not use legacy TENCENT_CLOUD_SECRET_KEY placeholder",
+);
+
+assert.doesNotMatch(
+  secretsExample,
+  /__TENCENT_CLOUD_SECRET_ID__|__TENCENT_CLOUD_SECRET_KEY__/,
+  "platform secrets template must not retain legacy Tencent cloud secret placeholders",
+);
 
 for (const file of [
   "deploy/tke-package/rendered/01-platform-config.yaml",
