@@ -35,6 +35,8 @@ export function createPortalHttpDispatcher({
   return async function dispatchPortalHttpRequest(req, res) {
     const url = new URL(req.url || "/", "http://local");
     const isGetAuthPage = req.method === "GET" && (url.pathname === "/login" || url.pathname === "/register");
+    const isPortalAppShellRequest = req.method === "GET" &&
+      (url.pathname === "/portal/app" || url.pathname === "/portal/app/" || url.pathname.startsWith("/portal/app/"));
     if (isGetAuthPage) {
       const authHandled = await handleAuthRoutes({ req, res, url, db: null });
       if (authHandled) return;
@@ -58,6 +60,18 @@ export function createPortalHttpDispatcher({
     const isPostAuthEntry = req.method === "POST" && (url.pathname === "/login" || url.pathname === "/register");
     const hasPortalSessionCookie = String(req.headers?.cookie || "").includes("portal_session=");
     const currentUserMode = isPostAuthEntry && !hasPortalSessionCookie ? "auth_light" : "full";
+    if (isPortalAppShellRequest) {
+      const shellStartedAt = Date.now();
+      const { user } = await currentUser(req, { mode: "shell" });
+      const shell_ms = Date.now() - shellStartedAt;
+      if (!user) {
+        res.writeHead(302, { Location: "/login", "server-timing": `shell_ms;dur=${shell_ms}` });
+        res.end();
+        return;
+      }
+      await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");
+      return;
+    }
     const { db, user } = await currentUser(req, { mode: currentUserMode });
     if (!isGetAuthPage && (await handleAuthRoutes({ req, res, url, db }))) return;
     if (await handleResourceOrderRoutes({ req, res, url, db, user: null })) return;
@@ -69,10 +83,6 @@ export function createPortalHttpDispatcher({
     if (await handleOplRoutes({ req, res, url, db, user })) return;
     if (await handleLabPackageRoutes({ req, res, url, db, user })) return;
     if (await handleWorkspaceStorageRoutes({ req, res, url, db, user })) return;
-    if (req.method === "GET" && (url.pathname === "/portal/app" || url.pathname === "/portal/app/" || url.pathname.startsWith("/portal/app/"))) {
-      await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");
-      return;
-    }
     if (await handlePortalApiRoutes({ req, res, url, db, user })) return;
     if (await handlePortalAdminUserRoutes({ req, res, url, db, user })) return;
     if (req.method === "POST" && url.pathname === "/portal/api/theme") {

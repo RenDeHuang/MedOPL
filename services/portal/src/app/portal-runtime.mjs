@@ -432,13 +432,20 @@ function getTaskPath(userId, taskSlug) {
 }
 
 async function currentUser(req, { mode = "full" } = {}) {
-  const db = mode === "auth_light" || mode === "auth_page" ? await readAuthDb() : await readDb();
+  const startedAt = Date.now();
+  const lightweightAuth = mode === "auth_light" || mode === "auth_page" || mode === "shell";
+  const db = lightweightAuth ? await readAuthDb() : await readDb();
+  const readLatencyMs = Date.now() - startedAt;
+  const timing = {
+    auth_ms: lightweightAuth ? readLatencyMs : 0,
+    full_user_ms: lightweightAuth ? 0 : readLatencyMs,
+  };
   const cookies = parseCookies(req.headers.cookie);
   const sessionId = cookies.portal_session;
-  if (!sessionId) return { db, user: null };
+  if (!sessionId) return { db, user: null, timing };
   const session = db.sessions.find((item) => item.id === sessionId);
-  if (!session) return { db, user: null };
-  return { db, user: db.users.find((item) => item.id === session.userId) || null };
+  if (!session) return { db, user: null, timing };
+  return { db, user: db.users.find((item) => item.id === session.userId) || null, timing };
 }
 
 function portalInternalAuthAllowed(req) {
