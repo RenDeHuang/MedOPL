@@ -125,6 +125,12 @@ function makeWorkspace() {
 
   const oplWebSource = path.join(root, ".runtime/one-person-lab-upstream");
   writeFileSync(path.join(oplWebSource, "Dockerfile"), "FROM scratch\n", "utf8");
+  writeFileSync(path.join(oplWebSource, "package.json"), "{\"name\":\"opl-web-fixture\"}\n", "utf8");
+  writeFileSync(path.join(oplWebSource, "bun.lock"), "# fixture\n", "utf8");
+  mkdirSync(path.join(oplWebSource, "scripts"), { recursive: true });
+  writeFileSync(path.join(oplWebSource, "scripts/build-server.mjs"), "console.log('fixture');\n", "utf8");
+  mkdirSync(path.join(oplWebSource, "patches"), { recursive: true });
+  writeFileSync(path.join(oplWebSource, "patches/fixture.patch"), "fixture\n", "utf8");
   execFileSync("git", ["init", "-q"], { cwd: root });
   execFileSync("git", ["config", "user.email", "contract@example.com"], { cwd: root });
   execFileSync("git", ["config", "user.name", "contract"], { cwd: root });
@@ -297,6 +303,10 @@ function makeWorkspace() {
     assert.match(shellPlan, /docker build/);
     assert.match(shellPlan, /docker push/);
     assert.match(shellPlan, /render-tke-manifests\.mjs/);
+    assert.match(shellPlan, /--set 'BUILD_SHA=opl-v20\.31'/);
+    assert.match(shellPlan, /--set 'PORTAL_IMAGE=uswccr\.ccs\.tencentyun\.com\/gaofenglab\/portal-opl:opl-v20\.31'/);
+    assert.match(shellPlan, /--set 'OPL_WEB_IMAGE=uswccr\.ccs\.tencentyun\.com\/gaofenglab\/opl-web-opl:opl-v20\.31'/);
+    assert.match(shellPlan, /--set 'MED_AUTOSCIENCE_RUNNER_IMAGE=uswccr\.ccs\.tencentyun\.com\/gaofenglab\/med-autoscience-runner-opl:opl-v20\.31'/);
     assert.doesNotMatch(shellPlan, /super-secret-value/, "shell_plan_must_not_print_secret");
     assert.doesNotMatch(shellPlan, /dify_bundle-med-autoscience:latest/, "runner_workload_must_not_fallback_to_latest_bundle");
     assert.equal(shellPlan.includes("services/portal"), true);

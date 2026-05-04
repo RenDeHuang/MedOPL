@@ -19,6 +19,10 @@ mustMatch(/https:\/\/opl\.medopl\.cn/, "preacceptance_must_default_to_fixed_opl_
 mustMatch(/https:\/\/trace\.medopl\.cn/, "preacceptance_must_default_to_fixed_trace_host");
 mustMatch(/\bassertFixedHosts\b/, "preacceptance_must_validate_fixed_hosts");
 mustMatch(/\bV20_33_CONNECT_HOST\b/, "preacceptance_must_support_connect_host_transport");
+mustMatch(
+  /requestTarget:\s*\{[\s\S]*?hostname:\s*target\.hostname[\s\S]*?path:\s*`\$\{target\.pathname\}\$\{target\.search\}`[\s\S]*?\}/,
+  "preacceptance_default_transport_must_preserve_url_hostname_and_path",
+);
 mustMatch(/--host-resolver-rules/, "preacceptance_must_support_browser_host_resolver_rules");
 mustNotMatch(/portal-v20-33\.\$\{baseDomain\}/, "preacceptance_must_not_require_new_portal_dns");
 mustNotMatch(/opl-v20-33\.\$\{baseDomain\}/, "preacceptance_must_not_require_new_opl_dns");
@@ -70,6 +74,11 @@ mustMatch(/expectedAdminNav/, "preacceptance_must_check_admin_navigation_links")
 mustMatch(/forbiddenPrimaryLinks/, "preacceptance_must_reject_legacy_primary_links");
 mustMatch(/\/portal\/opl/, "preacceptance_must_check_portal_opl_jump");
 mustMatch(/\bportalToOplJumpLatencyMs\b/, "preacceptance_must_record_portal_opl_jump_latency");
+mustMatch(/\bV20_33_PREACCEPTANCE_OPL_JUMP_TIMEOUT_MS\b/, "preacceptance_must_allow_configured_opl_jump_timeout");
+mustMatch(/page\.waitForURL[\s\S]*config\.oplBaseUrl/, "preacceptance_must_wait_for_final_opl_host");
+mustMatch(/\bwaitOutcome\b/, "preacceptance_must_record_opl_jump_wait_outcome");
+mustMatch(/\bfinalUrl\b/, "preacceptance_must_record_portal_opl_jump_final_url");
+mustMatch(/\bpageTextPreview\b/, "preacceptance_must_record_portal_opl_jump_page_text_preview");
 mustMatch(/\bloginLatencyMs\b/, "preacceptance_must_record_login_latency");
 mustMatch(/\bmaxPageLatencyMs\b/, "preacceptance_must_record_page_latency_summary");
 mustMatch(/\bmaxApiLatencyMs\b/, "preacceptance_must_record_api_latency_summary");

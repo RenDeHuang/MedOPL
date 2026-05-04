@@ -134,7 +134,12 @@ function transportOptionsFor(target, headers = {}) {
   const allowInsecureTls = boolEnv("V20_33_ALLOW_INSECURE_TLS");
   if (!connectHost) {
     return {
-      requestTarget: target,
+      requestTarget: {
+        protocol: target.protocol,
+        hostname: target.hostname,
+        port: target.port || (target.protocol === "https:" ? 443 : 80),
+        path: `${target.pathname}${target.search}`,
+      },
       headers,
       rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
     };
@@ -332,13 +337,25 @@ async function verifyPortalOplJump(page, config) {
     waitUntil: "domcontentloaded",
     timeout: config.browserTimeoutMs,
   });
-  await page.waitForTimeout(1_500);
+  let waitOutcome = "reached_opl_host";
+  await page.waitForURL(
+    (url) => String(url.href || "").startsWith(config.oplBaseUrl),
+    { timeout: config.oplJumpTimeoutMs },
+  ).catch((error) => {
+    waitOutcome = `timeout:${String(error.message || error).split("\n")[0]}`;
+  });
   const currentUrl = page.url();
+  const pageTextPreview = sanitizeText(
+    await page.locator("body").innerText({ timeout: 5_000 }).catch(() => ""),
+  ).trim().slice(0, 500);
   return {
     ok: currentUrl.startsWith(config.oplBaseUrl),
     status: response?.status?.() || 0,
     latencyMs: Date.now() - startedAt,
     finalHost: new URL(currentUrl).hostname,
+    finalUrl: sanitizeUrl(currentUrl),
+    waitOutcome,
+    pageTextPreview,
     source: "/portal/opl",
   };
 }
@@ -406,6 +423,7 @@ const config = {
   browserTimeoutMs: positiveIntEnv("V20_33_PREACCEPTANCE_BROWSER_TIMEOUT_MS", 120_000),
   networkIdleTimeoutMs: positiveIntEnv("V20_33_PREACCEPTANCE_NETWORKIDLE_TIMEOUT_MS", 8_000),
   browserContentTimeoutMs: positiveIntEnv("V20_33_PREACCEPTANCE_CONTENT_TIMEOUT_MS", 45_000),
+  oplJumpTimeoutMs: positiveIntEnv("V20_33_PREACCEPTANCE_OPL_JUMP_TIMEOUT_MS", 45_000),
 };
 
 const email = env("PORTAL_LIVE_EMAIL", env("PORTAL_ADMIN_EMAIL"));

@@ -216,13 +216,26 @@ function resolveManifestOutDir(repoRoot, args) {
   return absoluteFromRepoRoot(repoRoot, args.manifestOutDir || DEFAULT_RENDER_PLAN_DIR);
 }
 
-function buildSyncOperations(repoRoot) {
+function buildSyncOperations(repoRoot, oplRuntimeSourcePath = path.resolve(repoRoot, ".runtime/one-person-lab-upstream")) {
   return REQUIRED_SYNC_SOURCES.map((relative) => ({
-    source: path.resolve(repoRoot, relative),
+    source: relative === ".runtime/one-person-lab-upstream"
+      ? path.resolve(oplRuntimeSourcePath)
+      : path.resolve(repoRoot, relative),
     target: path.resolve(repoRoot, "deploy/tke-package/source", relative),
     mode: "cpSync",
     excludeBasenames: [...SYNC_EXCLUDED_BASENAMES],
   }));
+}
+
+function resolveOplRuntime({ repoRoot, args }) {
+  const sourcePath = absoluteFromRepoRoot(
+    repoRoot,
+    args.oplRuntimeSource || ".runtime/one-person-lab-upstream",
+  );
+  return {
+    sourcePath,
+    exists: existsSync(sourcePath),
+  };
 }
 
 function resolveBuildImages({ repoRoot, registryNamespace, tag, buildSha, buildTime }) {
@@ -251,7 +264,7 @@ function resolveBuildImages({ repoRoot, registryNamespace, tag, buildSha, buildT
 function resolveOplWeb({ repoRoot, args, registryNamespace, tag }) {
   const sourcePath = absoluteFromRepoRoot(
     repoRoot,
-    args.oplWebSource || ".runtime/one-person-lab-upstream",
+    args.oplWebSource || args.oplRuntimeSource || ".runtime/one-person-lab-upstream",
   );
   const dockerfile = absoluteFromRepoRoot(
     repoRoot,
@@ -262,6 +275,22 @@ function resolveOplWeb({ repoRoot, args, registryNamespace, tag }) {
     dockerfile,
     exists: existsSync(sourcePath),
     dockerfileExists: existsSync(dockerfile),
+    requiredFiles: [
+      "package.json",
+      "bun.lock",
+      "scripts/build-server.mjs",
+    ].map((relative) => ({
+      relative,
+      absolutePath: path.join(sourcePath, relative),
+      exists: existsSync(path.join(sourcePath, relative)),
+    })),
+    requiredDirs: [
+      "patches",
+    ].map((relative) => ({
+      relative,
+      absolutePath: path.join(sourcePath, relative),
+      exists: existsSync(path.join(sourcePath, relative)),
+    })),
     image: buildImageRef(registryNamespace, "opl-web-opl", tag),
     tag,
   };
@@ -382,9 +411,10 @@ export function resolvePlan({ argv = [], repoRoot = defaultRepoRoot, env = proce
   const manifestOutDir = resolveManifestOutDir(repoRoot, args);
   const envPolicy = resolveTrackedEnvPolicy({ repoRoot, envFile, allowTrackedEnv, trackedPaths });
   const envVars = readEnvVars(envPolicy.path);
-  const syncOperations = buildSyncOperations(repoRoot);
   const buildImages = resolveBuildImages({ repoRoot, registryNamespace, tag, buildSha, buildTime });
+  const oplRuntime = resolveOplRuntime({ repoRoot, args });
   const oplWeb = resolveOplWeb({ repoRoot, args, registryNamespace, tag });
+  const syncOperations = buildSyncOperations(repoRoot, oplRuntime.sourcePath);
   const runnerWorkload = resolveRunnerWorkload({ repoRoot, args, registryNamespace, tag });
   const login = resolveLogin({ args, env, registryNamespace });
   const imageMap = {
@@ -426,9 +456,28 @@ export function resolvePlan({ argv = [], repoRoot = defaultRepoRoot, env = proce
   );
   appendValidationError(
     validationErrors,
+    !oplRuntime.exists,
+    `OPL runtime source must exist: ${relativeToRepo(repoRoot, oplRuntime.sourcePath)}`,
+  );
+  appendValidationError(
+    validationErrors,
     !oplWeb.exists,
     `OPL web source must exist: ${relativeToRepo(repoRoot, oplWeb.sourcePath)}`,
   );
+  for (const entry of oplWeb.requiredFiles) {
+    validationErrors.push(
+      ...collectMissingPaths([entry]).map(
+        () => `OPL web source must contain ${entry.relative}: ${relativeToRepo(repoRoot, entry.absolutePath)}`,
+      ),
+    );
+  }
+  for (const entry of oplWeb.requiredDirs) {
+    validationErrors.push(
+      ...collectMissingPaths([entry]).map(
+        () => `OPL web source must contain ${entry.relative}/: ${relativeToRepo(repoRoot, entry.absolutePath)}`,
+      ),
+    );
+  }
   appendValidationError(
     validationErrors,
     !oplWeb.dockerfileExists,
@@ -487,6 +536,7 @@ export function resolvePlan({ argv = [], repoRoot = defaultRepoRoot, env = proce
       operations: syncOperations,
     },
     buildImages,
+    oplRuntime,
     oplWeb,
     runnerWorkload,
     login,
@@ -525,17 +575,22 @@ function renderRunnerWorkloadCommand(plan) {
 }
 
 function renderManifestCommand(plan) {
-  return [
+  const command = [
     "node",
     sanitizeForShell(path.resolve(plan.repoRoot, "deploy/tke-package/scripts/render-tke-manifests.mjs")),
     `--env-file ${sanitizeForShell(plan.envFile.path)}`,
     `--template-dir ${sanitizeForShell(plan.manifest.templateDir)}`,
     `--out-dir ${sanitizeForShell(plan.manifest.outDir)}`,
-  ].join(" ");
+  ];
+  for (const key of ["BUILD_SHA", "BUILD_TIME", ...MANIFEST_IMAGE_VAR_KEYS]) {
+    command.push(`--set ${sanitizeForShell(`${key}=${plan.manifest.vars[key]}`)}`);
+  }
+  return command.join(" ");
 }
 
 export function renderShellPlan(plan) {
   const lines = [];
+  lines.push("set -euo pipefail");
   lines.push(`# release tag: ${plan.releaseTag}`);
   lines.push(`# dry-run: ${plan.options.dryRun ? "1" : "0"}`);
   lines.push(`# push blocked: ${plan.pushBlocked ? "1" : "0"}`);

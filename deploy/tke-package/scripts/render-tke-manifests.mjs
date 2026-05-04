@@ -60,6 +60,29 @@ function parseArgs(argv) {
   return parsed;
 }
 
+function parseOverrideVars(argv) {
+  const vars = {};
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token !== "--set") continue;
+    const assignment = argv[index + 1];
+    if (!assignment || assignment.startsWith("-")) {
+      throw new Error("--set requires KEY=VALUE");
+    }
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new Error(`--set requires KEY=VALUE, got: ${assignment}`);
+    }
+    const key = assignment.slice(0, separatorIndex);
+    if (!/^[A-Z0-9_]+$/.test(key)) {
+      throw new Error(`--set key must use uppercase env-style characters: ${key}`);
+    }
+    vars[key] = assignment.slice(separatorIndex + 1);
+    index += 1;
+  }
+  return vars;
+}
+
 function absoluteFromRepoRoot(value) {
   return path.isAbsolute(value) ? path.normalize(value) : path.resolve(repoRoot, value);
 }
@@ -71,6 +94,7 @@ export function resolveRenderOptions(argv = process.argv.slice(2)) {
     templateDir: absoluteFromRepoRoot(args.templatedir || args["template-dir"] || "deploy/tke-package/manifests"),
     outDir: absoluteFromRepoRoot(args.outdir || args["out-dir"] || "deploy/tke-package/rendered-local-check"),
     allowTrackedOutput: args.allowtrackedoutput === "1" || args["allow-tracked-output"] === "1",
+    overrideVars: parseOverrideVars(argv),
   };
 }
 
@@ -123,7 +147,10 @@ export function renderTkeManifests(options) {
   if (!existsSync(templateDir)) throw new Error(`Template dir not found: ${templateDir}`);
   ensureSafeOutputDir(outDir, allowTrackedOutput);
 
-  const vars = parseEnvContent(readFileSync(envFile, "utf8"));
+  const vars = {
+    ...parseEnvContent(readFileSync(envFile, "utf8")),
+    ...(options.overrideVars || {}),
+  };
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
 

@@ -106,11 +106,48 @@ const rendererPath = path.join(repoRoot, "deploy/tke-package/scripts/render-tke-
     "custom-manifests",
     "-OutDir",
     "custom-rendered",
+    "--set",
+    "BUILD_SHA=opl-v20.33",
+    "--set",
+    "PORTAL_IMAGE=registry/portal:opl-v20.33",
   ]);
 
   assert.equal(options.envFile, path.resolve(repoRoot, "custom.env"));
   assert.equal(options.templateDir, path.resolve(repoRoot, "custom-manifests"));
   assert.equal(options.outDir, path.resolve(repoRoot, "custom-rendered"));
+  assert.deepEqual(options.overrideVars, {
+    BUILD_SHA: "opl-v20.33",
+    PORTAL_IMAGE: "registry/portal:opl-v20.33",
+  });
+}
+
+{
+  const tmp = mkdtempSync(path.join(tmpdir(), "tke-render-overrides-"));
+  const envFile = path.join(tmp, "env/tke.env");
+  const templateDir = path.join(tmp, "templates");
+  const outDir = path.join(tmp, "rendered");
+  mkdirSync(path.dirname(envFile), { recursive: true });
+  mkdirSync(templateDir, { recursive: true });
+  writeFileSync(envFile, "BUILD_SHA=opl-v20.32\nPORTAL_IMAGE=registry/portal:opl-v20.32\n", "utf8");
+  writeFileSync(path.join(templateDir, "00-config.yaml"), "sha: __BUILD_SHA__\nimage: __PORTAL_IMAGE__\n", "utf8");
+
+  renderTkeManifests({
+    envFile,
+    templateDir,
+    outDir,
+    overrideVars: {
+      BUILD_SHA: "opl-v20.33",
+      PORTAL_IMAGE: "registry/portal:opl-v20.33",
+    },
+  });
+
+  assert.equal(
+    readFileSync(path.join(outDir, "00-config.yaml"), "utf8"),
+    "sha: opl-v20.33\nimage: registry/portal:opl-v20.33\n",
+    "renderer_overrides_must_replace_stale_env_release_values",
+  );
+
+  rmSync(tmp, { recursive: true, force: true });
 }
 
 {
