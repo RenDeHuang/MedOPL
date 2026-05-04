@@ -26,9 +26,29 @@
 
           <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="钱包余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
+            <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除冻结金额后的可用余额" />
+            <MetricCard label="已冻结" :value="money(payload.wallet.activeFreeze)" hint="已承诺服务占用的金额" />
             <MetricCard label="今日 T+1 校准" :value="microMoney(payload.todayCost)" hint="今日 T+1 校准后资源消费" />
             <MetricCard label="窗口总计" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口总成本" />
             <MetricCard label="账户流水" :value="payload.ledgerPagination.total" hint="当前窗口内流水数" />
+          </div>
+        </section>
+
+        <section v-if="payload.supportBoundary" class="card p-5">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 class="panel-title">余额与服务状态</h2>
+              <p class="panel-subtitle">{{ payload.supportBoundary.userCopy }}</p>
+              <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">{{ payload.supportBoundary.billingCopy }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="badge" :class="payload.supportBoundary.canStartPaidRun ? 'badge-success' : 'badge-warning'">
+                {{ payload.supportBoundary.canStartPaidRun ? "可启动新任务" : "暂不能启动新任务" }}
+              </span>
+              <span class="badge" :class="payload.supportBoundary.canDownloadExistingOutput ? 'badge-success' : 'badge-danger'">
+                {{ payload.supportBoundary.canDownloadExistingOutput ? "可下载已有结果" : "结果已过保留期" }}
+              </span>
+            </div>
           </div>
         </section>
 
@@ -240,7 +260,7 @@ const componentCostHint = computed(() => {
   if (payload.value?.breakdown.cloudSource === "tencent_cloud") {
     return "总额来自腾讯云，分项按账单组件回补";
   }
-  return "OpenCost / 本地计量待腾讯云回补";
+  return "运行中估算，等待真实账单回补";
 });
 const cloudHint = computed(() => payload.value?.breakdown.cloudSource === "tencent_cloud" ? "腾讯云总账单已接入，专项分项待回补" : "等待腾讯云账单回补");
 const trendChartData = computed(() => {

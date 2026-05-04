@@ -4,6 +4,12 @@ import pg from "pg";
 import { createClient as createRedisClient } from "redis";
 import { createPortalStoreHealth } from "./portal-store-health.mjs";
 import { createPortalStoreMigrations } from "./portal-store-migrations.mjs";
+import { createPortalAccountingStore } from "./portal-accounting-store.mjs";
+import { createPortalWorkspaceStore } from "./portal-workspace-store.mjs";
+import { createPortalResourceOrderStore } from "./portal-resource-order-store.mjs";
+import { createPortalLabBillingStore } from "./portal-lab-billing-store.mjs";
+import { runPortalSchemaMigration } from "./portal-schema-migrator.mjs";
+import { assertPortalSchemaReady } from "./portal-schema-health.mjs";
 import {
   readPortalPostgresSnapshot,
   writePortalPostgresSnapshot,
@@ -61,6 +67,10 @@ export function createPortalStore({
   let pgPool = null;
   let redisClient = null;
   let storageInfraPromise = null;
+  let accountingStore = null;
+  let workspaceStore = null;
+  let resourceOrderStore = null;
+  let labBillingStore = null;
   const {
     initializePostgresSchema,
     pgTableName,
@@ -155,6 +165,59 @@ export function createPortalStore({
     return redisClient;
   }
 
+  function getAccountingStore() {
+    if (!accountingStore) {
+      if (!pgPool) {
+        throw new Error("portal_accounting_store_requires_pg_pool");
+      }
+      accountingStore = createPortalAccountingStore({
+        pool: pgPool,
+        pgTableName,
+        randomUUID,
+      });
+    }
+    return accountingStore;
+  }
+
+  function getWorkspaceStore() {
+    if (!workspaceStore) {
+      if (!pgPool) {
+        throw new Error("portal_workspace_store_requires_pg_pool");
+      }
+      workspaceStore = createPortalWorkspaceStore({
+        pool: pgPool,
+        pgTableName,
+      });
+    }
+    return workspaceStore;
+  }
+
+  function getResourceOrderStore() {
+    if (!resourceOrderStore) {
+      if (!pgPool) {
+        throw new Error("portal_resource_order_store_requires_pg_pool");
+      }
+      resourceOrderStore = createPortalResourceOrderStore({
+        pool: pgPool,
+        pgTableName,
+      });
+    }
+    return resourceOrderStore;
+  }
+
+  function getLabBillingStore() {
+    if (!labBillingStore) {
+      if (!pgPool) {
+        throw new Error("portal_lab_billing_store_requires_pg_pool");
+      }
+      labBillingStore = createPortalLabBillingStore({
+        pool: pgPool,
+        pgTableName,
+      });
+    }
+    return labBillingStore;
+  }
+
   async function ensureJsonDb() {
     await mkdir(runtimeRoot, { recursive: true });
     await mkdir(medWorkspaceRoot, { recursive: true });
@@ -218,7 +281,15 @@ export function createPortalStore({
     }
     const pool = await ensurePgPool();
     await ensureRedis();
-    await initializePostgresSchema(pool);
+    await assertPortalSchemaReady({
+      pool,
+      pgTableName,
+      targetVersion: "v20.32",
+    });
+    getAccountingStore();
+    getWorkspaceStore();
+    getResourceOrderStore();
+    getLabBillingStore();
   }
 
   async function migrateLegacyAuditEvents(pool) {
@@ -299,6 +370,58 @@ export function createPortalStore({
     return migrated;
   }
 
+  async function readAuthDb() {
+    await ensureStorageInfra();
+    if (storageMode() === "json") {
+      return readJsonDb();
+    }
+    const pool = await ensurePgPool();
+    const redis = await ensureRedis();
+    await seedPostgresIfEmpty(pool);
+    const [usersRes, settingsRes] = await Promise.all([
+      pool.query(`SELECT id,email,name,role,status,password_hash,current_task_slug,group_id,preferences_json,created_at FROM ${pgTableName("users")}`),
+      pool.query(`SELECT key,value_json FROM ${pgTableName("portal_settings")}`),
+    ]);
+    const sessionKeys = await redis.keys(`${PORTAL_DB_NAMESPACE}:session:*`);
+    const sessionValues = sessionKeys.length ? await redis.mGet(sessionKeys) : [];
+    const sessions = sessionValues.map((value) => {
+      try {
+        return JSON.parse(String(value || ""));
+      } catch {
+        return null;
+      }
+    }).filter((value) => value && typeof value === "object");
+    return {
+      users: usersRes.rows.map((row) => ({
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        role: row.role,
+        status: row.status,
+        passwordHash: row.password_hash,
+        currentTaskSlug: row.current_task_slug,
+        groupId: row.group_id,
+        preferences: row.preferences_json || { theme: "light" },
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+      })),
+      sessions,
+      wallets: [],
+      taskSpaces: [],
+      workspaceSessions: [],
+      resourceOrders: [],
+      resourceOrderEvents: [],
+      storageOrders: [],
+      workspaceFiles: [],
+      labSubscriptions: [],
+      labPackageEvents: [],
+      labStorageAddons: [],
+      labDailyCharges: [],
+      userSandboxes: [],
+      groups: [],
+      settings: Object.fromEntries(settingsRes.rows.map((row) => [row.key, row.value_json])),
+    };
+  }
+
   async function writeDb(db) {
     await withDbWriteLock(async () => {
       if (storageMode() === "json") {
@@ -321,6 +444,19 @@ export function createPortalStore({
     });
   }
 
+  async function persistPortalSessions(db) {
+    await ensureStorageInfra();
+    if (storageMode() === "json") {
+      await writeDb(db);
+      return;
+    }
+    const redis = await ensureRedis();
+    for (const session of db.sessions || []) {
+      if (!session?.id) continue;
+      await redis.set(`${PORTAL_DB_NAMESPACE}:session:${session.id}`, JSON.stringify(session), { EX: 7 * 24 * 60 * 60 });
+    }
+  }
+
   async function logPortalEvent(event) {
     const payload = { occurredAt: new Date().toISOString(), ...event };
     await mkdir(runtimeRoot, { recursive: true });
@@ -338,6 +474,83 @@ export function createPortalStore({
         payload.occurredAt,
       ]);
     }
+  }
+
+  async function topupWallet(params) {
+    await ensureStorageInfra();
+    if (storageMode() !== "postgres_redis") {
+      throw new Error("portal_accounting_store_unavailable_for_storage_mode");
+    }
+    return getAccountingStore().topupWallet(params);
+  }
+
+  async function refundWallet(params) {
+    await ensureStorageInfra();
+    if (storageMode() !== "postgres_redis") {
+      throw new Error("portal_accounting_store_unavailable_for_storage_mode");
+    }
+    return getAccountingStore().refundWallet(params);
+  }
+
+  async function makeupChargeWallet(params) {
+    await ensureStorageInfra();
+    if (storageMode() !== "postgres_redis") {
+      throw new Error("portal_accounting_store_unavailable_for_storage_mode");
+    }
+    return getAccountingStore().makeupChargeWallet(params);
+  }
+
+  async function upsertWorkspaceFile(params) {
+    await ensureStorageInfra();
+    return getWorkspaceStore().upsertWorkspaceFile(params);
+  }
+
+  async function upsertStorageOrder(params) {
+    await ensureStorageInfra();
+    return getWorkspaceStore().upsertStorageOrder(params);
+  }
+
+  async function upsertTaskSpace(params) {
+    await ensureStorageInfra();
+    return getWorkspaceStore().upsertTaskSpace(params);
+  }
+
+  async function persistResourceOrderState(params) {
+    await ensureStorageInfra();
+    if (storageMode() === "postgres_redis") {
+      return getResourceOrderStore().persistResourceOrderState(params);
+    }
+    return writeDb(params?.db || {});
+  }
+
+  async function persistLabBillingState(params) {
+    await ensureStorageInfra();
+    if (storageMode() !== "postgres_redis") {
+      throw new Error("portal_lab_billing_store_unavailable_for_storage_mode");
+    }
+    return getLabBillingStore().persistLabBillingState(params);
+  }
+
+  async function migratePortalSchema() {
+    const pool = await ensurePgPool();
+    return runPortalSchemaMigration({
+      pool,
+      initializePostgresSchema,
+      pgTableName,
+      targetVersion: "v20.32",
+    });
+  }
+
+  writeDb.topupWallet = topupWallet;
+  writeDb.refundWallet = refundWallet;
+  writeDb.makeupChargeWallet = makeupChargeWallet;
+  writeDb.persistPortalSessions = persistPortalSessions;
+  if (storageMode() === "postgres_redis") {
+    writeDb.upsertStorageOrder = upsertStorageOrder;
+    writeDb.upsertTaskSpace = upsertTaskSpace;
+    writeDb.upsertWorkspaceFile = upsertWorkspaceFile;
+    writeDb.persistResourceOrderState = persistResourceOrderState;
+    writeDb.persistLabBillingState = persistLabBillingState;
   }
 
   async function readPortalEvents(limit = 120) {
@@ -369,9 +582,19 @@ export function createPortalStore({
     buildPortalHealthPayload,
     ensureStorageInfra,
     logPortalEvent,
+    migratePortalSchema,
+    readAuthDb,
     readDb,
     readPortalEvents,
     storageMode,
+    persistLabBillingState,
+    persistResourceOrderState,
+    refundWallet,
+    makeupChargeWallet,
+    topupWallet,
+    upsertStorageOrder,
+    upsertTaskSpace,
+    upsertWorkspaceFile,
     writeDb,
   };
 }

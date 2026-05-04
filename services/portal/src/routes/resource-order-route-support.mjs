@@ -142,3 +142,29 @@ export function resolveOrderNodePoolMutation(order = {}, payload = {}, actionLab
   }
   return { ok: true, nodePoolId };
 }
+
+export function validateDeleteNodePoolPayload(payload = {}) {
+  const forbiddenFields = [
+    "nodePoolId",
+    "node_pool_id",
+    "nodePoolIds",
+    "node_pool_ids",
+    "nodePoolIdSet",
+    "node_pool_id_set",
+    "instanceIds",
+    "instance_ids",
+    "cvmInstanceId",
+    "cvm_instance_id",
+    "cvmInstanceIds",
+    "cvm_instance_ids",
+    "cloudResourceIds",
+    "cloud_resource_ids",
+  ].filter((field) => Object.hasOwn(payload, field));
+  if (forbiddenFields.length === 0) return { ok: true };
+  return {
+    ok: false,
+    status: 400,
+    error: "delete_node_pool_client_resource_ids_forbidden",
+    message: `删除节点池请求不能携带客户端云资源标识：${forbiddenFields.join(", ")}`,
+  };
+}

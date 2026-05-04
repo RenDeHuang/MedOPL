@@ -26,6 +26,21 @@ function quoteTomlString(value) {
   return JSON.stringify(String(value || ""));
 }
 
+function normalizeProviderSecret(input = {}) {
+  return {
+    provider: String(input.provider || "").trim(),
+    source: String(input.source || "").trim(),
+    apiKey: String(input.apiKey || "").trim(),
+  };
+}
+
+function assertProviderSecret(ref, secret) {
+  if (!ref) throw new Error("provider_secret_ref_required");
+  if (secret.provider !== "gflabtoken") throw new Error("provider_secret_provider_invalid");
+  if (secret.source !== "user_input") throw new Error("provider_secret_source_invalid");
+  if (!secret.apiKey) throw new Error("provider_secret_api_key_required");
+}
+
 async function writeCodexProviderConfig(ref, secret) {
   const codexHome = codexHomeFor(ref);
   await mkdir(codexHome, { recursive: true, mode: 0o700 });
@@ -44,16 +59,27 @@ async function writeCodexProviderConfig(ref, secret) {
   return codexHome;
 }
 
+export async function writeProviderSecret(ref = "", input = {}) {
+  const normalizedRef = normalizeSecretRef(ref);
+  const secret = normalizeProviderSecret(input);
+  assertProviderSecret(normalizedRef, secret);
+  await mkdir(providerSecretRoot, { recursive: true, mode: 0o700 });
+  await writeFile(secretFilePath(normalizedRef), `${JSON.stringify({
+    version: "v1",
+    provider: secret.provider,
+    source: secret.source,
+    apiKey: secret.apiKey,
+    createdAt: new Date().toISOString(),
+  })}\n`, { mode: 0o600 });
+  return { ref: normalizedRef };
+}
+
 export async function readProviderSecret(ref = "") {
   const normalizedRef = normalizeSecretRef(ref);
   if (!normalizedRef) return null;
   const payload = JSON.parse(await readFile(secretFilePath(normalizedRef), "utf8"));
-  const provider = String(payload.provider || "").trim();
-  const source = String(payload.source || "").trim();
-  const apiKey = String(payload.apiKey || "").trim();
-  if (provider !== "gflabtoken" || source !== "user_input" || !apiKey) {
-    throw new Error("provider_secret_invalid");
-  }
-  const codexHome = await writeCodexProviderConfig(normalizedRef, { apiKey });
-  return { provider, source, apiKey, codexHome };
+  const secret = normalizeProviderSecret(payload);
+  assertProviderSecret(normalizedRef, secret);
+  const codexHome = await writeCodexProviderConfig(normalizedRef, { apiKey: secret.apiKey });
+  return { ...secret, codexHome };
 }

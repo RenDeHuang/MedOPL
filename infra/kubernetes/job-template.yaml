@@ -5,10 +5,13 @@ metadata:
   labels:
     app: med-autoscience
     portal_user_id: "__PORTAL_USER_ID__"
+    tenantid: "__TENANT_ID__"
     tenant_id: "__TENANT_ID__"
     customer_id: "__CUSTOMER_ID__"
     user_id: "__USER_ID__"
+    workspaceid: "__WORKSPACE_ID__"
     workspace_id: "__WORKSPACE_ID__"
+    runid: "__RUN_ID__"
     run_id: "__RUN_ID__"
     workspace_session_id: "__WORKSPACE_SESSION_ID__"
     runtime_session_id: "__RUNTIME_SESSION_ID__"
@@ -16,8 +19,10 @@ metadata:
     tool_name: "__TOOL_NAME__"
     billing_scope: "__BILLING_SCOPE__"
     cost_center: "__COST_CENTER__"
+    serverplanid: "__SERVER_PLAN_ID__"
     server_plan_id: "__SERVER_PLAN_ID__"
     instance_type: "__INSTANCE_TYPE_LABEL__"
+    resourceorderid: "__RESOURCE_ORDER_ID__"
     resource_order_id: "__RESOURCE_ORDER_ID__"
     region: "__REGION__"
     group_id: "__GROUP_ID__"
@@ -26,13 +31,17 @@ metadata:
 spec:
   template:
     metadata:
+      __POD_ANNOTATIONS_BLOCK__
       labels:
         app: med-autoscience
         portal_user_id: "__PORTAL_USER_ID__"
+        tenantid: "__TENANT_ID__"
         tenant_id: "__TENANT_ID__"
         customer_id: "__CUSTOMER_ID__"
         user_id: "__USER_ID__"
+        workspaceid: "__WORKSPACE_ID__"
         workspace_id: "__WORKSPACE_ID__"
+        runid: "__RUN_ID__"
         run_id: "__RUN_ID__"
         workspace_session_id: "__WORKSPACE_SESSION_ID__"
         runtime_session_id: "__RUNTIME_SESSION_ID__"
@@ -40,8 +49,10 @@ spec:
         tool_name: "__TOOL_NAME__"
         billing_scope: "__BILLING_SCOPE__"
         cost_center: "__COST_CENTER__"
+        serverplanid: "__SERVER_PLAN_ID__"
         server_plan_id: "__SERVER_PLAN_ID__"
         instance_type: "__INSTANCE_TYPE_LABEL__"
+        resourceorderid: "__RESOURCE_ORDER_ID__"
         resource_order_id: "__RESOURCE_ORDER_ID__"
         region: "__REGION__"
         group_id: "__GROUP_ID__"
@@ -56,7 +67,7 @@ spec:
       containers:
         - name: runner
           image: "__RUNNER_IMAGE__"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           resources:
             requests:
               cpu: "__CPU_REQUEST__"
@@ -110,11 +121,18 @@ spec:
           command:
             - "sh"
             - "-lc"
-            - "__RUNNER_COMMAND__"
+            - |-
+__RUNNER_WRAPPED_COMMAND__
           volumeMounts:
             - name: runtime
               mountPath: /app/.runtime
+            - name: workspace-outputs
+              mountPath: /workspace/outputs
+              subPathExpr: med-autoscience/workspaces/$(PORTAL_USER_ID)/$(WORKSPACE_ID)/outputs
       volumes:
         - name: runtime
+          persistentVolumeClaim:
+            claimName: portal-platform-runtime
+        - name: workspace-outputs
           persistentVolumeClaim:
             claimName: portal-platform-runtime

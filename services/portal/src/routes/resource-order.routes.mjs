@@ -19,6 +19,7 @@ export function createResourceOrderRoutes({
   ensureTaskSpace,
   fetchServerPlans,
   logPortalEvent,
+  markWorkspaceStorageDeleting,
   normalizeAuthEmail,
   portalInternalAuthAllowed,
   readJsonBody,
@@ -98,6 +99,7 @@ export function createResourceOrderRoutes({
 
   const handleResourceOrderPublicRoutes = createResourceOrderPublicRoutes({
     createQuotedResourceOrder,
+    markWorkspaceStorageDeleting,
     provisionResourceOrder,
     readJsonBody,
     resourceProvisionerClient,

@@ -190,6 +190,12 @@ spec:
                   name: secret-opl
                   key: MED_AUTOSCIENCE_RUNNER_TOKEN
                   optional: true
+            - name: PORTAL_INTERNAL_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_INTERNAL_AUTH_TOKEN
+                  optional: true
             - name: LANGFUSE_PUBLIC_KEY
               valueFrom:
                 secretKeyRef:
@@ -333,6 +339,12 @@ spec:
               value: "13031"
             - name: PORTAL_OPL_ADAPTER_URL
               value: "http://portal-opl-adapter:8788"
+            - name: PORTAL_INTERNAL_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: secret-portal
+                  key: PORTAL_INTERNAL_AUTH_TOKEN
+                  optional: true
           envFrom:
             - configMapRef:
                 name: portal-platform-config
@@ -595,6 +607,16 @@ spec:
           env:
             - name: MED_AUTOSCIENCE_RUNNER_PORT
               value: "18890"
+            - name: PORTAL_POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_POSTGRES_URL
+            - name: PORTAL_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: portal-postgres-redis-secret
+                  key: PORTAL_REDIS_URL
           envFrom:
             - configMapRef:
                 name: portal-platform-config

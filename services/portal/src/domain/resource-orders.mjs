@@ -27,6 +27,13 @@ export const RESOURCE_ORDER_PENDING_STOP_STATUSES = new Set([
   "cancelled",
 ]);
 
+export const RESOURCE_ORDER_REUSABLE_STATUSES = new Set([
+  "quoted",
+  "frozen",
+  "provisioning",
+  "running",
+]);
+
 export function ensureResourceOrderCollections(db) {
   if (!Array.isArray(db.resourceOrders)) db.resourceOrders = [];
   if (!Array.isArray(db.resourceOrderEvents)) db.resourceOrderEvents = [];
@@ -161,6 +168,8 @@ export function upsertQuotedResourceOrder(db, order) {
     const existing = db.resourceOrders.find((item) => item.idempotencyKey === order.idempotencyKey);
     if (existing) return { order: existing, created: false };
   }
+  const reusable = findReusableResourceOrder(db, order);
+  if (reusable) return { order: reusable, created: false, reusedBy: "business_key" };
   db.resourceOrders.push(order);
   appendResourceOrderEvent(db, {
     orderId: order.id,
@@ -183,6 +192,9 @@ export function upsertQuotedResourceOrder(db, order) {
 export function freezeResourceOrder(db, { user, order, idempotencyKey = "" }) {
   const target = db.resourceOrders.find((item) => item.id === order.id);
   if (!target) return { ok: false, status: 404, error: "resource_order_not_found" };
+  if (["frozen", "provisioning", "running"].includes(String(target.status || "").toLowerCase())) {
+    return { ok: true, order: target, ledgerEntry: null, snapshot: null, reused: true };
+  }
   if (["cancelled", "failed", "settled"].includes(target.status)) {
     return { ok: false, status: 409, error: "resource_order_not_freezable" };
   }
@@ -364,6 +376,52 @@ export function resourceOrderStopsPending(order = {}) {
   if (!order || typeof order !== "object") return false;
   if (String(order.pendingStoppedAt || "").trim()) return true;
   return RESOURCE_ORDER_PENDING_STOP_STATUSES.has(String(order.status || "").trim().toLowerCase());
+}
+
+export function findReusableResourceOrder(db, order = {}) {
+  ensureResourceOrderCollections(db);
+  const key = reusableResourceOrderKey(order);
+  if (!key) return null;
+  return db.resourceOrders
+    .filter((item) => resourceOrderMatchesReusableKey(item, key))
+    .sort(orderUpdatedDesc)[0] || null;
+}
+
+function reusableResourceOrderKey(order = {}) {
+  const userId = String(order.userId || order.portalUserId || "").trim();
+  const tenantId = String(order.tenantId || userId).trim();
+  const workspaceId = String(order.workspaceId || "").trim();
+  const runId = String(order.runId || "").trim();
+  const serverPlanId = String(order.serverPlanId || "").trim();
+  if (!workspaceId || !runId || !serverPlanId || (!userId && !tenantId)) return null;
+  return { userId, tenantId, workspaceId, runId, serverPlanId };
+}
+
+function resourceOrderMatchesReusableKey(item = {}, key = {}) {
+  return resourceOrderStatusReusable(item) &&
+    !resourceOrderStopsPending(item) &&
+    resourceOrderBusinessKeyMatches(item, key) &&
+    resourceOrderOwnerMatches(item, key);
+}
+
+function resourceOrderStatusReusable(item = {}) {
+  return RESOURCE_ORDER_REUSABLE_STATUSES.has(String(item.status || "").trim().toLowerCase());
+}
+
+function resourceOrderBusinessKeyMatches(item = {}, key = {}) {
+  return String(item.workspaceId || "").trim() === key.workspaceId &&
+    String(item.runId || "").trim() === key.runId &&
+    String(item.serverPlanId || "").trim() === key.serverPlanId;
+}
+
+function resourceOrderOwnerMatches(item = {}, key = {}) {
+  const itemUserId = String(item.userId || item.portalUserId || "").trim();
+  const itemTenantId = String(item.tenantId || "").trim();
+  return Boolean((key.userId && itemUserId === key.userId) || (key.tenantId && itemTenantId === key.tenantId));
+}
+
+function orderUpdatedDesc(a = {}, b = {}) {
+  return String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""));
 }
 
 function normalizeObject(value) {

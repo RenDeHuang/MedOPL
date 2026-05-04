@@ -13,9 +13,16 @@ import {
   submitRun,
 } from "./runner-client.mjs";
 import { usableServerPlanId } from "./server-plan-ids.mjs";
+import { createRunCorrelationId, createRunTraceId } from "./run-observability.mjs";
 
 function isTerminal(status = "") {
   return ["succeeded", "failed", "cancelled", "timed_out"].includes(String(status || "").toLowerCase());
+}
+
+function isDeliverableOutput(output = {}) {
+  const name = String(output.name || "").trim();
+  const sizeBytes = Number(output.sizeBytes || output.size_bytes || 0);
+  return Boolean(name && name !== ".keep" && sizeBytes > 0);
 }
 
 function preparedPlanContext(order = {}) {
@@ -29,6 +36,7 @@ function preparedPlanContext(order = {}) {
 
 export function createRunApi({
   portalInternalBaseUrl,
+  portalInternalAuthToken = "",
   runnerImage,
   k8sNamespace,
   publishTraceEvent,
@@ -36,6 +44,8 @@ export function createRunApi({
   function runContextFromRuntime(runtimeSession, input, req) {
     const runId = input.runId || input.run_id || randomUUID();
     return {
+      correlationId: createRunCorrelationId({ ...input, runId }),
+      traceId: createRunTraceId({ ...input, runId }),
       portalUserId: runtimeSession.portalUserId,
       tenantId: input.tenantId || input.tenant_id || runtimeSession.tenantId || runtimeSession.portalUserId,
       customerId: runtimeSession.portalUserId,
@@ -56,6 +66,9 @@ export function createRunApi({
       runtimeClass: input.runtimeClass || input.runtime_class || runtimeSession.runtimeClass || "",
       nodeSelector: (input.nodeSelector && typeof input.nodeSelector === "object" ? input.nodeSelector : runtimeSession.nodeSelector) || {},
       tolerations: Array.isArray(input.tolerations) ? input.tolerations : (Array.isArray(runtimeSession.tolerations) ? runtimeSession.tolerations : []),
+      podNetworkingMode: input.podNetworkingMode || input.pod_networking_mode || runtimeSession.podNetworkingMode || "",
+      requiresEniPod: input.requiresEniPod === true || input.requires_eni_pod === true || runtimeSession.requiresEniPod === true,
+      podAnnotations: (input.podAnnotations && typeof input.podAnnotations === "object" ? input.podAnnotations : runtimeSession.podAnnotations) || {},
       cpuRequest: input.cpuRequest || input.cpu_request || runtimeSession.cpuRequest || "",
       cpuLimit: input.cpuLimit || input.cpu_limit || runtimeSession.cpuLimit || "",
       memoryRequest: input.memoryRequest || input.memory_request || runtimeSession.memoryRequest || "",
@@ -95,7 +108,10 @@ export function createRunApi({
     const idempotencyKey = `${context.runId}:${context.workspaceSessionId || "no-workspace-session"}`;
     const response = await fetch(new URL("/portal/internal/resource-orders/prepare-run", `${portalInternalBaseUrl}/`), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(portalInternalAuthToken ? { "x-portal-internal-token": portalInternalAuthToken } : {}),
+      },
       body: JSON.stringify({
         tenantId: context.tenantId,
         userId: context.userId,
@@ -142,12 +158,15 @@ export function createRunApi({
     const run = createRunRecord(state, {
       ...context,
       ...submitted,
+      traceId: submitted.traceId || submitted.trace_id || context.traceId,
       status: submitted.status || "submitted",
       latencyMs: Date.now() - startedAt,
       userAgent: context.userAgent,
       tokenCount: context.tokenCount,
       model: context.model,
     });
+    run.traceId = submitted.traceId || submitted.trace_id || context.traceId;
+    run.correlationId = submitted.correlationId || submitted.correlation_id || context.correlationId;
     addRunAction(state, { ...run, actionType: "runner_run_submitted", summary: "med-autoscience runner accepted run.", status: run.status });
     await publishTraceEvent(state, {
       ...run,
@@ -182,7 +201,7 @@ export function createRunApi({
 
     if (isTerminal(patched.status)) {
       const outputs = await listOutputs(patched);
-      for (const output of outputs) {
+      for (const output of outputs.filter(isDeliverableOutput)) {
         const artifact = addArtifactRecord(state, {
           ...patched,
           name: output.name || "",

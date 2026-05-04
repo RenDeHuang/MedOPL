@@ -17,7 +17,7 @@ export function createPortalLegacyRedirectRoutes({
     ["/", "/portal/app/overview"],
     ["/portal", "/portal/app/overview"],
     ["/portal/billing", "/portal/app/billing"],
-    ["/portal/servers", "/portal/app/servers"],
+    ["/portal/servers", "/portal/app/resources"],
     ["/portal/workspace", "/portal/app/workspace"],
   ]);
 

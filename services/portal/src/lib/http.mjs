@@ -1,6 +1,7 @@
 import path from "node:path";
 import { createReadStream } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { HttpBodyError } from "./http-body-errors.mjs";
 
 export function safeJsonForHtml(value) {
   return JSON.stringify(value)
@@ -83,12 +84,33 @@ export function parseForm(body) {
   return obj;
 }
 
-export async function readBody(req) {
+export async function readBody(req, { limitBytes = 1024 * 1024 } = {}) {
   const chunks = [];
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  let size = 0;
+  let aborted = false;
+  const onAborted = () => {
+    aborted = true;
+  };
+  req?.once?.("aborted", onAborted);
+  try {
+    for await (const chunk of req) {
+      if (aborted) {
+        throw new HttpBodyError("request_body_aborted", "Request body stream aborted by client.");
+      }
+      const bufferChunk = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      size += bufferChunk.length;
+      if (size > limitBytes) {
+        throw new HttpBodyError("request_body_too_large", `Request body exceeds ${limitBytes} bytes limit.`, 413);
+      }
+      chunks.push(bufferChunk);
+    }
+    if (aborted) {
+      throw new HttpBodyError("request_body_aborted", "Request body stream aborted by client.");
+    }
+    return Buffer.concat(chunks);
+  } finally {
+    req?.off?.("aborted", onAborted);
   }
-  return Buffer.concat(chunks);
 }
 
 export function sendFile(res, filePath, downloadName, contentType = "application/octet-stream") {

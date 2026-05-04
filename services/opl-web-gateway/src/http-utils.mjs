@@ -46,14 +46,32 @@ export function buildTargetUrl(reqUrl, upstreamBase, prefix = "") {
   return target;
 }
 
-export function sanitizeProxyHeaders(headers, target) {
-  const next = { ...headers };
-  delete next.host;
-  delete next.connection;
-  delete next["content-length"];
-  next.host = target.host;
-  return next;
-}
+export function sanitizeProxyHeaders(headers, target) {
+  const hopByHopHeaders = new Set([
+    "connection",
+    "content-length",
+    "keep-alive",
+    "proxy-connection",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+  ]);
+  for (const value of String(headers.connection || "").split(",")) {
+    const name = value.trim().toLowerCase();
+    if (name) hopByHopHeaders.add(name);
+  }
+  const next = {};
+  for (const [key, value] of Object.entries(headers)) {
+    const name = key.toLowerCase();
+    if (name === "host" || hopByHopHeaders.has(name)) continue;
+    next[key] = value;
+  }
+  next.host = target.host;
+  return next;
+}
 
 export async function readRequestBody(req) {
   const chunks = [];

@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="服务器与费用" subtitle="浏览腾讯云真实 SKU、筛选规格、完成报价与下单">
+  <AppLayout title="服务器与费用" subtitle="浏览可用云服务器、筛选规格、完成报价与下单">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载服务器商品目录...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -18,9 +18,9 @@
                     {{ readiness.exactBillReady ? "真实账单就绪" : "账单待同步" }}
                   </span>
                 </div>
-                <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">腾讯云真实 SKU 商品目录</h2>
+                <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">云服务器商品目录</h2>
                 <p class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-slate-300">
-                  目录数据来自 Billing Aggregator，门户只消费聚合结果，不直接读取腾讯云凭据。不可售规格保留展示，但会禁用报价、冻结和下单。
+                  目录数据来自后台聚合服务，门户只展示可购买规格、预计价格和下单状态。不可售规格会禁用报价、冻结和下单。
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -50,7 +50,7 @@
                 <span class="muted-kv-value">{{ cloudSummary.nodePoolCount || 0 }}</span>
               </div>
               <div class="muted-kv">
-                <span class="muted-kv-label">CVM</span>
+                <span class="muted-kv-label">云服务器</span>
                 <span class="muted-kv-value">{{ cloudSummary.instanceCount || 0 }}</span>
               </div>
               <div class="muted-kv">
@@ -63,8 +63,8 @@
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="可售规格" :value="payload.summary.salableCount" hint="可执行下单" />
-          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="腾讯云实时报价" />
-          <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="按 SKU 实时返回" />
+          <MetricCard label="已报价" :value="payload.summary.quotedCount" hint="实时价格" />
+          <MetricCard label="最低小时价" :value="money(payload.summary.lowestHourlyPrice)" hint="按规格实时返回" />
           <MetricCard label="活跃订单" :value="activeOrderCount" hint="报价/冻结/开通/运行中" />
         </section>
 
@@ -113,7 +113,7 @@
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ item.name || item.id }}</h3>
-                  <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.instanceType || "Tencent CVM" }}</p>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.instanceType || "云服务器" }}</p>
                 </div>
                 <span class="badge" :class="isOrderable(item) ? 'badge-success' : 'badge-warning'">
                   {{ isOrderable(item) ? "可下单" : "不可售" }}
@@ -201,8 +201,8 @@
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-slate-400">
                   <div>冻结 {{ money(item.freezeAmount ?? item.frozenAmount, item.currency) }}</div>
-                  <div>Exact {{ money(item.exactCost, item.currency) }}</div>
-                  <div>节点池 {{ firstCloudResource(item) || "-" }}</div>
+                  <div>最终 {{ money(item.exactCost, item.currency) }}</div>
+                  <div>服务器编号 {{ firstCloudResource(item) || "-" }}</div>
                   <div>{{ item.pricingSource || "-" }}</div>
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
@@ -218,7 +218,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">云资源清单</h2>
-                <p class="panel-subtitle">TKE 节点池与 CVM 标签归因</p>
+                <p class="panel-subtitle">云服务器编号与费用归因</p>
               </div>
               <button class="btn btn-secondary" @click="reloadCloudResources">刷新</button>
             </div>
@@ -235,7 +235,7 @@
               >
                 <div class="flex items-center justify-between gap-3">
                   <span class="font-medium text-gray-950 dark:text-white">{{ stringFrom(item, "name", "nodePoolId", "id") }}</span>
-                  <span class="badge badge-primary">NodePool</span>
+                  <span class="badge badge-primary">服务器组</span>
                 </div>
                 <div class="mt-2 text-xs text-gray-500 dark:text-slate-400">{{ stringFrom(item, "status", "state") }}</div>
               </div>
@@ -261,10 +261,10 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 class="panel-title">结算规则</h2>
-              <p class="panel-subtitle">冻结按报价，最终扣费按腾讯云真实账单回补</p>
+              <p class="panel-subtitle">冻结按报价，最终扣费按真实账单回补</p>
             </div>
             <span class="badge" :class="readiness.exactBillReady ? 'badge-success' : 'badge-warning'">
-              {{ readiness.exactBillReady ? "exact ready" : "exact pending" }}
+              {{ readiness.exactBillReady ? "已校准" : "待校准" }}
             </span>
           </div>
         </section>
@@ -273,11 +273,11 @@
           <div class="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900">
             <h2 class="text-lg font-semibold text-gray-950 dark:text-white">删除节点池</h2>
             <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
-              销毁 CVM 会释放节点池内实例，运行环境和节点本地数据不可恢复。保留 CVM 时，节点池删除后实例仍可能继续产生云资源费用。
+              删除服务器会释放对应运行资源，运行环境和节点本地数据不可恢复。保留实例时，删除服务器组后仍可能继续产生云资源费用。
             </p>
             <label class="mt-4 flex items-center gap-2 text-sm text-gray-700 dark:text-slate-200">
               <input v-model="destroyCvmInstances" type="checkbox" />
-              同时销毁 CVM 实例
+              同时销毁云服务器实例
             </label>
             <div class="mt-5 flex justify-end gap-2">
               <button class="btn btn-secondary" @click="closeDeleteDialog">取消</button>
@@ -556,7 +556,6 @@ async function confirmDeleteNodePool() {
   try {
     await deleteResourceOrderNodePool({
       resourceOrderId: deleteTarget.value.id,
-      nodePoolId: firstCloudResource(deleteTarget.value),
       destroyCvmInstances: destroyCvmInstances.value,
       confirmDeleteNodePool: true,
     });

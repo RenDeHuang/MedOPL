@@ -5,6 +5,7 @@ const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/overview" },
   { path: "/overview", component: () => import("@/views/overview/OverviewView.vue") },
   { path: "/packages", component: () => import("@/views/packages/PackagesView.vue") },
+  { path: "/resources", component: () => import("@/views/resources/ResourcesView.vue") },
   { path: "/workspace", component: () => import("@/views/workspace/WorkspaceView.vue") },
   { path: "/advanced/servers", component: () => import("@/views/servers/ServersView.vue"), meta: { requiresAdmin: true } },
   { path: "/billing", component: () => import("@/views/billing/BillingView.vue") },

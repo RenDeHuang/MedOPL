@@ -71,23 +71,41 @@ export function writeRawHttpResponse(socket, response, head = null) {
   if (head?.length) socket.write(head);
 }
 
-export function writeUpgradeFailure(socket, statusCode, message) {
-  if (socket.destroyed) return;
-  socket.write([
-    `HTTP/1.1 ${statusCode} ${message}`,
+export function writeUpgradeFailure(socket, statusCode, message) {
+  if (socket.destroyed) return;
+  socket.write([
+    `HTTP/1.1 ${statusCode} ${message}`,
     "content-type: text/plain; charset=utf-8",
     "connection: close",
     "",
     message,
   ].join("\r\n"));
-  socket.destroy();
-}
-
-export function proxyUpgrade(req, socket, head, upstreamBase, prefix = "") {
-  const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
-  const client = target.protocol === "https:" ? https : http;
-  const headers = sanitizeProxyHeaders(req.headers, target);
-  headers.connection = "Upgrade";
+  socket.destroy();
+}
+
+function destroyQuietly(socket) {
+  if (!socket || socket.destroyed) return;
+  socket.destroy();
+}
+
+function bindUpgradeSocketPair(clientSocket, upstreamSocket) {
+  const closeBoth = () => {
+    destroyQuietly(clientSocket);
+    destroyQuietly(upstreamSocket);
+  };
+  clientSocket.on("error", closeBoth);
+  upstreamSocket.on("error", closeBoth);
+  clientSocket.on("close", () => destroyQuietly(upstreamSocket));
+  upstreamSocket.on("close", () => destroyQuietly(clientSocket));
+  upstreamSocket.pipe(clientSocket);
+  clientSocket.pipe(upstreamSocket);
+}
+
+export function proxyUpgrade(req, socket, head, upstreamBase, prefix = "") {
+  const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
+  const client = target.protocol === "https:" ? https : http;
+  const headers = sanitizeProxyHeaders(req.headers, target);
+  headers.connection = "Upgrade";
   headers.upgrade = req.headers.upgrade || "websocket";
 
   const upstream = client.request({
@@ -98,23 +116,23 @@ export function proxyUpgrade(req, socket, head, upstreamBase, prefix = "") {
     path: `${target.pathname}${target.search}`,
     headers,
   });
-
-  upstream.on("upgrade", (response, upstreamSocket, upstreamHead) => {
-    writeRawHttpResponse(socket, response, upstreamHead);
-    if (head?.length) upstreamSocket.write(head);
-    upstreamSocket.pipe(socket);
-    socket.pipe(upstreamSocket);
-  });
-
-  upstream.on("response", (response) => {
-    writeRawHttpResponse(socket, response);
-    response.resume();
+
+  upstream.on("upgrade", (response, upstreamSocket, upstreamHead) => {
+    writeRawHttpResponse(socket, response, upstreamHead);
+    if (head?.length) upstreamSocket.write(head);
+    bindUpgradeSocketPair(socket, upstreamSocket);
+  });
+
+  upstream.on("response", (response) => {
+    writeRawHttpResponse(socket, response);
+    response.resume();
     socket.destroy();
   });
 
-  upstream.on("error", (error) => {
-    writeUpgradeFailure(socket, 502, String(error.message || error));
-  });
-
-  upstream.end();
+  upstream.on("error", (error) => {
+    writeUpgradeFailure(socket, 502, String(error.message || error));
+  });
+  socket.on("error", () => upstream.destroy());
+
+  upstream.end();
 }

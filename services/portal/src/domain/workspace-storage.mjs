@@ -169,19 +169,23 @@ export function markWorkspaceStorageDeleting(db, { user, workspaceId, deletedAt 
   const cleanupAfterAt = new Date(Date.parse(now) + Math.max(1, Number(retentionDays || 7)) * 24 * 60 * 60 * 1000).toISOString();
   let storageOrderCount = 0;
   let fileCount = 0;
+  const storageOrderIds = [];
+  const workspaceFileIds = [];
   for (const order of db.storageOrders || []) {
     if (canMarkStorageOrderDeleting(order, context)) {
       applyRetentionMarker(order, now, cleanupAfterAt);
       storageOrderCount += 1;
+      storageOrderIds.push(order.id);
     }
   }
   for (const file of db.workspaceFiles || []) {
     if (canMarkWorkspaceFileDeleting(file, context)) {
       applyRetentionMarker(file, now, cleanupAfterAt);
       fileCount += 1;
+      workspaceFileIds.push(file.id);
     }
   }
-  return { ok: true, storageOrderCount, fileCount, deletedAt: now, cleanupAfterAt };
+  return { ok: true, storageOrderCount, fileCount, storageOrderIds, workspaceFileIds, deletedAt: now, cleanupAfterAt };
 }
 
 export function workspaceStorageCleanupCandidates(db, { now = new Date().toISOString(), retentionDays = 7 } = {}) {

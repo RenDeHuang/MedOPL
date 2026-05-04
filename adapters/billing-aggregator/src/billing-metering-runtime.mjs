@@ -235,11 +235,35 @@ export function createBillingMeteringRuntime({
     return [];
   }
 
+  function labelKeyAliases(key = "") {
+    const text = String(key || "").trim();
+    const compact = text.replace(/_/g, "");
+    const dashed = text.replace(/_/g, "-");
+    if (!text) return [];
+    return [...new Set([text, compact, dashed])];
+  }
+
+  function labelValue(entry, key) {
+    const props = entry?.properties || {};
+    const labels = props.labels || {};
+    for (const alias of labelKeyAliases(key)) {
+      const value = (
+        labels[alias] ||
+        props[`label:${alias}`] ||
+        props[alias] ||
+        props[`gaofenglab/${alias}`] ||
+        labels[`gaofenglab/${alias}`] ||
+        null
+      );
+      if (value) return value;
+    }
+    return null;
+  }
+
   function filterEntries(entries, customerId, workspaceId = "") {
     return entries.filter((entry) => {
-      const props = entry?.properties || {};
-      const customerOk = !customerId || props["label:customer_id"] === customerId || props.customer_id === customerId || entry?.name?.includes(customerId);
-      const workspaceOk = !workspaceId || props["label:workspace_id"] === workspaceId || props.workspace_id === workspaceId || entry?.name?.includes(workspaceId);
+      const customerOk = !customerId || labelValue(entry, "customer_id") === customerId || labelValue(entry, "tenant_id") === customerId || entry?.name?.includes(customerId);
+      const workspaceOk = !workspaceId || labelValue(entry, "workspace_id") === workspaceId || entry?.name?.includes(workspaceId);
       return customerOk && workspaceOk;
     });
   }
@@ -248,10 +272,9 @@ export function createBillingMeteringRuntime({
     const grouped = new Map();
 
     for (const entry of entries) {
-      const props = entry?.properties || {};
-      const runId = props["label:run_id"] || props.run_id || entry?.name || "unknown-run";
-      const workspaceId = props["label:workspace_id"] || props.workspace_id || "unknown-workspace";
-      const customerId = props["label:customer_id"] || props.customer_id || null;
+      const runId = labelValue(entry, "run_id") || entry?.name || "unknown-run";
+      const workspaceId = labelValue(entry, "workspace_id") || "unknown-workspace";
+      const customerId = labelValue(entry, "customer_id") || labelValue(entry, "tenant_id") || null;
       const current = grouped.get(runId) || {
         runId,
         workspaceId,
@@ -351,23 +374,12 @@ export function createBillingMeteringRuntime({
     };
   }
 
-  function labelValue(entry, key) {
-    const props = entry?.properties || {};
-    const labels = props.labels || {};
-    return (
-      labels[key] ||
-      props[`label:${key}`] ||
-      props[key] ||
-      null
-    );
-  }
-
   function summaryFromRawAllocations(entries, customerId = "", workspaceId = "") {
     const grouped = new Map();
 
     for (const entry of entries) {
       const runId = labelValue(entry, "run_id");
-      const entryCustomerId = labelValue(entry, "customer_id");
+      const entryCustomerId = labelValue(entry, "customer_id") || labelValue(entry, "tenant_id");
       const entryWorkspaceId = labelValue(entry, "workspace_id");
 
       if (!runId || !entryCustomerId || !entryWorkspaceId) continue;
@@ -424,8 +436,11 @@ export function createBillingMeteringRuntime({
         totalCost: item.totalCost,
         properties: {
           customer_id: item.customerId,
+          tenantid: item.customerId,
           workspace_id: item.workspaceId,
+          workspaceid: item.workspaceId,
           run_id: item.runId,
+          runid: item.runId,
           pricing_source: "OpenCost raw allocation",
         },
       })),

@@ -82,6 +82,11 @@ const plan = {
   provisioningMode: "tke_node_pool_create",
 };
 
+const writeDb = {
+  upsertTaskSpace: async (taskSpace) => writes.push(["task_space", taskSpace.slug]),
+  persistResourceOrderState: async ({ order, orderId }) => writes.push(["resource_order", order?.id || orderId]),
+};
+
 const route = createResourceOrderRoutes({
   defaultTaskTitle: (slug) => `Task ${slug}`,
   ensureTaskSpace: async () => db.taskSpaces[0],
@@ -110,7 +115,7 @@ const route = createResourceOrderRoutes({
   },
   sendJson,
   slugify: (value) => String(value || "").toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/^-|-$/g, "") || "default",
-  writeDb: async (targetDb) => writes.push(targetDb),
+  writeDb,
 });
 
 async function request(method, path, body) {
@@ -171,7 +176,7 @@ const routeWithDeleteGuard = createResourceOrderRoutes({
   },
   sendJson,
   slugify: (value) => String(value || "").toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/^-|-$/g, "") || "default",
-  writeDb: async () => {},
+  writeDb,
 });
 
 db.resourceOrders.push({
@@ -222,7 +227,8 @@ const wrongNodePoolDelete = await requestDelete({
   confirmDeleteNodePool: true,
 });
 assert.equal(wrongNodePoolDelete.handled, true, "delete_route_must_handle_wrong_nodepool_request");
-assert.equal(wrongNodePoolDelete.res.statusCode, 409, "delete_must_reject_mismatched_nodepool");
+assert.equal(wrongNodePoolDelete.res.statusCode, 400, "delete_must_reject_client_supplied_nodepool");
+assert.equal(wrongNodePoolDelete.res.payload.error, "delete_node_pool_client_resource_ids_forbidden", "delete_must_reject_client_cloud_resource_id_fields");
 
 const missingNodePoolDelete = await requestDelete({
   resourceOrderId: "order-delete-no-pool",
@@ -252,6 +258,22 @@ const missingNodePoolRelease = await requestRelease({
 });
 assert.equal(missingNodePoolRelease.handled, true, "release_route_must_handle_missing_nodepool_request");
 assert.equal(missingNodePoolRelease.res.statusCode, 422, "release_must_reject_when_nodepool_missing_in_payload_and_order");
+
+for (const forbiddenField of [
+  "nodePoolIds",
+  "instanceIds",
+  "cvmInstanceId",
+  "nodePoolIdSet",
+]) {
+  const rejected = await requestDelete({
+    resourceOrderId: "order-delete-a",
+    confirmDeleteNodePool: true,
+    [forbiddenField]: forbiddenField,
+  });
+  assert.equal(rejected.handled, true, `delete_route_must_handle_${forbiddenField}`);
+  assert.equal(rejected.res.statusCode, 400, `delete_route_must_reject_${forbiddenField}`);
+  assert.equal(rejected.res.payload.error, "delete_node_pool_client_resource_ids_forbidden", `delete_must_reject_${forbiddenField}_as_client_resource_id_alias`);
+}
 assert.equal(scaleProvisionerCalls.length, 0, "release_negative_cases_must_not_call_provisioner");
 
 console.log(JSON.stringify({
@@ -260,7 +282,7 @@ console.log(JSON.stringify({
   ledgerIds: payload.ledgerIds,
   cosKeys: payload.cosKeys,
   deleteGuardChecks: {
-    wrongNodePoolStatus: wrongNodePoolDelete.res.statusCode,
+    clientNodePoolStatus: wrongNodePoolDelete.res.statusCode,
     missingNodePoolStatus: missingNodePoolDelete.res.statusCode,
     deleteProvisionerCalls: deleteProvisionerCalls.length,
     wrongScaleNodePoolStatus: wrongNodePoolRelease.res.statusCode,

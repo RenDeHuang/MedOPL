@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -185,9 +185,9 @@ try {
   const observedResources = await postObserveResources({
     resourceOrderId: scheduleResourceOrderId,
     runId: scheduleRunId,
-    nodePoolId: "np-smoke",
     cloudResources: {
       clusterId: "cls-smoke",
+      nodePoolId: "np-smoke",
       nodePoolIds: ["np-smoke"],
       cvmInstanceIds: ["ins-smoke-1"],
       nodeNames: ["10.0.0.11"],
@@ -206,11 +206,39 @@ try {
   assertDeepEqual(observedResources.payload.mapping?.cosKeys, ["workspaces/tenant-smoke/workspace-smoke/inputs/input.txt"], "observe resources should expose COS keys");
   assert(observedResources.payload.mapping?.lastObservedAt === "2026-05-02T00:01:00.000Z", "observe resources should expose observation timestamp");
 
+  const bypassCleanup = await postMarkCleanup({
+    resourceOrderId: scheduleResourceOrderId,
+    status: "deleted",
+    cleanupEvidenceId: "cleanup-bypass",
+    billingStoppedAt: "2026-05-02T00:00:00.000Z",
+    cleanupRemaining: {
+      nodePools: 0,
+      instances: 0,
+      pods: 0,
+      jobs: 0,
+      pvcs: 0,
+      cosKeys: 0,
+    },
+  });
+  assert(bypassCleanup.response.status === 409, "mark-cleanup must reject billing stop before the bound delete chain records it");
+  assert(bypassCleanup.payload.error === "resource_mapping_delete_not_started", "mark-cleanup bypass rejection should be explicit");
+
+  const deleteStartedState = JSON.parse(await readFile(ordersFile, "utf8"));
+  const deleteStartedMapping = deleteStartedState.resourceMappings.find((item) => item.id === schedule.payload.order.resourceMappingId);
+  deleteStartedMapping.cleanupStatus = "delete_requested";
+  deleteStartedMapping.deleteRequestId = "req-delete-smoke";
+  deleteStartedMapping.billingStoppedAt = "2026-05-02T00:00:00.000Z";
+  const deleteStartedOrder = deleteStartedState.orders.find((item) => item.resourceMappingId === schedule.payload.order.resourceMappingId);
+  deleteStartedOrder.deleteRequestId = "req-delete-smoke";
+  deleteStartedOrder.billingStoppedAt = "2026-05-02T00:00:00.000Z";
+  deleteStartedOrder.cleanupStatus = "delete_requested";
+  await writeFile(ordersFile, `${JSON.stringify(deleteStartedState, null, 2)}\n`, "utf8");
+
   const markedCleanup = await postMarkCleanup({
     resourceOrderId: scheduleResourceOrderId,
     status: "deleted",
     cleanupEvidenceId: "cleanup-smoke",
-    billingStoppedAt: "2026-05-02T00:00:00.000Z",
+    billingStoppedAt: "2026-05-02T00:30:00.000Z",
     cleanupRemaining: {
       nodePools: 0,
       instances: 0,
@@ -223,7 +251,7 @@ try {
   assert(markedCleanup.response.ok, `resource mapping cleanup should be markable after external cleanup verification: ${JSON.stringify(markedCleanup.payload)}`);
   assert(markedCleanup.payload.mapping?.id === schedule.payload.order.resourceMappingId, "mark cleanup should update the same mapping");
   assert(markedCleanup.payload.mapping?.cleanupStatus === "deleted", "mark cleanup should expose deleted status");
-  assert(markedCleanup.payload.mapping?.billingStoppedAt === "2026-05-02T00:00:00.000Z", "mark cleanup should expose billingStoppedAt");
+  assert(markedCleanup.payload.mapping?.billingStoppedAt === "2026-05-02T00:00:00.000Z", "mark cleanup must preserve the bound delete billingStoppedAt");
   assertDeepEqual(markedCleanup.payload.mapping?.cleanupRemaining, {
     nodePools: 0,
     instances: 0,

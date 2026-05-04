@@ -42,6 +42,13 @@ export function createResourceOrderProvisioningService({
   }
 
   async function provisionResourceOrder(db, order, payload = {}, options = {}) {
+    const currentStatus = String(order.status || "").trim().toLowerCase();
+    if (currentStatus === "running") {
+      return { ok: true, provisioner: { ok: true, reused: true, reason: "resource_order_already_running" }, order };
+    }
+    if (currentStatus === "provisioning") {
+      return { ok: true, provisioner: { ok: true, reused: true, reason: "resource_order_already_provisioning" }, order };
+    }
     const plan = await findResourceOrderPlan(order);
     const provisionerPayload = await resourceOrderProvisionInput(db, order, plan, payload);
     const pending = transitionResourceOrder(db, {

@@ -35,6 +35,14 @@ export function createResourceOrderInternalRoutes({
     }
   }
 
+  async function persistResourceOrderState(db, order) {
+    if (typeof writeDb.persistResourceOrderState === "function") {
+      await writeDb.persistResourceOrderState({ db, order, orderId: order?.id });
+      return;
+    }
+    await writeDb(db);
+  }
+
   async function handleInternalPrepareRun({ req, res, url, db }) {
     if (req.method !== "POST" || url.pathname !== "/portal/internal/resource-orders/prepare-run") return false;
     if (rejectIfInternalAuthMissing(req, res)) return true;
@@ -65,7 +73,7 @@ export function createResourceOrderInternalRoutes({
       return true;
     }
     const provisioning = await provisionResourceOrder(db, frozen.order, payload, { allowDisabledPending: true });
-    await writeDb(db);
+    await persistResourceOrderState(db, provisioning.order || frozen.order);
     sendJson(res, {
       ...resourceOrderResponse(db, portalUser, provisioning.order || frozen.order),
       provisioner: provisioning.provisioner || null,
@@ -92,7 +100,7 @@ export function createResourceOrderInternalRoutes({
       sendJson(res, result, result.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistResourceOrderState(db, result.order);
     sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
     return true;
   }
@@ -146,7 +154,7 @@ export function createResourceOrderInternalRoutes({
         reason: payload.reason || payload.error || "provisioning_failed",
       });
     }
-    await writeDb(db);
+    await persistResourceOrderState(db, result.order);
     sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
     return true;
   }
@@ -172,7 +180,7 @@ export function createResourceOrderInternalRoutes({
       sendJson(res, result, result.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistResourceOrderState(db, result.order);
     sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
     return true;
   }

@@ -50,6 +50,7 @@ const isAdmin = computed(() => currentUser.value?.role === "admin");
 const userItems = [
   { to: "/overview", label: "总览" },
   { to: "/packages", label: "套餐" },
+  { to: "/resources", label: "我的资源" },
   { to: "/workspace", label: "工作空间" },
   { to: "/billing", label: "账单" },
   { to: "/trace", label: "轨迹" },

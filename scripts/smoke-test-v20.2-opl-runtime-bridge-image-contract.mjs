@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 
 const dockerfile = readFileSync("deploy/tke-package/build/dockerfiles/opl-runtime-bridge.Dockerfile", "utf8");
 
-assert.match(dockerfile, /COPY\s+source\/\.runtime\/one-person-lab-upstream\s+\.\/\.runtime\/one-person-lab-upstream/, "runtime bridge image must include upstream OPL runtime");
+assert.match(dockerfile, /COPY\s+source\/\.runtime\/one-person-lab-upstream\s+\/app\/one-person-lab-upstream/, "runtime bridge image must include upstream OPL runtime outside /app/.runtime");
+assert.doesNotMatch(dockerfile, /COPY\s+source\/\.runtime\/one-person-lab-upstream\s+\.\/\.runtime\/one-person-lab-upstream/, "runtime bridge image must not place upstream OPL runtime under /app/.runtime");
 assert.match(dockerfile, /apt-get\s+install\s+-y\s+--no-install-recommends\s+ca-certificates/, "runtime bridge image must include native CA certificates for Codex HTTPS/WebSocket calls");
 assert.match(dockerfile, /npm\s+install\s+-g\s+@openai\/codex@[0-9]+\.[0-9]+\.[0-9]+/, "runtime bridge image must provide a pinned Codex binary for ACP prompt");
 assert.match(dockerfile, /OPL_CODEX_BIN=/, "runtime bridge image must set OPL_CODEX_BIN explicitly");

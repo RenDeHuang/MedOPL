@@ -171,6 +171,13 @@ if "%1"=="create" (
   )
 )
 
+if "%1"=="auth" (
+  if "%2"=="can-i" (
+    echo yes
+    exit /b 0
+  )
+)
+
 if "%1"=="apply" (
   echo job.batch/fake-job configured
   exit /b 0
@@ -190,6 +197,11 @@ fi
 
 if [ "\${1:-}" = "create" ] && [ "\${2:-}" = "namespace" ]; then
   printf 'namespace/%s created\\n' "\${3:-}"
+  exit 0
+fi
+
+if [ "\${1:-}" = "auth" ] && [ "\${2:-}" = "can-i" ]; then
+  echo yes
   exit 0
 fi
 
@@ -263,6 +275,11 @@ async function main() {
     tolerations: [
       { key: "nvidia.com/gpu", operator: "Exists", value: "", effect: "NoSchedule" },
     ],
+    podNetworkingMode: "vpc_cni",
+    requiresEniPod: true,
+    podAnnotations: {
+      "tke.cloud.tencent.com/eni-ip": "true",
+    },
     cpuRequest: "8",
     cpuLimit: "8",
     memoryRequest: "32Gi",
@@ -366,6 +383,9 @@ async function main() {
     assert(run.resourceOrderId === `order-${run.runId}`, `run_resource_order_mismatch:${run.resourceOrderId}`);
     assert(run.runtimeClass === plan.runtimeClass, `run_runtime_class_mismatch:${run.runtimeClass}`);
     assert(run.nodePool === plan.nodePool, `run_node_pool_mismatch:${run.nodePool}`);
+    assert(run.podNetworkingMode === plan.podNetworkingMode, `run_pod_networking_mode_mismatch:${run.podNetworkingMode}`);
+    assert(run.requiresEniPod === true, "run_requires_eni_pod_mismatch");
+    assert(run.podAnnotations?.["tke.cloud.tencent.com/eni-ip"] === "true", "run_pod_annotations_missing_tke_eni");
 
     const manifest = await readFile(run.manifestPath, "utf8");
     assert(manifest.includes(`server_plan_id: "${plan.id}"`), "manifest_missing_server_plan_label");
@@ -376,6 +396,7 @@ async function main() {
     assert(manifest.includes(`- name: INSTANCE_TYPE`), "manifest_missing_instance_type_env_name");
     assert(manifest.includes(`value: "${plan.instanceType}"`), "manifest_missing_instance_type_env_value");
     assert(manifest.includes(`runtimeClassName: "${plan.runtimeClass}"`), "manifest_missing_runtime_class");
+    assert(manifest.includes(`tke.cloud.tencent.com/eni-ip: "true"`), "manifest_missing_tke_eni_annotation");
     assert(manifest.includes(`cpu: "${plan.cpuRequest}"`), "manifest_missing_cpu_request");
     assert(manifest.includes(`memory: "${plan.memoryRequest}"`), "manifest_missing_memory_request");
     assert(manifest.includes(`ephemeral-storage: "${plan.storageRequest}"`), "manifest_missing_storage_request");

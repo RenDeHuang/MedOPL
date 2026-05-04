@@ -108,22 +108,20 @@ export function createPortalAdminUserRoutes({
       sendHtml(res, layoutV2("充值失败", `<div class="card">参数错误</div>`, user), 400);
       return true;
     }
-    wallet.balance += amount;
-    wallet.updatedAt = new Date().toISOString();
-    appendLedgerEntry(db, {
-      id: randomUUID(),
-      tenantId: form.userId,
+    if (typeof writeDb.topupWallet !== "function") {
+      sendHtml(res, layoutV2("充值失败", `<div class="card">账务事务未启用</div>`, user), 503);
+      return true;
+    }
+    const idempotencyKey = String(form.idempotencyKey || `admin-recharge:${form.userId}:${amount}:${Date.now()}:${randomUUID()}`);
+    const result = await writeDb.topupWallet({
       userId: form.userId,
-      type: "topup",
       amount,
-      currency: "CNY",
-      sourceType: "admin_topup",
-      reason: "admin_recharge",
-      createdAt: new Date().toISOString(),
       operatorId: user.id,
+      idempotencyKey,
+      reason: "admin_recharge",
     });
-    await logPortalEvent({ type: "wallet_topped_up", userId: form.userId, operatorId: user.id, amount });
-    await writeDb(db);
+    wallet.balance = Number(result.balance || wallet.balance);
+    wallet.updatedAt = new Date().toISOString();
     redirect(res, redirectTo);
     return true;
   }

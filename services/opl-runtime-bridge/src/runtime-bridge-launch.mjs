@@ -17,6 +17,7 @@ import {
   getOplWebUrl,
 } from "./opl-client.mjs";
 import { usableServerPlanId } from "./server-plan-ids.mjs";
+import { writeProviderSecret } from "./provider-secret-store.mjs";
 
 function firstNonEmpty(values = []) {
   for (const value of values) {
@@ -36,6 +37,52 @@ function resolveOwnerId(detail = {}, fallback = "") {
 
 function resolveStorageOwnerId(detail = {}, fallback = "") {
   return firstNonEmpty([detail.storageOwnerId, detail.storage_owner_id, detail.storageOwner, detail.storage_owner]) || resolveOwnerId(detail, fallback);
+}
+
+function normalizeProviderKeyPayload(input = {}) {
+  const apiKey = firstNonEmpty([
+    input.apiKey,
+    input.api_key,
+    input.providerApiKey,
+    input.provider_api_key,
+    input.experimentalBearerToken,
+    input.experimental_bearer_token,
+    input.gflabtoken,
+    input.gflabToken,
+  ]);
+  if (!apiKey) return null;
+  return {
+    provider: firstNonEmpty([input.provider, input.providerName, input.provider_name]) || "gflabtoken",
+    source: firstNonEmpty([input.source, input.providerSource, input.provider_source]) || "user_input",
+    apiKey,
+  };
+}
+
+function providerSecretRefFor(runtimeSession = {}) {
+  const owner = firstNonEmpty([runtimeSession.portalUserId, runtimeSession.ownerId, runtimeSession.tenantId, "user"]);
+  const workspace = firstNonEmpty([runtimeSession.workspaceId, "default"]);
+  const session = firstNonEmpty([runtimeSession.runtimeSessionId, runtimeSession.workspaceSessionId, randomUUID()]);
+  return `gflab-${owner}-${workspace}-${session}`;
+}
+
+async function bindProviderConfig(runtimeSession, input = {}) {
+  const providerKey = normalizeProviderKeyPayload(input);
+  if (!providerKey) return false;
+  if (providerKey.provider !== "gflabtoken" || providerKey.source !== "user_input") {
+    throw new Error("provider_key_payload_invalid");
+  }
+  const ref = runtimeSession.providerConfigSecretRef || providerSecretRefFor(runtimeSession);
+  await writeProviderSecret(ref, providerKey);
+  runtimeSession.providerConfigured = true;
+  runtimeSession.providerConfigStatus = "configured";
+  runtimeSession.providerConfigSecretRef = ref;
+  runtimeSession.providerName = "gflab";
+  runtimeSession.providerBaseUrl = "https://gflabtoken.cn/v1";
+  runtimeSession.modelProvider = "gflab";
+  runtimeSession.model = input.model || runtimeSession.model || "gpt-5.5";
+  runtimeSession.modelReasoningEffort = input.modelReasoningEffort || input.model_reasoning_effort || runtimeSession.modelReasoningEffort || "xhigh";
+  runtimeSession.secretFingerprint = `sha256:${createHmac("sha256", "opl-provider-secret-fingerprint").update(providerKey.apiKey).digest("hex").slice(0, 16)}`;
+  return true;
 }
 
 function buildScope(launch = {}, runtimeSession = {}) {
@@ -366,18 +413,26 @@ export function createLaunchApi({
     };
   }
 
-  function bindOplSession(state, launch, input = {}) {
+  async function bindOplSession(state, launch, input = {}) {
     const runtimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === launch.runtimeSessionId);
     if (!runtimeSession) return null;
     const oplSessionId = input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || "";
     if (oplSessionId) runtimeSession.oplSessionId = oplSessionId;
+    const providerBound = await bindProviderConfig(runtimeSession, input);
     runtimeSession.status = input.status || runtimeSession.status || "ready";
     runtimeSession.lastActiveAt = nowIso();
     addEvent(state, "opl_session_bound", {
       ...runtimeSession,
       oplSessionId: runtimeSession.oplSessionId || "",
       source: "opl-web",
+      providerConfigured: Boolean(runtimeSession.providerConfigured),
     });
+    if (providerBound) {
+      addEvent(state, "provider_config_bound", {
+        ...runtimeSession,
+        source: "opl-web",
+      });
+    }
     return runtimeSession;
   }
 
@@ -404,6 +459,9 @@ export function createLaunchApi({
       runtimeClass: input.runtimeClass || input.runtime_class || selectedServerPlan.runtimeClass || "",
       nodeSelector: input.nodeSelector || selectedServerPlan.nodeSelector || {},
       tolerations: input.tolerations || selectedServerPlan.tolerations || [],
+      podNetworkingMode: input.podNetworkingMode || input.pod_networking_mode || selectedServerPlan.podNetworkingMode || "",
+      requiresEniPod: input.requiresEniPod === true || input.requires_eni_pod === true || selectedServerPlan.requiresEniPod === true,
+      podAnnotations: input.podAnnotations || input.pod_annotations || selectedServerPlan.podAnnotations || {},
       cpuRequest: input.cpuRequest || input.cpu_request || selectedServerPlan.cpuRequest || "",
       cpuLimit: input.cpuLimit || input.cpu_limit || selectedServerPlan.cpuLimit || "",
       memoryRequest: input.memoryRequest || input.memory_request || selectedServerPlan.memoryRequest || "",
@@ -471,6 +529,9 @@ export function createLaunchApi({
       runtimeClass: runtimeSession.runtimeClass || selectedServerPlan.runtimeClass || "",
       nodeSelector: runtimeSession.nodeSelector || selectedServerPlan.nodeSelector || {},
       tolerations: runtimeSession.tolerations || selectedServerPlan.tolerations || [],
+      podNetworkingMode: runtimeSession.podNetworkingMode || selectedServerPlan.podNetworkingMode || "",
+      requiresEniPod: runtimeSession.requiresEniPod === true || selectedServerPlan.requiresEniPod === true,
+      podAnnotations: runtimeSession.podAnnotations || selectedServerPlan.podAnnotations || {},
       cpuRequest: runtimeSession.cpuRequest || selectedServerPlan.cpuRequest || "",
       cpuLimit: runtimeSession.cpuLimit || selectedServerPlan.cpuLimit || "",
       memoryRequest: runtimeSession.memoryRequest || selectedServerPlan.memoryRequest || "",

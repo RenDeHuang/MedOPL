@@ -18,12 +18,16 @@ const rendererPath = path.join(repoRoot, "deploy/tke-package/scripts/render-tke-
   const vars = parseEnvContent(`
     # comment
     SIMPLE=value
+    QUOTED_EMAIL="admin@example.test"
+    QUOTED_SECRET='secret-value'
     URL=postgres://user:p%40ss@postgres:5432/portal?sslmode=disable
     JSON={"command":"node","args":["a=b","c"]}
   `);
 
   assert.deepEqual(vars, {
     SIMPLE: "value",
+    QUOTED_EMAIL: "admin@example.test",
+    QUOTED_SECRET: "secret-value",
     URL: "postgres://user:p%40ss@postgres:5432/portal?sslmode=disable",
     JSON: '{"command":"node","args":["a=b","c"]}',
   });
@@ -121,6 +125,43 @@ const rendererPath = path.join(repoRoot, "deploy/tke-package/scripts/render-tke-
   const rendered = readFileSync(path.join(repoRoot, "deploy/tke-package/manifests/04-runner-rbac.yaml"), "utf8");
   assert.match(rendered, /kind:\s*ClusterRoleBinding/, "runner RBAC manifest must include ClusterRoleBinding");
   assert.match(rendered, /namespace:\s*__NAMESPACE__/, "runner RBAC binding must be namespace-rendered for the target service account");
+  assert.equal(
+    rendered.match(/name:\s*__RUNNER_RBAC_NAME__/g)?.length,
+    3,
+    "runner ClusterRole, ClusterRoleBinding, and roleRef must share one renderable RBAC name",
+  );
+  assert.doesNotMatch(
+    rendered,
+    /name:\s*med-autoscience-runner-job-manager(\n|$)/,
+    "runner RBAC manifest must not hard-code the shared staging ClusterRole or ClusterRoleBinding name",
+  );
+}
+
+{
+  const namespaces = readFileSync(path.join(repoRoot, "deploy/tke-package/manifests/00-namespaces.yaml"), "utf8");
+  const langfuse = readFileSync(path.join(repoRoot, "deploy/tke-package/manifests/08-langfuse-stack.yaml"), "utf8");
+  assert.doesNotMatch(
+    namespaces,
+    /\n\s*name:\s*langfuse-system(\n|$)/,
+    "base namespace manifest must not include the shared Langfuse namespace",
+  );
+  assert.match(
+    langfuse,
+    /kind:\s*Namespace[\s\S]*?\n\s*name:\s*langfuse-system(\n|$)/,
+    "Langfuse stack manifest must own the shared Langfuse namespace",
+  );
+}
+
+{
+  const migrationJob = readFileSync(path.join(repoRoot, "deploy/tke-package/manifests/07a-portal-schema-migrate-job.yaml"), "utf8");
+  assert.match(migrationJob, /kind:\s*Job/, "portal schema migration must be packaged as an explicit Kubernetes Job");
+  assert.match(migrationJob, /\n\s*name:\s*portal-schema-migrate-v20-32(\n|$)/, "portal schema migration Job must use the v20.32 isolated name");
+  assert.match(migrationJob, /\n\s*namespace:\s*__NAMESPACE__(\n|$)/, "portal schema migration Job must render into the target namespace");
+  assert.match(migrationJob, /image:\s*"__PORTAL_IMAGE__"/, "portal schema migration Job must run the same portal image being deployed");
+  assert.match(migrationJob, /command:\s*\[\s*"node",\s*"src\/migrate-schema\.mjs"\s*\]/, "portal schema migration Job must run the explicit migration entrypoint");
+  assert.match(migrationJob, /name:\s*portal-postgres-redis-secret/, "portal schema migration Job must source postgres and redis from the scoped secret");
+  assert.match(migrationJob, /name:\s*"__IMAGE_PULL_SECRET__"/, "portal schema migration Job must use the rendered registry pull secret");
+  assert.doesNotMatch(migrationJob, /langfuse-system|portal-staging/, "portal schema migration Job must not target shared or old namespaces");
 }
 
 {

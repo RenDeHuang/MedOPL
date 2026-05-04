@@ -224,20 +224,28 @@ export function updateProvisionResourceMappingCleanup(state, input = {}) {
     runId: stringValue(input.runId || input.run_id),
   });
   if (!mapping) return null;
+  const order = (state.orders || []).find((item) =>
+    (mapping.resourceOrderId && item.resourceOrderId === mapping.resourceOrderId) ||
+    (mapping.nodePoolId && item.nodePoolId === mapping.nodePoolId) ||
+    (mapping.runId && item.runId === mapping.runId)
+  );
+  const officialDeleteRequestId = stringValue(mapping.deleteRequestId || order?.deleteRequestId);
+  const officialBillingStoppedAt = stringValue(mapping.billingStoppedAt || order?.billingStoppedAt);
+  if (!officialDeleteRequestId || !officialBillingStoppedAt) {
+    const error = new Error("resource_mapping_delete_not_started");
+    error.status = 409;
+    error.code = "resource_mapping_delete_not_started";
+    throw error;
+  }
   const index = state.resourceMappings.findIndex((item) => item.id === mapping.id);
   const updated = markProvisionResourceCleanup(mapping, {
     status: stringValue(input.status || input.cleanupStatus || input.cleanup_status || "deleted"),
-    requestId: stringValue(input.requestId || input.deleteRequestId || input.delete_request_id),
+    requestId: officialDeleteRequestId,
     cleanupEvidenceId: stringValue(input.cleanupEvidenceId || input.cleanup_evidence_id),
-    billingStoppedAt: stringValue(input.billingStoppedAt || input.billing_stopped_at || new Date().toISOString()),
+    billingStoppedAt: officialBillingStoppedAt,
     remaining: input.cleanupRemaining || input.cleanup_remaining || {},
   });
   if (index >= 0) state.resourceMappings[index] = updated;
-  const order = (state.orders || []).find((item) =>
-    (updated.resourceOrderId && item.resourceOrderId === updated.resourceOrderId) ||
-    (updated.nodePoolId && item.nodePoolId === updated.nodePoolId) ||
-    (updated.runId && item.runId === updated.runId)
-  );
   if (order) {
     order.billingStoppedAt = updated.billingStoppedAt;
     order.cleanupStatus = updated.cleanupStatus;

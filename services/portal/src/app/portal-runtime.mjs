@@ -212,6 +212,7 @@ const {
   buildPortalHealthPayload,
   ensureStorageInfra,
   logPortalEvent,
+  readAuthDb,
   readDb,
   readPortalEvents,
   storageMode,
@@ -341,6 +342,7 @@ const {
   layoutV2,
   listWorkspaceFiles,
   logPortalEvent,
+  markWorkspaceStorageDeleting,
   mkdir,
   normalizeAuthEmail,
   oplLaunchService,
@@ -359,6 +361,7 @@ const {
   slugify,
   stat,
   syncWorkspaceFileToMinio,
+  workspaceSessionCookie,
   workspaceStorageEntitlement,
   writeFile,
   writeDb,
@@ -428,8 +431,8 @@ function getTaskPath(userId, taskSlug) {
   return path.join(medWorkspaceRoot, userId, taskSlug);
 }
 
-async function currentUser(req) {
-  const db = await readDb();
+async function currentUser(req, { mode = "full" } = {}) {
+  const db = mode === "auth_light" || mode === "auth_page" ? await readAuthDb() : await readDb();
   const cookies = parseCookies(req.headers.cookie);
   const sessionId = cookies.portal_session;
   if (!sessionId) return { db, user: null };

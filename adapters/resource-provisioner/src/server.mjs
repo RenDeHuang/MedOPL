@@ -140,14 +140,18 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === "POST" && url.pathname === "/resource-mappings/mark-cleanup") {
-    const state = await readOrders();
-    const mapping = updateProvisionResourceMappingCleanup(state, await readBody(req));
-    if (!mapping) {
-      sendJson(res, 404, { ok: false, error: "resource_mapping_not_found" });
-      return;
+    try {
+      const state = await readOrders();
+      const mapping = updateProvisionResourceMappingCleanup(state, await readBody(req));
+      if (!mapping) {
+        sendJson(res, 404, { ok: false, error: "resource_mapping_not_found" });
+        return;
+      }
+      await writeOrders(state);
+      sendJson(res, 200, { ok: true, mapping });
+    } catch (error) {
+      sendJson(res, error.status || 500, { ok: false, error: String(error.message || error), code: error.code || "" });
     }
-    await writeOrders(state);
-    sendJson(res, 200, { ok: true, mapping });
     return;
   }
 

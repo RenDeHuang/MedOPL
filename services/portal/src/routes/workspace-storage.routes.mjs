@@ -130,7 +130,12 @@ export function createWorkspaceStorageRoutes({
       storageSizeGb,
       storageOrderId: created.order.id,
     });
-    await writeDb(db);
+    if (typeof writeDb.upsertTaskSpace === "function" && typeof writeDb.upsertStorageOrder === "function") {
+      await writeDb.upsertTaskSpace(taskSpace);
+      await writeDb.upsertStorageOrder(created.order);
+    } else {
+      await writeDb(db);
+    }
     sendJson(res, {
       ok: true,
       workspaceId: taskSpace.slug,
@@ -272,7 +277,12 @@ export function createWorkspaceStorageRoutes({
       return true;
     }
     await logPortalEvent({ type: "workspace_input_uploaded", userId: user.id, workspaceId: taskSpace.slug, fileCount: 1, fileName: saved.file.name });
-    await writeDb(db);
+    if (typeof writeDb.upsertTaskSpace === "function" && typeof writeDb.upsertWorkspaceFile === "function") {
+      await writeDb.upsertTaskSpace(taskSpace);
+      await writeDb.upsertWorkspaceFile(saved.file);
+    } else {
+      await writeDb(db);
+    }
     sendJson(res, {
       ok: true,
       workspaceId: taskSpace.slug,

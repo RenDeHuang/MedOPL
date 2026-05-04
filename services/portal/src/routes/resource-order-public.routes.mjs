@@ -9,14 +9,17 @@ import {
 import { buildCommercialProfile } from "../domain/commercial-state.mjs";
 import { currentServerPlanSelection } from "../domain/server-plans.mjs";
 import { isAdminUser } from "../domain/tenant-scope.mjs";
+import { buildUserResourceBindings } from "../domain/user-resource-bindings.mjs";
 import {
   findUserResourceOrder,
   resolveOrderNodePoolMutation,
   resourceOrderResponse,
+  validateDeleteNodePoolPayload,
 } from "./resource-order-route-support.mjs";
 
 export function createResourceOrderPublicRoutes({
   createQuotedResourceOrder,
+  markWorkspaceStorageDeleting,
   provisionResourceOrder,
   readJsonBody,
   resourceProvisionerClient,
@@ -50,6 +53,17 @@ export function createResourceOrderPublicRoutes({
     }
   }
 
+  async function persistPublicResourceOrderMutation(db, { order, taskSpace = null } = {}) {
+    if (typeof writeDb.upsertTaskSpace === "function" && taskSpace) {
+      await writeDb.upsertTaskSpace(taskSpace);
+    }
+    if (typeof writeDb.persistResourceOrderState === "function") {
+      await writeDb.persistResourceOrderState({ db, order, orderId: order?.id });
+      return;
+    }
+    throw new Error("resource_order_domain_store_not_configured");
+  }
+
   async function handleResourceOrderList({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/resource-orders") return false;
     ensureResourceOrderCollections(db);
@@ -64,6 +78,13 @@ export function createResourceOrderPublicRoutes({
     return true;
   }
 
+  async function handleMyResources({ req, res, url, db, user }) {
+    if (req.method !== "GET" || url.pathname !== "/portal/api/my/resources") return false;
+    const bindings = buildUserResourceBindings(db, user);
+    sendJson(res, bindings);
+    return true;
+  }
+
   async function handleResourceOrderQuote({ req, res, url, db, user }) {
     if (req.method !== "POST" || url.pathname !== "/portal/api/resource-orders/quote") return false;
     const body = await readPublicPayload(req, res);
@@ -74,7 +95,7 @@ export function createResourceOrderPublicRoutes({
       sendJson(res, quoted, quoted.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistPublicResourceOrderMutation(db, { order: quoted.order, taskSpace: quoted.taskSpace });
     sendJson(res, {
       ...resourceOrderResponse(db, user, quoted.order),
       selectedServerPlan: currentServerPlanSelection(quoted.taskSpace),
@@ -89,6 +110,7 @@ export function createResourceOrderPublicRoutes({
     if (!body.ok) return true;
     const payload = body.payload;
     let order = db.resourceOrders?.find((item) => item.id === String(payload.orderId || payload.resourceOrderId || ""));
+    let taskSpace = null;
     if (!order) {
       const quoted = await createQuotedResourceOrder(db, user, req, payload, { idempotencyPrefix: "resource-order-freeze-quote" });
       if (!quoted.ok) {
@@ -96,6 +118,7 @@ export function createResourceOrderPublicRoutes({
         return true;
       }
       order = quoted.order;
+      taskSpace = quoted.taskSpace;
     }
     const frozen = freezeResourceOrder(db, {
       user,
@@ -106,9 +129,46 @@ export function createResourceOrderPublicRoutes({
       sendJson(res, frozen, frozen.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistPublicResourceOrderMutation(db, { order: frozen.order, taskSpace });
     sendJson(res, resourceOrderResponse(db, user, frozen.order));
     return true;
+  }
+
+  async function persistWorkspaceStorageRetention(db, storageRetention) {
+    const storageOrderIds = new Set(storageRetention?.storageOrderIds || []);
+    const workspaceFileIds = new Set(storageRetention?.workspaceFileIds || []);
+    const shouldPersistStorageOrder = storageOrderIds.size
+      ? (order) => storageOrderIds.has(String(order.id || ""))
+      : () => false;
+    const shouldPersistWorkspaceFile = workspaceFileIds.size
+      ? (file) => workspaceFileIds.has(String(file.id || ""))
+      : () => false;
+
+    if (typeof writeDb.upsertStorageOrder === "function") {
+      for (const order of db.storageOrders || []) {
+        if (shouldPersistStorageOrder(order)) await writeDb.upsertStorageOrder(order);
+      }
+    }
+    if (typeof writeDb.upsertWorkspaceFile === "function") {
+      for (const file of db.workspaceFiles || []) {
+        if (shouldPersistWorkspaceFile(file)) await writeDb.upsertWorkspaceFile(file);
+      }
+    }
+  }
+
+  async function markOrderWorkspaceStorageDeleting(db, { user, order, deleted }) {
+    if (typeof markWorkspaceStorageDeleting !== "function") {
+      return { ok: true, skipped: true, reason: "workspace_storage_lifecycle_not_configured" };
+    }
+    const deletedAt = String(deleted?.mapping?.billingStoppedAt || deleted?.billingStoppedAt || "").trim();
+    const storageRetention = markWorkspaceStorageDeleting(db, {
+      user,
+      workspaceId: order.workspaceId,
+      deletedAt,
+      retentionDays: 7,
+    });
+    await persistWorkspaceStorageRetention(db, storageRetention);
+    return storageRetention;
   }
 
   async function handleCloudResources({ req, res, url, db, user }) {
@@ -144,12 +204,19 @@ export function createResourceOrderPublicRoutes({
       sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
       return true;
     }
+    if (String(order.status || "").toLowerCase() === "running") {
+      sendJson(res, {
+        ...resourceOrderResponse(db, user, order),
+        provisioner: { ok: true, reused: true, reason: "resource_order_already_running" },
+      });
+      return true;
+    }
     if (!["frozen", "provisioning"].includes(String(order.status || "").toLowerCase())) {
       sendJson(res, { ok: false, error: "resource_order_must_be_frozen", status: order.status }, 409);
       return true;
     }
     const provisioned = await provisionResourceOrder(db, order, payload);
-    await writeDb(db);
+    await persistPublicResourceOrderMutation(db, { order: provisioned.order || order });
     sendJson(res, {
       ...resourceOrderResponse(db, user, provisioned.order || order),
       provisioner: provisioned.provisioner,
@@ -208,7 +275,7 @@ export function createResourceOrderPublicRoutes({
       sendJson(res, released, released.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistPublicResourceOrderMutation(db, { order: released.order });
     sendJson(res, { ...resourceOrderResponse(db, user, released.order), scaleResult: scaled.scaleResult });
     return true;
   }
@@ -250,6 +317,11 @@ export function createResourceOrderPublicRoutes({
     const body = await readPublicPayload(req, res);
     if (!body.ok) return true;
     const payload = body.payload;
+    const payloadValidation = validateDeleteNodePoolPayload(payload);
+    if (!payloadValidation.ok) {
+      sendJson(res, payloadValidation, payloadValidation.status);
+      return true;
+    }
     const order = findUserResourceOrder(db, user, payload.orderId || payload.resourceOrderId);
     if (!order) {
       sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
@@ -268,13 +340,15 @@ export function createResourceOrderPublicRoutes({
       sendJson(res, { ok: false, error: deleted.error, message: deleted.message, provisioner: deleted.provisioner }, deleted.status);
       return true;
     }
+    const storageRetention = await markOrderWorkspaceStorageDeleting(db, { user, order, deleted: deleted.deleted });
     const transitioned = markDeletedNodePoolReleased(db, { user, order, payload, deleted: deleted.deleted });
-    await writeDb(db);
-    sendJson(res, { ...resourceOrderResponse(db, user, transitioned.order || order), provisioner: deleted.deleted });
+    await persistPublicResourceOrderMutation(db, { order: transitioned.order || order });
+    sendJson(res, { ...resourceOrderResponse(db, user, transitioned.order || order), provisioner: deleted.deleted, storageRetention });
     return true;
   }
 
   return async function handleResourceOrderPublicRoutes(context) {
+    if (await handleMyResources(context)) return true;
     if (await handleResourceOrderList(context)) return true;
     if (await handleResourceOrderQuote(context)) return true;
     if (await handleResourceOrderFreeze(context)) return true;

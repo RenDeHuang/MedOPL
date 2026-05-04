@@ -175,6 +175,14 @@ export function createPortalAuthRuntimeHandler({
   setCookie,
   writeDb,
 }) {
+  async function persistAuthSession(db) {
+    if (typeof writeDb.persistPortalSessions === "function") {
+      await writeDb.persistPortalSessions(db);
+      return;
+    }
+    await writeDb(db);
+  }
+
   async function registerLocalPortalUser(db, form) {
     if (portalOidc.enabled) {
       return { ok: false, status: 400, title: "注册不可用", message: "统一身份模式下不提供本地注册。" };
@@ -260,7 +268,7 @@ export function createPortalAuthRuntimeHandler({
         return true;
       }
       const sessionId = createPortalSession(db, authResult.user, "local");
-      await writeDb(db);
+      await persistAuthSession(db);
       setCookie(res, "portal_session", sessionId);
       res.writeHead(302, { Location: "/portal" });
       res.end();

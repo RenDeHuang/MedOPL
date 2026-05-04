@@ -47,6 +47,19 @@ export function createLabPackageRoutes({
     };
   }
 
+  async function persistLabBillingState(db, result = {}) {
+    if (typeof writeDb.persistLabBillingState === "function") {
+      await writeDb.persistLabBillingState({
+        db,
+        subscription: result.subscription,
+        subscriptionId: result.subscription?.id,
+        addon: result.addon || null,
+      });
+      return;
+    }
+    await writeDb(db);
+  }
+
   async function handleListPackages({ req, res, url }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/lab-packages") return false;
     sendJson(res, {
@@ -93,7 +106,7 @@ export function createLabPackageRoutes({
       sendJson(res, { ok: false, error: result.error }, result.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistLabBillingState(db, result);
     sendJson(res, {
       ok: true,
       created: result.created,
@@ -119,7 +132,7 @@ export function createLabPackageRoutes({
       sendJson(res, { ok: false, error: result.error }, result.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistLabBillingState(db, result);
     sendJson(res, {
       ok: true,
       created: result.created,
@@ -142,7 +155,7 @@ export function createLabPackageRoutes({
       sendJson(res, { ok: false, error: result.error }, result.status || 400);
       return true;
     }
-    await writeDb(db);
+    await persistLabBillingState(db, result);
     sendJson(res, {
       ok: true,
       created: result.created,

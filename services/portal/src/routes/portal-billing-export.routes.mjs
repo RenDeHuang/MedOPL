@@ -30,6 +30,36 @@ function withinHourWindow(isoString, hours) {
   return ts >= Date.now() - hours * 60 * 60 * 1000;
 }
 
+function labelKeyAliases(key = "") {
+  const text = String(key || "").trim();
+  const compact = text.replace(/_/g, "");
+  const dashed = text.replace(/_/g, "-");
+  if (!text) return [];
+  return [...new Set([text, compact, dashed])];
+}
+
+function billingLabelValue(item = {}, key = "") {
+  const props = item?.properties || {};
+  const labels = props.labels || {};
+  for (const alias of labelKeyAliases(key)) {
+    const value = labels[alias] || props[`label:${alias}`] || props[alias] || labels[`gaofenglab/${alias}`] || props[`gaofenglab/${alias}`] || "";
+    if (value) return value;
+  }
+  return "";
+}
+
+function billingItemMatchesRun(item = {}, runId = "") {
+  const target = String(runId || "").trim();
+  if (!target) return false;
+  return billingLabelValue(item, "run_id") === target || String(item?.name || "").includes(target);
+}
+
+function billingItemMatchesUser(item = {}, userId = "") {
+  const target = String(userId || "").trim();
+  if (!target) return false;
+  return billingLabelValue(item, "customer_id") === target || billingLabelValue(item, "tenant_id") === target;
+}
+
 function redirect(res, location) {
   res.writeHead(302, { Location: location });
   res.end();
@@ -119,7 +149,7 @@ export function createPortalBillingExportRoutes({
       ["entryId", "type", "userId", "userName", "userEmail", "runId", "workspaceId", "amount", "createdAt", "operatorId", "reason", "pricingSource"].join(","),
       ...db.ledger.filter((entry) => withinHourWindow(entry.createdAt, windowHours)).map((entry) => {
         const targetUser = db.users.find((item) => item.id === entry.userId) || {};
-        const related = items.find((item) => item?.properties?.["label:run_id"] === entry.runId || item?.properties?.run_id === entry.runId || item?.name?.includes(entry.runId || ""));
+        const related = items.find((item) => billingItemMatchesRun(item, entry.runId));
         const pricingSource = related ? "OpenCost aggregated" : (entry.type === "resource_charge" ? "metering pending" : "manual ledger");
         return [
           csvEscape(entry.id),
@@ -156,8 +186,7 @@ export function createPortalBillingExportRoutes({
         const topup = db.ledger.filter((item) => item.userId === entry.id && item.type === "topup" && withinHourWindow(item.createdAt, windowHours)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
         const resourceCharge = db.ledger.filter((item) => item.userId === entry.id && item.type === "resource_charge" && withinHourWindow(item.createdAt, windowHours)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
         const opencostTotal = items.filter((item) => {
-          const props = item?.properties || {};
-          return props["label:customer_id"] === entry.id || props.customer_id === entry.id;
+          return billingItemMatchesUser(item, entry.id);
         }).filter((item) => withinHourWindow(item?.end || item?.start, windowHours)).reduce((sum, item) => sum + Number(item?.totalCost || 0), 0);
         return [
           csvEscape(entry.id),
@@ -214,37 +243,43 @@ export function createPortalBillingExportRoutes({
       sendHtml(res, layoutV2("账务调整失败", `<div class="card">参数错误，请检查用户、动作类型、金额和原因。</div>`, user), 400);
       return true;
     }
-    const signedAmount = actionType === "refund" ? Math.abs(amount) : -Math.abs(amount);
-    wallet.balance += signedAmount;
-    wallet.updatedAt = new Date().toISOString();
-    appendLedgerEntry(db, {
-      id: randomUUID(),
-      tenantId: targetUser.id,
+    const transactionHandler = actionType === "refund" ? writeDb.refundWallet : writeDb.makeupChargeWallet;
+    if (typeof transactionHandler !== "function") {
+      sendHtml(res, layoutV2("账务调整失败", `<div class="card">账务事务未启用</div>`, user), 503);
+      return true;
+    }
+    const normalizedAmount = Math.abs(amount);
+    const result = await transactionHandler({
       userId: targetUser.id,
+      tenantId: targetUser.id,
+      amount: normalizedAmount,
+      operatorId: user.id,
+      idempotencyKey: String(form.idempotencyKey || `admin-ledger-adjust:${actionType}:${targetUser.id}:${normalizedAmount}:${Date.now()}:${randomUUID()}`),
+      reason,
       runId: String(form.runId || "").trim(),
       workspaceId: String(form.workspaceId || "").trim(),
       orderId: String(form.orderId || "").trim(),
-      type: actionType,
-      amount: Math.abs(amount),
-      currency: "CNY",
-      sourceType: "admin_adjustment",
       sourceId: String(form.sourceId || "").trim(),
-      idempotencyKey: String(form.idempotencyKey || "").trim(),
-      reason,
-      createdAt: new Date().toISOString(),
-      operatorId: user.id,
+      sourceType: "admin_adjustment",
+      auditType: "ledger_adjusted",
+      auditDetails: {
+        actionType,
+      },
     });
+    wallet.balance = Number(result.balance || wallet.balance);
+    wallet.updatedAt = new Date().toISOString();
     await logPortalEvent({
       type: "ledger_adjusted",
       userId: targetUser.id,
       operatorId: user.id,
       actionType,
-      amount: signedAmount,
+      amount: actionType === "refund" ? normalizedAmount : -normalizedAmount,
       runId: String(form.runId || "").trim(),
       workspaceId: String(form.workspaceId || "").trim(),
       reason,
+      ledgerId: result.ledgerId || "",
+      auditEventId: result.auditEventId || "",
     });
-    await writeDb(db);
     redirect(res, redirectTo);
     return true;
   }

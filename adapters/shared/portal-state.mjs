@@ -1,5 +1,3 @@
-import pg from "pg";
-import { createClient as createRedisClient } from "redis";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -55,6 +53,7 @@ async function writeJsonDb(db) {
 
 async function pool() {
   if (!pgPool) {
+    const pg = await import("pg");
     const { Pool } = pg;
     pgPool = new Pool({ connectionString: PORTAL_POSTGRES_URL });
   }
@@ -63,6 +62,7 @@ async function pool() {
 
 async function redis() {
   if (!redisClient) {
+    const { createClient: createRedisClient } = await import("redis");
     redisClient = createRedisClient({ url: PORTAL_REDIS_URL });
     redisClient.on("error", (error) => console.error("portal-state redis error", error));
     await redisClient.connect();

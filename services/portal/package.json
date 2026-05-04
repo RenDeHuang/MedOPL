@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node src/server.mjs",
+    "migrate:schema": "node src/migrate-schema.mjs",
     "check": "node --check src/server.mjs",
     "frontend:install": "npm --prefix frontend install",
     "frontend:typecheck": "npm --prefix frontend run typecheck",

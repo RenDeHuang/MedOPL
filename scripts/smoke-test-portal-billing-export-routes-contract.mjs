@@ -57,6 +57,7 @@ const db = {
 const events = [];
 const writes = [];
 const fetchCalls = [];
+const accountingCalls = [];
 const route = createPortalBillingExportRoutes({
   appendLedgerEntry: (targetDb, entry) => {
     targetDb.ledger.push(entry);
@@ -118,7 +119,16 @@ const route = createPortalBillingExportRoutes({
   readBillingRequestOptions: () => ({ window: "168h" }),
   readBody,
   sendHtml,
-  writeDb: async (targetDb) => writes.push(targetDb),
+  writeDb: Object.assign(async (targetDb) => writes.push(targetDb), {
+    async refundWallet(params) {
+      accountingCalls.push({ action: "refund", params });
+      return { ok: true, balance: 12.5, ledgerId: "ledger-refund-1", auditEventId: "audit-refund-1" };
+    },
+    async makeupChargeWallet(params) {
+      accountingCalls.push({ action: "makeup_charge", params });
+      return { ok: true, balance: 7.5, ledgerId: "ledger-makeup-1", auditEventId: "audit-makeup-1" };
+    },
+  }),
 });
 
 async function request(method, path, user, fields = {}) {
@@ -155,7 +165,101 @@ result = await request("POST", "/portal/admin/ledger-adjust", db.users[0], {
 });
 assert.equal(result.res.statusCode, 302, "ledger_adjust_must_redirect");
 assert.equal(db.wallets[0].balance, 12.5, "ledger_adjust_must_update_wallet");
-assert.ok(db.ledger.some((entry) => entry.type === "refund" && entry.userId === "user-1"), "ledger_adjust_must_append_entry");
+assert.equal(accountingCalls.length, 1, "refund_adjust_must_call_accounting_store_once");
+const refundCall = accountingCalls[0];
+assert.deepEqual(refundCall, {
+  action: "refund",
+  params: {
+    userId: "user-1",
+    tenantId: "user-1",
+    amount: 2.5,
+    operatorId: "admin-1",
+    idempotencyKey: refundCall.params.idempotencyKey,
+    reason: "exact bill refund",
+    runId: "",
+    workspaceId: "",
+    orderId: "",
+    sourceId: "",
+    sourceType: "admin_adjustment",
+    auditType: "ledger_adjusted",
+    auditDetails: {
+      actionType: "refund",
+    },
+  },
+}, "refund_adjust_must_use_accounting_store");
+assert.match(refundCall.params.idempotencyKey, /^admin-ledger-adjust:refund:user-1:2\.5:/);
+assert.equal(db.ledger.length, 1, "ledger_adjust_must_not_append_non_transactional_entry");
+
+result = await request("POST", "/portal/admin/ledger-adjust", db.users[0], {
+  userId: "user-1",
+  actionType: "makeup_charge",
+  amount: "5",
+  reason: "exact bill makeup",
+  idempotencyKey: "manual-makeup-idem",
+  redirectTo: "/portal/admin/billing-ops",
+});
+assert.equal(result.res.statusCode, 302, "makeup_charge_must_redirect");
+assert.equal(db.wallets[0].balance, 7.5, "makeup_charge_must_update_wallet_from_transaction_result");
+assert.equal(accountingCalls.length, 2, "makeup_charge_adjust_must_call_accounting_store_once");
+assert.deepEqual(accountingCalls[1], {
+  action: "makeup_charge",
+  params: {
+    userId: "user-1",
+    tenantId: "user-1",
+    amount: 5,
+    operatorId: "admin-1",
+    idempotencyKey: "manual-makeup-idem",
+    reason: "exact bill makeup",
+    runId: "",
+    workspaceId: "",
+    orderId: "",
+    sourceId: "",
+    sourceType: "admin_adjustment",
+    auditType: "ledger_adjusted",
+    auditDetails: {
+      actionType: "makeup_charge",
+    },
+  },
+}, "makeup_charge_adjust_must_use_accounting_store");
+
+const routeWithoutAccountingStore = createPortalBillingExportRoutes({
+  appendLedgerEntry: () => {
+    throw new Error("append_must_not_be_called_without_accounting_store");
+  },
+  billingServiceUrl: "http://billing.local",
+  buildBillingPayload: async () => ({ runCosts: [], taskCosts: [] }),
+  fetchBillingSummary: async () => ({ items: [] }),
+  fetchPendingSummary: async () => ({ runs: [] }),
+  layoutV2: (title, body) => `${title}:${body}`,
+  logPortalEvent: async () => {},
+  parseForm,
+  readBillingRequestOptions: () => ({ window: "168h" }),
+  readBody,
+  sendHtml,
+  writeDb: async () => {
+    throw new Error("writeDb_must_not_be_called_without_accounting_store");
+  },
+});
+{
+  const res = createResponseRecorder();
+  const handled = await routeWithoutAccountingStore({
+    req: {
+      method: "POST",
+      body: encodeForm({
+        userId: "user-1",
+        actionType: "refund",
+        amount: "1",
+        reason: "refund",
+      }),
+    },
+    res,
+    url: new URL("/portal/admin/ledger-adjust", "http://portal.local"),
+    db,
+    user: db.users[0],
+  });
+  assert.equal(handled, true, "ledger_adjust_without_accounting_store_must_be_handled");
+  assert.equal(res.statusCode, 503, "ledger_adjust_without_accounting_store_must_reject");
+}
 
 result = await request("POST", "/portal/admin/reconcile-billing", db.users[0], {
   scopeType: "workspace",

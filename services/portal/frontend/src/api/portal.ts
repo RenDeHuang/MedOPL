@@ -106,6 +106,9 @@ export interface BillingQuery {
 export interface BillingPayload {
   wallet: {
     balance: number;
+    activeFreeze?: number;
+    availableBalance?: number;
+    trialRemaining?: number;
   };
   totals: {
     cpuCost: number;
@@ -127,6 +130,26 @@ export interface BillingPayload {
     selectedCost: number;
     runCount: number;
     workspaceCount: number;
+    pendingCost?: number;
+    exactCost?: number;
+  };
+  supportBoundary?: {
+    supportStatus: string;
+    fundingStatus: string;
+    graceStatus: string;
+    fileRetentionStatus: string;
+    failedRunBillingStatus: string;
+    canStartPaidRun: boolean;
+    canDownloadExistingOutput: boolean;
+    billingCopy: string;
+    userCopy: string;
+    actionRequired: string[];
+    amounts: {
+      walletBalance: number;
+      activeFreeze: number;
+      availableBalance: number;
+      minRequiredBalance: number;
+    };
   };
   taskCosts: Array<{
     slug: string;
@@ -580,6 +603,40 @@ export interface ResourceOrdersPayload {
   };
 }
 
+export interface MyResourceBindingItem {
+  tenantId: string;
+  resourceOrderId: string;
+  status: string;
+  workspaceId: string;
+  runId?: string;
+  serverPlanId?: string;
+  nodePoolId?: string;
+  cvmInstanceIds: string[];
+  storageOrderId?: string;
+  cosPrefix?: string;
+  deleteBlockedReason?: string;
+  billingTags: {
+    resourceorderid: string;
+    runid: string;
+    serverplanid: string;
+    tenantid: string;
+    workspaceid: string;
+  };
+  canDelete: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MyResourcesPayload {
+  ok: boolean;
+  source: string;
+  items: MyResourceBindingItem[];
+  summary?: {
+    total?: number;
+    deletable?: number;
+  };
+}
+
 export interface ResourceOrderQuoteInput {
   workspaceId?: string;
   workspaceSessionId?: string;
@@ -755,6 +812,7 @@ export interface WorkspaceFileTransferPayload {
 export interface LabPackagePlan {
   id: string;
   name: string;
+  backingServerPlanId?: string;
   computePower: string;
   storageCapacityGb: number;
   dailyDebit: number;
@@ -921,6 +979,11 @@ export async function fetchResourceOrders(params?: Record<string, string | numbe
   return data;
 }
 
+export async function fetchMyResources() {
+  const { data } = await apiClient.get<MyResourcesPayload>("/my/resources");
+  return data;
+}
+
 export async function fetchCloudResources() {
   const { data } = await apiClient.get<CloudResourcesPayload>("/cloud/resources");
   return data;
@@ -948,7 +1011,6 @@ export async function releaseResourceOrder(input: { resourceOrderId: string; sca
 
 export async function deleteResourceOrderNodePool(input: {
   resourceOrderId: string;
-  nodePoolId?: string;
   destroyCvmInstances: boolean;
   confirmDeleteNodePool: boolean;
 }) {

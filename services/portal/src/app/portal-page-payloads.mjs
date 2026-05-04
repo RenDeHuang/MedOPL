@@ -25,6 +25,7 @@ import {
   sumFileSizes,
   summarizeRunStatus,
 } from "./portal-page-payload-helpers.mjs";
+import { resolveSupportBoundary } from "../domain/support-boundaries.mjs";
 
 export function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(String(value || ""), 10);
@@ -232,6 +233,12 @@ export function createPortalPagePayloads(deps) {
     const taskPagination = paginateRows(taskCostsAll, options.tasksPage, pageSize);
     const ledgerPagination = paginateRows(filteredLedger, options.ledgerPage, pageSize);
     const runPagination = paginateRows(allRunCosts, options.runsPage, pageSize);
+    const supportBoundary = resolveSupportBoundary({
+      wallet,
+      freeze: { activeFreeze: commercial.activeFreeze || 0 },
+      minRequiredBalance: Math.max(1, Number(commercial.balanceFloor || 0)),
+      run: allRunCosts.find((run) => ["failed", "error"].includes(String(run.runStatus || "").toLowerCase())) || {},
+    });
     return {
       wallet: {
         balance: Number(wallet.balance || 0),
@@ -247,6 +254,7 @@ export function createPortalPagePayloads(deps) {
         pendingCost: Number((Number(pendingBilling?.totals?.totalCost || pendingBilling?.totalCost || 0)).toFixed(5)),
         exactCost: Number((Number(billing?.totals?.totalCost || billing?.totalCost || totals.totalCost || 0)).toFixed(5)),
       },
+      supportBoundary,
       breakdown: {
         cpuCost: Number(totals.cpuCost.toFixed(5)),
         gpuCost: Number(totals.gpuCost.toFixed(5)),

@@ -43,6 +43,7 @@ function createDispatcher(overrides = {}) {
     frontendDistRoot: "/tmp/frontend",
     guessContentType: () => "text/plain",
     handleAuthRoutes: async () => false,
+    handleLabPackageRoutes: async () => false,
     handleOplRoutes: async () => false,
     handlePortalAdminApiRoutes: async () => false,
     handlePortalAdminOpsRoutes: async () => false,
@@ -128,7 +129,7 @@ function createDispatcher(overrides = {}) {
   const res = createResponse();
   await dispatch(createReq("GET", "/login"), res);
   assert.equal(res.statusCode, 200, "auth_handler_must_short_circuit");
-  assert.deepEqual(calls, ["currentUser", "auth"], "auth_routes_must_run_before_anonymous_resource_order");
+  assert.deepEqual(calls, ["auth"], "login_auth_routes_must_run_before_current_user");
 }
 
 {

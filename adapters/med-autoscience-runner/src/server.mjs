@@ -7,6 +7,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { getGroupById, getPortalUserById, getWalletByUserId, getWorkspaceSession } from "../../shared/portal-state.mjs";
+import { classifyKubectlError } from "./runner-k8s-errors.mjs";
+import { runK8sPreflight } from "./runner-k8s-preflight.mjs";
+import {
+  buildPodNetworkingContract,
+  normalizeBoolean,
+  normalizePodAnnotations,
+  yamlPodAnnotationsBlock,
+} from "./runner-pod-networking.mjs";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.runtime/med-autoscience");
 const WORKSPACES_DIR = path.join(ROOT_DIR, "workspaces");
@@ -107,6 +115,30 @@ function yamlQuoted(value = "") {
   return `"${String(value ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
+function yamlBlockScalarLines(value = "", indent = 14) {
+  const padding = " ".repeat(indent);
+  const text = String(value ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = text.split("\n");
+  return lines.map((line) => `${padding}${line}`).join("\n");
+}
+
+function shellSingleQuoted(value = "") {
+  return `'${String(value ?? "").replace(/'/g, `'\\''`)}'`;
+}
+
+function wrapRunnerCommand(command = "", runId = "") {
+  const safeCommand = String(command || "true").trim() || "true";
+  const summaryPath = `/workspace/outputs/${runId || "run"}-summary.md`;
+  return [
+    safeCommand,
+    "status=$?",
+    "if [ \"$status\" -eq 0 ] && ! find /workspace/outputs -type f ! -name .keep -size +0c -print -quit | grep -q .; then",
+    `  printf '%s\\n' ${shellSingleQuoted(`# Run ${runId}`)} ${shellSingleQuoted("")} ${shellSingleQuoted("v20.32 runtime completed successfully.")} ${shellSingleQuoted("completedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)")} > ${shellSingleQuoted(summaryPath)}`,
+    "fi",
+    "exit \"$status\"",
+  ].join("\n");
+}
+
 function yamlIndentedMap(value = {}, indent = 8) {
   const entries = Object.entries(value || {}).filter(([key, item]) => String(key || "").trim() && String(item ?? "").trim());
   if (!entries.length) return "";
@@ -193,6 +225,9 @@ function normalizeRunIdentity(args = {}) {
     runtimeClass: firstNonEmpty(args.runtimeClass, args.runtime_class) || "",
     nodeSelector: args.nodeSelector && typeof args.nodeSelector === "object" ? args.nodeSelector : {},
     tolerations: Array.isArray(args.tolerations) ? args.tolerations : [],
+    podNetworkingMode: firstNonEmpty(args.podNetworkingMode, args.pod_networking_mode) || "",
+    requiresEniPod: normalizeBoolean(args.requiresEniPod ?? args.requires_eni_pod),
+    podAnnotations: normalizePodAnnotations(args.podAnnotations || args.pod_annotations),
     provisioningMode: firstNonEmpty(args.provisioningMode, args.provisioning_mode) || "schedule_to_node_pool",
     tkeClusterId: firstNonEmpty(args.tkeClusterId, args.tke_cluster_id, args.clusterId, args.cluster_id),
     nodePoolId: firstNonEmpty(args.nodePoolId, args.node_pool_id),
@@ -447,6 +482,9 @@ async function ensureProvisionedCapacity(identity = {}) {
         runtimeClass: identity.runtimeClass,
         nodeSelector: identity.nodeSelector,
         tolerations: identity.tolerations,
+        podNetworkingMode: identity.podNetworkingMode,
+        requiresEniPod: identity.requiresEniPod,
+        podAnnotations: identity.podAnnotations,
         provisioningMode: identity.provisioningMode,
         tkeClusterId: identity.tkeClusterId,
         nodePoolId: identity.nodePoolId,
@@ -780,6 +818,8 @@ async function startRun(args = {}) {
     : [];
   const effectiveNodeSelector = { ...nodeSelector, ...provisionedNodeSelector };
   const effectiveTolerations = uniqueK8sTolerations([...tolerations, ...provisionedTolerations]);
+  const podNetworking = buildPodNetworkingContract(identity);
+  const podAnnotationsBlock = yamlPodAnnotationsBlock(podNetworking.podAnnotations, yamlIndentedMap);
   const gpuRequestBlock = gpuCount > 0 ? `nvidia.com/gpu: "${gpuCount}"` : "";
   const gpuLimitBlock = gpuCount > 0 ? `nvidia.com/gpu: "${gpuCount}"` : "";
   const storageRequestBlock = storageRequest ? `ephemeral-storage: "${storageRequest}"` : "";
@@ -787,6 +827,8 @@ async function startRun(args = {}) {
   const runtimeClassBlock = runtimeClass ? `runtimeClassName: ${yamlQuoted(runtimeClass)}` : "";
   const nodeSelectorBlock = yamlIndentedMap(effectiveNodeSelector, 8);
   const tolerationsBlock = yamlIndentedTolerations(effectiveTolerations, 8);
+  const workspaceOutputsHostPath = path.join(root, "outputs");
+  await mkdir(workspaceOutputsHostPath, { recursive: true });
   const imagePullSecretsBlock = process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET
     ? `imagePullSecrets:\n        - name: "${process.env.MED_AUTOSCIENCE_IMAGE_PULL_SECRET}"`
     : "";
@@ -808,6 +850,7 @@ async function startRun(args = {}) {
     .replaceAll("__RESOURCE_ORDER_ID__", k8sLabelSafe(resourceOrderId || "pending"))
     .replaceAll("__REGION__", k8sLabelSafe(region || "default"))
     .replaceAll("__RUNTIME_CLASS_BLOCK__", runtimeClassBlock)
+    .replaceAll("__POD_ANNOTATIONS_BLOCK__", podAnnotationsBlock)
     .replaceAll("__NODE_SELECTOR_BLOCK__", nodeSelectorBlock ? `nodeSelector:\n${nodeSelectorBlock}` : "")
     .replaceAll("__TOLERATIONS_BLOCK__", tolerationsBlock ? `tolerations:\n${tolerationsBlock}` : "")
     .replaceAll("__RUNNER_IMAGE__", runnerImage)
@@ -824,7 +867,9 @@ async function startRun(args = {}) {
     .replaceAll("__MEMORY_REQUEST__", memoryRequest)
     .replaceAll("__CPU_LIMIT__", cpuLimit)
     .replaceAll("__MEMORY_LIMIT__", memoryLimit)
-    .replaceAll("__RUNNER_COMMAND__", args.runnerCommand || RUNNER_COMMAND);
+    .replaceAll("__WORKSPACE_OUTPUTS_HOST_PATH__", workspaceOutputsHostPath)
+    .replaceAll("__RUNNER_COMMAND__", args.runnerCommand || RUNNER_COMMAND)
+    .replaceAll("__RUNNER_WRAPPED_COMMAND__", yamlBlockScalarLines(wrapRunnerCommand(args.runnerCommand || RUNNER_COMMAND, runId), 14));
 
   const manifestPath = path.join(root, "runtime", `job-${runId}.yaml`);
   const logPath = path.join(root, "logs", `${runId}.log`);
@@ -858,6 +903,9 @@ async function startRun(args = {}) {
     runtimeClass,
     nodeSelector: effectiveNodeSelector,
     tolerations: effectiveTolerations,
+    podNetworkingMode: podNetworking.podNetworkingMode,
+    requiresEniPod: podNetworking.requiresEniPod,
+    podAnnotations: podNetworking.podAnnotations,
     provisioningMode,
     tkeClusterId,
     nodePoolId,
@@ -888,11 +936,33 @@ async function startRun(args = {}) {
     logPath,
     inputFiles: copiedFiles,
     workspaceInputFiles,
+    correlationId: firstNonEmpty(args.correlationId, args.correlation_id),
     createdAt: new Date().toISOString()
   };
 
+  await runK8sPreflight({
+    kubectl,
+    namespace: K8S_NAMESPACE,
+    manifestPath,
+    jobName: runMetadata.jobName,
+    correlationId: runMetadata.correlationId,
+  });
   await ensureNamespace();
-  const applyResult = await kubectl(["apply", "-n", K8S_NAMESPACE, "-f", manifestPath]);
+  let applyResult = null;
+  try {
+    applyResult = await kubectl(["apply", "-n", K8S_NAMESPACE, "-f", manifestPath]);
+  } catch (error) {
+    throw {
+      ...classifyKubectlError(error, {
+        namespace: K8S_NAMESPACE,
+        manifestPath,
+        jobName: runMetadata.jobName,
+        correlationId: runMetadata.correlationId,
+      }),
+      correlationId: runMetadata.correlationId,
+      message: "任务服务器启动失败，管理员可以用错误编号定位原因。",
+    };
+  }
   await writeFile(logPath, `Run ${runId} created at ${new Date().toISOString()}\n${applyResult.stdout}\n${applyResult.stderr}\n`, "utf8");
 
   runMetadata.status = "submitted";
@@ -1137,7 +1207,31 @@ async function startHttpServer() {
         return;
       }
     } catch (error) {
-      sendJson(res, 500, { ok: false, error: String(error) });
+      if (error && typeof error === "object" && typeof error.code === "string" && typeof error.stage === "string") {
+        sendJson(res, 500, {
+          ok: false,
+          error: {
+            code: error.code,
+            stage: error.stage,
+            message: String(error.message || "任务服务器启动失败，管理员可以用错误编号定位原因。"),
+            retryable: Boolean(error.retryable),
+            details: error.details && typeof error.details === "object" ? error.details : {},
+            correlationId: String(error.correlationId || error.details?.correlationId || ""),
+          },
+        });
+        return;
+      }
+      sendJson(res, 500, {
+        ok: false,
+        error: {
+          code: "RUNNER_UPSTREAM_5XX",
+          stage: "runner_submit",
+          message: "任务服务器启动失败，管理员可以用错误编号定位原因。",
+          retryable: true,
+          details: { upstreamMessage: String(error?.message || error) },
+          correlationId: "",
+        },
+      });
       return;
     }
 

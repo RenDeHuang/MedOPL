@@ -348,6 +348,216 @@ function readProviderKey(container) {
 
 
 
+function providerConfiguredFromBootstrap(bootstrap) {
+
+  const provider = bootstrap && bootstrap.provider ? bootstrap.provider : {};
+
+  return provider.providerConfigured === true || provider.providerConfigStatus === "configured";
+
+}
+
+
+
+function removeLaunchProviderKeyPanel() {
+
+  try {
+
+    const panel = document.querySelector("[data-opl-launch-provider-panel]");
+
+    if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+
+  } catch {}
+
+}
+
+
+
+function renderLaunchProviderKeyPanel() {
+
+  const existing = document.querySelector("[data-opl-launch-provider-panel]");
+
+  if (existing) return existing;
+
+  const panel = document.createElement("section");
+
+  panel.setAttribute("data-opl-launch-provider-panel", "1");
+
+  panel.style.position = "fixed";
+
+  panel.style.inset = "0";
+
+  panel.style.zIndex = "2147483647";
+
+  panel.style.display = "flex";
+
+  panel.style.alignItems = "center";
+
+  panel.style.justifyContent = "center";
+
+  panel.style.background = "rgba(15, 23, 42, 0.52)";
+
+  const form = document.createElement("form");
+
+  form.style.width = "min(420px, calc(100vw - 32px))";
+
+  form.style.padding = "20px";
+
+  form.style.borderRadius = "8px";
+
+  form.style.background = "#ffffff";
+
+  form.style.boxShadow = "0 20px 60px rgba(15, 23, 42, 0.25)";
+
+  const title = document.createElement("h2");
+
+  title.textContent = "绑定 gflabtoken";
+
+  title.style.margin = "0 0 12px";
+
+  title.style.fontSize = "18px";
+
+  const hint = document.createElement("p");
+
+  hint.textContent = "请输入来源于 gflabtoken.cn 的 API key 后进入 OPL。";
+
+  hint.style.margin = "0 0 14px";
+
+  hint.style.fontSize = "14px";
+
+  hint.style.color = "#475569";
+
+  const input = document.createElement("input");
+
+  input.type = "password";
+
+  input.name = "apiKey";
+
+  input.autocomplete = "off";
+
+  input.placeholder = "gflabtoken API key";
+
+  input.setAttribute("data-opl-provider-key", "1");
+
+  input.value = readProviderKey(document) || "";
+
+  input.style.boxSizing = "border-box";
+
+  input.style.width = "100%";
+
+  input.style.height = "40px";
+
+  input.style.padding = "0 10px";
+
+  input.style.border = "1px solid #cbd5e1";
+
+  input.style.borderRadius = "6px";
+
+  const button = document.createElement("button");
+
+  button.type = "submit";
+
+  button.textContent = "继续";
+
+  button.style.width = "100%";
+
+  button.style.height = "40px";
+
+  button.style.marginTop = "14px";
+
+  button.style.border = "0";
+
+  button.style.borderRadius = "6px";
+
+  button.style.background = "#111827";
+
+  button.style.color = "#ffffff";
+
+  button.style.cursor = "pointer";
+
+  form.appendChild(title);
+
+  form.appendChild(hint);
+
+  form.appendChild(input);
+
+  form.appendChild(button);
+
+  panel.appendChild(form);
+
+  document.body.appendChild(panel);
+
+  return panel;
+
+}
+
+
+
+function ensureLaunchProviderKey(bootstrap) {
+
+  if (providerConfiguredFromBootstrap(bootstrap)) {
+
+    removeLaunchProviderKeyPanel();
+
+    return Promise.resolve("");
+
+  }
+
+  const stored = readProviderKey(document);
+
+  if (stored) return Promise.resolve(stored);
+
+  return new Promise((resolve) => {
+
+    const panel = renderLaunchProviderKeyPanel();
+
+    const form = panel.querySelector("form");
+
+    const input = panel.querySelector("[data-opl-provider-key]");
+
+    if (input && typeof input.focus === "function") setTimeout(() => input.focus(), 0);
+
+    if (input && typeof input.addEventListener === "function") {
+
+      input.addEventListener("input", () => {
+
+        if (typeof input.setCustomValidity === "function") input.setCustomValidity("");
+
+      });
+
+    }
+
+    form.addEventListener("submit", (event) => {
+
+      event.preventDefault();
+
+      const providerKey = readProviderKey(panel);
+
+      if (!providerKey) {
+
+        if (input && typeof input.setCustomValidity === "function") {
+
+          input.setCustomValidity("请输入 gflabtoken API key。");
+
+          if (typeof input.reportValidity === "function") input.reportValidity();
+
+        }
+
+        return;
+
+      }
+
+      removeLaunchProviderKeyPanel();
+
+      resolve(providerKey);
+
+    });
+
+  });
+
+}
+
+
+
 function ensureProviderKeyInput(form) {
 
   try {
@@ -747,14 +957,84 @@ function resolveOplModuleId(element) {
 
 
 function dispatchPortalRunEvent(type, detail) {
-  try {
-    window.dispatchEvent(new CustomEvent(type, { detail }));
-  } catch {}
-}
-
-function installNativeRunBridge() {
-  if (window.__OPL_PORTAL_NATIVE_RUN_BRIDGE_INSTALLED__) return;
-  if (typeof document === "undefined" || typeof document.addEventListener !== "function") return;
+  try {
+    window.dispatchEvent(new CustomEvent(type, { detail }));
+  } catch {}
+}
+
+function dispatchPortalMessageEvent(type, detail) {
+  try {
+    window.dispatchEvent(new CustomEvent(type, { detail }));
+  } catch {}
+}
+
+function resolveNativeMessageText(target) {
+  try {
+    const root = target && typeof target.closest === "function" ? target.closest("main, form, section, div") : document;
+    const inputSelector = "textarea, input[name='message'], input[name='prompt'], [contenteditable='true']";
+    const scoped = root && typeof root.querySelectorAll === "function" ? Array.from(root.querySelectorAll(inputSelector)) : [];
+    const global = typeof document !== "undefined" && typeof document.querySelectorAll === "function" ? Array.from(document.querySelectorAll(inputSelector)) : [];
+    const inputs = [...scoped, ...global];
+    for (const input of inputs) {
+      const value = String(input && "value" in input ? input.value : input.textContent || "").trim();
+      if (value) return value;
+    }
+  } catch {}
+  return "";
+}
+
+function consumeNativeMessageEvent(event, target, message) {
+  if (!event || !target || !message) return false;
+  if (event.__OPL_PORTAL_MESSAGE_BRIDGED__) return false;
+  if (target.dataset.oplPortalMessagePending === "1") return false;
+  event.__OPL_PORTAL_MESSAGE_BRIDGED__ = true;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  target.dataset.oplPortalMessagePending = "1";
+  window.__OPL_PORTAL__.sendMessage({
+    message,
+    source: "opl-web-native-ui-send",
+    toolName: "opl-native-ui",
+  })
+    .then((result) => dispatchPortalMessageEvent("opl:portal-message-sent", { message, result }))
+    .catch((error) => dispatchPortalMessageEvent("opl:portal-message-error", {
+      message,
+      error: String(error && error.message ? error.message : error)
+    }))
+    .finally(() => {
+      delete target.dataset.oplPortalMessagePending;
+    });
+  return true;
+}
+
+function resolveNativeMessageSendTarget(event) {
+  const target = event && event.target;
+  if (!target || typeof target.closest !== "function") return null;
+  return target.closest("button.send-button-custom, [data-testid='send-button'], button[aria-label='Send'], button[aria-label='发送'], button[type='submit']");
+}
+
+function installNativeMessageBridge() {
+  if (window.__OPL_PORTAL_NATIVE_MESSAGE_BRIDGE_INSTALLED__) return;
+  if (typeof document === "undefined" || typeof document.addEventListener !== "function") return;
+  window.__OPL_PORTAL_NATIVE_MESSAGE_BRIDGE_INSTALLED__ = true;
+  document.addEventListener("submit", (event) => {
+    const form = event && event.target;
+    if (!form || typeof form.querySelector !== "function") return;
+    const message = resolveNativeMessageText(form);
+    consumeNativeMessageEvent(event, form, message);
+  }, true);
+  document.addEventListener("click", (event) => {
+    const sendTarget = resolveNativeMessageSendTarget(event);
+    if (!sendTarget) return;
+    const message = resolveNativeMessageText(sendTarget);
+    consumeNativeMessageEvent(event, sendTarget, message);
+  }, true);
+}
+
+function installNativeRunBridge() {
+  if (window.__OPL_PORTAL_NATIVE_RUN_BRIDGE_INSTALLED__) return;
+  if (typeof document === "undefined" || typeof document.addEventListener !== "function") return;
   window.__OPL_PORTAL_NATIVE_RUN_BRIDGE_INSTALLED__ = true;
   document.addEventListener("click", (event) => {
     const module = resolveOplModuleClickTarget(event);
@@ -776,7 +1056,8 @@ function installNativeRunBridge() {
   }, true);
 }
 
-window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
+window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
+window.__OPL_PORTAL__.installNativeMessageBridge = installNativeMessageBridge;
 
 async function initializePortalLaunch() {
   const injectedDirectEntry = resolveInjectedDirectEntryFlag();
@@ -792,36 +1073,43 @@ async function initializePortalLaunch() {
     });
     return;
   }
-  const bootstrapUrl = state.adapterUrl + "/api/opl-launch/bootstrap?launch_token=" + encodeURIComponent(state.launchToken);
-  const bootstrap = await fetchJson(bootstrapUrl);
-  writeStoredBootstrap(bootstrap);
-
-  const launch = bootstrap.launch || {};
-  const portal = bootstrap.portal || {};
-  const workspace = bootstrap.workspace || {};
+  const bootstrapUrl = state.adapterUrl + "/api/opl-launch/bootstrap?launch_token=" + encodeURIComponent(state.launchToken);
+  const bootstrap = await fetchJson(bootstrapUrl);
+  writeStoredBootstrap(bootstrap);
+  const providerKey = await ensureLaunchProviderKey(bootstrap);
+
+  const launch = bootstrap.launch || {};
+  const portal = bootstrap.portal || {};
+  const workspace = bootstrap.workspace || {};
   const sessionBind = await fetchJson(state.adapterUrl + "/api/opl-launch/sessions/bind", {
     method: "POST",
     body: JSON.stringify({
       launchToken: state.launchToken,
       workspaceId: portal.workspaceId || launch.workspaceId || "",
       workspaceSessionId: portal.workspaceSessionId || launch.workspaceSessionId || "",
-      runtimeSessionId: portal.runtimeSessionId || launch.runtimeSessionId || "",
-      oplSessionId: "opl-web:" + (launch.launchId || portal.runtimeSessionId || Date.now()),
-      workspacePath: workspace.workspacePath || launch.workspacePath || "",
-      source: "opl-web-gateway",
-      userAgent: window.navigator.userAgent
-    })
-  });
-
-  window.__OPL_PORTAL_LAUNCH__ = { state, bootstrap, sessionBind };
-  window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
-  window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
-  updateDirectEntryState({
-    active: false,
-    authenticated: true,
-    reason: "portal_launch_active"
-  });
-  installNativeRunBridge();
+      runtimeSessionId: portal.runtimeSessionId || launch.runtimeSessionId || "",
+      oplSessionId: "opl-web:" + (launch.launchId || portal.runtimeSessionId || Date.now()),
+      workspacePath: workspace.workspacePath || launch.workspacePath || "",
+      source: providerKey ? "user_input" : "opl-web-gateway",
+      launchSource: "opl-web-gateway",
+      ...(providerKey ? { provider: "gflabtoken", apiKey: providerKey } : {}),
+      userAgent: window.navigator.userAgent
+    })
+  });
+  const refreshedBootstrap = providerKey ? await fetchJson(bootstrapUrl) : bootstrap;
+  writeStoredBootstrap(refreshedBootstrap);
+
+  window.__OPL_PORTAL_LAUNCH__ = { state, bootstrap: refreshedBootstrap, sessionBind };
+  window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
+  window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
+  window.__OPL_PORTAL__.installNativeMessageBridge = installNativeMessageBridge;
+  updateDirectEntryState({
+    active: false,
+    authenticated: true,
+    reason: "portal_launch_active"
+  });
+  installNativeRunBridge();
+  installNativeMessageBridge();
   window.dispatchEvent(new CustomEvent("opl:portal-launch-ready", {
     detail: window.__OPL_PORTAL_LAUNCH__
   }));

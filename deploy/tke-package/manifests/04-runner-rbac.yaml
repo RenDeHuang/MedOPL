@@ -7,7 +7,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: med-autoscience-runner-job-manager
+  name: __RUNNER_RBAC_NAME__
 rules:
   - apiGroups: [""]
     resources: ["namespaces"]
@@ -22,13 +22,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: med-autoscience-runner-job-manager
+  name: __RUNNER_RBAC_NAME__
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: med-autoscience-runner-job-manager
+  name: __RUNNER_RBAC_NAME__
 subjects:
   - kind: ServiceAccount
     name: med-autoscience-runner
     namespace: __NAMESPACE__
-

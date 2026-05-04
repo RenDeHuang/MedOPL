@@ -34,6 +34,11 @@ export function createPortalHttpDispatcher({
 }) {
   return async function dispatchPortalHttpRequest(req, res) {
     const url = new URL(req.url || "/", "http://local");
+    const isGetAuthPage = req.method === "GET" && (url.pathname === "/login" || url.pathname === "/register");
+    if (isGetAuthPage) {
+      const authHandled = await handleAuthRoutes({ req, res, url, db: null });
+      if (authHandled) return;
+    }
     if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
       sendJson(res, buildPortalHealthPayload());
       return;
@@ -50,8 +55,11 @@ export function createPortalHttpDispatcher({
       await sendStaticAsset(res, filePath, guessContentType(filePath));
       return;
     }
-    const { db, user } = await currentUser(req);
-    if (await handleAuthRoutes({ req, res, url, db })) return;
+    const isPostAuthEntry = req.method === "POST" && (url.pathname === "/login" || url.pathname === "/register");
+    const hasPortalSessionCookie = String(req.headers?.cookie || "").includes("portal_session=");
+    const currentUserMode = isPostAuthEntry && !hasPortalSessionCookie ? "auth_light" : "full";
+    const { db, user } = await currentUser(req, { mode: currentUserMode });
+    if (!isGetAuthPage && (await handleAuthRoutes({ req, res, url, db }))) return;
     if (await handleResourceOrderRoutes({ req, res, url, db, user: null })) return;
     if (!user) {
       res.writeHead(302, { Location: "/login" });

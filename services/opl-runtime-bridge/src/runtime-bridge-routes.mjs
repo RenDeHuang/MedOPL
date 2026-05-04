@@ -3,6 +3,7 @@ import { addEvent, addTraceRecord, ensureRuntime, readState, writeState } from "
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
 import { createMessageApi } from "./runtime-bridge-messages.mjs";
 import { createRunApi } from "./runtime-bridge-runs.mjs";
+import { mapRunError } from "./run-error-mapper.mjs";
 
 function readConfig() {
   const port = Number(process.env.PORT || 8788);
@@ -19,6 +20,7 @@ function readConfig() {
     oplWebUrl: String(process.env.OPL_WEB_URL || "").replace(/\/$/, ""),
     runnerUrl: String(process.env.MED_AUTOSCIENCE_RUNNER_URL || "").replace(/\/$/, ""),
     portalInternalBaseUrl: String(process.env.PORTAL_INTERNAL_BASE_URL || "").replace(/\/$/, ""),
+    portalInternalAuthToken: String(process.env.PORTAL_INTERNAL_AUTH_TOKEN || "").trim(),
   };
 }
 
@@ -79,6 +81,7 @@ export function createRuntimeBridgeRuntime() {
   });
   const runApi = createRunApi({
     portalInternalBaseUrl: config.portalInternalBaseUrl,
+    portalInternalAuthToken: config.portalInternalAuthToken,
     runnerImage: config.runnerImage,
     k8sNamespace: config.k8sNamespace,
     publishTraceEvent,
@@ -152,9 +155,18 @@ export function createRuntimeBridgeRuntime() {
       await writeState(state);
       sendJson(res, 200, { ok: true, run });
     } catch (error) {
-      addEvent(state, "runner_run_failed", { ...runtimeSession, error: String(error.message || error) });
+      const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
+      addEvent(state, "runner_run_failed", {
+        ...runtimeSession,
+        correlationId: mapped.correlationId,
+        code: mapped.code,
+        stage: mapped.stage,
+        retryable: mapped.retryable,
+        error: mapped.message,
+        details: mapped.details,
+      });
       await writeState(state);
-      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+      sendJson(res, 502, { ok: false, error: mapped });
     }
   }
 
@@ -182,7 +194,7 @@ export function createRuntimeBridgeRuntime() {
       return;
     }
     const state = await readState();
-    const runtimeSession = launchApi.bindOplSession(state, launch, input);
+    const runtimeSession = await launchApi.bindOplSession(state, launch, input);
     if (!runtimeSession) {
       sendJson(res, 404, { ok: false, error: "runtime_session_not_found" });
       return;

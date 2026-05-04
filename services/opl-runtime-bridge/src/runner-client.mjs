@@ -24,7 +24,19 @@ async function requestJson(path, options = {}) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload?.error || payload?.message || `med_autoscience_runner_failed:${response.status}:${path}`);
+    const runnerError = payload?.error && typeof payload.error === "object"
+      ? payload.error
+      : { message: payload?.error || payload?.message || `med_autoscience_runner_failed:${response.status}:${path}` };
+    const sanitizedMessage = "任务服务器启动失败，管理员可以用错误编号定位原因。";
+    const error = new Error(sanitizedMessage);
+    error.code = String(runnerError.code || "RUNNER_UPSTREAM_5XX");
+    error.stage = String(runnerError.stage || "runner_submit");
+    error.retryable = Boolean(runnerError.retryable);
+    error.details = runnerError.details && typeof runnerError.details === "object" ? runnerError.details : {};
+    error.correlationId = String(runnerError.correlationId || "");
+    error.status = response.status;
+    error.payload = payload && typeof payload === "object" ? payload : {};
+    throw error;
   }
   return payload;
 }
