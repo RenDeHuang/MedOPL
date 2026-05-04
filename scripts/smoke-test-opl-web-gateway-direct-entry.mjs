@@ -131,6 +131,9 @@ function createBrowserVm({ gatewayUrl }) {
     URL,
     URLSearchParams,
     console,
+    performance: {
+      now: () => Date.now(),
+    },
     fetch(input, options) {
       const target = new URL(String(input), gatewayUrl);
       return fetch(target, options);

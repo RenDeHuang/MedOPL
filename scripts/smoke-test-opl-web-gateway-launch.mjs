@@ -126,6 +126,10 @@ function startAdapterFixture(calls) {
         storageOwner: "portal-user-smoke",
         storageOwnerId: "portal-user-smoke",
       },
+      provider: {
+        providerConfigured: true,
+        providerConfigStatus: "configured",
+      },
       }));
       return;
     }
@@ -272,12 +276,15 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
       sessionStorage: window.sessionStorage,
       history: window.history,
       CustomEvent,
-      URL,
-      URLSearchParams,
-      console,
-      fetch(input, options) {
-        const target = new URL(String(input), gatewayUrl);
-        return fetch(target, options);
+    URL,
+    URLSearchParams,
+    console,
+    performance: {
+      now: () => Date.now(),
+    },
+    fetch(input, options) {
+      const target = new URL(String(input), gatewayUrl);
+      return fetch(target, options);
       },
     }),
     ready,
@@ -373,6 +380,8 @@ try {
   assert(calls.bind[0].runtimeSessionId === "runtime-session-smoke", "runtime session bind mismatch");
   assert(!browser.window.location.search.includes("launch_token"), "launch token should be stripped from browser URL after bind");
   assert(browser.window.__OPL_PORTAL_NATIVE_RUN_BRIDGE_INSTALLED__ === true, "native OPL module click bridge was not installed");
+  assert(typeof browser.window.__OPL_PORTAL_TIMING__.portal_launch_ready_ms === "number", "portal launch ready timing marker missing");
+  assert(browser.window.__OPL_PORTAL_TIMING__.markers.some((item) => item.marker === "portal_launch_ready_ms"), "portal launch ready telemetry event missing");
 
   const nativeModuleElement = {
     textContent: "MAS 医学研究",
@@ -386,8 +395,8 @@ try {
     type: "click",
     target: {
       closest(selector) {
-        assert(selector.includes("opl-module-pill-"), "native bridge selector mismatch");
-        return nativeModuleElement;
+        if (selector.includes("opl-module-pill-")) return nativeModuleElement;
+        return null;
       },
     },
   });
@@ -398,6 +407,7 @@ try {
     }),
   ]);
   assert(nativeRun.module.moduleId === "mas", "native module bridge did not resolve MAS module");
+  assert(typeof browser.window.__OPL_PORTAL_TIMING__.opl_first_interaction_ms === "number", "first interaction timing marker missing");
   assert(calls.runs.at(-1).agentId === "mas", "native module bridge did not call MAS run");
   assert(calls.runs.at(-1).source === "opl-web-native-ui-click", "native module bridge source mismatch");
 

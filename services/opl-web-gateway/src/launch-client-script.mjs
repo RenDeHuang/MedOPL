@@ -26,7 +26,60 @@ const NATIVE_LOGIN_PATHS = [
 ];
 
 const OPL_MODULE_IDS = ["mas", "mag", "rca"];
+const TIMING_MARKERS = ["portal_launch_ready_ms", "opl_dom_ready_ms", "opl_first_interaction_ms"];
 const DIRECT_ENTRY_DEFAULT = ${JSON.stringify(buildDirectEntryState())};
+
+const launchStartedAtMs = performance.now();
+
+window.__OPL_PORTAL_TIMING__ = window.__OPL_PORTAL_TIMING__ || {
+  portal_launch_ready_ms: null,
+  opl_dom_ready_ms: null,
+  opl_first_interaction_ms: null,
+  markers: []
+};
+
+function elapsedMs() {
+  return Math.round(performance.now() - launchStartedAtMs);
+}
+
+function markOplTelemetry(marker, details = {}) {
+  if (!TIMING_MARKERS.includes(marker)) return null;
+  const timing = window.__OPL_PORTAL_TIMING__;
+  if (timing[marker] === null || timing[marker] === undefined) {
+    timing[marker] = elapsedMs();
+  }
+  const entry = {
+    marker,
+    valueMs: timing[marker],
+    details,
+    recordedAt: new Date().toISOString()
+  };
+  timing.markers.push(entry);
+  try {
+    window.dispatchEvent(new CustomEvent("opl:portal-telemetry", { detail: entry }));
+  } catch {}
+  return entry;
+}
+
+function markDomReady() {
+  markOplTelemetry("opl_dom_ready_ms", { readyState: document.readyState || "" });
+}
+
+function installDomReadyMarker() {
+  if (document.readyState === "interactive" || document.readyState === "complete") {
+    markDomReady();
+    return;
+  }
+  document.addEventListener("DOMContentLoaded", markDomReady, { once: true });
+}
+
+function markLaunchReady() {
+  markOplTelemetry("portal_launch_ready_ms", { source: "opl-web-gateway" });
+}
+
+function markFirstInteraction(details = {}) {
+  markOplTelemetry("opl_first_interaction_ms", details);
+}
 
 function readStoredState() {
   try {
@@ -988,6 +1041,7 @@ function consumeNativeMessageEvent(event, target, message) {
   if (event.__OPL_PORTAL_MESSAGE_BRIDGED__) return false;
   if (target.dataset.oplPortalMessagePending === "1") return false;
   event.__OPL_PORTAL_MESSAGE_BRIDGED__ = true;
+  markFirstInteraction({ source: "opl-web-native-ui-send" });
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
@@ -1037,9 +1091,10 @@ function installNativeRunBridge() {
   if (typeof document === "undefined" || typeof document.addEventListener !== "function") return;
   window.__OPL_PORTAL_NATIVE_RUN_BRIDGE_INSTALLED__ = true;
   document.addEventListener("click", (event) => {
-    const module = resolveOplModuleClickTarget(event);
-    if (!module) return;
-    window.__OPL_PORTAL__.startRun({
+    const module = resolveOplModuleClickTarget(event);
+    if (!module) return;
+    markFirstInteraction({ source: "opl-web-native-ui-click", moduleId: module.moduleId });
+    window.__OPL_PORTAL__.startRun({
       agentId: module.moduleId,
       toolName: "opl-native-ui",
       source: "opl-web-native-ui-click",
@@ -1058,6 +1113,8 @@ function installNativeRunBridge() {
 
 window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
 window.__OPL_PORTAL__.installNativeMessageBridge = installNativeMessageBridge;
+window.__OPL_PORTAL__.markFirstInteraction = markFirstInteraction;
+installDomReadyMarker();
 
 async function initializePortalLaunch() {
   const injectedDirectEntry = resolveInjectedDirectEntryFlag();
@@ -1103,6 +1160,7 @@ async function initializePortalLaunch() {
   window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
   window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
   window.__OPL_PORTAL__.installNativeMessageBridge = installNativeMessageBridge;
+  window.__OPL_PORTAL__.markFirstInteraction = markFirstInteraction;
   updateDirectEntryState({
     active: false,
     authenticated: true,
@@ -1110,7 +1168,8 @@ async function initializePortalLaunch() {
   });
   installNativeRunBridge();
   installNativeMessageBridge();
-  window.dispatchEvent(new CustomEvent("opl:portal-launch-ready", {
+  markLaunchReady();
+  window.dispatchEvent(new CustomEvent("opl:portal-launch-ready", {
     detail: window.__OPL_PORTAL_LAUNCH__
   }));
   stripLaunchQuery();
