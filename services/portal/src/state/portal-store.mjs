@@ -553,10 +553,35 @@ export function createPortalStore({
     writeDb.persistLabBillingState = persistLabBillingState;
   }
 
-  async function readPortalEvents(limit = 120) {
+  async function readPortalEvents(options = 120) {
+    const request = typeof options === "number" ? { limit: options } : (options || {});
+    const limit = Number.isInteger(Number(request.limit)) && Number(request.limit) > 0 ? Number(request.limit) : 120;
+    const userId = String(request.userId || "").trim();
+    const workspaceId = String(request.workspaceId || "").trim();
+    const runId = String(request.runId || "").trim();
+    const eventMatches = (event = {}) =>
+      (!userId || event.userId === userId) &&
+      (!workspaceId || !event.workspaceId || event.workspaceId === workspaceId) &&
+      (!runId || !event.runId || event.runId === runId);
     if (storageMode() === "postgres_redis") {
       const pool = await ensurePgPool();
-      const result = await pool.query(`SELECT * FROM ${pgTableName("audit_events")} ORDER BY occurred_at DESC LIMIT $1`, [limit]);
+      const filters = [];
+      const values = [];
+      if (userId) {
+        values.push(userId);
+        filters.push(`user_id = $${values.length}`);
+      }
+      if (workspaceId) {
+        values.push(workspaceId);
+        filters.push(`(workspace_id IS NULL OR workspace_id = $${values.length})`);
+      }
+      if (runId) {
+        values.push(runId);
+        filters.push(`(run_id IS NULL OR run_id = $${values.length})`);
+      }
+      values.push(limit);
+      const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+      const result = await pool.query(`SELECT * FROM ${pgTableName("audit_events")} ${where} ORDER BY occurred_at DESC LIMIT $${values.length}`, values);
       return result.rows.map((row) => ({
         occurredAt: row.occurred_at instanceof Date ? row.occurred_at.toISOString() : row.occurred_at,
         type: row.type,
@@ -569,13 +594,13 @@ export function createPortalStore({
     }
     if (!(await exists(eventsFile))) return [];
     const raw = await readFile(eventsFile, "utf8");
-    return raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(-limit).map((line) => {
+    return raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).reverse().map((line) => {
       try {
         return JSON.parse(line);
       } catch {
         return null;
       }
-    }).filter(Boolean).reverse();
+    }).filter(Boolean).filter(eventMatches).slice(0, limit);
   }
 
   return {

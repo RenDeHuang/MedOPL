@@ -299,25 +299,39 @@ export function createPortalWorkspaceRuntime({
     }
   }
 
-  async function collectRunsForUser(userId) {
+  async function collectRunsForUser(userId, { limit = 200, workspaceId = "", runId = "" } = {}) {
+    const maxRows = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 200;
+    const targetWorkspaceId = String(workspaceId || "").trim();
+    const targetRunId = String(runId || "").trim();
+    const runMatches = (item = {}) =>
+      (item.userId === userId || item.customerId === userId || item.portalUserId === userId) &&
+      (!targetWorkspaceId || item.workspaceId === targetWorkspaceId) &&
+      (!targetRunId || item.runId === targetRunId);
     const items = [];
     const files = await readDirSafe(medRunsRoot);
-    for (const file of files) {
+    let limitReached = false;
+    for (const file of files.slice().reverse()) {
       if (!file.endsWith(".json")) continue;
       try {
         const json = JSON.parse(await readFile(path.join(medRunsRoot, file), "utf8"));
-        if (json.userId === userId || json.customerId === userId) items.push(json);
+        if (runMatches(json)) items.push(json);
+        if (items.length >= maxRows) {
+          limitReached = true;
+          break;
+        }
       } catch {}
     }
-    if (await exists(codexRuntimeEventsFile)) {
+    if (!limitReached && await exists(codexRuntimeEventsFile)) {
       try {
         const raw = await readFile(codexRuntimeEventsFile, "utf8");
-        const lines = raw.split(/\r?\n/).filter(Boolean);
+        const lines = raw.split(/\r?\n/).filter(Boolean).reverse();
         for (const line of lines) {
           try {
             const event = JSON.parse(line);
             if (event.type !== "codex_runtime_run") continue;
             if (event.portalUserId !== userId) continue;
+            if (targetWorkspaceId && event.workspaceId !== targetWorkspaceId) continue;
+            if (targetRunId && event.runId !== targetRunId) continue;
             items.push({
               runId: event.runId,
               userId: event.portalUserId,
@@ -331,6 +345,10 @@ export function createPortalWorkspaceRuntime({
               stdoutFile: event.stdoutFile || "",
               stderrFile: event.stderrFile || "",
             });
+            if (items.length >= maxRows) {
+              limitReached = true;
+              break;
+            }
           } catch {}
         }
       } catch {}
@@ -343,8 +361,13 @@ export function createPortalWorkspaceRuntime({
         deduped.set(key, item);
       }
     }
-    const merged = [...deduped.values()];
-    merged.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    const boundedRuns = [...deduped.values()]
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    const merged = boundedRuns.slice(0, maxRows);
+    Object.defineProperty(merged, "limitReached", {
+      value: limitReached || boundedRuns.length > maxRows,
+      enumerable: false,
+    });
     return merged;
   }
 
@@ -398,8 +421,7 @@ export function createPortalWorkspaceRuntime({
   }
 
   async function collectRunsForTask(userId, workspaceId) {
-    const runs = await collectRunsForUser(userId);
-    return runs.filter((item) => item.workspaceId === workspaceId);
+    return collectRunsForUser(userId, { workspaceId, limit: 200 });
   }
 
   function summarizeTaskRuns(runs) {

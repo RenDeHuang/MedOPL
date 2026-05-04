@@ -105,6 +105,22 @@ export function groupBillingByDay(items = [], days = 7) {
   };
 }
 
+function createPayloadTimingRecorder() {
+  const startedAt = Date.now();
+  const marks = {};
+  return {
+    mark(name) {
+      marks[name] = Date.now() - startedAt;
+    },
+    done() {
+      return {
+        totalMs: Date.now() - startedAt,
+        breakdown: marks,
+      };
+    },
+  };
+}
+
 export function createPortalPagePayloads(deps) {
   const {
     buildCommercialProfile,
@@ -139,16 +155,19 @@ export function createPortalPagePayloads(deps) {
   } = deps;
 
   async function buildOverviewPayload(db, user, options = {}) {
+    const timing = createPayloadTimingRecorder();
     const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
     const tasks = listTaskSpacesForUser(db, user.id);
     const currentTask = currentTaskSpaceForUser(db, user) || tasks[0] || null;
-    const runs = await collectRunsForUser(user.id);
+    const runs = await collectRunsForUser(user.id, { limit: 50 });
+    timing.mark("runs");
     const policy = await evaluateUserPolicy(db, user);
     const commercial = buildCommercialProfile(db, user, { wallet, policy });
     const serverPlans = await fetchServerPlans() || buildServerPlansFallback();
     const serverPlansSummary = buildServerPlansSummary(serverPlans);
     const billing = await fetchBillingSummary(user.id, "", "168h");
     const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
+    timing.mark("billing");
     const items = billing?.items || [];
     const resourceOrders = resourceOrdersForUser(db, user.id);
     const todayRange = rangeBounds("today");
@@ -201,10 +220,12 @@ export function createPortalPagePayloads(deps) {
         total: latestRunsPagination.total,
         totalPages: latestRunsPagination.totalPages,
       },
+      performance: timing.done(),
     };
   }
 
   async function buildBillingPayload(db, user, options = {}) {
+    const timing = createPayloadTimingRecorder();
     const wallet = ensureWallet(db, user.id);
     const commercial = buildCommercialProfile(db, user, { wallet });
     const pageSize = normalizePageSize(options.pageSize);
@@ -218,8 +239,10 @@ export function createPortalPagePayloads(deps) {
     const range = rangeBounds(rangeKey, normalizedFrom, normalizedTo);
     const billing = await fetchBillingSummary(user.id, "", "720h");
     const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
+    timing.mark("billing");
     const items = billing?.items || [];
-    const runs = await collectRunsForUser(user.id);
+    const runs = await collectRunsForUser(user.id, { limit: 200 });
+    timing.mark("runs");
     const filteredItems = items.filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, range));
     const filteredRuns = runs.filter((run) => withinDateRange(run.createdAt || "", range));
     const filteredLedger = db.ledger
@@ -296,10 +319,12 @@ export function createPortalPagePayloads(deps) {
         .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, rangeBounds("today")))
         .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0)
         .toFixed(5)),
+      performance: timing.done(),
     };
   }
 
   async function buildBillingSummaryPayload(db, user, options = {}) {
+    const timing = createPayloadTimingRecorder();
     const wallet = ensureWallet(db, user.id);
     const commercial = buildCommercialProfile(db, user, { wallet });
     const fromValue = String(options.from || "").trim();
@@ -314,6 +339,7 @@ export function createPortalPagePayloads(deps) {
       fetchBillingSummary(user.id, "", "720h"),
       fetchPendingSummary(user.id, "", "168h"),
     ]);
+    timing.mark("billing");
     const items = billing?.items || [];
     const filteredItems = items.filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, range));
     const totals = buildBillingTotals(filteredItems);
@@ -359,11 +385,14 @@ export function createPortalPagePayloads(deps) {
         .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, rangeBounds("today")))
         .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0)
         .toFixed(5)),
+      performance: timing.done(),
     };
   }
 
   async function buildBillingDetailsPayload(db, user, options = {}) {
+    const timing = createPayloadTimingRecorder();
     const full = await buildBillingPayload(db, user, options);
+    timing.mark("fullBilling");
     return {
       taskCosts: full.taskCosts,
       taskPagination: full.taskPagination,
@@ -372,10 +401,12 @@ export function createPortalPagePayloads(deps) {
       ledger: full.ledger,
       ledgerPagination: full.ledgerPagination,
       trend: full.trend,
+      performance: timing.done(),
     };
   }
 
   async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
+    const timing = createPayloadTimingRecorder();
     const currentTask = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     const current = {
       ...currentTask,
@@ -388,11 +419,14 @@ export function createPortalPagePayloads(deps) {
     await mkdir(outputDir, { recursive: true });
     const files = await listFilesRecursive(inputDir);
     const outputs = await listFilesRecursive(outputDir);
-    const userRuns = await collectRunsForUser(user.id);
-    const runs = userRuns.filter((item) => item.workspaceId === current.slug);
+    const userRuns = await collectRunsForUser(user.id, { workspaceId: current.slug, limit: 50 });
+    const runs = userRuns;
+    timing.mark("runs");
     const billing = await fetchBillingSummary(user.id, current.slug, "168h");
+    timing.mark("billing");
     const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-    const events = (await readPortalEvents(200)).filter((event) => event.userId === user.id && (!event.workspaceId || event.workspaceId === current.slug));
+    const events = await readPortalEvents({ limit: 200, userId: user.id, workspaceId: current.slug });
+    timing.mark("events");
     const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
     const storageEntitlement = workspaceStorageEntitlement(db, user, current.slug);
     const runPagination = paginateRows(runs, options.runsPage, 5);
@@ -482,6 +516,7 @@ export function createPortalPagePayloads(deps) {
         total: runPagination.total,
         totalPages: runPagination.totalPages,
       },
+      performance: timing.done(),
     };
   }
 

@@ -162,7 +162,7 @@ export async function buildSessionTraceDetailPayload(deps, db, user, sessionId) 
   const payload = await buildSessionTracesApiPayload(deps, db, user, { sessionId, limit: 200, pageSize: 200 });
   const item = findTraceDetailItem(payload.items, sessionId);
   if (!item) return null;
-  const events = (await deps.readPortalEvents(500)).filter((event) => eventMatchesTrace(event, item, user));
+  const events = await deps.readPortalEvents({ limit: 200, userId: user.id, workspaceId: item.workspaceId, runId: item.runId });
   return {
     ...item,
     timeline: timelineForEvents(events, item),

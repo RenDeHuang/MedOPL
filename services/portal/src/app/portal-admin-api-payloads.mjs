@@ -211,10 +211,10 @@ export function createPortalAdminApiPayloads(deps) {
     const tasks = db.taskSpaces.filter((item) => item.status !== "deleted");
     const groups = Array.isArray(db.groups) ? db.groups : [];
     const todayRange = rangeBounds("today");
-    const recentEvents = await readPortalEvents(240);
+    const recentEvents = await readPortalEvents({ limit: 240 });
     const allRuns = [];
     for (const item of users) {
-      allRuns.push(...(await collectRunsForUser(item.id)).map((run) => ({ ...run, userId: item.id, userName: item.name, userEmail: item.email })));
+      allRuns.push(...(await collectRunsForUser(item.id, { limit: 50 })).map((run) => ({ ...run, userId: item.id, userName: item.name, userEmail: item.email })));
     }
     const serviceStatuses = await Promise.all([
       { name: "Portal OPL Adapter", url: new URL("/healthz", `${urls.portalOplAdapterUrl}/`).toString() },
