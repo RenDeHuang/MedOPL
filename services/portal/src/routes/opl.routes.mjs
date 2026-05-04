@@ -83,6 +83,22 @@ async function handleOplLaunchApi(context, deps) {
   return true;
 }
 
+async function handleOplLaunchStatusApi(context, deps) {
+  const { req, res, url, user } = context;
+  const match = url.pathname.match(/^\/portal\/api\/opl\/launch-status\/(?<launchId>[^/]+)$/);
+  if (req.method !== "GET" || !match?.groups?.launchId) return false;
+  const status = deps.oplLaunchService.getLaunchStatus(decodeURIComponent(match.groups.launchId));
+  if (!status || status.userId !== user.id) {
+    deps.sendJson(res, { ok: false, error: "opl_launch_status_not_found" }, 404);
+    return true;
+  }
+  if (status.workspaceSession?.id) {
+    deps.appendCookie(res, `${deps.workspaceSessionCookie()}=${status.workspaceSession.id}; Path=/; HttpOnly; SameSite=Lax`);
+  }
+  deps.sendJson(res, status);
+  return true;
+}
+
 function workspaceBlockedHtml(result) {
   const reasonList = (result.reasons || []).map((item) => `<li>${item}</li>`).join("");
   return `<div class="card"><h2>当前账号暂时不能启动 OPL</h2><ul class="list">${reasonList}</ul></div>`;
@@ -108,27 +124,42 @@ function sendOplLaunchErrorPage(res, result, user, deps) {
   deps.sendHtml(res, deps.layoutV2("OPL Web 不可用", oplUnavailableHtml(result), user), result.status || 502);
 }
 
+async function recordBackgroundLaunchFailure({ error, intent, taskSlug, user, deps }) {
+  try {
+    await deps.logPortalEvent({
+      type: "opl_launch_prepare_background_failed",
+      userId: user.id,
+      workspaceId: taskSlug,
+      launchId: intent.launchId,
+      source: "portal-page",
+      error: String(error.message || error),
+    });
+  } catch (eventError) {
+    console.error("opl launch background failure event failed", eventError);
+  }
+}
+
 async function handleOplPage(context, deps) {
   const { req, res, url, db, user } = context;
   if (req.method !== "GET" || url.pathname !== "/portal/opl") return false;
 
   const requestedTask = String(url.searchParams.get("task") || user.currentTaskSlug || "default").trim();
   const taskSlug = deps.slugify(requestedTask);
-  const result = await deps.oplLaunchService.prepareLaunch({
+  const intent = deps.oplLaunchService.createLaunchIntent({ user, taskSlug, source: "portal-page" });
+  deps.oplLaunchService.prepareLaunchIntent({
+    launchId: intent.launchId,
     db,
     user,
     taskSlug,
     requireRealOplWeb: true,
     source: "portal-page",
-  });
+  }).then((result) => {
+    if (result?.ok && result.workspaceSession?.id) {
+      intent.workspaceSessionId = result.workspaceSession.id;
+    }
+  }).catch((error) => recordBackgroundLaunchFailure({ error, intent, taskSlug, user, deps }));
 
-  if (!result.ok) {
-    sendOplLaunchErrorPage(res, result, user, deps);
-    return true;
-  }
-
-  deps.appendCookie(res, `${deps.workspaceSessionCookie()}=${result.workspaceSession.id}; Path=/; HttpOnly; SameSite=Lax`);
-  res.writeHead(302, { Location: result.launch.oplWebUrl });
+  res.writeHead(302, { Location: `/portal/app/opl-launch?launchId=${encodeURIComponent(intent.launchId)}` });
   res.end();
   return true;
 }
@@ -144,6 +175,7 @@ function redirectWorkspaceOpl(req, res, url) {
 export function createOplRoutes({
   appendCookie,
   layoutV2,
+  logPortalEvent,
   oplLaunchService,
   readBody,
   sendHtml,
@@ -154,6 +186,7 @@ export function createOplRoutes({
   const deps = {
     appendCookie,
     layoutV2,
+    logPortalEvent,
     oplLaunchService,
     readBody,
     sendHtml,
@@ -165,6 +198,7 @@ export function createOplRoutes({
   return async function handleOplRoutes(context) {
     const { req, res, url } = context;
     if (redirectWorkspaceOpl(req, res, url)) return true;
+    if (await handleOplLaunchStatusApi(context, deps)) return true;
     if (await handleOplLaunchApi(context, deps)) return true;
     if (await handleOplPage(context, deps)) return true;
     return false;

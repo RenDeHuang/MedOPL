@@ -440,6 +440,12 @@ export function createLaunchApi({
     const selectedServerPlan = input.selectedServerPlan && typeof input.selectedServerPlan === "object" ? input.selectedServerPlan : {};
     const state = await readState();
     const workspace = upsertWorkspace(state, input);
+    const launchStatus = {
+      stages: [
+        { stage: "workspace_ready", ok: true, userVisibleState: "实验空间已准备", blockingUser: false },
+      ],
+      currentStage: "workspace_ready",
+    };
     const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
     const runtimeSession = createRuntimeSession(state, {
       ...input,
@@ -497,6 +503,8 @@ export function createLaunchApi({
       await bindWorkspace(portalContext);
       const oplSession = await createOplSession(portalContext);
       runtimeSession.oplSessionId = oplSession.id || oplSession.sessionId || "";
+      launchStatus.stages.push({ stage: "session_created", ok: true, userVisibleState: "OPL 会话已创建", blockingUser: false });
+      launchStatus.currentStage = "session_created";
       if (oplSession.status === "deferred") {
         addEvent(state, "opl_session_create_deferred", { ...portalContext, reason: oplSession.reason || "" });
       }
@@ -545,6 +553,7 @@ export function createLaunchApi({
       nodePoolCreatePayload: runtimeSession.nodePoolCreatePayload || selectedServerPlan.nodePoolCreatePayload || null,
       nodePoolScalePayload: runtimeSession.nodePoolScalePayload || selectedServerPlan.nodePoolScalePayload || null,
       provisionerPayload: runtimeSession.provisionerPayload || selectedServerPlan.provisionerPayload || null,
+      launchStatus,
       source: "portal-control-plane",
       createdAt: nowIso(),
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),

@@ -27,6 +27,31 @@ const PROVIDER_KEY_VALIDATORS = [
   },
 ];
 
+const OPL_LAUNCH_STAGES = Object.freeze([
+  "workspace_ready",
+  "provider_key_bound",
+  "session_created",
+  "gateway_ready",
+  "opl_opening",
+]);
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function createLaunchStage(stage, { ok = true, blockingUser = false, userVisibleState = "" } = {}) {
+  const at = nowIso();
+  return {
+    stage,
+    ok,
+    blockingUser,
+    userVisibleState: userVisibleState || stage,
+    startedAt: at,
+    endedAt: at,
+    latencyMs: 0,
+  };
+}
+
 function normalizeProviderKeyInput(providerKeyPayload = {}) {
   return {
     provider: String(providerKeyPayload.provider || "").trim(),
@@ -122,6 +147,140 @@ export function createOplLaunchService({
   logPortalEvent,
   writeDb,
 }) {
+  const launchStatuses = new Map();
+
+  function updateLaunchStage(launchId, stage, details = {}) {
+    const current = launchStatuses.get(launchId);
+    if (!current) return null;
+    const existing = current.stages.find((item) => item.stage === stage);
+    const next = {
+      ...(existing || createLaunchStage(stage)),
+      ...details,
+      stage,
+      endedAt: nowIso(),
+      ok: details.ok ?? true,
+      blockingUser: Boolean(details.blockingUser),
+      userVisibleState: details.userVisibleState || existing?.userVisibleState || stage,
+    };
+    if (existing) {
+      Object.assign(existing, next);
+    } else {
+      current.stages.push(next);
+    }
+    current.currentStage = stage;
+    current.updatedAt = nowIso();
+    return current;
+  }
+
+  function getLaunchStatus(launchId) {
+    return launchStatuses.get(launchId) || null;
+  }
+
+  function createLaunchIntent({ user, taskSlug, source = "portal-page" }) {
+    const launchId = `opl-launch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const status = {
+      ok: true,
+      launchId,
+      status: "preparing",
+      currentStage: "workspace_ready",
+      taskSlug,
+      source,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+      userId: user.id,
+      userVisibleState: "正在准备实验空间",
+      blockingUser: false,
+      oplWebUrl: "",
+      stages: [
+        createLaunchStage("workspace_ready", {
+          blockingUser: false,
+          userVisibleState: "正在准备实验空间",
+        }),
+      ],
+    };
+    launchStatuses.set(launchId, status);
+    return status;
+  }
+
+  async function prepareLaunchIntent({ launchId, db, user, taskSlug, requireRealOplWeb = true, source = "portal-page" }) {
+    const startedAt = Date.now();
+    try {
+      updateLaunchStage(launchId, "provider_key_bound", {
+        blockingUser: false,
+        userVisibleState: "正在绑定 OPL 访问凭证",
+      });
+      const result = await prepareLaunch({
+        db,
+        user,
+        taskSlug,
+        requireRealOplWeb,
+        source,
+      });
+      if (!result.ok) {
+        const current = launchStatuses.get(launchId);
+        if (current) {
+          current.ok = false;
+          current.status = "failed";
+          current.error = result.error;
+          current.message = result.message || (result.reasons || []).join("；");
+          current.blockingUser = true;
+          current.userVisibleState = result.message || "OPL 准备失败，请检查账号和工作空间状态";
+          current.updatedAt = nowIso();
+          updateLaunchStage(launchId, "session_created", {
+            ok: false,
+            blockingUser: true,
+            userVisibleState: current.userVisibleState,
+          });
+        }
+        return result;
+      }
+      updateLaunchStage(launchId, "session_created", {
+        blockingUser: false,
+        userVisibleState: "正在创建 OPL 会话",
+      });
+      updateLaunchStage(launchId, "gateway_ready", {
+        blockingUser: false,
+        userVisibleState: "OPL 网关已准备",
+      });
+      updateLaunchStage(launchId, "opl_opening", {
+        blockingUser: false,
+        userVisibleState: "正在打开 OPL",
+      });
+      const current = launchStatuses.get(launchId);
+      if (current) {
+        current.status = "ready";
+        current.userVisibleState = "OPL 已准备好，正在打开";
+        current.blockingUser = false;
+        current.oplWebUrl = result.launch.oplWebUrl || "";
+        current.runtimeUrl = result.launch.runtimeUrl || "";
+        current.workspace = result.taskSpace;
+        current.workspaceSession = result.workspaceSession;
+        current.launch = result.launch;
+        current.latencyMs = Date.now() - startedAt;
+        current.updatedAt = nowIso();
+      }
+      return result;
+    } catch (error) {
+      const current = launchStatuses.get(launchId);
+      if (current) {
+        current.ok = false;
+        current.status = "failed";
+        current.error = "opl_launch_failed";
+        current.message = String(error.message || error);
+        current.blockingUser = true;
+        current.userVisibleState = "OPL 准备失败，请稍后重试";
+        current.latencyMs = Date.now() - startedAt;
+        current.updatedAt = nowIso();
+        updateLaunchStage(launchId, current.currentStage || "session_created", {
+          ok: false,
+          blockingUser: true,
+          userVisibleState: current.userVisibleState,
+        });
+      }
+      throw error;
+    }
+  }
+
   async function buildLaunchBlockReasons(db, user) {
     const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
     const policy = await evaluateUserPolicy(db, user);
@@ -135,8 +294,7 @@ export function createOplLaunchService({
     };
   }
 
-  return {
-    async prepareLaunch({
+  async function prepareLaunch({
       db,
       user,
       taskSlug,
@@ -257,6 +415,13 @@ export function createOplLaunchService({
         policy,
         wallet,
       };
-    },
+    }
+
+  return {
+    createLaunchIntent,
+    getLaunchStatus,
+    prepareLaunch,
+    prepareLaunchIntent,
+    updateLaunchStage,
   };
 }

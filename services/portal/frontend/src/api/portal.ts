@@ -657,6 +657,27 @@ export interface MyResourcesPayload {
   };
 }
 
+export interface OplLaunchStatusPayload {
+  ok: boolean;
+  launchId: string;
+  status: "preparing" | "ready" | "failed" | string;
+  currentStage: string;
+  userVisibleState: string;
+  blockingUser: boolean;
+  oplWebUrl: string;
+  error?: string;
+  message?: string;
+  stages: Array<{
+    stage: string;
+    ok: boolean;
+    blockingUser: boolean;
+    userVisibleState: string;
+    startedAt: string;
+    endedAt: string;
+    latencyMs: number;
+  }>;
+}
+
 export interface ResourceOrderQuoteInput {
   workspaceId?: string;
   workspaceSessionId?: string;
@@ -1011,6 +1032,11 @@ export async function fetchResourceOrders(params?: Record<string, string | numbe
 
 export async function fetchMyResources() {
   const { data } = await apiClient.get<MyResourcesPayload>("/my/resources");
+  return data;
+}
+
+export async function fetchOplLaunchStatus(launchId: string) {
+  const { data } = await apiClient.get<OplLaunchStatusPayload>(`/opl/launch-status/${encodeURIComponent(launchId)}`);
   return data;
 }
 

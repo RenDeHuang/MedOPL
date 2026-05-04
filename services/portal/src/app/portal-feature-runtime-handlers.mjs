@@ -52,6 +52,7 @@ export function createPortalFeatureRuntimeHandlers({
   const handleOplRoutes = createOplRoutes({
     appendCookie,
     layoutV2,
+    logPortalEvent,
     oplLaunchService,
     readBody,
     sendHtml,
