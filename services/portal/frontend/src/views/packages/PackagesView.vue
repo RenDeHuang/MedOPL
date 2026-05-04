@@ -30,45 +30,51 @@
         </div>
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article v-for="item in visiblePackageItems" :key="item.id" class="card p-5">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="text-base font-semibold text-gray-950 dark:text-white">{{ packageDisplayName(item) }}</h3>
-            <span v-if="subscription?.currentPackageId === item.id" class="badge badge-success">当前套餐</span>
+      <section v-if="recommendedPackage" class="card p-5">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <span class="badge badge-primary">推荐套餐</span>
+            <h3 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">CPU 2C4G + 10GB 存储 + OPL 实验室</h3>
+            <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">{{ recommendedPackage.headline }}</p>
           </div>
+          <button class="btn btn-primary" :disabled="loadingAction || !recommendedPackage.backingServerPlanId" @click="activateRecommendedPackage">
+            开通推荐套餐
+          </button>
+        </div>
 
-          <div class="mt-4 space-y-2 text-sm">
-            <div class="muted-kv">
-              <span class="muted-kv-label">计算能力</span>
-              <span class="muted-kv-value">{{ item.computePower }}</span>
-            </div>
-            <div class="muted-kv">
-              <span class="muted-kv-label">套餐存储容量</span>
-              <span class="muted-kv-value">{{ item.storageCapacityGb }} GB</span>
-            </div>
-            <div class="muted-kv">
-              <span class="muted-kv-label">每日扣款</span>
-              <span class="muted-kv-value">{{ money(item.dailyDebit, item.currency) }}</span>
-            </div>
-            <div class="muted-kv">
-              <span class="muted-kv-label">周冻结</span>
-              <span class="muted-kv-value">{{ money(item.weeklyFreeze, item.currency) }}</span>
-            </div>
+        <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+            <div class="text-xs text-gray-500 dark:text-slate-400">费用说明</div>
+            <div class="mt-2 text-sm font-medium text-gray-950 dark:text-white">{{ money(recommendedPackage.dailyDebit, recommendedPackage.currency) }} / 天</div>
           </div>
+          <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+            <div class="text-xs text-gray-500 dark:text-slate-400">预扣金额</div>
+            <div class="mt-2 text-sm font-medium text-gray-950 dark:text-white">{{ money(recommendedPackage.weeklyFreeze, recommendedPackage.currency) }}</div>
+          </div>
+          <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+            <div class="text-xs text-gray-500 dark:text-slate-400">删除停费</div>
+            <div class="mt-2 text-sm font-medium text-gray-950 dark:text-white">在“我的资源”按订单删除后停止继续预扣</div>
+          </div>
+        </div>
 
-          <div class="mt-4 grid grid-cols-2 gap-2">
-            <button class="btn btn-secondary" :disabled="loadingAction" @click="activate(item.id)">开通</button>
-            <button class="btn btn-secondary" :disabled="loadingAction" @click="upgrade(item.id)">升级</button>
+        <div class="mt-5 grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+          <div class="muted-kv">
+            <span class="muted-kv-label">计算能力</span>
+            <span class="muted-kv-value">{{ recommendedPackage.computePower }}</span>
           </div>
-        </article>
+          <div class="muted-kv">
+            <span class="muted-kv-label">套餐存储容量</span>
+            <span class="muted-kv-value">{{ recommendedPackage.storageCapacityGb }} GB</span>
+          </div>
+        </div>
       </section>
 
       <section class="card p-5">
         <h3 class="text-base font-semibold text-gray-950 dark:text-white">自定义套餐</h3>
-        <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">如果入门套餐和进阶套餐不满足需求，可先选择接近配置后再扩容。</p>
+        <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">如果推荐套餐不满足需求，可再选择进阶配置或扩容存储。</p>
         <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           <button class="btn btn-secondary" :disabled="loadingAction" @click="expand">加 100GB 存储</button>
-          <button class="btn btn-secondary" :disabled="loadingAction || !computeTargetPlanId" @click="addComputeNode">加一个计算节点</button>
+          <button class="btn btn-secondary" :disabled="loadingAction || !advancedPackage" @click="upgradeAdvancedPackage">选择进阶套餐</button>
         </div>
       </section>
     </div>
@@ -103,25 +109,11 @@ const usedStorageGb = computed(() => {
   const source = subscription.value as any;
   return Number(source?.usedStorageGb ?? source?.storageUsedGb ?? 0);
 });
-const visiblePackageItems = computed(() =>
-  packageItems.value.filter((item) => item.id === "starter" || item.id === "pro")
-);
-const computeTargetPlanId = computed(() => {
-  const currentPackageId = subscription.value?.currentPackageId;
-  const current = packageItems.value.find((item) => item.id === currentPackageId);
-  return current?.backingServerPlanId || visiblePackageItems.value[0]?.backingServerPlanId || "";
-});
+const recommendedPackage = computed(() => packageItems.value.find((item) => item.id === "starter") || null);
+const advancedPackage = computed(() => packageItems.value.find((item) => item.id === "pro") || null);
 
 function money(value: number | undefined, currency = "CNY") {
   return `${currency} ${Number(value || 0).toFixed(2)}`;
-}
-
-function packageDisplayName(item: LabPackagePlan) {
-  const names: Record<string, string> = {
-    starter: "入门套餐",
-    pro: "进阶套餐",
-  };
-  return names[item.id] || item.name;
 }
 
 async function reloadAll() {
@@ -134,20 +126,27 @@ async function reloadAll() {
   subscription.value = subscriptionPayload;
 }
 
-async function activate(packageId: string) {
+async function activateRecommendedPackage() {
+  const item = recommendedPackage.value;
+  if (!item?.backingServerPlanId) return;
   loadingAction.value = true;
   try {
-    await activateLabPackage({ packageId });
-    await reloadAll();
-  } finally {
-    loadingAction.value = false;
-  }
-}
-
-async function upgrade(packageId: string) {
-  loadingAction.value = true;
-  try {
-    await upgradeLabPackage({ packageId });
+    await activateLabPackage({ packageId: item.id });
+    const quoted = await quoteResourceOrder({ serverPlanId: item.backingServerPlanId, estimatedHours: 24 });
+    if (!quoted.resourceOrderId && !quoted.quoteId) {
+      throw new Error("推荐套餐创建失败：缺少报价标识");
+    }
+    const frozen = await freezeResourceOrder({
+      resourceOrderId: quoted.resourceOrderId,
+      quoteId: quoted.quoteId,
+      serverPlanId: item.backingServerPlanId,
+      estimatedHours: 24,
+    });
+    const resourceOrderId = frozen.resourceOrderId || quoted.resourceOrderId;
+    if (!resourceOrderId) {
+      throw new Error("推荐套餐预扣失败：缺少订单标识");
+    }
+    await provisionResourceOrder({ resourceOrderId });
     await reloadAll();
   } finally {
     loadingAction.value = false;
@@ -164,25 +163,12 @@ async function expand() {
   }
 }
 
-async function addComputeNode() {
-  if (!computeTargetPlanId.value) return;
+async function upgradeAdvancedPackage() {
+  const item = advancedPackage.value;
+  if (!item) return;
   loadingAction.value = true;
   try {
-    const quoted = await quoteResourceOrder({ serverPlanId: computeTargetPlanId.value, estimatedHours: 24 });
-    if (!quoted.resourceOrderId && !quoted.quoteId) {
-      throw new Error("计算节点下单失败：缺少报价标识");
-    }
-    const frozen = await freezeResourceOrder({
-      resourceOrderId: quoted.resourceOrderId,
-      quoteId: quoted.quoteId,
-      serverPlanId: computeTargetPlanId.value,
-      estimatedHours: 24,
-    });
-    const resourceOrderId = frozen.resourceOrderId || quoted.resourceOrderId;
-    if (!resourceOrderId) {
-      throw new Error("计算节点冻结失败：缺少订单标识");
-    }
-    await provisionResourceOrder({ resourceOrderId });
+    await upgradeLabPackage({ packageId: item.id });
     await reloadAll();
   } finally {
     loadingAction.value = false;

@@ -853,6 +853,7 @@ export interface WorkspaceFileTransferPayload {
 export interface LabPackagePlan {
   id: string;
   name: string;
+  headline?: string;
   backingServerPlanId?: string;
   computePower: string;
   storageCapacityGb: number;

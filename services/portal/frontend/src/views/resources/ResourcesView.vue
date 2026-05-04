@@ -10,7 +10,7 @@
         <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <MetricCard label="绑定总数" :value="resourceSummary.total" hint="当前订单资源绑定" />
           <MetricCard label="可删除" :value="resourceSummary.deletable" hint="可释放的资源绑定" />
-          <MetricCard label="CVM 数量" :value="resourceSummary.cvmCount" hint="绑定中的云服务器" />
+          <MetricCard label="云主机数量" :value="resourceSummary.cloudHostCount" hint="绑定中的计算资源" />
         </div>
       </section>
 
@@ -36,14 +36,14 @@
           <div class="muted-kv"><span class="muted-kv-label">工作空间</span><span class="muted-kv-value">{{ item.workspaceId || "-" }}</span></div>
           <div class="muted-kv"><span class="muted-kv-label">运行 ID</span><span class="muted-kv-value">{{ item.runId || "-" }}</span></div>
           <div class="muted-kv"><span class="muted-kv-label">套餐计划</span><span class="muted-kv-value">{{ item.serverPlanId || "-" }}</span></div>
-          <div class="muted-kv"><span class="muted-kv-label">节点池</span><span class="muted-kv-value">{{ item.nodePoolId || "-" }}</span></div>
-          <div class="muted-kv"><span class="muted-kv-label">CVM 数量</span><span class="muted-kv-value">{{ item.cvmInstanceIds?.length || 0 }}</span></div>
-          <div class="muted-kv"><span class="muted-kv-label">存储订单</span><span class="muted-kv-value">{{ item.storageOrderId || "-" }}</span></div>
-          <div class="muted-kv md:col-span-2"><span class="muted-kv-label">COS 前缀</span><span class="muted-kv-value break-all">{{ item.cosPrefix || "-" }}</span></div>
+          <div class="muted-kv"><span class="muted-kv-label">计算资源</span><span class="muted-kv-value">{{ computeResourceState(item) }}</span></div>
+          <div class="muted-kv"><span class="muted-kv-label">云主机数量</span><span class="muted-kv-value">{{ item.cvmInstanceIds?.length || 0 }}</span></div>
+          <div class="muted-kv"><span class="muted-kv-label">存储</span><span class="muted-kv-value">{{ storageState(item) }}</span></div>
+          <div class="muted-kv md:col-span-2"><span class="muted-kv-label">删除停费状态</span><span class="muted-kv-value">{{ deleteBillingStopState(item) }}</span></div>
         </div>
 
         <div class="mt-4 rounded-xl border border-gray-100 p-3 dark:border-slate-700">
-          <div class="text-xs font-semibold text-gray-500 dark:text-slate-400">billingTags</div>
+          <div class="text-xs font-semibold text-gray-500 dark:text-slate-400">账单标签</div>
           <div class="mt-2 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
             <div class="muted-kv"><span class="muted-kv-label">resourceorderid</span><span class="muted-kv-value">{{ item.billingTags.resourceorderid }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">runid</span><span class="muted-kv-value">{{ item.billingTags.runid }}</span></div>
@@ -55,7 +55,7 @@
 
         <div class="mt-4">
           <button class="btn btn-danger" :disabled="deletingId === item.resourceOrderId || !item.canDelete" @click="remove(item.resourceOrderId)">
-            删除节点池绑定
+            删除资源并停费
           </button>
           <div v-if="!item.canDelete && item.deleteBlockedReason" class="mt-2 text-xs text-amber-700 dark:text-amber-300">{{ item.deleteBlockedReason }}</div>
         </div>
@@ -77,8 +77,29 @@ const items = ref<MyResourceBindingItem[]>([]);
 const resourceSummary = computed(() => ({
   total: items.value.length,
   deletable: items.value.filter((item) => item.canDelete).length,
-  cvmCount: items.value.reduce((sum, item) => sum + (item.cvmInstanceIds?.length || 0), 0),
+  cloudHostCount: items.value.reduce((sum, item) => sum + (item.cvmInstanceIds?.length || 0), 0),
 }));
+
+function computeResourceState(item: MyResourceBindingItem) {
+  if (item.status === "released") return "已删除";
+  if (item.canDelete) return "运行中";
+  return item.status || "未知";
+}
+
+function storageState(item: MyResourceBindingItem) {
+  const size = Number((item as any).storageSizeGb || 0);
+  const status = String((item as any).storageStatus || "").trim();
+  if (size > 0 && status) return `${size} GB，${status}`;
+  if (size > 0) return `${size} GB`;
+  return status || "未绑定";
+}
+
+function deleteBillingStopState(item: MyResourceBindingItem) {
+  const stoppedAt = String((item as any).billingStoppedAt || (item as any).storageBillingStoppedAt || "").trim();
+  if (stoppedAt) return `已停费：${stoppedAt}`;
+  if (item.status === "released") return "已提交删除，等待停费确认";
+  return item.canDelete ? "删除后停止继续预扣" : "当前不可删除";
+}
 
 async function reload() {
   resourcesLoading.value = true;

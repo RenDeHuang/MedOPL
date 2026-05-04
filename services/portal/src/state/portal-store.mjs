@@ -545,11 +545,11 @@ export function createPortalStore({
   writeDb.refundWallet = refundWallet;
   writeDb.makeupChargeWallet = makeupChargeWallet;
   writeDb.persistPortalSessions = persistPortalSessions;
+  writeDb.persistResourceOrderState = persistResourceOrderState;
   if (storageMode() === "postgres_redis") {
     writeDb.upsertStorageOrder = upsertStorageOrder;
     writeDb.upsertTaskSpace = upsertTaskSpace;
     writeDb.upsertWorkspaceFile = upsertWorkspaceFile;
-    writeDb.persistResourceOrderState = persistResourceOrderState;
     writeDb.persistLabBillingState = persistLabBillingState;
   }
 
