@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="账单" subtitle="钱包余额、运行中预扣、T+1 校准与账户流水">
     <div class="space-y-4">
-      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单数据...</div>
+      <div v-if="summaryLoading && !summaryPayload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单摘要...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
         <section class="card p-5">
@@ -71,8 +71,9 @@
               <span class="badge badge-primary">7 天</span>
             </div>
             <div class="h-[260px]">
+              <div v-if="detailsLoading && !detailsPayload" class="flex h-full items-center justify-center text-sm text-gray-500 dark:text-slate-400">正在加载趋势...</div>
               <Bar v-if="trendChartData" :data="trendChartData" :options="barOptions" />
-              <div v-else class="flex h-full items-center justify-center text-sm text-gray-500 dark:text-slate-400">暂无趋势数据</div>
+              <div v-else-if="!detailsLoading" class="flex h-full items-center justify-center text-sm text-gray-500 dark:text-slate-400">暂无趋势数据</div>
             </div>
           </div>
 
@@ -112,6 +113,7 @@
             <span class="badge badge-warning">{{ payload.taskPagination.total }} 项</span>
           </div>
 
+          <div v-if="detailsLoading && !detailsPayload" class="empty-state">正在加载工作空间成本明细...</div>
           <div class="table-shell">
             <table class="text-sm">
               <thead>
@@ -162,6 +164,7 @@
               <span class="badge badge-primary">{{ payload.runPagination.total }} 条</span>
             </div>
 
+            <div v-if="detailsLoading && !detailsPayload" class="empty-state">正在加载运行明细...</div>
             <div class="table-shell">
               <table class="text-sm">
                 <thead>
@@ -208,6 +211,7 @@
               <span class="badge badge-success">{{ payload.ledgerPagination.total }} 条</span>
             </div>
             <div class="space-y-2.5">
+              <div v-if="detailsLoading && !detailsPayload" class="empty-state">正在加载账户流水...</div>
               <div v-for="item in payload.ledger" :key="item.id || `${item.type}-${item.createdAt}`" class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
                 <div class="flex items-start justify-between gap-3">
                   <div>
@@ -244,17 +248,40 @@ import { Bar } from "vue-chartjs";
 import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip } from "chart.js";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { BillingPayload, PortalQueryValue } from "@/api/portal";
-import { fetchBilling } from "@/api/portal";
+import type { BillingDetailsPayload, BillingPayload, BillingSummaryPayload, PortalPagination, PortalQueryValue } from "@/api/portal";
+import { fetchBillingDetails, fetchBillingSummary } from "@/api/portal";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const route = useRoute();
 const router = useRouter();
-const loading = ref(true);
+const summaryLoading = ref(true);
+const detailsLoading = ref(false);
 const error = ref("");
-const payload = ref<BillingPayload | null>(null);
+const detailsError = ref("");
+const summaryPayload = ref<BillingSummaryPayload | null>(null);
+const detailsPayload = ref<BillingDetailsPayload | null>(null);
 const filterDraft = reactive({ from: "", to: "" });
+
+const emptyPagination: PortalPagination = { page: 1, pageSize: 5, total: 0, totalPages: 1 };
+const emptyDetails: BillingDetailsPayload = {
+  taskCosts: [],
+  taskPagination: emptyPagination,
+  runCosts: [],
+  runPagination: emptyPagination,
+  ledger: [],
+  ledgerPagination: emptyPagination,
+  trend: { labels: [], total: [], cpu: [], gpu: [], storage: [] },
+};
+
+const payload = computed<BillingPayload | null>(() => {
+  if (!summaryPayload.value) return null;
+  const details = detailsPayload.value || emptyDetails;
+  return {
+    ...summaryPayload.value,
+    ...details,
+  };
+});
 
 const componentCostHint = computed(() => {
   if (payload.value?.breakdown.cloudSource === "tencent_cloud") {
@@ -399,10 +426,33 @@ let requestId = 0;
 
 async function load() {
   const current = ++requestId;
-  loading.value = true;
+  summaryLoading.value = true;
+  detailsLoading.value = false;
   error.value = "";
+  detailsError.value = "";
   try {
-    const data = await fetchBilling({
+    const data = await fetchBillingSummary({
+      from: readQueryValue("from"),
+      to: readQueryValue("to"),
+    });
+    if (current !== requestId) return;
+    summaryPayload.value = data;
+    filterDraft.from = data.filter.from || "";
+    filterDraft.to = data.filter.to || "";
+    void loadBillingDetails(current);
+  } catch (err: any) {
+    if (current !== requestId) return;
+    error.value = err?.message || "账单加载失败";
+  } finally {
+    if (current === requestId) summaryLoading.value = false;
+  }
+}
+
+async function loadBillingDetails(current: number) {
+  detailsLoading.value = true;
+  detailsError.value = "";
+  try {
+    const data = await fetchBillingDetails({
       from: readQueryValue("from"),
       to: readQueryValue("to"),
       tasks_page: readQueryValue("tasks_page"),
@@ -410,14 +460,12 @@ async function load() {
       ledger_page: readQueryValue("ledger_page"),
     });
     if (current !== requestId) return;
-    payload.value = data;
-    filterDraft.from = data.filter.from || "";
-    filterDraft.to = data.filter.to || "";
+    detailsPayload.value = data;
   } catch (err: any) {
     if (current !== requestId) return;
-    error.value = err?.message || "账单加载失败";
+    detailsError.value = err?.message || "账单明细加载失败";
   } finally {
-    if (current === requestId) loading.value = false;
+    if (current === requestId) detailsLoading.value = false;
   }
 }
 

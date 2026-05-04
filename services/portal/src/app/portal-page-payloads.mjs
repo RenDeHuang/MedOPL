@@ -299,6 +299,82 @@ export function createPortalPagePayloads(deps) {
     };
   }
 
+  async function buildBillingSummaryPayload(db, user, options = {}) {
+    const wallet = ensureWallet(db, user.id);
+    const commercial = buildCommercialProfile(db, user, { wallet });
+    const fromValue = String(options.from || "").trim();
+    const toValue = String(options.to || "").trim();
+    const rangeKey = fromValue || toValue ? "custom" : "30d";
+    const fallbackStart = new Date();
+    fallbackStart.setDate(fallbackStart.getDate() - 29);
+    const normalizedFrom = fromValue || formatDateOnly(fallbackStart);
+    const normalizedTo = toValue || formatDateOnly(new Date());
+    const range = rangeBounds(rangeKey, normalizedFrom, normalizedTo);
+    const [billing, pendingBilling] = await Promise.all([
+      fetchBillingSummary(user.id, "", "720h"),
+      fetchPendingSummary(user.id, "", "168h"),
+    ]);
+    const items = billing?.items || [];
+    const filteredItems = items.filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, range));
+    const totals = buildBillingTotals(filteredItems);
+    const summary = {
+      selectedCost: Number(totals.totalCost.toFixed(5)),
+      runCount: 0,
+      workspaceCount: 0,
+      pendingCost: Number((Number(pendingBilling?.totals?.totalCost || pendingBilling?.totalCost || 0)).toFixed(5)),
+      exactCost: Number((Number(billing?.totals?.totalCost || billing?.totalCost || totals.totalCost || 0)).toFixed(5)),
+    };
+    const supportBoundary = resolveSupportBoundary({
+      wallet,
+      freeze: { activeFreeze: commercial.activeFreeze || 0 },
+      minRequiredBalance: Math.max(1, Number(commercial.balanceFloor || 0)),
+      run: {},
+    });
+    return {
+      wallet: {
+        balance: Number(wallet.balance || 0),
+        activeFreeze: commercial.activeFreeze || 0,
+        availableBalance: commercial.availableBalance || 0,
+        trialRemaining: commercial.trialRemaining || 0,
+      },
+      totals,
+      summary,
+      supportBoundary,
+      breakdown: {
+        cpuCost: Number(totals.cpuCost.toFixed(5)),
+        gpuCost: Number(totals.gpuCost.toFixed(5)),
+        storageCost: Number(totals.pvCost.toFixed(5)),
+        vpnCost: 0,
+        trafficCost: 0,
+        otherCloudCost: 0,
+        cloudSource: billing?.cloudSource || billing?.source || "not_connected",
+        pricingSource: billing?.source || "unavailable",
+      },
+      filter: {
+        range: rangeKey,
+        from: normalizedFrom,
+        to: normalizedTo,
+      },
+      todayCost: Number(filteredItems
+        .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, rangeBounds("today")))
+        .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0)
+        .toFixed(5)),
+    };
+  }
+
+  async function buildBillingDetailsPayload(db, user, options = {}) {
+    const full = await buildBillingPayload(db, user, options);
+    return {
+      taskCosts: full.taskCosts,
+      taskPagination: full.taskPagination,
+      runCosts: full.runCosts,
+      runPagination: full.runPagination,
+      ledger: full.ledger,
+      ledgerPagination: full.ledgerPagination,
+      trend: full.trend,
+    };
+  }
+
   async function buildWorkspacePayload(db, user, taskSlug, options = {}) {
     const currentTask = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     const current = {
@@ -411,6 +487,8 @@ export function createPortalPagePayloads(deps) {
 
   return {
     buildBillingPayload,
+    buildBillingDetailsPayload,
+    buildBillingSummaryPayload,
     buildOverviewPayload,
     buildWorkspacePayload,
   };

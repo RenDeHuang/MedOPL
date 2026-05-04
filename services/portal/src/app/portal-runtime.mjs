@@ -494,7 +494,9 @@ function money(value) {
 }
 
 const {
+  buildBillingDetailsPayload,
   buildBillingPayload,
+  buildBillingSummaryPayload,
   buildOverviewPayload,
   buildWorkspacePayload,
 } = createPageRuntimePayloads({
@@ -655,7 +657,9 @@ const {
 });
 
 const dispatchPortalHttpRequest = createPortalHttpDispatcher({
+  buildBillingDetailsPayload,
   buildBillingPayload,
+  buildBillingSummaryPayload,
   buildOverviewPayload,
   buildPortalHealthPayload,
   buildWorkspacePayload,

@@ -197,6 +197,26 @@ export interface BillingPayload {
   todayCost: number;
 }
 
+export interface BillingSummaryPayload {
+  wallet: BillingPayload["wallet"];
+  totals: BillingPayload["totals"];
+  breakdown: BillingPayload["breakdown"];
+  summary: BillingPayload["summary"];
+  supportBoundary?: BillingPayload["supportBoundary"];
+  filter: BillingPayload["filter"];
+  todayCost: number;
+}
+
+export interface BillingDetailsPayload {
+  taskCosts: BillingPayload["taskCosts"];
+  taskPagination: BillingPayload["taskPagination"];
+  runCosts: BillingPayload["runCosts"];
+  runPagination: BillingPayload["runPagination"];
+  ledger: BillingPayload["ledger"];
+  ledgerPagination: BillingPayload["ledgerPagination"];
+  trend: BillingPayload["trend"];
+}
+
 export interface WorkspaceQuery {
   task?: PortalQueryValue;
   tasks_page?: PortalQueryValue;
@@ -966,6 +986,16 @@ export async function fetchOverview(params: OverviewQuery = {}) {
 
 export async function fetchBilling(params: BillingQuery = {}) {
   const { data } = await apiClient.get<BillingPayload>("/billing", { params });
+  return data;
+}
+
+export async function fetchBillingSummary(params: BillingQuery = {}) {
+  const { data } = await apiClient.get<BillingSummaryPayload>("/billing/summary", { params });
+  return data;
+}
+
+export async function fetchBillingDetails(params: BillingQuery = {}) {
+  const { data } = await apiClient.get<BillingDetailsPayload>("/billing/details", { params });
   return data;
 }
 

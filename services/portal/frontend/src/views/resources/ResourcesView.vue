@@ -4,16 +4,25 @@
       <section class="card p-5">
         <div class="flex items-center justify-between gap-3">
           <h2 class="text-lg font-semibold text-gray-950 dark:text-white">资源绑定</h2>
-          <button class="btn btn-secondary" :disabled="loading" @click="reload">刷新</button>
+          <button class="btn btn-secondary" :disabled="resourcesLoading" @click="reload">刷新</button>
         </div>
         <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">删除操作严格按订单执行，只提交订单标识与确认字段。</p>
+        <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <MetricCard label="绑定总数" :value="resourceSummary.total" hint="当前订单资源绑定" />
+          <MetricCard label="可删除" :value="resourceSummary.deletable" hint="可释放的资源绑定" />
+          <MetricCard label="CVM 数量" :value="resourceSummary.cvmCount" hint="绑定中的云服务器" />
+        </div>
       </section>
 
       <section v-if="errorMessage" class="card p-4">
         <div class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</div>
       </section>
 
-      <section v-if="!loading && items.length === 0" class="card p-5">
+      <section v-if="resourcesLoading" class="card p-5">
+        <div class="text-sm text-gray-600 dark:text-slate-300">正在加载资源绑定...</div>
+      </section>
+
+      <section v-if="!resourcesLoading && items.length === 0" class="card p-5">
         <div class="text-sm text-gray-600 dark:text-slate-300">暂无资源绑定记录。</div>
       </section>
 
@@ -56,17 +65,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
+import MetricCard from "@/components/common/MetricCard.vue";
 import { deleteResourceOrderNodePool, fetchMyResources, type MyResourceBindingItem } from "@/api/portal";
 
-const loading = ref(false);
+const resourcesLoading = ref(false);
 const deletingId = ref("");
 const errorMessage = ref("");
 const items = ref<MyResourceBindingItem[]>([]);
+const resourceSummary = computed(() => ({
+  total: items.value.length,
+  deletable: items.value.filter((item) => item.canDelete).length,
+  cvmCount: items.value.reduce((sum, item) => sum + (item.cvmInstanceIds?.length || 0), 0),
+}));
 
 async function reload() {
-  loading.value = true;
+  resourcesLoading.value = true;
   errorMessage.value = "";
   try {
     const payload = await fetchMyResources();
@@ -75,7 +90,7 @@ async function reload() {
     const message = error instanceof Error ? error.message : "加载失败";
     errorMessage.value = message;
   } finally {
-    loading.value = false;
+    resourcesLoading.value = false;
   }
 }
 

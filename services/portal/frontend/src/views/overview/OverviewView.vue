@@ -1,7 +1,7 @@
 <template>
   <AppLayout title="MedOPL" subtitle="普通用户总览">
     <div class="space-y-4">
-      <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载总览...</div>
+      <div v-if="overviewLoading && !payload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载总览...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
 
       <template v-else-if="payload">
@@ -84,6 +84,7 @@
               <RouterLink class="btn btn-secondary" to="/packages">去扩容</RouterLink>
             </div>
             <div class="space-y-2.5">
+              <div v-if="orderPanelLoading" class="empty-state">正在加载最近订单...</div>
               <div
                 v-for="item in recentOrders"
                 :key="item.id"
@@ -103,7 +104,7 @@
                   <div>Exact {{ money(item.exactCost) }}</div>
                 </div>
               </div>
-              <div v-if="!recentOrders.length" class="empty-state">暂无资源订单</div>
+              <div v-if="!orderPanelLoading && !recentOrders.length" class="empty-state">暂无资源订单</div>
             </div>
           </div>
 
@@ -217,7 +218,8 @@ import type { OverviewPayload, ResourceOrderItem, ResourceOrdersPayload } from "
 import { fetchOverview, fetchResourceOrders } from "@/api/portal";
 
 const route = useRoute();
-const loading = ref(true);
+const overviewLoading = ref(true);
+const orderPanelLoading = ref(false);
 const error = ref("");
 const payload = ref<OverviewPayload | null>(null);
 const resourceOrders = ref<ResourceOrdersPayload | null>(null);
@@ -339,7 +341,7 @@ let requestId = 0;
 
 async function load() {
   const current = ++requestId;
-  loading.value = true;
+  overviewLoading.value = true;
   error.value = "";
   try {
     const overviewData = await fetchOverview({
@@ -348,16 +350,26 @@ async function load() {
     });
     if (current !== requestId) return;
     payload.value = overviewData;
-    try {
-      resourceOrders.value = await fetchResourceOrders({ limit: 8 });
-    } catch {
-      resourceOrders.value = overviewData.resourceOrders || null;
-    }
+    void loadResourceOrders(current, overviewData);
   } catch (err: any) {
     if (current !== requestId) return;
     error.value = err?.message || "总览加载失败";
   } finally {
-    if (current === requestId) loading.value = false;
+    if (current === requestId) overviewLoading.value = false;
+  }
+}
+
+async function loadResourceOrders(current: number, overviewData: OverviewPayload) {
+  orderPanelLoading.value = true;
+  try {
+    const orders = await fetchResourceOrders({ limit: 8 });
+    if (current !== requestId) return;
+    resourceOrders.value = orders;
+  } catch {
+    if (current !== requestId) return;
+    resourceOrders.value = overviewData.resourceOrders || null;
+  } finally {
+    if (current === requestId) orderPanelLoading.value = false;
   }
 }
 

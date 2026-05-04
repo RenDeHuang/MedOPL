@@ -1,5 +1,7 @@
 export function createPortalHttpDispatcher({
+  buildBillingDetailsPayload,
   buildBillingPayload,
+  buildBillingSummaryPayload,
   buildOverviewPayload,
   buildPortalHealthPayload,
   buildWorkspacePayload,
@@ -101,6 +103,14 @@ export function createPortalHttpDispatcher({
     }
     if (req.method === "GET" && url.pathname === "/portal/api/billing") {
       sendJson(res, await buildBillingPayload(db, user, readBillingRequestOptions(url)));
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/portal/api/billing/summary") {
+      sendJson(res, await buildBillingSummaryPayload(db, user, readBillingRequestOptions(url)));
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/portal/api/billing/details") {
+      sendJson(res, await buildBillingDetailsPayload(db, user, readBillingRequestOptions(url)));
       return;
     }
     if (await handleResourceOrderRoutes({ req, res, url, db, user })) return;
