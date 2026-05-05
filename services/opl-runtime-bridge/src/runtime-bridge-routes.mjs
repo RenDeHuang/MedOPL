@@ -1,5 +1,13 @@
+import { createHash, randomUUID } from "node:crypto";
 import { createLangfusePublisher } from "./langfuse-publisher.mjs";
-import { addEvent, addTraceRecord, ensureRuntime, readState, writeState } from "./state-store.mjs";
+import {
+  addEvent,
+  addTraceRecord,
+  ensureRuntime,
+  readState,
+  upsertMessageRequestRecord,
+  writeState,
+} from "./state-store.mjs";
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
 import { createMessageApi } from "./runtime-bridge-messages.mjs";
 import { createRunApi } from "./runtime-bridge-runs.mjs";
@@ -46,6 +54,112 @@ async function readBody(req) {
   if (!chunks.length) return {};
   const raw = Buffer.concat(chunks).toString("utf8");
   return raw ? JSON.parse(raw) : {};
+}
+
+function launchTokenHash(token = "") {
+  return createHash("sha256").update(String(token || "")).digest("hex").slice(0, 32);
+}
+
+function messageIdFromInput(input = {}) {
+  return input.messageId || input.message_id || input.runId || input.run_id || randomUUID();
+}
+
+function messagePromptPreview(input = {}) {
+  return String(input.message || input.text || input.prompt || input.input?.message || "").slice(0, 120);
+}
+
+function waitForMessageCompletion(input = {}) {
+  return input.waitForCompletion === true || input.wait_for_completion === true;
+}
+
+function messageRequestRecord({ runtimeSession, input, messageId, tokenHash, status, req, extra = {} }) {
+  return {
+    ...runtimeSession,
+    ...input,
+    messageId,
+    runId: messageId,
+    launchTokenHash: tokenHash,
+    promptPreview: messagePromptPreview(input),
+    status,
+    userAgent: req?.headers?.["user-agent"] || "",
+    ...extra,
+  };
+}
+
+function emptyText(value = "") {
+  return String(value ?? "");
+}
+
+function messageReplyFor(state = {}, messageId = "") {
+  return (state.messageReplies || []).find((item) => item.messageId === messageId) || null;
+}
+
+function messageArtifactFor(state = {}, runId = "") {
+  return (state.artifacts || []).find((item) => item.runId === runId && item.kind === "message_reply") || null;
+}
+
+function statusForMessageRecord(record = {}, message = null) {
+  if (record.status) return record.status;
+  return message ? "succeeded" : "running";
+}
+
+function pendingMessagePayload(record = {}) {
+  return {
+    messageId: emptyText(record.messageId),
+    runId: emptyText(record.runId || record.messageId),
+    status: emptyText(record.status || "running"),
+    promptPreview: emptyText(record.promptPreview),
+    createdAt: emptyText(record.createdAt),
+    updatedAt: emptyText(record.updatedAt),
+  };
+}
+
+function messageStatusPayload(record = {}, state = {}) {
+  const message = messageReplyFor(state, record.messageId);
+  return {
+    ok: true,
+    status: statusForMessageRecord(record, message),
+    message: message || pendingMessagePayload(record),
+    artifact: messageArtifactFor(state, record.runId),
+    error: emptyText(record.error),
+  };
+}
+
+function statusUrlForMessage({ baseUrl, messageId, launchToken }) {
+  return `${baseUrl}/api/opl-launch/messages/${encodeURIComponent(messageId)}/status?launch_token=${encodeURIComponent(launchToken)}`;
+}
+
+function mergeUniqueBy(target = [], source = [], keyFn) {
+  const merged = [...target];
+  const seen = new Set(merged.map(keyFn).filter(Boolean));
+  for (const item of source || []) {
+    const key = keyFn(item);
+    if (!key || seen.has(key)) continue;
+    merged.push(item);
+    seen.add(key);
+  }
+  return merged;
+}
+
+function mergeMessageSideEffects(targetState, sourceState, acceptedAt) {
+  const acceptedTime = Date.parse(acceptedAt || 0);
+  const sourceEvents = (sourceState.events || []).filter((event) =>
+    Date.parse(event.occurredAt || event.createdAt || 0) >= acceptedTime
+  );
+  return {
+    ...targetState,
+    messageReplies: mergeUniqueBy(targetState.messageReplies, sourceState.messageReplies, (item) => item.messageId),
+    artifacts: mergeUniqueBy(targetState.artifacts, sourceState.artifacts, (item) => item.artifactId || `${item.runId}:${item.kind}:${item.name}:${item.localPath}`),
+    traceLinks: mergeUniqueBy(targetState.traceLinks, sourceState.traceLinks, (item) => item.traceId),
+    runActions: mergeUniqueBy(targetState.runActions, sourceState.runActions, (item) => item.actionId),
+    events: mergeUniqueBy(targetState.events, sourceEvents, (item) => item.id),
+  };
+}
+
+function messageRecordMatchesLaunch(record = {}, { messageId = "", runtimeSessionId = "", tokenHash = "" } = {}) {
+  return record.messageId === messageId &&
+    record.runtimeSessionId === runtimeSessionId &&
+    record.launchTokenHash === tokenHash;
 }
 
 export function createRuntimeBridgeRuntime() {
@@ -113,6 +227,111 @@ export function createRuntimeBridgeRuntime() {
     return { launch, state, runtimeSession };
   }
 
+  async function completeMessageInBackground(messageId, runtimeSession, input, req, acceptedAt) {
+    try {
+      const runningState = await readState();
+      const message = await messageApi.submitMessage(runningState, runtimeSession, input, req);
+      const currentState = await readState();
+      const completedState = mergeMessageSideEffects(currentState, runningState, acceptedAt);
+      upsertMessageRequestRecord(completedState, messageRequestRecord({
+        runtimeSession,
+        input,
+        messageId,
+        tokenHash: input.launchTokenHash,
+        status: "succeeded",
+        req,
+        extra: {
+          model: input.model || runtimeSession.model || "opl-runtime",
+          tokenCount: Number(input.tokenCount || input.token_count || 0),
+          reply: message.message?.reply || "",
+          artifactId: message.artifact?.artifactId || "",
+          artifactName: message.artifact?.name || "",
+          finishedAt: new Date().toISOString(),
+        },
+      }));
+      await writeState(completedState);
+    } catch (error) {
+      const failedState = await readState();
+      upsertMessageRequestRecord(failedState, messageRequestRecord({
+        runtimeSession,
+        input,
+        messageId,
+        tokenHash: input.launchTokenHash,
+        status: "failed",
+        req,
+        extra: {
+          error: String(error.message || error),
+          finishedAt: new Date().toISOString(),
+        },
+      }));
+      addEvent(failedState, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
+      await writeState(failedState);
+    }
+  }
+
+  async function runMessageToCompletion({ state, runtimeSession, input, req, messageId, tokenHash, res }) {
+    upsertMessageRequestRecord(state, messageRequestRecord({ runtimeSession, input, messageId, tokenHash, status: "running", req }));
+    try {
+      const message = await messageApi.submitMessage(state, runtimeSession, input, req);
+      upsertMessageRequestRecord(state, messageRequestRecord({
+        runtimeSession,
+        input,
+        messageId,
+        tokenHash,
+        status: "succeeded",
+        req,
+        extra: {
+          reply: message.message?.reply || "",
+          artifactId: message.artifact?.artifactId || "",
+          artifactName: message.artifact?.name || "",
+          finishedAt: new Date().toISOString(),
+        },
+      }));
+      await writeState(state);
+      sendJson(res, 200, { ok: true, ...message });
+    } catch (error) {
+      upsertMessageRequestRecord(state, messageRequestRecord({
+        runtimeSession,
+        input,
+        messageId,
+        tokenHash,
+        status: "failed",
+        req,
+        extra: {
+          error: String(error.message || error),
+          finishedAt: new Date().toISOString(),
+        },
+      }));
+      addEvent(state, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
+      await writeState(state);
+      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+    }
+  }
+
+  async function acceptMessageForBackground({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res }) {
+    const record = upsertMessageRequestRecord(state, messageRequestRecord({ runtimeSession, input, messageId, tokenHash, status: "running", req }));
+    await writeState(state);
+    setImmediate(() => completeMessageInBackground(messageId, runtimeSession, input, req, acceptedAt));
+    sendJson(res, 202, {
+      ok: true,
+      status: "accepted",
+      message: {
+        messageId,
+        runId: messageId,
+        status: record.status,
+      },
+      statusUrl: statusUrlForMessage({ baseUrl: config.baseUrl, messageId, launchToken }),
+    });
+  }
+
+  async function dispatchMessageRequest({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res }) {
+    if (waitForMessageCompletion(input)) {
+      await runMessageToCompletion({ state, runtimeSession, input, req, messageId, tokenHash, res });
+      return;
+    }
+    await acceptMessageForBackground({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res });
+  }
+
   async function handleHealth(_req, res) {
     sendJson(res, 200, launchApi.buildStatusPayload());
   }
@@ -174,16 +393,32 @@ export function createRuntimeBridgeRuntime() {
     const input = await readBody(req);
     const resolved = await readLaunchRuntimeSession(input, url, res);
     if (!resolved) return;
-    const { state, runtimeSession } = resolved;
-    try {
-      const message = await messageApi.submitMessage(state, runtimeSession, input, req);
-      await writeState(state);
-      sendJson(res, 200, { ok: true, ...message });
-    } catch (error) {
-      addEvent(state, "opl_message_reply_failed", { ...runtimeSession, error: String(error.message || error) });
-      await writeState(state);
-      sendJson(res, 502, { ok: false, error: String(error.message || error) });
+    const { launch, state, runtimeSession } = resolved;
+    const messageId = messageIdFromInput(input);
+    const launchToken = launchTokenFrom(input, url);
+    const tokenHash = launchTokenHash(launchToken);
+    const acceptedAt = new Date().toISOString();
+    Object.assign(input, { messageId, runId: messageId, launchTokenHash: tokenHash });
+    await dispatchMessageRequest({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res });
+  }
+
+  async function handleMessageStatus(_req, res, url, match) {
+    const launch = launchApi.verifyLaunchToken(url.searchParams.get("launch_token") || "");
+    if (!launch) {
+      sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
+      return;
     }
+    const state = await readState();
+    const tokenHash = launchTokenHash(url.searchParams.get("launch_token") || "");
+    const messageId = decodeURIComponent(match[1]);
+    const record = (state.messageRequests || []).find((item) =>
+      messageRecordMatchesLaunch(item, { messageId, runtimeSessionId: launch.runtimeSessionId, tokenHash })
+    );
+    if (!record) {
+      sendJson(res, 404, { ok: false, error: "message_not_found" });
+      return;
+    }
+    sendJson(res, 200, messageStatusPayload(record, state));
   }
 
   async function handleBindSession(req, res, url) {
@@ -293,6 +528,7 @@ export function createRuntimeBridgeRuntime() {
     { method: "GET", pattern: /^\/api\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/artifacts$/, handler: handleRunArtifacts },
+    { method: "GET", pattern: /^\/api\/opl-launch\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
   ];
 
   function routeKey(req, url) {

@@ -314,7 +314,7 @@ function resolveLaunchState() {
   return state;
 }
 
-async function fetchJson(url, options = {}) {
+async function fetchJson(url, options = {}) {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -328,8 +328,28 @@ async function fetchJson(url, options = {}) {
   if (!response.ok) {
     throw new Error(url + " failed " + response.status + ": " + JSON.stringify(payload));
   }
-  return payload;
-}
+  return payload;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function pollPortalMessageStatus(statusUrl, options = {}) {
+  const timeoutMs = Number(options.timeoutMs || 180000);
+  const intervalMs = Number(options.intervalMs || 2000);
+  const startedAt = Date.now();
+  let lastPayload = null;
+  while (Date.now() - startedAt < timeoutMs) {
+    lastPayload = await fetchJson(statusUrl);
+    if (lastPayload.status === "succeeded") return lastPayload;
+    if (lastPayload.status === "failed") {
+      throw new Error("OPL message failed: " + JSON.stringify(lastPayload));
+    }
+    await sleep(intervalMs);
+  }
+  throw new Error("OPL message status timeout: " + JSON.stringify(lastPayload));
+}
 
 function isNativeLoginUrl(input) {
 
@@ -941,13 +961,20 @@ function buildPortalApi() {
     },
     async sendMessage(input = {}) {
       const state = requireLaunchState();
-      return fetchJson(state.adapterUrl + "/api/opl-launch/messages", {
+      const accepted = await fetchJson(state.adapterUrl + "/api/opl-launch/messages", {
         method: "POST",
         body: JSON.stringify({
           ...input,
           launchToken: input.launchToken || input.launch_token || state.launchToken
         })
       });
+      if (accepted.status === "accepted" && accepted.statusUrl) {
+        return pollPortalMessageStatus(accepted.statusUrl, {
+          timeoutMs: input.statusTimeoutMs || input.status_timeout_ms,
+          intervalMs: input.statusIntervalMs || input.status_interval_ms
+        });
+      }
+      return accepted;
     },
     async getRunStatus(runId) {
       if (!runId) throw new Error("runId is required.");

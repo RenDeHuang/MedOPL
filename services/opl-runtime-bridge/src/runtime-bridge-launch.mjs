@@ -265,6 +265,7 @@ export function createLaunchApi({
       bootstrap: `${baseUrl}/api/opl-launch/bootstrap`,
       sessionBind: `${baseUrl}/api/opl-launch/sessions/bind`,
       message: `${baseUrl}/api/opl-launch/messages`,
+      messageStatus: `${baseUrl}/api/opl-launch/messages/{messageId}/status`,
       startRun: `${baseUrl}/api/opl-launch/runs`,
       runStatus: `${baseUrl}/api/opl-launch/runs/{runId}/status`,
       artifacts: `${baseUrl}/api/opl-launch/runs/{runId}/artifacts`,
@@ -287,6 +288,7 @@ export function createLaunchApi({
 
     const adapterRuns = scopedCollection(state.runs, scope);
     const adapterArtifacts = scopedCollection(state.artifacts, scope);
+    const adapterMessages = scopedCollection(state.messageRequests, scope);
     const adapterProgress = scopedCollection(state.events.slice(-200), scope, {
       sessionId: scope.runtimeSessionId || scope.workspaceSessionId,
     }).slice(-50);
@@ -403,6 +405,7 @@ export function createLaunchApi({
         agents: oplResources.agents || [],
         workspaces,
         sessions,
+        messages: adapterMessages,
         progress,
         artifacts,
       },

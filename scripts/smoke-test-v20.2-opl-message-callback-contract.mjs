@@ -199,6 +199,7 @@ try {
     launchToken: launch.launchToken,
     messageId: "message-v20-2-contract",
     message: "请回复 v20.2 callback ok",
+    waitForCompletion: true,
   });
   assert.equal(message.ok, true, "message callback must succeed");
   assert.equal(message.message?.messageId, "message-v20-2-contract", "message id mismatch");

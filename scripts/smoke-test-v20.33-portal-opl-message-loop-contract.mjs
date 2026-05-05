@@ -134,6 +134,16 @@ mustMatch(
 );
 mustMatch(
   gatewayLaunchSource,
+  /\bpollPortalMessageStatus\b/,
+  "gateway_launch_bridge_must_poll_async_portal_message_status",
+);
+mustMatch(
+  gatewayLaunchSource,
+  /status\s*===\s*["']accepted["'][\s\S]*statusUrl/,
+  "gateway_launch_bridge_must_handle_accepted_message_status_url",
+);
+mustMatch(
+  gatewayLaunchSource,
   /addEventListener\(\s*["']submit["']/,
   "gateway_launch_bridge_must_capture_native_message_form_submit",
 );
@@ -164,6 +174,9 @@ assert.doesNotMatch(source, /opl-v20-33\.\$\{baseDomain\}/, "live_script_must_no
 mustMatch(source, /\bfirstReplyLatencyMs\b/, "live_script_must_measure_first_reply_latency_ms");
 mustMatch(source, /\bcompleteReplyLatencyMs\b/, "live_script_must_measure_complete_reply_latency_ms");
 mustMatch(source, /\bwaitForOplMessageResponse\b/, "live_script_must_wait_for_adapter_message_response");
+mustMatch(source, /\bresolveOplMessageResult\b/, "live_script_must_follow_async_message_status_url");
+mustMatch(source, /\bpollOplMessageStatus\b/, "live_script_must_poll_message_status_after_accepted_response");
+mustMatch(source, /status\s*===\s*202[\s\S]*statusUrl/, "live_script_must_handle_202_accepted_message_response");
 mustMatch(source, /\/portal-adapter\/api\/opl-launch\/messages/, "live_script_must_observe_real_adapter_message_endpoint");
 mustMatch(source, /\bassertLiveMessagePayload\b/, "live_script_must_validate_message_response_payload");
 mustMatch(source, /messageReplyPreview/, "live_script_must_record_real_message_reply_preview");

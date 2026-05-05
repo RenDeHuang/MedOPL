@@ -535,6 +535,7 @@ async function sendOplMessage(config, launch, bootstrap, fixture) {
       launchToken: launch.launchToken,
       messageId: `${fixture.runId}-message`,
       message: "请回复：v20.33 isolated full loop ok",
+      waitForCompletion: true,
       model: "gpt-5.4",
       tokenCount: 32,
     }),

@@ -367,6 +367,42 @@ async function waitForOplMessageResponse(page, action) {
   };
 }
 
+async function pollOplMessageStatus(page, statusUrl, { timeoutMs = 180_000, intervalMs = 3_000 } = {}) {
+  const startedAt = Date.now();
+  let lastPayload = null;
+  while (Date.now() - startedAt < timeoutMs) {
+    const response = await page.request.get(statusUrl, { timeout: 30_000 });
+    const bodyText = await response.text().catch(() => "");
+    let payload = null;
+    try {
+      payload = bodyText ? JSON.parse(bodyText) : null;
+    } catch {}
+    if (!response.ok()) {
+      throw new Error(`opl_message_status_failed:${response.status()}:${sanitizeText(bodyText).slice(0, 160)}`);
+    }
+    lastPayload = payload;
+    if (payload?.status === "succeeded") {
+      return {
+        status: response.status(),
+        payload,
+        bodyText,
+      };
+    }
+    if (payload?.status === "failed") {
+      throw new Error(`opl_message_status_failed_terminal:${sanitizeText(JSON.stringify(payload)).slice(0, 240)}`);
+    }
+    await page.waitForTimeout(intervalMs);
+  }
+  throw new Error(`opl_message_status_timeout:${sanitizeText(JSON.stringify(lastPayload || {})).slice(0, 240)}`);
+}
+
+async function resolveOplMessageResult(page, messageResult) {
+  if (messageResult.status === 202 && messageResult.payload?.status === "accepted" && messageResult.payload?.statusUrl) {
+    return pollOplMessageStatus(page, messageResult.payload.statusUrl);
+  }
+  return messageResult;
+}
+
 function assertLiveMessagePayload(messageResult = {}) {
   assert(messageResult.status >= 200 && messageResult.status < 300, `opl_message_response_failed:${messageResult.status}:${sanitizeText(messageResult.bodyText || "").slice(0, 160)}`);
   const payload = messageResult.payload || {};
@@ -514,12 +550,13 @@ try {
   await handleLaunchProviderPanel(page, apiKey, { timeoutMs: 3_000 });
   evidence.messageSentAt = nowIso();
   const sendStarted = Date.now();
-  const messageResult = await waitForOplMessageResponse(page, async () => {
+  const acceptedMessageResult = await waitForOplMessageResponse(page, async () => {
     await Promise.all([
       page.waitForLoadState("domcontentloaded", { timeout: 10_000 }).catch(() => {}),
       sendButton.click(),
     ]);
   });
+  const messageResult = await resolveOplMessageResult(page, acceptedMessageResult);
   const messageEvidence = assertLiveMessagePayload(messageResult);
   evidence.firstReplyAt = nowIso();
   evidence.completeReplyAt = evidence.firstReplyAt;
