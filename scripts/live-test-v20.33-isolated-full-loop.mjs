@@ -24,6 +24,7 @@ const stageOrder = [
   "server_plan_select",
   "resource_quote",
   "resource_freeze",
+  "resource_order_visibility",
   "resource_provision",
   "user_resources",
   "opl_native_login",
@@ -448,6 +449,37 @@ async function verifyMyResources(config, userCookie, expected) {
   return binding;
 }
 
+async function inspectResourceOrderVisibility(config, userCookie, expectedResourceOrderId) {
+  const [ordersPayload, resourcesPayload] = await Promise.all([
+    apiJson(config, "/portal/api/resource-orders", userCookie),
+    apiJson(config, "/portal/api/my/resources", userCookie),
+  ]);
+  const resourceOrders = Array.isArray(ordersPayload?.items) ? ordersPayload.items : [];
+  const resources = Array.isArray(resourcesPayload?.items) ? resourcesPayload.items : [];
+  const resourceOrder = resourceOrders.find((item) =>
+    String(item.id || item.resourceOrderId || "") === expectedResourceOrderId
+  ) || null;
+  const resourceBinding = resources.find((item) =>
+    String(item.resourceOrderId || item.id || "") === expectedResourceOrderId
+  ) || null;
+  return {
+    expectedResourceOrderId,
+    visibleInResourceOrders: Boolean(resourceOrder),
+    visibleInMyResources: Boolean(resourceBinding),
+    resourceOrderStatus: String(resourceOrder?.status || resourceBinding?.status || ""),
+    workspaceId: String(resourceOrder?.workspaceId || resourceBinding?.workspaceId || ""),
+    runId: String(resourceOrder?.runId || resourceBinding?.runId || ""),
+    serverPlanId: String(resourceOrder?.serverPlanId || resourceBinding?.serverPlanId || ""),
+    resourceOrderEventCount: Array.isArray(resourceOrder?.events) ? resourceOrder.events.length : 0,
+    resourceOrderCount: resourceOrders.length,
+    myResourceCount: resources.length,
+    sources: {
+      resourceOrders: String(ordersPayload?.source || ""),
+      myResources: String(resourcesPayload?.source || ""),
+    },
+  };
+}
+
 async function nativeOplLogin(config, fixture) {
   const { response, bodyText, json } = await requestJson(`${config.oplBaseUrl}/api/auth/login`, {
     method: "POST",
@@ -715,7 +747,7 @@ function addStage(evidence, stage, details = {}) {
   evidenceRecorder.addStage(stage, item);
 }
 
-async function runStage(evidence, stage, costRisk, task, detailsForResult = (result) => result || {}) {
+async function runStage(evidence, stage, costRisk, task, detailsForResult = (result) => result || {}, detailsForError = () => ({})) {
   const startedAt = nowIso();
   const startedMs = Date.now();
   try {
@@ -738,6 +770,7 @@ async function runStage(evidence, stage, costRisk, task, detailsForResult = (res
       costRisk,
       ok: false,
       error: sanitizeText(error instanceof Error ? error.message : String(error)),
+      ...detailsForError(error),
     });
     throw error;
   }
@@ -912,6 +945,13 @@ try {
     },
     () => ({ resourceOrderId: quote.resourceOrderId }),
   );
+  const preProvisionVisibility = await runStage(
+    evidence,
+    "resource_order_visibility",
+    "no_cloud_resource",
+    () => inspectResourceOrderVisibility(config, userCookie, quote.resourceOrderId),
+    (visibility) => visibility,
+  );
   const provision = await runStage(
     evidence,
     "resource_provision",
@@ -924,7 +964,15 @@ try {
       assert(payload?.ok === true || ["running", "provisioning"].includes(String(payload?.order?.status || "").toLowerCase()), "resource_provision_failed");
       return payload;
     },
-    (payload) => ({ resourceOrderId: quote.resourceOrderId, status: payload?.order?.status || "" }),
+    (payload) => ({
+      resourceOrderId: quote.resourceOrderId,
+      status: payload?.order?.status || "",
+      preProvisionVisibility,
+    }),
+    () => ({
+      resourceOrderId: quote.resourceOrderId,
+      preProvisionVisibility,
+    }),
   );
   const ordered = { resourceOrderId: quote.resourceOrderId, quote: quote.payload, provision };
 

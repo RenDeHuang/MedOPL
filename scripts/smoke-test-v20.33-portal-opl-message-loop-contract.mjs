@@ -54,6 +54,26 @@ mustMatch(
 );
 mustMatch(
   source,
+  /\bV20_33_OPL_ENTER_TIMEOUT_MS\b/,
+  "live_script_opl_enter_timeout_must_be_configurable",
+);
+mustMatch(
+  source,
+  /page\.waitForURL[\s\S]*oplBaseUrl/,
+  "live_script_must_wait_for_portal_launch_to_reach_opl_host",
+);
+mustMatch(
+  source,
+  /page\.url\(\)\.startsWith\(oplBaseUrl\)[\s\S]*page\.waitForURL[\s\S]*page\.url\(\)\.startsWith\(oplBaseUrl\)/,
+  "live_script_must_not_fail_when_current_url_already_reached_opl_host",
+);
+mustMatch(
+  source,
+  /\bfinalUrl\b/,
+  "live_script_must_record_opl_enter_final_url_for_diagnosis",
+);
+mustMatch(
+  source,
   /button\.send-button-custom/,
   "live_script_must_support_upstream_opl_icon_send_button",
 );

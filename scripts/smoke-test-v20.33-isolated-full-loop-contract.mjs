@@ -114,6 +114,12 @@ mustMatch(source, /\blatencyMs\b/, "full_loop_gate_must_record_stage_latency_ms"
 mustMatch(source, /\bcostRisk\b/, "full_loop_gate_must_record_stage_cost_risk");
 mustMatch(source, /\bfirstReplyLatencyMs\b/, "full_loop_gate_must_record_opl_first_reply_latency");
 mustMatch(source, /\bcompleteReplyLatencyMs\b/, "full_loop_gate_must_record_opl_complete_reply_latency");
+mustMatch(source, /\binspectResourceOrderVisibility\b/, "full_loop_gate_must_inspect_resource_order_visibility_before_provision");
+mustMatch(source, /"resource_order_visibility"/, "full_loop_gate_must_record_resource_order_visibility_stage");
+mustMatch(source, /\bexpectedResourceOrderId\b/, "full_loop_gate_must_record_expected_resource_order_id_in_diagnostics");
+mustMatch(source, /\bvisibleInResourceOrders\b/, "full_loop_gate_must_record_resource_order_list_visibility");
+mustMatch(source, /\bresourceOrderStatus\b/, "full_loop_gate_must_record_resource_order_status_before_provision");
+mustMatch(source, /resource_provision[\s\S]{0,900}preProvisionVisibility/, "full_loop_gate_must_attach_pre_provision_visibility_to_provision_stage");
 mustMatch(source, /\bdestroyCvmInstances\b/, "full_loop_gate_must_delete_cvm_instances_when_confirmed");
 mustMatch(source, /delete-node-pool/, "full_loop_gate_must_use_delete_node_pool_confirmation");
 mustNotMatch(source, /deleteNodePoolPayload[\s\S]{0,240}nodePoolId/, "full_loop_gate_must_not_send_client_node_pool_id_to_delete");

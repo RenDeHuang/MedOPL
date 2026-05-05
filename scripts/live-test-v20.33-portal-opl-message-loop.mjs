@@ -275,17 +275,29 @@ async function loginOpl(page, baseUrl, email, password, apiKey) {
 
 async function enterOplFromPortal(page, portalBaseUrl, oplBaseUrl, apiKey) {
   const response = await page.goto(`${portalBaseUrl}/portal/opl`, { waitUntil: "domcontentloaded", timeout: 120_000 });
-  await page.waitForTimeout(2_500);
   const status = response?.status?.() || 0;
   if (status >= 400) {
     const title = await page.title().catch(() => "");
     const body = await getPageText(page).catch(() => "");
     throw new Error(`portal_opl_launch_failed:${status}:${title}:${body.slice(0, 160)}`);
   }
+  const enterTimeoutMs = positiveIntEnv("V20_33_OPL_ENTER_TIMEOUT_MS", 60_000);
   if (!page.url().startsWith(oplBaseUrl)) {
-    throw new Error(`portal_opl_launch_did_not_reach_opl:${page.url()}`);
+    await page.waitForURL(
+      (url) => String(url.href || "").startsWith(oplBaseUrl),
+      { timeout: enterTimeoutMs },
+    ).catch(async (error) => {
+      if (page.url().startsWith(oplBaseUrl)) return;
+      const body = await getPageText(page).catch(() => "");
+      throw new Error(`portal_opl_launch_did_not_reach_opl:${sanitizeUrl(page.url())}:${sanitizeText(body).slice(0, 240)}:${String(error.message || error).split("\n")[0]}`);
+    });
   }
-  await handleLaunchProviderPanel(page, apiKey, { timeoutMs: 10_000 });
+  const finalUrl = sanitizeUrl(page.url());
+  if (!page.url().startsWith(oplBaseUrl)) {
+    throw new Error(`portal_opl_launch_did_not_reach_opl:${finalUrl}`);
+  }
+  const providerPanelHandled = await handleLaunchProviderPanel(page, apiKey, { timeoutMs: 10_000 });
+  if (providerPanelHandled) return { finalUrl };
   const apiKeyInput = page.locator('input[name="providerKey"], input[name="apiKey"], textarea[name="providerKey"], textarea[name="apiKey"]').first();
   if (await apiKeyInput.count().catch(() => 0)) {
     await apiKeyInput.fill(apiKey, { timeout: 15_000 });
@@ -298,6 +310,7 @@ async function enterOplFromPortal(page, portalBaseUrl, oplBaseUrl, apiKey) {
       await page.waitForTimeout(2_500);
     }
   }
+  return { finalUrl };
 }
 
 async function handleLaunchProviderPanel(page, apiKey, { timeoutMs = 0 } = {}) {
@@ -471,10 +484,12 @@ const evidence = {
 };
 
 try {
-  await enterOplFromPortal(page, portalBaseUrl, oplBaseUrl, apiKey);
+  const oplEntry = await enterOplFromPortal(page, portalBaseUrl, oplBaseUrl, apiKey);
+  evidence.oplEntry = oplEntry;
   evidenceRecorder.addStage("opl_enter", {
     blockingUser: false,
     userVisibleState: "OPL opened from Portal and provider key panel cleared",
+    finalUrl: oplEntry.finalUrl,
   });
   if (!page.url().startsWith(oplBaseUrl)) {
     await loginOpl(page, oplBaseUrl, oplEmail, oplPassword, apiKey);
