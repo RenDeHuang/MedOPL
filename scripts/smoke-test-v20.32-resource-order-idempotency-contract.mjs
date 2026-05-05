@@ -292,6 +292,34 @@ assert.equal(
   "same_user_workspace_run_server_plan_must_not_call_provisioner_twice_for_existing_provisioning_order",
 );
 
+const missingExplicitOrderFreeze = await request(route, {
+  method: "POST",
+  path: "/portal/api/resource-orders/freeze",
+  body: JSON.stringify({
+    resourceOrderId: "missing-explicit-order",
+    task: "case-missing",
+    workspaceId: "case-missing",
+    serverPlanId: plan.id,
+    runId: "run-case-missing",
+    storageSizeGb: 50,
+  }),
+  db,
+  user,
+});
+
+assert.equal(missingExplicitOrderFreeze.handled, true, "missing_explicit_order_freeze_route_must_be_handled");
+assert.equal(missingExplicitOrderFreeze.res.statusCode, 404, "missing_explicit_order_freeze_must_return_404");
+assert.equal(
+  missingExplicitOrderFreeze.res.payload?.error,
+  "resource_order_not_found",
+  "missing_explicit_order_freeze_must_report_resource_order_not_found",
+);
+assert.equal(
+  db.resourceOrders.some((order) => String(order.workspaceId || "") === "case-missing"),
+  false,
+  "missing_explicit_order_freeze_must_not_create_replacement_order",
+);
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v20_32_resource_order_idempotency",

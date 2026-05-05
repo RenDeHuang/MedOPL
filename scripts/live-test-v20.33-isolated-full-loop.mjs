@@ -941,9 +941,14 @@ try {
         body: JSON.stringify({ resourceOrderId: quote.resourceOrderId }),
       });
       assert.equal(String(freeze?.order?.status || freeze?.status || "").toLowerCase(), "frozen", "resource_freeze_status_mismatch");
+      const freezeResourceOrderId = String(freeze?.resourceOrderId || freeze?.order?.id || "");
+      assert.equal(freezeResourceOrderId, quote.resourceOrderId, "resource_freeze_order_id_mismatch");
       return freeze;
     },
-    () => ({ resourceOrderId: quote.resourceOrderId }),
+    (freeze) => ({
+      resourceOrderId: quote.resourceOrderId,
+      freezeResourceOrderId: String(freeze?.resourceOrderId || freeze?.order?.id || ""),
+    }),
   );
   const preProvisionVisibility = await runStage(
     evidence,

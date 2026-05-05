@@ -119,6 +119,8 @@ mustMatch(source, /"resource_order_visibility"/, "full_loop_gate_must_record_res
 mustMatch(source, /\bexpectedResourceOrderId\b/, "full_loop_gate_must_record_expected_resource_order_id_in_diagnostics");
 mustMatch(source, /\bvisibleInResourceOrders\b/, "full_loop_gate_must_record_resource_order_list_visibility");
 mustMatch(source, /\bresourceOrderStatus\b/, "full_loop_gate_must_record_resource_order_status_before_provision");
+mustMatch(source, /\bfreezeResourceOrderId\b/, "full_loop_gate_must_record_freeze_returned_resource_order_id");
+mustMatch(source, /resource_freeze_order_id_mismatch/, "full_loop_gate_must_stop_if_freeze_returns_different_order_id");
 mustMatch(source, /resource_provision[\s\S]{0,900}preProvisionVisibility/, "full_loop_gate_must_attach_pre_provision_visibility_to_provision_stage");
 mustMatch(source, /\bdestroyCvmInstances\b/, "full_loop_gate_must_delete_cvm_instances_when_confirmed");
 mustMatch(source, /delete-node-pool/, "full_loop_gate_must_use_delete_node_pool_confirmation");

@@ -109,8 +109,13 @@ export function createResourceOrderPublicRoutes({
     const body = await readPublicPayload(req, res);
     if (!body.ok) return true;
     const payload = body.payload;
-    let order = db.resourceOrders?.find((item) => item.id === String(payload.orderId || payload.resourceOrderId || ""));
+    const requestedOrderId = String(payload.orderId || payload.resourceOrderId || "").trim();
+    let order = db.resourceOrders?.find((item) => item.id === requestedOrderId);
     let taskSpace = null;
+    if (!order && requestedOrderId) {
+      sendJson(res, { ok: false, error: "resource_order_not_found" }, 404);
+      return true;
+    }
     if (!order) {
       const quoted = await createQuotedResourceOrder(db, user, req, payload, { idempotencyPrefix: "resource-order-freeze-quote" });
       if (!quoted.ok) {
