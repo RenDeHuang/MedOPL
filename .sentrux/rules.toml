@@ -109,3 +109,48 @@ reason = "one-person-lab upstream is immutable; Portal must integrate through Ga
 from = "services/portal/src/*"
 to = "services/portal/src/integrations/langfuse-clickhouse*.mjs"
 reason = "Portal production trace queries must use Langfuse API, not direct ClickHouse access."
+
+[[boundaries]]
+from = "services/portal/src/*"
+to = "one-person-lab/*"
+reason = "v21 keeps one-person-lab upstream immutable; Portal must not import upstream source paths."
+
+[[boundaries]]
+from = "services/portal/src/*"
+to = "services/opl-web-upstream/src/*"
+reason = "v21 Portal must not import OPL upstream source internals."
+
+[[boundaries]]
+from = "services/opl-web-gateway/src/*"
+to = "services/portal/src/state/*"
+reason = "v21 Gateway can only use Portal APIs/contracts, never Portal state."
+
+[[boundaries]]
+from = "services/opl-web-gateway/src/*"
+to = "services/portal/src/app/*"
+reason = "v21 Gateway can only use Portal APIs/contracts, never Portal app/server internals."
+
+[[boundaries]]
+from = "services/opl-runtime-bridge/src/*"
+to = "services/portal/src/state/*"
+reason = "v21 Runtime Bridge must not import Portal state internals."
+
+[[boundaries]]
+from = "services/opl-runtime-bridge/src/*"
+to = "services/portal/src/domain/wallet*.mjs"
+reason = "v21 Runtime Bridge must not import Portal wallet internals."
+
+[[boundaries]]
+from = "services/opl-runtime-bridge/src/*"
+to = "services/portal/src/domain/resource-order*.mjs"
+reason = "v21 Runtime Bridge must not import Portal resource-order internals."
+
+[[boundaries]]
+from = "services/opl-runtime-bridge/src/*"
+to = "adapters/resource-provisioner/src/*"
+reason = "v21 default user-owned runtime path must not depend on resource-provisioner internals."
+
+[[boundaries]]
+from = "services/opl-runtime-bridge/src/*"
+to = "adapters/med-autoscience-runner/src/*"
+reason = "v21 default user-owned runtime path must not depend on med-autoscience-runner internals."
