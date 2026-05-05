@@ -58,7 +58,7 @@
           <MetricCard label="输入文件" :value="payload.counts.inputs" hint="inputs 文件数" />
           <MetricCard label="输出文件" :value="payload.counts.outputs" hint="outputs 文件数" />
           <MetricCard label="任务编号数" :value="payload.counts.runs" hint="当前空间任务编号总数" />
-          <MetricCard label="存储状态" :value="payload.storageEntitlement?.enabled ? `${payload.storageEntitlement.storageSizeGb}GB` : '未开通'" hint="免费容量为 0，最小 10GB" />
+          <MetricCard label="文件权限" :value="payload.storageEntitlement?.enabled ? `${payload.storageEntitlement.storageSizeGb}GB` : '未开通'" hint="在套餐页开通后可上传和保存结果" />
         </section>
 
         <section class="card p-5">
@@ -66,34 +66,18 @@
             <div>
               <div class="flex flex-wrap items-center gap-2">
                 <span class="badge" :class="storageEntitlement.enabled ? 'badge-success' : 'badge-warning'">
-                  {{ storageEntitlement.enabled ? "已开通存储容量" : "未开通存储容量" }}
+                  {{ storageEntitlement.enabled ? "文件写入已开启" : "文件写入未开启" }}
                 </span>
-                <span class="badge badge-primary">最小 10GB</span>
+                <span class="badge badge-primary">套餐控制</span>
               </div>
-              <h2 class="mt-3 panel-title">存储容量</h2>
+              <h2 class="mt-3 panel-title">文件写入权限</h2>
               <p class="mt-2 panel-subtitle">
-                未购买存储容量时不能上传文件，也不能保存下载结果。开通后文件写入当前工作空间。
+                工作空间只管理文件和结果。需要购买、升级或扩容时，请到套餐页处理。
               </p>
             </div>
-            <div class="w-full max-w-xl">
-              <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
-                <button
-                  v-for="size in storageOptions"
-                  :key="size"
-                  class="btn"
-                  :class="selectedStorageSize === size ? 'btn-primary' : 'btn-secondary'"
-                  type="button"
-                  @click="selectedStorageSize = size"
-                >
-                  {{ size }}GB
-                </button>
-              </div>
-              <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-slate-300">
-                <span>当前容量：{{ storageEntitlement.enabled ? `${storageEntitlement.storageSizeGb}GB` : "0GB" }}</span>
-                <button class="btn btn-primary" type="button" :disabled="orderingStorage" @click="orderStorage">
-                  {{ orderingStorage ? "处理中" : storageEntitlement.enabled ? "调整容量" : "开通容量" }}
-                </button>
-              </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="text-sm text-gray-600 dark:text-slate-300">当前：{{ storageEntitlement.enabled ? `${storageEntitlement.storageSizeGb}GB` : "未开通" }}</span>
+              <RouterLink class="btn btn-secondary" to="/packages">去套餐页</RouterLink>
             </div>
           </div>
         </section>
@@ -162,9 +146,8 @@
                 <h2 class="panel-title">输入文件</h2>
                 <p class="panel-subtitle">当前空间 inputs。</p>
               </div>
-              <button class="btn btn-secondary" type="button" :disabled="!payload.storageEntitlement?.enabled" @click="triggerUpload">
-                {{ payload.storageEntitlement?.enabled ? "上传文件" : "先开通容量" }}
-              </button>
+              <button v-if="payload.storageEntitlement?.enabled" class="btn btn-secondary" type="button" @click="triggerUpload">上传文件</button>
+              <RouterLink v-else class="btn btn-secondary" to="/packages">去套餐页</RouterLink>
               <form class="hidden" method="post" :action="uploadAction" enctype="multipart/form-data">
                 <input ref="uploadInput" class="hidden" name="file" type="file" @change="submitUpload" />
               </form>
@@ -177,7 +160,7 @@
                 </div>
               </div>
               <div v-if="!payload.files.length" class="empty-state">当前没有输入文件。</div>
-              <div v-if="!payload.storageEntitlement?.enabled" class="empty-state">当前工作空间未开通存储容量，不能上传文件或保存下载结果。</div>
+              <div v-if="!payload.storageEntitlement?.enabled" class="empty-state">当前工作空间还不能写入文件，请先到套餐页开通或扩容。</div>
             </div>
           </div>
 
@@ -211,17 +194,13 @@ import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import type { WorkspacePayload } from "@/api/portal";
-import { createStorageOrder, fetchWorkspace } from "@/api/portal";
+import { fetchWorkspace } from "@/api/portal";
 
 const route = useRoute();
 const loading = ref(true);
 const error = ref("");
 const payload = ref<WorkspacePayload | null>(null);
 const uploadInput = ref<HTMLInputElement | null>(null);
-const storageOptions = [10, 20, 50, 100, 200, 500];
-const selectedStorageSize = ref(10);
-const orderingStorage = ref(false);
-const storageBackendId = ["c", "o", "s"].join("");
 
 const currentTask = computed(() => {
   const value = route.query.task;
@@ -236,7 +215,7 @@ const storageEntitlement = computed(() => payload.value?.storageEntitlement || p
   status: "disabled",
   freeQuotaGb: 0,
   minimumPurchaseGb: 10,
-  storageBackend: storageBackendId,
+  storageBackend: "portal_storage",
   retentionPolicy: "order_lifecycle",
   cosPrefix: "",
   resourceOrderId: "",
@@ -320,25 +299,6 @@ function triggerUpload() {
   uploadInput.value?.click();
 }
 
-async function orderStorage() {
-  if (!payload.value) return;
-  orderingStorage.value = true;
-  error.value = "";
-  try {
-    const size = Math.max(10, Number(selectedStorageSize.value || 10));
-    await createStorageOrder({
-      task: payload.value.workspace.slug || currentTask.value,
-      storageSizeGb: size,
-      storagePlanId: `${storageBackendId}-${size}gb`,
-    });
-    await load();
-  } catch (err: any) {
-    error.value = err?.message || "存储开通失败";
-  } finally {
-    orderingStorage.value = false;
-  }
-}
-
 let requestId = 0;
 
 async function load() {
@@ -355,7 +315,6 @@ async function load() {
     });
     if (current !== requestId) return;
     payload.value = data;
-    selectedStorageSize.value = Math.max(10, Number(data.storageEntitlement?.storageSizeGb || data.workspace.storageEntitlement?.storageSizeGb || selectedStorageSize.value || 10));
   } catch (err: any) {
     if (current !== requestId) return;
     error.value = err?.message || "工作空间加载失败";

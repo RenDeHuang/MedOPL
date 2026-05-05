@@ -311,7 +311,7 @@ export function createPortalAuthRuntimeHandler({
         sendJson(res, {
           ok: false,
           error: "provider_api_key_required",
-          message: "请输入 gflabtoken API key 后再进入 OPL。",
+          message: "当前账号未连接 OPL 服务，请先完成 OPL 连接凭证绑定。",
         }, 400);
         return true;
       }

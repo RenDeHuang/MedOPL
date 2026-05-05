@@ -1,12 +1,12 @@
 <template>
-  <AppLayout title="我的资源" subtitle="查看订单绑定资源并按订单释放资源">
+  <AppLayout title="我的资源" subtitle="查看已开通资源、运行状态与停费状态">
     <div class="space-y-4">
       <section class="card p-5">
         <div class="flex items-center justify-between gap-3">
-          <h2 class="text-lg font-semibold text-gray-950 dark:text-white">资源绑定</h2>
+          <h2 class="text-lg font-semibold text-gray-950 dark:text-white">我的运行资源</h2>
           <button class="btn btn-secondary" :disabled="resourcesLoading" @click="reload">刷新</button>
         </div>
-        <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">删除操作严格按订单执行，只提交订单标识与确认字段。</p>
+        <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">这里展示已开通资源、是否仍在计费，以及删除停费进度。</p>
         <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <MetricCard label="绑定总数" :value="resourceSummary.total" hint="当前订单资源绑定" />
           <MetricCard label="可删除" :value="resourceSummary.deletable" hint="可释放的资源绑定" />
@@ -28,34 +28,30 @@
 
       <section v-for="item in items" :key="item.resourceOrderId" class="card p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="text-base font-semibold text-gray-950 dark:text-white">订单 {{ item.resourceOrderId }}</div>
-          <span class="badge" :class="item.canDelete ? 'badge-success' : 'badge-warning'">{{ item.status }}</span>
+          <div class="text-base font-semibold text-gray-950 dark:text-white">{{ resourceTitle(item) }}</div>
+          <span class="badge" :class="item.canDelete ? 'badge-success' : 'badge-warning'">{{ resourceStatus(item) }}</span>
         </div>
 
         <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div class="muted-kv"><span class="muted-kv-label">工作空间</span><span class="muted-kv-value">{{ item.workspaceId || "-" }}</span></div>
-          <div class="muted-kv"><span class="muted-kv-label">运行 ID</span><span class="muted-kv-value">{{ item.runId || "-" }}</span></div>
-          <div class="muted-kv"><span class="muted-kv-label">套餐计划</span><span class="muted-kv-value">{{ item.serverPlanId || "-" }}</span></div>
           <div class="muted-kv"><span class="muted-kv-label">计算资源</span><span class="muted-kv-value">{{ computeResourceState(item) }}</span></div>
           <div class="muted-kv"><span class="muted-kv-label">云主机数量</span><span class="muted-kv-value">{{ item.cvmInstanceIds?.length || 0 }}</span></div>
           <div class="muted-kv"><span class="muted-kv-label">存储</span><span class="muted-kv-value">{{ storageState(item) }}</span></div>
           <div class="muted-kv md:col-span-2"><span class="muted-kv-label">删除停费状态</span><span class="muted-kv-value">{{ deleteBillingStopState(item) }}</span></div>
         </div>
 
-        <div class="mt-4 rounded-xl border border-gray-100 p-3 dark:border-slate-700">
-          <div class="text-xs font-semibold text-gray-500 dark:text-slate-400">账单标签</div>
-          <div class="mt-2 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
-            <div class="muted-kv"><span class="muted-kv-label">resourceorderid</span><span class="muted-kv-value">{{ item.billingTags.resourceorderid }}</span></div>
-            <div class="muted-kv"><span class="muted-kv-label">runid</span><span class="muted-kv-value">{{ item.billingTags.runid }}</span></div>
-            <div class="muted-kv"><span class="muted-kv-label">serverplanid</span><span class="muted-kv-value">{{ item.billingTags.serverplanid }}</span></div>
-            <div class="muted-kv"><span class="muted-kv-label">tenantid</span><span class="muted-kv-value">{{ item.billingTags.tenantid }}</span></div>
-            <div class="muted-kv md:col-span-2"><span class="muted-kv-label">workspaceid</span><span class="muted-kv-value">{{ item.billingTags.workspaceid }}</span></div>
+        <details class="mt-4 rounded-xl border border-gray-100 p-3 dark:border-slate-700">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 dark:text-slate-200">高级信息</summary>
+          <div class="mt-3 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+            <div class="muted-kv"><span class="muted-kv-label">资源编号</span><span class="muted-kv-value">{{ shortId(item.resourceOrderId) }}</span></div>
+            <div class="muted-kv"><span class="muted-kv-label">工作空间编号</span><span class="muted-kv-value">{{ shortId(item.workspaceId) }}</span></div>
+            <div class="muted-kv"><span class="muted-kv-label">任务编号</span><span class="muted-kv-value">{{ shortId(item.runId) }}</span></div>
+            <div class="muted-kv"><span class="muted-kv-label">套餐编号</span><span class="muted-kv-value">{{ shortId(item.serverPlanId) }}</span></div>
           </div>
-        </div>
+        </details>
 
         <div class="mt-4">
-          <button class="btn btn-danger" :disabled="deletingId === item.resourceOrderId || !item.canDelete" @click="remove(item.resourceOrderId)">
-            删除资源并停费
+          <button class="btn btn-danger" :disabled="deletingId === item.resourceOrderId || !item.canDelete" @click="confirmRemove(item.resourceOrderId)">
+            {{ deletingId === item.resourceOrderId ? "正在删除..." : "删除资源并停费" }}
           </button>
           <div v-if="!item.canDelete && item.deleteBlockedReason" class="mt-2 text-xs text-amber-700 dark:text-amber-300">{{ item.deleteBlockedReason }}</div>
         </div>
@@ -86,6 +82,25 @@ function computeResourceState(item: MyResourceBindingItem) {
   return item.status || "未知";
 }
 
+function resourceStatus(item: MyResourceBindingItem) {
+  if (item.status === "released") return "已释放";
+  if (item.status === "provisioned") return "运行中";
+  if (item.status === "frozen") return "已预留";
+  if (item.status === "failed") return "异常";
+  return item.status || "未知";
+}
+
+function shortId(value?: string) {
+  const text = String(value || "").trim();
+  if (!text) return "-";
+  return text.length > 12 ? `${text.slice(0, 8)}...${text.slice(-4)}` : text;
+}
+
+function resourceTitle(item: MyResourceBindingItem) {
+  const plan = String(item.serverPlanId || "").trim();
+  return plan ? `运行资源 ${shortId(plan)}` : `运行资源 ${shortId(item.resourceOrderId)}`;
+}
+
 function storageState(item: MyResourceBindingItem) {
   const size = Number((item as any).storageSizeGb || 0);
   const status = String((item as any).storageStatus || "").trim();
@@ -113,6 +128,11 @@ async function reload() {
   } finally {
     resourcesLoading.value = false;
   }
+}
+
+function confirmRemove(resourceOrderId: string) {
+  if (!window.confirm("确认删除这组资源并停止继续计费？删除后运行环境和节点本地数据不可恢复。")) return;
+  void remove(resourceOrderId);
 }
 
 async function remove(resourceOrderId: string) {

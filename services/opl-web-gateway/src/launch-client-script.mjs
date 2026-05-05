@@ -7,24 +7,6 @@ const BOOTSTRAP_KEY = "portal.opl.bootstrap";
 
 const DIRECT_ENTRY_DISMISS_KEY = "portal.opl.directEntryDismissed";
 
-const PROVIDER_KEY_SESSION_KEY = "portal.opl.providerApiKey";
-
-const NATIVE_LOGIN_PATHS = [
-
-  "/api/auth/signin",
-
-  "/api/auth/login",
-
-  "/api/v1/auths/signin",
-
-  "/api/v1/auths/login",
-
-  "/auth/login",
-
-  "/login"
-
-];
-
 const OPL_MODULE_IDS = ["mas", "mag", "rca"];
 const TIMING_MARKERS = ["portal_launch_ready_ms", "opl_dom_ready_ms", "opl_first_interaction_ms"];
 const DIRECT_ENTRY_DEFAULT = ${JSON.stringify(buildDirectEntryState())};
@@ -351,76 +333,6 @@ async function pollPortalMessageStatus(statusUrl, options = {}) {
   throw new Error("OPL message status timeout: " + JSON.stringify(lastPayload));
 }
 
-function isNativeLoginUrl(input) {
-
-  try {
-
-    const value = typeof input === "string" ? input : input && input.url;
-
-    if (!value) return false;
-
-    const url = new URL(value, window.location.origin);
-
-    return NATIVE_LOGIN_PATHS.includes(url.pathname);
-
-  } catch {
-
-    return false;
-
-  }
-
-}
-
-
-
-function normalizeProviderKey(value) {
-
-  return String(value || "").trim();
-
-}
-
-
-
-function writeProviderKey(value) {
-
-  const normalized = normalizeProviderKey(value);
-
-  try {
-
-    if (normalized) window.sessionStorage.setItem(PROVIDER_KEY_SESSION_KEY, normalized);
-
-  } catch {}
-
-  return normalized;
-
-}
-
-
-
-function readProviderKey(container) {
-
-  try {
-
-    const root = container && typeof container.querySelector === "function" ? container : document;
-
-    const input = root.querySelector('[name="apiKey"], [name="providerApiKey"], [name="experimentalBearerToken"], [name="gflabtoken"], [data-opl-provider-key]');
-
-    const fromInput = normalizeProviderKey(input && input.value);
-
-    if (fromInput) return writeProviderKey(fromInput);
-
-    return normalizeProviderKey(window.sessionStorage.getItem(PROVIDER_KEY_SESSION_KEY));
-
-  } catch {
-
-    return "";
-
-  }
-
-}
-
-
-
 function providerConfiguredFromBootstrap(bootstrap) {
 
   const provider = bootstrap && bootstrap.provider ? bootstrap.provider : {};
@@ -431,11 +343,11 @@ function providerConfiguredFromBootstrap(bootstrap) {
 
 
 
-function removeLaunchProviderKeyPanel() {
+function removeLaunchProviderConnectionPanel() {
 
   try {
 
-    const panel = document.querySelector("[data-opl-launch-provider-panel]");
+    const panel = document.querySelector("[data-opl-launch-connection-panel]");
 
     if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
 
@@ -445,15 +357,15 @@ function removeLaunchProviderKeyPanel() {
 
 
 
-function renderLaunchProviderKeyPanel() {
+function renderLaunchProviderConnectionPanel() {
 
-  const existing = document.querySelector("[data-opl-launch-provider-panel]");
+  const existing = document.querySelector("[data-opl-launch-connection-panel]");
 
   if (existing) return existing;
 
   const panel = document.createElement("section");
 
-  panel.setAttribute("data-opl-launch-provider-panel", "1");
+  panel.setAttribute("data-opl-launch-connection-panel", "1");
 
   panel.style.position = "fixed";
 
@@ -469,21 +381,21 @@ function renderLaunchProviderKeyPanel() {
 
   panel.style.background = "rgba(15, 23, 42, 0.52)";
 
-  const form = document.createElement("form");
+  const box = document.createElement("div");
 
-  form.style.width = "min(420px, calc(100vw - 32px))";
+  box.style.width = "min(420px, calc(100vw - 32px))";
 
-  form.style.padding = "20px";
+  box.style.padding = "20px";
 
-  form.style.borderRadius = "8px";
+  box.style.borderRadius = "8px";
 
-  form.style.background = "#ffffff";
+  box.style.background = "#ffffff";
 
-  form.style.boxShadow = "0 20px 60px rgba(15, 23, 42, 0.25)";
+  box.style.boxShadow = "0 20px 60px rgba(15, 23, 42, 0.25)";
 
   const title = document.createElement("h2");
 
-  title.textContent = "绑定 gflabtoken";
+  title.textContent = "OPL 服务未连接";
 
   title.style.margin = "0 0 12px";
 
@@ -491,7 +403,7 @@ function renderLaunchProviderKeyPanel() {
 
   const hint = document.createElement("p");
 
-  hint.textContent = "请输入来源于 gflabtoken.cn 的 API key 后进入 OPL。";
+  hint.textContent = "请从 Portal 统一入口完成 OPL 连接后再进入。";
 
   hint.style.margin = "0 0 14px";
 
@@ -499,37 +411,11 @@ function renderLaunchProviderKeyPanel() {
 
   hint.style.color = "#475569";
 
-  const input = document.createElement("input");
-
-  input.type = "password";
-
-  input.name = "apiKey";
-
-  input.autocomplete = "off";
-
-  input.placeholder = "gflabtoken API key";
-
-  input.setAttribute("data-opl-provider-key", "1");
-
-  input.value = readProviderKey(document) || "";
-
-  input.style.boxSizing = "border-box";
-
-  input.style.width = "100%";
-
-  input.style.height = "40px";
-
-  input.style.padding = "0 10px";
-
-  input.style.border = "1px solid #cbd5e1";
-
-  input.style.borderRadius = "6px";
-
   const button = document.createElement("button");
 
-  button.type = "submit";
+  button.type = "button";
 
-  button.textContent = "继续";
+  button.textContent = "返回 Portal";
 
   button.style.width = "100%";
 
@@ -547,15 +433,23 @@ function renderLaunchProviderKeyPanel() {
 
   button.style.cursor = "pointer";
 
-  form.appendChild(title);
+  button.addEventListener("click", () => {
 
-  form.appendChild(hint);
+    const directEntry = window.__OPL_PORTAL_DIRECT_ENTRY__ || DIRECT_ENTRY_DEFAULT;
 
-  form.appendChild(input);
+    const target = directEntry.openFromPortalUrl || directEntry.portalPublicUrl || "";
 
-  form.appendChild(button);
+    if (target) window.location.href = target;
 
-  panel.appendChild(form);
+  });
+
+  box.appendChild(title);
+
+  box.appendChild(hint);
+
+  box.appendChild(button);
+
+  panel.appendChild(box);
 
   document.body.appendChild(panel);
 
@@ -565,364 +459,25 @@ function renderLaunchProviderKeyPanel() {
 
 
 
-function ensureLaunchProviderKey(bootstrap) {
+function ensureLaunchProviderConnection(bootstrap) {
 
   if (providerConfiguredFromBootstrap(bootstrap)) {
 
-    removeLaunchProviderKeyPanel();
+    removeLaunchProviderConnectionPanel();
 
-    return Promise.resolve("");
+    return true;
 
   }
 
-  const stored = readProviderKey(document);
+  renderLaunchProviderConnectionPanel();
 
-  if (stored) return Promise.resolve(stored);
-
-  return new Promise((resolve) => {
-
-    const panel = renderLaunchProviderKeyPanel();
-
-    const form = panel.querySelector("form");
-
-    const input = panel.querySelector("[data-opl-provider-key]");
-
-    if (input && typeof input.focus === "function") setTimeout(() => input.focus(), 0);
-
-    if (input && typeof input.addEventListener === "function") {
-
-      input.addEventListener("input", () => {
-
-        if (typeof input.setCustomValidity === "function") input.setCustomValidity("");
-
-      });
-
-    }
-
-    form.addEventListener("submit", (event) => {
-
-      event.preventDefault();
-
-      const providerKey = readProviderKey(panel);
-
-      if (!providerKey) {
-
-        if (input && typeof input.setCustomValidity === "function") {
-
-          input.setCustomValidity("请输入 gflabtoken API key。");
-
-          if (typeof input.reportValidity === "function") input.reportValidity();
-
-        }
-
-        return;
-
-      }
-
-      removeLaunchProviderKeyPanel();
-
-      resolve(providerKey);
-
-    });
-
+  updateDirectEntryState({
+    active: true,
+    authenticated: false,
+    reason: "provider_connection_required"
   });
 
-}
-
-
-
-function ensureProviderKeyInput(form) {
-
-  try {
-
-    if (!form || typeof form.querySelector !== "function") return;
-
-    if (!form.querySelector('input[type="password"], input[name="password"]')) return;
-
-    if (form.querySelector("[data-opl-provider-key-field]")) return;
-
-    const passwordInput = form.querySelector('input[type="password"], input[name="password"]');
-
-    if (!passwordInput || !passwordInput.parentNode) return;
-
-    const field = document.createElement("div");
-
-    field.className = "opl-portal-provider-key-field";
-
-    field.setAttribute("data-opl-provider-key-field", "1");
-
-    const label = document.createElement("label");
-
-    label.textContent = "gflabtoken API key";
-
-    const input = document.createElement("input");
-
-    input.type = "password";
-
-    input.name = "apiKey";
-
-    input.autocomplete = "off";
-
-    input.placeholder = "来源于 gflabtoken.cn";
-
-    input.setAttribute("data-opl-provider-key", "1");
-
-    input.value = readProviderKey() || "";
-
-    input.addEventListener("input", () => writeProviderKey(input.value));
-
-    field.appendChild(label);
-
-    field.appendChild(input);
-
-    const host = passwordInput.closest("label, div, fieldset") || passwordInput;
-
-    host.insertAdjacentElement("afterend", field);
-
-  } catch {}
-
-}
-
-
-
-function scanProviderKeyForms() {
-
-  try {
-
-    if (!document || typeof document.querySelectorAll !== "function") return;
-
-    document.querySelectorAll("form").forEach((form) => ensureProviderKeyInput(form));
-
-  } catch {}
-
-}
-
-
-
-function installProviderKeyFieldObserver() {
-
-  scanProviderKeyForms();
-
-  installProviderKeyInputHandler();
-
-  installProviderKeySubmitGuard();
-
-  installProviderKeyMutationObserver();
-
-}
-
-
-
-function installProviderKeyInputHandler() {
-
-  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-
-    document.addEventListener("input", (event) => {
-
-      const target = event && event.target;
-
-      if (target && typeof target.matches === "function" && target.matches("[data-opl-provider-key]")) {
-
-        writeProviderKey(target.value);
-
-      }
-
-    }, true);
-
-  }
-
-}
-
-
-
-function installProviderKeySubmitGuard() {
-
-  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-
-    document.addEventListener("submit", (event) => {
-
-      const form = event && event.target;
-
-      if (!form || typeof form.querySelector !== "function") return;
-
-      if (!form.querySelector('input[type="password"], input[name="password"]')) return;
-
-      const key = readProviderKey(form);
-
-      if (key) return;
-
-      const input = form.querySelector("[data-opl-provider-key]");
-
-      if (input && typeof input.setCustomValidity === "function") {
-
-        input.setCustomValidity("请输入 gflabtoken API key 后再进入 OPL。");
-
-        if (typeof input.reportValidity === "function") input.reportValidity();
-
-      }
-
-      event.preventDefault();
-
-      event.stopPropagation();
-
-    }, true);
-
-  }
-
-}
-
-
-
-function installProviderKeyMutationObserver() {
-
-  try {
-
-    if (typeof MutationObserver === "function" && document && document.documentElement) {
-
-      const observer = new MutationObserver(() => scanProviderKeyForms());
-
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-
-    }
-
-  } catch {}
-
-}
-
-
-
-function appendProviderKeyToLoginRequest(init = {}, providerKey = "") {
-
-  const key = normalizeProviderKey(providerKey);
-
-  const next = { ...init };
-
-  const headers = new Headers(init.headers || {});
-
-  const body = init.body;
-
-  if (body instanceof FormData) {
-
-    return appendProviderKeyBody(next, body, key);
-
-  }
-
-  if (body instanceof URLSearchParams) {
-
-    return appendProviderKeyBody(next, body, key);
-
-  }
-
-  if (typeof body === "string" && body.trim()) {
-
-    return appendProviderKeyStringBody(next, headers, body, key);
-
-  }
-
-  return appendProviderKeyJsonBody(next, headers, {}, key);
-
-}
-
-
-
-function appendProviderKeyBody(next, body, key) {
-
-  body.set("apiKey", key);
-
-  body.set("providerApiKey", key);
-
-  next.body = body;
-
-  return next;
-
-}
-
-
-
-function appendProviderKeyStringBody(next, headers, body, key) {
-
-  const contentType = String(headers.get("content-type") || "").toLowerCase();
-
-  if (contentType.includes("application/x-www-form-urlencoded")) {
-
-    const params = new URLSearchParams(body);
-
-    appendProviderKeyBody(next, params, key);
-
-    next.body = params.toString();
-
-    return next;
-
-  }
-
-  try {
-
-    return appendProviderKeyJsonBody(next, headers, JSON.parse(body), key);
-
-  } catch {
-
-    return appendProviderKeyJsonBody(next, headers, {}, key);
-
-  }
-
-}
-
-
-
-function appendProviderKeyJsonBody(next, headers, body, key) {
-
-  next.body = JSON.stringify({ ...body, apiKey: key, providerApiKey: key, experimentalBearerToken: key });
-
-  headers.set("content-type", "application/json");
-
-  next.headers = headers;
-
-  return next;
-}
-
-
-
-function installNativeLoginFetchBridge() {
-
-  if (window.__OPL_PORTAL_NATIVE_LOGIN_FETCH_BRIDGE_INSTALLED__) return;
-
-  if (typeof window.fetch !== "function") return;
-
-  window.__OPL_PORTAL_NATIVE_LOGIN_FETCH_BRIDGE_INSTALLED__ = true;
-
-  const nativeFetch = window.fetch.bind(window);
-
-  window.fetch = (input, init = {}) => {
-
-    if (!isNativeLoginUrl(input)) return nativeFetch(input, init);
-
-    const providerKey = readProviderKey(document);
-
-    if (!providerKey) {
-
-      return Promise.resolve(new Response(JSON.stringify({
-
-        ok: false,
-
-        error: "provider_api_key_required",
-
-        message: "gflabtoken API key is required before entering OPL."
-
-      }), {
-
-        status: 400,
-
-        headers: { "content-type": "application/json; charset=utf-8" }
-
-      }));
-
-    }
-
-
-    return nativeFetch(input, appendProviderKeyToLoginRequest(init, providerKey));
-
-  };
-
+  return false;
 }
 
 
@@ -992,10 +547,6 @@ function buildPortalApi() {
 window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
 window.__OPL_PORTAL_REFRESH_DIRECT_ENTRY__ = refreshDirectEntryShell;
 installDirectEntryDismissHandler();
-
-installProviderKeyFieldObserver();
-
-installNativeLoginFetchBridge();
 
 installDirectEntryRouteWatcher();
 
@@ -1160,7 +711,7 @@ async function initializePortalLaunch() {
   const bootstrapUrl = state.adapterUrl + "/api/opl-launch/bootstrap?launch_token=" + encodeURIComponent(state.launchToken);
   const bootstrap = await fetchJson(bootstrapUrl);
   writeStoredBootstrap(bootstrap);
-  const providerKey = await ensureLaunchProviderKey(bootstrap);
+  if (!ensureLaunchProviderConnection(bootstrap)) return;
 
   const launch = bootstrap.launch || {};
   const portal = bootstrap.portal || {};
@@ -1174,13 +725,12 @@ async function initializePortalLaunch() {
       runtimeSessionId: portal.runtimeSessionId || launch.runtimeSessionId || "",
       oplSessionId: "opl-web:" + (launch.launchId || portal.runtimeSessionId || Date.now()),
       workspacePath: workspace.workspacePath || launch.workspacePath || "",
-      source: providerKey ? "user_input" : "opl-web-gateway",
+      source: "opl-web-gateway",
       launchSource: "opl-web-gateway",
-      ...(providerKey ? { provider: "gflabtoken", apiKey: providerKey } : {}),
       userAgent: window.navigator.userAgent
     })
   });
-  const refreshedBootstrap = providerKey ? await fetchJson(bootstrapUrl) : bootstrap;
+  const refreshedBootstrap = bootstrap;
   writeStoredBootstrap(refreshedBootstrap);
 
   window.__OPL_PORTAL_LAUNCH__ = { state, bootstrap: refreshedBootstrap, sessionBind };

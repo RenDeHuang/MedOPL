@@ -16,6 +16,9 @@ assert.equal(pro?.storage?.includedGb, 100, "pro_storage_must_be_100gb");
 assert.equal(catalog.starter?.id, "starter", "catalog_must_expose_starter");
 assert.equal(catalog.pro?.id, "pro", "catalog_must_expose_pro");
 assert.ok(Array.isArray(catalog.customOptions?.storageAddonSizesGb), "catalog_must_expose_custom_options");
+assert.deepEqual(catalog.customOptions?.computeCores, [2, 4, 8], "custom_options_must_expose_compute_core_choices");
+assert.deepEqual(catalog.customOptions?.memoryGb, [4, 8, 16, 32], "custom_options_must_expose_memory_choices");
+assert.deepEqual(catalog.customOptions?.storageIncludedGb, [10, 100, 500], "custom_options_must_expose_included_storage_choices");
 
 const db = {
   wallets: [{ userId: "user-v20.34", balance: 500 }],
@@ -55,6 +58,9 @@ const packageRoutes = await readFile("services/portal/src/routes/lab-package.rou
 assert.match(packagesView, /入门套餐[\s\S]*进阶套餐[\s\S]*自定义/, "packages_view_must_show_three_columns");
 assert.doesNotMatch(packagesView, /推荐套餐|开通推荐套餐|CPU 2C4G \+ 10GB 存储 \+ OPL 实验室/, "packages_view_must_not_use_old_recommended_copy");
 assert.match(packagesView, /处理中\.\.\.|已成功|失败|未订阅时不能扩容，请先开通套餐。/, "packages_view_must_have_cn_feedback");
+assert.match(packagesView, /selectedCustomCpuCores|selectedCustomMemoryGb|selectedCustomStorageGb/, "custom_package_ui_must_select_cpu_memory_and_storage");
+assert.match(portalApi, /activateCustomLabPackage/, "portal_api_must_expose_custom_package_action");
+assert.match(packageRoutes, /handleCustomPackage/, "route_must_expose_custom_package_backend_contract");
 assert.match(packagesView, /packageCatalog\.value|packagesPayload\.catalog/, "packages_view_must_read_catalog");
 assert.match(portalApi, /businessMessage/, "portal_api_must_support_business_message");
 assert.match(portalApi, /normalizePortalBusinessError/, "portal_api_must_normalize_business_errors");

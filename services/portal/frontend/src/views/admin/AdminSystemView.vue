@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="系统入口" subtitle="系统状态、数据来源与安全配置健康">
+  <AppLayout title="系统状态" subtitle="Portal、OPL、Trace、Adapter 与内部诊断状态">
     <div class="space-y-6">
       <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载系统摘要...</div>
       <template v-else>
@@ -14,10 +14,10 @@
           <div class="card p-6">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <h2 class="panel-title">系统状态</h2>
-                <p class="panel-subtitle">每个系统都标出数据来源、探测状态与响应时间。</p>
+                <h2 class="panel-title">产品系统状态</h2>
+                <p class="panel-subtitle">聚焦 Portal、OPL、Trace、Adapter 等商业化主链路。</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/admin/ops">运维监控</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/admin/ops">云资源状态</RouterLink>
             </div>
 
             <div class="mt-6 grid gap-3 md:grid-cols-2">
@@ -77,21 +77,14 @@ const masReplyLabel = computed(() => {
   return value ? `${value} ms` : "-";
 });
 
-const serviceCards = computed(() => (payload.value?.serviceStatuses || []).map((item: any) => ({
-  ...item,
-  source: item.name === "Langfuse"
-    ? "Langfuse"
-    : item.name === "OpenCost"
-      ? "OpenCost"
-      : item.name === "Harbor"
-        ? "Harbor"
-        : item.name === "MinIO"
-          ? "MinIO"
-          : "Service probe",
-  kind: item.name === "Langfuse" || item.name === "OpenCost" || item.name === "Harbor" || item.name === "MinIO"
-    ? "真实摘要"
-    : "探测摘要",
-})));
+const productSystemNames = new Set(["Portal", "OPL", "Trace", "Adapter", "Runtime Bridge", "Gateway", "Portal OPL Adapter"]);
+const serviceCards = computed(() => (payload.value?.serviceStatuses || [])
+  .filter((item: any) => productSystemNames.has(String(item.name || "")))
+  .map((item: any) => ({
+    ...item,
+    source: "内部诊断",
+    kind: "主链路探测",
+  })));
 
 function responseLabel(value: number | null | undefined) {
   if (value == null || Number.isNaN(Number(value))) return "-";

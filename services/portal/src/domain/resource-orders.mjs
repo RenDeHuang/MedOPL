@@ -125,15 +125,17 @@ export function quoteResourceOrderFromPlan({ user, workspace, serverPlan, input 
   const preauthAmount = moneyAmount(Math.max(quoteAmount, quoteAmount * (1 + preauthBufferRatio)), 0);
   const now = new Date().toISOString();
   const quoteId = `quote_${randomUUID()}`;
+  const tenantId = String(user.tenantId || user.id || "").trim();
+  const userId = String(user.id || "").trim();
   return normalizeResourceOrder({
     id: String(input.orderId || randomUUID()),
-    tenantId: user.id,
-    userId: user.id,
-    portalUserId: user.id,
+    tenantId,
+    userId,
+    portalUserId: userId,
     workspaceId: workspace.slug,
     workspaceSessionId: input.workspaceSessionId || "",
     runId: input.runId || "",
-    billingAccountId: input.billingAccountId || user.id,
+    billingAccountId: input.billingAccountId || tenantId,
     status: "quoted",
     serverPlanId: serverPlan?.id || input.serverPlanId || "",
     region: serverPlan?.region || "",

@@ -57,7 +57,7 @@ const userItems = [
 ];
 
 const adminItems = [
-  { to: "/admin/dashboard", label: "运行资源" },
+  { to: "/admin/dashboard", label: "运营总台" },
   { to: "/admin/billing-ops", label: "客户账务" },
   { to: "/admin/usage", label: "账单归因" },
   { to: "/admin/users", label: "用户管理" },

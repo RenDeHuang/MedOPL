@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="运行总台" subtitle="用户、workspace、run、延迟与消费的统一运营入口">
+  <AppLayout title="运营总台" subtitle="客户、账务、资源、轨迹与告警的统一处理入口">
     <div class="space-y-4">
       <div v-if="!payload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载运行总台...</div>
       <template v-else>
@@ -31,8 +31,8 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">使用记录</h2>
-                <p class="panel-subtitle">展示谁、workspace、时间和运行计费明细。</p>
+                <h2 class="panel-title">最近使用记录</h2>
+                <p class="panel-subtitle">展示客户、工作空间、时间和资源消费明细。</p>
               </div>
               <RouterLink class="btn btn-secondary" to="/admin/usage">查看全部</RouterLink>
             </div>
@@ -42,7 +42,7 @@
                 <thead>
                   <tr class="table-head">
                     <th class="px-4 py-3">谁</th>
-                    <th class="px-4 py-3">workspace</th>
+                    <th class="px-4 py-3">工作空间</th>
                     <th class="px-4 py-3">时间</th>
                     <th class="px-4 py-3">CPU</th>
                     <th class="px-4 py-3">GPU</th>
@@ -75,23 +75,23 @@
             <div class="card p-5">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h2 class="panel-title">关键入口</h2>
-                  <p class="panel-subtitle">继续处理用户、Trace 和分发。</p>
+                  <h2 class="panel-title">运营入口</h2>
+                  <p class="panel-subtitle">按客户、账务、归因和资源异常继续处理。</p>
                 </div>
               </div>
               <div class="grid gap-2">
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/users">用户管理</RouterLink>
-                <RouterLink class="btn btn-secondary justify-start" to="/admin/trace">Agent Traces</RouterLink>
-                <RouterLink class="btn btn-secondary justify-start" to="/admin/billing-ops">计费运维</RouterLink>
-                <RouterLink class="btn btn-secondary justify-start" to="/admin/sandboxes">K8s运维与分发</RouterLink>
+                <RouterLink class="btn btn-secondary justify-start" to="/admin/billing-ops">客户账务</RouterLink>
+                <RouterLink class="btn btn-secondary justify-start" to="/admin/usage">账单归因</RouterLink>
+                <RouterLink class="btn btn-secondary justify-start" to="/admin/ops">云资源状态</RouterLink>
               </div>
             </div>
 
             <div class="card p-5">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h2 class="panel-title">告警概览</h2>
-                  <p class="panel-subtitle">直接看需要处理的异常。</p>
+                  <h2 class="panel-title">待处理事项</h2>
+                  <p class="panel-subtitle">直接看需要处理的客户和资源异常。</p>
                 </div>
                 <RouterLink class="btn btn-secondary" to="/admin/alerts">打开告警中心</RouterLink>
               </div>

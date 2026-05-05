@@ -23,7 +23,7 @@
                 <h2 class="panel-title">云资源状态</h2>
                 <p class="panel-subtitle">展示服务器编号、任务编号、释放证据和停止计费结果。</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/admin/system">系统入口</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/admin/system">系统状态</RouterLink>
             </div>
 
             <div class="mt-6 table-shell">
@@ -37,14 +37,17 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in payload.serviceStatuses || []" :key="item.name" class="table-row">
+                  <tr v-for="item in cloudResourceRows" :key="item.resourceOrderId || item.name" class="table-row">
                     <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ item.name }}</td>
                     <td class="px-4 py-3">
-                      <span class="badge" :class="item.ok ? 'badge-success' : 'badge-danger'">{{ item.ok ? "可用" : "异常" }}</span>
+                      <span class="badge" :class="item.billingStopped ? 'badge-success' : 'badge-warning'">{{ resourceStatus(item.status) }}</span>
                     </td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.status || "服务器编号 / 任务编号" }}</td>
+                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.runId || item.workspaceId || item.resourceOrderId || "-" }}</td>
                     <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.cleanupEvidence || "等待释放证据" }}</td>
                     <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.billingStopped ? "已停止计费" : "运行中" }}</td>
+                  </tr>
+                  <tr v-if="!cloudResourceRows.length">
+                    <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无云资源生命周期记录</td>
                   </tr>
                 </tbody>
               </table>
@@ -92,11 +95,17 @@ const masReplyLabel = computed(() => {
   return value ? `${value} ms` : "-";
 });
 
-const stoppedBillingCount = computed(() => (payload.value?.serviceStatuses || []).filter((item: any) => item.billingStopped).length);
+const cloudResourceRows = computed(() => payload.value?.cloudResourceRows || []);
+const stoppedBillingCount = computed(() => cloudResourceRows.value.filter((item: any) => item.billingStopped).length);
 
-function responseLabel(value: number | null | undefined) {
-  if (value == null || Number.isNaN(Number(value))) return "-";
-  return `${Number(value)} ms`;
+function resourceStatus(status = "") {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "running") return "运行中";
+  if (normalized === "provisioning") return "开通中";
+  if (normalized === "released") return "已释放";
+  if (normalized === "settled") return "已结清";
+  if (["failed", "cancelled"].includes(normalized)) return "已停止";
+  return status || "未知";
 }
 
 onMounted(async () => {

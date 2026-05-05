@@ -69,16 +69,70 @@ function freezePackage(item) {
 const PACKAGES = Object.freeze(PACKAGE_DEFINITIONS.map(freezePackage));
 const PACKAGE_BY_ID = new Map(PACKAGES.map((item) => [item.id, item]));
 const CUSTOM_OPTIONS = Object.freeze({
+  computeCores: Object.freeze([2, 4, 8]),
+  memoryGb: Object.freeze([4, 8, 16, 32]),
+  storageIncludedGb: Object.freeze([10, 100, 500]),
   storageAddonSizesGb: Object.freeze([100, 500, 1024]),
-  notes: Object.freeze(["支持扩容存储", "支持按业务升级为进阶套餐"]),
+  notes: Object.freeze(["自定义可选择计算核心、内存和套餐存储", "已开通套餐后可继续单独扩容存储"]),
 });
 
 export function listLabPackages() {
   return PACKAGES;
 }
 
-export function getLabPackage(packageId = "") {
-  return PACKAGE_BY_ID.get(String(packageId || "").trim()) || null;
+export function normalizeCustomLabPackageSpec(input = {}) {
+  const computeCores = Number(input.computeCores ?? input.compute_cores ?? input.cpuCores ?? input.cpu_cores ?? 0);
+  const memoryGb = Number(input.memoryGb ?? input.memory_gb ?? 0);
+  const storageIncludedGb = Number(input.storageIncludedGb ?? input.storage_included_gb ?? input.storageGb ?? input.storage_gb ?? 0);
+  const spec = { computeCores, memoryGb, storageIncludedGb };
+  return customSpecAllowed(spec) ? spec : null;
+}
+
+function customSpecAllowed(spec) {
+  return CUSTOM_OPTIONS.computeCores.includes(spec.computeCores)
+    && CUSTOM_OPTIONS.memoryGb.includes(spec.memoryGb)
+    && CUSTOM_OPTIONS.storageIncludedGb.includes(spec.storageIncludedGb);
+}
+
+export function customLabPackageFromSpec(input = {}) {
+  const spec = normalizeCustomLabPackageSpec(input);
+  if (!spec) return null;
+  const dailyPrice = Number((spec.computeCores * 9 + spec.memoryGb * 0.75 + spec.storageIncludedGb * 0.08).toFixed(2));
+  return {
+    id: "custom",
+    name: "自定义套餐",
+    audience: "regular",
+    currency: "CNY",
+    computeTier: "custom",
+    headline: "按业务规模选择算力、内存和套餐存储",
+    compute: {
+      tier: "custom",
+      label: `${spec.computeCores} 核 / ${spec.memoryGb}GB 内存`,
+      cores: spec.computeCores,
+      memoryGb: spec.memoryGb,
+      maxConcurrentRuns: Math.max(1, Math.floor(spec.computeCores / 2)),
+    },
+    storage: {
+      includedGb: spec.storageIncludedGb,
+      warningRatio: 0.8,
+    },
+    billing: {
+      dailyPrice,
+      freezeDays: FREEZE_DAYS,
+      weeklyFreezeAmount: Number((dailyPrice * FREEZE_DAYS).toFixed(2)),
+    },
+    plainIncluded: [`${spec.storageIncludedGb}GB 套餐存储`, `${spec.computeCores} 核计算`, `${spec.memoryGb}GB 内存`, "可上传文件", "可下载结果"],
+    plainLimits: ["自定义套餐按所选规格计费", "余额不足时会先提醒，再限制新任务"],
+    overageCopy: "超过套餐容量后需要扩容或清理旧文件",
+    backingServerPlanId: `custom-${spec.computeCores}c-${spec.memoryGb}g-${spec.storageIncludedGb}gb`,
+    customSpec: spec,
+  };
+}
+
+export function getLabPackage(packageId = "", customSpec = {}) {
+  const id = String(packageId || "").trim();
+  if (id === "custom") return customLabPackageFromSpec(customSpec);
+  return PACKAGE_BY_ID.get(id) || null;
 }
 
 export function packagePublicView(item) {
@@ -101,11 +155,15 @@ export function packagePublicView(item) {
     plainLimits: [...(item.plainLimits || [])],
     overageCopy: item.overageCopy || "",
     computePower: `${item.compute.cores} 核计算能力`,
+    memoryGb: Number(item.compute.memoryGb || 0),
     storageCapacityGb: item.storage.includedGb,
     dailyDebit: item.billing.dailyPrice,
     weeklyFreeze: item.billing.weeklyFreezeAmount,
     gracePeriodDays: 7,
-    planSummary: `${item.compute.cores}C / ${item.storage.includedGb}GB`,
+    customSpec: item.customSpec ? { ...item.customSpec } : null,
+    planSummary: item.compute.memoryGb
+      ? `${item.compute.cores}C / ${item.compute.memoryGb}GB 内存 / ${item.storage.includedGb}GB`
+      : `${item.compute.cores}C / ${item.storage.includedGb}GB`,
   };
 }
 

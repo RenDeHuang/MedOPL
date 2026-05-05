@@ -61,27 +61,51 @@
 
           <article class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
             <div class="text-xs text-gray-500 dark:text-slate-400">自定义</div>
-            <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">扩容与进阶选项</div>
-            <div class="mt-1 text-sm text-gray-600 dark:text-slate-300">可选扩容规格：{{ addonOptionsText }}</div>
+            <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">自定义套餐</div>
+            <div class="mt-1 text-sm text-gray-600 dark:text-slate-300">{{ customSummaryText }}</div>
             <div class="mt-2 text-xs text-gray-500 dark:text-slate-400">{{ customNotesText }}</div>
-            <button class="btn btn-secondary mt-3 w-full" :disabled="customDisabled" @click="expandSelected">
+            <div class="mt-4 space-y-3">
+              <label class="block text-xs font-medium text-gray-600 dark:text-slate-300">
+                CPU
+                <select v-model.number="selectedCustomCpuCores" class="mt-1 w-full rounded-lg border border-gray-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+                  <option v-for="cores in customCpuOptions" :key="cores" :value="cores">{{ cores }} 核</option>
+                </select>
+              </label>
+              <label class="block text-xs font-medium text-gray-600 dark:text-slate-300">
+                内存
+                <select v-model.number="selectedCustomMemoryGb" class="mt-1 w-full rounded-lg border border-gray-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+                  <option v-for="memory in customMemoryOptions" :key="memory" :value="memory">{{ memory }}GB</option>
+                </select>
+              </label>
+              <label class="block text-xs font-medium text-gray-600 dark:text-slate-300">
+                套餐存储
+                <select v-model.number="selectedCustomStorageGb" class="mt-1 w-full rounded-lg border border-gray-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+                  <option v-for="size in customStorageOptions" :key="size" :value="size">{{ size }}GB</option>
+                </select>
+              </label>
+            </div>
+            <button class="btn btn-secondary mt-3 w-full" :disabled="customPackageDisabled" @click="submitCustomPackage">
+              {{ actionText("custom_package", "提交自定义套餐") }}
+            </button>
+            <div class="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">已开通套餐后还可以单独扩容：{{ addonOptionsText }}</div>
+            <button class="btn btn-ghost mt-2 w-full" :disabled="customDisabled" @click="expandSelected">
               {{ actionText("expand_custom", `扩容 ${selectedAddonGb}GB`) }}
             </button>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="size in addonOptions"
+                :key="size"
+                class="btn btn-ghost"
+                :class="{ 'ring-1 ring-blue-500': selectedAddonGb === size }"
+                :disabled="loadingAction"
+                @click="selectedAddonGb = size"
+              >
+                {{ size }}GB
+              </button>
+            </div>
+            <div v-if="customPackageDisabledReason" class="mt-2 text-xs text-amber-600 dark:text-amber-400">{{ customPackageDisabledReason }}</div>
             <div v-if="customDisabledReason" class="mt-2 text-xs text-amber-600 dark:text-amber-400">{{ customDisabledReason }}</div>
           </article>
-        </div>
-
-        <div class="mt-4 flex flex-wrap gap-2">
-          <button
-            v-for="size in addonOptions"
-            :key="size"
-            class="btn btn-ghost"
-            :class="{ 'ring-1 ring-blue-500': selectedAddonGb === size }"
-            :disabled="loadingAction"
-            @click="selectedAddonGb = size"
-          >
-            {{ size }}GB
-          </button>
         </div>
 
         <div
@@ -101,6 +125,7 @@ import { computed, onMounted, ref } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import type { LabPackagePlan, LabSubscriptionPayload } from "@/api/portal";
 import {
+  activateCustomLabPackage,
   activateLabPackage,
   fetchLabEntitlement,
   fetchLabPackages,
@@ -116,6 +141,9 @@ const currentAction = ref("");
 const feedbackType = ref<"success" | "error" | "loading" | "">("");
 const actionFeedback = ref("");
 const selectedAddonGb = ref(100);
+const selectedCustomCpuCores = ref(4);
+const selectedCustomMemoryGb = ref(8);
+const selectedCustomStorageGb = ref(100);
 const packageCatalog = ref<any>({});
 
 function packageById(packageId: string) {
@@ -133,7 +161,11 @@ const usedStorageGb = computed(() => subscriptionNumber("usedStorageGb") || subs
 const starterPackage = computed(() => catalogPackage("starter"));
 const proPackage = computed(() => catalogPackage("pro"));
 const addonOptions = computed(() => packageCatalog.value?.customOptions?.storageAddonSizesGb || [100]);
+const customCpuOptions = computed(() => packageCatalog.value?.customOptions?.computeCores || [2, 4, 8]);
+const customMemoryOptions = computed(() => packageCatalog.value?.customOptions?.memoryGb || [4, 8, 16, 32]);
+const customStorageOptions = computed(() => packageCatalog.value?.customOptions?.storageIncludedGb || [10, 100, 500]);
 const addonOptionsText = computed(() => addonOptions.value.map((item: number) => `${item}GB`).join(" / "));
+const customSummaryText = computed(() => `${selectedCustomCpuCores.value} 核 / ${selectedCustomMemoryGb.value}GB 内存 / ${selectedCustomStorageGb.value}GB 存储`);
 const customNotesText = computed(() => (packageCatalog.value?.customOptions?.notes || []).join("；"));
 const hasSubscription = computed(() => Boolean(subscription.value?.currentPackageId));
 function pickDisabledReason(rules: Array<[boolean, string]>) {
@@ -161,9 +193,18 @@ const customDisabledReason = computed(() => {
     [!addonOptions.value.includes(selectedAddonGb.value), "请选择有效扩容规格。"],
   ]);
 });
+const customPackageDisabledReason = computed(() => {
+  return pickDisabledReason([
+    [loadingAction.value, "当前有操作进行中，请稍候。"],
+    [!customCpuOptions.value.includes(selectedCustomCpuCores.value), "请选择有效 CPU 规格。"],
+    [!customMemoryOptions.value.includes(selectedCustomMemoryGb.value), "请选择有效内存规格。"],
+    [!customStorageOptions.value.includes(selectedCustomStorageGb.value), "请选择有效套餐存储规格。"],
+  ]);
+});
 const starterDisabled = computed(() => Boolean(starterDisabledReason.value));
 const proDisabled = computed(() => Boolean(proDisabledReason.value));
 const customDisabled = computed(() => Boolean(customDisabledReason.value));
+const customPackageDisabled = computed(() => Boolean(customPackageDisabledReason.value));
 const feedbackClass = computed(() => {
   if (feedbackType.value === "success") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
   if (feedbackType.value === "error") return "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300";
@@ -236,6 +277,23 @@ async function expandSelected() {
     fallbackError: "扩容失败，请稍后重试。",
     disabledReason: customDisabledReason.value,
     run: () => purchaseLabStorageAddon({ addStorageGb: selectedAddonGb.value }),
+  });
+}
+
+async function submitCustomPackage() {
+  await runPackageAction({
+    action: "custom_package",
+    loadingText: "正在提交自定义套餐...",
+    successText: "已成功提交自定义套餐。",
+    fallbackError: "自定义套餐提交失败，请检查规格后重试。",
+    disabledReason: customPackageDisabledReason.value,
+    run: () => activateCustomLabPackage({
+      customSpec: {
+        computeCores: selectedCustomCpuCores.value,
+        memoryGb: selectedCustomMemoryGb.value,
+        storageIncludedGb: selectedCustomStorageGb.value,
+      },
+    }),
   });
 }
 

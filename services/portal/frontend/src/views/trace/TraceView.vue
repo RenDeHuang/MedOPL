@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="轨迹" subtitle="查看自己的会话、上传文件、下载结果、任务编号与费用">
+  <AppLayout title="轨迹" subtitle="查看会话过程、任务状态、文件结果与 traceId">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载会话轨迹...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -8,7 +8,7 @@
           <MetricCard label="会话数" :value="payload.pagination.total" hint="当前筛选命中总数" />
           <MetricCard label="任务编号数" :value="runCount" hint="关联任务编号的会话" />
           <MetricCard label="下载结果" :value="outputCount" hint="可在工作空间下载" />
-          <MetricCard label="T+1 校准金额" :value="exactCostLabel" hint="仅统计 T+1 校准金额" />
+          <MetricCard label="异常会话" :value="failedCount" hint="需要重试或联系客服" />
         </section>
 
         <section class="card p-5">
@@ -54,7 +54,6 @@
                   <th class="px-4 py-3">工作空间</th>
                   <th class="px-4 py-3">任务编号</th>
                   <th class="px-4 py-3">文件</th>
-                  <th class="px-4 py-3">费用</th>
                   <th class="px-4 py-3">状态</th>
                   <th class="px-4 py-3">时间</th>
                 </tr>
@@ -70,11 +69,8 @@
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
                     {{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出
                   </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
-                    运行中预扣 ¥{{ money(item.billing?.pendingCost) }} / T+1 校准 ¥{{ money(item.billing?.exactCost) }}
-                  </td>
                   <td class="px-4 py-3">
-                    <span class="badge" :class="statusBadge(item.businessStatus || item.status)">{{ item.businessStatus || item.status || "recorded" }}</span>
+                    <span class="badge" :class="statusBadge(item.businessStatus || item.status)">{{ humanizeStatus(item.businessStatus || item.status) }}</span>
                   </td>
                   <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.startedAt || "-" }}</td>
                 </tr>
@@ -115,7 +111,7 @@ const filters = reactive({ workspaceId: "", sessionId: "", status: "" });
 
 const runCount = computed(() => new Set((payload.value?.items || []).map((item: any) => item.runId).filter(Boolean)).size);
 const outputCount = computed(() => (payload.value?.items || []).reduce((sum: number, item: any) => sum + Number(item.files?.outputsCount || 0), 0));
-const exactCostLabel = computed(() => `¥${money((payload.value?.items || []).reduce((sum: number, item: any) => sum + Number(item.billing?.exactCost || 0), 0))}`);
+const failedCount = computed(() => (payload.value?.items || []).filter((item: any) => ["failed", "error"].includes(String(item.businessStatus || item.status || "").toLowerCase())).length);
 
 function routeQueryObject() {
   const query: Record<string, string> = {};
@@ -157,8 +153,13 @@ function statusBadge(status = "") {
   return "badge-warning";
 }
 
-function money(value: unknown) {
-  return Number(value || 0).toFixed(2);
+function humanizeStatus(status = "") {
+  const normalized = String(status || "").toLowerCase();
+  if (["completed", "success", "settled"].includes(normalized)) return "已完成";
+  if (["failed", "error"].includes(normalized)) return "失败";
+  if (["running", "active"].includes(normalized)) return "运行中";
+  if (normalized === "released") return "已释放";
+  return status || "已记录";
 }
 
 function applyFilters() {

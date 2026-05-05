@@ -109,6 +109,7 @@ export function createLabPackageRoutes({
       user,
       workspaceId,
       packageId: payload.packageId,
+      customSpec: payload.customSpec || null,
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
@@ -139,6 +140,7 @@ export function createLabPackageRoutes({
       user,
       subscriptionId: subscription?.id || "",
       packageId: payload.packageId,
+      customSpec: payload.customSpec || null,
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
@@ -186,6 +188,44 @@ export function createLabPackageRoutes({
     return true;
   }
 
+  async function handleCustomPackage(context) {
+    const { req, res, db, user } = context;
+    const payload = await readJsonBody(req, res);
+    if (!payload) return true;
+    const workspaceId = String(payload.workspaceId || "default").trim() || "default";
+    const subscription = currentLabSubscription(db, { user, workspaceId });
+    const result = submitCustomLabPackage(db, { user, workspaceId, subscription, payload });
+    if (!result.ok) {
+      sendJson(res, {
+        ok: false,
+        error: result.error,
+        businessMessage: result.businessMessage || "自定义套餐提交失败，请检查规格后重试。",
+      }, result.status || 400);
+      return true;
+    }
+    await persistLabBillingState(db, result);
+    sendJson(res, {
+      ok: true,
+      action: subscription ? "upgrade" : "activate",
+      created: result.created,
+      ...subscriptionPayload(db, user, result.subscription, result.subscription.workspaceId),
+    }, result.created ? 201 : 200);
+    return true;
+  }
+
+  function submitCustomLabPackage(db, { user, workspaceId, subscription, payload }) {
+    const input = {
+      user,
+      packageId: "custom",
+      customSpec: payload.customSpec || payload,
+      idempotencyKey: payload.idempotencyKey,
+    };
+    if (subscription) {
+      return upgradeLabSubscription(db, { ...input, subscriptionId: subscription.id });
+    }
+    return activateLabSubscription(db, { ...input, workspaceId });
+  }
+
   function resolveTargetSubscription(db, user, payload = {}) {
     if (payload.subscriptionId) return { id: String(payload.subscriptionId) };
     const workspaceId = String(payload.workspaceId || "default").trim() || "default";
@@ -199,6 +239,7 @@ export function createLabPackageRoutes({
     if (await handleGetEntitlement(context)) return true;
     if (req.method === "POST" && url.pathname === "/portal/api/lab-packages/activate") return handleActivate(context);
     if (req.method === "POST" && url.pathname === "/portal/api/lab-packages/upgrade") return handleUpgrade(context);
+    if (req.method === "POST" && url.pathname === "/portal/api/lab-packages/custom") return handleCustomPackage(context);
     if (req.method === "POST" && url.pathname === "/portal/api/lab-storage/addons") return handleStorageAddon(context);
     return false;
   };

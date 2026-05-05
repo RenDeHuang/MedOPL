@@ -42,6 +42,48 @@ function userDisplayName(user = {}) {
   return String(user.name || user.email || user.id || "").trim();
 }
 
+function customerSegment(user = {}) {
+  const explicit = String(user.customerSegment || user.customer_segment || user.segment || "").trim().toLowerCase();
+  if (["real_customer", "internal", "test_fixture"].includes(explicit)) return explicit;
+  const probe = `${user.id || ""} ${user.email || ""} ${user.name || ""} ${user.tenantId || ""}`.toLowerCase();
+  if (isTestFixtureProbe(probe)) return "test_fixture";
+  return isInternalProbe(probe) ? "internal" : "real_customer";
+}
+
+function adminDataSegment(user = {}) {
+  return customerSegment(user);
+}
+
+function isTestFixtureProbe(probe = "") {
+  return ["@example.test", "test-", "fixture", "smoke"].some((marker) => probe.includes(marker));
+}
+
+function isInternalProbe(probe = "") {
+  return ["@medopl.cn", "@gaofeng", "internal"].some((marker) => probe.includes(marker));
+}
+
+function includeAdminSegment(user = {}, { includeTestFixtures = false, includeInternal = false } = {}) {
+  const segment = adminDataSegment(user);
+  if (segment === "test_fixture") return Boolean(includeTestFixtures);
+  if (segment === "internal") return Boolean(includeInternal);
+  return true;
+}
+
+function commercialCustomers(db, options = {}) {
+  return (Array.isArray(db.users) ? db.users : [])
+    .filter((item) => item.role !== "admin")
+    .filter((item) => includeAdminSegment(item, options));
+}
+
+function commercialResourceOrders(db, options = {}) {
+  const usersById = new Map((Array.isArray(db.users) ? db.users : []).map((user) => [String(user.id || ""), user]));
+  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
+    .filter((order) => {
+      const user = usersById.get(String(order.userId || order.portalUserId || "")) || {};
+      return includeAdminSegment(user, options);
+    });
+}
+
 function userLedgerEntries(db, user = {}) {
   const tenantId = userTenantId(user);
   const userId = String(user.id || "").trim();
@@ -56,6 +98,29 @@ function activeResourceOrdersForUser(db, user = {}) {
   return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
     .filter((item) => item.userId === userId || item.tenantId === tenantId)
     .filter((item) => !["released", "settled", "failed", "cancelled", "deleted"].includes(String(item.status || "").toLowerCase()));
+}
+
+function cloudResourceRow(order = {}, formatDateTime = (value) => value || "") {
+  const resourceIds = Array.isArray(order.cloudResourceIds) ? order.cloudResourceIds : [];
+  const stoppedAt = String(order.billingStoppedAt || order.pendingStoppedAt || order.settledAt || "").trim();
+  return {
+    name: order.serverPlanId || order.id,
+    status: String(order.status || "unknown").trim() || "unknown",
+    resourceOrderId: order.id,
+    runId: order.runId || "",
+    workspaceId: order.workspaceId || "",
+    cloudResourceCount: resourceIds.length,
+    cleanupEvidence: stoppedAt ? `释放时间 ${formatDateTime(stoppedAt)}` : (resourceIds.length ? `${resourceIds.length} 个云资源编号` : "等待资源编号"),
+    billingStopped: Boolean(stoppedAt) || ["released", "settled", "failed", "cancelled"].includes(String(order.status || "").toLowerCase()),
+    updatedAt: order.updatedAt || order.createdAt || "",
+  };
+}
+
+function cloudResourceRows(db, formatDateTime) {
+  return commercialResourceOrders(db)
+    .map((order) => cloudResourceRow(order, formatDateTime))
+    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
+    .slice(0, 50);
 }
 
 function customerBillingRiskStatus(risk = {}) {
@@ -122,11 +187,15 @@ function userScopedRows(db, collectionKey, userId, tenantId) {
 }
 
 export function buildAdminCustomerAccountingPayload(db, { now = new Date().toISOString() } = {}) {
-  const users = (Array.isArray(db.users) ? db.users : []).filter((item) => item.role !== "admin");
+  const users = commercialCustomers(db);
   const customers = users.map((user) => customerAccountingRow(db, user, { now }));
   return {
     customers,
     summary: customerAccountingSummary(db, customers),
+    segmentPolicy: {
+      defaultSegment: "real_customer",
+      excludedByDefault: ["internal", "test_fixture"],
+    },
   };
 }
 
@@ -202,7 +271,7 @@ export function createPortalAdminApiPayloads(deps) {
   const urls = defaultUrls(configuredUrls);
 
   async function buildAdminOverviewPayload(db) {
-    const users = db.users.filter((item) => item.role !== "admin" && activeUserStatus(item.status) !== "deleted");
+    const users = commercialCustomers(db).filter((item) => activeUserStatus(item.status) !== "deleted");
     const billing = await fetchBillingSummary("", "", "168h");
     const items = billing?.items || [];
     const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
@@ -400,6 +469,7 @@ export function createPortalAdminApiPayloads(deps) {
           };
         })
         .sort((a, b) => String(b.updatedAt || b.lastActiveAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.lastActiveAt || a.createdAt || ""))),
+      cloudResourceRows: cloudResourceRows(db, formatDateTime),
       serviceStatuses: serviceStatuses.map((item) => ({ name: item.name, status: item.probe.status, ok: item.probe.ok, responseMs: item.probe.responseMs || null })),
     };
   }
@@ -524,7 +594,7 @@ export function createPortalAdminApiPayloads(deps) {
 
   function buildAdminOpsApiPayload(payload) {
     return {
-      serviceStatuses: payload.serviceStatuses || [],
+      cloudResourceRows: payload.cloudResourceRows || [],
       systemMetrics: payload.systemMetrics || {},
       pending: payload.pending || {},
       warningEvents: payload.warningEvents || [],
