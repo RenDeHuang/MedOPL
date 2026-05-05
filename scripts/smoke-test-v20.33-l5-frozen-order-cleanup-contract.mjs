@@ -30,6 +30,10 @@ mustMatch(/\/portal\/api\/admin\/customer-accounting\/detail/, "l5_cleanup_must_
 mustMatch(/cleanup_order_must_start_frozen/, "l5_cleanup_must_assert_start_state");
 mustMatch(/cleanup_must_write_preauth_release_ledger/, "l5_cleanup_must_assert_release_ledger");
 mustMatch(/cleanup_active_freeze_after_release_mismatch/, "l5_cleanup_must_assert_active_freeze_zero");
+mustMatch(/\bfindOrderOwnerByLedger\b/, "l5_cleanup_must_verify_release_by_ledger_when_order_leaves_active_list");
+mustMatch(/cleanup_order_must_leave_active_resource_orders_after_release/, "l5_cleanup_must_assert_released_order_removed_from_active_orders");
+mustNotMatch(/cleanup_order_missing_after_release/, "l5_cleanup_must_not_require_released_order_to_remain_active");
+mustNotMatch(/cleanup_order_status_after_release_mismatch/, "l5_cleanup_must_not_expect_released_order_inside_active_orders");
 mustMatch(/\bREAD_ENDPOINTS\b/, "l5_cleanup_must_publish_read_endpoint_inventory");
 mustMatch(/\bMUTATING_ENDPOINTS\b/, "l5_cleanup_must_publish_mutating_endpoint_inventory");
 mustMatch(/internal_release_only_releasePreauth_true_no_cloud_provisioner/, "l5_cleanup_must_disclose_mutation_boundary");

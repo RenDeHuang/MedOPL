@@ -371,6 +371,31 @@ async function findOrderOwner(config, adminCookie) {
   return null;
 }
 
+async function findOrderOwnerByLedger(config, adminCookie) {
+  const users = await fetchCandidateUsers(config, adminCookie);
+  for (const user of users) {
+    const userId = String(user.id || "").trim();
+    if (!userId) continue;
+    const detail = await apiJson(
+      config,
+      `/portal/api/admin/customer-accounting/detail?userId=${encodeURIComponent(userId)}`,
+      adminCookie,
+    );
+    const snapshot = orderSnapshot(detail, config.resourceOrderId);
+    if (snapshot.relevantLedger.length > 0) {
+      return {
+        user: {
+          id: userId,
+          email: user.email || "",
+          balance: Number(user.balance || 0),
+        },
+        snapshot,
+      };
+    }
+  }
+  return null;
+}
+
 async function releaseFrozenOrder(config) {
   const body = JSON.stringify({
     resourceOrderId: config.resourceOrderId,
@@ -475,9 +500,13 @@ async function main() {
   const release = await releaseFrozenOrder(config);
   assert.equal(release.orderStatus, "released", `cleanup_order_must_release:${release.orderStatus}`);
 
-  const after = await findOrderOwner(config, adminCookie);
-  assert(after, `cleanup_order_missing_after_release:${config.resourceOrderId}`);
-  assert.equal(after.snapshot.order.status, "released", `cleanup_order_status_after_release_mismatch:${after.snapshot.order.status}`);
+  const after = await findOrderOwnerByLedger(config, adminCookie);
+  assert(after, `cleanup_order_ledger_missing_after_release:${config.resourceOrderId}`);
+  assert.equal(
+    after.snapshot.found,
+    false,
+    `cleanup_order_must_leave_active_resource_orders_after_release:${after.snapshot.order?.status || "active"}`,
+  );
   assert.equal(after.snapshot.activeFreezeCents, 0, `cleanup_active_freeze_after_release_mismatch:${after.snapshot.activeFreezeCents}`);
   assert(
     after.snapshot.relevantLedger.some((entry) => entry.type === "preauth_release" && entry.amountCents > 0),

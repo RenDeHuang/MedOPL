@@ -68,15 +68,20 @@ assert.match(
   "lab_package_route_must_use_lab_billing_domain_store_when_injected",
 );
 
-assert.match(
+assert.doesNotMatch(
   postgresPersistenceSource,
   /DELETE FROM\s+\$\{pgTableName\("ledger_entries"\)\}/,
-  "legacy_snapshot_writer_must_still_show_full_rewrite_risk_for_contrast",
+  "snapshot_writer_must_not_delete_ledger_entries_after_resource_order_incremental_writes",
 );
-assert.match(
+assert.doesNotMatch(
   postgresPersistenceSource,
   /DELETE FROM\s+\$\{pgTableName\("resource_orders"\)\}/,
-  "legacy_snapshot_writer_must_still_show_resource_order_full_rewrite_risk_for_contrast",
+  "snapshot_writer_must_not_delete_resource_orders_after_resource_order_incremental_writes",
+);
+assert.doesNotMatch(
+  postgresPersistenceSource,
+  /DELETE FROM\s+\$\{pgTableName\("resource_order_events"\)\}/,
+  "snapshot_writer_must_not_delete_resource_order_events_after_resource_order_incremental_writes",
 );
 assert.match(
   postgresPersistenceSource,
