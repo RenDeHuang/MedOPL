@@ -4,6 +4,11 @@ import { moneyAmount } from "./wallet-ledger.mjs";
 
 export const LAB_SUBSCRIPTION_STATUSES = new Set(["active", "grace_period", "cleanup_queued", "cancelled"]);
 export const LAB_STORAGE_ADDON_SIZES_GB = new Set([100, 500, 1024]);
+const LAB_BUSINESS_MESSAGES = Object.freeze({
+  invalid_lab_package_activation: "套餐开通失败：套餐不存在或用户无效。",
+  lab_subscription_not_found: "未找到已开通套餐，请先开通套餐。",
+  unsupported_lab_storage_addon_size: "扩容失败：仅支持 100GB、500GB、1024GB 规格。",
+});
 
 function ensureArrayProperty(target, key) {
   if (!Array.isArray(target[key])) target[key] = [];
@@ -144,7 +149,7 @@ export function activateLabSubscription(db, {
   ensureLabSubscriptionCollections(db);
   const labPackage = getLabPackage(packageId);
   const userId = String(user?.id || "").trim();
-  if (!userId || !labPackage) return { ok: false, status: 400, error: "invalid_lab_package_activation" };
+  if (!userId || !labPackage) return businessError("invalid_lab_package_activation", 400);
   const key = String(idempotencyKey || `lab_subscription_activate:${userId}:${workspaceId}:${packageId}`).trim();
   const idempotent = activationByEventKey(db, key);
   if (idempotent) return idempotent;
@@ -223,7 +228,7 @@ export function upgradeLabSubscription(db, {
   const labPackage = getLabPackage(packageId);
   const userId = String(user?.id || "").trim();
   const target = db.labSubscriptions.find((item) => item.id === subscriptionId && item.userId === userId);
-  if (!target || !labPackage) return { ok: false, status: 404, error: "lab_subscription_not_found" };
+  if (!target || !labPackage) return businessError("lab_subscription_not_found", 404);
   const key = String(idempotencyKey || `lab_subscription_upgrade:${target.id}:${packageId}`).trim();
   const existingEvent = db.labPackageEvents.find((item) => item.idempotencyKey === key);
   if (existingEvent) return { ok: true, created: false, subscription: target, event: existingEvent };
@@ -265,8 +270,8 @@ export function purchaseLabStorageAddon(db, {
   const userId = String(user?.id || "").trim();
   const target = db.labSubscriptions.find((item) => item.id === subscriptionId && item.userId === userId);
   const size = Number(storageGb || 0);
-  if (!target) return { ok: false, status: 404, error: "lab_subscription_not_found" };
-  if (!LAB_STORAGE_ADDON_SIZES_GB.has(size)) return { ok: false, status: 400, error: "unsupported_lab_storage_addon_size" };
+  if (!target) return businessError("lab_subscription_not_found", 404);
+  if (!LAB_STORAGE_ADDON_SIZES_GB.has(size)) return businessError("unsupported_lab_storage_addon_size", 400);
   const key = String(idempotencyKey || `lab_storage_addon:${target.id}:${size}`).trim();
   const existing = db.labStorageAddons.find((item) => item.idempotencyKey === key);
   if (existing) return { ok: true, created: false, addon: existing, subscription: target };
@@ -298,4 +303,13 @@ export function storageAddonDailyPrice(storageGb) {
 export function labSubscriptionPublicView(subscription) {
   if (!subscription) return null;
   return { ...subscription };
+}
+
+function businessError(error, status) {
+  return {
+    ok: false,
+    status,
+    error,
+    businessMessage: LAB_BUSINESS_MESSAGES[error] || "套餐操作失败，请稍后重试。",
+  };
 }

@@ -13,22 +13,34 @@ import { createMessageApi } from "./runtime-bridge-messages.mjs";
 import { createRunApi } from "./runtime-bridge-runs.mjs";
 import { mapRunError } from "./run-error-mapper.mjs";
 
+function stringEnv(name, fallback = "") {
+  return String(process.env[name] ?? fallback);
+}
+
+function cleanEnv(name, fallback = "") {
+  return stringEnv(name, fallback).trim() || fallback;
+}
+
+function urlEnv(name, fallback = "") {
+  return stringEnv(name, fallback).replace(/\/$/, "");
+}
+
 function readConfig() {
-  const port = Number(process.env.PORT || 8788);
+  const port = Number(cleanEnv("PORT", "8788"));
   return {
     port,
-    baseUrl: String(process.env.PORTAL_OPL_ADAPTER_PUBLIC_URL || `http://127.0.0.1:${port}`).replace(/\/$/, ""),
-    launchSecret: process.env.OPL_LAUNCH_SECRET || "dev-opl-launch-secret-change-me",
-    runnerImage: process.env.MED_AUTOSCIENCE_RUNNER_IMAGE || "",
-    k8sNamespace: process.env.K8S_NAMESPACE || "med-agent-demo",
-    nodeEnv: String(process.env.NODE_ENV || "development").toLowerCase(),
-    buildSha: String(process.env.BUILD_SHA || "dev").trim() || "dev",
-    buildTime: String(process.env.BUILD_TIME || "unknown").trim() || "unknown",
-    runtimeMode: String(process.env.OPL_RUNTIME_MODE || "unknown").trim() || "unknown",
-    oplWebUrl: String(process.env.OPL_WEB_URL || "").replace(/\/$/, ""),
-    runnerUrl: String(process.env.MED_AUTOSCIENCE_RUNNER_URL || "").replace(/\/$/, ""),
-    portalInternalBaseUrl: String(process.env.PORTAL_INTERNAL_BASE_URL || "").replace(/\/$/, ""),
-    portalInternalAuthToken: String(process.env.PORTAL_INTERNAL_AUTH_TOKEN || "").trim(),
+    baseUrl: urlEnv("PORTAL_OPL_ADAPTER_PUBLIC_URL", `http://127.0.0.1:${port}`),
+    launchSecret: cleanEnv("OPL_LAUNCH_SECRET", "dev-opl-launch-secret-change-me"),
+    runnerImage: cleanEnv("MED_AUTOSCIENCE_RUNNER_IMAGE"),
+    k8sNamespace: cleanEnv("K8S_NAMESPACE", "med-agent-demo"),
+    nodeEnv: cleanEnv("NODE_ENV", "development").toLowerCase(),
+    buildSha: cleanEnv("BUILD_SHA", "dev"),
+    buildTime: cleanEnv("BUILD_TIME", "unknown"),
+    runtimeMode: cleanEnv("OPL_RUNTIME_MODE", "unknown"),
+    oplWebUrl: urlEnv("OPL_WEB_URL"),
+    runnerUrl: urlEnv("MED_AUTOSCIENCE_RUNNER_URL"),
+    portalInternalBaseUrl: urlEnv("PORTAL_INTERNAL_BASE_URL"),
+    portalInternalAuthToken: cleanEnv("PORTAL_INTERNAL_AUTH_TOKEN"),
   };
 }
 
@@ -72,6 +84,13 @@ function waitForMessageCompletion(input = {}) {
   return input.waitForCompletion === true || input.wait_for_completion === true;
 }
 
+function msBetween(start = "", end = "") {
+  const started = Date.parse(start || 0);
+  const ended = Date.parse(end || 0);
+  if (!Number.isFinite(started) || !Number.isFinite(ended)) return 0;
+  return Math.max(0, ended - started);
+}
+
 function messageRequestRecord({ runtimeSession, input, messageId, tokenHash, status, req, extra = {} }) {
   return {
     ...runtimeSession,
@@ -107,6 +126,7 @@ function pendingMessagePayload(record = {}) {
   return {
     messageId: emptyText(record.messageId),
     runId: emptyText(record.runId || record.messageId),
+    traceId: emptyText(record.traceId),
     status: emptyText(record.status || "running"),
     promptPreview: emptyText(record.promptPreview),
     createdAt: emptyText(record.createdAt),
@@ -114,13 +134,105 @@ function pendingMessagePayload(record = {}) {
   };
 }
 
+function timingPayload(record = {}) {
+  const acceptedAt = emptyText(record.acceptedAt || record.createdAt);
+  const workerStartedAt = emptyText(record.workerStartedAt || acceptedAt);
+  const acpStartedAt = emptyText(record.acpStartedAt || workerStartedAt);
+  const acpEndedAt = emptyText(record.acpEndedAt || record.finishedAt || acpStartedAt);
+  const persistedAt = emptyText(record.persistedAt || record.finishedAt || acpEndedAt);
+  const tracePublishedAt = emptyText(record.tracePublishedAt || persistedAt);
+  return {
+    acceptedAt,
+    workerStartedAt,
+    acpStartedAt,
+    acpEndedAt,
+    persistedAt,
+    tracePublishedAt,
+    queueLatencyMs: msBetween(acceptedAt, workerStartedAt),
+    acpLatencyMs: msBetween(acpStartedAt, acpEndedAt),
+    persistLatencyMs: msBetween(acpEndedAt, persistedAt),
+    totalLatencyMs: msBetween(acceptedAt, tracePublishedAt),
+  };
+}
+
+function messageTimingFields(message = {}, acceptedAt = "", workerStartedAt = "") {
+  const timing = message.timing || {};
+  return {
+    acpStartedAt: timing.acpStartedAt || "",
+    acpEndedAt: timing.acpEndedAt || "",
+    persistedAt: timing.persistedAt || "",
+    tracePublishedAt: timing.tracePublishedAt || "",
+    workerStartedAt,
+    acceptedAt,
+  };
+}
+
+function completedMessageExtra({ input = {}, runtimeSession = {}, message = {}, acceptedAt = "", workerStartedAt = "" } = {}) {
+  return {
+    model: input.model || runtimeSession.model || "opl-runtime",
+    tokenCount: Number(input.tokenCount || input.token_count || 0),
+    reply: message.message?.reply || "",
+    artifactId: message.artifact?.artifactId || "",
+    artifactName: message.artifact?.name || "",
+    ...messageTimingFields(message, acceptedAt, workerStartedAt),
+    finishedAt: new Date().toISOString(),
+  };
+}
+
+function failedMessageExtra(error, acceptedAt = "", workerStartedAt = "") {
+  return {
+    error: String(error.message || error),
+    workerStartedAt,
+    acceptedAt,
+    finishedAt: new Date().toISOString(),
+  };
+}
+
+function upsertRuntimeMessage(state, { runtimeSession, input, messageId, tokenHash, status, req, extra = {} }) {
+  return upsertMessageRequestRecord(state, messageRequestRecord({
+    runtimeSession,
+    input,
+    messageId,
+    tokenHash,
+    status,
+    req,
+    extra,
+  }));
+}
+
+function messageRecordInState(state = {}, { messageId = "", runtimeSessionId = "", tokenHash = "" } = {}) {
+  return (state.messageRequests || []).find((item) =>
+    messageRecordMatchesLaunch(item, { messageId, runtimeSessionId, tokenHash })
+  );
+}
+
+function launchTokenFrom(input = {}, url) {
+  return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "";
+}
+
+function messageStatusLookup({ state, url, match, launch }) {
+  const tokenHash = launchTokenHash(url.searchParams.get("launch_token") || "");
+  const messageId = decodeURIComponent(match[1]);
+  return messageRecordInState(state, {
+    messageId,
+    runtimeSessionId: launch.runtimeSessionId,
+    tokenHash,
+  });
+}
+
+function runtimeSessionByLaunch(state = {}, launch = {}) {
+  return (state.runtimeSessions || []).find((item) => item.runtimeSessionId === launch.runtimeSessionId) || null;
+}
+
 function messageStatusPayload(record = {}, state = {}) {
   const message = messageReplyFor(state, record.messageId);
   return {
     ok: true,
     status: statusForMessageRecord(record, message),
-    message: message || pendingMessagePayload(record),
+    traceId: emptyText(record.traceId),
+    message: message ? { ...message, traceId: message.traceId || record.traceId || "" } : pendingMessagePayload(record),
     artifact: messageArtifactFor(state, record.runId),
+    timing: timingPayload(record),
     error: emptyText(record.error),
   };
 }
@@ -141,16 +253,38 @@ function mergeUniqueBy(target = [], source = [], keyFn) {
   return merged;
 }
 
-function mergeMessageSideEffects(targetState, sourceState, acceptedAt) {
+function traceLinkMergeKey(item = {}) {
+  return [
+    item.traceId || "",
+    item.runId || "",
+    item.traceName || "",
+    item.status || "",
+  ].join(":");
+}
+
+function artifactMergeKey(item = {}) {
+  return item.artifactId || [
+    item.runId,
+    item.kind,
+    item.name,
+    item.localPath,
+  ].join(":");
+}
+
+function recentMessageEvents(sourceState = {}, acceptedAt = "") {
   const acceptedTime = Date.parse(acceptedAt || 0);
-  const sourceEvents = (sourceState.events || []).filter((event) =>
+  return (sourceState.events || []).filter((event) =>
     Date.parse(event.occurredAt || event.createdAt || 0) >= acceptedTime
   );
+}
+
+function mergeMessageSideEffects(targetState, sourceState, acceptedAt) {
+  const sourceEvents = recentMessageEvents(sourceState, acceptedAt);
   return {
     ...targetState,
     messageReplies: mergeUniqueBy(targetState.messageReplies, sourceState.messageReplies, (item) => item.messageId),
-    artifacts: mergeUniqueBy(targetState.artifacts, sourceState.artifacts, (item) => item.artifactId || `${item.runId}:${item.kind}:${item.name}:${item.localPath}`),
-    traceLinks: mergeUniqueBy(targetState.traceLinks, sourceState.traceLinks, (item) => item.traceId),
+    artifacts: mergeUniqueBy(targetState.artifacts, sourceState.artifacts, artifactMergeKey),
+    traceLinks: mergeUniqueBy(targetState.traceLinks, sourceState.traceLinks, traceLinkMergeKey),
     runActions: mergeUniqueBy(targetState.runActions, sourceState.runActions, (item) => item.actionId),
     events: mergeUniqueBy(targetState.events, sourceEvents, (item) => item.id),
   };
@@ -160,6 +294,18 @@ function messageRecordMatchesLaunch(record = {}, { messageId = "", runtimeSessio
   return record.messageId === messageId &&
     record.runtimeSessionId === runtimeSessionId &&
     record.launchTokenHash === tokenHash;
+}
+
+function runnerFailureEvent(runtimeSession = {}, mapped = {}) {
+  return {
+    ...runtimeSession,
+    correlationId: mapped.correlationId,
+    code: mapped.code,
+    stage: mapped.stage,
+    retryable: mapped.retryable,
+    error: mapped.message,
+    details: mapped.details,
+  };
 }
 
 export function createRuntimeBridgeRuntime() {
@@ -204,14 +350,6 @@ export function createRuntimeBridgeRuntime() {
     publishTraceEvent,
   });
 
-  function launchTokenFrom(input = {}, url) {
-    return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "";
-  }
-
-  function runtimeSessionByLaunch(state, launch) {
-    return state.runtimeSessions.find((item) => item.runtimeSessionId === launch.runtimeSessionId) || null;
-  }
-
   async function readLaunchRuntimeSession(input, url, res) {
     const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url));
     if (!launch) {
@@ -229,79 +367,73 @@ export function createRuntimeBridgeRuntime() {
 
   async function completeMessageInBackground(messageId, runtimeSession, input, req, acceptedAt) {
     try {
+      const workerStartedAt = new Date().toISOString();
       const runningState = await readState();
       const message = await messageApi.submitMessage(runningState, runtimeSession, input, req);
       const currentState = await readState();
       const completedState = mergeMessageSideEffects(currentState, runningState, acceptedAt);
-      upsertMessageRequestRecord(completedState, messageRequestRecord({
+      upsertRuntimeMessage(completedState, {
         runtimeSession,
         input,
         messageId,
         tokenHash: input.launchTokenHash,
         status: "succeeded",
         req,
-        extra: {
-          model: input.model || runtimeSession.model || "opl-runtime",
-          tokenCount: Number(input.tokenCount || input.token_count || 0),
-          reply: message.message?.reply || "",
-          artifactId: message.artifact?.artifactId || "",
-          artifactName: message.artifact?.name || "",
-          finishedAt: new Date().toISOString(),
-        },
-      }));
+        extra: completedMessageExtra({ input, runtimeSession, message, acceptedAt, workerStartedAt }),
+      });
       await writeState(completedState);
     } catch (error) {
       const failedState = await readState();
-      upsertMessageRequestRecord(failedState, messageRequestRecord({
+      upsertRuntimeMessage(failedState, {
         runtimeSession,
         input,
         messageId,
         tokenHash: input.launchTokenHash,
         status: "failed",
         req,
-        extra: {
-          error: String(error.message || error),
-          finishedAt: new Date().toISOString(),
-        },
-      }));
+        extra: failedMessageExtra(error, acceptedAt, new Date().toISOString()),
+      });
       addEvent(failedState, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
       await writeState(failedState);
     }
   }
 
   async function runMessageToCompletion({ state, runtimeSession, input, req, messageId, tokenHash, res }) {
-    upsertMessageRequestRecord(state, messageRequestRecord({ runtimeSession, input, messageId, tokenHash, status: "running", req }));
+    const acceptedAt = new Date().toISOString();
+    const workerStartedAt = acceptedAt;
+    upsertRuntimeMessage(state, {
+      runtimeSession,
+      input,
+      messageId,
+      tokenHash,
+      status: "running",
+      req,
+      extra: { acceptedAt, workerStartedAt },
+    });
     try {
       const message = await messageApi.submitMessage(state, runtimeSession, input, req);
-      upsertMessageRequestRecord(state, messageRequestRecord({
+      upsertRuntimeMessage(state, {
         runtimeSession,
         input,
         messageId,
         tokenHash,
         status: "succeeded",
         req,
-        extra: {
-          reply: message.message?.reply || "",
-          artifactId: message.artifact?.artifactId || "",
-          artifactName: message.artifact?.name || "",
-          finishedAt: new Date().toISOString(),
-        },
-      }));
+        extra: completedMessageExtra({ input, runtimeSession, message, acceptedAt, workerStartedAt }),
+      });
       await writeState(state);
-      sendJson(res, 200, { ok: true, ...message });
+      const record = messageRecordInState(state, { messageId, runtimeSessionId: runtimeSession.runtimeSessionId, tokenHash });
+      sendJson(res, 200, { ok: true, ...message, traceId: input.traceId || runtimeSession.traceId || "", timing: timingPayload(record || {}) });
     } catch (error) {
-      upsertMessageRequestRecord(state, messageRequestRecord({
+      upsertRuntimeMessage(state, {
         runtimeSession,
         input,
         messageId,
         tokenHash,
         status: "failed",
         req,
-        extra: {
-          error: String(error.message || error),
-          finishedAt: new Date().toISOString(),
-        },
-      }));
+        extra: failedMessageExtra(error, acceptedAt, workerStartedAt),
+      });
       addEvent(state, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
       await writeState(state);
       sendJson(res, 502, { ok: false, error: String(error.message || error) });
@@ -309,7 +441,15 @@ export function createRuntimeBridgeRuntime() {
   }
 
   async function acceptMessageForBackground({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res }) {
-    const record = upsertMessageRequestRecord(state, messageRequestRecord({ runtimeSession, input, messageId, tokenHash, status: "running", req }));
+    const record = upsertRuntimeMessage(state, {
+      runtimeSession,
+      input,
+      messageId,
+      tokenHash,
+      status: "running",
+      req,
+      extra: { acceptedAt },
+    });
     await writeState(state);
     setImmediate(() => completeMessageInBackground(messageId, runtimeSession, input, req, acceptedAt));
     sendJson(res, 202, {
@@ -318,7 +458,9 @@ export function createRuntimeBridgeRuntime() {
       message: {
         messageId,
         runId: messageId,
+        traceId: input.traceId || runtimeSession.traceId || "",
         status: record.status,
+        acceptedAt,
       },
       statusUrl: statusUrlForMessage({ baseUrl: config.baseUrl, messageId, launchToken }),
     });
@@ -375,15 +517,7 @@ export function createRuntimeBridgeRuntime() {
       sendJson(res, 200, { ok: true, run });
     } catch (error) {
       const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
-      addEvent(state, "runner_run_failed", {
-        ...runtimeSession,
-        correlationId: mapped.correlationId,
-        code: mapped.code,
-        stage: mapped.stage,
-        retryable: mapped.retryable,
-        error: mapped.message,
-        details: mapped.details,
-      });
+      addEvent(state, "runner_run_failed", runnerFailureEvent(runtimeSession, mapped));
       await writeState(state);
       sendJson(res, 502, { ok: false, error: mapped });
     }
@@ -398,7 +532,12 @@ export function createRuntimeBridgeRuntime() {
     const launchToken = launchTokenFrom(input, url);
     const tokenHash = launchTokenHash(launchToken);
     const acceptedAt = new Date().toISOString();
-    Object.assign(input, { messageId, runId: messageId, launchTokenHash: tokenHash });
+    Object.assign(input, {
+      messageId,
+      runId: messageId,
+      traceId: input.traceId || input.trace_id || launch.traceId || runtimeSession.traceId || "",
+      launchTokenHash: tokenHash,
+    });
     await dispatchMessageRequest({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res });
   }
 
@@ -409,11 +548,7 @@ export function createRuntimeBridgeRuntime() {
       return;
     }
     const state = await readState();
-    const tokenHash = launchTokenHash(url.searchParams.get("launch_token") || "");
-    const messageId = decodeURIComponent(match[1]);
-    const record = (state.messageRequests || []).find((item) =>
-      messageRecordMatchesLaunch(item, { messageId, runtimeSessionId: launch.runtimeSessionId, tokenHash })
-    );
+    const record = messageStatusLookup({ state, url, match, launch });
     if (!record) {
       sendJson(res, 404, { ok: false, error: "message_not_found" });
       return;

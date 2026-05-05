@@ -68,6 +68,10 @@ function freezePackage(item) {
 
 const PACKAGES = Object.freeze(PACKAGE_DEFINITIONS.map(freezePackage));
 const PACKAGE_BY_ID = new Map(PACKAGES.map((item) => [item.id, item]));
+const CUSTOM_OPTIONS = Object.freeze({
+  storageAddonSizesGb: Object.freeze([100, 500, 1024]),
+  notes: Object.freeze(["支持扩容存储", "支持按业务升级为进阶套餐"]),
+});
 
 export function listLabPackages() {
   return PACKAGES;
@@ -101,5 +105,19 @@ export function packagePublicView(item) {
     dailyDebit: item.billing.dailyPrice,
     weeklyFreeze: item.billing.weeklyFreezeAmount,
     gracePeriodDays: 7,
+    planSummary: `${item.compute.cores}C / ${item.storage.includedGb}GB`,
+  };
+}
+
+export function labPackageCatalogPublicView() {
+  const starter = packagePublicView(getLabPackage("starter"));
+  const pro = packagePublicView(getLabPackage("pro"));
+  return {
+    starter,
+    pro,
+    customOptions: {
+      ...CUSTOM_OPTIONS,
+      upgradeTargets: [pro?.id].filter(Boolean),
+    },
   };
 }

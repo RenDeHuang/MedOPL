@@ -45,6 +45,7 @@ type PortalAdminActionValue = string | number | boolean | null | undefined;
 
 interface PortalActionErrorShape {
   message?: string;
+  businessMessage?: string;
 }
 
 export interface OverviewQuery {
@@ -861,11 +862,21 @@ export interface LabPackagePlan {
   weeklyFreeze: number;
   gracePeriodDays: number;
   currency: string;
+  planSummary?: string;
 }
 
 export interface LabPackagesPayload {
   items: LabPackagePlan[];
   source?: string;
+  catalog?: {
+    starter?: LabPackagePlan | null;
+    pro?: LabPackagePlan | null;
+    customOptions?: {
+      storageAddonSizesGb?: number[];
+      notes?: string[];
+      upgradeTargets?: string[];
+    };
+  };
 }
 
 export interface LabSubscriptionPayload {
@@ -1191,18 +1202,15 @@ export async function fetchLabEntitlement() {
 }
 
 export async function activateLabPackage(input: LabPackageMutationInput) {
-  const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>("/lab-packages/activate", input);
-  return data;
+  return postLabMutation("/lab-packages/activate", input, "套餐开通失败，请稍后重试。");
 }
 
 export async function upgradeLabPackage(input: LabPackageMutationInput) {
-  const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>("/lab-packages/upgrade", input);
-  return data;
+  return postLabMutation("/lab-packages/upgrade", input, "套餐升级失败，请稍后重试。");
 }
 
 export async function purchaseLabStorageAddon(input: LabStorageAddonInput) {
-  const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>("/lab-storage/addons", input);
-  return data;
+  return postLabMutation("/lab-storage/addons", input, "扩容失败，请稍后重试。");
 }
 
 export async function fetchAdminAgentTraces(params?: Record<string, string | number | undefined>) {
@@ -1236,6 +1244,23 @@ function readPortalActionError(html: string, fallback: string) {
   const cardText = doc.querySelector(".card")?.textContent?.trim();
   const titleText = doc.querySelector("title")?.textContent?.trim();
   return cardText || titleText || fallback;
+}
+
+function normalizePortalBusinessError(cause: unknown, fallback: string) {
+  const businessMessage = (cause as any)?.response?.data?.businessMessage;
+  const message = typeof businessMessage === "string" && businessMessage.trim() ? businessMessage.trim() : fallback;
+  const error = new Error(message) as Error & PortalActionErrorShape;
+  error.businessMessage = message;
+  return error;
+}
+
+async function postLabMutation(path: string, input: LabPackageMutationInput | LabStorageAddonInput, fallback: string) {
+  try {
+    const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>(path, input);
+    return data;
+  } catch (error) {
+    throw normalizePortalBusinessError(error, fallback);
+  }
 }
 
 async function postPortalAdminAction(path: string, fields: Record<string, PortalAdminActionValue>) {

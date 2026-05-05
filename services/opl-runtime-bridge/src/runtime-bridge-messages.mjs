@@ -30,6 +30,7 @@ function buildMessageContext(runtimeSession, input = {}, req = {}) {
   return {
     messageId,
     runId: messageId,
+    traceId: input.traceId || input.trace_id || runtimeSession.traceId || "",
     tenantId: runtimeSession.tenantId || runtimeSession.portalUserId,
     portalUserId: runtimeSession.portalUserId,
     ownerId: runtimeSession.ownerId || runtimeSession.portalUserId,
@@ -108,11 +109,13 @@ export function createMessageApi({ publishTraceEvent }) {
   async function submitMessage(state, runtimeSession, input = {}, req = {}) {
     const context = buildMessageContext(runtimeSession, input, req);
     assertProviderConfigured(context);
+    const acpStartedAt = new Date().toISOString();
     addRunAction(state, {
       ...context,
       actionType: "opl_message_prompt_started",
       summary: "OPL message prompt submitted to runtime.",
       status: "started",
+      startedAt: acpStartedAt,
     });
     const providerSecret = await readProviderSecret(context.providerConfigSecretRef);
     const response = await sendMessage({
@@ -121,10 +124,12 @@ export function createMessageApi({ publishTraceEvent }) {
       sessionId: context.oplSessionId || context.runtimeSessionId,
       runtimeEnv: providerRuntimeEnv(providerSecret),
     });
+    const acpEndedAt = new Date().toISOString();
     const reply = trimText(response.reply || response.response || response.text);
     if (!reply) throw new Error("message_reply_empty");
 
     const file = await writeReplyArtifact(context, reply);
+    const persistedAt = new Date().toISOString();
     const message = addMessageReplyRecord(state, {
       ...context,
       reply,
@@ -145,8 +150,10 @@ export function createMessageApi({ publishTraceEvent }) {
       actionType: "opl_message_reply_persisted",
       summary: "OPL message reply persisted as workspace artifact.",
       status: "succeeded",
+      startedAt: persistedAt,
+      finishedAt: persistedAt,
     });
-    await publishTraceEvent(state, {
+    const trace = await publishTraceEvent(state, {
       ...context,
       eventType: "message_reply",
       traceName: "OPL message reply",
@@ -155,9 +162,17 @@ export function createMessageApi({ publishTraceEvent }) {
       tokenCount: context.tokenCount,
       userAgent: context.userAgent,
     });
+    const tracePublishedAt = new Date().toISOString();
     return {
       message,
       artifact,
+      trace,
+      timing: {
+        acpStartedAt,
+        acpEndedAt,
+        persistedAt,
+        tracePublishedAt,
+      },
     };
   }
 

@@ -90,6 +90,7 @@ function buildScope(launch = {}, runtimeSession = {}) {
   const ownerId = resolveOwnerId(runtimeSession, resolveOwnerId(launch, portalUserId));
   const storageOwnerId = resolveStorageOwnerId(runtimeSession, resolveStorageOwnerId(launch, ownerId));
   return {
+    traceId: firstNonEmpty([runtimeSession.traceId, runtimeSession.trace_id, launch.traceId, launch.trace_id]),
     portalUserId,
     tenantId: resolveTenantId(runtimeSession, resolveTenantId(launch, portalUserId)),
     ownerId,
@@ -135,6 +136,7 @@ function withScope(item = {}, scope, overrides = {}) {
   const storageOwnerId = resolveStorageOwnerId(item, scope.storageOwnerId || ownerId);
   return {
     ...item,
+    traceId: item.traceId || item.trace_id || scope.traceId,
     portalUserId: item.portalUserId || scope.portalUserId,
     tenantId: resolveTenantId(item, scope.tenantId),
     ownerId,
@@ -319,8 +321,10 @@ export function createLaunchApi({
 
     return {
       version: "v1",
+      traceId: scope.traceId,
       launch,
       identity: {
+        traceId: scope.traceId,
         portalUserId: scope.portalUserId,
         tenantId: scope.tenantId,
         workspaceId: scope.workspaceId,
@@ -442,6 +446,7 @@ export function createLaunchApi({
   async function issueLaunchToken(input = {}) {
     const selectedServerPlan = input.selectedServerPlan && typeof input.selectedServerPlan === "object" ? input.selectedServerPlan : {};
     const state = await readState();
+    const traceId = firstNonEmpty([input.traceId, input.trace_id]) || `opl-trace-${randomUUID()}`;
     const workspace = upsertWorkspace(state, input);
     const launchStatus = {
       stages: [
@@ -452,6 +457,7 @@ export function createLaunchApi({
     const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
     const runtimeSession = createRuntimeSession(state, {
       ...input,
+      traceId,
       tenantId: input.tenantId || input.tenant_id || input.portalUserId,
       ownerId: input.ownerId || input.owner_id || input.portalUserId,
       sessionOwnerId: input.sessionOwnerId || input.session_owner_id || input.portalUserId,
@@ -486,6 +492,7 @@ export function createLaunchApi({
       provisionerPayload: input.provisionerPayload || input.provisioner_payload || selectedServerPlan.provisionerPayload || null,
     });
     const portalContext = {
+      traceId,
       portalUserId: input.portalUserId,
       portalUserEmail: input.portalUserEmail || "",
       portalUserName: input.portalUserName || "",
@@ -518,6 +525,7 @@ export function createLaunchApi({
 
     const launchRecord = {
       launchId: randomUUID(),
+      traceId,
       portalUserId: input.portalUserId,
       tenantId: input.tenantId || input.tenant_id || input.portalUserId,
       ownerId: input.ownerId || input.owner_id || input.portalUserId,

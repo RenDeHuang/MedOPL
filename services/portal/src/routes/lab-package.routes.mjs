@@ -1,4 +1,4 @@
-import { listLabPackages, packagePublicView } from "../domain/lab-packages.mjs";
+import { labPackageCatalogPublicView, listLabPackages, packagePublicView } from "../domain/lab-packages.mjs";
 import {
   activateLabSubscription,
   currentLabSubscription,
@@ -9,6 +9,21 @@ import { resolveLabEntitlement } from "../domain/lab-entitlements.mjs";
 import { ensureWallet } from "../domain/wallet-ledger.mjs";
 import { labActiveFreezeAmount } from "../domain/lab-billing-policy.mjs";
 
+function subscriptionPackageName(subscription) {
+  if (!subscription) return null;
+  return listLabPackages().find((item) => item.id === subscription.packageId)?.name || subscription.packageId;
+}
+
+function walletPayload(wallet, activeFreeze) {
+  const balance = Number(wallet.balance || 0);
+  return {
+    balance,
+    activeFreeze,
+    availableBalance: Number((balance - activeFreeze).toFixed(2)),
+    currency: "CNY",
+  };
+}
+
 export function createLabPackageRoutes({
   readBody,
   sendJson,
@@ -18,7 +33,7 @@ export function createLabPackageRoutes({
     try {
       return JSON.parse((await readBody(req)).toString("utf8") || "{}");
     } catch {
-      sendJson(res, { ok: false, error: "invalid_json" }, 400);
+      sendJson(res, { ok: false, error: "invalid_json", businessMessage: "请求格式错误：请提交合法的 JSON。" }, 400);
       return null;
     }
   }
@@ -26,23 +41,16 @@ export function createLabPackageRoutes({
   function subscriptionPayload(db, user, subscription, workspaceId = "default") {
     const wallet = ensureWallet(db, user.id);
     const activeFreeze = subscription ? labActiveFreezeAmount(db, subscription.id) : 0;
-    const packageName = subscription
-      ? (listLabPackages().find((item) => item.id === subscription.packageId)?.name || subscription.packageId)
-      : null;
+    const walletView = walletPayload(wallet, activeFreeze);
     return {
       subscription,
       status: subscription?.status || "disabled",
       currentPackageId: subscription?.packageId || null,
-      currentPackageName: packageName,
-      balance: Number(wallet.balance || 0),
+      currentPackageName: subscriptionPackageName(subscription),
+      balance: walletView.balance,
       frozenAmount: activeFreeze,
       currency: "CNY",
-      wallet: {
-        balance: Number(wallet.balance || 0),
-        activeFreeze,
-        availableBalance: Number((Number(wallet.balance || 0) - activeFreeze).toFixed(2)),
-        currency: "CNY",
-      },
+      wallet: walletView,
       entitlement: resolveLabEntitlement(db, { user, workspaceId }),
     };
   }
@@ -66,6 +74,7 @@ export function createLabPackageRoutes({
       ok: true,
       source: "lab_packages",
       items: listLabPackages().map(packagePublicView),
+      catalog: labPackageCatalogPublicView(),
     });
     return true;
   }
@@ -103,7 +112,11 @@ export function createLabPackageRoutes({
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
-      sendJson(res, { ok: false, error: result.error }, result.status || 400);
+      sendJson(res, {
+        ok: false,
+        error: result.error,
+        businessMessage: result.businessMessage || "套餐开通失败，请稍后重试。",
+      }, result.status || 400);
       return true;
     }
     await persistLabBillingState(db, result);
@@ -129,7 +142,11 @@ export function createLabPackageRoutes({
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
-      sendJson(res, { ok: false, error: result.error }, result.status || 400);
+      sendJson(res, {
+        ok: false,
+        error: result.error,
+        businessMessage: result.businessMessage || "套餐升级失败，请稍后重试。",
+      }, result.status || 400);
       return true;
     }
     await persistLabBillingState(db, result);
@@ -152,7 +169,11 @@ export function createLabPackageRoutes({
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
-      sendJson(res, { ok: false, error: result.error }, result.status || 400);
+      sendJson(res, {
+        ok: false,
+        error: result.error,
+        businessMessage: result.businessMessage || "扩容失败，请稍后重试。",
+      }, result.status || 400);
       return true;
     }
     await persistLabBillingState(db, result);

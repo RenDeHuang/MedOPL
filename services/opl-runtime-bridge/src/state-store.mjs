@@ -238,6 +238,7 @@ export function createRuntimeSession(state, input = {}) {
     projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     oplSessionId: input.oplSessionId || input.opl_session_id || "",
+    traceId: input.traceId || input.trace_id || "",
     serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id),
     instanceType: input.instanceType || input.instance_type || input.InstanceType || "",
     region: input.region || "",
@@ -361,6 +362,7 @@ export function addRunAction(state, input = {}) {
   const action = {
     actionId: input.actionId || input.action_id || randomUUID(),
     runId: input.runId || input.run_id || "",
+    traceId: input.traceId || input.trace_id || "",
     tenantId: tenantIdFrom(input),
     portalUserId: input.portalUserId || input.portal_user_id || "",
     ownerId,
@@ -399,6 +401,7 @@ function messageRequestIds(input = {}, messageId = randomUUID()) {
   return {
     messageId,
     runId: input.runId || input.run_id || messageId,
+    traceId: input.traceId || input.trace_id || "",
     launchTokenHash: input.launchTokenHash || input.launch_token_hash || "",
   };
 }
@@ -433,6 +436,18 @@ function messageRequestResult(input = {}) {
     artifactId: input.artifactId || input.artifact_id || "",
     artifactName: input.artifactName || input.artifact_name || "",
     error: input.error || "",
+    ...messageRequestTiming(input),
+  };
+}
+
+function messageRequestTiming(input = {}) {
+  return {
+    acceptedAt: input.acceptedAt || input.accepted_at || "",
+    workerStartedAt: input.workerStartedAt || input.worker_started_at || "",
+    acpStartedAt: input.acpStartedAt || input.acp_started_at || "",
+    acpEndedAt: input.acpEndedAt || input.acp_ended_at || "",
+    persistedAt: input.persistedAt || input.persisted_at || "",
+    tracePublishedAt: input.tracePublishedAt || input.trace_published_at || "",
   };
 }
 
@@ -496,6 +511,7 @@ function messageReplyIds(input = {}) {
   return {
     messageId,
     runId: input.runId || input.run_id || input.messageId || input.message_id || "",
+    traceId: input.traceId || input.trace_id || "",
     oplSessionId: input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || "",
   };
 }
