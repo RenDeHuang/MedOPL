@@ -175,13 +175,14 @@ export function createResourceOrderInternalRoutes({
       actorId: String(payload.runId || ""),
       payload,
       idempotencyKey: String(payload.idempotencyKey || `preauth_release_deferred:${orderId}`).trim(),
+      releasePreauth: payload.releasePreauth === true,
     });
     if (!result.ok) {
       sendJson(res, result, result.status || 400);
       return true;
     }
     await persistResourceOrderState(db, result.order);
-    sendJson(res, { ok: true, resourceOrderId: orderId, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
+    sendJson(res, { ok: true, resourceOrderId: orderId, releasedAmount: result.releasedAmount || 0, order: resourceOrderPublicView(result.order, db.resourceOrderEvents || []) });
     return true;
   }
 

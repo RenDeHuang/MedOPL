@@ -129,8 +129,6 @@ export async function writeRedisPortalSessions({
     .filter((value) => value && typeof value === "object");
   const mergedSessions = mergeRowsById(existingSessions, sessions || []);
   const mergedWorkspaceSessions = mergeRowsById(existingWorkspaceSessions, workspaceSessions || []);
-  if (sessionKeys.length) await redis.del(sessionKeys);
-  if (workspaceSessionKeys.length) await redis.del(workspaceSessionKeys);
   for (const item of mergedSessions) {
     await redis.set(`${namespace}:session:${item.id}`, JSON.stringify(item), { EX: 7 * 24 * 60 * 60 });
   }
