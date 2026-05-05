@@ -19,8 +19,6 @@
       { href: "/portal/admin/usage", label: "使用记录", active: page === "admin-usage" },
       { href: "/portal/admin/billing-ops", label: "计费运维", active: page === "admin-billing-ops" },
       { href: "/portal/admin/system", label: "系统入口", active: page === "admin-system" },
-      { href: "/portal/admin/ops", label: "运维监控", active: page === "admin-ops" },
-      { href: "/portal/admin/sandboxes", label: "沙箱与分发", active: page === "admin-sandboxes" },
       { href: "/portal/admin/audit", label: "审计日志", active: page === "admin-audit" },
     ] : [];
     const chrome = user ? `
@@ -230,4 +228,3 @@
 
   return { layoutV2, layout };
 }
-

@@ -349,6 +349,11 @@ export interface CurrentUserPayload {
   selectedServerPlan?: SelectedServerPlan | null;
   initials: string;
   currentTaskSlug: string;
+  productProfile?: {
+    runtimeMode: string;
+    opsProfileEnabled: boolean;
+    opsSurfaceEnabled: boolean;
+  };
 }
 
 export interface SelectedServerPlan {

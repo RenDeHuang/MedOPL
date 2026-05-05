@@ -36,6 +36,8 @@ import {
   OPL_WEB_URL,
   OPL_WEBUI_AUTH_MODE,
   PORT,
+  PRODUCT_OPS_PROFILE,
+  PRODUCT_RUNTIME_MODE,
   portalWorkdir,
   PORTAL_ADMIN_SEED_BALANCE,
   PORTAL_IDENTITY_SYNC_MODE,
@@ -192,6 +194,7 @@ const {
 } = createPortalIdentitySecurityRuntime({
   env: {
     adminSeed,
+    HARBOR_ENABLED,
     HARBOR_PASSWORD,
     PORTAL_IDENTITY_SYNC_MODE,
     PORTAL_OIDC_CLIENT_ID,
@@ -592,6 +595,10 @@ const {
     oplWebUrl: OPL_WEB_URL,
     portalOplAdapterUrl: PORTAL_OPL_ADAPTER_URL,
     rancherUrl: RANCHER_URL,
+  },
+  productProfile: {
+    runtimeMode: PRODUCT_RUNTIME_MODE,
+    opsProfileEnabled: PRODUCT_OPS_PROFILE,
   },
   visibleAnnouncementRows,
   workspaceChatSessionsForUser,

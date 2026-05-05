@@ -4,6 +4,7 @@ export function createPortalIdentitySecurityRuntime({
 } = {}) {
   const {
     adminSeed = {},
+    HARBOR_ENABLED = false,
     HARBOR_PASSWORD = "",
     PORTAL_IDENTITY_SYNC_MODE = "local",
     PORTAL_OIDC_CLIENT_ID = "",
@@ -82,8 +83,10 @@ export function createPortalIdentitySecurityRuntime({
       },
       {
         key: "HARBOR_PASSWORD",
-        healthy: HARBOR_PASSWORD !== "HarborAdmin123!",
-        detail: HARBOR_PASSWORD !== "HarborAdmin123!" ? "Harbor 密码已覆盖默认值" : "Harbor 密码仍为默认值",
+        healthy: !HARBOR_ENABLED || (HARBOR_PASSWORD && HARBOR_PASSWORD !== "HarborAdmin123!"),
+        detail: !HARBOR_ENABLED
+          ? "Harbor 未启用，不检查 Harbor 密码"
+          : (HARBOR_PASSWORD !== "HarborAdmin123!" ? "Harbor 密码已覆盖默认值" : "Harbor 密码仍为默认值"),
       },
       {
         key: "JWT_REFRESH_SECRET",

@@ -17,7 +17,7 @@
                 <h2 class="panel-title">产品系统状态</h2>
                 <p class="panel-subtitle">聚焦 Portal、OPL、Trace、Adapter 等商业化主链路。</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/admin/ops">云资源状态</RouterLink>
+              <RouterLink v-if="opsSurfaceEnabled" class="btn btn-secondary" to="/admin/ops">云资源状态</RouterLink>
             </div>
 
             <div class="mt-6 grid gap-3 md:grid-cols-2">
@@ -71,6 +71,7 @@ import MetricCard from "@/components/common/MetricCard.vue";
 import { fetchAdminSystem } from "@/api/portal";
 
 const payload = ref<any>(null);
+const opsSurfaceEnabled = computed(() => Boolean(payload.value?.productProfile?.opsSurfaceEnabled));
 const failedServices = computed(() => (payload.value?.serviceStatuses || []).filter((item: any) => !item.ok).length);
 const masReplyLabel = computed(() => {
   const value = Number(payload.value?.summaries?.performance?.masFirstReplyApproxMs || 0);

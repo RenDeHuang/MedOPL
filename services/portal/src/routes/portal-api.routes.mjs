@@ -22,6 +22,7 @@ export function createPortalApiRoutes({
   normalizePageSize,
   paginateRows,
   parsePositiveInt,
+  productProfile = {},
   readSessionsRequestOptions,
   readTracesRequestOptions,
   sendJson,
@@ -64,6 +65,11 @@ export function createPortalApiRoutes({
       initials,
       currentTaskSlug: user.currentTaskSlug || "default",
       selectedServerPlan: currentServerPlanSelection(currentTaskSpaceForUser(db, user)),
+      productProfile: {
+        runtimeMode: String(productProfile.runtimeMode || "user_owned").trim().toLowerCase() || "user_owned",
+        opsProfileEnabled: Boolean(productProfile.opsProfileEnabled),
+        opsSurfaceEnabled: Boolean(productProfile.opsProfileEnabled) || String(productProfile.runtimeMode || "").trim().toLowerCase() === "managed_runtime",
+      },
     });
     return true;
   }
@@ -273,6 +279,16 @@ export function createPortalApiRoutes({
     if (url.pathname !== "/portal/api/registry/summary" && url.pathname !== "/portal/api/registry/images") return false;
     if (user.role !== "admin") {
       sendJson(res, { error: "forbidden" }, 403);
+      return true;
+    }
+    const opsSurfaceEnabled = Boolean(productProfile.opsProfileEnabled)
+      || String(productProfile.runtimeMode || "").trim().toLowerCase() === "managed_runtime";
+    if (!opsSurfaceEnabled) {
+      sendJson(res, {
+        ok: false,
+        error: "ops_surface_disabled",
+        message: "默认 user-owned 模式未启用镜像仓库运维入口。",
+      }, 404);
       return true;
     }
     if (url.pathname === "/portal/api/registry/summary") {

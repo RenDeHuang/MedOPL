@@ -11,10 +11,13 @@ export function createPortalAdminPortraitPayloads({
   latestActiveWorkspaceSession,
   listTaskSpacesForUser,
   money,
+  productProfile = {},
   readWorkspaceSession,
   sanitizeTaskTitle,
   workspaceChatSessionsForUser,
 } = {}) {
+  const opsSurfaceEnabled = Boolean(productProfile.opsSurfaceEnabled);
+
   async function buildAdminUserPortraitApiPayload(db, userId = "") {
     const user = db.users.find((item) => item.id === userId && item.role !== "admin");
     if (!user) return null;
@@ -107,7 +110,9 @@ export function createPortalAdminPortraitPayloads({
     const billing = await fetchBillingSummary(userId, workspaceId, "168h");
     const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
     const storage = await fetchWorkspaceStorageSnapshot(taskSpace);
-    const minio = await fetchWorkspaceMinioState(userId, workspaceId);
+    const minio = opsSurfaceEnabled
+      ? await fetchWorkspaceMinioState(userId, workspaceId)
+      : { source: "user_owned_storage", type: "disabled", available: false, synced: false, note: "默认 user-owned 模式下不展示 MinIO 同步状态" };
     const traces = await fetchTraceRows({ workspaceId, limit: 20 });
 
     return {
@@ -146,6 +151,7 @@ export function createPortalAdminPortraitPayloads({
         files: (storage.files || []).slice(0, 10),
       },
       minio,
+      productProfile,
       trace: {
         source: traces.source,
         type: traces.type,

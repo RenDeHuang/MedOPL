@@ -84,7 +84,7 @@ export function buildAdminAlerts({
       title: "MAS warmup 存在超时",
       detail: `最近检测到 ${performanceSummary.warmupTimeoutCount} 次 warmup 超时`,
       occurredAt: "",
-      action: `/portal/admin/ops`,
+      action: `/portal/admin/system`,
     });
   }
   if (Number(performanceSummary.masFirstReplyApproxMs || 0) > 20000) {
@@ -94,7 +94,7 @@ export function buildAdminAlerts({
       title: "MAS 首次回复偏慢",
       detail: `最近成功样本平均约 ${performanceSummary.masFirstReplyApproxMs} ms`,
       occurredAt: "",
-      action: `/portal/admin/ops`,
+      action: `/portal/admin/system`,
     });
   }
 

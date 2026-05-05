@@ -46,6 +46,7 @@ import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal";
 
 const currentUser = ref<CurrentUserPayload | null>(null);
 const isAdmin = computed(() => currentUser.value?.role === "admin");
+const opsSurfaceEnabled = computed(() => Boolean(currentUser.value?.productProfile?.opsSurfaceEnabled));
 
 const userItems = [
   { to: "/overview", label: "总览" },
@@ -56,14 +57,16 @@ const userItems = [
   { to: "/trace", label: "轨迹" },
 ];
 
-const adminItems = [
+const adminItemsBase = [
   { to: "/admin/dashboard", label: "运营总台" },
   { to: "/admin/billing-ops", label: "客户账务" },
   { to: "/admin/usage", label: "账单归因" },
   { to: "/admin/users", label: "用户管理" },
   { to: "/admin/system", label: "系统状态" },
-  { to: "/admin/ops", label: "云资源状态" },
 ];
+const adminItems = computed(() => (opsSurfaceEnabled.value
+  ? [...adminItemsBase, { to: "/admin/ops", label: "云资源状态" }]
+  : adminItemsBase));
 
 onMounted(async () => {
   try {

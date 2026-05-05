@@ -100,6 +100,8 @@
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
         "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter:8788",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
+        "PRODUCT_RUNTIME_MODE": "user_owned",
+        "PRODUCT_OPS_PROFILE": "${PRODUCT_OPS_PROFILE:-0}",
         "OPL_RUNTIME_MODE": "acp",
         "OPL_WEBUI_AUTH_MODE": "portal_launch_token",
         "PORTAL_OIDC_ENABLED": "0",
@@ -110,7 +112,7 @@
         "PORTAL_ADMIN_SEED_BALANCE": "${PORTAL_ADMIN_SEED_BALANCE:-100}",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "BILLING_SERVICE_URL": "http://billing-aggregator:3001",
-        "RESOURCE_PROVISIONER_URL": "http://resource-provisioner:18893",
+        "RESOURCE_PROVISIONER_URL": "",
         "TENCENT_BILLING_ENABLED": "0",
         "TENCENT_BILLING_REQUIRED": "0"
       },
@@ -129,14 +131,10 @@
         },
         "billing-aggregator": {
           "condition": "service_healthy"
-        },
-        "resource-provisioner": {
-          "condition": "service_healthy"
         }
       },
       "volumes": [
-        "portal-runtime:/app/.runtime/portal",
-        "med-autoscience-runtime:/app/.runtime/med-autoscience"
+        "portal-runtime:/app/.runtime/portal"
       ],
       "healthcheck": {
         "test": [
@@ -168,27 +166,23 @@
         "PORTAL_INTERNAL_BASE_URL": "http://portal:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
+        "PRODUCT_RUNTIME_MODE": "user_owned",
         "OPL_RUNTIME_MODE": "acp",
         "OPL_PRODUCT_API_URL": "",
         "OPL_PRODUCT_API_TOKEN": "",
         "OPL_DEFAULT_PROJECT_ID": "medautoscience",
-        "MED_AUTOSCIENCE_RUNNER_URL": "http://med-autoscience-runner:18890",
+        "MED_AUTOSCIENCE_RUNNER_URL": "",
         "MED_AUTOSCIENCE_RUNNER_TOKEN": "",
-        "MED_AUTOSCIENCE_RUNNER_IMAGE": "local/mock-cloud-fixture-runner:disabled",
-        "K8S_NAMESPACE": "mock-cloud-fixture",
+        "MED_AUTOSCIENCE_RUNNER_IMAGE": "",
+        "K8S_NAMESPACE": "",
         "OPL_LAUNCH_SECRET": "${OPL_LAUNCH_SECRET:-LocalProductApplianceLaunchSecret-2026}"
       },
       "ports": [
         "8788:8788"
       ],
-      "depends_on": {
-        "med-autoscience-runner": {
-          "condition": "service_healthy"
-        }
-      },
+      "depends_on": {},
       "volumes": [
         "adapter-runtime:/app/.runtime/portal-opl-adapter",
-        "med-autoscience-runtime:/app/.runtime/med-autoscience",
         "portal-runtime:/app/.runtime/portal"
       ],
       "healthcheck": {
@@ -222,6 +216,7 @@
         "PORTAL_INTERNAL_URL": "http://portal:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_GATEWAY_PUBLIC_URL": "http://127.0.0.1:13031",
+        "PRODUCT_RUNTIME_MODE": "user_owned",
         "OPL_WEBUI_AUTH_MODE": "portal_launch_token"
       },
       "ports": [
@@ -264,6 +259,7 @@
         "PORTAL_POSTGRES_URL": "postgres://portal:${PORTAL_POSTGRES_PASSWORD:-portal-local-change-me}@postgres:5432/portal",
         "PORTAL_REDIS_URL": "redis://redis:6379",
         "PORTAL_DB_NAMESPACE": "portal",
+        "PRODUCT_RUNTIME_MODE": "user_owned",
         "TENCENT_BILLING_ENABLED": "0",
         "TENCENT_BILLING_REQUIRED": "0",
         "TENCENT_PRICE_ENABLED": "0",
@@ -280,8 +276,7 @@
       },
       "volumes": [
         "portal-runtime:/app/.runtime/portal",
-        "billing-runtime:/app/.runtime/billing-aggregator",
-        "med-autoscience-runtime:/app/.runtime/med-autoscience"
+        "billing-runtime:/app/.runtime/billing-aggregator"
       ],
       "healthcheck": {
         "test": [
@@ -298,7 +293,8 @@
     },
     "resource-provisioner": {
       "profiles": [
-        "product"
+        "managed-runtime",
+        "ops"
       ],
       "image": "${RESOURCE_PROVISIONER_IMAGE:-opl-v19/resource-provisioner:local}",
       "build": {
@@ -334,7 +330,8 @@
     },
     "med-autoscience-runner": {
       "profiles": [
-        "product"
+        "managed-runtime",
+        "ops"
       ],
       "image": "${MED_AUTOSCIENCE_RUNNER_IMAGE:-opl-v19/med-autoscience-runner:local}",
       "build": {

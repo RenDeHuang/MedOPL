@@ -26,6 +26,18 @@ export function createPortalAdminApiRoutes({
     return handler(payload);
   }
 
+  function opsSurfaceEnabled(payload = {}) {
+    return Boolean(payload.productProfile?.opsSurfaceEnabled);
+  }
+
+  function sendOpsSurfaceDisabled(res) {
+    sendJson(res, {
+      ok: false,
+      error: "ops_surface_disabled",
+      message: "默认 user-owned 模式未启用平台托管运维入口。",
+    }, 404);
+  }
+
   return async function handlePortalAdminApiRoutes({ req, res, url, db, user }) {
     if (req.method !== "GET" || !url.pathname.startsWith("/portal/api/admin/")) return false;
     if (!(await requireAdmin({ res, user }))) return true;
@@ -80,11 +92,17 @@ export function createPortalAdminApiRoutes({
       return true;
     }
     if (url.pathname === "/portal/api/admin/ops") {
-      await withOverview(db, (payload) => sendJson(res, buildAdminOpsApiPayload(payload)));
+      await withOverview(db, (payload) => {
+        if (!opsSurfaceEnabled(payload)) return sendOpsSurfaceDisabled(res);
+        return sendJson(res, buildAdminOpsApiPayload(payload));
+      });
       return true;
     }
     if (url.pathname === "/portal/api/admin/sandboxes") {
-      await withOverview(db, (payload) => sendJson(res, buildAdminSandboxesApiPayload(payload)));
+      await withOverview(db, (payload) => {
+        if (!opsSurfaceEnabled(payload)) return sendOpsSurfaceDisabled(res);
+        return sendJson(res, buildAdminSandboxesApiPayload(payload));
+      });
       return true;
     }
     if (url.pathname === "/portal/api/admin/audit") {

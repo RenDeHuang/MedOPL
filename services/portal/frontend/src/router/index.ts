@@ -22,8 +22,8 @@ const routes: RouteRecordRaw[] = [
   { path: "/admin/alerts", component: () => import("@/views/admin/AdminAlertsView.vue"), meta: { requiresAdmin: true } },
   { path: "/admin/usage", component: () => import("@/views/admin/AdminUsageView.vue"), meta: { requiresAdmin: true } },
   { path: "/admin/system", component: () => import("@/views/admin/AdminSystemView.vue"), meta: { requiresAdmin: true } },
-  { path: "/admin/ops", component: () => import("@/views/admin/AdminOpsView.vue"), meta: { requiresAdmin: true } },
-  { path: "/admin/sandboxes", component: () => import("@/views/admin/AdminSandboxesView.vue"), meta: { requiresAdmin: true } },
+  { path: "/admin/ops", component: () => import("@/views/admin/AdminOpsView.vue"), meta: { requiresAdmin: true, requiresOpsSurface: true } },
+  { path: "/admin/sandboxes", component: () => import("@/views/admin/AdminSandboxesView.vue"), meta: { requiresAdmin: true, requiresOpsSurface: true } },
   { path: "/admin/audit", component: () => import("@/views/admin/AdminAuditView.vue"), meta: { requiresAdmin: true } }
 ];
 
@@ -47,6 +47,9 @@ router.beforeEach(async (to) => {
   }
   const user = await loadCurrentUser();
   if (user?.role === "admin") {
+    if (to.matched.some((record) => record.meta.requiresOpsSurface) && !user.productProfile?.opsSurfaceEnabled) {
+      return "/admin/system";
+    }
     return true;
   }
   return "/overview";

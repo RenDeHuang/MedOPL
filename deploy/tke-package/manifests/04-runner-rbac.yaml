@@ -1,33 +1,8 @@
+# v21 user-owned default: runner RBAC is not part of the product hot path.
+# Apply deploy/tke-package/optional/managed-runtime-runner-rbac.yaml only when
+# PRODUCT_RUNTIME_MODE=managed_runtime.
 apiVersion: v1
-kind: ServiceAccount
+kind: List
 metadata:
-  name: med-autoscience-runner
-  namespace: __NAMESPACE__
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: __RUNNER_RBAC_NAME__
-rules:
-  - apiGroups: [""]
-    resources: ["namespaces"]
-    verbs: ["get", "list", "create"]
-  - apiGroups: [""]
-    resources: ["pods", "pods/log"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["batch"]
-    resources: ["jobs"]
-    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: __RUNNER_RBAC_NAME__
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: __RUNNER_RBAC_NAME__
-subjects:
-  - kind: ServiceAccount
-    name: med-autoscience-runner
-    namespace: __NAMESPACE__
+  name: v21-user-owned-default-runner-rbac-disabled
+items: []

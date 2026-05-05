@@ -41,8 +41,8 @@ Copy-Item .\env\tke.env.example .\env\tke.env
 - `OPL_WEB_GATEWAY_IMAGE`
 - `OPL_WEB_IMAGE`
 - `BILLING_IMAGE`
-- `RUNNER_ORCHESTRATOR_IMAGE`
-- `MED_AUTOSCIENCE_RUNNER_IMAGE`
+- `PRODUCT_RUNTIME_MODE=user_owned`
+- `PRODUCT_OPS_PROFILE=0`
 - `IMAGE_PULL_SECRET`
 - `PORTAL_POSTGRES_URL`
 - `PORTAL_REDIS_URL`
@@ -107,7 +107,6 @@ kubectl -n portal-staging rollout status deploy/portal
 kubectl -n portal-staging rollout status deploy/portal-opl-adapter
 kubectl -n portal-staging rollout status deploy/opl-web-gateway
 kubectl -n portal-staging rollout status deploy/billing-aggregator
-kubectl -n portal-staging rollout status deploy/med-autoscience-runner
 ```
 
 6. 验证：
@@ -122,12 +121,13 @@ kubectl -n portal-staging rollout status deploy/med-autoscience-runner
 
 - `optional/minio-staging.yaml`：仅用于 staging 自建 MinIO。正式生产优先接 COS 或托管对象存储。
 - `optional/opencost-values.yaml`：OpenCost Helm values 参考。
+- `optional/managed-runtime-runner-rbac.yaml` 和 `optional/managed-runtime-workloads.yaml`：仅用于 `PRODUCT_RUNTIME_MODE=managed_runtime` 的平台托管 runtime，不属于 v21 user-owned 默认产品链路。
 - 可选 YAML 也需要先用同一个渲染脚本替换占位符，再 apply。
 
 ## 当前必须知道的限制
 
 - 这是 TKE staging 包，不是直接营业包。
-- Portal/runner 当前 MinIO 同步链路仍含 Windows/PowerShell 脚本假设；在 Linux 容器里要么先关闭 MinIO 强依赖，要么后续改成 S3/COS SDK 或 Linux mc 直接同步。
-- `med-autoscience-runner` 当前负责创建 TKE Job，但 runtime Job 的 artifact 共享卷和对象存储回传还需要继续生产化。
+- 默认 user-owned 路径不部署 runner，也不依赖 MinIO；managed-runtime profile 若重新启用 runner，仍需单独处理 MinIO/S3/COS 同步实现。
+- `med-autoscience-runner` 仅保留在 optional managed-runtime 清单中；启用前要明确它创建 TKE Job、共享卷和对象存储回传的生产化边界。
 - 计费在腾讯云真实账单未回补前只能是 pending，不允许把估算结果当最终扣费。
 - `OPL_WEBUI_AUTH_MODE=none` 是短期 launch token 模式；正式营业应升级为 token 换 OPL Web session 或 OIDC trust。

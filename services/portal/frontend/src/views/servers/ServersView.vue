@@ -45,7 +45,7 @@
                 <span class="muted-kv-label">集群</span>
                 <span class="muted-kv-value">{{ clusterId }}</span>
               </div>
-              <div class="muted-kv">
+              <div v-if="opsSurfaceEnabled" class="muted-kv">
                 <span class="muted-kv-label">节点池</span>
                 <span class="muted-kv-value">{{ cloudSummary.nodePoolCount || 0 }}</span>
               </div>
@@ -207,7 +207,7 @@
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button class="btn btn-secondary" :disabled="releasing === item.id" @click="releaseOrder(item, true)">缩容到 0</button>
-                  <button class="btn btn-secondary" @click="openDeleteDialog(item)">删除节点池</button>
+                  <button v-if="opsSurfaceEnabled" class="btn btn-secondary" @click="openDeleteDialog(item)">删除节点池</button>
                 </div>
               </div>
               <div v-if="!orders.length" class="empty-state">暂无资源订单</div>
@@ -229,6 +229,7 @@
 
             <div class="mt-3 space-y-3">
               <div
+                v-if="opsSurfaceEnabled"
                 v-for="item in nodePools.slice(0, 5)"
                 :key="resourceKey(item)"
                 class="rounded-xl border border-gray-100 px-4 py-3 text-sm dark:border-slate-700"
@@ -252,7 +253,7 @@
                 </div>
                 <div class="mt-2 text-xs text-gray-500 dark:text-slate-400">{{ stringFrom(item, "instanceType", "status", "state") }}</div>
               </div>
-              <div v-if="!nodePools.length && !instances.length" class="empty-state">暂无可展示云资源</div>
+              <div v-if="(!opsSurfaceEnabled || !nodePools.length) && !instances.length" class="empty-state">暂无可展示云资源</div>
             </div>
           </div>
         </section>
@@ -269,7 +270,7 @@
           </div>
         </section>
 
-        <div v-if="deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+        <div v-if="opsSurfaceEnabled && deleteTarget" class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
           <div class="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900">
             <h2 class="text-lg font-semibold text-gray-950 dark:text-white">删除节点池</h2>
             <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-slate-300">
@@ -305,6 +306,7 @@ import type {
 } from "@/api/portal";
 import {
   deleteResourceOrderNodePool,
+  fetchCurrentUser,
   fetchCloudResources,
   fetchResourceOrders,
   fetchServerPlans,
@@ -328,6 +330,7 @@ import {
 const loading = ref(true);
 const error = ref("");
 const payload = ref<ServerPlansPayload | null>(null);
+const currentUser = ref<any>(null);
 const ordersPayload = ref<ResourceOrdersPayload | null>(null);
 const cloudResources = ref<CloudResourcesPayload | null>(null);
 const selecting = ref("");
@@ -344,6 +347,7 @@ const catalogPage = ref(1);
 
 const serverPlanItems = computed<ServerPlanItem[]>(() => payload.value?.items || []);
 const cloudStatus = computed(() => payload.value?.cloudStatus || payload.value?.summary?.cloudStatus || null);
+const opsSurfaceEnabled = computed(() => Boolean(currentUser.value?.productProfile?.opsSurfaceEnabled));
 const readiness = computed(() => ({
   cloudAccountConnected: Boolean(cloudStatus.value?.readiness?.cloudAccountConnected ?? payload.value?.configured),
   realPriceReady: Boolean(cloudStatus.value?.readiness?.realPriceReady ?? (payload.value?.summary.quotedCount || 0) > 0),
@@ -463,14 +467,16 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const [plans, ordersData, cloudData] = await Promise.all([
+    const [plans, ordersData, cloudData, user] = await Promise.all([
       fetchServerPlans(),
       fetchResourceOrders({ limit: 20 }),
       fetchCloudResources().catch(() => null),
+      fetchCurrentUser().catch(() => null),
     ]);
     payload.value = plans;
     ordersPayload.value = ordersData;
     cloudResources.value = cloudData;
+    currentUser.value = user;
     goToCatalogPage(1);
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : "服务器与费用加载失败";

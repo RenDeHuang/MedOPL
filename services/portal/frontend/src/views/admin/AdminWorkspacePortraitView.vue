@@ -64,7 +64,7 @@
             <div class="muted-kv"><span class="muted-kv-label">outputs</span><span class="muted-kv-value">{{ payload.storage?.outputsCount ?? 0 }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">输入体积</span><span class="muted-kv-value">{{ payload.storage?.inputBytes ?? 0 }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">输出体积</span><span class="muted-kv-value">{{ payload.storage?.outputBytes ?? 0 }}</span></div>
-            <div class="muted-kv"><span class="muted-kv-label">MinIO</span><span class="muted-kv-value">{{ payload.minio?.note || (payload.minio?.synced ? '已同步' : '-') }}</span></div>
+            <div v-if="payload.productProfile?.opsSurfaceEnabled" class="muted-kv"><span class="muted-kv-label">MinIO</span><span class="muted-kv-value">{{ payload.minio?.note || (payload.minio?.synced ? '已同步' : '-') }}</span></div>
           </div>
           <div class="mt-4 space-y-3">
             <div v-for="item in payload.storage?.outputs || []" :key="item.name" class="rounded-2xl border border-gray-100 px-4 py-4 dark:border-slate-700">

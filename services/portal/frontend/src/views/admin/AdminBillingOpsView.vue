@@ -51,7 +51,7 @@
           </div>
 
           <div class="space-y-6">
-            <div class="card p-6">
+            <div v-if="opsSurfaceEnabled" class="card p-6">
               <h2 class="panel-title">当前状态</h2>
               <div class="mt-4 space-y-3 text-sm">
                 <div class="muted-kv"><span class="muted-kv-label">腾讯云账单</span><span class="muted-kv-value">{{ payload.billingSync?.tencentBillingLinked ? "已接入" : "待接入" }}</span></div>
@@ -101,12 +101,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import { fetchAdminBillingOps } from "@/api/portal";
 
 const payload = ref<any>(null);
+const opsSurfaceEnabled = computed(() => Boolean(payload.value?.productProfile?.opsSurfaceEnabled));
 
 function microMoney(value: number | undefined) {
   return `CNY ${Number(value || 0).toFixed(5)}`;

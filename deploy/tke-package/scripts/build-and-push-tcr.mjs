@@ -363,6 +363,8 @@ function resolveManifestPlan({
     ...envVars,
     BUILD_SHA: buildSha,
     BUILD_TIME: buildTime,
+    PRODUCT_RUNTIME_MODE: envVars.PRODUCT_RUNTIME_MODE || "user_owned",
+    PRODUCT_OPS_PROFILE: envVars.PRODUCT_OPS_PROFILE || "0",
     PORTAL_IMAGE: imageMap.portal,
     OPL_ADAPTER_IMAGE: imageMap["portal-opl-adapter"],
     OPL_WEB_GATEWAY_IMAGE: imageMap["opl-web-gateway"],

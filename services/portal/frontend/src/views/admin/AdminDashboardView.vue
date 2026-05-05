@@ -83,7 +83,7 @@
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/users">用户管理</RouterLink>
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/billing-ops">客户账务</RouterLink>
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/usage">账单归因</RouterLink>
-                <RouterLink class="btn btn-secondary justify-start" to="/admin/ops">云资源状态</RouterLink>
+                <RouterLink v-if="opsSurfaceEnabled" class="btn btn-secondary justify-start" to="/admin/ops">云资源状态</RouterLink>
               </div>
             </div>
 
@@ -124,6 +124,7 @@ import MetricCard from "@/components/common/MetricCard.vue";
 import { fetchAdminOverview } from "@/api/portal";
 
 const payload = ref<any>(null);
+const opsSurfaceEnabled = computed(() => Boolean(payload.value?.productProfile?.opsSurfaceEnabled));
 const usageRows = computed(() => (payload.value?.usageRows || []).slice(0, 5));
 const responseLabel = computed(() => {
   const value = Number(payload.value?.kpis?.averageResponseMs || 0);

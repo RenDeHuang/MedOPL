@@ -264,11 +264,15 @@ export function createPortalAdminApiPayloads(deps) {
     runtimePerformanceSummary,
     sanitizeTaskTitle,
     storageMode,
+    productProfile = {},
     urls: configuredUrls = {},
     withinDateRange,
     workspaceChatSessionsForUser,
   } = deps;
   const urls = defaultUrls(configuredUrls);
+  const runtimeMode = String(productProfile.runtimeMode || "user_owned").trim().toLowerCase() || "user_owned";
+  const opsProfileEnabled = Boolean(productProfile.opsProfileEnabled);
+  const opsSurfaceEnabled = opsProfileEnabled || runtimeMode === "managed_runtime";
 
   async function buildAdminOverviewPayload(db) {
     const users = commercialCustomers(db).filter((item) => activeUserStatus(item.status) !== "deleted");
@@ -288,14 +292,17 @@ export function createPortalAdminApiPayloads(deps) {
     const serviceStatuses = await Promise.all([
       { name: "Portal OPL Adapter", url: new URL("/healthz", `${urls.portalOplAdapterUrl}/`).toString() },
       { name: "Langfuse", url: urls.langfuseUrl },
-      { name: "Rancher", url: urls.rancherUrl },
-      { name: "OpenCost", url: urls.opencostUiUrl },
-      { name: "Harbor", url: urls.harborUrl },
-      { name: "MinIO", url: urls.minioConsoleUrl },
+      ...(opsSurfaceEnabled ? [
+        { name: "Rancher", url: urls.rancherUrl },
+        { name: "OpenCost", url: urls.opencostUiUrl },
+        { name: "Harbor", url: urls.harborUrl },
+        { name: "MinIO", url: urls.minioConsoleUrl },
+      ] : []),
     ].filter((item) => item.url).map(async (item) => ({ ...item, probe: await probe(item.url) })));
+    const disabledOpsSummary = { available: false, mode: "disabled", note: "默认 user-owned 模式下未启用运维入口" };
     const [minioSummary, harborSummary, langfuseSummary] = await Promise.all([
-      fetchMinioSummary(),
-      fetchHarborSummary(),
+      opsSurfaceEnabled ? fetchMinioSummary() : Promise.resolve(disabledOpsSummary),
+      opsSurfaceEnabled ? fetchHarborSummary() : Promise.resolve(disabledOpsSummary),
       fetchLangfuseSummary(),
     ]);
     const securitySummary = buildAdminSecuritySummary();
@@ -428,13 +435,13 @@ export function createPortalAdminApiPayloads(deps) {
       systemMetrics,
       summaries: {
         opencost: {
-          available: true,
-          mode: "live",
+          available: opsSurfaceEnabled,
+          mode: opsSurfaceEnabled ? "live" : "disabled",
           cpuCost: Number(totals.cpuCost || 0),
           gpuCost: Number(totals.gpuCost || 0),
           storageCost: Number(totals.pvCost || 0),
           totalCost: Number(totals.totalCost || 0),
-          note: "数据来自 OpenCost / 账单聚合",
+          note: opsSurfaceEnabled ? "数据来自 OpenCost / 账单聚合" : "默认 user-owned 模式下未启用运维成本入口",
         },
         minio: minioSummary,
         harbor: {
@@ -452,9 +459,9 @@ export function createPortalAdminApiPayloads(deps) {
             : "未配置 OPL_WEB_URL，Portal 不会回退到旧工作台路径",
         },
         rancher: {
-          available: Boolean(urls.rancherUrl),
-          mode: "status_only",
-          note: urls.rancherUrl ? "当前仅展示入口与可达状态" : "未配置 Rancher 入口",
+          available: opsSurfaceEnabled && Boolean(urls.rancherUrl),
+          mode: opsSurfaceEnabled ? "status_only" : "disabled",
+          note: !opsSurfaceEnabled ? "默认 user-owned 模式下未启用 Rancher 入口" : (urls.rancherUrl ? "当前仅展示入口与可达状态" : "未配置 Rancher 入口"),
         },
         security: securitySummary,
         performance: performanceSummary,
@@ -471,6 +478,11 @@ export function createPortalAdminApiPayloads(deps) {
         .sort((a, b) => String(b.updatedAt || b.lastActiveAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.lastActiveAt || a.createdAt || ""))),
       cloudResourceRows: cloudResourceRows(db, formatDateTime),
       serviceStatuses: serviceStatuses.map((item) => ({ name: item.name, status: item.probe.status, ok: item.probe.ok, responseMs: item.probe.responseMs || null })),
+      productProfile: {
+        runtimeMode,
+        opsProfileEnabled,
+        opsSurfaceEnabled,
+      },
     };
   }
 
@@ -552,6 +564,7 @@ export function createPortalAdminApiPayloads(deps) {
         total: pagination.total,
         totalPages: pagination.totalPages,
       },
+      productProfile: payload.productProfile || {},
     };
   }
 
@@ -562,6 +575,7 @@ export function createPortalAdminApiPayloads(deps) {
       pendingRuns: payload.pendingRuns || [],
       warningEvents: payload.warningEvents || [],
       summaries: payload.summaries,
+      productProfile: payload.productProfile || {},
       users: db.users.filter((item) => item.role !== "admin").map((item) => ({ id: item.id, name: item.name, email: item.email })),
       workspaces: db.taskSpaces.filter((item) => item.status !== "deleted").map((item) => ({ slug: item.slug, title: sanitizeTaskTitle(item.slug, item.title) })),
       adjustments: db.ledger
@@ -589,6 +603,7 @@ export function createPortalAdminApiPayloads(deps) {
       serviceStatuses: payload.serviceStatuses || [],
       summaries: payload.summaries || {},
       systemMetrics: payload.systemMetrics || {},
+      productProfile: payload.productProfile || {},
     };
   }
 
@@ -600,12 +615,14 @@ export function createPortalAdminApiPayloads(deps) {
       warningEvents: payload.warningEvents || [],
       alerts: payload.alerts || [],
       summaries: payload.summaries || {},
+      productProfile: payload.productProfile || {},
     };
   }
 
   function buildAdminSandboxesApiPayload(payload) {
     return {
       items: payload.sandboxes || [],
+      productProfile: payload.productProfile || {},
     };
   }
 
@@ -642,6 +659,11 @@ export function createPortalAdminApiPayloads(deps) {
     readWorkspaceSession,
     sanitizeTaskTitle,
     workspaceChatSessionsForUser,
+    productProfile: {
+      runtimeMode,
+      opsProfileEnabled,
+      opsSurfaceEnabled,
+    },
   });
 
   return {

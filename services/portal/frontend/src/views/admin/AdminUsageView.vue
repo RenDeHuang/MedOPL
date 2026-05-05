@@ -89,7 +89,7 @@
               </div>
               <div class="grid gap-3">
                 <RouterLink class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/billing-ops">计费运维</RouterLink>
-                <RouterLink class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/ops">运维监控</RouterLink>
+                <RouterLink v-if="opsSurfaceEnabled" class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/ops">运维监控</RouterLink>
                 <RouterLink class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/alerts">告警中心</RouterLink>
               </div>
             </div>
@@ -107,6 +107,7 @@ import AppLayout from "@/layouts/AppLayout.vue";
 import { fetchAdminUsage } from "@/api/portal";
 
 const payload = ref<any>(null);
+const opsSurfaceEnabled = computed(() => Boolean(payload.value?.productProfile?.opsSurfaceEnabled));
 const failedCount = computed(() => (payload.value?.items || []).filter((item: any) => /fail|error/i.test(String(item.status || ""))).length);
 const successCount = computed(() => (payload.value?.items || []).filter((item: any) => /complete|success|finish/i.test(String(item.status || ""))).length);
 const averageCost = computed(() => {
