@@ -16,8 +16,15 @@ import {
   getBootstrap as getOplBootstrap,
   getOplWebUrl,
 } from "./opl-client.mjs";
-import { usableServerPlanId } from "./server-plan-ids.mjs";
 import { writeProviderSecret } from "./provider-secret-store.mjs";
+import {
+  buildLaunchRecord,
+  buildLaunchStatus,
+  buildPortalContext,
+  buildRuntimeSessionInput,
+  markOplSessionCreated,
+  selectServerPlan,
+} from "./runtime-bridge-launch-issue.mjs";
 
 function firstNonEmpty(values = []) {
   for (const value of values) {
@@ -444,77 +451,33 @@ export function createLaunchApi({
   }
 
   async function issueLaunchToken(input = {}) {
-    const selectedServerPlan = input.selectedServerPlan && typeof input.selectedServerPlan === "object" ? input.selectedServerPlan : {};
+    const selectedServerPlan = selectServerPlan(input);
     const state = await readState();
     const traceId = firstNonEmpty([input.traceId, input.trace_id]) || `opl-trace-${randomUUID()}`;
     const workspace = upsertWorkspace(state, input);
-    const launchStatus = {
-      stages: [
-        { stage: "workspace_ready", ok: true, userVisibleState: "实验空间已准备", blockingUser: false },
-      ],
-      currentStage: "workspace_ready",
-    };
+    const launchStatus = buildLaunchStatus();
     const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
-    const runtimeSession = createRuntimeSession(state, {
-      ...input,
+    const runtimeSession = createRuntimeSession(state, buildRuntimeSessionInput({
+      input,
       traceId,
-      tenantId: input.tenantId || input.tenant_id || input.portalUserId,
-      ownerId: input.ownerId || input.owner_id || input.portalUserId,
-      sessionOwnerId: input.sessionOwnerId || input.session_owner_id || input.portalUserId,
-      storageOwnerId: input.storageOwnerId || input.storage_owner_id || input.portalUserId,
       workspaceId: workspace.workspaceId,
       workspaceSessionId: workspaceSession.workspaceSessionId,
-      namespace: k8sNamespace,
-      image: runnerImage,
-      serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id, selectedServerPlan.id),
-      instanceType: input.instanceType || input.instance_type || input.InstanceType || selectedServerPlan.instanceType || selectedServerPlan.InstanceType || "",
-      region: input.region || selectedServerPlan.region || "",
-      zone: input.zone || selectedServerPlan.zone || "",
-      nodePool: input.nodePool || input.node_pool || selectedServerPlan.nodePool || "",
-      runtimeClass: input.runtimeClass || input.runtime_class || selectedServerPlan.runtimeClass || "",
-      nodeSelector: input.nodeSelector || selectedServerPlan.nodeSelector || {},
-      tolerations: input.tolerations || selectedServerPlan.tolerations || [],
-      podNetworkingMode: input.podNetworkingMode || input.pod_networking_mode || selectedServerPlan.podNetworkingMode || "",
-      requiresEniPod: input.requiresEniPod === true || input.requires_eni_pod === true || selectedServerPlan.requiresEniPod === true,
-      podAnnotations: input.podAnnotations || input.pod_annotations || selectedServerPlan.podAnnotations || {},
-      cpuRequest: input.cpuRequest || input.cpu_request || selectedServerPlan.cpuRequest || "",
-      cpuLimit: input.cpuLimit || input.cpu_limit || selectedServerPlan.cpuLimit || "",
-      memoryRequest: input.memoryRequest || input.memory_request || selectedServerPlan.memoryRequest || "",
-      memoryLimit: input.memoryLimit || input.memory_limit || selectedServerPlan.memoryLimit || "",
-      gpuCount: Number(input.gpuCount ?? input.gpu_count ?? selectedServerPlan.gpuCount ?? selectedServerPlan.gpu ?? 0),
-      storageRequest: input.storageRequest || input.storage_request || selectedServerPlan.storageRequest || "",
-      storageLimit: input.storageLimit || input.storage_limit || selectedServerPlan.storageLimit || "",
-      provisioningMode: input.provisioningMode || input.provisioning_mode || selectedServerPlan.provisioningMode || "schedule_to_node_pool",
-      tkeClusterId: input.tkeClusterId || input.tke_cluster_id || selectedServerPlan.tkeClusterId || "",
-      nodePoolId: input.nodePoolId || input.node_pool_id || selectedServerPlan.nodePoolId || "",
-      nodePoolCreatePayload: input.nodePoolCreatePayload || input.node_pool_create_payload || selectedServerPlan.nodePoolCreatePayload || null,
-      nodePoolScalePayload: input.nodePoolScalePayload || input.node_pool_scale_payload || selectedServerPlan.nodePoolScalePayload || null,
-      provisionerPayload: input.provisionerPayload || input.provisioner_payload || selectedServerPlan.provisionerPayload || null,
-    });
-    const portalContext = {
+      k8sNamespace,
+      runnerImage,
+      selectedServerPlan,
+    }));
+    const portalContext = buildPortalContext({
+      input,
       traceId,
-      portalUserId: input.portalUserId,
-      portalUserEmail: input.portalUserEmail || "",
-      portalUserName: input.portalUserName || "",
-      tenantId: input.tenantId || input.tenant_id || input.portalUserId,
-      ownerId: input.ownerId || input.owner_id || input.portalUserId,
-      workspaceId: workspace.workspaceId,
-      workspaceTitle: workspace.title,
-      workspacePath: input.workspacePath || input.workspace_path || workspace.workspacePath || "",
-      projectId: input.projectId || input.project_id || input.moduleId || input.module_id || workspace.projectId || "",
+      workspace,
       workspaceSessionId: workspaceSession.workspaceSessionId,
       runtimeSessionId: runtimeSession.runtimeSessionId,
-      sourceSurface: input.sourceSurface || "portal-control-plane",
-      serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id, selectedServerPlan.id),
-      instanceType: input.instanceType || input.instance_type || input.InstanceType || selectedServerPlan.instanceType || selectedServerPlan.InstanceType || "",
-      region: input.region || selectedServerPlan.region || "",
-    };
+      selectedServerPlan,
+    });
     try {
       await bindWorkspace(portalContext);
       const oplSession = await createOplSession(portalContext);
-      runtimeSession.oplSessionId = oplSession.id || oplSession.sessionId || "";
-      launchStatus.stages.push({ stage: "session_created", ok: true, userVisibleState: "OPL 会话已创建", blockingUser: false });
-      launchStatus.currentStage = "session_created";
+      runtimeSession.oplSessionId = markOplSessionCreated(launchStatus, oplSession);
       if (oplSession.status === "deferred") {
         addEvent(state, "opl_session_create_deferred", { ...portalContext, reason: oplSession.reason || "" });
       }
@@ -523,52 +486,16 @@ export function createLaunchApi({
       addEvent(state, "opl_launch_bind_failed", { ...portalContext, error: String(error.message || error) });
     }
 
-    const launchRecord = {
-      launchId: randomUUID(),
+    const launchRecord = buildLaunchRecord({
+      input,
       traceId,
-      portalUserId: input.portalUserId,
-      tenantId: input.tenantId || input.tenant_id || input.portalUserId,
-      ownerId: input.ownerId || input.owner_id || input.portalUserId,
-      sessionOwnerId: input.sessionOwnerId || input.session_owner_id || input.portalUserId,
-      traceOwnerId: input.traceOwnerId || input.trace_owner_id || input.portalUserId,
-      artifactOwnerId: input.artifactOwnerId || input.artifact_owner_id || input.portalUserId,
-      storageOwnerId: input.storageOwnerId || input.storage_owner_id || input.portalUserId,
-      portalUserEmail: input.portalUserEmail || "",
-      portalUserName: input.portalUserName || "",
-      workspaceId: workspace.workspaceId,
-      workspaceTitle: workspace.title,
-      workspacePath: portalContext.workspacePath || "",
+      workspace,
       workspaceSessionId: workspaceSession.workspaceSessionId,
-      runtimeSessionId: runtimeSession.runtimeSessionId,
-      serverPlanId: usableServerPlanId(runtimeSession.serverPlanId, selectedServerPlan.id),
-      instanceType: runtimeSession.instanceType || selectedServerPlan.instanceType || selectedServerPlan.InstanceType || "",
-      region: runtimeSession.region || selectedServerPlan.region || "",
-      zone: runtimeSession.zone || selectedServerPlan.zone || "",
-      nodePool: runtimeSession.nodePool || selectedServerPlan.nodePool || "",
-      runtimeClass: runtimeSession.runtimeClass || selectedServerPlan.runtimeClass || "",
-      nodeSelector: runtimeSession.nodeSelector || selectedServerPlan.nodeSelector || {},
-      tolerations: runtimeSession.tolerations || selectedServerPlan.tolerations || [],
-      podNetworkingMode: runtimeSession.podNetworkingMode || selectedServerPlan.podNetworkingMode || "",
-      requiresEniPod: runtimeSession.requiresEniPod === true || selectedServerPlan.requiresEniPod === true,
-      podAnnotations: runtimeSession.podAnnotations || selectedServerPlan.podAnnotations || {},
-      cpuRequest: runtimeSession.cpuRequest || selectedServerPlan.cpuRequest || "",
-      cpuLimit: runtimeSession.cpuLimit || selectedServerPlan.cpuLimit || "",
-      memoryRequest: runtimeSession.memoryRequest || selectedServerPlan.memoryRequest || "",
-      memoryLimit: runtimeSession.memoryLimit || selectedServerPlan.memoryLimit || "",
-      gpuCount: Number(runtimeSession.gpuCount ?? selectedServerPlan.gpuCount ?? selectedServerPlan.gpu ?? 0),
-      storageRequest: runtimeSession.storageRequest || selectedServerPlan.storageRequest || "",
-      storageLimit: runtimeSession.storageLimit || selectedServerPlan.storageLimit || "",
-      provisioningMode: runtimeSession.provisioningMode || selectedServerPlan.provisioningMode || "schedule_to_node_pool",
-      tkeClusterId: runtimeSession.tkeClusterId || selectedServerPlan.tkeClusterId || "",
-      nodePoolId: runtimeSession.nodePoolId || selectedServerPlan.nodePoolId || "",
-      nodePoolCreatePayload: runtimeSession.nodePoolCreatePayload || selectedServerPlan.nodePoolCreatePayload || null,
-      nodePoolScalePayload: runtimeSession.nodePoolScalePayload || selectedServerPlan.nodePoolScalePayload || null,
-      provisionerPayload: runtimeSession.provisionerPayload || selectedServerPlan.provisionerPayload || null,
+      runtimeSession,
+      portalContext,
+      selectedServerPlan,
       launchStatus,
-      source: "portal-control-plane",
-      createdAt: nowIso(),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    };
+    });
     const launchToken = makeLaunchToken(launchRecord);
     const resolvedOplWebUrl = buildOplLaunchUrl(launchToken);
     const bootstrapUrl = `${baseUrl}/api/opl-launch/bootstrap?launch_token=${encodeURIComponent(launchToken)}`;
