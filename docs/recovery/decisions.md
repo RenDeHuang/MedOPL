@@ -96,3 +96,42 @@ Portal、OPL Web Gateway、clean upstream OPL Web、Portal OPL Adapter / Runtime
 ## D018: 未授权不执行真实资源操作
 
 普通文档收敛、本地检查和代码重构不得运行 build/push、kubectl、live-test、真实云资源操作，也不得修改 `.sentrux/*`。这些动作必须单独授权。
+
+## D019: 现有仓库按域分类，不把旧文件当垃圾
+
+platform-v22 不是空仓。现有文件必须先按域裁定为 `keep`、`migrate`、`delete` 或 `archive`，再进入后续 cleanup。盘点和分类不等于删除或搬目录。
+
+## D020: v22 可继续使用的 canonical 主干
+
+以下现有路径是 v22 可继续使用的主干：
+
+- Identity / Auth / Tenant：Portal auth、provider secret、tenant scope、store schema 和 OPL Gateway auth bridge。
+- Portal Web：Portal frontend router/layout/views，以及 Portal API、OPL launch、lab package、workspace storage routes。
+- OPL Web Gateway：`services/opl-web-gateway/src/*`。
+- OPL Adapter / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、launch/run/message/state-store/provider-secret/ACP runtime 相关模块。
+- Workspace / Artifact：workspace storage domain、routes、upload/download handlers 和 internal file index。
+- Session / Run：OPL launch service、session trace payload/domain、runtime run/message/artifact trace stores。
+- Billing / Usage / Freeze：wallet ledger、lab billing policy、billing payload/client/frontend、billing aggregator。
+- Resource Plan / Tenant Binding：server plans、platform-provisioned resources、user resource bindings、resource views。
+- Admin / Ops：admin routes、admin payloads 和 admin frontend views。
+- Scripts / Contracts：`docs/contracts/v22-*.md` 和直接验证 v22 billing/resource/tenant/freeze 边界的 smoke contracts。
+
+## D021: user_owned 只能是 legacy alias
+
+`PRODUCT_RUNTIME_MODE=user_owned`、`user-owned` 路由、`user-owned` domain/store 和所有带 user-owned 的脚本只能作为 legacy alias 或历史合同参考。新代码、新文档、新测试和默认产品叙事不得把它解释成用户自带 CVM、COS、K8s 或用户配置云资源。
+
+## D022: 旧 resource-order/provisioner 路线必须迁移或归档
+
+`resource-order*`、`resource-provisioner-client` 和旧 provisioning service 有迁移价值，但不能继续作为 v22 正式产品入口。它们必须收敛到 tenant resource binding、billing account、quota、audit tag / cost allocation tag 语义。
+
+## D023: 旧 runner/provisioner/K8s/OpenCost/Langfuse 不进入 v22 主线
+
+`adapters/med-autoscience-runner/`、`adapters/resource-provisioner/`、旧 K8s Job/RBAC/manifests、OpenCost、Langfuse 全栈部署和相关 live scripts 只能作为 legacy/reference 或单独授权的旧栈审查对象。它们不进入 v22 主产品叙事。
+
+## D024: Deploy 和 live scripts 只能作为授权边界内资产
+
+`deploy/tke-package` 的核心 manifests 和 render scripts 可以作为 v22 交付参考，但 build/push、kubectl、live-test 和真实云资源操作必须单独授权。历史 rendered 包、compose 旧栈、runner/provisioner Dockerfile 和 live-test 脚本不作为普通本地验证入口。
+
+## D025: delete 是后续 cleanup 目标
+
+本次分类中的 `delete` 表示后续 cleanup/delete 计划目标，不表示当前删除文件。任何删除必须在单独 cleanup 分支中执行，并证明 v22 只剩一个正式入口。

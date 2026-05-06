@@ -96,6 +96,43 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 
 任何第二入口、新旧双入口或并行主路径只能存在于 `spike/*`，不能进入 v22 trunk。进入 `feat/*` 前必须收敛为一个正式入口。
 
+## 现有仓库主干
+
+当前 worktree 已有可继续作为 v22 canonical 的主干文件。它们不需要复制或重写，只需要在后续 feature 中按 v22 truth 继续收敛：
+
+- Identity / Auth / Tenant：`services/portal/src/app/portal-auth-runtime-handler.mjs`、`services/portal/src/domain/portal-auth.mjs`、`provider-config.mjs`、`provider-secret-store.mjs`、`tenant-scope.mjs`、`portal-store-db-auth.mjs`、`portal-store-schema.mjs`。
+- Portal Web：`services/portal/frontend/src/router/index.ts`、`AppSidebar.vue`、`OverviewView.vue`、`PackagesView.vue`、`ResourcesView.vue`、`WorkspaceView.vue`、`OplLaunchView.vue`、`BillingView.vue`、`TraceView.vue`，以及 `services/portal/src/routes/portal-api.routes.mjs`、`opl.routes.mjs`、`lab-package.routes.mjs`、`workspace-storage.routes.mjs`。
+- OPL Web Gateway：`services/opl-web-gateway/src/server.mjs`、`proxy.mjs`、`portal-auth-bridge.mjs`、`html-injection.mjs`、`launch-client-script.mjs`、`config.mjs`。
+- OPL Adapter / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、`runtime-bridge-launch.mjs`、`runtime-bridge-runs.mjs`、`runtime-bridge-messages.mjs`、`runtime-bridge-routes-http.mjs`、`provider-secret-store.mjs`、`opl-acp-runtime-client.mjs`、`run-contract.mjs`、`state-store*.mjs`。
+- Workspace / Artifact：`services/portal/src/domain/workspace-storage.mjs`、`portal-api-workspace-storage.mjs`、`workspace-storage-route-handlers.mjs`、`workspace-storage-upload-support.mjs`、`workspace-files-internal.routes.mjs`。
+- Session / Run：`services/portal/src/domain/session-traces.mjs`、`services/portal/src/app/portal-session-trace-payloads.mjs`、`services/portal/src/services/opl-launch.service.mjs`、`services/opl-runtime-bridge/src/state-store-run-records.mjs`、`state-store-message-records.mjs`、`state-store-artifact-trace-records.mjs`。
+- Billing / Usage / Freeze：`services/portal/src/domain/wallet-ledger.mjs`、`lab-billing-policy.mjs`、`portal-page-billing-payloads.mjs`、`services/portal/src/integrations/billing-client.mjs`、`services/portal/frontend/src/api/portal/billing.ts`、`services/portal/frontend/src/views/billing/BillingView.vue`、`adapters/billing-aggregator/src/*`。
+- Resource Plan / Tenant Binding：`docs/contracts/v22-resource-plan-boundary.md`、`docs/contracts/v22-tenant-resource-binding-boundary.md`、`services/portal/src/domain/server-plans.mjs`、`platform-provisioned-resources.mjs`、`user-resource-bindings.mjs`、`services/portal/frontend/src/api/portal/resources.ts`。
+- Admin / Ops：`services/portal/src/routes/admin-api.routes.mjs`、`admin-user.routes.mjs`、`admin-ops.routes.mjs`、`services/portal/src/app/portal-admin-*.mjs`、`services/portal/frontend/src/views/admin/*.vue`。
+- Scripts / Contracts：`docs/contracts/v22-*.md` 和与 billing freeze、platform-provisioned resource lifecycle、tenant/resource binding 直接相关的 smoke contract。
+
+## 迁移和退场边界
+
+以下现有路径有价值，但不能按旧命名或旧边界继续扩散：
+
+- `services/portal/src/config/portal-config.mjs` 中 `PRODUCT_RUNTIME_MODE=user_owned` 只能迁为 legacy alias，默认语义必须是 `platform_provisioned` / `customer_dedicated`。
+- `services/portal/src/domain/user-owned-resources.mjs`、`services/portal/src/routes/user-owned-resource.routes.mjs`、`services/portal/src/state/portal-user-owned-resource-store.mjs` 只能作为 legacy alias 参考。
+- `services/portal/src/domain/resource-orders.mjs`、`services/portal/src/routes/resource-order*.mjs` 和 `services/portal/src/integrations/resource-provisioner-client.mjs` 要迁到 resource binding / billing / audit 语义；旧 resource-order 不再是 v22 正式产品入口。
+- `services/portal/src/routes/task-space.routes.mjs` 要迁到 workspace 语义。
+- `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组只作为 retired compatibility fence。
+- `services/opl-runtime-bridge` 路径暂保留，但产品语义是 Portal OPL Adapter / Runtime Agent；新文档和新入口不得继续扩大 bridge 命名。
+
+以下路径只作为 archive/reference，不进入 v22 主产品叙事：
+
+- `adapters/med-autoscience-runner/`
+- `adapters/resource-provisioner/`
+- `adapters/cloud-provisioner/`，除非后续单独迁为平台内部资源池开通组件。
+- `infra/opencost/`、`deploy/tke-package/optional/opencost-values.yaml`、`scripts/start-opencost-*`、`scripts/install-opencost-local.ps1`。
+- `compose.langfuse.yaml`、`deploy/tke-package/manifests/08-langfuse-stack.yaml`、`scripts/load-test-v13-langfuse-ingestion.mjs`。
+- `deploy/tke-package/rendered-v20.32-*`、旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*`。
+
+后续 cleanup/delete 目标是删除旧 `med-autoscience-runner`、`resource-provisioner`、K8s Job、OpenCost、Langfuse 主叙事和默认入口；本次只记录裁定，不执行删除。
+
 ## 操作边界
 
 未获单独授权时，不运行 build/push、kubectl、live-test、真实云资源操作，也不修改 `.sentrux/*`。普通文档收敛和本地验证不能顺手触发真实资源动作。
