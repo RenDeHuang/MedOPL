@@ -10,6 +10,7 @@ const DIRECT_ENTRY_DISMISS_KEY = "portal.opl.directEntryDismissed";
 const OPL_MODULE_IDS = ["mas", "mag", "rca"];
 const TIMING_MARKERS = ["portal_launch_ready_ms", "opl_dom_ready_ms", "opl_first_interaction_ms"];
 const DIRECT_ENTRY_DEFAULT = ${JSON.stringify(buildDirectEntryState())};
+const MODEL_SERVICE_SOURCE_COPY = "模型服务来源于 gflabtoken";
 
 const launchStartedAtMs = performance.now();
 
@@ -63,20 +64,20 @@ function markFirstInteraction(details = {}) {
   markOplTelemetry("opl_first_interaction_ms", details);
 }
 
-function readStoredState() {
-  try {
-    const raw = window.sessionStorage.getItem(STATE_KEY);
-    return raw ? JSON.parse(raw) : {};
+function readStoredState() {
+  try {
+    const raw = window.sessionStorage.getItem(STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
-
-function writeStoredState(state) {
-  try {
-    window.sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
-  } catch {}
-}
+
+function writeStoredState(state) {
+  try {
+    window.sessionStorage.setItem(STATE_KEY, JSON.stringify(publicLaunchState(state)));
+  } catch {}
+}
 
 function readStoredBootstrap() {
   try {
@@ -87,11 +88,11 @@ function readStoredBootstrap() {
   }
 }
 
-function writeStoredBootstrap(bootstrap) {
-  try {
-    window.sessionStorage.setItem(BOOTSTRAP_KEY, JSON.stringify(bootstrap));
-  } catch {}
-}
+function writeStoredBootstrap(bootstrap) {
+  try {
+    window.sessionStorage.setItem(BOOTSTRAP_KEY, JSON.stringify(publicBootstrapPayload(bootstrap)));
+  } catch {}
+}
 
 function updateDirectEntryState(overrides = {}) {
   const next = {
@@ -269,7 +270,7 @@ function resolveInjectedDirectEntryFlag() {
   }
 }
 
-function stripLaunchQuery() {
+function stripLaunchQuery() {
   try {
     const url = new URL(window.location.href);
     if (!url.searchParams.has("launch_token") && !url.searchParams.has("portal_adapter_url")) return;
@@ -277,27 +278,81 @@ function stripLaunchQuery() {
     url.searchParams.delete("portal_adapter_url");
     window.history.replaceState({}, document.title, url.toString());
   } catch {}
-}
-
-function resolveLaunchState() {
-  const params = new URLSearchParams(window.location.search);
-  const stored = readStoredState();
-  const launchToken = params.get("launch_token") || stored.launchToken || "";
-  const requestedAdapterUrl = params.get("portal_adapter_url") || stored.requestedAdapterUrl || "";
-  if (!launchToken) return null;
-  const state = {
-    launchToken,
-    requestedAdapterUrl,
-    adapterUrl: "/portal-adapter",
-    gatewayUrl: window.location.origin,
-    receivedAt: new Date().toISOString()
-  };
-  writeStoredState(state);
-  return state;
-}
-
+}
+
+function publicLaunchState(state = {}) {
+  return {
+    requestedAdapterUrl: state.requestedAdapterUrl || "",
+    adapterUrl: state.adapterUrl || "/portal-adapter",
+    gatewayUrl: state.gatewayUrl || window.location.origin,
+    receivedAt: state.receivedAt || "",
+    source: state.source || "gateway-cookie-session",
+    authenticated: state.authenticated === true || state.hasLaunchCookie === true
+  };
+}
+
+function resolveLaunchState() {
+  const params = new URLSearchParams(window.location.search);
+  const stored = readStoredState();
+  const hasLaunchToken = Boolean(params.get("launch_token"));
+  const requestedAdapterUrl = params.get("portal_adapter_url") || stored.requestedAdapterUrl || "";
+  if (!hasLaunchToken && stored.authenticated !== true) return null;
+  const state = {
+    requestedAdapterUrl,
+    adapterUrl: "/portal-adapter",
+    gatewayUrl: window.location.origin,
+    receivedAt: new Date().toISOString(),
+    hasLaunchCookie: hasLaunchToken || stored.authenticated === true,
+    source: hasLaunchToken ? "gateway-launch-cookie" : "gateway-stored-cookie-session",
+    authenticated: true
+  };
+  writeStoredState(state);
+  return state;
+}
+
+async function resolveCookieLaunchState() {
+  try {
+    const payload = await fetchJson("/api/v1/auths/");
+    if (payload.success !== true) return null;
+    const state = {
+      requestedAdapterUrl: "",
+      adapterUrl: "/portal-adapter",
+      gatewayUrl: window.location.origin,
+      receivedAt: new Date().toISOString(),
+      source: "gateway-cookie-session",
+      authenticated: true,
+      hasLaunchCookie: true
+    };
+    writeStoredState(state);
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+function safeErrorUrl(value = "") {
+  try {
+    const url = new URL(String(value || ""), window.location.origin);
+    url.searchParams.delete("launch_token");
+    url.searchParams.delete("runtime_token");
+    url.searchParams.delete("token");
+    return url.pathname + url.search;
+  } catch {
+    return "request";
+  }
+}
+
+function safeErrorMessage(error, defaultMessage = "请求失败，请重试。") {
+  const message = String(error && error.message ? error.message : defaultMessage);
+  return message
+    .replace(/launch_token=[^&\s"']+/gi, "launch_token=[redacted]")
+    .replace(/runtime_token=[^&\s"']+/gi, "runtime_token=[redacted]")
+    .replace(/token=[^&\s"']+/gi, "token=[redacted]")
+    .replace(/apiKey["']?\s*[:=]\s*["'][^"']+["']/gi, "apiKey:[redacted]");
+}
+
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers: {
       accept: "application/json",
@@ -305,11 +360,11 @@ async function fetchJson(url, options = {}) {
       ...(options.headers || {})
     },
     credentials: "same-origin"
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(url + " failed " + response.status + ": " + JSON.stringify(payload));
-  }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(safeErrorUrl(url) + " failed " + response.status);
+  }
   return payload;
 }
 
@@ -341,13 +396,112 @@ function providerConfiguredFromBootstrap(bootstrap) {
 
 }
 
+function normalizeProviderKey(value) {
+  try {
+    return String(value || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function createProviderKeyField() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "opl-portal-provider-key-field";
+  const label = document.createElement("label");
+  label.textContent = "gflabtoken API Key";
+  const input = document.createElement("input");
+  input.setAttribute("type", "password");
+  input.setAttribute("name", "oplProviderApiKey");
+  input.setAttribute("autocomplete", "off");
+  input.setAttribute("placeholder", "来源于 gflabtoken");
+  input.setAttribute("data-opl-provider-key", "1");
+  const hint = document.createElement("div");
+  hint.textContent = MODEL_SERVICE_SOURCE_COPY + "，请填写与当前 Portal 身份配套的 API Key，且不在页面回显明文。";
+  hint.style.fontSize = "12px";
+  hint.style.color = "#64748b";
+  wrapper.appendChild(label);
+  wrapper.appendChild(input);
+  wrapper.appendChild(hint);
+  return wrapper;
+}
+
+const PROVIDER_KEY_LOGIN_PATHS = ["/api/auth/signin", "/api/auth/login", "/api/v1/auths/signin", "/api/v1/auths/login", "/auth/login", "/login"];
+
+function normalizedPath(value = "") {
+  try {
+    return new URL(String(value || ""), window.location.origin).pathname;
+  } catch {
+    return String(value || "").split("?")[0] || "";
+  }
+}
+
+function isProviderKeyLoginPath(pathname = "") {
+  return PROVIDER_KEY_LOGIN_PATHS.includes(String(pathname || ""));
+}
+
+function isProviderKeyLoginRoute() {
+  const path = normalizedPath(window.location && window.location.href);
+  const hash = String(window.location && window.location.hash || "").toLowerCase();
+  return isProviderKeyLoginPath(path) || hash === "#/login" || hash === "#/signin" || hash === "#/auth/login";
+}
+
+function formTargetsProviderKeyLogin(form) {
+  const action = form && typeof form.getAttribute === "function" ? form.getAttribute("action") : "";
+  return isProviderKeyLoginPath(normalizedPath(action || window.location.href));
+}
+
+function isProviderKeyLoginForm(form) {
+  if (!form || typeof form.querySelector !== "function") return false;
+  if (form.getAttribute("data-opl-provider-key-form") === "1") return true;
+  const method = String(form.getAttribute("method") || "post").toLowerCase();
+  if (method && method !== "post") return false;
+  const hasPassword = Boolean(form.querySelector('input[type="password"], input[name="password"]'));
+  if (!hasPassword) return false;
+  return formTargetsProviderKeyLogin(form) || isProviderKeyLoginRoute();
+}
+
+function injectGflabtokenApiKeyField(root = document) {
+  if (!root || typeof root.querySelectorAll !== "function") return;
+  const forms = Array.from(root.querySelectorAll("form"));
+  for (const form of forms) {
+    if (!form || typeof form.querySelector !== "function") continue;
+    if (form.querySelector("[data-opl-provider-key]")) continue;
+    if (!isProviderKeyLoginForm(form)) continue;
+    const passwordInputs = Array.from(form.querySelectorAll('input[type="password"], input[name="password"]'));
+    if (!passwordInputs.length) continue;
+    const passwordField = passwordInputs[passwordInputs.length - 1];
+    const wrapper = createProviderKeyField();
+    const anchor = passwordField.closest("p, div, label, section") || passwordField;
+    if (anchor.parentNode && typeof anchor.parentNode.insertBefore === "function" && anchor.nextSibling) {
+      anchor.parentNode.insertBefore(wrapper, anchor.nextSibling);
+      continue;
+    }
+    if (anchor.parentNode && typeof anchor.parentNode.appendChild === "function") {
+      anchor.parentNode.appendChild(wrapper);
+      continue;
+    }
+    if (typeof form.appendChild === "function") form.appendChild(wrapper);
+  }
+}
+
+function installGflabtokenApiKeyFieldObserver() {
+  injectGflabtokenApiKeyField(document);
+  if (typeof MutationObserver === "function" && document && document.body) {
+    const observer = new MutationObserver(() => injectGflabtokenApiKeyField(document));
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+  if (typeof window.setInterval === "function") {
+    window.setInterval(() => injectGflabtokenApiKeyField(document), 1000);
+  }
+}
+
 
 
 function removeLaunchProviderConnectionPanel() {
 
   try {
 
-    const panel = document.querySelector("[data-opl-launch-connection-panel]");
+    const panel = document.querySelector("[data-opl-launch-provider-panel]");
 
     if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
 
@@ -357,15 +511,43 @@ function removeLaunchProviderConnectionPanel() {
 
 
 
-function renderLaunchProviderConnectionPanel() {
+async function bindLaunchProviderKey(state, bootstrap, providerKey) {
+  const launch = bootstrap.launch || {};
+  const portal = bootstrap.portal || {};
+  const workspace = bootstrap.workspace || {};
+  return fetchJson(state.adapterUrl + "/api/opl-launch/sessions/bind", {
+    method: "POST",
+    body: JSON.stringify({
+      workspaceId: portal.workspaceId || launch.workspaceId || workspace.workspaceId || "",
+      workspaceSessionId: portal.workspaceSessionId || launch.workspaceSessionId || "",
+      runtimeSessionId: portal.runtimeSessionId || launch.runtimeSessionId || "",
+      oplSessionId: "opl-web:" + (launch.launchId || portal.runtimeSessionId || Date.now()),
+      workspacePath: workspace.workspacePath || launch.workspacePath || "",
+      provider: "gflabtoken",
+      source: "user_input",
+      apiKey: providerKey,
+      userAgent: window.navigator.userAgent
+    })
+  });
+}
 
-  const existing = document.querySelector("[data-opl-launch-connection-panel]");
+function updateLaunchProviderPanelMessage(panel, message, { error = false } = {}) {
+  if (!panel || typeof panel.querySelector !== "function") return;
+  const messageNode = panel.querySelector("[data-opl-provider-message]");
+  if (!messageNode) return;
+  messageNode.textContent = message || "";
+  messageNode.style.color = error ? "#dc2626" : "#475569";
+}
+
+function renderLaunchProviderConnectionPanel(state, bootstrap) {
+
+  const existing = document.querySelector("[data-opl-launch-provider-panel]");
 
   if (existing) return existing;
 
   const panel = document.createElement("section");
 
-  panel.setAttribute("data-opl-launch-connection-panel", "1");
+  panel.setAttribute("data-opl-launch-provider-panel", "1");
 
   panel.style.position = "fixed";
 
@@ -395,7 +577,7 @@ function renderLaunchProviderConnectionPanel() {
 
   const title = document.createElement("h2");
 
-  title.textContent = "OPL 服务未连接";
+  title.textContent = "连接 gflabtoken";
 
   title.style.margin = "0 0 12px";
 
@@ -403,7 +585,7 @@ function renderLaunchProviderConnectionPanel() {
 
   const hint = document.createElement("p");
 
-  hint.textContent = "请从 Portal 统一入口完成 OPL 连接后再进入。";
+  hint.textContent = "当前 OPL 会话需要 gflabtoken API Key。模型服务来源于 gflabtoken，请填写与当前 Portal 身份配套的 key。";
 
   hint.style.margin = "0 0 14px";
 
@@ -411,43 +593,67 @@ function renderLaunchProviderConnectionPanel() {
 
   hint.style.color = "#475569";
 
-  const button = document.createElement("button");
+  const form = document.createElement("form");
+  form.style.display = "grid";
+  form.style.gap = "12px";
 
-  button.type = "button";
+  const providerField = createProviderKeyField();
+  const providerInput = providerField.querySelector("[data-opl-provider-key]");
+  if (providerInput) providerInput.setAttribute("placeholder", "来源于 gflabtoken");
 
-  button.textContent = "返回 Portal";
+  const message = document.createElement("p");
+  message.setAttribute("data-opl-provider-message", "1");
+  message.style.margin = "0";
+  message.style.fontSize = "12px";
+  message.style.minHeight = "18px";
+  message.style.color = "#475569";
 
-  button.style.width = "100%";
+  const buttonRow = document.createElement("div");
+  buttonRow.style.display = "grid";
+  buttonRow.style.gap = "8px";
 
-  button.style.height = "40px";
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "继续进入 OPL";
+  submit.style.width = "100%";
+  submit.style.height = "40px";
+  submit.style.border = "0";
+  submit.style.borderRadius = "6px";
+  submit.style.background = "#111827";
+  submit.style.color = "#ffffff";
+  submit.style.cursor = "pointer";
 
-  button.style.marginTop = "14px";
-
-  button.style.border = "0";
-
-  button.style.borderRadius = "6px";
-
-  button.style.background = "#111827";
-
-  button.style.color = "#ffffff";
-
-  button.style.cursor = "pointer";
-
-  button.addEventListener("click", () => {
-
+  const returnButton = document.createElement("button");
+  returnButton.type = "button";
+  returnButton.textContent = "返回 Portal";
+  returnButton.style.width = "100%";
+  returnButton.style.height = "40px";
+  returnButton.style.border = "1px solid #cbd5e1";
+  returnButton.style.borderRadius = "6px";
+  returnButton.style.background = "#ffffff";
+  returnButton.style.color = "#0f172a";
+  returnButton.style.cursor = "pointer";
+  returnButton.addEventListener("click", () => {
     const directEntry = window.__OPL_PORTAL_DIRECT_ENTRY__ || DIRECT_ENTRY_DEFAULT;
-
     const target = directEntry.openFromPortalUrl || directEntry.portalPublicUrl || "";
-
     if (target) window.location.href = target;
-
   });
+
+  form.addEventListener("submit", (event) => {
+    handleLaunchProviderPanelSubmit(event, state, bootstrap, panel);
+  }, true);
+
+  buttonRow.appendChild(submit);
+  buttonRow.appendChild(returnButton);
 
   box.appendChild(title);
 
   box.appendChild(hint);
 
-  box.appendChild(button);
+  form.appendChild(providerField);
+  form.appendChild(message);
+  form.appendChild(buttonRow);
+  box.appendChild(form);
 
   panel.appendChild(box);
 
@@ -459,7 +665,42 @@ function renderLaunchProviderConnectionPanel() {
 
 
 
-function ensureLaunchProviderConnection(bootstrap) {
+async function handleLaunchProviderPanelSubmit(event, state, bootstrap, panel) {
+  event.preventDefault();
+  const input = panel && typeof panel.querySelector === "function"
+    ? panel.querySelector("[data-opl-provider-key]")
+    : null;
+  const providerKey = normalizeProviderKey(input && "value" in input ? input.value : "");
+  if (!providerKey) {
+    updateLaunchProviderPanelMessage(panel, "请输入来源于 gflabtoken 的 API Key。", { error: true });
+    return;
+  }
+  if (input) input.disabled = true;
+  const submit = panel && typeof panel.querySelector === "function"
+    ? panel.querySelector('button[type="submit"]')
+    : null;
+  if (submit) submit.disabled = true;
+  updateLaunchProviderPanelMessage(panel, "正在绑定 gflabtoken 凭证...");
+  try {
+    await bindLaunchProviderKey(state, bootstrap, providerKey);
+    if (input && "value" in input) input.value = "";
+    const refreshedBootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap");
+    writeStoredBootstrap(refreshedBootstrap);
+    if (!providerConfiguredFromBootstrap(refreshedBootstrap)) {
+      throw new Error("provider_connection_required");
+    }
+    removeLaunchProviderConnectionPanel();
+    await completePortalLaunch(state, refreshedBootstrap);
+  } catch (error) {
+    updateLaunchProviderPanelMessage(panel, safeErrorMessage(error, "gflabtoken 绑定失败，请重试。"), { error: true });
+  } finally {
+    if (input && "value" in input) input.value = "";
+    if (input) input.disabled = false;
+    if (submit) submit.disabled = false;
+  }
+}
+
+function ensureLaunchProviderPanel(state, bootstrap) {
 
   if (providerConfiguredFromBootstrap(bootstrap)) {
 
@@ -469,7 +710,7 @@ function ensureLaunchProviderConnection(bootstrap) {
 
   }
 
-  renderLaunchProviderConnectionPanel();
+  renderLaunchProviderConnectionPanel(state, bootstrap);
 
   updateDirectEntryState({
     active: true,
@@ -483,12 +724,12 @@ function ensureLaunchProviderConnection(bootstrap) {
 
 
 function requireLaunchState() {
-  const state = readStoredState();
-  if (!state.launchToken) {
-    throw new Error("Portal launch token is not available. Open OPL Web from Portal.");
-  }
-  return state;
-}
+  const state = readStoredState();
+  if (state.authenticated !== true) {
+    throw new Error("Portal launch session is not available. Open OPL Web from Portal.");
+  }
+  return state;
+}
 
 function buildPortalApi() {
   return {
@@ -497,31 +738,25 @@ function buildPortalApi() {
     },
     get bootstrap() {
       return readStoredBootstrap();
-    },
-    async refreshBootstrap() {
-      const state = requireLaunchState();
-      const bootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap?launch_token=" + encodeURIComponent(state.launchToken));
-      writeStoredBootstrap(bootstrap);
-      return bootstrap;
-    },
+    },
+    async refreshBootstrap() {
+      const state = requireLaunchState();
+      const bootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap");
+      writeStoredBootstrap(bootstrap);
+      return bootstrap;
+    },
     async startRun(input = {}) {
       const state = requireLaunchState();
       return fetchJson(state.adapterUrl + "/api/opl-launch/runs", {
         method: "POST",
-        body: JSON.stringify({
-          ...input,
-          launchToken: input.launchToken || input.launch_token || state.launchToken
-        })
+        body: JSON.stringify(input)
       });
     },
     async sendMessage(input = {}) {
       const state = requireLaunchState();
       const accepted = await fetchJson(state.adapterUrl + "/api/opl-launch/messages", {
         method: "POST",
-        body: JSON.stringify({
-          ...input,
-          launchToken: input.launchToken || input.launch_token || state.launchToken
-        })
+        body: JSON.stringify(input)
       });
       if (accepted.status === "accepted" && accepted.statusUrl) {
         return pollPortalMessageStatus(accepted.statusUrl, {
@@ -693,35 +928,17 @@ window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
 window.__OPL_PORTAL__.installNativeMessageBridge = installNativeMessageBridge;
 window.__OPL_PORTAL__.markFirstInteraction = markFirstInteraction;
 installDomReadyMarker();
-
-async function initializePortalLaunch() {
-  const injectedDirectEntry = resolveInjectedDirectEntryFlag();
-  updateDirectEntryState({
-    active: injectedDirectEntry,
-    reason: injectedDirectEntry ? "portal_launch_required" : "portal_launch_pending"
-  });
-  const state = resolveLaunchState();
-  if (!state) {
-    updateDirectEntryState({
-      active: true,
-      reason: injectedDirectEntry ? "portal_launch_required" : "portal_launch_missing"
-    });
-    return;
-  }
-  const bootstrapUrl = state.adapterUrl + "/api/opl-launch/bootstrap?launch_token=" + encodeURIComponent(state.launchToken);
-  const bootstrap = await fetchJson(bootstrapUrl);
-  writeStoredBootstrap(bootstrap);
-  if (!ensureLaunchProviderConnection(bootstrap)) return;
+installGflabtokenApiKeyFieldObserver();
 
+async function completePortalLaunch(state, bootstrap) {
   const launch = bootstrap.launch || {};
   const portal = bootstrap.portal || {};
   const workspace = bootstrap.workspace || {};
-  const sessionBind = await fetchJson(state.adapterUrl + "/api/opl-launch/sessions/bind", {
-    method: "POST",
-    body: JSON.stringify({
-      launchToken: state.launchToken,
-      workspaceId: portal.workspaceId || launch.workspaceId || "",
-      workspaceSessionId: portal.workspaceSessionId || launch.workspaceSessionId || "",
+  const sessionBind = await fetchJson(state.adapterUrl + "/api/opl-launch/sessions/bind", {
+    method: "POST",
+    body: JSON.stringify({
+      workspaceId: portal.workspaceId || launch.workspaceId || "",
+      workspaceSessionId: portal.workspaceSessionId || launch.workspaceSessionId || "",
       runtimeSessionId: portal.runtimeSessionId || launch.runtimeSessionId || "",
       oplSessionId: "opl-web:" + (launch.launchId || portal.runtimeSessionId || Date.now()),
       workspacePath: workspace.workspacePath || launch.workspacePath || "",
@@ -733,7 +950,11 @@ async function initializePortalLaunch() {
   const refreshedBootstrap = bootstrap;
   writeStoredBootstrap(refreshedBootstrap);
 
-  window.__OPL_PORTAL_LAUNCH__ = { state, bootstrap: refreshedBootstrap, sessionBind };
+  window.__OPL_PORTAL_LAUNCH__ = {
+    state: publicLaunchState(state),
+    bootstrap: publicBootstrapPayload(refreshedBootstrap),
+    sessionBind: publicSessionBindPayload(sessionBind)
+  };
   window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
   window.__OPL_PORTAL__.installNativeRunBridge = installNativeRunBridge;
   window.__OPL_PORTAL__.installNativeMessageBridge = installNativeMessageBridge;
@@ -747,14 +968,87 @@ async function initializePortalLaunch() {
   installNativeMessageBridge();
   markLaunchReady();
   window.dispatchEvent(new CustomEvent("opl:portal-launch-ready", {
-    detail: window.__OPL_PORTAL_LAUNCH__
-  }));
-  stripLaunchQuery();
-}
-
-initializePortalLaunch().catch((error) => {
-  console.error("[opl-web-gateway] Portal launch initialization failed", error);
-  window.__OPL_PORTAL_LAUNCH_ERROR__ = String(error && error.message ? error.message : error);
+    detail: { ready: true, state: window.__OPL_PORTAL_LAUNCH__.state }
+  }));
+  stripLaunchQuery();
+}
+
+function pickFields(source = {}, keys = []) {
+  const target = {};
+  for (const key of keys) {
+    if (source[key] !== undefined && source[key] !== null && source[key] !== "") target[key] = source[key];
+  }
+  return target;
+}
+
+function publicBootstrapPayload(bootstrap = {}) {
+  return {
+    launch: pickFields(bootstrap.launch || {}, [
+      "launchId",
+      "workspaceId",
+      "workspaceSessionId",
+      "runtimeSessionId",
+      "oplSessionId",
+      "portalUserId",
+      "portalUserEmail",
+      "portalUserName",
+    ]),
+    portal: bootstrap.portal || {},
+    workspace: bootstrap.workspace || {},
+    provider: pickFields(bootstrap.provider || {}, [
+      "providerConfigured",
+      "providerConfigStatus",
+      "providerKeyRef",
+      "providerName",
+      "modelProvider",
+      "modelReasoningEffort",
+      "serviceTier",
+      "sandboxMode",
+    ])
+  };
+}
+
+function publicSessionBindPayload(sessionBind = {}) {
+  return pickFields(sessionBind || {}, [
+    "ok",
+    "status",
+    "workspaceId",
+    "workspaceSessionId",
+    "runtimeSessionId",
+    "oplSessionId",
+    "providerConfigured",
+    "providerConfigStatus",
+    "providerKeyRef",
+  ]);
+}
+
+async function initializePortalLaunch() {
+  const injectedDirectEntry = resolveInjectedDirectEntryFlag();
+  updateDirectEntryState({
+    active: injectedDirectEntry,
+    reason: injectedDirectEntry ? "portal_launch_required" : "portal_launch_pending"
+  });
+  let state = resolveLaunchState();
+  if (!state) {
+    state = await resolveCookieLaunchState();
+  }
+  if (!state) {
+    updateDirectEntryState({
+      active: true,
+      reason: injectedDirectEntry ? "portal_launch_required" : "portal_launch_missing"
+    });
+    return;
+  }
+  const bootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap");
+  writeStoredBootstrap(bootstrap);
+  if (!ensureLaunchProviderPanel(state, bootstrap)) return;
+  await completePortalLaunch(state, bootstrap);
+}
+
+initializePortalLaunch().catch((error) => {
+  const message = safeErrorMessage(error, "Portal launch initialization failed");
+  console.error("[opl-web-gateway] Portal launch initialization failed", message);
+  window.__OPL_PORTAL_LAUNCH_ERROR__ = message;
   updateDirectEntryState({
     active: true,
     authenticated: false,

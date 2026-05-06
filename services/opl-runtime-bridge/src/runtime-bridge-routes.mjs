@@ -206,12 +206,17 @@ function messageRecordInState(state = {}, { messageId = "", runtimeSessionId = "
   );
 }
 
-function launchTokenFrom(input = {}, url) {
-  return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "";
+function authorizationBearerFrom(req = null) {
+  const authorization = String(req?.headers?.authorization || "").trim();
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
 }
 
-function messageStatusLookup({ state, url, match, launch }) {
-  const tokenHash = launchTokenHash(url.searchParams.get("launch_token") || "");
+function launchTokenFrom(input = {}, url, req = null) {
+  return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || authorizationBearerFrom(req);
+}
+
+function messageStatusLookup({ state, tokenHash, match, launch }) {
   const messageId = decodeURIComponent(match[1]);
   return messageRecordInState(state, {
     messageId,
@@ -237,8 +242,8 @@ function messageStatusPayload(record = {}, state = {}) {
   };
 }
 
-function statusUrlForMessage({ baseUrl, messageId, launchToken }) {
-  return `${baseUrl}/api/opl-launch/messages/${encodeURIComponent(messageId)}/status?launch_token=${encodeURIComponent(launchToken)}`;
+function statusUrlForMessage({ messageId }) {
+  return `/api/opl-launch/messages/${encodeURIComponent(messageId)}/status`;
 }
 
 function mergeUniqueBy(target = [], source = [], keyFn) {
@@ -350,8 +355,8 @@ export function createRuntimeBridgeRuntime() {
     publishTraceEvent,
   });
 
-  async function readLaunchRuntimeSession(input, url, res) {
-    const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url));
+  async function readLaunchRuntimeSession(input, url, req, res) {
+    const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url, req));
     if (!launch) {
       sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
       return null;
@@ -462,7 +467,7 @@ export function createRuntimeBridgeRuntime() {
         status: record.status,
         acceptedAt,
       },
-      statusUrl: statusUrlForMessage({ baseUrl: config.baseUrl, messageId, launchToken }),
+      statusUrl: statusUrlForMessage({ messageId }),
     });
   }
 
@@ -494,8 +499,8 @@ export function createRuntimeBridgeRuntime() {
     sendRetired(res, "旧 /api/workbench/bootstrap 已退场；OPL Web 必须使用 /api/opl-launch/bootstrap。", "/api/opl-launch/bootstrap");
   }
 
-  async function handleBootstrap(_req, res, url) {
-    const launch = launchApi.verifyLaunchToken(url.searchParams.get("launch_token") || "");
+  async function handleBootstrap(req, res, url) {
+    const launch = launchApi.verifyLaunchToken(launchTokenFrom({}, url, req));
     if (!launch) {
       sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
       return;
@@ -508,7 +513,7 @@ export function createRuntimeBridgeRuntime() {
 
   async function handleRuntimeRun(req, res, url) {
     const input = await readBody(req);
-    const resolved = await readLaunchRuntimeSession(input, url, res);
+    const resolved = await readLaunchRuntimeSession(input, url, req, res);
     if (!resolved) return;
     const { state, runtimeSession } = resolved;
     try {
@@ -525,11 +530,11 @@ export function createRuntimeBridgeRuntime() {
 
   async function handleMessage(req, res, url) {
     const input = await readBody(req);
-    const resolved = await readLaunchRuntimeSession(input, url, res);
+    const resolved = await readLaunchRuntimeSession(input, url, req, res);
     if (!resolved) return;
     const { launch, state, runtimeSession } = resolved;
     const messageId = messageIdFromInput(input);
-    const launchToken = launchTokenFrom(input, url);
+    const launchToken = launchTokenFrom(input, url, req);
     const tokenHash = launchTokenHash(launchToken);
     const acceptedAt = new Date().toISOString();
     Object.assign(input, {
@@ -541,14 +546,15 @@ export function createRuntimeBridgeRuntime() {
     await dispatchMessageRequest({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res });
   }
 
-  async function handleMessageStatus(_req, res, url, match) {
-    const launch = launchApi.verifyLaunchToken(url.searchParams.get("launch_token") || "");
+  async function handleMessageStatus(req, res, url, match) {
+    const launchToken = launchTokenFrom({}, url, req);
+    const launch = launchApi.verifyLaunchToken(launchToken);
     if (!launch) {
       sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
       return;
     }
     const state = await readState();
-    const record = messageStatusLookup({ state, url, match, launch });
+    const record = messageStatusLookup({ state, tokenHash: launchTokenHash(launchToken), match, launch });
     if (!record) {
       sendJson(res, 404, { ok: false, error: "message_not_found" });
       return;
@@ -558,7 +564,7 @@ export function createRuntimeBridgeRuntime() {
 
   async function handleBindSession(req, res, url) {
     const input = await readBody(req);
-    const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url));
+    const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url, req));
     if (!launch) {
       sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
       return;

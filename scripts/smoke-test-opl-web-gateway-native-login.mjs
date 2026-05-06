@@ -258,20 +258,25 @@ async function main() {
     assert(openWebUiLogin.status === 200, `open-webui login expected 200, got ${openWebUiLogin.status}`);
     const openWebUiPayload = await openWebUiLogin.json();
     assert(openWebUiPayload.email === "native-login@example.test", "open-webui login email mismatch");
-    assert(openWebUiPayload.token === "launch-native-123", "open-webui login should expose token");
-    assert(openWebUiPayload.token_type === "Bearer", "open-webui login should expose bearer token");
+    assert(openWebUiPayload.token === undefined, "open-webui login should not expose token");
+    assert(openWebUiPayload.token_type === undefined, "open-webui login should not expose bearer token type");
+    assert(openWebUiPayload.launchToken === undefined, "open-webui login should not expose launch token");
+    assert(!JSON.stringify(openWebUiPayload).includes("launch-native-123"), "open-webui login payload should not include launch token anywhere");
     assert((openWebUiLogin.headers.get("set-cookie") || "").includes("opl_portal_launch="), "open-webui login should set launch cookie");
 
     const openWebUiMe = await fetch(`${gatewayUrl}/api/v1/auths/`, {
       headers: {
         accept: "application/json",
-        authorization: `Bearer ${openWebUiPayload.token}`,
+        cookie: (openWebUiLogin.headers.get("set-cookie") || "").split(";")[0],
       },
     });
     assert(openWebUiMe.status === 200, `open-webui me expected 200, got ${openWebUiMe.status}`);
     const openWebUiMePayload = await openWebUiMe.json();
     assert(openWebUiMePayload.email === "native-login@example.test", "open-webui me email mismatch");
-    assert(openWebUiMePayload.token === "launch-native-123", "open-webui me should preserve bearer token");
+    assert(openWebUiMePayload.token === undefined, "open-webui me should not expose token");
+    assert(openWebUiMePayload.token_type === undefined, "open-webui me should not expose bearer token type");
+    assert(openWebUiMePayload.launchToken === undefined, "open-webui me should not expose launch token");
+    assert(!JSON.stringify(openWebUiMePayload).includes("launch-native-123"), "open-webui me payload should not include launch token anywhere");
 
     assert(calls.portalLogin === 4, `portal login bridge expected 4 calls, got ${calls.portalLogin}`);
     assert(calls.upstreamLogin === 0, `upstream login should not be called, got ${calls.upstreamLogin}`);

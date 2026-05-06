@@ -16,20 +16,50 @@ import {
   sanitizeProxyHeaders,
 } from "./http-utils.mjs";
 
-export async function proxy(req, res, upstreamBase, prefix = "") {
-  const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
-  const body = await readRequestBody(req);
-  const response = await fetch(target, {
-    method: req.method || "GET",
-    headers: sanitizeProxyHeaders(req.headers, target),
-    body,
-    redirect: "manual",
-  });
+function launchTokenCookieFrom(req) {
+  return parseCookies(req.headers.cookie || "")[LAUNCH_COOKIE] || "";
+}
+
+function encodeCookieValue(value = "") {
+  return encodeURIComponent(String(value || ""));
+}
+
+function cookieHeaderWithoutLaunchToken(cookieHeader = "") {
+  const cookies = parseCookies(cookieHeader);
+  delete cookies[LAUNCH_COOKIE];
+  return Object.entries(cookies)
+    .map(([key, value]) => `${key}=${encodeCookieValue(value)}`)
+    .join("; ");
+}
+
+function buildProxyHeaders(req, target, prefix = "") {
+  const headers = sanitizeProxyHeaders(req.headers, target);
+  if (prefix !== ADAPTER_PREFIX) return headers;
+
+  const launchToken = launchTokenCookieFrom(req);
+  const cookieHeader = cookieHeaderWithoutLaunchToken(req.headers.cookie || "");
+  delete headers.authorization;
+  delete headers.Authorization;
+  if (cookieHeader) headers.cookie = cookieHeader;
+  else delete headers.cookie;
+  if (launchToken) headers.authorization = `Bearer ${launchToken}`;
+  return headers;
+}
+
+export async function proxy(req, res, upstreamBase, prefix = "") {
+  const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
+  const body = await readRequestBody(req);
+  const response = await fetch(target, {
+    method: req.method || "GET",
+    headers: buildProxyHeaders(req, target, prefix),
+    body,
+    redirect: "manual",
+  });
 
-  const headers = copyHeaders(response.headers);
-  const incoming = new URL(req.url || "/", BASE_URL);
-  const launchToken = incoming.searchParams.get("launch_token") || "";
-  const hasLaunchCookie = Boolean(parseCookies(req.headers.cookie || "")[LAUNCH_COOKIE]);
+  const headers = copyHeaders(response.headers);
+  const incoming = new URL(req.url || "/", BASE_URL);
+  const launchToken = incoming.searchParams.get("launch_token") || "";
+  const hasLaunchCookie = Boolean(launchTokenCookieFrom(req));
   const directEntry = !launchToken && !hasLaunchCookie;
   if (!prefix && launchToken) appendSetCookie(headers, buildLaunchCookie(launchToken));
   const contentType = response.headers.get("content-type") || "";
@@ -104,7 +134,7 @@ function bindUpgradeSocketPair(clientSocket, upstreamSocket) {
 export function proxyUpgrade(req, socket, head, upstreamBase, prefix = "") {
   const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
   const client = target.protocol === "https:" ? https : http;
-  const headers = sanitizeProxyHeaders(req.headers, target);
+  const headers = buildProxyHeaders(req, target, prefix);
   headers.connection = "Upgrade";
   headers.upgrade = req.headers.upgrade || "websocket";
 

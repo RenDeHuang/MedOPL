@@ -81,9 +81,18 @@ function startOplWebFixture(calls) {
 function startAdapterFixture(calls) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://adapter.local");
+    const authorization = String(req.headers.authorization || "");
+    const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || "";
+    if (url.pathname.startsWith("/api/opl-launch/") && bearer !== "launch-token-smoke") {
+      res.writeHead(401, { "content-type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: false, error: "launch_token_invalid" }));
+      return;
+    }
     if (req.method === "GET" && url.pathname === "/api/opl-launch/bootstrap") {
       calls.bootstrap.push({
-        launchToken: url.searchParams.get("launch_token") || "",
+        authorization,
+        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        cookie: req.headers.cookie || "",
       });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
@@ -136,7 +145,12 @@ function startAdapterFixture(calls) {
     if (req.method === "POST" && url.pathname === "/api/opl-launch/runs") {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
-      calls.runs.push(body);
+      calls.runs.push({
+        body,
+        authorization,
+        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        cookie: req.headers.cookie || "",
+      });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         ok: true,
@@ -150,7 +164,12 @@ function startAdapterFixture(calls) {
       return;
     }
     if (req.method === "GET" && url.pathname === "/api/opl-launch/runs/run-smoke/status") {
-      calls.status.push({ runId: "run-smoke" });
+      calls.status.push({
+        runId: "run-smoke",
+        authorization,
+        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        cookie: req.headers.cookie || "",
+      });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         ok: true,
@@ -163,7 +182,12 @@ function startAdapterFixture(calls) {
       return;
     }
     if (req.method === "GET" && url.pathname === "/api/opl-launch/runs/run-smoke/artifacts") {
-      calls.artifacts.push({ runId: "run-smoke" });
+      calls.artifacts.push({
+        runId: "run-smoke",
+        authorization,
+        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        cookie: req.headers.cookie || "",
+      });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         ok: true,
@@ -179,7 +203,12 @@ function startAdapterFixture(calls) {
     }
     if (req.method === "POST" && url.pathname === "/api/opl-launch/sessions/bind") {
       const raw = await readBody(req);
-      calls.bind.push(JSON.parse(raw || "{}"));
+      calls.bind.push({
+        body: JSON.parse(raw || "{}"),
+        authorization,
+        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        cookie: req.headers.cookie || "",
+      });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: true, bound: true }));
       return;
@@ -190,7 +219,7 @@ function startAdapterFixture(calls) {
   return server;
 }
 
-function createBrowserVm({ gatewayUrl, launchToken }) {
+function createBrowserVm({ gatewayUrl }) {
   const storage = new Map();
   const documentListeners = new Map();
   let resolveReady;
@@ -205,7 +234,7 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
     resolveRunStarted = resolve;
     rejectRunStarted = reject;
   });
-  const locationState = new URL(`${gatewayUrl}/?launch_token=${encodeURIComponent(launchToken)}&portal_adapter_url=http%3A%2F%2Fold-adapter.invalid`);
+  const locationState = new URL(`${gatewayUrl}/`);
   const location = {
     href: locationState.href,
     search: locationState.search,
@@ -284,7 +313,13 @@ function createBrowserVm({ gatewayUrl, launchToken }) {
     },
     fetch(input, options) {
       const target = new URL(String(input), gatewayUrl);
-      return fetch(target, options);
+      return fetch(target, {
+        ...options,
+        headers: {
+          cookie: "opl_portal_launch=launch-token-smoke",
+          ...(options && options.headers ? options.headers : {}),
+        },
+      });
       },
     }),
     ready,
@@ -358,7 +393,7 @@ try {
   assert(script.includes("/portal-adapter"), "portal launch script must use same-origin adapter proxy");
   assert(script.includes("window.__OPL_PORTAL__"), "portal launch script must expose stable browser API");
 
-  const browser = createBrowserVm({ gatewayUrl, launchToken: "launch-token-smoke" });
+  const browser = createBrowserVm({ gatewayUrl });
   vm.runInContext(script, browser.context, { filename: "portal-launch.js" });
   const detail = await Promise.race([
     browser.ready,
@@ -367,18 +402,27 @@ try {
     }),
   ]);
 
-  assert(detail.bootstrap.portal.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
-  assert(detail.bootstrap.identity.tenantId === "tenant-smoke", "bootstrap identity tenantId was not exposed");
-  assert(detail.bootstrap.ownership.storageOwnerId === "portal-user-smoke", "bootstrap ownership storage owner was not exposed");
-  assert(detail.bootstrap.workspace.storageOwnerId === "portal-user-smoke", "bootstrap workspace storage owner was not exposed");
+  assert(detail.state.authenticated === true, "launch ready event must expose public authenticated state");
+  assert(detail.state.adapterUrl === "/portal-adapter", "launch ready event must expose same-origin adapter");
+  assert(detail.state.launchToken === undefined, "launch ready event must not expose launch token");
+  assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.launch.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
+  assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.identity === undefined, "bootstrap identity must not be exposed in global launch state");
+  assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.ownership === undefined, "bootstrap ownership must not be exposed in global launch state");
   assert(browser.window.__OPL_PORTAL_DIRECT_ENTRY__.active === false, "launch flow should clear direct entry state");
   assert(browser.window.__OPL_PORTAL__.bootstrap.portal.portalUserId === "portal-user-smoke", "stable browser API did not expose bootstrap");
-  assert(calls.bootstrap.length === bootstrapCallsBeforeScript + 1, "adapter bootstrap was not called through gateway");
-  assert(calls.bootstrap.at(-1).launchToken === "launch-token-smoke", "launch token was not forwarded");
+  assert(calls.bootstrap.length >= bootstrapCallsBeforeScript + 2, "adapter bootstrap was not called through cookie-only gateway flow");
+  assert(calls.bootstrap.at(-1).authorization === "Bearer launch-token-smoke", "gateway must inject launch token as Authorization");
+  assert(calls.bootstrap.at(-1).launchTokenQuery === "", "gateway must not inject launch token query");
+  assert(!calls.bootstrap.at(-1).cookie.includes("opl_portal_launch"), "gateway must not forward launch cookie to adapter");
   assert(calls.bind.length === 1, "adapter session bind was not called through gateway");
-  assert(calls.bind[0].source === "opl-web-gateway", "session bind source mismatch");
-  assert(calls.bind[0].runtimeSessionId === "runtime-session-smoke", "runtime session bind mismatch");
+  assert(calls.bind[0].authorization === "Bearer launch-token-smoke", "gateway must inject Authorization for bind");
+  assert(calls.bind[0].launchTokenQuery === "", "bind callback must not include launch token query");
+  assert(!calls.bind[0].cookie.includes("opl_portal_launch"), "bind callback must not forward launch cookie");
+  assert(calls.bind[0].body.source === "opl-web-gateway", "session bind source mismatch");
+  assert(calls.bind[0].body.runtimeSessionId === "runtime-session-smoke", "runtime session bind mismatch");
   assert(!browser.window.location.search.includes("launch_token"), "launch token should be stripped from browser URL after bind");
+  assert(!JSON.stringify([...browser.storage.values()]).includes("launch-token-smoke"), "sessionStorage must not contain launch token");
+  assert(!JSON.stringify(browser.window.__OPL_PORTAL_LAUNCH__).includes("launch-token-smoke"), "global launch state must not contain launch token");
   assert(browser.window.__OPL_PORTAL_NATIVE_RUN_BRIDGE_INSTALLED__ === true, "native OPL module click bridge was not installed");
   assert(typeof browser.window.__OPL_PORTAL_TIMING__.portal_launch_ready_ms === "number", "portal launch ready timing marker missing");
   assert(browser.window.__OPL_PORTAL_TIMING__.markers.some((item) => item.marker === "portal_launch_ready_ms"), "portal launch ready telemetry event missing");
@@ -408,17 +452,26 @@ try {
   ]);
   assert(nativeRun.module.moduleId === "mas", "native module bridge did not resolve MAS module");
   assert(typeof browser.window.__OPL_PORTAL_TIMING__.opl_first_interaction_ms === "number", "first interaction timing marker missing");
-  assert(calls.runs.at(-1).agentId === "mas", "native module bridge did not call MAS run");
-  assert(calls.runs.at(-1).source === "opl-web-native-ui-click", "native module bridge source mismatch");
+  assert(calls.runs.at(-1).authorization === "Bearer launch-token-smoke", "gateway must inject Authorization for native run");
+  assert(calls.runs.at(-1).launchTokenQuery === "", "native run callback must not include launch token query");
+  assert(!calls.runs.at(-1).cookie.includes("opl_portal_launch"), "native run callback must not forward launch cookie");
+  assert(calls.runs.at(-1).body.launchToken === undefined, "native run body must not include launch token");
+  assert(calls.runs.at(-1).body.agentId === "mas", "native module bridge did not call MAS run");
+  assert(calls.runs.at(-1).body.source === "opl-web-native-ui-click", "native module bridge source mismatch");
 
   const run = await browser.window.__OPL_PORTAL__.startRun({ runId: "run-smoke", agentId: "mas" });
   assert(run.runId === "run-smoke", "stable browser API did not start run");
   assert(calls.runs.length >= 2, "adapter run callback was not called");
-  assert(calls.runs[0].launchToken === "launch-token-smoke", "run callback did not include launch token");
+  assert(calls.runs.at(-1).authorization === "Bearer launch-token-smoke", "stable browser run must use gateway Authorization injection");
+  assert(calls.runs.at(-1).body.launchToken === undefined, "stable browser run body must not include launch token");
   const status = await browser.window.__OPL_PORTAL__.getRunStatus("run-smoke");
   assert(status.status === "succeeded", "stable browser API did not read run status");
+  assert(calls.status.at(-1).authorization === "Bearer launch-token-smoke", "run status must use gateway Authorization injection");
+  assert(calls.status.at(-1).launchTokenQuery === "", "run status must not include launch token query");
   const artifacts = await browser.window.__OPL_PORTAL__.getArtifacts("run-smoke");
   assert(artifacts.items.length === 1, "stable browser API did not read artifacts");
+  assert(calls.artifacts.at(-1).authorization === "Bearer launch-token-smoke", "artifacts must use gateway Authorization injection");
+  assert(calls.artifacts.at(-1).launchTokenQuery === "", "artifacts must not include launch token query");
 
   console.log(JSON.stringify({
     ok: true,

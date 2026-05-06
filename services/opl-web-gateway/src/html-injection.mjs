@@ -51,8 +51,8 @@ export function buildNativeLoginEntryMarkup() {
   <div class="opl-portal-entry__panel">
     <button class="opl-portal-entry__close" type="button" aria-label="关闭提示" data-opl-portal-dismiss>&times;</button>
     <p class="opl-portal-entry__eyebrow">One Person Lab</p>
-    <h1 class="opl-portal-entry__title">请从 Portal 统一入口进入</h1>
-    <p class="opl-portal-entry__copy">Portal 会自动准备工作空间、OPL 连接凭证和启动状态；直开 OPL 时请先返回 Portal。</p>
+    <h1 class="opl-portal-entry__title">使用 Portal 账号进入 OPL</h1>
+    <p class="opl-portal-entry__copy">可直接在当前登录表单使用 Portal 账号登录，并在密码下方填写来源于 gflabtoken 的 API Key；也可以返回 Portal 统一入口继续。</p>
     ${button}
     <p class="opl-portal-entry__hint">${continueUrl ? `继续入口：${escapeHtml(continueUrl)}` : "未配置 Portal 公开地址，请联系管理员设置 PORTAL_PUBLIC_URL。"}</p>
   </div>
