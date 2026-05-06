@@ -151,7 +151,7 @@ const createdCompute = await invoke(route, {
   },
 });
 assert.equal(createdCompute.status, 201, "cloud_compute_create_status_must_be_201");
-assert.equal(createdCompute.payload?.item?.provisioningMode, "cloud_provisioned", "cloud_compute_provisioning_mode_mismatch");
+assert.equal(createdCompute.payload?.item?.provisioningMode, "platform_provisioned", "cloud_compute_provisioning_mode_mismatch");
 assert.equal(createdCompute.payload?.item?.cloudResourceId, "ins-cloud-a", "cloud_compute_resource_id_mismatch");
 assert.equal(createdCompute.payload?.item?.cvmInstanceId, "ins-cloud-a", "cloud_compute_cvm_id_mismatch");
 assert.equal(createdCompute.payload?.item?.runtimeAgentEndpoint, "https://runtime-agent.example.test", "cloud_compute_agent_endpoint_mismatch");
@@ -175,7 +175,7 @@ const createdStorage = await invoke(route, {
   },
 });
 assert.equal(createdStorage.status, 201, "cloud_storage_create_status_must_be_201");
-assert.equal(createdStorage.payload?.item?.provisioningMode, "cloud_provisioned", "cloud_storage_provisioning_mode_mismatch");
+assert.equal(createdStorage.payload?.item?.provisioningMode, "platform_provisioned", "cloud_storage_provisioning_mode_mismatch");
 assert.equal(createdStorage.payload?.item?.cloudResourceId, "cos-cloud-a", "cloud_storage_resource_id_mismatch");
 assert.equal(createdStorage.payload?.item?.bucketName, "opl-cloud-a", "cloud_storage_bucket_name_mismatch");
 assert.equal(createdStorage.payload?.item?.rootPrefix, "users/u-cloud/", "cloud_storage_root_prefix_mismatch");

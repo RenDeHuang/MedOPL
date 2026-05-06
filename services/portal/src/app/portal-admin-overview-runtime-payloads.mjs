@@ -123,7 +123,7 @@ function upstreamStatusRows({ billingStatus, runtimeAgents = [] }) {
     {
       name: "Runtime Agent",
       status: runtimeAgents.length ? "connected" : "pending",
-      detail: runtimeAgents.length ? `${runtimeAgents.length} 个用户 CVM Runtime Agent 有记录。` : "等待用户绑定 CVM 并注册 Runtime Agent。",
+      detail: runtimeAgents.length ? `${runtimeAgents.length} 个平台代开的客户专属运行环境已注册 Runtime Agent。` : "等待平台代开客户专属运行环境并注册 Runtime Agent。",
     },
   ];
 }

@@ -382,6 +382,7 @@ export async function fetchOplLaunchStatus(launchId: string) {
   return data;
 }
 
+// Legacy type aliases for old imports. New code should use Customer* and PlatformProvisioned* names.
 export type UserComputeInstance = CustomerComputeResource;
 export type UserStorageBucket = CustomerStorageResource;
 export type UserOwnedResourcesSummary = PlatformProvisionedResourcesSummary;
