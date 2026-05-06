@@ -4,10 +4,24 @@ function asObject(value) {
   return value && typeof value === "object" ? value : {};
 }
 
+function normalizeStage(stage = "") {
+  const normalized = String(stage || "").trim();
+  if (normalized === RUN_STAGES.USER_OWNED_RUNTIME_DISPATCH) return RUN_STAGES.PLATFORM_RUNTIME_DISPATCH;
+  return normalized;
+}
+
+function normalizeCode(code = "") {
+  const normalized = String(code || "").trim();
+  if (normalized === RUN_ERROR_CODES.USER_OWNED_RUNTIME_AGENT_REQUIRED) {
+    return RUN_ERROR_CODES.PLATFORM_RUNTIME_AGENT_REQUIRED;
+  }
+  return normalized;
+}
+
 export function mapRunError(error, context = {}) {
   const source = asObject(error);
-  const code = String(source.code || source.errorCode || "");
-  const stage = String(source.stage || "");
+  const code = normalizeCode(source.code || source.errorCode || "");
+  const stage = normalizeStage(source.stage || "");
   const details = asObject(source.details);
   const correlationId = String(context.correlationId || source.correlationId || details.correlationId || "");
 
