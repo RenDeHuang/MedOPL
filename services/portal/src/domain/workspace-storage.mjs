@@ -3,17 +3,54 @@ import { resolveWorkspaceLabStorageEntitlement } from "./lab-entitlements.mjs";
 
 export const STORAGE_ORDER_STATUSES = new Set(["active", "deleting", "deleted", "cleanup_failed", "cancelled"]);
 export const WORKSPACE_FILE_KINDS = new Set(["inputs", "outputs", "artifacts"]);
+export const WORKSPACE_STORAGE_MODES = new Set(["legacy", "full_runtime", "api_only"]);
 
 const transferTokens = new Map();
 
 function normalizeSlashPath(value = "") {
-  return String(value || "").replaceAll("\\", "/").replace(/^\/+/, "").replace(/\/{2,}/g, "/");
+  return String(value || "").trim();
 }
 
-function safeRelativePath(value = "") {
-  const normalized = normalizeSlashPath(value).replace(/^\.+\/?/, "");
-  if (!normalized || normalized === "." || normalized.startsWith("..") || normalized.includes("/../")) return "";
+function hasWindowsDrivePrefix(value = "") {
+  return /^[A-Za-z]:/.test(value);
+}
+
+function invalidPathSegment(segment = "") {
+  return !segment || segment === "." || segment === ".." || segment.includes("\0");
+}
+
+export function safeRelativePath(value = "") {
+  const normalized = normalizeSlashPath(value);
+  if (!normalized || normalized.includes("\\") || normalized.startsWith("/") || hasWindowsDrivePrefix(normalized)) return "";
+  const segments = normalized.split("/");
+  if (segments.some(invalidPathSegment)) return "";
+  return segments.join("/");
+}
+
+export function safeRelativePrefix(value = "") {
+  const normalized = normalizeSlashPath(value).replace(/\/+$/, "");
+  return safeRelativePath(normalized);
+}
+
+export function safePathSegment(value = "") {
+  const normalized = normalizeSlashPath(value);
+  if (invalidPathSegment(normalized) || normalized.includes("/") || normalized.includes("\\") || hasWindowsDrivePrefix(normalized)) return "";
   return normalized;
+}
+
+export function resolvePathInsideRoot(pathModule, rootPath, candidatePath) {
+  const root = pathModule.resolve(String(rootPath || ""));
+  const candidate = pathModule.resolve(String(candidatePath || ""));
+  if (!root || !candidate) return "";
+  const relative = pathModule.relative(root, candidate);
+  if (relative === "" || (!relative.startsWith("..") && !pathModule.isAbsolute(relative))) return candidate;
+  return "";
+}
+
+export function resolveRelativePathInsideRoot(pathModule, rootPath, relativePath) {
+  const normalizedRelativePath = safeRelativePath(relativePath);
+  if (!normalizedRelativePath) return "";
+  return resolvePathInsideRoot(pathModule, rootPath, pathModule.join(rootPath, ...normalizedRelativePath.split("/")));
 }
 
 function normalizeWorkspaceKind(kind = "inputs") {
@@ -21,12 +58,76 @@ function normalizeWorkspaceKind(kind = "inputs") {
   return WORKSPACE_FILE_KINDS.has(normalized) ? normalized : "inputs";
 }
 
+function normalizeStorageMode(value = "") {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "full_runtime") return "full_runtime";
+  if (normalized === "api_only") return "api_only";
+  return "legacy";
+}
+
+function normalizedStorageRootPrefix(value = "") {
+  const normalized = safeRelativePrefix(value);
+  return normalized ? `${normalized.replace(/\/+$/, "")}/` : "";
+}
+
+function stringFromFields(record = {}, fields = [], defaultValue = "") {
+  for (const field of fields) {
+    const value = record[field];
+    if (value) return String(value).trim();
+  }
+  return String(defaultValue).trim();
+}
+
 function storageOrderCosPrefix(tenantId, workspaceId) {
   return `workspaces/${String(tenantId || "").trim()}/${String(workspaceId || "").trim()}/`;
 }
 
+function fullRuntimeStorageRootPrefix({ userId = "", workspaceId = "", rootPrefix = "" } = {}) {
+  const defaultPrefix = `users/${String(userId || "").trim()}/workspaces/${String(workspaceId || "").trim()}/`;
+  return normalizedStorageRootPrefix(rootPrefix || defaultPrefix);
+}
+
+function fullRuntimeStoragePrefix({ userId = "", workspaceId = "", oplSessionId = "", rootPrefix = "" } = {}) {
+  const normalizedSessionId = safePathSegment(oplSessionId);
+  const normalizedRootPrefix = fullRuntimeStorageRootPrefix({ userId, workspaceId, rootPrefix });
+  if (!normalizedRootPrefix || !normalizedSessionId) return "";
+  return `${normalizedRootPrefix}sessions/${normalizedSessionId}/`;
+}
+
+function parseWorkspaceFileSource(source = "") {
+  const normalized = String(source || "").trim();
+  if (!normalized) return { source: "portal_upload", storageMode: "legacy", resourceBindingId: "" };
+  const [prefix, ...rest] = normalized.split(":");
+  const resourceBindingId = rest.join(":").trim();
+  if (prefix.startsWith("full_runtime")) {
+    return { source: normalized, storageMode: "full_runtime", resourceBindingId };
+  }
+  if (prefix.startsWith("api_only")) {
+    return { source: normalized, storageMode: "api_only", resourceBindingId: "" };
+  }
+  return { source: normalized, storageMode: "legacy", resourceBindingId };
+}
+
+function encodeWorkspaceFileSource({
+  source = "portal_upload",
+  storageMode = "legacy",
+  resourceBindingId = "",
+} = {}) {
+  const normalizedMode = normalizeStorageMode(storageMode);
+  const parsed = parseWorkspaceFileSource(source);
+  if (normalizedMode !== "full_runtime") {
+    if (normalizedMode === "api_only") return parsed.source.startsWith("api_only") ? parsed.source : "api_only_message_trace";
+    return parsed.source || "portal_upload";
+  }
+  const normalizedBindingId = String(resourceBindingId || parsed.resourceBindingId || "").trim();
+  const prefix = parsed.source.startsWith("full_runtime") ? parsed.source.split(":")[0] : String(source || "full_runtime_upload").trim() || "full_runtime_upload";
+  return normalizedBindingId ? `${prefix}:${normalizedBindingId}` : prefix;
+}
+
 function workspaceOwnerMatches(item = {}, context = {}) {
-  return item.workspaceId === context.workspaceId && (item.userId === context.userId || item.tenantId === context.tenantId);
+  if (item.workspaceId !== context.workspaceId) return false;
+  if (item.userId !== context.userId) return false;
+  return !context.tenantId || item.tenantId === context.tenantId;
 }
 
 function canMarkStorageOrderDeleting(order = {}, context = {}) {
@@ -44,9 +145,89 @@ function applyRetentionMarker(item, deletedAt, cleanupAfterAt) {
   item.retentionCleanupAfterAt = cleanupAfterAt;
 }
 
-export function buildWorkspaceStorageKey(tenantId, workspaceId, kind, relativePath) {
+function workspaceFileStorageMode(record = {}, parsedSource = {}, oplSessionId = "") {
+  const explicitMode = stringFromFields(record, ["storageMode", "storage_mode"]);
+  if (explicitMode) return normalizeStorageMode(explicitMode);
+  if (parsedSource.storageMode) return normalizeStorageMode(parsedSource.storageMode);
+  return normalizeStorageMode(oplSessionId ? "full_runtime" : "legacy");
+}
+
+function normalizeWorkspaceFileScope(record = {}, parsedSource = {}) {
+  const id = stringFromFields(record, ["id"], randomUUID());
+  const userId = stringFromFields(record, ["userId", "user_id", "tenantId", "tenant_id"]);
+  const tenantId = stringFromFields(record, ["tenantId", "tenant_id"], userId) || userId;
+  const workspaceId = stringFromFields(record, ["workspaceId", "workspace_id"]);
+  const oplSessionId = stringFromFields(record, ["oplSessionId", "opl_session_id", "runId", "run_id"]);
+  const resourceBindingId = stringFromFields(record, ["resourceBindingId", "resource_binding_id"], parsedSource.resourceBindingId);
+  const storageMode = workspaceFileStorageMode(record, parsedSource, oplSessionId);
+  const storageRootPrefix = fullRuntimeStorageRootPrefix({
+    userId,
+    workspaceId,
+    rootPrefix: stringFromFields(record, ["storageRootPrefix", "storage_root_prefix"]),
+  });
+  return { id, tenantId, userId, workspaceId, oplSessionId, resourceBindingId, storageMode, storageRootPrefix };
+}
+
+function basenameFromPath(relativePath = "") {
+  const segments = String(relativePath || "").split("/");
+  return segments[segments.length - 1] || "";
+}
+
+function normalizeWorkspaceFilePath(record = {}) {
+  const relativePath = safeRelativePath(stringFromFields(record, ["relativePath", "relative_path", "name"]));
+  return {
+    kind: normalizeWorkspaceKind(record.kind),
+    name: stringFromFields(record, ["name"], basenameFromPath(relativePath)),
+    relativePath,
+  };
+}
+
+function workspaceFileStorageKey(record = {}, scope = {}, path = {}) {
+  const explicitKey = stringFromFields(record, ["storageKey", "storage_key"]);
+  if (explicitKey) return explicitKey;
+  return buildWorkspaceStorageKey(scope.tenantId, scope.workspaceId, path.kind, path.relativePath, {
+    userId: scope.userId,
+    oplSessionId: scope.oplSessionId,
+    resourceBindingId: scope.resourceBindingId,
+    storageMode: scope.storageMode,
+    rootPrefix: scope.storageRootPrefix,
+  });
+}
+
+function workspaceFileSource(record = {}, scope = {}) {
+  return encodeWorkspaceFileSource({
+    source: stringFromFields(record, ["source"], "portal_upload") || "portal_upload",
+    storageMode: scope.storageMode,
+    resourceBindingId: scope.resourceBindingId,
+  });
+}
+
+function workspaceFileTimestamp(record = {}, camelField = "", snakeField = "", defaultValue = "") {
+  return stringFromFields(record, [camelField, snakeField], defaultValue) || defaultValue;
+}
+
+function validWorkspaceFileRecord(scope = {}, path = {}) {
+  if (!scope.id || !scope.userId || !scope.workspaceId || !path.relativePath || !path.name) return false;
+  if (scope.storageMode === "full_runtime") {
+    return Boolean(scope.oplSessionId && scope.resourceBindingId && scope.storageRootPrefix);
+  }
+  return true;
+}
+
+export function buildWorkspaceStorageKey(tenantId, workspaceId, kind, relativePath, options = {}) {
   const normalizedKind = normalizeWorkspaceKind(kind);
   const normalizedRelativePath = safeRelativePath(relativePath);
+  if (!normalizedRelativePath) return "";
+  const normalizedMode = normalizeStorageMode(options.storageMode || (options.oplSessionId ? "full_runtime" : "legacy"));
+  if (normalizedMode === "full_runtime") {
+    const prefix = fullRuntimeStoragePrefix({
+      userId: options.userId,
+      workspaceId,
+      oplSessionId: options.oplSessionId,
+      rootPrefix: options.rootPrefix,
+    });
+    if (prefix) return `${prefix}${normalizedKind}/${normalizedRelativePath}`;
+  }
   return `${storageOrderCosPrefix(tenantId, workspaceId)}${normalizedKind}/${normalizedRelativePath}`;
 }
 
@@ -89,35 +270,35 @@ export function normalizeStorageOrder(order = {}) {
 
 export function normalizeWorkspaceFileRecord(record = {}) {
   if (!record || typeof record !== "object") return null;
-  const id = String(record.id || randomUUID()).trim();
-  const userId = String(record.userId || record.user_id || record.tenantId || record.tenant_id || "").trim();
-  const tenantId = String(record.tenantId || record.tenant_id || userId).trim() || userId;
-  const workspaceId = String(record.workspaceId || record.workspace_id || "").trim();
-  const relativePath = safeRelativePath(record.relativePath || record.relative_path || record.name || "");
-  const kind = normalizeWorkspaceKind(record.kind);
-  const name = String(record.name || relativePath.split("/").pop() || "").trim();
+  const parsedSource = parseWorkspaceFileSource(record.source);
+  const scope = normalizeWorkspaceFileScope(record, parsedSource);
+  const path = normalizeWorkspaceFilePath(record);
   const now = new Date().toISOString();
-  if (!id || !userId || !workspaceId || !relativePath || !name) return null;
+  if (!validWorkspaceFileRecord(scope, path)) return null;
   return {
-    id,
-    tenantId,
-    userId,
-    workspaceId,
-    runId: String(record.runId || record.run_id || "").trim(),
-    kind,
-    name,
-    relativePath,
-    storageKey: String(record.storageKey || record.storage_key || buildWorkspaceStorageKey(tenantId, workspaceId, kind, relativePath)).trim(),
+    id: scope.id,
+    tenantId: scope.tenantId,
+    userId: scope.userId,
+    workspaceId: scope.workspaceId,
+    runId: scope.oplSessionId,
+    oplSessionId: scope.oplSessionId,
+    resourceBindingId: scope.resourceBindingId,
+    storageMode: scope.storageMode,
+    storageRootPrefix: scope.storageRootPrefix,
+    kind: path.kind,
+    name: path.name,
+    relativePath: path.relativePath,
+    storageKey: workspaceFileStorageKey(record, scope, path),
     localPath: String(record.localPath || record.local_path || "").trim(),
     sizeBytes: Math.max(0, Number(record.sizeBytes ?? record.size_bytes ?? 0)),
     checksum: String(record.checksum || "").trim(),
     contentType: String(record.contentType || record.content_type || "application/octet-stream").trim() || "application/octet-stream",
     status: String(record.status || "active").trim() || "active",
-    source: String(record.source || "portal_upload").trim() || "portal_upload",
-    createdAt: String(record.createdAt || record.created_at || now).trim() || now,
-    updatedAt: String(record.updatedAt || record.updated_at || now).trim() || now,
-    deletedAt: String(record.deletedAt || record.deleted_at || "").trim(),
-    retentionCleanupAfterAt: String(record.retentionCleanupAfterAt || record.retention_cleanup_after_at || "").trim(),
+    source: workspaceFileSource(record, scope),
+    createdAt: workspaceFileTimestamp(record, "createdAt", "created_at", now),
+    updatedAt: workspaceFileTimestamp(record, "updatedAt", "updated_at", now),
+    deletedAt: workspaceFileTimestamp(record, "deletedAt", "deleted_at"),
+    retentionCleanupAfterAt: workspaceFileTimestamp(record, "retentionCleanupAfterAt", "retention_cleanup_after_at"),
   };
 }
 
@@ -134,7 +315,8 @@ function resolveStorageOrderEntitlement(db, { user, workspaceId, tenantId, cosPr
   const activeStatuses = new Set(["active"]);
   const order = (db.storageOrders || [])
     .filter((item) => item.workspaceId === workspaceId)
-    .filter((item) => item.userId === user.id || item.tenantId === tenantId)
+    .filter((item) => item.userId === user.id)
+    .filter((item) => !tenantId || item.tenantId === tenantId)
     .filter((item) => activeStatuses.has(String(item.status || "").toLowerCase()))
     .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")))[0] || null;
   return {
@@ -239,11 +421,17 @@ export function recordWorkspaceFile(db, input = {}) {
   const existing = db.workspaceFiles.find((item) =>
     item.userId === normalized.userId &&
     item.workspaceId === normalized.workspaceId &&
+    item.oplSessionId === normalized.oplSessionId &&
+    item.resourceBindingId === normalized.resourceBindingId &&
     item.kind === normalized.kind &&
     item.relativePath === normalized.relativePath,
   );
   if (existing) {
     existing.runId = normalized.runId;
+    existing.oplSessionId = normalized.oplSessionId;
+    existing.resourceBindingId = normalized.resourceBindingId;
+    existing.storageMode = normalized.storageMode;
+    existing.storageRootPrefix = normalized.storageRootPrefix;
     existing.name = normalized.name;
     existing.storageKey = normalized.storageKey;
     existing.localPath = normalized.localPath;
@@ -265,11 +453,17 @@ export function listWorkspaceFiles(db, filters = {}) {
   const tenantId = String(filters.tenantId || "").trim();
   const userId = String(filters.userId || "").trim();
   const workspaceId = String(filters.workspaceId || "").trim();
+  const oplSessionId = String(filters.oplSessionId || filters.runId || "").trim();
+  const resourceBindingId = String(filters.resourceBindingId || "").trim();
+  const storageMode = filters.storageMode ? normalizeStorageMode(filters.storageMode) : "";
   const kind = filters.kind ? normalizeWorkspaceKind(filters.kind) : "";
   return (db.workspaceFiles || [])
     .filter((item) => !tenantId || item.tenantId === tenantId)
     .filter((item) => !userId || item.userId === userId)
     .filter((item) => !workspaceId || item.workspaceId === workspaceId)
+    .filter((item) => !oplSessionId || item.oplSessionId === oplSessionId)
+    .filter((item) => !resourceBindingId || item.resourceBindingId === resourceBindingId)
+    .filter((item) => !storageMode || item.storageMode === storageMode)
     .filter((item) => !kind || item.kind === kind)
     .filter((item) => String(item.status || "").toLowerCase() !== "deleted")
     .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));

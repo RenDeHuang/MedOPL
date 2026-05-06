@@ -43,6 +43,10 @@ function workspaceFileValues(file, { createdAt, updatedAt }) {
     textValue(file.userId),
     textValue(file.workspaceId),
     textValue(file.runId),
+    textValue(file.oplSessionId || file.runId),
+    textValue(file.resourceBindingId),
+    textValue(file.storageMode, file.oplSessionId ? "full_runtime" : "legacy"),
+    textValue(file.storageRootPrefix),
     textValue(file.kind, "inputs"),
     textValue(file.name),
     textValue(file.relativePath),
@@ -109,12 +113,16 @@ async function upsertWorkspaceFileWith({ pool, pgTableName, file }) {
   const updatedAt = isoTime(file.updatedAt || createdAt);
   await pool.query(
     `INSERT INTO ${pgTableName("workspace_files")} (
-      id,tenant_id,user_id,workspace_id,run_id,kind,name,relative_path,storage_key,local_path,size_bytes,checksum,content_type,status,source,created_at,updated_at,deleted_at,retention_cleanup_after_at
+      id,tenant_id,user_id,workspace_id,run_id,opl_session_id,resource_binding_id,storage_mode,storage_root_prefix,kind,name,relative_path,storage_key,local_path,size_bytes,checksum,content_type,status,source,created_at,updated_at,deleted_at,retention_cleanup_after_at
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
     )
     ON CONFLICT (id) DO UPDATE SET
       run_id=EXCLUDED.run_id,
+      opl_session_id=EXCLUDED.opl_session_id,
+      resource_binding_id=EXCLUDED.resource_binding_id,
+      storage_mode=EXCLUDED.storage_mode,
+      storage_root_prefix=EXCLUDED.storage_root_prefix,
       kind=EXCLUDED.kind,
       name=EXCLUDED.name,
       relative_path=EXCLUDED.relative_path,
