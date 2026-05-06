@@ -89,10 +89,7 @@ export function createBillingWebServer({
       const customerId = url.searchParams.get("customer_id") || "";
       const workspaceId = url.searchParams.get("workspace_id") || "";
       const exactSummary = await fetchExactSummary(customerId, workspaceId, windowValue);
-      let pendingSummary = buildUnavailableSummary(customerId, workspaceId, "pending_unavailable", "local_metering_unmatched");
-      try {
-        pendingSummary = await fetchPendingSummary(customerId, workspaceId, windowValue);
-      } catch {}
+      const pendingSummary = await fetchPendingSummary(customerId, workspaceId, windowValue);
       const summary = buildBillingEnvelope({
         customerId,
         workspaceId,

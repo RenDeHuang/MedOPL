@@ -175,7 +175,7 @@ export function createBillingHttpHandler({
       ok: true,
       opencostBaseUrl: OPENCOST_BASE_URL || null,
       exactSources: ["tencent_cloud_bill"],
-      pendingSources: ["opencost_pending", "metering_pending"],
+      pendingSources: ["local_metering_pending"],
       tencentBillingEnabled: TENCENT_BILLING_ENABLED,
       tencentBillingRequired: TENCENT_BILLING_REQUIRED,
       tencentPriceEnabled: TENCENT_PRICE_ENABLED,
@@ -249,8 +249,17 @@ export function createBillingHttpHandler({
   async function handleAttributionRoute(req, res, url) {
     if (req.method !== "GET" || url.pathname !== "/billing/attribution") return false;
     const resourceOrderId = String(url.searchParams.get("resourceOrderId") || url.searchParams.get("resource_order_id") || "").trim();
-    const items = await collectAttributionItems(url).catch(() => []);
-    sendJson(res, 200, buildAttributionPayload(items, resourceOrderId));
+    try {
+      const items = await collectAttributionItems(url);
+      sendJson(res, 200, buildAttributionPayload(items, resourceOrderId));
+    } catch (error) {
+      sendJson(res, 502, {
+        ok: false,
+        source: "tencent_cloud_bill_attribution",
+        resourceOrderId,
+        error: String(error?.message || error || "billing_attribution_unavailable"),
+      });
+    }
     return true;
   }
 

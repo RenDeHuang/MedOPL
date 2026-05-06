@@ -90,7 +90,7 @@ export function createCosBillingRuntime({
   async function normalizeCosBillRowsWithAttribution(parsedRows = []) {
     const rows = parsedRows.map(normalizeCosBillRow);
     if (rows.every((row) => row.attributed)) return rows;
-    const mappings = await fetchProvisionResourceMappings();
+    const mappings = [];
     return applyResourceAttributionToRows(rows, mappings);
   }
 
@@ -173,14 +173,154 @@ export function createCosBillingRuntime({
     })), customerId, workspaceId);
   }
 
+  function objectOrEmpty(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  function attributionFieldAliasCandidates(fieldKey = "") {
+    const explicitAliases = {
+      resource_order_id: ["resource_order_id"],
+      run_id: ["run_id"],
+      server_plan_id: ["server_plan_id"],
+      tenant_id: ["tenant_id", "customer_id"],
+      workspace_id: ["workspace_id"],
+    };
+    const aliases = explicitAliases[fieldKey] || [fieldKey];
+    const candidates = new Set();
+
+    for (const alias of aliases) {
+      const text = String(alias || "").trim();
+      if (!text) continue;
+      const compact = text.replace(/[_-]/g, "");
+      const dashed = text.replace(/_/g, "-");
+      const camel = text.replace(/[-_]([a-z])/g, (_match, letter) => letter.toUpperCase());
+      const pascal = camel ? camel.charAt(0).toUpperCase() + camel.slice(1) : "";
+      for (const candidate of [text, compact, dashed, camel, pascal]) {
+        if (!candidate) continue;
+        candidates.add(candidate);
+        candidates.add(`gaofenglab/${candidate}`);
+      }
+    }
+
+    return [...candidates];
+  }
+
+  function explicitAttributionMaps(item = {}) {
+    const properties = objectOrEmpty(item.properties);
+    const metadata = objectOrEmpty(item.metadata);
+    const labels = objectOrEmpty(item.labels);
+    const tags = objectOrEmpty(item.tags);
+
+    return {
+      properties,
+      metadata,
+      labels,
+      tags,
+      propertyLabels: objectOrEmpty(properties.labels),
+      propertyTags: objectOrEmpty(properties.tags),
+      propertyMetadata: objectOrEmpty(properties.metadata),
+      metadataLabels: objectOrEmpty(metadata.labels),
+      metadataTags: objectOrEmpty(metadata.tags),
+      metadataProperties: objectOrEmpty(metadata.properties),
+    };
+  }
+
+  function readExplicitAttributionValue(item = {}, fieldKey = "") {
+    const maps = explicitAttributionMaps(item);
+    for (const alias of attributionFieldAliasCandidates(fieldKey)) {
+      const value = firstNonEmpty(
+        maps.labels[alias],
+        maps.tags[alias],
+        maps.properties[alias],
+        maps.metadata[alias],
+        maps.propertyLabels[alias],
+        maps.propertyTags[alias],
+        maps.propertyMetadata[alias],
+        maps.metadataLabels[alias],
+        maps.metadataTags[alias],
+        maps.metadataProperties[alias],
+        maps.properties[`label:${alias}`],
+        maps.properties[`tag:${alias}`],
+        maps.metadata[`label:${alias}`],
+        maps.metadata[`tag:${alias}`],
+      );
+      if (value) return value;
+    }
+    return "";
+  }
+
+  function explicitAttribution(item = {}) {
+    return {
+      resourceOrderId: readExplicitAttributionValue(item, "resource_order_id"),
+      runId: readExplicitAttributionValue(item, "run_id"),
+      serverPlanId: readExplicitAttributionValue(item, "server_plan_id"),
+      tenantId: readExplicitAttributionValue(item, "tenant_id"),
+      workspaceId: readExplicitAttributionValue(item, "workspace_id"),
+    };
+  }
+
+  function attributionCost(item = {}) {
+    const amount = Number(
+      item.totalCost
+      ?? item.TotalCost
+      ?? item.realTotalCost
+      ?? item.RealTotalCost
+      ?? 0,
+    );
+    return Number.isFinite(amount) ? amount : 0;
+  }
+
+  function unattributedAttributionItem(item = {}, extracted = {}, reasons = []) {
+    return {
+      ...item,
+      attributed: false,
+      attributionState: "unattributed",
+      reasons,
+      attribution: {
+        resourceOrderId: extracted.resourceOrderId || null,
+        runId: extracted.runId || null,
+        serverPlanId: extracted.serverPlanId || null,
+        tenantId: extracted.tenantId || null,
+        workspaceId: extracted.workspaceId || null,
+      },
+    };
+  }
+
+  function classifyAttributionItem(item = {}, resourceOrderId = "") {
+    const extracted = explicitAttribution(item);
+    const reasons = [];
+
+    if (!resourceOrderId) reasons.push("missing_resource_order_id_query");
+    if (!extracted.resourceOrderId) reasons.push("missing_resource_order_id");
+    if (!extracted.runId) reasons.push("missing_run_id");
+    if (!extracted.serverPlanId) reasons.push("missing_server_plan_id");
+    if (!extracted.tenantId) reasons.push("missing_tenant_id");
+    if (!extracted.workspaceId) reasons.push("missing_workspace_id");
+    if (resourceOrderId && extracted.resourceOrderId && extracted.resourceOrderId !== resourceOrderId) {
+      reasons.push("resource_order_id_mismatch");
+    }
+
+    return {
+      matched: reasons.length === 0,
+      unattributed: reasons.length === 0 ? null : unattributedAttributionItem(item, extracted, reasons),
+    };
+  }
+
   function buildAttributionPayload(items = [], resourceOrderId = "") {
     const normalizedResourceOrderId = String(resourceOrderId || "").trim();
-    const related = items.filter((item) => normalizedResourceOrderId && JSON.stringify(item || {}).includes(normalizedResourceOrderId));
-    const unattributed = items.filter((item) => {
-      const text = JSON.stringify(item || {});
-      return !requiredCostTags.every((key) => text.includes(key));
-    });
-    const totalCost = related.reduce((sum, item) => sum + Number(item.totalCost || item.TotalCost || item.realTotalCost || item.RealTotalCost || 0), 0);
+    const related = [];
+    const unattributed = [];
+
+    for (const item of items) {
+      const classified = classifyAttributionItem(item, normalizedResourceOrderId);
+      if (classified.matched) {
+        related.push(item);
+        continue;
+      }
+      unattributed.push(classified.unattributed);
+    }
+
+    const totalCost = related.reduce((sum, item) => sum + attributionCost(item), 0);
     return {
       ok: true,
       source: "tencent_cloud_bill_attribution",

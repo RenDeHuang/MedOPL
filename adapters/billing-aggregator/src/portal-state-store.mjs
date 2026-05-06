@@ -56,6 +56,7 @@ export function createPortalStateStore({
         runId: row.run_id,
         workspaceId: row.workspace_id,
         orderId: row.order_id || "",
+        resourceBindingId: row.resource_binding_id || "",
         type: row.type,
         amount: Number(row.amount || 0),
         currency: row.currency || "CNY",
@@ -136,8 +137,8 @@ export function createPortalStateStore({
       for (const row of db.ledger || []) {
         if (existing.has(row.id)) continue;
         await client.query(
-          `INSERT INTO ${portalTable("ledger_entries")} (id,tenant_id,user_id,run_id,workspace_id,order_id,type,amount,currency,source_type,source_id,idempotency_key,reason,operator_id,created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+          `INSERT INTO ${portalTable("ledger_entries")} (id,tenant_id,user_id,run_id,workspace_id,order_id,resource_binding_id,type,amount,currency,source_type,source_id,idempotency_key,reason,operator_id,created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
           [
             row.id,
             row.tenantId || row.userId || "",
@@ -145,6 +146,7 @@ export function createPortalStateStore({
             row.runId || "",
             row.workspaceId || "",
             row.resourceOrderId || row.orderId || "",
+            row.resourceBindingId || "",
             row.type || "",
             Number(row.amount || 0),
             row.currency || "CNY",

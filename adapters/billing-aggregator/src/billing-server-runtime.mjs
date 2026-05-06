@@ -58,10 +58,7 @@ export function createBillingServerRuntime({
 
   async function listPendingRuns(customerId = "", workspaceId = "", windowValue = "7d") {
     const summary = await fetchExactSummary(customerId || "", workspaceId || "", windowValue || "7d");
-    let pendingSummary = buildUnavailableSummary(customerId || "", workspaceId || "", "pending_unavailable", "local_metering_unmatched");
-    try {
-      pendingSummary = await fetchPendingSummary(customerId || "", workspaceId || "", windowValue || "7d");
-    } catch {}
+    const pendingSummary = await fetchPendingSummary(customerId || "", workspaceId || "", windowValue || "7d");
 
     const runs = await readRuns();
     const exactRunIds = new Set((summary.runs || []).map((item) => item.runId));

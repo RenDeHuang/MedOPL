@@ -41,6 +41,7 @@ function orderLedgerContext(user = {}, order = {}) {
     workspaceId: firstString(order.workspaceId),
     runId: firstString(order.runId),
     resourceOrderId: firstString(order.id, order.resourceOrderId, order.orderId),
+    resourceBindingId: firstString(order.resourceBindingId, order.resource_binding_id),
     billingAccountId: firstString(order.billingAccountId, tenantId, userId),
     currency: firstString(order.currency, "CNY"),
   };
@@ -66,6 +67,7 @@ export function normalizeLedgerEntry(entry = {}) {
     runId: firstString(entry.runId, entry.run_id),
     resourceOrderId,
     orderId: resourceOrderId,
+    resourceBindingId: firstString(entry.resourceBindingId, entry.resource_binding_id),
     billingAccountId,
     type: LEDGER_TYPES.has(type) ? type : "manual_adjustment",
     amount: moneyAmount(entry.amount, 0),
