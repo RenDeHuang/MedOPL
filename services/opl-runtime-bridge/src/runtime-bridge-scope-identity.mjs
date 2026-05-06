@@ -1,10 +1,4 @@
-function firstNonEmpty(values = []) {
-  for (const value of values) {
-    const normalized = String(value ?? "").trim();
-    if (normalized) return normalized;
-  }
-  return "";
-}
+import { firstNonEmpty } from "./runtime-bridge-scope-primitives.mjs";
 
 export function providerKeyRefFrom(record = {}) {
   return firstNonEmpty([

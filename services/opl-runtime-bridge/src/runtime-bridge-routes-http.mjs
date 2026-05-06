@@ -1,4 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
+import {
+  hasRequiredFullRuntimeScope,
+  normalizeRuntimeSessionMode,
+  runtimeScopeFrom as runtimeScopeFromPrimitive,
+} from "./runtime-bridge-scope-primitives.mjs";
 
 function stringEnv(name, fallback = "") {
   return String(process.env[name] ?? fallback);
@@ -72,28 +77,20 @@ export function messageIdFromInput(input = {}) {
 }
 
 export function operationModeFrom(record = {}) {
-  const mode = String(record.mode || record.runtimeSessionMode || record.runtime_session_mode || "").trim().toLowerCase();
-  return mode === "full_runtime" ? "full_runtime" : "api_only";
+  return normalizeRuntimeSessionMode(record);
 }
 
 export function runtimeScopeFrom(record = {}) {
-  return {
-    mode: operationModeFrom(record),
-    resourceBindingId: String(record.resourceBindingId || record.resource_binding_id || "").trim(),
-    computeInstanceId: String(record.computeInstanceId || record.compute_instance_id || "").trim(),
-    storageBucketId: String(record.storageBucketId || record.storage_bucket_id || "").trim(),
-    runtimeAgentId: String(record.runtimeAgentId || record.runtime_agent_id || "").trim(),
-    runtimeAgentEndpoint: String(record.runtimeAgentEndpoint || record.runtime_agent_endpoint || "").trim().replace(/\/$/, ""),
-  };
+  return runtimeScopeFromPrimitive(record);
 }
 
 export function validateFullRuntimeScope(record = {}) {
   const scope = runtimeScopeFrom(record);
   if (scope.mode !== "full_runtime") return { ok: true, scope };
-  if (!scope.resourceBindingId || !scope.computeInstanceId || !scope.storageBucketId) {
+  if (!hasRequiredFullRuntimeScope(scope, { requireRuntimeAgent: false })) {
     return { ok: false, status: 409, error: "resource_binding_required", code: "RESOURCE_BINDING_REQUIRED", scope };
   }
-  if (!scope.runtimeAgentId && !scope.runtimeAgentEndpoint) {
+  if (!hasRequiredFullRuntimeScope(scope)) {
     return { ok: false, status: 409, error: "platform_isolated_runtime_agent_required", code: "PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED", scope };
   }
   return { ok: true, scope };

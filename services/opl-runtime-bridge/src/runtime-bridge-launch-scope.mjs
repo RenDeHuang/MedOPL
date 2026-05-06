@@ -1,18 +1,11 @@
 import { providerKeyRefFrom, scopedMessageIdentity } from "./runtime-bridge-scope-identity.mjs";
+import {
+  firstNonEmpty,
+  normalizeRuntimeEndpoint,
+  normalizeRuntimeSessionMode,
+} from "./runtime-bridge-scope-primitives.mjs";
 
 export { providerKeyRefFrom, scopedMessageIdentity } from "./runtime-bridge-scope-identity.mjs";
-
-function firstNonEmpty(values = []) {
-  for (const value of values) {
-    const normalized = String(value ?? "").trim();
-    if (normalized) return normalized;
-  }
-  return "";
-}
-
-function normalizedMode(value = "") {
-  return String(value || "").trim().toLowerCase() === "full_runtime" ? "full_runtime" : "api_only";
-}
 
 export function launchScopeSnapshot(launch = {}, runtimeSession = {}) {
   const source = runtimeSession && typeof runtimeSession === "object" && Object.keys(runtimeSession).length ? runtimeSession : launch;
@@ -23,12 +16,12 @@ export function launchScopeSnapshot(launch = {}, runtimeSession = {}) {
     workspaceSessionId: firstNonEmpty([source.workspaceSessionId, source.workspace_session_id, launch.workspaceSessionId, launch.workspace_session_id]),
     runtimeSessionId: firstNonEmpty([source.runtimeSessionId, source.runtime_session_id, launch.runtimeSessionId, launch.runtime_session_id]),
     providerKeyRef: providerKeyRefFrom(source) || providerKeyRefFrom(launch),
-    mode: normalizedMode(source.mode || source.runtimeSessionMode || source.runtime_session_mode || launch.mode),
+    mode: normalizeRuntimeSessionMode(source.mode || source.runtimeSessionMode || source.runtime_session_mode || launch.mode),
     resourceBindingId: firstNonEmpty([source.resourceBindingId, source.resource_binding_id, launch.resourceBindingId, launch.resource_binding_id]),
     computeInstanceId: firstNonEmpty([source.computeInstanceId, source.compute_instance_id, launch.computeInstanceId, launch.compute_instance_id]),
     storageBucketId: firstNonEmpty([source.storageBucketId, source.storage_bucket_id, launch.storageBucketId, launch.storage_bucket_id]),
     runtimeAgentId: firstNonEmpty([source.runtimeAgentId, source.runtime_agent_id, launch.runtimeAgentId, launch.runtime_agent_id]),
-    runtimeAgentEndpoint: firstNonEmpty([source.runtimeAgentEndpoint, source.runtime_agent_endpoint, launch.runtimeAgentEndpoint, launch.runtime_agent_endpoint]).replace(/\/$/, ""),
+    runtimeAgentEndpoint: normalizeRuntimeEndpoint(firstNonEmpty([source.runtimeAgentEndpoint, source.runtime_agent_endpoint, launch.runtimeAgentEndpoint, launch.runtime_agent_endpoint])),
   };
 }
 
@@ -44,9 +37,9 @@ function requestedScope(input = {}, expected = {}) {
     computeInstanceId: firstNonEmpty([input.computeInstanceId, input.compute_instance_id, expected.computeInstanceId]),
     storageBucketId: firstNonEmpty([input.storageBucketId, input.storage_bucket_id, expected.storageBucketId]),
     runtimeAgentId: firstNonEmpty([input.runtimeAgentId, input.runtime_agent_id, expected.runtimeAgentId]),
-    runtimeAgentEndpoint: firstNonEmpty([input.runtimeAgentEndpoint, input.runtime_agent_endpoint, expected.runtimeAgentEndpoint]).replace(/\/$/, ""),
+    runtimeAgentEndpoint: normalizeRuntimeEndpoint(firstNonEmpty([input.runtimeAgentEndpoint, input.runtime_agent_endpoint, expected.runtimeAgentEndpoint])),
   };
-  if (request.mode) request.mode = normalizedMode(request.mode);
+  if (request.mode) request.mode = normalizeRuntimeSessionMode(request.mode);
   return request;
 }
 
@@ -66,8 +59,8 @@ export function validateLaunchScope({ launch = {}, runtimeSession = {}, input = 
   const requested = requestedScope(input, expected);
   for (const field of Object.keys(requested)) {
     if (!requested[field]) continue;
-    const normalizedActual = field === "mode" ? normalizedMode(actual[field]) : String(actual[field] || "");
-    const normalizedRequested = field === "mode" ? normalizedMode(requested[field]) : String(requested[field] || "");
+    const normalizedActual = field === "mode" ? normalizeRuntimeSessionMode(actual[field]) : String(actual[field] || "");
+    const normalizedRequested = field === "mode" ? normalizeRuntimeSessionMode(requested[field]) : String(requested[field] || "");
     if (normalizedActual !== normalizedRequested) {
       return scopeMismatch(field, normalizedActual, normalizedRequested);
     }
