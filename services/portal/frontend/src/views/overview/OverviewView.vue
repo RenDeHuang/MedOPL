@@ -15,7 +15,7 @@
                     {{ payload.commercial.canEnterWorkbench ? "工作台可用" : "工作台受限" }}
                   </span>
                   <span class="badge" :class="payload.serverPlansSummary.quotedCount > 0 ? 'badge-success' : 'badge-warning'">
-                    {{ payload.serverPlansSummary.quotedCount > 0 ? "腾讯云报价已同步" : "等待腾讯云报价" }}
+                    {{ payload.serverPlansSummary.quotedCount > 0 ? "服务套餐已同步" : "等待套餐同步" }}
                   </span>
                 </div>
                 <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">账户与任务总览</h2>
@@ -64,47 +64,47 @@
           <MetricCard label="钱包余额" :value="money(payload.kpis.balance)" hint="账户余额" />
           <MetricCard label="运行中预扣" :value="money(frozenAmount)" hint="运行中预扣金额" />
           <MetricCard label="可用额度" :value="money(availableBalance)" hint="余额 - 冻结 + 试用" />
-          <MetricCard label="活跃订单" :value="activeOrderCount" hint="进行中的资源订单" />
+          <MetricCard label="运行环境" :value="resourceBindingCount" hint="平台代开隔离运行环境与文件空间" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="今日运行中预扣" :value="money(pendingToday)" hint="今日运行中预扣" />
-          <MetricCard label="今日 T+1 校准" :value="money(exactToday)" hint="今日 T+1 校准后金额" />
+          <MetricCard label="今日实际结算" :value="money(exactToday)" hint="今日已核算金额" />
           <MetricCard label="本月运行中预扣" :value="money(pendingMonth)" hint="本月累计运行中预扣" />
-          <MetricCard label="本月 T+1 校准" :value="money(exactMonth)" hint="本月累计 T+1 校准后金额" />
+          <MetricCard label="本月实际结算" :value="money(exactMonth)" hint="本月累计已核算金额" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">最近订单</h2>
-                <p class="panel-subtitle">报价、冻结、运行、结算状态</p>
+                <h2 class="panel-title">我的资源</h2>
+                <p class="panel-subtitle">平台代开隔离运行环境、文件空间与保护金状态</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/packages">去扩容</RouterLink>
+              <RouterLink class="btn btn-secondary" to="/resources">去开通</RouterLink>
             </div>
             <div class="space-y-2.5">
-              <div v-if="orderPanelLoading" class="empty-state">正在加载最近订单...</div>
+              <div v-if="resourcePanelLoading" class="empty-state">正在加载资源绑定...</div>
               <div
-                v-for="item in recentOrders"
+                v-for="item in recentBindings"
                 :key="item.id"
                 class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700"
               >
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceTitle || item.workspaceId || item.id }}</div>
+                    <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceId || item.id }}</div>
                     <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      服务器编号 {{ item.serverPlanId || "-" }} · {{ item.serverPlanName || "未命名规格" }} · {{ item.region || "-" }}
+                      OPL Full Runtime · 运行环境 {{ item.status || "-" }}
                     </div>
                   </div>
-                  <span class="badge" :class="orderStatusBadge(item.status)">{{ orderStatusText(item.status) }}</span>
+                  <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-slate-400">
-                  <div>冻结 {{ money(item.frozenAmount) }}</div>
-                  <div>Exact {{ money(item.exactCost) }}</div>
+                  <div>保护金 {{ money(item.protection?.frozenAmount) }}</div>
+                  <div>已消耗 {{ money(item.protection?.consumedAmount) }}</div>
                 </div>
               </div>
-              <div v-if="!orderPanelLoading && !recentOrders.length" class="empty-state">暂无资源订单</div>
+              <div v-if="!resourcePanelLoading && !recentBindings.length" class="empty-state">暂无运行环境，仍可使用 OPL Lite。</div>
             </div>
           </div>
 
@@ -160,11 +160,11 @@
                 <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.salableCount }}</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">已报价规格</div>
+                <div class="text-xs text-gray-500 dark:text-slate-400">已同步套餐</div>
                 <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.quotedCount }}</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
-                <div class="text-xs text-gray-500 dark:text-slate-400">最低小时价</div>
+                <div class="text-xs text-gray-500 dark:text-slate-400">入门估算</div>
                 <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ money(payload.serverPlansSummary.lowestHourlyPrice) }}</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
@@ -214,15 +214,15 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { OverviewPayload, ResourceOrderItem, ResourceOrdersPayload } from "@/api/portal";
-import { fetchOverview, fetchResourceOrders } from "@/api/portal";
+import type { OverviewPayload, PlatformProvisionedResourcesPayload, WorkspaceResourceBinding } from "@/api/portal";
+import { fetchMyResources, fetchOverview } from "@/api/portal";
 
 const route = useRoute();
 const overviewLoading = ref(true);
-const orderPanelLoading = ref(false);
+const resourcePanelLoading = ref(false);
 const error = ref("");
 const payload = ref<OverviewPayload | null>(null);
-const resourceOrders = ref<ResourceOrdersPayload | null>(null);
+const platformProvisionedResources = ref<PlatformProvisionedResourcesPayload | null>(null);
 
 function money(value: number | undefined) {
   return `CNY ${Number(value || 0).toFixed(2)}`;
@@ -244,30 +244,6 @@ function humanizeStatus(status?: string) {
   if (normalized === "archived") return "已归档";
   if (["failed", "error", "disabled"].includes(normalized)) return "异常";
   return status || "未知";
-}
-
-function orderStatusBadge(status?: string) {
-  const normalized = String(status || "").toLowerCase();
-  if (["running", "provisioning"].includes(normalized)) return "badge-primary";
-  if (["settled", "released"].includes(normalized)) return "badge-success";
-  if (["failed", "cancelled"].includes(normalized)) return "badge-danger";
-  return "badge-warning";
-}
-
-function orderStatusText(status?: string) {
-  const normalized = String(status || "").toLowerCase();
-  const labels: Record<string, string> = {
-    quoted: "已报价",
-    frozen: "已冻结",
-    provisioning: "开通中",
-    running: "运行中",
-    released: "已释放",
-    reconciling: "对账中",
-    settled: "已结算",
-    failed: "失败",
-    cancelled: "已取消",
-  };
-  return labels[normalized] || status || "未知";
 }
 
 function commercialText(status?: string) {
@@ -325,17 +301,14 @@ function nextPage(page: number, totalPages: number) {
 }
 
 const workbenchHref = "/portal/opl";
-const recentOrders = computed<ResourceOrderItem[]>(() => (resourceOrders.value?.items || payload.value?.resourceOrders?.items || []).slice(0, 4));
-const frozenAmount = computed(() => Number(payload.value?.kpis.frozenAmount ?? resourceOrders.value?.summary?.frozenAmount ?? 0));
+const recentBindings = computed<WorkspaceResourceBinding[]>(() => (platformProvisionedResources.value?.bindings || []).slice(0, 4));
+const frozenAmount = computed(() => Number(payload.value?.kpis.frozenAmount ?? recentBindings.value.reduce((sum, item) => sum + Number(item.protection?.frozenAmount || 0), 0)));
 const availableBalance = computed(() => Number(payload.value?.kpis.availableBalance ?? (payload.value?.kpis.balance || 0) - frozenAmount.value));
 const pendingToday = computed(() => Number(payload.value?.kpis.pendingCostToday ?? 0));
 const exactToday = computed(() => Number(payload.value?.kpis.exactCostToday ?? payload.value?.kpis.todayCost ?? 0));
-const pendingMonth = computed(() => Number(payload.value?.kpis.pendingCostMonth ?? resourceOrders.value?.summary?.pendingAmount ?? 0));
+const pendingMonth = computed(() => Number(payload.value?.kpis.pendingCostMonth ?? 0));
 const exactMonth = computed(() => Number(payload.value?.kpis.exactCostMonth ?? payload.value?.kpis.historicalCost ?? 0));
-const activeOrderCount = computed(() => {
-  if (typeof resourceOrders.value?.summary?.activeCount === "number") return resourceOrders.value.summary.activeCount;
-  return recentOrders.value.filter((item) => ["quoted", "frozen", "provisioning", "running", "reconciling"].includes(String(item.status || "").toLowerCase())).length;
-});
+const resourceBindingCount = computed(() => Number(platformProvisionedResources.value?.summary?.bindingCount ?? recentBindings.value.length));
 
 let requestId = 0;
 
@@ -350,7 +323,7 @@ async function load() {
     });
     if (current !== requestId) return;
     payload.value = overviewData;
-    void loadResourceOrders(current, overviewData);
+    void loadPlatformProvisionedResources(current);
   } catch (err: any) {
     if (current !== requestId) return;
     error.value = err?.message || "总览加载失败";
@@ -359,17 +332,17 @@ async function load() {
   }
 }
 
-async function loadResourceOrders(current: number, overviewData: OverviewPayload) {
-  orderPanelLoading.value = true;
+async function loadPlatformProvisionedResources(current: number) {
+  resourcePanelLoading.value = true;
   try {
-    const orders = await fetchResourceOrders({ limit: 8 });
+    const resources = await fetchMyResources();
     if (current !== requestId) return;
-    resourceOrders.value = orders;
+    platformProvisionedResources.value = resources;
   } catch {
     if (current !== requestId) return;
-    resourceOrders.value = overviewData.resourceOrders || null;
+    platformProvisionedResources.value = null;
   } finally {
-    if (current === requestId) orderPanelLoading.value = false;
+    if (current === requestId) resourcePanelLoading.value = false;
   }
 }
 

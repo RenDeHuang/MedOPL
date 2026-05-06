@@ -1,6 +1,7 @@
 import { createOplRoutes } from "../routes/opl.routes.mjs";
 import { createLabPackageRoutes } from "../routes/lab-package.routes.mjs";
 import { createResourceOrderRoutes } from "../routes/resource-order.routes.mjs";
+import { createWorkspaceFilesInternalRoutes } from "../routes/workspace-files-internal.routes.mjs";
 import { createWorkspaceStorageRoutes } from "../routes/workspace-storage.routes.mjs";
 
 export function createPortalFeatureRuntimeHandlers({
@@ -12,7 +13,7 @@ export function createPortalFeatureRuntimeHandlers({
   ensureTaskSpace,
   exists,
   fetchServerPlans,
-  fetchWorkspaceMinioState,
+  fetchWorkspaceUserStorageState,
   fetchWorkspaceStorageSnapshot,
   findTaskSpace,
   guessContentType,
@@ -26,19 +27,19 @@ export function createPortalFeatureRuntimeHandlers({
   oplLaunchService,
   path,
   portalInternalAuthAllowed,
+  productRuntimeMode = "platform_provisioned",
   readBody,
   readDb,
   readJsonBody,
   readWorkspaceTransferToken,
   recordWorkspaceFile,
-  resourceProvisionerClient,
   safeRelativePath,
   sendFile,
   sendHtml,
   sendJson,
   slugify,
   stat,
-  syncWorkspaceFileToMinio,
+  syncWorkspaceFileToUserStorage,
   workspaceSessionCookie,
   workspaceStorageEntitlement,
   writeFile,
@@ -67,7 +68,7 @@ export function createPortalFeatureRuntimeHandlers({
     defaultTaskTitle,
     ensureTaskSpace,
     exists,
-    fetchWorkspaceMinioState,
+    fetchWorkspaceUserStorageState,
     fetchWorkspaceStorageSnapshot,
     findTaskSpace,
     guessContentType,
@@ -85,9 +86,21 @@ export function createPortalFeatureRuntimeHandlers({
     sendJson,
     slugify,
     stat,
-    syncWorkspaceFileToMinio,
+    syncWorkspaceFileToUserStorage,
     workspaceStorageEntitlement,
     writeFile,
+    writeDb,
+  });
+  const handleWorkspaceFilesInternalRoutes = createWorkspaceFilesInternalRoutes({
+    defaultTaskTitle,
+    ensureTaskSpace,
+    findTaskSpace,
+    logPortalEvent,
+    portalInternalAuthAllowed,
+    readBody,
+    recordWorkspaceFile,
+    safeRelativePath,
+    sendJson,
     writeDb,
   });
   const handleResourceOrderRoutes = createResourceOrderRoutes({
@@ -98,8 +111,8 @@ export function createPortalFeatureRuntimeHandlers({
     markWorkspaceStorageDeleting,
     normalizeAuthEmail,
     portalInternalAuthAllowed,
+    productRuntimeMode,
     readJsonBody,
-    resourceProvisionerClient,
     sendJson,
     slugify,
     writeDb,
@@ -108,6 +121,7 @@ export function createPortalFeatureRuntimeHandlers({
   return {
     handleLabPackageRoutes,
     handleOplRoutes,
+    handleWorkspaceFilesInternalRoutes,
     handleResourceOrderRoutes,
     handleWorkspaceStorageRoutes,
   };

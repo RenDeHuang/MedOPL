@@ -8,6 +8,22 @@ export function createResourceOrderProvisioningService({
   fetchServerPlans,
   resourceProvisionerClient,
 }) {
+  function retiredProvisionResponse(order) {
+    return {
+      ok: false,
+      status: 410,
+      provisioner: {
+        ok: false,
+        error: "retired_in_v21",
+        runtimeMode: "platform_provisioned",
+        message: "v21 默认 product path 已移除旧资源订单 provision 链路。",
+        use: "/portal/api/platform-provisioned-resources",
+        legacyUse: "/portal/api/user-owned-resources",
+      },
+      order,
+    };
+  }
+
   async function findResourceOrderPlan(order) {
     const plansPayload = await fetchServerPlans() || buildServerPlansFallback();
     const items = Array.isArray(plansPayload.items) ? plansPayload.items : [];
@@ -29,7 +45,7 @@ export function createResourceOrderProvisioningService({
       cosKeys: attribution.cosKeys,
       region: order.region || plan.region || "",
       zone: order.zone || plan.zone || "",
-      provisioningMode: plan.provisioningMode || "tke_node_pool_create",
+      provisioningMode: plan.provisioningMode || "",
       serverPlan: {
         ...plan,
         id: order.serverPlanId || plan.id || "",
@@ -42,72 +58,10 @@ export function createResourceOrderProvisioningService({
   }
 
   async function provisionResourceOrder(db, order, payload = {}, options = {}) {
-    const currentStatus = String(order.status || "").trim().toLowerCase();
-    if (currentStatus === "running") {
-      return { ok: true, provisioner: { ok: true, reused: true, reason: "resource_order_already_running" }, order };
-    }
-    if (currentStatus === "provisioning") {
-      return { ok: true, provisioner: { ok: true, reused: true, reason: "resource_order_already_provisioning" }, order };
-    }
-    const plan = await findResourceOrderPlan(order);
-    const provisionerPayload = await resourceOrderProvisionInput(db, order, plan, payload);
-    const pending = transitionResourceOrder(db, {
-      orderId: order.id,
-      status: "provisioning",
-      actorType: "resource-provisioner",
-      actorId: "provision-async",
-      payload: {
-        runId: provisionerPayload.runId,
-        async: true,
-      },
-      idempotencyKey: `event:provisioning:${order.id}:${provisionerPayload.runId || "default"}`,
-    });
-    if (!pending.ok) {
-      return { ok: false, status: pending.status || 400, provisioner: null, order };
-    }
-
-    const provisioned = await resourceProvisionerClient.startProvision(provisionerPayload);
-    if (!provisioned?.ok) {
-      if (options.allowDisabledPending && String(provisioned?.error || "") === "resource_provisioning_disabled") {
-        return { ok: true, provisioner: provisioned, order: pending.order || order };
-      }
-      const failed = transitionResourceOrder(db, {
-        orderId: order.id,
-        status: "failed",
-        actorType: "resource-provisioner",
-        actorId: "provision-async",
-        payload: {
-          error: provisioned?.error || "resource_provisioner_failed",
-          code: provisioned?.code || "",
-        },
-        idempotencyKey: `event:provision-failed:${order.id}:${provisioned?.code || provisioned?.error || "error"}`,
-      });
-      return { ok: false, status: provisioned?.status || 502, provisioner: provisioned, order: failed.order || pending.order || order };
-    }
-
-    const provisionerOrder = provisioned.order || {};
-    if (provisionerOrder.status === "ready") {
-      const ready = transitionResourceOrder(db, {
-        orderId: order.id,
-        status: "running",
-        actorType: "resource-provisioner",
-        actorId: String(provisionerOrder.requestId || provisionerOrder.nodePoolId || ""),
-        payload: {
-          runId: provisionerPayload.runId,
-          provisionRequestId: provisionerOrder.requestId || "",
-          nodePoolId: provisionerOrder.nodePoolId || "",
-          cloudResourceIds: [provisionerOrder.nodePoolId].filter(Boolean),
-          provisionerOrder,
-        },
-        idempotencyKey: `event:provisioned:${order.id}:${provisionerOrder.requestId || provisionerOrder.nodePoolId || "ready"}`,
-      });
-      return { ok: true, provisioner: provisioned, order: ready.order || pending.order || order };
-    }
-
-    if (pending.order) {
-      pending.order.provisionRequestId = String(provisionerOrder.requestId || provisionerOrder.id || pending.order.provisionRequestId || "").trim();
-    }
-    return { ok: true, provisioner: provisioned, order: pending.order || order };
+    void db;
+    void payload;
+    void options;
+    return retiredProvisionResponse(order);
   }
 
   return {

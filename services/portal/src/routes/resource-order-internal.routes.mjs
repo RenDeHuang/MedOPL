@@ -46,38 +46,14 @@ export function createResourceOrderInternalRoutes({
   async function handleInternalPrepareRun({ req, res, url, db }) {
     if (req.method !== "POST" || url.pathname !== "/portal/internal/resource-orders/prepare-run") return false;
     if (rejectIfInternalAuthMissing(req, res)) return true;
-    const body = await readInternalPayload(req, res);
-    if (!body.ok) return true;
-    const payload = body.payload;
-    const portalUser = findResourceOrderUser(db, payload, normalizeAuthEmail);
-    if (!portalUser) {
-      sendJson(res, { ok: false, error: "portal_user_not_found" }, 404);
-      return true;
-    }
-    if (isBlockedUserStatus(portalUser.status)) {
-      sendJson(res, { ok: false, error: "account_blocked" }, 403);
-      return true;
-    }
-    const quoted = await createQuotedResourceOrder(db, portalUser, req, payload, { idempotencyPrefix: "prepare-run" });
-    if (!quoted.ok) {
-      sendJson(res, quoted, quoted.status || 400);
-      return true;
-    }
-    const frozen = freezeResourceOrder(db, {
-      user: portalUser,
-      order: quoted.order,
-      idempotencyKey: String(payload.freezeIdempotencyKey || `prepare-run-freeze:${quoted.order.id}`).trim(),
-    });
-    if (!frozen.ok) {
-      sendJson(res, frozen, frozen.status || 400);
-      return true;
-    }
-    const provisioning = await provisionResourceOrder(db, frozen.order, payload, { allowDisabledPending: true });
-    await persistResourceOrderState(db, provisioning.order || frozen.order);
     sendJson(res, {
-      ...resourceOrderResponse(db, portalUser, provisioning.order || frozen.order),
-      provisioner: provisioning.provisioner || null,
-    }, provisioning.ok ? 200 : (provisioning.status || 502));
+      ok: false,
+      error: "retired_in_v21",
+      runtimeMode: "platform_provisioned",
+      message: "v21 默认 product path 已移除旧资源订单 prepare-run 托管算力链路。",
+      use: "/portal/api/platform-provisioned-resources",
+      legacyUse: "/portal/api/user-owned-resources",
+    }, 410);
     return true;
   }
 

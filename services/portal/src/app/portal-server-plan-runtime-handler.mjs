@@ -90,7 +90,7 @@ export function createPortalServerPlanRuntimeHandler({
           finalBilling: "腾讯云账单明细 DescribeBillDetail 回补为最终真实扣费依据",
           minBillableHoursDefault: 1,
           pendingCostIntervalSeconds: 60,
-          opencostRole: "仅用于运行中近实时分摊观测，不作为最终扣费账单。",
+          pendingSource: "platform_provisioned_local_metering",
         },
       });
       return true;

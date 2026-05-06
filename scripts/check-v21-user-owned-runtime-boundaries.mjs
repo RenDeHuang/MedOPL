@@ -4,296 +4,193 @@ import process from "node:process";
 
 const repoRoot = process.cwd();
 
-const REQUIRED_FILES = {
-  portalConfig: "services/portal/src/config/portal-config.mjs",
-  composeProduct: "compose.product.yaml",
-  platformConfig: "deploy/tke-package/manifests/01-platform-config.yaml",
-  runnerRbac: "deploy/tke-package/manifests/04-runner-rbac.yaml",
-  platformWorkloads: "deploy/tke-package/manifests/05-platform-workloads.yaml",
-  buildAndPushTcr: "deploy/tke-package/scripts/build-and-push-tcr.mjs",
-  adminRoutes: "services/portal/src/routes/admin-api.routes.mjs",
-  portalApiRoutes: "services/portal/src/routes/portal-api.routes.mjs",
-  frontendRouter: "services/portal/frontend/src/router/index.ts",
-};
-
-const FORBIDDEN_PORTAL_DEFAULTS = [
-  { key: "RANCHER_URL", literal: "https://127.0.0.1:30443" },
-  { key: "OPENCOST_UI_URL", literal: "http://127.0.0.1:30090" },
-  { key: "HARBOR_URL", literal: "http://127.0.0.1:30095" },
-  { key: "MINIO_API_URL", literal: "http://127.0.0.1:30091" },
-  { key: "RESOURCE_PROVISIONER_URL", literal: "http://127.0.0.1:18893" },
+const REQUIRED_FILES = [
+  {
+    file: "compose.product.yaml",
+    checks: [
+      { token: "PRODUCT_RUNTIME_MODE=user_owned", pattern: /\bPRODUCT_RUNTIME_MODE["']?\s*[:=]\s*["']?user_owned\b/ },
+    ],
+  },
+  {
+    file: "docs/plan/2026-05-05-OPL-v21-User-Owned-Runtime-Refactor-Checklist.md",
+    checks: [
+      { token: "next migration to platform_provisioned", pattern: /下一轮代码迁移应改成\s+`?platform_provisioned`?/ },
+      { token: "new PRODUCT_RUNTIME_MODE=user_owned", pattern: /新增\s+`PRODUCT_RUNTIME_MODE=user_owned`/ },
+      { token: "unchecked platform_provisioned migration", pattern: /\[ \]\s+将\s+`PRODUCT_RUNTIME_MODE=user_owned`\s+迁移为\s+`platform_provisioned`/ },
+    ],
+  },
+  {
+    file: "docs/superpowers/plans/2026-05-06-opl-v21-phase-0.5-and-phase-1.md",
+    checks: [
+      { token: "user_owned is only product runtime mode", pattern: /`(?:PRODUCT_RUNTIME_MODE=)?user_owned`\s+is the only v21 product runtime mode|`user_owned`\s+is the only product runtime mode/ },
+      { token: "user CVM Runtime Agent", pattern: /\buser CVM Runtime Agent\b/ },
+      { token: "v21 user-owned product", pattern: /\bv21 user-owned product\b/ },
+      { token: "default user-owned mode", pattern: /默认\s+user-owned\s+模式/ },
+    ],
+  },
+  {
+    file: "docs/reports/2026-05-06-OPL-v21-Phase2-9-Local-Acceptance-Report.md",
+    checks: [
+      { token: "用户自有 CVM", pattern: /用户自有\s+CVM/ },
+      { token: "真实用户 CVM", pattern: /真实用户\s+CVM/ },
+    ],
+  },
+  {
+    file: "services/opl-runtime-bridge/src/runtime-bridge-runs.mjs",
+    checks: [
+      { token: "/portal/internal/resource-orders/prepare-run", pattern: /\/portal\/internal\/resource-orders\/prepare-run/ },
+      { token: "provision", pattern: /\bprovision\b/ },
+      { token: "user_owned_runtime_dispatch", pattern: /\buser_owned_runtime_dispatch\b/ },
+    ],
+  },
+  {
+    file: "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs",
+    checks: [
+      { token: "runnerUrl", pattern: /\brunnerUrl\b/ },
+      { token: "k8sNamespace", pattern: /\bk8sNamespace\b/ },
+      { token: "runnerImage", pattern: /\brunnerImage\b/ },
+      { token: "user_owned_runtime_agent", pattern: /\buser_owned_runtime_agent\b/ },
+    ],
+  },
+  {
+    file: "services/portal/src/routes/portal-api-costs.routes.mjs",
+    checks: [
+      { token: "OpenCost", pattern: /\bOpenCost\b/ },
+    ],
+  },
+  {
+    file: "services/portal/src/app/portal-page-payload-helpers.mjs",
+    checks: [
+      { token: "OpenCost aggregated", pattern: /OpenCost aggregated/ },
+    ],
+  },
+  {
+    file: "services/portal/src/app/portal-admin-api-payloads.mjs",
+    checks: [
+      { token: "minioConsoleUrl", pattern: /\bminioConsoleUrl\b/ },
+    ],
+  },
+  {
+    file: "services/portal/src/app/portal-admin-overview-payloads.mjs",
+    checks: [
+      { token: "minioSummary", pattern: /\bminioSummary\b/ },
+      { token: "用户自有资源", pattern: /用户自有资源/ },
+      { token: "user_owned_storage", pattern: /\buser_owned_storage\b/ },
+      { token: "user_owned_local_metering", pattern: /\buser_owned_local_metering\b/ },
+    ],
+  },
+  {
+    file: "services/portal/src/app/portal-server-plan-runtime-handler.mjs",
+    checks: [
+      { token: "user_owned_local_metering", pattern: /\buser_owned_local_metering\b/ },
+    ],
+  },
+  {
+    file: "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+    checks: [
+      { token: "productRuntimeMode user_owned default", pattern: /productRuntimeMode\s*=\s*["']user_owned["']/ },
+    ],
+  },
+  {
+    file: "services/portal/src/routes/resource-order.routes.mjs",
+    checks: [
+      { token: "primary user-owned resource pointer", pattern: /\buse:\s*["']\/portal\/api\/user-owned-resources/ },
+    ],
+  },
+  {
+    file: "services/portal/src/routes/resource-order-internal.routes.mjs",
+    checks: [
+      { token: "primary user-owned resource pointer", pattern: /\buse:\s*["']\/portal\/api\/user-owned-resources/ },
+    ],
+  },
+  {
+    file: "services/portal/src/routes/resource-order-provisioning-service.mjs",
+    checks: [
+      { token: "primary user-owned resource pointer", pattern: /\buse:\s*["']\/portal\/api\/user-owned-resources/ },
+    ],
+  },
+  {
+    file: "services/portal/src/routes/resource-order-public-delete.routes.mjs",
+    checks: [
+      { token: "primary user-owned resource pointer", pattern: /\buse:\s*["']\/portal\/api\/user-owned-resources/ },
+    ],
+  },
+  {
+    file: "services/portal/frontend/src/api/portal/resources.ts",
+    checks: [
+      { token: "frontend primary user-owned API path", pattern: /apiClient\.(?:get|post)[\s\S]*?["']\/user-owned-resources/ },
+    ],
+  },
+  {
+    file: "services/portal/frontend/src/views/resources/ResourcesView.vue",
+    checks: [
+      { token: "运行节点", pattern: /运行节点/ },
+      { token: "运行代理", pattern: /运行代理/ },
+    ],
+  },
+  {
+    file: "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+    checks: [
+      { token: "fetchWorkspaceMinioState", pattern: /\bfetchWorkspaceMinioState\b/ },
+      { token: "fetchMinioSummary", pattern: /\bfetchMinioSummary\b/ },
+      { token: "user_owned_storage", pattern: /\buser_owned_storage\b/ },
+    ],
+  },
+  {
+    file: "services/portal/src/integrations/opl-adapter-client.mjs",
+    checks: [
+      { token: "catch {}", pattern: /catch\s*\{\s*\}/ },
+      { token: "fetchJson return null", pattern: /async function fetchJson[\s\S]*?return null;/ },
+    ],
+  },
 ];
 
-const FORBIDDEN_PRODUCT_SERVICES = [
-  "resource-provisioner",
-  "med-autoscience-runner",
-];
-
-const FORBIDDEN_PRODUCT_ENV = [
-  { service: "portal", key: "RESOURCE_PROVISIONER_URL" },
-  { service: "portal-opl-adapter", key: "MED_AUTOSCIENCE_RUNNER_URL" },
-  { service: "portal-opl-adapter", key: "MED_AUTOSCIENCE_RUNNER_IMAGE" },
-  { service: "portal-opl-adapter", key: "K8S_NAMESPACE" },
-];
-
-const FORBIDDEN_PLATFORM_CONFIG_VALUES = [
-  { key: "MED_AUTOSCIENCE_RUNNER_URL", forbidden: /^http:\/\/med-autoscience-runner:18890$/ },
-  { key: "RESOURCE_PROVISIONER_URL", forbidden: /^http:\/\/resource-provisioner:18893$/ },
-  { key: "MED_AUTOSCIENCE_RUNNER_IMAGE", forbidden: /__MED_AUTOSCIENCE_RUNNER_IMAGE__/ },
-  { key: "K8S_NAMESPACE", forbidden: /__NAMESPACE__/ },
-];
-
-const OPS_PROFILE_FILES = [
-  "compose.product.yaml",
-  "deploy/tke-package/manifests/01-platform-config.yaml",
-  "deploy/tke-package/env/tke.env.example",
-  "deploy/tke-package/env/tke.env.tcr-gaofenglab.example",
-  "deploy/tke-package/scripts/build-and-push-tcr.mjs",
-];
-
-function normalize(filePath) {
+function absolutePath(filePath) {
   return path.resolve(repoRoot, filePath);
 }
 
 async function readRequiredFile(filePath) {
   try {
-    return await readFile(normalize(filePath), "utf8");
+    return await readFile(absolutePath(filePath), "utf8");
   } catch (error) {
     throw new Error(`required_file_missing_or_unreadable:${filePath}:${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 function findLine(content, pattern) {
-  const lines = content.split("\n");
-  for (let i = 0; i < lines.length; i += 1) {
-    if (pattern.test(lines[i])) return i + 1;
-  }
-  return null;
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+  const globalPattern = new RegExp(pattern.source, flags);
+  const match = globalPattern.exec(content);
+  if (!match) return null;
+  return content.slice(0, match.index).split("\n").length;
 }
 
-function checkPortalConfigDefaults(content, violations) {
-  for (const item of FORBIDDEN_PORTAL_DEFAULTS) {
-    const escaped = item.literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`export const\\s+${item.key}\\s*=\\s*process\\.env\\.${item.key}\\s*\\|\\|\\s*["']${escaped}["']`);
-    if (regex.test(content)) {
-      violations.push({
-        rule: "portal_config_forbidden_default",
-        file: REQUIRED_FILES.portalConfig,
-        key: item.key,
-        defaultValue: item.literal,
-        line: findLine(content, new RegExp(`export const\\s+${item.key}\\s*=`)),
-        message: `${item.key} still has a non-empty hardcoded default value`,
-      });
-    }
-  }
-}
-
-function parseComposeProduct(content) {
-  try {
-    const compose = JSON.parse(content);
-    const services = compose?.services;
-    if (!services || typeof services !== "object" || Array.isArray(services)) {
-      throw new Error(`compose_product_invalid_structure:${REQUIRED_FILES.composeProduct}:services_missing_or_invalid`);
-    }
-    if (!services.portal || typeof services.portal !== "object") {
-      throw new Error(`compose_product_invalid_structure:${REQUIRED_FILES.composeProduct}:services.portal_missing`);
-    }
-    return services;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (message.startsWith("compose_product_invalid_structure:")) throw error;
-    throw new Error(`compose_product_parse_error:${REQUIRED_FILES.composeProduct}:${message}`);
-  }
-}
-
-function profilesFor(service) {
-  return Array.isArray(service?.profiles) ? service.profiles : [];
-}
-
-function isProductService(service) {
-  return profilesFor(service).includes("product");
-}
-
-function dependsOnFor(service) {
-  return service?.depends_on && typeof service.depends_on === "object" && !Array.isArray(service.depends_on)
-    ? service.depends_on
-    : {};
-}
-
-function productServiceEntries(services) {
-  return Object.entries(services).filter(([, service]) => service && typeof service === "object" && isProductService(service));
-}
-
-function checkComposeProductDependsOn(services, violations) {
-  for (const [serviceName, service] of productServiceEntries(services)) {
-    for (const forbiddenService of FORBIDDEN_PRODUCT_SERVICES) {
-      if (!Object.prototype.hasOwnProperty.call(dependsOnFor(service), forbiddenService)) continue;
-      violations.push({
-        rule: "compose_product_forbidden_depends_on",
-        file: REQUIRED_FILES.composeProduct,
-        service: serviceName,
-        profile: "product",
-        dependsOn: forbiddenService,
-        message: `${serviceName} in product profile still depends_on ${forbiddenService}`,
-      });
-    }
-  }
-}
-
-function checkComposeProductServices(services, violations) {
-  for (const serviceName of FORBIDDEN_PRODUCT_SERVICES) {
-    if (!isProductService(services[serviceName])) continue;
-    violations.push({
-      rule: "compose_product_forbidden_service_profile",
-      file: REQUIRED_FILES.composeProduct,
-      service: serviceName,
-      profile: "product",
-      message: `${serviceName} still belongs to product profile`,
-    });
-  }
-}
-
-function checkComposeProductEnv(services, violations) {
-  for (const item of FORBIDDEN_PRODUCT_ENV) {
-    const service = services[item.service];
-    if (!isProductService(service)) continue;
-    const value = String(service?.environment?.[item.key] || "").trim();
-    if (!value) continue;
-    violations.push({
-      rule: "compose_product_forbidden_managed_runtime_env",
-      file: REQUIRED_FILES.composeProduct,
-      service: item.service,
-      key: item.key,
-      value,
-      message: `${item.service} product environment still configures ${item.key}`,
-    });
-  }
-}
-
-function configValue(content, key) {
-  const match = content.match(new RegExp(`^\\s*${key}\\s*:\\s*["']?([^"'\\n]*)["']?\\s*$`, "m"));
-  return match ? String(match[1] || "").trim() : "";
-}
-
-function checkPlatformConfigDefaults(content, violations) {
-  for (const item of FORBIDDEN_PLATFORM_CONFIG_VALUES) {
-    const value = configValue(content, item.key);
-    if (item.forbidden.test(value)) {
-      violations.push({
-        rule: "platform_config_forbidden_managed_runtime_default",
-        file: REQUIRED_FILES.platformConfig,
-        key: item.key,
-        value,
-        line: findLine(content, new RegExp(`^\\s*${item.key}\\s*:`)),
-        message: `${item.key} still points default TKE product config at managed-runtime`,
-      });
-    }
-  }
-}
-
-function checkProductOpsProfileWiring(fileContents, violations) {
-  for (const file of OPS_PROFILE_FILES) {
-    if (String(fileContents[file] || "").includes("PRODUCT_OPS_PROFILE")) continue;
-    violations.push({
-      rule: "product_ops_profile_not_wired",
-      file,
-      message: `${file} must explicitly carry PRODUCT_OPS_PROFILE so ops surface is not a dead branch`,
-    });
-  }
-}
-
-function checkOpsSurfaceGuards({ adminRoutes, portalApiRoutes, frontendRouter }, violations) {
-  const checks = [
-    {
-      file: REQUIRED_FILES.adminRoutes,
-      content: adminRoutes,
-      patterns: [/opsSurfaceEnabled\(payload\)/, /ops_surface_disabled/],
-      message: "admin ops/sandboxes APIs must be blocked unless ops surface is enabled",
-    },
-    {
-      file: REQUIRED_FILES.portalApiRoutes,
-      content: portalApiRoutes,
-      patterns: [/opsSurfaceEnabled/, /ops_surface_disabled/, /\/portal\/api\/registry\/summary/],
-      message: "registry APIs must be blocked unless ops surface is enabled",
-    },
-    {
-      file: REQUIRED_FILES.frontendRouter,
-      content: frontendRouter,
-      patterns: [/requiresOpsSurface/, /opsSurfaceEnabled/],
-      message: "frontend ops routes must require ops surface",
-    },
-  ];
+function collectViolations(file, content, checks, violations) {
   for (const check of checks) {
-    if (check.patterns.every((pattern) => pattern.test(check.content))) continue;
+    const line = findLine(content, check.pattern);
+    if (line === null) continue;
     violations.push({
-      rule: "ops_surface_guard_missing",
-      file: check.file,
-      message: check.message,
+      rule: "retired_stack_token_detected",
+      file,
+      token: check.token,
+      line,
+      message: `${file} still contains retired stack token ${check.token}`,
     });
-  }
-}
-
-function checkRunnerRbacDefaultInclusion(content, violations) {
-  if (/kind:\s*(ServiceAccount|ClusterRole|ClusterRoleBinding)[\s\S]*name:\s*med-autoscience-runner|name:\s*__RUNNER_RBAC_NAME__/.test(content)) {
-    violations.push({
-      rule: "runner_rbac_default_includes_managed_runtime",
-      file: REQUIRED_FILES.runnerRbac,
-      message: "default runner RBAC manifest still contains managed-runtime RBAC resources",
-    });
-  }
-}
-
-function checkPlatformWorkloadDefaultInclusion(content, violations) {
-  const docs = content.split(/\n---\n/g);
-  const targets = ["resource-provisioner", "med-autoscience-runner"];
-  for (const target of targets) {
-    for (const doc of docs) {
-      if (!new RegExp(`\\n\\s*name:\\s*${target}\\s*\\n`).test(`\n${doc}\n`)) continue;
-      violations.push({
-        rule: "platform_workloads_default_includes_forbidden_runtime_dependency",
-        file: REQUIRED_FILES.platformWorkloads,
-        resource: target,
-        message: `${target} is still included in default platform workloads; move it to optional/managed-runtime`,
-      });
-      break;
-    }
   }
 }
 
 async function main() {
   const violations = [];
-  const portalConfig = await readRequiredFile(REQUIRED_FILES.portalConfig);
-  const composeProduct = await readRequiredFile(REQUIRED_FILES.composeProduct);
-  const composeServices = parseComposeProduct(composeProduct);
-  const platformConfig = await readRequiredFile(REQUIRED_FILES.platformConfig);
-  const runnerRbac = await readRequiredFile(REQUIRED_FILES.runnerRbac);
-  const platformWorkloads = await readRequiredFile(REQUIRED_FILES.platformWorkloads);
-  const buildAndPushTcr = await readRequiredFile(REQUIRED_FILES.buildAndPushTcr);
-  const adminRoutes = await readRequiredFile(REQUIRED_FILES.adminRoutes);
-  const portalApiRoutes = await readRequiredFile(REQUIRED_FILES.portalApiRoutes);
-  const frontendRouter = await readRequiredFile(REQUIRED_FILES.frontendRouter);
-
-  checkPortalConfigDefaults(portalConfig, violations);
-  checkComposeProductDependsOn(composeServices, violations);
-  checkComposeProductServices(composeServices, violations);
-  checkComposeProductEnv(composeServices, violations);
-  checkPlatformConfigDefaults(platformConfig, violations);
-  checkProductOpsProfileWiring({
-    [REQUIRED_FILES.composeProduct]: composeProduct,
-    [REQUIRED_FILES.platformConfig]: platformConfig,
-    "deploy/tke-package/env/tke.env.example": await readRequiredFile("deploy/tke-package/env/tke.env.example"),
-    "deploy/tke-package/env/tke.env.tcr-gaofenglab.example": await readRequiredFile("deploy/tke-package/env/tke.env.tcr-gaofenglab.example"),
-    [REQUIRED_FILES.buildAndPushTcr]: buildAndPushTcr,
-  }, violations);
-  checkOpsSurfaceGuards({ adminRoutes, portalApiRoutes, frontendRouter }, violations);
-  checkRunnerRbacDefaultInclusion(runnerRbac, violations);
-  checkPlatformWorkloadDefaultInclusion(platformWorkloads, violations);
+  for (const entry of REQUIRED_FILES) {
+    const content = await readRequiredFile(entry.file);
+    collectViolations(entry.file, content, entry.checks, violations);
+  }
 
   const payload = {
     ok: violations.length === 0,
     status: violations.length === 0 ? "pass" : "fail",
-    contract: "v21_user_owned_runtime_boundaries",
-    checkedFiles: Object.values(REQUIRED_FILES),
+    contract: "v21_platform_provisioned_runtime_boundaries",
+    checkedFiles: REQUIRED_FILES.map((entry) => entry.file),
     violations,
   };
   console.log(JSON.stringify(payload, null, 2));
@@ -304,7 +201,7 @@ main().catch((error) => {
   console.log(JSON.stringify({
     ok: false,
     status: "error",
-    contract: "v21_user_owned_runtime_boundaries",
+    contract: "v21_platform_provisioned_runtime_boundaries",
     error: error instanceof Error ? error.message : String(error),
   }, null, 2));
   process.exitCode = 1;
