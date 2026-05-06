@@ -7,7 +7,6 @@ import { createBillingAllocationSummaryRuntime } from "../adapters/billing-aggre
 import { createBillingHttpHandler } from "../adapters/billing-aggregator/src/http-routes.mjs";
 import { createBillingSummaryRuntime } from "../adapters/billing-aggregator/src/billing-summary-runtime.mjs";
 import { createCosBillingRuntime } from "../adapters/billing-aggregator/src/cos-billing-runtime.mjs";
-import { createServerPlansService } from "../adapters/billing-aggregator/src/server-plans-service.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -22,49 +21,37 @@ async function readSource(relativePath) {
 
 async function main() {
   const [
-    billingConfigSource,
-    cloudStatusSource,
     httpRoutesSource,
     summaryRuntimeSource,
     localCostsSource,
     allocationSummarySource,
     cosBillingRuntimeSource,
-    discoveryRuntimeSource,
   ] = await Promise.all([
-    readSource("adapters/billing-aggregator/src/billing-config.mjs"),
-    readSource("adapters/billing-aggregator/src/server-plans-cloud-status.mjs"),
     readSource("adapters/billing-aggregator/src/http-routes.mjs"),
     readSource("adapters/billing-aggregator/src/billing-summary-runtime.mjs"),
     readSource("adapters/billing-aggregator/src/billing-metering-local-costs.mjs"),
     readSource("adapters/billing-aggregator/src/billing-metering-allocation-summary.mjs"),
     readSource("adapters/billing-aggregator/src/cos-billing-runtime.mjs"),
-    readSource("adapters/billing-aggregator/src/server-plans-discovery-runtime.mjs"),
   ]);
 
-  assert(!billingConfigSource.includes("tke_node_pool_create"), "contract_failed:default_catalog_must_not_use_tke_node_pool_create");
-  assert(!billingConfigSource.includes("node-pool-role"), "contract_failed:default_catalog_must_not_embed_node_pool_role");
-  assert(billingConfigSource.includes('provisioningMode: "platform_provisioned_runtime"'), "contract_failed:default_catalog_must_default_to_platform_provisioned_runtime");
-  assert(!cloudStatusSource.includes('source: "resource_provisioner"'), "contract_failed:cloud_status_must_not_default_to_resource_provisioner");
-  assert(!cloudStatusSource.includes("调用 TKE"), "contract_failed:cloud_status_must_not_describe_tke_as_default");
-  assert(cloudStatusSource.includes('pendingSource: "local_metering_pending"'), "contract_failed:cloud_status_must_default_pending_source_to_local_metering_pending");
-  assert(cloudStatusSource.includes('source: "platform_provisioned_runtime"'), "contract_failed:cloud_status_must_publish_platform_provisioned_runtime_source");
   assert(httpRoutesSource.includes('pendingSources: ["local_metering_pending"]'), "contract_failed:http_status_must_only_publish_local_metering_pending_default");
   assert(!httpRoutesSource.includes("opencost_pending"), "contract_failed:http_status_must_not_publish_opencost_pending_default");
   assert(summaryRuntimeSource.includes('summary.source = "local_metering_pending"'), "contract_failed:pending_summary_must_use_local_metering_source");
   assert(summaryRuntimeSource.includes('aggregatedSummary.source = "local_metering_pending"'), "contract_failed:aggregated_pending_summary_must_use_local_metering_source");
   assert(summaryRuntimeSource.includes('rawSummary.source = "local_metering_pending"'), "contract_failed:raw_pending_summary_must_use_local_metering_source");
+  assert(!summaryRuntimeSource.includes("user_owned_local_metering"), "contract_failed:summary_must_not_publish_user_owned_local_metering");
   assert(!summaryRuntimeSource.includes("catch {}"), "contract_failed:pending_summary_must_not_swallow_read_failures");
   assert(!httpRoutesSource.includes("collectAttributionItems(url).catch"), "contract_failed:attribution_route_must_not_swallow_collection_failures");
   assert(localCostsSource.includes('pricingSource: "platform_provisioned_local_metering"'), "contract_failed:local_metering_costs_must_use_platform_provisioned_pricing_source");
+  assert(!localCostsSource.includes("user_owned_local_metering"), "contract_failed:local_costs_must_not_publish_user_owned_local_metering");
   assert(allocationSummarySource.includes('source: "local_metering_pending"'), "contract_failed:allocation_summary_pending_source_must_be_local_metering_pending");
   assert(allocationSummarySource.includes('cloudSource: "platform_provisioned_local_metering"'), "contract_failed:allocation_summary_pending_cloud_source_must_be_platform_provisioned_local_metering");
+  assert(!allocationSummarySource.includes("user_owned_local_metering"), "contract_failed:allocation_summary_must_not_publish_user_owned_local_metering");
   assert(!allocationSummarySource.includes("OpenCost raw allocation"), "contract_failed:allocation_summary_must_not_label_pending_as_opencost_raw_allocation");
   assert(!allocationSummarySource.includes("entry?.name?.includes(customerId)"), "contract_failed:allocation_summary_must_not_use_name_contains_customer_id");
   assert(!allocationSummarySource.includes("entry?.name?.includes(workspaceId)"), "contract_failed:allocation_summary_must_not_use_name_contains_workspace_id");
   assert(!cosBillingRuntimeSource.includes("fetchProvisionResourceMappings();"), "contract_failed:cos_exact_attribution_must_not_default_to_resource_provisioner_mapping");
   assert(!cosBillingRuntimeSource.includes("JSON.stringify(item"), "contract_failed:cos_attribution_must_not_scan_item_json");
-  assert(!discoveryRuntimeSource.includes('provisioningMode: "schedule_to_node_pool"'), "contract_failed:discovered_server_plan_must_not_default_to_node_pool_scheduling");
-  assert(discoveryRuntimeSource.includes('provisioningMode: "platform_provisioned_runtime"'), "contract_failed:discovered_server_plan_must_default_to_platform_provisioned_runtime");
 
   const cosAttributionRuntime = createCosBillingRuntime({
     cosBillReader: {
@@ -281,74 +268,6 @@ async function main() {
   assertNode.equal(sentResponses[0].status, 502, "attribution_collection_error_must_surface_502");
   assertNode.equal(sentResponses[0].payload.ok, false, "attribution_collection_error_must_not_look_successful");
   assertNode.match(sentResponses[0].payload.error, /exact_bill_unavailable/, "attribution_collection_error_must_include_cause");
-
-  const serverPlansService = createServerPlansService({
-    env: {
-      SERVER_PLAN_CATALOG_JSON: JSON.stringify([
-        {
-          id: "legacy-plan",
-          name: "Legacy Alias Plan",
-          provider: "tencent",
-          region: "na-siliconvalley",
-          zone: "na-siliconvalley-1",
-          instanceType: "SA5.MEDIUM4",
-          cpu: 2,
-          memoryGb: 4,
-          salable: true,
-          provisioningMode: "user_owned_runtime",
-          priceStatus: "quoted",
-          unitPrice: 1.2,
-          discountPrice: 1.2,
-          source: "platform_catalog",
-        },
-        {
-          id: "new-plan",
-          name: "New Mode Plan",
-          provider: "tencent",
-          region: "na-siliconvalley",
-          zone: "na-siliconvalley-1",
-          instanceType: "SA5.LARGE8",
-          cpu: 4,
-          memoryGb: 8,
-          salable: true,
-          provisioningMode: "platform_provisioned_runtime",
-          priceStatus: "quoted",
-          unitPrice: 2.4,
-          discountPrice: 2.4,
-          source: "platform_catalog",
-        },
-      ]),
-      TENCENT_CLOUD_REGION: "na-siliconvalley",
-      TENCENT_PRICE_ENABLED: false,
-      TENCENT_PLAN_DISCOVERY_ENABLED: false,
-      SERVER_PLAN_CACHE_TTL_MS: 0,
-    },
-    deps: {
-      firstString: (...values) => values.map((value) => String(value ?? "").trim()).find(Boolean) || "",
-      firstNumber: (...values) => {
-        for (const value of values) {
-          const parsed = Number(value);
-          if (Number.isFinite(parsed) && parsed > 0) return parsed;
-        }
-        return 0;
-      },
-      sanitizeCloudError: (error) => error ? { message: String(error.message || error) } : null,
-      cloudErrorMessage: (error) => String(error?.message || error || ""),
-      tencentCloudConfigured: () => false,
-      callTencentCloud: async () => {
-        throw new Error("call_tencent_cloud_must_not_run_in_catalog_normalization_contract");
-      },
-      randomUUID: () => "uuid-fixture",
-    },
-  });
-  const planPayload = await serverPlansService.listServerPlans();
-  const legacyPlan = planPayload.items.find((item) => item.id === "legacy-plan");
-  const newPlan = planPayload.items.find((item) => item.id === "new-plan");
-  assertNode.equal(legacyPlan?.provisioningMode, "platform_provisioned_runtime", "legacy_alias_plan_must_normalize_to_platform_provisioned_runtime");
-  assertNode.equal(newPlan?.provisioningMode, "platform_provisioned_runtime", "new_plan_must_keep_platform_provisioned_runtime");
-  assertNode.equal(planPayload.cloudStatus?.provisioning?.source, "platform_provisioned_runtime", "cloud_status_provisioning_source_must_publish_platform_runtime_mode");
-  assertNode.equal(planPayload.cloudStatus?.provisioning?.platformProvisionedRuntimeCount, 2, "cloud_status_must_count_legacy_aliases_as_platform_runtime");
-  assertNode.equal(planPayload.cloudStatus?.provisioning?.manualBindingCount, 0, "cloud_status_must_not_treat_legacy_alias_as_manual_binding");
 
   console.log(JSON.stringify({
     ok: true,

@@ -129,9 +129,12 @@ for (const forbidden of [
 }
 
 assert(
-  resourcesApiSource.includes('resourceLifecycleMode: "cloud_provisioned"')
-    || resourcesApiSource.includes('resourceLifecycleMode: "platform_provisioned"'),
-  "resources api must submit platform provisioned lifecycle mode by default",
+  resourcesApiSource.includes('resourceLifecycleMode: "platform_provisioned"'),
+  "resources api must submit platform_provisioned lifecycle mode by default",
+);
+assert(
+  !resourcesApiSource.includes('resourceLifecycleMode: "cloud_provisioned"'),
+  "resources api must not submit cloud_provisioned as the default lifecycle mode",
 );
 
 const displayStorageLabelBody = resourcesViewSource.match(/function displayStorageLabel[\s\S]*?\n}\n/)?.[0] || "";

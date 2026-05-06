@@ -72,7 +72,7 @@ const rejectedCloudCompute = await invoke(routeWithoutProvisioner, {
   user,
   db: missingProvisionerDb,
   body: {
-    resourceLifecycleMode: "cloud_provisioned",
+    resourceLifecycleMode: "platform_provisioned",
     region: "na-siliconvalley",
     zone: "na-siliconvalley-1",
     instanceType: "SA5.MEDIUM4",
@@ -143,7 +143,7 @@ const createdCompute = await invoke(route, {
   user,
   db,
   body: {
-    resourceLifecycleMode: "cloud_provisioned",
+    resourceLifecycleMode: "platform_provisioned",
     region: "na-siliconvalley",
     zone: "na-siliconvalley-1",
     instanceType: "SA5.MEDIUM4",
@@ -167,7 +167,7 @@ const createdStorage = await invoke(route, {
   user,
   db,
   body: {
-    resourceLifecycleMode: "cloud_provisioned",
+    resourceLifecycleMode: "platform_provisioned",
     provider: "cos",
     region: "na-siliconvalley",
     storagePlanId: "storage-100g",
