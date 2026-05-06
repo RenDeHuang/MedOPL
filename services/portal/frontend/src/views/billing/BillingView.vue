@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="账单" subtitle="钱包余额、运行中预扣、T+1 校准与账户流水">
+  <AppLayout title="账单" subtitle="钱包余额、运行中预扣、实际结算与账户流水">
     <div class="space-y-4">
       <div v-if="summaryLoading && !summaryPayload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单摘要...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -15,7 +15,7 @@
               </div>
               <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">当前账户的资源成本与流水</h2>
               <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                当前优先展示 CPU、GPU、存储等成本。运行中预扣金额会在 T+1 校准后更新为最终金额。
+                当前优先展示套餐、计算和存储成本。运行中预扣金额会在实际结算后更新为最终金额。
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -28,7 +28,7 @@
             <MetricCard label="钱包余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
             <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除冻结金额后的可用余额" />
             <MetricCard label="已冻结" :value="money(payload.wallet.activeFreeze)" hint="已承诺服务占用的金额" />
-            <MetricCard label="今日 T+1 校准" :value="microMoney(payload.todayCost)" hint="今日 T+1 校准后资源消费" />
+            <MetricCard label="今日实际结算" :value="microMoney(payload.todayCost)" hint="今日已核算资源消费" />
             <MetricCard label="窗口总计" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口总成本" />
             <MetricCard label="账户流水" :value="payload.ledgerPagination.total" hint="当前窗口内流水数" />
           </div>
