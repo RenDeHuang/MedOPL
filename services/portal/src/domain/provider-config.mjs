@@ -37,14 +37,18 @@ export function createGflabProviderConfig({ userId = "", workspaceId = "", apiKe
   const secretRef = `gflab-${String(userId || "user").replace(/[^a-zA-Z0-9]+/g, "").slice(0, 20) || "user"}-${randomUUID()}`;
   return {
     ok: true,
+    providerKeyRef: secretRef,
     providerConfigSecretRef: secretRef,
     providerConfigStatus: "configured",
+    providerBound: true,
     providerConfigured: true,
     providerName: GFLAB_PROVIDER_CONFIG.providerName,
     providerConfig: {
       ...GFLAB_PROVIDER_CONFIG,
+      providerKeyRef: secretRef,
       providerConfigSecretRef: secretRef,
       providerConfigStatus: "configured",
+      providerBound: true,
       ownerUserId: userId,
       workspaceId,
       secretFingerprint: providerKeyFingerprint(normalizedKey),
@@ -60,9 +64,13 @@ export function createGflabProviderConfig({ userId = "", workspaceId = "", apiKe
 export function redactProviderConfig(config = {}) {
   const providerName = String(config.providerName || GFLAB_PROVIDER_CONFIG.providerName).trim() || GFLAB_PROVIDER_CONFIG.providerName;
   const providerConfigSecretRef = String(config.providerConfigSecretRef || "").trim();
+  const providerKeyRef = String(config.providerKeyRef || providerConfigSecretRef).trim();
+  const providerBound = Boolean(config.providerBound || config.providerConfigured || config.providerConfigStatus === "configured" || providerKeyRef);
   return {
-    providerConfigured: Boolean(config.providerConfigured || config.providerConfigStatus === "configured" || providerConfigSecretRef),
-    providerConfigStatus: config.providerConfigStatus || (providerConfigSecretRef ? "configured" : "missing"),
+    providerBound,
+    providerConfigured: providerBound,
+    providerConfigStatus: config.providerConfigStatus || (providerKeyRef ? "configured" : "missing"),
+    providerKeyRef,
     providerConfigSecretRef,
     providerName,
     providerBaseUrl: config.providerBaseUrl || GFLAB_PROVIDER_CONFIG.providerBaseUrl,

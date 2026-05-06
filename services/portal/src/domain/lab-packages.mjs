@@ -76,6 +76,81 @@ const CUSTOM_OPTIONS = Object.freeze({
   notes: Object.freeze(["自定义可选择计算核心、内存和套餐存储", "已开通套餐后可继续单独扩容存储"]),
 });
 
+const CANONICAL_RESOURCE_PLAN_DEFAULTS = Object.freeze({
+  basePrice: null,
+  pendingProductApproval: true,
+  storageBackend: "cos_standard_workspace_quota",
+  region: "na-siliconvalley",
+  zone: "na-siliconvalley-1",
+  os: "ubuntu_22_04",
+  cloudBillingMode: "pay_as_you_go",
+});
+
+const CANONICAL_RESOURCE_PLAN_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    id: "starter_2c4g_10gb",
+    name: "starter_2c4g_10gb",
+    tier: "starter",
+    compute: Object.freeze({ cpuCores: 2, memoryGb: 4 }),
+    storage: Object.freeze({ capacityGb: 10 }),
+    ...CANONICAL_RESOURCE_PLAN_DEFAULTS,
+  }),
+  Object.freeze({
+    id: "pro_8c16g_100gb",
+    name: "pro_8c16g_100gb",
+    tier: "pro",
+    compute: Object.freeze({ cpuCores: 8, memoryGb: 16 }),
+    storage: Object.freeze({ capacityGb: 100 }),
+    ...CANONICAL_RESOURCE_PLAN_DEFAULTS,
+  }),
+]);
+
+const CANONICAL_RESOURCE_PLAN_ALIASES = Object.freeze({
+  starter: "starter_2c4g_10gb",
+  "starter-2c": "starter_2c4g_10gb",
+  "starter-2c4g-10gb": "starter_2c4g_10gb",
+  "default-2c4gb-10gb": "starter_2c4g_10gb",
+  starter_2c4gb_10gb: "starter_2c4g_10gb",
+  pro: "pro_8c16g_100gb",
+  "pro-8c": "pro_8c16g_100gb",
+  "pro-8c16g-100gb": "pro_8c16g_100gb",
+  "default-8c16gb-100gb": "pro_8c16g_100gb",
+  pro_8c16gb_100gb: "pro_8c16g_100gb",
+});
+
+const CANONICAL_RESOURCE_PLAN_BY_ID = new Map(CANONICAL_RESOURCE_PLAN_DEFINITIONS.map((item) => [item.id, item]));
+
+function canonicalResourcePlanId(value = "") {
+  const id = String(value || "").trim();
+  return CANONICAL_RESOURCE_PLAN_ALIASES[id] || id;
+}
+
+export function listCanonicalResourcePlans() {
+  return CANONICAL_RESOURCE_PLAN_DEFINITIONS;
+}
+
+export function getCanonicalResourcePlan(planId = "") {
+  return CANONICAL_RESOURCE_PLAN_BY_ID.get(canonicalResourcePlanId(planId)) || null;
+}
+
+export function canonicalResourcePlanPublicView(plan = null) {
+  if (!plan) return null;
+  return {
+    id: plan.id,
+    name: plan.name,
+    tier: plan.tier,
+    compute: { ...plan.compute },
+    storage: { ...plan.storage },
+    storageBackend: plan.storageBackend,
+    region: plan.region,
+    zone: plan.zone,
+    os: plan.os,
+    cloudBillingMode: plan.cloudBillingMode,
+    basePrice: null,
+    pendingProductApproval: true,
+  };
+}
+
 export function listLabPackages() {
   return PACKAGES;
 }

@@ -1,6 +1,7 @@
 import { createPortalApiCostsRoutes } from "./portal-api-costs.routes.mjs";
 import { createPortalApiRunsRoutes } from "./portal-api-runs.routes.mjs";
 import { createPortalApiSessionsRoutes } from "./portal-api-sessions.routes.mjs";
+import { createPortalApiStateRoutes } from "./portal-api-state.routes.mjs";
 import { createPortalApiTracesRoutes } from "./portal-api-traces.routes.mjs";
 import { createPlatformProvisionedResourceRoutes } from "./platform-provisioned-resource.routes.mjs";
 import { createUserOwnedResourceRoutes } from "./user-owned-resource.routes.mjs";
@@ -60,10 +61,21 @@ export function createPortalApiRoutes({
     workspaceChatSessionsForUser,
   });
   const handleRuns = createPortalApiRunsRoutes({
+    buildUserBillingSummary,
     collectRunsForUser,
+    currentServerPlanSelection,
+    currentTaskSpaceForUser,
     fetchOplAdapterRuns,
     formatDateTime,
     isRunTerminal,
+    readBody,
+    sendJson,
+  });
+  const handleState = createPortalApiStateRoutes({
+    activeUserStatus,
+    buildUserBillingSummary,
+    currentServerPlanSelection,
+    currentTaskSpaceForUser,
     sendJson,
   });
   const handleCosts = createPortalApiCostsRoutes({
@@ -184,6 +196,7 @@ export function createPortalApiRoutes({
   return async function handlePortalApiRoutes(context) {
     if (await handlePlatformProvisionedResources(context)) return true;
     if (await handleLegacyUserOwnedResources(context)) return true;
+    if (await handleState(context)) return true;
     if (await handleAnnouncements(context)) return true;
     if (await handleMe(context)) return true;
     if (await handleSessions(context)) return true;

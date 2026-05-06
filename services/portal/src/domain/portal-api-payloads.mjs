@@ -1,3 +1,17 @@
+import {
+  buildWeeklyProtectionFreezeView,
+  buildWorkspaceBindingAccess,
+  ownerScopeFromUser,
+} from "./platform-provisioned-resources.mjs";
+import {
+  canonicalResourcePlanPublicView,
+  getCanonicalResourcePlan,
+} from "./lab-packages.mjs";
+
+function text(value) {
+  return String(value ?? "").trim();
+}
+
 async function collectAllRunsWithUsers(db, collectRunsForUser) {
   const rows = [];
   for (const user of db.users.filter((item) => item.role !== "admin")) {
@@ -6,6 +20,175 @@ async function collectAllRunsWithUsers(db, collectRunsForUser) {
   }
   rows.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   return rows;
+}
+
+function userTenantId(user = {}) {
+  return text(user.tenantId || user.tenant_id || user.id);
+}
+
+function statusText(value = "", fallback = "active") {
+  return text(value || fallback).toLowerCase();
+}
+
+function providerBindingMatchesUser(binding = {}, user = {}) {
+  const tenantId = userTenantId(user);
+  const userId = text(user.id);
+  return text(binding.tenantId || binding.tenant_id || binding.ownerTenantId) === tenantId
+    && text(binding.userId || binding.user_id || binding.ownerUserId) === userId
+    && text(binding.provider || "gflabtoken") === "gflabtoken";
+}
+
+function providerBindingIsBound(binding = {}) {
+  const status = statusText(binding.boundStatus || binding.status || binding.providerConfigStatus, "bound");
+  return ["bound", "configured", "active"].includes(status);
+}
+
+function resolveProviderState(db = {}, user = {}) {
+  const binding = (Array.isArray(db.providerKeyBindings) ? db.providerKeyBindings : [])
+    .find((item) => providerBindingMatchesUser(item, user) && providerBindingIsBound(item));
+  const userProviderKeyRef = text(user.providerKeyRef || user.providerConfigSecretRef);
+  const providerKeyRef = text(binding?.providerKeyRef || binding?.providerConfigSecretRef || userProviderKeyRef);
+  const providerBound = Boolean(providerKeyRef && (!binding || providerBindingIsBound(binding)));
+  return {
+    providerBound,
+    providerKeyRef: providerBound ? providerKeyRef : "",
+    provider: "gflabtoken",
+    boundStatus: providerBound ? "bound" : "missing",
+  };
+}
+
+function tenantRecord(db = {}, user = {}) {
+  const tenantId = userTenantId(user);
+  return (Array.isArray(db.tenants) ? db.tenants : []).find((item) => text(item.id || item.tenantId) === tenantId) || {};
+}
+
+function identityPayload(user = {}, activeUserStatus = (status) => status || "active") {
+  return {
+    id: text(user.id),
+    userId: text(user.id),
+    name: text(user.name),
+    email: text(user.email),
+    role: text(user.role || "user"),
+    status: activeUserStatus(user.status),
+  };
+}
+
+function tenantPayload(db = {}, user = {}) {
+  const tenant = tenantRecord(db, user);
+  const tenantId = userTenantId(user);
+  return {
+    tenantId,
+    id: text(tenant.id || tenant.tenantId || tenantId),
+    slug: text(tenant.slug || tenant.name || tenantId),
+    status: statusText(tenant.status || "active"),
+    runtimeOwnership: "platform_provisioned",
+    isolationMode: "customer_dedicated",
+  };
+}
+
+function ownerMatches(item = {}, owner = {}) {
+  return text(item.ownerUserId || item.userId || item.user_id) === text(owner.ownerUserId)
+    && text(item.ownerTenantId || item.tenantId || item.tenant_id) === text(owner.ownerTenantId);
+}
+
+function findTaskSpace(db = {}, user = {}, workspaceId = "", currentTaskSpaceForUser = null) {
+  const explicitWorkspaceId = text(workspaceId);
+  if (explicitWorkspaceId) {
+    const byWorkspace = (Array.isArray(db.taskSpaces) ? db.taskSpaces : [])
+      .find((item) => text(item.slug || item.workspaceId || item.id) === explicitWorkspaceId && text(item.userId || item.ownerUserId) === text(user.id));
+    if (byWorkspace) return byWorkspace;
+  }
+  if (typeof currentTaskSpaceForUser === "function") return currentTaskSpaceForUser(db, user) || null;
+  return (Array.isArray(db.taskSpaces) ? db.taskSpaces : [])
+    .find((item) => text(item.userId || item.ownerUserId) === text(user.id) && text(item.slug) === text(user.currentTaskSlug)) || null;
+}
+
+function activeBindingForWorkspace(db = {}, user = {}, workspaceId = "") {
+  const owner = ownerScopeFromUser(user);
+  const targetWorkspaceId = text(workspaceId);
+  const bindings = (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((item) => ownerMatches(item, owner))
+    .filter((item) => statusText(item.status) === "active")
+    .filter((item) => !targetWorkspaceId || text(item.workspaceId) === targetWorkspaceId)
+    .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")));
+  return bindings[0] || null;
+}
+
+function freezeForBinding(db = {}, user = {}, binding = null) {
+  if (!binding) return null;
+  const owner = ownerScopeFromUser(user);
+  const bindingIds = new Set([text(binding.id), text(binding.resourceBindingId)].filter(Boolean));
+  const freeze = (Array.isArray(db.weeklyProtectionFreezes) ? db.weeklyProtectionFreezes : [])
+    .filter((item) => ownerMatches(item, owner))
+    .filter((item) => bindingIds.has(text(item.resourceBindingId)))
+    .sort((left, right) => String(right.updatedAt || right.windowStartAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.windowStartAt || left.createdAt || "")))[0] || null;
+  return freeze ? buildWeeklyProtectionFreezeView(freeze) : null;
+}
+
+function resourceBindingPayload(binding = null) {
+  if (!binding) return null;
+  return {
+    id: text(binding.id),
+    resourceBindingId: text(binding.resourceBindingId || binding.id),
+    workspaceId: text(binding.workspaceId),
+    computeInstanceId: text(binding.computeInstanceId),
+    storageBucketId: text(binding.storageBucketId),
+    rootPrefix: text(binding.rootPrefix),
+    status: statusText(binding.status),
+    bindingAccess: buildWorkspaceBindingAccess(binding),
+    createdAt: text(binding.createdAt),
+    updatedAt: text(binding.updatedAt),
+  };
+}
+
+function planIdFromInputs({ binding = null, taskSpace = null, selectedServerPlan = null } = {}) {
+  return text(
+    binding?.planId
+    || binding?.packageId
+    || binding?.serverPlanId
+    || taskSpace?.serverPlanId
+    || taskSpace?.packageId
+    || selectedServerPlan?.id
+    || "starter_2c4g_10gb"
+  );
+}
+
+function canonicalPlanPayload({ binding = null, taskSpace = null, selectedServerPlan = null } = {}) {
+  const plan = getCanonicalResourcePlan(planIdFromInputs({ binding, taskSpace, selectedServerPlan }))
+    || getCanonicalResourcePlan("starter_2c4g_10gb");
+  return canonicalResourcePlanPublicView(plan);
+}
+
+export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
+  activeUserStatus = (status) => status || "active",
+  buildUserBillingSummary = () => ({ balanceCents: 0, availableBalanceCents: 0, frozenWeeklyAmountCents: 0 }),
+  currentServerPlanSelection = () => null,
+  currentTaskSpaceForUser = null,
+  workspaceId = "",
+} = {}) {
+  const taskSpace = findTaskSpace(db, user, workspaceId, currentTaskSpaceForUser);
+  const selectedServerPlan = currentServerPlanSelection(taskSpace);
+  const targetWorkspaceId = text(workspaceId || taskSpace?.slug || taskSpace?.workspaceId || user.currentTaskSlug || "");
+  const binding = activeBindingForWorkspace(db, user, targetWorkspaceId);
+  const resourceBinding = resourceBindingPayload(binding);
+  const freeze = freezeForBinding(db, user, binding);
+  const provider = resolveProviderState(db, user);
+  const balance = buildUserBillingSummary(db, { user });
+  const runtimeEnabled = Boolean(resourceBinding?.bindingAccess?.fullRuntime?.allowed);
+  return {
+    ok: true,
+    source: "portal_canonical_state",
+    identity: identityPayload(user, activeUserStatus),
+    tenant: tenantPayload(db, user),
+    balance,
+    providerBound: provider.providerBound,
+    providerKeyRef: provider.providerKeyRef,
+    provider,
+    runtimeEnabled,
+    resourceBinding,
+    freeze,
+    plan: canonicalPlanPayload({ binding, taskSpace, selectedServerPlan }),
+  };
 }
 
 export function createPortalApiPayloads(deps) {
