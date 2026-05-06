@@ -1,55 +1,98 @@
 # platform-v22 Recovery Decisions
 
-本文档记录 platform-v22 canonical trunk 的当前决策。除非后续通过新的明确决策替换，否则这些规则约束 v22 的文档、代码、测试和分支操作。
+本文档记录 platform-v22 canonical trunk 的当前决策。
 
-## D001: platform-v22 是新 canonical trunk
+## D001: platform-v22 是 MedOPL canonical trunk
 
-platform-v22 是 MedOPL OPL SaaS 的新 canonical trunk。正式产品语义、正式入口和正式工作流以 v22 为准。
+platform-v22 是 MedOPL 托管 OPL 科研工作台的 canonical trunk。正式产品语义、正式入口和正式合同以 v22 为准。
 
-## D002: platform-v21 是 legacy recovery/reference worktree
+## D002: MedOPL 不是云资源控制台
 
-platform-v21 不再作为功能叠加主线。v21 只能作为 legacy recovery/reference worktree，用于按域查证、迁移判断和边界参考。v21 内容不能整包搬进 v22。
+MedOPL 面向小白科研用户。用户通过 Portal 和 OPL Web 使用托管科研工作台，不需要懂 CVM、COS、K8s，也不直接配置云资源。
 
-## D003: 产品主线是 platform-provisioned / customer-dedicated OPL SaaS
+## D003: 平台管理 TKE 和存储资源池
 
-MedOPL 用户购买套餐、计算能力、存储容量和运行环境。平台负责开通、隔离、计费、审计和释放。`user_owned` 只能作为 legacy alias，不能被解释成用户自带云资源。
+平台管理自己的 TKE 和存储资源池。runtime、compute、storage 是平台向租户提供的托管能力，不是用户自配云资源。
 
-## D004: one-person-lab upstream 必须保持 clean
+## D004: Runtime 是租户可选开通能力
 
-one-person-lab 是 clean upstream。v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Adapter 代码，不 import upstream 内部模块。集成只能走 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界。
+托管 runtime 不是默认强制提供。租户开通 runtime 后才能使用平台托管 runtime 跑任务；租户不开通 runtime 时，可以有账号、充值、绑定 API key，但不能跑托管 runtime 任务。
 
-## D005: 主链路固定为 Portal 到平台资源治理
+## D005: 所有资源必须绑定租户和治理边界
+
+runtime、compute、storage 必须绑定到 tenant、user、workspace、resource binding、billing account、audit tag / cost allocation tag。v22 不允许无归属资源。
+
+## D006: 默认套餐和扩展能力固定进入 v22 truth
+
+v22 默认基础套餐是：
+
+| 套餐 | 计算 | 存储 |
+| --- | --- | --- |
+| 默认套餐 1 | 2c4gb | 10GB |
+| 默认套餐 2 | 8c16gb | 100GB |
+
+v22 支持叠加计算、叠加存储和自定义套餐。所有叠加和自定义资源都必须进入 billing、quota、audit 边界。
+
+## D007: API token 业务使用 gflabtoken 中转站
+
+MedOPL 的 OpenAI-compatible API 中转站 base URL 是：
+
+```text
+https://gflabtoken.cn/v1
+```
+
+商业目标之一是销售 token/API 使用额度。raw API key 只能进入后端密钥边界；前端最多保留一次性输入态、`providerKeyRef` 和 bound status。
+
+## D008: 前端不得持久化密钥和运行 token
+
+raw API key、bearer token、launchToken、runtimeToken 不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git。
+
+## D009: one-person-lab upstream 必须保持 clean
+
+one-person-lab upstream 地址是：
+
+```text
+https://github.com/gaofeng21cn/one-person-lab
+```
+
+v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Adapter 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
+
+## D010: 主链路固定
 
 v22 主链路是：
 
 ```text
-Portal -> OPL Web Gateway -> clean upstream OPL Web -> Portal OPL Adapter / Runtime Agent -> platform-provisioned compute/storage/runtime -> Billing/Audit/Admin
+Portal -> OPL Web Gateway -> clean upstream OPL Web -> Portal OPL Adapter / Runtime Agent -> platform-managed TKE/storage resource pools -> Billing/Quota/Audit/Admin
 ```
 
-新文档、新代码和新测试必须围绕这条主链路组织。
+## D011: 核心用户 loop 固定
 
-## D006: spike 探索，feat 落地
+v22 用户 loop 包括账号/租户创建、充值、登录 `portal.medopl.cn`、绑定 gflabtoken API key、选择是否开通 runtime、选择套餐、平台开通资源、预扣费或冻结金额、进入 `opl.medopl.cn` 工作、查看文件/账单/session trace metadata、余额不足提示、7 天冻结保护、释放后停止扣费。
 
-想法不确定时开 `spike/*`。`spike/*` 可以快、可以脏、可以丢，但不能直接并入 trunk。
+## D012: Billing freeze 是产品边界
 
-方向确定后，从 v22 trunk 新开 `feat/*` 干净重落。一个 `feat/*` 只能服务一个产品意图，即使它同时修改前端、后端、文档和测试。
+开通资源后开始预扣费或冻结金额。余额不足时，Portal 提示将消耗冻结金额。冻结保护期是 7 天；7 天后清理对应数据和资源。用户删除或释放资源后，扣费停止。
 
-## D007: main/recovery trunk 不接收半成品探索
+## D013: Trace 只保留必要 metadata
 
-`main` 和 `recovery/*` 这类 trunk 线只接收已经收敛的正式变更。半成品探索、并行入口、路线未定实现和脏实验必须留在 `spike/*`。
+Portal 可以保留必要 session trace metadata 用于轨迹跟踪、审计和排障。metadata 不能泄露 raw prompt、API key、secret、token 或可还原敏感内容。
 
-## D008: 每次 pivot 必须带 cleanup/delete 计划
+## D014: Langfuse 不是当前主产品叙事
+
+Langfuse 可以作为后续 trace metadata 来源，但当前 v22 主线只定义 trace metadata boundary。Langfuse 具体接入必须后续单独设计。
+
+## D015: spike 探索，feat 落地
+
+想法不确定时开 `spike/*`。方向确定后，从 v22 trunk 新开 `feat/*` 干净重落。`main` 和 `recovery/*` trunk 不接收半成品探索。
+
+## D016: 每次 pivot 必须带 cleanup/delete 计划
 
 路线替换不能只新增新路径。每次 pivot 必须写明旧入口、旧文档、旧测试、旧脚本或旧配置如何处理，并通过 `cleanup/*` 删除、迁移或归档被替代路径。
 
-## D009: 一个核心域只能有一个正式入口
+## D017: 一个核心域只能有一个正式入口
 
-Portal、OPL Web Gateway、clean upstream OPL Web、Portal OPL Adapter / Runtime Agent、platform-provisioned compute/storage/runtime、Billing/Audit/Admin 各自承担唯一正式入口。并行入口只能用于探索，不能进入 v22 trunk。
+Portal、OPL Web Gateway、clean upstream OPL Web、Portal OPL Adapter / Runtime Agent、platform-managed TKE/storage resource pools、Billing/Quota/Audit/Admin 各自承担唯一正式入口。并行入口只能用于探索，不能进入 v22 trunk。
 
-## D010: 旧运行栈不是 v22 主产品叙事
-
-旧 `med-autoscience-runner`、`resource-provisioner`、K8s Job、OpenCost、Langfuse 不作为 v22 主线。它们只能被裁定为 `keep`、`migrate`、`delete` 或 `archive` 后按域处理。
-
-## D011: 未授权不执行真实资源操作
+## D018: 未授权不执行真实资源操作
 
 普通文档收敛、本地检查和代码重构不得运行 build/push、kubectl、live-test、真实云资源操作，也不得修改 `.sentrux/*`。这些动作必须单独授权。
