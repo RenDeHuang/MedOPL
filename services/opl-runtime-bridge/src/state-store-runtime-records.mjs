@@ -1,0 +1,32 @@
+import { randomUUID } from "node:crypto";
+
+import { ownerIdFrom } from "./state-store-identity.mjs";
+import {
+  providerConfigFields,
+  runtimeDispatchFields,
+  runtimeOwnershipFields,
+  runtimeResourceFields,
+  workspaceSessionScopeFields,
+} from "./state-store-record-field-groups.mjs";
+import { nowIso } from "./state-store-record-time.mjs";
+
+export function buildRuntimeSessionRecord(input = {}) {
+  const ownerId = ownerIdFrom(input);
+  return {
+    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || randomUUID(),
+    ...runtimeOwnershipFields(input, ownerId),
+    sessionOwnerId: input.sessionOwnerId || input.session_owner_id || ownerId,
+    ...workspaceSessionScopeFields(input, "default"),
+    oplSessionId: input.oplSessionId || input.opl_session_id || "",
+    traceId: input.traceId || input.trace_id || "",
+    ...runtimeResourceFields(input),
+    ...runtimeDispatchFields(input),
+    engine: input.engine || "opl-codex-default",
+    status: input.status || "ready",
+    namespace: input.namespace || "",
+    image: input.image || "",
+    ...providerConfigFields(input),
+    createdAt: nowIso(),
+    warmedAt: nowIso(),
+  };
+}

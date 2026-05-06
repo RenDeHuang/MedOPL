@@ -1,9 +1,29 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { usableServerPlanId } from "./server-plan-ids.mjs";
+
+import { idChainFrom, ownerIdFrom, slugify, storageOwnerIdFrom, tenantIdFrom } from "./state-store-identity.mjs";
+import {
+  buildArtifactRecord,
+  buildCostRecord,
+  buildMessageReplyRecord,
+  buildMessageRequestRecord,
+  buildRunActionRecord,
+  buildRunRecord,
+  buildRuntimeSessionRecord,
+  buildTraceRecord,
+  buildWorkspaceRecord,
+  buildWorkspaceSessionRecord,
+  normalizeCostRecords,
+  nowIso,
+} from "./state-store-records.mjs";
+import { scopedMessageIdentity } from "./runtime-bridge-scope-identity.mjs";
+
+export { nowIso } from "./state-store-records.mjs";
+export { slugify } from "./state-store-identity.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../");
 const runtimeRoot = process.env.PORTAL_OPL_ADAPTER_STATE_ROOT
@@ -22,24 +42,14 @@ const emptyState = {
   runActions: [],
   artifacts: [],
   messageRequests: [],
+  messageReplies: [],
   traceLinks: [],
   costRecords: [],
+  sessionLedgerEntries: [],
   events: [],
 };
 
 export { runtimeRoot, stateFile, artifactsRoot, emptyState };
-
-export function nowIso() {
-  return new Date().toISOString();
-}
-
-export function slugify(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "default";
-}
 
 export async function ensureRuntime() {
   await mkdir(runtimeRoot, { recursive: true });
@@ -63,68 +73,9 @@ export async function writeState(state) {
 function sanitizeState(state) {
   return {
     ...state,
+    messageReplies: Array.isArray(state.messageReplies) ? state.messageReplies : [],
+    sessionLedgerEntries: Array.isArray(state.sessionLedgerEntries) ? state.sessionLedgerEntries : [],
     costRecords: normalizeCostRecords(state.costRecords),
-  };
-}
-
-function normalizeCostRecords(records) {
-  return Array.isArray(records) ? records.map(normalizeCostRecord) : [];
-}
-
-function normalizeCostRecord(item) {
-  return item?.pricingSource === "contract-zero-cost"
-    ? normalizeLegacyContractCost(item)
-    : item;
-}
-
-function normalizeLegacyContractCost(item) {
-  return {
-    ...item,
-    pricingSource: "legacy-contract-fixture",
-    status: normalizeLegacyContractCostStatus(item.status),
-  };
-}
-
-function normalizeLegacyContractCostStatus(status) {
-  return status === "exact" ? "legacy_fixture" : status;
-}
-
-function tenantIdFrom(detail = {}) {
-  return firstString([detail.tenantId, detail.tenant_id, detail.portalUserId, detail.portal_user_id]);
-}
-
-function ownerIdFrom(detail = {}) {
-  return firstString([detail.ownerId, detail.owner_id, detail.portalUserId, detail.portal_user_id]);
-}
-
-function storageOwnerIdFrom(detail = {}) {
-  return firstString([detail.storageOwnerId, detail.storage_owner_id, detail.storageOwner, detail.storage_owner]) || ownerIdFrom(detail);
-}
-
-function objectMapFrom(detail = {}) {
-  return detail && typeof detail === "object" && !Array.isArray(detail) ? detail : {};
-}
-
-function firstString(values = []) {
-  for (const value of values) {
-    const normalized = String(value || "").trim();
-    if (normalized) return normalized;
-  }
-  return "";
-}
-
-function tolerationsFrom(detail = {}) {
-  return Array.isArray(detail) ? detail.filter((item) => item && typeof item === "object") : [];
-}
-
-function idChainFrom(detail = {}) {
-  return {
-    tenantId: tenantIdFrom(detail),
-    portalUserId: detail.portalUserId || detail.portal_user_id || "",
-    workspaceId: detail.workspaceId || detail.workspace_id || "",
-    workspaceSessionId: detail.workspaceSessionId || detail.workspace_session_id || "",
-    runtimeSessionId: detail.runtimeSessionId || detail.runtime_session_id || "",
-    runId: detail.runId || detail.run_id || "",
   };
 }
 
@@ -141,206 +92,37 @@ export function addEvent(state, type, detail = {}) {
 export function upsertWorkspace(state, input = {}) {
   const portalUserId = input.portalUserId || input.portal_user_id || "";
   const workspaceId = slugify(input.workspaceId || input.workspace_id || "default");
-  const tenantId = tenantIdFrom(input) || portalUserId;
-  const ownerId = ownerIdFrom(input) || portalUserId;
-  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
-  let workspace = state.workspaces.find((item) =>
+  const existing = state.workspaces.find((item) =>
     item.portalUserId === portalUserId &&
     item.workspaceId === workspaceId
   );
-  if (!workspace) {
-    workspace = {
-      workspaceId,
-      tenantId,
-      portalUserId,
-      ownerId,
-      title: input.workspaceTitle || input.workspace_title || workspaceId,
-      workspacePath: input.workspacePath || input.workspace_path || "",
-      projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
-      inputOwner: input.inputOwner || input.input_owner || ownerId,
-      outputOwner: input.outputOwner || input.output_owner || ownerId,
-      storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
-      storageOwnerId,
-      status: "active",
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    };
+  const workspace = buildWorkspaceRecord(input, existing);
+  if (!existing) {
     state.workspaces.push(workspace);
     addEvent(state, "workspace_registered", { portalUserId, workspaceId });
-  } else {
-    workspace.tenantId = tenantId;
-    workspace.ownerId = ownerId;
-    workspace.title = input.workspaceTitle || input.workspace_title || workspace.title;
-    workspace.workspacePath = input.workspacePath || input.workspace_path || workspace.workspacePath || "";
-    workspace.projectId = input.projectId || input.project_id || input.moduleId || input.module_id || workspace.projectId || "";
-    workspace.inputOwner = input.inputOwner || input.input_owner || workspace.inputOwner || ownerId;
-    workspace.outputOwner = input.outputOwner || input.output_owner || workspace.outputOwner || ownerId;
-    workspace.storageOwner = input.storageOwner || input.storage_owner || workspace.storageOwner || storageOwnerId;
-    workspace.storageOwnerId = storageOwnerId;
-    workspace.updatedAt = nowIso();
+    return workspace;
   }
-  return workspace;
+  Object.assign(existing, workspace);
+  return existing;
 }
 
 export function createWorkspaceSession(state, input = {}) {
   const workspace = upsertWorkspace(state, input);
-  const ownerId = ownerIdFrom(input) || workspace.ownerId || workspace.portalUserId;
-  const session = {
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || randomUUID(),
-    tenantId: tenantIdFrom(input) || workspace.tenantId || workspace.portalUserId,
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    sessionOwnerId: input.sessionOwnerId || input.session_owner_id || ownerId,
-    workspaceId: workspace.workspaceId,
-    workspacePath: input.workspacePath || input.workspace_path || workspace.workspacePath || "",
-    projectId: input.projectId || input.project_id || workspace.projectId || "",
-    sourceSurface: input.sourceSurface || input.source_surface || "portal-control-plane",
-    status: "active",
-    createdAt: nowIso(),
-    lastActiveAt: nowIso(),
-  };
+  const session = buildWorkspaceSessionRecord(input, workspace);
   state.workspaceSessions.push(session);
   addEvent(state, "workspace_session_created", session);
   return session;
 }
 
 export function createRuntimeSession(state, input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
-  const rawProviderConfig = objectMapFrom(input.providerConfig || input.provider_config);
-  const providerConfigSecretRef = firstString([
-    input.providerConfigSecretRef,
-    input.provider_config_secret_ref,
-    rawProviderConfig.providerConfigSecretRef,
-  ]);
-  const providerConfigStatus = firstString([
-    input.providerConfigStatus,
-    input.provider_config_status,
-    rawProviderConfig.providerConfigStatus,
-  ]) || (providerConfigSecretRef ? "configured" : "missing");
-  const providerConfigured = [
-    input.providerConfigured,
-    input.provider_configured,
-    rawProviderConfig.providerConfigured,
-    rawProviderConfig.providerConfigStatus === "configured",
-    providerConfigSecretRef,
-  ].some(Boolean);
-  const runtimeSession = {
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || randomUUID(),
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    sessionOwnerId: input.sessionOwnerId || input.session_owner_id || ownerId,
-    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
-    storageOwnerId,
-    workspaceId: input.workspaceId || input.workspace_id || "default",
-    workspacePath: input.workspacePath || input.workspace_path || "",
-    projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    oplSessionId: input.oplSessionId || input.opl_session_id || "",
-    traceId: input.traceId || input.trace_id || "",
-    serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id),
-    instanceType: input.instanceType || input.instance_type || input.InstanceType || "",
-    region: input.region || "",
-    zone: input.zone || "",
-    nodePool: input.nodePool || input.node_pool || "",
-    runtimeClass: input.runtimeClass || input.runtime_class || "",
-    nodeSelector: objectMapFrom(input.nodeSelector),
-    tolerations: tolerationsFrom(input.tolerations),
-    podNetworkingMode: input.podNetworkingMode || input.pod_networking_mode || "",
-    requiresEniPod: input.requiresEniPod === true || input.requires_eni_pod === true,
-    podAnnotations: objectMapFrom(input.podAnnotations || input.pod_annotations),
-    cpuRequest: input.cpuRequest || input.cpu_request || "",
-    cpuLimit: input.cpuLimit || input.cpu_limit || "",
-    memoryRequest: input.memoryRequest || input.memory_request || "",
-    memoryLimit: input.memoryLimit || input.memory_limit || "",
-    gpuCount: Number(input.gpuCount ?? input.gpu_count ?? 0),
-    storageRequest: input.storageRequest || input.storage_request || "",
-    storageLimit: input.storageLimit || input.storage_limit || "",
-    provisioningMode: input.provisioningMode || input.provisioning_mode || "schedule_to_node_pool",
-    tkeClusterId: input.tkeClusterId || input.tke_cluster_id || input.clusterId || input.cluster_id || "",
-    nodePoolId: input.nodePoolId || input.node_pool_id || "",
-    nodePoolCreatePayload: input.nodePoolCreatePayload || input.node_pool_create_payload || null,
-    nodePoolScalePayload: input.nodePoolScalePayload || input.node_pool_scale_payload || null,
-    provisionerPayload: input.provisionerPayload || input.provisioner_payload || null,
-    engine: input.engine || "opl-codex-default",
-    status: input.status || "ready",
-    namespace: input.namespace || "",
-    image: input.image || "",
-    providerConfigured,
-    providerConfigStatus,
-    providerConfigSecretRef,
-    providerName: firstString([input.providerName, input.provider_name, rawProviderConfig.providerName]),
-    providerBaseUrl: firstString([rawProviderConfig.providerBaseUrl, input.providerBaseUrl, input.provider_base_url]),
-    modelProvider: firstString([rawProviderConfig.modelProvider, input.modelProvider, input.model_provider]),
-    model: firstString([rawProviderConfig.model, input.model]),
-    modelReasoningEffort: firstString([rawProviderConfig.modelReasoningEffort, input.modelReasoningEffort, input.model_reasoning_effort]),
-    serviceTier: firstString([rawProviderConfig.serviceTier, input.serviceTier, input.service_tier]),
-    sandboxMode: firstString([rawProviderConfig.sandboxMode, input.sandboxMode, input.sandbox_mode]),
-    secretFingerprint: firstString([rawProviderConfig.secretFingerprint, input.secretFingerprint, input.secret_fingerprint]),
-    createdAt: nowIso(),
-    warmedAt: nowIso(),
-  };
+  const runtimeSession = buildRuntimeSessionRecord(input);
   state.runtimeSessions.push(runtimeSession);
   addEvent(state, "runtime_session_warmed", runtimeSession);
   return runtimeSession;
 }
 
 export function createRunRecord(state, input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
-  const run = {
-    runId: input.runId || input.run_id || randomUUID(),
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
-    storageOwnerId,
-    workspaceId: input.workspaceId || input.workspace_id || "default",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    kind: input.kind || "med-autoscience",
-    agentId: input.agentId || input.agent_id || "mas",
-    toolName: input.toolName || input.tool_name || "med-autoscience",
-    serverPlanId: usableServerPlanId(input.serverPlanId, input.server_plan_id),
-    instanceType: input.instanceType || input.instance_type || input.InstanceType || "",
-    resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
-    region: input.region || "",
-    zone: input.zone || "",
-    nodePool: input.nodePool || input.node_pool || "",
-    runtimeClass: input.runtimeClass || input.runtime_class || "",
-    nodeSelector: objectMapFrom(input.nodeSelector),
-    tolerations: tolerationsFrom(input.tolerations),
-    podNetworkingMode: input.podNetworkingMode || input.pod_networking_mode || "",
-    requiresEniPod: input.requiresEniPod === true || input.requires_eni_pod === true,
-    podAnnotations: objectMapFrom(input.podAnnotations || input.pod_annotations),
-    cpuRequest: input.cpuRequest || input.cpu_request || "",
-    cpuLimit: input.cpuLimit || input.cpu_limit || "",
-    memoryRequest: input.memoryRequest || input.memory_request || "",
-    memoryLimit: input.memoryLimit || input.memory_limit || "",
-    gpuCount: Number(input.gpuCount ?? input.gpu_count ?? 0),
-    storageRequest: input.storageRequest || input.storage_request || "",
-    storageLimit: input.storageLimit || input.storage_limit || "",
-    provisioningMode: input.provisioningMode || input.provisioning_mode || "schedule_to_node_pool",
-    tkeClusterId: input.tkeClusterId || input.tke_cluster_id || input.clusterId || input.cluster_id || "",
-    nodePoolId: input.nodePoolId || input.node_pool_id || "",
-    nodePoolCreatePayload: input.nodePoolCreatePayload || input.node_pool_create_payload || null,
-    nodePoolScalePayload: input.nodePoolScalePayload || input.node_pool_scale_payload || null,
-    provisionerPayload: input.provisionerPayload || input.provisioner_payload || null,
-    status: input.status || "submitted",
-    runnerImage: input.runnerImage || input.runner_image || "",
-    namespace: input.namespace || "",
-    jobName: input.jobName || input.job_name || "",
-    manifestPath: input.manifestPath || input.manifest_path || "",
-    createdAt: input.createdAt || input.created_at || nowIso(),
-    startedAt: input.startedAt || input.started_at || "",
-    finishedAt: input.finishedAt || input.finished_at || "",
-    latencyMs: Number(input.latencyMs || input.latency_ms || 0),
-    tokenCount: Number(input.tokenCount || input.token_count || 0),
-    model: input.model || "opl-runtime",
-    userAgent: input.userAgent || input.user_agent || "",
-    error: input.error || "",
-  };
+  const run = buildRunRecord(input);
   state.runs.push(run);
   addEvent(state, "runner_run_submitted", run);
   return run;
@@ -358,103 +140,16 @@ export function updateRunStatus(state, runId, patch = {}) {
 }
 
 export function addRunAction(state, input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const action = {
-    actionId: input.actionId || input.action_id || randomUUID(),
-    runId: input.runId || input.run_id || "",
-    traceId: input.traceId || input.trace_id || "",
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    workspaceId: input.workspaceId || input.workspace_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
-    actionType: input.actionType || input.action_type || "runtime_action",
-    summary: input.summary || "",
-    status: input.status || "recorded",
-    startedAt: input.startedAt || input.started_at || nowIso(),
-    finishedAt: input.finishedAt || input.finished_at || "",
-    createdAt: nowIso(),
-  };
+  const action = buildRunActionRecord(input);
   state.runActions.push(action);
   return action;
-}
-
-function buildMessageRequestRecord(input = {}) {
-  const messageId = input.messageId || input.message_id || input.runId || input.run_id || randomUUID();
-  const ownerId = ownerIdFrom(input);
-  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
-  return {
-    ...messageRequestIds(input, messageId),
-    ...messageRequestOwnership(input, ownerId, storageOwnerId),
-    ...messageRequestScope(input),
-    ...messageRequestResult(input),
-    createdAt: input.createdAt || input.created_at || nowIso(),
-    startedAt: input.startedAt || input.started_at || nowIso(),
-    finishedAt: input.finishedAt || input.finished_at || "",
-    updatedAt: input.updatedAt || input.updated_at || nowIso(),
-  };
-}
-
-function messageRequestIds(input = {}, messageId = randomUUID()) {
-  return {
-    messageId,
-    runId: input.runId || input.run_id || messageId,
-    traceId: input.traceId || input.trace_id || "",
-    launchTokenHash: input.launchTokenHash || input.launch_token_hash || "",
-  };
-}
-
-function messageRequestOwnership(input = {}, ownerId = "", storageOwnerId = "") {
-  return {
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
-    storageOwnerId,
-  };
-}
-
-function messageRequestScope(input = {}) {
-  return {
-    workspaceId: input.workspaceId || input.workspace_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    oplSessionId: input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || "",
-    promptPreview: input.promptPreview || input.prompt_preview || "",
-  };
-}
-
-function messageRequestResult(input = {}) {
-  return {
-    status: input.status || "running",
-    model: input.model || "opl-runtime",
-    tokenCount: Number(input.tokenCount || input.token_count || 0),
-    userAgent: input.userAgent || input.user_agent || "",
-    reply: input.reply || "",
-    artifactId: input.artifactId || input.artifact_id || "",
-    artifactName: input.artifactName || input.artifact_name || "",
-    error: input.error || "",
-    ...messageRequestTiming(input),
-  };
-}
-
-function messageRequestTiming(input = {}) {
-  return {
-    acceptedAt: input.acceptedAt || input.accepted_at || "",
-    workerStartedAt: input.workerStartedAt || input.worker_started_at || "",
-    acpStartedAt: input.acpStartedAt || input.acp_started_at || "",
-    acpEndedAt: input.acpEndedAt || input.acp_ended_at || "",
-    persistedAt: input.persistedAt || input.persisted_at || "",
-    tracePublishedAt: input.tracePublishedAt || input.trace_published_at || "",
-  };
 }
 
 export function upsertMessageRequestRecord(state, input = {}) {
   if (!Array.isArray(state.messageRequests)) state.messageRequests = [];
   const incoming = buildMessageRequestRecord(input);
-  const existing = state.messageRequests.find((item) => item.messageId === incoming.messageId);
+  const incomingIdentity = scopedMessageIdentity(incoming);
+  const existing = state.messageRequests.find((item) => scopedMessageIdentity(item) === incomingIdentity);
   if (!existing) {
     state.messageRequests.push(incoming);
     addEvent(state, "opl_message_request_accepted", incoming);
@@ -471,29 +166,7 @@ export function upsertMessageRequestRecord(state, input = {}) {
 }
 
 export function addArtifactRecord(state, input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
-  const artifact = {
-    artifactId: input.artifactId || input.artifact_id || randomUUID(),
-    runId: input.runId || input.run_id || "",
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    artifactOwnerId: input.artifactOwnerId || input.artifact_owner_id || ownerId,
-    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
-    storageOwnerId,
-    workspaceId: input.workspaceId || input.workspace_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
-    kind: input.kind || "output",
-    name: input.name || "",
-    objectKey: input.objectKey || input.object_key || "",
-    localPath: input.localPath || input.local_path || input.path || "",
-    sizeBytes: Number(input.sizeBytes || input.size_bytes || 0),
-    contentType: input.contentType || input.content_type || "application/octet-stream",
-    createdAt: input.createdAt || input.created_at || nowIso(),
-  };
+  const artifact = buildArtifactRecord(input);
   const exists = state.artifacts.find((item) =>
     item.runId === artifact.runId &&
     item.objectKey === artifact.objectKey &&
@@ -506,105 +179,93 @@ export function addArtifactRecord(state, input = {}) {
   return artifact;
 }
 
-function messageReplyIds(input = {}) {
-  const messageId = input.messageId || input.message_id || input.runId || input.run_id || randomUUID();
-  return {
-    messageId,
-    runId: input.runId || input.run_id || input.messageId || input.message_id || "",
-    traceId: input.traceId || input.trace_id || "",
-    oplSessionId: input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || "",
-  };
-}
-
-function messageReplyOwnership(input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const storageOwnerId = storageOwnerIdFrom(input) || ownerId;
-  return {
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    storageOwner: input.storageOwner || input.storage_owner || storageOwnerId,
-    storageOwnerId,
-  };
-}
-
-function buildMessageReplyRecord(input = {}) {
-  return {
-    ...messageReplyIds(input),
-    ...messageReplyOwnership(input),
-    workspaceId: input.workspaceId || input.workspace_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    promptPreview: input.promptPreview || input.prompt_preview || "",
-    reply: input.reply || "",
-    source: input.source || "opl_runtime",
-    status: input.status || "succeeded",
-    model: input.model || "opl-runtime",
-    tokenCount: Number(input.tokenCount || input.token_count || 0),
-    createdAt: input.createdAt || input.created_at || nowIso(),
-  };
-}
-
 export function addMessageReplyRecord(state, input = {}) {
   const message = buildMessageReplyRecord(input);
   if (!Array.isArray(state.messageReplies)) state.messageReplies = [];
-  const exists = state.messageReplies.find((item) => item.messageId === message.messageId);
+  const incomingIdentity = scopedMessageIdentity(message);
+  const exists = state.messageReplies.find((item) => scopedMessageIdentity(item) === incomingIdentity);
   if (exists) return exists;
   state.messageReplies.push(message);
   addEvent(state, "opl_message_reply_recorded", message);
   return message;
 }
 
-export function addTraceRecord(state, input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const trace = {
-    traceId: input.traceId || input.trace_id || randomUUID(),
-    runId: input.runId || input.run_id || "",
-    tenantId: tenantIdFrom(input),
+function sessionLedgerScope(input = {}) {
+  const runtimeSessionId = String(input.runtimeSessionId || input.runtime_session_id || "");
+  const workspaceSessionId = String(input.workspaceSessionId || input.workspace_session_id || "");
+  return { runtimeSessionId, workspaceSessionId };
+}
+
+function sessionLedgerSequence(state, scope, input = {}) {
+  const scopedEntries = state.sessionLedgerEntries.filter((item) =>
+    (scope.runtimeSessionId && item.runtimeSessionId === scope.runtimeSessionId) ||
+    (!scope.runtimeSessionId && scope.workspaceSessionId && item.workspaceSessionId === scope.workspaceSessionId)
+  );
+  const lastSequence = scopedEntries.reduce((max, item) => Math.max(max, Number(item.sequence || 0)), 0);
+  return Number(input.sequence || 0) > 0 ? Number(input.sequence) : lastSequence + 1;
+}
+
+function rawLedgerPayload(input = {}) {
+  return input.rawPayload && typeof input.rawPayload === "object" ? input.rawPayload : {};
+}
+
+function rawLedgerPayloadHash(rawPayload) {
+  return createHash("sha256").update(JSON.stringify(rawPayload)).digest("hex");
+}
+
+function buildSessionLedgerEntry(state, input = {}) {
+  const scope = sessionLedgerScope(input);
+  const rawPayload = rawLedgerPayload(input);
+  return {
+    id: input.id || randomUUID(),
+    tenantId: input.tenantId || input.tenant_id || "",
     portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    traceOwnerId: input.traceOwnerId || input.trace_owner_id || ownerId,
     workspaceId: input.workspaceId || input.workspace_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
-    traceProvider: input.traceProvider || input.trace_provider || "portal-opl-adapter",
-    traceName: input.traceName || input.trace_name || "med-autoscience-run",
-    status: input.status || "submitted",
-    latencyMs: Number(input.latencyMs || input.latency_ms || 0),
-    model: input.model || "opl-runtime",
-    tokenCount: Number(input.tokenCount || input.token_count || 0),
-    userAgent: input.userAgent || input.user_agent || "",
-    error: input.error || "",
+    resourceBindingId: input.resourceBindingId || input.resource_binding_id || "",
+    workspaceSessionId: scope.workspaceSessionId,
+    runtimeSessionId: scope.runtimeSessionId,
+    oplSessionId: input.oplSessionId || input.opl_session_id || "",
+    messageId: input.messageId || input.message_id || "",
+    runId: input.runId || input.run_id || "",
+    traceId: input.traceId || input.trace_id || "",
+    sequence: sessionLedgerSequence(state, scope, input),
+    eventType: String(input.eventType || input.event_type || "runtime_event"),
+    rawPayload,
+    payloadHash: rawLedgerPayloadHash(rawPayload),
+    artifactRefs: Array.isArray(input.artifactRefs) ? input.artifactRefs : [],
     createdAt: input.createdAt || input.created_at || nowIso(),
   };
+}
+
+export function addSessionLedgerEntry(state, input = {}) {
+  if (!Array.isArray(state.sessionLedgerEntries)) state.sessionLedgerEntries = [];
+  const entry = buildSessionLedgerEntry(state, input);
+  state.sessionLedgerEntries.push(entry);
+  return entry;
+}
+
+export function listSessionLedgerEntries(state, scope = {}) {
+  const runtimeSessionId = String(scope.runtimeSessionId || scope.runtime_session_id || "");
+  const workspaceSessionId = String(scope.workspaceSessionId || scope.workspace_session_id || "");
+  return (state.sessionLedgerEntries || [])
+    .filter((item) =>
+      (!runtimeSessionId || item.runtimeSessionId === runtimeSessionId) &&
+      (!workspaceSessionId || item.workspaceSessionId === workspaceSessionId)
+    )
+    .sort((left, right) => Number(left.sequence || 0) - Number(right.sequence || 0));
+}
+
+export function addTraceRecord(state, input = {}) {
+  const trace = buildTraceRecord(input);
   state.traceLinks.push(trace);
   return trace;
 }
 
 export function addCostRecord(state, input = {}) {
-  const ownerId = ownerIdFrom(input);
-  const cost = {
-    costRecordId: input.costRecordId || input.cost_record_id || randomUUID(),
-    runId: input.runId || input.run_id || "",
-    tenantId: tenantIdFrom(input),
-    portalUserId: input.portalUserId || input.portal_user_id || "",
-    ownerId,
-    workspaceId: input.workspaceId || input.workspace_id || "",
-    workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
-    runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
-    cpuCost: input.cpuCost ?? null,
-    gpuCost: input.gpuCost ?? null,
-    storageCost: input.storageCost ?? null,
-    vpnCost: input.vpnCost ?? null,
-    trafficCost: input.trafficCost ?? null,
-    totalCost: input.totalCost ?? null,
-    pricingSource: input.pricingSource || "opencost-pending",
-    status: input.status || "pending",
-    createdAt: input.createdAt || input.created_at || nowIso(),
-  };
+  const cost = buildCostRecord(input);
   state.costRecords.push(cost);
   addEvent(state, cost.status === "exact" ? "runner_cost_reconciled" : "runner_cost_pending", cost);
   return cost;
 }
+
+export { ownerIdFrom, storageOwnerIdFrom, tenantIdFrom };
