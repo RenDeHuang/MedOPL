@@ -1,5 +1,9 @@
 # OPL v21 Platform-Provisioned OPL Service Refactor Checklist
 
+## 文档命名说明
+
+文件名里的 `User-Owned` 是历史命名。当前 v21 语义是 `platform-provisioned / customer-dedicated`：平台代用户开通隔离计算和存储资源，用户购买套餐、计算能力、存储容量和运行环境；`user_owned` 只能作为 legacy alias。
+
 ## 2026-05-06 产品口径修正
 
 v21 的商业模式不是“用户自己准备云服务器和对象存储，然后来平台登记”。这个口径对 AI 小白和科研小白不成立。

@@ -1,29 +1,36 @@
-# 平台搭建 v1
+# MedOPL v21 平台搭建
 
-当前产品主线：
+MedOPL v21 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。
+
+用户购买平台打包好的套餐、计算能力、存储容量和运行环境。平台负责后台开通、隔离、计费、审计和释放；用户不自带云服务器、对象存储或容器集群，也不配置云资源。
+
+当前 v21 产品主链：
 
 ```text
-Portal -> real OPL Web -> OPL runtime -> med-autoscience-runner -> Portal control-plane recovery
+Portal -> OPL Web Gateway -> clean upstream OPL Web -> Portal OPL Adapter / Runtime Agent -> platform-provisioned compute/storage -> Billing/Audit
 ```
 
 当前职责边界：
 
-- Portal：SaaS 控制面。负责开户、登录、用户状态、余额、注册策略、workspace 生命周期、K8s 调度入口、对象存储归属、OpenCost/云账单/钱包流水、session/trace/latency/user-agent/token/run actions 查看，以及管理员端的用户、run、成本、K8s 分发与异常可观测。
-- OPL Web：工作台体验。负责 session/workspace/progress/artifacts 的工作流投影，以及 MAS/MAG/RCA 等 domain agent 激活、对话、恢复、进度、产物视图。
-- med-autoscience：医学科研 domain logic。负责真实 runner / CLI / 工具链、domain artifact、domain progress truth。
+- Portal：SaaS 控制面。负责账号、充值、套餐、workspace 生命周期、运行环境开通、文件空间、账单、审计和管理员治理。
+- OPL Web Gateway：同源工作台入口。负责把 clean upstream OPL Web 接入 Portal 身份、工作区、运行态和文件边界。
+- Portal OPL Adapter / Runtime Agent：平台内部运行边界。负责会话绑定、消息/run 合同、运行状态、产物索引和 customer-dedicated 资源连接。
+- Billing/Audit：平台账单与审计边界。负责费用投影、核对证据、释放证据和用户可解释账单。
 
-旧聊天壳代理和旧 MCP 产品入口不再作为主路径。
-`services/opl-runtime-bridge` 当前目录名保留，但产品语义视为 Portal 内部 adapter，不是产品主入口。
+`user_owned` 只能作为 legacy alias；当前产品语义必须是平台代开通、用户购买服务、后台隔离资源。upstream OPL 必须保持 clean，只能通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
 
 ## 当前入口
 
 - Portal 控制面：`services/portal`
-- Portal OPL adapter（当前代码目录仍为 `services/opl-runtime-bridge`）：`services/opl-runtime-bridge`
-- med-autoscience runner：`adapters/med-autoscience-runner`
-- OPL Product API fixture（仅 dev/test）：`scripts/fixtures/opl-product-api-fixture.mjs`
-- 当前开发方案：`docs/plan/2026-04-25-Portal-OPL-Web-旧路径退场与双入口改造方案-v1.md`
-- 当前推进日志：`docs/logs/2026-04-25-Portal-OPL-Web-旧路径退场推进日志-v1.md`
-- 2026-04-24 旧联调文档仅作为历史记录保留，不再代表当前主链路。
+- OPL Web Gateway：`services/opl-web-gateway`
+- Portal OPL Adapter / Runtime Agent（当前代码目录仍为 `services/opl-runtime-bridge`）：`services/opl-runtime-bridge`
+- v21 产品主计划：`docs/plan/2026-05-05-OPL-v21-User-Owned-Runtime-Refactor-Checklist.md`
+- v21 产品逻辑校正：`docs/reports/2026-05-06-OPL-v21-Product-Logic-Reconciliation.md`
+- v21 本地验收历史记录：`docs/reports/2026-05-06-OPL-v21-Phase2-9-Local-Acceptance-Report.md`
+- v21 灰度推云计划：`docs/reports/2026-05-06-OPL-v21-Cloud-Rollout-Plan.md`
+
+旧聊天壳代理、旧 MCP 产品入口和旧托管运行栈不再作为 v21 主路径。
+`services/opl-runtime-bridge` 当前目录名保留，但产品语义视为 Portal 内部 adapter，不是产品主入口。
 
 ## 环境变量
 
@@ -64,6 +71,16 @@ Portal 控制面基础设施归属：
 - `Harbor`：Portal 镜像与 runner 发布资产管理
 - `Rancher/K8s`：Portal runtime 调度与异常查看
 - `Langfuse`：Portal 可选 trace backend，不是主链路阻塞项
+
+## 历史实现资产
+
+以下旧实现资产只作为历史记录或内部迁移参考，不代表 v21 当前主产品叙事：
+
+- med-autoscience runner：`adapters/med-autoscience-runner`
+- OPL Product API fixture（仅 dev/test）：`scripts/fixtures/opl-product-api-fixture.mjs`
+- 旧开发方案：`docs/plan/2026-04-25-Portal-OPL-Web-旧路径退场与双入口改造方案-v1.md`
+- 旧推进日志：`docs/logs/2026-04-25-Portal-OPL-Web-旧路径退场推进日志-v1.md`
+- 2026-04-24 旧联调文档仅作为历史记录保留，不再代表当前主链路。
 
 ## 本地 live 启动
 
