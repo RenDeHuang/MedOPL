@@ -157,7 +157,7 @@
             <div class="grid grid-cols-2 gap-3 text-sm">
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
                 <div class="text-xs text-gray-500 dark:text-slate-400">可选规格</div>
-                <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.salableCount }}</div>
+                <div class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">{{ payload.serverPlansSummary.purchasableCount }}</div>
               </div>
               <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
                 <div class="text-xs text-gray-500 dark:text-slate-400">已同步套餐</div>

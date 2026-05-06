@@ -10,15 +10,11 @@ const BILLING_CLI_VALUE_OPTIONS = new Map([
 const BILLING_CLI_HELP_OPTIONS = new Set(["--help", "-h"]);
 
 function defaultServerPlanCatalog() {
-  const runtimeNodePoolScheduling = {
-    nodeSelector: { "gaofenglab/node-pool-role": "runtime" },
-    tolerations: [{ key: "gaofenglab/node-pool-role", operator: "Equal", value: "runtime", effect: "NoSchedule" }],
-  };
   return [
-    { id: "cpu-2c4g", name: "CPU 2C4G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.MEDIUM4", cpu: 2, memoryGb: 4, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", cpuRequest: "1000m", cpuLimit: "2", memoryRequest: "2Gi", memoryLimit: "3Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "20Gi", storageLimit: "100Gi", ...runtimeNodePoolScheduling },
-    { id: "cpu-4c8g", name: "CPU 4C8G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.LARGE8", cpu: 4, memoryGb: 8, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", cpuRequest: "2000m", cpuLimit: "4", memoryRequest: "4Gi", memoryLimit: "6Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "20Gi", storageLimit: "150Gi", ...runtimeNodePoolScheduling },
-    { id: "cpu-8c16g", name: "CPU 8C16G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.2XLARGE16", cpu: 8, memoryGb: 16, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", cpuRequest: "4000m", cpuLimit: "8", memoryRequest: "8Gi", memoryLimit: "12Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "40Gi", storageLimit: "200Gi", ...runtimeNodePoolScheduling },
-    { id: "cpu-16c32g", name: "CPU 16C32G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.4XLARGE32", cpu: 16, memoryGb: 32, gpu: 0, salable: true, provisioningMode: "tke_node_pool_create", cpuRequest: "8000m", cpuLimit: "16", memoryRequest: "16Gi", memoryLimit: "24Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "80Gi", storageLimit: "300Gi", ...runtimeNodePoolScheduling },
+    { id: "cpu-2c4g", name: "CPU 2C4G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.MEDIUM4", cpu: 2, memoryGb: 4, gpu: 0, salable: true, provisioningMode: "platform_provisioned_runtime", cpuRequest: "1000m", cpuLimit: "2", memoryRequest: "2Gi", memoryLimit: "3Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "20Gi", storageLimit: "100Gi" },
+    { id: "cpu-4c8g", name: "CPU 4C8G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.LARGE8", cpu: 4, memoryGb: 8, gpu: 0, salable: true, provisioningMode: "platform_provisioned_runtime", cpuRequest: "2000m", cpuLimit: "4", memoryRequest: "4Gi", memoryLimit: "6Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "20Gi", storageLimit: "150Gi" },
+    { id: "cpu-8c16g", name: "CPU 8C16G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.2XLARGE16", cpu: 8, memoryGb: 16, gpu: 0, salable: true, provisioningMode: "platform_provisioned_runtime", cpuRequest: "4000m", cpuLimit: "8", memoryRequest: "8Gi", memoryLimit: "12Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "40Gi", storageLimit: "200Gi" },
+    { id: "cpu-16c32g", name: "CPU 16C32G", provider: "tencent", region: "na-siliconvalley", zone: "na-siliconvalley-1", instanceType: "SA5.4XLARGE32", cpu: 16, memoryGb: 32, gpu: 0, salable: true, provisioningMode: "platform_provisioned_runtime", cpuRequest: "8000m", cpuLimit: "16", memoryRequest: "16Gi", memoryLimit: "24Gi", minBillableHours: 1, riskFactor: 1, reservationFloor: 0, storageRequest: "80Gi", storageLimit: "300Gi" },
   ];
 }
 
