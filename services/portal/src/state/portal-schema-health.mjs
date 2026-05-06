@@ -13,7 +13,16 @@ export async function assertPortalSchemaReady({
   pool,
   pgTableName,
   targetVersion,
-  requiredTables = ["users", "wallets", "ledger_entries", "audit_events"],
+  requiredTables = [
+    "users",
+    "wallets",
+    "ledger_entries",
+    "audit_events",
+    "user_compute_instances",
+    "user_storage_buckets",
+    "workspace_resource_bindings",
+    "weekly_protection_freezes",
+  ],
 }) {
   let versionResult;
   try {

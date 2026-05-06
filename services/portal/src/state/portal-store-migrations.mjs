@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
-import path from "node:path";
+import { ensureSeedAdminAccount } from "./portal-store-migration-admin-seed.mjs";
+import { runPortalStoreCollectionMigrations } from "./portal-store-migration-collections.mjs";
+import { migrateTaskSpaces } from "./portal-store-migration-taskspaces.mjs";
+import { migrateUsersAndGroups } from "./portal-store-migration-users-groups.mjs";
 
 export function createPortalStoreMigrations({
   adminSeed,
@@ -33,13 +36,17 @@ export function createPortalStoreMigrations({
         },
       ],
       sessions: [],
-      wallets: [{ userId: adminId, balance: 0, updatedAt: new Date().toISOString() }],
+      wallets: [{ userId: adminId, balance: adminSeedBalance, updatedAt: new Date().toISOString() }],
       ledger: [],
       taskSpaces: [],
       workspaceSessions: [],
       resourceOrders: [],
       resourceOrderEvents: [],
       storageOrders: [],
+      userComputeInstances: [],
+      userStorageBuckets: [],
+      workspaceResourceBindings: [],
+      weeklyProtectionFreezes: [],
       workspaceFiles: [],
       labSubscriptions: [],
       labPackageEvents: [],
@@ -56,62 +63,12 @@ export function createPortalStoreMigrations({
 
   async function migrateDb(db) {
     let changed = false;
-    for (const key of ["users", "sessions", "wallets", "ledger", "workspaceSessions", "resourceOrders", "resourceOrderEvents", "storageOrders", "workspaceFiles", "labSubscriptions", "labPackageEvents", "labStorageAddons", "labDailyCharges", "userSandboxes", "groups"]) {
-      if (!Array.isArray(db[key])) {
-        db[key] = [];
-        changed = true;
-      }
-    }
-    const resourceOrderStateBefore = JSON.stringify({
-      ledger: db.ledger,
-      resourceOrders: db.resourceOrders,
-      resourceOrderEvents: db.resourceOrderEvents,
-    });
-    ensureResourceOrderCollections(db);
-    if (JSON.stringify({
-      ledger: db.ledger,
-      resourceOrders: db.resourceOrders,
-      resourceOrderEvents: db.resourceOrderEvents,
-    }) !== resourceOrderStateBefore) {
-      changed = true;
-    }
-    const workspaceStorageStateBefore = JSON.stringify({
-      storageOrders: db.storageOrders,
-      workspaceFiles: db.workspaceFiles,
-    });
-    ensureWorkspaceStorageCollections(db);
-    if (JSON.stringify({
-      storageOrders: db.storageOrders,
-      workspaceFiles: db.workspaceFiles,
-    }) !== workspaceStorageStateBefore) {
-      changed = true;
-    }
-    const labSubscriptionStateBefore = JSON.stringify({
-      labSubscriptions: db.labSubscriptions,
-      labPackageEvents: db.labPackageEvents,
-      labStorageAddons: db.labStorageAddons,
-      labDailyCharges: db.labDailyCharges,
-    });
-    ensureLabSubscriptionCollections(db);
-    if (JSON.stringify({
-      labSubscriptions: db.labSubscriptions,
-      labPackageEvents: db.labPackageEvents,
-      labStorageAddons: db.labStorageAddons,
-      labDailyCharges: db.labDailyCharges,
-    }) !== labSubscriptionStateBefore) {
-      changed = true;
-    }
-    if (!Array.isArray(db.taskSpaces)) {
-      db.taskSpaces = (db.workspaces || []).map((item) => ({
-        id: item.id || randomUUID(),
-        userId: item.userId,
-        slug: item.slug || "default",
-        title: sanitizeTaskTitle(item.slug || "default", item.title || item.workspace_name || "Default Task"),
-        path: item.path || item.workspace_root || getTaskPath(item.userId, item.slug || "default"),
-        status: "active",
-        createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-        updatedAt: item.updatedAt || item.updated_at || new Date().toISOString(),
-      }));
+    if (runPortalStoreCollectionMigrations({
+      db,
+      ensureLabSubscriptionCollections,
+      ensureResourceOrderCollections,
+      ensureWorkspaceStorageCollections,
+    })) {
       changed = true;
     }
     if (!db.settings || typeof db.settings !== "object") {
@@ -131,152 +88,15 @@ export function createPortalStoreMigrations({
         changed = true;
       }
     }
-    const adminPasswordHash = hashPassword(adminSeed.password);
-    let seededAdmin = db.users.find((item) => item.email === adminSeed.email && item.role === "admin");
-    if (!seededAdmin) {
-      seededAdmin = {
-        id: randomUUID(),
-        email: adminSeed.email,
-        name: adminSeed.name,
-        role: "admin",
-        status: "active",
-        currentTaskSlug: "default",
-        preferences: { theme: "light" },
-        passwordHash: adminPasswordHash,
-        createdAt: new Date().toISOString(),
-      };
-      db.users.push(seededAdmin);
-      db.wallets.push({ userId: seededAdmin.id, balance: adminSeedBalance, updatedAt: new Date().toISOString() });
+    if (ensureSeedAdminAccount({ adminSeed, adminSeedBalance, db, hashPassword })) {
       changed = true;
-    } else {
-      if (seededAdmin.passwordHash !== adminPasswordHash) {
-        seededAdmin.passwordHash = adminPasswordHash;
-        changed = true;
-      }
-      if (!seededAdmin.preferences) {
-        seededAdmin.preferences = { theme: "light" };
-        changed = true;
-      }
     }
-    for (const user of db.users) {
-      if (!user.status) {
-        user.status = "active";
-        changed = true;
-      }
-      if (!user.preferences || typeof user.preferences !== "object") {
-        user.preferences = { theme: "light" };
-        changed = true;
-      }
-      if (!user.preferences.theme) {
-        user.preferences.theme = "light";
-        changed = true;
-      }
-      if (!user.currentTaskSlug) {
-        user.currentTaskSlug = "default";
-        changed = true;
-      }
-      if (!("groupId" in user)) {
-        user.groupId = "";
-        changed = true;
-      }
-      if (ensureUserCommercialState(user, { grantTrial: false })) {
-        changed = true;
-      }
+    if (migrateUsersAndGroups({ db, ensureUserCommercialState })) {
+      changed = true;
     }
-    for (const group of db.groups) {
-      if (!("balanceFloor" in group)) {
-        group.balanceFloor = 0;
-        changed = true;
-      }
-      if (!("maxWorkspaces" in group)) {
-        group.maxWorkspaces = 0;
-        changed = true;
-      }
-      if (!("maxConcurrentRuns" in group)) {
-        group.maxConcurrentRuns = 0;
-        changed = true;
-      }
-      if (!("allowMas" in group)) {
-        group.allowMas = true;
-        changed = true;
-      }
-      if (!("allowWorkspaceCreate" in group)) {
-        group.allowWorkspaceCreate = true;
-        changed = true;
-      }
-      if (!("cpuRequest" in group)) {
-        group.cpuRequest = "";
-        changed = true;
-      }
-      if (!("cpuLimit" in group)) {
-        group.cpuLimit = "";
-        changed = true;
-      }
-      if (!("memoryRequest" in group)) {
-        group.memoryRequest = "";
-        changed = true;
-      }
-      if (!("memoryLimit" in group)) {
-        group.memoryLimit = "";
-        changed = true;
-      }
-      if (!("gpuCount" in group)) {
-        group.gpuCount = 0;
-        changed = true;
-      }
-      if (!("storageRequest" in group)) {
-        group.storageRequest = "";
-        changed = true;
-      }
-      if (!("storageLimit" in group)) {
-        group.storageLimit = "";
-        changed = true;
-      }
+    if (migrateTaskSpaces({ db, getTaskPath, normalizeServerPlanSelection, sanitizeTaskTitle })) {
+      changed = true;
     }
-    for (const taskSpace of db.taskSpaces) {
-      const sanitizedTitle = sanitizeTaskTitle(taskSpace.slug, taskSpace.title);
-      if (taskSpace.title !== sanitizedTitle) {
-        taskSpace.title = sanitizedTitle;
-        changed = true;
-      }
-      if (!taskSpace.status) {
-        taskSpace.status = "active";
-        changed = true;
-      }
-      if (!taskSpace.path) {
-        taskSpace.path = getTaskPath(taskSpace.userId, taskSpace.slug || "default");
-        changed = true;
-      }
-      const expectedTaskPath = getTaskPath(taskSpace.userId, taskSpace.slug || "default");
-      if (path.normalize(String(taskSpace.path || "")) !== path.normalize(expectedTaskPath)) {
-        taskSpace.path = expectedTaskPath;
-        changed = true;
-      }
-      if (!taskSpace.createdAt) {
-        taskSpace.createdAt = new Date().toISOString();
-        changed = true;
-      }
-      if (!taskSpace.updatedAt) {
-        taskSpace.updatedAt = taskSpace.createdAt;
-        changed = true;
-      }
-      const normalizedServerPlan = normalizeServerPlanSelection(taskSpace.serverPlanSnapshot);
-      if (JSON.stringify(normalizedServerPlan) !== JSON.stringify(taskSpace.serverPlanSnapshot || null)) {
-        taskSpace.serverPlanSnapshot = normalizedServerPlan;
-        changed = true;
-      }
-      const serverPlanId = normalizedServerPlan?.id || "";
-      const serverPlanRegion = normalizedServerPlan?.region || "";
-      if (String(taskSpace.serverPlanId || "") !== serverPlanId) {
-        taskSpace.serverPlanId = serverPlanId;
-        changed = true;
-      }
-      if (String(taskSpace.serverPlanRegion || "") !== serverPlanRegion) {
-        taskSpace.serverPlanRegion = serverPlanRegion;
-        changed = true;
-      }
-    }
-    delete db.workspaces;
     return {
       db: {
         ...db,

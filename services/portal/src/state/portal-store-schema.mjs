@@ -32,6 +32,7 @@ export function createPortalStoreSchema({
         run_id text NOT NULL,
         workspace_id text NOT NULL,
         order_id text NOT NULL DEFAULT '',
+        resource_binding_id text NOT NULL DEFAULT '',
         type text NOT NULL,
         amount numeric NOT NULL,
         currency text NOT NULL DEFAULT 'CNY',
@@ -109,12 +110,105 @@ export function createPortalStoreSchema({
         deleted_at timestamptz NULL,
         retention_cleanup_after_at text NOT NULL DEFAULT ''
       );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("user_compute_instances")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        provider text NOT NULL,
+        region text NOT NULL,
+        zone text NOT NULL,
+        cvm_instance_id text NOT NULL,
+        instance_type text NOT NULL,
+        public_endpoint text NOT NULL,
+        private_endpoint text NOT NULL,
+        runtime_agent_id text NOT NULL,
+        runtime_agent_endpoint text NOT NULL DEFAULT '',
+        runtime_agent_version text NOT NULL,
+        provisioning_mode text NOT NULL DEFAULT 'registered_only',
+        cloud_resource_id text NOT NULL DEFAULT '',
+        server_plan_id text NOT NULL DEFAULT '',
+        provision_evidence_id text NOT NULL DEFAULT '',
+        provision_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        release_evidence_id text NOT NULL DEFAULT '',
+        release_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        status text NOT NULL,
+        health_status text NOT NULL,
+        billing_started_at text NOT NULL,
+        billing_stopped_at text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("user_storage_buckets")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        provider text NOT NULL,
+        region text NOT NULL,
+        bucket_name text NOT NULL,
+        bucket_id text NOT NULL,
+        provisioning_mode text NOT NULL DEFAULT 'registered_only',
+        cloud_resource_id text NOT NULL DEFAULT '',
+        storage_plan_id text NOT NULL DEFAULT '',
+        storage_capacity_gb numeric NOT NULL DEFAULT 0,
+        endpoint text NOT NULL,
+        credentials_secret_ref text NOT NULL,
+        root_prefix text NOT NULL,
+        provision_evidence_id text NOT NULL DEFAULT '',
+        provision_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        release_evidence_id text NOT NULL DEFAULT '',
+        release_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        billing_started_at text NOT NULL DEFAULT '',
+        billing_stopped_at text NOT NULL DEFAULT '',
+        status text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("workspace_resource_bindings")} (
+        id text PRIMARY KEY,
+        resource_binding_id text NOT NULL,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        compute_instance_id text NOT NULL,
+        storage_bucket_id text NOT NULL,
+        root_prefix text NOT NULL,
+        protection_policy_id text NOT NULL,
+        status text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("weekly_protection_freezes")} (
+        id text PRIMARY KEY,
+        resource_binding_id text NOT NULL,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        compute_instance_id text NOT NULL,
+        storage_bucket_id text NOT NULL,
+        usage_mode text NOT NULL,
+        window_start_at text NOT NULL,
+        window_end_at text NOT NULL,
+        weekly_amount numeric NOT NULL,
+        frozen_amount numeric NOT NULL,
+        consumed_amount numeric NOT NULL,
+        remaining_amount numeric NOT NULL,
+        reconcile_120_min_status text NOT NULL,
+        t_plus_1_audit_status text NOT NULL,
+        status text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL,
+        UNIQUE (resource_binding_id, window_start_at, window_end_at)
+      );
       CREATE TABLE IF NOT EXISTS ${pgTableName("workspace_files")} (
         id text PRIMARY KEY,
         tenant_id text NOT NULL,
         user_id text NOT NULL,
         workspace_id text NOT NULL,
         run_id text NOT NULL,
+        opl_session_id text NOT NULL DEFAULT '',
+        resource_binding_id text NOT NULL DEFAULT '',
+        storage_mode text NOT NULL DEFAULT 'legacy',
+        storage_root_prefix text NOT NULL DEFAULT '',
         kind text NOT NULL,
         name text NOT NULL,
         relative_path text NOT NULL,
@@ -252,9 +346,32 @@ export function createPortalStoreSchema({
       ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_region text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("task_spaces")} ADD COLUMN IF NOT EXISTS server_plan_snapshot_json jsonb NOT NULL DEFAULT '{}'::jsonb;
       ALTER TABLE ${pgTableName("storage_orders")} ADD COLUMN IF NOT EXISTS retention_cleanup_after_at text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS runtime_agent_endpoint text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS provisioning_mode text NOT NULL DEFAULT 'registered_only';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS cloud_resource_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS server_plan_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS provision_evidence_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS provision_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb;
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS release_evidence_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_compute_instances")} ADD COLUMN IF NOT EXISTS release_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb;
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS provisioning_mode text NOT NULL DEFAULT 'registered_only';
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS cloud_resource_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS storage_plan_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS storage_capacity_gb numeric NOT NULL DEFAULT 0;
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS provision_evidence_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS provision_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb;
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS release_evidence_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS release_evidence_json jsonb NOT NULL DEFAULT '{}'::jsonb;
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS billing_started_at text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("user_storage_buckets")} ADD COLUMN IF NOT EXISTS billing_stopped_at text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS opl_session_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS resource_binding_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS storage_mode text NOT NULL DEFAULT 'legacy';
+      ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS storage_root_prefix text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS retention_cleanup_after_at text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS order_id text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS resource_binding_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'CNY';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_id text NOT NULL DEFAULT '';
