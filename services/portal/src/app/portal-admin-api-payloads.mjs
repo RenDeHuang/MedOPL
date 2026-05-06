@@ -434,14 +434,14 @@ export function createPortalAdminApiPayloads(deps) {
       auditRows: buildAdminAuditRows(recentEvents, formatDateTime),
       systemMetrics,
       summaries: {
-        opencost: {
+        billing: {
           available: opsSurfaceEnabled,
           mode: opsSurfaceEnabled ? "live" : "disabled",
           cpuCost: Number(totals.cpuCost || 0),
           gpuCost: Number(totals.gpuCost || 0),
           storageCost: Number(totals.pvCost || 0),
           totalCost: Number(totals.totalCost || 0),
-          note: opsSurfaceEnabled ? "数据来自 OpenCost / 账单聚合" : "默认 user-owned 模式下未启用运维成本入口",
+          note: opsSurfaceEnabled ? "数据来自账单聚合" : "未启用运维成本入口",
         },
         minio: minioSummary,
         harbor: {

@@ -20,6 +20,7 @@ const db = {
       name: "Alice",
       role: "user",
       status: "active",
+      customerSegment: "real_customer",
       groupId: "group-1",
       createdAt: now,
     },
@@ -160,6 +161,12 @@ const overview = await payloads.buildAdminOverviewPayload(db);
 assert.equal(overview.kpis.totalUsers, 1, "admin_overview_must_exclude_admin_users");
 assert.equal(overview.groups[0].memberCount, 1, "admin_overview_must_count_group_members");
 assert.equal(overview.alerts.length, 0, "healthy_fixture_must_not_create_alerts");
+assert.ok(overview.summaries.billing, "overview_must_include_billing_summary");
+assert.equal(overview.summaries.billing.cpuCost, 1, "billing_summary_must_include_cpu_cost");
+assert.equal(overview.summaries.billing.gpuCost, 2, "billing_summary_must_include_gpu_cost");
+assert.equal(overview.summaries.billing.storageCost, 3, "billing_summary_must_include_storage_cost");
+assert.equal(overview.summaries.billing.totalCost, 6, "billing_summary_must_include_total_cost");
+assert.equal(overview.summaries.opencost, undefined, "opencost_must_not_remain_primary_billing_summary");
 assert.equal(overview.summaries.harbor.imageTagCount, 1, "overview_must_include_harbor_image_tag_count");
 
 const users = payloads.buildAdminUsersApiPayload(db, overview, { q: "alice", workspace: "analysis" });

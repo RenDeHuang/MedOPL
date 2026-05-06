@@ -60,17 +60,17 @@
                 <div class="muted-kv"><span class="muted-kv-label">最近调整数</span><span class="muted-kv-value">{{ payload.billingSync?.lastAdjustmentCount ?? 0 }}</span></div>
               </div>
               <p class="mt-4 text-sm leading-6 text-gray-500 dark:text-slate-400">
-                这里的“对账”是指把腾讯云真实账单、运行记录和账单条目做一致性校验；OpenCost 只用于待回补期间的近实时参考。
+                这里的“对账”是指把腾讯云真实账单、运行记录和账单条目做一致性校验；近实时成本信号只用于待回补期间的辅助参考。
               </p>
             </div>
 
             <div class="card p-6">
               <h2 class="panel-title">成本构成</h2>
               <div class="mt-4 space-y-3 text-sm">
-                <div class="muted-kv"><span class="muted-kv-label">CPU</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.opencost?.cpuCost) }}</span></div>
-                <div class="muted-kv"><span class="muted-kv-label">GPU</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.opencost?.gpuCost) }}</span></div>
-                <div class="muted-kv"><span class="muted-kv-label">存储</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.opencost?.storageCost) }}</span></div>
-                <div class="muted-kv"><span class="muted-kv-label">总成本</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.opencost?.totalCost) }}</span></div>
+                <div class="muted-kv"><span class="muted-kv-label">CPU</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.billing?.cpuCost) }}</span></div>
+                <div class="muted-kv"><span class="muted-kv-label">GPU</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.billing?.gpuCost) }}</span></div>
+                <div class="muted-kv"><span class="muted-kv-label">存储</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.billing?.storageCost) }}</span></div>
+                <div class="muted-kv"><span class="muted-kv-label">总成本</span><span class="muted-kv-value">{{ microMoney(payload.summaries?.billing?.totalCost) }}</span></div>
               </div>
             </div>
 
