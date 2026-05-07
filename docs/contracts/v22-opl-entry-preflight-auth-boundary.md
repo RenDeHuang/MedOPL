@@ -13,16 +13,16 @@
 - raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git。
 - one-person-lab 是 clean upstream；不得修改源码，不得 import 内部模块。
 
-## Entrypoint
+## Entrypoint Alias
 
-最小闭环复用现有入口：
+用户可见入口必须指向 OPL Gateway entry/preflight alias，不暴露 internal path：
 
 ```text
-GET  /internal/opl/auth/login
-POST /internal/opl/auth/login
+用户可见入口：GET /opl/entry/preflight
+用户可见入口：POST /opl/entry/preflight
 ```
 
-该入口属于 MedOPL Gateway / SSO / Auth Bridge 的 OPL entry/preflight 边界，不是 Portal 普通登录页。`/login` 只能保留账号/邮箱和密码，不得出现 gflabtoken API Key 字段。
+内部实现可以保留 /internal/opl/auth/login，但用户合同、表单 action 和产品入口必须指向 OPL Gateway entry/preflight alias。该入口属于 MedOPL Gateway / SSO / Auth Bridge 的 OPL entry/preflight 边界，不是 Portal 普通登录页。`/login` 只能保留账号/邮箱和密码，不得出现 gflabtoken API Key 字段。
 
 ## Preflight Form
 

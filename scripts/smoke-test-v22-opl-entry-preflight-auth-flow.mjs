@@ -9,6 +9,8 @@ const PASSWORD = "portal-password-v22";
 const contractPath = "docs/contracts/v22-opl-entry-preflight-auth-boundary.md";
 const authHandlerPath = "services/portal/src/app/portal-auth-runtime-handler.mjs";
 const oplLaunchViewPath = "services/portal/frontend/src/views/opl/OplLaunchView.vue";
+const userVisibleEntryPath = "/opl/entry/preflight";
+const internalImplementationPath = "/internal/opl/auth/login";
 
 const { createPortalAuthRuntimeHandler } = await import("../services/portal/src/app/portal-auth-runtime-handler.mjs");
 const {
@@ -79,10 +81,14 @@ async function assertContract() {
     "gflabtoken.cn 网站本身不进入 MedOPL 用户主流程",
     "raw API Key 只能进入后端密钥边界",
     "one-person-lab 是 clean upstream",
-    "/internal/opl/auth/login",
+    "用户可见入口：GET /opl/entry/preflight",
+    "用户可见入口：POST /opl/entry/preflight",
+    "内部实现可以保留 /internal/opl/auth/login",
   ]) {
     assert(contract.includes(required), `contract_missing:${required}`);
   }
+  assert.equal(contract.includes(["用户可见入口：GET", internalImplementationPath].join(" ")), false, "contract_must_not_make_internal_get_user_visible");
+  assert.equal(contract.includes(["用户可见入口：POST", internalImplementationPath].join(" ")), false, "contract_must_not_make_internal_post_user_visible");
 }
 
 function assertPreflightFormOrder(html) {
@@ -98,6 +104,8 @@ function assertPreflightFormOrder(html) {
   assert(apiKeyIndex >= 0, "opl_preflight_form_api_key_field_missing");
   assert(emailIndex < passwordIndex, "opl_preflight_email_must_precede_password");
   assert(passwordIndex < apiKeyIndex, "opl_preflight_api_key_must_be_below_password");
+  assert(html.includes(`action="${userVisibleEntryPath}"`), "opl_preflight_form_action_must_use_user_visible_alias");
+  assert.equal(html.includes(internalImplementationPath), false, "opl_preflight_form_must_not_expose_internal_path");
   assert(html.includes("gflabtoken API Key"), "opl_preflight_form_must_label_gflabtoken_api_key");
   assert(html.includes("已绑定"), "opl_preflight_form_must_explain_bound_status");
   assert.equal(html.includes("gflabtoken.cn"), false, "opl_preflight_form_must_not_send_user_to_gflabtoken_site");
@@ -210,7 +218,7 @@ function createFixture({ providerSecretStore, events, writes, launchCalls }) {
     },
   });
 
-  async function request({ method = "GET", urlPath = "/internal/opl/auth/login", body = "", headers = {}, contentType = "" } = {}) {
+  async function request({ method = "GET", urlPath = userVisibleEntryPath, body = "", headers = {}, contentType = "" } = {}) {
     const res = createResponseRecorder();
     const nextHeaders = {
       "x-portal-internal-token": "allow-opl-entry",
@@ -245,13 +253,18 @@ try {
   const launchCalls = [];
   const { db, request } = createFixture({ providerSecretStore, events, writes, launchCalls });
 
-  const form = await request({ method: "GET" });
+  const form = await request({ method: "GET", urlPath: userVisibleEntryPath });
   assert.equal(form.handled, true, "opl_preflight_get_must_be_handled");
   assert.equal(form.res.statusCode, 200, "opl_preflight_get_status_mismatch");
   assertPreflightFormOrder(form.res.body);
 
+  const internalForm = await request({ method: "GET", urlPath: internalImplementationPath });
+  assert.equal(internalForm.handled, true, "opl_preflight_internal_get_must_remain_handled");
+  assert.equal(internalForm.res.body, form.res.body, "opl_preflight_alias_must_reach_same_form");
+
   const missingKey = await request({
     method: "POST",
+    urlPath: userVisibleEntryPath,
     body: formBody({
       email: "opl-entry@example.test",
       password: PASSWORD,
@@ -266,6 +279,7 @@ try {
 
   const success = await request({
     method: "POST",
+    urlPath: userVisibleEntryPath,
     body: formBody({
       email: "opl-entry@example.test",
       password: PASSWORD,
@@ -291,6 +305,7 @@ try {
 
   const alreadyBound = await request({
     method: "POST",
+    urlPath: userVisibleEntryPath,
     body: JSON.stringify({
       email: "opl-entry@example.test",
       password: PASSWORD,
@@ -313,5 +328,6 @@ try {
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_opl_entry_preflight_auth",
-  entrypoint: "/internal/opl/auth/login",
+  entrypoint: userVisibleEntryPath,
+  internalImplementationPath,
 }, null, 2));

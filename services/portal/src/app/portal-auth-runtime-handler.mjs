@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { hashPassword, verifyPassword } from "../domain/portal-auth.mjs";
 import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
 
+const OPL_ENTRY_PREFLIGHT_PATH = "/opl/entry/preflight";
+const OPL_INTERNAL_AUTH_PATH = "/internal/opl/auth/login";
+
 export function isRegistrationEnabled(db) {
   return db?.settings?.allowRegistration !== false;
 }
@@ -142,7 +145,11 @@ function oplEntryPreflightLoginBody({ providerBound = false } = {}) {
   const boundHint = providerBound
     ? "gflabtoken 模型调用密钥已绑定，可留空继续进入 OPL 工作台。"
     : "gflabtoken API Key 只进入后端密钥边界，不会返回前端；已绑定用户可留空继续进入 OPL 工作台。";
-  return `<div class="hero"><h1>OPL 工作台登录</h1></div><div class="card"><form method="post" action="/internal/opl/auth/login"><p><label>账号/邮箱<br /><input name="email" type="email" autocomplete="username" required /></label></p><p><label>密码<br /><input name="password" type="password" autocomplete="current-password" required /></label></p><p><label>gflabtoken API Key<br /><input name="apiKey" type="password" autocomplete="off"${apiKeyRequired} /></label></p><p class="hint">${boundHint}</p><p><button type="submit">进入 OPL 工作台</button></p></form></div>`;
+  return `<div class="hero"><h1>OPL 工作台登录</h1></div><div class="card"><form method="post" action="${OPL_ENTRY_PREFLIGHT_PATH}"><p><label>账号/邮箱<br /><input name="email" type="email" autocomplete="username" required /></label></p><p><label>密码<br /><input name="password" type="password" autocomplete="current-password" required /></label></p><p><label>gflabtoken API Key<br /><input name="apiKey" type="password" autocomplete="off"${apiKeyRequired} /></label></p><p class="hint">${boundHint}</p><p><button type="submit">进入 OPL 工作台</button></p></form></div>`;
+}
+
+function isOplEntryPreflightPath(pathname = "") {
+  return pathname === OPL_ENTRY_PREFLIGHT_PATH || pathname === OPL_INTERNAL_AUTH_PATH;
 }
 
 function parseOplEntryPreflightPayload(req, bodyText = "", parseForm) {
@@ -361,7 +368,7 @@ export function createPortalAuthRuntimeHandler({
       return true;
     }
 
-    if (req.method === "GET" && url.pathname === "/internal/opl/auth/login") {
+    if (req.method === "GET" && isOplEntryPreflightPath(url.pathname)) {
       if (!portalInternalAuthAllowed(req)) {
         sendHtml(res, `<div class="card">internal auth token mismatch</div>`, 403);
         return true;
@@ -372,7 +379,7 @@ export function createPortalAuthRuntimeHandler({
       return true;
     }
 
-    if (req.method === "POST" && url.pathname === "/internal/opl/auth/login") {
+    if (req.method === "POST" && isOplEntryPreflightPath(url.pathname)) {
       if (!portalInternalAuthAllowed(req)) {
         sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
         return true;
