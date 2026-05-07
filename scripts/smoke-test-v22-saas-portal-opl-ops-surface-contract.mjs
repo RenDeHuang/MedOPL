@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const contractPath = path.join(__dirname, "../docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md");
 const frontendUserSurfacePaths = [
   "../services/portal/frontend/src/layouts/AppHeader.vue",
+  "../services/portal/frontend/src/layouts/AppSidebar.vue",
   "../services/portal/frontend/src/views/overview/OverviewView.vue",
   "../services/portal/frontend/src/views/resources/ResourcesView.vue",
   "../services/portal/frontend/src/views/workspace/WorkspaceView.vue",
@@ -14,6 +15,7 @@ const frontendUserSurfacePaths = [
   "../services/portal/frontend/src/views/trace/TraceView.vue",
   "../services/portal/frontend/src/views/opl/OplLaunchView.vue",
 ].map((relativePath) => path.join(__dirname, relativePath));
+const traceViewPath = path.join(__dirname, "../services/portal/frontend/src/views/trace/TraceView.vue");
 
 const CONTRACT_START = "<!-- v22-saas-portal-opl-ops-surface-contract:start -->";
 const CONTRACT_END = "<!-- v22-saas-portal-opl-ops-surface-contract:end -->";
@@ -98,6 +100,7 @@ function assertNoForbiddenBeginnerText(text, label) {
     "session trace metadata",
     "API key",
     "API Key",
+    "保护金",
   ];
   for (const term of forbidden) {
     assert.equal(text.includes(term), false, `${label}_must_not_include:${term}`);
@@ -146,6 +149,9 @@ async function assertFrontendBeginnerSurfaceCopy() {
     if (filePath.endsWith("AppHeader.vue")) {
       return [visibleTemplate, extractStringArrayConst(source, "helpPages")].join("\n");
     }
+    if (filePath.endsWith("AppSidebar.vue")) {
+      return [visibleTemplate, extractStringArrayConst(source, "userItems")].join("\n");
+    }
     return visibleTemplate;
   }))).join("\n");
   assertIncludesAll(visibleSurface, [
@@ -172,11 +178,20 @@ async function assertFrontendBeginnerSurfaceCopy() {
   assertNoForbiddenBeginnerText(visibleSurface, "frontend_beginner_surface_copy");
 }
 
+async function assertTraceTaskHeaderCopy() {
+  const source = await readFile(traceViewPath, "utf8");
+  const templateMatch = /<template>([\s\S]*?)<\/template>/.exec(source);
+  const visibleTemplate = extractVisibleTemplateCopy(templateMatch?.[1] || "");
+  assert.equal(visibleTemplate.includes("任务编号"), false, "trace_view_task_header_must_not_use_number_label");
+  assert(visibleTemplate.includes("任务"), "trace_view_task_header_must_use_task_label");
+}
+
 const markdown = await readFile(contractPath, "utf8");
 assert(markdown.includes("MedOPL 是面向 AI 小白科研用户的 OPL SaaS 科研托管平台。"), "product_statement_missing");
 assert(markdown.includes("普通用户不需要理解云厂商控制台或工程后台。"), "not_cloud_console_statement_missing");
 assert(markdown.includes("本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。"), "non_implementation_scope_missing");
 await assertFrontendBeginnerSurfaceCopy();
+await assertTraceTaskHeaderCopy();
 
 const contract = extractContractJson(markdown);
 

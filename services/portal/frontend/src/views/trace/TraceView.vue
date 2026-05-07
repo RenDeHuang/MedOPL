@@ -64,7 +64,7 @@
                 <tr class="table-head">
                   <th class="px-4 py-3">会话</th>
                   <th class="px-4 py-3">工作空间</th>
-                  <th class="px-4 py-3">任务编号</th>
+                  <th class="px-4 py-3">任务</th>
                   <th class="px-4 py-3">文件</th>
                   <th class="px-4 py-3">状态</th>
                   <th class="px-4 py-3">时间</th>

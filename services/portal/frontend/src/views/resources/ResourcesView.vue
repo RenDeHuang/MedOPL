@@ -279,7 +279,7 @@
           </label>
           <div class="flex items-end justify-end">
             <button class="btn btn-primary" :disabled="ensureFreezeBusy || busy" type="submit">
-              {{ ensureFreezeBusy ? "正在设置..." : "设置本周保护金" }}
+              {{ ensureFreezeBusy ? "正在设置..." : "设置本周冻结金额" }}
             </button>
           </div>
         </form>
@@ -768,9 +768,9 @@ async function submitEnsureProtectionFreeze() {
       usageMode: "full_runtime",
     });
     await reload();
-    noticeMessage.value = result.created ? "本周保护金已设置" : "本周保护金已更新";
+    noticeMessage.value = result.created ? "本周冻结金额已设置" : "本周冻结金额已更新";
   } catch (error) {
-    reportError(error, "设置本周保护金失败");
+    reportError(error, "设置本周冻结金额失败");
   } finally {
     ensureFreezeBusy.value = false;
     ensureFreezeBusyId.value = "";
