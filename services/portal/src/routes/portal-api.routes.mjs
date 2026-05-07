@@ -3,6 +3,7 @@ import { createPortalApiRunsRoutes } from "./portal-api-runs.routes.mjs";
 import { createPortalApiSessionsRoutes } from "./portal-api-sessions.routes.mjs";
 import { createPortalApiStateRoutes } from "./portal-api-state.routes.mjs";
 import { createPortalApiTracesRoutes } from "./portal-api-traces.routes.mjs";
+import { createPortalApiV22OplWorkRoutes } from "./portal-api-v22-opl-work.routes.mjs";
 import { createPortalApiV22UserCreditProviderKeyRoutes } from "./portal-api-v22-user-credit-provider-key.routes.mjs";
 import { createPlatformProvisionedResourceRoutes } from "./platform-provisioned-resource.routes.mjs";
 import { createUserOwnedResourceRoutes } from "./user-owned-resource.routes.mjs";
@@ -49,6 +50,15 @@ export function createPortalApiRoutes({
     currentServerPlanSelection,
     currentTaskSpaceForUser,
     providerSecretStore,
+    readBody,
+    sendJson,
+    writeDb,
+  });
+  const handleV22OplWork = createPortalApiV22OplWorkRoutes({
+    activeUserStatus,
+    buildUserBillingSummary,
+    currentServerPlanSelection,
+    currentTaskSpaceForUser,
     readBody,
     sendJson,
     writeDb,
@@ -208,6 +218,7 @@ export function createPortalApiRoutes({
 
   return async function handlePortalApiRoutes(context) {
     if (await handleV22UserCreditProviderKey(context)) return true;
+    if (await handleV22OplWork(context)) return true;
     if (await handlePlatformProvisionedResources(context)) return true;
     if (await handleLegacyUserOwnedResources(context)) return true;
     if (await handleState(context)) return true;
