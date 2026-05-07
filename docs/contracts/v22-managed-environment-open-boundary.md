@@ -40,7 +40,7 @@ MVP 只支持两个默认套餐：
 ## Open Flow
 
 1. 用户调用 Portal 后端开通“托管运行环境”。
-2. 请求必须包含 workspace、默认套餐和文件空间。
+2. 请求必须显式包含 `workspaceId`、`planId` 和 `fileSpaceGb`。
 3. Portal 后端先检查 provider readiness；不满足时返回 `provider_key_required`。
 4. Portal 后端只生成平台内部合同状态，不调用真实云 API。
 5. 后台创建 platform-managed CVM / COS / runtime 表达的内部资源记录。
@@ -48,6 +48,14 @@ MVP 只支持两个默认套餐：
 7. `resourceBinding` 必须绑定 tenant、user、workspace、billingAccount、auditTag 和 costAllocationTag。
 8. 开通后进入预扣费/冻结状态。
 9. API response 和 canonical state 只暴露用户可理解的托管环境、工作空间、文件空间、套餐、余额、预扣费状态，以及必要的 binding/audit 引用。
+
+缺失开通参数时必须稳定失败：
+
+- 缺 `workspaceId` 返回 `workspace_required`。
+- 缺 `planId` 返回 `plan_required`。
+- 缺 `fileSpaceGb` 返回 `file_space_required`。
+
+不得使用用户当前任务、`default`、默认套餐或套餐容量补齐缺失的开通参数。
 
 ## Canonical State Contract
 

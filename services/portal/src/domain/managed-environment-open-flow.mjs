@@ -26,27 +26,38 @@ function centsFromYuan(value = 0) {
   return Math.max(0, Math.round(parsed * 100));
 }
 
-function workspaceIdFrom(input = {}, user = {}) {
-  return text(input.workspaceId || input.workspace_id || user.currentTaskSlug || "default");
+function firstNonEmptyText(...values) {
+  for (const value of values) {
+    const candidate = text(value);
+    if (candidate) return candidate;
+  }
+  return "";
+}
+
+function workspaceIdFrom(input = {}) {
+  return firstNonEmptyText(input.workspaceId, input.workspace_id);
 }
 
 function resolvePlan(planId = "") {
-  const plan = getCanonicalResourcePlan(planId || "starter_2c4g_10gb");
+  const plan = getCanonicalResourcePlan(planId);
   if (!plan) return null;
   if (!["starter_2c4g_10gb", "pro_8c16g_100gb"].includes(plan.id)) return null;
   return plan;
 }
 
 function fileSpaceFrom(input = {}, plan = {}) {
-  const requested = Number(input.fileSpaceGb || input.file_space_gb || input.fileSpace?.capacityGb || input.fileSpace?.capacity_gb || 0);
-  const fallback = Number(plan.storage?.capacityGb || 0);
-  const capacityGb = Number.isFinite(requested) && requested > 0 ? requested : fallback;
-  if (capacityGb !== fallback) return null;
+  const requested = Number(firstNonEmptyText(input.fileSpaceGb, input.file_space_gb, input.fileSpace?.capacityGb, input.fileSpace?.capacity_gb));
+  const planCapacityGb = Number(plan.storage?.capacityGb || 0);
+  if (!Number.isFinite(requested) || requested <= 0 || requested !== planCapacityGb) return null;
   return {
-    capacityGb,
+    capacityGb: requested,
     storageBackend: plan.storageBackend,
     status: "active",
   };
+}
+
+function hasFileSpaceInput(input = {}) {
+  return Boolean(firstNonEmptyText(input.fileSpaceGb, input.file_space_gb, input.fileSpace?.capacityGb, input.fileSpace?.capacity_gb));
 }
 
 function ensureWorkspace(db = {}, user = {}, workspaceId = "", plan = {}) {
@@ -270,13 +281,20 @@ export function openManagedEnvironment(db = {}, user = {}, input = {}, { state =
   const readiness = managedEnvironmentReadinessFromState(state);
   if (!readiness.ok) return readiness;
 
-  const plan = resolvePlan(input.planId || input.plan_id);
+  const workspaceId = workspaceIdFrom(input);
+  if (!workspaceId) return { ok: false, status: 422, error: "workspace_required" };
+
+  const planId = firstNonEmptyText(input.planId, input.plan_id);
+  if (!planId) return { ok: false, status: 422, error: "plan_required" };
+
+  if (!hasFileSpaceInput(input)) return { ok: false, status: 422, error: "file_space_required" };
+
+  const plan = resolvePlan(planId);
   if (!plan) return { ok: false, status: 422, error: "invalid_managed_environment_plan" };
 
   const fileSpace = fileSpaceFrom(input, plan);
   if (!fileSpace) return { ok: false, status: 422, error: "invalid_file_space_for_plan" };
 
-  const workspaceId = workspaceIdFrom(input, user);
   const existing = ensureArrayField(db, "workspaceResourceBindings")
     .find((item) => text(item.ownerUserId || item.userId) === text(user.id) && text(item.workspaceId) === workspaceId && text(item.status || "active") === "active");
   if (existing) {

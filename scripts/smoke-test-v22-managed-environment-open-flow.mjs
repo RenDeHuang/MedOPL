@@ -150,6 +150,45 @@ try {
   });
   assert.equal(bound.res.statusCode, 200, "provider_key_binding_must_return_200");
 
+  for (const missingInputCase of [
+    {
+      label: "missing_workspace_id",
+      body: {
+        planId: "starter_2c4g_10gb",
+        fileSpaceGb: 10,
+      },
+      error: "workspace_required",
+    },
+    {
+      label: "missing_plan_id",
+      body: {
+        workspaceId: "workspace-v22-open",
+        fileSpaceGb: 10,
+      },
+      error: "plan_required",
+    },
+    {
+      label: "missing_file_space_gb",
+      body: {
+        workspaceId: "workspace-v22-open",
+        planId: "starter_2c4g_10gb",
+      },
+      error: "file_space_required",
+    },
+  ]) {
+    const missingInput = await request({
+      method: "POST",
+      urlPath: "/portal/api/v22/managed-environment/open",
+      user,
+      body: missingInputCase.body,
+    });
+    assert.equal(missingInput.handled, true, `${missingInputCase.label}_route_must_be_handled`);
+    assert.equal(missingInput.res.statusCode, 422, `${missingInputCase.label}_must_return_422`);
+    assert.equal(missingInput.res.payload.ok, false, `${missingInputCase.label}_must_return_not_ok`);
+    assert.equal(missingInput.res.payload.error, missingInputCase.error, `${missingInputCase.label}_error_mismatch`);
+    assertNoSecretLeak(missingInput.res.payload, missingInputCase.label);
+  }
+
   const opened = await request({
     method: "POST",
     urlPath: "/portal/api/v22/managed-environment/open",
