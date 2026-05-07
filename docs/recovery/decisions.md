@@ -16,7 +16,7 @@ MedOPL 面向小白科研用户。用户通过 Portal 和 OPL Web 使用托管�
 
 ## D004: Runtime 是租户可选开通能力
 
-托管 runtime 不是默认强制提供。租户开通 runtime 后才能使用平台托管 runtime 跑任务；租户不开通 runtime 时，可以有账号、充值、绑定 API key，但不能跑托管 runtime 任务。
+托管 runtime 不是默认强制提供。租户开通 runtime 后才能使用平台托管 runtime 跑任务；租户不开通 runtime 时，可以有账号、充值和 OPL entry/preflight provider key 绑定状态，但不能跑托管 runtime 任务。
 
 ## D005: 所有资源必须绑定租户和治理边界
 
@@ -41,11 +41,11 @@ MedOPL 的 OpenAI-compatible API 中转站 base URL 是：
 https://gflabtoken.cn/v1
 ```
 
-商业目标之一是销售 token/API 使用额度。raw API key 只能进入后端密钥边界；前端最多保留一次性输入态、`providerKeyRef` 和 bound status。
+商业目标之一是销售 token/API 使用额度。portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。API Key 输入框放在 OPL 登录页密码下面；已绑定用户可以看到“已绑定”，不要求重复输入。gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。raw API Key 只能进入后端密钥边界；前端最多保留一次性输入态、`providerKeyRef` 和 bound status。
 
 ## D008: 前端不得持久化密钥和运行 token
 
-raw API key、bearer token、launchToken、runtimeToken 不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git。
+raw API Key、bearer token、launchToken、runtimeToken 不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git，不能返回前端、不能写日志、不能进 git。
 
 ## D009: one-person-lab upstream 必须保持 clean
 
@@ -67,7 +67,7 @@ Portal -> OPL Web Gateway -> clean upstream OPL Web -> Portal OPL Adapter / Runt
 
 ## D011: 核心用户 loop 固定
 
-v22 用户 loop 包括账号/租户创建、充值、登录 `portal.medopl.cn`、绑定 gflabtoken API key、选择是否开通 runtime、选择套餐、平台开通资源、预扣费或冻结金额、进入 `opl.medopl.cn` 工作、查看文件/账单/session trace metadata、余额不足提示、7 天冻结保护、释放后停止扣费。
+v22 用户 loop 包括账号/租户创建、充值、登录 `portal.medopl.cn`、在 `opl.medopl.cn` 登录 / 进入 OPL 工作台时输入或确认 gflabtoken API Key、选择是否开通 runtime、选择套餐、平台开通资源、预扣费或冻结金额、进入 OPL 工作台工作、查看文件/账单/session trace metadata、余额不足提示、7 天冻结保护、释放后停止扣费。
 
 ## D012: Billing freeze 是产品边界
 

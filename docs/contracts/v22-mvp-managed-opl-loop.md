@@ -25,7 +25,12 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
 
 - 默认套餐只引用 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
 - 本合同不扩展自定义套餐实现。
-- raw gflabtoken API key 只进入后端密钥边界；用户侧只看到 `providerKeyRef` 和 bound status。
+- portal.medopl.cn 登录不需要 gflabtoken API Key。
+- opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
+- API Key 输入框放在 OPL 登录页密码下面；已绑定时显示“已绑定”，不要求重复输入。
+- gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
+- Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。
+- raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git；用户侧只看到 `providerKeyRef` 和 bound status。
 - OPL Web 使用 clean upstream one-person-lab：`https://github.com/gaofeng21cn/one-person-lab`。
 - 不修改 upstream 源码，不 import upstream 内部模块。
 
@@ -80,6 +85,10 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
   ],
   "secretBoundary": {
     "provider": "gflabtoken",
+    "portalLoginRequiresProviderKey": false,
+    "oplEntryRequiresProviderKey": true,
+    "inputLocation": "OPL 登录页密码下面",
+    "gflabtokenSiteInUserMainFlow": false,
     "rawKeyBackendOnly": true,
     "publicFields": [
       "providerKeyRef",
@@ -129,6 +138,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
       "userFacing": true,
       "requiredEvidence": [
         "Portal login session exists",
+        "Portal login does not require gflabtoken API Key",
         "user sees 科研工作台"
       ]
     },
@@ -138,14 +148,17 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
       "userFacing": true,
       "requiredEvidence": [
         "OPL Web entry opens",
+        "OPL entry requires gflabtoken API Key",
         "workspace context is bound"
       ]
     },
     {
       "id": 5,
-      "name": "用户绑定 gflabtoken API key",
+      "name": "用户在 opl.medopl.cn 登录 / 进入 OPL 工作台时绑定 gflabtoken API Key",
       "userFacing": true,
       "requiredEvidence": [
+        "API Key input is below OPL login password field",
+        "bound users see 已绑定",
         "providerKeyRef returned",
         "boundStatus returned",
         "raw key remains backend only"

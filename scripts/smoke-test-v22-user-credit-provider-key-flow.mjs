@@ -213,7 +213,11 @@ try {
     "readyForManagedEnvironment",
     "providerKeyRef",
     "bound status",
-    "raw API key 只进入后端密钥边界",
+    "portal.medopl.cn 登录不需要 gflabtoken API Key",
+    "opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key",
+    "API Key 输入框放在 OPL 登录页密码下面",
+    "API Key 不是 Portal 普通登录字段",
+    "raw API Key 只能进入后端密钥边界",
   ]) {
     assert(contract.includes(required), `contract_missing:${required}`);
   }

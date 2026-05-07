@@ -130,7 +130,7 @@ OPL Web 入口通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。gfl
 
 MedOPL 账号密码与 OPL Web 账号密码统一。用户从 `opl.medopl.cn` 进入时，通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。
 
-gflabtoken 模型调用密钥放在 `opl.medopl.cn` entry / preflight 的账号密码输入区下面。gflabtoken 模型调用密钥不是 Portal 普通登录字段。原始密钥只进入后端密钥边界；前端只展示 `providerKeyRef` / bound status。
+gflabtoken 模型调用密钥放在 OPL 登录页密码下面。gflabtoken 模型调用密钥不是 Portal 普通登录字段。原始密钥只进入后端密钥边界；前端只展示 `providerKeyRef` / bound status。
 
 ## upstream 边界
 
@@ -313,7 +313,7 @@ AI 小白用户进入 Portal 后能回答：
   "accountAndApiKeyBoundary": {
     "medoplAccountUnifiedWithOplWeb": true,
     "identityPath": "MedOPL Gateway / SSO / Auth Bridge",
-    "gflabtokenInputLocation": "opl.medopl.cn entry / preflight 的账号密码输入区下面",
+    "gflabtokenInputLocation": "OPL 登录页密码下面",
     "apiKeyIsPortalLoginField": false,
     "rawApiKeyBackendOnly": true,
     "beginnerVisibleName": "gflabtoken 模型调用密钥",

@@ -324,7 +324,7 @@ assertIncludesAll(contract.cloudResourceBoundary.forbiddenBeginnerConfiguration,
 
 assert.equal(contract.accountAndApiKeyBoundary.medoplAccountUnifiedWithOplWeb, true, "medopl_account_must_be_unified_with_opl_web");
 assert.equal(contract.accountAndApiKeyBoundary.identityPath, "MedOPL Gateway / SSO / Auth Bridge", "identity_path_mismatch");
-assert.equal(contract.accountAndApiKeyBoundary.gflabtokenInputLocation, "opl.medopl.cn entry / preflight 的账号密码输入区下面", "gflabtoken_input_location_mismatch");
+assert.equal(contract.accountAndApiKeyBoundary.gflabtokenInputLocation, "OPL 登录页密码下面", "gflabtoken_input_location_mismatch");
 assert.equal(contract.accountAndApiKeyBoundary.apiKeyIsPortalLoginField, false, "api_key_must_not_be_portal_login_field");
 assert.equal(contract.accountAndApiKeyBoundary.rawApiKeyBackendOnly, true, "raw_api_key_must_be_backend_only");
 assert.deepEqual(contract.accountAndApiKeyBoundary.frontendPublicFields, ["providerKeyRef", "bound status"], "frontend_public_fields_mismatch");

@@ -39,8 +39,8 @@
 | 默认资源套餐 | 2c4gb+10GB、8c16gb+100GB | keep |
 | 叠加计算/叠加存储/自定义套餐 | billing/quota/audit 边界 | keep，不能描述成用户自配云资源 |
 | 资源绑定 | tenant/user/workspace/resource binding/billing account/audit tag / cost allocation tag | keep，所有资源必须绑定 |
-| API token 业务 | `https://gflabtoken.cn/v1` | keep，商业目标之一是销售 token/API 使用额度 |
-| API key 密钥边界 | 后端密钥边界 | keep，前端只保留一次性输入态、`providerKeyRef`、bound status |
+| API token 业务 | `https://gflabtoken.cn/v1` | keep，商业目标之一是销售 token/API 使用额度；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程 |
+| API key 密钥边界 | OPL entry/preflight + 后端密钥边界 | keep，portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key；API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态；API Key 不是 Portal 普通登录字段；raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git |
 | OPL Web | clean upstream OPL Web | keep |
 | upstream 更新 | pull + Gateway/Adapter/Runtime Agent/API/CLI 适配 | keep，不修改 upstream 源码 |
 | Billing freeze | 7 天冻结保护 | keep，余额不足提示消耗冻结金额，释放后停止扣费 |
@@ -89,7 +89,7 @@
 | 资源池 | 平台 TKE/存储资源池由平台管理，用户不直接配置云资源 |
 | 资源套餐 | 明确 2c4gb+10GB、8c16gb+100GB、叠加和自定义能力 |
 | 资源绑定 | runtime/compute/storage 绑定 tenant/user/workspace/resource binding/billing account/audit tag / cost allocation tag |
-| Token provider | 明确 `https://gflabtoken.cn/v1` 和 API key 后端密钥边界 |
+| Token provider | 明确 `https://gflabtoken.cn/v1`、OPL entry/preflight 输入位置、Portal 非登录字段和 API Key 后端密钥边界 |
 | Upstream | one-person-lab upstream clean，不修改源码 |
 | Billing freeze | 明确 7 天冻结保护、余额不足提示、释放后停止扣费 |
 | Trace | Langfuse 只作为后续 trace metadata 来源，不是当前主产品叙事 |

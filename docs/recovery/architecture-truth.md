@@ -21,13 +21,15 @@ Portal
 
 ### Portal
 
-Portal 是 SaaS 控制面，负责用户和租户、充值、API key 绑定状态、runtime 开通选择、资源套餐、workspace 状态、账单、冻结金额、审计和管理员治理。
+Portal 是 SaaS 控制面，负责用户和租户、充值、gflabtoken 绑定状态展示、runtime 开通选择、资源套餐、workspace 状态、账单、冻结金额、审计和管理员治理。
 
 Portal 展示的是托管科研工作台资源状态，不展示云资源控制台式 CVM/COS/K8s 配置界面。
 
 ### OPL Web Gateway
 
 OPL Web Gateway 是 `opl.medopl.cn` 的正式入口。它把平台身份、workspace 上下文、runtime availability、resource binding 和 adapter 接入传给 upstream OPL Web，不把 Portal 逻辑写进 upstream。
+
+`opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。API Key 输入框放在 OPL 登录页密码下面；已绑定时显示“已绑定”，不要求重复输入。
 
 ### clean upstream OPL Web
 
@@ -75,7 +77,9 @@ MedOPL 的 OpenAI-compatible API 中转站 base URL 是：
 https://gflabtoken.cn/v1
 ```
 
-raw API key 只能进入后端密钥边界。前端最多保留一次性输入态、`providerKeyRef` 和 bound status，不能把 raw API key、bearer token、launchToken 或 runtimeToken 写入 sessionStorage、localStorage、global JS state、log、evidence 或 git。
+portal.medopl.cn 登录不需要 gflabtoken API Key。gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。
+
+raw API Key 只能进入后端密钥边界。前端最多保留一次性输入态、`providerKeyRef` 和 bound status，不能把 raw API Key、bearer token、launchToken 或 runtimeToken 写入 sessionStorage、localStorage、global JS state、log、evidence 或 git，不能返回前端、不能写日志、不能进 git。
 
 ## Trace Metadata Boundary
 
