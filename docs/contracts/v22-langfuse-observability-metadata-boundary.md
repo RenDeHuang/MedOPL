@@ -18,6 +18,10 @@ trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是�
 
 Runtime Bridge 先清洗，再投递 Langfuse。Langfuse 只接收 sanitized trace/session metadata。Portal 只读取 sanitized projection。
 
+sanitized projection adapter 的输入为 Runtime Bridge 已清洗 metadata + Langfuse trace/session 摘要。
+
+Portal “会话轨迹”展示合并后的业务化摘要，不能把 Langfuse 原始 trace 当成客户默认页面。
+
 Portal 可展示的 Langfuse projection 只能是：
 
 - `traceId`
@@ -147,7 +151,10 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
   "sanitizationPipeline": {
     "runtimeBridgeSanitizesBeforeLangfuse": true,
     "langfuseReceives": "sanitized trace/session metadata",
-    "portalReads": "sanitized projection"
+    "portalReads": "sanitized projection",
+    "adapter": "sanitized projection adapter",
+    "adapterInput": "Runtime Bridge 已清洗 metadata + Langfuse trace/session 摘要",
+    "portalBusinessSummarySurface": "Portal 会话轨迹"
   },
   "portalSanitizedProjection": {
     "allowedFields": [

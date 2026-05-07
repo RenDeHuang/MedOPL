@@ -18,6 +18,83 @@ function firstValue(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== "") ?? "";
 }
 
+function requiredText(value, code) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    const error = new Error(code);
+    error.code = code;
+    throw error;
+  }
+  return normalized;
+}
+
+function requiredNonNegativeNumber(value, code) {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue) || numberValue < 0) {
+    const error = new Error(code);
+    error.code = code;
+    throw error;
+  }
+  return numberValue;
+}
+
+function requiredTags(value) {
+  if (!Array.isArray(value)) {
+    const error = new Error("langfuse_projection_tags_required");
+    error.code = "LANGFUSE_PROJECTION_TAGS_REQUIRED";
+    throw error;
+  }
+  return value.map((item) => requiredText(item, "langfuse_projection_tag_required"));
+}
+
+function usageSummaryProjection(summary = {}) {
+  return {
+    inputTokens: requiredNonNegativeNumber(summary.inputTokens, "langfuse_projection_input_tokens_required"),
+    outputTokens: requiredNonNegativeNumber(summary.outputTokens, "langfuse_projection_output_tokens_required"),
+    totalTokens: requiredNonNegativeNumber(summary.totalTokens, "langfuse_projection_total_tokens_required"),
+  };
+}
+
+function costEstimateProjection(runtimeBridgeMetadata = {}) {
+  const billingCostSummary = runtimeBridgeMetadata.billingCostSummary || {};
+  return {
+    currency: requiredText(billingCostSummary.currency, "langfuse_projection_cost_currency_required"),
+    amount: requiredNonNegativeNumber(billingCostSummary.estimatedAmount, "langfuse_projection_cost_amount_required"),
+  };
+}
+
+function requiredAdminTraceUrl(value, adminConsoleUrl) {
+  const traceUrlValue = requiredText(value, "langfuse_projection_trace_url_required");
+  if (!traceUrlValue.startsWith(adminConsoleUrl)) {
+    const error = new Error("langfuse_projection_trace_url_must_use_admin_console_url");
+    error.code = "LANGFUSE_PROJECTION_TRACE_URL_MUST_USE_ADMIN_CONSOLE_URL";
+    throw error;
+  }
+  return traceUrlValue;
+}
+
+export function createLangfuseSanitizedProjectionAdapter({
+  adminConsoleUrl = "https://trace.medopl.cn",
+} = {}) {
+  const normalizedAdminConsoleUrl = requiredText(adminConsoleUrl, "langfuse_projection_admin_console_url_required").replace(/\/$/, "");
+
+  return {
+    project({ runtimeBridgeMetadata = {}, langfuseTraceSummary = {} } = {}) {
+      return {
+        traceId: requiredText(langfuseTraceSummary.traceId, "langfuse_projection_trace_id_required"),
+        sessionId: requiredText(runtimeBridgeMetadata.sessionId, "langfuse_projection_session_id_required"),
+        runId: requiredText(runtimeBridgeMetadata.runId, "langfuse_projection_run_id_required"),
+        status: requiredText(runtimeBridgeMetadata.status, "langfuse_projection_status_required"),
+        latencyMs: requiredNonNegativeNumber(langfuseTraceSummary.latencyMs, "langfuse_projection_latency_ms_required"),
+        usageSummary: usageSummaryProjection(langfuseTraceSummary.usageSummary),
+        costEstimate: costEstimateProjection(runtimeBridgeMetadata),
+        traceUrl: requiredAdminTraceUrl(langfuseTraceSummary.traceUrl, normalizedAdminConsoleUrl),
+        tags: requiredTags(runtimeBridgeMetadata.tags),
+      };
+    },
+  };
+}
+
 function metadataFromTrace(item = {}) {
   const metadata = item.metadata || item.meta || {};
   return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};

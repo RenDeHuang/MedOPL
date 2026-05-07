@@ -390,6 +390,29 @@ function billingLifecyclePayload({ release = {}, stopBilling = {}, audit = {} } 
   };
 }
 
+function portalTraceProjectionView(row = {}) {
+  const usageSummary = row.usageSummary && typeof row.usageSummary === "object" ? row.usageSummary : {};
+  const costEstimate = row.costEstimate && typeof row.costEstimate === "object" ? row.costEstimate : {};
+  return {
+    traceId: text(row.traceId),
+    sessionId: text(row.sessionId),
+    runId: text(row.runId),
+    status: text(row.status),
+    latencyMs: Number(row.latencyMs),
+    usageSummary: {
+      inputTokens: Number(usageSummary.inputTokens),
+      outputTokens: Number(usageSummary.outputTokens),
+      totalTokens: Number(usageSummary.totalTokens),
+    },
+    costEstimate: {
+      currency: text(costEstimate.currency),
+      amount: Number(costEstimate.amount),
+    },
+    traceUrl: text(row.traceUrl),
+    tags: Array.isArray(row.tags) ? row.tags.map(text).filter(Boolean) : [],
+  };
+}
+
 function applyReleaseBillingSummary(summary = {}, { release = {}, stopBilling = {}, audit = {} } = {}) {
   return {
     ...summary,
@@ -493,6 +516,7 @@ export function createPortalApiPayloads(deps) {
     fetchBillingSummary,
     fetchHarborSummary,
     fetchLangfuseSummary,
+    fetchTraceRows = async () => ({ source: "langfuse_sanitized_projection", type: "status_only", rows: [] }),
     findTaskSpace,
     isRunTerminal,
     normalizePageSize,
@@ -674,16 +698,33 @@ export function createPortalApiPayloads(deps) {
   }
 
   async function buildTracesApiPayload(options = {}) {
-    const summary = await fetchLangfuseSummary();
+    const [summary, traceRows] = await Promise.all([
+      fetchLangfuseSummary(),
+      fetchTraceRows({
+        userId: options.userId || "",
+        workspaceId: options.workspaceId || "",
+        runId: options.runId || "",
+        limit: options.limit || 20,
+      }),
+    ]);
+    const items = (Array.isArray(traceRows.rows) ? traceRows.rows : []).map(portalTraceProjectionView);
     return {
       filters: {
         userId: options.userId || "",
         workspaceId: options.workspaceId || "",
         runId: options.runId || "",
       },
-      summary,
-      items: [],
-      dataSource: summary.available ? "Langfuse summary only; detailed trace drill-down pending" : "unavailable",
+      summary: {
+        ...summary,
+        canonicalSource: false,
+        billingTruth: false,
+        traceCount: items.length,
+      },
+      items,
+      customerTraceSurface: "Portal 会话轨迹",
+      customerDefaultLangfuseUi: false,
+      dataSource: "Portal 会话轨迹 sanitized projection",
+      source: traceRows.source || "langfuse_sanitized_projection",
     };
   }
 

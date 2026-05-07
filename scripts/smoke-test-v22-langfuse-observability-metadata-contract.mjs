@@ -105,14 +105,37 @@ function assertProjectionShape(projection, label) {
   assert.equal(projection.latencyMs, 1280, `${label}_latency_mismatch`);
   assert.equal(projection.usageSummary.totalTokens, 52, `${label}_usage_summary_mismatch`);
   assert.equal(projection.costEstimate.currency, "CNY", `${label}_cost_estimate_currency_mismatch`);
-  assert.equal(projection.traceUrl, "https://observability.medopl.example/trace/trace-v22-langfuse-sanitized", `${label}_trace_url_mismatch`);
+  assert.equal(projection.traceUrl, "https://trace.medopl.cn/project/platform/traces/trace-v22-langfuse-sanitized", `${label}_trace_url_mismatch`);
   assert.deepEqual(projection.tags, ["workspace:v22", "run:contract"], `${label}_tags_mismatch`);
   assertExcludesAnyKey(projection, forbiddenFieldNames, label);
+}
+
+function assertNoForbiddenValue(value, label) {
+  const serialized = JSON.stringify(value);
+  for (const fieldName of forbiddenFieldNames) {
+    assert.equal(new RegExp(fieldName, "i").test(serialized), false, `${label}_must_not_include_forbidden_field:${fieldName}`);
+  }
+  for (const forbidden of [
+    "raw prompt content",
+    "raw completion content",
+    "gflabtoken_raw_secret",
+    "bearer-token-secret",
+    "launch-token-secret",
+    "runtime-token-secret",
+    "internal/object/key.csv",
+    "internal-storage-key",
+    "/private/local/result.csv",
+    "https://storage.example.test/signed",
+  ]) {
+    assert.equal(serialized.includes(forbidden), false, `${label}_must_not_leak_forbidden_value:${forbidden}`);
+  }
 }
 
 const markdown = await readFile(path.join(repoRoot, contractPath), "utf8");
 const readme = await readFile(path.join(repoRoot, readmePath), "utf8");
 const suite = await readFile(path.join(repoRoot, suitePath), "utf8");
+const { createLangfuseSanitizedProjectionAdapter } = await import("../services/portal/src/integrations/langfuse-trace-client.mjs");
+const { createPortalApiPayloads } = await import("../services/portal/src/domain/portal-api-payloads.mjs");
 
 for (const required of [
   "Runtime Bridge session/run metadata 是 MedOPL 业务事实",
@@ -127,6 +150,9 @@ for (const required of [
   "Langfuse 只接收 sanitized trace/session metadata",
   "Portal 只读取 sanitized projection",
   "traceId、sessionId、runId、status、latencyMs、usage summary、cost estimate、traceUrl、tags",
+  "sanitized projection adapter",
+  "输入为 Runtime Bridge 已清洗 metadata + Langfuse trace/session 摘要",
+  "Portal “会话轨迹”展示合并后的业务化摘要",
   "trace.medopl.cn 是 Langfuse 管理员/运维原生观测台入口",
   "客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面",
   "trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是客户默认 trace 页面",
@@ -186,6 +212,9 @@ assertIncludesAll(contract.langfuseObservabilityAttachment.notCanonicalFor, [
 assert.equal(contract.sanitizationPipeline.runtimeBridgeSanitizesBeforeLangfuse, true, "runtime_bridge_must_sanitize_before_langfuse");
 assert.equal(contract.sanitizationPipeline.langfuseReceives, "sanitized trace/session metadata", "langfuse_receives_mismatch");
 assert.equal(contract.sanitizationPipeline.portalReads, "sanitized projection", "portal_reads_mismatch");
+assert.equal(contract.sanitizationPipeline.adapter, "sanitized projection adapter", "sanitization_pipeline_adapter_mismatch");
+assert.equal(contract.sanitizationPipeline.adapterInput, "Runtime Bridge 已清洗 metadata + Langfuse trace/session 摘要", "sanitization_pipeline_adapter_input_mismatch");
+assert.equal(contract.sanitizationPipeline.portalBusinessSummarySurface, "Portal 会话轨迹", "sanitization_pipeline_portal_surface_mismatch");
 assert.equal(contract.langfuseConsole.adminConsoleUrl, "https://trace.medopl.cn", "langfuse_admin_console_url_mismatch");
 assert.equal(contract.langfuseConsole.customerTraceSurface, "Portal 会话轨迹", "customer_trace_surface_mismatch");
 assert.equal(contract.langfuseConsole.customerDefaultLangfuseUi, false, "customer_default_langfuse_ui_must_be_false");
@@ -255,13 +284,92 @@ const langfuseSanitizedEvent = {
     currency: "CNY",
     amount: 0.08,
   },
-  traceUrl: "https://observability.medopl.example/trace/trace-v22-langfuse-sanitized",
+  traceUrl: "https://trace.medopl.cn/project/platform/traces/trace-v22-langfuse-sanitized",
   tags: ["workspace:v22", "run:contract"],
 };
 assertProjectionShape(langfuseSanitizedEvent, "langfuse_sanitized_event");
 
 const portalSanitizedProjection = { ...langfuseSanitizedEvent };
 assertProjectionShape(portalSanitizedProjection, "portal_sanitized_projection");
+
+const projectionAdapter = createLangfuseSanitizedProjectionAdapter({
+  adminConsoleUrl: "https://trace.medopl.cn",
+});
+const adapterProjection = projectionAdapter.project({
+  runtimeBridgeMetadata: {
+    sessionId: "session-v22-langfuse",
+    runId: "run-v22-langfuse",
+    status: "succeeded",
+    tags: ["workspace:v22", "run:contract"],
+    billingCostSummary: {
+      currency: "CNY",
+      estimatedAmount: 0.08,
+    },
+  },
+  langfuseTraceSummary: {
+    traceId: "trace-v22-langfuse-sanitized",
+    latencyMs: 1280,
+    usageSummary: {
+      inputTokens: 31,
+      outputTokens: 21,
+      totalTokens: 52,
+    },
+    traceUrl: "https://trace.medopl.cn/project/platform/traces/trace-v22-langfuse-sanitized",
+    rawPrompt: "raw prompt content",
+    rawCompletion: "raw completion content",
+    rawApiKey: "gflabtoken_raw_secret",
+    bearerToken: "bearer-token-secret",
+    launchToken: "launch-token-secret",
+    runtimeToken: "runtime-token-secret",
+    objectKey: "internal/object/key.csv",
+    storageKey: "internal-storage-key",
+    localPath: "/private/local/result.csv",
+    signedUrl: "https://storage.example.test/signed",
+  },
+});
+assertProjectionShape(adapterProjection, "adapter_projection");
+assertNoForbiddenValue(adapterProjection, "adapter_projection");
+
+const payloads = createPortalApiPayloads({
+  collectRunsForUser: async () => [],
+  defaultTaskTitle: (slug) => `Task ${slug}`,
+  ensureTaskSpace: async (_db, user, slug) => ({ slug, userId: user.id }),
+  fetchBillingSummary: async () => ({ totals: { totalCost: 0 }, items: [] }),
+  fetchHarborSummary: async () => ({ available: false }),
+  fetchLangfuseSummary: async () => ({
+    available: true,
+    source: "langfuse_observability_attachment",
+    canonicalSource: false,
+    billingTruth: false,
+  }),
+  fetchTraceRows: async () => ({
+    source: "langfuse_sanitized_projection",
+    type: "sanitized_projection",
+    rows: [adapterProjection],
+  }),
+  findTaskSpace: () => null,
+  isRunTerminal: () => false,
+  normalizePageSize: (value) => Number(value || 10),
+  paginateRows: (rows, pageValue = 1, pageSizeValue = 10) => ({
+    rows: rows.slice(0, Number(pageSizeValue || 10)),
+    page: Number(pageValue || 1),
+    pageSize: Number(pageSizeValue || 10),
+    total: rows.length,
+    totalPages: Math.max(1, Math.ceil(rows.length / Number(pageSizeValue || 10))),
+  }),
+  buildWorkspacePayload: async () => ({ workspace: { slug: "" }, counts: {}, distribution: {} }),
+});
+const portalTracePayload = await payloads.buildTracesApiPayload({
+  userId: "user-v22-langfuse",
+  workspaceId: "workspace-v22-langfuse",
+  runId: "run-v22-langfuse",
+});
+assert.deepEqual(portalTracePayload.items, [adapterProjection], "portal_trace_payload_must_consume_sanitized_projection");
+assert.equal(portalTracePayload.summary.canonicalSource, false, "portal_trace_summary_must_not_make_langfuse_canonical_source");
+assert.equal(portalTracePayload.summary.billingTruth, false, "portal_trace_summary_must_not_make_langfuse_billing_truth");
+assert.equal(portalTracePayload.customerTraceSurface, "Portal 会话轨迹", "portal_trace_customer_surface_mismatch");
+assert.equal(portalTracePayload.customerDefaultLangfuseUi, false, "portal_trace_must_not_use_langfuse_ui_as_customer_default");
+assertNoForbiddenValue(portalTracePayload, "portal_trace_payload");
 
 assert(readme.includes("v22-langfuse-observability-metadata-boundary.md"), "contracts_readme_missing_langfuse_contract");
 assert(readme.includes("观测附件"), "contracts_readme_must_describe_langfuse_as_observability_attachment");
