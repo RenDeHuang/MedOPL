@@ -10,6 +10,12 @@ Runtime Bridge metadata 责任字段按合同表达为：workspace、run、artif
 
 Langfuse session/trace 是观测附件，负责 trace/session 可视化、模型调用耗时、usage、debug、错误链路，不是 Portal canonical source，不是 billing truth，不决定余额、扣费、资源状态、文件归属、释放状态。
 
+trace.medopl.cn 是 Langfuse 管理员/运维原生观测台入口。
+
+客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面。
+
+trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是客户默认 trace 页面。
+
 Runtime Bridge 先清洗，再投递 Langfuse。Langfuse 只接收 sanitized trace/session metadata。Portal 只读取 sanitized projection。
 
 Portal 可展示的 Langfuse projection 只能是：
@@ -29,6 +35,8 @@ Portal 可展示的 Langfuse projection 只能是：
 Langfuse 不能保存 raw prompt / raw completion / raw API key / bearer token / launchToken / runtimeToken / objectKey / storageKey / localPath / signedUrl。
 
 Langfuse 部署、ClickHouse、真实 API key、真实 trace source 后续单独授权；当前分支不改 runtime 实现，不接真实 Langfuse。
+
+trace.medopl.cn 的真实部署、Ingress/TLS、Langfuse secret、ClickHouse 等仍需后续单独授权。
 
 ## Canonical Metadata
 
@@ -104,6 +112,11 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
   },
   "langfuseObservabilityAttachment": {
     "sourceOfTruth": false,
+    "adminConsoleUrl": "https://trace.medopl.cn",
+    "customerTraceSurface": "Portal 会话轨迹",
+    "customerDefaultLangfuseUi": false,
+    "portalCanonicalSource": false,
+    "billingTruth": false,
     "responsibleFor": [
       "trace/session 可视化",
       "模型调用耗时",
@@ -123,6 +136,13 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
       "文件归属",
       "释放状态"
     ]
+  },
+  "langfuseConsole": {
+    "adminConsoleUrl": "https://trace.medopl.cn",
+    "customerTraceSurface": "Portal 会话轨迹",
+    "customerDefaultLangfuseUi": false,
+    "portalCanonicalSource": false,
+    "billingTruth": false
   },
   "sanitizationPipeline": {
     "runtimeBridgeSanitizesBeforeLangfuse": true,
@@ -167,6 +187,9 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
     "signedUrl"
   ],
   "deferredAuthorization": [
+    "trace.medopl.cn 真实部署",
+    "Ingress/TLS",
+    "Langfuse secret",
     "Langfuse 部署",
     "ClickHouse",
     "真实 API key",

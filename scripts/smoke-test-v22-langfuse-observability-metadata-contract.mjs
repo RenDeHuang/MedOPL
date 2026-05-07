@@ -127,6 +127,10 @@ for (const required of [
   "Langfuse 只接收 sanitized trace/session metadata",
   "Portal 只读取 sanitized projection",
   "traceId、sessionId、runId、status、latencyMs、usage summary、cost estimate、traceUrl、tags",
+  "trace.medopl.cn 是 Langfuse 管理员/运维原生观测台入口",
+  "客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面",
+  "trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是客户默认 trace 页面",
+  "trace.medopl.cn 的真实部署、Ingress/TLS、Langfuse secret、ClickHouse 等仍需后续单独授权",
   "Langfuse 不能成为用户、账单、文件、资源、审计的真相源",
   "Langfuse 部署、ClickHouse、真实 API key、真实 trace source 后续单独授权",
   "当前分支不改 runtime 实现，不接真实 Langfuse",
@@ -182,10 +186,18 @@ assertIncludesAll(contract.langfuseObservabilityAttachment.notCanonicalFor, [
 assert.equal(contract.sanitizationPipeline.runtimeBridgeSanitizesBeforeLangfuse, true, "runtime_bridge_must_sanitize_before_langfuse");
 assert.equal(contract.sanitizationPipeline.langfuseReceives, "sanitized trace/session metadata", "langfuse_receives_mismatch");
 assert.equal(contract.sanitizationPipeline.portalReads, "sanitized projection", "portal_reads_mismatch");
+assert.equal(contract.langfuseConsole.adminConsoleUrl, "https://trace.medopl.cn", "langfuse_admin_console_url_mismatch");
+assert.equal(contract.langfuseConsole.customerTraceSurface, "Portal 会话轨迹", "customer_trace_surface_mismatch");
+assert.equal(contract.langfuseConsole.customerDefaultLangfuseUi, false, "customer_default_langfuse_ui_must_be_false");
+assert.equal(contract.langfuseConsole.portalCanonicalSource, false, "trace_medopl_cn_must_not_be_portal_canonical_source");
+assert.equal(contract.langfuseConsole.billingTruth, false, "trace_medopl_cn_must_not_be_billing_truth");
 assert.deepEqual(contract.portalSanitizedProjection.allowedFields.sort(), portalProjectionAllowedFields, "portal_projection_allowed_fields_mismatch");
 assert.deepEqual(contract.forbiddenData, forbiddenDataNames, "forbidden_data_mismatch");
 assert.deepEqual(contract.langfusePersistenceForbidden, forbiddenDataNames, "langfuse_persistence_forbidden_mismatch");
 assertIncludesAll(contract.deferredAuthorization, [
+  "trace.medopl.cn 真实部署",
+  "Ingress/TLS",
+  "Langfuse secret",
   "Langfuse 部署",
   "ClickHouse",
   "真实 API key",
