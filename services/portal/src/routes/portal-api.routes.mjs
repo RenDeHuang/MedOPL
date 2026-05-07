@@ -3,6 +3,7 @@ import { createPortalApiRunsRoutes } from "./portal-api-runs.routes.mjs";
 import { createPortalApiSessionsRoutes } from "./portal-api-sessions.routes.mjs";
 import { createPortalApiStateRoutes } from "./portal-api-state.routes.mjs";
 import { createPortalApiTracesRoutes } from "./portal-api-traces.routes.mjs";
+import { createPortalApiV22ManagedEnvironmentReleaseRoutes } from "./portal-api-v22-managed-environment-release.routes.mjs";
 import { createPortalApiV22OplWorkRoutes } from "./portal-api-v22-opl-work.routes.mjs";
 import { createPortalApiV22UserCreditProviderKeyRoutes } from "./portal-api-v22-user-credit-provider-key.routes.mjs";
 import { createPlatformProvisionedResourceRoutes } from "./platform-provisioned-resource.routes.mjs";
@@ -59,6 +60,11 @@ export function createPortalApiRoutes({
     buildUserBillingSummary,
     currentServerPlanSelection,
     currentTaskSpaceForUser,
+    readBody,
+    sendJson,
+    writeDb,
+  });
+  const handleV22ManagedEnvironmentRelease = createPortalApiV22ManagedEnvironmentReleaseRoutes({
     readBody,
     sendJson,
     writeDb,
@@ -218,6 +224,7 @@ export function createPortalApiRoutes({
 
   return async function handlePortalApiRoutes(context) {
     if (await handleV22UserCreditProviderKey(context)) return true;
+    if (await handleV22ManagedEnvironmentRelease(context)) return true;
     if (await handleV22OplWork(context)) return true;
     if (await handlePlatformProvisionedResources(context)) return true;
     if (await handleLegacyUserOwnedResources(context)) return true;

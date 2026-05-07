@@ -115,6 +115,16 @@ function ownerMatches(item = {}, owner = {}) {
     && text(item.ownerTenantId || item.tenantId || item.tenant_id) === text(owner.ownerTenantId);
 }
 
+const CANONICAL_BINDING_STATUSES = new Set([
+  "active",
+  "release_requested",
+  "billing_stop_confirming",
+  "billing_stopped",
+  "audit_pending",
+  "audit_ready",
+  "audited",
+]);
+
 function findTaskSpace(db = {}, user = {}, workspaceId = "", currentTaskSpaceForUser = null) {
   const explicitWorkspaceId = text(workspaceId);
   if (explicitWorkspaceId) {
@@ -132,7 +142,7 @@ function activeBindingForWorkspace(db = {}, user = {}, workspaceId = "") {
   const targetWorkspaceId = text(workspaceId);
   const bindings = (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
     .filter((item) => ownerMatches(item, owner))
-    .filter((item) => statusText(item.status) === "active")
+    .filter((item) => CANONICAL_BINDING_STATUSES.has(statusText(item.status)))
     .filter((item) => !targetWorkspaceId || text(item.workspaceId) === targetWorkspaceId)
     .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")));
   return bindings[0] || null;
@@ -153,8 +163,11 @@ function resourceBindingPayload(binding = null) {
   if (!binding) return null;
   return {
     ...resourceBindingPublicView(binding),
-    rootPrefix: text(binding.rootPrefix),
     bindingAccess: buildWorkspaceBindingAccess(binding),
+    releasedAt: text(binding.releasedAt),
+    billingStoppedAt: text(binding.billingStoppedAt),
+    billingStopConfirmBy: text(binding.billingStopConfirmBy),
+    auditReadyAt: text(binding.auditReadyAt),
   };
 }
 
@@ -275,6 +288,15 @@ function billingSummaryPayload(balance = {}, freeze = null) {
       items: pendingItems,
     },
     releaseStopBillingStatus: "none",
+    billingLifecycle: {
+      status: "active_billing",
+      activeBilling: true,
+      stopBillingConfirming: false,
+      billingStopped: false,
+      auditPending: false,
+      auditReady: false,
+      audited: false,
+    },
   };
 }
 
@@ -295,6 +317,84 @@ function managedEnvironmentPayload({ runtimeEnabled = false, workspace = null, f
     resourceBinding,
     freeze,
     selectedPlan,
+  };
+}
+
+function parseTime(value = "") {
+  const parsed = Date.parse(text(value));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function auditStatusForBinding(binding = null, now = "") {
+  if (!binding || !text(binding.releasedAt)) return "none";
+  const explicit = statusText(binding.auditStatus || binding.status, "audit_pending");
+  if (explicit === "audited") return "audited";
+  const auditReadyAt = parseTime(binding.auditReadyAt);
+  const nowMs = parseTime(now) || Date.now();
+  if (auditReadyAt && nowMs >= auditReadyAt) return "audit_ready";
+  return explicit === "audit_ready" ? "audit_ready" : "audit_pending";
+}
+
+function releasePayload(binding = null) {
+  if (!binding || !text(binding.releasedAt)) return { status: "none" };
+  return {
+    status: text(binding.status || "audit_pending"),
+    releasedAt: text(binding.releasedAt),
+    transitions: Array.isArray(binding.releaseTransitions) ? binding.releaseTransitions.map((item) => ({
+      status: text(item.status),
+      at: text(item.at),
+    })) : [],
+  };
+}
+
+function stopBillingPayload(binding = null) {
+  if (!binding || !text(binding.releasedAt)) {
+    return {
+      status: "active_billing",
+      billingStoppedAt: "",
+      billingStopConfirmBy: "",
+      confirmationWindowMinutes: 120,
+    };
+  }
+  return {
+    status: text(binding.stopBillingStatus || "billing_stopped"),
+    billingStoppedAt: text(binding.billingStoppedAt || binding.releasedAt),
+    billingStopConfirmBy: text(binding.billingStopConfirmBy),
+    confirmationWindowMinutes: 120,
+  };
+}
+
+function auditPayload(binding = null, now = "") {
+  if (!binding || !text(binding.releasedAt)) return { status: "none", auditReadyAt: "", auditPolicy: "T+1" };
+  return {
+    status: auditStatusForBinding(binding, now),
+    auditReadyAt: text(binding.auditReadyAt),
+    auditPolicy: "T+1",
+  };
+}
+
+function billingLifecyclePayload({ release = {}, stopBilling = {}, audit = {} } = {}) {
+  const activeBilling = stopBilling.status === "active_billing";
+  return {
+    status: activeBilling ? "active_billing" : audit.status,
+    activeBilling,
+    stopBillingConfirming: stopBilling.status === "billing_stop_confirming",
+    billingStopped: stopBilling.status === "billing_stopped",
+    auditPending: audit.status === "audit_pending",
+    auditReady: audit.status === "audit_ready",
+    audited: audit.status === "audited",
+    releasedAt: text(release.releasedAt),
+    billingStoppedAt: text(stopBilling.billingStoppedAt),
+    billingStopConfirmBy: text(stopBilling.billingStopConfirmBy),
+    auditReadyAt: text(audit.auditReadyAt),
+  };
+}
+
+function applyReleaseBillingSummary(summary = {}, { release = {}, stopBilling = {}, audit = {} } = {}) {
+  return {
+    ...summary,
+    releaseStopBillingStatus: stopBilling.status === "active_billing" ? "none" : stopBilling.status,
+    billingLifecycle: billingLifecyclePayload({ release, stopBilling, audit }),
   };
 }
 
@@ -321,6 +421,7 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
   buildUserBillingSummary = () => ({ balanceCents: 0, availableBalanceCents: 0, frozenWeeklyAmountCents: 0 }),
   currentServerPlanSelection = () => null,
   currentTaskSpaceForUser = null,
+  now = "",
   workspaceId = "",
 } = {}) {
   const taskSpace = findTaskSpace(db, user, workspaceId, currentTaskSpaceForUser);
@@ -339,6 +440,10 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
   const publicWorkspaceFiles = workspaceFilesForPortal(db, user, targetWorkspaceId, resourceBinding);
   const outputFiles = publicWorkspaceFiles.filter((item) => item.kind === "outputs");
   const sessionTraceMetadata = sessionTraceMetadataForPortal(db, user, targetWorkspaceId, resourceBinding);
+  const release = releasePayload(binding);
+  const stopBilling = stopBillingPayload(binding);
+  const audit = auditPayload(binding, now);
+  const billingSummary = applyReleaseBillingSummary(billingSummaryPayload(balance, freeze), { release, stopBilling, audit });
   return {
     ok: true,
     source: "portal_canonical_state",
@@ -357,6 +462,9 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
     resourceBinding,
     freeze: freezePublicView(freeze),
     preauth: preauthPayload(freeze),
+    release,
+    stopBilling,
+    audit,
     selectedPlan,
     plan: selectedPlan,
     managedEnvironment: managedEnvironmentPayload({
@@ -370,7 +478,7 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
     workspaceFiles: publicWorkspaceFiles,
     outputFiles,
     artifacts: outputFiles,
-    billingSummary: billingSummaryPayload(balance, freeze),
+    billingSummary,
     sessionTraceMetadata,
     userNarrative: managedEnvironmentUserNarrative(),
   };

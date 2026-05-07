@@ -16,6 +16,7 @@ export function createPortalApiStateRoutes({
       currentServerPlanSelection,
       currentTaskSpaceForUser,
       workspaceId: url.searchParams.get("workspaceId") || "",
+      now: url.searchParams.get("now") || "",
     });
     sendJson(res, payload);
     return true;
