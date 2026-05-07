@@ -1,4 +1,5 @@
 export {
+  createGflabBoundProviderConfig,
   createGflabProviderConfig,
   normalizeProviderApiKey,
   redactProviderConfig,

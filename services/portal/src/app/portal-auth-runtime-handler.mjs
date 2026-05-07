@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { hashPassword, verifyPassword } from "../domain/portal-auth.mjs";
+import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
 
 export function isRegistrationEnabled(db) {
   return db?.settings?.allowRegistration !== false;
@@ -134,6 +135,91 @@ function localLoginBody(db, options = {}) {
 function localRegisterBody(message = "") {
   const messageBlock = message ? `<p class="hint">${message}</p>` : "";
   return `<div class="hero"><h1>注册账号</h1></div><div class="card"><form method="post" action="/register"><p><input name="name" type="text" placeholder="姓名" required /></p><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码，至少 8 位" minlength="8" required /></p><p><button type="submit">创建账号</button></p></form>${messageBlock}<p class="hint"><a href="/login">返回登录</a></p></div>`;
+}
+
+function oplEntryPreflightLoginBody({ providerBound = false } = {}) {
+  const apiKeyRequired = providerBound ? "" : " required";
+  const boundHint = providerBound
+    ? "gflabtoken 模型调用密钥已绑定，可留空继续进入 OPL 工作台。"
+    : "gflabtoken API Key 只进入后端密钥边界，不会返回前端；已绑定用户可留空继续进入 OPL 工作台。";
+  return `<div class="hero"><h1>OPL 工作台登录</h1></div><div class="card"><form method="post" action="/internal/opl/auth/login"><p><label>账号/邮箱<br /><input name="email" type="email" autocomplete="username" required /></label></p><p><label>密码<br /><input name="password" type="password" autocomplete="current-password" required /></label></p><p><label>gflabtoken API Key<br /><input name="apiKey" type="password" autocomplete="off"${apiKeyRequired} /></label></p><p class="hint">${boundHint}</p><p><button type="submit">进入 OPL 工作台</button></p></form></div>`;
+}
+
+function parseOplEntryPreflightPayload(req, bodyText = "", parseForm) {
+  const source = String(bodyText || "").trim();
+  if (!source) return {};
+  const contentType = String(req.headers?.["content-type"] || "").toLowerCase();
+  if (contentType.includes("application/json") || source.startsWith("{")) return JSON.parse(source);
+  return parseForm(source);
+}
+
+function oplEntryProviderApiKey(payload = {}, normalizeProviderApiKey) {
+  return normalizeProviderApiKey(
+    payload.apiKey ||
+    payload.api_key ||
+    payload.providerApiKey ||
+    payload.provider_api_key ||
+    payload.gflabtoken ||
+    payload.gflabToken ||
+    ""
+  );
+}
+
+function boundStatusText(value = "") {
+  const status = String(value || "").trim();
+  return status || "bound";
+}
+
+function findBoundGflabProviderKeyBinding(db = {}, user = {}, workspaceId = "") {
+  const bindings = Array.isArray(db.providerKeyBindings) ? db.providerKeyBindings : [];
+  return [...bindings].reverse().find((binding) => {
+    if (String(binding.provider || "gflabtoken") !== "gflabtoken") return false;
+    if (String(binding.userId || "") !== String(user.id || "")) return false;
+    if (workspaceId && String(binding.workspaceId || "") && String(binding.workspaceId) !== workspaceId) return false;
+    if (!String(binding.providerKeyRef || binding.providerConfigSecretRef || "")) return false;
+    const status = boundStatusText(binding.boundStatus || binding.status || binding.providerConfigStatus);
+    return status === "bound" || status === "configured";
+  }) || null;
+}
+
+function upsertGflabProviderKeyBinding(db = {}, user = {}, workspaceId = "", providerConfigResult = {}) {
+  if (!Array.isArray(db.providerKeyBindings)) db.providerKeyBindings = [];
+  const providerKeyRef = String(providerConfigResult.providerKeyRef || providerConfigResult.providerConfigSecretRef || "").trim();
+  const existing = findBoundGflabProviderKeyBinding(db, user, workspaceId);
+  const now = new Date().toISOString();
+  if (existing) {
+    existing.providerKeyRef = providerKeyRef || existing.providerKeyRef;
+    existing.providerConfigSecretRef = providerKeyRef || existing.providerConfigSecretRef || existing.providerKeyRef;
+    existing.boundStatus = "bound";
+    existing.providerConfigStatus = "configured";
+    existing.updatedAt = now;
+    return existing;
+  }
+  const binding = {
+    id: `provider-binding-${randomUUID()}`,
+    tenantId: String(user.tenantId || ""),
+    userId: String(user.id || ""),
+    workspaceId,
+    provider: "gflabtoken",
+    providerKeyRef,
+    providerConfigSecretRef: providerKeyRef,
+    boundStatus: "bound",
+    providerConfigStatus: "configured",
+    createdAt: now,
+    updatedAt: now,
+  };
+  db.providerKeyBindings.push(binding);
+  return binding;
+}
+
+function providerKeyPublicPayload(binding = {}) {
+  const providerKeyRef = String(binding.providerKeyRef || binding.providerConfigSecretRef || "").trim();
+  return {
+    provider: "gflabtoken",
+    providerBound: Boolean(providerKeyRef),
+    providerKeyRef,
+    boundStatus: boundStatusText(binding.boundStatus || binding.providerConfigStatus),
+  };
 }
 
 function oidcStateCookie() {
@@ -275,6 +361,17 @@ export function createPortalAuthRuntimeHandler({
       return true;
     }
 
+    if (req.method === "GET" && url.pathname === "/internal/opl/auth/login") {
+      if (!portalInternalAuthAllowed(req)) {
+        sendHtml(res, `<div class="card">internal auth token mismatch</div>`, 403);
+        return true;
+      }
+      sendHtml(res, layoutV2("OPL 工作台登录", oplEntryPreflightLoginBody({
+        providerBound: url.searchParams.get("providerBound") === "1",
+      }), null));
+      return true;
+    }
+
     if (req.method === "POST" && url.pathname === "/internal/opl/auth/login") {
       if (!portalInternalAuthAllowed(req)) {
         sendJson(res, { ok: false, error: "forbidden", message: "internal auth token mismatch" }, 403);
@@ -283,36 +380,18 @@ export function createPortalAuthRuntimeHandler({
       const bodyText = (await readBody(req)).toString("utf8");
       let payload = {};
       try {
-        payload = bodyText ? JSON.parse(bodyText) : {};
+        payload = parseOplEntryPreflightPayload(req, bodyText, parseForm);
       } catch {
-        sendJson(res, { ok: false, error: "invalid_json", message: "request body must be json" }, 400);
+        sendJson(res, { ok: false, error: "invalid_payload", message: "request body must be json or form data" }, 400);
         return true;
       }
 
       const email = String(payload.email || payload.username || payload.loginName || "").trim();
       const password = String(payload.password || "").trim();
       const taskSlug = String(payload.task || payload.workspaceId || payload.taskSlug || "default").trim();
-      const providerApiKey = normalizeProviderApiKey(
-        payload.apiKey ||
-        payload.api_key ||
-        payload.experimentalBearerToken ||
-        payload.experimental_bearer_token ||
-        payload.providerApiKey ||
-        payload.provider_api_key ||
-        payload.gflabtoken ||
-        payload.gflabToken ||
-        ""
-      );
+      const providerApiKey = oplEntryProviderApiKey(payload, normalizeProviderApiKey);
       if (!email || !password) {
         sendJson(res, { ok: false, error: "invalid_credentials", message: "邮箱和密码不能为空。" }, 400);
-        return true;
-      }
-      if (!providerApiKey) {
-        sendJson(res, {
-          ok: false,
-          error: "provider_api_key_required",
-          message: "当前账号未连接 OPL 服务，请先完成 OPL 连接凭证绑定。",
-        }, 400);
         return true;
       }
 
@@ -335,11 +414,28 @@ export function createPortalAuthRuntimeHandler({
       }
 
       const user = authResult.user;
-      const providerConfigResult = createGflabProviderConfig({
-        userId: user.id,
-        workspaceId: taskSlug,
-        apiKey: providerApiKey,
-      });
+      const existingBinding = findBoundGflabProviderKeyBinding(db, user, taskSlug);
+      if (!providerApiKey && !existingBinding) {
+        sendJson(res, {
+          ok: false,
+          error: "provider_api_key_required",
+          message: "请输入 gflabtoken API Key 后再进入 OPL。",
+        }, 400);
+        return true;
+      }
+
+      const providerConfigResult = providerApiKey
+        ? createGflabProviderConfig({
+          userId: user.id,
+          workspaceId: taskSlug,
+          apiKey: providerApiKey,
+        })
+        : createGflabBoundProviderConfig({
+          userId: user.id,
+          workspaceId: taskSlug,
+          providerKeyRef: existingBinding.providerKeyRef || existingBinding.providerConfigSecretRef,
+          providerConfigSecretRef: existingBinding.providerConfigSecretRef || existingBinding.providerKeyRef,
+        });
       if (!providerConfigResult.ok) {
         sendJson(res, {
           ok: false,
@@ -356,11 +452,13 @@ export function createPortalAuthRuntimeHandler({
         source: "opl-native-login",
         providerConfig: providerConfigResult.providerConfig,
         providerConfigSecretRef: providerConfigResult.providerConfigSecretRef,
-        providerKeyPayload: {
-          provider: "gflabtoken",
-          source: "user_input",
-          apiKey: providerApiKey,
-        },
+        providerKeyPayload: providerApiKey
+          ? {
+            provider: "gflabtoken",
+            source: "user_input",
+            apiKey: providerApiKey,
+          }
+          : null,
       });
       if (!launchResult.ok) {
         sendJson(res, {
@@ -371,6 +469,11 @@ export function createPortalAuthRuntimeHandler({
         }, launchResult.status || 500);
         return true;
       }
+
+      const providerBinding = providerApiKey
+        ? upsertGflabProviderKeyBinding(db, user, taskSlug, providerConfigResult)
+        : existingBinding;
+      if (providerApiKey) await writeDb(db);
 
       sendJson(res, {
         ok: true,
@@ -383,7 +486,7 @@ export function createPortalAuthRuntimeHandler({
           runtimeSessionId: launchResult.launch.runtimeSessionId || "",
           oplSessionId: launchResult.launch.oplSessionId || "",
         },
-        ...redactProviderConfig(providerConfigResult),
+        ...providerKeyPublicPayload(providerBinding),
       });
       return true;
     }

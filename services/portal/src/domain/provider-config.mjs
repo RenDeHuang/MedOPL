@@ -61,6 +61,36 @@ export function createGflabProviderConfig({ userId = "", workspaceId = "", apiKe
   };
 }
 
+export function createGflabBoundProviderConfig({ userId = "", workspaceId = "", providerKeyRef = "", providerConfigSecretRef = "" } = {}) {
+  const secretRef = String(providerConfigSecretRef || providerKeyRef || "").trim();
+  if (!secretRef) {
+    return {
+      ok: false,
+      error: "provider_key_ref_required",
+      message: "gflabtoken 模型调用密钥未绑定。",
+    };
+  }
+
+  return {
+    ok: true,
+    providerKeyRef: secretRef,
+    providerConfigSecretRef: secretRef,
+    providerConfigStatus: "configured",
+    providerBound: true,
+    providerConfigured: true,
+    providerName: GFLAB_PROVIDER_CONFIG.providerName,
+    providerConfig: {
+      ...GFLAB_PROVIDER_CONFIG,
+      providerKeyRef: secretRef,
+      providerConfigSecretRef: secretRef,
+      providerConfigStatus: "configured",
+      providerBound: true,
+      ownerUserId: userId,
+      workspaceId,
+    },
+  };
+}
+
 export function redactProviderConfig(config = {}) {
   const providerName = String(config.providerName || GFLAB_PROVIDER_CONFIG.providerName).trim() || GFLAB_PROVIDER_CONFIG.providerName;
   const providerConfigSecretRef = String(config.providerConfigSecretRef || "").trim();
