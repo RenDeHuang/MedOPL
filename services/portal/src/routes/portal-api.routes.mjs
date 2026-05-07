@@ -3,8 +3,10 @@ import { createPortalApiRunsRoutes } from "./portal-api-runs.routes.mjs";
 import { createPortalApiSessionsRoutes } from "./portal-api-sessions.routes.mjs";
 import { createPortalApiStateRoutes } from "./portal-api-state.routes.mjs";
 import { createPortalApiTracesRoutes } from "./portal-api-traces.routes.mjs";
+import { createPortalApiV22UserCreditProviderKeyRoutes } from "./portal-api-v22-user-credit-provider-key.routes.mjs";
 import { createPlatformProvisionedResourceRoutes } from "./platform-provisioned-resource.routes.mjs";
 import { createUserOwnedResourceRoutes } from "./user-owned-resource.routes.mjs";
+import { buildUserBillingSummary as buildDefaultUserBillingSummary } from "../domain/wallet-ledger.mjs";
 
 export function createPortalApiRoutes({
   activeUserStatus,
@@ -30,16 +32,27 @@ export function createPortalApiRoutes({
   paginateRows,
   parsePositiveInt,
   productProfile = {},
+  providerSecretStore = null,
   readBody = async () => Buffer.from(""),
   readSessionsRequestOptions,
   readTracesRequestOptions,
   sendJson,
-  buildUserBillingSummary,
+  buildUserBillingSummary = buildDefaultUserBillingSummary,
   cloudProvisioner = null,
   visibleAnnouncementRows,
   writeDb = async () => {},
   workspaceChatSessionsForUser,
 }) {
+  const handleV22UserCreditProviderKey = createPortalApiV22UserCreditProviderKeyRoutes({
+    activeUserStatus,
+    buildUserBillingSummary,
+    currentServerPlanSelection,
+    currentTaskSpaceForUser,
+    providerSecretStore,
+    readBody,
+    sendJson,
+    writeDb,
+  });
   const handlePlatformProvisionedResources = createPlatformProvisionedResourceRoutes({
     readBody,
     sendJson,
@@ -194,6 +207,7 @@ export function createPortalApiRoutes({
   }
 
   return async function handlePortalApiRoutes(context) {
+    if (await handleV22UserCreditProviderKey(context)) return true;
     if (await handlePlatformProvisionedResources(context)) return true;
     if (await handleLegacyUserOwnedResources(context)) return true;
     if (await handleState(context)) return true;

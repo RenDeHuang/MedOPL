@@ -56,8 +56,11 @@ export function createPortalApiRuntimeHandlers({
   sendJson,
   storageMode,
   productProfile,
+  providerSecretStore,
+  readBody,
   urls,
   visibleAnnouncementRows,
+  writeDb,
   workspaceChatSessionsForUser,
 }) {
   const adminPayloads = createPortalAdminApiPayloads({
@@ -152,11 +155,14 @@ export function createPortalApiRuntimeHandlers({
     paginateRows,
     parsePositiveInt,
     productProfile,
+    providerSecretStore,
+    readBody,
     readSessionsRequestOptions,
     readTracesRequestOptions,
     sendJson,
     buildUserBillingSummary,
     visibleAnnouncementRows,
+    writeDb,
     workspaceChatSessionsForUser,
   });
 

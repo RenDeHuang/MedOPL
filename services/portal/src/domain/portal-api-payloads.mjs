@@ -57,6 +57,23 @@ function resolveProviderState(db = {}, user = {}) {
   };
 }
 
+function managedEnvironmentReadiness(provider = {}) {
+  if (!provider.providerBound || !text(provider.providerKeyRef)) {
+    return {
+      ready: false,
+      reason: "provider_key_required",
+      providerBound: false,
+      providerKeyRef: "",
+    };
+  }
+  return {
+    ready: true,
+    reason: "ready",
+    providerBound: true,
+    providerKeyRef: text(provider.providerKeyRef),
+  };
+}
+
 function tenantRecord(db = {}, user = {}) {
   const tenantId = userTenantId(user);
   return (Array.isArray(db.tenants) ? db.tenants : []).find((item) => text(item.id || item.tenantId) === tenantId) || {};
@@ -175,6 +192,7 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
   const provider = resolveProviderState(db, user);
   const balance = buildUserBillingSummary(db, { user });
   const runtimeEnabled = Boolean(resourceBinding?.bindingAccess?.fullRuntime?.allowed);
+  const readiness = managedEnvironmentReadiness(provider);
   return {
     ok: true,
     source: "portal_canonical_state",
@@ -184,6 +202,8 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
     providerBound: provider.providerBound,
     providerKeyRef: provider.providerKeyRef,
     provider,
+    readyForManagedEnvironment: readiness.ready,
+    readiness,
     runtimeEnabled,
     resourceBinding,
     freeze,

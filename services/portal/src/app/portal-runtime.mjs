@@ -311,13 +311,14 @@ const {
   writeFile,
 });
 
+const providerSecretStore = createProviderSecretStore({ secretsRoot: PORTAL_OPL_PROVIDER_SECRET_ROOT });
 const oplLaunchService = createOplLaunchService({
   evaluateUserPolicy,
   findTaskSpace,
   ensureTaskSpace,
   ensureWorkspaceSession,
   createOplLaunch,
-  providerSecretStore: createProviderSecretStore({ secretsRoot: PORTAL_OPL_PROVIDER_SECRET_ROOT }),
+  providerSecretStore,
   resolveStorageEntitlement: workspaceStorageEntitlement,
   defaultTaskTitle,
   logPortalEvent,
@@ -600,7 +601,10 @@ const {
     runtimeMode: PRODUCT_RUNTIME_MODE,
     opsProfileEnabled: PRODUCT_OPS_PROFILE,
   },
+  providerSecretStore,
+  readBody,
   visibleAnnouncementRows,
+  writeDb,
   workspaceChatSessionsForUser,
 });
 
