@@ -1,5 +1,7 @@
 import { apiClient } from "../client";
-import type { SelectedServerPlan } from "./server-plans";
+import type { CommercialProfile, SelectedServerPlan } from "./types";
+
+export type { CommercialProfile, TrialEntitlement } from "./types";
 
 export interface CurrentUserPayload {
   id: string;
@@ -18,37 +20,6 @@ export interface CurrentUserPayload {
     runtimeMode: string;
     opsProfileEnabled: boolean;
     opsSurfaceEnabled: boolean;
-  };
-}
-
-export interface TrialEntitlement {
-  kind: string;
-  status: string;
-  source: string;
-  currency: string;
-  totalCredit: number;
-  remainingCredit: number;
-  createdAt: string;
-  expiresAt: string;
-  note: string;
-}
-
-export interface CommercialProfile {
-  accountStatus: string;
-  billingStatus: string;
-  entitlementStatus: string;
-  walletBalance: number;
-  balanceFloor: number;
-  canEnterWorkbench: boolean;
-  canStartChargeableRun: boolean;
-  chargeBlockedReasons: string[];
-  priceTransparency: string;
-  trialEntitlement: TrialEntitlement | null;
-  group: null | {
-    id: string;
-    name: string;
-    balanceFloor: number;
-    maxConcurrentRuns: number;
   };
 }
 
