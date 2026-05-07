@@ -222,6 +222,7 @@ function buildSessionLedgerEntry(state, input = {}) {
     portalUserId: input.portalUserId || input.portal_user_id || "",
     workspaceId: input.workspaceId || input.workspace_id || "",
     resourceBindingId: input.resourceBindingId || input.resource_binding_id || "",
+    providerKeyRef: input.providerKeyRef || input.provider_key_ref || input.providerConfigSecretRef || input.provider_config_secret_ref || "",
     workspaceSessionId: scope.workspaceSessionId,
     runtimeSessionId: scope.runtimeSessionId,
     oplSessionId: input.oplSessionId || input.opl_session_id || "",

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { ownerIdFrom, storageOwnerIdFrom, tenantIdFrom } from "./state-store-identity.mjs";
+import { providerKeyRefFields } from "./state-store-record-field-groups.mjs";
 import { nowIso } from "./state-store-record-time.mjs";
 
 export function buildArtifactRecord(input = {}) {
@@ -18,7 +19,9 @@ export function buildArtifactRecord(input = {}) {
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
+    resourceBindingId: input.resourceBindingId || input.resource_binding_id || "",
     resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
+    ...providerKeyRefFields(input),
     kind: input.kind || "output",
     name: input.name || "",
     relativePath: input.relativePath || input.relative_path || input.path || input.name || "",

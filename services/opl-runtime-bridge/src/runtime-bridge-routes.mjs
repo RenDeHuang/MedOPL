@@ -10,7 +10,7 @@ import {
 } from "./state-store.mjs";
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
 import { createMessageApi } from "./runtime-bridge-messages.mjs";
-import { createRunApi } from "./runtime-bridge-runs.mjs";
+import { createRunApi, publicRunArtifact } from "./runtime-bridge-runs.mjs";
 import { mapRunError } from "./run-error-mapper.mjs";
 
 function stringEnv(name, fallback = "") {
@@ -611,17 +611,37 @@ export function createRuntimeBridgeRuntime() {
       return null;
     });
     await writeState(state);
-    sendJson(res, 200, { ok: true, items: state.artifacts.filter((item) => item.runId === match[1]) });
+    sendJson(res, 200, {
+      ok: true,
+      items: state.artifacts
+        .filter((item) => item.runId === match[1])
+        .map((item) => publicRunArtifact(item, run, state.runtimeSessions.find((session) => session.runtimeSessionId === run.runtimeSessionId) || {})),
+    });
   }
 
   async function handleRunsList(_req, res) {
     const state = await readState();
-    sendJson(res, 200, { ok: true, items: state.runs });
+    sendJson(res, 200, {
+      ok: true,
+      items: state.runs.map((run) => ({
+        ...run,
+        artifacts: state.artifacts
+          .filter((item) => item.runId === run.runId)
+          .map((item) => publicRunArtifact(item, run, state.runtimeSessions.find((session) => session.runtimeSessionId === run.runtimeSessionId) || {})),
+      })),
+    });
   }
 
   async function handleArtifactsList(_req, res) {
     const state = await readState();
-    sendJson(res, 200, { ok: true, items: state.artifacts });
+    sendJson(res, 200, {
+      ok: true,
+      items: state.artifacts.map((item) => {
+        const run = state.runs.find((entry) => entry.runId === item.runId) || {};
+        const runtimeSession = state.runtimeSessions.find((session) => session.runtimeSessionId === item.runtimeSessionId) || {};
+        return publicRunArtifact(item, run, runtimeSession);
+      }),
+    });
   }
 
   async function handleTraceLinks(_req, res) {

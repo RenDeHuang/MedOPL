@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { ownerIdFrom, tenantIdFrom } from "./state-store-identity.mjs";
 import {
+  providerKeyRefFields,
   runtimeDispatchFields,
   runExecutionFields,
   runtimeOwnershipFields,
@@ -17,6 +18,7 @@ export function buildRunRecord(input = {}) {
     workspaceId: input.workspaceId || input.workspace_id || "default",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
+    traceId: input.traceId || input.trace_id || "",
     kind: input.kind || "med-autoscience",
     agentId: input.agentId || input.agent_id || "mas",
     toolName: input.toolName || input.tool_name || "med-autoscience",
@@ -28,6 +30,7 @@ export function buildRunRecord(input = {}) {
     jobName: input.jobName || input.job_name || "",
     manifestPath: input.manifestPath || input.manifest_path || "",
     ...runExecutionFields(input),
+    ...providerKeyRefFields(input),
   };
 }
 

@@ -1,4 +1,4 @@
-import { createRunRecord, updateRunStatus } from "./state-store.mjs";
+import { addArtifactRecord, addSessionLedgerEntry, createRunRecord, updateRunStatus } from "./state-store.mjs";
 import { providerKeyRefFrom } from "./runtime-bridge-launch-scope.mjs";
 
 export const RUN_API_RUNTIME_MODES = Object.freeze({
@@ -95,6 +95,32 @@ function normalizeRuntimeArtifacts(response = {}, run = {}, runtimeSession = {})
   return candidates.map((item) => normalizeArtifactRef(item, run, runtimeSession)).filter(Boolean);
 }
 
+export function publicRunArtifact(artifact = {}, run = {}, runtimeSession = {}) {
+  const artifactId = String(artifact.artifactId || artifact.artifact_id || "").trim();
+  return {
+    artifactId,
+    artifactRef: artifactId,
+    runId: String(artifact.runId || artifact.run_id || run.runId || "").trim(),
+    workspaceId: String(artifact.workspaceId || artifact.workspace_id || run.workspaceId || runtimeSession.workspaceId || "").trim(),
+    resourceBindingId: String(artifact.resourceBindingId || artifact.resource_binding_id || run.resourceBindingId || runtimeSession.resourceBindingId || "").trim(),
+    providerKeyRef: providerKeyRefFrom(artifact) || providerKeyRefFrom(run) || providerKeyRefFrom(runtimeSession),
+    kind: String(artifact.kind || "outputs").trim() || "outputs",
+    name: String(artifact.name || "").trim(),
+    relativePath: String(artifact.relativePath || "").trim(),
+    sizeBytes: Number(artifact.sizeBytes || 0),
+    contentType: String(artifact.contentType || "application/octet-stream").trim() || "application/octet-stream",
+  };
+}
+
+function publicRuntimeClaims(claims = {}, run = {}, runtimeSession = {}) {
+  if (!claims || typeof claims !== "object") return null;
+  return {
+    runtimeSessionId: String(claims.runtimeSessionId || claims.runtime_session_id || run.runtimeSessionId || runtimeSession.runtimeSessionId || "").trim(),
+    workspaceId: String(claims.workspaceId || claims.workspace_id || run.workspaceId || runtimeSession.workspaceId || "").trim(),
+    providerKeyRef: providerKeyRefFrom(claims) || providerKeyRefFrom(run) || providerKeyRefFrom(runtimeSession),
+  };
+}
+
 function retiredManagedRuntimeError(runtimeMode) {
   return runDispatchError({
     message: "managed_runtime_retired",
@@ -116,7 +142,7 @@ function fullRuntimeScope(runtimeSession = {}, input = {}) {
 
 export function createRunApi({
   productRuntimeMode = process.env.PRODUCT_RUNTIME_MODE || RUN_API_RUNTIME_MODES.PLATFORM_PROVISIONED,
-  runtimeAgentRelay,
+  runtimeAgentRelay = null,
 }) {
   const runtimeMode = normalizeRuntimeMode(productRuntimeMode);
 
@@ -128,6 +154,9 @@ export function createRunApi({
     }
     if (!scope.runtimeAgentId && !scope.runtimeAgentEndpoint) {
       throw platformRuntimeAgentRequiredError(runtimeMode);
+    }
+    if (!runtimeAgentRelay) {
+      throw runtimeAgentRelayNotImplementedError(scope);
     }
     const runId = String(input.runId || input.run_id || "").trim();
     const traceId = String(input.traceId || input.trace_id || runtimeSession.traceId || "").trim();
@@ -152,12 +181,39 @@ export function createRunApi({
       jobName: response.run?.jobName || "",
       userAgent: req?.headers?.["user-agent"] || "",
       providerKeyRef: providerKeyRefFrom(input) || providerKeyRefFrom(runtimeSession),
+      resourceBindingId: scope.resourceBindingId,
     });
+    const publicArtifacts = normalizeRuntimeArtifacts(response, run, runtimeSession).map((artifact) => {
+      const persistedArtifact = addArtifactRecord(state, {
+        ...artifact,
+        workspaceId: run.workspaceId || runtimeSession.workspaceId || "",
+        workspaceSessionId: run.workspaceSessionId || runtimeSession.workspaceSessionId || "",
+        runtimeSessionId: run.runtimeSessionId || runtimeSession.runtimeSessionId || "",
+        resourceBindingId: scope.resourceBindingId,
+        providerKeyRef: providerKeyRefFrom(input) || providerKeyRefFrom(runtimeSession),
+      });
+      return publicRunArtifact(persistedArtifact, run, runtimeSession);
+    });
+    for (const ledgerEntry of Array.isArray(response.ledgerEntries) ? response.ledgerEntries : []) {
+      addSessionLedgerEntry(state, {
+        ...ledgerEntry,
+        tenantId: runtimeSession.tenantId || "",
+        portalUserId: runtimeSession.portalUserId || "",
+        workspaceId: run.workspaceId || runtimeSession.workspaceId || "",
+        workspaceSessionId: run.workspaceSessionId || runtimeSession.workspaceSessionId || "",
+        runtimeSessionId: run.runtimeSessionId || runtimeSession.runtimeSessionId || "",
+        resourceBindingId: scope.resourceBindingId,
+        providerKeyRef: providerKeyRefFrom(input) || providerKeyRefFrom(runtimeSession),
+        runId: run.runId,
+        traceId: run.traceId,
+        artifactRefs: publicArtifacts.map((artifact) => artifact.artifactRef),
+      });
+    }
     return {
       ...run,
-      artifacts: normalizeRuntimeArtifacts(response, run, runtimeSession),
-      runtimeTokenClaims: response.runtimeTokenClaims || null,
-      ledgerEntries: Array.isArray(response.ledgerEntries) ? response.ledgerEntries : [],
+      artifacts: publicArtifacts,
+      runtimeClaims: publicRuntimeClaims(response.runtimeClaims || response.runtimeTokenClaims, run, runtimeSession),
+      ledgerEntryCount: Array.isArray(response.ledgerEntries) ? response.ledgerEntries.length : 0,
     };
   }
 
@@ -170,8 +226,12 @@ export function createRunApi({
   }
 
   async function cancelRuntimeRun(runtimeSession, run, input = {}) {
-    if (fullRuntimeScope(runtimeSession, input).mode !== "full_runtime") {
+    const scope = fullRuntimeScope(runtimeSession, input);
+    if (scope.mode !== "full_runtime") {
       throw apiOnlyRunUnsupportedError();
+    }
+    if (!runtimeAgentRelay) {
+      throw runtimeAgentRelayNotImplementedError(scope);
     }
     const response = await runtimeAgentRelay.cancelRun({
       runtimeSession,
@@ -184,8 +244,8 @@ export function createRunApi({
     });
     return {
       status: response.status || "cancel_requested",
-      ledgerEntries: Array.isArray(response.ledgerEntries) ? response.ledgerEntries : [],
-      runtimeTokenClaims: response.runtimeTokenClaims || null,
+      ledgerEntryCount: Array.isArray(response.ledgerEntries) ? response.ledgerEntries.length : 0,
+      runtimeClaims: publicRuntimeClaims(response.runtimeClaims || response.runtimeTokenClaims, run, runtimeSession),
     };
   }
 

@@ -36,6 +36,7 @@ const smokeScripts = [
   ["smoke-test-v22-user-credit-provider-key-flow", "scripts/smoke-test-v22-user-credit-provider-key-flow.mjs"],
   ["smoke-test-v22-managed-environment-open-flow", "scripts/smoke-test-v22-managed-environment-open-flow.mjs"],
   ["smoke-test-v22-opl-work-message-file-run-flow", "scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs"],
+  ["smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow", "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs"],
   ["smoke-test-v22-portal-files-billing-trace-flow", "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"],
   ["smoke-test-v22-release-stop-billing-audit-flow", "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"],
 ];
