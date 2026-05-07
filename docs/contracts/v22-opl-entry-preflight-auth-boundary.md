@@ -49,8 +49,12 @@ OPL entry/preflight 登录表单必须包含：
 
 Gateway / preflight / launch 边界必须满足：
 
+- OPL Gateway 通过显式 `OPL_UPSTREAM_URL` 配置代理 clean upstream one-person-lab Web。
+- 未配置 `OPL_UPSTREAM_URL` 时，Gateway 必须返回稳定错误 `opl_upstream_url_required`，不得兜底到旧 v19/v20/v21 direct path、direct upstream path 或硬编码本地 upstream。
+- Gateway 只代理 upstream HTML/健康响应，并注入公开启动上下文；公开上下文只包含 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL。
 - launchToken/runtimeToken 不进 URL query。
 - launchToken/runtimeToken 不进 localStorage/sessionStorage。
+- raw API Key、bearer token、objectKey、localPath、signedUrl 不进入 upstream、URL、response、log、localStorage 或 sessionStorage。
 - Gateway 不写 raw API Key 到 localStorage/sessionStorage。
 - Gateway 不 import one-person-lab 内部模块。
 

@@ -68,6 +68,9 @@ assertIncludesAll(contractCorpus, [
   "raw API Key 只进入后端密钥边界",
   "Gateway 不写 raw API Key 到 localStorage/sessionStorage",
   "Gateway 不 import one-person-lab 内部模块",
+  "OPL Gateway 通过 `OPL_UPSTREAM_URL` 显式配置 clean upstream one-person-lab Web",
+  "未配置 `OPL_UPSTREAM_URL` 时，Gateway 返回稳定错误 `opl_upstream_url_required`",
+  "launchToken/runtimeToken/apiKey 不得通过 URL query 传递；Gateway 必须拒绝这类 query",
 ], "token_secret_boundary");
 
 assertIncludesAll(contents.upstream, [
@@ -77,6 +80,8 @@ assertIncludesAll(contents.upstream, [
   "不把 Portal 账号、计费、资源、gflabtoken、trace、Langfuse、腾讯云逻辑写进 upstream",
   "只能通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入",
   "Portal / Gateway / Runtime / Langfuse / 腾讯云逻辑不得写进 upstream",
+  "不硬编码 v19/v20/v21 upstream 路径，不使用旧 direct upstream path 作为默认值",
+  "注入/暴露给 upstream 的公开上下文只包含 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL",
 ], "upstream_pollution_boundary");
 
 assertIncludesAll(recoveryCorpus, [
@@ -100,6 +105,11 @@ assertExcludesAll(fullCorpus, [
 assert(
   contents.suite.includes("smoke-test-v22-opl-dual-entry-contract"),
   "mvp_contract_suite_must_include_dual_entry_smoke",
+);
+
+assert(
+  contents.suite.includes("smoke-test-v22-opl-gateway-upstream-proxy-local"),
+  "mvp_contract_suite_must_include_local_gateway_proxy_smoke",
 );
 
 console.log(JSON.stringify({

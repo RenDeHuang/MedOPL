@@ -33,6 +33,7 @@ const smokeScripts = [
   ["smoke-test-v22-retire-portal-provider-key-entry", "scripts/smoke-test-v22-retire-portal-provider-key-entry.mjs"],
   ["smoke-test-v22-opl-entry-preflight-auth-flow", "scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs"],
   ["smoke-test-v22-opl-dual-entry-contract", "scripts/smoke-test-v22-opl-dual-entry-contract.mjs"],
+  ["smoke-test-v22-opl-gateway-upstream-proxy-local", "scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"],
   ["smoke-test-v22-mvp-managed-opl-loop-contract", "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs"],
   ["smoke-test-v22-user-credit-provider-key-flow", "scripts/smoke-test-v22-user-credit-provider-key-flow.mjs"],
   ["smoke-test-v22-managed-environment-open-flow", "scripts/smoke-test-v22-managed-environment-open-flow.mjs"],

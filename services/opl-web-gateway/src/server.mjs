@@ -5,6 +5,7 @@ import {
   BASE_URL,
   LAUNCH_SCRIPT_PATH,
   NATIVE_AUTH_USER_PATHS,
+  OPL_UPSTREAM_URL,
   OPL_WEB_UPSTREAM_URL,
   PORT,
   PORTAL_OPL_ADAPTER_URL,
@@ -14,6 +15,15 @@ import { handleAuthUser, handleNativeLogin, isOpenWebUiAuthPath } from "./portal
 import { portalLaunchClientScript } from "./launch-client-script.mjs";
 import { proxy, proxyUpgrade, writeUpgradeFailure } from "./proxy.mjs";
 import { sendJson } from "./http-utils.mjs";
+
+function sendUpstreamRequired(res) {
+  sendJson(res, 503, {
+    ok: false,
+    service: "opl-web-gateway",
+    error: "opl_upstream_url_required",
+    message: "OPL_UPSTREAM_URL is required before proxying clean upstream OPL Web.",
+  });
+}
 
 export function createOplWebGatewayServer() {
   const server = http.createServer(async (req, res) => {
@@ -39,6 +49,10 @@ export function createOplWebGatewayServer() {
         await proxy(req, res, PORTAL_OPL_ADAPTER_URL, ADAPTER_PREFIX);
         return;
       }
+      if (!OPL_UPSTREAM_URL) {
+        sendUpstreamRequired(res);
+        return;
+      }
       await proxy(req, res, OPL_WEB_UPSTREAM_URL);
     } catch (error) {
       sendJson(res, 502, {
@@ -54,6 +68,10 @@ export function createOplWebGatewayServer() {
       const url = new URL(req.url || "/", BASE_URL);
       if (url.pathname === ADAPTER_PREFIX || url.pathname.startsWith(`${ADAPTER_PREFIX}/`)) {
         proxyUpgrade(req, socket, head, PORTAL_OPL_ADAPTER_URL, ADAPTER_PREFIX);
+        return;
+      }
+      if (!OPL_UPSTREAM_URL) {
+        writeUpgradeFailure(socket, 503, "opl_upstream_url_required");
         return;
       }
       proxyUpgrade(req, socket, head, OPL_WEB_UPSTREAM_URL);

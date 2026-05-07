@@ -2,8 +2,9 @@ import { buildDirectEntryState } from "./config.mjs";
 
 export function portalLaunchClientScript() {
   return `
-const STATE_KEY = "portal.opl.launch";
+const STATE_KEY = "portal.opl.launch";
 const BOOTSTRAP_KEY = "portal.opl.bootstrap";
+const PORTAL_ADAPTER_PATH = "/portal-adapter";
 
 const DIRECT_ENTRY_DISMISS_KEY = "portal.opl.directEntryDismissed";
 
@@ -270,44 +271,40 @@ function resolveInjectedDirectEntryFlag() {
   }
 }
 
-function stripLaunchQuery() {
-  try {
-    const url = new URL(window.location.href);
-    if (!url.searchParams.has("launch_token") && !url.searchParams.has("portal_adapter_url")) return;
-    url.searchParams.delete("launch_token");
-    url.searchParams.delete("portal_adapter_url");
-    window.history.replaceState({}, document.title, url.toString());
-  } catch {}
+function stripPublicAdapterQuery() {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("portal_adapter_url")) return;
+    url.searchParams.delete("portal_adapter_url");
+    window.history.replaceState({}, document.title, url.toString());
+  } catch {}
 }
 
 function publicLaunchState(state = {}) {
+  const bootstrap = state.bootstrap || {};
+  const launch = bootstrap.launch || {};
+  const portal = bootstrap.portal || {};
+  const workspace = bootstrap.workspace || {};
+  const provider = bootstrap.provider || {};
+  const sessionBind = state.sessionBind || {};
+  const workspaceId = state.workspaceId || portal.workspaceId || launch.workspaceId || workspace.workspaceId || sessionBind.workspaceId || "";
+  const sessionId = state.sessionId || sessionBind.sessionId || launch.sessionId || launch.oplSessionId || launch.runtimeSessionId || launch.workspaceSessionId || "";
+  const providerKeyRef = state.providerKeyRef || provider.providerKeyRef || launch.providerKeyRef || sessionBind.providerKeyRef || "";
+  const providerBound = state.providerBound === true || providerConfiguredFromBootstrap(bootstrap) || sessionBind.providerBound === true || Boolean(providerKeyRef);
   return {
-    requestedAdapterUrl: state.requestedAdapterUrl || "",
-    adapterUrl: state.adapterUrl || "/portal-adapter",
-    gatewayUrl: state.gatewayUrl || window.location.origin,
-    receivedAt: state.receivedAt || "",
-    source: state.source || "gateway-cookie-session",
-    authenticated: state.authenticated === true || state.hasLaunchCookie === true
+    workspaceId,
+    sessionId,
+    launchStatus: state.launchStatus || (state.authenticated === true || state.hasLaunchCookie === true ? "ready" : "pending"),
+    providerBound,
+    providerKeyRef,
+    portalReturnUrl: state.portalReturnUrl || DIRECT_ENTRY_DEFAULT.openFromPortalUrl || DIRECT_ENTRY_DEFAULT.portalPublicUrl || ""
   };
 }
 
 function resolveLaunchState() {
-  const params = new URLSearchParams(window.location.search);
   const stored = readStoredState();
-  const hasLaunchToken = Boolean(params.get("launch_token"));
-  const requestedAdapterUrl = params.get("portal_adapter_url") || stored.requestedAdapterUrl || "";
-  if (!hasLaunchToken && stored.authenticated !== true) return null;
-  const state = {
-    requestedAdapterUrl,
-    adapterUrl: "/portal-adapter",
-    gatewayUrl: window.location.origin,
-    receivedAt: new Date().toISOString(),
-    hasLaunchCookie: hasLaunchToken || stored.authenticated === true,
-    source: hasLaunchToken ? "gateway-launch-cookie" : "gateway-stored-cookie-session",
-    authenticated: true
-  };
-  writeStoredState(state);
-  return state;
+  if (stored.launchStatus !== "ready") return null;
+  return stored;
 }
 
 async function resolveCookieLaunchState() {
@@ -315,13 +312,12 @@ async function resolveCookieLaunchState() {
     const payload = await fetchJson("/api/v1/auths/");
     if (payload.success !== true) return null;
     const state = {
-      requestedAdapterUrl: "",
-      adapterUrl: "/portal-adapter",
-      gatewayUrl: window.location.origin,
-      receivedAt: new Date().toISOString(),
-      source: "gateway-cookie-session",
-      authenticated: true,
-      hasLaunchCookie: true
+      workspaceId: payload.workspace && payload.workspace.workspaceId || payload.portal && payload.portal.workspaceId || "",
+      sessionId: payload.portal && (payload.portal.oplSessionId || payload.portal.runtimeSessionId || payload.portal.workspaceSessionId) || "",
+      providerBound: Boolean(payload.portal && payload.portal.providerKeyRef),
+      providerKeyRef: payload.portal && payload.portal.providerKeyRef || "",
+      portalReturnUrl: DIRECT_ENTRY_DEFAULT.openFromPortalUrl || DIRECT_ENTRY_DEFAULT.portalPublicUrl || "",
+      launchStatus: "ready"
     };
     writeStoredState(state);
     return state;
@@ -333,9 +329,7 @@ async function resolveCookieLaunchState() {
 function safeErrorUrl(value = "") {
   try {
     const url = new URL(String(value || ""), window.location.origin);
-    url.searchParams.delete("launch_token");
-    url.searchParams.delete("runtime_token");
-    url.searchParams.delete("token");
+    url.search = "";
     return url.pathname + url.search;
   } catch {
     return "request";
@@ -345,8 +339,6 @@ function safeErrorUrl(value = "") {
 function safeErrorMessage(error, defaultMessage = "请求失败，请重试。") {
   const message = String(error && error.message ? error.message : defaultMessage);
   return message
-    .replace(/launch_token=[^&\s"']+/gi, "launch_token=[redacted]")
-    .replace(/runtime_token=[^&\s"']+/gi, "runtime_token=[redacted]")
     .replace(/token=[^&\s"']+/gi, "token=[redacted]")
     .replace(/apiKey["']?\s*[:=]\s*["'][^"']+["']/gi, "apiKey:[redacted]");
 }
@@ -515,7 +507,7 @@ async function bindLaunchProviderKey(state, bootstrap, providerKey) {
   const launch = bootstrap.launch || {};
   const portal = bootstrap.portal || {};
   const workspace = bootstrap.workspace || {};
-  return fetchJson(state.adapterUrl + "/api/opl-launch/sessions/bind", {
+  return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/sessions/bind", {
     method: "POST",
     body: JSON.stringify({
       workspaceId: portal.workspaceId || launch.workspaceId || workspace.workspaceId || "",
@@ -684,7 +676,7 @@ async function handleLaunchProviderPanelSubmit(event, state, bootstrap, panel) {
   try {
     await bindLaunchProviderKey(state, bootstrap, providerKey);
     if (input && "value" in input) input.value = "";
-    const refreshedBootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap");
+    const refreshedBootstrap = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/bootstrap");
     writeStoredBootstrap(refreshedBootstrap);
     if (!providerConfiguredFromBootstrap(refreshedBootstrap)) {
       throw new Error("provider_connection_required");
@@ -725,7 +717,7 @@ function ensureLaunchProviderPanel(state, bootstrap) {
 
 function requireLaunchState() {
   const state = readStoredState();
-  if (state.authenticated !== true) {
+  if (state.launchStatus !== "ready") {
     throw new Error("Portal launch session is not available. Open OPL Web from Portal.");
   }
   return state;
@@ -741,20 +733,20 @@ function buildPortalApi() {
     },
     async refreshBootstrap() {
       const state = requireLaunchState();
-      const bootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap");
+      const bootstrap = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/bootstrap");
       writeStoredBootstrap(bootstrap);
       return bootstrap;
     },
     async startRun(input = {}) {
       const state = requireLaunchState();
-      return fetchJson(state.adapterUrl + "/api/opl-launch/runs", {
+      return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/runs", {
         method: "POST",
         body: JSON.stringify(input)
       });
     },
     async sendMessage(input = {}) {
       const state = requireLaunchState();
-      const accepted = await fetchJson(state.adapterUrl + "/api/opl-launch/messages", {
+      const accepted = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/messages", {
         method: "POST",
         body: JSON.stringify(input)
       });
@@ -769,12 +761,12 @@ function buildPortalApi() {
     async getRunStatus(runId) {
       if (!runId) throw new Error("runId is required.");
       const state = requireLaunchState();
-      return fetchJson(state.adapterUrl + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/status");
+      return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/status");
     },
     async getArtifacts(runId) {
       if (!runId) throw new Error("runId is required.");
       const state = requireLaunchState();
-      return fetchJson(state.adapterUrl + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/artifacts");
+      return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/artifacts");
     }
   };
 }
@@ -934,7 +926,7 @@ async function completePortalLaunch(state, bootstrap) {
   const launch = bootstrap.launch || {};
   const portal = bootstrap.portal || {};
   const workspace = bootstrap.workspace || {};
-  const sessionBind = await fetchJson(state.adapterUrl + "/api/opl-launch/sessions/bind", {
+  const sessionBind = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/sessions/bind", {
     method: "POST",
     body: JSON.stringify({
       workspaceId: portal.workspaceId || launch.workspaceId || "",
@@ -970,7 +962,7 @@ async function completePortalLaunch(state, bootstrap) {
   window.dispatchEvent(new CustomEvent("opl:portal-launch-ready", {
     detail: { ready: true, state: window.__OPL_PORTAL_LAUNCH__.state }
   }));
-  stripLaunchQuery();
+  stripPublicAdapterQuery();
 }
 
 function pickFields(source = {}, keys = []) {
@@ -982,44 +974,46 @@ function pickFields(source = {}, keys = []) {
 }
 
 function publicBootstrapPayload(bootstrap = {}) {
+  const launch = bootstrap.launch || {};
+  const portal = bootstrap.portal || {};
+  const workspace = bootstrap.workspace || {};
+  const provider = bootstrap.provider || {};
+  const workspaceId = portal.workspaceId || launch.workspaceId || workspace.workspaceId || "";
+  const sessionId = launch.sessionId || launch.oplSessionId || launch.runtimeSessionId || launch.workspaceSessionId || portal.sessionId || portal.runtimeSessionId || portal.workspaceSessionId || "";
+  const providerKeyRef = provider.providerKeyRef || launch.providerKeyRef || "";
+  const providerBound = providerConfiguredFromBootstrap(bootstrap) || Boolean(providerKeyRef);
   return {
-    launch: pickFields(bootstrap.launch || {}, [
-      "launchId",
-      "workspaceId",
-      "workspaceSessionId",
-      "runtimeSessionId",
-      "oplSessionId",
-      "portalUserId",
-      "portalUserEmail",
-      "portalUserName",
-    ]),
-    portal: bootstrap.portal || {},
-    workspace: bootstrap.workspace || {},
-    provider: pickFields(bootstrap.provider || {}, [
-      "providerConfigured",
-      "providerConfigStatus",
-      "providerKeyRef",
-      "providerName",
-      "modelProvider",
-      "modelReasoningEffort",
-      "serviceTier",
-      "sandboxMode",
-    ])
+    launch: {
+      workspaceId,
+      sessionId,
+      launchStatus: workspaceId || sessionId ? "ready" : "pending",
+      providerBound,
+      providerKeyRef,
+      portalReturnUrl: DIRECT_ENTRY_DEFAULT.openFromPortalUrl || DIRECT_ENTRY_DEFAULT.portalPublicUrl || "",
+    },
+    workspace: {
+      workspaceId,
+    },
+    provider: {
+      providerBound,
+      providerKeyRef,
+    },
   };
 }
 
 function publicSessionBindPayload(sessionBind = {}) {
-  return pickFields(sessionBind || {}, [
-    "ok",
-    "status",
-    "workspaceId",
-    "workspaceSessionId",
-    "runtimeSessionId",
-    "oplSessionId",
-    "providerConfigured",
-    "providerConfigStatus",
-    "providerKeyRef",
-  ]);
+  const sessionId = sessionBind.sessionId || sessionBind.oplSessionId || sessionBind.runtimeSessionId || sessionBind.workspaceSessionId || "";
+  const providerKeyRef = sessionBind.providerKeyRef || "";
+  return {
+    ok: sessionBind.ok === true,
+    status: sessionBind.status || "",
+    workspaceId: sessionBind.workspaceId || "",
+    sessionId,
+    launchStatus: sessionBind.status || (sessionId ? "ready" : "pending"),
+    providerBound: sessionBind.providerBound === true || sessionBind.providerConfigured === true || Boolean(providerKeyRef),
+    providerKeyRef,
+    portalReturnUrl: DIRECT_ENTRY_DEFAULT.openFromPortalUrl || DIRECT_ENTRY_DEFAULT.portalPublicUrl || "",
+  };
 }
 
 async function initializePortalLaunch() {
@@ -1039,7 +1033,7 @@ async function initializePortalLaunch() {
     });
     return;
   }
-  const bootstrap = await fetchJson(state.adapterUrl + "/api/opl-launch/bootstrap");
+  const bootstrap = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/bootstrap");
   writeStoredBootstrap(bootstrap);
   if (!ensureLaunchProviderPanel(state, bootstrap)) return;
   await completePortalLaunch(state, bootstrap);

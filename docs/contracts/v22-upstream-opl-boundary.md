@@ -33,6 +33,20 @@ upstream 更新后，平台拉取更新，并通过以下公开边界适配：
 
 只能通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入。
 
+## Local Gateway Proxy
+
+v22 本地最小代理链路必须满足：
+
+- OPL Gateway 通过 `OPL_UPSTREAM_URL` 显式配置 clean upstream one-person-lab Web。
+- 不硬编码 v19/v20/v21 upstream 路径，不使用旧 direct upstream path 作为默认值。
+- 未配置 `OPL_UPSTREAM_URL` 时，Gateway 返回稳定错误 `opl_upstream_url_required`，不得降级到本地旧端口、旧目录或 legacy route。
+- Gateway 只代理 upstream HTML 或健康响应，并注入公开启动上下文。
+- 注入/暴露给 upstream 的公开上下文只包含 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL。
+- raw API Key、launchToken、runtimeToken、bearer token、objectKey、localPath、signedUrl 不进入 upstream、URL query、response、log、localStorage 或 sessionStorage。
+- launchToken/runtimeToken/apiKey 不得通过 URL query 传递；Gateway 必须拒绝这类 query。
+- Gateway 可以使用 httpOnly cookie 或服务端状态保存 launch context。
+- 本地 proxy smoke 只验证合同和本地 fixture，不部署、不调用真实云 API，不修改 upstream。
+
 ## Product Entry
 
 用户不能通过 direct upstream path 作为 v22 产品入口。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。

@@ -1,5 +1,6 @@
-export const PORT = Number(process.env.PORT || process.env.OPL_WEB_GATEWAY_PORT || 18789);
-export const OPL_WEB_UPSTREAM_URL = String(process.env.OPL_WEB_UPSTREAM_URL || process.env.OPL_WEB_URL || "http://127.0.0.1:13030").replace(/\/$/, "");
+export const PORT = Number(process.env.PORT || process.env.OPL_WEB_GATEWAY_PORT || 18789);
+export const OPL_UPSTREAM_URL = String(process.env.OPL_UPSTREAM_URL || process.env.OPL_WEB_UPSTREAM_URL || "").replace(/\/$/, "");
+export const OPL_WEB_UPSTREAM_URL = OPL_UPSTREAM_URL;
 export const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
 export const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").replace(/\/$/, "");
 export const PORTAL_INTERNAL_URL = String(process.env.PORTAL_INTERNAL_URL || PORTAL_PUBLIC_URL || "http://127.0.0.1:17080").replace(/\/$/, "");
@@ -59,11 +60,13 @@ export function buildStatusPayload() {
       firstReplyMs: 10000,
     },
     runtime: {
-      gatewayPublicUrl: BASE_URL,
-      upstreamUrl: OPL_WEB_UPSTREAM_URL,
-      portalAdapterUrl: PORTAL_OPL_ADAPTER_URL,
-      portalPublicUrl: PORTAL_PUBLIC_URL || null,
-      portalInternalUrl: PORTAL_INTERNAL_URL || null,
+      gatewayPublicUrl: BASE_URL,
+      upstreamUrl: OPL_UPSTREAM_URL || null,
+      upstreamConfigured: Boolean(OPL_UPSTREAM_URL),
+      upstreamConfigKey: "OPL_UPSTREAM_URL",
+      portalAdapterUrl: PORTAL_OPL_ADAPTER_URL,
+      portalPublicUrl: PORTAL_PUBLIC_URL || null,
+      portalInternalUrl: PORTAL_INTERNAL_URL || null,
     },
   };
 }

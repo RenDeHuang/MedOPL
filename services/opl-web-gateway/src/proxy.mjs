@@ -5,10 +5,8 @@ import {
   BASE_URL,
   LAUNCH_COOKIE,
 } from "./config.mjs";
-import { buildLaunchCookie } from "./portal-auth-bridge.mjs";
 import { injectLaunchScript } from "./html-injection.mjs";
 import {
-  appendSetCookie,
   buildTargetUrl,
   copyHeaders,
   parseCookies,
@@ -46,7 +44,46 @@ function buildProxyHeaders(req, target, prefix = "") {
   return headers;
 }
 
+const FORBIDDEN_QUERY_SECRET_KEYS = new Set([
+  "apikey",
+  "api_key",
+  "providerapikey",
+  "provider_api_key",
+  "launchkey",
+  "launchtoken",
+  "launch_token",
+  "runtimekey",
+  "runtimetoken",
+  "runtime_token",
+]);
+
+function forbiddenQuerySecretKey(reqUrl = "") {
+  const incoming = new URL(reqUrl || "/", BASE_URL);
+  for (const key of incoming.searchParams.keys()) {
+    const normalized = String(key || "").replace(/[^a-z0-9_]/gi, "").toLowerCase();
+    if (FORBIDDEN_QUERY_SECRET_KEYS.has(normalized)) return key;
+  }
+  return "";
+}
+
+function rejectForbiddenQuerySecret(req, res) {
+  const key = forbiddenQuerySecretKey(req.url || "/");
+  if (!key) return false;
+  res.writeHead(400, {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "no-cache, no-store, must-revalidate",
+  });
+  res.end(JSON.stringify({
+    ok: false,
+    service: "opl-web-gateway",
+    error: "gateway_query_secret_forbidden",
+    forbiddenQueryKey: key,
+  }, null, 2));
+  return true;
+}
+
 export async function proxy(req, res, upstreamBase, prefix = "") {
+  if (rejectForbiddenQuerySecret(req, res)) return;
   const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
   const body = await readRequestBody(req);
   const response = await fetch(target, {
@@ -55,14 +92,11 @@ export async function proxy(req, res, upstreamBase, prefix = "") {
     body,
     redirect: "manual",
   });
-
+
   const headers = copyHeaders(response.headers);
-  const incoming = new URL(req.url || "/", BASE_URL);
-  const launchToken = incoming.searchParams.get("launch_token") || "";
   const hasLaunchCookie = Boolean(launchTokenCookieFrom(req));
-  const directEntry = !launchToken && !hasLaunchCookie;
-  if (!prefix && launchToken) appendSetCookie(headers, buildLaunchCookie(launchToken));
-  const contentType = response.headers.get("content-type") || "";
+  const directEntry = !hasLaunchCookie;
+  const contentType = response.headers.get("content-type") || "";
   if (contentType.includes("text/html")) {
     const html = injectLaunchScript(await response.text(), directEntry);
     headers["content-type"] = contentType;
@@ -132,6 +166,11 @@ function bindUpgradeSocketPair(clientSocket, upstreamSocket) {
 }
 
 export function proxyUpgrade(req, socket, head, upstreamBase, prefix = "") {
+  const forbiddenKey = forbiddenQuerySecretKey(req.url || "/");
+  if (forbiddenKey) {
+    writeUpgradeFailure(socket, 400, "gateway_query_secret_forbidden");
+    return;
+  }
   const target = buildTargetUrl(req.url || "/", upstreamBase, prefix);
   const client = target.protocol === "https:" ? https : http;
   const headers = buildProxyHeaders(req, target, prefix);
