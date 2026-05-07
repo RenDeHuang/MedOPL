@@ -64,6 +64,19 @@ AI 小白科研用户在 OPL Web 必须能做：
 
 OPL Web 入口通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。gflabtoken 模型调用密钥不是 Portal 普通登录字段，原始密钥只进入后端密钥边界。
 
+MedOPL 有两种进入 OPL Web 的路径：
+
+- 路径 1：从 Portal SaaS 后台进入。
+- `portal.medopl.cn -> Portal 工作空间 / 托管运行环境 / “进入 OPL 工作台”按钮 -> Gateway launch / preflight -> clean upstream one-person-lab Web`
+- 路径 2：直接访问 OPL 工作台。
+- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号/密码/gflabtoken API Key preflight -> clean upstream one-person-lab Web`
+
+两条路径最终进入同一套 Gateway / preflight / launch 逻辑。从 Portal 进入时可复用 Portal session / workspace / launch context；从 OPL 直接进入时需要 MedOPL 账号/密码/gflabtoken API Key，已绑定可显示“已绑定”。
+
+用户可见入口不是 /internal/opl/auth/login；/internal/opl/auth/login 只能是 internal implementation path。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。
+
+launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 localStorage/sessionStorage。Gateway 不写 raw API Key 到 localStorage/sessionStorage，Gateway 不 import one-person-lab 内部模块。
+
 ## 平台运维视图 / 运维面
 
 平台运维在 Portal / 运维面必须能看到：

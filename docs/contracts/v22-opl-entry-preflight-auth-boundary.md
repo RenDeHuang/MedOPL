@@ -4,13 +4,24 @@
 
 ## Product Truth
 
+- MedOPL 有两种进入 OPL Web 的路径。
+- 路径 1：从 Portal SaaS 后台进入。
+- `portal.medopl.cn -> Portal 工作空间 / 托管运行环境 / “进入 OPL 工作台”按钮 -> Gateway launch / preflight -> clean upstream one-person-lab Web`
+- 路径 2：直接访问 OPL 工作台。
+- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号/密码/gflabtoken API Key preflight -> clean upstream one-person-lab Web`
+- 两条路径最终进入同一套 Gateway / preflight / launch 逻辑。
 - portal.medopl.cn 登录不需要 gflabtoken API Key。
+- Portal 普通登录页不需要 API Key。
 - opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
 - OPL 登录页输入顺序：账号/邮箱、密码、gflabtoken API Key。
 - API Key 放在密码下面。
+- API Key 只出现在 opl.medopl.cn entry/preflight 的密码下面。
+- 从 Portal 进入时可复用 Portal session / workspace / launch context。
+- 从 OPL 直接进入时需要 MedOPL 账号/密码/gflabtoken API Key，已绑定可显示“已绑定”。
 - 已绑定则显示“已绑定”，不要求重复输入。
 - gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git。
+- raw API Key 只进入后端密钥边界。
 - one-person-lab 是 clean upstream；不得修改源码，不得 import 内部模块。
 
 ## Entrypoint Alias
@@ -24,6 +35,8 @@
 
 内部实现可以保留 /internal/opl/auth/login，但用户合同、表单 action 和产品入口必须指向 OPL Gateway entry/preflight alias。该入口属于 MedOPL Gateway / SSO / Auth Bridge 的 OPL entry/preflight 边界，不是 Portal 普通登录页。`/login` 只能保留账号/邮箱和密码，不得出现 gflabtoken API Key 字段。
 
+用户可见入口不是 /internal/opl/auth/login。/internal/opl/auth/login 只能是 internal implementation path。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。
+
 ## Preflight Form
 
 OPL entry/preflight 登录表单必须包含：
@@ -33,6 +46,13 @@ OPL entry/preflight 登录表单必须包含：
 3. `apiKey`，用户可见名称为 `gflabtoken API Key`
 
 `apiKey` 字段必须在 `password` 字段之后。表单不得引导用户进入 `gflabtoken.cn` 网站主流程。
+
+Gateway / preflight / launch 边界必须满足：
+
+- launchToken/runtimeToken 不进 URL query。
+- launchToken/runtimeToken 不进 localStorage/sessionStorage。
+- Gateway 不写 raw API Key 到 localStorage/sessionStorage。
+- Gateway 不 import one-person-lab 内部模块。
 
 ## Binding Flow
 

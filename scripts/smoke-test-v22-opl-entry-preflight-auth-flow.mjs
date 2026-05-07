@@ -74,9 +74,16 @@ async function assertContract() {
   const contract = await readFile(contractPath, "utf8");
   for (const required of [
     "portal.medopl.cn 登录不需要 gflabtoken API Key",
+    "Portal 普通登录页不需要 API Key",
+    "路径 1：从 Portal SaaS 后台进入",
+    "路径 2：直接访问 OPL 工作台",
+    "两条路径最终进入同一套 Gateway / preflight / launch 逻辑",
+    "从 Portal 进入时可复用 Portal session / workspace / launch context",
+    "从 OPL 直接进入时需要 MedOPL 账号/密码/gflabtoken API Key，已绑定可显示“已绑定”",
     "opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key",
     "OPL 登录页输入顺序：账号/邮箱、密码、gflabtoken API Key",
     "API Key 放在密码下面",
+    "API Key 只出现在 opl.medopl.cn entry/preflight 的密码下面",
     "已绑定则显示“已绑定”，不要求重复输入",
     "gflabtoken.cn 网站本身不进入 MedOPL 用户主流程",
     "raw API Key 只能进入后端密钥边界",
@@ -84,6 +91,11 @@ async function assertContract() {
     "用户可见入口：GET /opl/entry/preflight",
     "用户可见入口：POST /opl/entry/preflight",
     "内部实现可以保留 /internal/opl/auth/login",
+    "用户可见入口不是 /internal/opl/auth/login",
+    "/internal/opl/auth/login 只能是 internal implementation path",
+    "launchToken/runtimeToken 不进 URL query",
+    "launchToken/runtimeToken 不进 localStorage/sessionStorage",
+    "Gateway 不写 raw API Key 到 localStorage/sessionStorage",
   ]) {
     assert(contract.includes(required), `contract_missing:${required}`);
   }

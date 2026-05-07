@@ -23,6 +23,10 @@
 
 Active surface 的产品叙事必须保持 `platform-provisioned / customer-dedicated`：用户购买套餐、计算能力、存储容量和运行环境，平台负责开通、隔离、计费、审计和释放。
 
+OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。/internal/opl/auth/login 只能作为 internal implementation path。旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口。后续真实 proxy / upstream 运行接入单独 feat；旧入口删除如需要另开 cleanup/*。
+
+active surface 不允许修改 one-person-lab upstream。one-person-lab upstream 不属于 active surface；它只作为 clean upstream reference，通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入。
+
 ## Migrate
 
 `migrate` 表示资产仍有可复用价值，但它不能以旧路径、旧命名或旧叙事直接进入 v22 active surface。迁移必须满足：
