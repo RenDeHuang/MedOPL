@@ -169,7 +169,7 @@ const helpPages = [
     title: "账户",
     summary: "账号、余额和权限分开管理。",
     sections: [
-      { title: "登录", items: ["MedOPL 账号可进入 Portal 和 OPL Web。", "gflabtoken 模型调用密钥在进入 OPL 工作台后绑定。"] },
+      { title: "登录", items: ["MedOPL 账号可进入 Portal 和 OPL Web。", "Portal 只展示 gflabtoken 模型调用密钥已绑定/未绑定状态，不提供输入入口。"] },
       { title: "余额", items: ["余额不足不影响查看工作台。", "收费任务会检查余额或试用额度。"] },
     ],
   },

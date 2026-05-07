@@ -7,6 +7,12 @@ import {
   managedEnvironmentReadinessFromState,
 } from "../domain/user-credit-provider-key-flow.mjs";
 
+export const providerKeyEntryBoundary = Object.freeze({
+  route: "/portal/api/v22/provider-key",
+  source: "OPL entry/preflight",
+  notPortalUserVisibleEntry: true,
+});
+
 function parseJsonBodyOrEmpty(raw = Buffer.from("")) {
   const source = String(raw || "").trim();
   if (!source) return {};
@@ -52,7 +58,8 @@ export function createPortalApiV22UserCreditProviderKeyRoutes({
   }
 
   async function handleProviderKey({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/api/v22/provider-key") return false;
+    // Backend secret boundary retained for OPL entry/preflight reuse; Portal user UI must not expose it as a key entry.
+    if (req.method !== "POST" || url.pathname !== providerKeyEntryBoundary.route) return false;
     const payload = parseJsonBodyOrEmpty(await readBody(req));
     const result = await bindV22GflabProviderKey(db, user, payload, { providerSecretStore });
     if (result.ok) await writeDb(db);

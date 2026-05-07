@@ -17,9 +17,9 @@
       <section class="card p-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 class="panel-title">统一账号与 gflabtoken 绑定</h2>
+            <h2 class="panel-title">gflabtoken 模型调用密钥状态</h2>
             <p class="panel-subtitle">
-              MedOPL 账号密码与 OPL Web 账号密码统一。进入 OPL 工作台后需要绑定 gflabtoken 模型调用密钥，用于 OPL 工作台调用模型，不放在 Portal 普通登录表单里。
+              MedOPL 账号密码与 OPL Web 账号密码统一。Portal 只展示 gflabtoken 模型调用密钥已绑定/未绑定状态，不在 Portal 普通登录表单提供输入入口。
             </p>
           </div>
           <span class="badge badge-primary">进入 OPL 工作台</span>
@@ -90,7 +90,7 @@ const statusBadge = computed(() => {
 function stageLabel(stage: string) {
   const labels: Record<string, string> = {
     workspace_ready: "准备工作空间",
-    provider_key_bound: "确认 gflabtoken 模型调用密钥",
+    provider_key_bound: "确认 gflabtoken 模型调用密钥已绑定",
     session_created: "创建 OPL 会话",
     gateway_ready: "确认 OPL 网关",
     opl_opening: "打开 OPL",

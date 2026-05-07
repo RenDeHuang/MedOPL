@@ -30,6 +30,7 @@ const requiredReportPhrases = [
 const smokeScripts = [
   ["smoke-test-v22-pricing-plan-contract", "scripts/smoke-test-v22-pricing-plan-contract.mjs"],
   ["smoke-test-v22-gflabtoken-entry-contract", "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs"],
+  ["smoke-test-v22-retire-portal-provider-key-entry", "scripts/smoke-test-v22-retire-portal-provider-key-entry.mjs"],
   ["smoke-test-v22-mvp-managed-opl-loop-contract", "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs"],
   ["smoke-test-v22-user-credit-provider-key-flow", "scripts/smoke-test-v22-user-credit-provider-key-flow.mjs"],
   ["smoke-test-v22-managed-environment-open-flow", "scripts/smoke-test-v22-managed-environment-open-flow.mjs"],
