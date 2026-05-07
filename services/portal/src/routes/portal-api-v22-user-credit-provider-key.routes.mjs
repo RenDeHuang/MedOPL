@@ -1,4 +1,5 @@
 import { buildCanonicalPortalStatePayload } from "../domain/portal-api-payloads.mjs";
+import { openManagedEnvironment } from "../domain/managed-environment-open-flow.mjs";
 import {
   bindV22GflabProviderKey,
   creditV22PortalUser,
@@ -74,10 +75,27 @@ export function createPortalApiV22UserCreditProviderKeyRoutes({
     return true;
   }
 
+  async function handleManagedEnvironmentOpen({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/api/v22/managed-environment/open") return false;
+    const payload = parseJsonBodyOrEmpty(await readBody(req));
+    const state = buildCanonicalPortalStatePayload(db, user, {
+      activeUserStatus,
+      buildUserBillingSummary,
+      currentServerPlanSelection,
+      currentTaskSpaceForUser,
+      workspaceId: payload.workspaceId || payload.workspace_id || "",
+    });
+    const result = openManagedEnvironment(db, user, payload, { state });
+    if (result.ok) await writeDb(db);
+    sendResult(sendJson, res, result, result.created ? 201 : 200);
+    return true;
+  }
+
   return async function handlePortalApiV22UserCreditProviderKeyRoutes(context) {
     if (await handlePrepareUser(context)) return true;
     if (await handleCreditUser(context)) return true;
     if (await handleProviderKey(context)) return true;
+    if (await handleManagedEnvironmentOpen(context)) return true;
     if (await handleReadiness(context)) return true;
     return false;
   };

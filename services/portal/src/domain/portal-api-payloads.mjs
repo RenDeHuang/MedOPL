@@ -4,6 +4,13 @@ import {
   ownerScopeFromUser,
 } from "./platform-provisioned-resources.mjs";
 import {
+  fileSpacePublicView,
+  freezePublicView,
+  managedEnvironmentUserNarrative,
+  resourceBindingPublicView,
+  workspacePublicView,
+} from "./managed-environment-open-flow.mjs";
+import {
   canonicalResourcePlanPublicView,
   getCanonicalResourcePlan,
 } from "./lab-packages.mjs";
@@ -145,16 +152,9 @@ function freezeForBinding(db = {}, user = {}, binding = null) {
 function resourceBindingPayload(binding = null) {
   if (!binding) return null;
   return {
-    id: text(binding.id),
-    resourceBindingId: text(binding.resourceBindingId || binding.id),
-    workspaceId: text(binding.workspaceId),
-    computeInstanceId: text(binding.computeInstanceId),
-    storageBucketId: text(binding.storageBucketId),
+    ...resourceBindingPublicView(binding),
     rootPrefix: text(binding.rootPrefix),
-    status: statusText(binding.status),
     bindingAccess: buildWorkspaceBindingAccess(binding),
-    createdAt: text(binding.createdAt),
-    updatedAt: text(binding.updatedAt),
   };
 }
 
@@ -204,10 +204,15 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
     provider,
     readyForManagedEnvironment: readiness.ready,
     readiness,
+    managedEnvironmentEnabled: runtimeEnabled,
     runtimeEnabled,
+    workspace: workspacePublicView(taskSpace || {}, targetWorkspaceId),
+    fileSpace: fileSpacePublicView(resourceBinding || taskSpace || {}, canonicalPlanPayload({ binding, taskSpace, selectedServerPlan })),
     resourceBinding,
-    freeze,
+    freeze: freezePublicView(freeze),
+    selectedPlan: canonicalPlanPayload({ binding, taskSpace, selectedServerPlan }),
     plan: canonicalPlanPayload({ binding, taskSpace, selectedServerPlan }),
+    userNarrative: managedEnvironmentUserNarrative(),
   };
 }
 
