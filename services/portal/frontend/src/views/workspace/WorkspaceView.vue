@@ -9,18 +9,18 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="max-w-2xl">
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-primary">workspace 文件夹</span>
+                  <span class="badge badge-primary">工作空间文件夹</span>
                   <span class="badge" :class="statusBadge(payload.workspace.status)">{{ humanizeStatus(payload.workspace.status) }}</span>
                 </div>
                 <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">{{ payload.workspace.title }}</h2>
                 <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  当前页面用于管理 workspace 文件夹、input 文件、output 文件和 artifacts / 输出文件，并查看文件空间状态。
+                  当前页面用于管理工作空间文件夹、输入文件、输出文件和输出结果，并查看文件空间状态。
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <a class="btn btn-primary" :href="workspaceMasHref(payload.workspace.slug)" target="_blank" rel="noreferrer">进入工作台</a>
-                <a class="btn btn-secondary" :href="downloadAllHref('inputs')">打包下载 inputs</a>
-                <a class="btn btn-secondary" :href="downloadAllHref('outputs')">打包下载 outputs</a>
+                <a class="btn btn-primary" :href="workspaceMasHref(payload.workspace.slug)" target="_blank" rel="noreferrer">进入 OPL 工作台</a>
+                <a class="btn btn-secondary" :href="downloadAllHref('inputs')">打包下载输入文件</a>
+                <a class="btn btn-secondary" :href="downloadAllHref('outputs')">打包下载输出文件</a>
               </div>
             </div>
           </div>
@@ -55,9 +55,9 @@
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="input 文件" :value="payload.counts.inputs" hint="inputs 文件数" />
-          <MetricCard label="output 文件" :value="payload.counts.outputs" hint="outputs 文件数" />
-          <MetricCard label="task 数" :value="payload.counts.runs" hint="当前空间 task 总数" />
+          <MetricCard label="输入文件" :value="payload.counts.inputs" hint="输入文件数" />
+          <MetricCard label="输出文件" :value="payload.counts.outputs" hint="输出文件数" />
+          <MetricCard label="任务数" :value="payload.counts.runs" hint="当前空间任务总数" />
           <MetricCard label="文件空间状态" :value="payload.storageEntitlement?.enabled ? `${payload.storageEntitlement.storageSizeGb}GB` : '未开通'" hint="在套餐页开通后可上传和保存结果" />
         </section>
 
@@ -72,7 +72,7 @@
               </div>
               <h2 class="mt-3 panel-title">文件空间状态</h2>
               <p class="mt-2 panel-subtitle">
-                工作空间只管理 input、output 和 artifacts / 输出文件。需要购买、升级或扩容时，请到套餐页处理。
+                工作空间只管理输入文件、输出文件和输出结果。需要购买、升级或扩容时，请到套餐页处理。
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -96,9 +96,9 @@
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">工作空间</th>
-                  <th class="px-4 py-3">input</th>
-                  <th class="px-4 py-3">output</th>
-                  <th class="px-4 py-3">task</th>
+                  <th class="px-4 py-3">输入文件</th>
+                  <th class="px-4 py-3">输出文件</th>
+                  <th class="px-4 py-3">任务</th>
                   <th class="px-4 py-3">状态</th>
                   <th class="px-4 py-3">最近更新</th>
                   <th class="px-4 py-3">操作</th>
@@ -143,8 +143,8 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">input 文件</h2>
-                <p class="panel-subtitle">当前 workspace 文件夹中的 input 文件。</p>
+                <h2 class="panel-title">输入文件</h2>
+                <p class="panel-subtitle">当前工作空间文件夹中的输入文件。</p>
               </div>
               <button v-if="payload.storageEntitlement?.enabled" class="btn btn-secondary" type="button" @click="triggerUpload">上传文件</button>
               <RouterLink v-else class="btn btn-secondary" to="/packages">去套餐页</RouterLink>
@@ -167,8 +167,8 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">output 文件 / artifacts</h2>
-                <p class="panel-subtitle">当前 workspace 文件夹中的 output 文件和 artifacts / 输出文件。</p>
+                <h2 class="panel-title">输出文件</h2>
+                <p class="panel-subtitle">当前工作空间文件夹中的输出文件和输出结果。</p>
               </div>
               <span class="badge badge-success">{{ payload.counts.outputs }} 个</span>
             </div>

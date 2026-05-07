@@ -5,6 +5,15 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const contractPath = path.join(__dirname, "../docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md");
+const frontendUserSurfacePaths = [
+  "../services/portal/frontend/src/layouts/AppHeader.vue",
+  "../services/portal/frontend/src/views/overview/OverviewView.vue",
+  "../services/portal/frontend/src/views/resources/ResourcesView.vue",
+  "../services/portal/frontend/src/views/workspace/WorkspaceView.vue",
+  "../services/portal/frontend/src/views/billing/BillingView.vue",
+  "../services/portal/frontend/src/views/trace/TraceView.vue",
+  "../services/portal/frontend/src/views/opl/OplLaunchView.vue",
+].map((relativePath) => path.join(__dirname, relativePath));
 
 const CONTRACT_START = "<!-- v22-saas-portal-opl-ops-surface-contract:start -->";
 const CONTRACT_END = "<!-- v22-saas-portal-opl-ops-surface-contract:end -->";
@@ -49,10 +58,125 @@ function assertQuestions(actualItems, expectedItems, label) {
   }
 }
 
+function assertNoForbiddenBeginnerText(text, label) {
+  const forbidden = [
+    "CVM",
+    "COS",
+    "COS 存储桶",
+    "bucket",
+    "K8s",
+    "TKE",
+    "Kubernetes",
+    "tenant",
+    "tenantId",
+    "workspaceId",
+    "resourceOrder",
+    "resourceOrderId",
+    "resourceBinding",
+    "serverPlan",
+    "runId",
+    "billing tags",
+    "分账标签",
+    "costAllocationTag",
+    "launchToken",
+    "runtimeToken",
+    "raw API key",
+    "raw provider key",
+    "Ops Surface",
+    "ops",
+    "admin",
+    "backend",
+    "cloud console",
+    "云资源控制台",
+    "provider secret",
+    "backend secret boundary",
+    "session 数",
+    "task 数",
+    "input 文件",
+    "output 文件",
+    "workspace 文件夹",
+    "session trace metadata",
+    "API key",
+    "API Key",
+  ];
+  for (const term of forbidden) {
+    assert.equal(text.includes(term), false, `${label}_must_not_include:${term}`);
+  }
+}
+
+function extractQuotedAttribute(template, attributeName) {
+  const values = [];
+  const pattern = new RegExp(`\\s:?${attributeName}="([^"]*)"`, "g");
+  let match;
+  while ((match = pattern.exec(template)) !== null) {
+    values.push(match[1]);
+  }
+  return values.join("\n");
+}
+
+function extractStringArrayConst(source, constName) {
+  const match = new RegExp(`const ${constName} = \\[([\\s\\S]*?)\\];`).exec(source);
+  return match?.[1] || "";
+}
+
+function extractVisibleTemplateCopy(template) {
+  const visibleAttributes = [
+    "title",
+    "subtitle",
+    "description",
+    "label",
+    "hint",
+    "placeholder",
+  ].map((attribute) => extractQuotedAttribute(template, attribute));
+  const textNodes = template
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/{{[\s\S]*?}}/g, " ")
+    .replace(/<[^>]+>/g, " ");
+  const interpolationStrings = [...template.matchAll(/"([^"]*[一-龥][^"]*)"/g)].map((match) => match[1]);
+  return [...visibleAttributes, textNodes, ...interpolationStrings].join("\n");
+}
+
+async function assertFrontendBeginnerSurfaceCopy() {
+  const visibleSurface = (await Promise.all(frontendUserSurfacePaths.map(async (filePath) => {
+    const source = await readFile(filePath, "utf8");
+    const templateMatch = /<template>([\s\S]*?)<\/template>/.exec(source);
+    const visibleTemplate = extractVisibleTemplateCopy(templateMatch?.[1] || "");
+    if (filePath.endsWith("AppHeader.vue")) {
+      return [visibleTemplate, extractStringArrayConst(source, "helpPages")].join("\n");
+    }
+    return visibleTemplate;
+  }))).join("\n");
+  assertIncludesAll(visibleSurface, [
+    "科研托管平台",
+    "科研工作台",
+    "托管运行环境",
+    "工作空间",
+    "文件空间",
+    "会话",
+    "任务",
+    "输入文件",
+    "输出文件",
+    "运行轨迹",
+    "余额",
+    "消费",
+    "账单",
+    "预扣费",
+    "冻结金额",
+    "停止计费",
+    "审计状态",
+    "进入 OPL 工作台",
+    "gflabtoken 模型调用密钥",
+  ], "frontend_beginner_surface_copy");
+  assertNoForbiddenBeginnerText(visibleSurface, "frontend_beginner_surface_copy");
+}
+
 const markdown = await readFile(contractPath, "utf8");
 assert(markdown.includes("MedOPL 是面向 AI 小白科研用户的 OPL SaaS 科研托管平台。"), "product_statement_missing");
-assert(markdown.includes("它不是云资源控制台。"), "not_cloud_console_statement_missing");
+assert(markdown.includes("普通用户不需要理解云厂商控制台或工程后台。"), "not_cloud_console_statement_missing");
 assert(markdown.includes("本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。"), "non_implementation_scope_missing");
+await assertFrontendBeginnerSurfaceCopy();
 
 const contract = extractContractJson(markdown);
 
@@ -68,7 +192,7 @@ assert.deepEqual(
     "forbiddenBeginnerUserNarrative",
     "nonGoals",
     "oplWebBeginnerSurface",
-    "opsSurface",
+    "operationsSurface",
     "personas",
     "portalBeginnerSurface",
     "productEffectQuestions",
@@ -83,9 +207,9 @@ assert.deepEqual(
 assert.equal(contract.productPositioning.statement, "MedOPL 是面向 AI 小白科研用户的 OPL SaaS 科研托管平台。", "product_positioning_statement_mismatch");
 assert.equal(contract.productPositioning.notCloudConsole, true, "product_must_not_be_cloud_console");
 assertIncludesAll(contract.productPositioning.includes, [
-  "Portal SaaS 后台 / 科研托管平台控制台",
+  "科研托管平台控制台",
   "OPL Web 科研工作台",
-  "Ops Surface 运维面",
+  "平台运维视图 / 运维面",
   "平台代开通计算和存储",
   "账单 / 余额 / 审计 / 运维",
   "one-person-lab clean upstream",
@@ -99,14 +223,14 @@ assertExcludesAll(contract.personas.mvpRoles, ["租户管理员", "课题组管�
 assertIncludesAll(contract.portalBeginnerSurface.mustShow, [
   "余额",
   "钱花在哪里",
-  "session 数",
-  "task 数",
+  "会话数",
+  "任务数",
   "科研任务进度",
   "托管运行环境状态",
   "文件空间状态",
-  "input 文件",
-  "output 文件",
-  "workspace 文件夹",
+  "输入文件",
+  "输出文件",
+  "工作空间文件夹",
   "运行轨迹",
   "账单摘要",
   "停止计费 / 审计状态",
@@ -116,7 +240,7 @@ assert.equal(contract.portalBeginnerSurface.cloudConsoleShown, false, "portal_mu
 
 assertIncludesAll(contract.oplWebBeginnerSurface.mustDo, [
   "使用统一 MedOPL 账号登录",
-  "在 opl.medopl.cn entry / preflight 的账号密码输入区下面输入 / 绑定 gflabtoken API key",
+  "进入 OPL 工作台后输入 / 绑定 gflabtoken 模型调用密钥",
   "发消息",
   "上传文件",
   "用文件跑任务",
@@ -124,7 +248,7 @@ assertIncludesAll(contract.oplWebBeginnerSurface.mustDo, [
 ], "opl_web_beginner_surface");
 assert.equal(contract.oplWebBeginnerSurface.entrypoint, "opl.medopl.cn", "opl_entrypoint_mismatch");
 
-assertIncludesAll(contract.opsSurface.mustShow, [
+assertIncludesAll(contract.operationsSurface.mustShow, [
   "tenant 状态",
   "workspace 状态",
   "resourceOrder / resourceBinding 状态",
@@ -137,7 +261,7 @@ assertIncludesAll(contract.opsSurface.mustShow, [
   "120min 停止计费确认状态",
   "T+1 审计状态",
   "异常账单 / 异常资源",
-], "ops_surface");
+], "operations_surface");
 
 assert.deepEqual(contract.backendMultiTenantBoundary.fields, [
   "tenantId",
@@ -179,6 +303,7 @@ assert.equal(contract.accountAndApiKeyBoundary.gflabtokenInputLocation, "opl.med
 assert.equal(contract.accountAndApiKeyBoundary.apiKeyIsPortalLoginField, false, "api_key_must_not_be_portal_login_field");
 assert.equal(contract.accountAndApiKeyBoundary.rawApiKeyBackendOnly, true, "raw_api_key_must_be_backend_only");
 assert.deepEqual(contract.accountAndApiKeyBoundary.frontendPublicFields, ["providerKeyRef", "bound status"], "frontend_public_fields_mismatch");
+assert.equal(contract.accountAndApiKeyBoundary.beginnerVisibleName, "gflabtoken 模型调用密钥", "beginner_visible_key_name_mismatch");
 
 assert.equal(contract.upstreamBoundary.repository, "https://github.com/gaofeng21cn/one-person-lab", "upstream_repository_mismatch");
 assert.equal(contract.upstreamBoundary.cleanUpstream, true, "upstream_must_be_clean");
@@ -203,14 +328,14 @@ assertIncludesAll(contract.forbiddenBeginnerUserNarrative, [
 assertQuestions(contract.productEffectQuestions.beginnerUserCanAnswer, [
   "我还有多少钱？",
   "我的钱花在哪里？",
-  "我有几个 session？",
-  "我有几个 task？",
+  "我有几个会话？",
+  "我有几个任务？",
   "我的科研任务跑到哪一步？",
   "我的托管运行环境是否可用？",
   "我的文件空间是什么状态？",
-  "我的 input/output 文件在哪里？",
+  "我的输入文件和输出文件在哪里？",
   "我从哪里进入 OPL 工作台？",
-  "我的 API key 是否已绑定？",
+  "我的 gflabtoken 模型调用密钥是否已绑定？",
   "我释放环境后是否停止扣费？",
   "账单核对和审计是否完成？",
 ], "beginner_user_questions");

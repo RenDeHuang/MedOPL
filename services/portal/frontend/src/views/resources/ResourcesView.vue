@@ -4,9 +4,9 @@
       <section class="card p-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 class="text-lg font-semibold text-gray-950 dark:text-white">资源总览</h2>
+            <h2 class="text-lg font-semibold text-gray-950 dark:text-white">托管运行环境总览</h2>
             <p class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-slate-300">
-              OPL Lite 可直接通过工作台使用；托管运行环境会由平台代开运行能力、文件空间和后台服务，并按 freeze / preauth 管理计费。
+              OPL Lite 可直接通过工作台使用；托管运行环境会由平台代开运行能力和文件空间，并按预扣费与冻结金额管理计费。
             </p>
           </div>
           <button class="btn btn-secondary" :disabled="resourcesLoading || busy" @click="reload">刷新</button>
@@ -15,7 +15,7 @@
           <MetricCard label="当前套餐" :value="resourceSummary.bindingCount" hint="已开通的托管运行环境" />
           <MetricCard label="托管运行环境" :value="resourceSummary.computeInstanceCount" hint="平台代开的运行能力" />
           <MetricCard label="文件空间" :value="resourceSummary.storageBucketCount" hint="平台代开的结果与数据空间" />
-          <MetricCard label="预扣费 / freeze / preauth" :value="money(resourceSummary.frozenAmount)" hint="已冻结" />
+          <MetricCard label="预扣费 / 冻结金额" :value="money(resourceSummary.frozenAmount)" hint="已冻结" />
           <MetricCard label="消费" :value="money(resourceSummary.consumedAmount)" hint="已核算" />
           <MetricCard label="剩余可释放" :value="money(resourceSummary.remainingAmount)" hint="待释放" />
         </div>
@@ -38,7 +38,7 @@
           <div>
             <h2 class="text-base font-semibold text-gray-950 dark:text-white">开通运行环境</h2>
             <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              面向 AI 小白科研用户，只需选择套餐和运行能力。平台会代开托管运行环境并接入后台服务。
+              面向 AI 小白科研用户，只需选择套餐和运行能力。平台会代开托管运行环境并接入科研工作台。
             </p>
           </div>
           <form class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" @submit.prevent="submitCreateCompute">
@@ -67,7 +67,7 @@
           </div>
           <form class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" @submit.prevent="submitCreateStorage">
             <label class="space-y-2">
-              <span class="text-sm text-gray-700 dark:text-slate-200">存储容量</span>
+              <span class="text-sm text-gray-700 dark:text-slate-200">文件空间容量</span>
               <input v-model.number="storageForm.storageCapacityGb" class="input" min="1" placeholder="例如 200" type="number" />
             </label>
             <div class="md:col-span-2 flex justify-end">
@@ -110,7 +110,7 @@
             </select>
           </label>
           <label class="space-y-2">
-            <span class="text-sm text-gray-700 dark:text-slate-200">workspace 文件夹</span>
+            <span class="text-sm text-gray-700 dark:text-slate-200">工作空间文件夹</span>
             <input v-model.trim="bindForm.rootPrefix" class="input" placeholder="可选，默认按工作空间自动生成" />
           </label>
           <div class="xl:col-span-4 flex justify-end">
@@ -123,8 +123,8 @@
 
       <section class="card p-5">
         <div class="flex items-center justify-between gap-3">
-          <div class="text-base font-semibold text-gray-950 dark:text-white">我的运行环境</div>
-          <div class="text-sm text-gray-500 dark:text-slate-400">平台代开的托管运行环境，仅在运维面查看后台标识</div>
+          <div class="text-base font-semibold text-gray-950 dark:text-white">我的托管运行环境</div>
+          <div class="text-sm text-gray-500 dark:text-slate-400">平台代开的托管运行环境，普通用户只查看可用状态</div>
         </div>
         <div v-if="computeRows.length === 0" class="mt-3 text-sm text-gray-600 dark:text-slate-300">还没有开通运行环境。</div>
         <div v-else class="mt-3 space-y-3">
@@ -191,25 +191,25 @@
       <section class="card p-5">
         <div class="flex items-center justify-between gap-3">
           <div class="text-base font-semibold text-gray-950 dark:text-white">运行环境</div>
-          <div class="text-sm text-gray-500 dark:text-slate-400">OPL Full Runtime 会使用这里指定的运行环境、文件空间和保护金</div>
+          <div class="text-sm text-gray-500 dark:text-slate-400">OPL 工作台会使用这里指定的运行环境、文件空间和冻结金额</div>
         </div>
         <div v-if="items.length === 0" class="mt-3 text-sm text-gray-600 dark:text-slate-300">还没有开通记录，OPL Lite 仍可直接使用。</div>
         <div v-else class="mt-3 space-y-3">
           <div
             v-for="item in items"
-            :key="item.resourceBindingId"
+            :key="item.id"
             class="rounded-lg border border-gray-200 p-4 dark:border-slate-700"
           >
             <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span class="text-sm font-medium text-gray-950 dark:text-white">{{ shortId(item.workspaceId) }}</span>
+                  <span class="text-sm font-medium text-gray-950 dark:text-white">{{ workspaceDisplayName(item.workspaceId) }}</span>
                   <span class="text-sm text-gray-600 dark:text-slate-300">{{ statusText(item.status) }}</span>
                 </div>
                 <div class="mt-2 grid grid-cols-1 gap-2 text-sm text-gray-600 dark:text-slate-300 md:grid-cols-2">
-                  <div>运行环境：{{ displayComputeLabel(item.computeInstance || item.computeInstances[0]) || shortId(item.computeInstanceId) }}</div>
-                  <div>文件空间：{{ displayStorageLabel(item.storageBucket || item.storageBuckets[0]) || shortId(item.storageBucketId) }}</div>
-                  <div class="md:col-span-2">workspace 文件夹：{{ item.rootPrefix || "-" }}</div>
+                  <div>运行环境：{{ displayComputeLabel(item.computeInstance || item.computeInstances[0]) || environmentDisplayName(item.computeInstanceId) }}</div>
+                  <div>文件空间：{{ displayStorageLabel(item.storageBucket || item.storageBuckets[0]) || fileSpaceDisplayName(item.storageBucketId) }}</div>
+                  <div class="md:col-span-2">工作空间文件夹：{{ item.rootPrefix || "-" }}</div>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-slate-300 lg:grid-cols-5">
                   <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">OPL Lite：{{ allowText(item.bindingAccess.oplLite.allowed) }}</div>
@@ -230,7 +230,7 @@
               </div>
               <div class="flex flex-wrap gap-2">
                 <button class="btn btn-secondary" :disabled="ensureFreezeBusyId === item.id || busy" @click="seedFreezeForm(item)">
-                  填入本周保护金
+                  填入本周冻结金额
                 </button>
                 <button
                   class="btn btn-secondary"
@@ -248,9 +248,9 @@
       <section class="card p-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <div class="text-base font-semibold text-gray-950 dark:text-white">设置本周保护金</div>
+            <div class="text-base font-semibold text-gray-950 dark:text-white">设置本周冻结金额</div>
             <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              托管运行环境启动前，需要先设置 freeze / preauth。系统会在两小时核对和次日审计后按实际用量结算。
+              托管运行环境启动前，需要先设置预扣费和冻结金额。系统会在两小时核对和次日审计后按实际用量结算。
             </p>
           </div>
           <div class="text-sm text-gray-500 dark:text-slate-400">停止计费已确认 {{ money(resourceSummary.releasedProtectionAmount) }}</div>
@@ -261,7 +261,7 @@
             <select v-model="freezeForm.bindingId" class="input">
               <option value="">请选择</option>
               <option v-for="item in activeBindings" :key="item.id" :value="item.id">
-                {{ item.workspaceId }} / {{ displayComputeLabel(item.computeInstance || item.computeInstances[0]) || shortId(item.computeInstanceId) }}
+                {{ workspaceDisplayName(item.workspaceId) }} / {{ displayComputeLabel(item.computeInstance || item.computeInstances[0]) || environmentDisplayName(item.computeInstanceId) }}
               </option>
             </select>
           </label>
@@ -284,7 +284,7 @@
           </div>
         </form>
 
-        <div v-if="protectionRows.length === 0" class="mt-4 text-sm text-gray-600 dark:text-slate-300">还没有本周保护金记录。</div>
+        <div v-if="protectionRows.length === 0" class="mt-4 text-sm text-gray-600 dark:text-slate-300">还没有本周冻结金额记录。</div>
         <div v-else class="mt-4 space-y-3">
           <div
             v-for="row in protectionRows"
@@ -292,7 +292,7 @@
             class="rounded-lg border border-gray-200 p-4 dark:border-slate-700"
           >
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span class="text-sm font-medium text-gray-950 dark:text-white">{{ shortId(row.workspaceId) }}</span>
+              <span class="text-sm font-medium text-gray-950 dark:text-white">{{ workspaceDisplayName(row.workspaceId) }}</span>
               <span class="text-sm text-gray-600 dark:text-slate-300">{{ statusText(row.status) }}</span>
             </div>
             <div class="mt-2 grid grid-cols-1 gap-2 text-sm text-gray-600 dark:text-slate-300 md:grid-cols-2 xl:grid-cols-4">
@@ -417,7 +417,7 @@ const workspaceRefsByComputeId = computed(() => {
     const key = String(item.computeInstanceId || "").trim();
     if (!key) continue;
     const list = refs.get(key) || [];
-    list.push(shortId(item.workspaceId));
+    list.push(workspaceDisplayName(item.workspaceId));
     refs.set(key, list);
   }
   return refs;
@@ -429,7 +429,7 @@ const workspaceRefsByStorageId = computed(() => {
     const key = String(item.storageBucketId || "").trim();
     if (!key) continue;
     const list = refs.get(key) || [];
-    list.push(shortId(item.workspaceId));
+    list.push(workspaceDisplayName(item.workspaceId));
     refs.set(key, list);
   }
   return refs;
@@ -472,18 +472,33 @@ function money(value: number | undefined) {
   return `CNY ${Number(value || 0).toFixed(2)}`;
 }
 
-function shortId(value?: string) {
-  const text = String(value || "").trim();
-  if (!text) return "-";
-  return text.length > 16 ? `${text.slice(0, 8)}...${text.slice(-4)}` : text;
-}
-
 function timeText(value?: string) {
   return String(value || "").trim() || "-";
 }
 
 function allowText(value: boolean) {
   return value ? "可用" : "不可用";
+}
+
+function displayOrdinalFromId(value?: string) {
+  const text = String(value || "").trim();
+  const match = /(\d+)(?!.*\d)/.exec(text);
+  return match ? match[1] : "";
+}
+
+function workspaceDisplayName(value?: string) {
+  const ordinal = displayOrdinalFromId(value);
+  return ordinal ? `工作空间 ${ordinal}` : "工作空间";
+}
+
+function environmentDisplayName(value?: string) {
+  const ordinal = displayOrdinalFromId(value);
+  return ordinal ? `运行环境 ${ordinal}` : "运行环境";
+}
+
+function fileSpaceDisplayName(value?: string) {
+  const ordinal = displayOrdinalFromId(value);
+  return ordinal ? `文件空间 ${ordinal}` : "文件空间";
 }
 
 function statusText(status?: string) {
@@ -515,15 +530,24 @@ function auditStatusText(status?: string) {
 
 function displayComputeLabel(row?: Partial<CustomerComputeResource> | null) {
   if (!row) return "";
-  const parts = [String(row.serverPlanId || "").trim(), String(row.instanceType || "").trim()].filter(Boolean);
+  const parts = [planLabel(row.serverPlanId), String(row.instanceType || "").trim()].filter(Boolean);
   return parts.join(" / ");
 }
 
 function displayStorageLabel(row?: Partial<CustomerStorageResource> | null) {
   if (!row) return "";
   const capacity = storageCapacityText(row);
-  const parts = [String(row.storagePlanId || "").trim(), capacity].filter(Boolean);
+  const parts = [fileSpaceDisplayName(row.id || row.bucketId), capacity].filter(Boolean);
   return parts.join(" / ");
+}
+
+function planLabel(planId?: string) {
+  const normalized = String(planId || "").trim();
+  const labels: Record<string, string> = {
+    starter_2c4g_10gb: "入门套餐",
+    pro_8c16g_100gb: "专业套餐",
+  };
+  return labels[normalized] || (normalized ? "运行套餐" : "");
 }
 
 function storageCapacityText(row?: Partial<CustomerStorageResource> | null) {
@@ -636,7 +660,7 @@ async function submitCreateCompute() {
     });
     await reload();
     resetComputeForm();
-    noticeMessage.value = `已开通运行环境 ${displayComputeLabel(result.item) || computeForm.serverPlanId}`;
+    noticeMessage.value = `已开通运行环境 ${displayComputeLabel(result.item) || "运行套餐"}`;
   } catch (error) {
     reportError(error, "开通运行环境失败");
   } finally {
@@ -676,7 +700,7 @@ async function submitBindWorkspace() {
       rootPrefix: bindForm.rootPrefix,
     });
     await reload();
-    noticeMessage.value = `工作空间 ${bindForm.workspaceId} 已开通运行环境`;
+    noticeMessage.value = `${workspaceDisplayName(bindForm.workspaceId)} 已开通运行环境`;
     resetBindForm();
   } catch (error) {
     reportError(error, "开通运行环境失败");

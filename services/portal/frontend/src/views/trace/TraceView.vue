@@ -1,25 +1,25 @@
 <template>
-  <AppLayout title="运行轨迹" subtitle="查看 session trace metadata、task 状态、文件结果与审计轨迹">
+  <AppLayout title="运行轨迹" subtitle="查看会话、任务状态、文件结果与审计轨迹">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载会话轨迹...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="session 数" :value="payload.pagination.total" hint="当前筛选命中总数" />
-          <MetricCard label="task 数" :value="runCount" hint="关联 task 的 session" />
-          <MetricCard label="output 文件" :value="outputCount" hint="可在工作空间下载" />
+          <MetricCard label="会话数" :value="payload.pagination.total" hint="当前筛选命中总数" />
+          <MetricCard label="任务数" :value="runCount" hint="关联任务的会话" />
+          <MetricCard label="输出文件" :value="outputCount" hint="可在工作空间下载" />
           <MetricCard label="异常会话" :value="failedCount" hint="需要重试或联系客服" />
         </section>
 
         <section class="card p-5">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 class="panel-title">session trace metadata</h2>
+              <h2 class="panel-title">运行轨迹</h2>
               <p class="panel-subtitle">
-                运行轨迹只展示 session、workspace、task、输出文件引用、状态和时间；原始输入和密钥字段只留在后端边界。
+                运行轨迹只展示会话、工作空间、任务、输出文件引用、状态和时间；原始输入和密钥字段不会出现在普通用户界面。
               </p>
             </div>
-            <RouterLink class="btn btn-secondary" to="/workspace">查看 output 文件</RouterLink>
+            <RouterLink class="btn btn-secondary" to="/workspace">查看输出文件</RouterLink>
           </div>
         </section>
 
@@ -31,7 +31,7 @@
             </div>
             <div class="grid gap-3 md:grid-cols-3">
               <input v-model.trim="filters.workspaceId" class="input" type="text" placeholder="工作空间" />
-              <input v-model.trim="filters.sessionId" class="input" type="text" placeholder="session" />
+              <input v-model.trim="filters.sessionId" class="input" type="text" placeholder="会话" />
               <select v-model="filters.status" class="input">
                 <option value="">全部状态</option>
                 <option value="active">active</option>
@@ -71,13 +71,13 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in payload.items" :key="item.traceId || item.sessionId" class="table-row">
+                <tr v-for="(item, index) in payload.items" :key="item.traceId || item.sessionId" class="table-row">
                   <td class="px-4 py-3">
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.traceName || item.sessionId || "会话" }}</div>
-                    <div class="mt-1 text-[11px] text-gray-500 dark:text-slate-400">session {{ item.sessionId || "-" }}</div>
+                    <div class="mt-1 text-[11px] text-gray-500 dark:text-slate-400">会话 {{ displayIndex(index) }}</div>
                   </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.workspaceId || "-" }}</td>
-                  <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">{{ item.runId || "-" }}</td>
+                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">工作空间 {{ displayIndex(index) }}</td>
+                  <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">任务 {{ displayIndex(index) }}</td>
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
                     {{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出
                   </td>
@@ -158,6 +158,10 @@ function previousPage(page: number) {
 
 function nextPage(page: number, totalPages: number) {
   return Math.min(Number(totalPages || 1), Number(page || 1) + 1);
+}
+
+function displayIndex(index: number) {
+  return String(Number(index || 0) + 1);
 }
 
 function statusBadge(status = "") {

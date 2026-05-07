@@ -1,27 +1,27 @@
-# v22 SaaS Portal OPL Ops Surface Boundary Contract
+# v22 SaaS Portal OPL 运维面共享界面合同
 
-本合同固定 MedOPL v22 的 Portal、OPL Web、Ops Surface 共享产品表面、用户角色、多租户后台边界和腾讯云分账标签边界。
+本合同固定 MedOPL v22 的 Portal、OPL Web、平台运维视图 / 运维面共享产品表面、用户角色、多租户后台边界和腾讯云分账标签边界。
 
 本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。
 
-## Product Positioning
+## 产品定位
 
 MedOPL 是面向 AI 小白科研用户的 OPL SaaS 科研托管平台。
 
-它不是云资源控制台。
+普通用户不需要理解云厂商控制台或工程后台。
 
 它包含：
 
-- Portal SaaS 后台 / 科研托管平台控制台
+- 科研托管平台控制台
 - OPL Web 科研工作台
-- Ops Surface 运维面
+- 平台运维视图 / 运维面
 - 平台代开通计算和存储
 - 账单 / 余额 / 审计 / 运维
 - one-person-lab clean upstream
 
 用户开通的是托管运行环境和文件空间；腾讯云资源池、资源标签和内部绑定只属于后台实现、计费、审计和运维边界。
 
-## Personas
+## 使用人群
 
 MVP 只定义两类使用人群：
 
@@ -30,43 +30,43 @@ MVP 只定义两类使用人群：
 
 不要把“租户/课题组管理员”作为 MVP 独立角色。多租户是后台边界，不是当前 MVP 用户角色。
 
-## Beginner User Portal Surface
+## AI 小白科研用户 Portal 界面
 
 AI 小白科研用户在 Portal 必须能看到：
 
 - 余额
 - 钱花在哪里
-- session 数
-- task 数
+- 会话数
+- 任务数
 - 科研任务进度
 - 托管运行环境状态
 - 文件空间状态
-- input 文件
-- output 文件
-- workspace 文件夹
+- 输入文件
+- 输出文件
+- 工作空间文件夹
 - 运行轨迹
 - 账单摘要
 - 停止计费 / 审计状态
 - 进入 OPL 工作台的入口
 
-Portal 面向 AI 小白科研用户时不得把腾讯云资源池、CVM、COS bucket、K8s、TKE 或原始分账标签作为主语言。
+Portal 面向 AI 小白科研用户时不得把云厂商资源池、工程后台字段或原始分账标签作为主语言。
 
-## Beginner User OPL Web Surface
+## AI 小白科研用户 OPL 工作台界面
 
 AI 小白科研用户在 OPL Web 必须能做：
 
 - 使用统一 MedOPL 账号登录
-- 在 `opl.medopl.cn` entry / preflight 的账号密码输入区下面输入 / 绑定 gflabtoken API key
+- 进入 OPL 工作台后输入 / 绑定 gflabtoken 模型调用密钥
 - 发消息
 - 上传文件
 - 用文件跑任务
 - 下载输出文件
 
-OPL Web 入口通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。gflabtoken API key 不是 Portal 普通登录字段，raw API key 只进入后端密钥边界。
+OPL Web 入口通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。gflabtoken 模型调用密钥不是 Portal 普通登录字段，原始密钥只进入后端密钥边界。
 
-## Ops Surface
+## 平台运维视图 / 运维面
 
-平台运维在 Portal / Ops Surface 必须能看到：
+平台运维在 Portal / 运维面必须能看到：
 
 - tenant 状态
 - workspace 状态
@@ -81,9 +81,9 @@ OPL Web 入口通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。gfl
 - T+1 审计状态
 - 异常账单 / 异常资源
 
-Ops Surface 可以展示后台标识、腾讯云标签映射和异常归因；这些不进入 AI 小白科研用户主叙事。
+平台运维视图可以展示后台标识、腾讯云标签映射和异常归因；这些不进入 AI 小白科研用户主叙事。
 
-## Backend Multi-Tenant Boundary
+## 后台多租户边界
 
 后台必须保持：
 
@@ -97,7 +97,7 @@ Ops Surface 可以展示后台标识、腾讯云标签映射和异常归因；�
 
 这些字段用于隔离、计费、审计、运维，不作为 AI 小白用户主语言。
 
-## Tencent Cost Allocation Tags
+## 腾讯云分账标签
 
 当前腾讯云分账标签固定为：
 
@@ -107,9 +107,9 @@ Ops Surface 可以展示后台标识、腾讯云标签映射和异常归因；�
 - `tenantid`
 - `workspaceid`
 
-这些标签用于腾讯云账单核对、COS 存储桶列表、成本归因和审计。普通用户不直接操作这些标签；运维可以在 Ops Surface 查看标签映射和异常。
+这些标签用于腾讯云账单核对、COS 存储桶列表、成本归因和审计。普通用户不直接操作这些标签；运维可以在平台运维视图查看标签映射和异常。
 
-## Tencent Cloud Resource Boundary
+## 腾讯云资源边界
 
 腾讯云是后台资源池，不是用户主界面。
 
@@ -126,13 +126,13 @@ Ops Surface 可以展示后台标识、腾讯云标签映射和异常归因；�
 
 普通用户不能被引导去配置 CVM / COS / K8s / TKE。
 
-## Account And API Key Boundary
+## 账号和 gflabtoken 模型调用密钥边界
 
 MedOPL 账号密码与 OPL Web 账号密码统一。用户从 `opl.medopl.cn` 进入时，通过 MedOPL Gateway / SSO / Auth Bridge 完成统一身份。
 
-gflabtoken API key 放在 `opl.medopl.cn` entry / preflight 的账号密码输入区下面。API key 不是 Portal 普通登录字段。raw API key 只进入后端密钥边界；前端只展示 `providerKeyRef` / bound status。
+gflabtoken 模型调用密钥放在 `opl.medopl.cn` entry / preflight 的账号密码输入区下面。gflabtoken 模型调用密钥不是 Portal 普通登录字段。原始密钥只进入后端密钥边界；前端只展示 `providerKeyRef` / bound status。
 
-## Upstream Boundary
+## upstream 边界
 
 one-person-lab 是 clean upstream：
 
@@ -140,7 +140,7 @@ one-person-lab 是 clean upstream：
 - 不得 import upstream 内部模块。
 - OPL entry / preflight 属于 MedOPL Gateway / SSO / Auth Bridge。
 
-## Forbidden Beginner User Narrative
+## AI 小白科研用户禁用主语言
 
 普通用户界面不得把以下作为主语言：
 
@@ -156,24 +156,24 @@ one-person-lab 是 clean upstream：
 - 内部存储密钥
 - one-person-lab upstream 内部模块
 
-## Product Effect
+## 产品验收效果
 
 AI 小白用户进入 Portal 后能回答：
 
 - 我还有多少钱？
 - 我的钱花在哪里？
-- 我有几个 session？
-- 我有几个 task？
+- 我有几个会话？
+- 我有几个任务？
 - 我的科研任务跑到哪一步？
 - 我的托管运行环境是否可用？
 - 我的文件空间是什么状态？
-- 我的 input/output 文件在哪里？
+- 我的输入文件和输出文件在哪里？
 - 我从哪里进入 OPL 工作台？
-- 我的 API key 是否已绑定？
+- 我的 gflabtoken 模型调用密钥是否已绑定？
 - 我释放环境后是否停止扣费？
 - 账单核对和审计是否完成？
 
-平台运维进入 Ops Surface 后能回答：
+平台运维进入运维面后能回答：
 
 - 哪个 tenant / workspace / run / serverPlan / resourceOrder 产生了费用？
 - 腾讯云账单标签是否完整？
@@ -194,9 +194,9 @@ AI 小白用户进入 Portal 后能回答：
     "statement": "MedOPL 是面向 AI 小白科研用户的 OPL SaaS 科研托管平台。",
     "notCloudConsole": true,
     "includes": [
-      "Portal SaaS 后台 / 科研托管平台控制台",
+      "科研托管平台控制台",
       "OPL Web 科研工作台",
-      "Ops Surface 运维面",
+      "平台运维视图 / 运维面",
       "平台代开通计算和存储",
       "账单 / 余额 / 审计 / 运维",
       "one-person-lab clean upstream"
@@ -214,14 +214,14 @@ AI 小白用户进入 Portal 后能回答：
     "mustShow": [
       "余额",
       "钱花在哪里",
-      "session 数",
-      "task 数",
+      "会话数",
+      "任务数",
       "科研任务进度",
       "托管运行环境状态",
       "文件空间状态",
-      "input 文件",
-      "output 文件",
-      "workspace 文件夹",
+      "输入文件",
+      "输出文件",
+      "工作空间文件夹",
       "运行轨迹",
       "账单摘要",
       "停止计费 / 审计状态",
@@ -233,14 +233,14 @@ AI 小白用户进入 Portal 后能回答：
     "entrypoint": "opl.medopl.cn",
     "mustDo": [
       "使用统一 MedOPL 账号登录",
-      "在 opl.medopl.cn entry / preflight 的账号密码输入区下面输入 / 绑定 gflabtoken API key",
+      "进入 OPL 工作台后输入 / 绑定 gflabtoken 模型调用密钥",
       "发消息",
       "上传文件",
       "用文件跑任务",
       "下载输出文件"
     ]
   },
-  "opsSurface": {
+  "operationsSurface": {
     "mustShow": [
       "tenant 状态",
       "workspace 状态",
@@ -316,6 +316,7 @@ AI 小白用户进入 Portal 后能回答：
     "gflabtokenInputLocation": "opl.medopl.cn entry / preflight 的账号密码输入区下面",
     "apiKeyIsPortalLoginField": false,
     "rawApiKeyBackendOnly": true,
+    "beginnerVisibleName": "gflabtoken 模型调用密钥",
     "frontendPublicFields": [
       "providerKeyRef",
       "bound status"
@@ -345,14 +346,14 @@ AI 小白用户进入 Portal 后能回答：
     "beginnerUserCanAnswer": [
       "我还有多少钱？",
       "我的钱花在哪里？",
-      "我有几个 session？",
-      "我有几个 task？",
+      "我有几个会话？",
+      "我有几个任务？",
       "我的科研任务跑到哪一步？",
       "我的托管运行环境是否可用？",
       "我的文件空间是什么状态？",
-      "我的 input/output 文件在哪里？",
+      "我的输入文件和输出文件在哪里？",
       "我从哪里进入 OPL 工作台？",
-      "我的 API key 是否已绑定？",
+      "我的 gflabtoken 模型调用密钥是否已绑定？",
       "我释放环境后是否停止扣费？",
       "账单核对和审计是否完成？"
     ],

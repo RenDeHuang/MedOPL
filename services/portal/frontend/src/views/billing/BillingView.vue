@@ -26,8 +26,8 @@
 
           <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
-            <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除 freeze 后的可用余额" />
-            <MetricCard label="freeze / preauth" :value="money(payload.wallet.activeFreeze)" hint="托管运行环境预扣费" />
+            <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除冻结金额后的可用余额" />
+            <MetricCard label="预扣费 / 冻结金额" :value="money(payload.wallet.activeFreeze)" hint="托管运行环境预扣费" />
             <MetricCard label="今日消费" :value="microMoney(payload.todayCost)" hint="今日已核算消费" />
             <MetricCard label="钱花在哪里" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口消费" />
             <MetricCard label="账户流水" :value="payload.ledgerPagination.total" hint="当前窗口内流水数" />
@@ -119,7 +119,7 @@
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">工作空间</th>
-                  <th class="px-4 py-3">task 数</th>
+                  <th class="px-4 py-3">任务数</th>
                   <th class="px-4 py-3">计算</th>
                   <th class="px-4 py-3">加速</th>
                   <th class="px-4 py-3">文件空间</th>
@@ -158,8 +158,8 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">task 明细</h2>
-                <p class="panel-subtitle">单次 task 的状态、账单来源与总消费。</p>
+                <h2 class="panel-title">任务明细</h2>
+                <p class="panel-subtitle">单次任务的状态、账单来源与总消费。</p>
               </div>
               <span class="badge badge-primary">{{ payload.runPagination.total }} 条</span>
             </div>
@@ -169,7 +169,7 @@
               <table class="text-sm">
                 <thead>
                   <tr class="table-head">
-                    <th class="px-4 py-3">task</th>
+                    <th class="px-4 py-3">任务</th>
                     <th class="px-4 py-3">工作空间</th>
                     <th class="px-4 py-3">状态</th>
                     <th class="px-4 py-3">账单来源</th>
@@ -177,9 +177,9 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in payload.runCosts" :key="item.runId" class="table-row">
-                    <td class="px-4 py-3 font-mono text-xs text-gray-700 dark:text-slate-300">{{ item.runId }}</td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.workspaceId || "-" }}</td>
+                  <tr v-for="(item, index) in payload.runCosts" :key="item.runId" class="table-row">
+                    <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">任务 {{ index + 1 }}</td>
+                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">工作空间 {{ index + 1 }}</td>
                     <td class="px-4 py-3">
                       <span class="badge" :class="statusBadge(item.runStatus)">{{ humanizeStatus(item.runStatus) }}</span>
                     </td>

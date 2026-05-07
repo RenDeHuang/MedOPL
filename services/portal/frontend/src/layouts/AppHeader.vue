@@ -69,7 +69,7 @@
     v-model="helpOpen"
     v-model:page="helpPage"
     title="帮助"
-    description="账户、任务空间、服务器费用和账单。"
+    description="账户、工作空间、托管运行环境消费和账单。"
     :pages="helpPages"
   />
 
@@ -151,17 +151,17 @@ const userStatusLabel = computed(() => {
 const helpPages = [
   {
     title: "开始使用",
-    summary: "进入 OPL 科研工作台，选择工作空间，开始一次 task。",
+    summary: "进入 OPL 科研工作台，选择工作空间，开始一次任务。",
     sections: [
-      { title: "科研工作台", items: ["从总览或工作空间进入 OPL。", "output 文件会回到当前工作空间。"] },
-      { title: "工作空间", items: ["保存 input、output、运行轨迹和 task 记录。", "不同工作空间可以选择不同套餐和文件空间。"] },
+      { title: "科研工作台", items: ["从总览或工作空间进入 OPL。", "输出文件会回到当前工作空间。"] },
+      { title: "工作空间", items: ["保存输入文件、输出文件、运行轨迹和任务记录。", "不同工作空间可以选择不同套餐和文件空间。"] },
     ],
   },
   {
     title: "费用",
     summary: "余额、消费、预扣费和账单核对集中展示。",
     sections: [
-      { title: "托管运行环境", items: ["在套餐和文件空间中选择需要的运行能力。", "运行前显示 freeze / preauth。"] },
+      { title: "托管运行环境", items: ["在套餐和文件空间中选择需要的运行能力。", "运行前显示预扣费和冻结金额。"] },
       { title: "账单", items: ["运行中显示预扣费。", "账单日内核对后展示最终消费。"] },
     ],
   },
@@ -169,8 +169,8 @@ const helpPages = [
     title: "账户",
     summary: "账号、余额和权限分开管理。",
     sections: [
-      { title: "登录", items: ["MedOPL 账号可进入 Portal 和 OPL Web。", "gflabtoken API key 在 OPL entry/preflight 绑定。"] },
-      { title: "余额", items: ["余额不足不影响查看工作台。", "收费 task 会检查余额或试用额度。"] },
+      { title: "登录", items: ["MedOPL 账号可进入 Portal 和 OPL Web。", "gflabtoken 模型调用密钥在进入 OPL 工作台后绑定。"] },
+      { title: "余额", items: ["余额不足不影响查看工作台。", "收费任务会检查余额或试用额度。"] },
     ],
   },
 ];

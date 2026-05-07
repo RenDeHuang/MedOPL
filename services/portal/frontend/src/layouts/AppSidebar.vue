@@ -65,7 +65,7 @@ const adminItemsBase = [
   { to: "/admin/system", label: "系统状态" },
 ];
 const adminItems = computed(() => (opsSurfaceEnabled.value
-  ? [...adminItemsBase, { to: "/admin/ops", label: "Ops Surface" }]
+  ? [...adminItemsBase, { to: "/admin/ops", label: "运维面" }]
   : adminItemsBase));
 
 onMounted(async () => {
