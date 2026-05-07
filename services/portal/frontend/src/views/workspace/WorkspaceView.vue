@@ -86,7 +86,7 @@
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 class="panel-title">工作空间列表</h2>
-              <p class="panel-subtitle">统一展示上传文件、下载结果、任务编号、状态和更新时间。</p>
+              <p class="panel-subtitle">统一展示上传文件、下载结果、任务、状态和更新时间。</p>
             </div>
             <span class="badge badge-primary">{{ payload.tasksPagination.total }} 个</span>
           </div>

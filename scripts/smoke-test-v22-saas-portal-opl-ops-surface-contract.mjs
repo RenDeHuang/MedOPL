@@ -101,6 +101,7 @@ function assertNoForbiddenBeginnerText(text, label) {
     "API key",
     "API Key",
     "保护金",
+    "编号",
   ];
   for (const term of forbidden) {
     assert.equal(text.includes(term), false, `${label}_must_not_include:${term}`);
@@ -141,11 +142,20 @@ function extractVisibleTemplateCopy(template) {
   return [...visibleAttributes, textNodes, ...interpolationStrings].join("\n");
 }
 
+function extractUserFacingScriptAssignments(source) {
+  return [...source.matchAll(/(?:errorMessage|noticeMessage|actionFeedback)\.value\s*=\s*"([^"]*)"/g)]
+    .map((match) => match[1])
+    .join("\n");
+}
+
 async function assertFrontendBeginnerSurfaceCopy() {
   const visibleSurface = (await Promise.all(frontendUserSurfacePaths.map(async (filePath) => {
     const source = await readFile(filePath, "utf8");
     const templateMatch = /<template>([\s\S]*?)<\/template>/.exec(source);
-    const visibleTemplate = extractVisibleTemplateCopy(templateMatch?.[1] || "");
+    const visibleTemplate = [
+      extractVisibleTemplateCopy(templateMatch?.[1] || ""),
+      extractUserFacingScriptAssignments(source),
+    ].join("\n");
     if (filePath.endsWith("AppHeader.vue")) {
       return [visibleTemplate, extractStringArrayConst(source, "helpPages")].join("\n");
     }

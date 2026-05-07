@@ -107,7 +107,7 @@ function stageBadge(stage: { stage: string; ok: boolean }) {
 async function loadStatus() {
   const launchId = String(route.query.launchId || "");
   if (!launchId) {
-    errorMessage.value = "缺少 OPL 启动编号，请从工作空间重新进入。";
+    errorMessage.value = "未找到 OPL 启动信息，请从工作空间重新进入。";
     return;
   }
   try {
