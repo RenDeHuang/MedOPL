@@ -158,6 +158,146 @@ function resourceBindingPayload(binding = null) {
   };
 }
 
+function workspaceFilePublicView(file = {}) {
+  return {
+    id: text(file.id),
+    fileRef: text(file.id),
+    workspaceId: text(file.workspaceId),
+    sessionId: text(file.oplSessionId || file.runId),
+    resourceBindingId: text(file.resourceBindingId),
+    kind: text(file.kind),
+    name: text(file.name),
+    relativePath: text(file.kind) ? `${text(file.kind)}/${text(file.relativePath)}` : text(file.relativePath),
+    sizeBytes: Number(file.sizeBytes || 0),
+    contentType: text(file.contentType),
+    status: text(file.status || "active"),
+    createdAt: text(file.createdAt),
+    updatedAt: text(file.updatedAt),
+  };
+}
+
+function workspaceFilesForPortal(db = {}, user = {}, workspaceId = "", resourceBinding = null) {
+  const tenantId = userTenantId(user);
+  const userId = text(user.id);
+  const bindingId = text(resourceBinding?.resourceBindingId || resourceBinding?.id);
+  return (Array.isArray(db.workspaceFiles) ? db.workspaceFiles : [])
+    .filter((item) => text(item.tenantId) === tenantId)
+    .filter((item) => text(item.userId) === userId)
+    .filter((item) => text(item.workspaceId) === text(workspaceId))
+    .filter((item) => !bindingId || text(item.resourceBindingId) === bindingId)
+    .filter((item) => statusText(item.status || "active") !== "deleted")
+    .sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")))
+    .map(workspaceFilePublicView);
+}
+
+function sessionTraceMetadataView(trace = {}, resourceBinding = null) {
+  const timestamps = trace.timestamps && typeof trace.timestamps === "object" ? trace.timestamps : {};
+  return {
+    sessionId: text(trace.sessionId),
+    workspaceId: text(trace.workspaceId),
+    resourceBindingId: text(trace.resourceBindingId),
+    providerKeyRef: text(trace.providerKeyRef),
+    artifactRefs: Array.isArray(trace.artifactRefs) ? trace.artifactRefs.map(text).filter(Boolean) : [],
+    timestamps: {
+      createdAt: text(timestamps.createdAt || trace.createdAt),
+      updatedAt: text(timestamps.updatedAt || trace.updatedAt || timestamps.createdAt || trace.createdAt),
+    },
+    status: text(trace.status || "recorded"),
+    auditTag: text(trace.auditTag || resourceBinding?.auditTag),
+  };
+}
+
+function sessionTraceMetadataForPortal(db = {}, user = {}, workspaceId = "", resourceBinding = null) {
+  const bindingId = text(resourceBinding?.resourceBindingId || resourceBinding?.id);
+  return (Array.isArray(db.oplWorkTraceMetadata) ? db.oplWorkTraceMetadata : [])
+    .filter((item) => text(item.workspaceId) === text(workspaceId))
+    .filter((item) => !bindingId || text(item.resourceBindingId) === bindingId)
+    .filter((item) => !item.tenantId || text(item.tenantId) === userTenantId(user))
+    .map((item) => sessionTraceMetadataView(item, resourceBinding))
+    .sort((left, right) => String(right.timestamps.updatedAt || "").localeCompare(String(left.timestamps.updatedAt || "")));
+}
+
+function cents(value = 0) {
+  const parsed = Number(value || 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed);
+}
+
+function yuanToCents(value = 0) {
+  const parsed = Number(value || 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.round(parsed * 100);
+}
+
+function amountCents(centsValue, yuanValue = 0) {
+  if (centsValue !== undefined && centsValue !== null && text(centsValue) !== "") return cents(centsValue);
+  return yuanToCents(yuanValue);
+}
+
+function sumPendingUsageCents(balance = {}) {
+  return (Array.isArray(balance.pending) ? balance.pending : [])
+    .reduce((sum, item) => sum + cents(item.amountCents), 0);
+}
+
+function billingSummaryPayload(balance = {}, freeze = null) {
+  const frozenAmountCents = freeze
+    ? amountCents(freeze.frozenAmountCents ?? freeze.weeklyAmountCents, freeze.frozenAmount ?? freeze.weeklyAmount)
+    : cents(balance.frozenWeeklyAmountCents);
+  const estimatedUsageCents = sumPendingUsageCents(balance);
+  const pendingItems = Array.isArray(balance.pending) ? balance.pending.map((item) => ({
+    id: text(item.id),
+    runId: text(item.runId),
+    resourceOrderId: text(item.resourceOrderId),
+    amountCents: cents(item.amountCents),
+    status: text(item.status || "waiting_exact_bill"),
+    createdAt: text(item.createdAt),
+  })) : [];
+  return {
+    balance: {
+      balanceCents: cents(balance.balanceCents),
+      availableBalanceCents: cents(balance.availableBalanceCents),
+    },
+    frozen: {
+      amountCents: frozenAmountCents,
+      status: frozenAmountCents > 0 ? text(freeze?.status || "active_pending_product_approval") : "none",
+    },
+    preauth: {
+      amountCents: frozenAmountCents,
+      status: frozenAmountCents > 0 ? text(freeze?.preauthStatus || "pending_product_approval") : "none",
+    },
+    estimatedUsage: {
+      amountCents: estimatedUsageCents,
+      status: estimatedUsageCents > 0 ? "estimated" : "none",
+      items: pendingItems,
+    },
+    pendingReconciliation: {
+      status: pendingItems.length > 0 ? "pending_reconciliation" : "none",
+      items: pendingItems,
+    },
+    releaseStopBillingStatus: "none",
+  };
+}
+
+function preauthPayload(freeze = null) {
+  if (!freeze) return { status: "none", amountCents: 0 };
+  return {
+    status: text(freeze.preauthStatus || "pending_product_approval"),
+    amountCents: amountCents(freeze.frozenAmountCents ?? freeze.weeklyAmountCents, freeze.frozenAmount ?? freeze.weeklyAmount),
+    resourceBindingId: text(freeze.resourceBindingId),
+  };
+}
+
+function managedEnvironmentPayload({ runtimeEnabled = false, workspace = null, fileSpace = null, resourceBinding = null, freeze = null, selectedPlan = null } = {}) {
+  return {
+    enabled: Boolean(runtimeEnabled),
+    workspace,
+    fileSpace,
+    resourceBinding,
+    freeze,
+    selectedPlan,
+  };
+}
+
 function planIdFromInputs({ binding = null, taskSpace = null, selectedServerPlan = null } = {}) {
   return text(
     binding?.planId
@@ -193,6 +333,12 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
   const balance = buildUserBillingSummary(db, { user });
   const runtimeEnabled = Boolean(resourceBinding?.bindingAccess?.fullRuntime?.allowed);
   const readiness = managedEnvironmentReadiness(provider);
+  const workspace = workspacePublicView(taskSpace || {}, targetWorkspaceId);
+  const selectedPlan = canonicalPlanPayload({ binding, taskSpace, selectedServerPlan });
+  const fileSpace = fileSpacePublicView(resourceBinding || taskSpace || {}, selectedPlan);
+  const publicWorkspaceFiles = workspaceFilesForPortal(db, user, targetWorkspaceId, resourceBinding);
+  const outputFiles = publicWorkspaceFiles.filter((item) => item.kind === "outputs");
+  const sessionTraceMetadata = sessionTraceMetadataForPortal(db, user, targetWorkspaceId, resourceBinding);
   return {
     ok: true,
     source: "portal_canonical_state",
@@ -206,12 +352,26 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
     readiness,
     managedEnvironmentEnabled: runtimeEnabled,
     runtimeEnabled,
-    workspace: workspacePublicView(taskSpace || {}, targetWorkspaceId),
-    fileSpace: fileSpacePublicView(resourceBinding || taskSpace || {}, canonicalPlanPayload({ binding, taskSpace, selectedServerPlan })),
+    workspace,
+    fileSpace,
     resourceBinding,
     freeze: freezePublicView(freeze),
-    selectedPlan: canonicalPlanPayload({ binding, taskSpace, selectedServerPlan }),
-    plan: canonicalPlanPayload({ binding, taskSpace, selectedServerPlan }),
+    preauth: preauthPayload(freeze),
+    selectedPlan,
+    plan: selectedPlan,
+    managedEnvironment: managedEnvironmentPayload({
+      runtimeEnabled,
+      workspace,
+      fileSpace,
+      resourceBinding,
+      freeze: freezePublicView(freeze),
+      selectedPlan,
+    }),
+    workspaceFiles: publicWorkspaceFiles,
+    outputFiles,
+    artifacts: outputFiles,
+    billingSummary: billingSummaryPayload(balance, freeze),
+    sessionTraceMetadata,
     userNarrative: managedEnvironmentUserNarrative(),
   };
 }

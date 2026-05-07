@@ -24,9 +24,11 @@ function assertNoInternalStorageLeak(value, label) {
 function assertTraceMetadataShape(metadata, label, expectedProviderKeyRef) {
   assert.deepEqual(Object.keys(metadata).sort(), [
     "artifactRefs",
+    "auditTag",
     "providerKeyRef",
     "resourceBindingId",
     "sessionId",
+    "status",
     "timestamps",
     "workspaceId",
   ], `${label}_trace_metadata_keys_mismatch`);
@@ -34,6 +36,8 @@ function assertTraceMetadataShape(metadata, label, expectedProviderKeyRef) {
   assert.equal(metadata.workspaceId, "workspace-v22-opl-work", `${label}_trace_workspace_mismatch`);
   assert.ok(metadata.resourceBindingId, `${label}_trace_resource_binding_required`);
   assert.equal(metadata.providerKeyRef, expectedProviderKeyRef, `${label}_trace_provider_key_ref_mismatch`);
+  assert.equal(metadata.status, "succeeded", `${label}_trace_status_mismatch`);
+  assert.ok(metadata.auditTag.includes("workspace:workspace-v22-opl-work"), `${label}_trace_audit_tag_mismatch`);
   assert.equal(Array.isArray(metadata.artifactRefs), true, `${label}_trace_artifact_refs_must_be_array`);
   assert.equal(typeof metadata.timestamps.createdAt, "string", `${label}_trace_created_at_required`);
   assert.equal(typeof metadata.timestamps.updatedAt, "string", `${label}_trace_updated_at_required`);
@@ -250,6 +254,7 @@ try {
   assert.equal(uploaded.res.statusCode, 201, "opl_work_file_upload_must_return_201");
   assert.equal(uploaded.res.payload.ok, true, "opl_work_file_upload_must_return_ok");
   assert.equal(uploaded.res.payload.fileRef.kind, "inputs", "uploaded_file_kind_mismatch");
+  assert.equal(uploaded.res.payload.fileRef.relativePath, "inputs/measurements.csv", "uploaded_file_relative_path_mismatch");
   assert.equal(uploaded.res.payload.fileRef.workspaceId, "workspace-v22-opl-work", "uploaded_file_workspace_mismatch");
   assert.equal(uploaded.res.payload.fileRef.resourceBindingId, resourceBindingId, "uploaded_file_resource_binding_mismatch");
   assertNoSecretLeak(uploaded.res.payload, "opl_work_file_upload");

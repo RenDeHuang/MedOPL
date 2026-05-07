@@ -104,6 +104,11 @@ function fileNameFrom(input = {}) {
   return text(input.fileName || input.file_name || input.name || input.relativePath || input.relative_path);
 }
 
+function inputRelativePathFrom(input = {}) {
+  const relativePath = fileNameFrom(input).replace(/^inputs\//, "");
+  return text(relativePath);
+}
+
 function basename(relativePath = "") {
   const segments = text(relativePath).split("/").filter(Boolean);
   return segments[segments.length - 1] || text(relativePath);
@@ -139,7 +144,7 @@ function workspaceFilePublicView(file = {}) {
 }
 
 function recordInputFile(db, { user, workspaceId, sessionId, resourceBindingId, input } = {}) {
-  const relativePath = fileNameFrom(input);
+  const relativePath = inputRelativePathFrom(input);
   if (!relativePath) return { ok: false, status: 422, error: "file_name_required" };
   const contentType = contentTypeFrom(input);
   if (!contentType) return { ok: false, status: 422, error: "file_content_type_required" };
@@ -211,7 +216,7 @@ function recordOutputArtifact(db, { user, workspaceId, sessionId, resourceBindin
   return { ok: true, artifact: recorded.file };
 }
 
-function traceMetadataFor({ sessionId = "", workspaceId = "", resourceBindingId = "", providerKeyRef = "", artifactRefs = [], createdAt = "" } = {}) {
+function traceMetadataFor({ sessionId = "", workspaceId = "", resourceBindingId = "", providerKeyRef = "", artifactRefs = [], auditTag = "", status = "succeeded", createdAt = "" } = {}) {
   const now = createdAt || nowIso();
   return {
     sessionId,
@@ -219,6 +224,8 @@ function traceMetadataFor({ sessionId = "", workspaceId = "", resourceBindingId 
     resourceBindingId,
     providerKeyRef,
     artifactRefs: artifactRefs.map(text).filter(Boolean),
+    status: text(status || "succeeded"),
+    auditTag: text(auditTag),
     timestamps: {
       createdAt: now,
       updatedAt: now,
@@ -404,6 +411,8 @@ export function runOplWorkWithFiles(db = {}, user = {}, input = {}, { state = {}
     resourceBindingId: ready.resourceBindingId,
     providerKeyRef: ready.providerKeyRef,
     artifactRefs: run.artifactRefs,
+    auditTag: text(state.resourceBinding?.auditTag),
+    status: run.status,
     createdAt: now,
   });
   ensureArrayField(db, "oplWorkTraceMetadata").push(traceMetadata);
