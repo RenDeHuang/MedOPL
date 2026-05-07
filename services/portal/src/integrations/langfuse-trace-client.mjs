@@ -18,6 +18,8 @@ function firstValue(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== "") ?? "";
 }
 
+const LANGFUSE_ADMIN_CONSOLE_ORIGIN = "https://trace.medopl.cn";
+
 function requiredText(value, code) {
   const normalized = String(value ?? "").trim();
   if (!normalized) {
@@ -63,11 +65,30 @@ function costEstimateProjection(runtimeBridgeMetadata = {}) {
   };
 }
 
-function requiredAdminTraceUrl(value, adminConsoleUrl) {
+function requiredUrlOrigin(value, code) {
+  const urlValue = requiredText(value, code);
+  try {
+    return new URL(urlValue).origin;
+  } catch {
+    const error = new Error("langfuse_projection_trace_url_invalid");
+    error.code = "LANGFUSE_PROJECTION_TRACE_URL_INVALID";
+    throw error;
+  }
+}
+
+function requiredAdminTraceUrl(value, adminConsoleOrigin) {
   const traceUrlValue = requiredText(value, "langfuse_projection_trace_url_required");
-  if (!traceUrlValue.startsWith(adminConsoleUrl)) {
-    const error = new Error("langfuse_projection_trace_url_must_use_admin_console_url");
-    error.code = "LANGFUSE_PROJECTION_TRACE_URL_MUST_USE_ADMIN_CONSOLE_URL";
+  let traceOrigin = "";
+  try {
+    traceOrigin = new URL(traceUrlValue).origin;
+  } catch {
+    const error = new Error("langfuse_projection_trace_url_invalid");
+    error.code = "LANGFUSE_PROJECTION_TRACE_URL_INVALID";
+    throw error;
+  }
+  if (traceOrigin !== adminConsoleOrigin) {
+    const error = new Error("langfuse_projection_trace_url_must_use_admin_console_origin");
+    error.code = "LANGFUSE_PROJECTION_TRACE_URL_MUST_USE_ADMIN_CONSOLE_ORIGIN";
     throw error;
   }
   return traceUrlValue;
@@ -76,7 +97,12 @@ function requiredAdminTraceUrl(value, adminConsoleUrl) {
 export function createLangfuseSanitizedProjectionAdapter({
   adminConsoleUrl = "https://trace.medopl.cn",
 } = {}) {
-  const normalizedAdminConsoleUrl = requiredText(adminConsoleUrl, "langfuse_projection_admin_console_url_required").replace(/\/$/, "");
+  const adminConsoleOrigin = requiredUrlOrigin(adminConsoleUrl, "langfuse_projection_admin_console_url_required");
+  if (adminConsoleOrigin !== LANGFUSE_ADMIN_CONSOLE_ORIGIN) {
+    const error = new Error("langfuse_projection_admin_console_origin_mismatch");
+    error.code = "LANGFUSE_PROJECTION_ADMIN_CONSOLE_ORIGIN_MISMATCH";
+    throw error;
+  }
 
   return {
     project({ runtimeBridgeMetadata = {}, langfuseTraceSummary = {} } = {}) {
@@ -88,7 +114,7 @@ export function createLangfuseSanitizedProjectionAdapter({
         latencyMs: requiredNonNegativeNumber(langfuseTraceSummary.latencyMs, "langfuse_projection_latency_ms_required"),
         usageSummary: usageSummaryProjection(langfuseTraceSummary.usageSummary),
         costEstimate: costEstimateProjection(runtimeBridgeMetadata),
-        traceUrl: requiredAdminTraceUrl(langfuseTraceSummary.traceUrl, normalizedAdminConsoleUrl),
+        traceUrl: requiredAdminTraceUrl(langfuseTraceSummary.traceUrl, adminConsoleOrigin),
         tags: requiredTags(runtimeBridgeMetadata.tags),
       };
     },

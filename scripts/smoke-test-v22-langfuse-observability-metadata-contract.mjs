@@ -156,7 +156,8 @@ for (const required of [
   "trace.medopl.cn 是 Langfuse 管理员/运维原生观测台入口",
   "客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面",
   "trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是客户默认 trace 页面",
-  "trace.medopl.cn 的真实部署、Ingress/TLS、Langfuse secret、ClickHouse 等仍需后续单独授权",
+  "trace.medopl.cn 的真实部署、Ingress/TLS、LB、DNS、Langfuse secret、ClickHouse 等仍需后续单独授权",
+  "projection 中的 traceUrl 必须静态严格校验 URL origin，不能用字符串前缀匹配",
   "Langfuse 不能成为用户、账单、文件、资源、审计的真相源",
   "Langfuse 部署、ClickHouse、真实 API key、真实 trace source 后续单独授权",
   "当前分支不改 runtime 实现，不接真实 Langfuse",
@@ -221,11 +222,19 @@ assert.equal(contract.langfuseConsole.customerDefaultLangfuseUi, false, "custome
 assert.equal(contract.langfuseConsole.portalCanonicalSource, false, "trace_medopl_cn_must_not_be_portal_canonical_source");
 assert.equal(contract.langfuseConsole.billingTruth, false, "trace_medopl_cn_must_not_be_billing_truth");
 assert.deepEqual(contract.portalSanitizedProjection.allowedFields.sort(), portalProjectionAllowedFields, "portal_projection_allowed_fields_mismatch");
+assert.deepEqual(contract.traceUrlOriginValidation, {
+  requiredOrigin: "https://trace.medopl.cn",
+  urlParserRequired: true,
+  stringPrefixMatchingAllowed: false,
+  invalidOriginRejected: true,
+}, "trace_url_origin_validation_mismatch");
 assert.deepEqual(contract.forbiddenData, forbiddenDataNames, "forbidden_data_mismatch");
 assert.deepEqual(contract.langfusePersistenceForbidden, forbiddenDataNames, "langfuse_persistence_forbidden_mismatch");
 assertIncludesAll(contract.deferredAuthorization, [
   "trace.medopl.cn 真实部署",
   "Ingress/TLS",
+  "LB",
+  "DNS",
   "Langfuse secret",
   "Langfuse 部署",
   "ClickHouse",
@@ -295,6 +304,37 @@ assertProjectionShape(portalSanitizedProjection, "portal_sanitized_projection");
 const projectionAdapter = createLangfuseSanitizedProjectionAdapter({
   adminConsoleUrl: "https://trace.medopl.cn",
 });
+assert.throws(
+  () => createLangfuseSanitizedProjectionAdapter({ adminConsoleUrl: "https://trace.medopl.cn.evil.example" }),
+  /langfuse_projection_admin_console_origin_mismatch/,
+  "admin_console_origin_must_be_fixed_to_trace_medopl_cn",
+);
+
+function projectionInputWithTraceUrl(traceUrl) {
+  return {
+    runtimeBridgeMetadata: {
+      sessionId: "session-v22-langfuse",
+      runId: "run-v22-langfuse",
+      status: "succeeded",
+      tags: ["workspace:v22", "run:contract"],
+      billingCostSummary: {
+        currency: "CNY",
+        estimatedAmount: 0.08,
+      },
+    },
+    langfuseTraceSummary: {
+      traceId: "trace-v22-langfuse-sanitized",
+      latencyMs: 1280,
+      usageSummary: {
+        inputTokens: 31,
+        outputTokens: 21,
+        totalTokens: 52,
+      },
+      traceUrl,
+    },
+  };
+}
+
 const adapterProjection = projectionAdapter.project({
   runtimeBridgeMetadata: {
     sessionId: "session-v22-langfuse",
@@ -329,6 +369,19 @@ const adapterProjection = projectionAdapter.project({
 });
 assertProjectionShape(adapterProjection, "adapter_projection");
 assertNoForbiddenValue(adapterProjection, "adapter_projection");
+
+for (const forgedTraceUrl of [
+  "https://trace.medopl.cn.evil.example/project/platform/traces/trace-v22-langfuse-sanitized",
+  "https://evil.example/https://trace.medopl.cn/project/platform/traces/trace-v22-langfuse-sanitized",
+  "http://trace.medopl.cn/project/platform/traces/trace-v22-langfuse-sanitized",
+  "//trace.medopl.cn.evil.example/project/platform/traces/trace-v22-langfuse-sanitized",
+]) {
+  assert.throws(
+    () => projectionAdapter.project(projectionInputWithTraceUrl(forgedTraceUrl)),
+    /langfuse_projection_trace_url_must_use_admin_console_origin|langfuse_projection_trace_url_invalid/,
+    `forged_trace_url_must_be_rejected:${forgedTraceUrl}`,
+  );
+}
 
 const payloads = createPortalApiPayloads({
   collectRunsForUser: async () => [],

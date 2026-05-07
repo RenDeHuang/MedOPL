@@ -40,7 +40,9 @@ Langfuse 不能保存 raw prompt / raw completion / raw API key / bearer token /
 
 Langfuse 部署、ClickHouse、真实 API key、真实 trace source 后续单独授权；当前分支不改 runtime 实现，不接真实 Langfuse。
 
-trace.medopl.cn 的真实部署、Ingress/TLS、Langfuse secret、ClickHouse 等仍需后续单独授权。
+trace.medopl.cn 的真实部署、Ingress/TLS、LB、DNS、Langfuse secret、ClickHouse 等仍需后续单独授权。
+
+projection 中的 traceUrl 必须静态严格校验 URL origin，不能用字符串前缀匹配。
 
 ## Canonical Metadata
 
@@ -169,6 +171,12 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
       "tags"
     ]
   },
+  "traceUrlOriginValidation": {
+    "requiredOrigin": "https://trace.medopl.cn",
+    "urlParserRequired": true,
+    "stringPrefixMatchingAllowed": false,
+    "invalidOriginRejected": true
+  },
   "forbiddenData": [
     "raw prompt",
     "raw completion",
@@ -196,6 +204,8 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
   "deferredAuthorization": [
     "trace.medopl.cn 真实部署",
     "Ingress/TLS",
+    "LB",
+    "DNS",
     "Langfuse secret",
     "Langfuse 部署",
     "ClickHouse",
