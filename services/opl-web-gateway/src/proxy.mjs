@@ -32,12 +32,12 @@ function cookieHeaderWithoutLaunchToken(cookieHeader = "") {
 
 function buildProxyHeaders(req, target, prefix = "") {
   const headers = sanitizeProxyHeaders(req.headers, target);
+  delete headers.authorization;
+  delete headers.Authorization;
   if (prefix !== ADAPTER_PREFIX) return headers;
 
   const launchToken = launchTokenCookieFrom(req);
   const cookieHeader = cookieHeaderWithoutLaunchToken(req.headers.cookie || "");
-  delete headers.authorization;
-  delete headers.Authorization;
   if (cookieHeader) headers.cookie = cookieHeader;
   else delete headers.cookie;
   if (launchToken) headers.authorization = `Bearer ${launchToken}`;

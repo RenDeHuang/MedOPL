@@ -188,6 +188,7 @@ function assertPublicContextWhitelist(source) {
 
 function assertGatewayStaticBoundaries(corpus) {
   assert(corpus.text.includes("OPL_UPSTREAM_URL"), "gateway_must_read_opl_upstream_url_config");
+  assert.equal(corpus.byFile[path.join(gatewaySrcRoot, "config.mjs")].includes("OPL_WEB_UPSTREAM_URL"), false, "gateway_config_must_not_read_or_export_legacy_upstream_env");
   assert.equal(corpus.text.includes("127.0.0.1:13030"), false, "gateway_must_not_fallback_to_hardcoded_local_upstream");
   assert.equal(/searchParams\.get\(["']launch_token["']\)/.test(corpus.text), false, "gateway_must_not_read_launch_token_query");
   assert.equal(/searchParams\.get\(["']runtime_token["']\)/.test(corpus.text), false, "gateway_must_not_read_runtime_token_query");
@@ -211,6 +212,30 @@ async function assertUnconfiguredGatewayFailsWithStableError() {
     const payload = await response.json();
     assert.equal(response.status, 503, "unconfigured_upstream_status_mismatch");
     assert.equal(payload.error, "opl_upstream_url_required", "unconfigured_upstream_error_mismatch");
+  } finally {
+    await stopChild(child);
+  }
+}
+
+async function assertLegacyUpstreamEnvDoesNotConfigureGateway() {
+  const port = await freePort();
+  const child = spawnGateway({
+    port,
+    env: {
+      OPL_WEB_UPSTREAM_URL: "http://127.0.0.1:13030",
+    },
+  });
+  try {
+    const baseUrl = `http://127.0.0.1:${port}`;
+    await waitFor(`${baseUrl}/healthz`);
+    const health = await (await fetch(`${baseUrl}/healthz`)).json();
+    assert.equal(health.runtime.upstreamConfigured, false, "legacy_opl_web_upstream_url_must_not_configure_gateway");
+    assert.equal(health.runtime.upstreamUrl, null, "legacy_opl_web_upstream_url_must_not_be_reported");
+
+    const response = await fetch(`${baseUrl}/`, { redirect: "manual" });
+    const payload = await response.json();
+    assert.equal(response.status, 503, "legacy_env_unconfigured_status_mismatch");
+    assert.equal(payload.error, "opl_upstream_url_required", "legacy_env_unconfigured_error_mismatch");
   } finally {
     await stopChild(child);
   }
@@ -249,6 +274,16 @@ async function assertConfiguredGatewayProxiesCleanUpstream() {
     assert.equal(upstreamHealth.status, 200, "gateway_healthz_must_remain_gateway_status");
     assert(calls.some((call) => call.path === "/"), "upstream_html_must_receive_gateway_proxy_call");
     assert.equal(calls.some((call) => /launchToken|runtimeToken|apiKey|launch_token|runtime_token|api_key/i.test(call.search)), false, "upstream_must_not_receive_secret_query");
+
+    calls.length = 0;
+    const authorizedResponse = await fetch(`${baseUrl}/`, {
+      headers: {
+        authorization: "Bearer client-token-must-not-reach-upstream",
+      },
+    });
+    assert.equal(authorizedResponse.status, 200, "authorized_client_request_must_still_proxy_html");
+    assert.equal(calls.length > 0, true, "authorized_client_request_must_reach_upstream_without_auth");
+    assert.equal(calls.some((call) => String(call.authorization || "").trim()), false, "ordinary_upstream_proxy_must_not_forward_authorization");
   } finally {
     await stopChild(gateway);
     await close(upstream);
@@ -293,6 +328,7 @@ async function assertForbiddenQuerySecretsAreRejected() {
 const corpus = await readGatewaySourceCorpus();
 assertGatewayStaticBoundaries(corpus);
 await assertUnconfiguredGatewayFailsWithStableError();
+await assertLegacyUpstreamEnvDoesNotConfigureGateway();
 await assertConfiguredGatewayProxiesCleanUpstream();
 await assertForbiddenQuerySecretsAreRejected();
 
@@ -301,8 +337,10 @@ console.log(JSON.stringify({
   contract: "v22_opl_gateway_upstream_proxy_local",
   verified: [
     "OPL_UPSTREAM_URL_config",
+    "legacy_OPL_WEB_UPSTREAM_URL_ignored",
     "upstream_required_without_fallback",
     "local_html_proxy",
+    "ordinary_authorization_not_forwarded_to_upstream",
     "safe_public_launch_context",
     "forbidden_query_secret_rejection",
     "no_one_person_lab_internal_import",

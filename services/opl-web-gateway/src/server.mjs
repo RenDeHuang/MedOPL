@@ -6,7 +6,6 @@ import {
   LAUNCH_SCRIPT_PATH,
   NATIVE_AUTH_USER_PATHS,
   OPL_UPSTREAM_URL,
-  OPL_WEB_UPSTREAM_URL,
   PORT,
   PORTAL_OPL_ADAPTER_URL,
   buildStatusPayload,
@@ -53,7 +52,7 @@ export function createOplWebGatewayServer() {
         sendUpstreamRequired(res);
         return;
       }
-      await proxy(req, res, OPL_WEB_UPSTREAM_URL);
+      await proxy(req, res, OPL_UPSTREAM_URL);
     } catch (error) {
       sendJson(res, 502, {
         ok: false,
@@ -74,7 +73,7 @@ export function createOplWebGatewayServer() {
         writeUpgradeFailure(socket, 503, "opl_upstream_url_required");
         return;
       }
-      proxyUpgrade(req, socket, head, OPL_WEB_UPSTREAM_URL);
+      proxyUpgrade(req, socket, head, OPL_UPSTREAM_URL);
     } catch (error) {
       writeUpgradeFailure(socket, 502, String(error.message || error));
     }
