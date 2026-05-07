@@ -97,7 +97,7 @@ assert.equal(registryImages.items.length, 1, "registry_images_must_exclude_empty
 assert.equal(registryImages.items[0].imageTag, "portal/test:1", "registry_images_must_preserve_image_tag");
 
 const traceSummary = await payloads.buildTraceSummaryApiPayload();
-assert.equal(traceSummary.dataSource, "Langfuse ClickHouse", "trace_summary_must_mark_live_langfuse_source");
+assert.equal(traceSummary.dataSource, "Portal 会话轨迹 sanitized projection", "trace_summary_must_mark_sanitized_projection_source");
 
 const traces = await payloads.buildTracesApiPayload({ userId: "user-1", workspaceId: "analysis", runId: "run-1" });
 assert.equal(traces.filters.runId, "run-1", "traces_payload_must_echo_filters");

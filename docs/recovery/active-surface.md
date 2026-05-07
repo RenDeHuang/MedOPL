@@ -28,7 +28,7 @@ Active surface 的产品叙事必须保持 `platform-provisioned / customer-dedi
 `migrate` 表示资产仍有可复用价值，但它不能以旧路径、旧命名或旧叙事直接进入 v22 active surface。迁移必须满足：
 
 - 重新落到 active surface 中的 v22 文件或 v22 contract。
-- 去掉 `user_owned` primary path、`resource-order` primary path、旧 runner/provisioner、OpenCost 和 Langfuse 主产品叙事。
+- 去掉 `user_owned` primary path、`resource-order` primary path、旧 runner/provisioner、OpenCost 主叙事和 Langfuse 旧默认叙事。
 - 不把 v19/v20/v21 的 smoke、live-test、部署脚本或报告当成 v22 默认验证入口。
 - 不移动目录，不删除文件；清理动作另走 `cleanup/*`。
 
@@ -54,7 +54,7 @@ Active surface 的产品叙事必须保持 `platform-provisioned / customer-dedi
 - `med-autoscience-runner`
 - `resource-provisioner`
 - OpenCost 主叙事
-- Langfuse 主产品叙事
+- Langfuse 旧默认叙事
 
 ## Forbidden Without Explicit Authorization
 

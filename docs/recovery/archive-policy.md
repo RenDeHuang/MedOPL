@@ -47,7 +47,7 @@ Archive/reference 资产可以被阅读、摘取事实或转写为新的 v22 con
 - `med-autoscience-runner`
 - `resource-provisioner`
 - OpenCost 主叙事
-- Langfuse 主产品叙事
+- Langfuse 旧默认叙事
 
 Cleanup target 的处理规则：
 

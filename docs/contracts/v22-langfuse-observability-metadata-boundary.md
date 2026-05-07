@@ -1,20 +1,20 @@
 # v22 Langfuse Observability Metadata Boundary Contract
 
-本合同定义 MedOPL v22 中 Langfuse 作为可选观测层时的 metadata 边界，只约束合同和静态 smoke，不接真实 Langfuse，不改 runtime 实现。
+本合同定义 MedOPL v22 中 Langfuse 作为 optional observability attachment（可选观测附件）时的 metadata 边界，只约束合同和静态 smoke，不接真实 Langfuse，不改 runtime 实现。
 
 ## Product Boundary
 
-Runtime Bridge session/run metadata 是 MedOPL 业务事实，负责 `workspace`、`run`、`artifact`、`resourceBinding`、`providerKeyRef`、`billing/cost summary`、`release/audit` 关联，是 Portal / Billing / Audit 的 canonical source。
+Runtime Bridge session/run metadata 是 MedOPL 业务事实，负责 `workspace`、`run`、`artifact`、`resourceBinding`、`providerKeyRef`、`billing/cost summary`、`release/audit` 关联，是 Portal / Billing / Audit 的业务事实源。
 
 Runtime Bridge metadata 责任字段按合同表达为：workspace、run、artifact、resourceBinding、providerKeyRef、billing/cost summary、release/audit。
 
-Langfuse session/trace 是观测附件，负责 trace/session 可视化、模型调用耗时、usage、debug、错误链路，不是 Portal canonical source，不是 billing truth，不决定余额、扣费、资源状态、文件归属、释放状态。
+Langfuse session/trace 是 optional observability attachment，负责 trace/session 可视化、模型调用耗时、usage、debug、错误链路，不承担 Portal 事实源角色，不是结算真相源，不决定余额、扣费、资源状态、文件归属、释放状态。
 
-trace.medopl.cn 是 Langfuse 管理员/运维原生观测台入口。
+trace.medopl.cn 是 Langfuse admin/ops console（管理员/运维原生观测台）入口。
 
 客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面。
 
-trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是客户默认 trace 页面。
+trace.medopl.cn 是管理员/运维原生观测台，不承担 Portal/结算事实源角色，也不是客户默认 trace 页面。
 
 Runtime Bridge 先清洗，再投递 Langfuse。Langfuse 只接收 sanitized trace/session metadata。Portal 只读取 sanitized projection。
 
@@ -117,6 +117,7 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
     ]
   },
   "langfuseObservabilityAttachment": {
+    "attachmentKind": "optional observability attachment",
     "sourceOfTruth": false,
     "adminConsoleUrl": "https://trace.medopl.cn",
     "customerTraceSurface": "Portal 会话轨迹",
@@ -144,6 +145,7 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
     ]
   },
   "langfuseConsole": {
+    "consoleRole": "admin/ops console",
     "adminConsoleUrl": "https://trace.medopl.cn",
     "customerTraceSurface": "Portal 会话轨迹",
     "customerDefaultLangfuseUi": false,

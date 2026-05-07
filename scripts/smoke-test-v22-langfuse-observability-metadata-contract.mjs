@@ -8,6 +8,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const contractPath = "docs/contracts/v22-langfuse-observability-metadata-boundary.md";
 const readmePath = "docs/contracts/README.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
+const portalPayloadPath = "services/portal/src/domain/portal-api-payloads.mjs";
 
 const CONTRACT_START = "<!-- v22-langfuse-observability-metadata-contract:start -->";
 const CONTRACT_END = "<!-- v22-langfuse-observability-metadata-contract:end -->";
@@ -53,6 +54,18 @@ const portalProjectionAllowedFields = [
   "traceId",
   "traceUrl",
   "usageSummary",
+];
+
+const oldRuntimeTraceSource = "Langfuse";
+const oldStorageEngineName = "Click" + "House";
+const portalName = "Portal";
+const oldNarrativePatterns = [
+  ["langfuse_storage_engine", new RegExp(`${oldRuntimeTraceSource} ${oldStorageEngineName}`)],
+  ["live_langfuse_source", new RegExp(`live ${oldRuntimeTraceSource}`)],
+  ["customer_default_langfuse", new RegExp(`客户默认.*${oldRuntimeTraceSource}`)],
+  ["portal_storage_engine", new RegExp(`${portalName}.*${oldStorageEngineName}`)],
+  ["billing_truth_phrase", new RegExp(["billing", "truth"].join(" "))],
+  ["canonical_source_phrase", new RegExp(["canonical", "source"].join(" "))],
 ];
 
 function extractContractJson(markdown) {
@@ -131,20 +144,30 @@ function assertNoForbiddenValue(value, label) {
   }
 }
 
+function assertNoOldNarrative(text, label) {
+  for (const [patternLabel, pattern] of oldNarrativePatterns) {
+    assert.equal(pattern.test(text), false, `${label}_must_not_include_old_narrative:${patternLabel}`);
+  }
+}
+
 const markdown = await readFile(path.join(repoRoot, contractPath), "utf8");
 const readme = await readFile(path.join(repoRoot, readmePath), "utf8");
 const suite = await readFile(path.join(repoRoot, suitePath), "utf8");
 const { createLangfuseSanitizedProjectionAdapter } = await import("../services/portal/src/integrations/langfuse-trace-client.mjs");
 const { createPortalApiPayloads } = await import("../services/portal/src/domain/portal-api-payloads.mjs");
+const portalPayloadSource = await readFile(path.join(repoRoot, portalPayloadPath), "utf8");
+
+assertNoOldNarrative(markdown, "langfuse_contract");
+assertNoOldNarrative(portalPayloadSource, "portal_api_payloads");
 
 for (const required of [
   "Runtime Bridge session/run metadata 是 MedOPL 业务事实",
-  "Portal / Billing / Audit 的 canonical source",
+  "Portal / Billing / Audit 的业务事实源",
   "workspace、run、artifact、resourceBinding、providerKeyRef、billing/cost summary、release/audit",
-  "Langfuse session/trace 是观测附件",
+  "Langfuse session/trace 是 optional observability attachment",
   "trace/session 可视化、模型调用耗时、usage、debug、错误链路",
-  "不是 Portal canonical source",
-  "不是 billing truth",
+  "不承担 Portal 事实源角色",
+  "不是结算真相源",
   "不决定余额、扣费、资源状态、文件归属、释放状态",
   "Runtime Bridge 先清洗，再投递 Langfuse",
   "Langfuse 只接收 sanitized trace/session metadata",
@@ -153,9 +176,9 @@ for (const required of [
   "sanitized projection adapter",
   "输入为 Runtime Bridge 已清洗 metadata + Langfuse trace/session 摘要",
   "Portal “会话轨迹”展示合并后的业务化摘要",
-  "trace.medopl.cn 是 Langfuse 管理员/运维原生观测台入口",
+  "trace.medopl.cn 是 Langfuse admin/ops console",
   "客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面",
-  "trace.medopl.cn 不是 Portal canonical source，不是 billing truth，不是客户默认 trace 页面",
+  "trace.medopl.cn 是管理员/运维原生观测台，不承担 Portal/结算事实源角色，也不是客户默认 trace 页面",
   "trace.medopl.cn 的真实部署、Ingress/TLS、LB、DNS、Langfuse secret、ClickHouse 等仍需后续单独授权",
   "projection 中的 traceUrl 必须静态严格校验 URL origin，不能用字符串前缀匹配",
   "Langfuse 不能成为用户、账单、文件、资源、审计的真相源",
@@ -174,6 +197,8 @@ const contract = extractContractJson(markdown);
 
 assert.equal(contract.contract, "v22_langfuse_observability_metadata_boundary", "contract_name_mismatch");
 assert.equal(contract.version, 1, "contract_version_mismatch");
+assert.equal(contract.langfuseObservabilityAttachment.attachmentKind, "optional observability attachment", "langfuse_attachment_kind_mismatch");
+assert.equal(contract.langfuseConsole.consoleRole, "admin/ops console", "langfuse_console_role_mismatch");
 assert.deepEqual(contract.runtimeBridgeCanonicalSource.canonicalFor, [
   "Portal",
   "Billing",
@@ -427,6 +452,8 @@ assertNoForbiddenValue(portalTracePayload, "portal_trace_payload");
 assert(readme.includes("v22-langfuse-observability-metadata-boundary.md"), "contracts_readme_missing_langfuse_contract");
 assert(readme.includes("观测附件"), "contracts_readme_must_describe_langfuse_as_observability_attachment");
 assert(suite.includes("smoke-test-v22-langfuse-observability-metadata-contract"), "mvp_suite_missing_langfuse_smoke");
+assert(portalPayloadSource.includes("Portal 会话轨迹 sanitized projection"), "portal_payload_trace_summary_datasource_mismatch");
+assert(portalPayloadSource.includes('source: traceRows.source || "langfuse_sanitized_projection"'), "portal_payload_must_preserve_sanitized_projection_source");
 
 console.log(JSON.stringify({
   ok: true,

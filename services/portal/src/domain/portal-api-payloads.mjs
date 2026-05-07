@@ -693,7 +693,7 @@ export function createPortalApiPayloads(deps) {
     const summary = await fetchLangfuseSummary();
     return {
       ...summary,
-      dataSource: summary.available ? "Langfuse ClickHouse" : "trace summary unavailable",
+      dataSource: summary.available ? "Portal 会话轨迹 sanitized projection" : "trace summary unavailable",
     };
   }
 

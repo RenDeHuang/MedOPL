@@ -12,7 +12,7 @@
 | active | `services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge`、`docs/product.md`、`docs/architecture.md`、`docs/contracts/v22-*`、`docs/recovery/*`、`scripts/smoke-test-v22-*` | 可以承载 v22 新产品语义、契约、文档收敛和本地 smoke |
 | migrate | 有复用价值但仍带 v19/v20/v21 旧命名、旧路径或旧主叙事的资产 | 必须重落到 active surface，改成 v22 `platform-provisioned / customer-dedicated` 语义后才能进入主线 |
 | archive/reference | `docs/plan/*`、`docs/reports/*`、`docs/releases/*`、`docs/logs/*`、`scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/live-test-*`、`OPL-v20-商业化产品套餐开发方案.md` | 只读历史证据和迁移参考，不作为新实现入口或默认验证入口 |
-| delete/cleanup target | `user_owned` primary path、`resource-order` primary path、`med-autoscience-runner`、`resource-provisioner`、OpenCost 主叙事、Langfuse 主产品叙事 | 不在普通 `feat/*` 继续扩写；删除、拆除或退场走专门 `cleanup/*` |
+| delete/cleanup target | `user_owned` primary path、`resource-order` primary path、`med-autoscience-runner`、`resource-provisioner`、OpenCost 主叙事、Langfuse 旧默认叙事 | 不在普通 `feat/*` 继续扩写；删除、拆除或退场走专门 `cleanup/*` |
 | forbidden without explicit authorization | `deploy/*`、`.sentrux/*`、`adapters/*`、one-person-lab upstream、build/push/kubectl/live-test/真实云资源操作 | 没有单独授权时禁止修改或运行 |
 
 ## Trunk 状态
