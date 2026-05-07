@@ -6,6 +6,13 @@ const { emptyState } = await import("../services/opl-runtime-bridge/src/state-st
 
 const RAW_PROVIDER_KEY = "gflabtoken_raw_key_runtime_bridge_must_not_cross_boundary";
 const RAW_PROMPT = "raw OPL workbench prompt must stay outside runtime bridge contract metadata";
+const RAW_LAUNCH_TOKEN = "launch-token-runtime-bridge-ledger-must-not-persist";
+const RAW_RUNTIME_TOKEN = "runtime-token-runtime-bridge-ledger-must-not-persist";
+const RAW_BEARER_TOKEN = "bearer-token-runtime-bridge-ledger-must-not-persist";
+const RAW_OBJECT_KEY = "internal/object/key/must/not/be-public-or-ledger";
+const RAW_STORAGE_KEY = "internal/storage/key/must/not-be-ledger";
+const RAW_LOCAL_PATH = "/runtime/private/output/result.csv";
+const RAW_SIGNED_URL = "https://storage.example.test/private/result.csv?signature=must-not-persist";
 
 function cloneState() {
   return JSON.parse(JSON.stringify(emptyState));
@@ -15,6 +22,9 @@ function assertNoSecretLeak(value, label) {
   const serialized = JSON.stringify(value);
   assert.equal(serialized.includes(RAW_PROVIDER_KEY), false, `${label}_must_not_leak_raw_provider_key`);
   assert.equal(serialized.includes(RAW_PROMPT), false, `${label}_must_not_leak_raw_prompt`);
+  assert.equal(serialized.includes(RAW_LAUNCH_TOKEN), false, `${label}_must_not_leak_launch_token_value`);
+  assert.equal(serialized.includes(RAW_RUNTIME_TOKEN), false, `${label}_must_not_leak_runtime_token_value`);
+  assert.equal(serialized.includes(RAW_BEARER_TOKEN), false, `${label}_must_not_leak_bearer_token_value`);
   assert.equal(/rawApiKey|providerSecret|apiKey|launchToken|runtimeToken|bearerToken/i.test(serialized), false, `${label}_must_not_expose_secret_fields`);
 }
 
@@ -26,6 +36,10 @@ function assertNoCredentialLeak(value, label) {
 
 function assertNoInternalFileLeak(value, label) {
   const serialized = JSON.stringify(value);
+  assert.equal(serialized.includes(RAW_OBJECT_KEY), false, `${label}_must_not_persist_raw_object_key`);
+  assert.equal(serialized.includes(RAW_STORAGE_KEY), false, `${label}_must_not_persist_raw_storage_key`);
+  assert.equal(serialized.includes(RAW_LOCAL_PATH), false, `${label}_must_not_persist_raw_local_path`);
+  assert.equal(serialized.includes(RAW_SIGNED_URL), false, `${label}_must_not_persist_signed_url`);
   assert.equal(/storageKey|objectKey|signedUrl|presignedUrl|localPath|pathOnRuntime/i.test(serialized), false, `${label}_must_not_expose_internal_file_fields`);
 }
 
@@ -73,17 +87,47 @@ const runtimeAgentRelay = {
         kind: "outputs",
         name: "result.csv",
         relativePath: "outputs/result.csv",
-        objectKey: "internal/object/key/must/not/be/public",
-        localPath: "/runtime/private/output/result.csv",
+        objectKey: RAW_OBJECT_KEY,
+        localPath: RAW_LOCAL_PATH,
         sizeBytes: 128,
         contentType: "text/csv",
       }],
       ledgerEntries: [{
+        ledgerEntryId: RAW_PROVIDER_KEY,
+        sessionId: RAW_LAUNCH_TOKEN,
         eventType: "runtime_run_succeeded",
+        status: "succeeded",
+        usage: {
+          inputTokens: 12,
+          outputTokens: 8,
+          totalTokens: 20,
+        },
+        costSummary: {
+          currency: "USD",
+          estimatedCost: 0.01,
+        },
+        metadata: {
+          publicStatus: "succeeded",
+          rawPrompt: RAW_PROMPT,
+          apiKey: RAW_PROVIDER_KEY,
+          objectKey: RAW_OBJECT_KEY,
+          localPath: RAW_LOCAL_PATH,
+        },
         rawPayload: {
           runId: input.runId,
           fileRefs: input.fileRefs,
           status: "succeeded",
+          prompt: RAW_PROMPT,
+          rawPrompt: RAW_PROMPT,
+          apiKey: RAW_PROVIDER_KEY,
+          providerApiKey: RAW_PROVIDER_KEY,
+          launchToken: RAW_LAUNCH_TOKEN,
+          runtimeToken: RAW_RUNTIME_TOKEN,
+          bearerToken: RAW_BEARER_TOKEN,
+          objectKey: RAW_OBJECT_KEY,
+          storageKey: RAW_STORAGE_KEY,
+          localPath: RAW_LOCAL_PATH,
+          signedUrl: RAW_SIGNED_URL,
         },
         artifactRefs: ["outputs/result.csv"],
       }],
@@ -163,14 +207,24 @@ assertNoInternalFileLeak(run, "run_response");
 assert.equal(state.runs.length, 1, "state_run_must_be_persisted");
 assert.equal(state.runs[0].providerKeyRef, "provider-key-ref-runtime-bridge-v22", "state_run_provider_key_ref_mismatch");
 assert.equal(state.artifacts.length, 1, "state_artifact_must_be_persisted");
-assert.equal(state.artifacts[0].objectKey, "internal/object/key/must/not/be/public", "state_artifact_must_keep_internal_object_key_backend_only");
+assert.equal(state.artifacts[0].objectKey, RAW_OBJECT_KEY, "state_artifact_must_keep_internal_object_key_backend_only");
 assert.equal(state.artifacts[0].providerKeyRef, "provider-key-ref-runtime-bridge-v22", "state_artifact_provider_key_ref_mismatch");
 assert.equal(state.sessionLedgerEntries.length, 1, "state_session_ledger_must_be_persisted");
 assert.equal(state.sessionLedgerEntries[0].runtimeSessionId, "runtime-session-runtime-bridge-v22", "ledger_runtime_session_mismatch");
 assert.equal(state.sessionLedgerEntries[0].runId, "run-runtime-bridge-v22", "ledger_run_mismatch");
+assert.ok(state.sessionLedgerEntries[0].ledgerEntryId, "ledger_entry_id_required");
+assert.notEqual(state.sessionLedgerEntries[0].ledgerEntryId, RAW_PROVIDER_KEY, "ledger_entry_id_must_not_trust_agent_secret_value");
+assert.equal(state.sessionLedgerEntries[0].sessionId, "runtime-session-runtime-bridge-v22", "ledger_session_id_must_come_from_runtime_context");
+assert.equal(state.sessionLedgerEntries[0].status, "succeeded", "ledger_status_mismatch");
+assert.equal(state.sessionLedgerEntries[0].usage.totalTokens, 20, "ledger_usage_total_tokens_mismatch");
+assert.equal(state.sessionLedgerEntries[0].costSummary.estimatedCost, 0.01, "ledger_cost_summary_mismatch");
 assert.equal(state.sessionLedgerEntries[0].artifactRefs[0], run.artifacts[0].artifactRef, "ledger_artifact_ref_mismatch");
+assert.deepEqual(state.sessionLedgerEntries[0].metadata, { publicStatus: "succeeded" }, "ledger_metadata_must_be_sanitized");
+assert.equal("rawPayload" in state.sessionLedgerEntries[0], false, "ledger_must_not_persist_raw_payload");
+assert.equal("payloadHash" in state.sessionLedgerEntries[0], false, "ledger_must_not_persist_raw_payload_hash");
 assertNoSecretLeak(state.runs, "state_runs");
 assertNoSecretLeak(state.sessionLedgerEntries, "state_session_ledger");
+assertNoInternalFileLeak(state.sessionLedgerEntries, "state_session_ledger");
 
 const contract = await readFile("docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md", "utf8");
 for (const required of [
@@ -178,8 +232,10 @@ for (const required of [
   "POST /api/opl-launch/sessions/bind",
   "providerKeyRef",
   "resourceBindingId",
+  "ledgerEntries[].rawPayload",
   "workspace file reference",
   "artifact reference",
+  "payloadHash",
   "storageKey",
   "objectKey",
   "localPath",

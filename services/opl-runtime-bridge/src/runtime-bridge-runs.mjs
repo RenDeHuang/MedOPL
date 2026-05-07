@@ -121,6 +121,33 @@ function publicRuntimeClaims(claims = {}, run = {}, runtimeSession = {}) {
   };
 }
 
+function runtimeLedgerEntryInput(ledgerEntry = {}, { runtimeSession = {}, run = {}, scope = {}, providerKeyRef = "", artifactRefs = [] } = {}) {
+  const metadata = ledgerEntry.metadata && typeof ledgerEntry.metadata === "object" ? ledgerEntry.metadata : {};
+  return {
+    tenantId: runtimeSession.tenantId || "",
+    portalUserId: runtimeSession.portalUserId || "",
+    workspaceId: run.workspaceId || runtimeSession.workspaceId || "",
+    workspaceSessionId: run.workspaceSessionId || runtimeSession.workspaceSessionId || "",
+    runtimeSessionId: run.runtimeSessionId || runtimeSession.runtimeSessionId || "",
+    sessionId: runtimeSession.oplSessionId || runtimeSession.runtimeSessionId || "",
+    oplSessionId: runtimeSession.oplSessionId || "",
+    resourceBindingId: scope.resourceBindingId,
+    providerKeyRef,
+    runId: run.runId,
+    traceId: run.traceId,
+    eventType: ledgerEntry.eventType || ledgerEntry.event_type || "runtime_event",
+    status: ledgerEntry.status || run.status || "recorded",
+    usage: ledgerEntry.usage && typeof ledgerEntry.usage === "object" ? ledgerEntry.usage : {},
+    costSummary: ledgerEntry.costSummary && typeof ledgerEntry.costSummary === "object" ? ledgerEntry.costSummary : {},
+    metadata: {
+      publicStatus: metadata.publicStatus || metadata.public_status || metadata.status || ledgerEntry.status || run.status || "recorded",
+    },
+    artifactRefs,
+    createdAt: ledgerEntry.createdAt || ledgerEntry.created_at || "",
+    updatedAt: ledgerEntry.updatedAt || ledgerEntry.updated_at || "",
+  };
+}
+
 function retiredManagedRuntimeError(runtimeMode) {
   return runDispatchError({
     message: "managed_runtime_retired",
@@ -195,19 +222,13 @@ export function createRunApi({
       return publicRunArtifact(persistedArtifact, run, runtimeSession);
     });
     for (const ledgerEntry of Array.isArray(response.ledgerEntries) ? response.ledgerEntries : []) {
-      addSessionLedgerEntry(state, {
-        ...ledgerEntry,
-        tenantId: runtimeSession.tenantId || "",
-        portalUserId: runtimeSession.portalUserId || "",
-        workspaceId: run.workspaceId || runtimeSession.workspaceId || "",
-        workspaceSessionId: run.workspaceSessionId || runtimeSession.workspaceSessionId || "",
-        runtimeSessionId: run.runtimeSessionId || runtimeSession.runtimeSessionId || "",
-        resourceBindingId: scope.resourceBindingId,
+      addSessionLedgerEntry(state, runtimeLedgerEntryInput(ledgerEntry, {
+        runtimeSession,
+        run,
+        scope,
         providerKeyRef: providerKeyRefFrom(input) || providerKeyRefFrom(runtimeSession),
-        runId: run.runId,
-        traceId: run.traceId,
         artifactRefs: publicArtifacts.map((artifact) => artifact.artifactRef),
-      });
+      }));
     }
     return {
       ...run,

@@ -51,6 +51,7 @@ OPL session 绑定必须满足：
 - 缺少 Runtime Agent identity/endpoint 时返回 `PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED`。
 - Runtime Bridge 传给 Runtime Agent 的 provider 信息只能是 `providerKeyRef`，不得传 raw API key。
 - Runtime Bridge 持久化 run 时必须保留 `traceId`、`workspaceId`、`runtimeSessionId`、`resourceBindingId` 和 `providerKeyRef`。
+- Runtime Agent 返回的 ledger entry 必须经过 Runtime Bridge 白名单净化，不得把 `ledgerEntries[].rawPayload` 原样保存。
 
 当前分支只定义本地合同和 mock Runtime Agent relay 小闭包；不接真实云、不创建真实运行节点、不调用真实 Runtime Agent。
 
@@ -63,24 +64,39 @@ OPL session 绑定必须满足：
 - 公开 artifact shape 只允许包含 `artifactId`、`artifactRef`、`runId`、`workspaceId`、`resourceBindingId`、`providerKeyRef`、`kind`、`name`、`relativePath`、`sizeBytes` 和 `contentType`。
 - `storageKey`、`objectKey`、`localPath`、`signedUrl`、`presignedUrl` 和 runtime 私有路径只能留在后端状态边界，不得进入公开 response。
 - session ledger 可以记录公开 `artifactRef`，不得记录 raw key 或 token。
+- session ledger 不得保存 Runtime Agent 的 `rawPayload` 原文或基于原文的 `payloadHash`；只能保存白名单后的安全 ledger metadata。
 
 ## Trace And Ledger Boundary
 
 trace / ledger metadata 允许包含：
 
+- `ledgerEntryId`
 - `tenantId`
 - `portalUserId`
 - `workspaceId`
 - `workspaceSessionId`
 - `runtimeSessionId`
+- `sessionId`
 - `resourceBindingId`
 - `runId`
 - `traceId`
 - `providerKeyRef`
 - artifact reference list
+- usage / cost summary
 - status / event type / timestamps
+- sanitized metadata
 
 trace / ledger metadata 不得包含 raw prompt、raw API key、`launchToken`、`runtimeToken`、bearer token、internal storage key、local path 或 signed URL。
+
+Runtime Bridge ledger 净化规则是白名单规则：
+
+- `ledgerEntryId` 由 Runtime Bridge 本地生成；`sessionId`、`runId`、`traceId`、`workspaceId`、`resourceBindingId`、`providerKeyRef` 来自已验证的 runtime/session/run context 或公开 id。
+- `artifactRefs` 只能来自 Runtime Bridge 生成的公开 artifact reference。
+- `usage` 只保留非负数值摘要，例如 input/output/total token count。
+- `costSummary` 只保留三位货币代码和非负数值摘要。
+- `status` 和 `eventType` 只保留 Runtime Bridge 允许集合中的枚举值。
+- `metadata` 只保留 Runtime Bridge 明确允许的安全字段，例如 `publicStatus`。
+- `rawPayload`、raw prompt、raw API key、`providerApiKey`、`apiKey`、`launchToken`、`runtimeToken`、bearer token、`objectKey`、`storageKey`、`localPath`、`signedUrl`、`presignedUrl` 和 internal storage key 必须被丢弃。
 
 ## Upstream Boundary
 
