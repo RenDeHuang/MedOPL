@@ -151,26 +151,26 @@ const userStatusLabel = computed(() => {
 const helpPages = [
   {
     title: "开始使用",
-    summary: "进入工作台，选择任务空间，开始一次运行。",
+    summary: "进入 OPL 科研工作台，选择工作空间，开始一次 task。",
     sections: [
-      { title: "工作台", items: ["从总览或任务空间进入实验室。", "输出结果会回到当前任务空间。"] },
-      { title: "任务空间", items: ["保存输入、输出、trace 和运行记录。", "不同任务空间可以选择不同服务器规格。"] },
+      { title: "科研工作台", items: ["从总览或工作空间进入 OPL。", "output 文件会回到当前工作空间。"] },
+      { title: "工作空间", items: ["保存 input、output、运行轨迹和 task 记录。", "不同工作空间可以选择不同套餐和文件空间。"] },
     ],
   },
   {
     title: "费用",
-    summary: "价格透明，最终以腾讯云账单回补为准。",
+    summary: "余额、消费、预扣费和账单核对集中展示。",
     sections: [
-      { title: "服务器", items: ["在服务器与费用页选择 CPU、GPU、地域和价格。", "运行前按报价和最小计费单元计算冻结金额。"] },
-      { title: "账单", items: ["运行中显示 pending cost。", "最终扣费来自腾讯云账单明细。"] },
+      { title: "托管运行环境", items: ["在套餐和文件空间中选择需要的运行能力。", "运行前显示 freeze / preauth。"] },
+      { title: "账单", items: ["运行中显示预扣费。", "账单日内核对后展示最终消费。"] },
     ],
   },
   {
     title: "账户",
     summary: "账号、余额和权限分开管理。",
     sections: [
-      { title: "登录", items: ["Portal 账号可进入实验室。", "OPL 原生登录由 Gateway 接入 Portal 校验。"] },
-      { title: "余额", items: ["余额不足不影响进入工作台。", "收费运行会检查余额或试用额度。"] },
+      { title: "登录", items: ["MedOPL 账号可进入 Portal 和 OPL Web。", "gflabtoken API key 在 OPL entry/preflight 绑定。"] },
+      { title: "余额", items: ["余额不足不影响查看工作台。", "收费 task 会检查余额或试用额度。"] },
     ],
   },
 ];

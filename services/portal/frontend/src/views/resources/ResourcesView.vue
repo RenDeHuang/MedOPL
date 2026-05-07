@@ -1,22 +1,22 @@
 <template>
-  <AppLayout title="我的资源" subtitle="管理平台代开的运行套餐、文件空间与隔离运行环境">
+  <AppLayout title="托管运行环境" subtitle="管理套餐、文件空间、预扣费与停止计费状态">
     <div class="space-y-4">
       <section class="card p-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2 class="text-lg font-semibold text-gray-950 dark:text-white">资源总览</h2>
             <p class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-slate-300">
-              OPL Lite 可直接通过 API 或工作台使用；OPL Full Runtime 会由平台代开隔离运行环境、文件空间和后台服务，并按一周保护金管理计费。
+              OPL Lite 可直接通过工作台使用；托管运行环境会由平台代开运行能力、文件空间和后台服务，并按 freeze / preauth 管理计费。
             </p>
           </div>
           <button class="btn btn-secondary" :disabled="resourcesLoading || busy" @click="reload">刷新</button>
         </div>
         <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <MetricCard label="运行套餐" :value="resourceSummary.bindingCount" hint="已开通的隔离运行环境" />
-          <MetricCard label="计算能力" :value="resourceSummary.computeInstanceCount" hint="平台代开的运行环境" />
+          <MetricCard label="当前套餐" :value="resourceSummary.bindingCount" hint="已开通的托管运行环境" />
+          <MetricCard label="托管运行环境" :value="resourceSummary.computeInstanceCount" hint="平台代开的运行能力" />
           <MetricCard label="文件空间" :value="resourceSummary.storageBucketCount" hint="平台代开的结果与数据空间" />
-          <MetricCard label="本周保护金" :value="money(resourceSummary.frozenAmount)" hint="已冻结" />
-          <MetricCard label="已消耗" :value="money(resourceSummary.consumedAmount)" hint="已核算" />
+          <MetricCard label="预扣费 / freeze / preauth" :value="money(resourceSummary.frozenAmount)" hint="已冻结" />
+          <MetricCard label="消费" :value="money(resourceSummary.consumedAmount)" hint="已核算" />
           <MetricCard label="剩余可释放" :value="money(resourceSummary.remainingAmount)" hint="待释放" />
         </div>
       </section>
@@ -38,7 +38,7 @@
           <div>
             <h2 class="text-base font-semibold text-gray-950 dark:text-white">开通运行环境</h2>
             <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              面向 AI/科研小白，只需选择运行套餐和计算能力。平台会代开隔离运行环境并接入后台服务。
+              面向 AI 小白科研用户，只需选择套餐和运行能力。平台会代开托管运行环境并接入后台服务。
             </p>
           </div>
           <form class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" @submit.prevent="submitCreateCompute">
@@ -47,7 +47,7 @@
               <input v-model.trim="computeForm.serverPlanId" class="input" placeholder="例如 opl-full-standard" />
             </label>
             <label class="space-y-2">
-              <span class="text-sm text-gray-700 dark:text-slate-200">计算能力</span>
+              <span class="text-sm text-gray-700 dark:text-slate-200">运行能力</span>
               <input v-model.trim="computeForm.instanceType" class="input" placeholder="例如 8 核 / 32 GB / GPU 1 卡" />
             </label>
             <div class="md:col-span-2 flex justify-end">
@@ -83,7 +83,7 @@
         <div>
           <h2 class="text-base font-semibold text-gray-950 dark:text-white">开通运行环境</h2>
           <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
-            选择工作空间、运行套餐与文件空间后，平台会代开 OPL Full Runtime。OPL Lite 仍可单独使用，不依赖运行环境。
+            选择工作空间、套餐与文件空间后，平台会开通托管运行环境。OPL Lite 仍可单独使用，不依赖托管运行环境。
           </p>
         </div>
         <form class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-4" @submit.prevent="submitBindWorkspace">
@@ -110,7 +110,7 @@
             </select>
           </label>
           <label class="space-y-2">
-            <span class="text-sm text-gray-700 dark:text-slate-200">工作目录</span>
+            <span class="text-sm text-gray-700 dark:text-slate-200">workspace 文件夹</span>
             <input v-model.trim="bindForm.rootPrefix" class="input" placeholder="可选，默认按工作空间自动生成" />
           </label>
           <div class="xl:col-span-4 flex justify-end">
@@ -124,7 +124,7 @@
       <section class="card p-5">
         <div class="flex items-center justify-between gap-3">
           <div class="text-base font-semibold text-gray-950 dark:text-white">我的运行环境</div>
-          <div class="text-sm text-gray-500 dark:text-slate-400">平台代开的隔离计算资源，仅在诊断信息中显示底层标识</div>
+          <div class="text-sm text-gray-500 dark:text-slate-400">平台代开的托管运行环境，仅在运维面查看后台标识</div>
         </div>
         <div v-if="computeRows.length === 0" class="mt-3 text-sm text-gray-600 dark:text-slate-300">还没有开通运行环境。</div>
         <div v-else class="mt-3 space-y-3">
@@ -209,11 +209,11 @@
                 <div class="mt-2 grid grid-cols-1 gap-2 text-sm text-gray-600 dark:text-slate-300 md:grid-cols-2">
                   <div>运行环境：{{ displayComputeLabel(item.computeInstance || item.computeInstances[0]) || shortId(item.computeInstanceId) }}</div>
                   <div>文件空间：{{ displayStorageLabel(item.storageBucket || item.storageBuckets[0]) || shortId(item.storageBucketId) }}</div>
-                  <div class="md:col-span-2">工作目录：{{ item.rootPrefix || "-" }}</div>
+                  <div class="md:col-span-2">workspace 文件夹：{{ item.rootPrefix || "-" }}</div>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-slate-300 lg:grid-cols-5">
                   <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">OPL Lite：{{ allowText(item.bindingAccess.oplLite.allowed) }}</div>
-                  <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">OPL Full Runtime：{{ allowText(item.bindingAccess.fullRuntime.allowed) }}</div>
+                  <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">托管运行环境：{{ allowText(item.bindingAccess.fullRuntime.allowed) }}</div>
                   <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">上传文件：{{ allowText(item.bindingAccess.workspaceFiles.allowed) }}</div>
                   <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">运行任务：{{ allowText(item.bindingAccess.workspaceTasks.allowed) }}</div>
                   <div class="rounded-md bg-gray-50 px-3 py-2 dark:bg-slate-800">下载结果：{{ allowText(item.bindingAccess.workspaceOutputs.allowed) }}</div>
@@ -250,10 +250,10 @@
           <div>
             <div class="text-base font-semibold text-gray-950 dark:text-white">设置本周保护金</div>
             <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
-              OPL Full Runtime 启动前，需要先冻结一周保护金。系统会在两小时核对和次日审计后按实际用量结算。
+              托管运行环境启动前，需要先设置 freeze / preauth。系统会在两小时核对和次日审计后按实际用量结算。
             </p>
           </div>
-          <div class="text-sm text-gray-500 dark:text-slate-400">已释放 {{ money(resourceSummary.releasedProtectionAmount) }}</div>
+          <div class="text-sm text-gray-500 dark:text-slate-400">停止计费已确认 {{ money(resourceSummary.releasedProtectionAmount) }}</div>
         </div>
         <form class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-5" @submit.prevent="submitEnsureProtectionFreeze">
           <label class="space-y-2">

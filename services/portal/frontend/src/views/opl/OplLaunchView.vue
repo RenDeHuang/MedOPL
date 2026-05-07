@@ -1,14 +1,28 @@
 <template>
-  <AppLayout title="OPL 准备中" subtitle="正在准备实验空间和 OPL 会话">
+  <AppLayout title="OPL 科研工作台" subtitle="正在准备工作空间和 OPL session">
     <div class="space-y-4">
       <section class="card p-5">
         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <span class="badge" :class="statusBadge">{{ statusLabel }}</span>
-            <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">{{ status?.userVisibleState || "正在准备实验空间" }}</h2>
-            <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">保持此页面打开，准备完成后会自动进入 OPL。</p>
+            <h2 class="mt-3 text-xl font-semibold text-gray-950 dark:text-white">{{ status?.userVisibleState || "正在准备工作空间" }}</h2>
+            <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">
+              保持此页面打开，准备完成后会自动进入 opl.medopl.cn 的 OPL 科研工作台。
+            </p>
           </div>
           <RouterLink class="btn btn-secondary" to="/workspace">返回工作空间</RouterLink>
+        </div>
+      </section>
+
+      <section class="card p-5">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 class="panel-title">统一账号与 gflabtoken 绑定</h2>
+            <p class="panel-subtitle">
+              MedOPL 账号密码与 OPL Web 账号密码统一。gflabtoken API key 在 opl.medopl.cn entry/preflight 绑定，位置在账号密码输入区下面，不放在 Portal 普通登录表单里。
+            </p>
+          </div>
+          <span class="badge badge-primary">Gateway / SSO / Auth Bridge</span>
         </div>
       </section>
 
@@ -75,8 +89,8 @@ const statusBadge = computed(() => {
 
 function stageLabel(stage: string) {
   const labels: Record<string, string> = {
-    workspace_ready: "准备实验空间",
-    provider_key_bound: "绑定访问凭证",
+    workspace_ready: "准备工作空间",
+    provider_key_bound: "确认 gflabtoken API key",
     session_created: "创建 OPL 会话",
     gateway_ready: "确认 OPL 网关",
     opl_opening: "打开 OPL",

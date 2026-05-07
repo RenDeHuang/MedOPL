@@ -24,6 +24,22 @@ export interface StorageEntitlementPayload {
   message: string;
 }
 
+export function disabledStorageEntitlement(): StorageEntitlementPayload {
+  return {
+    enabled: false,
+    status: "disabled",
+    freeQuotaGb: 0,
+    minimumPurchaseGb: 10,
+    storageBackend: "portal_storage",
+    retentionPolicy: "order_lifecycle",
+    cosPrefix: "",
+    resourceOrderId: "",
+    storagePlanId: "",
+    storageSizeGb: 0,
+    message: "storage_required",
+  };
+}
+
 export interface WorkspacePayload {
   workspace: {
     slug: string;

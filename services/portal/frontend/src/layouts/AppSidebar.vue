@@ -12,7 +12,7 @@
 
     <nav class="flex-1 overflow-y-auto px-3 py-3">
       <div class="mb-5">
-        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">实验室</div>
+        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">科研工作台</div>
         <RouterLink
           v-for="item in userItems"
           :key="item.to"
@@ -49,12 +49,12 @@ const isAdmin = computed(() => currentUser.value?.role === "admin");
 const opsSurfaceEnabled = computed(() => Boolean(currentUser.value?.productProfile?.opsSurfaceEnabled));
 
 const userItems = [
-  { to: "/overview", label: "总览" },
+  { to: "/overview", label: "SaaS 总览" },
   { to: "/packages", label: "套餐" },
-  { to: "/resources", label: "我的资源" },
+  { to: "/resources", label: "托管运行环境" },
   { to: "/workspace", label: "工作空间" },
   { to: "/billing", label: "账单" },
-  { to: "/trace", label: "轨迹" },
+  { to: "/trace", label: "运行轨迹" },
 ];
 
 const adminItemsBase = [
@@ -65,7 +65,7 @@ const adminItemsBase = [
   { to: "/admin/system", label: "系统状态" },
 ];
 const adminItems = computed(() => (opsSurfaceEnabled.value
-  ? [...adminItemsBase, { to: "/admin/ops", label: "云资源状态" }]
+  ? [...adminItemsBase, { to: "/admin/ops", label: "Ops Surface" }]
   : adminItemsBase));
 
 onMounted(async () => {

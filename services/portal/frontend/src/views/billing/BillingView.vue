@@ -8,14 +8,14 @@
           <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div class="max-w-2xl">
               <div class="flex items-center gap-2">
-                <span class="badge badge-primary">真实账单</span>
+                <span class="badge badge-primary">账单摘要</span>
                 <span class="badge" :class="payload.breakdown.cloudSource === 'tencent_cloud' ? 'badge-success' : 'badge-warning'">
-                  {{ payload.breakdown.cloudSource === "tencent_cloud" ? "腾讯云账单已接入" : "等待腾讯云账单" }}
+                  {{ payload.breakdown.cloudSource === "tencent_cloud" ? "账单核对已接入" : "等待账单核对" }}
                 </span>
               </div>
-              <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">当前账户的资源成本与流水</h2>
+              <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">余额、消费和账单核对</h2>
               <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                当前优先展示套餐、计算和存储成本。运行中预扣金额会在实际结算后更新为最终金额。
+                当前优先展示钱花在哪里、运行中预扣费、文件空间消费和账单摘要。释放托管运行环境后会显示停止计费与审计状态。
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -25,11 +25,11 @@
           </div>
 
           <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="钱包余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
-            <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除冻结金额后的可用余额" />
-            <MetricCard label="已冻结" :value="money(payload.wallet.activeFreeze)" hint="已承诺服务占用的金额" />
-            <MetricCard label="今日实际结算" :value="microMoney(payload.todayCost)" hint="今日已核算资源消费" />
-            <MetricCard label="窗口总计" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口总成本" />
+            <MetricCard label="余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
+            <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除 freeze 后的可用余额" />
+            <MetricCard label="freeze / preauth" :value="money(payload.wallet.activeFreeze)" hint="托管运行环境预扣费" />
+            <MetricCard label="今日消费" :value="microMoney(payload.todayCost)" hint="今日已核算消费" />
+            <MetricCard label="钱花在哪里" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口消费" />
             <MetricCard label="账户流水" :value="payload.ledgerPagination.total" hint="当前窗口内流水数" />
           </div>
         </section>
@@ -53,12 +53,12 @@
         </section>
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <MetricCard label="CPU 成本" :value="microMoney(payload.breakdown.cpuCost)" :hint="componentCostHint" />
-          <MetricCard label="GPU 成本" :value="microMoney(payload.breakdown.gpuCost)" :hint="componentCostHint" />
-          <MetricCard label="存储成本" :value="microMoney(payload.breakdown.storageCost)" :hint="componentCostHint" />
-          <MetricCard label="VPN 成本" :value="cloudValue(payload.breakdown.vpnCost)" :hint="cloudHint" />
-          <MetricCard label="流量成本" :value="cloudValue(payload.breakdown.trafficCost)" :hint="cloudHint" />
-          <MetricCard label="其他云成本" :value="cloudValue(payload.breakdown.otherCloudCost)" :hint="cloudHint" />
+          <MetricCard label="计算消费" :value="microMoney(payload.breakdown.cpuCost)" :hint="componentCostHint" />
+          <MetricCard label="加速消费" :value="microMoney(payload.breakdown.gpuCost)" :hint="componentCostHint" />
+          <MetricCard label="文件空间消费" :value="microMoney(payload.breakdown.storageCost)" :hint="componentCostHint" />
+          <MetricCard label="网络服务消费" :value="sourceBackfilledValue(payload.breakdown.vpnCost)" :hint="sourceBackfillHint" />
+          <MetricCard label="流量消费" :value="sourceBackfilledValue(payload.breakdown.trafficCost)" :hint="sourceBackfillHint" />
+          <MetricCard label="其他服务消费" :value="sourceBackfilledValue(payload.breakdown.otherCloudCost)" :hint="sourceBackfillHint" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
@@ -105,10 +105,10 @@
         </section>
 
         <section class="card p-5">
-          <div class="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 class="panel-title">工作空间成本明细</h2>
-              <p class="panel-subtitle">按工作空间查看 CPU、GPU、存储和总成本。</p>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 class="panel-title">工作空间成本明细</h2>
+                <p class="panel-subtitle">按工作空间查看计算、加速、文件空间和总消费。</p>
             </div>
             <span class="badge badge-warning">{{ payload.taskPagination.total }} 项</span>
           </div>
@@ -119,11 +119,11 @@
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">工作空间</th>
-                  <th class="px-4 py-3">任务编号数</th>
-                  <th class="px-4 py-3">CPU</th>
-                  <th class="px-4 py-3">GPU</th>
-                  <th class="px-4 py-3">存储</th>
-                  <th class="px-4 py-3">总成本</th>
+                  <th class="px-4 py-3">task 数</th>
+                  <th class="px-4 py-3">计算</th>
+                  <th class="px-4 py-3">加速</th>
+                  <th class="px-4 py-3">文件空间</th>
+                  <th class="px-4 py-3">总消费</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,8 +158,8 @@
           <div class="card p-5">
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">运行明细</h2>
-                <p class="panel-subtitle">单次任务的状态、计价来源与总成本。</p>
+                <h2 class="panel-title">task 明细</h2>
+                <p class="panel-subtitle">单次 task 的状态、账单来源与总消费。</p>
               </div>
               <span class="badge badge-primary">{{ payload.runPagination.total }} 条</span>
             </div>
@@ -169,11 +169,11 @@
               <table class="text-sm">
                 <thead>
                   <tr class="table-head">
-                    <th class="px-4 py-3">任务编号</th>
+                    <th class="px-4 py-3">task</th>
                     <th class="px-4 py-3">工作空间</th>
                     <th class="px-4 py-3">状态</th>
-                    <th class="px-4 py-3">计价来源</th>
-                    <th class="px-4 py-3">总成本</th>
+                    <th class="px-4 py-3">账单来源</th>
+                    <th class="px-4 py-3">总消费</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -285,11 +285,11 @@ const payload = computed<BillingPayload | null>(() => {
 
 const componentCostHint = computed(() => {
   if (payload.value?.breakdown.cloudSource === "tencent_cloud") {
-    return "总额来自腾讯云，分项按账单组件回补";
+    return "总额来自账单核对，分项按消费组件回补";
   }
-  return "运行中估算，等待真实账单回补";
+  return "运行中估算，等待账单核对回补";
 });
-const cloudHint = computed(() => payload.value?.breakdown.cloudSource === "tencent_cloud" ? "腾讯云总账单已接入，专项分项待回补" : "等待腾讯云账单回补");
+const sourceBackfillHint = computed(() => payload.value?.breakdown.cloudSource === "tencent_cloud" ? "账单核对已接入，专项分项待回补" : "等待账单核对回补");
 const trendChartData = computed(() => {
   const trend = payload.value?.trend;
   if (!trend?.labels?.length) return null;
@@ -327,7 +327,7 @@ function microMoney(value: number | undefined) {
   return `¥${Number(value || 0).toFixed(5)}`;
 }
 
-function cloudValue(value: number | undefined) {
+function sourceBackfilledValue(value: number | undefined) {
   return payload.value?.breakdown.cloudSource === "tencent_cloud" ? microMoney(value) : "待回补";
 }
 
@@ -350,7 +350,7 @@ function statusBadge(status?: string) {
 
 function humanizeLedgerType(type = "") {
   if (type === "topup") return "充值";
-  if (type === "resource_charge") return "资源扣费";
+  if (type === "resource_charge") return "托管运行环境消费";
   if (type === "refund") return "退款";
   if (type === "makeup_charge") return "补扣";
   return type || "-";
