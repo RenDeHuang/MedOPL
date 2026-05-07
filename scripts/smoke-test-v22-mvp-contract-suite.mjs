@@ -39,6 +39,7 @@ const smokeScripts = [
   ["smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow", "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs"],
   ["smoke-test-v22-portal-files-billing-trace-flow", "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"],
   ["smoke-test-v22-release-stop-billing-audit-flow", "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"],
+  ["smoke-test-v22-langfuse-observability-metadata-contract", "scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs"],
 ];
 
 async function assertReportAcceptanceBoundary() {
