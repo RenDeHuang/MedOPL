@@ -46,6 +46,7 @@ function fileSummary(workspaceId, storage) {
   return {
     inputsCount: storage?.inputsCount || 0,
     outputsCount: storage?.outputsCount || 0,
+    linkedOutputCount: Array.isArray(storage?.linkedOutputFiles) ? storage.linkedOutputFiles.length : 0,
     latestOutputs: (storage?.outputs || []).slice(0, 5).map((item) => ({
       name: item.name,
       size: item.size || item.sizeBytes || 0,
@@ -190,6 +191,51 @@ function matchingObservability(row = {}, projectionMap = new Map()) {
   return null;
 }
 
+function publicOutputFileView(file = {}) {
+  const fileRef = text(file.artifactRef || file.fileRef || file.id);
+  return {
+    artifactRef: fileRef,
+    fileRef,
+    name: text(file.name),
+    workspaceId: text(file.workspaceId || file.workspace_id),
+    runId: text(file.runId || file.run_id),
+    sessionId: text(file.sessionId || file.session_id || file.oplSessionId || file.opl_session_id),
+    kind: text(file.kind || "outputs"),
+    sizeBytes: numberValue(file.sizeBytes || file.size_bytes || file.size),
+    contentType: text(file.contentType || file.content_type),
+    status: text(file.status || "active"),
+    source: text(file.source || "runtime_bridge_artifact_reference"),
+  };
+}
+
+function outputFilesFromStorage(storage = {}) {
+  const candidates = [
+    ...(Array.isArray(storage?.outputFiles) ? storage.outputFiles : []),
+    ...(Array.isArray(storage?.outputs) ? storage.outputs : []),
+    ...(Array.isArray(storage?.artifacts) ? storage.artifacts : []),
+  ];
+  return candidates.map(publicOutputFileView).filter((item) => item.fileRef || item.name);
+}
+
+function outputFileMatchesTrace(file = {}, row = {}) {
+  const artifactRefs = new Set((Array.isArray(row.artifactRefs) ? row.artifactRefs : []).map(text).filter(Boolean));
+  return (artifactRefs.size > 0 && artifactRefs.has(text(file.artifactRef || file.fileRef)))
+    || (text(row.runId) && text(file.runId) === text(row.runId))
+    || (text(row.sessionId) && text(file.sessionId) === text(row.sessionId))
+    || (text(row.runtimeSessionId) && text(file.sessionId) === text(row.runtimeSessionId));
+}
+
+function linkedOutputFilesForTrace(row = {}, storage = {}) {
+  const linked = outputFilesFromStorage(storage).filter((file) => outputFileMatchesTrace(file, row));
+  const seen = new Set();
+  return linked.filter((file) => {
+    const key = file.artifactRef || file.fileRef || `${file.runId}:${file.name}`;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {
   const observability = matchingObservability(row, projectionMap);
   return {
@@ -254,6 +300,7 @@ async function enrichSessionTraceRow(deps, db, user, row = {}) {
   const runId = String(row.runId || "").trim();
   const taskSpace = workspaceId ? deps.findTaskSpace(db, row.userId || user.id, workspaceId) : null;
   const storage = taskSpace ? await deps.fetchWorkspaceStorageSnapshot(taskSpace) : null;
+  const linkedOutputFiles = linkedOutputFilesForTrace(row, storage);
   const billing = runId
     ? await deps.fetchBillingSummary(row.userId || user.id, workspaceId, "168h").catch(() => null)
     : null;
@@ -262,7 +309,12 @@ async function enrichSessionTraceRow(deps, db, user, row = {}) {
     ...row,
     title: traceTitle(row),
     businessStatus: row.status || "recorded",
-    files: fileSummary(workspaceId, storage),
+    files: {
+      ...fileSummary(workspaceId, { ...(storage || {}), linkedOutputFiles }),
+      linkedOutputFiles,
+    },
+    outputFiles: linkedOutputFiles,
+    linkedOutputFiles,
     billing: billingSummary(billing, relatedCosts),
   };
 }

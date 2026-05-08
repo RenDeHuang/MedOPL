@@ -48,7 +48,6 @@ export interface TracesPayload {
     businessStatus?: string;
     url: string;
     source?: string;
-    title?: string;
     customerDefaultTraceSurface?: string;
     customerDefaultLangfuseUi?: boolean;
     observability?: {
@@ -71,9 +70,49 @@ export interface TracesPayload {
       traceUrl: string;
       tags: string[];
     };
+    linkedOutputFiles?: Array<{
+      artifactRef: string;
+      fileRef: string;
+      name: string;
+      workspaceId: string;
+      runId: string;
+      sessionId: string;
+      kind: string;
+      sizeBytes: number;
+      contentType: string;
+      status: string;
+      source: string;
+    }>;
+    outputFiles?: Array<{
+      artifactRef: string;
+      fileRef: string;
+      name: string;
+      workspaceId: string;
+      runId: string;
+      sessionId: string;
+      kind: string;
+      sizeBytes: number;
+      contentType: string;
+      status: string;
+      source: string;
+    }>;
     files?: {
       inputsCount: number;
       outputsCount: number;
+      linkedOutputCount?: number;
+      linkedOutputFiles?: Array<{
+        artifactRef: string;
+        fileRef: string;
+        name: string;
+        workspaceId: string;
+        runId: string;
+        sessionId: string;
+        kind: string;
+        sizeBytes: number;
+        contentType: string;
+        status: string;
+        source: string;
+      }>;
       latestOutputs?: Array<{ name: string; size: number; downloadUrl: string }>;
     };
     billing?: {

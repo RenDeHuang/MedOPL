@@ -175,6 +175,12 @@
             <div class="space-y-2.5">
               <div v-for="item in payload.outputs" :key="item.name" class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
                 <div class="font-medium text-gray-950 dark:text-white">{{ item.name }}</div>
+                <div v-if="item.artifactRef || hasLinkedTask(item)" class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                  输出文件来自运行轨迹；关联任务 {{ linkedTaskText(item) }}
+                </div>
+                <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                  用量和费用估算可在运行轨迹查看。
+                </div>
                 <div class="mt-2">
                   <a class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400" :href="downloadFileHref('outputs', item.name)">下载</a>
                 </div>
@@ -261,6 +267,18 @@ function humanizeStatus(status?: string) {
   if (normalized === "deleting") return "删除中";
   if (["completed", "success", "finished"].includes(normalized)) return "已完成";
   return status || "未知";
+}
+
+function taskDisplayName(value?: string) {
+  return value ? "已关联" : "已记录";
+}
+
+function hasLinkedTask(item: { runId?: string }) {
+  return Boolean(item.runId);
+}
+
+function linkedTaskText(item: { runId?: string }) {
+  return taskDisplayName(item.runId);
 }
 
 function workspaceMasHref(task?: string) {

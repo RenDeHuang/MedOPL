@@ -8,6 +8,62 @@ import {
   summarizeRunStatus,
 } from "./portal-page-payload-helpers.mjs";
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function userTenantId(user = {}) {
+  return text(user.tenantId || user.tenant_id || user.id);
+}
+
+function isVisibleWorkspaceFile(file = {}) {
+  return text(file.status || "active").toLowerCase() !== "deleted";
+}
+
+function runtimeBridgeOutputFilesForWorkspace(db = {}, user = {}, workspaceId = "") {
+  const tenantId = userTenantId(user);
+  return (Array.isArray(db.workspaceFiles) ? db.workspaceFiles : [])
+    .filter((item) => text(item.userId || item.user_id) === text(user.id))
+    .filter((item) => !tenantId || text(item.tenantId || item.tenant_id) === tenantId)
+    .filter((item) => text(item.workspaceId || item.workspace_id) === text(workspaceId))
+    .filter((item) => text(item.kind) === "outputs")
+    .filter(isVisibleWorkspaceFile)
+    .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")))
+    .map((item) => {
+      const fileRef = text(item.id || item.fileRef || item.file_ref);
+      return {
+        name: text(item.name || item.fileName || item.file_name),
+        fullPath: text(item.relativePath || item.relative_path || item.name),
+        artifactRef: fileRef,
+        fileRef,
+        runId: text(item.runId || item.run_id),
+        sessionId: text(item.sessionId || item.session_id || item.oplSessionId || item.opl_session_id || item.runId || item.run_id),
+        workspaceId: text(item.workspaceId || item.workspace_id),
+        kind: "outputs",
+        sizeBytes: Number(item.sizeBytes || item.size_bytes || 0),
+        contentType: text(item.contentType || item.content_type),
+        status: text(item.status || "active"),
+        source: text(item.source || "runtime_bridge_artifact_reference").startsWith("runtime_bridge_artifact_reference")
+          ? "runtime_bridge_artifact_reference"
+          : text(item.source || "runtime_bridge_artifact_reference"),
+        createdAt: text(item.createdAt || item.created_at),
+        updatedAt: text(item.updatedAt || item.updated_at),
+      };
+    });
+}
+
+function mergeOutputRows(filesystemOutputs = [], artifactOutputs = []) {
+  const rows = [...artifactOutputs];
+  const seen = new Set(rows.map((item) => item.artifactRef || `${item.name}:${item.fullPath}`).filter(Boolean));
+  for (const item of filesystemOutputs) {
+    const key = item.artifactRef || `${item.name}:${item.fullPath}`;
+    if (key && seen.has(key)) continue;
+    rows.push(item);
+    if (key) seen.add(key);
+  }
+  return rows;
+}
+
 export function createWorkspacePayloadBuilder({
   collectRunsForUser,
   currentServerPlanSelection,
@@ -40,7 +96,9 @@ export function createWorkspacePayloadBuilder({
     await mkdir(inputDir, { recursive: true });
     await mkdir(outputDir, { recursive: true });
     const files = await listFilesRecursive(inputDir);
-    const outputs = await listFilesRecursive(outputDir);
+    const filesystemOutputs = await listFilesRecursive(outputDir);
+    const artifactOutputs = runtimeBridgeOutputFilesForWorkspace(db, user, current.slug);
+    const outputs = mergeOutputRows(filesystemOutputs, artifactOutputs);
     const userRuns = await collectRunsForUser(user.id, { workspaceId: current.slug, limit: 50 });
     const runs = userRuns;
     timing.mark("runs");
@@ -102,7 +160,7 @@ export function createWorkspacePayloadBuilder({
       })),
       distribution: {
         inputBytes: await sumFileSizes(files, stat),
-        outputBytes: await sumFileSizes(outputs, stat),
+        outputBytes: (await sumFileSizes(filesystemOutputs, stat)) + artifactOutputs.reduce((sum, item) => sum + Number(item.sizeBytes || 0), 0),
       },
       tasks: taskCards,
       tasksPageRows: taskCards,

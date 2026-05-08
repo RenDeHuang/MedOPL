@@ -33,7 +33,7 @@
                 运行轨迹只展示会话、工作空间、任务、输出文件引用、状态、观测摘要和时间；原始输入和密钥字段不会出现在普通用户界面。
               </p>
             </div>
-            <RouterLink class="btn btn-secondary" to="/workspace">查看输出文件</RouterLink>
+            <RouterLink class="btn btn-secondary" to="/workspace">查看文件空间</RouterLink>
           </div>
         </section>
 
@@ -94,7 +94,12 @@
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">工作空间 {{ displayIndex(index) }}</td>
                   <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">任务 {{ displayIndex(index) }}</td>
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
-                    {{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出
+                    <div>{{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出</div>
+                    <div class="mt-2 space-y-1">
+                      <div v-for="file in linkedOutputFiles(item)" :key="file.artifactRef || file.fileRef || file.name" class="text-xs text-gray-500 dark:text-slate-400">
+                        输出文件 {{ file.name || "结果文件" }}
+                      </div>
+                    </div>
                   </td>
                   <td class="px-4 py-3">
                     <span class="badge" :class="statusBadge(item.businessStatus || item.status)">{{ humanizeStatus(item.businessStatus || item.status) }}</span>
@@ -148,8 +153,12 @@ const filters = reactive({ workspaceId: "", sessionId: "", status: "" });
 
 const traceItems = computed<SessionTraceItem[]>(() => payload.value?.items || []);
 const runCount = computed(() => new Set(traceItems.value.map((item) => item.runId).filter(Boolean)).size);
-const outputCount = computed(() => traceItems.value.reduce((sum, item) => sum + Number(item.files?.outputsCount || 0), 0));
+const outputCount = computed(() => traceItems.value.reduce((sum, item) => sum + Number(item.files?.linkedOutputCount || item.files?.outputsCount || 0), 0));
 const failedCount = computed(() => traceItems.value.filter((item) => ["failed", "error"].includes(String(item.businessStatus || item.status || "").toLowerCase())).length);
+
+function linkedOutputFiles(item: SessionTraceItem) {
+  return item.linkedOutputFiles || item.files?.linkedOutputFiles || [];
+}
 
 function routeQueryObject() {
   const query: Record<string, string> = {};

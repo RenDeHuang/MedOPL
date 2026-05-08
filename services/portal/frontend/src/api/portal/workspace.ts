@@ -131,6 +131,18 @@ export interface WorkspacePayload {
   outputs: Array<{
     name: string;
     fullPath: string;
+    artifactRef?: string;
+    fileRef?: string;
+    runId?: string;
+    sessionId?: string;
+    workspaceId?: string;
+    kind?: string;
+    sizeBytes?: number;
+    contentType?: string;
+    status?: string;
+    source?: string;
+    createdAt?: string;
+    updatedAt?: string;
   }>;
   outputsPagination: PortalPagination;
   runsPagination: PortalPagination;

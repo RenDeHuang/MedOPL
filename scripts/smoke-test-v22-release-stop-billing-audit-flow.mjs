@@ -8,6 +8,7 @@ const RAW_PROMPT = "raw release flow prompt must not appear in release or audit 
 const RELEASED_AT = "2026-05-07T02:00:00.000Z";
 const BILLING_STOP_CONFIRM_BY = "2026-05-07T04:00:00.000Z";
 const AUDIT_READY_AT = "2026-05-08T02:00:00.000Z";
+const AUDIT_PENDING_QUERY_AT = "2026-05-07T05:00:00.000Z";
 const AUDIT_QUERY_AT = "2026-05-08T02:01:00.000Z";
 
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
@@ -299,7 +300,7 @@ try {
   assertNoSecretLeak(blockedRunAfterRelease.res.payload, "run_after_release");
 
   const releasedState = await request(route, db, {
-    urlPath: "/portal/api/canonical-state?workspaceId=workspace-v22-release",
+    urlPath: `/portal/api/canonical-state?workspaceId=workspace-v22-release&now=${encodeURIComponent(AUDIT_PENDING_QUERY_AT)}`,
     user,
   });
   assert.equal(releasedState.res.statusCode, 200, "released_state_must_return_200");
