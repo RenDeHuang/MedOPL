@@ -16,7 +16,6 @@ export interface WorkspaceResourceUsagePayload {
   sessionId: string;
   workspaceId: string;
   status: string;
-  tokenCount: number;
   latencyMs: number;
   inputFileCount: number;
   outputFileCount: number;
@@ -98,6 +97,61 @@ export interface StorageEntitlementPayload {
   message: string;
 }
 
+export interface FileSpaceFolderPayload {
+  folderRef: string;
+  name: string;
+  parentFolderRef: string;
+  path: string;
+  status: string;
+}
+
+export interface FileSpaceFilePayload {
+  fileRef: string;
+  name: string;
+  folderRef: string;
+  kind: "input" | "output" | string;
+  source: "upload" | "runtime_output" | string;
+  runId: string;
+  sessionId: string;
+  artifactRef: string;
+  sizeBytes: number;
+  status: string;
+  deletedAt: string;
+  retentionUntil: string;
+}
+
+export interface FileSpaceActionsPayload {
+  createFolder: boolean;
+  renameFolder: boolean;
+  deleteFileOrFolder: boolean;
+  uploadToCurrentFolder: boolean;
+  moveFileOrFolder: boolean;
+  selectFiles: boolean;
+  batchDownload: boolean;
+  batchDelete: boolean;
+  permanentDeleteRequiresConfirmation: boolean;
+  clearFileSpaceRequiresConfirmation: boolean;
+}
+
+export interface FileSpaceDeletePolicyPayload {
+  ordinaryDeleteRequiresConfirmation: boolean;
+  retentionDays: number;
+  permanentDeleteRequiresConfirmation: boolean;
+  clearFileSpaceRequiresConfirmation: boolean;
+}
+
+export interface FileSpacePayload {
+  capacityGb: number;
+  usedGb: number;
+  retentionDays: number;
+  currentFolderRef: string;
+  folders: FileSpaceFolderPayload[];
+  files: FileSpaceFilePayload[];
+  selectedFileRefs: string[];
+  actions: FileSpaceActionsPayload;
+  deletePolicy: FileSpaceDeletePolicyPayload;
+}
+
 export function disabledStorageEntitlement(): StorageEntitlementPayload {
   return {
     enabled: false,
@@ -139,6 +193,7 @@ export interface WorkspacePayload {
   };
   storageEntitlement?: StorageEntitlementPayload;
   managedResourceBindingPlan?: ManagedResourceBindingPlanPayload | null;
+  fileSpace?: FileSpacePayload | null;
   runStatus: {
     running: number;
     completed: number;

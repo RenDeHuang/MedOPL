@@ -68,19 +68,72 @@
                 <span class="badge" :class="storageEntitlement.enabled ? 'badge-success' : 'badge-warning'">
                   {{ storageEntitlement.enabled ? "文件写入已开启" : "文件写入未开启" }}
                 </span>
-                <span class="badge badge-primary">套餐控制</span>
+                <span class="badge badge-primary">文件空间</span>
               </div>
-              <h2 class="mt-3 panel-title">文件空间状态</h2>
+              <h2 class="mt-3 panel-title">文件空间管理</h2>
               <p class="mt-2 panel-subtitle">
-                工作空间只管理输入文件、输出文件和输出结果。需要购买、升级或扩容时，请到套餐页处理。
+                工作空间只管理文件空间、文件夹、输入文件、输出文件和运行轨迹关联。需要购买、升级或扩容时，请到套餐页处理。
               </p>
               <p class="panel-subtitle">
-                任务的资源用量和费用估算来自运行轨迹与合同快照，不在这里执行真实扣费。
+                普通删除后进入 {{ ordinaryDeleteRequiresConfirmation ? 0 : (payload.fileSpace?.deletePolicy.retentionDays || 7) }} 天保护期；永久删除或清空文件空间需要二次确认。
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
-              <span class="text-sm text-gray-600 dark:text-slate-300">当前：{{ storageEntitlement.enabled ? `${storageEntitlement.storageSizeGb}GB` : "未开通" }}</span>
+              <span class="text-sm text-gray-600 dark:text-slate-300">{{ fileSpaceUsageText }}</span>
               <RouterLink class="btn btn-secondary" to="/packages">去套餐页</RouterLink>
+            </div>
+          </div>
+
+          <div v-if="payload.fileSpace" class="mt-5 grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+            <div class="rounded-2xl border border-gray-100 p-4 dark:border-slate-700">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold text-gray-950 dark:text-white">文件夹</h3>
+                <span class="badge badge-primary">当前文件夹：{{ currentFolderName }}</span>
+              </div>
+              <div class="mt-3 grid gap-2">
+                <div v-for="folder in payload.fileSpace.folders" :key="folder.folderRef" class="rounded-xl bg-gray-50 px-3 py-2 dark:bg-slate-800">
+                  <div class="text-sm font-medium text-gray-950 dark:text-white">{{ folder.name }}</div>
+                  <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ folder.path || "/" }} · {{ humanizeStatus(folder.status) }}</div>
+                </div>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.createFolder">创建文件夹</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.renameFolder">重命名文件夹</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.moveFileOrFolder">移动文件/文件夹</button>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-gray-100 p-4 dark:border-slate-700">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold text-gray-950 dark:text-white">文件选择</h3>
+                <span class="badge badge-success">已选择 {{ selectedFileCount }} 个</span>
+              </div>
+              <div class="mt-3 space-y-2">
+                <label v-for="file in payload.fileSpace.files" :key="file.fileRef" class="flex gap-3 rounded-xl bg-gray-50 px-3 py-2 text-sm dark:bg-slate-800">
+                  <input class="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600" type="checkbox" :checked="payload.fileSpace.selectedFileRefs.includes(file.fileRef)" :disabled="!payload.fileSpace.actions.selectFiles" />
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-medium text-gray-950 dark:text-white">{{ file.name }}</span>
+                    <span class="mt-1 block text-xs text-gray-500 dark:text-slate-400">
+                      {{ fileKindText(file.kind) }} · 来源：{{ fileSourceText(file) }} · 状态：{{ fileProtectionText(file) }}
+                    </span>
+                    <span v-if="file.kind === 'output' && file.artifactRef" class="mt-1 block text-xs text-gray-500 dark:text-slate-400">
+                      输出文件已关联运行轨迹。
+                    </span>
+                  </span>
+                </label>
+                <div v-if="!payload.fileSpace.files.length" class="empty-state">当前文件夹没有文件。</div>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.uploadToCurrentFolder">上传文件到当前文件夹</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.batchDownload">批量下载</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.batchDelete">批量删除</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.deleteFileOrFolder">删除文件/文件夹</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.permanentDeleteRequiresConfirmation">永久删除</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.clearFileSpaceRequiresConfirmation">清空文件空间</button>
+              </div>
+              <p class="mt-3 text-xs text-gray-500 dark:text-slate-400">
+                普通删除不需要二次确认；保护期为 {{ payload.fileSpace.deletePolicy.retentionDays }} 天。
+              </p>
             </div>
           </div>
         </section>
@@ -192,7 +245,7 @@
                 <h2 class="panel-title">输入文件</h2>
                 <p class="panel-subtitle">当前工作空间文件夹中的输入文件。</p>
               </div>
-              <button v-if="payload.storageEntitlement?.enabled" class="btn btn-secondary" type="button" @click="triggerUpload">上传文件</button>
+              <button v-if="payload.storageEntitlement?.enabled" class="btn btn-secondary" type="button" @click="triggerUpload">上传文件到当前文件夹</button>
               <RouterLink v-else class="btn btn-secondary" to="/packages">去套餐页</RouterLink>
               <form class="hidden" method="post" :action="uploadAction" enctype="multipart/form-data">
                 <input ref="uploadInput" class="hidden" name="file" type="file" @change="submitUpload" />
@@ -269,6 +322,17 @@ const emptyStorageEntitlement = computed(() => disabledStorageEntitlement());
 const storageEntitlement = computed(() => payload.value?.storageEntitlement || payload.value?.workspace.storageEntitlement || emptyStorageEntitlement.value);
 const totalEstimatedCost = computed(() => (payload.value?.outputs || []).reduce((sum, item) => sum + Number(item.costEstimate?.amount || 0), 0));
 const managedPlan = computed(() => payload.value?.managedResourceBindingPlan || null);
+const fileSpace = computed(() => payload.value?.fileSpace || null);
+const selectedFileCount = computed(() => fileSpace.value?.selectedFileRefs.length || 0);
+const currentFolderName = computed(() => {
+  const current = fileSpace.value?.folders.find((folder) => folder.folderRef === fileSpace.value?.currentFolderRef);
+  return current?.name || "全部文件";
+});
+const fileSpaceUsageText = computed(() => {
+  if (!fileSpace.value) return storageEntitlement.value.enabled ? `${storageEntitlement.value.storageSizeGb}GB 文件空间` : "文件空间未开通";
+  return `${fileSpace.value.usedGb}GB / ${fileSpace.value.capacityGb}GB`;
+});
+const ordinaryDeleteRequiresConfirmation = computed(() => Boolean(fileSpace.value?.deletePolicy.ordinaryDeleteRequiresConfirmation));
 
 function routeQueryObject() {
   const query: Record<string, string> = {};
@@ -342,6 +406,20 @@ function costEstimateText(item: { costEstimate?: { amount?: number; currency?: s
 
 function rechargeStatusText(value?: string) {
   return value === "display_only" ? "仅展示" : "待估算";
+}
+
+function fileKindText(value?: string) {
+  return value === "output" ? "输出文件" : "输入文件";
+}
+
+function fileSourceText(file: { source?: string; artifactRef?: string }) {
+  if (file.source === "runtime_output" || file.artifactRef) return "运行轨迹";
+  return "上传文件";
+}
+
+function fileProtectionText(file: { status?: string; retentionUntil?: string }) {
+  if (String(file.status || "").toLowerCase() === "retention_protected") return file.retentionUntil ? `保护期至 ${file.retentionUntil}` : "保护期";
+  return humanizeStatus(file.status || "active");
 }
 
 function releasePolicyText(value?: string) {

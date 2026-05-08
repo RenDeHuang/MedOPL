@@ -29,6 +29,27 @@ Portal canonical state 必须能输出：
 
 workspace file reference 和 artifact reference 是公开文件引用，不等于内部存储 key、对象 key、本地路径或签名 URL。
 
+## File Space Management Surface
+
+文件空间属于 workspace，和运行环境生命周期分离。托管运行环境释放、停止计费和审计不等于立即清空文件空间。
+
+Portal workspace payload 可以输出 `fileSpace` 业务视图：
+
+- `capacityGb` / `usedGb`
+- `retentionDays: 7`
+- `currentFolderRef`
+- `folders`: `folderRef`、`name`、`parentFolderRef`、`path`、`status`
+- `files`: `fileRef`、`name`、`folderRef`、`kind`、`source`、`runId`、`sessionId`、`artifactRef`、`sizeBytes`、`status`、`deletedAt`、`retentionUntil`
+- `selectedFileRefs`
+- `actions`
+- `deletePolicy`
+
+普通删除不需要二次确认，删除后进入 7 天保护期。永久删除和清空文件空间需要二次确认。输出文件必须继续通过 `runId`、`sessionId` 和 `artifactRef` 关联运行轨迹。
+
+`fileSpace` 只表达 Portal 用户文件空间管理合同，不执行真实 COS 操作，不返回内部存储 key、对象 key、本地路径、签名 URL、云厂商凭据或 raw provider key。
+
+本分支允许最小 Portal frontend 文件空间展示，用于呈现文件空间、文件夹、输入文件、输出文件、运行轨迹、保护期、批量下载和批量删除入口；真实 COS API、signed URL、拖拽、文件预览、协作权限、真实生命周期 worker 和 OPL Web 内部文件选择器深度接入仍需后续单独授权。
+
 ## Billing Summary
 
 `billingSummary` 必须区分：
@@ -68,7 +89,6 @@ Langfuse 只作为后续 trace metadata source，不进入 MVP 主产品叙事�
 
 ## Non-goals
 
-- 不改 frontend。
 - 不改 OPL Gateway。
 - 不改 Runtime Bridge。
 - 不改 deploy、`.sentrux` 或 `adapters`。

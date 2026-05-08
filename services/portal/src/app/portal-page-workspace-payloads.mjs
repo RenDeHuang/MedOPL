@@ -17,6 +17,7 @@ import {
   findManagedResourceBinding,
   managedResourceBindingPlanView,
 } from "../domain/managed-resource-binding-plan-view.mjs";
+import { buildPortalFileSpacePayload } from "../domain/portal-file-space-management.mjs";
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -92,7 +93,7 @@ function outputCostSummary(billing = {}, output = {}, workspaceId = "") {
   const costEstimate = publicCostEstimate(billing || {}, relatedCosts);
   return {
     ...output,
-    resourceUsage: publicResourceUsage({
+    resourceUsage: workspaceResourceUsageView(publicResourceUsage({
       row: {
         runId: output.runId,
         sessionId: output.sessionId,
@@ -101,9 +102,24 @@ function outputCostSummary(billing = {}, output = {}, workspaceId = "") {
       },
       outputFiles: [output],
       relatedCosts,
-    }),
+    })),
     costEstimate,
     balanceLink: publicBalanceLink(costEstimate),
+  };
+}
+
+function workspaceResourceUsageView(resourceUsage = {}) {
+  return {
+    source: text(resourceUsage.source),
+    runId: text(resourceUsage.runId),
+    sessionId: text(resourceUsage.sessionId),
+    workspaceId: text(resourceUsage.workspaceId),
+    status: text(resourceUsage.status),
+    latencyMs: Number(resourceUsage.latencyMs || 0),
+    inputFileCount: Number(resourceUsage.inputFileCount || 0),
+    outputFileCount: Number(resourceUsage.outputFileCount || 0),
+    outputBytes: Number(resourceUsage.outputBytes || 0),
+    costItemCount: Number(resourceUsage.costItemCount || 0),
   };
 }
 
@@ -158,6 +174,12 @@ export function createWorkspacePayloadBuilder({
     timing.mark("events");
     const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
     const storageEntitlement = workspaceStorageEntitlement(db, user, current.slug);
+    const fileSpace = buildPortalFileSpacePayload({
+      db,
+      user,
+      workspaceId: current.slug,
+      storageEntitlement,
+    });
     const runRows = runs.map((run) => ({
       ...run,
       ...runCostSummary(billing, run, current.slug),
@@ -196,6 +218,7 @@ export function createWorkspacePayloadBuilder({
       costs: totals,
       storageEntitlement,
       managedResourceBindingPlan,
+      fileSpace,
       runStatus: summarizeRunStatus(runs, isRunTerminal),
       activeSession: activeSession ? {
         id: activeSession.id,
@@ -207,7 +230,7 @@ export function createWorkspacePayloadBuilder({
         runId: run.runId,
         status: isRunTerminal(run) ? "completed" : (run.status || "running"),
         createdAt: formatDateTime(run.createdAt || ""),
-        resourceUsage: run.resourceUsage,
+        resourceUsage: workspaceResourceUsageView(run.resourceUsage),
         costEstimate: run.costEstimate,
         balanceLink: run.balanceLink,
       })),
