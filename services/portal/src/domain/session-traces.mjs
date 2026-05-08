@@ -16,6 +16,10 @@ function filterMergedTraceRows(rows = [], requestOptions = {}) {
     .sort((a, b) => String(b.startedAt || b.createdAt || "").localeCompare(String(a.startedAt || a.createdAt || "")));
 }
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
 function traceTitle(row = {}) {
   return row.traceName || row.sessionId || row.workspaceSessionId || row.runId || "会话";
 }
@@ -62,11 +66,16 @@ function billingSummary(billing, relatedCosts = []) {
 
 function traceListSummary(merged) {
   return {
-    available: merged.sources.adapter.type === "live" || merged.sources.langfuse.type === "live",
-    mode: merged.sources.adapter.type === "live" ? "live" : merged.sources.langfuse.type,
+    available: merged.sources.adapter.type === "live",
+    mode: merged.sources.adapter.type === "live" ? "live" : "status_only",
     traceCount: merged.rows.length,
     latestTraceAt: merged.rows[0]?.startedAt || "",
-    dataSource: `${merged.sources.adapter.source || "portal_opl_adapter"} + ${merged.sources.langfuse.source || "langfuse_api"}`,
+    dataSource: "runtime_bridge_canonical_metadata",
+    businessFactSource: "runtime_bridge_canonical_metadata",
+    canonicalSource: "runtime_bridge_canonical_metadata",
+    observabilityAttachmentSource: merged.sources.langfuse.source || "langfuse_sanitized_projection",
+    observabilityAvailable: Boolean(merged.observabilityRows.length),
+    billingTruth: false,
   };
 }
 
@@ -100,6 +109,114 @@ function findTraceDetailItem(items = [], sessionId = "") {
   ) || items[0] || null;
 }
 
+function numberValue(value = 0) {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function strictAdminTraceUrl(value = "") {
+  const normalized = text(value);
+  if (!normalized) return "";
+  try {
+    const url = new URL(normalized);
+    return url.origin === "https://trace.medopl.cn" ? normalized : "";
+  } catch {
+    return "";
+  }
+}
+
+function usageSummaryProjection(row = {}) {
+  const usageSummary = row.usageSummary && typeof row.usageSummary === "object" ? row.usageSummary : {};
+  return {
+    inputTokens: numberValue(usageSummary.inputTokens),
+    outputTokens: numberValue(usageSummary.outputTokens),
+    totalTokens: numberValue(usageSummary.totalTokens || row.tokenCount),
+  };
+}
+
+function costEstimateProjection(row = {}) {
+  const costEstimate = row.costEstimate && typeof row.costEstimate === "object" ? row.costEstimate : {};
+  return {
+    currency: text(costEstimate.currency),
+    amount: numberValue(costEstimate.amount),
+  };
+}
+
+function observabilityProjection(row = {}, source = "") {
+  const traceId = text(row.traceId);
+  const sessionId = text(row.sessionId || row.runtimeSessionId || row.workspaceSessionId);
+  const runId = text(row.runId);
+  if (!traceId && !sessionId && !runId) return null;
+  return {
+    source: source || text(row.source) || "langfuse_sanitized_projection",
+    label: "观测摘要",
+    traceId,
+    sessionId,
+    runId,
+    status: text(row.status || "recorded"),
+    latencyMs: numberValue(row.latencyMs),
+    usageSummary: usageSummaryProjection(row),
+    costEstimate: costEstimateProjection(row),
+    traceUrl: strictAdminTraceUrl(row.traceUrl || row.url),
+    tags: Array.isArray(row.tags) ? row.tags.map(text).filter(Boolean) : [],
+  };
+}
+
+function traceMatchKeys(row = {}) {
+  return [
+    text(row.runId),
+    text(row.sessionId),
+    text(row.runtimeSessionId),
+    text(row.workspaceSessionId),
+    text(row.traceId),
+  ].filter(Boolean);
+}
+
+function observabilityByTraceKey(rows = []) {
+  const map = new Map();
+  for (const row of rows) {
+    for (const key of traceMatchKeys(row)) {
+      if (!map.has(key)) map.set(key, row);
+    }
+  }
+  return map;
+}
+
+function matchingObservability(row = {}, projectionMap = new Map()) {
+  for (const key of traceMatchKeys(row)) {
+    const projection = projectionMap.get(key);
+    if (projection) return projection;
+  }
+  return null;
+}
+
+function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {
+  const observability = matchingObservability(row, projectionMap);
+  return {
+    traceId: text(row.traceId),
+    traceName: text(row.traceName),
+    title: traceTitle(row),
+    userId: text(row.userId || row.portalUserId),
+    workspaceId: text(row.workspaceId),
+    workspaceSessionId: text(row.workspaceSessionId),
+    runtimeSessionId: text(row.runtimeSessionId),
+    runId: text(row.runId),
+    model: text(row.model),
+    sessionId: text(row.sessionId || row.runtimeSessionId || row.workspaceSessionId),
+    tokenCount: numberValue(row.tokenCount),
+    userAgent: text(row.userAgent),
+    latencyMs: numberValue(row.latencyMs),
+    startedAt: text(row.startedAt || row.createdAt),
+    updatedAt: text(row.updatedAt),
+    status: text(row.status || "recorded"),
+    source: "runtime_bridge_canonical_metadata",
+    artifactRefs: Array.isArray(row.artifactRefs) ? row.artifactRefs.map(text).filter(Boolean) : [],
+    observability,
+    customerDefaultTraceSurface: "Portal 会话轨迹",
+    customerDefaultLangfuseUi: false,
+  };
+}
+
 async function fetchMergedTraceRowsForPortalUser(deps, user, options = {}) {
   const requestOptions = traceRequestOptions(user, options, deps.parsePositiveInt);
   const [langfuseRows, adapterRows] = await Promise.all([
@@ -116,9 +233,15 @@ async function fetchMergedTraceRowsForPortalUser(deps, user, options = {}) {
       limit: requestOptions.limit,
     }),
   ]);
+  const observabilityRows = (langfuseRows.rows || [])
+    .map((row) => observabilityProjection(row, langfuseRows.source || "langfuse_sanitized_projection"))
+    .filter(Boolean);
+  const projectionMap = observabilityByTraceKey(observabilityRows);
+  const canonicalRows = (adapterRows.rows || []).map((row) => canonicalRuntimeTraceRow(row, projectionMap));
   return {
-    rows: filterMergedTraceRows([...(adapterRows.rows || []), ...(langfuseRows.rows || [])], requestOptions),
+    rows: filterMergedTraceRows(canonicalRows, requestOptions),
     filters: requestOptions,
+    observabilityRows,
     sources: {
       adapter: adapterRows,
       langfuse: langfuseRows,
@@ -154,6 +277,8 @@ export async function buildSessionTracesApiPayload(deps, db, user, options = {})
     items,
     pagination: paginationPayload(pagination),
     dataSource: "portal_session_traces",
+    customerTraceSurface: "Portal 会话轨迹",
+    customerDefaultLangfuseUi: false,
     note: "用户侧只返回当前账号可见的会话、文件、运行、费用和资源状态索引；不暴露 Langfuse key 或原始内部参数。",
   };
 }

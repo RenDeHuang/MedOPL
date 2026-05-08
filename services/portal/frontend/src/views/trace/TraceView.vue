@@ -1,9 +1,23 @@
 <template>
-  <AppLayout title="运行轨迹" subtitle="查看会话、任务状态、文件结果与审计轨迹">
+  <AppLayout title="会话轨迹" subtitle="查看会话、任务状态、文件结果与审计轨迹">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载会话轨迹...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
+        <section class="card p-5">
+          <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 class="panel-title">运行轨迹</h2>
+              <p class="panel-subtitle">
+                运行记录为准，观测摘要只作补充。
+              </p>
+            </div>
+            <div v-if="payload.summary.businessFactSource && payload.customerDefaultLangfuseUi === false" class="text-right text-xs text-gray-500 dark:text-slate-400">
+              默认在 Portal 查看，不跳转外部观测台
+            </div>
+          </div>
+        </section>
+
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="会话数" :value="payload.pagination.total" hint="当前筛选命中总数" />
           <MetricCard label="任务数" :value="runCount" hint="关联任务的会话" />
@@ -16,7 +30,7 @@
             <div>
               <h2 class="panel-title">运行轨迹</h2>
               <p class="panel-subtitle">
-                运行轨迹只展示会话、工作空间、任务、输出文件引用、状态和时间；原始输入和密钥字段不会出现在普通用户界面。
+                运行轨迹只展示会话、工作空间、任务、输出文件引用、状态、观测摘要和时间；原始输入和密钥字段不会出现在普通用户界面。
               </p>
             </div>
             <RouterLink class="btn btn-secondary" to="/workspace">查看输出文件</RouterLink>
@@ -34,12 +48,12 @@
               <input v-model.trim="filters.sessionId" class="input" type="text" placeholder="会话" />
               <select v-model="filters.status" class="input">
                 <option value="">全部状态</option>
-                <option value="active">active</option>
-                <option value="running">running</option>
-                <option value="completed">completed</option>
-                <option value="failed">failed</option>
-                <option value="released">released</option>
-                <option value="settled">settled</option>
+                <option value="active">运行中</option>
+                <option value="running">运行中</option>
+                <option value="completed">已完成</option>
+                <option value="failed">失败</option>
+                <option value="released">已释放</option>
+                <option value="settled">已结算</option>
               </select>
             </div>
           </div>
@@ -67,6 +81,7 @@
                   <th class="px-4 py-3">任务</th>
                   <th class="px-4 py-3">文件</th>
                   <th class="px-4 py-3">状态</th>
+                  <th class="px-4 py-3">观测摘要</th>
                   <th class="px-4 py-3">时间</th>
                 </tr>
               </thead>
@@ -83,6 +98,14 @@
                   </td>
                   <td class="px-4 py-3">
                     <span class="badge" :class="statusBadge(item.businessStatus || item.status)">{{ humanizeStatus(item.businessStatus || item.status) }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
+                    <div class="font-medium text-gray-950 dark:text-white">观测摘要</div>
+                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                      用量 {{ item.observability?.usageSummary?.totalTokens || 0 }}，
+                      费用估算 {{ item.observability?.costEstimate?.amount || 0 }} {{ item.observability?.costEstimate?.currency || "USD" }}，
+                      延迟 {{ item.observability?.latencyMs || 0 }} ms
+                    </div>
                   </td>
                   <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.startedAt || "-" }}</td>
                 </tr>

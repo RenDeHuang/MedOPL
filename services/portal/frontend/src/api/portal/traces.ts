@@ -8,6 +8,11 @@ export interface TraceSummaryPayload {
   traceCount?: number;
   latestTraceAt?: string;
   dataSource?: string;
+  businessFactSource?: string;
+  canonicalSource?: string;
+  observabilityAttachmentSource?: string;
+  observabilityAvailable?: boolean;
+  billingTruth?: boolean;
 }
 
 export interface TracesPayload {
@@ -42,6 +47,30 @@ export interface TracesPayload {
     status: string;
     businessStatus?: string;
     url: string;
+    source?: string;
+    title?: string;
+    customerDefaultTraceSurface?: string;
+    customerDefaultLangfuseUi?: boolean;
+    observability?: {
+      source: string;
+      label: string;
+      traceId: string;
+      sessionId: string;
+      runId: string;
+      status: string;
+      latencyMs: number;
+      usageSummary: {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+      };
+      costEstimate: {
+        currency: string;
+        amount: number;
+      };
+      traceUrl: string;
+      tags: string[];
+    };
     files?: {
       inputsCount: number;
       outputsCount: number;
@@ -55,6 +84,8 @@ export interface TracesPayload {
   }>;
   pagination: PortalPagination;
   dataSource: string;
+  customerTraceSurface?: string;
+  customerDefaultLangfuseUi?: boolean;
   note?: string;
 }
 
