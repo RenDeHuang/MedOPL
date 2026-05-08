@@ -4,6 +4,27 @@
 
 它不代表真实云资源、Gateway、Runtime Bridge 或 one-person-lab upstream 已全部打通；也不代表真实价格审批、真实上线部署、真实账单核对或真实 trace source 已完成。
 
+## 合同订阅规则
+
+正式开发开始前，必须先订阅合同包。合同包用于限定本分支的产品真相、技术边界、非目标、污染防护和验收条件。
+
+合同包至少包含：
+
+- v22 主合同
+- 本次相关分支合同
+- 本次相关共享边界合同
+- recovery 约束文档
+
+新增合同、修改合同、合同冲突、主叙事变化，以及真实云、secret、upstream、deploy 授权边界变化，必须先让用户审阅确认。
+
+合同审阅必须确认：
+
+- 范围是否正确
+- 边界是否正确
+- 非目标是否完整
+- 验收条件是否可验证
+- 是否存在污染风险
+
 ## v22 主合同
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md): MVP 托管 OPL 用户闭环主合同，定义从平台创建用户、充值、登录 Portal、在 OPL entry/preflight 输入或确认 gflabtoken 模型调用密钥、开通托管运行环境、进入 OPL 科研工作台、产出文件到释放环境和审计的 contract-level 主路径。portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
@@ -43,3 +64,99 @@
 ## 相关合同
 
 - [v22-canonical-user-loop.md](./v22-canonical-user-loop.md): canonical user loop 的早期/共享参考合同，阅读时以 v22 主合同和各段边界合同为当前执行入口。
+
+## 合同包模板
+
+### Portal / UI 合同包
+
+适用于 Portal dashboard、资源状态、账单、文件、trace 页面和普通用户中文产品语言。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md)
+- [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../recovery/active-surface.md](../recovery/active-surface.md)
+
+### OPL Entry / Gateway 合同包
+
+适用于 OPL entry/preflight、Gateway alias、Portal 进入 OPL 工作台、直接访问 OPL 工作台和 gflabtoken API Key 输入边界。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md)
+- [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md)
+- [v22-token-provider-boundary.md](./v22-token-provider-boundary.md)
+- [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+
+### Runtime Bridge 合同包
+
+适用于 OPL session bind、run、message、file reference、artifact reference、providerKeyRef 透传和 Runtime Agent relay。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
+- [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)
+- [v22-token-provider-boundary.md](./v22-token-provider-boundary.md)
+- [v22-trace-metadata-boundary.md](./v22-trace-metadata-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+
+### Langfuse / Trace 合同包
+
+适用于 Langfuse 观测附件、sanitized projection、Portal 会话轨迹、trace metadata 和非 canonical source 边界。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)
+- [v22-trace-metadata-boundary.md](./v22-trace-metadata-boundary.md)
+- [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+
+### Resource / Billing / Audit 合同包
+
+适用于套餐、托管环境开通、资源绑定、预扣费、冻结金额、释放停止计费、审计状态。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
+- [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)
+- [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
+- [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md)
+- [v22-billing-freeze-boundary.md](./v22-billing-freeze-boundary.md)
+- [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+
+### Tencent Quote Provider 合同包
+
+适用于 readonly/tencent quote provider、mock adapter、套餐估算、quote snapshot 和后续真实腾讯云接入前的只读边界。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
+- [v22-tencent-readonly-quote-provider-boundary.md](./v22-tencent-readonly-quote-provider-boundary.md)
+- [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
+- [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+
+真实腾讯云 API、真实 SecretId/SecretKey、真实资源创建/释放、deploy、build/push、kubectl 和 live-test 必须单独授权。
+
+### Cleanup 合同包
+
+适用于退役 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事、旧 v19/v20/v21 路线。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../recovery/active-surface.md](../recovery/active-surface.md)
+- [../recovery/archive-policy.md](../recovery/archive-policy.md)
+- 与被退役路径相关的分支合同
+
+cleanup 分支必须证明：退役后每个核心域只剩一个正式入口。

@@ -20,3 +20,37 @@
 - upstream OPL 必须保持 clean，不修改 upstream 源码，不在 upstream 目录写 Portal/Gateway/Adapter 代码，不 import upstream 内部模块；只能通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
 - raw provider API key 只能进入后端密钥边界；前端最多持有 `providerKeyRef`、bound status 和一次性输入态，不能把 raw key、bearer token、launchToken/runtimeToken 写入 sessionStorage/localStorage、全局 JS state、日志、evidence 或 git。
 - build/push、kubectl、live-test、真实云资源操作和 `.sentrux/*` 修改必须单独授权；不得在普通重构、文档收敛或本地 smoke 中顺手执行。
+
+## 阶段状态
+
+- v22 当前阶段以 `docs/recovery/mvp-contract-acceptance.md`、`docs/recovery/status-matrix.md` 和 `docs/contracts/README.md` 为准；不得根据过期聊天记忆判断当前阶段。
+- 新开发必须先读取当前阶段文档、合同索引和本次订阅合同，再声明分支意图、合同订阅包、授权边界和验收命令。
+- 阶段推进后优先更新 recovery 阶段文档；本文件只保留稳定纪律，不写死会随阶段变化的完成状态。
+
+## 合同订阅制度
+
+- 任何正式开发开始前，必须先声明本分支订阅的合同包。合同包至少包含主合同、本次相关分支合同、本次相关边界合同和 recovery 约束文档。
+- 新增合同、修改合同、合同冲突、主叙事变化、授权边界变化，必须先让用户审阅确认，再写 smoke 或实现。
+- 合同审阅必须确认：范围是否正确、边界是否正确、非目标是否完整、验收条件是否可验证、是否存在污染风险。
+
+## A/B/C 窗口职责
+
+- 窗口 A 是开发窗口：从最新 `recovery/platform-v22-trunk` 新建 `feat/*` 或 `cleanup/*` 分支，只做一个明确意图，按“合同 -> smoke -> 实现 -> 验证 -> commit”推进。
+- 窗口 B 是审计 / 合并 / push 窗口：复审 A 的分支，检查合同一致性、污染风险、secret hygiene、验证结果和工作区状态。B 不做大功能开发；无 blocker 时才 `ff-only` 合回 `recovery/platform-v22-trunk` 并 push GitHub。
+- 窗口 C 是并行工作窗口：只做互不冲突的独立任务，例如文档 cleanup、结构修复、合同梳理。C 合并前必须基于最新 trunk 重放或 rebase，并交给 B 审。
+
+## 污染防护
+
+- 产品叙事污染：不得把 MedOPL 讲回云资源控制台、CVM/COS/K8s 用户自配。
+- 旧路线污染：不得恢复 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事为主线。
+- upstream 污染：不得修改 one-person-lab upstream、import upstream 内部模块，或把 Portal/Gateway/Adapter/Runtime 代码写进 upstream。
+- secret 污染：不得让 raw API key、token、kubeconfig、SecretId/SecretKey、SSH private key、`.env` 进入日志、evidence、git 或 GitHub。
+- 合同污染：不得绕过合同实现；不得让 smoke 用默认值、隐式兜底或伪通过掩盖真实缺参。
+- trunk 污染：不得让 spike 半成品、未验证代码、真实云操作副作用或未 cleanup 的旧入口进入 `recovery/platform-v22-trunk`。
+
+## 必须先和用户讨论的情况
+
+- 产品方向不清、合同之间冲突、主叙事变化或授权边界变化。
+- 需要读取 secret、执行真实云操作、修改 upstream、触碰 `deploy/*` / `.sentrux/*` / `adapters/*`。
+- 需要 build/push、kubectl、live-test 或其他会影响真实外部系统的操作。
+- 需要退役旧路线，或实现范围超过当前分支意图。
