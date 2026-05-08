@@ -1,4 +1,8 @@
 import { getCanonicalResourcePlan } from "./lab-packages.mjs";
+import {
+  defaultTencentReadonlyQuoteProvider,
+  quoteManagedResourceBindingPlan,
+} from "./tencent-readonly-quote-provider.mjs";
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -106,13 +110,20 @@ export function managedResourceBindingPlanView({ binding = null, taskSpace = {},
   const plan = getCanonicalResourcePlan(planIdFor(binding, taskSpace));
   const region = text(binding.region || plan?.region);
   const zone = text(binding.zone || plan?.zone);
+  const quote = quoteManagedResourceBindingPlan({
+    provider: defaultTencentReadonlyQuoteProvider,
+    binding,
+  });
   return {
     resourceBindingId: text(binding.resourceBindingId || binding.id),
     managedEnvironment: "托管运行环境",
-    regionLabel: regionLabel(region, zone),
-    planSpec: planSpec(plan, binding),
+    regionLabel: quote.regionLabel || regionLabel(region, zone),
+    planSpec: quote.planSpec || planSpec(plan, binding),
     status: text(binding.status || "active"),
     estimatedCost: estimatedCost(billing, binding),
+    quoteSource: text(quote.quoteSource || "mock/tencent-readonly-quote-provider"),
+    quoteStatus: text(quote.quoteStatus || "mock_snapshot"),
+    quoteSnapshotId: text(quote.quoteSnapshotId),
     releasePolicy: releasePolicy(binding),
     auditStatus: auditStatus(binding),
     snapshot: snapshotView(),

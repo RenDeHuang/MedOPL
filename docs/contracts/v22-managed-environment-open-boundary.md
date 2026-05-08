@@ -115,9 +115,13 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
     "amount": 0,
     "currency": "CNY",
     "source": "contract_snapshot_fixture",
+    "status": "mock_snapshot",
     "billingTruth": false,
     "chargeApplied": false
   },
+  "quoteSource": "mock/tencent-readonly-quote-provider",
+  "quoteStatus": "mock_snapshot",
+  "quoteSnapshotId": "quote-snapshot-v22-pro-8c16g-100gb",
   "releasePolicy": {
     "status": "not_released",
     "stopBillingConfirmWithinMinutes": 120
