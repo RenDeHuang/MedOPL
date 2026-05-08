@@ -1,3 +1,10 @@
+import {
+  billingItemsForRun,
+  publicBalanceLink,
+  publicCostEstimate,
+  publicResourceUsage,
+} from "./cost-balance-trace-linkage.mjs";
+
 function traceRequestOptions(user, options = {}, parsePositiveInt) {
   return {
     userId: user?.role === "admin" ? String(options.userId || "").trim() : user.id,
@@ -305,10 +312,20 @@ async function enrichSessionTraceRow(deps, db, user, row = {}) {
     ? await deps.fetchBillingSummary(row.userId || user.id, workspaceId, "168h").catch(() => null)
     : null;
   const relatedCosts = (billing?.items || []).filter((item) => costMatchesRun(item, { runId, workspaceId }));
+  const linkedCosts = billingItemsForRun(billing?.items || [], { runId, workspaceId });
+  const publicCosts = linkedCosts.length ? linkedCosts : relatedCosts;
+  const costEstimate = publicCostEstimate(billing || {}, publicCosts);
   return {
     ...row,
     title: traceTitle(row),
     businessStatus: row.status || "recorded",
+    resourceUsage: publicResourceUsage({
+      row,
+      outputFiles: linkedOutputFiles,
+      relatedCosts: publicCosts,
+    }),
+    costEstimate,
+    balanceLink: publicBalanceLink(costEstimate),
     files: {
       ...fileSummary(workspaceId, { ...(storage || {}), linkedOutputFiles }),
       linkedOutputFiles,

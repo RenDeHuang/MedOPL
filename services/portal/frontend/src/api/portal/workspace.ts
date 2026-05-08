@@ -10,6 +10,46 @@ export interface WorkspaceQuery {
   outputs_page?: PortalQueryValue;
 }
 
+export interface WorkspaceResourceUsagePayload {
+  source: string;
+  runId: string;
+  sessionId: string;
+  workspaceId: string;
+  status: string;
+  tokenCount: number;
+  latencyMs: number;
+  inputFileCount: number;
+  outputFileCount: number;
+  outputBytes: number;
+  costItemCount: number;
+}
+
+export interface WorkspaceCostEstimatePayload {
+  amount: number;
+  currency: string;
+  source: string;
+  pricingSource: string;
+  status: string;
+  billingTruth: boolean;
+  pendingReconciliation: boolean;
+  components: {
+    compute: number;
+    storage: number;
+    total: number;
+  };
+}
+
+export interface WorkspaceBalanceLinkPayload {
+  linkedToBalance: boolean;
+  chargeApplied: boolean;
+  rechargeStatus: string;
+  estimateOnly: boolean;
+  estimatedAmount: number;
+  currency: string;
+  balanceCents: number;
+  availableBalanceCents: number;
+}
+
 export interface StorageEntitlementPayload {
   enabled: boolean;
   status: "disabled" | "active" | string;
@@ -78,6 +118,9 @@ export interface WorkspacePayload {
     runId: string;
     status: string;
     createdAt: string;
+    resourceUsage?: WorkspaceResourceUsagePayload;
+    costEstimate?: WorkspaceCostEstimatePayload;
+    balanceLink?: WorkspaceBalanceLinkPayload;
   }>;
   eventTimeline: Array<{
     type: string;
@@ -141,6 +184,9 @@ export interface WorkspacePayload {
     contentType?: string;
     status?: string;
     source?: string;
+    resourceUsage?: WorkspaceResourceUsagePayload;
+    costEstimate?: WorkspaceCostEstimatePayload;
+    balanceLink?: WorkspaceBalanceLinkPayload;
     createdAt?: string;
     updatedAt?: string;
   }>;

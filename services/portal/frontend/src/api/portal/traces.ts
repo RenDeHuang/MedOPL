@@ -15,6 +15,46 @@ export interface TraceSummaryPayload {
   billingTruth?: boolean;
 }
 
+export interface TraceResourceUsagePayload {
+  source: string;
+  runId: string;
+  sessionId: string;
+  workspaceId: string;
+  status: string;
+  tokenCount: number;
+  latencyMs: number;
+  inputFileCount: number;
+  outputFileCount: number;
+  outputBytes: number;
+  costItemCount: number;
+}
+
+export interface TraceCostEstimatePayload {
+  amount: number;
+  currency: string;
+  source: string;
+  pricingSource: string;
+  status: string;
+  billingTruth: boolean;
+  pendingReconciliation: boolean;
+  components: {
+    compute: number;
+    storage: number;
+    total: number;
+  };
+}
+
+export interface TraceBalanceLinkPayload {
+  linkedToBalance: boolean;
+  chargeApplied: boolean;
+  rechargeStatus: string;
+  estimateOnly: boolean;
+  estimatedAmount: number;
+  currency: string;
+  balanceCents: number;
+  availableBalanceCents: number;
+}
+
 export interface TracesPayload {
   filters: {
     userId: string;
@@ -50,6 +90,9 @@ export interface TracesPayload {
     source?: string;
     customerDefaultTraceSurface?: string;
     customerDefaultLangfuseUi?: boolean;
+    resourceUsage?: TraceResourceUsagePayload;
+    costEstimate?: TraceCostEstimatePayload;
+    balanceLink?: TraceBalanceLinkPayload;
     observability?: {
       source: string;
       label: string;

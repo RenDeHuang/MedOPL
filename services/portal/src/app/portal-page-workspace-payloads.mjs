@@ -7,6 +7,12 @@ import {
   sumFileSizes,
   summarizeRunStatus,
 } from "./portal-page-payload-helpers.mjs";
+import {
+  billingItemsForRun,
+  publicBalanceLink,
+  publicCostEstimate,
+  publicResourceUsage,
+} from "../domain/cost-balance-trace-linkage.mjs";
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -64,6 +70,39 @@ function mergeOutputRows(filesystemOutputs = [], artifactOutputs = []) {
   return rows;
 }
 
+function runCostSummary(billing = {}, run = {}, workspaceId = "") {
+  const relatedCosts = billingItemsForRun(billing?.items || [], { runId: run.runId, workspaceId });
+  const costEstimate = publicCostEstimate(billing || {}, relatedCosts);
+  return {
+    resourceUsage: publicResourceUsage({
+      run,
+      relatedCosts,
+    }),
+    costEstimate,
+    balanceLink: publicBalanceLink(costEstimate),
+  };
+}
+
+function outputCostSummary(billing = {}, output = {}, workspaceId = "") {
+  const relatedCosts = billingItemsForRun(billing?.items || [], { runId: output.runId, workspaceId });
+  const costEstimate = publicCostEstimate(billing || {}, relatedCosts);
+  return {
+    ...output,
+    resourceUsage: publicResourceUsage({
+      row: {
+        runId: output.runId,
+        sessionId: output.sessionId,
+        workspaceId: output.workspaceId || workspaceId,
+        status: output.status || "active",
+      },
+      outputFiles: [output],
+      relatedCosts,
+    }),
+    costEstimate,
+    balanceLink: publicBalanceLink(costEstimate),
+  };
+}
+
 export function createWorkspacePayloadBuilder({
   collectRunsForUser,
   currentServerPlanSelection,
@@ -109,9 +148,14 @@ export function createWorkspacePayloadBuilder({
     timing.mark("events");
     const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
     const storageEntitlement = workspaceStorageEntitlement(db, user, current.slug);
-    const runPagination = paginateRows(runs, options.runsPage, 5);
+    const runRows = runs.map((run) => ({
+      ...run,
+      ...runCostSummary(billing, run, current.slug),
+    }));
+    const outputRows = outputs.map((output) => outputCostSummary(billing, output, current.slug));
+    const runPagination = paginateRows(runRows, options.runsPage, 5);
     const filePagination = paginateRows(files, options.inputsPage, 5);
-    const outputPagination = paginateRows(outputs, options.outputsPage, 5);
+    const outputPagination = paginateRows(outputRows, options.outputsPage, 5);
     const taskPagination = paginateRows(allTasks, options.tasksPage, 5);
     const billingAll = await fetchBillingSummary(user.id, "", "168h");
     const taskCards = await buildWorkspaceTaskCards({
@@ -152,6 +196,9 @@ export function createWorkspacePayloadBuilder({
         runId: run.runId,
         status: isRunTerminal(run) ? "completed" : (run.status || "running"),
         createdAt: formatDateTime(run.createdAt || ""),
+        resourceUsage: run.resourceUsage,
+        costEstimate: run.costEstimate,
+        balanceLink: run.balanceLink,
       })),
       eventTimeline: events.slice(0, 16).map((event) => ({
         type: event.type,

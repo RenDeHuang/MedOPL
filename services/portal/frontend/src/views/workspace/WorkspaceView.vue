@@ -58,7 +58,7 @@
           <MetricCard label="输入文件" :value="payload.counts.inputs" hint="输入文件数" />
           <MetricCard label="输出文件" :value="payload.counts.outputs" hint="输出文件数" />
           <MetricCard label="任务数" :value="payload.counts.runs" hint="当前空间任务总数" />
-          <MetricCard label="文件空间状态" :value="payload.storageEntitlement?.enabled ? `${payload.storageEntitlement.storageSizeGb}GB` : '未开通'" hint="在套餐页开通后可上传和保存结果" />
+          <MetricCard label="费用估算" :value="money(totalEstimatedCost)" hint="余额和充值状态只作估算关联" />
         </section>
 
         <section class="card p-5">
@@ -73,6 +73,9 @@
               <h2 class="mt-3 panel-title">文件空间状态</h2>
               <p class="mt-2 panel-subtitle">
                 工作空间只管理输入文件、输出文件和输出结果。需要购买、升级或扩容时，请到套餐页处理。
+              </p>
+              <p class="panel-subtitle">
+                任务的资源用量和费用估算来自运行轨迹与合同快照，不在这里执行真实扣费。
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -179,7 +182,10 @@
                   输出文件来自运行轨迹；关联任务 {{ linkedTaskText(item) }}
                 </div>
                 <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                  用量和费用估算可在运行轨迹查看。
+                  资源用量 {{ item.resourceUsage?.outputFileCount || 0 }} 个输出文件；费用估算 {{ costEstimateText(item) }}。
+                </div>
+                <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+                  余额关联 {{ item.balanceLink?.linkedToBalance ? "已关联" : "待估算" }}，充值状态 {{ rechargeStatusText(item.balanceLink?.rechargeStatus) }}。
                 </div>
                 <div class="mt-2">
                   <a class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400" :href="downloadFileHref('outputs', item.name)">下载</a>
@@ -218,6 +224,7 @@ const isArchivedWorkspace = computed(() => String(payload.value?.workspace.statu
 const uploadAction = computed(() => `/portal/workspace/upload?task=${encodeURIComponent(payload.value?.workspace.slug || currentTask.value || "default")}`);
 const emptyStorageEntitlement = computed(() => disabledStorageEntitlement());
 const storageEntitlement = computed(() => payload.value?.storageEntitlement || payload.value?.workspace.storageEntitlement || emptyStorageEntitlement.value);
+const totalEstimatedCost = computed(() => (payload.value?.outputs || []).reduce((sum, item) => sum + Number(item.costEstimate?.amount || 0), 0));
 
 function routeQueryObject() {
   const query: Record<string, string> = {};
@@ -279,6 +286,18 @@ function hasLinkedTask(item: { runId?: string }) {
 
 function linkedTaskText(item: { runId?: string }) {
   return taskDisplayName(item.runId);
+}
+
+function money(value?: number, currency = "CNY") {
+  return `${Number(value || 0).toFixed(2)} ${currency}`;
+}
+
+function costEstimateText(item: { costEstimate?: { amount?: number; currency?: string } }) {
+  return money(item.costEstimate?.amount, item.costEstimate?.currency || "CNY");
+}
+
+function rechargeStatusText(value?: string) {
+  return value === "display_only" ? "仅展示" : "待估算";
 }
 
 function workspaceMasHref(task?: string) {
