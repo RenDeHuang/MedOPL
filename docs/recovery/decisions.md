@@ -12,26 +12,26 @@ MedOPL 面向小白科研用户。用户通过 Portal 和 OPL Web 使用托管�
 
 ## D003: 平台管理 TKE 和存储资源池
 
-平台管理自己的 TKE 和存储资源池。runtime、compute、storage 是平台向租户提供的托管能力，不是用户自配云资源。
+平台管理自己的 TKE 和存储资源池。计算资源和文件空间是平台向账号工作空间提供的托管能力，不是用户自配云资源。普通用户主语言优先使用：账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额。租户 / runtime / 运行环境 / environmentId 只能作为内部标签、对账标签或审计字段。
 
-## D004: Runtime 是租户可选开通能力
+## D004: 工作台资源是账号工作空间可选开通能力
 
-托管 runtime 不是默认强制提供。租户开通 runtime 后才能使用平台托管 runtime 跑任务；租户不开通 runtime 时，可以有账号、充值和 OPL entry/preflight provider key 绑定状态，但不能跑托管 runtime 任务。
+计算资源和文件空间不是默认强制提供。账号在工作空间下开通计算资源且文件空间可用后，才能使用平台托管计算资源跑任务；未开通计算资源时，可以有账号、充值和 OPL entry/preflight provider key 绑定状态，但不能跑托管计算任务。
 
-## D005: 所有资源必须绑定租户和治理边界
+## D005: 所有资源必须绑定账号工作空间和治理边界
 
-runtime、compute、storage 必须绑定到 tenant、user、workspace、resource binding、billing account、audit tag / cost allocation tag。v22 不允许无归属资源。
+计算资源和存储资源必须绑定到 tenant、user、workspace、resource binding、billing account、audit tag / cost allocation tag。v22 不允许无归属资源。
 
 ## D006: 默认套餐和扩展能力固定进入 v22 truth
 
-v22 默认基础套餐是：
+v22 套餐是：
 
-| 套餐 | 计算 | 存储 |
-| --- | --- | --- |
-| 默认套餐 1 | 2c4gb | 10GB |
-| 默认套餐 2 | 8c16gb | 100GB |
+| 套餐 | 计算资源 | 文件空间 | 任务并发 |
+| --- | --- | --- | --- |
+| 基础套餐 | 2c / 4GB | 10GB 文件空间 | 1 个任务并发 |
+| Pro 套餐 | 8c / 16GB | 100GB 文件空间 | 2 个任务并发 |
 
-v22 支持叠加计算、叠加存储和自定义套餐。所有叠加和自定义资源都必须进入 billing、quota、audit 边界。
+v22 支持叠加计算、叠加存储和自定义规格。自定义规格支持 CPU、内存、文件空间和任务并发数。所有叠加和自定义资源都必须进入 billing、quota、audit 边界。
 
 ## D007: API token 业务使用 gflabtoken 中转站
 
@@ -67,11 +67,11 @@ Portal -> OPL Web Gateway -> clean upstream OPL Web -> Portal OPL Adapter / Runt
 
 ## D011: 核心用户 loop 固定
 
-v22 用户 loop 包括账号/租户创建、充值、登录 `portal.medopl.cn`、在 `opl.medopl.cn` 登录 / 进入 OPL 工作台时输入或确认 gflabtoken API Key、选择是否开通 runtime、选择套餐、平台开通资源、预扣费或冻结金额、进入 OPL 工作台工作、查看文件/账单/session trace metadata、余额不足提示、7 天冻结保护、释放后停止扣费。
+v22 用户 loop 包括账号创建、充值、登录 `portal.medopl.cn`、在 `opl.medopl.cn` 登录 / 进入 OPL 工作台时输入或确认 gflabtoken API Key、选择是否开通计算资源和文件空间、选择基础套餐 / Pro 套餐 / 自定义规格、平台开通可组合资源、预扣费或冻结金额、进入 OPL 工作台工作、查看文件/账单/session trace metadata、余额不足提示、计算释放和文件空间保护期分离、释放计算资源后停止计算扣费。
 
 ## D012: Billing freeze 是产品边界
 
-开通资源后开始预扣费或冻结金额。余额不足时，Portal 提示将消耗冻结金额。冻结保护期是 7 天；7 天后清理对应数据和资源。用户删除或释放资源后，扣费停止。
+开通资源后开始预扣费或冻结金额。余额不足时，Portal 提示将消耗冻结金额。工作空间是业务容器。计算资源可独立开通、扩容、缩容、释放。存储资源 / 文件空间可独立开通、扩容、删除。释放计算资源不删除文件空间。释放计算资源不让文件空间进入 7 天保护期。删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。计算资源已释放但文件空间仍保留，是合法状态。文件空间进入保护期或不可用时，新任务不能依赖该文件空间。
 
 ## D013: Trace 只保留必要 metadata
 

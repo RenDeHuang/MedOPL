@@ -1,10 +1,12 @@
 # platform-v22 Architecture Truth
 
-platform-v22 的架构真相是：Portal 提供托管科研工作台控制面，OPL Web Gateway 接入 clean upstream OPL Web，Portal OPL Adapter / Runtime Agent 连接平台管理的 TKE/存储资源池，并把所有 runtime、compute、storage 纳入 tenant binding、billing、quota、audit 和 admin 边界。
+platform-v22 的架构真相是：Portal 提供托管科研工作台控制面，OPL Web Gateway 接入 clean upstream OPL Web，Portal OPL Adapter / Runtime Agent 连接平台管理的 TKE/存储资源池，并把所有计算资源、存储资源和文件空间纳入 tenant binding、billing、quota、audit 和 admin 边界。
 
 ## 架构定位
 
-MedOPL 是 `platform-provisioned / customer-dedicated` 托管科研工作台，不是云资源控制台。用户不直接配置 CVM、COS、K8s。平台管理自己的 TKE 和存储资源池，向租户提供可选开通的托管 runtime、计算和存储能力。
+MedOPL 是 `platform-provisioned / customer-dedicated` 托管科研工作台，不是云资源控制台。用户不直接配置 CVM、COS、K8s。平台管理自己的 TKE 和存储资源池，向账号和工作空间提供可选开通的计算资源和文件空间。
+
+普通用户主语言优先使用：账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额。租户 / runtime / 运行环境 / environmentId 只能作为内部标签、对账标签或审计字段。
 
 ## 主链路
 
@@ -21,13 +23,13 @@ Portal
 
 ### Portal
 
-Portal 是 SaaS 控制面，负责用户和租户、充值、gflabtoken 绑定状态展示、runtime 开通选择、资源套餐、workspace 状态、账单、冻结金额、审计和管理员治理。
+Portal 是 SaaS 控制面，负责账号、充值、gflabtoken 绑定状态展示、计算资源开通选择、资源套餐、workspace 状态、账单、冻结金额、审计和管理员治理。
 
 Portal 展示的是托管科研工作台资源状态，不展示云资源控制台式 CVM/COS/K8s 配置界面。
 
 ### OPL Web Gateway
 
-OPL Web Gateway 是 `opl.medopl.cn` 的正式入口。它把平台身份、workspace 上下文、runtime availability、resource binding 和 adapter 接入传给 upstream OPL Web，不把 Portal 逻辑写进 upstream。
+OPL Web Gateway 是 `opl.medopl.cn` 的正式入口。它把平台身份、workspace 上下文、计算资源可用状态、resource binding 和 adapter 接入传给 upstream OPL Web，不把 Portal 逻辑写进 upstream。
 
 `opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。API Key 输入框放在 OPL 登录页密码下面；已绑定时显示“已绑定”，不要求重复输入。
 
@@ -43,31 +45,33 @@ v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Ada
 
 ### Portal OPL Adapter / Runtime Agent
 
-Portal OPL Adapter / Runtime Agent 是运行集成边界。它只能在租户已开通 runtime 且资源绑定有效时调度托管 runtime 任务。
+Portal OPL Adapter / Runtime Agent 是运行集成边界。它只能在账号工作空间已开通计算资源、文件空间可用且资源绑定有效时调度托管计算任务。
 
 它负责：
 
 - 校验 tenant、user、workspace、resource binding、billing account、audit tag / cost allocation tag。
 - 连接 platform-managed TKE/storage resource pools。
 - 记录 run status、artifact index 和必要 session trace metadata。
-- 阻止未开通 runtime 的租户运行托管 runtime 任务。
+- 阻止未开通计算资源或文件空间不可用的账号运行托管计算任务。
 
 ### Platform Resource Pools
 
-平台资源池由平台管理，包括 TKE 和存储资源池。runtime、compute、storage 以托管能力形式分配给租户，不暴露为用户自配云资源。
+平台资源池由平台管理，包括 TKE 和存储资源池。计算资源和文件空间以托管能力形式分配给账号工作空间，不暴露为用户自配云资源。
 
-默认基础套餐：
+当前套餐：
 
-| 套餐 | 计算 | 存储 |
-| --- | --- | --- |
-| 默认套餐 1 | 2c4gb | 10GB |
-| 默认套餐 2 | 8c16gb | 100GB |
+| 套餐 | 计算资源 | 文件空间 | 任务并发 |
+| --- | --- | --- | --- |
+| 基础套餐 | 2c / 4GB | 10GB 文件空间 | 1 个任务并发 |
+| Pro 套餐 | 8c / 16GB | 100GB 文件空间 | 2 个任务并发 |
 
-叠加计算、叠加存储和自定义套餐都必须进入 billing、quota、audit 边界。
+自定义规格支持 CPU、内存、文件空间和任务并发数。叠加计算、叠加存储和自定义规格都必须进入 billing、quota、audit 边界。
+
+工作空间是业务容器。计算资源可独立开通、扩容、缩容、释放。存储资源 / 文件空间可独立开通、扩容、删除。释放计算资源不删除文件空间。释放计算资源不让文件空间进入 7 天保护期。删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。计算资源已释放但文件空间仍保留，是合法状态。
 
 ### Billing/Quota/Audit/Admin
 
-Billing/Quota/Audit/Admin 是资源治理边界。开通 runtime、compute、storage 后开始预扣费或冻结金额。余额不足时，Portal 必须提示将消耗冻结金额。冻结保护期是 7 天；7 天后清理对应数据和资源。用户删除或释放资源后，扣费停止。
+Billing/Quota/Audit/Admin 是资源治理边界。开通计算资源和存储资源后开始预扣费或冻结金额。余额不足时，Portal 必须提示将消耗冻结金额。释放计算资源只停止计算计费和任务续用，不删除文件空间；删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。文件空间进入保护期或不可用时，新任务不能依赖该文件空间。
 
 ## Token Provider Boundary
 
