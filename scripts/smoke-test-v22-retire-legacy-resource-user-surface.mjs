@@ -25,6 +25,7 @@ const forbiddenVisibleCopy = [
   "开通文件空间",
   "进阶升级",
   "进阶套餐",
+  "开通工作台资源",
 ];
 
 for (const copy of forbiddenVisibleCopy) {
@@ -60,6 +61,8 @@ for (const required of [
 
 assertIncludes(resourcesView, "dry-run", "resource_adjustment_must_be_dry_run_copy");
 assertIncludes(resourcesView, "不会真实开通", "resource_adjustment_must_not_create_real_resources");
+assertIncludes(resourcesView, "生成套餐调整计划", "package_card_cta_must_be_dry_run_copy");
+assertIncludes(resourcesView, "shrink-0 whitespace-nowrap", "resource_confirmation_badge_must_not_wrap_on_mobile");
 assertExcludes(resourcesView, "@submit.prevent=\"submitEnsureProtectionFreeze\"", "ordinary_resource_surface_must_not_offer_freeze_form");
 assertExcludes(resourcesView, "@submit.prevent=\"submitCreateCompute\"", "ordinary_resource_surface_must_not_offer_direct_compute_create");
 assertExcludes(resourcesView, "@submit.prevent=\"submitCreateStorage\"", "ordinary_resource_surface_must_not_offer_direct_storage_create");
@@ -72,6 +75,22 @@ assertExcludes(resourcesView, "deleteStorageBucket(", "ordinary_resource_surface
 assertExcludes(resourcesView, "unbindWorkspaceResource(", "ordinary_resource_surface_must_not_call_unbind_mutation");
 
 assertIncludes(suite, "smoke-test-v22-retire-legacy-resource-user-surface", "mvp_suite_must_run_resource_surface_cleanup_smoke");
+
+const serversView = await readFile("services/portal/frontend/src/views/servers/ServersView.vue", "utf8");
+for (const retiredServerDependency of [
+  "fetchCloudResources",
+  "fetchResourceOrders",
+  "deleteResourceOrderNodePool",
+  "quoteResourceOrder",
+  "freezeResourceOrder",
+  "provisionResourceOrder",
+  "releaseResourceOrder",
+  "CloudResourcesPayload",
+  "ResourceOrdersPayload",
+]) {
+  assertExcludes(serversView, retiredServerDependency, "servers_view_must_not_import_retired_resource_surface_api");
+}
+assertIncludes(serversView, "旧服务器目录已退役", "servers_view_must_explain_retired_surface");
 
 console.log(JSON.stringify({
   ok: true,

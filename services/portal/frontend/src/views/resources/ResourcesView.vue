@@ -35,7 +35,7 @@
         <div class="card p-5">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 class="panel-title">选择套餐 / 开通工作台资源</h2>
+              <h2 class="panel-title">选择套餐 / 工作台资源计划</h2>
               <p class="panel-subtitle">选择套餐后生成 dry-run 调整计划，不会真实开通资源。</p>
             </div>
             <span class="badge badge-primary">dry-run</span>
@@ -74,7 +74,7 @@
                 </div>
               </dl>
               <button class="btn btn-secondary mt-4 w-full" type="button" @click="setAdjustmentPlan(plan.name)">
-                开通工作台资源
+                生成套餐调整计划
               </button>
             </article>
           </div>
@@ -86,7 +86,7 @@
               <h2 class="panel-title">调整计划</h2>
               <p class="panel-subtitle">增加资源只生成 dry-run 计划，不会真实开通。</p>
             </div>
-            <span class="badge badge-warning">需确认</span>
+            <span class="badge badge-warning shrink-0 whitespace-nowrap">需确认</span>
           </div>
           <div class="mt-4 grid grid-cols-1 gap-3">
             <button class="btn btn-secondary justify-between" type="button" @click="setAdjustmentPlan('增加计算资源')">

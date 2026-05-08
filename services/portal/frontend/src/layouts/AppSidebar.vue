@@ -15,7 +15,7 @@
       </div>
       <div class="min-w-0 flex-1">
         <div class="text-sm font-semibold text-gray-950 dark:text-white">MedOPL</div>
-        <div class="text-[11px] text-gray-500 dark:text-slate-400">Portal 控制台</div>
+        <div class="text-[11px] text-gray-500 dark:text-slate-400">MedOPL 工作台</div>
       </div>
       <button type="button" class="btn btn-secondary lg:hidden" aria-label="关闭导航" @click="closeMobileNav">关闭</button>
     </div>
