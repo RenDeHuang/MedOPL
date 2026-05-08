@@ -1,19 +1,24 @@
 <template>
   <header class="glass sticky top-0 z-30 border-b border-gray-200/70 dark:border-slate-700/70">
-    <div class="flex min-h-[60px] items-center justify-between px-4 md:px-5">
-      <div class="min-w-0">
-        <h1 class="text-lg font-semibold tracking-tight text-gray-950 dark:text-white">{{ title }}</h1>
-        <p v-if="subtitle" class="mt-0.5 max-w-[520px] truncate text-xs leading-5 text-gray-500 dark:text-slate-400">{{ subtitle }}</p>
+    <div class="flex min-h-[60px] items-center justify-between gap-3 px-4 md:px-5">
+      <div class="flex min-w-0 flex-1 items-center gap-3">
+        <button type="button" class="btn btn-secondary shrink-0 lg:hidden" aria-label="打开导航" @click="emit('toggleMobileNav')">
+          菜单
+        </button>
+        <div class="min-w-0">
+          <h1 class="truncate whitespace-nowrap text-base font-semibold tracking-tight text-gray-950 dark:text-white sm:text-lg">{{ title }}</h1>
+          <p v-if="subtitle" class="mt-0.5 max-w-[520px] truncate text-xs leading-5 text-gray-500 dark:text-slate-400">{{ subtitle }}</p>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <span class="badge badge-success hidden sm:inline-flex">MedOPL</span>
 
-        <button type="button" class="btn btn-secondary min-w-[72px]" @click="helpOpen = true">
+        <button type="button" class="btn btn-secondary hidden min-w-[72px] sm:inline-flex" @click="helpOpen = true">
           帮助
         </button>
 
-        <button type="button" class="btn btn-secondary min-w-[72px]" @click="announcementOpen = true">
+        <button type="button" class="btn btn-secondary hidden min-w-[72px] sm:inline-flex" @click="announcementOpen = true">
           公告
           <span
             v-if="activeAnnouncementCount"
@@ -23,7 +28,7 @@
           </span>
         </button>
 
-        <button id="theme-toggle" type="button" class="btn btn-secondary min-w-[92px]" @click="toggleTheme">
+        <button id="theme-toggle" type="button" class="btn btn-secondary hidden min-w-[92px] sm:inline-flex" @click="toggleTheme">
           {{ themeLabel }}
         </button>
 
@@ -109,6 +114,10 @@ import { fetchAnnouncements } from "@/api/portal";
 defineProps<{
   title: string;
   subtitle?: string;
+}>();
+
+const emit = defineEmits<{
+  toggleMobileNav: [];
 }>();
 
 interface CurrentUserState {

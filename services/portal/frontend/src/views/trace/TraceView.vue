@@ -30,7 +30,7 @@
             <div>
               <h2 class="panel-title">运行轨迹</h2>
               <p class="panel-subtitle">
-                运行轨迹只展示会话、工作空间、任务、输出文件引用、状态、观测摘要和时间；原始输入和密钥字段不会出现在普通用户界面。
+                运行轨迹只展示会话、工作空间、任务、输出文件引用、状态、观测摘要和时间；不会展示不适合普通用户查看的内部信息。
               </p>
               <p class="panel-subtitle">
                 余额和充值状态只用于查看费用估算关联，当前页面不会执行真实扣费。
@@ -70,13 +70,38 @@
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 class="panel-title">会话列表</h2>
-              <p class="panel-subtitle">业务视角优先；技术 trace 信息默认折叠到详情。</p>
+              <p class="panel-subtitle">业务视角优先；运行轨迹信息默认折叠到详情。</p>
             </div>
             <span class="badge badge-primary">{{ payload.summary.traceCount || 0 }} 条</span>
           </div>
 
-          <div class="table-shell">
-            <table class="text-sm">
+          <div class="mobile-card-list">
+            <div v-for="(item, index) in payload.items" :key="item.traceId || item.sessionId" class="mobile-only-card">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.traceName || item.sessionId || "会话" }}</div>
+                  <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">会话 {{ displayIndex(index) }}</div>
+                </div>
+                <span class="badge shrink-0" :class="statusBadge(item.businessStatus || item.status)">{{ humanizeStatus(item.businessStatus || item.status) }}</span>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                <div><span class="block text-gray-400 dark:text-slate-500">工作空间</span>工作空间 {{ displayIndex(index) }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">任务</span>任务 {{ displayIndex(index) }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">文件</span>{{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">资源用量</span>{{ item.resourceUsage?.tokenCount || item.observability?.usageSummary?.totalTokens || 0 }}</div>
+              </div>
+              <div class="mt-3 space-y-1 text-xs text-gray-500 dark:text-slate-400">
+                <div>费用估算 {{ costEstimateText(item) }}</div>
+                <div v-for="file in linkedOutputFiles(item)" :key="file.artifactRef || file.fileRef || file.name">
+                  输出文件 {{ file.name || "结果文件" }}
+                </div>
+              </div>
+            </div>
+            <div v-if="!payload.items.length" class="empty-state">当前暂无会话轨迹</div>
+          </div>
+
+          <div class="desktop-table-shell">
+            <table class="min-w-[980px] text-sm">
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">会话</th>
@@ -96,8 +121,8 @@
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.traceName || item.sessionId || "会话" }}</div>
                     <div class="mt-1 text-[11px] text-gray-500 dark:text-slate-400">会话 {{ displayIndex(index) }}</div>
                   </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">工作空间 {{ displayIndex(index) }}</td>
-                  <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">任务 {{ displayIndex(index) }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-slate-300">工作空间 {{ displayIndex(index) }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-xs text-gray-700 dark:text-slate-300">任务 {{ displayIndex(index) }}</td>
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
                     <div>{{ item.files?.inputsCount || 0 }} 入 / {{ item.files?.outputsCount || 0 }} 出</div>
                     <div class="mt-2 space-y-1">
@@ -106,17 +131,17 @@
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">
+                  <td class="whitespace-nowrap px-4 py-3 text-xs text-gray-700 dark:text-slate-300">
                     <div>资源用量 {{ item.resourceUsage?.tokenCount || item.observability?.usageSummary?.totalTokens || 0 }}</div>
                     <div class="mt-1 text-gray-500 dark:text-slate-400">输出文件 {{ item.resourceUsage?.outputFileCount || linkedOutputFiles(item).length }}</div>
                   </td>
-                  <td class="px-4 py-3 text-xs text-gray-700 dark:text-slate-300">
+                  <td class="whitespace-nowrap px-4 py-3 text-xs text-gray-700 dark:text-slate-300">
                     <div>费用估算 {{ costEstimateText(item) }}</div>
                     <div class="mt-1 text-gray-500 dark:text-slate-400">
                       余额关联 {{ item.balanceLink?.linkedToBalance ? "已关联" : "待估算" }}，充值状态 {{ rechargeStatusText(item.balanceLink?.rechargeStatus) }}
                     </div>
                   </td>
-                  <td class="px-4 py-3">
+                  <td class="whitespace-nowrap px-4 py-3">
                     <span class="badge" :class="statusBadge(item.businessStatus || item.status)">{{ humanizeStatus(item.businessStatus || item.status) }}</span>
                   </td>
                   <td class="px-4 py-3 text-gray-700 dark:text-slate-300">
@@ -127,7 +152,7 @@
                       延迟 {{ item.observability?.latencyMs || 0 }} ms
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.startedAt || "-" }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.startedAt || "-" }}</td>
                 </tr>
                 <tr v-if="!payload.items.length">
                   <td colspan="9" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">当前暂无会话轨迹</td>

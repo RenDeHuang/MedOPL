@@ -98,7 +98,7 @@
                   <div>
                     <div class="font-medium text-gray-950 dark:text-white">工作空间 {{ index + 1 }}</div>
                     <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                      当前套餐 {{ displayPlan(item) }} · 托管运行环境 {{ item.status || "-" }}
+                      当前套餐 {{ displayPlan(item) }} · 托管运行环境 {{ humanizeStatus(item.status) }}
                     </div>
                   </div>
                   <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
@@ -246,7 +246,7 @@ function humanizeStatus(status?: string) {
   const normalized = String(status || "").toLowerCase();
   if (["completed", "success", "finished"].includes(normalized)) return "已完成";
   if (normalized === "running") return "运行中";
-  if (normalized === "active") return "活跃";
+  if (normalized === "active") return "可用";
   if (normalized === "archived") return "已归档";
   if (["failed", "error", "disabled"].includes(normalized)) return "异常";
   return status || "未知";

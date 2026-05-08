@@ -75,7 +75,7 @@
                 工作空间只管理文件空间、文件夹、输入文件、输出文件和运行轨迹关联。需要购买、升级或扩容时，请到套餐页处理。
               </p>
               <p class="panel-subtitle">
-                普通删除后进入 {{ ordinaryDeleteRequiresConfirmation ? 0 : (payload.fileSpace?.deletePolicy.retentionDays || 7) }} 天保护期；永久删除或清空文件空间需要二次确认。
+                普通删除后进入 {{ fileSpaceRetentionDays }} 天保护期；永久删除或清空文件空间需要二次确认。
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -126,14 +126,22 @@
               <div class="mt-4 flex flex-wrap gap-2">
                 <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.uploadToCurrentFolder">上传文件到当前文件夹</button>
                 <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.batchDownload">批量下载</button>
-                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.batchDelete">批量删除</button>
-                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.deleteFileOrFolder">删除文件/文件夹</button>
-                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.permanentDeleteRequiresConfirmation">永久删除</button>
-                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.clearFileSpaceRequiresConfirmation">清空文件空间</button>
               </div>
-              <p class="mt-3 text-xs text-gray-500 dark:text-slate-400">
-                普通删除不需要二次确认；保护期为 {{ payload.fileSpace.deletePolicy.retentionDays }} 天。
-              </p>
+              <div class="danger-action-group mt-4">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div class="text-sm font-semibold text-amber-900 dark:text-amber-200">危险操作</div>
+                    <p class="mt-1 text-xs text-amber-800 dark:text-amber-300">普通删除不需要二次确认；保护期为 {{ fileSpaceRetentionDays }} 天。</p>
+                  </div>
+                  <span class="badge badge-warning">保护期</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.batchDelete">批量删除</button>
+                  <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.deleteFileOrFolder">删除文件/文件夹</button>
+                  <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.permanentDeleteRequiresConfirmation">永久删除 <span class="text-[11px] text-amber-700 dark:text-amber-300">需二次确认</span></button>
+                  <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.clearFileSpaceRequiresConfirmation">清空文件空间 <span class="text-[11px] text-amber-700 dark:text-amber-300">需二次确认</span></button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -190,8 +198,32 @@
             <span class="badge badge-primary">{{ payload.tasksPagination.total }} 个</span>
           </div>
 
-          <div class="table-shell">
-            <table class="text-sm">
+          <div class="mobile-card-list">
+            <div v-for="item in payload.tasksPageRows" :key="item.slug" class="mobile-only-card">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.slug }}</div>
+                  <div class="mt-1 truncate text-xs text-gray-500 dark:text-slate-400">{{ item.slug }}</div>
+                </div>
+                <span class="badge shrink-0" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
+              </div>
+              <div class="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                <div><span class="block text-gray-400 dark:text-slate-500">输入文件</span>{{ item.inputs }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">输出文件</span>{{ item.outputs }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">任务</span>{{ item.runs }}</div>
+              </div>
+              <div class="mt-3 flex items-center justify-between gap-3">
+                <span class="truncate text-xs text-gray-500 dark:text-slate-400">{{ item.updatedAt || "-" }}</span>
+                <RouterLink class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400" :to="{ path: '/workspace', query: { task: item.slug } }">
+                  打开
+                </RouterLink>
+              </div>
+            </div>
+            <div v-if="!payload.tasksPageRows.length" class="empty-state">暂无工作空间</div>
+          </div>
+
+          <div class="desktop-table-shell">
+            <table class="min-w-[760px] text-sm">
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">工作空间</th>
@@ -207,16 +239,16 @@
                 <tr v-for="item in payload.tasksPageRows" :key="item.slug" class="table-row">
                   <td class="px-4 py-3">
                     <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.slug }}</div>
-                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.slug }}</div>
+                    <div class="mt-1 whitespace-nowrap text-xs text-gray-500 dark:text-slate-400">{{ item.slug }}</div>
                   </td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.inputs }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.outputs }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.runs }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.inputs }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.outputs }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.runs }}</td>
                   <td class="px-4 py-3">
                     <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
                   </td>
-                  <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.updatedAt || "-" }}</td>
-                  <td class="px-4 py-3">
+                  <td class="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.updatedAt || "-" }}</td>
+                  <td class="whitespace-nowrap px-4 py-3">
                     <RouterLink class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400" :to="{ path: '/workspace', query: { task: item.slug } }">
                       打开
                     </RouterLink>
@@ -333,6 +365,7 @@ const fileSpaceUsageText = computed(() => {
   return `${fileSpace.value.usedGb}GB / ${fileSpace.value.capacityGb}GB`;
 });
 const ordinaryDeleteRequiresConfirmation = computed(() => Boolean(fileSpace.value?.deletePolicy.ordinaryDeleteRequiresConfirmation));
+const fileSpaceRetentionDays = computed(() => fileSpace.value?.deletePolicy.retentionDays || 7);
 
 function routeQueryObject() {
   const query: Record<string, string> = {};

@@ -324,7 +324,7 @@ function money(value: number | undefined) {
 }
 
 function microMoney(value: number | undefined) {
-  return `¥${Number(value || 0).toFixed(5)}`;
+  return money(value);
 }
 
 function sourceBackfilledValue(value: number | undefined) {
@@ -335,7 +335,7 @@ function humanizeStatus(status?: string) {
   const normalized = String(status || "").toLowerCase();
   if (["completed", "success", "finished"].includes(normalized)) return "已完成";
   if (normalized === "running") return "运行中";
-  if (normalized === "active") return "活跃";
+  if (normalized === "active") return "运行中";
   if (["failed", "error"].includes(normalized)) return "失败";
   return status || "未知";
 }
