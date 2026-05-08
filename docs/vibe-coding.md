@@ -114,6 +114,12 @@ node scripts/v22-agent-workflow.mjs next --state <json>
 node scripts/v22-agent-workflow.mjs ingest --from A|B|C|D --file <reply.txt>
 node scripts/v22-agent-workflow.mjs write-pack --window A|B|C|D --state <state.json>
 node scripts/v22-agent-workflow.mjs status
+node scripts/v22-agent-workflow.mjs lane init --id <lane-id> --type <portal-ui|contract|ops-console|resource-billing|cleanup|workflow> --goal <text> --owner A|C|D --branch <branch> --worktree <path>
+node scripts/v22-agent-workflow.mjs lane ingest --id <lane-id> --from A|B|C|D --file <reply.txt>
+node scripts/v22-agent-workflow.mjs lane next --id <lane-id>
+node scripts/v22-agent-workflow.mjs lane board
+node scripts/v22-agent-workflow.mjs lane handoff --id <lane-id>
+node scripts/v22-agent-workflow.mjs lane close --id <lane-id> --status <merged|abandoned|superseded>
 ```
 
 ## Owner worktree / long autonomy 纪律
@@ -141,6 +147,23 @@ node scripts/v22-agent-workflow.mjs status
 `ingest` 只根据显式状态解析和回复文件生成下一步任务包，不自动 merge、不自动 push、不启动 tmux。
 `write-pack` 只根据状态输出可复制 prompt。
 `status` 只展示当前 lane 状态、branch、worktree、pending owner 和 next action。
+
+## Agent Governance Lane State
+
+第三阶段把 A/B/C/D 工作流升级为 repo-governed lane state + handoff bundle。
+
+- repo-tracked truth：`AGENTS.md`、`docs/vibe-coding.md`、`docs/contracts`、`docs/recovery`、`scripts/smoke-*`。
+- local runtime state：`.runtime/v22-agent-workflow/lanes/*.json`，不得进 git。
+- tmux/session/agent 对话只是执行面，不是 truth。
+- 主工作区只给 B 做审计、ff-only merge、checkpoint、push、清理。
+- A/C/D 写文件默认独立 worktree。
+- B 的人工审计闸门不能被绕过。
+- `lane init` 创建本地 lane state。
+- `lane ingest` 读取 A/B/C/D 回复文件并更新本地 lane state。
+- `lane next` 根据 lane state 输出下一步任务包。
+- `lane board` 输出当前所有 lanes。
+- `lane handoff` 输出 one-person-lab 风格 handoff bundle。
+- `lane close` 标记 lane 为 merged / abandoned / superseded，并输出 cleanup checklist。
 
 ## 分支开工声明模板
 

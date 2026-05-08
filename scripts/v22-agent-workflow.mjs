@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,11 +50,14 @@ const statusAliases = Object.freeze({
 });
 
 const worktreeRoot = "/home/dev/projects/platform-v22.worktrees";
+const runtimeStateRoot = ".runtime/v22-agent-workflow";
+const laneStateDir = `${runtimeStateRoot}/lanes`;
 
 const workspaceDiscipline = Object.freeze({
   mainWorkspaceRole: "主工作区只用于规划、B 审计、ff-only merge、checkpoint、push、清理。",
   mainWorkspaceWritable: false,
   mainWorkspaceWriteReminder: "主工作区不可写：A/C/D 写文件时必须切到独立 git worktree。",
+  bAuditGateRule: "B 的人工审计闸门不能被绕过。",
   bUsesMainWorkspace: true,
   bWorkspace: "main",
   writingLanesUseWorktree: ["A", "C", "D"],
@@ -66,6 +69,16 @@ const workspaceDiscipline = Object.freeze({
   truthTrackedPaths: ["contracts", "docs", "scripts", "tests"],
   nonCommittableLocalState: ["t" + "mux session", "agent 对话", "临时日志", "本地状态"],
 });
+
+const repoGovernanceTruth = Object.freeze([
+  "AGENTS.md",
+  "docs/vibe-coding.md",
+  "docs/contracts",
+  "docs/recovery",
+  "scripts/smoke-*",
+]);
+
+const forbiddenActions = Object.freeze(disallowedActions);
 
 const workflowTypes = {
   cleanup: {
@@ -278,7 +291,12 @@ const nextStateHandlers = {
 };
 
 function parseArgs(argv) {
-  const [mode, ...rest] = argv;
+  const [mode, ...rawRest] = argv;
+  const rest = [...rawRest];
+  let submode = "";
+  if (mode === "lane" && rest[0] && !rest[0].startsWith("--")) {
+    submode = rest.shift();
+  }
   const options = {};
   for (let index = 0; index < rest.length; index += 1) {
     const item = rest[index];
@@ -294,7 +312,7 @@ function parseArgs(argv) {
       index += 1;
     }
   }
-  return { mode, options };
+  return { mode, submode, options };
 }
 
 function workflowForType(type) {
@@ -369,6 +387,7 @@ function disciplineLines(discipline = workspaceDiscipline) {
   return [
     discipline.mainWorkspaceRole,
     discipline.mainWorkspaceWriteReminder,
+    discipline.bAuditGateRule,
     "B 使用主工作区。",
     discipline.writingLaneRule,
     "一个 worktree 只承载一条 active lane。",
@@ -460,6 +479,225 @@ function currentBranchName() {
 
 function currentWorktreePath() {
   return gitCommand(["rev-parse", "--show-toplevel"]) || process.cwd();
+}
+
+function repoRootPath() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+}
+
+function laneIdSafe(laneId) {
+  const value = String(laneId || "");
+  if (!/^[a-zA-Z0-9._-]+$/.test(value)) {
+    throw new Error(`invalid_lane_id:${laneId || "(missing)"}`);
+  }
+  return value;
+}
+
+function laneStatePath(laneId) {
+  return path.join(repoRootPath(), laneStateDir, `${laneIdSafe(laneId)}.json`);
+}
+
+function relativeLaneStatePath(laneId) {
+  return `${laneStateDir}/${laneIdSafe(laneId)}.json`;
+}
+
+async function ensureLaneStateDir() {
+  await mkdir(path.join(repoRootPath(), laneStateDir), { recursive: true });
+}
+
+async function writeJsonAtomic(filePath, payload) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  const tempPath = `${filePath}.tmp`;
+  await writeFile(tempPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  await rename(tempPath, filePath);
+}
+
+async function readLane(laneId) {
+  const filePath = laneStatePath(laneId);
+  const source = await readFile(filePath, "utf8");
+  return JSON.parse(source);
+}
+
+async function writeLane(lane) {
+  await writeJsonAtomic(laneStatePath(lane.id), lane);
+}
+
+async function listLanes() {
+  await ensureLaneStateDir();
+  const dirPath = path.join(repoRootPath(), laneStateDir);
+  const entries = await readdir(dirPath, { withFileTypes: true });
+  const lanes = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    const source = await readFile(path.join(dirPath, entry.name), "utf8");
+    lanes.push(JSON.parse(source));
+  }
+  return lanes.sort((left, right) => String(left.id).localeCompare(String(right.id)));
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function packageContractsForType(type) {
+  const workflow = workflowTypes[type === "workflow" ? "contract" : type];
+  if (type === "workflow") {
+    return [
+      "AGENTS.md",
+      "docs/vibe-coding.md",
+      "docs/contracts/README.md",
+      "docs/recovery/status-matrix.md",
+      "scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "scripts/smoke-test-v22-workflow-gate.mjs",
+    ];
+  }
+  if (!workflow) return stageDocuments;
+  return workflow.contracts;
+}
+
+function validationCommandsForType(type) {
+  if (type === "workflow") {
+    return [
+      "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "node scripts/smoke-test-v22-workflow-gate.mjs",
+      "git diff --check -- scripts docs .gitignore",
+    ];
+  }
+  const workflow = workflowTypes[type];
+  return workflow?.validations || [
+    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "git diff --check -- scripts docs",
+  ];
+}
+
+function createLaneRecord({ id, type, goal, owner, branch, worktree }) {
+  const laneId = laneIdSafe(id);
+  if (!workflowTypes[type] && type !== "workflow") {
+    throw new Error(`unknown_lane_type:${type || "(missing)"}`);
+  }
+  if (!["A", "C", "D"].includes(owner)) {
+    throw new Error(`invalid_lane_owner:${owner || "(missing)"}`);
+  }
+  if (!goal || goal === true) {
+    throw new Error("lane_goal_required");
+  }
+  if (!branch || branch === true) {
+    throw new Error("lane_branch_required");
+  }
+  if (!worktree || worktree === true) {
+    throw new Error("lane_worktree_required");
+  }
+  const timestamp = nowIso();
+  return {
+    schemaVersion: 1,
+    id: laneId,
+    type,
+    goal,
+    owner,
+    branch,
+    worktree,
+    status: "LANE_INITIALIZED",
+    latestCommit: "",
+    pendingOwner: owner,
+    nextWindow: owner,
+    nextAction: "start work in owner worktree",
+    blockerCount: 0,
+    blockers: [],
+    completed: [],
+    subscribedContracts: packageContractsForType(type),
+    verificationCommands: validationCommandsForType(type),
+    forbiddenActions,
+    runtimeStatePath: relativeLaneStatePath(laneId),
+    runtimeStateTracked: false,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    events: [
+      {
+        at: timestamp,
+        from: "system",
+        status: "LANE_INITIALIZED",
+        summary: "lane state initialized",
+      },
+    ],
+    closed: null,
+  };
+}
+
+function nextForStableStatus(stableStatus, state) {
+  const transition = createIngestTransitionPack({ stableStatus, state });
+  return transition;
+}
+
+function updateLaneFromIngest(lane, parsedState, from, transition) {
+  const timestamp = nowIso();
+  const blocker = parsedState.blocker || "";
+  const completed = [...(lane.completed || [])];
+  if (parsedState.summary) completed.push(parsedState.summary);
+  if (parsedState.fix) completed.push(parsedState.fix);
+  const blockers = [...(lane.blockers || [])];
+  if (blocker) {
+    blockers.push({
+      at: timestamp,
+      from,
+      status: parsedState.stableStatus,
+      text: blocker,
+    });
+  }
+  return {
+    ...lane,
+    owner: transition.next.window,
+    status: parsedState.stableStatus,
+    branch: parsedState.branch || lane.branch,
+    worktree: parsedState.worktree || lane.worktree,
+    latestCommit: parsedState.commit || lane.latestCommit,
+    pendingOwner: transition.next.window,
+    nextWindow: transition.next.window,
+    nextAction: transition.next.action,
+    blockerCount: blockers.length,
+    blockers,
+    completed,
+    updatedAt: timestamp,
+    events: [
+      ...(lane.events || []),
+      {
+        at: timestamp,
+        from,
+        status: parsedState.stableStatus,
+        commit: parsedState.commit,
+        summary: parsedState.summary || parsedState.fix || parsedState.blocker || "",
+      },
+    ],
+  };
+}
+
+function worktreeClean(worktreePath) {
+  try {
+    const output = execFileSync("git", ["status", "--porcelain"], {
+      cwd: worktreePath,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+    return output.length === 0;
+  } catch {
+    return false;
+  }
+}
+
+function mainWorkspaceClean() {
+  return worktreeClean("/home/dev/projects/platform-v22");
+}
+
+function branchMergeReady(lane) {
+  return lane.status === "B_MERGED";
+}
+
+async function pathExists(targetPath) {
+  try {
+    await stat(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function createStartPack({ type }) {
@@ -670,6 +908,28 @@ function createDonePack({ state } = {}) {
   };
 }
 
+function createOwnerActionPack({ lane }) {
+  return {
+    ok: true,
+    command: "owner-action-pack",
+    window: lane.nextWindow || lane.owner,
+    stableStatus: lane.status,
+    branch: lane.branch,
+    prompt: [
+      `继续 lane ${lane.id}: ${lane.goal}`,
+      `branch: ${lane.branch}`,
+      `worktree: ${lane.worktree}`,
+      `next action: ${lane.nextAction}`,
+      "A/C/D 写文件默认在独立 worktree；B 的人工审计闸门不能被绕过。",
+    ],
+    verificationCommands: lane.verificationCommands,
+    recommendedBranch: lane.branch,
+    recommendedWorktreePath: lane.worktree,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
 function createCheckpointPack() {
   return {
     ok: true,
@@ -849,6 +1109,195 @@ async function createIngestPack({ from, replyFile }) {
   };
 }
 
+async function createLaneInitPack(options) {
+  const lane = createLaneRecord(options);
+  await ensureLaneStateDir();
+  await writeLane(lane);
+  return {
+    ok: true,
+    command: "lane init",
+    lane,
+    message: "repo-governed lane state initialized",
+    runtimeStatePath: lane.runtimeStatePath,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+async function createLaneIngestPack({ id, from, replyFile }) {
+  const lane = await readLane(id);
+  const ingest = await createIngestPack({ from, replyFile });
+  const updatedLane = updateLaneFromIngest(lane, ingest.state, from, ingest);
+  await writeLane(updatedLane);
+  return {
+    ok: true,
+    command: "lane ingest",
+    lane: updatedLane,
+    stableStatus: ingest.stableStatus,
+    next: ingest.next,
+    pack: ingest.pack,
+    runtimeStatePath: updatedLane.runtimeStatePath,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+async function createLaneNextPack({ id }) {
+  const lane = await readLane(id);
+  if (!stableStatusEnum.includes(lane.status)) {
+    const pack = createOwnerActionPack({ lane });
+    return {
+      ok: true,
+      command: "lane next",
+      lane,
+      stableStatus: lane.status,
+      next: { window: lane.nextWindow, action: lane.nextAction },
+      pack,
+      workspaceDiscipline,
+      disallowedActions,
+    };
+  }
+  const state = {
+    status: lane.status,
+    stableStatus: assertKnownStatus(lane.status),
+    branch: lane.branch,
+    commit: lane.latestCommit,
+    blocker: lane.blockers?.at(-1)?.text || "",
+    surface: lane.surface || "overview",
+  };
+  const transition = nextForStableStatus(state.stableStatus, state);
+  return {
+    ok: true,
+    command: "lane next",
+    lane,
+    stableStatus: state.stableStatus,
+    next: transition.next,
+    pack: transition.pack,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+async function createLaneBoardPack() {
+  const lanes = await listLanes();
+  const mainClean = mainWorkspaceClean();
+  const rows = lanes.map((lane) => ({
+    id: lane.id,
+    branch: lane.branch,
+    worktree: lane.worktree,
+    owner: lane.owner,
+    status: lane.status,
+    latestCommit: lane.latestCommit,
+    nextWindow: lane.nextWindow,
+    nextAction: lane.nextAction,
+    blockerCount: lane.blockerCount || 0,
+    mainWorkspaceClean: mainClean,
+    mergeReady: branchMergeReady(lane),
+  }));
+  return {
+    ok: true,
+    command: "lane board",
+    lanes: rows,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+async function createLaneHandoffPack({ id }) {
+  const lane = await readLane(id);
+  const transition = stableStatusEnum.includes(lane.status)
+    ? nextForStableStatus(lane.status, {
+      status: lane.status,
+      stableStatus: lane.status,
+      branch: lane.branch,
+      commit: lane.latestCommit,
+      blocker: lane.blockers?.at(-1)?.text || "",
+      surface: lane.surface || "overview",
+    })
+    : { next: { window: lane.nextWindow, action: lane.nextAction } };
+  return {
+    ok: true,
+    command: "lane handoff",
+    lane,
+    bundle: {
+      currentGoal: lane.goal,
+      completed: lane.completed || [],
+      currentBlocker: lane.blockers?.at(-1)?.text || "none",
+      subscribedContracts: lane.subscribedContracts,
+      worktree: lane.worktree,
+      branch: lane.branch,
+      verificationCommands: lane.verificationCommands,
+      nextAction: transition.next.action,
+      nextWindow: transition.next.window,
+      forbiddenActions,
+    },
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+async function createLaneClosePack({ id, status }) {
+  const closeStatus = String(status || "");
+  if (!["merged", "abandoned", "superseded"].includes(closeStatus)) {
+    throw new Error(`invalid_lane_close_status:${status || "(missing)"}`);
+  }
+  const lane = await readLane(id);
+  const timestamp = nowIso();
+  const worktreeExists = await pathExists(lane.worktree);
+  const clean = worktreeExists ? worktreeClean(lane.worktree) : false;
+  const updatedLane = {
+    ...lane,
+    status: `LANE_${closeStatus.toUpperCase()}`,
+    pendingOwner: "B",
+    nextWindow: "B",
+    nextAction: "cleanup checklist",
+    updatedAt: timestamp,
+    closed: {
+      at: timestamp,
+      status: closeStatus,
+    },
+    events: [
+      ...(lane.events || []),
+      {
+        at: timestamp,
+        from: "system",
+        status: `LANE_${closeStatus.toUpperCase()}`,
+        summary: "lane closed",
+      },
+    ],
+  };
+  await writeLane(updatedLane);
+  return {
+    ok: true,
+    command: "lane close",
+    lane: updatedLane,
+    cleanupChecklist: [
+      {
+        item: "worktree 是否可删除",
+        ok: worktreeExists && clean,
+      },
+      {
+        item: "branch 是否可删除",
+        ok: closeStatus !== "merged" ? true : false,
+      },
+      {
+        item: "是否已 push",
+        ok: closeStatus === "merged",
+      },
+      {
+        item: "是否有未提交文件",
+        ok: clean,
+      },
+      {
+        item: "runtime state 需要归档或删除",
+        ok: true,
+      },
+    ],
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
 function renderPromptBlock(prompt) {
   if (Array.isArray(prompt)) {
     return humanList(prompt);
@@ -931,10 +1380,187 @@ function renderStatusPack(pack) {
   ].join("\n");
 }
 
+function renderLaneSummary(lane) {
+  return humanKeyValue([
+    ["lane id", lane.id],
+    ["type", lane.type],
+    ["goal", lane.goal],
+    ["branch", lane.branch],
+    ["worktree", lane.worktree],
+    ["owner", lane.owner],
+    ["status", lane.status],
+    ["latest commit", lane.latestCommit],
+    ["pending owner", lane.pendingOwner],
+    ["next window", lane.nextWindow],
+    ["next action", lane.nextAction],
+    ["blockerCount", lane.blockerCount],
+    ["runtime state", lane.runtimeStatePath],
+    ["runtimeStateTracked", String(lane.runtimeStateTracked)],
+  ]);
+}
+
+function renderLaneInitPack(pack) {
+  return [
+    "# lane init",
+    "",
+    pack.message,
+    "",
+    "## repo-governed lane state",
+    renderLaneSummary(pack.lane),
+    "",
+    "## repo-tracked truth",
+    humanList(repoGovernanceTruth),
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## 边界确认",
+    humanList(sharedBoundaries),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderLaneIngestPack(pack) {
+  return [
+    `# lane ingest: ${pack.lane.id} -> ${pack.stableStatus}`,
+    "",
+    renderLaneSummary(pack.lane),
+    "",
+    `next: ${pack.next.window} ${pack.next.action}`,
+    "",
+    "## next pack",
+    renderPack(pack.pack),
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderLaneNextPack(pack) {
+  return [
+    `# lane next: ${pack.lane.id}`,
+    "",
+    renderLaneSummary(pack.lane),
+    "",
+    `next: ${pack.next.window} ${pack.next.action}`,
+    "",
+    "## next pack",
+    renderPack(pack.pack),
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## 边界确认",
+    humanList(sharedBoundaries),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderLaneBoardPack(pack) {
+  const rows = pack.lanes.map((lane) => [
+    `### ${lane.id}`,
+    humanKeyValue([
+      ["branch", lane.branch],
+      ["worktree", lane.worktree],
+      ["owner", lane.owner],
+      ["status", lane.status],
+      ["latest commit", lane.latestCommit],
+      ["next window", lane.nextWindow],
+      ["next action", lane.nextAction],
+      ["blockerCount", lane.blockerCount],
+      ["mainWorkspaceClean", String(lane.mainWorkspaceClean)],
+      ["mergeReady", String(lane.mergeReady)],
+    ]),
+  ].join("\n")).join("\n\n");
+  return [
+    "# lane board",
+    "",
+    rows || "no lanes",
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderLaneHandoffPack(pack) {
+  return [
+    `# handoff bundle: ${pack.lane.id}`,
+    "",
+    "## 当前目标",
+    pack.bundle.currentGoal,
+    "",
+    "## 已完成",
+    pack.bundle.completed.length ? humanList(pack.bundle.completed) : "- none",
+    "",
+    "## 当前 blocker",
+    pack.bundle.currentBlocker,
+    "",
+    "## 订阅合同",
+    humanList(pack.bundle.subscribedContracts),
+    "",
+    "## worktree",
+    pack.bundle.worktree,
+    "",
+    "## branch",
+    pack.bundle.branch,
+    "",
+    "## verification commands",
+    humanList(pack.bundle.verificationCommands),
+    "",
+    "## next action",
+    `窗口 ${pack.bundle.nextWindow}: ${pack.bundle.nextAction}`,
+    "",
+    "## forbidden actions",
+    humanList(pack.bundle.forbiddenActions),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderLaneClosePack(pack) {
+  return [
+    `# lane close: ${pack.lane.id}`,
+    "",
+    renderLaneSummary(pack.lane),
+    "",
+    "## cleanup checklist",
+    pack.cleanupChecklist.map((item) => `- ${item.item}: ${item.ok}`).join("\n"),
+    "",
+    "## forbidden actions",
+    humanList(forbiddenActions),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
 function renderPack(pack) {
   if (pack.command === "review-pack") return renderReview(pack);
   if (pack.command === "checkpoint-pack") return renderCheckpoint(pack);
   if (pack.command === "c-qa-pack") return renderQa(pack);
+  if (pack.command === "lane init") return renderLaneInitPack(pack);
+  if (pack.command === "lane ingest") return renderLaneIngestPack(pack);
+  if (pack.command === "lane next") return renderLaneNextPack(pack);
+  if (pack.command === "lane board") return renderLaneBoardPack(pack);
+  if (pack.command === "lane handoff") return renderLaneHandoffPack(pack);
+  if (pack.command === "lane close") return renderLaneClosePack(pack);
   if (pack.command === "fix-pack" || pack.command === "re-review-pack" || pack.command === "done" || pack.command === "write-pack") {
     return renderActionPack(pack);
   }
@@ -1111,12 +1737,18 @@ function printUsage() {
     "  node scripts/v22-agent-workflow.mjs ingest --from A|B|C|D --file <reply.txt> [--json]",
     "  node scripts/v22-agent-workflow.mjs write-pack --window A|B|C|D --state <json> [--json]",
     "  node scripts/v22-agent-workflow.mjs status [--state <json>] [--json]",
+    "  node scripts/v22-agent-workflow.mjs lane init --id <lane-id> --type <portal-ui|contract|ops-console|resource-billing|cleanup|workflow> --goal <text> --owner A|C|D --branch <branch> --worktree <path> [--json]",
+    "  node scripts/v22-agent-workflow.mjs lane ingest --id <lane-id> --from A|B|C|D --file <reply.txt> [--json]",
+    "  node scripts/v22-agent-workflow.mjs lane next --id <lane-id> [--json]",
+    "  node scripts/v22-agent-workflow.mjs lane board [--json]",
+    "  node scripts/v22-agent-workflow.mjs lane handoff --id <lane-id> [--json]",
+    "  node scripts/v22-agent-workflow.mjs lane close --id <lane-id> --status <merged|abandoned|superseded> [--json]",
     "",
   ].join("\n"));
 }
 
 async function main() {
-  const { mode, options } = parseArgs(process.argv.slice(2));
+  const { mode, submode, options } = parseArgs(process.argv.slice(2));
   const jsonOnly = options.json === true;
   let pack;
   let rendered;
@@ -1145,6 +1777,31 @@ async function main() {
   } else if (mode === "status") {
     pack = createStatusPack({ state: options.state && options.state !== true ? parseState(options.state) : null });
     rendered = renderStatusPack(pack);
+  } else if (mode === "lane" && submode === "init") {
+    pack = await createLaneInitPack({
+      id: options.id,
+      type: options.type,
+      goal: options.goal,
+      owner: options.owner,
+      branch: options.branch,
+      worktree: options.worktree,
+    });
+    rendered = renderLaneInitPack(pack);
+  } else if (mode === "lane" && submode === "ingest") {
+    pack = await createLaneIngestPack({ id: options.id, from: options.from, replyFile: options.file });
+    rendered = renderLaneIngestPack(pack);
+  } else if (mode === "lane" && submode === "next") {
+    pack = await createLaneNextPack({ id: options.id });
+    rendered = renderLaneNextPack(pack);
+  } else if (mode === "lane" && submode === "board") {
+    pack = await createLaneBoardPack();
+    rendered = renderLaneBoardPack(pack);
+  } else if (mode === "lane" && submode === "handoff") {
+    pack = await createLaneHandoffPack({ id: options.id });
+    rendered = renderLaneHandoffPack(pack);
+  } else if (mode === "lane" && submode === "close") {
+    pack = await createLaneClosePack({ id: options.id, status: options.status });
+    rendered = renderLaneClosePack(pack);
   } else {
     printUsage();
     process.exitCode = 2;

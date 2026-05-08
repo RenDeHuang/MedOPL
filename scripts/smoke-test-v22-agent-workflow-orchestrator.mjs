@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -10,6 +10,14 @@ const repoRoot = path.resolve(__dirname, "..");
 
 function runWorkflow(args) {
   return spawnSync(process.execPath, ["scripts/v22-agent-workflow.mjs", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+}
+
+function runGit(args) {
+  return spawnSync("git", args, {
     cwd: repoRoot,
     encoding: "utf8",
     stdio: "pipe",
@@ -59,6 +67,15 @@ assertIncludesAll(docs, [
   "主工作区只用于规划、B 审计、ff-only merge、checkpoint、push、清理",
   "A/C/D 只要会写文件，默认必须在独立 git worktree",
   "truth 必须进入 repo-tracked contracts/docs/scripts/tests",
+  "repo-governed lane state",
+  ".runtime/v22-agent-workflow/lanes/*.json",
+  "lane init",
+  "lane ingest",
+  "lane next",
+  "lane board",
+  "lane handoff",
+  "lane close",
+  "B 的人工审计闸门不能被绕过",
 ], "vibe_coding_doc");
 
 const startResult = runWorkflow(["start", "--type", "cleanup"]);
@@ -258,13 +275,149 @@ try {
   const secretReject = runWorkflow(["ingest", "--from", "A", "--file", path.join(tempRoot, ".env")]);
   assert.notEqual(secretReject.status, 0, "ingest_secret_like_file_must_fail");
   assert(secretReject.stderr.includes("secret_like_reply_file_rejected"), "ingest_secret_like_file_error");
+
+  const laneId = "gov-smoke-lane";
+  const laneStatePath = path.join(repoRoot, ".runtime/v22-agent-workflow/lanes/gov-smoke-lane.json");
+  await rm(laneStatePath, { force: true });
+
+  const laneInit = runWorkflow([
+    "lane",
+    "init",
+    "--id",
+    laneId,
+    "--type",
+    "workflow",
+    "--goal",
+    "repo-governed lane state + handoff bundle",
+    "--owner",
+    "D",
+    "--branch",
+    "feat/v22-agent-governance-lane-state",
+    "--worktree",
+    "/home/dev/projects/platform-v22.worktrees/agent-governance-lane-state",
+  ]);
+  assert.equal(laneInit.status, 0, "lane_init_must_exit_zero");
+  assertIncludesAll(laneInit.stdout, [
+    "lane init",
+    laneId,
+    ".runtime/v22-agent-workflow/lanes/gov-smoke-lane.json",
+    "repo-governed lane state",
+    "JSON 摘要",
+  ], "lane_init_human");
+  await access(laneStatePath);
+  const laneInitPayload = parseJson(runWorkflow(["lane", "init", "--id", "gov-smoke-json", "--type", "workflow", "--goal", "json init", "--owner", "D", "--branch", "feat/v22-agent-governance-lane-state", "--worktree", "/home/dev/projects/platform-v22.worktrees/agent-governance-lane-state", "--json"]).stdout);
+  assert.equal(laneInitPayload.command, "lane init", "lane_init_json_command");
+  assert.equal(laneInitPayload.lane.id, "gov-smoke-json", "lane_init_json_id");
+  assert.equal(laneInitPayload.lane.runtimeStateTracked, false, "lane_init_runtime_not_tracked");
+  await rm(path.join(repoRoot, ".runtime/v22-agent-workflow/lanes/gov-smoke-json.json"), { force: true });
+
+  const laneASuccess = await writeReply(tempRoot, "lane-a-success.txt", [
+    "status: A_COMMITTED",
+    "branch: feat/v22-agent-governance-lane-state",
+    "commit: 333cccc",
+    "summary: A 完成治理 lane state commit",
+  ].join("\n"));
+  const laneIngestA = runWorkflow(["lane", "ingest", "--id", laneId, "--from", "A", "--file", laneASuccess]);
+  assert.equal(laneIngestA.status, 0, "lane_ingest_a_success_must_exit_zero");
+  assertIncludesAll(laneIngestA.stdout, [
+    "lane ingest",
+    "A_COMMITTED",
+    "B review-pack",
+    laneId,
+    "JSON 摘要",
+  ], "lane_ingest_a_success_human");
+
+  const laneBBlocker = await writeReply(tempRoot, "lane-b-blocker.txt", [
+    "status: B_BLOCKER",
+    "branch: feat/v22-agent-governance-lane-state",
+    "commit: 333cccc",
+    "blocker: B 的人工审计闸门不能被绕过",
+  ].join("\n"));
+  const laneIngestB = parseJson(runWorkflow(["lane", "ingest", "--id", laneId, "--from", "B", "--file", laneBBlocker, "--json"]).stdout);
+  assert.equal(laneIngestB.command, "lane ingest", "lane_ingest_b_json_command");
+  assert.equal(laneIngestB.lane.status, "B_BLOCKER", "lane_ingest_b_status");
+  assert.equal(laneIngestB.lane.blockerCount, 1, "lane_ingest_b_blocker_count");
+  assert.equal(laneIngestB.next.action, "fix-pack", "lane_ingest_b_next_action");
+
+  const laneNextFix = runWorkflow(["lane", "next", "--id", laneId]);
+  assert.equal(laneNextFix.status, 0, "lane_next_fix_must_exit_zero");
+  assertIncludesAll(laneNextFix.stdout, [
+    "lane next",
+    "A fix-pack",
+    "B 的人工审计闸门不能被绕过",
+    "JSON 摘要",
+  ], "lane_next_fix_human");
+
+  const laneAFixed = await writeReply(tempRoot, "lane-a-fixed.txt", [
+    "status: A_FIXED",
+    "branch: feat/v22-agent-governance-lane-state",
+    "commit: 444dddd",
+    "fix: 保留 B 人工审计闸门",
+  ].join("\n"));
+  const laneIngestFixed = parseJson(runWorkflow(["lane", "ingest", "--id", laneId, "--from", "A", "--file", laneAFixed, "--json"]).stdout);
+  assert.equal(laneIngestFixed.lane.status, "A_FIXED", "lane_ingest_fixed_status");
+  assert.equal(laneIngestFixed.next.action, "re-review-pack", "lane_ingest_fixed_next_action");
+
+  const laneNextReview = runWorkflow(["lane", "next", "--id", laneId]);
+  assert.equal(laneNextReview.status, 0, "lane_next_review_must_exit_zero");
+  assertIncludesAll(laneNextReview.stdout, [
+    "lane next",
+    "B re-review-pack",
+    "444dddd",
+    "JSON 摘要",
+  ], "lane_next_review_human");
+
+  const laneBoard = runWorkflow(["lane", "board"]);
+  assert.equal(laneBoard.status, 0, "lane_board_must_exit_zero");
+  assertIncludesAll(laneBoard.stdout, [
+    "lane board",
+    "gov-smoke-lane",
+    "feat/v22-agent-governance-lane-state",
+    "blockerCount",
+    "mainWorkspaceClean",
+    "mergeReady",
+    "JSON 摘要",
+  ], "lane_board_human");
+  const laneBoardJson = parseJson(runWorkflow(["lane", "board", "--json"]).stdout);
+  assert.equal(laneBoardJson.command, "lane board", "lane_board_json_command");
+  assert(laneBoardJson.lanes.some((lane) => lane.id === laneId), "lane_board_json_must_include_lane");
+
+  const laneHandoff = runWorkflow(["lane", "handoff", "--id", laneId]);
+  assert.equal(laneHandoff.status, 0, "lane_handoff_must_exit_zero");
+  assertIncludesAll(laneHandoff.stdout, [
+    "handoff bundle",
+    "当前目标",
+    "已完成",
+    "当前 blocker",
+    "订阅合同",
+    "verification commands",
+    "forbidden actions",
+    "JSON 摘要",
+  ], "lane_handoff_human");
+
+  const laneClose = runWorkflow(["lane", "close", "--id", laneId, "--status", "abandoned"]);
+  assert.equal(laneClose.status, 0, "lane_close_must_exit_zero");
+  assertIncludesAll(laneClose.stdout, [
+    "cleanup checklist",
+    "worktree 是否可删除",
+    "branch 是否可删除",
+    "是否已 push",
+    "是否有未提交文件",
+    "runtime state 需要归档或删除",
+    "JSON 摘要",
+  ], "lane_close_human");
+
+  const ignoredRuntime = runGit(["check-ignore", ".runtime/v22-agent-workflow/lanes/gov-smoke-lane.json"]);
+  assert.equal(ignoredRuntime.status, 0, "runtime_lane_state_must_be_ignored");
+  const gitDiffNames = runGit(["diff", "--name-only"]);
+  assert.equal(gitDiffNames.stdout.includes(".runtime/"), false, "runtime_state_must_not_enter_git_diff");
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
+  await rm(path.join(repoRoot, ".runtime/v22-agent-workflow/lanes/gov-smoke-lane.json"), { force: true });
 }
 
 const source = await readFile(path.join(repoRoot, "scripts/v22-agent-workflow.mjs"), "utf8");
 assertNotIncludesAny(source, [
-  "writeFile(",
   "tmux",
   "kubectl",
   "live-test",
@@ -295,6 +448,11 @@ console.log(JSON.stringify({
     "ingest_c_blocker_and_c_pass",
     "write_pack_a_fix_and_b_re_review",
     "status_lane_summary",
+    "lane_init_state_file",
+    "lane_ingest_updates_runtime_state",
+    "lane_next_fix_and_re_review_pack",
+    "lane_board_handoff_close",
+    "runtime_state_ignored_and_not_in_git_diff",
     "stable_status_enum",
     "owner_worktree_lane_discipline_and_json_fields",
     "no_secret_like_reply_file_no_cloud_no_merge_push_tmux",
