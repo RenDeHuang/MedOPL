@@ -74,6 +74,14 @@ assertNotContainsForbidden(envSummary, "readonly_secret_summary");
 
 assertThrowsCode(() => validateReadonlyInventorySecretEnv({
   ...readonlyEnv,
+  UNLISTED_SECRET_KEY: "must-not-be-accepted",
+}), "readonly_inventory_non_allowlist_secret_key_rejected:UNLISTED_SECRET_KEY");
+assertThrowsCode(() => validateReadonlyInventorySecretEnv({
+  ...readonlyEnv,
+  TENCENT_READONLY_EXTRA_KEY: "must-not-be-accepted",
+}), "readonly_inventory_non_allowlist_secret_key_rejected:TENCENT_READONLY_EXTRA_KEY");
+assertThrowsCode(() => validateReadonlyInventorySecretEnv({
+  ...readonlyEnv,
   TENCENT_MUTATION_SECRET_ID: "mutation-secret",
 }), "readonly_inventory_forbidden_secret_key:TENCENT_MUTATION_SECRET_ID");
 assertThrowsCode(() => validateReadonlyInventorySecretEnv({

@@ -111,6 +111,9 @@ function assertNoForbiddenSecretKeys(env = {}) {
     if (FORBIDDEN_SECRET_KEYS.has(key)) {
       throw new Error(`readonly_inventory_forbidden_secret_key:${key}`);
     }
+    if (!READONLY_SECRET_KEYS.has(key)) {
+      throw new Error(`readonly_inventory_non_allowlist_secret_key_rejected:${key}`);
+    }
   }
 }
 
