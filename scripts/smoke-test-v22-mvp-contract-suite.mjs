@@ -42,6 +42,7 @@ const smokeScripts = [
   ["smoke-test-v22-tencent-readonly-quote-provider-boundary", "scripts/smoke-test-v22-tencent-readonly-quote-provider-boundary.mjs"],
   ["smoke-test-v22-tencent-dry-run-resource-plan-provider", "scripts/smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-boundary", "scripts/smoke-test-v22-tencent-readonly-inventory-boundary.mjs"],
+  ["smoke-test-v22-tencent-readonly-inventory-local-guard", "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs"],
   ["smoke-test-v22-authorized-tencent-create-release-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs"],
   ["smoke-test-v22-authorized-tencent-create-release-implementation-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs"],
   ["smoke-test-v22-real-resource-contract-alignment", "scripts/smoke-test-v22-real-resource-contract-alignment.mjs"],
