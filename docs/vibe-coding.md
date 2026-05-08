@@ -113,6 +113,16 @@ node scripts/v22-agent-workflow.mjs checkpoint-pack
 node scripts/v22-agent-workflow.mjs next --state <json>
 ```
 
+## Owner worktree / long autonomy 纪律
+
+- 主工作区只用于规划、B 审计、ff-only merge、checkpoint、push、清理。
+- A/C/D 只要会写文件，默认必须在独立 git worktree。
+- 一个 worktree 只承载一条 active lane。
+- lane 完成后走 verify -> B review -> absorb or abandon -> cleanup。
+- tmux pane/session 只是执行面，不是 truth。
+- truth 必须进入 repo-tracked contracts/docs/scripts/tests。
+- 不提交 tmux session、agent 对话、临时日志、本地状态。
+
 ## 分支开工声明模板
 
 ```text

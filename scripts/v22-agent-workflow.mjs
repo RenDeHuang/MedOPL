@@ -32,6 +32,24 @@ const disallowedActions = [
   "live" + "-test",
 ];
 
+const worktreeRoot = "/home/dev/projects/platform-v22.worktrees";
+
+const workspaceDiscipline = Object.freeze({
+  mainWorkspaceRole: "主工作区只用于规划、B 审计、ff-only merge、checkpoint、push、清理。",
+  mainWorkspaceWritable: false,
+  mainWorkspaceWriteReminder: "主工作区不可写：A/C/D 写文件时必须切到独立 git worktree。",
+  bUsesMainWorkspace: true,
+  bWorkspace: "main",
+  writingLanesUseWorktree: ["A", "C", "D"],
+  writingLaneRule: "A/C/D 使用独立 worktree；C 只读 QA 不写文件，若升级为写文件修复则拆 lane。",
+  oneActiveLanePerWorktree: true,
+  completionFlow: ["verify", "B review", "absorb or abandon", "cleanup"],
+  executionSurfaceNotTruth: "t" + "mux pane/session 只是执行面，不是 truth。",
+  truthRule: "truth 必须进入 repo-tracked contracts/docs/scripts/tests。",
+  truthTrackedPaths: ["contracts", "docs", "scripts", "tests"],
+  nonCommittableLocalState: ["t" + "mux session", "agent 对话", "临时日志", "本地状态"],
+});
+
 const workflowTypes = {
   cleanup: {
     label: "cleanup",
@@ -296,14 +314,52 @@ function humanList(items) {
   return items.map((item) => `- ${item}`).join("\n");
 }
 
+function laneSlug(value) {
+  return String(value || "")
+    .replace(/^refs\/heads\//, "")
+    .replace(/^(feat|cleanup|contract|spike)\//, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || "lane";
+}
+
+function recommendedBranchForWorkflow(workflow) {
+  return `${workflow.branchPrefix}v22-${workflow.label}-lane`;
+}
+
+function recommendedWorktreePathForLane(lane) {
+  return `${worktreeRoot}/${laneSlug(lane)}`;
+}
+
+function disciplineLines(discipline = workspaceDiscipline) {
+  return [
+    discipline.mainWorkspaceRole,
+    discipline.mainWorkspaceWriteReminder,
+    "B 使用主工作区。",
+    discipline.writingLaneRule,
+    "一个 worktree 只承载一条 active lane。",
+    `lane 完成后走 ${discipline.completionFlow.join(" -> ")}。`,
+    discipline.executionSurfaceNotTruth,
+    discipline.truthRule,
+    `不提交 ${discipline.nonCommittableLocalState.join("、")}。`,
+  ];
+}
+
 function createStartPack({ type }) {
   const workflow = workflowForType(type);
+  const recommendedBranch = recommendedBranchForWorkflow(workflow);
+  const recommendedWorktreePath = recommendedWorktreePathForLane(workflow.label);
   const packages = {
     A: {
       window: "A",
       title: `A 窗口任务包：${workflow.label}`,
+      recommendedBranch,
+      recommendedWorktreePath,
+      workspace: "independent-worktree",
       prompt: [
         `从 ${workflow.branchPrefix}<name> 开始，只做一个明确意图：${workflow.intent}`,
+        `推荐 branch：${recommendedBranch}`,
+        `推荐 worktree 路径：${recommendedWorktreePath}`,
         "先读取阶段文档和订阅合同，声明边界，再按 smoke -> 实现 -> 验证 -> commit 推进。",
         "本窗口只产出本地变更和 commit，不执行合并、推送或外部系统动作。",
       ],
@@ -314,7 +370,9 @@ function createStartPack({ type }) {
     B: {
       window: "B",
       title: "B 窗口任务包：审计 / 合并前复审",
+      workspace: "main",
       prompt: [
+        "B 使用主工作区；主工作区不可写，除规划、审计、ff-only 合并、checkpoint、push、清理外不承载开发改动。",
         "复审 A 分支是否只服务一个意图，合同订阅是否完整，smoke 是否覆盖边界。",
         "检查污染风险、secret hygiene、验证结果、工作区状态和合并条件。",
         "本包只给审查步骤；是否合并由 B 依据审查结果人工执行。",
@@ -328,7 +386,10 @@ function createStartPack({ type }) {
     C: {
       window: "C",
       title: "C 窗口任务包：并行只读 QA",
+      workspace: "independent-worktree-if-writing",
+      recommendedWorktreePath: recommendedWorktreePathForLane(`c-qa-${workflow.label}`),
       prompt: [
+        "A/C/D 使用独立 worktree；C 当前只读 QA 不写文件，若要写入修复必须拆独立 lane。",
         workflow.cScope,
         "只读浏览、截图、记录边界问题；不得改代码、不得触发状态变更。",
         "发现 blocker 时输出复现、截图要求、影响面和建议交回 A/B 的窗口。",
@@ -341,6 +402,9 @@ function createStartPack({ type }) {
     ok: true,
     command: "start",
     type,
+    recommendedBranch,
+    recommendedWorktreePath,
+    workspaceDiscipline,
     packages,
     nextRecommendation: "先把 A 窗口任务包发给开发窗口；B 等 A_COMMITTED 后使用 review-pack；C 可并行使用 c-qa-pack 做只读 QA。",
     disallowedActions,
@@ -352,6 +416,7 @@ function createReviewPack({ branch, base }) {
     throw new Error("branch_required");
   }
   const targetBase = base && base !== true ? base : "recovery/platform-v22-trunk";
+  const recommendedWorktreePath = recommendedWorktreePathForLane(branch);
   const verificationCommands = [
     `git diff --name-only ${targetBase}...${branch}`,
     `node scripts/v22-workflow-gate.mjs review --base ${targetBase}`,
@@ -367,14 +432,19 @@ function createReviewPack({ branch, base }) {
     "没有 secret 或内部令牌进入 diff、日志或 evidence",
     "所有本地验证命令通过",
     "B 窗口确认可以 ff-only 合回 recovery/platform-v22-trunk",
+    "A/C/D 写入工作已经在独立 worktree 完成，主工作区仅用于 B 审计和合并前后 checkpoint",
   ];
   return {
     ok: true,
     command: "review-pack",
     branch,
     base: targetBase,
+    recommendedBranch: branch,
+    recommendedWorktreePath,
+    workspaceDiscipline,
     prompt: [
       `审查 ${branch} 相对 ${targetBase} 的 diff。`,
+      "B 使用主工作区；主工作区不可写，除 B 审计、ff-only 合并、checkpoint、push、清理外不承载开发改动。",
       "优先找 blocker：合同不一致、污染风险、secret hygiene、未授权路径、未验证变更、隐式缺参或伪通过。",
       "审查输出先列 findings，再列验证证据和合并判断。",
     ],
@@ -386,13 +456,21 @@ function createReviewPack({ branch, base }) {
 
 function createQaPack({ surface }) {
   const selected = qaForSurface(surface);
+  const recommendedWorktreePath = recommendedWorktreePathForLane(`c-qa-${surface}`);
   return {
     ok: true,
     command: "c-qa-pack",
     surface,
+    recommendedBranch: `qa/v22-c-${surface}-readonly`,
+    recommendedWorktreePath,
+    workspaceDiscipline,
     prompt: selected.prompt,
     screenshotRequirements: selected.screenshots,
-    boundaryChecks: selected.checks,
+    boundaryChecks: [
+      ...selected.checks,
+      workspaceDiscipline.writingLaneRule,
+      workspaceDiscipline.truthRule,
+    ],
     disallowedActions,
   };
 }
@@ -401,8 +479,12 @@ function createCheckpointPack() {
   return {
     ok: true,
     command: "checkpoint-pack",
+    recommendedBranch: "recovery/platform-v22-trunk",
+    recommendedWorktreePath: "/home/dev/projects/platform-v22",
+    workspaceDiscipline,
     prompt: "B push 前 checkpoint：只做人工确认清单和下一步建议；本脚本不执行任何合并或推送。",
     checklist: [
+      workspaceDiscipline.mainWorkspaceRole,
       "确认当前分支是 recovery/platform-v22-trunk。",
       "确认工作区干净。",
       "确认本地 trunk 包含已审分支 commit。",
@@ -422,6 +504,7 @@ function createNextPack({ state }) {
     command: "next",
     state,
     next,
+    workspaceDiscipline,
     disallowedActions,
   };
 }
@@ -457,6 +540,9 @@ function renderStart(pack) {
     "推荐 surface：",
     humanList(c.recommendedSurfaces),
     "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
     "## 边界确认",
     humanList(sharedBoundaries),
     "",
@@ -484,6 +570,9 @@ function renderReview(pack) {
     "## 合并条件",
     humanList(pack.mergeConditions),
     "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
     "## 边界确认",
     humanList(sharedBoundaries),
     "",
@@ -506,6 +595,9 @@ function renderQa(pack) {
     "## 边界检查项",
     humanList(pack.boundaryChecks),
     "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
     "## 边界确认",
     humanList(sharedBoundaries),
     "",
@@ -524,6 +616,9 @@ function renderCheckpoint(pack) {
     "",
     "## checklist",
     humanList(pack.checklist),
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
     "",
     "## 边界确认",
     humanList(sharedBoundaries),
@@ -546,6 +641,9 @@ function renderNext(pack) {
     "",
     "## 消息",
     pack.next.message,
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
     "",
     "## 边界确认",
     humanList(sharedBoundaries),
