@@ -1,0 +1,271 @@
+# v22 Tencent Readonly Inventory Boundary
+
+本合同定义 v22 `readonly/tencent inventory` 边界。当前分支只写合同和 smoke，不读取 secret，不调用真实腾讯云 / COS / TKE / CVM / 账单 API，不实现真实 inventory。
+
+该合同属于 Tencent Provider 合同包，阶段位置是：
+
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release`
+
+## 阶段边界
+
+readonly inventory 只做真实云只读盘点，用来验证云上事实和 Portal 账本是否一致。
+
+它不代表后续不能创建、删除、释放、扩缩容、改标签。创建、删除、释放、扩缩容、改标签属于后续 authorized create/release 阶段，必须另开 feat/* 并单独授权。
+
+readonly inventory 通过后，只能说明后续 create/release 可以进入授权评估；它不能自动执行真实云 mutation，不能自动读取 mutation secret，不能自动释放资源，不能真实扣费。
+
+## Purpose
+
+readonly inventory 要验证：
+
+- 云上有哪些 MedOPL 资源。
+- 资源标签是否完整。
+- 资源是否能映射到账号、工作空间、resourceOrderId、resourceBindingId。
+- 是否存在孤儿资源、标签缺失、标签冲突、区域不一致。
+- 是否支持后续 T+1 对账和 create/release 安全执行。
+
+inventory 结果只能进入管理员 / 运维审计和后续授权评估，不得成为普通用户云控制台视图。
+
+## Secret 文件模型
+
+允许未来使用单一 secret 文件：
+
+```text
+/home/dev/.secrets/medopl/secrets.env.txt
+```
+
+但 secret 读取必须是 allowlist_only，不允许“一读全读”。readonly inventory 阶段只允许读取以下 key：
+
+- RUN_TENCENT_READONLY_INVENTORY
+- TENCENT_READONLY_SECRET_ID
+- TENCENT_READONLY_SECRET_KEY
+- TENCENT_READONLY_REGIONS
+- TENCENT_READONLY_ALLOWED_APIS
+- TENCENT_READONLY_ACCOUNT_ID 或等价只读账号标识
+
+明确禁止读取或使用：
+
+- TENCENT_MUTATION_SECRET_ID
+- TENCENT_MUTATION_SECRET_KEY
+- RUN_TENCENT_CREATE_RELEASE
+- LANGFUSE_SECRET_KEY
+- GITHUB_TOKEN
+- DATABASE_URL
+- SSH_PRIVATE_KEY
+- kubeconfig
+- raw API Key
+- 任何非 readonly inventory allowlist 的 key
+
+当前分支不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不验证该文件是否存在，不打印 secret 路径内容。
+
+## API allowlist
+
+readonly inventory 后续授权阶段只允许 Describe / List / Get / Head 类 API，例如：
+
+- 账号身份摘要，只输出脱敏账号标识。
+- CVM 实例列表、状态、标签。
+- TKE 集群 / namespace / node pool 只读摘要和标签。
+- COS bucket 列表、bucket 标签、prefix 用量摘要。
+- COS object metadata / HEAD，用于验证文件存在和归属，不读取对象正文。
+- Tencent tag resources 只读查询。
+- 账单 / 费用只读摘要，如后续单独授权。
+
+禁止 API：
+
+- Create*
+- Delete*
+- Modify*
+- Run*
+- Terminate*
+- Attach*
+- Detach*
+- PutBucket*
+- PutObject*
+- DeleteObject*
+- Update*
+- Tag mutation
+- 权限、策略、bucket policy 修改
+
+readonly inventory 不允许使用任何可能创建、删除、释放、扩缩容、改标签、改权限或改变 bucket policy 的 API。API allowlist 必须显式配置；缺少 allowlist 时 fail-closed。
+
+## COS 对账边界
+
+readonly inventory 不读取 COS 对象正文，不下载用户文件，不打印用户文件内容。
+
+允许读取 bucket / prefix / object metadata、用量摘要、账单明细和资源标签，用于归属校验、文件存在性校验和 T+1 对账。
+
+objectKey、storageKey、cosPrefix、signedUrl 不得进入普通用户 payload、日志或 evidence。管理员 / 运维输出也只能看到脱敏摘要、计数、状态和审计队列项，不能看到可直接定位或下载用户文件的内部存储字段。
+
+## 输出边界
+
+inventory 输出只能是脱敏摘要：
+
+- accountMasked
+- region
+- resourceType
+- resourceStatus
+- tagCompleteness
+- portalMappingStatus
+- orphanResourceCount
+- missingTagCount
+- conflictCount
+- auditQueueItems
+
+不得输出：
+
+- SecretId / SecretKey
+- token
+- kubeconfig
+- objectKey / storageKey / cosPrefix / signedUrl
+- CVM instance raw full object
+- COS object 正文
+- bucket policy
+- provider raw response 全量
+
+输出必须默认 redacted。任何 raw provider response、raw cloud object、raw billing object 只能留在后端受控调试边界，且必须另行授权；不得进入 Portal payload、日志、evidence 或 git。
+
+## 映射规则
+
+readonly inventory 必须用 Portal 账本 + 云标签双重校验：
+
+- accountId / portal account
+- workspaceId
+- resourceOrderId
+- resourceBindingId
+- serverPlanId
+- runId 可为空
+- resource type
+- region
+
+不能只靠资源名称、创建时间、IP、规格推断归属。
+
+归属缺失或冲突必须 fail-closed，进入 admin 审计队列。inventory 不得用默认账号、默认 workspace、最近创建时间、IP 段或规格相似度补齐归属。
+
+## 用户删除 / 释放安全
+
+readonly inventory 必须证明后续 release/delete 只能作用于用户自己的资源：
+
+- 删除计算资源前必须证明 resourceBindingId、workspaceId、accountId 一致。
+- 删除存储资源/文件空间前必须证明 storage entitlement 和 workspaceId 一致。
+- 释放计算资源不得删除文件空间。
+- 删除文件空间才进入 7 天保护期。
+
+inventory 通过不能直接触发删除或释放；它只为 authorized create/release 阶段提供只读证据。任何不一致、缺失或冲突都必须阻断 mutation 授权并进入 admin 审计队列。
+
+## 当前分支 Non-Goals
+
+- 不读取 /home/dev/.secrets/medopl/secrets.env.txt。
+- 不调用真实腾讯云/COS/TKE/CVM/账单 API。
+- 不创建、删除、释放、扩缩容、改标签、改权限。
+- 不真实扣费。
+- 不运行 build/push/kubectl/live-test。
+- 不修改 deploy/.sentrux/adapters/upstream/Gateway/Runtime Bridge。
+- 不实现真实 inventory provider。
+- 不新增 Portal UI。
+
+## Contract Data
+
+<!-- v22-tencent-readonly-inventory-contract:start -->
+```json
+{
+  "contract": "v22_tencent_readonly_inventory_boundary",
+  "version": 1,
+  "providerPackage": "Tencent Provider",
+  "stage": "readonly/tencent inventory",
+  "route": "mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release",
+  "implementsRealCloudCall": false,
+  "readsSecretNow": false,
+  "futureSecretFileAllowed": true,
+  "futureSecretFile": "/home/dev/.secrets/medopl/secrets.env.txt",
+  "secretLoadMode": "allowlist_only",
+  "forbidsReadAllSecretFile": true,
+  "allowedReadonlySecretKeys": [
+    "RUN_TENCENT_READONLY_INVENTORY",
+    "TENCENT_READONLY_SECRET_ID",
+    "TENCENT_READONLY_SECRET_KEY",
+    "TENCENT_READONLY_REGIONS",
+    "TENCENT_READONLY_ALLOWED_APIS",
+    "TENCENT_READONLY_ACCOUNT_ID"
+  ],
+  "forbiddenSecretKeys": [
+    "TENCENT_MUTATION_SECRET_ID",
+    "TENCENT_MUTATION_SECRET_KEY",
+    "RUN_TENCENT_CREATE_RELEASE",
+    "LANGFUSE_SECRET_KEY",
+    "GITHUB_TOKEN",
+    "DATABASE_URL",
+    "SSH_PRIVATE_KEY",
+    "kubeconfig",
+    "raw API Key"
+  ],
+  "allowedApiVerbs": [
+    "Describe",
+    "List",
+    "Get",
+    "Head"
+  ],
+  "forbiddenApiVerbs": [
+    "Create",
+    "Delete",
+    "Modify",
+    "Run",
+    "Terminate",
+    "Attach",
+    "Detach",
+    "PutBucket",
+    "PutObject",
+    "DeleteObject",
+    "Update",
+    "TagMutation",
+    "PolicyMutation"
+  ],
+  "allowsCosMetadataAndUsageRead": true,
+  "forbidsCosObjectBodyRead": true,
+  "allowsBillingSummaryReadAfterSeparateAuthorization": true,
+  "outputRedactionRequired": true,
+  "allowedOutputFields": [
+    "accountMasked",
+    "region",
+    "resourceType",
+    "resourceStatus",
+    "tagCompleteness",
+    "portalMappingStatus",
+    "orphanResourceCount",
+    "missingTagCount",
+    "conflictCount",
+    "auditQueueItems"
+  ],
+  "forbiddenOutputFields": [
+    "SecretId",
+    "SecretKey",
+    "token",
+    "kubeconfig",
+    "objectKey",
+    "storageKey",
+    "cosPrefix",
+    "signedUrl",
+    "cvmInstanceRawFullObject",
+    "cosObjectBody",
+    "bucketPolicy",
+    "providerRawResponse"
+  ],
+  "requiresPortalLedgerAndCloudTagMatch": true,
+  "requiredOwnershipTags": [
+    "accountId",
+    "workspaceId",
+    "resourceOrderId",
+    "resourceBindingId",
+    "serverPlanId",
+    "resourceType",
+    "region"
+  ],
+  "runIdMayBeNull": true,
+  "forbidsOwnershipInferenceByNameTimeIpOrSpec": true,
+  "failClosedOnMissingOrConflictingOwnership": true,
+  "createReleaseMayProceedAfterInventoryPass": true,
+  "inventoryPassDoesNotExecuteMutation": true,
+  "computeReleaseDeletesFileSpace": false,
+  "fileSpaceDeleteTriggersRetentionDays": 7
+}
+```
+<!-- v22-tencent-readonly-inventory-contract:end -->
