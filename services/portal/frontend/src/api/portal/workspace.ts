@@ -50,6 +50,40 @@ export interface WorkspaceBalanceLinkPayload {
   availableBalanceCents: number;
 }
 
+export interface ManagedResourceBindingPlanPayload {
+  resourceBindingId: string;
+  managedEnvironment: string;
+  regionLabel: string;
+  planSpec: string;
+  status: string;
+  estimatedCost: {
+    amount: number;
+    currency: string;
+    source: string;
+    status: string;
+    billingTruth: boolean;
+    chargeApplied: boolean;
+  };
+  releasePolicy: {
+    status: string;
+    releasedAt: string;
+    billingStopConfirmBy: string;
+    stopBillingConfirmWithinMinutes: number;
+    protection: string;
+  };
+  auditStatus: {
+    status: string;
+    auditReadyAt: string;
+    policy: string;
+  };
+  snapshot: {
+    source: string;
+    label: string;
+    realResourceCreated: boolean;
+    providerAdapterStage: string;
+  };
+}
+
 export interface StorageEntitlementPayload {
   enabled: boolean;
   status: "disabled" | "active" | string;
@@ -104,6 +138,7 @@ export interface WorkspacePayload {
     totalCost: number;
   };
   storageEntitlement?: StorageEntitlementPayload;
+  managedResourceBindingPlan?: ManagedResourceBindingPlanPayload | null;
   runStatus: {
     running: number;
     completed: number;

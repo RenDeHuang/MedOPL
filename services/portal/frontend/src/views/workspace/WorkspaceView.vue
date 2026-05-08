@@ -86,6 +86,49 @@
         </section>
 
         <section class="card p-5">
+          <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 class="panel-title">托管运行环境</h2>
+              <p class="panel-subtitle">
+                这里展示托管运行环境的计划快照；当前为计划视图，不代表真实资源已创建。
+              </p>
+            </div>
+            <span class="badge" :class="statusBadge(managedPlan?.status)">{{ humanizeStatus(managedPlan?.status || "not_started") }}</span>
+          </div>
+          <div v-if="managedPlan" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div class="text-xs text-gray-500 dark:text-slate-400">区域</div>
+              <div class="mt-1 font-medium text-gray-950 dark:text-white">{{ managedPlan.regionLabel }}</div>
+            </div>
+            <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div class="text-xs text-gray-500 dark:text-slate-400">规格</div>
+              <div class="mt-1 font-medium text-gray-950 dark:text-white">{{ managedPlan.planSpec }}</div>
+            </div>
+            <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div class="text-xs text-gray-500 dark:text-slate-400">预计费用</div>
+              <div class="mt-1 font-medium text-gray-950 dark:text-white">{{ money(managedPlan.estimatedCost.amount, managedPlan.estimatedCost.currency) }}</div>
+              <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">不做真实扣费</div>
+            </div>
+            <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div class="text-xs text-gray-500 dark:text-slate-400">释放策略</div>
+              <div class="mt-1 font-medium text-gray-950 dark:text-white">{{ releasePolicyText(managedPlan.releasePolicy.status) }}</div>
+              <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ managedPlan.releasePolicy.stopBillingConfirmWithinMinutes }} 分钟内确认停止计费</div>
+            </div>
+            <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div class="text-xs text-gray-500 dark:text-slate-400">审计状态</div>
+              <div class="mt-1 font-medium text-gray-950 dark:text-white">{{ auditStatusText(managedPlan.auditStatus.status) }}</div>
+              <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ managedPlan.auditStatus.policy }}</div>
+            </div>
+            <div class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">
+              <div class="text-xs text-gray-500 dark:text-slate-400">状态</div>
+              <div class="mt-1 font-medium text-gray-950 dark:text-white">{{ snapshotText(managedPlan.snapshot.realResourceCreated) }}</div>
+              <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">计划快照</div>
+            </div>
+          </div>
+          <div v-else class="empty-state">当前工作空间还没有托管运行环境计划。</div>
+        </section>
+
+        <section class="card p-5">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <h2 class="panel-title">工作空间列表</h2>
@@ -225,6 +268,7 @@ const uploadAction = computed(() => `/portal/workspace/upload?task=${encodeURICo
 const emptyStorageEntitlement = computed(() => disabledStorageEntitlement());
 const storageEntitlement = computed(() => payload.value?.storageEntitlement || payload.value?.workspace.storageEntitlement || emptyStorageEntitlement.value);
 const totalEstimatedCost = computed(() => (payload.value?.outputs || []).reduce((sum, item) => sum + Number(item.costEstimate?.amount || 0), 0));
+const managedPlan = computed(() => payload.value?.managedResourceBindingPlan || null);
 
 function routeQueryObject() {
   const query: Record<string, string> = {};
@@ -298,6 +342,21 @@ function costEstimateText(item: { costEstimate?: { amount?: number; currency?: s
 
 function rechargeStatusText(value?: string) {
   return value === "display_only" ? "仅展示" : "待估算";
+}
+
+function releasePolicyText(value?: string) {
+  return value === "not_released" ? "未释放" : "释放处理中";
+}
+
+function auditStatusText(value?: string) {
+  if (value === "audit_pending") return "待审计";
+  if (value === "audit_ready") return "可审计";
+  if (value === "audited") return "已审计";
+  return "未开始";
+}
+
+function snapshotText(realResourceCreated?: boolean) {
+  return realResourceCreated ? "已创建" : "计划快照";
 }
 
 function workspaceMasHref(task?: string) {

@@ -98,6 +98,50 @@ MVP 只支持两个默认套餐：
 }
 ```
 
+## Managed Resource Binding Plan View
+
+Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`，用于把“托管运行环境”的区域、规格、状态、预计费用、释放策略和审计状态呈现给普通用户。
+
+该视图是 managed resource binding 的计划摘要，不代表真实资源已创建，不调用真实腾讯云 API，不读取真实 COS、TKE、CVM、kubeconfig、SecretId/SecretKey、token 或任何本地 secret。Portal payload 只暴露业务对象：
+
+```json
+{
+  "resourceBindingId": "resource binding id",
+  "managedEnvironment": "托管运行环境",
+  "regionLabel": "硅谷一区",
+  "planSpec": "8核 / 16GB 内存 / 100GB 文件空间",
+  "status": "active",
+  "estimatedCost": {
+    "amount": 0,
+    "currency": "CNY",
+    "source": "contract_snapshot_fixture",
+    "billingTruth": false,
+    "chargeApplied": false
+  },
+  "releasePolicy": {
+    "status": "not_released",
+    "stopBillingConfirmWithinMinutes": 120
+  },
+  "auditStatus": {
+    "status": "audit_pending",
+    "policy": "T+1"
+  },
+  "snapshot": {
+    "source": "mock_snapshot_provider",
+    "label": "managed resource binding plan / mock snapshot",
+    "realResourceCreated": false
+  }
+}
+```
+
+普通用户界面只使用“托管运行环境、区域、规格、预计费用、释放策略、审计状态、状态”等产品语言，不把 CVM、COS、K8s、TKE 或云资源控制台作为主语言。
+
+后续真实腾讯云接入路线必须按阶段推进：
+
+`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider`
+
+真实接入另开 feat/* 并单独授权。替换点是 provider adapter，不重做 Portal 用户闭环；真实创建、释放、报价、Ingress/TLS、kubeconfig、SecretId/SecretKey、token 和真实云资源操作均不属于当前合同层级。
+
 ## Non-goals
 
 - 不改 frontend。

@@ -13,6 +13,10 @@ import {
   publicCostEstimate,
   publicResourceUsage,
 } from "../domain/cost-balance-trace-linkage.mjs";
+import {
+  findManagedResourceBinding,
+  managedResourceBindingPlanView,
+} from "../domain/managed-resource-binding-plan-view.mjs";
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -144,6 +148,12 @@ export function createWorkspacePayloadBuilder({
     const billing = await fetchBillingSummary(user.id, current.slug, "168h");
     timing.mark("billing");
     const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
+    const managedBinding = findManagedResourceBinding(db, user, current.slug);
+    const managedResourceBindingPlan = managedResourceBindingPlanView({
+      binding: managedBinding,
+      taskSpace: current,
+      billing,
+    });
     const events = await readPortalEvents({ limit: 200, userId: user.id, workspaceId: current.slug });
     timing.mark("events");
     const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
@@ -185,6 +195,7 @@ export function createWorkspacePayloadBuilder({
       },
       costs: totals,
       storageEntitlement,
+      managedResourceBindingPlan,
       runStatus: summarizeRunStatus(runs, isRunTerminal),
       activeSession: activeSession ? {
         id: activeSession.id,
