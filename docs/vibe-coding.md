@@ -103,6 +103,16 @@ node scripts/v22-workflow-gate.mjs checkpoint
 
 当前内置合同包类型包括 `portal-ui`、`gateway`、`runtime`、`langfuse-trace`、`resource-billing`、`tencent-quote` 和 `cleanup`。gate 只检查 git diff、路径、remote URL 和推荐验证命令；它不读取 secret 内容，不执行 build/push/kubectl/live-test，也不调用真实云 API。
 
+`scripts/v22-agent-workflow.mjs` 是 A/B/C 本地 workflow orchestrator，只生成任务包和下一步建议，不自动 merge、不自动 push、不启动 tmux、不读 secret、不调用真实云、不执行 build/push/kubectl/live-test。
+
+```bash
+node scripts/v22-agent-workflow.mjs start --type <cleanup|portal-ui|resource-billing|contract|ops-console>
+node scripts/v22-agent-workflow.mjs review-pack --branch <branch> --base recovery/platform-v22-trunk
+node scripts/v22-agent-workflow.mjs c-qa-pack --surface <resources|workspace|trace|billing|overview>
+node scripts/v22-agent-workflow.mjs checkpoint-pack
+node scripts/v22-agent-workflow.mjs next --state <json>
+```
+
 ## 分支开工声明模板
 
 ```text
