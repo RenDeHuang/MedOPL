@@ -168,6 +168,12 @@ const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mj
 assertUserCopy(workspaceViewSource, "workspace_view");
 assert(workspaceViewSource.includes("managedResourceBindingPlan"), "workspace_view_must_render_managed_resource_binding_plan");
 assert(workspaceTypesSource.includes("managedResourceBindingPlan"), "workspace_types_must_include_managed_resource_binding_plan");
+assert(contractSource.includes("本分支允许的最小 Portal frontend 展示范围"), "contract_must_allow_minimal_portal_frontend_display");
+assert(contractSource.includes("Portal 工作空间 payload 输出 `managedResourceBindingPlan`"), "contract_must_allow_managed_resource_binding_plan_payload");
+assert(contractSource.includes("Portal 工作空间普通用户页面展示托管运行环境的区域、规格、状态、预计费用、释放策略和审计状态"), "contract_must_allow_managed_resource_binding_plan_view");
+assert.equal(contractSource.includes("- 不改 frontend。"), false, "contract_must_not_prohibit_required_frontend_scope");
+assert(contractSource.includes("不创建、绑定或释放真实腾讯云资源"), "contract_must_forbid_real_tencent_resource_lifecycle");
+assert(contractSource.includes("不调用真实腾讯云、COS、Langfuse 或 one-person-lab API"), "contract_must_forbid_real_external_api_calls");
 assert(contractSource.includes("mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider"), "contract_must_include_tencent_adapter_route");
 assert(contractSource.includes("真实接入另开 feat/* 并单独授权"), "contract_must_require_separate_authorization");
 assert(contractSource.includes("managed resource binding plan / mock snapshot"), "contract_must_define_mock_snapshot_plan_view");

@@ -142,11 +142,17 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 
 真实接入另开 feat/* 并单独授权。替换点是 provider adapter，不重做 Portal 用户闭环；真实创建、释放、报价、Ingress/TLS、kubeconfig、SecretId/SecretKey、token 和真实云资源操作均不属于当前合同层级。
 
+本分支允许的最小 Portal frontend 展示范围：
+
+- Portal 工作空间 payload 输出 `managedResourceBindingPlan`。
+- Portal 工作空间普通用户页面展示托管运行环境的区域、规格、状态、预计费用、释放策略和审计状态。
+- 前端只消费 `managedResourceBindingPlan` 里的业务字段，不展示或传递真实云对象、provider 内部字段、密钥或内部存储字段。
+
 ## Non-goals
 
-- 不改 frontend。
-- 不改 OPL Gateway。
-- 不改 Runtime Bridge。
-- 不改 deploy、`.sentrux` 或 `adapters`。
-- 不修改 one-person-lab upstream。
+- 不创建、绑定或释放真实腾讯云资源。
+- 不调用真实腾讯云、COS、Langfuse 或 one-person-lab API。
+- 不改 OPL Gateway、Runtime Bridge、deploy、`.sentrux`、`adapters` 或 one-person-lab upstream。
+- 不暴露 SecretId/SecretKey、kubeconfig、token、raw API Key、objectKey/storageKey/localPath/signedUrl 或 provider raw cost internals。
+- 不把 CVM、COS、K8s 或 TKE 作为普通用户主语言。
 - 不运行 build/push/kubectl/live-test。
