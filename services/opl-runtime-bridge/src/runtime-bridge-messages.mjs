@@ -45,6 +45,7 @@ function buildMessageContext(runtimeSession, input = {}, req = {}) {
     tokenCount: Number(input.tokenCount || input.token_count || 0),
     providerConfigured: Boolean(runtimeSession.providerConfigured),
     providerConfigStatus: runtimeSession.providerConfigStatus || (runtimeSession.providerConfigured ? "configured" : "missing"),
+    providerKeyRef: runtimeSession.providerKeyRef || runtimeSession.providerConfigSecretRef || "",
     providerConfigSecretRef: runtimeSession.providerConfigSecretRef || "",
     providerName: runtimeSession.providerName || "",
     userAgent: req.headers?.["user-agent"] || "",

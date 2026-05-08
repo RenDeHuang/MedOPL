@@ -9,6 +9,7 @@ import {
   writeState,
 } from "./state-store.mjs";
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
+import { createLocalFakeRuntimeAgentRelay } from "./local-fake-runtime-agent-relay.mjs";
 import { createMessageApi } from "./runtime-bridge-messages.mjs";
 import { createRunApi, publicRunArtifact } from "./runtime-bridge-runs.mjs";
 import { mapRunError } from "./run-error-mapper.mjs";
@@ -41,6 +42,7 @@ function readConfig() {
     runnerUrl: urlEnv("MED_AUTOSCIENCE_RUNNER_URL"),
     portalInternalBaseUrl: urlEnv("PORTAL_INTERNAL_BASE_URL"),
     portalInternalAuthToken: cleanEnv("PORTAL_INTERNAL_AUTH_TOKEN"),
+    localFakeRuntimeRelay: cleanEnv("OPL_RUNTIME_BRIDGE_LOCAL_FAKE_RUNTIME") === "1",
   };
 }
 
@@ -117,6 +119,17 @@ function messageArtifactFor(state = {}, runId = "") {
   return (state.artifacts || []).find((item) => item.runId === runId && item.kind === "message_reply") || null;
 }
 
+function publicMessageArtifactFor(state = {}, record = {}, runtimeSession = {}) {
+  const artifact = messageArtifactFor(state, record.runId || record.messageId);
+  if (!artifact) return null;
+  return publicRunArtifact(artifact, {
+    runId: record.runId || record.messageId || "",
+    workspaceId: record.workspaceId || runtimeSession.workspaceId || "",
+    resourceBindingId: record.resourceBindingId || runtimeSession.resourceBindingId || "",
+    providerKeyRef: record.providerKeyRef || runtimeSession.providerKeyRef || "",
+  }, runtimeSession);
+}
+
 function statusForMessageRecord(record = {}, message = null) {
   if (record.status) return record.status;
   return message ? "succeeded" : "running";
@@ -128,9 +141,48 @@ function pendingMessagePayload(record = {}) {
     runId: emptyText(record.runId || record.messageId),
     traceId: emptyText(record.traceId),
     status: emptyText(record.status || "running"),
-    promptPreview: emptyText(record.promptPreview),
     createdAt: emptyText(record.createdAt),
     updatedAt: emptyText(record.updatedAt),
+  };
+}
+
+function publicTracePayload(trace = {}) {
+  if (!trace) return null;
+  return {
+    traceId: emptyText(trace.traceId),
+    runId: emptyText(trace.runId),
+    workspaceId: emptyText(trace.workspaceId),
+    workspaceSessionId: emptyText(trace.workspaceSessionId),
+    runtimeSessionId: emptyText(trace.runtimeSessionId),
+    status: emptyText(trace.status || "recorded"),
+    traceName: emptyText(trace.traceName),
+    latencyMs: Number(trace.latencyMs || 0),
+    model: emptyText(trace.model),
+    tokenCount: Number(trace.tokenCount || 0),
+    createdAt: emptyText(trace.createdAt),
+  };
+}
+
+function publicMessageReplyPayload(message = {}, record = {}) {
+  if (!message) return pendingMessagePayload(record);
+  return {
+    messageId: emptyText(message.messageId || record.messageId),
+    runId: emptyText(message.runId || record.runId || message.messageId || record.messageId),
+    traceId: emptyText(message.traceId || record.traceId),
+    status: emptyText(message.status || record.status || "succeeded"),
+    reply: emptyText(message.reply),
+    source: emptyText(message.source || "opl_runtime"),
+    model: emptyText(message.model || record.model),
+    tokenCount: Number(message.tokenCount || record.tokenCount || 0),
+    createdAt: emptyText(message.createdAt || record.createdAt),
+  };
+}
+
+function publicCompletedMessagePayload(messageResult = {}, record = {}, state = {}, runtimeSession = {}) {
+  return {
+    message: publicMessageReplyPayload(messageResult.message, record),
+    artifact: publicMessageArtifactFor(state, record, runtimeSession),
+    trace: publicTracePayload(messageResult.trace),
   };
 }
 
@@ -235,8 +287,8 @@ function messageStatusPayload(record = {}, state = {}) {
     ok: true,
     status: statusForMessageRecord(record, message),
     traceId: emptyText(record.traceId),
-    message: message ? { ...message, traceId: message.traceId || record.traceId || "" } : pendingMessagePayload(record),
-    artifact: messageArtifactFor(state, record.runId),
+    message: message ? publicMessageReplyPayload(message, record) : pendingMessagePayload(record),
+    artifact: publicMessageArtifactFor(state, record),
     timing: timingPayload(record),
     error: emptyText(record.error),
   };
@@ -350,6 +402,7 @@ export function createRuntimeBridgeRuntime() {
     runnerImage: config.runnerImage,
     k8sNamespace: config.k8sNamespace,
     publishTraceEvent,
+    runtimeAgentRelay: config.localFakeRuntimeRelay ? createLocalFakeRuntimeAgentRelay() : null,
   });
   const messageApi = createMessageApi({
     publishTraceEvent,
@@ -428,7 +481,12 @@ export function createRuntimeBridgeRuntime() {
       });
       await writeState(state);
       const record = messageRecordInState(state, { messageId, runtimeSessionId: runtimeSession.runtimeSessionId, tokenHash });
-      sendJson(res, 200, { ok: true, ...message, traceId: input.traceId || runtimeSession.traceId || "", timing: timingPayload(record || {}) });
+      sendJson(res, 200, {
+        ok: true,
+        ...publicCompletedMessagePayload(message, record || {}, state, runtimeSession),
+        traceId: input.traceId || runtimeSession.traceId || "",
+        timing: timingPayload(record || {}),
+      });
     } catch (error) {
       upsertRuntimeMessage(state, {
         runtimeSession,
@@ -518,6 +576,17 @@ export function createRuntimeBridgeRuntime() {
     const { state, runtimeSession } = resolved;
     try {
       const run = await runApi.submitRuntimeRun(state, runtimeSession, input, req);
+      await publishTraceEvent(state, {
+        ...runtimeSession,
+        runId: run.runId,
+        traceId: run.traceId,
+        eventType: "runtime_run",
+        traceName: "OPL runtime run",
+        status: run.status || "recorded",
+        model: input.model || runtimeSession.model || "opl-runtime",
+        tokenCount: Number(input.tokenCount || input.token_count || 0),
+        userAgent: req?.headers?.["user-agent"] || "",
+      });
       await writeState(state);
       sendJson(res, 200, { ok: true, run });
     } catch (error) {

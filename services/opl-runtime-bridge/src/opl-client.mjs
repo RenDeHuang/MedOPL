@@ -360,10 +360,7 @@ function normalizeProductMessage(record = {}, payload = {}) {
 }
 
 async function sendMessageViaProductApi(input, prompt) {
-  const payload = {
-    ...input,
-    message: prompt,
-  };
+  const payload = sanitizedProductApiMessagePayload(input, prompt);
   const result = await requestFirstAvailable([
     "/api/opl/messages",
     "/api/opl/sessions/messages",
@@ -374,6 +371,45 @@ async function sendMessageViaProductApi(input, prompt) {
   });
   const record = firstFrom(result, "message", ["message", "reply", "response"]);
   return normalizeProductMessage(record, payload);
+}
+
+const PRODUCT_API_FORBIDDEN_MESSAGE_FIELDS = new Set([
+  "apikey",
+  "api_key",
+  "providerapikey",
+  "provider_api_key",
+  "rawproviderkey",
+  "raw_provider_key",
+  "providerconfigsecretref",
+  "provider_config_secret_ref",
+  "providersecret",
+  "provider_secret",
+  "secretfingerprint",
+  "secret_fingerprint",
+  "launchtoken",
+  "launch_token",
+  "launchtokenhash",
+  "launch_token_hash",
+  "runtimetoken",
+  "runtime_token",
+  "bearertoken",
+  "bearer_token",
+  "runtimeenv",
+  "runtime_env",
+]);
+
+function sanitizedProductApiMessagePayload(input = {}, prompt = "") {
+  const payload = {};
+  for (const [key, value] of Object.entries(input || {})) {
+    const normalized = key.replace(/[^a-z0-9_]/gi, "").toLowerCase();
+    if (PRODUCT_API_FORBIDDEN_MESSAGE_FIELDS.has(normalized)) continue;
+    payload[key] = value;
+  }
+  payload.providerKeyRef = input.providerKeyRef || input.provider_key_ref || input.providerConfigSecretRef || input.provider_config_secret_ref || "";
+  payload.providerConfigured = input.providerConfigured === true || input.provider_configured === true;
+  payload.providerConfigStatus = input.providerConfigStatus || input.provider_config_status || (payload.providerConfigured ? "configured" : "missing");
+  payload.message = prompt;
+  return payload;
 }
 
 export async function sendMessage(input = {}) {
