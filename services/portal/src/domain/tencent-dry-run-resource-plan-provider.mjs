@@ -78,8 +78,6 @@ function dryRunPlanFromQuote({ binding = {}, quote = {} } = {}) {
     releasePolicy: releasePolicy(binding),
     auditStatus: auditStatus(binding),
     riskNotes: riskNotes(),
-    realResourceCreated: false,
-    chargeApplied: false,
   };
 }
 

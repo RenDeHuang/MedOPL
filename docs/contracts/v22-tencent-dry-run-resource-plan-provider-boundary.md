@@ -48,13 +48,13 @@ Provider 输出字段白名单：
     "dry-run 只生成不会执行的资源创建计划",
     "真实腾讯云接入必须另开 feat/* 并单独授权",
     "当前不创建、绑定、释放真实资源，不真实扣费"
-  ],
-  "realResourceCreated": false,
-  "chargeApplied": false
+  ]
 }
 ```
 
-`realResourceCreated=false` 和 `chargeApplied=false` 是固定边界。dry-run 不得声称真实资源已创建，不得触发真实扣费。
+`resourcePlan` 顶层字段必须严格限于上述白名单。realResourceCreated 不属于 resourcePlan 顶层字段；chargeApplied 不属于 resourcePlan 顶层字段。
+
+真实资源未创建必须通过 `managedResourceBindingPlan.snapshot.realResourceCreated=false` 表达；未真实扣费必须通过 `estimatedCost.chargeApplied=false` 或现有费用估算边界表达。dry-run 不得声称真实资源已创建，不得触发真实扣费。
 
 ## Resource Steps Language
 

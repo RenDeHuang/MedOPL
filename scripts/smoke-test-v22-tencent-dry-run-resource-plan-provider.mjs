@@ -29,7 +29,7 @@ const forbiddenValuePattern = new RegExp([
   "must-not-leak",
 ].map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i");
 
-const dryRunAllowedKeys = new Set([
+const dryRunAllowedKeys = Object.freeze([
   "resourcePlanId",
   "resourceBindingId",
   "planMode",
@@ -41,8 +41,6 @@ const dryRunAllowedKeys = new Set([
   "releasePolicy",
   "auditStatus",
   "riskNotes",
-  "realResourceCreated",
-  "chargeApplied",
 ]);
 
 const costAllowedKeys = new Set([
@@ -64,6 +62,10 @@ function assertOnlyKeys(object = {}, allowed = new Set(), label = "object") {
   for (const key of Object.keys(object)) {
     assert(allowed.has(key), `${label}_unexpected_key:${key}`);
   }
+}
+
+function assertExactKeys(object = {}, expected = [], label = "object") {
+  assert.deepEqual(Object.keys(object), expected, `${label}_keys_mismatch`);
 }
 
 function assertNoRealTencentSdkSource(source, label) {
@@ -148,7 +150,7 @@ const dryRunPlan = await planTencentDryRunResourceBinding({
   quote,
 });
 
-assertOnlyKeys(dryRunPlan, dryRunAllowedKeys, "dry_run_provider_response");
+assertExactKeys(dryRunPlan, dryRunAllowedKeys, "dry_run_provider_response");
 assertOnlyKeys(dryRunPlan.estimatedCost, costAllowedKeys, "dry_run_estimated_cost");
 assert.equal(dryRunPlan.resourcePlanId, "dry-run-plan-rb-v22-tencent-dry-run-plan", "dry_run_plan_id_mismatch");
 assert.equal(dryRunPlan.resourceBindingId, "rb-v22-tencent-dry-run-plan", "dry_run_resource_binding_id_mismatch");
@@ -167,8 +169,8 @@ assert.deepEqual(dryRunPlan.riskNotes, [
   "真实腾讯云接入必须另开 feat/* 并单独授权",
   "当前不创建、绑定、释放真实资源，不真实扣费",
 ], "dry_run_risk_notes_mismatch");
-assert.equal(dryRunPlan.realResourceCreated, false, "dry_run_must_not_claim_real_resource_created");
-assert.equal(dryRunPlan.chargeApplied, false, "dry_run_must_not_apply_real_charge");
+assert.equal(Object.hasOwn(dryRunPlan, "realResourceCreated"), false, "dry_run_resource_plan_must_not_expose_top_level_real_resource_created");
+assert.equal(Object.hasOwn(dryRunPlan, "chargeApplied"), false, "dry_run_resource_plan_must_not_expose_top_level_charge_applied");
 assertNoForbiddenLeak(dryRunPlan, "dry_run_provider_response");
 assert.throws(() => planTencentDryRunResourceBinding({
   provider: dryRunProvider,
@@ -238,10 +240,12 @@ const buildWorkspacePayload = createWorkspacePayloadBuilder({
 const workspacePayload = await buildWorkspacePayload(db, user, workspaceId);
 const payloadPlan = workspacePayload.managedResourceBindingPlan;
 assert(payloadPlan.resourcePlan, "portal_payload_must_include_dry_run_resource_plan");
-assertOnlyKeys(payloadPlan.resourcePlan, dryRunAllowedKeys, "portal_payload_resource_plan");
+assertExactKeys(payloadPlan.resourcePlan, dryRunAllowedKeys, "portal_payload_resource_plan");
 assert.equal(payloadPlan.resourcePlan.planMode, "dry_run", "portal_payload_resource_plan_mode_mismatch");
-assert.equal(payloadPlan.resourcePlan.realResourceCreated, false, "portal_payload_resource_plan_must_not_claim_real_resource_created");
-assert.equal(payloadPlan.resourcePlan.chargeApplied, false, "portal_payload_resource_plan_must_not_apply_real_charge");
+assert.equal(Object.hasOwn(payloadPlan.resourcePlan, "realResourceCreated"), false, "portal_payload_resource_plan_must_not_expose_top_level_real_resource_created");
+assert.equal(Object.hasOwn(payloadPlan.resourcePlan, "chargeApplied"), false, "portal_payload_resource_plan_must_not_expose_top_level_charge_applied");
+assert.equal(payloadPlan.snapshot.realResourceCreated, false, "portal_payload_snapshot_must_express_real_resource_created_false");
+assert.equal(payloadPlan.resourcePlan.estimatedCost.chargeApplied, false, "portal_payload_estimated_cost_must_express_charge_applied_false");
 assertProductLanguageSteps(payloadPlan.resourcePlan.resourceSteps, "portal_payload_resource_steps");
 assertNoForbiddenLeak(workspacePayload, "portal_workspace_payload");
 
@@ -257,8 +261,10 @@ assertNoRealTencentSdkSource(providerSource, "dry_run_provider_source");
 assertNoRealTencentSdkSource(planViewSource, "managed_plan_view_source");
 assert(dryRunContractSource.includes("dry-run/tencent resource plan provider"), "dry_run_contract_must_define_provider");
 assert(dryRunContractSource.includes("不会执行的资源创建计划"), "dry_run_contract_must_define_non_executing_plan");
-assert(dryRunContractSource.includes("realResourceCreated=false"), "dry_run_contract_must_fix_real_resource_false");
-assert(dryRunContractSource.includes("chargeApplied=false"), "dry_run_contract_must_fix_charge_applied_false");
+assert(dryRunContractSource.includes("realResourceCreated 不属于 resourcePlan 顶层字段"), "dry_run_contract_must_exclude_top_level_real_resource_created");
+assert(dryRunContractSource.includes("chargeApplied 不属于 resourcePlan 顶层字段"), "dry_run_contract_must_exclude_top_level_charge_applied");
+assert(dryRunContractSource.includes("managedResourceBindingPlan.snapshot.realResourceCreated=false"), "dry_run_contract_must_express_real_resource_created_on_snapshot");
+assert(dryRunContractSource.includes("estimatedCost.chargeApplied=false"), "dry_run_contract_must_express_charge_applied_on_estimated_cost");
 assert(dryRunContractSource.includes("mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release"), "dry_run_contract_must_keep_adapter_route");
 assert(readonlyContractSource.includes("dry-run/tencent plan provider"), "readonly_contract_must_reference_dry_run_stage");
 assert(managedContractSource.includes("dry-run/tencent plan provider"), "managed_contract_must_reference_dry_run_stage");

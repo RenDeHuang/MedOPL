@@ -142,9 +142,7 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
       "准备运行网络边界",
       "登记账单和审计边界"
     ],
-    "approvalRequired": true,
-    "realResourceCreated": false,
-    "chargeApplied": false
+    "approvalRequired": true
   },
   "releasePolicy": {
     "status": "not_released",
@@ -164,7 +162,7 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 
 普通用户界面只使用“托管运行环境、区域、规格、预计费用、释放策略、审计状态、状态”等产品语言，不把 CVM、COS、K8s、TKE 或云资源控制台作为主语言。
 
-`resourcePlan` 来自 `dry-run/tencent resource plan provider`，只生成不会执行的资源创建计划。`resourceSteps` 只能使用“准备托管运行环境”“分配文件空间”“准备运行网络边界”“登记账单和审计边界”等产品语言，不把 CVM、COS、K8s 或 TKE 当普通用户主语言。dry-run 固定 `realResourceCreated=false`、`chargeApplied=false`，不创建、绑定、释放真实资源，不真实扣费。
+`resourcePlan` 来自 `dry-run/tencent resource plan provider`，只生成不会执行的资源创建计划。`resourceSteps` 只能使用“准备托管运行环境”“分配文件空间”“准备运行网络边界”“登记账单和审计边界”等产品语言，不把 CVM、COS、K8s 或 TKE 当普通用户主语言。`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段；真实资源未创建通过 `snapshot.realResourceCreated=false` 表达，未真实扣费通过 `estimatedCost.chargeApplied=false` 或现有费用估算边界表达。
 
 后续真实腾讯云接入路线必须按阶段推进：
 
