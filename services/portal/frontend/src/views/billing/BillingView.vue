@@ -114,8 +114,26 @@
           </div>
 
           <div v-if="detailsLoading && !detailsPayload" class="empty-state">正在加载工作空间成本明细...</div>
-          <div class="table-shell">
-            <table class="text-sm">
+          <div class="mobile-card-list">
+            <div v-for="item in payload.taskCosts" :key="item.slug" class="mobile-only-card">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.slug }}</div>
+                  <div class="mt-1 truncate text-xs text-gray-500 dark:text-slate-400">{{ item.slug }}</div>
+                </div>
+                <div class="shrink-0 text-right text-sm font-medium text-gray-950 dark:text-white">{{ microMoney(item.totalCost) }}</div>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                <div><span class="block text-gray-400 dark:text-slate-500">任务数</span>{{ item.runCount }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">计算</span>{{ microMoney(item.cpuCost) }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">加速</span>{{ microMoney(item.gpuCost) }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">文件空间</span>{{ microMoney(item.storageCost) }}</div>
+              </div>
+            </div>
+            <div v-if="!payload.taskCosts.length" class="empty-state">当前窗口暂无任务空间成本</div>
+          </div>
+          <div class="desktop-table-shell">
+            <table class="min-w-[760px] text-sm">
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">工作空间</th>
@@ -165,8 +183,24 @@
             </div>
 
             <div v-if="detailsLoading && !detailsPayload" class="empty-state">正在加载运行明细...</div>
-            <div class="table-shell">
-              <table class="text-sm">
+            <div class="mobile-card-list">
+              <div v-for="(item, index) in payload.runCosts" :key="item.runId" class="mobile-only-card">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="font-medium text-gray-950 dark:text-white">任务 {{ index + 1 }}</div>
+                    <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">工作空间 {{ index + 1 }}</div>
+                  </div>
+                  <span class="badge shrink-0" :class="statusBadge(item.runStatus)">{{ humanizeStatus(item.runStatus) }}</span>
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                  <div><span class="block text-gray-400 dark:text-slate-500">账单来源</span>{{ item.pricingSource || "-" }}</div>
+                  <div><span class="block text-gray-400 dark:text-slate-500">总消费</span>{{ microMoney(item.totalCost) }}</div>
+                </div>
+              </div>
+              <div v-if="!payload.runCosts.length" class="empty-state">当前窗口暂无运行明细</div>
+            </div>
+            <div class="desktop-table-shell">
+              <table class="min-w-[680px] text-sm">
                 <thead>
                   <tr class="table-head">
                     <th class="px-4 py-3">任务</th>

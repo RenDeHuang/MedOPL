@@ -19,8 +19,25 @@
               </div>
               <span class="badge badge-primary">只读</span>
             </div>
-            <div class="mt-5 table-shell">
-              <table class="text-sm">
+            <div class="mt-5 mobile-card-list">
+              <div v-for="item in payload.accountOperations.accounts" :key="item.accountId" class="mobile-only-card">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="font-medium text-gray-950 dark:text-white">{{ item.accountName }}</div>
+                    <div class="mt-1 truncate text-xs text-gray-500 dark:text-slate-400">{{ item.email }}</div>
+                  </div>
+                  <span class="badge shrink-0" :class="item.accessStatus === '开通' ? 'badge-success' : 'badge-warning'">{{ item.accessStatus }}</span>
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                  <div><span class="block text-gray-400 dark:text-slate-500">工作空间</span>{{ item.workspaceCount }}</div>
+                  <div><span class="block text-gray-400 dark:text-slate-500">余额</span>{{ money(item.wallet.balance) }}</div>
+                  <div><span class="block text-gray-400 dark:text-slate-500">冻结金额</span>{{ money(item.wallet.frozenAmount) }}</div>
+                </div>
+              </div>
+              <div v-if="!payload.accountOperations.accounts.length" class="empty-state">暂无账号记录</div>
+            </div>
+            <div class="mt-5 desktop-table-shell">
+              <table class="min-w-[720px] text-sm">
                 <thead>
                   <tr class="table-head">
                     <th class="px-4 py-3">账号</th>
@@ -78,8 +95,27 @@
             </div>
             <span class="badge badge-success">账号 / 工作空间</span>
           </div>
-          <div class="mt-5 table-shell">
-            <table class="text-sm">
+          <div class="mt-5 mobile-card-list">
+            <div v-for="item in payload.workspaceOperations.workspaces" :key="item.workspaceId" class="mobile-only-card">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceName || item.workspaceId }}</div>
+                  <div class="mt-1 truncate text-xs text-gray-500 dark:text-slate-400">{{ item.accountName }}</div>
+                </div>
+                <span class="badge shrink-0" :class="statusClass(item.status)">{{ item.status }}</span>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                <div><span class="block text-gray-400 dark:text-slate-500">套餐</span>{{ item.planLabel }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">规格</span>{{ item.cpuCores }} 核 / {{ item.memoryGb }}GB</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">文件空间</span>{{ item.fileSpaceGb }}GB</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">并发 / 队列</span>{{ item.concurrency }} / {{ item.queueCapacity }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">审计</span>{{ item.auditStatus || "未开始" }}</div>
+              </div>
+            </div>
+            <div v-if="!payload.workspaceOperations.workspaces.length" class="empty-state">暂无工作空间记录</div>
+          </div>
+          <div class="mt-5 desktop-table-shell">
+            <table class="min-w-[900px] text-sm">
               <thead>
                 <tr class="table-head">
                   <th class="px-4 py-3">工作空间</th>

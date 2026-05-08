@@ -52,6 +52,7 @@ const smokeScripts = [
   ["smoke-test-v22-portal-files-billing-trace-flow", "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"],
   ["smoke-test-v22-portal-file-space-management", "scripts/smoke-test-v22-portal-file-space-management.mjs"],
   ["smoke-test-v22-portal-mobile-usability", "scripts/smoke-test-v22-portal-mobile-usability.mjs"],
+  ["smoke-test-v22-portal-mobile-table-usability", "scripts/smoke-test-v22-portal-mobile-table-usability.mjs"],
   ["smoke-test-v22-portal-session-trace-view", "scripts/smoke-test-v22-portal-session-trace-view.mjs"],
   ["smoke-test-v22-portal-trace-file-linkage", "scripts/smoke-test-v22-portal-trace-file-linkage.mjs"],
   ["smoke-test-v22-portal-cost-balance-trace-linkage", "scripts/smoke-test-v22-portal-cost-balance-trace-linkage.mjs"],
