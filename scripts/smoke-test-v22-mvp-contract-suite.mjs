@@ -41,6 +41,7 @@ const smokeScripts = [
   ["smoke-test-v22-managed-resource-binding-plan-view", "scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs"],
   ["smoke-test-v22-tencent-readonly-quote-provider-boundary", "scripts/smoke-test-v22-tencent-readonly-quote-provider-boundary.mjs"],
   ["smoke-test-v22-tencent-dry-run-resource-plan-provider", "scripts/smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs"],
+  ["smoke-test-v22-authorized-tencent-create-release-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs"],
   ["smoke-test-v22-workflow-gate", "scripts/smoke-test-v22-workflow-gate.mjs"],
   ["smoke-test-v22-opl-work-message-file-run-flow", "scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs"],
   ["smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow", "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs"],
