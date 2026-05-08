@@ -79,6 +79,30 @@ cleanup 计划必须写清楚：
 10. B 无 blocker 时 `ff-only` 合入 trunk。
 11. B push GitHub。
 
+## 本地 workflow gate
+
+`scripts/v22-workflow-gate.mjs` 是本地可执行的合同优先工作流检查器，只输出模板和检查结果，不自动修改、不自动合并、不自动 push。
+
+开工时可运行：
+
+```bash
+node scripts/v22-workflow-gate.mjs start --type portal-ui
+```
+
+审计时可运行：
+
+```bash
+node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk
+```
+
+B push 前 checkpoint 可运行：
+
+```bash
+node scripts/v22-workflow-gate.mjs checkpoint
+```
+
+当前内置合同包类型包括 `portal-ui`、`gateway`、`runtime`、`langfuse-trace`、`resource-billing`、`tencent-quote` 和 `cleanup`。gate 只检查 git diff、路径、remote URL 和推荐验证命令；它不读取 secret 内容，不执行 build/push/kubectl/live-test，也不调用真实云 API。
+
 ## 分支开工声明模板
 
 ```text
