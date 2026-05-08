@@ -94,7 +94,7 @@ export function createPortalAdminApiRoutes({
     if (url.pathname === "/portal/api/admin/ops") {
       await withOverview(db, (payload) => {
         if (!opsSurfaceEnabled(payload)) return sendOpsSurfaceDisabled(res);
-        return sendJson(res, buildAdminOpsApiPayload(payload));
+        return sendJson(res, buildAdminOpsApiPayload(db, payload));
       });
       return true;
     }

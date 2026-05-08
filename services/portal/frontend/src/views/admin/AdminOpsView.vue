@@ -1,80 +1,189 @@
 <template>
-  <AppLayout title="云资源状态" subtitle="服务器编号、任务编号、释放证据与停止计费状态">
+  <AppLayout title="运营总览" subtitle="管理员/运维只读视图">
     <div class="space-y-6">
-      <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载运维数据...</div>
+      <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载运营数据...</div>
       <template v-else>
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="并发运行" :value="payload.systemMetrics?.concurrentRuns ?? 0" hint="当前未结束 runs" />
-          <MetricCard label="活跃沙箱" :value="payload.systemMetrics?.activeSandboxes ?? 0" hint="当前运行中或活跃沙箱" />
-          <MetricCard label="活跃 Session" :value="payload.systemMetrics?.activeWorkspaceSessions ?? 0" hint="当前 workspace session" />
-          <MetricCard label="停止计费" :value="stoppedBillingCount" hint="已释放服务器" />
+          <MetricCard label="账号" :value="payload.summary.accountCount" hint="纳入运营视图" />
+          <MetricCard label="工作空间" :value="payload.summary.workspaceCount" hint="全部可见归属" />
+          <MetricCard label="当前运行" :value="payload.summary.currentRunCount" hint="进行中的会话 / 任务" />
+          <MetricCard label="费用估算" :value="money(payload.summary.estimatedCost)" hint="只读估算，不扣费" />
         </section>
 
-        <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <MetricCard label="MAS 首次回复" :value="masReplyLabel" hint="最近成功样本的平均近似值" />
-          <MetricCard label="Warmup 超时" :value="payload.summaries?.performance?.warmupTimeoutCount ?? 0" hint="最近 warmup 超时次数" />
-          <MetricCard label="安全缺口" :value="payload.summaries?.security?.failedCount ?? 0" hint="默认 secret / 默认口令 / 配置卫生问题" />
-        </section>
-
-        <section class="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
+        <section class="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div class="card p-6">
-            <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 class="panel-title">云资源状态</h2>
-                <p class="panel-subtitle">展示服务器编号、任务编号、释放证据和停止计费结果。</p>
+                <h2 class="panel-title">账号运营</h2>
+                <p class="panel-subtitle">账号状态、工作空间数量和余额摘要。</p>
               </div>
-              <RouterLink class="btn btn-secondary" to="/admin/system">系统状态</RouterLink>
+              <span class="badge badge-primary">只读</span>
             </div>
-
-            <div class="mt-6 table-shell">
+            <div class="mt-5 table-shell">
               <table class="text-sm">
                 <thead>
                   <tr class="table-head">
-                    <th class="px-4 py-3">资源</th>
+                    <th class="px-4 py-3">账号</th>
                     <th class="px-4 py-3">状态</th>
-                    <th class="px-4 py-3">释放证据</th>
-                    <th class="px-4 py-3">停止计费</th>
+                    <th class="px-4 py-3">工作空间</th>
+                    <th class="px-4 py-3">余额</th>
+                    <th class="px-4 py-3">冻结金额</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in cloudResourceRows" :key="item.resourceOrderId || item.name" class="table-row">
-                    <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ item.name }}</td>
+                  <tr v-for="item in payload.accountOperations.accounts" :key="item.accountId" class="table-row">
                     <td class="px-4 py-3">
-                      <span class="badge" :class="item.billingStopped ? 'badge-success' : 'badge-warning'">{{ resourceStatus(item.status) }}</span>
+                      <div class="font-medium text-gray-950 dark:text-white">{{ item.accountName }}</div>
+                      <div class="text-xs text-gray-500 dark:text-slate-400">{{ item.email }}</div>
                     </td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.runId || item.workspaceId || item.resourceOrderId || "-" }}</td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.cleanupEvidence || "等待释放证据" }}</td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.billingStopped ? "已停止计费" : "运行中" }}</td>
-                  </tr>
-                  <tr v-if="!cloudResourceRows.length">
-                    <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无云资源生命周期记录</td>
+                    <td class="px-4 py-3"><span class="badge" :class="item.accessStatus === '开通' ? 'badge-success' : 'badge-warning'">{{ item.accessStatus }}</span></td>
+                    <td class="px-4 py-3">{{ item.workspaceCount }}</td>
+                    <td class="px-4 py-3">{{ money(item.wallet.balance) }}</td>
+                    <td class="px-4 py-3">{{ money(item.wallet.frozenAmount) }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div class="space-y-6">
-            <div class="card p-6">
-              <h2 class="panel-title">性能摘要</h2>
-              <div class="mt-4 space-y-3 text-sm">
-                <div class="muted-kv"><span class="muted-kv-label">MAS 首次回复近似值</span><span class="muted-kv-value">{{ masReplyLabel }}</span></div>
-                <div class="muted-kv"><span class="muted-kv-label">成功 MAS Runs</span><span class="muted-kv-value">{{ payload.summaries?.performance?.totalSuccessfulMasRuns ?? 0 }}</span></div>
-                <div class="muted-kv"><span class="muted-kv-label">Warmup 超时</span><span class="muted-kv-value">{{ payload.summaries?.performance?.warmupTimeoutCount ?? 0 }}</span></div>
-              </div>
+          <div class="card p-6">
+            <h2 class="panel-title">费用 / 对账</h2>
+            <div class="mt-4 space-y-3">
+              <div class="muted-kv"><span class="muted-kv-label">费用估算</span><span class="muted-kv-value">{{ money(payload.costReconciliation.estimatedCost.amount) }}</span></div>
+              <div class="muted-kv"><span class="muted-kv-label">冻结金额</span><span class="muted-kv-value">{{ money(payload.costReconciliation.frozenAmount) }}</span></div>
+              <div class="muted-kv"><span class="muted-kv-label">T+1 对账状态</span><span class="muted-kv-value">{{ payload.costReconciliation.tPlus1Status }}</span></div>
             </div>
-
-            <div class="card p-6">
-              <h2 class="panel-title">安全与异常事件</h2>
-              <div class="mt-4 space-y-3">
-                <div v-for="item in payload.warningEvents || []" :key="`${item.type}-${item.occurredAt}-${item.userId}`" class="rounded-2xl border border-gray-100 px-4 py-4 dark:border-slate-700">
-                  <div class="font-medium text-gray-950 dark:text-white">{{ item.type }}</div>
-                  <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.occurredAtLabel || item.occurredAt || '-' }}</div>
-                  <div class="mt-2 text-sm text-gray-500 dark:text-slate-400">{{ item.workspaceId || item.userId || '-' }}</div>
+            <div class="mt-5 space-y-3">
+              <div v-for="item in payload.costReconciliation.costAllocationTags.slice(0, 4)" :key="item.resourceOrderId" class="rounded-xl border border-gray-100 p-3 text-xs dark:border-slate-700">
+                <div class="font-medium text-gray-950 dark:text-white">{{ item.resourceOrderId }}</div>
+                <div class="mt-2 grid grid-cols-2 gap-2 text-gray-500 dark:text-slate-400">
+                  <span>runId: {{ item.runId || "未归因" }}</span>
+                  <span>serverPlanId: {{ item.serverPlanId || "-" }}</span>
+                  <span>tenantId: {{ item.tenantId || "-" }}</span>
+                  <span>workspaceId: {{ item.workspaceId || "-" }}</span>
+                  <span>resourceBindingId: {{ item.resourceBindingId || "-" }}</span>
+                  <span>environmentId: {{ item.environmentId || "-" }}</span>
                 </div>
-                <div v-if="!(payload.warningEvents || []).length" class="empty-state">暂无事件</div>
               </div>
+              <div v-if="!payload.costReconciliation.costAllocationTags.length" class="empty-state">暂无对账标签</div>
             </div>
+          </div>
+        </section>
+
+        <section class="card p-6">
+          <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 class="panel-title">工作空间运营</h2>
+              <p class="panel-subtitle">套餐、计算规格、文件空间、并发、队列和状态。</p>
+            </div>
+            <span class="badge badge-success">账号 / 工作空间</span>
+          </div>
+          <div class="mt-5 table-shell">
+            <table class="text-sm">
+              <thead>
+                <tr class="table-head">
+                  <th class="px-4 py-3">工作空间</th>
+                  <th class="px-4 py-3">账号</th>
+                  <th class="px-4 py-3">套餐</th>
+                  <th class="px-4 py-3">规格</th>
+                  <th class="px-4 py-3">并发 / 队列</th>
+                  <th class="px-4 py-3">状态</th>
+                  <th class="px-4 py-3">审计</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in payload.workspaceOperations.workspaces" :key="item.workspaceId" class="table-row">
+                  <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ item.workspaceName || item.workspaceId }}</td>
+                  <td class="px-4 py-3">{{ item.accountName }}</td>
+                  <td class="px-4 py-3">{{ item.planLabel }}</td>
+                  <td class="px-4 py-3">{{ item.cpuCores }} 核 / {{ item.memoryGb }}GB / {{ item.fileSpaceGb }}GB 文件空间</td>
+                  <td class="px-4 py-3">{{ item.concurrency }} / {{ item.queueCapacity }}</td>
+                  <td class="px-4 py-3"><span class="badge" :class="statusClass(item.status)">{{ item.status }}</span></td>
+                  <td class="px-4 py-3">{{ item.auditStatus || "未开始" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div class="card p-6">
+            <h2 class="panel-title">当前运行</h2>
+            <div class="mt-4 space-y-3">
+              <div v-for="item in payload.currentRuns.items" :key="item.runId || `${item.workspaceId}-${item.task}`" class="rounded-xl border border-gray-100 p-4 text-sm dark:border-slate-700">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="font-medium text-gray-950 dark:text-white">{{ item.task }}</div>
+                  <span class="badge badge-warning">{{ item.status }}</span>
+                </div>
+                <div class="mt-2 grid grid-cols-1 gap-2 text-xs text-gray-500 dark:text-slate-400 md:grid-cols-2">
+                  <span>账号：{{ item.accountName }}</span>
+                  <span>工作空间：{{ item.workspaceId }}</span>
+                  <span>runId：{{ item.runId || "未归因" }}</span>
+                  <span>resourceBindingId：{{ item.resourceBindingId || "-" }}</span>
+                  <span>environmentId：{{ item.environmentId || "-" }}</span>
+                  <span>费用估算：{{ money(item.estimatedCost) }}</span>
+                </div>
+              </div>
+              <div v-if="!payload.currentRuns.items.length" class="empty-state">暂无当前运行</div>
+            </div>
+          </div>
+
+          <div class="card p-6">
+            <h2 class="panel-title">文件空间运营</h2>
+            <div class="mt-4 space-y-3">
+              <div v-for="item in payload.fileSpaceOperations.items" :key="item.workspaceId" class="rounded-xl border border-gray-100 p-4 text-sm dark:border-slate-700">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-medium text-gray-950 dark:text-white">{{ item.workspaceName || item.workspaceId }}</div>
+                    <div class="text-xs text-gray-500 dark:text-slate-400">{{ item.accountName }}</div>
+                  </div>
+                  <span class="badge" :class="item.protectedGb > 0 ? 'badge-warning' : 'badge-success'">{{ item.deleteProtectionStatus }}</span>
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
+                  <span>容量：{{ item.capacityGb }}GB</span>
+                  <span>已用：{{ item.usedGb }}GB</span>
+                  <span>保护期占用：{{ item.protectedGb }}GB</span>
+                  <span>保护期：{{ item.retentionDays }} 天</span>
+                  <span>输出文件：{{ item.outputFileCount }}</span>
+                </div>
+              </div>
+              <div v-if="!payload.fileSpaceOperations.items.length" class="empty-state">暂无文件空间记录</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card p-6">
+          <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 class="panel-title">审计 / 异常 / 公告</h2>
+              <p class="panel-subtitle">只读查看审计事件、异常、释放失败、账单异常和公告。</p>
+            </div>
+            <span class="badge badge-primary">不执行真实资源操作</span>
+          </div>
+          <div class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-4">
+            <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+              <div class="text-sm font-medium text-gray-950 dark:text-white">审计事件</div>
+              <div class="mt-2 text-2xl font-semibold">{{ payload.auditAndAnnouncements.auditEvents.length }}</div>
+            </div>
+            <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+              <div class="text-sm font-medium text-gray-950 dark:text-white">异常</div>
+              <div class="mt-2 text-2xl font-semibold">{{ payload.auditAndAnnouncements.exceptions.length }}</div>
+            </div>
+            <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+              <div class="text-sm font-medium text-gray-950 dark:text-white">释放失败</div>
+              <div class="mt-2 text-2xl font-semibold">{{ payload.auditAndAnnouncements.releaseFailures.length }}</div>
+            </div>
+            <div class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
+              <div class="text-sm font-medium text-gray-950 dark:text-white">账单异常</div>
+              <div class="mt-2 text-2xl font-semibold">{{ payload.auditAndAnnouncements.billingExceptions.length }}</div>
+            </div>
+          </div>
+          <div class="mt-5 space-y-3">
+            <div v-for="item in payload.auditAndAnnouncements.announcements" :key="item.id" class="rounded-xl border border-gray-100 p-4 text-sm dark:border-slate-700">
+              <div class="font-medium text-gray-950 dark:text-white">{{ item.title }}</div>
+              <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">公告状态：{{ item.status }}</div>
+            </div>
+            <div v-if="!payload.auditAndAnnouncements.announcements.length" class="empty-state">暂无公告</div>
           </div>
         </section>
       </template>
@@ -83,29 +192,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import { fetchAdminOps } from "@/api/portal";
 
 const payload = ref<any>(null);
 
-const masReplyLabel = computed(() => {
-  const value = Number(payload.value?.summaries?.performance?.masFirstReplyApproxMs || 0);
-  return value ? `${value} ms` : "-";
-});
+function money(value = 0) {
+  return `¥${Number(value || 0).toFixed(2)}`;
+}
 
-const cloudResourceRows = computed(() => payload.value?.cloudResourceRows || []);
-const stoppedBillingCount = computed(() => cloudResourceRows.value.filter((item: any) => item.billingStopped).length);
-
-function resourceStatus(status = "") {
-  const normalized = String(status || "").toLowerCase();
-  if (normalized === "running") return "运行中";
-  if (normalized === "provisioning") return "开通中";
-  if (normalized === "released") return "已释放";
-  if (normalized === "settled") return "已结清";
-  if (["failed", "cancelled"].includes(normalized)) return "已停止";
-  return status || "未知";
+function statusClass(status = "") {
+  if (["可用", "已释放"].includes(status)) return "badge-success";
+  if (["准备中", "释放中", "计划中"].includes(status)) return "badge-warning";
+  return "badge-danger";
 }
 
 onMounted(async () => {
