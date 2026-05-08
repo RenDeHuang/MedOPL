@@ -88,9 +88,7 @@ export interface StorageEntitlementPayload {
   status: "disabled" | "active" | string;
   freeQuotaGb: number;
   minimumPurchaseGb: number;
-  storageBackend: string;
   retentionPolicy: string;
-  cosPrefix: string;
   resourceOrderId: string;
   storagePlanId: string;
   storageSizeGb: number;
@@ -158,9 +156,7 @@ export function disabledStorageEntitlement(): StorageEntitlementPayload {
     status: "disabled",
     freeQuotaGb: 0,
     minimumPurchaseGb: 10,
-    storageBackend: "portal_storage",
     retentionPolicy: "order_lifecycle",
-    cosPrefix: "",
     resourceOrderId: "",
     storagePlanId: "",
     storageSizeGb: 0,

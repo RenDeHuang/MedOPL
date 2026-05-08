@@ -123,6 +123,20 @@ function workspaceResourceUsageView(resourceUsage = {}) {
   };
 }
 
+function publicStorageEntitlementView(storageEntitlement = {}) {
+  return {
+    enabled: Boolean(storageEntitlement.enabled),
+    status: text(storageEntitlement.status || (storageEntitlement.enabled ? "active" : "disabled")),
+    freeQuotaGb: Number(storageEntitlement.freeQuotaGb || 0),
+    minimumPurchaseGb: Number(storageEntitlement.minimumPurchaseGb || 10),
+    retentionPolicy: text(storageEntitlement.retentionPolicy || "workspace_lifecycle"),
+    resourceOrderId: text(storageEntitlement.resourceOrderId),
+    storagePlanId: text(storageEntitlement.storagePlanId),
+    storageSizeGb: Number(storageEntitlement.storageSizeGb || storageEntitlement.capacityGb || 0),
+    message: text(storageEntitlement.message || (storageEntitlement.enabled ? "active" : "storage_required")),
+  };
+}
+
 export function createWorkspacePayloadBuilder({
   collectRunsForUser,
   currentServerPlanSelection,
@@ -174,6 +188,7 @@ export function createWorkspacePayloadBuilder({
     timing.mark("events");
     const activeSession = latestActiveWorkspaceSession(db, user.id, current.slug);
     const storageEntitlement = workspaceStorageEntitlement(db, user, current.slug);
+    const publicStorageEntitlement = publicStorageEntitlementView(storageEntitlement);
     const fileSpace = buildPortalFileSpacePayload({
       db,
       user,
@@ -204,7 +219,7 @@ export function createWorkspacePayloadBuilder({
         title: current.title,
         status: current.status,
         serverPlan: currentServerPlanSelection(current),
-        storageEntitlement,
+        storageEntitlement: publicStorageEntitlement,
         createdAt: current.createdAt || null,
         archivedAt: current.archivedAt || null,
         deletedAt: current.deletedAt || null,
@@ -216,7 +231,7 @@ export function createWorkspacePayloadBuilder({
         completedRuns: runs.filter((run) => isRunTerminal(run)).length,
       },
       costs: totals,
-      storageEntitlement,
+      storageEntitlement: publicStorageEntitlement,
       managedResourceBindingPlan,
       fileSpace,
       runStatus: summarizeRunStatus(runs, isRunTerminal),

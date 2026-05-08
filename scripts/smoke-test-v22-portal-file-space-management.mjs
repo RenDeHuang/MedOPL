@@ -20,6 +20,8 @@ const forbiddenValuePattern = new RegExp([
   "/runtime/private/file",
   "signed.example.test",
   "cos-prefix-must-not-leak",
+  "cos-prefix-proof-must-not-leak",
+  "cos_standard_workspace_quota",
 ].map((item) => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "i");
 
 const fileSpaceAllowedKeys = Object.freeze([
@@ -107,6 +109,12 @@ function assertUserCopy(source, label) {
   ]) {
     assert.equal(source.includes(forbidden), false, `${label}_must_not_show_forbidden_copy:${forbidden}`);
   }
+}
+
+function interfaceBody(source = "", name = "") {
+  const match = source.match(new RegExp(`export interface ${name} \\{([\\s\\S]*?)\\n\\}`));
+  assert(match, `workspace_types_missing_interface:${name}`);
+  return match[1];
 }
 
 const user = {
@@ -222,7 +230,8 @@ const buildWorkspacePayload = createWorkspacePayloadBuilder({
     enabled: true,
     status: "active",
     storageSizeGb: 100,
-    storageBackend: "file_space",
+    storageBackend: "cos_standard_workspace_quota",
+    cosPrefix: "cos-prefix-proof-must-not-leak",
     message: "active",
   }),
 });
@@ -279,6 +288,9 @@ assert.equal(outputFile.retentionUntil, "2026-05-15T09:00:00.000Z", "output_file
 assertNoForbiddenLeak(fileSpace, "file_space_payload");
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 assert.equal(JSON.stringify(workspacePayload).includes("tokenCount"), false, "workspace_payload_must_not_expose_token_count_on_file_space_page");
+assert.equal(JSON.stringify(workspacePayload).includes("cos-prefix-proof-must-not-leak"), false, "workspace_payload_must_not_expose_storage_prefix_value");
+assert.equal(JSON.stringify(workspacePayload).includes("cos_standard_workspace_quota"), false, "workspace_payload_must_not_expose_internal_storage_backend");
+assert.equal(JSON.stringify(workspacePayload).includes("storageBackend"), false, "workspace_payload_must_not_expose_storage_backend_field");
 
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
@@ -290,6 +302,9 @@ assert(workspaceViewSource.includes("payload.fileSpace"), "workspace_view_must_r
 assert(workspaceViewSource.includes("ordinaryDeleteRequiresConfirmation"), "workspace_view_must_describe_delete_policy");
 assert(workspaceTypesSource.includes("FileSpacePayload"), "workspace_types_must_define_file_space_payload");
 assert(workspaceTypesSource.includes("selectedFileRefs"), "workspace_types_must_include_selected_file_refs");
+const storageEntitlementType = interfaceBody(workspaceTypesSource, "StorageEntitlementPayload");
+assert.equal(storageEntitlementType.includes("cosPrefix"), false, "workspace_storage_entitlement_type_must_not_expose_storage_prefix");
+assert.equal(storageEntitlementType.includes("storageBackend"), false, "workspace_storage_entitlement_type_must_not_expose_storage_backend");
 assert(contractSource.includes("文件空间属于 workspace，和运行环境生命周期分离"), "contract_must_define_file_space_lifecycle");
 assert(contractSource.includes("本分支允许最小 Portal frontend 文件空间展示"), "contract_must_allow_minimal_frontend_file_space");
 assert.equal(contractSource.includes("- 不改 frontend。"), false, "contract_must_not_keep_old_frontend_non_goal");
