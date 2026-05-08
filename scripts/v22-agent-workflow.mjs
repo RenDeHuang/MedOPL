@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const stageDocuments = [
@@ -31,6 +34,20 @@ const disallowedActions = [
   "kube" + "ctl",
   "live" + "-test",
 ];
+
+const stableStatusEnum = Object.freeze([
+  "A_COMMITTED",
+  "B_BLOCKER",
+  "A_FIXED",
+  "B_MERGED",
+  "B_PUSHED",
+  "C_BLOCKER",
+  "C_PASS",
+]);
+
+const statusAliases = Object.freeze({
+  B_BLOCKED: "B_BLOCKER",
+});
 
 const worktreeRoot = "/home/dev/projects/platform-v22.worktrees";
 
@@ -228,30 +245,35 @@ const nextStateHandlers = {
     action: "review-pack",
     message: `窗口 B 执行 review-pack：node scripts/v22-agent-workflow.mjs review-pack --branch ${state.branch || "<branch>"} --base ${state.base || "recovery/platform-v22-trunk"}`,
   }),
-  B_BLOCKED: (state) => ({
+  B_BLOCKER: (state) => ({
     window: "A",
-    action: "fix",
-    message: `窗口 A 根据 B blocker 修复并补验证；保持同一分支 ${state.branch || "<branch>"}，修复后重新 commit。`,
+    action: "fix-pack",
+    message: `窗口 A 执行 fix-pack：修复 ${state.branch || "<branch>"} 的 blocker，修复后回复 status: A_FIXED。`,
+  }),
+  A_FIXED: (state) => ({
+    window: "B",
+    action: "re-review-pack",
+    message: `窗口 B 执行 re-review-pack：复审修复 commit ${state.commit || "<commit>"}。`,
   }),
   B_MERGED: () => ({
     window: "B",
     action: "checkpoint-pack",
     message: "窗口 B 执行 checkpoint-pack，确认 push 前工作区、remote、secret hygiene 和验证记录。",
   }),
-  B_PUSHED: () => ({
-    window: "B",
-    action: "收尾",
-    message: "窗口 B 收尾：记录 push 结果、GitHub 状态和后续分支建议；不要继续做新功能。",
+  B_PUSHED: (state) => ({
+    window: "C",
+    action: "qa-pack",
+    message: `窗口 C 执行 qa-pack：对 ${state.surface || "overview"} 做只读 QA，发现问题回复 status: C_BLOCKER，通过回复 status: C_PASS。`,
   }),
   C_BLOCKER: (state) => ({
     window: "A",
-    action: "C blocker triage",
-    message: `窗口 A 处理 C blocker：读取只读 QA 证据，判断是否需要修复 ${state.branch || "<branch>"} 或拆出新分支。`,
+    action: "fix-pack",
+    message: `窗口 A 处理 C blocker：修复 ${state.branch || "<branch>"} 或拆出新 lane，修复后回复 status: A_FIXED。`,
   }),
   C_PASS: () => ({
-    window: "B",
-    action: "checkpoint-pack",
-    message: "窗口 B 汇总 C 只读 QA PASS 证据，进入 checkpoint-pack；仍需 B 复审后才可合入或 push。",
+    window: "D",
+    action: "done",
+    message: "C 只读 QA PASS；当前 lane done，下一步由 owner 选择 next business lane。",
   }),
 };
 
@@ -304,14 +326,26 @@ function parseState(stateText) {
   if (!state || typeof state !== "object" || Array.isArray(state)) {
     throw new Error("state_json_object_required");
   }
-  if (!state.status || !nextStateHandlers[state.status]) {
+  const stableStatus = assertKnownStatus(state.status);
+  if (!stableStatus) {
     throw new Error(`unknown_state_status:${state.status || "(missing)"}`);
   }
-  return state;
+  return {
+    ...state,
+    status: state.status,
+    stableStatus,
+  };
 }
 
 function humanList(items) {
   return items.map((item) => `- ${item}`).join("\n");
+}
+
+function humanKeyValue(items) {
+  return items
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => `- ${key}: ${value}`)
+    .join("\n");
 }
 
 function laneSlug(value) {
@@ -343,6 +377,89 @@ function disciplineLines(discipline = workspaceDiscipline) {
     discipline.truthRule,
     `不提交 ${discipline.nonCommittableLocalState.join("、")}。`,
   ];
+}
+
+function canonicalStatus(status) {
+  return statusAliases[status] || status;
+}
+
+function assertKnownStatus(status) {
+  const canonical = canonicalStatus(status);
+  if (!stableStatusEnum.includes(canonical)) {
+    throw new Error(`unknown_state_status:${status || "(missing)"}`);
+  }
+  return canonical;
+}
+
+function isSecretLikeReplyFile(filePath) {
+  const normalized = String(filePath || "").replaceAll("\\", "/");
+  const envName = "." + "env";
+  const secretKeywords = [
+    envName,
+    "secret",
+    "token",
+    "key",
+    "kubeconfig",
+    "credential",
+    "private",
+    "pem",
+  ];
+  return secretKeywords.some((keyword) => normalized.toLowerCase().includes(keyword.toLowerCase()));
+}
+
+function parseReplyText(replyText, from, replyFile) {
+  const fields = {};
+  const lines = String(replyText || "").split(/\r?\n/);
+  for (const line of lines) {
+    const match = line.match(/^\s*([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*?)\s*$/);
+    if (!match) continue;
+    const [, rawKey, rawValue] = match;
+    fields[rawKey.toLowerCase()] = rawValue;
+  }
+
+  const rawStatus = fields.status || fields.state;
+  const stableStatus = assertKnownStatus(rawStatus);
+  const branch = fields.branch || "";
+  const commit = fields.commit || "";
+  const worktree = fields.worktree || "";
+  const surface = fields.surface || "";
+  const base = fields.base || "";
+  const blocker = fields.blocker || "";
+  const summary = fields.summary || "";
+  const fix = fields.fix || "";
+
+  return {
+    command: "ingest",
+    from,
+    replyFile,
+    replyText: String(replyText || "").trimEnd(),
+    status: rawStatus,
+    stableStatus,
+    branch,
+    commit,
+    worktree,
+    surface,
+    base,
+    blocker,
+    summary,
+    fix,
+  };
+}
+
+function gitCommand(args) {
+  return execFileSync("git", args, {
+    cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+}
+
+function currentBranchName() {
+  return gitCommand(["branch", "--show-current"]) || "(unknown)";
+}
+
+function currentWorktreePath() {
+  return gitCommand(["rev-parse", "--show-toplevel"]) || process.cwd();
 }
 
 function createStartPack({ type }) {
@@ -437,6 +554,7 @@ function createReviewPack({ branch, base }) {
   return {
     ok: true,
     command: "review-pack",
+    window: "B",
     branch,
     base: targetBase,
     recommendedBranch: branch,
@@ -460,6 +578,7 @@ function createQaPack({ surface }) {
   return {
     ok: true,
     command: "c-qa-pack",
+    window: "C",
     surface,
     recommendedBranch: `qa/v22-c-${surface}-readonly`,
     recommendedWorktreePath,
@@ -475,10 +594,87 @@ function createQaPack({ surface }) {
   };
 }
 
+function createFixPack({ state, window = "A" } = {}) {
+  const branch = state?.branch || "<branch>";
+  return {
+    ok: true,
+    command: "fix-pack",
+    window,
+    stableStatus: state?.stableStatus || "B_BLOCKER",
+    branch,
+    prompt: [
+      `A fix-pack：修复 ${branch} 的 blocker。`,
+      `blocker: ${state?.blocker || "<blocker>"}`,
+      "在独立 worktree 完成修复。",
+      "修复后回复 status: A_FIXED。",
+    ],
+    verificationCommands: [
+      "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "node scripts/smoke-test-v22-workflow-gate.mjs",
+      "git diff --check -- scripts docs",
+    ],
+    recommendedBranch: branch,
+    recommendedWorktreePath: `${worktreeRoot}/${laneSlug(branch)}`,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+function createReReviewPack({ state } = {}) {
+  const branch = state?.branch || "<branch>";
+  return {
+    ok: true,
+    command: "re-review-pack",
+    window: "B",
+    stableStatus: state?.stableStatus || "A_FIXED",
+    branch,
+    prompt: [
+      `B re-review-pack：复审修复 commit ${state?.commit || "<commit>"}.`,
+      "确认 blocker 已消失，继续下一轮审查。",
+      "B 使用主工作区；主工作区不可写。",
+    ],
+    verificationCommands: [
+      "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
+      "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "node scripts/smoke-test-v22-workflow-gate.mjs",
+    ],
+    mergeConditions: [
+      "工作区干净",
+      "复修 commit 已解释 blocker",
+      "没有新的 secret 或未授权路径",
+    ],
+    recommendedBranch: branch,
+    recommendedWorktreePath: "/home/dev/projects/platform-v22",
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+function createDonePack({ state } = {}) {
+  return {
+    ok: true,
+    command: "done",
+    window: "D",
+    stableStatus: state?.stableStatus || "C_PASS",
+    branch: state?.branch || "<branch>",
+    prompt: [
+      "lane done。",
+      "下一步由 owner 选择 next business lane suggestion。",
+      "不要自动 merge、push 或启动 " + "t" + "mux。",
+    ],
+    nextBusinessLaneSuggestion: "根据 trunk 最新业务需求开启下一条独立 lane。",
+    recommendedBranch: state?.branch || "<branch>",
+    recommendedWorktreePath: "/home/dev/projects/platform-v22.worktrees/next-business-lane",
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
 function createCheckpointPack() {
   return {
     ok: true,
     command: "checkpoint-pack",
+    window: "B",
     recommendedBranch: "recovery/platform-v22-trunk",
     recommendedWorktreePath: "/home/dev/projects/platform-v22",
     workspaceDiscipline,
@@ -497,12 +693,262 @@ function createCheckpointPack() {
   };
 }
 
+function createIngestTransitionPack({ stableStatus, state }) {
+  if (stableStatus === "A_COMMITTED") {
+    const pack = createReviewPack({ branch: state.branch || "<branch>", base: state.base || "recovery/platform-v22-trunk" });
+    return { next: { window: "B", action: "review-pack" }, pack };
+  }
+  if (stableStatus === "B_BLOCKER") {
+    const pack = createFixPack({ state, window: "A" });
+    return { next: { window: "A", action: "fix-pack" }, pack };
+  }
+  if (stableStatus === "A_FIXED") {
+    const pack = createReReviewPack({ state });
+    return { next: { window: "B", action: "re-review-pack" }, pack };
+  }
+  if (stableStatus === "B_MERGED") {
+    const pack = createCheckpointPack();
+    return { next: { window: "B", action: "checkpoint-pack" }, pack };
+  }
+  if (stableStatus === "B_PUSHED") {
+    const pack = createQaPack({ surface: state.surface || "overview" });
+    return { next: { window: "C", action: "qa-pack" }, pack };
+  }
+  if (stableStatus === "C_BLOCKER") {
+    const pack = createFixPack({ state, window: "A" });
+    return { next: { window: "A", action: "fix-pack" }, pack };
+  }
+  if (stableStatus === "C_PASS") {
+    const pack = createDonePack({ state });
+    return { next: { window: "D", action: "done" }, pack };
+  }
+  throw new Error(`unknown_state_status:${stableStatus}`);
+}
+
+function createWritePack({ window, state }) {
+  const stableStatus = state.stableStatus || assertKnownStatus(state.status);
+  if (window === "A") {
+    if (stableStatus === "B_BLOCKER" || stableStatus === "C_BLOCKER") {
+      return createFixPack({ state: { ...state, stableStatus }, window: "A" });
+    }
+    return {
+      ok: true,
+      command: "write-pack",
+      window,
+      stableStatus,
+      branch: state.branch || "<branch>",
+      prompt: [
+        `A write-pack：为 ${state.branch || "<branch>"} 生成待复制 prompt。`,
+        `当前状态: ${stableStatus}`,
+      ],
+      recommendedBranch: state.branch || "<branch>",
+      recommendedWorktreePath: `${worktreeRoot}/${laneSlug(state.branch || "a-lane")}`,
+      workspaceDiscipline,
+      disallowedActions,
+    };
+  }
+  if (window === "B") {
+    if (stableStatus === "A_COMMITTED") {
+      return createReviewPack({ branch: state.branch || "<branch>", base: state.base || "recovery/platform-v22-trunk" });
+    }
+    if (stableStatus === "A_FIXED") {
+      return createReReviewPack({ state: { ...state, stableStatus } });
+    }
+    if (stableStatus === "B_MERGED") {
+      return createCheckpointPack();
+    }
+    return {
+      ok: true,
+      command: "write-pack",
+      window,
+      stableStatus,
+      branch: state.branch || "<branch>",
+      prompt: [
+        `B write-pack：为 ${state.branch || "<branch>"} 生成待复制 prompt。`,
+        `当前状态: ${stableStatus}`,
+      ],
+      recommendedBranch: state.branch || "<branch>",
+      recommendedWorktreePath: "/home/dev/projects/platform-v22",
+      workspaceDiscipline,
+      disallowedActions,
+    };
+  }
+  if (window === "C") {
+    if (stableStatus === "B_PUSHED") {
+      return createQaPack({ surface: state.surface || "overview" });
+    }
+    if (stableStatus === "C_PASS") {
+      return createDonePack({ state: { ...state, stableStatus } });
+    }
+    return {
+      ok: true,
+      command: "write-pack",
+      window,
+      stableStatus,
+      branch: state.branch || "<branch>",
+      prompt: [
+        `C write-pack：为 ${state.branch || "<branch>"} 生成只读 QA prompt。`,
+        `当前状态: ${stableStatus}`,
+      ],
+      recommendedBranch: state.branch || "<branch>",
+      recommendedWorktreePath: `${worktreeRoot}/${laneSlug(`c-${state.surface || "qa"}`)}`,
+      workspaceDiscipline,
+      disallowedActions,
+    };
+  }
+  if (window === "D") {
+    return createDonePack({ state: { ...state, stableStatus } });
+  }
+  throw new Error(`unknown_window:${window || "(missing)"}`);
+}
+
+function createStatusPack({ state = null } = {}) {
+  const branch = currentBranchName();
+  const worktree = currentWorktreePath();
+  const stableStatus = state ? (state.stableStatus || assertKnownStatus(state.status)) : "STATE_REQUIRED";
+  const pendingOwner = state?.next?.window || (stableStatus === "STATE_REQUIRED" ? "A/B/C/D" : "owner");
+  const nextAction = state?.next?.action || "ingest --from <A|B|C|D> --file <reply.txt>";
+  return {
+    ok: true,
+    command: "status",
+    laneStatus: stableStatus,
+    branch: state?.branch || branch,
+    worktree: state?.worktree || worktree,
+    pendingOwner,
+    nextAction,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+async function createIngestPack({ from, replyFile }) {
+  if (!["A", "B", "C", "D"].includes(from)) {
+    throw new Error(`unknown_from_window:${from || "(missing)"}`);
+  }
+  if (!replyFile || replyFile === true) {
+    throw new Error("reply_file_required");
+  }
+  if (isSecretLikeReplyFile(replyFile)) {
+    throw new Error("secret_like_reply_file_rejected");
+  }
+  const normalizedReplyFile = String(replyFile);
+  const replyText = await readFile(normalizedReplyFile, "utf8");
+  const state = parseReplyText(replyText, from, normalizedReplyFile);
+  const transition = createIngestTransitionPack({ stableStatus: state.stableStatus, state });
+  return {
+    ok: true,
+    command: "ingest",
+    from,
+    replyFile: normalizedReplyFile,
+    state,
+    stableStatus: state.stableStatus,
+    next: transition.next,
+    pack: transition.pack,
+    workspaceDiscipline,
+    disallowedActions,
+  };
+}
+
+function renderPromptBlock(prompt) {
+  if (Array.isArray(prompt)) {
+    return humanList(prompt);
+  }
+  return String(prompt || "");
+}
+
+function renderActionPack(pack) {
+  return [
+    `# ${pack.window} ${pack.command}`,
+    "",
+    "## prompt",
+    renderPromptBlock(pack.prompt),
+    "",
+    "## recommended branch",
+    pack.recommendedBranch,
+    "",
+    "## recommended worktree",
+    pack.recommendedWorktreePath,
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderIngestPack(pack) {
+  return [
+    `# ingest: ${pack.from} -> ${pack.stableStatus}`,
+    "",
+    `stableStatus: ${pack.stableStatus}`,
+    `next: ${pack.next.window} ${pack.next.action}`,
+    "",
+    "## reply state",
+    humanKeyValue([
+      ["from", pack.from],
+      ["branch", pack.state.branch],
+      ["commit", pack.state.commit],
+      ["worktree", pack.state.worktree],
+      ["base", pack.state.base],
+      ["surface", pack.state.surface],
+      ["blocker", pack.state.blocker],
+      ["summary", pack.state.summary],
+      ["fix", pack.state.fix],
+    ]),
+    "",
+    "## next pack",
+    renderPack(pack.pack),
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderStatusPack(pack) {
+  return [
+    "# lane status",
+    "",
+    humanKeyValue([
+      ["laneStatus", pack.laneStatus],
+      ["branch", pack.branch],
+      ["worktree", pack.worktree],
+      ["pendingOwner", pack.pendingOwner],
+      ["nextAction", pack.nextAction],
+    ]),
+    "",
+    "## Owner Worktree 纪律",
+    humanList(disciplineLines(pack.workspaceDiscipline)),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderPack(pack) {
+  if (pack.command === "review-pack") return renderReview(pack);
+  if (pack.command === "checkpoint-pack") return renderCheckpoint(pack);
+  if (pack.command === "c-qa-pack") return renderQa(pack);
+  if (pack.command === "fix-pack" || pack.command === "re-review-pack" || pack.command === "done" || pack.command === "write-pack") {
+    return renderActionPack(pack);
+  }
+  return renderActionPack(pack);
+}
+
 function createNextPack({ state }) {
-  const next = nextStateHandlers[state.status](state);
+  const stableStatus = state.stableStatus || assertKnownStatus(state.status);
+  const next = nextStateHandlers[stableStatus](state);
   return {
     ok: true,
     command: "next",
     state,
+    stableStatus,
     next,
     workspaceDiscipline,
     disallowedActions,
@@ -662,6 +1108,9 @@ function printUsage() {
     "  node scripts/v22-agent-workflow.mjs c-qa-pack --surface <resources|workspace|trace|billing|overview> [--json]",
     "  node scripts/v22-agent-workflow.mjs checkpoint-pack [--json]",
     "  node scripts/v22-agent-workflow.mjs next --state <json> [--json]",
+    "  node scripts/v22-agent-workflow.mjs ingest --from A|B|C|D --file <reply.txt> [--json]",
+    "  node scripts/v22-agent-workflow.mjs write-pack --window A|B|C|D --state <json> [--json]",
+    "  node scripts/v22-agent-workflow.mjs status [--state <json>] [--json]",
     "",
   ].join("\n"));
 }
@@ -687,6 +1136,15 @@ async function main() {
   } else if (mode === "next") {
     pack = createNextPack({ state: parseState(options.state) });
     rendered = renderNext(pack);
+  } else if (mode === "ingest") {
+    pack = await createIngestPack({ from: options.from, replyFile: options.file });
+    rendered = renderIngestPack(pack);
+  } else if (mode === "write-pack") {
+    pack = createWritePack({ window: options.window, state: parseState(options.state) });
+    rendered = renderPack(pack);
+  } else if (mode === "status") {
+    pack = createStatusPack({ state: options.state && options.state !== true ? parseState(options.state) : null });
+    rendered = renderStatusPack(pack);
   } else {
     printUsage();
     process.exitCode = 2;
@@ -698,11 +1156,15 @@ async function main() {
 
 export {
   createCheckpointPack,
+  createIngestPack,
   createNextPack,
   createQaPack,
   createReviewPack,
   createStartPack,
+  createStatusPack,
+  createWritePack,
   qaSurfaces,
+  stableStatusEnum,
   workflowTypes,
 };
 

@@ -111,6 +111,9 @@ node scripts/v22-agent-workflow.mjs review-pack --branch <branch> --base recover
 node scripts/v22-agent-workflow.mjs c-qa-pack --surface <resources|workspace|trace|billing|overview>
 node scripts/v22-agent-workflow.mjs checkpoint-pack
 node scripts/v22-agent-workflow.mjs next --state <json>
+node scripts/v22-agent-workflow.mjs ingest --from A|B|C|D --file <reply.txt>
+node scripts/v22-agent-workflow.mjs write-pack --window A|B|C|D --state <state.json>
+node scripts/v22-agent-workflow.mjs status
 ```
 
 ## Owner worktree / long autonomy 纪律
@@ -122,6 +125,22 @@ node scripts/v22-agent-workflow.mjs next --state <json>
 - tmux pane/session 只是执行面，不是 truth。
 - truth 必须进入 repo-tracked contracts/docs/scripts/tests。
 - 不提交 tmux session、agent 对话、临时日志、本地状态。
+
+## Workflow State Machine
+
+第二阶段的稳定状态枚举：
+
+- `A_COMMITTED`
+- `B_BLOCKER`
+- `A_FIXED`
+- `B_MERGED`
+- `B_PUSHED`
+- `C_BLOCKER`
+- `C_PASS`
+
+`ingest` 只根据显式状态解析和回复文件生成下一步任务包，不自动 merge、不自动 push、不启动 tmux。
+`write-pack` 只根据状态输出可复制 prompt。
+`status` 只展示当前 lane 状态、branch、worktree、pending owner 和 next action。
 
 ## 分支开工声明模板
 
