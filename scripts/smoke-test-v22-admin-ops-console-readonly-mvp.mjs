@@ -53,6 +53,14 @@ function assertTopLevelKeys(value, expected, label) {
   assert.deepEqual(sortedKeys(value), expected.slice().sort(), `${label}_keys_mismatch`);
 }
 
+function sliceBetween(source, start, end, label) {
+  const startIndex = source.indexOf(start);
+  assert.notEqual(startIndex, -1, `${label}_start_marker_missing`);
+  const endIndex = source.indexOf(end, startIndex + start.length);
+  assert.notEqual(endIndex, -1, `${label}_end_marker_missing`);
+  return source.slice(startIndex, endIndex);
+}
+
 const db = {
   users: [
     { id: "admin-ops-1", email: "ops@example.test", name: "Ops", role: "admin", status: "active", createdAt: now },
@@ -407,12 +415,34 @@ assert.equal(adminOpsPayload.workspaceOperations.workspaces[0].memoryGb, 4, "wor
 assert.equal(adminOpsPayload.workspaceOperations.workspaces[0].fileSpaceGb, 10, "workspace_must_include_file_space");
 assert.equal(adminOpsPayload.workspaceOperations.workspaces[0].concurrency, 2, "workspace_must_include_concurrency");
 assert.equal(adminOpsPayload.workspaceOperations.workspaces[0].queueCapacity, 4, "workspace_must_include_queue");
+assertNotIncludesAny(JSON.stringify(adminOpsPayload.workspaceOperations), [
+  "tenantId",
+  "resourceBindingId",
+  "environmentId",
+  "resourceOrderId",
+  "serverPlanId",
+], "workspace_operations_must_not_expose_attribution_tags");
 
 assert.equal(adminOpsPayload.currentRuns.items.length >= 1, true, "admin_ops_must_include_current_runs");
 assert.equal(adminOpsPayload.currentRuns.items[0].accountId, "user-alpha", "current_run_must_include_account");
 assert.equal(adminOpsPayload.currentRuns.items[0].workspaceId, "workspace-alpha", "current_run_must_include_workspace_id");
-assert.equal(adminOpsPayload.currentRuns.items[0].resourceBindingId, "rb-alpha", "current_run_must_include_resource_binding_id");
-assert.equal(adminOpsPayload.currentRuns.items[0].environmentId, "env-alpha", "current_run_must_include_environment_id");
+assertTopLevelKeys(adminOpsPayload.currentRuns.items[0], [
+  "accountId",
+  "accountName",
+  "estimatedCost",
+  "runId",
+  "sessionId",
+  "status",
+  "task",
+  "workspaceId",
+], "current_run_item_public_surface");
+assertNotIncludesAny(JSON.stringify(adminOpsPayload.currentRuns), [
+  "tenantId",
+  "resourceBindingId",
+  "environmentId",
+  "resourceOrderId",
+  "serverPlanId",
+], "current_runs_must_not_expose_attribution_tags");
 
 assert.equal(adminOpsPayload.fileSpaceOperations.items[0].usedGb > 0, true, "file_space_must_include_usage");
 assert.equal(adminOpsPayload.fileSpaceOperations.items[0].retentionDays, 7, "file_space_must_include_retention_days");
@@ -475,6 +505,19 @@ assertIncludesAll(viewSource, [
 assertNotIncludesAny(viewSource, forbiddenSecretsAndStorage, "admin_ops_view_secret_storage_copy");
 assertNotIncludesAny(viewSource, forbiddenCloudMutationCopy, "admin_ops_view_cloud_console_copy");
 assert.equal(viewSource.includes("租户") || viewSource.includes("运行环境"), false, "tenant_environment_must_not_be_primary_ui_copy");
+const currentRunsViewSection = sliceBetween(
+  viewSource,
+  "<h2 class=\"panel-title\">当前运行</h2>",
+  "<h2 class=\"panel-title\">文件空间运营</h2>",
+  "admin_ops_current_runs_view_section",
+);
+assertNotIncludesAny(currentRunsViewSection, [
+  "tenantId",
+  "resourceBindingId",
+  "environmentId",
+  "resourceOrderId",
+  "serverPlanId",
+], "current_runs_view_must_not_render_attribution_tags");
 
 const userSurfaceSources = [
   await readFile("services/portal/frontend/src/views/resources/ResourcesView.vue", "utf8"),

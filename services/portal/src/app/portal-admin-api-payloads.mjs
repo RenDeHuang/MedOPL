@@ -264,8 +264,6 @@ function workspaceOperationRows(db = {}) {
         concurrency: workspaceConcurrency(task, planId),
         queueCapacity: workspaceQueueCapacity(task, planId),
         status: resourceState(binding.status || task.managedEnvironmentStatus || task.status),
-        resourceBindingId: bindingId(binding),
-        environmentId: String(binding.environmentId || ""),
         auditStatus: String(binding.auditStatus || "not_started"),
       };
     });
@@ -289,8 +287,6 @@ function activeRunRows(payload = {}, db = {}) {
         accountId: String(row.userId || ""),
         accountName: userDisplayName(user),
         workspaceId,
-        resourceBindingId: bindingId(binding) || String(row.resourceBindingId || ""),
-        environmentId: String(binding.environmentId || row.environmentId || ""),
         estimatedCost: moneyAmount(row.totalCost),
       };
     });

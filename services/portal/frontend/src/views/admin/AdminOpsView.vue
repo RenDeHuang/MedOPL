@@ -119,8 +119,6 @@
                   <span>账号：{{ item.accountName }}</span>
                   <span>工作空间：{{ item.workspaceId }}</span>
                   <span>runId：{{ item.runId || "未归因" }}</span>
-                  <span>resourceBindingId：{{ item.resourceBindingId || "-" }}</span>
-                  <span>environmentId：{{ item.environmentId || "-" }}</span>
                   <span>费用估算：{{ money(item.estimatedCost) }}</span>
                 </div>
               </div>
