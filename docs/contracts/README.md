@@ -47,6 +47,7 @@
 - tenant/resource binding: [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
 - managed resource binding plan / mock snapshot: [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider`，真实接入另开 feat/* 并单独授权。
 - readonly/tencent quote provider: [v22-tencent-readonly-quote-provider-boundary.md](./v22-tencent-readonly-quote-provider-boundary.md)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
+- dry-run/tencent resource plan provider: [v22-tencent-dry-run-resource-plan-provider-boundary.md](./v22-tencent-dry-run-resource-plan-provider-boundary.md)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段，固定 `realResourceCreated=false`、`chargeApplied=false`。
 - billing freeze/preauth: [v22-billing-freeze-boundary.md](./v22-billing-freeze-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md)
 - trace metadata: [v22-trace-metadata-boundary.md](./v22-trace-metadata-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md), [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)
 - Langfuse 观测附件: [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)。该合同只定义 sanitized trace/session metadata 边界，不代表 Langfuse 部署、ClickHouse、真实 API key 或真实 trace source 已接入。
@@ -134,13 +135,14 @@
 
 ### Tencent Quote Provider 合同包
 
-适用于 readonly/tencent quote provider、mock adapter、套餐估算、quote snapshot 和后续真实腾讯云接入前的只读边界。
+适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划和后续真实腾讯云接入前的只读 / dry-run 边界。
 
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
 - [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
 - [v22-tencent-readonly-quote-provider-boundary.md](./v22-tencent-readonly-quote-provider-boundary.md)
+- [v22-tencent-dry-run-resource-plan-provider-boundary.md](./v22-tencent-dry-run-resource-plan-provider-boundary.md)
 - [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
 - [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)

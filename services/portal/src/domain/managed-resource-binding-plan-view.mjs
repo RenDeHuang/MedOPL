@@ -3,6 +3,10 @@ import {
   defaultTencentReadonlyQuoteProvider,
   quoteManagedResourceBindingPlan,
 } from "./tencent-readonly-quote-provider.mjs";
+import {
+  defaultTencentDryRunResourcePlanProvider,
+  planTencentDryRunResourceBinding,
+} from "./tencent-dry-run-resource-plan-provider.mjs";
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -114,6 +118,11 @@ export function managedResourceBindingPlanView({ binding = null, taskSpace = {},
     provider: defaultTencentReadonlyQuoteProvider,
     binding,
   });
+  const resourcePlan = planTencentDryRunResourceBinding({
+    provider: defaultTencentDryRunResourcePlanProvider,
+    binding,
+    quote,
+  });
   return {
     resourceBindingId: text(binding.resourceBindingId || binding.id),
     managedEnvironment: "托管运行环境",
@@ -126,6 +135,7 @@ export function managedResourceBindingPlanView({ binding = null, taskSpace = {},
     quoteSnapshotId: text(quote.quoteSnapshotId),
     releasePolicy: releasePolicy(binding),
     auditStatus: auditStatus(binding),
+    resourcePlan,
     snapshot: snapshotView(),
   };
 }

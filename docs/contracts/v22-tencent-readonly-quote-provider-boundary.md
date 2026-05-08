@@ -53,6 +53,8 @@ Provider response 不得包含：
 
 后续真实腾讯云接入路线保持：
 
-`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release`
+
+等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider`
 
 真实腾讯云 readonly 接入、SDK 选择、API 凭据读取、限流、重试、审计日志和真实 quote source 均必须另开 feat/* 并单独授权。
