@@ -37,6 +37,22 @@ board id: v22-program-board
 | user-authorized test | real readonly live, create/release, dependency install, deploy/build/push/kubectl, or network updater execution only after explicit user authorization. |
 | forbidden test | non-authorized phases must not read secret, call real cloud, run live-test, build/push/kubectl, create/release, deploy, or write upstream. |
 
+## Discovery/Canary Status Rules
+
+Discovery/Canary governance applies to portal-product-surface, cloud-onboarding, and one-person-lab-sync.
+
+- 边界先行 -> 探索/canary -> 修正边界 -> 正式实现 -> B 吸收。
+- 未知外部系统接入先走 Discovery/Canary lane。
+- canary 必须有用户授权边界。
+- canary 输出只进 .runtime，不进 git。
+- canary evidence location: .runtime only。
+- canary 可以验证真实 SDK/云/服务，但不得自动变成 production dependency。
+- canary 发现的事实必须回写 contracts/status/decisions。
+- production implementation 必须基于已验证事实。
+- productionized branch required before B absorption。
+- B 只吸收 productionized 分支，不吸收未清理 canary 临时代码。
+- Portal、Cloud、OPL sync 三条 program 都适用。
+
 ## Status Data
 
 <!-- v22-program-status-table:start -->

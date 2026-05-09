@@ -168,6 +168,25 @@ lanes:
 - 任何窗口不得把聊天里的授权扩大到下一次执行。
 - 真实副作用必须在当前会话重新确认授权边界、secret allowlist、region/API/resource scope、输出位置和 rollback/stop 条件。
 
+## Discovery/Canary Lane Rules
+
+- 边界先行 -> 探索/canary -> 修正边界 -> 正式实现 -> B 吸收。
+- 未知外部系统接入先走 Discovery/Canary lane。
+- canary 必须有用户授权边界。
+- canary 输出只进 .runtime，不进 git。
+- canary 可以验证真实 SDK/云/服务，但不得自动变成 production dependency。
+- canary 发现的事实必须回写 contracts/status/decisions。
+- production implementation 必须基于已验证事实。
+- B 只吸收 productionized 分支，不吸收未清理 canary 临时代码。
+- Portal、Cloud、OPL sync 三条 program 都适用。
+
+lane markers:
+
+- boundary-first
+- discovery-canary
+- canary-evidence
+- productionized-implementation
+
 ## Board Data
 
 <!-- v22-program-board:start -->
@@ -185,6 +204,20 @@ lanes:
   "advancesCo06Now": false,
   "automerges": false,
   "autopushes": false,
+  "discoveryCanaryGovernance": {
+    "boundaryFirst": true,
+    "canaryRequiresUserAuthorization": true,
+    "canaryOutputLocation": ".runtime",
+    "canaryMayBecomeProductionDependencyAutomatically": false,
+    "mustWriteBackFactsToContractsStatusDecisions": true,
+    "productionImplementationRequiresVerifiedFacts": true,
+    "bAbsorbsOnlyProductionizedBranches": true,
+    "appliesToPrograms": [
+      "portal-product-surface",
+      "cloud-onboarding",
+      "one-person-lab-sync"
+    ]
+  },
   "windows": [
     {
       "windowId": "Window A",
@@ -252,6 +285,11 @@ lanes:
       "bAbsorptionStatus": "pending B review",
       "evidenceCommit": "bb1238c",
       "nextAction": "keep product-surface fixes isolated from cloud live lanes",
+      "discoveryCanaryPolicy": {
+        "applies": true,
+        "canaryOutputLocation": ".runtime",
+        "bAbsorptionRequiresProductionizedBranch": true
+      },
       "lanes": [
         "local-dev-url",
         "current-ui-qa",
@@ -304,6 +342,11 @@ lanes:
       "bAbsorptionStatus": "pending user authorization and B review",
       "evidenceCommit": "bb1238c",
       "nextAction": "do not advance CO-06; wait for explicit user authorization before readonly live",
+      "discoveryCanaryPolicy": {
+        "applies": true,
+        "canaryOutputLocation": ".runtime",
+        "bAbsorptionRequiresProductionizedBranch": true
+      },
       "lanes": [
         "readonly-live",
         "readonly-report-review",
@@ -353,6 +396,11 @@ lanes:
       "bAbsorptionStatus": "pending B review",
       "evidenceCommit": "bb1238c",
       "nextAction": "define sync contract before any read-only download spike",
+      "discoveryCanaryPolicy": {
+        "applies": true,
+        "canaryOutputLocation": ".runtime",
+        "bAbsorptionRequiresProductionizedBranch": true
+      },
       "lanes": [
         "sync-contract",
         "read-only-download-spike",

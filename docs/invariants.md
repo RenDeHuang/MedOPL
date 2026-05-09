@@ -40,3 +40,15 @@ References:
 - Check-config and default gate precede any official SDK readonly live run.
 - TC3 remains diagnostic/reference until official SDK live report exists and B accepts cleanup readiness.
 - create/release uses separate contracts, separate RUN gate, and separate mutation authorization from readonly inventory.
+
+## Discovery/Canary Invariants
+
+- 边界先行 -> 探索/canary -> 修正边界 -> 正式实现 -> B 吸收。
+- 未知外部系统接入先走 Discovery/Canary lane。
+- canary 必须有用户授权边界。
+- canary 输出只进 .runtime，不进 git。
+- canary 可以验证真实 SDK/云/服务，但不得自动变成 production dependency。
+- canary 发现的事实必须回写 contracts/status/decisions。
+- production implementation 必须基于已验证事实。
+- B 只吸收 productionized 分支，不吸收未清理 canary 临时代码。
+- Portal、Cloud、OPL sync 三条 program 都适用。
