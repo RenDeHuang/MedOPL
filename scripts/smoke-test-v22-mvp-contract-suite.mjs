@@ -46,6 +46,7 @@ const smokeScripts = [
   ["smoke-test-v22-tencent-readonly-inventory-live-adapter-shell", "scripts/smoke-test-v22-tencent-readonly-inventory-live-adapter-shell.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-sdk-client", "scripts/smoke-test-v22-tencent-readonly-inventory-sdk-client.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-live-runner", "scripts/smoke-test-v22-tencent-readonly-inventory-live-runner.mjs"],
+  ["smoke-test-v22-tencent-readonly-inventory-real-sdk-client", "scripts/smoke-test-v22-tencent-readonly-inventory-real-sdk-client.mjs"],
   ["smoke-test-v22-authorized-tencent-create-release-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs"],
   ["smoke-test-v22-authorized-tencent-create-release-implementation-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs"],
   ["smoke-test-v22-real-resource-contract-alignment", "scripts/smoke-test-v22-real-resource-contract-alignment.mjs"],

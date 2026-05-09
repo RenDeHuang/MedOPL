@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
 import { validateReadonlyInventorySecretEnv } from "../services/portal/src/domain/tencent-readonly-inventory-provider.mjs";
+import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +44,7 @@ function parseArgs(argv = []) {
     mode: "",
     secretFile: "",
     runId: "",
+    sdkMode: "",
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -57,6 +59,11 @@ function parseArgs(argv = []) {
     }
     if (arg === "--run-id") {
       options.runId = text(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+    if (arg === "--sdk-mode") {
+      options.sdkMode = text(argv[index + 1]);
       index += 1;
       continue;
     }
@@ -315,7 +322,7 @@ async function runFakeLive({ env, runId }) {
   return { reportPath, summary };
 }
 
-async function runLiveReadonly({ env }) {
+async function runLiveReadonly({ env, runId, sdkMode }) {
   const envSummary = validateReadonlyInventorySecretEnv(env);
   if (!envSummary.enabled) {
     return {
@@ -330,16 +337,36 @@ async function runLiveReadonly({ env }) {
       },
     };
   }
-  return {
-    status: 1,
-    payload: {
-      reportPath: null,
-      summary: blockedSummary({
-        envSummary,
-        mode: "live-readonly",
-        blockedReason: "live_readonly_requires_separate_authorization",
-      }),
+  if (sdkMode !== "fake-real-sdk") {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "live_readonly_requires_separate_authorization",
+        }),
+      },
+    };
+  }
+  const client = createTencentReadonlyInventoryRealSdkClient({
+    sdkFactory: () => createFakeSdk(),
+    credentials: {
+      id: env.TENCENT_READONLY_SECRET_ID,
+      key: env.TENCENT_READONLY_SECRET_KEY,
     },
+    accountId: env.TENCENT_READONLY_ACCOUNT_ID,
+    allowedApis: envSummary.allowedApis,
+    regions: envSummary.regions,
+  });
+  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+  const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
+  const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
+  const reportPath = await writeReport(summary, runId);
+  return {
+    status: 0,
+    payload: { reportPath, summary },
   };
 }
 
@@ -353,7 +380,7 @@ async function runCli(argv = []) {
     return { status: 0, payload: await runFakeLive({ env, runId: options.runId }) };
   }
   if (options.mode === "live-readonly") {
-    return runLiveReadonly({ env });
+    return runLiveReadonly({ env, runId: options.runId, sdkMode: options.sdkMode });
   }
   throw new Error(`readonly_inventory_runner_unknown_mode:${options.mode}`);
 }

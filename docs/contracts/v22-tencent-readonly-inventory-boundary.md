@@ -171,6 +171,14 @@ SDK 只能隐藏在 thin client wrapper 里。业务层只允许使用 inventory
 
 SDK wrapper 仍必须遵守 allowlist_only、Describe/List/Get/Head only、COS metadata only/no object body、fail-closed ownership 和 redacted contract-whitelisted output。它不允许 Create/Delete/Modify/Run/Terminate 等 mutation API。
 
+## Live Readonly Authorization Note
+
+live readonly 只允许读取 `/home/dev/.secrets/medopl/tencent-readonly-inventory.env`，且只允许读取 `TENCENT_READONLY_*` allowlist key。必须要求 `RUN_TENCENT_READONLY_INVENTORY=1`，并且只允许调用 check-config 已通过的 Describe/List/Get/Head 类 API。
+
+禁止 Create/Delete/Modify/Run/Terminate/Put/Update/Attach/Detach/Tag mutation。输出只能写 `.runtime/v22-tencent-readonly-inventory/*.json`，stdout 只打印脱敏摘要；不写 git，不写 docs，不贴 raw response。
+
+live readonly 不创建、不删除、不释放、不扩缩容、不改标签、不扣费。权限/限流/region 错误只进入安全 audit summary。真实 live run 必须由用户在当前会话单独授权后执行。
+
 ## Contract Data
 
 <!-- v22-tencent-readonly-inventory-contract:start -->
