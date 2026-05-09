@@ -9,6 +9,7 @@ References:
 - `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
 - `docs/recovery/cloud-onboarding-execution-board.md`
 - `docs/recovery/cloud-onboarding-status-table.md`
+- `docs/recovery/cloud-onboarding-verification-matrix.md`
 - `scripts/smoke-test-v22-mvp-contract-suite.mjs`
 - `scripts/v22-workflow-gate.mjs`
 - `scripts/v22-agent-workflow.mjs`

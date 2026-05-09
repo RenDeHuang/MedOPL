@@ -18,6 +18,7 @@ CO-06 requires explicit user authorization
 - user authorization gate: CO-06 requires explicit user authorization before any official SDK readonly live run
 - execution board: `docs/recovery/cloud-onboarding-execution-board.md`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
+- verification matrix: `docs/recovery/cloud-onboarding-verification-matrix.md`
 - workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
 - contract index: `docs/contracts/README.md`
 - MVP suite: `scripts/smoke-test-v22-mvp-contract-suite.mjs`

@@ -57,6 +57,7 @@
 
 - cloud onboarding execution board: [cloud-onboarding-execution-board.md](./cloud-onboarding-execution-board.md)
 - cloud onboarding status table: [cloud-onboarding-status-table.md](./cloud-onboarding-status-table.md)
+- cloud onboarding verification matrix: [cloud-onboarding-verification-matrix.md](./cloud-onboarding-verification-matrix.md)
 - program id: v22-cloud-onboarding
 - 当前执行板只记录 program/phase/lane/离场条件、状态表和下一棒；不读 secret、不调用真实云、不改 deploy、不 build/push/kubectl。
 
