@@ -64,7 +64,7 @@ assert.equal(statusPayload.command, "cloud-onboarding status", "status_command")
 assert.equal(statusPayload.programId, "v22-cloud-onboarding", "program_id");
 assert.equal(statusPayload.currentPhase, "check-config / default gate / user-authorized official SDK readonly live", "current_phase");
 assert.equal(statusPayload.activeLane, "CO-04 check-config", "active_lane");
-assert.equal(statusPayload.nextLane, "CO-05 default gate", "next_lane");
+assert.equal(statusPayload.nextLane, "CO-06 user-authorized readonly live", "next_lane");
 assert.equal(statusPayload.handoffTarget, "A", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
   "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
@@ -73,7 +73,7 @@ assert.deepEqual(statusPayload.requiredSmoke, [
 assert.equal(statusPayload.userGate, "stop if real secret, real cloud, deploy, or dependency install is needed", "active_user_gate");
 
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-01"), "summary_done_must_include_co01");
-assert(statusPayload.phaseSummary.pending.some((phase) => phase.phaseId === "CO-05"), "summary_pending_must_include_co05");
+assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-05"), "summary_done_must_include_co05");
 assert(statusPayload.phaseSummary.blocked.some((phase) => phase.phaseId === "CO-08"), "summary_blocked_must_include_co08");
 assert(statusPayload.phaseSummary.needsUserAuthorization.some((phase) => phase.phaseId === "CO-06"), "summary_needs_user_auth_must_include_co06");
 assert(statusPayload.phaseSummary.active.some((phase) => phase.phaseId === "CO-04"), "summary_active_must_include_co04");
@@ -100,8 +100,7 @@ assert(checkConfigPacket.suggestedCommands.includes("node scripts/smoke-test-v22
 
 const defaultGatePacket = findPacket(statusPayload, "default-gate");
 assert.equal(defaultGatePacket.handoffTarget, "B", "default_gate_handoff");
-assert.equal(defaultGatePacket.status, "pending", "default_gate_status");
-assert(defaultGatePacket.suggestedCommands.includes("node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk"), "default_gate_workflow_gate");
+assert.equal(defaultGatePacket.status, "done", "default_gate_status");
 
 const userLivePacket = findPacket(statusPayload, "user-authorized-readonly-live");
 assert.equal(userLivePacket.handoffTarget, "D", "user_live_handoff");
@@ -131,7 +130,7 @@ assertIncludesAll(humanStatus.stdout, [
   "v22 cloud onboarding workflow",
   "program id: v22-cloud-onboarding",
   "active lane: CO-04 check-config",
-  "next lane: CO-05 default gate",
+  "next lane: CO-06 user-authorized readonly live",
   "needs-user-authorization",
   "A/B/C/D handoff",
   "JSON 摘要",

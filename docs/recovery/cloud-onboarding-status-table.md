@@ -12,7 +12,7 @@ program id: v22-cloud-onboarding
 - official SDK wrapper: done
 - official SDK dependency loader: done
 - cloud onboarding workflow boundary: done
-- check-config/default gate/user-authorized official SDK readonly live: next/pending
+- check-config/default gate: done; user-authorized official SDK readonly live: next/needs-user-authorization
 - TC3 cleanup: pending official SDK live report
 - create/release dry-run: pending
 - mutation wrapper: pending
@@ -28,7 +28,7 @@ program id: v22-cloud-onboarding
 | CO-02 | official SDK wrapper | done | existing trunk evidence before 148f5a0 | A | none | `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs` | none |
 | CO-03 | official SDK dependency loader | done | existing trunk evidence before 148f5a0 | A | none | `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs` | none |
 | CO-04 | check-config | active | local gate pass on branch docs/v22-cloud-onboarding-co04-check-config-evidence: workflow status/next, readonly local guard, official SDK loader, agent workflow cloud onboarding, long-term governance surfaces, MVP suite; 未读 secret; 未读取 /home/dev/.secrets; 未 source env; 未传 --live-readonly; 未调用真实 Tencent API; 未加载真实 SDK live path; official SDK loader 默认 fail-closed; CO-06 仍需用户显式授权 | A | prepare local static gate for readonly live; evidence remains local/static only and does not advance CO-05/CO-06 | `smoke-test-v22-tencent-readonly-inventory-local-guard.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs` | stop if real secret, real cloud, deploy, or dependency install is needed |
-| CO-05 | default gate | pending | pending B review | B | confirm default path is fail-closed and TC3 is not production default | `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`; `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs` | stop before merge/push or any live path |
+| CO-05 | default gate | done | B default gate pass after 83dfc45/ce58a94: 无 blocker; 默认路径不读 secret; 不调用真实云; 不加载真实 SDK live path; TC3 仍是 diagnostic/reference; 未新增 create/release/mutation 路径; 不自动 merge/push/build/push/kubectl | B | handoff to CO-06 user-authorized readonly live; no further default gate action | `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`; `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs` | stop before merge/push or any live path |
 | CO-06 | user-authorized readonly live | needs-user-authorization | no live report yet | user | decide whether to authorize official SDK readonly secret allowlist and readonly API call | `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`; `smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs`; check-config output | must explicitly authorize secret allowlist, region/API scope, real cloud call, report location |
 | CO-07 | readonly report review | pending | pending readonly report | B | review redacted report after CO-06 | `smoke-test-v22-tencent-readonly-inventory-boundary.mjs`; report redaction checks | stop if another real cloud read or report sharing is needed |
 | CO-08 | TC3 cleanup gate | blocked | pending official SDK live report | B | wait for official SDK live report and B acceptance | `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs` | stop if cleanup would delete TC3 before report review |
@@ -106,10 +106,10 @@ program id: v22-cloud-onboarding
     {
       "phaseId": "CO-05",
       "phaseName": "default gate",
-      "status": "pending",
-      "evidenceCommitOrReport": "pending B review",
+      "status": "done",
+      "evidenceCommitOrReport": "B default gate pass after 83dfc45/ce58a94: 无 blocker; 默认路径不读 secret; 不调用真实云; 不加载真实 SDK live path; TC3 仍是 diagnostic/reference; 未新增 create/release/mutation 路径; 不自动 merge/push/build/push/kubectl",
       "owner": "B",
-      "nextAction": "confirm default path is fail-closed and TC3 is not production default",
+      "nextAction": "handoff to CO-06 user-authorized readonly live; no further default gate action",
       "requiredSmoke": [
         "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
         "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",

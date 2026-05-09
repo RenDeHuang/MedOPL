@@ -117,7 +117,7 @@ assertIncludesAll(status, [
   "| CO-02 | official SDK wrapper | done |",
   "| CO-03 | official SDK dependency loader | done |",
   "| CO-04 | check-config | active |",
-  "| CO-05 | default gate | pending |",
+  "| CO-05 | default gate | done |",
   "| CO-06 | user-authorized readonly live | needs-user-authorization |",
   "| CO-07 | readonly report review | pending |",
   "| CO-08 | TC3 cleanup gate | blocked | pending official SDK live report |",
@@ -134,7 +134,7 @@ assertIncludesAll(status, [
   "official SDK wrapper: done",
   "official SDK dependency loader: done",
   "cloud onboarding workflow boundary: done",
-  "check-config/default gate/user-authorized official SDK readonly live: next/pending",
+  "check-config/default gate: done; user-authorized official SDK readonly live: next/needs-user-authorization",
   "TC3 cleanup: pending official SDK live report",
   "create/release dry-run: pending",
   "mutation wrapper: pending",
@@ -208,7 +208,22 @@ assertIncludesAll(
   ],
   "co04_check_config_audit_evidence"
 );
-assert.equal(statusById["CO-05"].status, "pending", "co05_must_be_pending");
+assert.equal(statusById["CO-05"].status, "done", "co05_must_be_done");
+assertIncludesAll(
+  `${statusById["CO-05"].evidenceCommitOrReport} ${statusById["CO-05"].nextAction}`,
+  [
+    "B default gate pass",
+    "无 blocker",
+    "默认路径不读 secret",
+    "不调用真实云",
+    "不加载真实 SDK live path",
+    "TC3 仍是 diagnostic/reference",
+    "未新增 create/release/mutation 路径",
+    "不自动 merge/push/build/push/kubectl",
+    "handoff to CO-06 user-authorized readonly live",
+  ],
+  "co05_default_gate_pass_evidence"
+);
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
 assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
 assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
