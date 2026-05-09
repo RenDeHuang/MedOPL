@@ -163,6 +163,14 @@ inventory 通过不能直接触发删除或释放；它只为 authorized create/
 - 不实现真实 inventory provider。
 - 不新增 Portal UI。
 
+## Implementation Note: SDK Client Wrapper
+
+SDK adapter 属于 readonly inventory 实现层，不是 create/release。当前分支不读取 secret、不运行真实云盘点。
+
+SDK 只能隐藏在 thin client wrapper 里。业务层只允许使用 inventory client interface，不能暴露 Tencent SDK raw client 或通用 call(apiName, params)。
+
+SDK wrapper 仍必须遵守 allowlist_only、Describe/List/Get/Head only、COS metadata only/no object body、fail-closed ownership 和 redacted contract-whitelisted output。它不允许 Create/Delete/Modify/Run/Terminate 等 mutation API。
+
 ## Contract Data
 
 <!-- v22-tencent-readonly-inventory-contract:start -->
