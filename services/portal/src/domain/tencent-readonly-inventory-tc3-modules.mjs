@@ -201,9 +201,15 @@ function errorCode(error = {}) {
   return text(error.code || error.Code || error.name || error.message);
 }
 
+function errorMessage(error = {}) {
+  return text(error.message || error.Message);
+}
+
 function safeTc3Error(error = {}, apiName = "unknown") {
   const normalized = new Error(`tencent_readonly_tc3_request_failed:${apiName}`);
   normalized.code = errorCode(error) || "tencent_readonly_tc3_error";
+  normalized.providerCode = normalized.code;
+  normalized.providerMessage = errorMessage(error);
   normalized.status = Number(error.status || 0);
   normalized.apiName = apiName;
   return normalized;

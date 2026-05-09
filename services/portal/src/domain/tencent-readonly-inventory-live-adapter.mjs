@@ -97,6 +97,31 @@ function safeClientAuditItem({ method = "", region = "", reason = "", resourceTy
   };
 }
 
+export function safeLiveDiagnostic(error = {}, fallback = {}) {
+  const category = text(error.category || classifyClientError(error).replace(/^readonly_/, "") || "sdk_error") || "sdk_error";
+  return {
+    apiName: text(error.apiName || fallback.apiName),
+    clientMethod: text(error.clientMethod || fallback.clientMethod || fallback.method),
+    category,
+    providerCode: text(error.providerCode || error.code || error.Code || category),
+    region: text(error.region || fallback.region),
+    resourceType: text(error.resourceType || fallback.resourceType),
+  };
+}
+
+function throwLiveDiagnostic(error = {}, fallback = {}) {
+  const diagnostic = safeLiveDiagnostic(error, fallback);
+  const wrapped = new Error("readonly_inventory_live_diagnostic");
+  wrapped.diagnostic = diagnostic;
+  wrapped.code = diagnostic.providerCode;
+  wrapped.category = diagnostic.category;
+  wrapped.apiName = diagnostic.apiName;
+  wrapped.clientMethod = diagnostic.clientMethod;
+  wrapped.region = diagnostic.region;
+  wrapped.resourceType = diagnostic.resourceType;
+  throw wrapped;
+}
+
 function classifyClientError(error = {}) {
   const code = text(error.category || error.code || error.name || error.message).toLowerCase();
   if (code.includes("permission") || code.includes("denied")) return "readonly_permission_denied";
@@ -116,7 +141,7 @@ async function collectPagedResources({ client, method, region, resourceType, aud
     } catch (error) {
       const reason = classifyClientError(error);
       if (!reason) {
-        throw new Error(`readonly_inventory_live_client_error:${method}`);
+        throwLiveDiagnostic(error, { method, region, resourceType });
       }
       auditQueueItems.push(safeClientAuditItem({ method, region, reason, resourceType }));
       return resources;
@@ -144,7 +169,11 @@ async function collectCosMetadataEvidence({ client, item = {}, region = "", audi
   } catch (error) {
     const reason = classifyClientError(error);
     if (!reason) {
-      throw new Error("readonly_inventory_live_client_error:describeCosMetadata");
+      throwLiveDiagnostic(error, {
+        method: "describeCosMetadata",
+        region,
+        resourceType: "file_space",
+      });
     }
     auditQueueItems.push(safeClientAuditItem({
       method: "describeCosMetadata",
@@ -156,8 +185,24 @@ async function collectCosMetadataEvidence({ client, item = {}, region = "", audi
 }
 
 async function collectLiveResources({ client, regions = [] } = {}) {
-  await client.describeAccount();
-  await client.describeRegions();
+  try {
+    await client.describeAccount();
+  } catch (error) {
+    throwLiveDiagnostic(error, {
+      apiName: "DescribeAccount",
+      method: "describeAccount",
+      resourceType: "account",
+    });
+  }
+  try {
+    await client.describeRegions();
+  } catch (error) {
+    throwLiveDiagnostic(error, {
+      apiName: "DescribeRegions",
+      method: "describeRegions",
+      resourceType: "region",
+    });
+  }
 
   const auditQueueItems = [];
   const resources = [];

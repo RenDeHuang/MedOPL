@@ -33,6 +33,10 @@ const RESOURCE_TYPE_BY_API = Object.freeze({
   DescribeTagResources: "tagged_resource",
 });
 
+const API_TO_CLIENT_METHOD = Object.freeze(Object.fromEntries(
+  Object.entries(METHOD_TO_API).map(([method, apiName]) => [apiName, method]),
+));
+
 const RETRYABLE_ERROR_CATEGORIES = new Set(["rate_limited", "network_error"]);
 
 function text(value = "") {
@@ -185,8 +189,10 @@ function normalizeMetadata(response = {}, region = "") {
 }
 
 function errorCategory(error = {}) {
-  const code = text(error.code || error.Code || error.name || error.message).toLowerCase();
+  const code = text(error.category || error.providerCode || error.code || error.Code || error.name || error.message || error.providerMessage).toLowerCase();
   if (code.includes("permission") || code.includes("denied") || code.includes("unauthorized")) return "permission_denied";
+  if (code.includes("authfailure") || code.includes("unauthorizedoperation")) return "permission_denied";
+  if (code.includes("signature")) return "permission_denied";
   if (code.includes("rate") || code.includes("limit") || code.includes("throttle")) return "rate_limited";
   if (code.includes("region") && (code.includes("unavailable") || code.includes("unsupported"))) return "region_unavailable";
   if (code.includes("network") || code.includes("timeout") || code.includes("econn")) return "network_error";
@@ -194,10 +200,13 @@ function errorCategory(error = {}) {
   return "sdk_error";
 }
 
-function safeError(error = {}, { region = "", resourceType = "unknown" } = {}) {
+function safeError(error = {}, { apiName = "", clientMethod = "", region = "", resourceType = "unknown" } = {}) {
   const category = errorCategory(error);
   const normalized = Object.assign(new Error(`readonly_inventory_sdk_${category}`), {
-    code: text(error.code || error.Code || category),
+    code: text(error.providerCode || error.code || error.Code || category),
+    providerCode: text(error.providerCode || error.code || error.Code || category),
+    apiName: text(error.apiName || apiName),
+    clientMethod: text(error.clientMethod || clientMethod || API_TO_CLIENT_METHOD[error.apiName || apiName]),
     category,
     retryable: RETRYABLE_ERROR_CATEGORIES.has(category),
     region,
@@ -211,11 +220,11 @@ function safeError(error = {}, { region = "", resourceType = "unknown" } = {}) {
   return normalized;
 }
 
-async function invokeSdk({ sdk, sdkMethod, params, region, resourceType }) {
+async function invokeSdk({ sdk, sdkMethod, params, apiName, clientMethod, region, resourceType }) {
   try {
     return await sdk[sdkMethod](params);
   } catch (error) {
-    throw safeError(error, { region, resourceType });
+    throw safeError(error, { apiName, clientMethod, region, resourceType });
   }
 }
 
@@ -240,6 +249,8 @@ export function createTencentReadonlyInventorySdkClient({
       sdk,
       sdkMethod,
       params,
+      apiName,
+      clientMethod: API_TO_CLIENT_METHOD[apiName],
       region: text(params.Region || params.region),
       resourceType: RESOURCE_TYPE_BY_API[apiName],
     });

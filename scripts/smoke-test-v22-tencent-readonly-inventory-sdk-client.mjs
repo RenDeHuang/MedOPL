@@ -74,9 +74,12 @@ function assertPageShape(page, label) {
 function assertSafeError(error, label) {
   assert(error && typeof error === "object", `${label}_error_object_required`);
   assert.deepEqual(Object.keys(error).sort(), [
+    "apiName",
     "category",
+    "clientMethod",
     "code",
     "message",
+    "providerCode",
     "region",
     "resourceType",
     "retryable",
