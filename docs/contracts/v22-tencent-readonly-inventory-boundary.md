@@ -192,6 +192,14 @@ official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、reda
 
 新增 tencentcloud-sdk-nodejs 或相关官方 SDK 依赖必须单独 feat 分支，并由 B 审查 package diff。不在合同分支安装依赖。
 
+## Implementation Note: Official SDK Dependency Loader
+
+official SDK dependency loader 属于 readonly inventory 实现层，只负责把 `tencentcloud-sdk-nodejs` package shape 包成 `createTencentReadonlyInventoryOfficialSdkModules` 可消费的 factories。
+
+loader 不读取 process.env，不读取 secret 文件，不 source env，不调用真实腾讯云。runner 只有在 `--live-readonly`、`--sdk-mode tencent-official-sdk-readonly`、`--enable-official-sdk-loader`、RUN gate 开启、regions 非空且 readonly API allowlist 通过后，才允许加载 official SDK package。默认未显式开启时必须 fail-closed，不加载 SDK package，不打云。
+
+loader 不暴露 raw SDK client，不暴露通用 call(apiName, params)，不暴露 Create/Delete/Modify/Run/Terminate/Put/Update/Attach/Detach/Tag mutation。SDK raw response、endpoint、authorization header、SecretId/SecretKey、token、objectKey/storageKey/cosPrefix/signedUrl 不得进入 stdout、report、Portal payload 或 evidence。
+
 cleanup 策略：
 
 - official SDK readonly live 跑通前，不删除 TC3。

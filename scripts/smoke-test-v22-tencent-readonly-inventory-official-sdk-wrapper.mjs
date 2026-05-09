@@ -665,7 +665,13 @@ assert.equal(/call\s*\(\s*apiName/.test(runnerSource), false, "runner_must_not_e
 assert.equal(/\.Create|\.Delete|\.Modify|\.Run|\.Terminate|\.Put|\.Update|\.Attach|\.Detach/.test(runnerSource), false, "runner_must_not_call_mutation_methods");
 
 const portalPackage = await readFile(portalPackagePath, "utf8");
-assert.equal(portalPackage.includes("tencentcloud-sdk-nodejs"), false, "portal_package_must_not_add_tencent_sdk_dependency");
+if (portalPackage.includes("tencentcloud-sdk-nodejs")) {
+  assert.equal(
+    moduleSource.includes("tencentcloud-sdk-nodejs"),
+    false,
+    "official_wrapper_module_must_not_import_sdk_dependency",
+  );
+}
 assert.equal(portalPackage.includes("@tencentcloud"), false, "portal_package_must_not_add_tencent_sdk_namespace");
 
 const suite = await readFile(suitePath, "utf8");

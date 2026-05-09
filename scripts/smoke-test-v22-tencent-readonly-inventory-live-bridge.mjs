@@ -369,7 +369,13 @@ try {
   assert.equal(/\.Create|\.Delete|\.Modify|\.Run|\.Terminate|\.Put|\.Update|\.Attach|\.Detach/.test(runnerSource), false, "runner_must_not_call_mutation_methods");
 
   const portalPackage = await readFile(portalPackagePath, "utf8");
-  assert.equal(portalPackage.includes("tencentcloud-sdk-nodejs"), false, "portal_package_must_not_add_tencent_sdk_dependency");
+  if (portalPackage.includes("tencentcloud-sdk-nodejs")) {
+    assert.equal(
+      runnerSource.includes("import(\"tencentcloud-sdk-nodejs\")"),
+      false,
+      "tc3_live_bridge_must_not_load_official_sdk_dependency",
+    );
+  }
   assert.equal(portalPackage.includes("@tencentcloud"), false, "portal_package_must_not_add_tencent_sdk_namespace");
 
   const contract = await readFile(contractPath, "utf8");

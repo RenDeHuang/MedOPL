@@ -7,6 +7,10 @@ import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdap
 import { validateReadonlyInventorySecretEnv } from "../services/portal/src/domain/tencent-readonly-inventory-provider.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
+import {
+  createTencentReadonlyInventoryOfficialSdkModulesFromPackage,
+  loadTencentReadonlyInventoryOfficialSdkPackage,
+} from "../services/portal/src/domain/tencent-readonly-inventory-official-sdk-loader.mjs";
 import { createTencentReadonlyInventoryOfficialSdkModules } from "../services/portal/src/domain/tencent-readonly-inventory-official-sdk-modules.mjs";
 import { createTencentReadonlyInventoryTc3Modules } from "../services/portal/src/domain/tencent-readonly-inventory-tc3-modules.mjs";
 import { createTencentReadonlyInventoryTencentSdkFactory } from "../services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs";
@@ -49,6 +53,7 @@ function parseArgs(argv = []) {
     runId: "",
     sdkMode: "",
     enableRealFetch: false,
+    enableOfficialSdkLoader: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -73,6 +78,10 @@ function parseArgs(argv = []) {
     }
     if (arg === "--enable-real-fetch") {
       options.enableRealFetch = true;
+      continue;
+    }
+    if (arg === "--enable-official-sdk-loader") {
+      options.enableOfficialSdkLoader = true;
       continue;
     }
     throw new Error(`readonly_inventory_runner_unknown_arg:${arg}`);
@@ -476,7 +485,13 @@ async function runTencentRealReadonly({ env, runId, tencentSdkModules }) {
   }
 }
 
-async function runTencentOfficialSdkReadonly({ env, runId, officialSdkModules }) {
+async function runTencentOfficialSdkReadonly({
+  env,
+  runId,
+  officialSdkModules,
+  enableOfficialSdkLoader = false,
+  loadOfficialSdkPackage = loadTencentReadonlyInventoryOfficialSdkPackage,
+}) {
   const envSummary = validateReadonlyInventorySecretEnv(env);
   if (!envSummary.enabled) {
     return {
@@ -504,7 +519,14 @@ async function runTencentOfficialSdkReadonly({ env, runId, officialSdkModules })
       },
     };
   }
-  if (!officialSdkModules) {
+  let sdkModules = officialSdkModules;
+  if (!sdkModules && enableOfficialSdkLoader) {
+    const sdkPackage = await loadOfficialSdkPackage();
+    sdkModules = createTencentReadonlyInventoryOfficialSdkModulesFromPackage({
+      sdkPackage,
+    });
+  }
+  if (!sdkModules) {
     return {
       status: 1,
       payload: {
@@ -519,7 +541,7 @@ async function runTencentOfficialSdkReadonly({ env, runId, officialSdkModules })
   }
   const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
     sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
-      officialSdkModules,
+      officialSdkModules: sdkModules,
     }),
   });
   const client = createTencentReadonlyInventoryRealSdkClient({
@@ -631,7 +653,13 @@ async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now, enableRealF
   }
 }
 
-export async function runCli(argv = [], { tencentSdkModules, officialSdkModules, tc3Fetch, tc3Now } = {}) {
+export async function runCli(argv = [], {
+  tencentSdkModules,
+  officialSdkModules,
+  loadOfficialSdkPackage,
+  tc3Fetch,
+  tc3Now,
+} = {}) {
   const options = parseArgs(argv);
   const env = await loadSecretEnv(options.secretFile);
   if (options.mode === "check-config") {
@@ -645,7 +673,13 @@ export async function runCli(argv = [], { tencentSdkModules, officialSdkModules,
       return runTencentRealReadonly({ env, runId: options.runId, tencentSdkModules });
     }
     if (options.sdkMode === "tencent-official-sdk-readonly") {
-      return runTencentOfficialSdkReadonly({ env, runId: options.runId, officialSdkModules });
+      return runTencentOfficialSdkReadonly({
+        env,
+        runId: options.runId,
+        officialSdkModules,
+        enableOfficialSdkLoader: options.enableOfficialSdkLoader,
+        loadOfficialSdkPackage,
+      });
     }
     if (options.sdkMode === "tencent-tc3-readonly") {
       return runTencentTc3Readonly({

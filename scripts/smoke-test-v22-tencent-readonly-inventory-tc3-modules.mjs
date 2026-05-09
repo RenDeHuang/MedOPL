@@ -526,7 +526,13 @@ assert.equal(runnerSource.includes(liveSecretPathProof), false, "runner_must_not
 assert.equal(/call\s*\(\s*apiName/.test(runnerSource), false, "runner_must_not_expose_generic_call");
 
 const portalPackage = await readFile(portalPackagePath, "utf8");
-assert.equal(portalPackage.includes("tencentcloud-sdk-nodejs"), false, "portal_package_must_not_add_tencent_sdk_dependency");
+if (portalPackage.includes("tencentcloud-sdk-nodejs")) {
+  assert.equal(
+    moduleSource.includes("tencentcloud-sdk-nodejs"),
+    false,
+    "tc3_module_must_not_import_tencent_sdk_when_dependency_exists",
+  );
+}
 assert.equal(portalPackage.includes("@tencentcloud"), false, "portal_package_must_not_add_tencent_sdk_namespace");
 
 const contract = await readFile(contractPath, "utf8");
