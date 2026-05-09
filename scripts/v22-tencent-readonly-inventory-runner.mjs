@@ -7,6 +7,7 @@ import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdap
 import { validateReadonlyInventorySecretEnv } from "../services/portal/src/domain/tencent-readonly-inventory-provider.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
+import { createTencentReadonlyInventoryTc3Modules } from "../services/portal/src/domain/tencent-readonly-inventory-tc3-modules.mjs";
 import { createTencentReadonlyInventoryTencentSdkFactory } from "../services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -448,7 +449,74 @@ async function runTencentRealReadonly({ env, runId, tencentSdkModules }) {
   };
 }
 
-export async function runCli(argv = [], { tencentSdkModules } = {}) {
+async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now }) {
+  const envSummary = validateReadonlyInventorySecretEnv(env);
+  if (!envSummary.enabled) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "live_readonly_requires_run_gate",
+        }),
+      },
+    };
+  }
+  if (!envSummary.regions.length) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "readonly_inventory_regions_required",
+        }),
+      },
+    };
+  }
+  if (typeof tc3Fetch !== "function") {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "tencent_readonly_tc3_fetch_required",
+        }),
+      },
+    };
+  }
+  const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
+    sdkModules: createTencentReadonlyInventoryTc3Modules({
+      fetchImpl: tc3Fetch,
+      now: typeof tc3Now === "function" ? tc3Now : undefined,
+    }),
+  });
+  const client = createTencentReadonlyInventoryRealSdkClient({
+    sdkFactory,
+    credentials: {
+      SecretId: env.TENCENT_READONLY_SECRET_ID,
+      SecretKey: env.TENCENT_READONLY_SECRET_KEY,
+    },
+    accountId: env.TENCENT_READONLY_ACCOUNT_ID,
+    allowedApis: envSummary.allowedApis,
+    regions: envSummary.regions,
+  });
+  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+  const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
+  const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
+  const reportPath = await writeReport(summary, runId);
+  return {
+    status: 0,
+    payload: { reportPath, summary },
+  };
+}
+
+export async function runCli(argv = [], { tencentSdkModules, tc3Fetch, tc3Now } = {}) {
   const options = parseArgs(argv);
   const env = await loadSecretEnv(options.secretFile);
   if (options.mode === "check-config") {
@@ -460,6 +528,9 @@ export async function runCli(argv = [], { tencentSdkModules } = {}) {
   if (options.mode === "live-readonly") {
     if (options.sdkMode === "tencent-real-readonly" && tencentSdkModules) {
       return runTencentRealReadonly({ env, runId: options.runId, tencentSdkModules });
+    }
+    if (options.sdkMode === "tencent-tc3-readonly") {
+      return runTencentTc3Readonly({ env, runId: options.runId, tc3Fetch, tc3Now });
     }
     return runLiveReadonly({ env, runId: options.runId, sdkMode: options.sdkMode });
   }

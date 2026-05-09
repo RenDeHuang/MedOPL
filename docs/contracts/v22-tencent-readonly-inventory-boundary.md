@@ -181,6 +181,8 @@ live readonly 不创建、不删除、不释放、不扩缩容、不改标签、
 
 runner 只有在 `--sdk-mode tencent-real-readonly`、`RUN_TENCENT_READONLY_INVENTORY=1`、allowlist 通过、用户单独授权执行时，才允许调用真实只读 SDK。默认 smoke 和 CI 不运行真实云。
 
+TC3 readonly modules 属于 readonly inventory live client implementation，不是 create/release，不扩大 mutation 权限。TC3 modules 只能通过注入 fetch 和 readonly credentials 生成 Describe/List/Get/Head 请求，不读取 secret 文件、不 source env、不暴露 raw client 或通用 call(apiName, params)。
+
 ## Contract Data
 
 <!-- v22-tencent-readonly-inventory-contract:start -->
