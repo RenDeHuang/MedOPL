@@ -41,6 +41,11 @@ function hasClient(root, service, version) {
   return typeof root?.[service]?.[version]?.Client === "function";
 }
 
+function hasClientMethod(root, service, version, methodName) {
+  const Client = root?.[service]?.[version]?.Client;
+  return typeof Client?.prototype?.[methodName] === "function";
+}
+
 const portalPackage = JSON.parse(await readFile(portalPackagePath, "utf8"));
 const lock = JSON.parse(await readFile(portalLockPath, "utf8"));
 assert(portalPackage.dependencies?.[sdkPackageName], "portal_package_must_declare_tencentcloud_sdk_nodejs");
@@ -69,6 +74,16 @@ if (installed) {
   assert.equal(hasClient(sdkRoot, "tke", "v20180525"), true, "sdk_shape_must_include_tke_v20180525_client");
   assert.equal(hasClient(sdkRoot, "billing", "v20180709"), true, "sdk_shape_must_include_billing_v20180709_client");
   assert.equal(hasClient(sdkRoot, "tag", "v20180813"), true, "sdk_shape_must_include_tag_v20180813_client");
+  assert.equal(
+    hasClientMethod(sdkRoot, "tag", "v20180813", "GetResources"),
+    true,
+    "sdk_shape_must_include_tag_v20180813_get_resources",
+  );
+  assert.equal(
+    hasClientMethod(sdkRoot, "tag", "v20180813", "DescribeTagResources"),
+    false,
+    "sdk_shape_must_not_include_tag_v20180813_describe_tag_resources",
+  );
   assert.equal(hasClient(sdkRoot, "cos", "v20180530"), false, "sdk_shape_must_record_cos_v20180530_absent_from_tencentcloud_sdk_nodejs");
 }
 
@@ -84,6 +99,8 @@ const result = {
     "no_cos_nodejs_sdk_v5_added",
     "does_not_read_secret_or_call_cloud",
     installed ? "sts_cvm_tke_billing_tag_client_shape_present" : "sdk_package_not_installed_in_this_worktree",
+    installed ? "tag_v20180813_get_resources_present" : "tag_method_shape_deferred_until_local_dependency_install",
+    installed ? "tag_v20180813_describe_tag_resources_absent" : "tag_method_absence_deferred_until_local_dependency_install",
     installed ? "cos_v20180530_client_absent_from_tencentcloud_sdk_nodejs" : "shape_import_deferred_until_local_dependency_install",
   ],
   cosBoundary: "cos.v20180530.Client is not provided by tencentcloud-sdk-nodejs; COS readonly support requires a separate cos-nodejs-sdk-v5 contract or dedicated implementation path.",

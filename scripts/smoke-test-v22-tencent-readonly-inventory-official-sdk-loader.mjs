@@ -78,6 +78,37 @@ function assertReportWhitelist(report, label) {
   assertNotContainsForbidden(report, label);
 }
 
+function errorSafeDiagnostic(diagnostic = {}) {
+  return Boolean(
+    diagnostic
+      && typeof diagnostic === "object"
+      && typeof diagnostic.apiName === "string"
+      && typeof diagnostic.clientMethod === "string"
+      && typeof diagnostic.category === "string"
+      && typeof diagnostic.providerCode === "string"
+      && typeof diagnostic.region === "string"
+      && typeof diagnostic.resourceType === "string",
+  );
+}
+
+function assertDiagnosticReport(report, label) {
+  assert.deepEqual(Object.keys(report).sort(), [
+    "accountMasked",
+    "allowedApis",
+    "auditQueueCounts",
+    "blockedReason",
+    "diagnostic",
+    "mode",
+    "ok",
+    "regions",
+    "resourceCounts",
+  ].sort(), `${label}_diagnostic_report_whitelist`);
+  assert.equal(report.ok, false, `${label}_diagnostic_report_ok_false`);
+  assert.equal(report.blockedReason, "readonly_inventory_live_diagnostic", `${label}_diagnostic_report_reason`);
+  assert(errorSafeDiagnostic(report.diagnostic), `${label}_diagnostic_safe_shape`);
+  assertNotContainsForbidden(report, label);
+}
+
 function assertPage(page, label) {
   assert(Array.isArray(page.items), `${label}_items_required`);
   assert("nextCursor" in page, `${label}_next_cursor_required`);
@@ -288,7 +319,8 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
     tag: {
       v20180813: {
         Client: clientClass("tag", {
-          DescribeTagResources(params) {
+          GetResources(params) {
+            calls.push("GetResources");
             return page("DescribeTagResources", params);
           },
           UpdateTags: mutation("UpdateTags"),
@@ -324,6 +356,8 @@ const nonCosClient = createTencentReadonlyInventoryRealSdkClient({
 });
 assertPage(await nonCosClient.describeCvmInstances({ region: "ap-guangzhou" }), "loader_non_cos_cvm_page");
 assertPage(await nonCosClient.describeTkeClusters({ region: "ap-shanghai" }), "loader_non_cos_tke_page");
+assertPage(await nonCosClient.describeTagResources({ region: "ap-shanghai" }), "loader_non_cos_tag_page");
+assert.equal(officialSdkPackageWithoutCos.calls.includes("GetResources"), true, "loader_non_cos_tag_semantic_uses_get_resources");
 assert.equal(
   officialSdkPackageWithoutCos.calls.some((call) => call === "construct:cos" || call === "ListBuckets" || call === "HeadObject"),
   false,
@@ -441,6 +475,7 @@ assert.deepEqual(metadata.metadataSummary, { sizeBytes: 4096, checksumStatus: "p
 assertNotContainsForbidden(metadata, "loader_cos_metadata");
 assertPage(await client.describeBillingSummary({ region: "ap-shanghai" }), "loader_billing_page");
 assertPage(await client.describeTagResources({ region: "ap-shanghai" }), "loader_tag_page");
+assert.equal(officialSdkPackage.calls.includes("GetResources"), true, "loader_tag_semantic_must_use_get_resources");
 
 for (const mutationCall of [
   "CreateRole",
@@ -681,11 +716,42 @@ try {
   assert.equal(nonCosLiveRun.status, 0, "official_loader_non_cos_live_status");
   assert.equal(nonCosLiveRun.payload.summary.ok, true, "official_loader_non_cos_live_ok");
   assertReportWhitelist(nonCosLiveRun.payload.summary, "official_loader_non_cos_live_summary");
+  assert.equal(runnerPackageWithoutCos.calls.includes("GetResources"), true, "official_loader_non_cos_live_uses_get_resources_for_tag_semantic");
   assert.equal(
     runnerPackageWithoutCos.calls.some((call) => call === "construct:cos" || call === "ListBuckets" || call === "HeadObject"),
     false,
     "official_loader_non_cos_live_must_not_construct_or_call_cos",
   );
+
+  loadCalls = 0;
+  const cosShapeBlockedPackage = createFakeSdkPackage();
+  delete cosShapeBlockedPackage.cos;
+  const cosShapeBlocked = await runCli([
+    "--live-readonly",
+    "--sdk-mode",
+    "tencent-official-sdk-readonly",
+    "--enable-official-sdk-loader",
+    "--secret-file",
+    secretFile,
+    "--run-id",
+    "official-sdk-loader-missing-cos-preflight",
+  ], {
+    loadOfficialSdkPackage: async () => {
+      loadCalls += 1;
+      return cosShapeBlockedPackage;
+    },
+  });
+  assert.equal(cosShapeBlocked.status, 1, "official_loader_missing_cos_preflight_status");
+  assert.equal(loadCalls, 1, "official_loader_missing_cos_preflight_loads_package_once");
+  assert(cosShapeBlocked.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/official-sdk-loader-missing-cos-preflight.json"), "official_loader_missing_cos_preflight_report_path");
+  assertDiagnosticReport(cosShapeBlocked.payload.summary, "official_loader_missing_cos_preflight_summary");
+  assert.equal(cosShapeBlocked.payload.summary.diagnostic.category, "sdk_module_shape_mismatch", "official_loader_missing_cos_preflight_category");
+  assert.equal(cosShapeBlocked.payload.summary.diagnostic.resourceType, "cos", "official_loader_missing_cos_preflight_resource_type");
+  assert.equal(cosShapeBlockedPackage.calls.includes("ListBuckets"), false, "official_loader_missing_cos_preflight_must_not_call_list_buckets");
+  assert.equal(cosShapeBlockedPackage.calls.includes("HeadObject"), false, "official_loader_missing_cos_preflight_must_not_call_head_object");
+  const cosShapeBlockedReport = JSON.parse(await readFile(cosShapeBlocked.payload.reportPath, "utf8"));
+  assertDiagnosticReport(cosShapeBlockedReport, "official_loader_missing_cos_preflight_report");
+  assert.deepEqual(cosShapeBlockedReport, cosShapeBlocked.payload.summary, "official_loader_missing_cos_preflight_report_matches_summary");
 
   loadCalls = 0;
   const runnerPackage = createFakeSdkPackage();
@@ -769,7 +835,9 @@ console.log(JSON.stringify({
     "raw_sdk_client_not_exposed",
     "mutation_methods_not_visible_or_called",
     "safe_error_redaction",
+    "official_sdk_tag_get_resources_method_shape_for_describe_tag_resources_semantic",
     "non_cos_allowlist_does_not_require_cos_sdk_shape",
+    "cos_allowlist_missing_cos_sdk_shape_writes_redacted_failure_report_before_live",
     "cos_allowlist_missing_cos_sdk_fails_closed_with_sanitized_diagnostic",
     "no_real_secret_or_cloud_call",
     "tc3_diagnostic_smoke_kept",

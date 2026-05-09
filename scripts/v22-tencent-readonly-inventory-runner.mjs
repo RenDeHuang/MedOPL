@@ -539,23 +539,23 @@ async function runTencentOfficialSdkReadonly({
       },
     };
   }
-  const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
-    sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
-      officialSdkModules: sdkModules,
-    }),
-  });
-  const client = createTencentReadonlyInventoryRealSdkClient({
-    sdkFactory,
-    credentials: {
-      SecretId: env.TENCENT_READONLY_SECRET_ID,
-      SecretKey: env.TENCENT_READONLY_SECRET_KEY,
-    },
-    accountId: env.TENCENT_READONLY_ACCOUNT_ID,
-    allowedApis: envSummary.allowedApis,
-    regions: envSummary.regions,
-  });
-  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
   try {
+    const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
+      sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
+        officialSdkModules: sdkModules,
+      }),
+    });
+    const client = createTencentReadonlyInventoryRealSdkClient({
+      sdkFactory,
+      credentials: {
+        SecretId: env.TENCENT_READONLY_SECRET_ID,
+        SecretKey: env.TENCENT_READONLY_SECRET_KEY,
+      },
+      accountId: env.TENCENT_READONLY_ACCOUNT_ID,
+      allowedApis: envSummary.allowedApis,
+      regions: envSummary.regions,
+    });
+    const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
     const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
     const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
     const reportPath = await writeReport(summary, runId);

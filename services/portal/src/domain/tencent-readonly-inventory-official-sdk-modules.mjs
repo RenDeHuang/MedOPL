@@ -16,7 +16,7 @@ const READONLY_METHODS = Object.freeze({
   ListBuckets: ["ListBuckets", "listBuckets"],
   HeadObject: ["HeadObject", "headObject"],
   DescribeBillSummary: ["DescribeBillSummary", "describeBillSummary"],
-  DescribeTagResources: ["DescribeTagResources", "describeTagResources"],
+  DescribeTagResources: ["GetResources", "getResources"],
 });
 
 function assertOfficialSdkModules(officialSdkModules) {

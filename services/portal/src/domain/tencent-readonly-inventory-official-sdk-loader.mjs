@@ -45,7 +45,7 @@ const SERVICE_CONFIGS = Object.freeze({
     service: "tag",
     version: "v20180813",
     endpoint: "tag.tencentcloudapi.com",
-    method: "DescribeTagResources",
+    method: "GetResources",
   }),
 });
 
@@ -198,7 +198,7 @@ export function createTencentReadonlyInventoryOfficialSdkModulesFromPackage({ sd
         sdkPackage,
         context,
         config: SERVICE_CONFIGS.tag,
-        exposedMethod: "DescribeTagResources",
+        exposedMethod: "GetResources",
       });
     },
   });

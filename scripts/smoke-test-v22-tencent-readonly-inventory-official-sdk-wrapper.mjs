@@ -280,7 +280,8 @@ function createFakeOfficialSdkModules({ cvmError = null, expectedAllowedApis = a
     },
     createTagClient() {
       return createClient("tag", {
-        describeTagResources(params) {
+        GetResources(params) {
+          calls.push("GetResources");
           return page("DescribeTagResources", params);
         },
         updateTags: mutation("updateTags"),
@@ -440,6 +441,7 @@ const billingPage = await client.describeBillingSummary({ region: "ap-shanghai" 
 assertPage(billingPage, "official_billing_page");
 const tagPage = await client.describeTagResources({ region: "ap-shanghai" });
 assertPage(tagPage, "official_tag_page");
+assert.equal(officialSdkModules.calls.includes("GetResources"), true, "official_tag_semantic_must_use_get_resources");
 
 const liveAdapter = createTencentReadonlyInventoryLiveAdapter({ client });
 const inventory = await collectTencentReadonlyInventory({
@@ -691,6 +693,7 @@ try {
   assert.equal(nonCosLiveRun.status, 0, "official_non_cos_live_run_status");
   assert.equal(nonCosLiveRun.payload.summary.ok, true, "official_non_cos_live_run_ok");
   assertReportWhitelist(nonCosLiveRun.payload.summary, "official_non_cos_live_run_summary");
+  assert.equal(runnerModulesWithoutCos.calls.includes("GetResources"), true, "official_non_cos_live_uses_get_resources_for_tag_semantic");
   assert.equal(runnerModulesWithoutCos.calls.includes("create:cos-missing"), false, "official_non_cos_live_must_not_create_cos");
 
   const runnerModules = createFakeOfficialSdkModules();
@@ -776,6 +779,7 @@ console.log(JSON.stringify({
     "fake_official_sdk_happy_path_account_regions_cvm_tke_cos_billing_tag",
     "permission_rate_network_errors_sanitized",
     "non_cos_allowlist_does_not_require_cos_sdk_shape",
+    "official_sdk_tag_get_resources_method_shape_for_describe_tag_resources_semantic",
     "cos_allowlist_missing_cos_sdk_fails_closed_with_sanitized_diagnostic",
     "raw_sdk_response_and_storage_internals_redacted",
     "mutation_methods_not_visible_or_called",
