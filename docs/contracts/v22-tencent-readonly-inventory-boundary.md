@@ -183,6 +183,8 @@ runner 只有在 `--sdk-mode tencent-real-readonly`、`RUN_TENCENT_READONLY_INVE
 
 TC3 readonly modules 属于 readonly inventory live client implementation，不是 create/release，不扩大 mutation 权限。TC3 modules 只能通过注入 fetch 和 readonly credentials 生成 Describe/List/Get/Head 请求，不读取 secret 文件、不 source env、不暴露 raw client 或通用 call(apiName, params)。
 
+Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner 只有在 `--live-readonly`、`--sdk-mode tencent-tc3-readonly`、`--enable-real-fetch`、`RUN_TENCENT_READONLY_INVENTORY=1`、regions 非空、allowlist 通过且用户在当前会话单独授权执行时，才允许把 `globalThis.fetch` 注入 TC3 readonly modules；未显式开启时必须 fail-closed。Live Bridge 不扩大 create/release，不支持 mutation API，不改变输出脱敏边界，默认 smoke 和 CI 不运行真实云。
+
 ## Contract Data
 
 <!-- v22-tencent-readonly-inventory-contract:start -->

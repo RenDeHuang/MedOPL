@@ -47,6 +47,7 @@ function parseArgs(argv = []) {
     secretFile: "",
     runId: "",
     sdkMode: "",
+    enableRealFetch: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -67,6 +68,10 @@ function parseArgs(argv = []) {
     if (arg === "--sdk-mode") {
       options.sdkMode = text(argv[index + 1]);
       index += 1;
+      continue;
+    }
+    if (arg === "--enable-real-fetch") {
+      options.enableRealFetch = true;
       continue;
     }
     throw new Error(`readonly_inventory_runner_unknown_arg:${arg}`);
@@ -449,7 +454,7 @@ async function runTencentRealReadonly({ env, runId, tencentSdkModules }) {
   };
 }
 
-async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now }) {
+async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now, enableRealFetch }) {
   const envSummary = validateReadonlyInventorySecretEnv(env);
   if (!envSummary.enabled) {
     return {
@@ -477,7 +482,11 @@ async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now }) {
       },
     };
   }
-  if (typeof tc3Fetch !== "function") {
+  let fetchImpl = tc3Fetch;
+  if (typeof fetchImpl !== "function" && enableRealFetch) {
+    fetchImpl = globalThis.fetch;
+  }
+  if (typeof fetchImpl !== "function") {
     return {
       status: 1,
       payload: {
@@ -492,7 +501,7 @@ async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now }) {
   }
   const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
     sdkModules: createTencentReadonlyInventoryTc3Modules({
-      fetchImpl: tc3Fetch,
+      fetchImpl,
       now: typeof tc3Now === "function" ? tc3Now : undefined,
     }),
   });
@@ -530,7 +539,13 @@ export async function runCli(argv = [], { tencentSdkModules, tc3Fetch, tc3Now } 
       return runTencentRealReadonly({ env, runId: options.runId, tencentSdkModules });
     }
     if (options.sdkMode === "tencent-tc3-readonly") {
-      return runTencentTc3Readonly({ env, runId: options.runId, tc3Fetch, tc3Now });
+      return runTencentTc3Readonly({
+        env,
+        runId: options.runId,
+        tc3Fetch,
+        tc3Now,
+        enableRealFetch: options.enableRealFetch,
+      });
     }
     return runLiveReadonly({ env, runId: options.runId, sdkMode: options.sdkMode });
   }
