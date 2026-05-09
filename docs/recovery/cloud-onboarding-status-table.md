@@ -27,7 +27,7 @@ program id: v22-cloud-onboarding
 | CO-01 | official SDK provider strategy | done | existing trunk evidence before 148f5a0 | A | none | `smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs` | none |
 | CO-02 | official SDK wrapper | done | existing trunk evidence before 148f5a0 | A | none | `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs` | none |
 | CO-03 | official SDK dependency loader | done | existing trunk evidence before 148f5a0 | A | none | `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs` | none |
-| CO-04 | check-config | active | pending local check-config evidence | A | prepare local static gate for readonly live | `smoke-test-v22-tencent-readonly-inventory-local-guard.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs` | stop if real secret, real cloud, deploy, or dependency install is needed |
+| CO-04 | check-config | active | local gate pass on branch docs/v22-cloud-onboarding-co04-check-config-evidence: workflow status/next, readonly local guard, official SDK loader, agent workflow cloud onboarding, long-term governance surfaces, MVP suite | A | prepare local static gate for readonly live | `smoke-test-v22-tencent-readonly-inventory-local-guard.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs` | stop if real secret, real cloud, deploy, or dependency install is needed |
 | CO-05 | default gate | pending | pending B review | B | confirm default path is fail-closed and TC3 is not production default | `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`; `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs` | stop before merge/push or any live path |
 | CO-06 | user-authorized readonly live | needs-user-authorization | no live report yet | user | decide whether to authorize official SDK readonly secret allowlist and readonly API call | `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`; `smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs`; check-config output | must explicitly authorize secret allowlist, region/API scope, real cloud call, report location |
 | CO-07 | readonly report review | pending | pending readonly report | B | review redacted report after CO-06 | `smoke-test-v22-tencent-readonly-inventory-boundary.mjs`; report redaction checks | stop if another real cloud read or report sharing is needed |
@@ -94,7 +94,7 @@ program id: v22-cloud-onboarding
       "phaseId": "CO-04",
       "phaseName": "check-config",
       "status": "active",
-      "evidenceCommitOrReport": "pending local check-config evidence",
+      "evidenceCommitOrReport": "local gate pass on branch docs/v22-cloud-onboarding-co04-check-config-evidence: workflow status/next, readonly local guard, official SDK loader, agent workflow cloud onboarding, long-term governance surfaces, MVP suite",
       "owner": "A",
       "nextAction": "prepare local static gate for readonly live",
       "requiredSmoke": [
