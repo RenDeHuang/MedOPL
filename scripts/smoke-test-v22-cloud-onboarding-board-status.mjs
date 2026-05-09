@@ -194,9 +194,27 @@ assert.equal(statusById["CO-01"].status, "done", "co01_must_be_done");
 assert.equal(statusById["CO-02"].status, "done", "co02_must_be_done");
 assert.equal(statusById["CO-03"].status, "done", "co03_must_be_done");
 assert.equal(statusById["CO-04"].status, "active", "co04_must_be_active");
+assertIncludesAll(
+  `${statusById["CO-04"].evidenceCommitOrReport} ${statusById["CO-04"].nextAction}`,
+  [
+    "未读 secret",
+    "未读取 /home/dev/.secrets",
+    "未 source env",
+    "未传 --live-readonly",
+    "未调用真实 Tencent API",
+    "未加载真实 SDK live path",
+    "official SDK loader 默认 fail-closed",
+    "CO-06 仍需用户显式授权",
+  ],
+  "co04_check_config_audit_evidence"
+);
 assert.equal(statusById["CO-05"].status, "pending", "co05_must_be_pending");
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
+assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
+assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
+assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");
+assert(statusById["CO-08"].nextAction.includes("wait for official SDK live report and B acceptance"), "co08_next_action_must_wait_for_b_acceptance");
 
 assertIncludesAll(matrix, [
   "cloud onboarding execution board",
