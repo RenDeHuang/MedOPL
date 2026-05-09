@@ -7,6 +7,7 @@ import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdap
 import { validateReadonlyInventorySecretEnv } from "../services/portal/src/domain/tencent-readonly-inventory-provider.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
+import { createTencentReadonlyInventoryOfficialSdkModules } from "../services/portal/src/domain/tencent-readonly-inventory-official-sdk-modules.mjs";
 import { createTencentReadonlyInventoryTc3Modules } from "../services/portal/src/domain/tencent-readonly-inventory-tc3-modules.mjs";
 import { createTencentReadonlyInventoryTencentSdkFactory } from "../services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs";
 
@@ -475,6 +476,81 @@ async function runTencentRealReadonly({ env, runId, tencentSdkModules }) {
   }
 }
 
+async function runTencentOfficialSdkReadonly({ env, runId, officialSdkModules }) {
+  const envSummary = validateReadonlyInventorySecretEnv(env);
+  if (!envSummary.enabled) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "live_readonly_requires_run_gate",
+        }),
+      },
+    };
+  }
+  if (!envSummary.regions.length) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "readonly_inventory_regions_required",
+        }),
+      },
+    };
+  }
+  if (!officialSdkModules) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "tencent_readonly_official_sdk_modules_required",
+        }),
+      },
+    };
+  }
+  const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
+    sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
+      officialSdkModules,
+    }),
+  });
+  const client = createTencentReadonlyInventoryRealSdkClient({
+    sdkFactory,
+    credentials: {
+      SecretId: env.TENCENT_READONLY_SECRET_ID,
+      SecretKey: env.TENCENT_READONLY_SECRET_KEY,
+    },
+    accountId: env.TENCENT_READONLY_ACCOUNT_ID,
+    allowedApis: envSummary.allowedApis,
+    regions: envSummary.regions,
+  });
+  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+  try {
+    const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
+    const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
+    const reportPath = await writeReport(summary, runId);
+    return {
+      status: 0,
+      payload: { reportPath, summary },
+    };
+  } catch (error) {
+    const summary = diagnosticSummary({ envSummary, mode: "live-readonly", error });
+    const reportPath = await writeReport(summary, runId);
+    return {
+      status: 1,
+      payload: { reportPath, summary },
+    };
+  }
+}
+
 async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now, enableRealFetch }) {
   const envSummary = validateReadonlyInventorySecretEnv(env);
   if (!envSummary.enabled) {
@@ -555,7 +631,7 @@ async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now, enableRealF
   }
 }
 
-export async function runCli(argv = [], { tencentSdkModules, tc3Fetch, tc3Now } = {}) {
+export async function runCli(argv = [], { tencentSdkModules, officialSdkModules, tc3Fetch, tc3Now } = {}) {
   const options = parseArgs(argv);
   const env = await loadSecretEnv(options.secretFile);
   if (options.mode === "check-config") {
@@ -567,6 +643,9 @@ export async function runCli(argv = [], { tencentSdkModules, tc3Fetch, tc3Now } 
   if (options.mode === "live-readonly") {
     if (options.sdkMode === "tencent-real-readonly" && tencentSdkModules) {
       return runTencentRealReadonly({ env, runId: options.runId, tencentSdkModules });
+    }
+    if (options.sdkMode === "tencent-official-sdk-readonly") {
+      return runTencentOfficialSdkReadonly({ env, runId: options.runId, officialSdkModules });
     }
     if (options.sdkMode === "tencent-tc3-readonly") {
       return runTencentTc3Readonly({
