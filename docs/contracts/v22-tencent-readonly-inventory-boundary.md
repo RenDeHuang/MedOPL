@@ -171,6 +171,36 @@ SDK 只能隐藏在 thin client wrapper 里。业务层只允许使用 inventory
 
 SDK wrapper 仍必须遵守 allowlist_only、Describe/List/Get/Head only、COS metadata only/no object body、fail-closed ownership 和 redacted contract-whitelisted output。它不允许 Create/Delete/Modify/Run/Terminate 等 mutation API。
 
+## Official SDK Provider Strategy
+
+readonly inventory 的 production default provider = Tencent official SDK wrapper。业务层只允许依赖 v22 自己的 readonly inventory interface，不直接依赖 Tencent SDK raw client。
+
+hand-rolled TC3 = diagnostic/reference only, not production default。TC3 暂不删除，但不能作为 production default readonly live path，不能作为 create/release provider，也不能扩大 mutation 权限。
+
+official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、redaction、RUN gate、no raw SDK exposure。它只能暴露现有语义接口：
+
+- describeAccount
+- describeRegions
+- describeCvmInstances
+- describeTkeClusters
+- describeCosBuckets
+- describeCosMetadata
+- describeBillingSummary
+- describeTagResources
+
+禁止 raw SDK client 泄露到业务层。禁止通用 call(apiName, params)。禁止 mutation API。SDK raw response 不得进入 stdout/report/Portal payload。
+
+新增 tencentcloud-sdk-nodejs 或相关官方 SDK 依赖必须单独 feat 分支，并由 B 审查 package diff。不在合同分支安装依赖。
+
+cleanup 策略：
+
+- official SDK readonly live 跑通前，不删除 TC3。
+- official SDK readonly live 跑通后，另开 cleanup 分支将 TC3 从 production default 退场。
+- TC3 可保留为 isolated diagnostic fixture。
+- TC3 不能作为 create/release 或默认 readonly live 主路径。
+
+当前分支不读 secret、不调用真实腾讯云、不安装 SDK、不实现 SDK modules、不删除 TC3、不改 create/release mutation 边界。
+
 ## Live Readonly Authorization Note
 
 live readonly 只允许读取 `/home/dev/.secrets/medopl/tencent-readonly-inventory.env`，且只允许读取 `TENCENT_READONLY_*` allowlist key。必须要求 `RUN_TENCENT_READONLY_INVENTORY=1`，并且只允许调用 check-config 已通过的 Describe/List/Get/Head 类 API。
@@ -195,6 +225,17 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
   "providerPackage": "Tencent Provider",
   "stage": "readonly/tencent inventory",
   "route": "mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release",
+  "productionDefaultProviderStrategy": "tencent_official_sdk_wrapper",
+  "tc3ProviderStrategy": "diagnostic_reference_only",
+  "officialSdkWrapperExposesOnlyReadonlyInventoryInterface": true,
+  "rawSdkClientExposedToBusinessLayer": false,
+  "genericApiCallExposed": false,
+  "sdkRawResponseAllowedInStdoutReportOrPortalPayload": false,
+  "newSdkDependencyRequiresSeparateFeatAndPackageDiffReview": true,
+  "contractBranchInstallsSdkDependency": false,
+  "removeTc3BeforeOfficialSdkLivePass": false,
+  "tc3AllowedAsCreateReleaseProvider": false,
+  "changesCreateReleaseMutationBoundary": false,
   "implementsRealCloudCall": false,
   "readsSecretNow": false,
   "futureSecretFileAllowed": true,

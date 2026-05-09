@@ -160,6 +160,8 @@
 
 真实腾讯云 API、真实 SecretId/SecretKey、真实资源创建/释放、deploy、build/push、kubectl 和 live-test 必须另开 feat/* 并单独授权。
 
+readonly inventory 的 official Tencent SDK wrapper 是 production default provider strategy；TC3 仅作为 diagnostic/reference，不能作为默认 readonly live 主路径或 create/release provider。新增官方 SDK 依赖必须另开 feat/* 并经 package diff 审查。
+
 ### Cleanup 合同包
 
 适用于退役 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事、旧 v19/v20/v21 路线。
