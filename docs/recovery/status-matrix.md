@@ -53,13 +53,16 @@
 | K8s Job 主叙事 | 无正式入口 | archive/reference，非 v22 主线 |
 | OpenCost 主叙事 | 无正式入口 | archive/reference，非 v22 主线 |
 
-## Cloud Onboarding Program Board
+## v22 Program Board
 
+- v22 program board: [v22-program-board.md](./v22-program-board.md)
+- v22 program status table: [v22-program-status-table.md](./v22-program-status-table.md)
 - cloud onboarding execution board: [cloud-onboarding-execution-board.md](./cloud-onboarding-execution-board.md)
 - cloud onboarding status table: [cloud-onboarding-status-table.md](./cloud-onboarding-status-table.md)
 - cloud onboarding verification matrix: [cloud-onboarding-verification-matrix.md](./cloud-onboarding-verification-matrix.md)
-- program id: v22-cloud-onboarding
-- 当前执行板只记录 program/phase/lane/离场条件、状态表和下一棒；不读 secret、不调用真实云、不改 deploy、不 build/push/kubectl。
+- cloud onboarding program id: v22-cloud-onboarding
+- program ids: portal-product-surface, cloud-onboarding, one-person-lab-sync
+- 总执行板记录 A/B/C/D 窗口角色、三条 program、lane、测试边界和真实副作用规则；不读 secret、不调用真实云、不改 services/deploy/upstream，不 build/push/kubectl。
 
 ## Long-Term Governance Surfaces
 

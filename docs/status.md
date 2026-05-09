@@ -16,6 +16,8 @@ CO-06 requires explicit user authorization
 - current phase: CO-04 check-config
 - next phase: CO-05 default gate
 - user authorization gate: CO-06 requires explicit user authorization before any official SDK readonly live run
+- total program board: `docs/recovery/v22-program-board.md`
+- total program status table: `docs/recovery/v22-program-status-table.md`
 - execution board: `docs/recovery/cloud-onboarding-execution-board.md`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - verification matrix: `docs/recovery/cloud-onboarding-verification-matrix.md`
