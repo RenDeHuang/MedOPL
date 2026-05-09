@@ -2,7 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 
 const API_CONFIG = Object.freeze({
   DescribeAccount: Object.freeze({
-    endpoint: "sts.tencentcloudapi.com",
+    endpoint: "sts.intl.tencentcloudapi.com",
     service: "sts",
     action: "GetCallerIdentity",
     version: "2018-08-13",

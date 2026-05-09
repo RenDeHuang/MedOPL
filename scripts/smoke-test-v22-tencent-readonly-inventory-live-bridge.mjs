@@ -26,7 +26,7 @@ const allowedApis = [
 
 const expectedApiMap = {
   GetCallerIdentity: {
-    endpoint: "sts.tencentcloudapi.com",
+    endpoint: "sts.intl.tencentcloudapi.com",
     version: "2018-08-13",
   },
   DescribeRegions: {

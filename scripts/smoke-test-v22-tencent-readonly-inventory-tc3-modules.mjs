@@ -31,7 +31,7 @@ const allowedApis = [
 
 const expectedApiMap = {
   DescribeAccount: {
-    endpoint: "sts.tencentcloudapi.com",
+    endpoint: "sts.intl.tencentcloudapi.com",
     service: "sts",
     action: "GetCallerIdentity",
     version: "2018-08-13",
@@ -358,6 +358,15 @@ assert.deepEqual(calledActions, [
   "ListBuckets",
   "HeadObject",
 ], "tc3_called_actions");
+const accountCall = fetchImpl.calls.find((call) => call.headers["x-tc-action"] === "GetCallerIdentity");
+assert(accountCall, "tc3_describe_account_call_required");
+assert.equal(accountCall.url, "https://sts.intl.tencentcloudapi.com", "tc3_describe_account_intl_url");
+assert.equal(accountCall.headers.host, "sts.intl.tencentcloudapi.com", "tc3_describe_account_intl_host");
+assert.equal(accountCall.headers["x-tc-action"], "GetCallerIdentity", "tc3_describe_account_action");
+assert.equal(accountCall.headers["x-tc-version"], "2018-08-13", "tc3_describe_account_version");
+assert(accountCall.headers.authorization.includes("/sts/tc3_request"), "tc3_describe_account_service_scope");
+assert.equal(accountCall.headers.authorization.includes("secret-key-proof"), false, "tc3_describe_account_authorization_no_secret_key");
+assert.equal(accountCall.headers.authorization.includes("token-proof"), false, "tc3_describe_account_authorization_no_token");
 for (const call of fetchImpl.calls) {
   const body = call.body;
   const expected = Object.values(expectedApiMap).find((config) => config.action === call.headers["x-tc-action"]);
