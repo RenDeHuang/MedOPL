@@ -179,6 +179,8 @@ live readonly 只允许读取 `/home/dev/.secrets/medopl/tencent-readonly-invent
 
 live readonly 不创建、不删除、不释放、不扩缩容、不改标签、不扣费。权限/限流/region 错误只进入安全 audit summary。真实 live run 必须由用户在当前会话单独授权后执行。
 
+runner 只有在 `--sdk-mode tencent-real-readonly`、`RUN_TENCENT_READONLY_INVENTORY=1`、allowlist 通过、用户单独授权执行时，才允许调用真实只读 SDK。默认 smoke 和 CI 不运行真实云。
+
 ## Contract Data
 
 <!-- v22-tencent-readonly-inventory-contract:start -->

@@ -7,6 +7,7 @@ import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdap
 import { validateReadonlyInventorySecretEnv } from "../services/portal/src/domain/tencent-readonly-inventory-provider.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
+import { createTencentReadonlyInventoryTencentSdkFactory } from "../services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -337,7 +338,27 @@ async function runLiveReadonly({ env, runId, sdkMode }) {
       },
     };
   }
-  if (sdkMode !== "fake-real-sdk") {
+  if (sdkMode === "fake-real-sdk") {
+    const client = createTencentReadonlyInventoryRealSdkClient({
+      sdkFactory: () => createFakeSdk(),
+      credentials: {
+        id: env.TENCENT_READONLY_SECRET_ID,
+        key: env.TENCENT_READONLY_SECRET_KEY,
+      },
+      accountId: env.TENCENT_READONLY_ACCOUNT_ID,
+      allowedApis: envSummary.allowedApis,
+      regions: envSummary.regions,
+    });
+    const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+    const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
+    const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
+    const reportPath = await writeReport(summary, runId);
+    return {
+      status: 0,
+      payload: { reportPath, summary },
+    };
+  }
+  if (sdkMode !== "tencent-real-readonly") {
     return {
       status: 1,
       payload: {
@@ -350,11 +371,68 @@ async function runLiveReadonly({ env, runId, sdkMode }) {
       },
     };
   }
+  return {
+    status: 1,
+    payload: {
+      reportPath: null,
+      summary: blockedSummary({
+        envSummary,
+        mode: "live-readonly",
+        blockedReason: "tencent_readonly_sdk_modules_required",
+      }),
+    },
+  };
+}
+
+async function runTencentRealReadonly({ env, runId, tencentSdkModules }) {
+  const envSummary = validateReadonlyInventorySecretEnv(env);
+  if (!envSummary.enabled) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "live_readonly_requires_run_gate",
+        }),
+      },
+    };
+  }
+  if (!envSummary.regions.length) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "readonly_inventory_regions_required",
+        }),
+      },
+    };
+  }
+  if (!tencentSdkModules) {
+    return {
+      status: 1,
+      payload: {
+        reportPath: null,
+        summary: blockedSummary({
+          envSummary,
+          mode: "live-readonly",
+          blockedReason: "tencent_readonly_sdk_modules_required",
+        }),
+      },
+    };
+  }
+  const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({
+    sdkModules: tencentSdkModules,
+  });
   const client = createTencentReadonlyInventoryRealSdkClient({
-    sdkFactory: () => createFakeSdk(),
+    sdkFactory,
     credentials: {
-      id: env.TENCENT_READONLY_SECRET_ID,
-      key: env.TENCENT_READONLY_SECRET_KEY,
+      SecretId: env.TENCENT_READONLY_SECRET_ID,
+      SecretKey: env.TENCENT_READONLY_SECRET_KEY,
     },
     accountId: env.TENCENT_READONLY_ACCOUNT_ID,
     allowedApis: envSummary.allowedApis,
@@ -370,7 +448,7 @@ async function runLiveReadonly({ env, runId, sdkMode }) {
   };
 }
 
-async function runCli(argv = []) {
+export async function runCli(argv = [], { tencentSdkModules } = {}) {
   const options = parseArgs(argv);
   const env = await loadSecretEnv(options.secretFile);
   if (options.mode === "check-config") {
@@ -380,6 +458,9 @@ async function runCli(argv = []) {
     return { status: 0, payload: await runFakeLive({ env, runId: options.runId }) };
   }
   if (options.mode === "live-readonly") {
+    if (options.sdkMode === "tencent-real-readonly" && tencentSdkModules) {
+      return runTencentRealReadonly({ env, runId: options.runId, tencentSdkModules });
+    }
     return runLiveReadonly({ env, runId: options.runId, sdkMode: options.sdkMode });
   }
   throw new Error(`readonly_inventory_runner_unknown_mode:${options.mode}`);

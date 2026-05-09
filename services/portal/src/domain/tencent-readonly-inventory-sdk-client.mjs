@@ -33,7 +33,7 @@ const RESOURCE_TYPE_BY_API = Object.freeze({
   DescribeTagResources: "tagged_resource",
 });
 
-const RETRYABLE_ERROR_CATEGORIES = new Set(["rate_limited"]);
+const RETRYABLE_ERROR_CATEGORIES = new Set(["rate_limited", "network_error"]);
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -189,6 +189,7 @@ function errorCategory(error = {}) {
   if (code.includes("permission") || code.includes("denied") || code.includes("unauthorized")) return "permission_denied";
   if (code.includes("rate") || code.includes("limit") || code.includes("throttle")) return "rate_limited";
   if (code.includes("region") && (code.includes("unavailable") || code.includes("unsupported"))) return "region_unavailable";
+  if (code.includes("network") || code.includes("timeout") || code.includes("econn")) return "network_error";
   if (code.includes("notfound") || code.includes("not_found") || code.includes("not found")) return "not_found";
   return "sdk_error";
 }
@@ -210,9 +211,9 @@ function safeError(error = {}, { region = "", resourceType = "unknown" } = {}) {
   return normalized;
 }
 
-function invokeSdk({ sdk, sdkMethod, params, region, resourceType }) {
+async function invokeSdk({ sdk, sdkMethod, params, region, resourceType }) {
   try {
-    return sdk[sdkMethod](params);
+    return await sdk[sdkMethod](params);
   } catch (error) {
     throw safeError(error, { region, resourceType });
   }

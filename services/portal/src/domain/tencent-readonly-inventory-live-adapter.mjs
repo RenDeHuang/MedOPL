@@ -98,9 +98,11 @@ function safeClientAuditItem({ method = "", region = "", reason = "", resourceTy
 }
 
 function classifyClientError(error = {}) {
-  const code = text(error.code || error.name || error.message).toLowerCase();
+  const code = text(error.category || error.code || error.name || error.message).toLowerCase();
   if (code.includes("permission") || code.includes("denied")) return "readonly_permission_denied";
   if (code.includes("rate") || code.includes("limit") || code.includes("throttle")) return "readonly_rate_limited";
+  if (code.includes("region") && (code.includes("unavailable") || code.includes("unsupported"))) return "readonly_region_unavailable";
+  if (code.includes("network") || code.includes("timeout") || code.includes("econn")) return "readonly_network_error";
   return "";
 }
 
