@@ -17,6 +17,8 @@ v22 的完成阶段会变化。每个分支开工前必须读取：
 
 当前默认开发动作只包括本地合同、Portal、Gateway / Runtime Bridge 小闭包和本地 smoke。真实云、真实部署、真实账单核对、真实 Langfuse、真实 upstream 生产接入不属于默认动作，必须单独授权。
 
+涉及 v22 cloud onboarding workflow 的分支必须显式订阅 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，并按合同状态机推进 official SDK、readonly live、report review、dry-run、mutation、deploy、Portal production integration 和 canary/QA/status update。AGENTS 管流程与红线，合同管语义与验收；该 workflow 只生成任务包和下一步建议，不自动 merge、不自动 push、不读 secret、不调用真实云。
+
 ## Canonical Trunk
 
 - platform-v22 是新的 canonical trunk，所有正式产品语义、正式文档和正式入口以 v22 为准。
