@@ -60,6 +60,12 @@
 - program id: v22-cloud-onboarding
 - 当前执行板只记录 program/phase/lane/离场条件、状态表和下一棒；不读 secret、不调用真实云、不改 deploy、不 build/push/kubectl。
 
+## Long-Term Governance Surfaces
+
+- long-term governance surfaces: [../status.md](../status.md), [../invariants.md](../invariants.md), [../decisions.md](../decisions.md)
+- `docs/status.md` 是 v22 当前唯一活状态入口，指向 active program、cloud onboarding execution board、status table 和 MVP suite。
+- `docs/invariants.md` 固化长期红线；`docs/decisions.md` 记录当前有效关键决策。
+
 ## 现有仓库域分类
 
 本节基于当前 worktree 的已有文件做 recovery 分类。分类只记录裁定；本次不删除文件、不搬目录、不写业务代码。

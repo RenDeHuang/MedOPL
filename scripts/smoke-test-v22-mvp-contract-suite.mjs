@@ -45,6 +45,7 @@ const smokeScripts = [
   ["smoke-test-v22-cloud-onboarding-workflow-contract", "scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs"],
   ["smoke-test-v22-cloud-onboarding-board-status", "scripts/smoke-test-v22-cloud-onboarding-board-status.mjs"],
   ["smoke-test-v22-agent-workflow-cloud-onboarding", "scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs"],
+  ["smoke-test-v22-long-term-governance-surfaces", "scripts/smoke-test-v22-long-term-governance-surfaces.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-boundary", "scripts/smoke-test-v22-tencent-readonly-inventory-boundary.mjs"],
   ["smoke-test-v22-tencent-official-sdk-provider-strategy-contract", "scripts/smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper", "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"],
