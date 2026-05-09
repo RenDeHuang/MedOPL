@@ -52,6 +52,9 @@ const statusAliases = Object.freeze({
 const worktreeRoot = "/home/dev/projects/platform-v22.worktrees";
 const runtimeStateRoot = ".runtime/v22-agent-workflow";
 const laneStateDir = `${runtimeStateRoot}/lanes`;
+const cloudOnboardingBoardPath = "docs/recovery/cloud-onboarding-execution-board.md";
+const cloudOnboardingStatusTablePath = "docs/recovery/cloud-onboarding-status-table.md";
+const cloudOnboardingWorkflowContractPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
 
 const workspaceDiscipline = Object.freeze({
   mainWorkspaceRole: "主工作区只用于规划、B 审计、ff-only merge、checkpoint、push、清理。",
@@ -294,7 +297,7 @@ function parseArgs(argv) {
   const [mode, ...rawRest] = argv;
   const rest = [...rawRest];
   let submode = "";
-  if (mode === "lane" && rest[0] && !rest[0].startsWith("--")) {
+  if ((mode === "lane" || mode === "cloud-onboarding") && rest[0] && !rest[0].startsWith("--")) {
     submode = rest.shift();
   }
   const options = {};
@@ -483,6 +486,23 @@ function currentWorktreePath() {
 
 function repoRootPath() {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+}
+
+async function readRepoText(relativePath) {
+  return readFile(path.join(repoRootPath(), relativePath), "utf8");
+}
+
+function parseAnchoredJsonBlock(source, name) {
+  const pattern = new RegExp(`<!-- ${name}:start -->\\s*\\\`\\\`\\\`json\\s*([\\s\\S]*?)\\s*\\\`\\\`\\\`\\s*<!-- ${name}:end -->`);
+  const match = String(source || "").match(pattern);
+  if (!match) {
+    throw new Error(`anchored_json_block_missing:${name}`);
+  }
+  try {
+    return JSON.parse(match[1]);
+  } catch (error) {
+    throw new Error(`anchored_json_block_invalid:${name}:${error.message}`);
+  }
 }
 
 function laneIdSafe(laneId) {
@@ -763,6 +783,208 @@ function createStartPack({ type }) {
     packages,
     nextRecommendation: "先把 A 窗口任务包发给开发窗口；B 等 A_COMMITTED 后使用 review-pack；C 可并行使用 c-qa-pack 做只读 QA。",
     disallowedActions,
+  };
+}
+
+function compactCloudOnboardingPhase(phase) {
+  return {
+    phaseId: phase.phaseId,
+    phaseName: phase.phaseName,
+    status: phase.status,
+    owner: phase.owner,
+    handoffTarget: handoffTargetForCloudOwner(phase.owner),
+    nextAction: phase.nextAction,
+  };
+}
+
+function handoffTargetForCloudOwner(owner) {
+  if (owner === "A" || owner === "B" || owner === "C" || owner === "D") return owner;
+  if (owner === "user") return "D";
+  return "A";
+}
+
+function nodeCommandsForSmoke(smokeList) {
+  return (smokeList || [])
+    .filter((item) => String(item).startsWith("scripts/"))
+    .map((item) => `node ${item}`);
+}
+
+function phaseLabel(phase) {
+  if (!phase) return "";
+  return `${phase.phaseId} ${phase.phaseName}`;
+}
+
+function buildCloudOnboardingPhaseSummary(phases) {
+  const summary = {
+    done: [],
+    pending: [],
+    blocked: [],
+    needsUserAuthorization: [],
+    active: [],
+  };
+  for (const phase of phases) {
+    const compact = compactCloudOnboardingPhase(phase);
+    if (phase.status === "needs-user-authorization") {
+      summary.needsUserAuthorization.push(compact);
+    } else if (summary[phase.status]) {
+      summary[phase.status].push(compact);
+    }
+  }
+  return summary;
+}
+
+function cloudOnboardingHandoffGuidance() {
+  return {
+    A: "窗口 A：使用独立 worktree 做本地实现、合同、smoke 和任务包准备；不触发真实外部副作用。",
+    B: "窗口 B：使用主工作区做审查、默认 gate、checkpoint 和人工合并判断；脚本不自动合并或推送。",
+    C: "窗口 C：做只读 QA、状态核对和 report 审查输入；需要写文件时拆独立 lane。",
+    D: "窗口 D：承接用户授权 gate 和后续串行真实外部副作用协调；没有明确授权时保持阻断。",
+  };
+}
+
+function buildCloudOnboardingTaskPackets({ activePhase, defaultGatePhase, userLivePhase }) {
+  const checkConfigCommands = nodeCommandsForSmoke(activePhase?.requiredSmoke);
+  const defaultGateCommands = [
+    "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
+    ...nodeCommandsForSmoke(defaultGatePhase?.requiredSmoke),
+  ];
+  const reviewCommands = [
+    "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
+    "node scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs",
+    "node scripts/smoke-test-v22-cloud-onboarding-board-status.mjs",
+    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "git diff --check -- scripts docs/recovery docs/contracts",
+  ];
+
+  return [
+    {
+      id: "check-config",
+      title: "check-config task packet",
+      phaseId: activePhase?.phaseId || "CO-04",
+      phaseName: activePhase?.phaseName || "check-config",
+      status: activePhase?.status || "active",
+      handoffTarget: "A",
+      requiredSmoke: activePhase?.requiredSmoke || [],
+      userGate: activePhase?.userGate || "",
+      suggestedCommands: checkConfigCommands,
+      allowedActions: ["read tracked docs", "run local smoke", "prepare task packet"],
+      forbiddenActions: sharedBoundaries,
+    },
+    {
+      id: "default-gate",
+      title: "default gate task packet",
+      phaseId: defaultGatePhase?.phaseId || "CO-05",
+      phaseName: defaultGatePhase?.phaseName || "default gate",
+      status: defaultGatePhase?.status || "pending",
+      handoffTarget: "B",
+      requiredSmoke: defaultGatePhase?.requiredSmoke || [],
+      userGate: defaultGatePhase?.userGate || "",
+      suggestedCommands: defaultGateCommands,
+      allowedActions: ["review fail-closed default path", "check TC3 diagnostic-only boundary", "record blocker or pass"],
+      forbiddenActions: sharedBoundaries,
+    },
+    {
+      id: "user-authorized-readonly-live",
+      title: "user-authorized readonly live task packet",
+      phaseId: userLivePhase?.phaseId || "CO-06",
+      phaseName: userLivePhase?.phaseName || "user-authorized readonly live",
+      status: userLivePhase?.status || "needs-user-authorization",
+      handoffTarget: "D",
+      requiredSmoke: userLivePhase?.requiredSmoke || [],
+      userGate: userLivePhase?.userGate || "",
+      needsUserAuthorization: true,
+      blockedReason: "needs_explicit_user_authorization",
+      suggestedCommands: [],
+      allowedActions: ["ask user for explicit authorization scope", "record authorization decision"],
+      forbiddenActions: sharedBoundaries,
+    },
+    {
+      id: "b-review-merge",
+      title: "B review/merge task packet",
+      phaseId: defaultGatePhase?.phaseId || "CO-05",
+      phaseName: "B review and manual merge decision",
+      status: "pending",
+      handoffTarget: "B",
+      requiredSmoke: [
+        "scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs",
+        "scripts/smoke-test-v22-cloud-onboarding-board-status.mjs",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      ],
+      userGate: "stop before merge/push or any live path",
+      requiresManualMergeDecision: true,
+      suggestedCommands: reviewCommands,
+      allowedActions: ["review diff", "record findings", "decide whether manual ff-only merge is allowed"],
+      forbiddenActions: sharedBoundaries,
+    },
+  ];
+}
+
+async function readCloudOnboardingData() {
+  const [boardSource, statusSource] = await Promise.all([
+    readRepoText(cloudOnboardingBoardPath),
+    readRepoText(cloudOnboardingStatusTablePath),
+  ]);
+  return {
+    board: parseAnchoredJsonBlock(boardSource, "v22-cloud-onboarding-execution-board"),
+    statusTable: parseAnchoredJsonBlock(statusSource, "v22-cloud-onboarding-status-table"),
+  };
+}
+
+async function createCloudOnboardingStatusPack() {
+  const { board, statusTable } = await readCloudOnboardingData();
+  const phases = statusTable.phases || [];
+  const activePhase = phases.find((phase) => phase.status === "active");
+  const activeIndex = activePhase ? phases.indexOf(activePhase) : -1;
+  const nextPhase = phases.slice(activeIndex + 1).find((phase) => ["pending", "needs-user-authorization", "blocked"].includes(phase.status))
+    || phases.find((phase) => phase.status === "pending")
+    || phases.find((phase) => phase.status === "needs-user-authorization");
+  const defaultGatePhase = phases.find((phase) => phase.phaseName === "default gate");
+  const userLivePhase = phases.find((phase) => phase.status === "needs-user-authorization" && phase.phaseName.includes("readonly live"));
+  const taskPackets = buildCloudOnboardingTaskPackets({
+    activePhase,
+    defaultGatePhase,
+    userLivePhase,
+  });
+
+  return {
+    ok: true,
+    command: "cloud-onboarding status",
+    programId: statusTable.programId || board.programId,
+    currentPhase: board.currentPhase,
+    activeLane: phaseLabel(activePhase),
+    nextLane: phaseLabel(nextPhase),
+    handoffTarget: handoffTargetForCloudOwner(activePhase?.owner),
+    requiredSmoke: activePhase?.requiredSmoke || [],
+    userGate: activePhase?.userGate || "",
+    phaseSummary: buildCloudOnboardingPhaseSummary(phases),
+    serialRealSideEffects: board.serialRealSideEffects || [],
+    handoffGuidance: cloudOnboardingHandoffGuidance(),
+    taskPackets,
+    sourceDocuments: {
+      executionBoard: cloudOnboardingBoardPath,
+      statusTable: cloudOnboardingStatusTablePath,
+      workflowContract: cloudOnboardingWorkflowContractPath,
+    },
+    safety: {
+      printsRecommendationsOnly: true,
+      readsSecretNow: false,
+      callsRealCloudNow: false,
+      automerges: false,
+      autopushes: false,
+      serializesRealExternalSideEffects: true,
+    },
+    disallowedActions,
+  };
+}
+
+async function createCloudOnboardingNextPack() {
+  const statusPack = await createCloudOnboardingStatusPack();
+  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.status === "active")
+    || statusPack.taskPackets[0];
+  return {
+    ...statusPack,
+    command: "cloud-onboarding next",
+    nextTaskPacket,
   };
 }
 
@@ -1726,6 +1948,89 @@ function renderNext(pack) {
   ].join("\n");
 }
 
+function renderCloudOnboardingStatus(pack) {
+  const taskRows = pack.taskPackets.map((packet) => [
+    `### ${packet.id}`,
+    humanKeyValue([
+      ["title", packet.title],
+      ["phase", `${packet.phaseId} ${packet.phaseName}`],
+      ["status", packet.status],
+      ["handoff target", packet.handoffTarget],
+      ["needs user authorization", packet.needsUserAuthorization ? "true" : "false"],
+      ["blocked reason", packet.blockedReason],
+      ["user gate", packet.userGate],
+    ]),
+    packet.suggestedCommands.length ? humanList(packet.suggestedCommands) : "- no executable command; explicit user authorization required before any live path",
+  ].join("\n")).join("\n\n");
+
+  return [
+    "# v22 cloud onboarding workflow",
+    "",
+    humanKeyValue([
+      ["program id", pack.programId],
+      ["current phase", pack.currentPhase],
+      ["active lane", pack.activeLane],
+      ["next lane", pack.nextLane],
+      ["handoff target", pack.handoffTarget],
+      ["user gate", pack.userGate],
+    ]),
+    "",
+    "## phase summary",
+    humanKeyValue([
+      ["done", pack.phaseSummary.done.map((phase) => phase.phaseId).join(", ")],
+      ["pending", pack.phaseSummary.pending.map((phase) => phase.phaseId).join(", ")],
+      ["blocked", pack.phaseSummary.blocked.map((phase) => phase.phaseId).join(", ")],
+      ["needs-user-authorization", pack.phaseSummary.needsUserAuthorization.map((phase) => phase.phaseId).join(", ")],
+      ["active", pack.phaseSummary.active.map((phase) => phase.phaseId).join(", ")],
+    ]),
+    "",
+    "## required smoke",
+    humanList(pack.requiredSmoke),
+    "",
+    "## task packets",
+    taskRows,
+    "",
+    "## real external side effects are serial",
+    humanList(pack.serialRealSideEffects),
+    "",
+    "## A/B/C/D handoff",
+    humanList(Object.values(pack.handoffGuidance)),
+    "",
+    "## 边界确认",
+    humanList(sharedBoundaries),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
+function renderCloudOnboardingNext(pack) {
+  return [
+    "# v22 cloud onboarding next task packet",
+    "",
+    humanKeyValue([
+      ["program id", pack.programId],
+      ["next task packet", pack.nextTaskPacket.id],
+      ["handoff target", pack.nextTaskPacket.handoffTarget],
+      ["status", pack.nextTaskPacket.status],
+      ["user gate", pack.nextTaskPacket.userGate],
+    ]),
+    "",
+    "## suggested commands",
+    pack.nextTaskPacket.suggestedCommands.length
+      ? humanList(pack.nextTaskPacket.suggestedCommands)
+      : "- no executable command; explicit user authorization required before any live path",
+    "",
+    "## 边界确认",
+    humanList(sharedBoundaries),
+    "",
+    "## JSON 摘要",
+    JSON.stringify(pack, null, 2),
+    "",
+  ].join("\n");
+}
+
 function printUsage() {
   process.stderr.write([
     "Usage:",
@@ -1743,6 +2048,8 @@ function printUsage() {
     "  node scripts/v22-agent-workflow.mjs lane board [--json]",
     "  node scripts/v22-agent-workflow.mjs lane handoff --id <lane-id> [--json]",
     "  node scripts/v22-agent-workflow.mjs lane close --id <lane-id> --status <merged|abandoned|superseded> [--json]",
+    "  node scripts/v22-agent-workflow.mjs cloud-onboarding status [--json]",
+    "  node scripts/v22-agent-workflow.mjs cloud-onboarding next [--json]",
     "",
   ].join("\n"));
 }
@@ -1777,6 +2084,12 @@ async function main() {
   } else if (mode === "status") {
     pack = createStatusPack({ state: options.state && options.state !== true ? parseState(options.state) : null });
     rendered = renderStatusPack(pack);
+  } else if (mode === "cloud-onboarding" && submode === "status") {
+    pack = await createCloudOnboardingStatusPack();
+    rendered = renderCloudOnboardingStatus(pack);
+  } else if (mode === "cloud-onboarding" && submode === "next") {
+    pack = await createCloudOnboardingNextPack();
+    rendered = renderCloudOnboardingNext(pack);
   } else if (mode === "lane" && submode === "init") {
     pack = await createLaneInitPack({
       id: options.id,
@@ -1813,6 +2126,8 @@ async function main() {
 
 export {
   createCheckpointPack,
+  createCloudOnboardingNextPack,
+  createCloudOnboardingStatusPack,
   createIngestPack,
   createNextPack,
   createQaPack,
