@@ -50,6 +50,7 @@ const smokeScripts = [
   ["smoke-test-v22-tencent-official-sdk-provider-strategy-contract", "scripts/smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper", "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-official-sdk-loader", "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"],
+  ["smoke-test-v22-tencent-readonly-inventory-official-sdk-shape", "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs"],
   ["smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan", "scripts/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-local-guard", "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs"],
   ["smoke-test-v22-tencent-readonly-inventory-live-adapter-shell", "scripts/smoke-test-v22-tencent-readonly-inventory-live-adapter-shell.mjs"],

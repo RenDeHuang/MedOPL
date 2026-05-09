@@ -200,6 +200,8 @@ loader 不读取 process.env，不读取 secret 文件，不 source env，不调
 
 loader 不暴露 raw SDK client，不暴露通用 call(apiName, params)，不暴露 Create/Delete/Modify/Run/Terminate/Put/Update/Attach/Detach/Tag mutation。SDK raw response、endpoint、authorization header、SecretId/SecretKey、token、objectKey/storageKey/cosPrefix/signedUrl 不得进入 stdout、report、Portal payload 或 evidence。
 
+Implementation shape note: `tencentcloud-sdk-nodejs` covers the readonly account/CVM/TKE/billing/tag client shapes used by this inventory path, but does not provide `cos.v20180530.Client`; COS readonly support requires a separate `cos-nodejs-sdk-v5` contract or dedicated implementation path. Non-COS readonly allowlists must not initialize or be blocked by COS client shape, while COS-enabled allowlists must fail closed with a sanitized diagnostic if the COS SDK shape is missing.
+
 cleanup 策略：
 
 - official SDK readonly live 跑通前，不删除 TC3。

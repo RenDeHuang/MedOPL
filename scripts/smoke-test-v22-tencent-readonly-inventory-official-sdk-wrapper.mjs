@@ -29,6 +29,8 @@ const allowedApis = [
   "DescribeTagResources",
 ];
 
+const nonCosAllowedApis = allowedApis.filter((apiName) => !["ListBuckets", "HeadObject"].includes(apiName));
+
 function assertNotContainsForbidden(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
   const forbidden = [
@@ -103,7 +105,7 @@ function ownershipTags(overrides = {}) {
   };
 }
 
-function createFakeOfficialSdkModules({ cvmError = null } = {}) {
+function createFakeOfficialSdkModules({ cvmError = null, expectedAllowedApis = allowedApis } = {}) {
   const calls = [];
   const mutation = (name) => async () => {
     calls.push(name);
@@ -199,7 +201,7 @@ function createFakeOfficialSdkModules({ cvmError = null } = {}) {
     calls,
     createAccountClient({ credentials, allowedApis: factoryAllowedApis, regions }) {
       assert.equal(credentials.SecretId, "secret-id-proof", "official_account_factory_receives_private_secret_boundary");
-      assert.deepEqual(factoryAllowedApis, allowedApis, "official_account_factory_receives_allowlist");
+      assert.deepEqual(factoryAllowedApis, expectedAllowedApis, "official_account_factory_receives_allowlist");
       assert.deepEqual(regions, ["ap-guangzhou", "ap-shanghai"], "official_account_factory_receives_regions");
       return createClient("account", {
         async GetCallerIdentity() {
@@ -302,6 +304,68 @@ assert.equal("rawClient" in sdkModules, false, "official_modules_must_not_expose
 assert.equal("client" in sdkModules, false, "official_modules_must_not_expose_client");
 assert.equal("sdk" in sdkModules, false, "official_modules_must_not_expose_sdk");
 assert.equal("call" in sdkModules, false, "official_modules_must_not_expose_generic_call");
+
+const officialSdkModulesWithoutCos = createFakeOfficialSdkModules({
+  expectedAllowedApis: nonCosAllowedApis,
+});
+officialSdkModulesWithoutCos.createCosClient = () => {
+  officialSdkModulesWithoutCos.calls.push("create:cos-missing");
+  throw Object.assign(new Error("raw-response-proof"), {
+    code: "tencent_readonly_official_sdk_client_class_required:cos.v20180530",
+    category: "sdk_module_shape_mismatch",
+    apiName: "createCosClient",
+    clientMethod: "clientClassFor",
+    resourceType: "cos",
+    rawResponse: "raw-sdk-response-proof",
+    authorizationHeader: "authorization-header-proof",
+  });
+};
+const nonCosClient = createTencentReadonlyInventoryRealSdkClient({
+  sdkFactory: createTencentReadonlyInventoryTencentSdkFactory({
+    sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
+      officialSdkModules: officialSdkModulesWithoutCos,
+    }),
+  }),
+  credentials: { SecretId: "secret-id-proof", SecretKey: "secret-key-proof", token: "token-proof" },
+  accountId: "tencent-account-1234567890",
+  allowedApis: nonCosAllowedApis,
+  regions: ["ap-guangzhou", "ap-shanghai"],
+});
+assertPage(await nonCosClient.describeCvmInstances({ region: "ap-guangzhou" }), "official_non_cos_cvm_page");
+assertPage(await nonCosClient.describeTkeClusters({ region: "ap-shanghai" }), "official_non_cos_tke_page");
+assert.equal(officialSdkModulesWithoutCos.calls.includes("create:cos-missing"), false, "official_non_cos_must_not_create_cos");
+await assert.rejects(
+  () => nonCosClient.describeCosBuckets({ region: "ap-shanghai" }),
+  /readonly_inventory_sdk_api_not_allowed:ListBuckets/,
+  "official_non_cos_client_rejects_cos_method_without_creating_cos",
+);
+assert.equal(officialSdkModulesWithoutCos.calls.includes("create:cos-missing"), false, "official_non_cos_rejected_method_must_not_create_cos");
+
+let missingCosError;
+try {
+  const officialSdkModulesMissingCosForAllowlist = createFakeOfficialSdkModules();
+  officialSdkModulesMissingCosForAllowlist.createCosClient = officialSdkModulesWithoutCos.createCosClient;
+  createTencentReadonlyInventoryRealSdkClient({
+    sdkFactory: createTencentReadonlyInventoryTencentSdkFactory({
+      sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
+        officialSdkModules: officialSdkModulesMissingCosForAllowlist,
+      }),
+    }),
+    credentials: { SecretId: "secret-id-proof", SecretKey: "secret-key-proof", token: "token-proof" },
+    accountId: "tencent-account-1234567890",
+    allowedApis,
+    regions: ["ap-guangzhou", "ap-shanghai"],
+  });
+} catch (error) {
+  missingCosError = error;
+}
+assert(missingCosError, "official_cos_allowlist_missing_cos_sdk_must_fail_closed");
+assert.equal(missingCosError.code || missingCosError.message, "tencent_readonly_official_sdk_client_class_required:cos.v20180530", "official_missing_cos_provider_code");
+assert.equal(missingCosError.category, "sdk_module_shape_mismatch", "official_missing_cos_category");
+assert.equal(missingCosError.apiName, "createCosClient", "official_missing_cos_api_name");
+assert.equal(missingCosError.clientMethod, "clientClassFor", "official_missing_cos_client_method");
+assert.equal(missingCosError.resourceType, "cos", "official_missing_cos_resource_type");
+assertNotContainsForbidden(missingCosError, "official_missing_cos_error");
 
 const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({ sdkModules });
 const sdk = sdkFactory({
@@ -571,10 +635,12 @@ const goodSecretText = [
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-official-sdk-wrapper-"));
 try {
   const secretFile = path.join(tmpDir, "readonly.env");
+  const nonCosSecretFile = path.join(tmpDir, "readonly-non-cos.env");
   const disabledSecretFile = path.join(tmpDir, "disabled.env");
   const emptyApisFile = path.join(tmpDir, "empty-apis.env");
   const mutationApisFile = path.join(tmpDir, "mutation-apis.env");
   await writeFile(secretFile, goodSecretText, "utf8");
+  await writeFile(nonCosSecretFile, goodSecretText.replace(/TENCENT_READONLY_ALLOWED_APIS=.*/, `TENCENT_READONLY_ALLOWED_APIS=${nonCosAllowedApis.join(",")}`), "utf8");
   await writeFile(disabledSecretFile, goodSecretText.replace("RUN_TENCENT_READONLY_INVENTORY=1", "RUN_TENCENT_READONLY_INVENTORY=0"), "utf8");
   await writeFile(emptyApisFile, goodSecretText.replace(/TENCENT_READONLY_ALLOWED_APIS=.*/, "TENCENT_READONLY_ALLOWED_APIS="), "utf8");
   await writeFile(mutationApisFile, goodSecretText.replace("DescribeAccount,DescribeRegions", "DescribeAccount,CreateInstances"), "utf8");
@@ -605,6 +671,27 @@ try {
     /readonly_inventory_forbidden_api:CreateInstances/,
     "official_mutation_api_rejected_in_runner",
   );
+
+  const runnerModulesWithoutCos = createFakeOfficialSdkModules({
+    expectedAllowedApis: nonCosAllowedApis,
+  });
+  runnerModulesWithoutCos.createCosClient = () => {
+    runnerModulesWithoutCos.calls.push("create:cos-missing");
+    throw new Error("tencent_readonly_official_sdk_client_class_required:cos.v20180530");
+  };
+  const nonCosLiveRun = await runCli([
+    "--live-readonly",
+    "--sdk-mode",
+    "tencent-official-sdk-readonly",
+    "--secret-file",
+    nonCosSecretFile,
+    "--run-id",
+    "official-sdk-wrapper-non-cos-proof",
+  ], { officialSdkModules: runnerModulesWithoutCos });
+  assert.equal(nonCosLiveRun.status, 0, "official_non_cos_live_run_status");
+  assert.equal(nonCosLiveRun.payload.summary.ok, true, "official_non_cos_live_run_ok");
+  assertReportWhitelist(nonCosLiveRun.payload.summary, "official_non_cos_live_run_summary");
+  assert.equal(runnerModulesWithoutCos.calls.includes("create:cos-missing"), false, "official_non_cos_live_must_not_create_cos");
 
   const runnerModules = createFakeOfficialSdkModules();
   const liveRun = await runCli([
@@ -688,6 +775,8 @@ console.log(JSON.stringify({
     "run_gate_and_allowlist_fail_closed",
     "fake_official_sdk_happy_path_account_regions_cvm_tke_cos_billing_tag",
     "permission_rate_network_errors_sanitized",
+    "non_cos_allowlist_does_not_require_cos_sdk_shape",
+    "cos_allowlist_missing_cos_sdk_fails_closed_with_sanitized_diagnostic",
     "raw_sdk_response_and_storage_internals_redacted",
     "mutation_methods_not_visible_or_called",
     "no_real_secret_cloud_or_sdk_dependency",

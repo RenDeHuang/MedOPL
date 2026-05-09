@@ -16,11 +16,11 @@ const REQUIRED_CLIENT_METHODS = [
 ];
 
 const PAGE_METHODS = [
-  ["describeCvmInstances", "compute"],
-  ["describeTkeClusters", "managed_cluster"],
-  ["describeCosBuckets", "file_space"],
-  ["describeBillingSummary", "billing_summary"],
-  ["describeTagResources", "tagged_resource"],
+  ["describeCvmInstances", "DescribeInstances", "compute"],
+  ["describeTkeClusters", "DescribeClusters", "managed_cluster"],
+  ["describeCosBuckets", "ListBuckets", "file_space"],
+  ["describeBillingSummary", "DescribeBillSummary", "billing_summary"],
+  ["describeTagResources", "DescribeTagResources", "tagged_resource"],
 ];
 
 const PUBLIC_OUTPUT_KEYS = [
@@ -184,30 +184,36 @@ async function collectCosMetadataEvidence({ client, item = {}, region = "", audi
   }
 }
 
-async function collectLiveResources({ client, regions = [] } = {}) {
-  try {
-    await client.describeAccount();
-  } catch (error) {
-    throwLiveDiagnostic(error, {
-      apiName: "DescribeAccount",
-      method: "describeAccount",
-      resourceType: "account",
-    });
+async function collectLiveResources({ client, regions = [], allowedApis = [] } = {}) {
+  const allowedSet = new Set(allowedApis);
+  if (allowedSet.has("DescribeAccount")) {
+    try {
+      await client.describeAccount();
+    } catch (error) {
+      throwLiveDiagnostic(error, {
+        apiName: "DescribeAccount",
+        method: "describeAccount",
+        resourceType: "account",
+      });
+    }
   }
-  try {
-    await client.describeRegions();
-  } catch (error) {
-    throwLiveDiagnostic(error, {
-      apiName: "DescribeRegions",
-      method: "describeRegions",
-      resourceType: "region",
-    });
+  if (allowedSet.has("DescribeRegions")) {
+    try {
+      await client.describeRegions();
+    } catch (error) {
+      throwLiveDiagnostic(error, {
+        apiName: "DescribeRegions",
+        method: "describeRegions",
+        resourceType: "region",
+      });
+    }
   }
 
   const auditQueueItems = [];
   const resources = [];
   for (const region of regions) {
-    for (const [method, resourceType] of PAGE_METHODS) {
+    for (const [method, apiName, resourceType] of PAGE_METHODS) {
+      if (!allowedSet.has(apiName)) continue;
       resources.push(...await collectPagedResources({
         client,
         method,
@@ -250,6 +256,7 @@ export function createTencentReadonlyInventoryLiveAdapter({ client } = {}) {
       const { resources, auditQueueItems } = await collectLiveResources({
         client,
         regions: envSummary?.regions || [],
+        allowedApis: envSummary?.allowedApis || [],
       });
       return { resources, auditQueueItems };
     },

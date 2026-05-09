@@ -69,6 +69,7 @@ assert.equal(statusPayload.handoffTarget, "A", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
   "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
   "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
+  "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs",
 ], "active_required_smoke");
 assert.equal(statusPayload.userGate, "stop if real secret, real cloud, deploy, or dependency install is needed", "active_user_gate");
 
@@ -97,6 +98,7 @@ const checkConfigPacket = findPacket(statusPayload, "check-config");
 assert.equal(checkConfigPacket.handoffTarget, "A", "check_config_handoff");
 assert.equal(checkConfigPacket.status, "active", "check_config_status");
 assert(checkConfigPacket.suggestedCommands.includes("node scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs"), "check_config_smoke_command");
+assert(checkConfigPacket.suggestedCommands.includes("node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs"), "check_config_shape_smoke_command");
 
 const defaultGatePacket = findPacket(statusPayload, "default-gate");
 assert.equal(defaultGatePacket.handoffTarget, "B", "default_gate_handoff");
