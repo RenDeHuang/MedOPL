@@ -281,23 +281,23 @@ function launchTokenFrom(input = {}, url, req = null) {
 
 function adapterContractMetadata() {
   return {
-    adapterContractVersion: "v22.portal-opl.v1",
-    capabilities: [
-      "bootstrap",
-      "session_bind",
-      "message",
-      "file_upload",
-      "run_start",
-      "run_status",
-      "artifact_download",
-    ],
+    adapterContractVersion: "v22.portal-opl-context-backflow.v1",
+    upstreamProfile: process.env.OPL_RUNTIME_MODE === "webui" ? "webui_bridge" : "opl_product_api",
+    capabilities: {
+      contextBootstrap: { status: "supported", source: "gateway_adapter" },
+      session: { status: "supported", source: process.env.OPL_RUNTIME_MODE === "webui" ? "webui_bridge" : "opl_product_api" },
+      messageBackflow: { status: "supported", source: process.env.OPL_RUNTIME_MODE === "webui" ? "webui_bridge" : "opl_product_api" },
+      fileIntent: { status: "requires_downstream_runtime_boundary", source: "portal_workspace_file_store" },
+      runIntent: { status: "requires_runtime_agent", source: "runtime_bridge" },
+      langfuseSessionTrace: { status: "deferred_authorization", source: "trace.medopl.cn" },
+    },
     supportedEvents: [
+      "context_bootstrapped",
       "session_bound",
       "message_created",
-      "file_referenced",
-      "run_started",
-      "run_updated",
-      "artifact_created",
+      "message_reply_observed",
+      "downstream_runtime_gate_evaluated",
+      "session_trace_metadata_projected",
     ],
   };
 }

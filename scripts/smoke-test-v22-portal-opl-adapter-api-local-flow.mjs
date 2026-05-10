@@ -619,13 +619,20 @@ try {
 
   const status = await getJson(`${gatewayUrl}/portal-adapter/api/opl/status`, { cookie });
   assert.equal(status.response.status, 200, "stable_adapter_status_must_return_200");
-  assert.equal(status.json.adapterContractVersion, "v22.portal-opl.v1", "adapter_contract_version_mismatch");
-  assert(status.json.capabilities.includes("run_status"), "adapter_status_must_include_run_status_capability");
+  assert.equal(status.json.adapterContractVersion, "v22.portal-opl-context-backflow.v1", "adapter_contract_version_mismatch");
+  assert.equal(status.json.capabilities?.contextBootstrap?.status, "supported", "adapter_status_must_include_context_bootstrap_capability");
+  assert.equal(status.json.capabilities?.runIntent?.status, "requires_runtime_agent", "adapter_status_must_gate_run_intent_to_downstream_runtime");
+  assert.equal(status.json.capabilities?.langfuseSessionTrace?.source, "trace.medopl.cn", "adapter_status_must_expose_downstream_langfuse_boundary");
+  assert(status.json.supportedEvents.includes("context_bootstrapped"), "adapter_status_must_include_context_bootstrapped_event");
+  assert(status.json.supportedEvents.includes("downstream_runtime_gate_evaluated"), "adapter_status_must_include_runtime_gate_event");
 
   const bootstrap = await getJson(`${gatewayUrl}/portal-adapter/api/opl/bootstrap`, { cookie });
   assert.equal(bootstrap.response.status, 200, "stable_bootstrap_must_return_200");
   assert.equal(bootstrap.json.identity.workspaceId, WORKSPACE_ID, "bootstrap_workspace_mismatch");
-  assert.equal(bootstrap.json.adapterContractVersion, "v22.portal-opl.v1", "bootstrap_contract_version_mismatch");
+  assert.equal(bootstrap.json.adapterContractVersion, "v22.portal-opl-context-backflow.v1", "bootstrap_contract_version_mismatch");
+  assert.equal(bootstrap.json.capabilities?.messageBackflow?.source, "opl_product_api", "bootstrap_must_classify_message_backflow_source");
+  assert.equal(bootstrap.json.capabilities?.runIntent?.status, "requires_runtime_agent", "bootstrap_must_classify_run_as_downstream_runtime");
+  assert.equal(bootstrap.json.capabilities?.langfuseSessionTrace?.status, "deferred_authorization", "bootstrap_must_gate_langfuse_deployment");
   assert.equal(bootstrap.json.callbacks.runArtifacts, "/portal-adapter/api/opl/runs/{runId}/artifacts", "bootstrap_must_expose_run_artifacts_callback");
   assert.equal(bootstrap.json.opl.health?.service, "fake-clean-opl-product-api", "bootstrap_health_must_come_from_product_api");
   assert.equal(bootstrap.json.system?.id, "fake-clean-opl", "bootstrap_system_must_come_from_product_api");
@@ -749,6 +756,9 @@ try {
   });
   assert.equal(portalBootstrap.status, 200, "portal_bootstrap_proxy_must_return_200");
   assert.equal(portalBootstrap.payload.identity.workspaceId, WORKSPACE_ID, "portal_bootstrap_proxy_workspace_mismatch");
+  assert.equal(portalBootstrap.payload.adapterContractVersion, "v22.portal-opl-context-backflow.v1", "portal_bootstrap_proxy_contract_version_mismatch");
+  assert.equal(portalBootstrap.payload.capabilities?.contextBootstrap?.status, "supported", "portal_bootstrap_proxy_context_capability_mismatch");
+  assert.equal(portalBootstrap.payload.capabilities?.runIntent?.status, "requires_runtime_agent", "portal_bootstrap_proxy_runtime_gate_mismatch");
   assertNoSecretLeak(portalBootstrap.payload, "portal_bootstrap_proxy");
 
   const portalRunArtifacts = await callPortalProxy(portalProxy, {
