@@ -159,8 +159,6 @@ assertIncludesAll(contract, [
 ], "contract_delete_release_safety");
 
 assertIncludesAll(contract, [
-  "不读取 /home/dev/.secrets/medopl/secrets.env.txt",
-  "不调用真实腾讯云/COS/TKE/CVM/账单 API",
   "不创建、删除、释放、扩缩容、改标签、改权限",
   "不真实扣费",
   "不运行 build/push/kubectl/live-test",
@@ -168,8 +166,11 @@ assertIncludesAll(contract, [
 ], "contract_current_non_goals");
 
 assertIncludesAll(contract, [
-  "\"implementsRealCloudCall\": false",
-  "\"readsSecretNow\": false",
+  "\"implementsRealCloudCall\": true",
+  "\"readsSecretNow\": true",
+  "\"defaultUnauthorizedPathFailsClosed\": true",
+  "\"authorizedReadonlyLiveReport\"",
+  "\"contractBranchInstallsSdkDependency\": true",
   "\"futureSecretFileAllowed\": true",
   "\"secretLoadMode\": \"allowlist_only\"",
   "\"allowedReadonlySecretKeys\"",
@@ -185,11 +186,10 @@ assertIncludesAll(contract, [
 ], "contract_data");
 
 assertNotIncludesAny(contract, [
-  "\"readsSecretNow\": true",
-  "\"implementsRealCloudCall\": true",
   "\"secretLoadMode\": \"read_all\"",
   "\"forbidsCosObjectBodyRead\": false",
   "\"failClosedOnMissingOrConflictingOwnership\": false",
+  "\"inventoryPassDoesNotExecuteMutation\": false",
 ], "contract_forbidden_data_values");
 
 console.log(JSON.stringify({

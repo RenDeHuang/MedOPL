@@ -54,7 +54,7 @@ const readonlyEnv = {
   RUN_TENCENT_READONLY_INVENTORY: "1",
   TENCENT_READONLY_SECRET_ID: "secret-id-proof",
   TENCENT_READONLY_SECRET_KEY: "secret-key-proof",
-  TENCENT_READONLY_REGIONS: "ap-guangzhou,na-siliconvalley",
+  TENCENT_READONLY_REGIONS: "ap-guangzhou,na-siliconvalley-1",
   TENCENT_READONLY_ALLOWED_APIS: "DescribeInstances,ListBuckets,GetBucketTagging,HeadObject,DescribeBillSummary",
   TENCENT_READONLY_ACCOUNT_ID: "tencent-account-1234567890",
 };

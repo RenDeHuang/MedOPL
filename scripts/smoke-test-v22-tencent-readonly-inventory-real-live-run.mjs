@@ -14,7 +14,6 @@ const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const portalPackagePath = "services/portal/package.json";
-const runtimeReportDir = path.join(repoRoot, ".runtime", "v22-tencent-readonly-inventory");
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");
 
 const allowedApis = [
@@ -458,6 +457,7 @@ const goodSecretText = [
 ].join("\n");
 
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-real-live-run-"));
+const reportPathsToCleanup = [];
 try {
   const secretFile = path.join(tmpDir, "readonly.env");
   const disabledSecretFile = path.join(tmpDir, "disabled.env");
@@ -517,6 +517,7 @@ try {
     "real-live-run-proof",
   ], { tencentSdkModules: runnerModules });
   assert.equal(liveRun.status, 0, "real_live_run_with_fake_modules_status");
+  reportPathsToCleanup.push(liveRun.payload.reportPath);
   assert(liveRun.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/real-live-run-proof.json"), "real_live_report_path");
   assertReportWhitelist(liveRun.payload.summary, "real_live_stdout_summary");
   assert.equal(liveRun.payload.summary.mode, "live-readonly", "real_live_summary_mode");
@@ -530,7 +531,7 @@ try {
   }
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
-  await rm(runtimeReportDir, { recursive: true, force: true });
+  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
 }
 
 const moduleSource = await readFile(modulePath, "utf8");

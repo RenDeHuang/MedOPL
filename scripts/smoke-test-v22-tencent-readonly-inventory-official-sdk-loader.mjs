@@ -16,7 +16,6 @@ const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const portalPackagePath = "services/portal/package.json";
 const portalLockPath = "services/portal/package-lock.json";
-const runtimeReportDir = path.join(repoRoot, ".runtime", "v22-tencent-readonly-inventory");
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");
 
 const allowedApis = [
@@ -145,73 +144,48 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
 
   const pages = {
     DescribeInstances: {
-      "ap-guangzhou:": {
-        items: [
+      "ap-guangzhou:0": {
+        InstanceSet: [
           {
             InstanceId: "ins-loader-001",
             InstanceState: "RUNNING",
-            Tags: ownershipTags(),
+            Tags: Object.entries(ownershipTags()).map(([Key, Value]) => ({ Key, Value })),
             RawResponse: "raw-sdk-response-proof",
             SecretId: "secret-id-proof",
           },
         ],
-        NextToken: "page-2",
+        TotalCount: 101,
         Response: "raw-response-proof",
       },
-      "ap-guangzhou:page-2": {
-        items: [
+      "ap-guangzhou:100": {
+        InstanceSet: [
           {
             InstanceId: "ins-loader-002",
             InstanceState: "RUNNING",
-            Tags: ownershipTags({ resourceOrderId: "order-002", resourceBindingId: "binding-002" }),
+            Tags: Object.entries(ownershipTags({ resourceOrderId: "order-002", resourceBindingId: "binding-002" })).map(([Key, Value]) => ({ Key, Value })),
           },
         ],
-        NextToken: "",
+        TotalCount: 101,
       },
-      "ap-shanghai:": { items: [], NextToken: "" },
+      "ap-shanghai:0": { InstanceSet: [], TotalCount: 0 },
     },
     DescribeClusters: {
-      "ap-guangzhou:": { items: [], NextToken: "" },
-      "ap-shanghai:": { items: [], NextToken: "" },
-    },
-    ListBuckets: {
-      "ap-guangzhou:": { items: [], NextToken: "" },
-      "ap-shanghai:": {
-        items: [
-          {
-            BucketRef: "bucket-loader-001",
-            PrefixRef: "prefix-loader-001",
-            Status: "available",
-            Tags: ownershipTags({
-              resourceOrderId: "order-storage-001",
-              resourceBindingId: "binding-storage-001",
-              serverPlanId: "storage_100gb",
-              runId: "run-001",
-              resourceType: "file_space",
-              region: "ap-shanghai",
-            }),
-            objectKey: "object-key-proof",
-            storageKey: "storage-key-proof",
-            cosPrefix: "cos-prefix-proof",
-            signedUrl: "signed-url-proof",
-            BucketPolicy: "bucket-policy-proof",
-          },
-        ],
-        NextToken: "",
-      },
+      "ap-guangzhou:0": { Clusters: [], TotalCount: 0 },
+      "ap-shanghai:0": { Clusters: [], TotalCount: 0 },
     },
     DescribeBillSummary: {
-      "ap-guangzhou:": { items: [], NextToken: "" },
-      "ap-shanghai:": { items: [], NextToken: "" },
+      "ap-guangzhou:": { SummaryDetail: [], Ready: 1 },
+      "ap-shanghai:": { SummaryDetail: [], Ready: 1 },
     },
     DescribeTagResources: {
-      "ap-guangzhou:": { items: [], NextToken: "" },
-      "ap-shanghai:": { items: [], NextToken: "" },
+      "ap-guangzhou:": { ResourceTagMappingList: [], PaginationToken: "" },
+      "ap-shanghai:": { ResourceTagMappingList: [], PaginationToken: "" },
     },
   };
 
   function page(apiName, params = {}) {
     calls.push(apiName);
+    assert.equal("Cursor" in params, false, `${apiName}_must_not_send_internal_cursor_param`);
     if (apiName === "DescribeInstances" && cvmError) {
       const error = new Error(cvmError.message);
       error.code = cvmError.code;
@@ -220,7 +194,14 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
       error.authorizationHeader = cvmError.authorizationHeader;
       throw error;
     }
-    const key = `${params.Region || ""}:${params.Cursor || ""}`;
+    const offset = "Offset" in params ? params.Offset : "";
+    const key = `${this.__region || ""}:${offset}`;
+    if (apiName === "DescribeTagResources") {
+      return pages[apiName]?.[`${this.__region || ""}:`] || { ResourceTagMappingList: [], PaginationToken: "" };
+    }
+    if (apiName === "DescribeBillSummary") {
+      return pages[apiName]?.[`${this.__region || ""}:`] || { SummaryDetail: [], Ready: 1 };
+    }
     return pages[apiName]?.[key] || { items: [], NextToken: "" };
   }
 
@@ -231,6 +212,7 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
         assert.equal(options.credential?.secretId, "secret-id-proof", `${serviceName}_secret_id_private_boundary`);
         assert.equal(options.credential?.secretKey, "secret-key-proof", `${serviceName}_secret_key_private_boundary`);
         assert.equal(typeof options.profile?.httpProfile?.endpoint, "string", `${serviceName}_endpoint_configured`);
+        this.__region = options.region;
         Object.assign(this, methods);
       }
     };
@@ -264,7 +246,7 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
             };
           },
           DescribeInstances(params) {
-            return page("DescribeInstances", params);
+            return page.call(this, "DescribeInstances", params);
           },
           RunInstances: mutation("RunInstances"),
           TerminateInstances: mutation("TerminateInstances"),
@@ -276,33 +258,9 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
       v20180525: {
         Client: clientClass("tke", {
           DescribeClusters(params) {
-            return page("DescribeClusters", params);
+            return page.call(this, "DescribeClusters", params);
           },
           DeleteCluster: mutation("DeleteCluster"),
-        }),
-      },
-    },
-    cos: {
-      v20180530: {
-        Client: clientClass("cos", {
-          ListBuckets(params) {
-            return page("ListBuckets", params);
-          },
-          HeadObject(params = {}) {
-            calls.push("HeadObject");
-            assert.equal(typeof params.BucketRef, "string", "head_bucket_ref");
-            assert.equal(typeof params.PrefixRef, "string", "head_prefix_ref");
-            return {
-              Exists: true,
-              MetadataSummary: { sizeBytes: 4096, checksumStatus: "present" },
-              BillingSummary: { amountCny: "0.00" },
-              objectKey: "object-key-proof",
-              cosObjectBody: "cos-object-body-proof",
-              rawResponse: "raw-sdk-response-proof",
-            };
-          },
-          PutObject: mutation("PutObject"),
-          DeleteObject: mutation("DeleteObject"),
         }),
       },
     },
@@ -310,7 +268,7 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
       v20180709: {
         Client: clientClass("billing", {
           DescribeBillSummary(params) {
-            return page("DescribeBillSummary", params);
+            return page.call(this, "DescribeBillSummary", params);
           },
           ModifyBill: mutation("ModifyBill"),
         }),
@@ -321,7 +279,7 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
         Client: clientClass("tag", {
           GetResources(params) {
             calls.push("GetResources");
-            return page("DescribeTagResources", params);
+            return page.call(this, "DescribeTagResources", params);
           },
           UpdateTags: mutation("UpdateTags"),
         }),
@@ -332,11 +290,95 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
   return packageShape;
 }
 
+function createFakeCosSdkPackage({ calls = [] } = {}) {
+  return class FakeCosOfficialSdkClient {
+    constructor(options = {}) {
+      calls.push("construct:cos");
+      assert.equal(options.SecretId, "secret-id-proof", "cos_secret_id_private_boundary");
+      assert.equal(options.SecretKey, "secret-key-proof", "cos_secret_key_private_boundary");
+      if (options.SecurityToken) {
+        assert.equal(options.SecurityToken, "token-proof", "cos_token_private_boundary");
+      }
+    }
+
+    getService(params = {}) {
+      calls.push("ListBuckets");
+      assert(["ap-guangzhou", "ap-shanghai"].includes(params.Region), "cos_list_region");
+      if (params.Region === "ap-guangzhou") {
+        return {
+          Buckets: [],
+          NextMarker: "",
+        };
+      }
+      return {
+        Buckets: [
+          {
+            Name: "bucket-loader-001",
+            Location: "ap-shanghai",
+            Status: "available",
+            PrefixRef: "prefix-loader-001",
+            Tags: ownershipTags({
+              resourceOrderId: "order-storage-001",
+              resourceBindingId: "binding-storage-001",
+              serverPlanId: "storage_100gb",
+              runId: "run-001",
+              resourceType: "file_space",
+              region: "ap-shanghai",
+            }),
+            objectKey: "object-key-proof",
+            storageKey: "storage-key-proof",
+            cosPrefix: "cos-prefix-proof",
+            signedUrl: "signed-url-proof",
+            BucketPolicy: "bucket-policy-proof",
+          },
+        ],
+        NextMarker: "",
+        rawResponse: "raw-sdk-response-proof",
+      };
+    }
+
+    headObject(params = {}) {
+      calls.push("HeadObject");
+      assert.equal(params.Bucket, "bucket-loader-001", "head_bucket_ref");
+      assert.equal(params.Key, "prefix-loader-001", "head_prefix_ref");
+      return {
+        Exists: true,
+        headers: {
+          "content-length": "4096",
+          etag: "checksum-proof",
+          authorization: "authorization-header-proof",
+        },
+        objectKey: "object-key-proof",
+        cosObjectBody: "cos-object-body-proof",
+        rawResponse: "raw-sdk-response-proof",
+      };
+    }
+
+    putObject() {
+      calls.push("PutObject");
+      throw new Error("PutObject_must_not_be_called");
+    }
+
+    deleteObject() {
+      calls.push("DeleteObject");
+      throw new Error("DeleteObject_must_not_be_called");
+    }
+  };
+}
+
+function createFakeSdkPackages(options = {}) {
+  const tencentcloudSdkPackage = createFakeSdkPackage(options);
+  return {
+    tencentcloudSdkPackage,
+    cosSdkPackage: createFakeCosSdkPackage({ calls: tencentcloudSdkPackage.calls }),
+    calls: tencentcloudSdkPackage.calls,
+  };
+}
+
 const portalPackage = JSON.parse(await readFile(portalPackagePath, "utf8"));
 assert(portalPackage.dependencies?.["tencentcloud-sdk-nodejs"], "package_json_must_include_tencentcloud_sdk_nodejs");
 
 const officialSdkPackageWithoutCos = createFakeSdkPackage();
-delete officialSdkPackageWithoutCos.cos;
 const nonCosClient = createTencentReadonlyInventoryRealSdkClient({
   sdkFactory: createTencentReadonlyInventoryTencentSdkFactory({
     sdkModules: createTencentReadonlyInventoryOfficialSdkModules({
@@ -399,16 +441,16 @@ try {
 assert(missingCosError, "loader_cos_allowlist_missing_cos_sdk_must_fail_closed");
 assert.equal(
   missingCosError.code || missingCosError.message,
-  "tencent_readonly_official_sdk_client_class_required:cos.v20180530",
+  "tencent_readonly_official_cos_sdk_package_required",
   "loader_missing_cos_provider_code",
 );
 assert.equal(missingCosError.category, "sdk_module_shape_mismatch", "loader_missing_cos_category");
 assert.equal(missingCosError.apiName, "createCosClient", "loader_missing_cos_api_name");
-assert.equal(missingCosError.clientMethod, "clientClassFor", "loader_missing_cos_client_method");
+assert.equal(missingCosError.clientMethod, "cosSdkPackageFor", "loader_missing_cos_client_method");
 assert.equal(missingCosError.resourceType, "cos", "loader_missing_cos_resource_type");
 assertNotContainsForbidden(missingCosError, "loader_missing_cos_error");
 
-const officialSdkPackage = createFakeSdkPackage();
+const officialSdkPackage = createFakeSdkPackages();
 const officialSdkModules = createTencentReadonlyInventoryOfficialSdkModulesFromPackage({
   sdkPackage: officialSdkPackage,
 });
@@ -460,7 +502,7 @@ const regions = await client.describeRegions();
 assert.deepEqual(regions.items, [{ region: "ap-guangzhou" }, { region: "ap-shanghai" }], "loader_regions");
 const cvmPage1 = await client.describeCvmInstances({ region: "ap-guangzhou" });
 assertPage(cvmPage1, "loader_cvm_page_1");
-assert.equal(cvmPage1.nextCursor, "page-2", "loader_cvm_cursor");
+assert.equal(cvmPage1.nextCursor, "100", "loader_cvm_cursor");
 const cvmPage2 = await client.describeCvmInstances({ region: "ap-guangzhou", cursor: cvmPage1.nextCursor });
 assertPage(cvmPage2, "loader_cvm_page_2");
 assertPage(await client.describeTkeClusters({ region: "ap-shanghai" }), "loader_tke_page");
@@ -493,7 +535,7 @@ for (const mutationCall of [
 
 let permissionError;
 try {
-  const permissionPackage = createFakeSdkPackage({
+  const permissionPackage = createFakeSdkPackages({
     cvmError: {
       code: "AuthFailure.UnauthorizedOperation",
       message: "permission-denied-raw-proof",
@@ -523,7 +565,7 @@ assertSafeError(permissionError, "permission_denied", "loader_permission_error")
 
 let rateLimitError;
 try {
-  const ratePackage = createFakeSdkPackage({
+  const ratePackage = createFakeSdkPackages({
     cvmError: {
       code: "RateLimitExceeded",
       message: "rate-limited-raw-proof",
@@ -551,7 +593,7 @@ assertSafeError(rateLimitError, "rate_limited", "loader_rate_limit_error");
 
 let networkError;
 try {
-  const networkPackage = createFakeSdkPackage({
+  const networkPackage = createFakeSdkPackages({
     cvmError: {
       code: "ECONNRESET",
       message: "network-error-raw-proof",
@@ -601,6 +643,7 @@ const goodSecretText = [
 ].join("\n");
 
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-official-sdk-loader-"));
+const reportPathsToCleanup = [];
 try {
   const secretFile = path.join(tmpDir, "readonly.env");
   const nonCosSecretFile = path.join(tmpDir, "readonly-non-cos.env");
@@ -634,7 +677,7 @@ try {
   ], {
     loadOfficialSdkPackage: async () => {
       loadCalls += 1;
-      return createFakeSdkPackage();
+      return createFakeSdkPackages();
     },
   });
   assert.equal(noFlag.status, 1, "no_flag_status");
@@ -651,7 +694,7 @@ try {
   ], {
     loadOfficialSdkPackage: async () => {
       loadCalls += 1;
-      return createFakeSdkPackage();
+      return createFakeSdkPackages();
     },
   });
   assert.equal(disabled.status, 1, "disabled_run_gate_status");
@@ -669,7 +712,7 @@ try {
     ], {
       loadOfficialSdkPackage: async () => {
         loadCalls += 1;
-        return createFakeSdkPackage();
+        return createFakeSdkPackages();
       },
     }),
     /readonly_inventory_api_allowlist_required/,
@@ -688,7 +731,7 @@ try {
     ], {
       loadOfficialSdkPackage: async () => {
         loadCalls += 1;
-        return createFakeSdkPackage();
+        return createFakeSdkPackages();
       },
     }),
     /readonly_inventory_forbidden_api:CreateInstances/,
@@ -697,7 +740,6 @@ try {
   assert.equal(loadCalls, 0, "mutation_api_must_not_load_sdk_package");
 
   const runnerPackageWithoutCos = createFakeSdkPackage();
-  delete runnerPackageWithoutCos.cos;
   const nonCosLiveRun = await runCli([
     "--live-readonly",
     "--sdk-mode",
@@ -725,7 +767,6 @@ try {
 
   loadCalls = 0;
   const cosShapeBlockedPackage = createFakeSdkPackage();
-  delete cosShapeBlockedPackage.cos;
   const cosShapeBlocked = await runCli([
     "--live-readonly",
     "--sdk-mode",
@@ -742,6 +783,7 @@ try {
     },
   });
   assert.equal(cosShapeBlocked.status, 1, "official_loader_missing_cos_preflight_status");
+  reportPathsToCleanup.push(cosShapeBlocked.payload.reportPath);
   assert.equal(loadCalls, 1, "official_loader_missing_cos_preflight_loads_package_once");
   assert(cosShapeBlocked.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/official-sdk-loader-missing-cos-preflight.json"), "official_loader_missing_cos_preflight_report_path");
   assertDiagnosticReport(cosShapeBlocked.payload.summary, "official_loader_missing_cos_preflight_summary");
@@ -754,7 +796,7 @@ try {
   assert.deepEqual(cosShapeBlockedReport, cosShapeBlocked.payload.summary, "official_loader_missing_cos_preflight_report_matches_summary");
 
   loadCalls = 0;
-  const runnerPackage = createFakeSdkPackage();
+  const runnerPackage = createFakeSdkPackages();
   const loaded = await runCli([
     "--live-readonly",
     "--sdk-mode",
@@ -771,6 +813,7 @@ try {
     },
   });
   assert.equal(loaded.status, 0, "explicit_loader_with_fake_package_status");
+  reportPathsToCleanup.push(loaded.payload.reportPath);
   assert.equal(loadCalls, 1, "explicit_loader_loads_package_once");
   assert(loaded.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/official-sdk-loader-proof.json"), "official_loader_report_path");
   assertReportWhitelist(loaded.payload.summary, "official_loader_stdout_summary");
@@ -794,7 +837,7 @@ try {
   }
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
-  await rm(runtimeReportDir, { recursive: true, force: true });
+  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
 }
 
 const updatedPackage = JSON.parse(await readFile(portalPackagePath, "utf8"));

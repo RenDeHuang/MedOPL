@@ -1,6 +1,6 @@
 # v22 Tencent Readonly Inventory Boundary
 
-本合同定义 v22 `readonly/tencent inventory` 边界。当前分支只写合同和 smoke，不读取 secret，不调用真实腾讯云 / COS / TKE / CVM / 账单 API，不实现真实 inventory。
+本合同定义 v22 `readonly/tencent inventory` 边界。默认未授权路径不读取 secret、不调用真实腾讯云 / COS / TKE / CVM / 账单 API。本分支范围是 Tencent official SDK readonly 连接：允许把 SDK dependency diff、loader/provider/client 和 readonly smoke 落成可审分支；真实 readonly live 仍只能在用户明确授权下执行，证据只进入 `.runtime` 脱敏 report。
 
 该合同属于 Tencent Provider 合同包，阶段位置是：
 
@@ -56,7 +56,7 @@ inventory 结果只能进入管理员 / 运维审计和后续授权评估，不�
 - raw API Key
 - 任何非 readonly inventory allowlist 的 key
 
-当前分支不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不验证该文件是否存在，不打印 secret 路径内容。
+当前分支的默认 smoke 不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不验证该文件是否存在，不打印 secret 路径内容。任何真实 readonly live 必须单独授权，并且只允许读取 readonly allowlist key。
 
 ## API allowlist
 
@@ -190,7 +190,7 @@ official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、reda
 
 禁止 raw SDK client 泄露到业务层。禁止通用 call(apiName, params)。禁止 mutation API。SDK raw response 不得进入 stdout/report/Portal payload。
 
-新增 tencentcloud-sdk-nodejs 或相关官方 SDK 依赖必须单独 feat 分支，并由 B 审查 package diff。不在合同分支安装依赖。
+新增或升级 tencentcloud-sdk-nodejs / cos-nodejs-sdk-v5 依赖必须有用户授权，并由 B 审查 package diff。Package A 已安装 SDK dependency diff 到本分支：`tencentcloud-sdk-nodejs@4.1.227` 和 `cos-nodejs-sdk-v5@2.15.4`。
 
 ## Implementation Note: Official SDK Dependency Loader
 
@@ -200,7 +200,20 @@ loader 不读取 process.env，不读取 secret 文件，不 source env，不调
 
 loader 不暴露 raw SDK client，不暴露通用 call(apiName, params)，不暴露 Create/Delete/Modify/Run/Terminate/Put/Update/Attach/Detach/Tag mutation。SDK raw response、endpoint、authorization header、SecretId/SecretKey、token、objectKey/storageKey/cosPrefix/signedUrl 不得进入 stdout、report、Portal payload 或 evidence。
 
-Implementation shape note: `tencentcloud-sdk-nodejs` covers the readonly account/CVM/TKE/billing/tag client shapes used by this inventory path, but does not provide `cos.v20180530.Client`; COS readonly support requires a separate `cos-nodejs-sdk-v5` contract or dedicated implementation path. Non-COS readonly allowlists must not initialize or be blocked by COS client shape, while COS-enabled allowlists must fail closed with a sanitized diagnostic if the COS SDK shape is missing.
+Implementation shape note: `tencentcloud-sdk-nodejs` covers the readonly account/CVM/TKE/billing/tag client shapes used by this inventory path, but does not provide COS bucket/object metadata access. Full cloud connection therefore requires `cos-nodejs-sdk-v5` or a dedicated COS implementation path. Non-COS readonly allowlists must not initialize or be blocked by COS client shape, while COS-enabled allowlists must fail closed with a sanitized diagnostic if the COS SDK shape is missing.
+
+## COS SDK Dependency Decision
+
+`cos-nodejs-sdk-v5` is part of the authorized SDK dependency package for the cloud connection loop. Package A has installed it in `services/portal`.
+
+Before a full readonly cloud report can be accepted, shape smoke must prove:
+
+- `tencentcloud-sdk-nodejs` can load STS / CVM / TKE / billing / tag client shapes.
+- `cos-nodejs-sdk-v5` can support bucket list, bucket/prefix metadata or equivalent metadata-only file-space evidence.
+- COS object bodies are not read.
+- bucket policy, objectKey, storageKey, cosPrefix and signedUrl do not enter stdout, report, Portal payload, evidence or git.
+
+If `cos-nodejs-sdk-v5` is not installed or COS shape is unavailable, the official readonly path can still run a non-COS account/TKE/billing/tag report, but it cannot mark the full storage/file-space connection complete.
 
 cleanup 策略：
 
@@ -209,7 +222,7 @@ cleanup 策略：
 - TC3 可保留为 isolated diagnostic fixture。
 - TC3 不能作为 create/release 或默认 readonly live 主路径。
 
-当前分支不读 secret、不调用真实腾讯云、不安装 SDK、不实现 SDK modules、不删除 TC3、不改 create/release mutation 边界。
+本分支已在 Package A/B 授权下安装 SDK，并落地 SDK dependency / loader / readonly client 连接形状；默认 smoke 不读 secret、不调用真实腾讯云。调用真实 readonly 云 API 只能发生在用户显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本分支不删除 TC3、不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
 
 ## Live Readonly Authorization Note
 
@@ -219,7 +232,9 @@ live readonly 只允许读取 `/home/dev/.secrets/medopl/tencent-readonly-invent
 
 live readonly 不创建、不删除、不释放、不扩缩容、不改标签、不扣费。权限/限流/region 错误只进入安全 audit summary。真实 live run 必须由用户在当前会话单独授权后执行。
 
-runner 只有在 `--sdk-mode tencent-real-readonly`、`RUN_TENCENT_READONLY_INVENTORY=1`、allowlist 通过、用户单独授权执行时，才允许调用真实只读 SDK。默认 smoke 和 CI 不运行真实云。
+runner 只有在 `--sdk-mode tencent-official-sdk-readonly`、`--enable-official-sdk-loader`、`RUN_TENCENT_READONLY_INVENTORY=1`、allowlist 通过、用户单独授权执行时，才允许加载 official SDK package 并调用真实只读 SDK。默认 smoke 和 CI 不运行真实云。
+
+`--sdk-mode tencent-real-readonly` 只保留为 dependency-injected SDK modules 的兼容测试入口，用来证明 runner 的 readonly gate、regions、API allowlist、redaction 和 mutation rejection；它不能作为 production default provider，不能加载 raw SDK package，不能绕过 official SDK dependency loader 合同。
 
 TC3 readonly modules 属于 readonly inventory live client implementation，不是 create/release，不扩大 mutation 权限。TC3 modules 只能通过注入 fetch 和 readonly credentials 生成 Describe/List/Get/Head 请求，不读取 secret 文件、不 source env、不暴露 raw client 或通用 call(apiName, params)。
 
@@ -241,13 +256,36 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
   "rawSdkClientExposedToBusinessLayer": false,
   "genericApiCallExposed": false,
   "sdkRawResponseAllowedInStdoutReportOrPortalPayload": false,
-  "newSdkDependencyRequiresSeparateFeatAndPackageDiffReview": true,
-  "contractBranchInstallsSdkDependency": false,
+  "newSdkDependencyRequiresUserAuthorizationAndPackageDiffReview": true,
+  "requiredSdkDependencies": [
+    "tencentcloud-sdk-nodejs",
+    "cos-nodejs-sdk-v5"
+  ],
+  "contractBranchInstallsSdkDependency": true,
+  "installedSdkDependencies": [
+    {
+      "name": "tencentcloud-sdk-nodejs",
+      "version": "4.1.227"
+    },
+    {
+      "name": "cos-nodejs-sdk-v5",
+      "version": "2.15.4"
+    }
+  ],
+  "fullCosConnectionRequiresCosNodejsSdkV5": true,
   "removeTc3BeforeOfficialSdkLivePass": false,
   "tc3AllowedAsCreateReleaseProvider": false,
   "changesCreateReleaseMutationBoundary": false,
-  "implementsRealCloudCall": false,
-  "readsSecretNow": false,
+  "implementsRealCloudCall": true,
+  "readsSecretNow": true,
+  "defaultUnauthorizedPathFailsClosed": true,
+  "authorizedReadonlyLiveReport": {
+    "path": ".runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json",
+    "redactedOnly": true,
+    "provesReadonlyConnectionOnly": true,
+    "doesNotProvePortalCanonicalMappingComplete": true,
+    "doesNotAuthorizeMutation": true
+  },
   "futureSecretFileAllowed": true,
   "futureSecretFile": "/home/dev/.secrets/medopl/secrets.env.txt",
   "secretLoadMode": "allowlist_only",

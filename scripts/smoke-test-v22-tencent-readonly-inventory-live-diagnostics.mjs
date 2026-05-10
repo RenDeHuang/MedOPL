@@ -6,7 +6,6 @@ import path from "node:path";
 import { runCli } from "./v22-tencent-readonly-inventory-runner.mjs";
 
 const repoRoot = path.resolve(".");
-const runtimeReportDir = path.join(repoRoot, ".runtime", "v22-tencent-readonly-inventory");
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
 const allowedApis = [
@@ -160,6 +159,7 @@ async function runTc3(secretFile, runId, fetchImpl) {
 }
 
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-live-diagnostics-"));
+const reportPathsToCleanup = [];
 try {
   const secretFile = await writeSecretFixture(tmpDir, "readonly.env", goodSecretText);
 
@@ -172,6 +172,7 @@ try {
     }),
   );
   assert.equal(accountError.status, 1, "account_error_status");
+  reportPathsToCleanup.push(accountError.payload.reportPath);
   assert.equal(accountError.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/diagnostic-account-auth.json"), true, "account_error_report_path");
   assertDiagnostic(accountError.payload.summary, {
     apiName: "DescribeAccount",
@@ -199,6 +200,7 @@ try {
     }),
   );
   assert.equal(regionError.status, 1, "region_error_status");
+  reportPathsToCleanup.push(regionError.payload.reportPath);
   assertDiagnostic(regionError.payload.summary, {
     apiName: "DescribeRegions",
     clientMethod: "describeRegions",
@@ -212,6 +214,7 @@ try {
     createNetworkErrorFetch({ failAction: "GetCallerIdentity" }),
   );
   assert.equal(networkError.status, 1, "network_error_status");
+  reportPathsToCleanup.push(networkError.payload.reportPath);
   assertDiagnostic(networkError.payload.summary, {
     apiName: "DescribeAccount",
     clientMethod: "describeAccount",
@@ -227,7 +230,7 @@ try {
   assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-live-diagnostics.mjs"), "mvp_suite_must_include_live_diagnostics_smoke");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
-  await rm(runtimeReportDir, { recursive: true, force: true });
+  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
 }
 
 console.log(JSON.stringify({

@@ -52,10 +52,11 @@ assertIncludesAll(contract, [
 ], "official_sdk_strategy_forbidden_surface");
 
 assertIncludesAll(contract, [
-  "新增 tencentcloud-sdk-nodejs",
-  "官方 SDK 依赖必须单独 feat 分支",
+  "新增或升级 tencentcloud-sdk-nodejs",
+  "cos-nodejs-sdk-v5",
+  "必须有用户授权",
   "B 审查 package diff",
-  "不在合同分支安装依赖",
+  "Package A 已安装",
 ], "official_sdk_strategy_dependency_policy");
 
 assertIncludesAll(contract, [
@@ -67,10 +68,8 @@ assertIncludesAll(contract, [
 ], "official_sdk_strategy_cleanup_policy");
 
 assertIncludesAll(contract, [
-  "当前分支不读 secret",
-  "不调用真实腾讯云",
-  "不安装 SDK",
-  "不实现 SDK modules",
+  "本分支已在 Package A/B 授权下安装 SDK",
+  "调用真实 readonly 云 API",
   "不删除 TC3",
   "不改 create/release mutation 边界",
 ], "official_sdk_strategy_non_goals");
@@ -82,8 +81,8 @@ assertIncludesAll(contract, [
   "\"rawSdkClientExposedToBusinessLayer\": false",
   "\"genericApiCallExposed\": false",
   "\"sdkRawResponseAllowedInStdoutReportOrPortalPayload\": false",
-  "\"newSdkDependencyRequiresSeparateFeatAndPackageDiffReview\": true",
-  "\"contractBranchInstallsSdkDependency\": false",
+  "\"newSdkDependencyRequiresUserAuthorizationAndPackageDiffReview\": true",
+  "\"contractBranchInstallsSdkDependency\": true",
   "\"removeTc3BeforeOfficialSdkLivePass\": false",
   "\"tc3AllowedAsCreateReleaseProvider\": false",
   "\"changesCreateReleaseMutationBoundary\": false",
@@ -98,7 +97,6 @@ assertIncludesAll(readme, [
 assert(suite.includes("smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"), "mvp_suite_must_include_official_sdk_strategy_smoke");
 
 assertNotIncludesAny(contract, [
-  "\"contractBranchInstallsSdkDependency\": true",
   "\"tc3AllowedAsCreateReleaseProvider\": true",
   "\"rawSdkClientExposedToBusinessLayer\": true",
   "\"genericApiCallExposed\": true",

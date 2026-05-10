@@ -15,7 +15,6 @@ const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const portalPackagePath = "services/portal/package.json";
-const runtimeReportDir = path.join(repoRoot, ".runtime", "v22-tencent-readonly-inventory");
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");
 
 const allowedApis = [
@@ -479,6 +478,7 @@ const goodSecretText = [
 ].join("\n");
 
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-tc3-modules-"));
+const reportPathsToCleanup = [];
 try {
   const secretFile = path.join(tmpDir, "readonly.env");
   await writeFile(secretFile, goodSecretText, "utf8");
@@ -497,6 +497,7 @@ try {
     "tc3-live-proof",
   ], { tc3Fetch: createFakeFetch(), tc3Now: () => 1700000000 });
   assert.equal(runResult.status, 0, "tc3_run_cli_status");
+  reportPathsToCleanup.push(runResult.payload.reportPath);
   assert(runResult.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/tc3-live-proof.json"), "tc3_report_path");
   assertReportWhitelist(runResult.payload.summary, "tc3_run_summary");
   assert.equal(runResult.payload.summary.mode, "live-readonly", "tc3_run_mode");
@@ -507,7 +508,7 @@ try {
   assert.deepEqual(report, runResult.payload.summary, "tc3_report_matches_summary");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
-  await rm(runtimeReportDir, { recursive: true, force: true });
+  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
 }
 
 const moduleSource = await readFile(modulePath, "utf8");

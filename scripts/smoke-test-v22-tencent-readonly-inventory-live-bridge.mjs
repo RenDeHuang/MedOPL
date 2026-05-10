@@ -10,7 +10,6 @@ const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const portalPackagePath = "services/portal/package.json";
-const runtimeReportDir = path.join(repoRoot, ".runtime", "v22-tencent-readonly-inventory");
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");
 
 const allowedApis = [
@@ -252,6 +251,7 @@ const goodSecretText = [
 
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-inventory-live-bridge-"));
 const originalFetch = globalThis.fetch;
+const reportPathsToCleanup = [];
 try {
   const goodSecretFile = await writeSecretFixture(tmpDir, "readonly.env", goodSecretText);
   const disabledRunFile = await writeSecretFixture(
@@ -345,6 +345,7 @@ try {
     "live-bridge-proof",
   ]);
   assert.equal(liveResult.status, 0, "live_bridge_enabled_status");
+  reportPathsToCleanup.push(liveResult.payload.reportPath);
   assert(liveResult.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/live-bridge-proof.json"), "live_bridge_report_path");
   assertReportWhitelist(liveResult.payload.summary, "live_bridge_stdout_summary");
   assert.equal(liveResult.payload.summary.ok, true, "live_bridge_summary_ok");
@@ -389,7 +390,7 @@ try {
 } finally {
   globalThis.fetch = originalFetch;
   await rm(tmpDir, { recursive: true, force: true });
-  await rm(runtimeReportDir, { recursive: true, force: true });
+  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
 }
 
 console.log(JSON.stringify({

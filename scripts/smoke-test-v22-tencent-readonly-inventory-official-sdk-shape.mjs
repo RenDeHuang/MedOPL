@@ -7,7 +7,8 @@ const repoRoot = path.resolve(".");
 const portalRoot = path.join(repoRoot, "services", "portal");
 const portalPackagePath = path.join(portalRoot, "package.json");
 const portalLockPath = path.join(portalRoot, "package-lock.json");
-const sdkPackageName = "tencentcloud-sdk-nodejs";
+const tencentSdkPackageName = "tencentcloud-sdk-nodejs";
+const cosSdkPackageName = "cos-nodejs-sdk-v5";
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");
 
 function assertNotContainsForbidden(value, label) {
@@ -46,64 +47,99 @@ function hasClientMethod(root, service, version, methodName) {
   return typeof Client?.prototype?.[methodName] === "function";
 }
 
+function hasFunction(value, methodName) {
+  return typeof value?.prototype?.[methodName] === "function";
+}
+
 const portalPackage = JSON.parse(await readFile(portalPackagePath, "utf8"));
 const lock = JSON.parse(await readFile(portalLockPath, "utf8"));
-assert(portalPackage.dependencies?.[sdkPackageName], "portal_package_must_declare_tencentcloud_sdk_nodejs");
-assert(lock.packages?.[`node_modules/${sdkPackageName}`], "portal_lock_must_pin_tencentcloud_sdk_nodejs");
-assert.equal(portalPackage.dependencies?.["cos-nodejs-sdk-v5"], undefined, "portal_package_must_not_add_cos_nodejs_sdk_v5_in_this_branch");
-assert.equal(lock.packages?.["node_modules/cos-nodejs-sdk-v5"], undefined, "portal_lock_must_not_add_cos_nodejs_sdk_v5_in_this_branch");
+assert(portalPackage.dependencies?.[tencentSdkPackageName], "portal_package_must_declare_tencentcloud_sdk_nodejs");
+assert(lock.packages?.[`node_modules/${tencentSdkPackageName}`], "portal_lock_must_pin_tencentcloud_sdk_nodejs");
+assert(portalPackage.dependencies?.[cosSdkPackageName], "portal_package_must_declare_cos_nodejs_sdk_v5");
+assert(lock.packages?.[`node_modules/${cosSdkPackageName}`], "portal_lock_must_pin_cos_nodejs_sdk_v5");
 
-let sdkRoot;
-let installed = false;
-let packageVersion = lock.packages[`node_modules/${sdkPackageName}`]?.version || "";
+let tencentSdkRoot;
+let cosSdkRoot;
+let tencentInstalled = false;
+let cosInstalled = false;
+let tencentPackageVersion = lock.packages[`node_modules/${tencentSdkPackageName}`]?.version || "";
+let cosPackageVersion = lock.packages[`node_modules/${cosSdkPackageName}`]?.version || "";
 try {
   const requireFromPortal = createRequire(path.join(portalRoot, "package.json"));
-  sdkRoot = moduleRoot(requireFromPortal(sdkPackageName));
-  installed = true;
-  const installedPackage = requireFromPortal(`${sdkPackageName}/package.json`);
-  packageVersion = installedPackage.version || packageVersion;
+  tencentSdkRoot = moduleRoot(requireFromPortal(tencentSdkPackageName));
+  tencentInstalled = true;
+  const installedTencentPackage = requireFromPortal(`${tencentSdkPackageName}/package.json`);
+  tencentPackageVersion = installedTencentPackage.version || tencentPackageVersion;
+
+  cosSdkRoot = moduleRoot(requireFromPortal(cosSdkPackageName));
+  cosInstalled = true;
+  const installedCosPackage = requireFromPortal(`${cosSdkPackageName}/package.json`);
+  cosPackageVersion = installedCosPackage.version || cosPackageVersion;
 } catch (error) {
   if (error?.code !== "MODULE_NOT_FOUND") {
     throw error;
   }
 }
 
-if (installed) {
-  assert.equal(hasClient(sdkRoot, "sts", "v20180813"), true, "sdk_shape_must_include_sts_v20180813_client");
-  assert.equal(hasClient(sdkRoot, "cvm", "v20170312"), true, "sdk_shape_must_include_cvm_v20170312_client");
-  assert.equal(hasClient(sdkRoot, "tke", "v20180525"), true, "sdk_shape_must_include_tke_v20180525_client");
-  assert.equal(hasClient(sdkRoot, "billing", "v20180709"), true, "sdk_shape_must_include_billing_v20180709_client");
-  assert.equal(hasClient(sdkRoot, "tag", "v20180813"), true, "sdk_shape_must_include_tag_v20180813_client");
+if (tencentInstalled) {
+  assert.equal(hasClient(tencentSdkRoot, "sts", "v20180813"), true, "sdk_shape_must_include_sts_v20180813_client");
+  assert.equal(hasClient(tencentSdkRoot, "cvm", "v20170312"), true, "sdk_shape_must_include_cvm_v20170312_client");
+  assert.equal(hasClient(tencentSdkRoot, "tke", "v20180525"), true, "sdk_shape_must_include_tke_v20180525_client");
+  assert.equal(hasClient(tencentSdkRoot, "billing", "v20180709"), true, "sdk_shape_must_include_billing_v20180709_client");
+  assert.equal(hasClient(tencentSdkRoot, "tag", "v20180813"), true, "sdk_shape_must_include_tag_v20180813_client");
   assert.equal(
-    hasClientMethod(sdkRoot, "tag", "v20180813", "GetResources"),
+    hasClientMethod(tencentSdkRoot, "tag", "v20180813", "GetResources"),
     true,
     "sdk_shape_must_include_tag_v20180813_get_resources",
   );
   assert.equal(
-    hasClientMethod(sdkRoot, "tag", "v20180813", "DescribeTagResources"),
+    hasClientMethod(tencentSdkRoot, "tag", "v20180813", "DescribeTagResources"),
     false,
     "sdk_shape_must_not_include_tag_v20180813_describe_tag_resources",
   );
-  assert.equal(hasClient(sdkRoot, "cos", "v20180530"), false, "sdk_shape_must_record_cos_v20180530_absent_from_tencentcloud_sdk_nodejs");
+  assert.equal(hasClient(tencentSdkRoot, "cos", "v20180530"), false, "sdk_shape_must_record_cos_v20180530_absent_from_tencentcloud_sdk_nodejs");
+}
+
+if (cosInstalled) {
+  assert.equal(typeof cosSdkRoot, "function", "cos_sdk_shape_must_export_constructor");
+  assert.equal(hasFunction(cosSdkRoot, "getService"), true, "cos_sdk_shape_must_include_get_service_for_bucket_list");
+  assert.equal(hasFunction(cosSdkRoot, "headObject"), true, "cos_sdk_shape_must_include_head_object_for_metadata");
+  assert.equal(hasFunction(cosSdkRoot, "getObject"), true, "cos_sdk_shape_records_get_object_exists_but_loader_must_not_call_it");
+  assert.equal(hasFunction(cosSdkRoot, "putObject"), true, "cos_sdk_shape_records_put_object_exists_but_loader_must_not_call_it");
+  assert.equal(hasFunction(cosSdkRoot, "deleteObject"), true, "cos_sdk_shape_records_delete_object_exists_but_loader_must_not_call_it");
 }
 
 const result = {
   ok: true,
   contract: "v22_tencent_readonly_inventory_official_sdk_shape_preflight",
-  installed,
-  packageName: sdkPackageName,
-  packageVersion,
+  installed: {
+    tencentcloudSdk: tencentInstalled,
+    cosSdk: cosInstalled,
+  },
+  packages: {
+    tencentcloudSdk: {
+      packageName: tencentSdkPackageName,
+      packageVersion: tencentPackageVersion,
+    },
+    cosSdk: {
+      packageName: cosSdkPackageName,
+      packageVersion: cosPackageVersion,
+    },
+  },
   checked: [
     "package_json_declares_tencentcloud_sdk_nodejs",
     "package_lock_pins_tencentcloud_sdk_nodejs",
-    "no_cos_nodejs_sdk_v5_added",
+    "package_json_declares_cos_nodejs_sdk_v5",
+    "package_lock_pins_cos_nodejs_sdk_v5",
     "does_not_read_secret_or_call_cloud",
-    installed ? "sts_cvm_tke_billing_tag_client_shape_present" : "sdk_package_not_installed_in_this_worktree",
-    installed ? "tag_v20180813_get_resources_present" : "tag_method_shape_deferred_until_local_dependency_install",
-    installed ? "tag_v20180813_describe_tag_resources_absent" : "tag_method_absence_deferred_until_local_dependency_install",
-    installed ? "cos_v20180530_client_absent_from_tencentcloud_sdk_nodejs" : "shape_import_deferred_until_local_dependency_install",
+    tencentInstalled ? "sts_cvm_tke_billing_tag_client_shape_present" : "tencent_sdk_package_not_installed_in_this_worktree",
+    tencentInstalled ? "tag_v20180813_get_resources_present" : "tag_method_shape_deferred_until_local_dependency_install",
+    tencentInstalled ? "tag_v20180813_describe_tag_resources_absent" : "tag_method_absence_deferred_until_local_dependency_install",
+    tencentInstalled ? "cos_v20180530_client_absent_from_tencentcloud_sdk_nodejs" : "tencent_shape_import_deferred_until_local_dependency_install",
+    cosInstalled ? "cos_sdk_get_service_and_head_object_shape_present" : "cos_sdk_package_not_installed_in_this_worktree",
+    cosInstalled ? "cos_sdk_mutation_methods_exist_but_are_not_loader_contract_methods" : "cos_mutation_method_shape_deferred_until_local_dependency_install",
   ],
-  cosBoundary: "cos.v20180530.Client is not provided by tencentcloud-sdk-nodejs; COS readonly support requires a separate cos-nodejs-sdk-v5 contract or dedicated implementation path.",
+  cosBoundary: "cos.v20180530.Client is not provided by tencentcloud-sdk-nodejs; COS readonly support must use cos-nodejs-sdk-v5 through metadata-only loader methods.",
 };
 
 assertNotContainsForbidden(result, "shape_preflight_result");

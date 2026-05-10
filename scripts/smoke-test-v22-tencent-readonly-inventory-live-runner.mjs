@@ -10,7 +10,6 @@ const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 const smokePath = "scripts/smoke-test-v22-tencent-readonly-inventory-live-runner.mjs";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const repoRoot = path.resolve(".");
-const runtimeReportDir = path.join(repoRoot, ".runtime", "v22-tencent-readonly-inventory");
 const realSecretPathProof = ["/home/dev", ".secrets", "medopl", "secrets.env.txt"].join("/");
 
 function assertNotContainsForbidden(value, label) {
@@ -107,6 +106,7 @@ assert.throws(
 );
 
 const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-inventory-runner-"));
+const reportPathsToCleanup = [];
 try {
   const goodSecretFile = await writeSecretFixture(tmpDir, "readonly.env", goodSecretText);
   const disabledRunFile = await writeSecretFixture(tmpDir, "disabled.env", goodSecretText.replace("RUN_TENCENT_READONLY_INVENTORY=1", "RUN_TENCENT_READONLY_INVENTORY=0"));
@@ -146,6 +146,7 @@ try {
 
   const fakeLive = runRunner(["--fake-live", "--secret-file", goodSecretFile, "--run-id", "fake-live-proof"]);
   const fakeLiveOut = parseStdout(fakeLive.stdout);
+  reportPathsToCleanup.push(fakeLiveOut.reportPath);
   assert(fakeLiveOut.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/fake-live-proof.json"), "fake_live_report_path");
   assertReportWhitelist(fakeLiveOut.summary, "fake_live_stdout_summary");
   assert.equal(fakeLiveOut.summary.mode, "fake-live", "fake_live_mode");
@@ -181,7 +182,7 @@ try {
   assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-live-runner.mjs"), "mvp_suite_must_include_live_runner_smoke");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
-  await rm(runtimeReportDir, { recursive: true, force: true });
+  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
 }
 
 console.log(JSON.stringify({

@@ -116,6 +116,8 @@ function resourceRef(item = {}) {
       || item.ResourceId
       || item.InstanceId
       || item.ClusterId
+      || item.Name
+      || item.name
       || item.BucketRef
       || item.bucketRef
       || "unknown-resource",
@@ -139,9 +141,9 @@ function normalizeResourceItem(item = {}, region = "", resourceType = "unknown")
     id: resourceRef(item),
     resourceType: text(item.resourceType || item.ResourceType || tagsFor(item).resourceType || resourceType),
     resourceStatus: statusFor(item),
-    region: text(item.region || item.Region || region),
+    region: text(item.region || item.Region || item.Location || region),
     tags: tagsFor(item),
-    bucketRef: text(item.bucketRef || item.BucketRef),
+    bucketRef: text(item.bucketRef || item.BucketRef || item.Name),
     prefixRef: text(item.prefixRef || item.PrefixRef),
   };
 }
@@ -183,8 +185,17 @@ function normalizeMetadata(response = {}, region = "") {
     region,
     resourceType: "file_space",
     resourceStatus: response.Exists === false || response.exists === false ? "metadata_missing" : "metadata_available",
-    metadataSummary: response.metadataSummary || response.MetadataSummary || {},
+    metadataSummary: response.metadataSummary || response.MetadataSummary || metadataSummaryFromHeaders(response.headers || response.Headers || {}),
     billingSummary: response.billingSummary || response.BillingSummary || {},
+  };
+}
+
+function metadataSummaryFromHeaders(headers = {}) {
+  if (!headers || typeof headers !== "object") return {};
+  const sizeBytes = Number(headers["content-length"] || headers["Content-Length"] || 0);
+  return {
+    ...(Number.isFinite(sizeBytes) && sizeBytes > 0 ? { sizeBytes } : {}),
+    ...(text(headers.etag || headers.ETag) ? { checksumStatus: "present" } : {}),
   };
 }
 

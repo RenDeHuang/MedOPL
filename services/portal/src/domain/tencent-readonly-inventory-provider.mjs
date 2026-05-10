@@ -87,6 +87,12 @@ function listFromCsv(value = "") {
     .filter(Boolean);
 }
 
+function normalizeTencentRegion(value = "") {
+  const normalized = text(value);
+  const zoneMatch = normalized.match(/^([a-z]+(?:-[a-z]+)+)-[0-9]+$/);
+  return zoneMatch ? zoneMatch[1] : normalized;
+}
+
 function uniqueSorted(values = []) {
   return [...new Set(values.map((value) => text(value)).filter(Boolean))].sort();
 }
@@ -140,7 +146,7 @@ export function assertReadonlyInventoryApiAllowlist(apis = []) {
 export function validateReadonlyInventorySecretEnv(env = {}) {
   assertNoForbiddenSecretKeys(env);
   const allowedApis = assertReadonlyInventoryApiAllowlist(env.TENCENT_READONLY_ALLOWED_APIS || "");
-  const regions = listFromCsv(env.TENCENT_READONLY_REGIONS);
+  const regions = listFromCsv(env.TENCENT_READONLY_REGIONS).map(normalizeTencentRegion);
   return {
     enabled: text(env.RUN_TENCENT_READONLY_INVENTORY) === "1" || text(env.RUN_TENCENT_READONLY_INVENTORY).toLowerCase() === "true",
     readonlyCredentialStatus: {
