@@ -4,6 +4,7 @@ import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
 
 const OPL_ENTRY_PREFLIGHT_PATH = "/opl/entry/preflight";
 const OPL_INTERNAL_AUTH_PATH = "/internal/opl/auth/login";
+const PORTAL_AUTH_SUCCESS_LOCATION = "/portal/app/overview";
 
 export function isRegistrationEnabled(db) {
   return db?.settings?.allowRegistration !== false;
@@ -333,7 +334,7 @@ export function createPortalAuthRuntimeHandler({
       const sessionId = createPortalSession(db, result.user, "local");
       await writeDb(db);
       setCookie(res, "portal_session", sessionId);
-      res.writeHead(302, { Location: "/portal" });
+      res.writeHead(302, { Location: PORTAL_AUTH_SUCCESS_LOCATION });
       res.end();
       return true;
     }
@@ -363,7 +364,7 @@ export function createPortalAuthRuntimeHandler({
       const sessionId = createPortalSession(db, authResult.user, "local");
       await persistAuthSession(db);
       setCookie(res, "portal_session", sessionId);
-      res.writeHead(302, { Location: "/portal" });
+      res.writeHead(302, { Location: PORTAL_AUTH_SUCCESS_LOCATION });
       res.end();
       return true;
     }
@@ -556,7 +557,7 @@ export function createPortalAuthRuntimeHandler({
       await writeDb(db);
       clearCookie(res, oidcStateCookie());
       setCookie(res, "portal_session", sessionId);
-      res.writeHead(302, { Location: "/portal" });
+      res.writeHead(302, { Location: PORTAL_AUTH_SUCCESS_LOCATION });
       res.end();
       return true;
     }

@@ -15,7 +15,12 @@ export default defineConfig({
       "/portal/api": "http://127.0.0.1:17080",
       "/portal/workspace-session": "http://127.0.0.1:17080",
       "/portal/tasks": "http://127.0.0.1:17080",
-      "/portal/admin": "http://127.0.0.1:17080"
+      "/portal/admin": "http://127.0.0.1:17080",
+      "/login": "http://127.0.0.1:17080",
+      "/register": "http://127.0.0.1:17080",
+      "/logout": "http://127.0.0.1:17080",
+      "/auth": "http://127.0.0.1:17080",
+      "/opl/entry/preflight": "http://127.0.0.1:17080"
     }
   },
   build: {

@@ -33,6 +33,12 @@
       <section class="card p-5">
         <h3 class="text-base font-semibold text-gray-950 dark:text-white">套餐目录</h3>
         <p class="mt-2 text-sm text-gray-600 dark:text-slate-300">入门、进阶与自定义能力并列展示，按业务阶段选择。</p>
+        <div v-if="catalogLoading" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">套餐目录加载中...</div>
+        <div v-if="catalogError" class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ catalogError }}</div>
+        <div v-if="subscriptionLoading" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">订阅状态加载中...</div>
+        <div v-if="subscriptionError" class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ subscriptionError }}</div>
+        <div v-if="entitlementLoading" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">套餐权益加载中...</div>
+        <div v-if="entitlementError" class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ entitlementError }}</div>
 
         <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
           <article class="rounded-xl border border-gray-100 p-4 dark:border-slate-700">
@@ -140,6 +146,12 @@ const loadingAction = ref(false);
 const currentAction = ref("");
 const feedbackType = ref<"success" | "error" | "loading" | "">("");
 const actionFeedback = ref("");
+const catalogLoading = ref(false);
+const catalogError = ref("");
+const subscriptionLoading = ref(false);
+const subscriptionError = ref("");
+const entitlementLoading = ref(false);
+const entitlementError = ref("");
 const selectedAddonGb = ref(100);
 const selectedCustomCpuCores = ref(4);
 const selectedCustomMemoryGb = ref(8);
@@ -215,15 +227,54 @@ function money(value: number | undefined, currency = "CNY") {
   return `${currency} ${Number(value || 0).toFixed(2)}`;
 }
 
+async function loadPackageCatalog() {
+  catalogLoading.value = true;
+  catalogError.value = "";
+  try {
+    const packagesPayload = await fetchLabPackages();
+    packageItems.value = packagesPayload.items || [];
+    packageCatalog.value = packagesPayload.catalog || {};
+  } catch (error) {
+    catalogError.value = errorMessage(error, "套餐目录加载失败，请稍后重试。");
+  } finally {
+    catalogLoading.value = false;
+  }
+}
+
+async function loadSubscription() {
+  subscriptionLoading.value = true;
+  subscriptionError.value = "";
+  try {
+    subscription.value = await fetchLabSubscription();
+  } catch (error) {
+    subscriptionError.value = errorMessage(error, "订阅状态加载失败，请稍后重试。");
+  } finally {
+    subscriptionLoading.value = false;
+  }
+}
+
+async function loadEntitlement() {
+  entitlementLoading.value = true;
+  entitlementError.value = "";
+  try {
+    await fetchLabEntitlement();
+  } catch (error) {
+    entitlementError.value = errorMessage(error, "套餐权益加载失败，请稍后重试。");
+  } finally {
+    entitlementLoading.value = false;
+  }
+}
+
 async function reloadAll() {
-  const [packagesPayload, subscriptionPayload] = await Promise.all([
-    fetchLabPackages(),
-    fetchLabSubscription(),
-    fetchLabEntitlement(),
-  ]);
-  packageItems.value = packagesPayload.items || [];
-  packageCatalog.value = packagesPayload.catalog || {};
-  subscription.value = subscriptionPayload;
+  await loadPackageCatalog();
+  await loadSubscription();
+  await loadEntitlement();
+}
+
+function loadPackageSurface() {
+  void loadPackageCatalog();
+  void loadSubscription();
+  void loadEntitlement();
 }
 
 function actionText(key: string, fallback: string) {
@@ -334,6 +385,6 @@ async function runPackageAction(input: {
 }
 
 onMounted(async () => {
-  await reloadAll();
+  loadPackageSurface();
 });
 </script>

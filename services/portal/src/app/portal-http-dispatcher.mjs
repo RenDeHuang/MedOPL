@@ -34,6 +34,10 @@ export function createPortalHttpDispatcher({
   slugify,
   writeDb,
 }) {
+  function isPortalApiRequest(url) {
+    return url.pathname === "/portal/api" || url.pathname.startsWith("/portal/api/");
+  }
+
   return async function dispatchPortalHttpRequest(req, res) {
     const url = new URL(req.url || "/", "http://local");
     const isGetAuthPage = req.method === "GET" && (url.pathname === "/login" || url.pathname === "/register");
@@ -78,6 +82,10 @@ export function createPortalHttpDispatcher({
     if (!isGetAuthPage && (await handleAuthRoutes({ req, res, url, db }))) return;
     if (await handleResourceOrderRoutes({ req, res, url, db, user: null })) return;
     if (!user) {
+      if (isPortalApiRequest(url)) {
+        sendJson(res, { ok: false, error: "unauthenticated", loginUrl: "/login" }, 401);
+        return;
+      }
       res.writeHead(302, { Location: "/login" });
       res.end();
       return;

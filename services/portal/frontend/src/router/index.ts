@@ -3,6 +3,7 @@ import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal";
 
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/overview" },
+  { path: "/portal", redirect: "/overview" },
   { path: "/overview", component: () => import("@/views/overview/OverviewView.vue") },
   { path: "/packages", component: () => import("@/views/packages/PackagesView.vue") },
   { path: "/resources", component: () => import("@/views/resources/ResourcesView.vue") },

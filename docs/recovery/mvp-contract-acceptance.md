@@ -93,6 +93,12 @@
 - `scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`
 - `scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs`
 - `scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
+- `scripts/smoke-test-v22-portal-runtime-startup-config.mjs`
+- `scripts/smoke-test-v22-portal-dev-server-auth-proxy.mjs`
+- `scripts/smoke-test-v22-portal-auth-landing-route.mjs`
+- `scripts/smoke-test-v22-portal-web-route-alignment.mjs`
+- `scripts/smoke-test-v22-portal-api-auth-boundary.mjs`
+- `scripts/smoke-test-v22-portal-package-surface-isolation.mjs`
 - `scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`
 - `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
 - `scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs`
