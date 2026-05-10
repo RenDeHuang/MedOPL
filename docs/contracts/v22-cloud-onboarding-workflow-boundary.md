@@ -283,11 +283,42 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 
 这些工作仍必须使用独立 worktree，并且不得读取 secret、不得调用真实云、不得执行 build/push/kubectl/live-test。
 
+## Runnable Cloud Connection Path
+
+当前接云模块收敛为 R-00 到 R-21 的闭环验证路径；旧 `CO-01..CO-14` 只保留为历史阶段和状态说明，不再作为新验收主线。`C00`、`C01`、`C02`、`C03`、`C04` 也不得作为当前 gate id、task packet id 或完成状态使用。
+
+| step | gate | authorization package | entrypoint | artifact path | pass condition |
+| --- | --- | --- | --- | --- | --- |
+| R-00 local contract guard | CC-01 | none | repo root | stdout JSON only | 合同、board、status、workflow task packet 口径一致 |
+| R-01 SDK dependency install | CC-01 | dependency_install | `services/portal` | `services/portal/package.json`; `services/portal/package-lock.json` | 只增加经审查 SDK dependency diff |
+| R-02 SDK shape smoke | CC-01 | dependency_install | repo root | stdout JSON only | Tencent SDK 和 COS SDK shape 被证明或 fail-closed |
+| R-03 readonly preflight | CC-02 | readonly_connection | repo root | stdout JSON only | RUN gate、readonly secret allowlist、region/API allowlist 和 redaction 规则通过 |
+| R-04 readonly live report | CC-02 | readonly_connection | repo root | `.runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json` | 脱敏 report 证明账号、region、TKE、COS、billing、tag/cost allocation 可读 |
+| R-05 Portal canonical operation smoke | CC-03 | local_contract_smoke | repo root | stdout JSON only | Portal click/test API 写入 canonical operation、binding、file space、compute、ledger、audit 形状 |
+| R-06 storage dry-run | CC-04 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-storage-dry-run.json` | dry-run 写明 workspace、file space、COS scope、预算和 rollback/retention policy，且不 mutation |
+| R-07 authorized storage execution | CC-04 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-storage-execution.json` | 授权后执行最小 storage create/expand/delete，并回写 Portal/audit |
+| R-08 compute dry-run | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-dry-run.json` | dry-run 写明已有 TKE cluster、namespace/quota/workload class/node pool capacity，且不 mutation |
+| R-09 authorized compute execution | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-execution.json` | 授权后执行最小 compute create/expand/release，并保持 file space retained |
+| R-10 Portal projection smoke | CC-03 | local_contract_smoke | repo root | stdout JSON only | 普通用户 projection 只展示工作台/计算/文件空间/账务状态，不展示云控制台对象 |
+| R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-storage-expand.json` | 文件空间 entitlement、费用冻结估算和 audit event 更新 |
+| R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-expand.json` | namespace quota、workload class 或 node pool capacity 更新，Portal projection 同步 |
+| R-13 COS billing checkpoint | CC-06 | readonly_connection | repo root | `.runtime/v22-cloud-reconciliation/<run-id>.json` | billing summary、COS usage、Portal ledger、cloud tag/cost allocation 可对账或产出 blocker |
+| R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | repo root | `.runtime/v22-registry/<run-id>.json` | release plan 内每个 target repository/tag/digest 预检通过，禁止 `latest` |
+| R-15 multi-image build and push unique test tag | CC-07 | deploy_and_production_integration | repo root | `.runtime/v22-registry/<run-id>.json` | 每个 target image push 唯一 test tag，并读回 digest |
+| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | repo root | `.runtime/v22-cloud-deploy/<run-id>.json` | dry-run 限定在 release plan 指定 namespace/workload/container，并有 rollback target |
+| R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | repo root | `.runtime/v22-cloud-deploy/<run-id>.json` | 授权后 rollout 成功或 rollback evidence 完整 |
+| R-18 runtime smoke | CC-07 | deploy_and_production_integration | repo root | `.runtime/v22-runtime-smoke/<run-id>.json` | `portal.medopl.cn`、`opl.medopl.cn`、`trace.medopl.cn` 证明推送版本运行且无 secret 泄漏 |
+| R-19 release compute | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-release.json` | compute allocation 释放、计算计费停止、file space 保留 |
+| R-20 delete file space | CC-04 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-storage-delete.json` | file space 进入 7 天保护期或有审计永久清理记录 |
+| R-21 final reconciliation cleanup and B review | CC-REVIEW | manual_b_review | repo root | `.runtime/v22-cloud-cleanup/<run-id>.json` | billing、COS、TKE、TCR、deploy、runtime smoke、cleanup evidence 被 B 接受或返回 blocker |
+
+任何 R-step 都不得把 raw provider response、SecretId、SecretKey、token、kubeconfig、object key、signed URL 或 COS object body 写入 stdout、`.runtime`、docs、git 或 Portal payload。
+
 ## Workflow Non-Goals
 
-本 workflow 不自动 merge、不自动 push、不读 secret、不调用真实云；只能生成任务包和下一步建议。
+本 workflow 不自动 merge、不自动 push、不读 secret、不调用真实云；只能生成任务包、可跑路径和下一步建议。
 
-本分支可预留后续让 `scripts/v22-agent-workflow.mjs` 支持 cloud-onboarding lane type，但本分支不实现脚本逻辑，不修改 workflow orchestrator behavior，不新增自动执行能力。
+本分支让 `scripts/v22-agent-workflow.mjs cloud-onboarding status --json` 输出 runnable path task packet 形状，但不新增真实云执行能力、不读 secret、不执行 build/push/kubectl。
 
 ## Contract Data
 
@@ -303,9 +334,23 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
   "autopushes": false,
   "readsSecretNow": false,
   "callsRealCloudNow": false,
+  "installsDependencyNow": false,
+  "executesMutationNow": false,
+  "runsBuildPushKubectlNow": false,
+  "oldCoPhaseStateMachineRetired": true,
+  "activeGatePrefix": "CC",
+  "retiredLegacyGateAliases": [
+    "C00",
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "CO-01..CO-14"
+  ],
+  "loopName": "authorized_cloud_connection_loop",
   "generatesOnlyTaskPackagesAndNextStepSuggestions": true,
-  "futureScriptLaneType": "cloud-onboarding",
-  "implementsScriptLogicNow": false,
+  "scriptLaneType": "cloud-onboarding",
+  "implementsScriptLogicNow": true,
   "serialExternalSideEffects": [
     "真实云 live",
     "create/release",
@@ -319,6 +364,36 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
     "fake wrapper",
     "cleanup plan",
     "topology/deploy contract"
+  ],
+  "authorizationPackages": [
+    "dependency_install",
+    "readonly_connection",
+    "authorized_resource_lifecycle",
+    "deploy_and_production_integration"
+  ],
+  "runnablePath": [
+    { "step": "R-00", "gateId": "CC-01", "authorizationPackage": "none", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
+    { "step": "R-01", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "services/portal", "artifactPath": "services/portal/package.json and services/portal/package-lock.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
+    { "step": "R-02", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-verification-matrix.md" },
+    { "step": "R-03", "gateId": "CC-02", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
+    { "step": "R-04", "gateId": "CC-02", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": ".runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json", "blockerWriteback": "docs/recovery/cloud-onboarding-execution-board.md" },
+    { "step": "R-05", "gateId": "CC-03", "authorizationPackage": "local_contract_smoke", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/contracts/v22-authorized-tencent-create-release-boundary.md" },
+    { "step": "R-06", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-dry-run.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
+    { "step": "R-07", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-execution.json", "blockerWriteback": "cloud operation row and docs/recovery/cloud-onboarding-execution-board.md" },
+    { "step": "R-08", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-dry-run.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
+    { "step": "R-09", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-execution.json", "blockerWriteback": "cloud operation row and CC-05 status" },
+    { "step": "R-10", "gateId": "CC-03", "authorizationPackage": "local_contract_smoke", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md and CC-03 blocker" },
+    { "step": "R-11", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-expand.json", "blockerWriteback": "cloud operation row and CC-04 status" },
+    { "step": "R-12", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-expand.json", "blockerWriteback": "cloud operation row and CC-05 status" },
+    { "step": "R-13", "gateId": "CC-06", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-reconciliation/<run-id>.json", "blockerWriteback": "billing_reconciliation record and CC-06 blocker" },
+    { "step": "R-14", "gateId": "CC-07", "authorizationPackage": "deploy_and_production_integration", "entrypoint": "repo root", "artifactPath": ".runtime/v22-registry/<run-id>.json", "blockerWriteback": "CC-07 blocker and registry preflight evidence" },
+    { "step": "R-15", "gateId": "CC-07", "authorizationPackage": "deploy_and_production_integration", "entrypoint": "repo root", "artifactPath": ".runtime/v22-registry/<run-id>.json", "blockerWriteback": "CC-07 blocker and registry evidence" },
+    { "step": "R-16", "gateId": "CC-07", "authorizationPackage": "deploy_and_production_integration", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-deploy/<run-id>.json", "blockerWriteback": "CC-07 blocker and deploy dry-run evidence" },
+    { "step": "R-17", "gateId": "CC-07", "authorizationPackage": "deploy_and_production_integration", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-deploy/<run-id>.json", "blockerWriteback": "CC-07 blocker and rollout evidence" },
+    { "step": "R-18", "gateId": "CC-07", "authorizationPackage": "deploy_and_production_integration", "entrypoint": "repo root", "artifactPath": ".runtime/v22-runtime-smoke/<run-id>.json", "blockerWriteback": "CC-07 blocker and runtime smoke evidence" },
+    { "step": "R-19", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-release.json", "blockerWriteback": "cloud operation row and CC-05 status" },
+    { "step": "R-20", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-delete.json", "blockerWriteback": "cloud operation row and CC-04 status" },
+    { "step": "R-21", "gateId": "CC-REVIEW", "authorizationPackage": "manual_b_review", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-cleanup/<run-id>.json", "blockerWriteback": "B review note" }
   ],
   "portalApiTestBridge": {
     "testOnly": true,

@@ -56,6 +56,41 @@ const cloudOnboardingBoardPath = "docs/recovery/cloud-onboarding-execution-board
 const cloudOnboardingStatusTablePath = "docs/recovery/cloud-onboarding-status-table.md";
 const cloudOnboardingWorkflowContractPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
 
+const cloudOnboardingRunnablePath = Object.freeze([
+  ["R-00", "CC-01", "none", "local contract guard", "stdout JSON only"],
+  ["R-01", "CC-01", "dependency_install", "SDK dependency install", "services/portal/package.json and services/portal/package-lock.json"],
+  ["R-02", "CC-01", "dependency_install", "SDK shape smoke", "stdout JSON only"],
+  ["R-03", "CC-02", "readonly_connection", "readonly preflight", "stdout JSON only"],
+  ["R-04", "CC-02", "readonly_connection", "readonly live report", ".runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json"],
+  ["R-05", "CC-03", "local_contract_smoke", "Portal canonical operation smoke", "stdout JSON only"],
+  ["R-06", "CC-04", "authorized_resource_lifecycle", "storage dry-run", ".runtime/v22-cloud-lifecycle/<operation-id>-storage-dry-run.json"],
+  ["R-07", "CC-04", "authorized_resource_lifecycle", "authorized storage execution", ".runtime/v22-cloud-lifecycle/<operation-id>-storage-execution.json"],
+  ["R-08", "CC-05", "authorized_resource_lifecycle", "compute dry-run", ".runtime/v22-cloud-lifecycle/<operation-id>-compute-dry-run.json"],
+  ["R-09", "CC-05", "authorized_resource_lifecycle", "authorized compute execution", ".runtime/v22-cloud-lifecycle/<operation-id>-compute-execution.json"],
+  ["R-10", "CC-03", "local_contract_smoke", "Portal projection smoke", "stdout JSON only"],
+  ["R-11", "CC-04", "authorized_resource_lifecycle", "expand storage dry-run and execution", ".runtime/v22-cloud-lifecycle/<operation-id>-storage-expand.json"],
+  ["R-12", "CC-05", "authorized_resource_lifecycle", "expand compute dry-run and execution", ".runtime/v22-cloud-lifecycle/<operation-id>-compute-expand.json"],
+  ["R-13", "CC-06", "readonly_connection", "COS billing checkpoint", ".runtime/v22-cloud-reconciliation/<run-id>.json"],
+  ["R-14", "CC-07", "deploy_and_production_integration", "TCR repository/tag preflight", ".runtime/v22-registry/<run-id>.json"],
+  ["R-15", "CC-07", "deploy_and_production_integration", "multi-image build and push unique test tag", ".runtime/v22-registry/<run-id>.json"],
+  ["R-16", "CC-07", "deploy_and_production_integration", "deploy dry-run", ".runtime/v22-cloud-deploy/<run-id>.json"],
+  ["R-17", "CC-07", "deploy_and_production_integration", "authorized deploy rollout", ".runtime/v22-cloud-deploy/<run-id>.json"],
+  ["R-18", "CC-07", "deploy_and_production_integration", "runtime smoke", ".runtime/v22-runtime-smoke/<run-id>.json"],
+  ["R-19", "CC-05", "authorized_resource_lifecycle", "release compute", ".runtime/v22-cloud-lifecycle/<operation-id>-compute-release.json"],
+  ["R-20", "CC-04", "authorized_resource_lifecycle", "delete file space", ".runtime/v22-cloud-lifecycle/<operation-id>-storage-delete.json"],
+  ["R-21", "CC-REVIEW", "manual_b_review", "final reconciliation cleanup and B review", ".runtime/v22-cloud-cleanup/<run-id>.json"],
+].map(([step, gateId, authorizationPackage, name, artifactPath]) => Object.freeze({
+  step,
+  gateId,
+  authorizationPackage,
+  name,
+  artifactPath,
+  blockedReason: authorizationPackage === "none" || authorizationPackage === "local_contract_smoke"
+    ? ""
+    : "needs_explicit_user_authorization",
+  suggestedCommands: [],
+})));
+
 const workspaceDiscipline = Object.freeze({
   mainWorkspaceRole: "主工作区只用于规划、B 审计、ff-only merge、checkpoint、push、清理。",
   mainWorkspaceWritable: false,
@@ -957,6 +992,7 @@ async function createCloudOnboardingStatusPack() {
     requiredSmoke: activePhase?.requiredSmoke || [],
     userGate: activePhase?.userGate || "",
     phaseSummary: buildCloudOnboardingPhaseSummary(phases),
+    runnablePath: cloudOnboardingRunnablePath,
     serialRealSideEffects: board.serialRealSideEffects || [],
     handoffGuidance: cloudOnboardingHandoffGuidance(),
     taskPackets,

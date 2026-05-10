@@ -44,7 +44,8 @@ assertIncludesAll(contract, [
   "AGENTS.md 管 A/B/C/D 纪律",
   "本合同管业务推进顺序",
   "repo-tracked workflow 合同",
-  "状态机",
+  "Runnable Cloud Connection Path",
+  "authorized_cloud_connection_loop",
 ], "cloud_onboarding_scope");
 
 const requiredStageNames = [
@@ -128,19 +129,34 @@ assertIncludesAll(contract, [
   "不自动 push",
   "不读 secret",
   "不调用真实云",
-  "只能生成任务包和下一步建议",
-  "本分支不实现脚本逻辑",
-  "cloud-onboarding lane type",
+  "只能生成任务包、可跑路径和下一步建议",
+  "cloud-onboarding status --json",
 ], "cloud_onboarding_non_goals_and_future_script");
 
 const workflow = extractJsonBlock(contract, "v22-cloud-onboarding-workflow-contract");
 assert.equal(workflow.contract, "v22_cloud_onboarding_workflow_boundary", "contract_data_name_mismatch");
 assert.equal(workflow.replacesAgentsMd, false, "contract_must_not_replace_agents_md");
+assert.equal(workflow.oldCoPhaseStateMachineRetired, true, "old_co_phase_state_machine_must_be_retired");
+assert.equal(workflow.activeGatePrefix, "CC", "active_gate_prefix_mismatch");
+assert.deepEqual(workflow.retiredLegacyGateAliases, [
+  "C00",
+  "C01",
+  "C02",
+  "C03",
+  "C04",
+  "CO-01..CO-14",
+], "retired_legacy_aliases_mismatch");
+assert.equal(workflow.loopName, "authorized_cloud_connection_loop", "loop_name_mismatch");
 assert.equal(workflow.automerges, false, "workflow_must_not_auto_merge");
 assert.equal(workflow.autopushes, false, "workflow_must_not_auto_push");
 assert.equal(workflow.readsSecretNow, false, "workflow_must_not_read_secret_now");
 assert.equal(workflow.callsRealCloudNow, false, "workflow_must_not_call_real_cloud_now");
+assert.equal(workflow.installsDependencyNow, false, "workflow_must_not_install_dependency_now");
+assert.equal(workflow.executesMutationNow, false, "workflow_must_not_execute_mutation_now");
+assert.equal(workflow.runsBuildPushKubectlNow, false, "workflow_must_not_build_push_kubectl_now");
 assert.equal(workflow.generatesOnlyTaskPackagesAndNextStepSuggestions, true, "workflow_must_only_generate_task_packages");
+assert.equal(workflow.scriptLaneType, "cloud-onboarding", "workflow_script_lane_type");
+assert.equal(workflow.implementsScriptLogicNow, true, "workflow_script_logic_now");
 
 assert.deepEqual(workflow.serialExternalSideEffects, [
   "真实云 live",
@@ -157,6 +173,46 @@ assert.deepEqual(workflow.parallelizableWork, [
   "cleanup plan",
   "topology/deploy contract",
 ], "parallelizable_work_mismatch");
+
+assert.deepEqual(workflow.authorizationPackages, [
+  "dependency_install",
+  "readonly_connection",
+  "authorized_resource_lifecycle",
+  "deploy_and_production_integration",
+], "authorization_packages_mismatch");
+
+assert.deepEqual(workflow.runnablePath.map((step) => step.step), [
+  "R-00",
+  "R-01",
+  "R-02",
+  "R-03",
+  "R-04",
+  "R-05",
+  "R-06",
+  "R-07",
+  "R-08",
+  "R-09",
+  "R-10",
+  "R-11",
+  "R-12",
+  "R-13",
+  "R-14",
+  "R-15",
+  "R-16",
+  "R-17",
+  "R-18",
+  "R-19",
+  "R-20",
+  "R-21",
+], "runnable_path_step_order_mismatch");
+assert(workflow.runnablePath.every((step) => step.gateId.startsWith("CC-")), "runnable_path_must_use_cc_gate_ids");
+assert(workflow.runnablePath.some((step) => step.artifactPath === ".runtime/v22-registry/<run-id>.json"), "runnable_path_registry_artifact_missing");
+assert(workflow.runnablePath.some((step) => step.artifactPath === ".runtime/v22-runtime-smoke/<run-id>.json"), "runnable_path_runtime_smoke_artifact_missing");
+for (const step of workflow.runnablePath) {
+  for (const key of ["step", "gateId", "authorizationPackage", "entrypoint", "artifactPath", "blockerWriteback"]) {
+    assert(Object.hasOwn(step, key), `runnable_path_${step.step}_missing:${key}`);
+  }
+}
 
 assert.equal(workflow.portalApiTestBridge?.testOnly, true, "portal_api_test_bridge_must_be_test_only");
 assert.equal(workflow.portalApiTestBridge?.productionPortalConnected, false, "portal_api_test_bridge_must_not_claim_production_connected");
@@ -246,6 +302,19 @@ assertNotIncludesAny(contract, [
   "\"autopushes\": true",
   "\"readsSecretNow\": true",
   "\"callsRealCloudNow\": true",
+  "\"installsDependencyNow\": true",
+  "\"executesMutationNow\": true",
+  "\"runsBuildPushKubectlNow\": true",
+  "\"gateId\": \"C00\"",
+  "\"gateId\": \"C01\"",
+  "\"gateId\": \"C02\"",
+  "\"gateId\": \"C03\"",
+  "\"gateId\": \"C04\"",
+  "| C00 |",
+  "| C01 |",
+  "| C02 |",
+  "| C03 |",
+  "| C04 |",
   "会自动 merge",
   "会自动 push",
   "默认读取 secret",
@@ -262,6 +331,8 @@ console.log(JSON.stringify({
     "serial_external_side_effects",
     "parallelizable_contract_smoke_fake_wrapper_cleanup_topology_work",
     "portal_api_test_bridge",
+    "runnable_cloud_connection_path",
+    "legacy_c00_c04_aliases_retired",
     "workflow_generates_only_task_packages_and_next_step_suggestions",
     "readme_suite_vibe_reference",
   ],

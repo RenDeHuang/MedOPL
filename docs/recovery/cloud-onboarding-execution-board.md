@@ -116,6 +116,33 @@ user confirmation gates:
 - open issue: workflow contract phase 14 required contracts still includes role surface contracts and release/status docs. It must be replaced by concrete repo-tracked contract/status files before canary / QA / release status update can be treated as release-ready.
 - 本分支只登记 open issue，不修改 workflow 合同。
 
+## Runnable Path Snapshot
+
+| step | gate | owner package | status in this branch |
+| --- | --- | --- | --- |
+| R-00 local contract guard | CC-01 | none | defined and smoke-covered |
+| R-01 SDK dependency install | CC-01 | dependency_install | path defined; execution remains separate |
+| R-02 SDK shape smoke | CC-01 | dependency_install | path defined; execution remains separate |
+| R-03 readonly preflight | CC-02 | readonly_connection | path defined; execution remains separate |
+| R-04 readonly live report | CC-02 | readonly_connection | path defined; needs explicit authorization |
+| R-05 Portal canonical operation smoke | CC-03 | local_contract_smoke | test-only fake-live bridge already covered |
+| R-06 storage dry-run | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-07 authorized storage execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-08 compute dry-run | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-09 authorized compute execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-10 Portal projection smoke | CC-03 | local_contract_smoke | test-only fake-live bridge already covered |
+| R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-13 COS billing checkpoint | CC-06 | readonly_connection | path defined; execution remains separate |
+| R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; runner in later Package D branch |
+| R-15 multi-image build and push unique test tag | CC-07 | deploy_and_production_integration | path defined; real push blocked |
+| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | path defined; runner in later Package D branch |
+| R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | path defined; real kubectl blocked |
+| R-18 runtime smoke | CC-07 | deploy_and_production_integration | path defined; execution remains separate |
+| R-19 release compute | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-20 delete file space | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-21 final reconciliation cleanup and B review | CC-REVIEW | manual_b_review | path defined; B absorption gate |
+
 ## Board Data
 
 <!-- v22-cloud-onboarding-execution-board:start -->
@@ -124,6 +151,17 @@ user confirmation gates:
   "programId": "v22-cloud-onboarding",
   "currentTrunkAnchor": "148f5a0",
   "currentPhase": "check-config / default gate / user-authorized official SDK readonly live",
+  "workflowModel": "authorized_cloud_connection_loop",
+  "oldCoPhaseStateMachineRetired": true,
+  "activeGatePrefix": "CC",
+  "retiredLegacyGateAliases": [
+    "C00",
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "CO-01..CO-14"
+  ],
   "currentLane": "CO-05 check-config preparation",
   "nextLane": "CO-06 default gate review, then CO-07 user-authorized official SDK readonly live after explicit user authorization",
   "workflowContract": "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
@@ -147,6 +185,18 @@ user confirmation gates:
     "fake wrapper",
     "cleanup plan",
     "topology/deploy contract"
+  ],
+  "runnablePathArtifactRoots": [
+    "stdout JSON only",
+    "services/portal/package.json",
+    "services/portal/package-lock.json",
+    ".runtime/v22-tencent-readonly-inventory/",
+    ".runtime/v22-cloud-lifecycle/",
+    ".runtime/v22-registry/",
+    ".runtime/v22-cloud-reconciliation/",
+    ".runtime/v22-cloud-deploy/",
+    ".runtime/v22-runtime-smoke/",
+    ".runtime/v22-cloud-cleanup/"
   ],
   "openIssues": [
     "workflow contract phase 12 required contracts still includes deploy plan contract",

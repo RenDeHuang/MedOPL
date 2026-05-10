@@ -45,6 +45,19 @@ program id: v22-cloud-onboarding
 - workflow contract phase 14 required contracts still includes role surface contracts and release/status docs. Track as should-fix before canary / QA / release status update can be release-ready.
 - This branch records the open issue only; it does not modify `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`.
 
+## Runnable Gate Mapping
+
+| gate | runnable steps | required artifact roots | blocker writeback |
+| --- | --- | --- | --- |
+| CC-01 | R-00 local contract guard; R-01 SDK dependency install; R-02 SDK shape smoke | stdout JSON only; `services/portal/package.json`; `services/portal/package-lock.json` | CC-01 blocker; verification matrix |
+| CC-02 | R-03 readonly preflight; R-04 readonly live report | stdout JSON only; `.runtime/v22-tencent-readonly-inventory/` | CC-02 blocker; execution board current blockers |
+| CC-03 | R-05 Portal canonical operation smoke; R-10 Portal projection smoke | stdout JSON only | CC-03 blocker; Portal canonical store contract |
+| CC-04 | R-06 storage dry-run; R-07 authorized storage execution; R-11 expand storage dry-run and execution; R-20 delete file space | `.runtime/v22-cloud-lifecycle/` | CC-04 blocker; cloud operation row |
+| CC-05 | R-08 compute dry-run; R-09 authorized compute execution; R-12 expand compute dry-run and execution; R-19 release compute | `.runtime/v22-cloud-lifecycle/` | CC-05 blocker; cloud operation row |
+| CC-06 | R-13 COS billing checkpoint; R-21 final reconciliation cleanup and B review | `.runtime/v22-cloud-reconciliation/`; `.runtime/v22-cloud-cleanup/` | billing reconciliation record; CC-06 blocker |
+| CC-07 | R-14 TCR repository/tag preflight; R-15 multi-image build and push unique test tag; R-16 deploy dry-run; R-17 authorized deploy rollout; R-18 runtime smoke | `.runtime/v22-registry/`; `.runtime/v22-cloud-deploy/`; `.runtime/v22-runtime-smoke/` | program board blocker; CC-07 blocker |
+| CC-REVIEW | R-21 final reconciliation cleanup and B review | `.runtime/v22-cloud-cleanup/`; stdout JSON and reviewed diff | B review note |
+
 ## Status Data
 
 <!-- v22-cloud-onboarding-status-table:start -->
@@ -52,7 +65,60 @@ program id: v22-cloud-onboarding
 {
   "programId": "v22-cloud-onboarding",
   "currentTrunkAnchor": "148f5a0",
+  "workflowModel": "authorized_cloud_connection_loop",
+  "oldCoPhaseStateMachineRetired": true,
+  "activeGatePrefix": "CC",
+  "retiredLegacyGateAliases": [
+    "C00",
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "CO-01..CO-14"
+  ],
   "workflowBoundaryEvidence": "148f5a0",
+  "runnableGateMapping": [
+    {
+      "gateId": "CC-01",
+      "steps": ["R-00", "R-01", "R-02"],
+      "artifactRoots": ["stdout JSON only", "services/portal/package.json", "services/portal/package-lock.json"]
+    },
+    {
+      "gateId": "CC-02",
+      "steps": ["R-03", "R-04"],
+      "artifactRoots": ["stdout JSON only", ".runtime/v22-tencent-readonly-inventory/"]
+    },
+    {
+      "gateId": "CC-03",
+      "steps": ["R-05", "R-10"],
+      "artifactRoots": ["stdout JSON only"]
+    },
+    {
+      "gateId": "CC-04",
+      "steps": ["R-06", "R-07", "R-11", "R-20"],
+      "artifactRoots": [".runtime/v22-cloud-lifecycle/"]
+    },
+    {
+      "gateId": "CC-05",
+      "steps": ["R-08", "R-09", "R-12", "R-19"],
+      "artifactRoots": [".runtime/v22-cloud-lifecycle/"]
+    },
+    {
+      "gateId": "CC-06",
+      "steps": ["R-13", "R-21"],
+      "artifactRoots": [".runtime/v22-cloud-reconciliation/", ".runtime/v22-cloud-cleanup/"]
+    },
+    {
+      "gateId": "CC-07",
+      "steps": ["R-14", "R-15", "R-16", "R-17", "R-18"],
+      "artifactRoots": [".runtime/v22-registry/", ".runtime/v22-cloud-deploy/", ".runtime/v22-runtime-smoke/"]
+    },
+    {
+      "gateId": "CC-REVIEW",
+      "steps": ["R-21"],
+      "artifactRoots": [".runtime/v22-cloud-cleanup/", "stdout JSON and reviewed diff"]
+    }
+  ],
   "phases": [
     {
       "phaseId": "CO-01",
