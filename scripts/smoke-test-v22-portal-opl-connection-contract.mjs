@@ -19,6 +19,7 @@ const files = {
   suite: "scripts/smoke-test-v22-mvp-contract-suite.mjs",
   stateStoreSmoke: "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs",
   adapterApiSmoke: "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs",
+  realOplCanarySmoke: "scripts/smoke-test-v22-real-opl-canary.mjs",
 };
 
 async function read(relativePath) {
@@ -127,6 +128,15 @@ assertIncludesAll(contents.connection, [
   "upstream OPL 更新只允许改 Gateway/Adapter 映射层",
   "不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同",
   "`capability_not_supported`",
+  "真实 upstream 能力必须先由 canary 分类，不能从 fake Product API fixture 推断",
+  "`real_http_product_api`",
+  "`mapped_to_acp_runtime`",
+  "`capability_not_supported`",
+  "`opl web` 已 retired",
+  "主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
+  "`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面",
+  "当真实 upstream 没有 HTTP Product API 而只有 ACP/CLI 边界时",
+  "`initialize`、`session_list`、`session_ledger`",
   "不同 API 必须低耦合演进",
   "每个 API 的验收不得只检查 HTTP 200/201/202",
   "真实访问和真实回流",
@@ -145,7 +155,19 @@ assertIncludesAll(contents.connection, [
   "start run 后平台生成 `runId`",
   "输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal",
   "Portal 能按 workspace、session 和 run 看到任务、文件、trace 和账单状态",
+  "真实 OPL canary 必须输出接口事实",
+  "fake upstream smoke 只能证明合同实现，不能证明 one-person-lab 主仓真实 API 存在",
 ], "connection_acceptance");
+
+assertIncludesAll(contents.upstream, [
+  "Real Main-Repo Canary Findings",
+  "`opl web` 真实执行返回 `cli_usage_error`",
+  "主仓当前不提供可启动的本地 Product API Web 进程",
+  "主仓当前没有暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions`",
+  "`opl session runtime --acp` 是当前可验证的公开 CLI/ACP 边界",
+  "`workspace_list` 虽出现在 ACP command list 中，但隔离 canary 返回 `invalid_payload`",
+  "Portal OPL Adapter 可在 `OPL_RUNTIME_MODE=acp`",
+], "upstream_real_canary_findings");
 
 assertIncludesAll(contents.readme, [
   "v22-portal-opl-connection-boundary.md",
@@ -176,6 +198,19 @@ assertIncludesAll(contents.adapterApiSmoke, [
   "stable_run_artifacts_must_read_persisted_run_artifact",
 ], "adapter_api_local_flow_smoke");
 
+assertIncludesAll(contents.realOplCanarySmoke, [
+  "opl web",
+  "session runtime",
+  "--acp",
+  "/api/opl/system",
+  "/api/opl/messages",
+  "/api/opl/sessions",
+  "capability_not_supported_until_mapping_exists",
+  "adapter_acp_bootstrap_must_succeed",
+  "adapter_acp_session_bind_must_succeed",
+  ".runtime",
+], "real_opl_canary_smoke");
+
 assertIncludesAll(contents.stateStoreSmoke, [
   "state_store_must_export_transactional_update_state",
   "state_store_must_preserve_concurrent_message_backflow",
@@ -203,6 +238,13 @@ assertIncludesAll([
   "两条路径最终进入同一套 Gateway / preflight / launch 逻辑",
   "该逻辑必须保持 MedOPL 的 tenant、workspace、runtime availability、resource binding 和 token provider boundary",
 ], "existing_contract_alignment");
+
+assertIncludesAll(contents.statusMatrix, [
+  "2026-05-10 主仓 canary 确认 `opl web` retired",
+  "主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
+  "当前可验证公开边界是 `opl session runtime --acp`",
+  "未验证或不兼容能力必须显式 `capability_not_supported`",
+], "status_matrix_real_opl_canary_alignment");
 
 assertExcludesAll(contents.connection, [
   "用户直接访问 upstream 作为 v22 产品入口",

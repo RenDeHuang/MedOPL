@@ -33,6 +33,19 @@ upstream 更新后，平台拉取更新，并通过以下公开边界适配：
 
 只能通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入。
 
+## Real Main-Repo Canary Findings
+
+截至 2026-05-10，本地真实 canary 对 `/home/dev/projects/one-person-lab` 主仓验证结果如下：
+
+- `opl web` 真实执行返回 `cli_usage_error`，`retired=true`；主仓当前不提供可启动的本地 Product API Web 进程。
+- 主仓当前没有暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` 这类 HTTP Product API endpoint；这些 endpoint 只能通过未来独立 WebUI/Product API provider 或 Gateway/Adapter 映射层接入，不能由 fake Product API smoke 代替真实结论。
+- `opl session runtime --acp` 是当前可验证的公开 CLI/ACP 边界；canary 已验证 `initialize`、`session_list`、`session_ledger` 可访问。
+- `workspace_list` 虽出现在 ACP command list 中，但隔离 canary 返回 `invalid_payload`；在映射层完成并验证前必须标记为 `capability_not_supported`。
+- OPL Web Gateway 配置 `OPL_UPSTREAM_URL` 指向不可用真实 Web 时必须 fail closed，不得回退到旧端口、旧 workbench 或 fake upstream。
+- Portal OPL Adapter 可在 `OPL_RUNTIME_MODE=acp`、`OPL_ACP_RUNTIME_DIR=/home/dev/projects/one-person-lab` 下通过真实 ACP runtime 完成 bootstrap 和 session bind，并写回 Adapter state。
+
+上述结论只证明主仓真实 canary 边界；不证明独立 OPL WebUI、真实浏览器交互、真实 provider key 调用或生产部署已完成。
+
 ## Local Gateway Proxy
 
 v22 本地最小代理链路必须满足：

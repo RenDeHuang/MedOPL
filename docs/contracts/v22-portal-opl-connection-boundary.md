@@ -167,9 +167,18 @@ bootstrap 和 Adapter status 必须能表达：
 
 如果 upstream OPL 缺少某个能力、能力版本不兼容或映射层尚未实现，Adapter 必须显式返回 `capability_not_supported`，不能隐式兜底、伪装成功或把未知 upstream shape 直接写入 Portal 状态。
 
+真实 upstream 能力必须先由 canary 分类，不能从 fake Product API fixture 推断：
+
+- `real_http_product_api`: 真实 upstream HTTP Product API endpoint 存在，可直接由 Gateway/Adapter 访问。
+- `mapped_to_acp_runtime`: 真实 upstream 没有对应 HTTP endpoint，但存在公开 ACP/CLI runtime 边界，可由 Adapter 映射。
+- `capability_not_supported`: 真实 upstream 不存在、返回不兼容，或映射层尚未完成；Adapter 必须显式返回该状态。
+
+2026-05-10 的 `/home/dev/projects/one-person-lab` 主仓 canary 结论是：`opl web` 已 retired，主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面；`workspace_list`、浏览器 WebUI Product API、无 secret 的真实 message prompt 和 WebUI 文件上传暂不支持或未验证。
+
 每个 API 的验收不得只检查 HTTP 200/201/202。必须同时证明真实访问和真实回流：
 
 - `GET /portal-adapter/api/opl/bootstrap` 必须访问 upstream/Product API 的 health、system、engines、modules、agents、workspaces、sessions、progress 和 artifacts 边界；返回值必须来自这些访问结果和 Adapter state projection，不能只本地构造。
+- 当真实 upstream 没有 HTTP Product API 而只有 ACP/CLI 边界时，bootstrap 必须证明 `initialize`、`session_list`、`session_ledger` 等公开 ACP 命令被真实访问，并对缺失或不兼容能力返回 `capability_not_supported`。
 - `POST /portal-adapter/api/opl/sessions/bind` 必须更新 runtime session 的 `oplSessionId`、workspace、tenant、resourceBinding 和 provider binding 关系，并写入 `opl_session_bound` 事件。
 - `POST /portal-adapter/api/opl/messages` 必须把 normalized message 发到 OPL Product API 或公开 ACP/runtime 边界，并把 message request、reply、message artifact 和 trace 写回 Adapter state。
 - `GET /portal-adapter/api/opl/messages/{messageId}/status` 必须读取前序 message 写入的 request/reply/trace 状态，不能返回静态成功。
@@ -241,6 +250,7 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 7. start run 后平台生成 `runId`。
 8. 输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。
 9. Portal 能按 workspace、session 和 run 看到任务、文件、trace 和账单状态。
+10. 真实 OPL canary 必须输出接口事实：哪些 HTTP Product API 真实存在，哪些能力映射到 ACP/CLI，哪些能力暂不支持；fake upstream smoke 只能证明合同实现，不能证明 one-person-lab 主仓真实 API 存在。
 
 ## Non-goals
 
@@ -261,6 +271,9 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
 node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 node scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs
+node scripts/smoke-test-v22-real-opl-canary.mjs
 ```
 
-这些 smoke 只检查 repo-tracked 合同、索引、本地 fake clean OPL Product API、本地 fake Runtime Agent relay 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
+前三条 smoke 只检查 repo-tracked 合同、索引、本地 fake clean OPL Product API、本地 fake Runtime Agent relay 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
+
+`scripts/smoke-test-v22-real-opl-canary.mjs` 是单独真实 upstream canary：它读取并执行 `/home/dev/projects/one-person-lab` 的公开 CLI/ACP 边界，证据只写入 `.runtime/real-opl-canary/evidence.json`，不修改 upstream，不读取 secret，不调用真实云，不把 fake Product API 当真实接口结论。

@@ -43,19 +43,20 @@
 - OPL entry/preflight 合同已定义：`portal.medopl.cn` 登录不需要 gflabtoken API Key；`opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
 - OPL 工作流合同覆盖发送信息、上传文件、用文件跑任务、生成输出文件引用和下载引用。
 - Runtime Bridge session/run/file/providerKeyRef 合同已定义，run、artifact、ledger、providerKeyRef 和敏感字段净化已有本地合同 smoke。
+- `/home/dev/projects/one-person-lab` 主仓真实 canary 已确认：当前主仓 `opl web` retired，未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 Adapter bootstrap/session bind 的公开映射面。
 - Portal 后端/API 可表达 workspace 文件、输出文件、账单摘要、冻结/预扣费和 session trace metadata。
 - 释放托管环境后可表达停止扣费确认、T+1 审计和文件保护/清理边界。
 - Langfuse observability metadata boundary 已定义为观测附件，不是 Portal canonical source，不是 billing truth。
 - raw API key、raw prompt、bearer token、`launchToken`、`runtimeToken`、内部存储密钥、objectKey、localPath、signedUrl 不得出现在公开 response、Portal projection、日志、evidence 或 git。
 
-该层级不是完整真实上线，不代表真实云资源、真实部署、真实 upstream 生产运行、真实价格审批、真实账单核对、真实 Langfuse trace source 或生产 OPL E2E 已完成。
+该层级不是完整真实上线，不代表真实云资源、真实部署、独立 OPL WebUI/Product API、真实 provider key 调用、真实价格审批、真实账单核对、真实 Langfuse trace source 或生产 OPL E2E 已完成。
 
 ## 尚未完成真实上线能力
 
 以下能力尚未完成，不能在本报告中视为已上线：
 
-- Gateway / Runtime Bridge 真实联通，当前只到本地合同和本地 E2E smoke 边界
-- one-person-lab 实际拉取/部署/运行接入
+- Gateway / Runtime Bridge 生产联通，当前只到本地合同、本地 E2E smoke 和 `/home/dev/projects/one-person-lab` 主仓 canary 边界
+- one-person-lab 实际拉取/部署/运行接入：已完成主仓本地 canary；尚未完成独立 OPL WebUI/Product API 接入、真实浏览器工作台接入和真实 provider key message prompt
 - 真实云资源开通，包含后续真实腾讯云资源开通 / 释放
 - 真实价格审批
 - 真实账单核对
@@ -98,6 +99,7 @@
 - `scripts/smoke-test-v22-portal-opl-connection-contract.mjs`
 - `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs`
+- `scripts/smoke-test-v22-real-opl-canary.mjs`（单独真实 upstream canary，不并入默认纯本地 fixture suite）
 - `scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
 - `scripts/smoke-test-v22-portal-runtime-startup-config.mjs`
 - `scripts/smoke-test-v22-portal-dev-server-auth-proxy.mjs`
