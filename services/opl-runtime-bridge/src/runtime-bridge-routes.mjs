@@ -243,6 +243,8 @@ function completedMessageExtra({ input = {}, runtimeSession = {}, message = {}, 
 function failedMessageExtra(error, acceptedAt = "", workerStartedAt = "") {
   return {
     error: String(error.message || error),
+    errorCode: error?.code || "",
+    capability: error?.capability || "",
     workerStartedAt,
     acceptedAt,
     finishedAt: new Date().toISOString(),
@@ -421,6 +423,19 @@ function runnerFailureEvent(runtimeSession = {}, mapped = {}) {
   };
 }
 
+function isCapabilityNotSupported(error) {
+  return error?.code === "capability_not_supported";
+}
+
+function capabilityNotSupportedPayload(error, capabilityFallback = "") {
+  return {
+    ok: false,
+    error: "capability_not_supported",
+    capability: error?.capability || capabilityFallback,
+    message: String(error?.message || "OPL capability is not supported by the current upstream mapping."),
+  };
+}
+
 export function createRuntimeBridgeRuntime() {
   const config = readConfig();
   const langfusePublisher = createLangfusePublisher();
@@ -571,7 +586,7 @@ export function createRuntimeBridgeRuntime() {
           timing: timingPayload(record || {}),
         };
       } catch (error) {
-        status = 502;
+        status = isCapabilityNotSupported(error) ? 409 : 502;
         upsertRuntimeMessage(state, {
           runtimeSession: activeRuntimeSession,
           input,
@@ -582,7 +597,9 @@ export function createRuntimeBridgeRuntime() {
           extra: failedMessageExtra(error, acceptedAt, workerStartedAt),
         });
         addEvent(state, "opl_message_reply_failed", { ...activeRuntimeSession, messageId, error: String(error.message || error) });
-        payload = { ok: false, error: String(error.message || error) };
+        payload = isCapabilityNotSupported(error)
+          ? capabilityNotSupportedPayload(error, "message")
+          : { ok: false, error: String(error.message || error) };
       }
     });
     sendJson(res, status, payload);

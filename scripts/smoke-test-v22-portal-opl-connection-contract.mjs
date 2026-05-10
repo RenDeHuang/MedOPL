@@ -20,6 +20,9 @@ const files = {
   stateStoreSmoke: "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs",
   adapterApiSmoke: "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs",
   realOplCanarySmoke: "scripts/smoke-test-v22-real-opl-canary.mjs",
+  realOplWebuiCanarySmoke: "scripts/smoke-test-v22-real-opl-webui-canary.mjs",
+  realOplWebuiAdapterSmoke: "scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs",
+  webuiBridgeClient: "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
 };
 
 async function read(relativePath) {
@@ -135,6 +138,17 @@ assertIncludesAll(contents.connection, [
   "`opl web` 已 retired",
   "主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
   "`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面",
+  "真实 WebUI canary 结论",
+  "该 WebUI 的真实 session 协议是 WebSocket bridge",
+  "`create-conversation`、`database.get-user-conversations`、`database.get-conversation-messages` 已完成真实 session 创建和数据库回读",
+  "只是通用 `/api` catch-all 的 200 placeholder，不是 Product API",
+  "`chat.send.message` 当前会进入 WebUI/ACP 启动路径但未形成完整 AI reply 回流",
+  "真实 WebUI Adapter flow 结论",
+  "Portal OPL Adapter 可以在 `OPL_RUNTIME_MODE=webui`",
+  "launch 阶段创建真实 WebUI conversation",
+  "bootstrap 从 WebUI database 回读 session",
+  "`opl_webui_bridge_session_created`",
+  "不能生成伪 run/artifact 成功",
   "当真实 upstream 没有 HTTP Product API 而只有 ACP/CLI 边界时",
   "`initialize`、`session_list`、`session_ledger`",
   "不同 API 必须低耦合演进",
@@ -211,6 +225,60 @@ assertIncludesAll(contents.realOplCanarySmoke, [
   ".runtime",
 ], "real_opl_canary_smoke");
 
+assertIncludesAll(contents.realOplWebuiCanarySmoke, [
+  "v22_real_opl_webui_canary",
+  "OPL_WEBUI_AUTH_MODE",
+  "real_webui_root_must_load",
+  "/api/auth/status",
+  "/api/auth/user",
+  "/api/opl/system",
+  "/api/opl/sessions",
+  "/api/opl/messages",
+  "catch_all_placeholder_not_product_api",
+  "create-conversation",
+  "database.get-user-conversations",
+  "database.get-conversation-messages",
+  "chat.send.message",
+  "capability_not_supported",
+  "launchScriptInjected",
+  "forbiddenSecretQueryStatus",
+  ".runtime",
+], "real_opl_webui_canary_smoke");
+
+assertIncludesAll(contents.realOplWebuiAdapterSmoke, [
+  "v22_real_opl_webui_adapter_flow",
+  "OPL_RUNTIME_MODE",
+  "OPL_WEBUI_BRIDGE_URL",
+  "/portal-adapter/api/opl/bootstrap",
+  "/portal-adapter/api/opl/sessions/bind",
+  "/portal-adapter/api/opl/messages",
+  "/portal-adapter/api/opl/runs",
+  "real_webui_adapter_launch",
+  "real_webui_websocket_session_create",
+  "real_webui_database_session_roundtrip",
+  "http_product_api_classified_not_supported",
+  "message_reply_not_faked",
+  "capability_not_supported",
+  "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED",
+  "opl_webui_bridge_session_created",
+  ".runtime",
+], "real_opl_webui_adapter_smoke");
+
+assertIncludesAll(contents.webuiBridgeClient, [
+  "OplWebuiCapabilityError",
+  "hasOplWebuiBridge",
+  "getWebuiBootstrap",
+  "bindWebuiWorkspace",
+  "createWebuiSession",
+  "sendWebuiMessage",
+  "create-conversation",
+  "database.get-user-conversations",
+  "database.get-conversation-messages",
+  "chat.send.message",
+  "catch_all_placeholder_not_product_api",
+  "capability_not_supported",
+], "real_opl_webui_bridge_client");
+
 assertIncludesAll(contents.stateStoreSmoke, [
   "state_store_must_export_transactional_update_state",
   "state_store_must_preserve_concurrent_message_backflow",
@@ -242,8 +310,10 @@ assertIncludesAll([
 assertIncludesAll(contents.statusMatrix, [
   "2026-05-10 主仓 canary 确认 `opl web` retired",
   "主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
-  "当前可验证公开边界是 `opl session runtime --acp`",
+  "独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可接通",
+  "当前可验证公开边界是 `opl session runtime --acp` 和独立 WebUI WebSocket bridge session 创建/DB 回读",
   "未验证或不兼容能力必须显式 `capability_not_supported`",
+  "不能把 run/artifact 伪成功",
 ], "status_matrix_real_opl_canary_alignment");
 
 assertExcludesAll(contents.connection, [

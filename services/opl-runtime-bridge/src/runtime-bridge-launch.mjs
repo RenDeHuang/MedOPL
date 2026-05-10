@@ -623,6 +623,7 @@ export function createLaunchApi({
       engines: oplResources.engines || [],
       modules: oplResources.modules || [],
       agents: oplResources.agents || [],
+      capabilityClassification: oplResources.capabilityClassification || null,
       runtimeSession: runtimeSessionView,
       opl: {
         health: oplResources.health || null,
@@ -698,6 +699,14 @@ export function createLaunchApi({
         await bindWorkspace(portalContext);
         const oplSession = await createOplSession(portalContext);
         runtimeSession.oplSessionId = markOplSessionCreated(launchStatus, oplSession);
+        if (oplSession.source === "aionui" || oplSession.source === "opl_webui_bridge") {
+          addEvent(state, "opl_webui_bridge_session_created", {
+            ...portalContext,
+            oplSessionId: runtimeSession.oplSessionId,
+            source: oplSession.source,
+            databaseConversationRoundtrip: oplSession.databaseConversationRoundtrip === true,
+          });
+        }
         if (oplSession.status === "deferred") {
           addEvent(state, "opl_session_create_deferred", { ...portalContext, reason: oplSession.reason || "" });
         }

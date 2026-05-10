@@ -6,6 +6,13 @@ import {
   initializeAcpRuntime,
   promptAcpRuntime,
 } from "./opl-acp-runtime-client.mjs";
+import {
+  bindWebuiWorkspace,
+  createWebuiSession,
+  getWebuiBootstrap,
+  hasOplWebuiBridge,
+  sendWebuiMessage,
+} from "./opl-webui-bridge-client.mjs";
 
 const PRODUCT_API_URL = String(process.env.OPL_PRODUCT_API_URL || "").replace(/\/$/, "");
 const PRODUCT_API_TOKEN = String(process.env.OPL_PRODUCT_API_TOKEN || "");
@@ -217,16 +224,22 @@ function useAcpRuntime() {
   return hasOplAcpRuntime() && !PRODUCT_API_URL;
 }
 
+function useWebuiBridge() {
+  return hasOplWebuiBridge() && !PRODUCT_API_URL && !useAcpRuntime();
+}
+
 export function getOplWebUrl() {
   return OPL_WEB_URL;
 }
 
 export async function getSystem() {
+  if (useWebuiBridge()) return (await getWebuiBootstrap()).system;
   if (useAcpRuntime()) return (await getAcpBootstrap()).system;
   return firstFrom(await requestJson("/api/opl/system"), "system");
 }
 
 export async function getHealth() {
+  if (useWebuiBridge()) return (await getWebuiBootstrap()).health;
   if (useAcpRuntime()) {
     const initialized = await initializeAcpRuntime();
     return {
@@ -273,6 +286,7 @@ export async function listAgents() {
 }
 
 export async function bindWorkspace(portalContext) {
+  if (useWebuiBridge()) return bindWebuiWorkspace(portalContext);
   if (useAcpRuntime()) return bindAcpWorkspace(portalContext);
   const payload = await requestFirstAvailable(["/api/opl/workspaces/bind", "/api/opl/workspaces"], {
     method: "POST",
@@ -291,6 +305,7 @@ export async function listWorkspaces(context = {}) {
 }
 
 export async function createSession(portalContext) {
+  if (useWebuiBridge()) return createWebuiSession(portalContext);
   if (useAcpRuntime()) return createAcpSession(portalContext);
   try {
     return firstFrom(await requestJson("/api/opl/sessions", {
@@ -414,6 +429,7 @@ function sanitizedProductApiMessagePayload(input = {}, prompt = "") {
 
 export async function sendMessage(input = {}) {
   const prompt = readPromptText(input);
+  if (useWebuiBridge()) return sendWebuiMessage({ ...input, prompt });
   return useAcpRuntime()
     ? sendMessageViaAcp(input, prompt)
     : sendMessageViaProductApi(input, prompt);
@@ -458,6 +474,7 @@ export async function listArtifacts(context = {}) {
 }
 
 export async function getBootstrap(runtimeSession = {}) {
+  if (useWebuiBridge()) return getWebuiBootstrap(runtimeSession);
   if (useAcpRuntime()) return getAcpBootstrap(runtimeSession);
   const [health, system, engines, modules, agents, workspaces, sessions, progress, artifacts] = await Promise.all([
     getHealth(),

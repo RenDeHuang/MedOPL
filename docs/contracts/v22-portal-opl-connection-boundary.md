@@ -173,7 +173,11 @@ bootstrap 和 Adapter status 必须能表达：
 - `mapped_to_acp_runtime`: 真实 upstream 没有对应 HTTP endpoint，但存在公开 ACP/CLI runtime 边界，可由 Adapter 映射。
 - `capability_not_supported`: 真实 upstream 不存在、返回不兼容，或映射层尚未完成；Adapter 必须显式返回该状态。
 
-2026-05-10 的 `/home/dev/projects/one-person-lab` 主仓 canary 结论是：`opl web` 已 retired，主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面；`workspace_list`、浏览器 WebUI Product API、无 secret 的真实 message prompt 和 WebUI 文件上传暂不支持或未验证。
+2026-05-10 的 `/home/dev/projects/one-person-lab` 主仓 canary 结论是：`opl web` 已 retired，主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面；`workspace_list`、无 secret 的真实 message prompt 和 WebUI 文件上传暂不支持或未验证。
+
+2026-05-10 的真实 WebUI canary 结论是：独立 OPL/AionUI WebUI 可作为真实浏览器工作台进程启动，`GET /`、`GET /api/auth/status`、`GET /api/auth/user` 可真实访问；Gateway 指向该 WebUI 后可代理页面、注入 launch script、拒绝 secret query，并代理 WebSocket bridge。该 WebUI 的真实 session 协议是 WebSocket bridge，`create-conversation`、`database.get-user-conversations`、`database.get-conversation-messages` 已完成真实 session 创建和数据库回读。`/api/opl/system`、`/api/opl/sessions`、`/api/opl/messages` 在该 WebUI 上只是通用 `/api` catch-all 的 200 placeholder，不是 Product API；`chat.send.message` 当前会进入 WebUI/ACP 启动路径但未形成完整 AI reply 回流，必须标为 `capability_not_supported`，直到 provider/agent canary 证明真实回复回流。
+
+2026-05-10 的真实 WebUI Adapter flow 结论是：Portal OPL Adapter 可以在 `OPL_RUNTIME_MODE=webui` 下通过 `OPL_WEBUI_BRIDGE_URL`/`OPL_WEB_URL` 连接真实 OPL/AionUI WebUI WebSocket bridge；launch 阶段创建真实 WebUI conversation，bootstrap 从 WebUI database 回读 session，并在 Adapter state 写入 `opl_webui_bridge_session_created` 和 `opl_session_bound`。该模式仍必须把 `/api/opl/*` HTTP Product API 分类为 `capability_not_supported`；message reply 未验证前返回 `capability_not_supported`，run 在没有真实 Runtime Agent relay 时返回明确失败，不能生成伪 run/artifact 成功。
 
 每个 API 的验收不得只检查 HTTP 200/201/202。必须同时证明真实访问和真实回流：
 
@@ -272,8 +276,14 @@ node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
 node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 node scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs
 node scripts/smoke-test-v22-real-opl-canary.mjs
+OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-canary.mjs
+OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
 ```
 
 前三条 smoke 只检查 repo-tracked 合同、索引、本地 fake clean OPL Product API、本地 fake Runtime Agent relay 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
 
 `scripts/smoke-test-v22-real-opl-canary.mjs` 是单独真实 upstream canary：它读取并执行 `/home/dev/projects/one-person-lab` 的公开 CLI/ACP 边界，证据只写入 `.runtime/real-opl-canary/evidence.json`，不修改 upstream，不读取 secret，不调用真实云，不把 fake Product API 当真实接口结论。
+
+`scripts/smoke-test-v22-real-opl-webui-canary.mjs` 是单独真实 WebUI canary：它启动或连接独立 OPL/AionUI WebUI，验证页面、auth context、Gateway proxy、WebSocket session bridge 和 `/api/opl/*` catch-all 分类，证据只写入 `.runtime/real-opl-webui-canary/evidence.json`，不修改 WebUI/upstream，不读取 secret，不调用真实云，不把 HTTP 200 placeholder 当真实 Product API。该 canary 需要显式 WebUI 来源：默认读取 `.runtime/opl-aion-shell` 的已构建 `dist-server`/`out/renderer`，或通过 `OPL_REAL_WEBUI_DIR` 指向已构建 WebUI 目录，或通过 `OPL_REAL_WEBUI_URL` 指向已启动的真实 WebUI。
+
+`scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs` 是单独真实 WebUI Adapter flow：它通过 Gateway 和 Adapter 连接真实 WebUI WebSocket bridge，验证 launch、session 创建、database 回读、state backflow、HTTP Product API 不支持分类，以及 message/run 不伪成功。该 smoke 同样需要显式 WebUI 来源，证据只保存在 `.runtime/real-opl-webui-adapter-flow`，不进 git。

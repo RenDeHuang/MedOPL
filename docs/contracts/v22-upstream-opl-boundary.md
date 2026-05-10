@@ -46,6 +46,19 @@ upstream 更新后，平台拉取更新，并通过以下公开边界适配：
 
 上述结论只证明主仓真实 canary 边界；不证明独立 OPL WebUI、真实浏览器交互、真实 provider key 调用或生产部署已完成。
 
+## Real WebUI Canary Findings
+
+截至 2026-05-10，本地真实 WebUI canary 对已构建的 OPL/AionUI WebUI 运行态验证结果如下：
+
+- 真实 WebUI 进程可启动为独立 Web server；`GET /` 返回 One Person Lab Web app HTML，`GET /api/auth/status` 和 `GET /api/auth/user` 可在 `OPL_WEBUI_AUTH_MODE=none` 的隔离 canary 环境返回真实用户上下文。
+- WebUI 的 `/api/opl/system`、`/api/opl/sessions`、`/api/opl/messages` 虽然 `GET` 返回 200，但源码与 canary 均证明它们命中通用 `/api` catch-all，只返回 `API endpoint - bridge integration working`；这不是 Product API，必须分类为 `capability_not_supported`，不能被 Gateway/Adapter 当成真实 Product API。
+- WebUI 的真实业务协议是 browser WebSocket bridge，而不是 `/api/opl/*` HTTP Product API；canary 已通过 `create-conversation`、`database.get-user-conversations` 和 `database.get-conversation-messages` 验证真实 session 创建和数据库回读。
+- OPL Web Gateway 指向真实 WebUI 后可代理 HTML、注入 launch script、拒绝 secret query，并可代理 WebSocket bridge 完成 session 创建和数据库回读。
+- Portal OPL Adapter 在 `OPL_RUNTIME_MODE=webui` 下可通过 WebSocket bridge 创建真实 WebUI conversation，并把 session 创建和 database 回读投影到 MedOPL bootstrap/state；该映射属于 Gateway/Adapter anti-corruption layer，不修改 WebUI/upstream 源码。
+- `chat.send.message` 已能进入 WebUI WebSocket bridge 并触发后端 agent 启动路径，但当前隔离环境未配置可用 provider/agent 登录，未形成完整 AI reply 回流；在完成 provider/agent canary 前必须标记为 `capability_not_supported`。
+
+上述结论只证明真实 WebUI 进程、页面、认证上下文、WebSocket session bridge、Gateway proxy 和 Adapter session bridge 可接通；不证明 HTTP Product API、真实 provider key message prompt、文件上传、run/artifact 或生产部署已完成。
+
 ## Local Gateway Proxy
 
 v22 本地最小代理链路必须满足：

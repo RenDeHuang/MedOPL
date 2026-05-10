@@ -42,8 +42,8 @@
 | API token 业务 | `https://gflabtoken.cn/v1` | keep，商业目标之一是销售 token/API 使用额度；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程 |
 | API key 密钥边界 | OPL entry/preflight + 后端密钥边界 | keep，portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key；API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态；API Key 不是 Portal 普通登录字段；raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git |
 | OPL Web 双入口 | Portal “进入 OPL 工作台” + `/opl/entry/preflight` | keep，用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight；/internal/opl/auth/login 只能作为 internal implementation path；旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口；后续真实 proxy / upstream 运行接入单独 feat；旧入口删除如需要另开 cleanup/* |
-| OPL Web | clean upstream OPL Web | keep，active surface 不允许修改 one-person-lab upstream；one-person-lab upstream 不属于 active surface；2026-05-10 主仓 canary 确认 `opl web` retired，主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API，独立 WebUI/Product API 仍需后续接入 |
-| upstream 更新 | pull + Gateway/Adapter/Runtime Agent/API/CLI 适配 | keep，不修改 upstream 源码；当前可验证公开边界是 `opl session runtime --acp`，Adapter 可映射 bootstrap/session bind，未验证或不兼容能力必须显式 `capability_not_supported` |
+| OPL Web | clean upstream OPL Web | keep，active surface 不允许修改 one-person-lab upstream；one-person-lab upstream 不属于 active surface；2026-05-10 主仓 canary 确认 `opl web` retired，主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；真实 WebUI canary 确认独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可接通，但 `/api/opl/*` 是 catch-all placeholder，不是 Product API，message AI reply、file upload、run/artifact 回流仍未完成 |
+| upstream 更新 | pull + Gateway/Adapter/Runtime Agent/API/CLI 适配 | keep，不修改 upstream 源码；当前可验证公开边界是 `opl session runtime --acp` 和独立 WebUI WebSocket bridge session 创建/DB 回读，Adapter 可映射 bootstrap/session bind，未验证或不兼容能力必须显式 `capability_not_supported`，不能把 run/artifact 伪成功 |
 | Billing freeze | 7 天冻结保护 | keep，余额不足提示消耗冻结金额，释放后停止扣费 |
 | Trace metadata | Portal 元数据边界 | keep，仅用于轨迹、审计、排障 |
 | Langfuse | 后续 trace metadata 来源 | archive/reference，不是当前主产品叙事 |

@@ -72,6 +72,11 @@ function providerRuntimeEnv(secret) {
   };
 }
 
+function shouldReadProviderSecretForRuntime() {
+  const runtimeMode = String(process.env.OPL_RUNTIME_MODE || "").trim().toLowerCase();
+  return runtimeMode === "acp" || Boolean(String(process.env.OPL_ACP_RUNTIME_COMMAND_JSON || "").trim());
+}
+
 function artifactName(messageId) {
   return `${messageId}-reply.md`;
 }
@@ -118,7 +123,9 @@ export function createMessageApi({ publishTraceEvent }) {
       status: "started",
       startedAt: acpStartedAt,
     });
-    const providerSecret = await readProviderSecret(context.providerConfigSecretRef);
+    const providerSecret = shouldReadProviderSecretForRuntime()
+      ? await readProviderSecret(context.providerConfigSecretRef)
+      : null;
     const response = await sendMessage({
       ...context,
       prompt: context.message,
