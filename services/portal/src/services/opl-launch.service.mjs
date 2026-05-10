@@ -176,6 +176,53 @@ export function createOplLaunchService({
     return launchStatuses.get(launchId) || null;
   }
 
+  function completeLaunchIntent(launchId, result, { startedAt = Date.now() } = {}) {
+    updateLaunchStage(launchId, "session_created", {
+      blockingUser: false,
+      userVisibleState: "正在创建 OPL 会话",
+    });
+    updateLaunchStage(launchId, "gateway_ready", {
+      blockingUser: false,
+      userVisibleState: "OPL 网关已准备",
+    });
+    updateLaunchStage(launchId, "opl_opening", {
+      blockingUser: false,
+      userVisibleState: "正在打开 OPL",
+    });
+    const current = launchStatuses.get(launchId);
+    if (current) {
+      current.status = "ready";
+      current.userVisibleState = "OPL 已准备好，正在打开";
+      current.blockingUser = false;
+      current.oplWebUrl = result.launch.oplWebUrl || "";
+      current.runtimeUrl = result.launch.runtimeUrl || "";
+      current.workspace = result.taskSpace;
+      current.workspaceSession = result.workspaceSession;
+      current.launch = result.launch;
+      current.latencyMs = Date.now() - startedAt;
+      current.updatedAt = nowIso();
+    }
+    return current;
+  }
+
+  function failLaunchIntent(launchId, result) {
+    const current = launchStatuses.get(launchId);
+    if (!current) return null;
+    current.ok = false;
+    current.status = "failed";
+    current.error = result.error;
+    current.message = result.message || (result.reasons || []).join("；");
+    current.blockingUser = true;
+    current.userVisibleState = result.message || "OPL 准备失败，请检查账号和工作空间状态";
+    current.updatedAt = nowIso();
+    updateLaunchStage(launchId, "session_created", {
+      ok: false,
+      blockingUser: true,
+      userVisibleState: current.userVisibleState,
+    });
+    return current;
+  }
+
   function createLaunchIntent({ user, taskSlug, source = "portal-page" }) {
     const launchId = `opl-launch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const status = {
@@ -217,48 +264,10 @@ export function createOplLaunchService({
         source,
       });
       if (!result.ok) {
-        const current = launchStatuses.get(launchId);
-        if (current) {
-          current.ok = false;
-          current.status = "failed";
-          current.error = result.error;
-          current.message = result.message || (result.reasons || []).join("；");
-          current.blockingUser = true;
-          current.userVisibleState = result.message || "OPL 准备失败，请检查账号和工作空间状态";
-          current.updatedAt = nowIso();
-          updateLaunchStage(launchId, "session_created", {
-            ok: false,
-            blockingUser: true,
-            userVisibleState: current.userVisibleState,
-          });
-        }
+        failLaunchIntent(launchId, result);
         return result;
       }
-      updateLaunchStage(launchId, "session_created", {
-        blockingUser: false,
-        userVisibleState: "正在创建 OPL 会话",
-      });
-      updateLaunchStage(launchId, "gateway_ready", {
-        blockingUser: false,
-        userVisibleState: "OPL 网关已准备",
-      });
-      updateLaunchStage(launchId, "opl_opening", {
-        blockingUser: false,
-        userVisibleState: "正在打开 OPL",
-      });
-      const current = launchStatuses.get(launchId);
-      if (current) {
-        current.status = "ready";
-        current.userVisibleState = "OPL 已准备好，正在打开";
-        current.blockingUser = false;
-        current.oplWebUrl = result.launch.oplWebUrl || "";
-        current.runtimeUrl = result.launch.runtimeUrl || "";
-        current.workspace = result.taskSpace;
-        current.workspaceSession = result.workspaceSession;
-        current.launch = result.launch;
-        current.latencyMs = Date.now() - startedAt;
-        current.updatedAt = nowIso();
-      }
+      completeLaunchIntent(launchId, result, { startedAt });
       return result;
     } catch (error) {
       const current = launchStatuses.get(launchId);
@@ -417,10 +426,47 @@ export function createOplLaunchService({
       };
     }
 
+  async function prepareLaunchForIntent({
+      db,
+      user,
+      taskSlug,
+      requireRealOplWeb = true,
+      source = "portal-api",
+      sourceSurface = "portal-control-plane",
+      providerConfig = null,
+      providerConfigSecretRef = "",
+      providerKeyPayload = null,
+    }) {
+      const intent = createLaunchIntent({ user, taskSlug, source });
+      updateLaunchStage(intent.launchId, "provider_key_bound", {
+        blockingUser: false,
+        userVisibleState: "正在绑定 OPL 访问凭证",
+      });
+      const startedAt = Date.now();
+      const result = await prepareLaunch({
+        db,
+        user,
+        taskSlug,
+        requireRealOplWeb,
+        source,
+        sourceSurface,
+        providerConfig,
+        providerConfigSecretRef,
+        providerKeyPayload,
+      });
+      if (!result.ok) {
+        failLaunchIntent(intent.launchId, result);
+        return { ...result, launchId: intent.launchId, launchStatus: getLaunchStatus(intent.launchId) };
+      }
+      const launchStatus = completeLaunchIntent(intent.launchId, result, { startedAt });
+      return { ...result, launchId: intent.launchId, launchStatus };
+    }
+
   return {
     createLaunchIntent,
     getLaunchStatus,
     prepareLaunch,
+    prepareLaunchForIntent,
     prepareLaunchIntent,
     updateLaunchStage,
   };

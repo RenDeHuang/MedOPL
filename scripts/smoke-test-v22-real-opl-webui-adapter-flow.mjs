@@ -267,6 +267,8 @@ try {
   assert.equal(bootstrap.json.identity.workspaceId, WORKSPACE_ID, "webui_adapter_bootstrap_workspace_mismatch");
   assert.equal(bootstrap.json.opl.health.source, "opl_webui_bridge", "webui_adapter_bootstrap_must_use_bridge_health");
   assert.equal(bootstrap.json.system.id, "opl-webui-bridge", "webui_adapter_bootstrap_system_mismatch");
+  assert.equal(bootstrap.json.capabilities?.messageBackflow?.status, "capability_not_supported", "webui_adapter_message_backflow_capability_must_not_claim_supported");
+  assert.equal(bootstrap.json.capabilities?.messageBackflow?.reason, "reply_not_verified", "webui_adapter_message_backflow_reason_mismatch");
   assert.equal(bootstrap.json.capabilityClassification.httpProductApi, "capability_not_supported", "webui_adapter_http_product_api_must_be_not_supported");
   assert.equal(bootstrap.json.capabilityClassification.websocketBridgeSession, "real_webui_bridge_roundtrip", "webui_adapter_bridge_session_classification_mismatch");
   assert(bootstrap.json.resources.sessions.some((session) => session.oplSessionId === bootstrap.json.identity.oplSessionId), "webui_adapter_bootstrap_must_read_created_session_from_webui_database");

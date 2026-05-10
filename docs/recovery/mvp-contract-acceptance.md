@@ -44,6 +44,7 @@
 - OPL 工作流合同覆盖发送信息、上传文件、用文件跑任务、生成输出文件引用和下载引用。
 - Runtime Bridge session/run/file/providerKeyRef 合同已定义，run、artifact、ledger、providerKeyRef 和敏感字段净化已有本地合同 smoke。
 - Portal-OPL context/backflow 三级执行合同已定义，把 Portal SaaS control plane、Gateway entry/proxy、OPL context bootstrap、Adapter capability/backflow projection、downstream Runtime gate 和 downstream Langfuse `trace.medopl.cn` session trace boundary 拆开；该合同是 Portal 打通 OPL、OPL 获取上下文、OPL 事件反馈 Portal 的开发验收入口，不代表真实云 runtime、真实 Langfuse 部署或完整 run/artifact 回流已经完成。
+- Portal `/portal/api/opl/*` 代理已通过 `scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs` 验证：本地 Portal 后端真实 HTTP 登录、`POST /portal/api/opl/launch`、bootstrap、session bind、message、file、run、artifact projection 和 Vite OPL launch shell 可以打到 Adapter；该 smoke 使用本地 fake Product API 与显式 fake Runtime Agent relay，不代表生产 Runtime Agent、真实 provider key message、真实云 runtime 或真实 OPL Product API 已上线。
 - `/home/dev/projects/one-person-lab` 主仓真实 canary 已确认：当前主仓 `opl web` retired，未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 Adapter bootstrap/session bind 的公开映射面。
 - 真实 OPL/AionUI WebUI canary 已确认：独立 WebUI 进程、页面、`/api/auth/status`、`/api/auth/user`、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可访问；`create-conversation` 与数据库回读可形成真实 session 回流；`/api/opl/*` 只是通用 `/api` catch-all 200 placeholder，不是 Product API；`chat.send.message` 当前未形成完整 AI reply 回流，仍为 `capability_not_supported`；run 在没有真实 Runtime Agent relay 时不能伪成功。
 - Portal 后端/API 可表达 workspace 文件、输出文件、账单摘要、冻结/预扣费和 session trace metadata。
@@ -59,6 +60,7 @@
 
 - Gateway / Runtime Bridge 生产联通，当前只到本地合同、本地 E2E smoke、`/home/dev/projects/one-person-lab` 主仓 canary 和真实 WebUI Adapter session bridge canary 边界
 - one-person-lab 实际拉取/部署/运行接入：已完成主仓本地 canary、独立 WebUI 本地 canary和真实 WebUI Adapter session bridge canary；尚未完成 HTTP Product API 接入、真实 provider key message prompt、WebUI 文件上传、run/artifact 和生产部署接入
+- Portal `/portal/api/opl/*` runtime loop 当前只证明本地 fake Product API 与 fake Runtime Agent relay 闭环，不代表真实 OPL Product API、真实 WebUI message reply、真实文件上传或生产 Runtime Agent 已完成。
 - 真实云资源开通，包含后续真实腾讯云资源开通 / 释放
 - 真实价格审批
 - 真实账单核对
@@ -103,6 +105,7 @@
 - `scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs`
 - `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs`
+- `scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs`
 - `scripts/smoke-test-v22-real-opl-canary.mjs`（单独真实 upstream canary，不并入默认纯本地 fixture suite）
 - `scripts/smoke-test-v22-real-opl-webui-canary.mjs`（单独真实 WebUI canary，不并入默认纯本地 fixture suite；需 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向真实 WebUI 来源）
 - `scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs`（单独真实 WebUI Adapter flow，不并入默认纯本地 fixture suite；需 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向真实 WebUI 来源）

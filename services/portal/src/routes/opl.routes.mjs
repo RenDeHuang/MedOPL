@@ -50,9 +50,10 @@ function publicLaunchPayload(launch = {}) {
 
 function launchSuccessPayload(result) {
   const launch = publicLaunchPayload(result.launch || {});
+  const publicLaunchId = result.launchId || launch.launchId || "";
   return {
     ok: true,
-    launchId: launch.launchId || "",
+    launchId: publicLaunchId,
     openUrl: launch.oplWebUrl || "",
     oplWebUrl: launch.oplWebUrl || "",
     runtimeUrl: launch.runtimeUrl || "",
@@ -66,7 +67,10 @@ function launchSuccessPayload(result) {
       runtimeSessionId: launch.runtimeSessionId || "",
       oplSessionId: launch.oplSessionId || "",
     },
-    launch,
+    launch: {
+      ...launch,
+      launchId: publicLaunchId,
+    },
   };
 }
 
@@ -82,7 +86,7 @@ async function handleOplLaunchApi(context, deps) {
   const body = await readJsonBody(req, deps.readBody);
   const taskSlug = deps.slugify(body.task || body.workspaceId || user.currentTaskSlug || "default");
   const providerKeyPayload = normalizeProviderKeyPayload(body);
-  const result = await deps.oplLaunchService.prepareLaunch({
+  const result = await deps.oplLaunchService.prepareLaunchForIntent({
     db,
     user,
     taskSlug,

@@ -409,13 +409,14 @@ async function assertPortalLaunchResponseIsPublicOnly() {
     logPortalEvent: async () => {},
     oplAdapterClient: {},
     oplLaunchService: {
-      async prepareLaunch() {
+      async prepareLaunchForIntent() {
         return {
           ok: true,
+          launchId: "portal-public-launch-id",
           taskSpace: { slug: WORKSPACE_ID, title: "Adapter API Workspace" },
           workspaceSession: { id: WORKSPACE_SESSION_ID, workspaceId: WORKSPACE_ID },
           launch: {
-            launchId: "portal-public-launch-id",
+            launchId: "adapter-launch-id-must-not-be-public-primary",
             launchToken: "portal-launch-token-must-stay-cookie-only",
             oplWebUrl: "http://opl.local/workspace",
             runtimeUrl: "https://github.com/gaofeng21cn/one-person-lab",
@@ -450,8 +451,11 @@ async function assertPortalLaunchResponseIsPublicOnly() {
   });
   assert.equal(handled, true, "portal_launch_api_must_handle_request");
   assert.equal(res.statusCode, 200, "portal_launch_api_must_return_200");
+  assert.equal(res.payload?.launchId, "portal-public-launch-id", "portal_launch_response_must_use_portal_launch_id");
+  assert.equal(res.payload?.launch?.launchId, "portal-public-launch-id", "portal_launch_nested_response_must_use_portal_launch_id");
   assertNoSecretLeak(res.payload, "portal_launch_public_response");
   const serialized = JSON.stringify(res.payload || {});
+  assert.equal(serialized.includes("adapter-launch-id-must-not-be-public-primary"), false, "portal_launch_response_must_not_use_adapter_launch_id_as_primary");
   assert.equal(serialized.includes("providerConfigSecretRef"), false, "portal_launch_response_must_not_expose_secret_ref_field");
   assert.equal(serialized.includes("nodePoolId"), false, "portal_launch_response_must_not_expose_internal_node_pool");
   assert.equal(serialized.includes("tkeClusterId"), false, "portal_launch_response_must_not_expose_internal_cluster");
@@ -616,6 +620,13 @@ try {
 
   const unauthorizedBootstrap = await getJson(`${gatewayUrl}/portal-adapter/api/opl/bootstrap`);
   assert.equal(unauthorizedBootstrap.response.status, 401, "stable_bootstrap_without_cookie_must_return_401");
+  const queryTokenBootstrap = await getJson(`${adapterUrl}/api/opl/bootstrap?launch_token=${encodeURIComponent(launch.launchToken)}`);
+  assert.equal(queryTokenBootstrap.response.status, 401, "adapter_must_reject_launch_token_query");
+  const bodyTokenBind = await postJson(`${adapterUrl}/api/opl/sessions/bind`, {
+    launchToken: launch.launchToken,
+    oplSessionId: "body-token-must-not-bind",
+  });
+  assert.equal(bodyTokenBind.response.status, 401, "adapter_must_reject_launch_token_body");
 
   const status = await getJson(`${gatewayUrl}/portal-adapter/api/opl/status`, { cookie });
   assert.equal(status.response.status, 200, "stable_adapter_status_must_return_200");

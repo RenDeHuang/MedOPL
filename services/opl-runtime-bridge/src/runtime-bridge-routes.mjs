@@ -276,17 +276,20 @@ function authorizationBearerFrom(req = null) {
 }
 
 function launchTokenFrom(input = {}, url, req = null) {
-  return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || authorizationBearerFrom(req);
+  return authorizationBearerFrom(req);
 }
 
 function adapterContractMetadata() {
+  const webuiMode = process.env.OPL_RUNTIME_MODE === "webui";
   return {
     adapterContractVersion: "v22.portal-opl-context-backflow.v1",
-    upstreamProfile: process.env.OPL_RUNTIME_MODE === "webui" ? "webui_bridge" : "opl_product_api",
+    upstreamProfile: webuiMode ? "webui_bridge" : "opl_product_api",
     capabilities: {
       contextBootstrap: { status: "supported", source: "gateway_adapter" },
-      session: { status: "supported", source: process.env.OPL_RUNTIME_MODE === "webui" ? "webui_bridge" : "opl_product_api" },
-      messageBackflow: { status: "supported", source: process.env.OPL_RUNTIME_MODE === "webui" ? "webui_bridge" : "opl_product_api" },
+      session: { status: "supported", source: webuiMode ? "webui_bridge" : "opl_product_api" },
+      messageBackflow: webuiMode
+        ? { status: "capability_not_supported", source: "webui_bridge", reason: "reply_not_verified" }
+        : { status: "supported", source: "opl_product_api" },
       fileIntent: { status: "requires_downstream_runtime_boundary", source: "portal_workspace_file_store" },
       runIntent: { status: "requires_runtime_agent", source: "runtime_bridge" },
       langfuseSessionTrace: { status: "deferred_authorization", source: "trace.medopl.cn" },
