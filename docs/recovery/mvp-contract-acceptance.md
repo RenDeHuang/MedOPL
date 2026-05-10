@@ -19,6 +19,7 @@
 - managed resource binding plan / mock snapshot view
 - readonly/tencent quote provider mock boundary
 - Portal frontend MVP UI
+- Portal structure/failure isolation governance contract
 - OPL entry/preflight auth flow
 - OPL work message/file/run flow
 - Runtime Bridge session/run/file/providerKeyRef flow
@@ -37,6 +38,7 @@
 - 用户、充值、gflabtoken provider key 绑定、canonical state readiness 已具备合同级闭环；provider key 已从 Portal 普通登录/普通入口退场，进入 OPL entry/preflight 和后端密钥边界。
 - 托管运行环境开通要求显式 `workspaceId`、`planId`、`fileSpaceGb`，不做隐式兜底。
 - Portal UI MVP 已覆盖普通用户可见的余额、消费、托管运行环境、工作空间、文件空间、会话、任务、输入文件、输出文件、运行轨迹、账单、预扣费、冻结金额、停止计费和审计状态等基础表面。
+- Portal 结构治理 / failure isolation 三级合同已定义后端 route/dispatcher、payload/DTO builder、frontend view/composable、frontend API module 和 Portal smoke 分层边界；该合同不代表真实云、真实 OPL 或真实部署已接入。
 - OPL entry/preflight 合同已定义：`portal.medopl.cn` 登录不需要 gflabtoken API Key；`opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
 - OPL 工作流合同覆盖发送信息、上传文件、用文件跑任务、生成输出文件引用和下载引用。
 - Runtime Bridge session/run/file/providerKeyRef 合同已定义，run、artifact、ledger、providerKeyRef 和敏感字段净化已有本地合同 smoke。
@@ -99,6 +101,7 @@
 - `scripts/smoke-test-v22-portal-web-route-alignment.mjs`
 - `scripts/smoke-test-v22-portal-api-auth-boundary.mjs`
 - `scripts/smoke-test-v22-portal-package-surface-isolation.mjs`
+- `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
 - `scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`
 - `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
 - `scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs`
