@@ -4,7 +4,6 @@ import { readdirSync } from "node:fs";
 import path from "node:path";
 
 const repoRoot = path.resolve(".");
-const secretDir = "/home/dev/.secrets/medopl";
 const runnerPath = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
 
 const operations = Object.freeze([
@@ -21,6 +20,7 @@ function text(value = "") {
 function parseArgs(argv = []) {
   const options = {
     secretFile: "",
+    secretDir: "",
     workspaceId: "",
     targetDesiredCapacity: "",
     releaseDesiredCapacity: "0",
@@ -30,6 +30,11 @@ function parseArgs(argv = []) {
     const arg = argv[index];
     if (arg === "--secret-file") {
       options.secretFile = text(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+    if (arg === "--secret-dir") {
+      options.secretDir = text(argv[index + 1]);
       index += 1;
       continue;
     }
@@ -58,7 +63,8 @@ function parseArgs(argv = []) {
   return options;
 }
 
-function candidateFiles() {
+function candidateFiles(secretDir) {
+  if (!secretDir) return [];
   try {
     return readdirSync(secretDir)
       .filter((name) => !name.startsWith("."))
@@ -84,9 +90,9 @@ function runRunner(args) {
   return { status: result.status, parsed };
 }
 
-function discoverSecretFile(explicitFile = "") {
+function discoverSecretFile(explicitFile = "", secretDir = "") {
   if (explicitFile) return explicitFile;
-  for (const file of candidateFiles()) {
+  for (const file of candidateFiles(secretDir)) {
     const { status, parsed } = runRunner([
       "--check-config",
       "--secret-file",
@@ -135,7 +141,7 @@ function execute({ secretFile, operation, acceptedDryRunId, workspaceId, targetD
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  const secretFile = discoverSecretFile(options.secretFile);
+  const secretFile = discoverSecretFile(options.secretFile, options.secretDir);
   if (!secretFile) {
     console.log(JSON.stringify({
       ok: false,

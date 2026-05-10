@@ -266,7 +266,7 @@ try {
   assert.match(source, /ScaleNodePool/, "runner_must_scale_native_node_pool_with_scale_node_pool");
   assert.doesNotMatch(source, /\.ModifyNodePoolDesiredCapacityAboutAsg\(/, "runner_must_not_use_legacy_desired_capacity_for_native_node_pool");
   assert.equal(/(^|\n)\s*source\s+/.test(source), false, "runner_must_not_source_secret_file");
-  assert.equal(source.includes("/home/dev/.secrets"), false, "runner_must_not_hardcode_real_secret_path");
+  assert.equal(source.includes("/home/dev/" + ".secrets"), false, "runner_must_not_hardcode_real_secret_path");
   assert.equal(/\.CreateClusterNodePool|\.DeleteClusterNodePool|\.deleteBucket|\.putBucket/.test(source), false, "runner_must_not_create_or_delete_cluster_node_pool_or_bucket");
 
   const suite = await readFile(suitePath, "utf8");
