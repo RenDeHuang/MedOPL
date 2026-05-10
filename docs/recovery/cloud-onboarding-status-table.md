@@ -36,7 +36,7 @@ program id: v22-cloud-onboarding
 | CO-10 | mutation SDK wrapper | pending | pending | A | define fake-only mutation wrapper and gates | `smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs`; `smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs` | stop if mutation secret, real API, dependency change, build/push/kubectl, or deploy is needed |
 | CO-11 | minimal authorized create/release live | pending | pending | user | only after dry-run, wrapper, B review, and explicit user authorization | execution contract smoke; preflight dry-run diff; rollback/audit smoke | must explicitly authorize each real mutation, budget, tags, retry, rollback, and scope expansion |
 | CO-12 | production deploy execution | pending | pending | user | wait for concrete deploy plan contract and explicit user authorization | deploy plan smoke; local build/deploy dry-run smoke; workflow gate review | must explicitly authorize build, push, kubectl, deploy secret/kubeconfig, registry, rollback |
-| CO-13 | Portal production integration | pending | pending | A | connect Portal to sanitized production projection after deploy evidence | portal payload contract smoke; portal role surface smoke; mobile usability smoke | stop if Portal would expose secret/internal/cloud console language or alter billing truth |
+| CO-13 | Portal production integration | pending | test-only fake-live bridge smoke covered locally; production Portal connection still pending | A | connect Portal to sanitized production projection after deploy evidence; replace test-only route with real Portal route/queue/persistence path | portal payload contract smoke; portal role surface smoke; mobile usability smoke; `smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs` | stop if Portal would expose secret/internal/cloud console language, alter billing truth, or treat the test-only route as production connected |
 | CO-14 | canary / QA / release status update | pending | pending | C | run QA/status update after Portal integration and authorized canary scope | canary/QA smoke; `smoke-test-v22-mvp-contract-suite.mjs`; workflow gate review | stop if QA needs live credentials, canary calls real service, or release status implies readiness |
 
 ## Open Issues
@@ -215,15 +215,16 @@ program id: v22-cloud-onboarding
       "phaseId": "CO-13",
       "phaseName": "Portal production integration",
       "status": "pending",
-      "evidenceCommitOrReport": "pending",
+      "evidenceCommitOrReport": "test-only fake-live bridge smoke covered locally; production Portal connection still pending",
       "owner": "A",
-      "nextAction": "connect Portal to sanitized production projection after deploy evidence",
+      "nextAction": "connect Portal to sanitized production projection after deploy evidence; replace test-only route with real Portal route/queue/persistence path",
       "requiredSmoke": [
         "portal payload contract smoke",
         "portal role surface smoke",
-        "mobile usability smoke"
+        "mobile usability smoke",
+        "scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs"
       ],
-      "userGate": "stop if Portal would expose secret/internal/cloud console language or alter billing truth"
+      "userGate": "stop if Portal would expose secret/internal/cloud console language, alter billing truth, or treat the test-only route as production connected"
     },
     {
       "phaseId": "CO-14",

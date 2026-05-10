@@ -225,6 +225,24 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 - blocker 回流到谁: A fixes Portal/API; B reviews role boundary; C runs UI QA
 - 什么时候必须停下来问用户: Portal would expose secret/internal storage/cloud console language, alter billing truth, or require real cloud read
 
+#### Portal API test-only fake-live bridge
+
+在 Portal production integration 之前，允许存在一个本地 smoke 专用的 test-only fake-live bridge，用来验证 Portal API、PostgreSQL canonical shape、Package C fake-live operation 状态回写和普通用户 projection 的闭环。
+
+测试路径：
+
+- `POST /portal/api/v22/cloud-operations/test/fake-live`
+- `GET /portal/api/v22/cloud-operations/test/projection?workspaceId=<workspace-id>`
+
+边界：
+
+- 该 API 只能用于本地 smoke 和合同验证，必须返回 `testOnly=true`、`productionPortalConnected=false`、`runnerMode=fake-live`、`realCloudCalls=false`。
+- 该 API 不读 secret、不调用真实云、不执行真实 TKE/COS/TCR/deploy、不写真实 `.runtime` evidence。
+- 该 API 只写与未来真实 Portal 一致的 canonical record shape：`cloudOperations`、`computeAllocations`、`fileSpaceEntitlements`、`cloudResourceProjections`、`workspaceResourceBindings`、`weeklyProtectionFreezes` / wallet ledger、`billingReconciliations`、`auditEvents`。
+- 支持的测试操作仅限：`create_storage`、`create_compute`、`expand_storage`、`expand_compute`、`release_compute`、`delete_storage`。
+- 后续真实 Portal 可以复用同一 canonical shape，但必须替换为正式 Portal route、真实 PostgreSQL persistence、授权 runner queue 和用户确认链路；不得把该测试 API 当作生产 Portal 已接云。
+- 普通用户 projection 只能显示工作台资源、计算资源、文件空间、套餐、余额、冻结金额、开通中、可用、扩容中、释放中、文件保护期、对账中、对账异常等产品语言；不得展示 CVM、COS、TKE、Kubernetes、node pool、bucket、object key、VPC、安全组、kubeconfig、SecretId、SecretKey 或 raw response。
+
 ### 14. canary / QA / release status update
 
 目标：C/D 对生产路径做 canary、QA 和 release status update，B 汇总是否可推进 release。
@@ -301,6 +319,38 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
     "cleanup plan",
     "topology/deploy contract"
   ],
+  "portalApiTestBridge": {
+    "testOnly": true,
+    "productionPortalConnected": false,
+    "runnerMode": "fake-live",
+    "realCloudCalls": false,
+    "readsSecretNow": false,
+    "apiPaths": [
+      "POST /portal/api/v22/cloud-operations/test/fake-live",
+      "GET /portal/api/v22/cloud-operations/test/projection"
+    ],
+    "operations": [
+      "create_storage",
+      "create_compute",
+      "expand_storage",
+      "expand_compute",
+      "release_compute",
+      "delete_storage"
+    ],
+    "canonicalRecords": [
+      "cloudOperations",
+      "computeAllocations",
+      "fileSpaceEntitlements",
+      "cloudResourceProjections",
+      "workspaceResourceBindings",
+      "weeklyProtectionFreezes",
+      "walletLedger",
+      "billingReconciliations",
+      "auditEvents"
+    ],
+    "futureProductionPortalMustReplaceTestRoute": true,
+    "ordinaryProjectionHidesCloudConsoleObjects": true
+  },
   "phases": [
     {
       "name": "official SDK provider strategy",
