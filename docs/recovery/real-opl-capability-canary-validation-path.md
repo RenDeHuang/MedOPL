@@ -1,6 +1,6 @@
 # v22 Real OPL Capability Canary Complete Workflow And Validation Path
 
-本文定义真实 OPL 能力 canary 的完整工作流和验证顺序。它是 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 的执行路径，不替代一级主合同、二级 Portal-OPL 连接合同或 [portal-opl-context-backflow-validation-path.md](./portal-opl-context-backflow-validation-path.md)。
+本文定义真实 OPL 能力 canary 的完整工作流和验证顺序。它是 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 的执行路径，不替代一级主合同、二级 Portal-OPL 连接合同或 [portal-opl-context-backflow-validation-path.md](./portal-opl-context-backflow-validation-path.md)。provider message reply 的细分验证路径是 [real-opl-provider-message-canary-validation-path.md](./real-opl-provider-message-canary-validation-path.md)。
 
 ## Complete Workflow
 
@@ -117,6 +117,7 @@ node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 
 - 证明 message intent 进入真实 OPL/agent/provider 边界。
 - 证明 AI reply 有明确回流，或返回明确 gate。
+- provider 级字段、gate、evidence 和 Portal trace 验收见 [real-opl-provider-message-canary-validation-path.md](./real-opl-provider-message-canary-validation-path.md)。
 
 预期链路：
 

@@ -6,7 +6,7 @@
 Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真实 message、file、run、artifact、runtime 和 observability 能力是否能进入真实 OPL/agent/provider/runtime 边界并回流 Portal。
 ```
 
-本合同不替代 [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。前者定义 Portal-OPL 连接骨架，本合同定义剩余真实 OPL 能力 canary 和后续 productionization handoff。
+本合同不替代 [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。前者定义 Portal-OPL 连接骨架，本合同定义剩余真实 OPL 能力 canary 和后续 productionization handoff。message reply 的 provider 细分执行合同是 [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md)。
 
 ## Contract Level
 
@@ -25,6 +25,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
+- [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md)
 - [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md)
 - [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)
 - [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
@@ -36,6 +37,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
 - [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
 - [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
+- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
 
 规范路径为：
 
@@ -43,6 +45,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/portal-opl-context-backflow-validation-path.md`
 - `docs/recovery/real-opl-capability-canary-validation-path.md`
+- `docs/recovery/real-opl-provider-message-canary-validation-path.md`
 
 ## Product Truth
 
@@ -223,6 +226,8 @@ evidence 禁止包含：
 ## Message Reply Canary
 
 message reply canary 的目标是证明 message 真正进入 OPL/agent/provider，并形成可查询回流。
+
+message reply 的 provider 级细分验收以 [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md) 和 `docs/recovery/real-opl-provider-message-canary-validation-path.md` 为准。该细分合同只证明真实 message/reply/provider 边界，不证明 file、run、artifact、真实云 runtime 或 Langfuse 已上线。
 
 请求必须携带：
 
