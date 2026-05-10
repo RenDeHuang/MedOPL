@@ -68,7 +68,7 @@
 import { computed, onMounted, ref } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import { fetchAdminSystem } from "@/api/portal";
+import { fetchAdminSystem } from "@/api/portal/admin";
 
 const payload = ref<any>(null);
 const opsSurfaceEnabled = computed(() => Boolean(payload.value?.productProfile?.opsSurfaceEnabled));

@@ -109,7 +109,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import AnnouncementDialog from "@/components/common/AnnouncementDialog.vue";
 import BaseDialog from "@/components/common/BaseDialog.vue";
-import { fetchAnnouncements } from "@/api/portal";
+import { fetchAnnouncements } from "@/api/portal/sessions";
 
 defineProps<{
   title: string;

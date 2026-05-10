@@ -220,8 +220,10 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { OverviewPayload, PlatformProvisionedResourcesPayload, WorkspaceResourceBinding } from "@/api/portal";
-import { fetchMyResources, fetchOverview } from "@/api/portal";
+import type { OverviewPayload } from "@/api/portal/overview";
+import type { PlatformProvisionedResourcesPayload, WorkspaceResourceBinding } from "@/api/portal/resources";
+import { fetchOverview } from "@/api/portal/overview";
+import { fetchMyResources } from "@/api/portal/resources";
 
 const route = useRoute();
 const overviewLoading = ref(true);

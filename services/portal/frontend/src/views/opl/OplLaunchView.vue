@@ -53,7 +53,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
-import { fetchOplLaunchStatus, type OplLaunchStatusPayload } from "@/api/portal";
+import { fetchOplLaunchStatus, type OplLaunchStatusPayload } from "@/api/portal/resources";
 
 const route = useRoute();
 const status = ref<OplLaunchStatusPayload | null>(null);

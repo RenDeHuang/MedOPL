@@ -179,8 +179,8 @@ import { computed, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { SessionTracesPayload } from "@/api/portal";
-import { fetchSessionTraces } from "@/api/portal";
+import type { SessionTracesPayload } from "@/api/portal/traces";
+import { fetchSessionTraces } from "@/api/portal/traces";
 
 type SessionTraceItem = SessionTracesPayload["items"][number];
 

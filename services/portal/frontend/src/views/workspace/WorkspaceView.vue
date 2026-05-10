@@ -333,8 +333,8 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { WorkspacePayload } from "@/api/portal";
-import { disabledStorageEntitlement, fetchWorkspace } from "@/api/portal";
+import type { WorkspacePayload } from "@/api/portal/workspace";
+import { disabledStorageEntitlement, fetchWorkspace } from "@/api/portal/workspace";
 
 const route = useRoute();
 const loading = ref(true);

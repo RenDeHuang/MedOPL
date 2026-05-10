@@ -182,7 +182,7 @@ import {
   type PlatformProvisionedResourcesPayload,
   type WeeklyProtectionFreeze,
   type WorkspaceResourceBinding,
-} from "@/api/portal";
+} from "@/api/portal/resources";
 
 const resourcesLoading = ref(false);
 const errorMessage = ref("");

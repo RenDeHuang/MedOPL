@@ -229,7 +229,7 @@
 import { onMounted, ref } from "vue";
 import MetricCard from "@/components/common/MetricCard.vue";
 import AppLayout from "@/layouts/AppLayout.vue";
-import { fetchAdminOps } from "@/api/portal";
+import { fetchAdminOps } from "@/api/portal/admin";
 
 const payload = ref<any>(null);
 

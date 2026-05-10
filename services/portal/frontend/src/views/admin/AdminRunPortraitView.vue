@@ -82,7 +82,7 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import MetricCard from "@/components/common/MetricCard.vue";
 import AppLayout from "@/layouts/AppLayout.vue";
-import { fetchAdminRunPortrait } from "@/api/portal";
+import { fetchAdminRunPortrait } from "@/api/portal/admin";
 
 const route = useRoute();
 const payload = ref<any>(null);

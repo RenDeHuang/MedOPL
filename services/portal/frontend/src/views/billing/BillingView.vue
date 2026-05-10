@@ -282,8 +282,9 @@ import { Bar } from "vue-chartjs";
 import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip } from "chart.js";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { BillingDetailsPayload, BillingPayload, BillingSummaryPayload, PortalPagination, PortalQueryValue } from "@/api/portal";
-import { fetchBillingDetails, fetchBillingSummary } from "@/api/portal";
+import type { BillingDetailsPayload, BillingPayload, BillingSummaryPayload } from "@/api/portal/billing";
+import type { PortalPagination, PortalQueryValue } from "@/api/portal/common";
+import { fetchBillingDetails, fetchBillingSummary } from "@/api/portal/billing";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 

@@ -218,3 +218,72 @@ export function buildAdminUsersRows({
     })
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 }
+
+export function userTenantId(user = {}) {
+  return String(user.tenantId || user.id || "").trim();
+}
+
+export function customerSegment(user = {}) {
+  const explicit = String(user.customerSegment || user.customer_segment || user.segment || "").trim().toLowerCase();
+  if (["real_customer", "internal", "test_fixture"].includes(explicit)) return explicit;
+  const probe = `${user.id || ""} ${user.email || ""} ${user.name || ""} ${user.tenantId || ""}`.toLowerCase();
+  if (isTestFixtureProbe(probe)) return "test_fixture";
+  return isInternalProbe(probe) ? "internal" : "real_customer";
+}
+
+export function adminDataSegment(user = {}) {
+  return customerSegment(user);
+}
+
+export function isTestFixtureProbe(probe = "") {
+  return ["@example.test", "test-", "fixture", "smoke"].some((marker) => probe.includes(marker));
+}
+
+export function isInternalProbe(probe = "") {
+  return ["@medopl.cn", "@gaofeng", "internal"].some((marker) => probe.includes(marker));
+}
+
+export function includeAdminSegment(user = {}, { includeTestFixtures = false, includeInternal = false } = {}) {
+  const segment = adminDataSegment(user);
+  if (segment === "test_fixture") return Boolean(includeTestFixtures);
+  if (segment === "internal") return Boolean(includeInternal);
+  return true;
+}
+
+export function commercialCustomers(db, options = {}) {
+  return (Array.isArray(db.users) ? db.users : [])
+    .filter((item) => item.role !== "admin")
+    .filter((item) => includeAdminSegment(item, options));
+}
+
+export function commercialResourceOrders(db, options = {}) {
+  const usersById = new Map((Array.isArray(db.users) ? db.users : []).map((user) => [String(user.id || ""), user]));
+  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
+    .filter((order) => {
+      const user = usersById.get(String(order.userId || order.portalUserId || "")) || {};
+      return includeAdminSegment(user, options);
+    });
+}
+
+export function cloudResourceRow(order = {}, formatDateTime = (value) => value || "") {
+  const resourceIds = Array.isArray(order.cloudResourceIds) ? order.cloudResourceIds : [];
+  const stoppedAt = String(order.billingStoppedAt || order.pendingStoppedAt || order.settledAt || "").trim();
+  return {
+    name: order.serverPlanId || order.id,
+    status: String(order.status || "unknown").trim() || "unknown",
+    resourceOrderId: order.id,
+    runId: order.runId || "",
+    workspaceId: order.workspaceId || "",
+    cloudResourceCount: resourceIds.length,
+    cleanupEvidence: stoppedAt ? `释放时间 ${formatDateTime(stoppedAt)}` : (resourceIds.length ? `${resourceIds.length} 个云资源编号` : "等待资源编号"),
+    billingStopped: Boolean(stoppedAt) || ["released", "settled", "failed", "cancelled"].includes(String(order.status || "").toLowerCase()),
+    updatedAt: order.updatedAt || order.createdAt || "",
+  };
+}
+
+export function cloudResourceRows(db, formatDateTime) {
+  return commercialResourceOrders(db)
+    .map((order) => cloudResourceRow(order, formatDateTime))
+    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
+    .slice(0, 50);
+}

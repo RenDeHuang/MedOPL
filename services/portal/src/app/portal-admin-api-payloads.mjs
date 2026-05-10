@@ -1,16 +1,12 @@
-import os from "node:os";
 import { getCanonicalResourcePlan } from "../domain/lab-packages.mjs";
 import { buildUserBillingSummary, normalizeLedgerEntries } from "../domain/wallet-ledger.mjs";
 import {
-  buildAdminAlerts,
-  buildAdminAuditRows,
-  buildAdminGroups,
-  buildAdminLedgerSummary,
-  buildAdminRecentUsage,
-  buildAdminTopUsers,
-  buildAdminUsageRows,
   buildAdminUsersRows,
+  commercialCustomers,
+  customerSegment,
+  userTenantId,
 } from "./portal-admin-api-payload-helpers.mjs";
+import { createPortalAdminOverviewPayloadBuilder } from "./portal-admin-overview-runtime-payloads.mjs";
 import { createPortalAdminPortraitPayloads } from "./portal-admin-portrait-payloads.mjs";
 
 function isRegistrationEnabled(db) {
@@ -35,54 +31,8 @@ function defaultUrls(urls = {}) {
   };
 }
 
-function userTenantId(user = {}) {
-  return String(user.tenantId || user.id || "").trim();
-}
-
 function userDisplayName(user = {}) {
   return String(user.name || user.email || user.id || "").trim();
-}
-
-function customerSegment(user = {}) {
-  const explicit = String(user.customerSegment || user.customer_segment || user.segment || "").trim().toLowerCase();
-  if (["real_customer", "internal", "test_fixture"].includes(explicit)) return explicit;
-  const probe = `${user.id || ""} ${user.email || ""} ${user.name || ""} ${user.tenantId || ""}`.toLowerCase();
-  if (isTestFixtureProbe(probe)) return "test_fixture";
-  return isInternalProbe(probe) ? "internal" : "real_customer";
-}
-
-function adminDataSegment(user = {}) {
-  return customerSegment(user);
-}
-
-function isTestFixtureProbe(probe = "") {
-  return ["@example.test", "test-", "fixture", "smoke"].some((marker) => probe.includes(marker));
-}
-
-function isInternalProbe(probe = "") {
-  return ["@medopl.cn", "@gaofeng", "internal"].some((marker) => probe.includes(marker));
-}
-
-function includeAdminSegment(user = {}, { includeTestFixtures = false, includeInternal = false } = {}) {
-  const segment = adminDataSegment(user);
-  if (segment === "test_fixture") return Boolean(includeTestFixtures);
-  if (segment === "internal") return Boolean(includeInternal);
-  return true;
-}
-
-function commercialCustomers(db, options = {}) {
-  return (Array.isArray(db.users) ? db.users : [])
-    .filter((item) => item.role !== "admin")
-    .filter((item) => includeAdminSegment(item, options));
-}
-
-function commercialResourceOrders(db, options = {}) {
-  const usersById = new Map((Array.isArray(db.users) ? db.users : []).map((user) => [String(user.id || ""), user]));
-  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
-    .filter((order) => {
-      const user = usersById.get(String(order.userId || order.portalUserId || "")) || {};
-      return includeAdminSegment(user, options);
-    });
 }
 
 function userLedgerEntries(db, user = {}) {
@@ -99,29 +49,6 @@ function activeResourceOrdersForUser(db, user = {}) {
   return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
     .filter((item) => item.userId === userId || item.tenantId === tenantId)
     .filter((item) => !["released", "settled", "failed", "cancelled", "deleted"].includes(String(item.status || "").toLowerCase()));
-}
-
-function cloudResourceRow(order = {}, formatDateTime = (value) => value || "") {
-  const resourceIds = Array.isArray(order.cloudResourceIds) ? order.cloudResourceIds : [];
-  const stoppedAt = String(order.billingStoppedAt || order.pendingStoppedAt || order.settledAt || "").trim();
-  return {
-    name: order.serverPlanId || order.id,
-    status: String(order.status || "unknown").trim() || "unknown",
-    resourceOrderId: order.id,
-    runId: order.runId || "",
-    workspaceId: order.workspaceId || "",
-    cloudResourceCount: resourceIds.length,
-    cleanupEvidence: stoppedAt ? `释放时间 ${formatDateTime(stoppedAt)}` : (resourceIds.length ? `${resourceIds.length} 个云资源编号` : "等待资源编号"),
-    billingStopped: Boolean(stoppedAt) || ["released", "settled", "failed", "cancelled"].includes(String(order.status || "").toLowerCase()),
-    updatedAt: order.updatedAt || order.createdAt || "",
-  };
-}
-
-function cloudResourceRows(db, formatDateTime) {
-  return commercialResourceOrders(db)
-    .map((order) => cloudResourceRow(order, formatDateTime))
-    .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
-    .slice(0, 50);
 }
 
 function moneyAmount(value = 0) {
@@ -529,217 +456,33 @@ export function createPortalAdminApiPayloads(deps) {
   const opsProfileEnabled = Boolean(productProfile.opsProfileEnabled);
   const opsSurfaceEnabled = opsProfileEnabled || runtimeMode === "managed_runtime";
 
-  async function buildAdminOverviewPayload(db) {
-    const users = commercialCustomers(db).filter((item) => activeUserStatus(item.status) !== "deleted");
-    const billing = await fetchBillingSummary("", "", "168h");
-    const items = billing?.items || [];
-    const totals = billing?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 };
-    const pending = await fetchPendingSummary("", "", "168h");
-    const billingStatus = await fetchBillingStatus();
-    const tasks = db.taskSpaces.filter((item) => item.status !== "deleted");
-    const groups = Array.isArray(db.groups) ? db.groups : [];
-    const todayRange = rangeBounds("today");
-    const recentEvents = await readPortalEvents({ limit: 240 });
-    const allRuns = [];
-    for (const item of users) {
-      allRuns.push(...(await collectRunsForUser(item.id, { limit: 50 })).map((run) => ({ ...run, userId: item.id, userName: item.name, userEmail: item.email })));
-    }
-    const serviceStatuses = await Promise.all([
-      { name: "Portal OPL Adapter", url: new URL("/healthz", `${urls.portalOplAdapterUrl}/`).toString() },
-      { name: "Langfuse", url: urls.langfuseUrl },
-      ...(opsSurfaceEnabled ? [
-        { name: "Rancher", url: urls.rancherUrl },
-        { name: "OpenCost", url: urls.opencostUiUrl },
-        { name: "Harbor", url: urls.harborUrl },
-        { name: "MinIO", url: urls.minioConsoleUrl },
-      ] : []),
-    ].filter((item) => item.url).map(async (item) => ({ ...item, probe: await probe(item.url) })));
-    const disabledOpsSummary = { available: false, mode: "disabled", note: "默认 user-owned 模式下未启用运维入口" };
-    const [minioSummary, harborSummary, langfuseSummary] = await Promise.all([
-      opsSurfaceEnabled ? fetchMinioSummary() : Promise.resolve(disabledOpsSummary),
-      opsSurfaceEnabled ? fetchHarborSummary() : Promise.resolve(disabledOpsSummary),
-      fetchLangfuseSummary(),
-    ]);
-    const securitySummary = buildAdminSecuritySummary();
-    const performanceSummary = await runtimePerformanceSummary();
-
-    const topUsers = buildAdminTopUsers({ users, items, wallets: db.wallets });
-    const recentUsage = buildAdminRecentUsage({ allRuns, isRunTerminal, formatDateTime });
-    const usageRows = buildAdminUsageRows({ allRuns, items, isRunTerminal, formatDateTime });
-
-    const warningEvents = recentEvents
-      .filter((event) => /fail|error|denied|blocked|pending|reconcile/i.test(String(event.type || "")))
-      .slice(0, 12);
-    const lowBalanceUsers = users
-      .map((entry) => {
-        const wallet = db.wallets.find((wallet) => wallet.userId === entry.id) || { balance: 0 };
-        return { userId: entry.id, name: entry.name, email: entry.email, balance: Number(wallet.balance || 0) };
-      })
-      .filter((entry) => entry.balance <= 0)
-      .slice(0, 12);
-    const failedRuns = allRuns
-      .filter((run) => String(run.status || "").toLowerCase() === "failed")
-      .slice(0, 12)
-      .map((run) => ({
-        runId: run.runId,
-        userId: run.userId,
-        userName: run.userName,
-        workspaceId: run.workspaceId || "-",
-        createdAt: formatDateTime(run.createdAt || ""),
-      }));
-    const unavailableServices = serviceStatuses.filter((item) => !item.probe.ok);
-    const traceMissingRuns = allRuns
-      .filter((run) => isRunTerminal(run))
-      .slice(0, 40)
-      .filter(() => langfuseSummary?.available);
-    const traceRows = langfuseSummary?.available ? (await fetchTraceRows({ limit: 200 })).rows || [] : [];
-    const tracedRunIds = new Set(traceRows.map((item) => item.runId).filter(Boolean));
-    const traceMissingAlerts = traceMissingRuns
-      .filter((run) => run.runId && !tracedRunIds.has(run.runId))
-      .slice(0, 12)
-      .map((run) => ({
-        severity: "warning",
-        category: "trace",
-        userId: run.userId,
-        runId: run.runId,
-        workspaceId: run.workspaceId || "-",
-        title: "Run 缺少 Trace",
-        detail: `${run.runId} 已完成但未找到 Langfuse trace`,
-        occurredAt: formatDateTime(run.createdAt || ""),
-        action: `/portal/admin/run?runId=${run.runId}`,
-      }));
-    const alerts = buildAdminAlerts({
-      securitySummary,
-      performanceSummary,
-      unavailableServices,
-      traceMissingAlerts,
-      failedRuns,
-      pendingRuns: pending?.runs || [],
-      lowBalanceUsers,
-      formatDateTime,
-      money,
-    });
-
-    const systemMetrics = {
-      hostname: os.hostname(),
-      cpuCores: os.cpus().length,
-      totalMemoryGb: Number((os.totalmem() / 1024 / 1024 / 1024).toFixed(1)),
-      freeMemoryGb: Number((os.freemem() / 1024 / 1024 / 1024).toFixed(1)),
-      uptimeHours: Number((os.uptime() / 3600).toFixed(1)),
-      concurrentRuns: allRuns.filter((run) => !isRunTerminal(run)).length,
-      activeSandboxes: db.userSandboxes.filter((item) => !["terminated", "error"].includes(String(item.status || "").toLowerCase())).length,
-      activeWorkspaceSessions: db.workspaceSessions.filter((item) => item.status === "active" && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())).length,
-      dbMode: storageMode() === "postgres_redis" ? "Postgres / Redis" : "portal-db.json",
-      redisStatus: redisConfigured ? "已配置" : "未接入",
-      opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
-      tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
-    };
-
-    return {
-      kpis: {
-        totalUsers: users.length,
-        activeUsers: users.filter((item) => activeUserStatus(item.status) === "active").length,
-        disabledUsers: users.filter((item) => activeUserStatus(item.status) !== "active").length,
-        activeTasks: tasks.filter((item) => item.status === "active").length,
-        archivedTasks: tasks.filter((item) => item.status === "archived").length,
-        totalCost: Number(totals.totalCost || 0),
-        workspaceTotal: tasks.length,
-        todayRuns: allRuns.filter((run) => withinDateRange(run.createdAt || "", todayRange)).length,
-        todayNewUsers: users.filter((item) => withinDateRange(item.createdAt || "", todayRange)).length,
-        todayNewWorkspaces: tasks.filter((item) => withinDateRange(item.createdAt || "", todayRange)).length,
-        totalRuns: allRuns.length,
-        averageResponseMs: Number(performanceSummary.masFirstReplyApproxMs || 0),
-        todayTotalCost: Number(items
-          .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, todayRange))
-          .reduce((sum, item) => sum + Number(item?.totalCost || 0), 0)
-          .toFixed(5)),
-        historicalTotalCost: Number(totals.totalCost || 0),
-      },
-      pending: {
-        count: Number(pending?.pendingCount || 0),
-        oldestPendingHours: Number(pending?.oldestPendingHours || 0),
-        riskByUser: Array.isArray(pending?.riskByUser) ? pending.riskByUser.slice(0, 8) : [],
-        riskByWorkspace: Array.isArray(pending?.riskByWorkspace) ? pending.riskByWorkspace.slice(0, 8) : [],
-      },
-      trend: groupBillingByDay(items, 7),
-      totals,
-      topUsers,
-      recentUsage,
-      groups: buildAdminGroups({ groups, users }),
-      usageRows,
-      ledgerSummary: buildAdminLedgerSummary(db.ledger),
-      pendingRuns: Array.isArray(pending?.runs) ? pending.runs.slice(0, 12) : [],
-      billingSync: {
-        autoReconcileEnabled: Boolean(billingStatus?.autoReconcileEnabled),
-        autoReconcileWindow: billingStatus?.autoReconcileWindow || "168h",
-        lastRunAt: billingStatus?.reconcileState?.lastRunAt || "",
-        lastScope: billingStatus?.reconcileState?.lastScope || "all",
-        lastReconciledCount: Number(billingStatus?.reconcileState?.lastReconciledCount || 0),
-        lastExactCount: Number(billingStatus?.reconcileState?.lastExactCount || 0),
-        lastEstimatedCount: Number(billingStatus?.reconcileState?.lastEstimatedCount || 0),
-        lastAdjustmentCount: Number(billingStatus?.reconcileState?.lastAdjustmentCount || 0),
-        lastError: billingStatus?.reconcileState?.lastError || "",
-        opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
-        tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
-        exactSources: billingStatus?.exactSources || ["tencent_cloud_bill"],
-        pendingSources: billingStatus?.pendingSources || ["opencost_pending", "metering_pending"],
-      },
-      warningEvents,
-      alerts,
-      auditRows: buildAdminAuditRows(recentEvents, formatDateTime),
-      systemMetrics,
-      summaries: {
-        billing: {
-          available: opsSurfaceEnabled,
-          mode: opsSurfaceEnabled ? "live" : "disabled",
-          cpuCost: Number(totals.cpuCost || 0),
-          gpuCost: Number(totals.gpuCost || 0),
-          storageCost: Number(totals.pvCost || 0),
-          totalCost: Number(totals.totalCost || 0),
-          note: opsSurfaceEnabled ? "数据来自账单聚合" : "未启用运维成本入口",
-        },
-        minio: minioSummary,
-        harbor: {
-          ...harborSummary,
-          imageTagCount: new Set(db.userSandboxes.map((item) => item.imageTag).filter(Boolean)).size,
-        },
-        langfuse: langfuseSummary,
-        oplRuntime: {
-          available: true,
-          mode: "status_only",
-          adapterUrl: urls.portalOplAdapterUrl,
-          oplWebUrl: urls.oplWebUrl || "",
-          note: urls.oplWebUrl
-            ? "Portal 生成 launch context，并把用户带到真实 OPL Web；adapter 只负责内部合同转换"
-            : "未配置 OPL_WEB_URL，Portal 不会回退到旧工作台路径",
-        },
-        rancher: {
-          available: opsSurfaceEnabled && Boolean(urls.rancherUrl),
-          mode: opsSurfaceEnabled ? "status_only" : "disabled",
-          note: !opsSurfaceEnabled ? "默认 user-owned 模式下未启用 Rancher 入口" : (urls.rancherUrl ? "当前仅展示入口与可达状态" : "未配置 Rancher 入口"),
-        },
-        security: securitySummary,
-        performance: performanceSummary,
-      },
-      sandboxes: db.userSandboxes
-        .map((item) => {
-          const targetUser = db.users.find((user) => user.id === item.userId) || {};
-          return {
-            ...item,
-            userName: targetUser.name || targetUser.email || item.userId,
-            updatedAtLabel: formatDateTime(item.updatedAt || item.lastActiveAt || item.createdAt || ""),
-          };
-        })
-        .sort((a, b) => String(b.updatedAt || b.lastActiveAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.lastActiveAt || a.createdAt || ""))),
-      cloudResourceRows: cloudResourceRows(db, formatDateTime),
-      serviceStatuses: serviceStatuses.map((item) => ({ name: item.name, status: item.probe.status, ok: item.probe.ok, responseMs: item.probe.responseMs || null })),
-      productProfile: {
-        runtimeMode,
-        opsProfileEnabled,
-        opsSurfaceEnabled,
-      },
-    };
-  }
+  const buildAdminOverviewPayload = createPortalAdminOverviewPayloadBuilder({
+    activeUserStatus,
+    buildAdminSecuritySummary,
+    collectRunsForUser,
+    fetchBillingStatus,
+    fetchBillingSummary,
+    fetchHarborSummary,
+    fetchLangfuseSummary,
+    fetchMinioSummary,
+    fetchPendingSummary,
+    fetchTraceRows,
+    formatDateTime,
+    groupBillingByDay,
+    isRunTerminal,
+    money,
+    probe,
+    rangeBounds,
+    readPortalEvents,
+    redisConfigured,
+    runtimePerformanceSummary,
+    storageMode,
+    withinDateRange,
+    urls,
+    runtimeMode,
+    opsProfileEnabled,
+    opsSurfaceEnabled,
+  });
 
   function buildAdminUsersApiPayload(db, payload, options = {}) {
     const workspaceFilter = String(options.workspace || "").trim().toLowerCase();

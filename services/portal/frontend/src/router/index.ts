@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
-import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal";
+import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal/commercial";
 
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: "/overview" },

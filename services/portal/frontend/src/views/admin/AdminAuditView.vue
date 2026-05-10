@@ -73,7 +73,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import { fetchAdminAudit } from "@/api/portal";
+import { fetchAdminAudit } from "@/api/portal/admin";
 
 const payload = ref<any>(null);
 const keyword = ref("");

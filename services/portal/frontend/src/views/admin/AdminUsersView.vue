@@ -265,7 +265,7 @@ import {
   type AdminUserFinanceRow,
   type AdminUserListItem,
   type AdminUsersPayload,
-} from "@/api/portal";
+} from "@/api/portal/admin";
 
 const ADMIN_USERS_REDIRECT = "/portal/app/admin/users";
 

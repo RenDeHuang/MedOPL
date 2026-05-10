@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal";
+import { fetchCurrentUser, type CurrentUserPayload } from "@/api/portal/commercial";
 
 defineProps<{
   mobileOpen?: boolean;

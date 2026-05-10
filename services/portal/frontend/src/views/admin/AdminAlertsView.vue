@@ -125,7 +125,8 @@
 import { computed, onMounted, ref } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import { fetchAdminAlerts, fetchAnnouncements } from "@/api/portal";
+import { fetchAdminAlerts } from "@/api/portal/admin";
+import { fetchAnnouncements } from "@/api/portal/sessions";
 
 const loading = ref(true);
 const alertsPayload = ref<any>(null);

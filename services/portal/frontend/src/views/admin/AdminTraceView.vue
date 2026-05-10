@@ -102,8 +102,8 @@ import { computed, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import type { TracesPayload } from "@/api/portal";
-import { fetchAdminAgentTraces } from "@/api/portal";
+import { fetchAdminAgentTraces } from "@/api/portal/admin";
+import type { TracesPayload } from "@/api/portal/traces";
 
 const route = useRoute();
 const router = useRouter();

@@ -110,7 +110,7 @@
 <script setup lang="ts">
 import AppLayout from "@/layouts/AppLayout.vue";
 import MetricCard from "@/components/common/MetricCard.vue";
-import { fetchAdminGroups } from "@/api/portal";
+import { fetchAdminGroups } from "@/api/portal/admin";
 import { computed, onMounted, ref } from "vue";
 
 const payload = ref<any>(null);

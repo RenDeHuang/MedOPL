@@ -129,7 +129,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
-import type { LabPackagePlan, LabSubscriptionPayload } from "@/api/portal";
+import type { LabPackagePlan, LabSubscriptionPayload } from "@/api/portal/lab";
 import {
   activateCustomLabPackage,
   activateLabPackage,
@@ -138,7 +138,7 @@ import {
   fetchLabSubscription,
   purchaseLabStorageAddon,
   upgradeLabPackage,
-} from "@/api/portal";
+} from "@/api/portal/lab";
 
 const packageItems = ref<LabPackagePlan[]>([]);
 const subscription = ref<LabSubscriptionPayload | null>(null);
