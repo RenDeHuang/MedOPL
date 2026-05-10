@@ -127,6 +127,37 @@ session bind 成功后，平台必须能得到以下关系：
 portalUserId + tenantId + workspaceId + workspaceSessionId + runtimeSessionId + resourceBindingId + oplSessionId
 ```
 
+## Adapter Decoupling And Anti-Corruption Boundary
+
+Portal 只依赖 MedOPL 稳定接口，不得依赖 one-person-lab upstream 内部 API、DOM、store、数据库 schema 或内部 session model。
+
+Gateway / Portal OPL Adapter 是 anti-corruption layer。它负责把 upstream OPL 的页面、路由、事件或接口变化翻译成 MedOPL 稳定合同。upstream OPL 更新只允许改 Gateway/Adapter 映射层，不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同。
+
+不同 API 必须低耦合演进：
+
+- Portal launch API 只创建 MedOPL launch session，不调用 upstream 内部 API。
+- Gateway bootstrap API 只暴露 MedOPL public context，不透传 upstream private state。
+- session bind API 只接受 normalized OPL session identity，不要求 Portal 理解 upstream session model。
+- OPL message/file/run 事件必须先归一化为 MedOPL canonical event，再进入 Runtime Agent、文件空间、trace 或 billing 边界。
+- artifact projection API 只返回 MedOPL artifact/output file reference，不透传 upstream 或存储后端路径。
+
+bootstrap 和 Adapter status 必须能表达：
+
+- `adapterContractVersion`
+- `capabilities`
+- `supportedEvents`
+
+`capabilities` 至少区分 message、file upload、run start、run status、artifact list、artifact download。`supportedEvents` 至少区分 session bound、message created、file referenced、run started、run updated、artifact created。
+
+如果 upstream OPL 缺少某个能力、能力版本不兼容或映射层尚未实现，Adapter 必须显式返回 `capability_not_supported`，不能隐式兜底、伪装成功或把未知 upstream shape 直接写入 Portal 状态。
+
+禁止事项：
+
+- 禁止 Portal 直接追踪 upstream route、DOM selector、frontend store、database schema 或 internal session model。
+- 禁止 Runtime Agent 直接依赖 upstream UI 事件原始 shape。
+- 禁止把 upstream raw event、raw prompt、raw file path 或 raw response 原样写入 Portal trace / billing / audit。
+- 禁止为适配 upstream 更新而修改 one-person-lab upstream 源码。
+
 ## Messages, Files, Runs
 
 OPL 工作流通过 Portal OPL Adapter / Runtime Agent 边界接入：

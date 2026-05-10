@@ -103,6 +103,21 @@ assertIncludesAll(contents.connection, [
 ], "connection_run_gates");
 
 assertIncludesAll(contents.connection, [
+  "Adapter Decoupling And Anti-Corruption Boundary",
+  "Portal 只依赖 MedOPL 稳定接口",
+  "不得依赖 one-person-lab upstream 内部 API、DOM、store、数据库 schema 或内部 session model",
+  "Gateway / Portal OPL Adapter 是 anti-corruption layer",
+  "`adapterContractVersion`",
+  "`capabilities`",
+  "`supportedEvents`",
+  "OPL message/file/run 事件必须先归一化为 MedOPL canonical event",
+  "upstream OPL 更新只允许改 Gateway/Adapter 映射层",
+  "不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同",
+  "`capability_not_supported`",
+  "不同 API 必须低耦合演进",
+], "connection_adapter_decoupling_boundary");
+
+assertIncludesAll(contents.connection, [
   "Portal 点击“进入 OPL 工作台”后打开 clean upstream OPL",
   "bootstrap 不含 raw key、token 或内部存储路径",
   "OPL session 绑定到 `portalUserId`、`tenantId`、`workspaceId`、`runtimeSessionId` 和 `resourceBindingId`",
