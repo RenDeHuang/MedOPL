@@ -22,6 +22,12 @@ export async function assertPortalSchemaReady({
     "user_storage_buckets",
     "workspace_resource_bindings",
     "weekly_protection_freezes",
+    "cloud_operations",
+    "cloud_operation_jobs",
+    "compute_allocations",
+    "file_space_entitlements",
+    "cloud_resource_projections",
+    "billing_reconciliations",
   ],
 }) {
   let versionResult;

@@ -232,10 +232,17 @@ try {
   }, null, 2));
 } finally {
   if (portal) {
-    if (portal.exitCode === null && !portal.killed) {
+    if (portal.exitCode !== null) {
+      // already closed
+    } else if (portal.killed) {
+      await new Promise((resolve) => portal.once("close", resolve));
+    } else {
       portal.kill("SIGTERM");
+      await Promise.race([
+        new Promise((resolve) => portal.once("close", resolve)),
+        new Promise((resolve) => setTimeout(resolve, 1500)),
+      ]);
     }
-    await new Promise((resolve) => portal.once("close", resolve));
   }
   await rm(tempDir, { recursive: true, force: true });
 }

@@ -125,7 +125,7 @@ assertIncludesAll(status, [
   "| CO-10 | mutation SDK wrapper | pending |",
   "| CO-11 | minimal authorized create/release live | pending |",
   "| CO-12 | production deploy execution | pending |",
-  "| CO-13 | Portal production integration | pending |",
+  "| CO-13 | Portal production integration | pending | production Portal route",
   "| CO-14 | canary / QA / release status update | pending |",
 ], "status_current_truth");
 
@@ -139,7 +139,7 @@ assertIncludesAll(status, [
   "create/release dry-run: pending",
   "mutation wrapper: pending",
   "production deploy: pending",
-  "Portal production integration: pending",
+  "Portal production integration: local production API + PostgreSQL canonical store smoke done; real Tencent storage-create canary pending explicit Package C mutation secret file path",
   "canary/QA/release status: pending",
 ], "status_plain_language_summary");
 
@@ -233,6 +233,20 @@ assert.equal(boardData.nextLane, "readonly-report-review after explicit user aut
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
 assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");
 assert(statusById["CO-08"].nextAction.includes("wait for official SDK live report and B acceptance"), "co08_next_action_must_wait_for_b_acceptance");
+assert.equal(statusById["CO-13"].status, "pending", "co13_must_remain_pending_until_real_canary");
+assertIncludesAll(
+  `${statusById["CO-13"].evidenceCommitOrReport} ${statusById["CO-13"].nextAction} ${statusById["CO-13"].requiredSmoke.join(" ")} ${statusById["CO-13"].userGate}`,
+  [
+    "production Portal route",
+    "PostgreSQL canonical store shape",
+    "MVP suite coverage pass locally",
+    "real Tencent storage-create canary has not run",
+    "explicit Package C mutation secret file path",
+    "smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+    "smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+  ],
+  "co13_production_portal_local_evidence"
+);
 
 assertIncludesAll(matrix, [
   "cloud onboarding execution board",

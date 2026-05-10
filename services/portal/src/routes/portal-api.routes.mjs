@@ -3,6 +3,7 @@ import { createPortalApiRunsRoutes } from "./portal-api-runs.routes.mjs";
 import { createPortalApiSessionsRoutes } from "./portal-api-sessions.routes.mjs";
 import { createPortalApiStateRoutes } from "./portal-api-state.routes.mjs";
 import { createPortalApiTracesRoutes } from "./portal-api-traces.routes.mjs";
+import { createPortalApiV22CloudOperationsRoutes } from "./portal-api-v22-cloud-operations.routes.mjs";
 import { createPortalApiV22CloudOperationsTestRoutes } from "./portal-api-v22-cloud-operations-test.routes.mjs";
 import { createPortalApiV22ManagedEnvironmentReleaseRoutes } from "./portal-api-v22-managed-environment-release.routes.mjs";
 import { createPortalApiV22OplWorkRoutes } from "./portal-api-v22-opl-work.routes.mjs";
@@ -42,6 +43,10 @@ export function createPortalApiRoutes({
   sendJson,
   buildUserBillingSummary = buildDefaultUserBillingSummary,
   cloudProvisioner = null,
+  cloudOperationRunnerMode = "fake-live",
+  cloudOperationRunnerScript = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+  cloudOperationSecretFile = "",
+  enableCloudOperationProductionBridge = false,
   enableCloudOperationTestBridge = false,
   nodeEnv = process.env.NODE_ENV || "",
   visibleAnnouncementRows,
@@ -50,6 +55,7 @@ export function createPortalApiRoutes({
 }) {
   const cloudOperationTestBridgeEnabled = Boolean(enableCloudOperationTestBridge)
     && String(nodeEnv || "").trim().toLowerCase() !== "production";
+  const cloudOperationProductionBridgeEnabled = Boolean(enableCloudOperationProductionBridge);
 
   const handleV22UserCreditProviderKey = createPortalApiV22UserCreditProviderKeyRoutes({
     activeUserStatus,
@@ -77,6 +83,15 @@ export function createPortalApiRoutes({
   });
   const handleV22CloudOperationsTest = createPortalApiV22CloudOperationsTestRoutes({
     readBody,
+    sendJson,
+    writeDb,
+  });
+  const handleV22CloudOperations = createPortalApiV22CloudOperationsRoutes({
+    readBody,
+    repoRoot: process.cwd().endsWith("/services/portal") ? "../.." : ".",
+    runnerMode: cloudOperationRunnerMode,
+    runnerScript: cloudOperationRunnerScript,
+    secretFile: cloudOperationSecretFile,
     sendJson,
     writeDb,
   });
@@ -235,6 +250,7 @@ export function createPortalApiRoutes({
 
   return async function handlePortalApiRoutes(context) {
     if (await handleV22UserCreditProviderKey(context)) return true;
+    if (cloudOperationProductionBridgeEnabled && await handleV22CloudOperations(context)) return true;
     if (cloudOperationTestBridgeEnabled && await handleV22CloudOperationsTest(context)) return true;
     if (await handleV22ManagedEnvironmentRelease(context)) return true;
     if (await handleV22OplWork(context)) return true;

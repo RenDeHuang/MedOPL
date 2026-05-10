@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本矩阵定义 v22 cloud onboarding 的验证分层。AGENTS 管协作纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒；本文件只说明每类验证证明什么、什么时候必须跑、不能做什么，以及 blocker 应回流到哪里。
 
-本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表真实云、create/release、deploy、Portal production integration 或 canary 已完成。当前分支只写 docs，不改 scripts，不改业务代码，不读 secret，不调用真实云，不 build/push/kubectl，不 merge，不 push。
+本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表真实云、create/release、deploy 或 canary 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；真实 Tencent storage-create canary 仍需显式 Package C mutation secret 文件路径。当前分支不读真实 secret，不调用真实云，不 build/push/kubectl，不 merge，不 push。
 
 ## Verification Scope
 
@@ -22,7 +22,7 @@ verification matrix does not cover:
 
 - create/release mutation execution.
 - production deploy/build/push/kubectl execution.
-- Portal production integration implementation.
+- Portal production integration real Tencent canary.
 - real secret reading without explicit user authorization.
 - real cloud calls without explicit user authorization.
 

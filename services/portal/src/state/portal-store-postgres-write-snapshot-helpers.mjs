@@ -424,6 +424,210 @@ export async function writeWeeklyProtectionFreezes({ client, pgTableName, db }) 
   }
 }
 
+export async function writeCloudOperations({ client, pgTableName, db }) {
+  for (const row of db.cloudOperations || []) {
+    await client.query(`INSERT INTO ${pgTableName("cloud_operations")} (id,operation_id,tenant_id,user_id,workspace_id,resource_binding_id,operation_type,status,runner_mode,real_cloud_calls,production_portal_connected,test_only,accepted_dry_run_id,dry_run_report_ref,execution_report_ref,requested_spec_json,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+      ON CONFLICT (id) DO UPDATE SET
+        operation_id=EXCLUDED.operation_id,
+        tenant_id=EXCLUDED.tenant_id,
+        user_id=EXCLUDED.user_id,
+        workspace_id=EXCLUDED.workspace_id,
+        resource_binding_id=EXCLUDED.resource_binding_id,
+        operation_type=EXCLUDED.operation_type,
+        status=EXCLUDED.status,
+        runner_mode=EXCLUDED.runner_mode,
+        real_cloud_calls=EXCLUDED.real_cloud_calls,
+        production_portal_connected=EXCLUDED.production_portal_connected,
+        test_only=EXCLUDED.test_only,
+        accepted_dry_run_id=EXCLUDED.accepted_dry_run_id,
+        dry_run_report_ref=EXCLUDED.dry_run_report_ref,
+        execution_report_ref=EXCLUDED.execution_report_ref,
+        requested_spec_json=EXCLUDED.requested_spec_json,
+        updated_at=EXCLUDED.updated_at`, [
+      row.id || row.operationId,
+      row.operationId || row.id || "",
+      row.tenantId || row.userId || "",
+      row.userId || "",
+      row.workspaceId || "",
+      row.resourceBindingId || "",
+      row.operationType || "",
+      row.status || "",
+      row.runnerMode || "",
+      Boolean(row.realCloudCalls),
+      Boolean(row.productionPortalConnected),
+      Boolean(row.testOnly),
+      row.acceptedDryRunId || "",
+      row.dryRunReportRef || "",
+      row.executionReportRef || row.evidenceRef || "",
+      JSON.stringify(row.requestedSpec || {}),
+      row.createdAt || new Date().toISOString(),
+      row.updatedAt || row.createdAt || new Date().toISOString(),
+    ]);
+  }
+}
+
+export async function writeCloudOperationJobs({ client, pgTableName, db }) {
+  for (const row of db.cloudOperationJobs || []) {
+    await client.query(`INSERT INTO ${pgTableName("cloud_operation_jobs")} (id,operation_id,tenant_id,user_id,workspace_id,resource_binding_id,queue_mode,status,runner_mode,real_cloud_calls,dry_run_report_ref,execution_report_ref,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      ON CONFLICT (id) DO UPDATE SET
+        operation_id=EXCLUDED.operation_id,
+        tenant_id=EXCLUDED.tenant_id,
+        user_id=EXCLUDED.user_id,
+        workspace_id=EXCLUDED.workspace_id,
+        resource_binding_id=EXCLUDED.resource_binding_id,
+        queue_mode=EXCLUDED.queue_mode,
+        status=EXCLUDED.status,
+        runner_mode=EXCLUDED.runner_mode,
+        real_cloud_calls=EXCLUDED.real_cloud_calls,
+        dry_run_report_ref=EXCLUDED.dry_run_report_ref,
+        execution_report_ref=EXCLUDED.execution_report_ref,
+        updated_at=EXCLUDED.updated_at`, [
+      row.id,
+      row.operationId || "",
+      row.tenantId || row.userId || "",
+      row.userId || "",
+      row.workspaceId || "",
+      row.resourceBindingId || "",
+      row.queueMode || "inline_worker",
+      row.status || "",
+      row.runnerMode || "",
+      Boolean(row.realCloudCalls),
+      row.dryRunReportRef || "",
+      row.executionReportRef || "",
+      row.createdAt || new Date().toISOString(),
+      row.updatedAt || row.createdAt || new Date().toISOString(),
+    ]);
+  }
+}
+
+export async function writeComputeAllocations({ client, pgTableName, db }) {
+  for (const row of db.computeAllocations || []) {
+    await client.query(`INSERT INTO ${pgTableName("compute_allocations")} (id,tenant_id,user_id,workspace_id,resource_binding_id,plan_id,compute_units,status,cluster_ref,namespace_ref,quota_json,workload_class,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      ON CONFLICT (id) DO UPDATE SET
+        tenant_id=EXCLUDED.tenant_id,
+        user_id=EXCLUDED.user_id,
+        workspace_id=EXCLUDED.workspace_id,
+        resource_binding_id=EXCLUDED.resource_binding_id,
+        plan_id=EXCLUDED.plan_id,
+        compute_units=EXCLUDED.compute_units,
+        status=EXCLUDED.status,
+        cluster_ref=EXCLUDED.cluster_ref,
+        namespace_ref=EXCLUDED.namespace_ref,
+        quota_json=EXCLUDED.quota_json,
+        workload_class=EXCLUDED.workload_class,
+        updated_at=EXCLUDED.updated_at`, [
+      row.id,
+      row.tenantId || row.userId || "",
+      row.userId || "",
+      row.workspaceId || "",
+      row.resourceBindingId || "",
+      row.planId || "",
+      Number(row.computeUnits || 0),
+      row.status || "",
+      row.clusterRef || "",
+      row.namespaceRef || "",
+      JSON.stringify(row.quota || {}),
+      row.workloadClass || "",
+      row.createdAt || new Date().toISOString(),
+      row.updatedAt || row.createdAt || new Date().toISOString(),
+    ]);
+  }
+}
+
+export async function writeFileSpaceEntitlements({ client, pgTableName, db }) {
+  for (const row of db.fileSpaceEntitlements || []) {
+    await client.query(`INSERT INTO ${pgTableName("file_space_entitlements")} (id,tenant_id,user_id,workspace_id,resource_binding_id,plan_id,capacity_gb,status,retention_protection_status,retention_cleanup_after_at,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      ON CONFLICT (id) DO UPDATE SET
+        tenant_id=EXCLUDED.tenant_id,
+        user_id=EXCLUDED.user_id,
+        workspace_id=EXCLUDED.workspace_id,
+        resource_binding_id=EXCLUDED.resource_binding_id,
+        plan_id=EXCLUDED.plan_id,
+        capacity_gb=EXCLUDED.capacity_gb,
+        status=EXCLUDED.status,
+        retention_protection_status=EXCLUDED.retention_protection_status,
+        retention_cleanup_after_at=EXCLUDED.retention_cleanup_after_at,
+        updated_at=EXCLUDED.updated_at`, [
+      row.id,
+      row.tenantId || row.userId || "",
+      row.userId || "",
+      row.workspaceId || "",
+      row.resourceBindingId || "",
+      row.planId || "",
+      Number(row.capacityGb || 0),
+      row.status || "",
+      row.retentionProtectionStatus || "",
+      row.retentionCleanupAfterAt || "",
+      row.createdAt || new Date().toISOString(),
+      row.updatedAt || row.createdAt || new Date().toISOString(),
+    ]);
+  }
+}
+
+export async function writeCloudResourceProjections({ client, pgTableName, db }) {
+  for (const row of db.cloudResourceProjections || []) {
+    await client.query(`INSERT INTO ${pgTableName("cloud_resource_projections")} (id,tenant_id,user_id,workspace_id,resource_binding_id,status,production_portal_connected,runner_mode,real_cloud_calls,last_operation_id,visible_summary_json,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      ON CONFLICT (id) DO UPDATE SET
+        tenant_id=EXCLUDED.tenant_id,
+        user_id=EXCLUDED.user_id,
+        workspace_id=EXCLUDED.workspace_id,
+        resource_binding_id=EXCLUDED.resource_binding_id,
+        status=EXCLUDED.status,
+        production_portal_connected=EXCLUDED.production_portal_connected,
+        runner_mode=EXCLUDED.runner_mode,
+        real_cloud_calls=EXCLUDED.real_cloud_calls,
+        last_operation_id=EXCLUDED.last_operation_id,
+        visible_summary_json=EXCLUDED.visible_summary_json,
+        updated_at=EXCLUDED.updated_at`, [
+      row.id,
+      row.tenantId || row.userId || "",
+      row.userId || "",
+      row.workspaceId || "",
+      row.resourceBindingId || "",
+      row.status || "",
+      Boolean(row.productionPortalConnected),
+      row.runnerMode || "",
+      Boolean(row.realCloudCalls),
+      row.lastOperationId || "",
+      JSON.stringify(row.visibleSummary || {}),
+      row.createdAt || new Date().toISOString(),
+      row.updatedAt || row.createdAt || new Date().toISOString(),
+    ]);
+  }
+}
+
+export async function writeBillingReconciliations({ client, pgTableName, db }) {
+  for (const row of db.billingReconciliations || []) {
+    await client.query(`INSERT INTO ${pgTableName("billing_reconciliations")} (id,tenant_id,user_id,workspace_id,resource_binding_id,operation_id,status,status_label,source,billing_read_ref,audit_queue_ref,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      ON CONFLICT (id) DO UPDATE SET
+        tenant_id=EXCLUDED.tenant_id,
+        user_id=EXCLUDED.user_id,
+        workspace_id=EXCLUDED.workspace_id,
+        resource_binding_id=EXCLUDED.resource_binding_id,
+        operation_id=EXCLUDED.operation_id,
+        status=EXCLUDED.status,
+        status_label=EXCLUDED.status_label,
+        source=EXCLUDED.source,
+        billing_read_ref=EXCLUDED.billing_read_ref,
+        audit_queue_ref=EXCLUDED.audit_queue_ref,
+        updated_at=EXCLUDED.updated_at`, [
+      row.id,
+      row.tenantId || row.userId || "",
+      row.userId || "",
+      row.workspaceId || "",
+      row.resourceBindingId || "",
+      row.operationId || "",
+      row.status || "",
+      row.statusLabel || "",
+      row.source || "",
+      row.billingReadRef || "",
+      row.auditQueueRef || "",
+      row.createdAt || new Date().toISOString(),
+      row.updatedAt || row.createdAt || new Date().toISOString(),
+    ]);
+  }
+}
+
 export async function replaceWorkspaceFiles({ client, pgTableName, db }) {
   await client.query(`DELETE FROM ${pgTableName("workspace_files")}`);
   for (const row of db.workspaceFiles || []) {

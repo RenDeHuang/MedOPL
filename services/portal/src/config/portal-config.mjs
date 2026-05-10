@@ -65,6 +65,11 @@ export const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
 export const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
 export const PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE = String(process.env.PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE || "").trim() === "1"
   && String(process.env.NODE_ENV || "").trim().toLowerCase() !== "production";
+export const PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE = String(process.env.PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE || "").trim() === "1";
+export const PORTAL_CLOUD_OPERATION_RUNNER_MODE = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_MODE || "fake-live").trim() || "fake-live";
+export const PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE = String(process.env.PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE || "").trim();
+export const PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs").trim()
+  || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
 
 export const adminSeed = {
   email: process.env.PORTAL_ADMIN_EMAIL || "zitadel-admin@zitadel.localhost",

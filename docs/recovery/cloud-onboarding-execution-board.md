@@ -125,12 +125,12 @@ user confirmation gates:
 | R-02 SDK shape smoke | CC-01 | dependency_install | path defined; execution remains separate |
 | R-03 readonly preflight | CC-02 | readonly_connection | path defined; execution remains separate |
 | R-04 readonly live report | CC-02 | readonly_connection | path defined; needs explicit authorization |
-| R-05 Portal canonical operation smoke | CC-03 | local_contract_smoke | test-only fake-live bridge already covered |
+| R-05 Portal canonical operation smoke | CC-03 | local_contract_smoke | test-only fake-live bridge and production storage-create fake-live loop covered; production route uses inline operation job and PostgreSQL canonical store shape |
 | R-06 storage dry-run | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-07 authorized storage execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-08 compute dry-run | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-09 authorized compute execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
-| R-10 Portal projection smoke | CC-03 | local_contract_smoke | test-only fake-live bridge already covered |
+| R-10 Portal projection smoke | CC-03 | local_contract_smoke | test-only projection and production sanitized projection covered locally; real Tencent storage-create canary still requires explicit Package C mutation secret file path |
 | R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-13 COS billing checkpoint | CC-06 | readonly_connection | path defined; execution remains separate |

@@ -335,6 +335,102 @@ export function createPortalStoreSchema({
         detail_json jsonb NOT NULL,
         occurred_at timestamptz NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("cloud_operations")} (
+        id text PRIMARY KEY,
+        operation_id text NOT NULL,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        resource_binding_id text NOT NULL,
+        operation_type text NOT NULL,
+        status text NOT NULL,
+        runner_mode text NOT NULL,
+        real_cloud_calls boolean NOT NULL,
+        production_portal_connected boolean NOT NULL,
+        test_only boolean NOT NULL DEFAULT false,
+        accepted_dry_run_id text NOT NULL,
+        dry_run_report_ref text NOT NULL,
+        execution_report_ref text NOT NULL,
+        requested_spec_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("cloud_operation_jobs")} (
+        id text PRIMARY KEY,
+        operation_id text NOT NULL,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        resource_binding_id text NOT NULL,
+        queue_mode text NOT NULL,
+        status text NOT NULL,
+        runner_mode text NOT NULL,
+        real_cloud_calls boolean NOT NULL,
+        dry_run_report_ref text NOT NULL,
+        execution_report_ref text NOT NULL,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("compute_allocations")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        resource_binding_id text NOT NULL,
+        plan_id text NOT NULL,
+        compute_units numeric NOT NULL,
+        status text NOT NULL,
+        cluster_ref text NOT NULL DEFAULT '',
+        namespace_ref text NOT NULL DEFAULT '',
+        quota_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        workload_class text NOT NULL DEFAULT '',
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("file_space_entitlements")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        resource_binding_id text NOT NULL,
+        plan_id text NOT NULL,
+        capacity_gb numeric NOT NULL,
+        status text NOT NULL,
+        retention_protection_status text NOT NULL DEFAULT '',
+        retention_cleanup_after_at text NOT NULL DEFAULT '',
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("cloud_resource_projections")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        resource_binding_id text NOT NULL,
+        status text NOT NULL,
+        production_portal_connected boolean NOT NULL,
+        runner_mode text NOT NULL,
+        real_cloud_calls boolean NOT NULL,
+        last_operation_id text NOT NULL,
+        visible_summary_json jsonb NOT NULL DEFAULT '{}'::jsonb,
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ${pgTableName("billing_reconciliations")} (
+        id text PRIMARY KEY,
+        tenant_id text NOT NULL,
+        user_id text NOT NULL,
+        workspace_id text NOT NULL,
+        resource_binding_id text NOT NULL,
+        operation_id text NOT NULL,
+        status text NOT NULL,
+        status_label text NOT NULL,
+        source text NOT NULL,
+        billing_read_ref text NOT NULL DEFAULT '',
+        audit_queue_ref text NOT NULL DEFAULT '',
+        created_at timestamptz NOT NULL,
+        updated_at timestamptz NOT NULL
+      );
       ALTER TABLE ${pgTableName("groups")} ADD COLUMN IF NOT EXISTS cpu_request text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("groups")} ADD COLUMN IF NOT EXISTS cpu_limit text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("groups")} ADD COLUMN IF NOT EXISTS memory_request text NOT NULL DEFAULT '';
