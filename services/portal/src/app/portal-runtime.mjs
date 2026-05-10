@@ -349,6 +349,7 @@ const {
   markWorkspaceStorageDeleting,
   mkdir,
   normalizeAuthEmail,
+  oplAdapterClient,
   oplLaunchService,
   path,
   portalInternalAuthAllowed,

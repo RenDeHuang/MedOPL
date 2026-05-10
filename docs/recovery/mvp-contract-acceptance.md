@@ -96,6 +96,8 @@
 - `scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`
 - `scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-connection-contract.mjs`
+- `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`
+- `scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs`
 - `scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
 - `scripts/smoke-test-v22-portal-runtime-startup-config.mjs`
 - `scripts/smoke-test-v22-portal-dev-server-auth-proxy.mjs`

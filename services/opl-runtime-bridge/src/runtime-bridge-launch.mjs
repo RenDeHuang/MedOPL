@@ -5,9 +5,8 @@ import {
   createRuntimeSession,
   createWorkspaceSession,
   nowIso,
-  readState,
   runtimeRoot,
-  writeState,
+  updateState,
   upsertWorkspace,
 } from "./state-store.mjs";
 import {
@@ -167,6 +166,224 @@ function scopedCollection(items, scope, overrides = {}) {
     .map((item) => withScope(item, scope, overrides));
 }
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function number(value = 0) {
+  const resolved = Number(value || 0);
+  return Number.isFinite(resolved) ? resolved : 0;
+}
+
+function bool(value = false) {
+  return value === true;
+}
+
+function publicLaunchView(launch = {}, runtimeSession = {}) {
+  return {
+    launchId: text(launch.launchId),
+    traceId: text(launch.traceId),
+    portalUserId: text(launch.portalUserId),
+    tenantId: text(launch.tenantId),
+    workspaceId: text(launch.workspaceId),
+    workspaceTitle: text(launch.workspaceTitle),
+    workspacePath: text(launch.workspacePath),
+    workspaceSessionId: text(launch.workspaceSessionId),
+    runtimeSessionId: text(launch.runtimeSessionId),
+    oplSessionId: text(runtimeSession.oplSessionId || launch.oplSessionId),
+    providerBound: Boolean(runtimeSession.providerConfigured && runtimeSession.providerKeyRef),
+    providerKeyRef: text(runtimeSession.providerKeyRef || launch.providerKeyRef),
+    launchStatus: launch.launchStatus || null,
+    source: text(launch.source),
+    createdAt: text(launch.createdAt),
+    expiresAt: text(launch.expiresAt),
+  };
+}
+
+function publicRuntimeSessionView(runtimeSession = {}, scope = {}) {
+  return {
+    runtimeSessionId: text(runtimeSession.runtimeSessionId || scope.runtimeSessionId),
+    oplSessionId: text(runtimeSession.oplSessionId || scope.oplSessionId),
+    portalUserId: text(runtimeSession.portalUserId || scope.portalUserId),
+    tenantId: text(runtimeSession.tenantId || scope.tenantId),
+    workspaceId: text(runtimeSession.workspaceId || scope.workspaceId),
+    workspaceSessionId: text(runtimeSession.workspaceSessionId || scope.workspaceSessionId),
+    resourceBindingId: text(runtimeSession.resourceBindingId),
+    providerKeyRef: text(runtimeSession.providerKeyRef),
+    providerConfigured: bool(runtimeSession.providerConfigured),
+    providerConfigStatus: text(runtimeSession.providerConfigStatus || (runtimeSession.providerConfigured ? "configured" : "missing")),
+    providerBound: Boolean(runtimeSession.providerConfigured && runtimeSession.providerKeyRef),
+    status: text(runtimeSession.status || "ready"),
+  };
+}
+
+function publicWorkspaceView(item = {}) {
+  return {
+    workspaceId: text(item.workspaceId || item.workspace_id || item.id),
+    workspaceTitle: text(item.workspaceTitle || item.workspace_title || item.title || item.label || item.name),
+    workspacePath: text(item.workspacePath || item.workspace_path),
+    portalUserId: text(item.portalUserId || item.portal_user_id || item.userId),
+    tenantId: text(item.tenantId || item.tenant_id),
+    ownerId: text(item.ownerId || item.owner_id),
+    status: text(item.status || "active"),
+    createdAt: text(item.createdAt || item.created_at),
+    updatedAt: text(item.updatedAt || item.updated_at),
+  };
+}
+
+function publicSessionView(item = {}) {
+  return {
+    sessionId: text(item.sessionId || item.session_id || item.oplSessionId || item.opl_session_id || item.id),
+    oplSessionId: text(item.oplSessionId || item.opl_session_id || item.sessionId || item.session_id || item.id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    portalUserId: text(item.portalUserId || item.portal_user_id || item.userId),
+    tenantId: text(item.tenantId || item.tenant_id),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    status: text(item.status || "active"),
+    createdAt: text(item.createdAt || item.created_at),
+    updatedAt: text(item.updatedAt || item.updated_at),
+  };
+}
+
+function publicMessageView(item = {}) {
+  return {
+    messageId: text(item.messageId || item.message_id),
+    runId: text(item.runId || item.run_id || item.messageId || item.message_id),
+    traceId: text(item.traceId || item.trace_id),
+    status: text(item.status || "running"),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    oplSessionId: text(item.oplSessionId || item.opl_session_id || item.sessionId || item.session_id),
+    providerKeyRef: text(item.providerKeyRef || item.provider_key_ref),
+    promptPreview: text(item.promptPreview || item.prompt_preview),
+    model: text(item.model),
+    tokenCount: number(item.tokenCount || item.token_count),
+    artifactRef: text(item.artifactId || item.artifact_id),
+    createdAt: text(item.createdAt || item.created_at),
+    updatedAt: text(item.updatedAt || item.updated_at),
+    finishedAt: text(item.finishedAt || item.finished_at),
+  };
+}
+
+function publicArtifactView(item = {}) {
+  const artifactRef = text(item.artifactId || item.artifact_id || item.artifactRef || item.artifact_ref || item.outputFileRef || item.output_file_ref);
+  return {
+    artifactId: artifactRef,
+    artifactRef,
+    outputFileRef: artifactRef,
+    runId: text(item.runId || item.run_id),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    resourceBindingId: text(item.resourceBindingId || item.resource_binding_id),
+    providerKeyRef: text(item.providerKeyRef || item.provider_key_ref),
+    kind: text(item.kind || "outputs"),
+    name: text(item.name),
+    relativePath: text(item.relativePath || item.relative_path),
+    sizeBytes: number(item.sizeBytes || item.size_bytes),
+    contentType: text(item.contentType || item.content_type || "application/octet-stream"),
+    createdAt: text(item.createdAt || item.created_at),
+  };
+}
+
+function publicProgressView(item = {}) {
+  return {
+    id: text(item.id),
+    type: text(item.type || item.eventType || item.event_type),
+    status: text(item.status),
+    portalUserId: text(item.portalUserId || item.portal_user_id || item.userId),
+    tenantId: text(item.tenantId || item.tenant_id),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    sessionId: text(item.sessionId || item.session_id || item.oplSessionId || item.opl_session_id),
+    messageId: text(item.messageId || item.message_id),
+    runId: text(item.runId || item.run_id),
+    artifactRef: text(item.artifactId || item.artifact_id || item.artifactRef || item.artifact_ref),
+    traceId: text(item.traceId || item.trace_id),
+    source: text(item.source),
+    occurredAt: text(item.occurredAt || item.occurred_at),
+    createdAt: text(item.createdAt || item.created_at),
+  };
+}
+
+function publicRunView(item = {}) {
+  return {
+    runId: text(item.runId || item.run_id),
+    traceId: text(item.traceId || item.trace_id),
+    status: text(item.status || "submitted"),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    resourceBindingId: text(item.resourceBindingId || item.resource_binding_id),
+    providerKeyRef: text(item.providerKeyRef || item.provider_key_ref),
+    kind: text(item.kind),
+    toolName: text(item.toolName || item.tool_name),
+    mode: text(item.mode),
+    model: text(item.model),
+    tokenCount: number(item.tokenCount || item.token_count),
+    createdAt: text(item.createdAt || item.created_at),
+    startedAt: text(item.startedAt || item.started_at),
+    finishedAt: text(item.finishedAt || item.finished_at),
+    latencyMs: number(item.latencyMs || item.latency_ms),
+    error: text(item.error),
+  };
+}
+
+function publicRunActionView(item = {}) {
+  return {
+    actionId: text(item.actionId || item.action_id),
+    runId: text(item.runId || item.run_id),
+    traceId: text(item.traceId || item.trace_id),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    actionType: text(item.actionType || item.action_type),
+    summary: text(item.summary),
+    status: text(item.status),
+    startedAt: text(item.startedAt || item.started_at),
+    finishedAt: text(item.finishedAt || item.finished_at),
+    createdAt: text(item.createdAt || item.created_at),
+  };
+}
+
+function publicTraceView(item = {}) {
+  return {
+    traceId: text(item.traceId || item.trace_id),
+    runId: text(item.runId || item.run_id),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    traceProvider: text(item.traceProvider || item.trace_provider),
+    traceName: text(item.traceName || item.trace_name),
+    status: text(item.status),
+    latencyMs: number(item.latencyMs || item.latency_ms),
+    model: text(item.model),
+    tokenCount: number(item.tokenCount || item.token_count),
+    createdAt: text(item.createdAt || item.created_at),
+  };
+}
+
+function publicCostView(item = {}) {
+  return {
+    costRecordId: text(item.costRecordId || item.cost_record_id || item.id),
+    runId: text(item.runId || item.run_id),
+    workspaceId: text(item.workspaceId || item.workspace_id),
+    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
+    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
+    resourceBindingId: text(item.resourceBindingId || item.resource_binding_id),
+    providerKeyRef: text(item.providerKeyRef || item.provider_key_ref),
+    status: text(item.status),
+    currency: text(item.currency || item.costSummary?.currency),
+    estimatedCost: number(item.estimatedCost ?? item.estimated_cost ?? item.costSummary?.estimatedCost),
+    billedCost: number(item.billedCost ?? item.billed_cost ?? item.costSummary?.billedCost),
+    createdAt: text(item.createdAt || item.created_at),
+    updatedAt: text(item.updatedAt || item.updated_at),
+  };
+}
+
 function localResources(state, launch) {
   const workspaces = state.workspaces.filter((item) =>
     item.portalUserId === launch.portalUserId &&
@@ -255,12 +472,10 @@ export function createLaunchApi({
     return parsed;
   }
 
-  function buildOplLaunchUrl(launchToken) {
+  function buildOplLaunchUrl() {
     const resolvedOplWebUrl = getOplWebUrl();
     if (resolvedOplWebUrl) {
       const url = new URL(resolvedOplWebUrl);
-      url.searchParams.set("launch_token", launchToken);
-      url.searchParams.set("portal_adapter_url", baseUrl);
       return url.toString();
     }
     if (nodeEnv === "production") {
@@ -271,13 +486,15 @@ export function createLaunchApi({
 
   function buildCallbacks() {
     return {
-      bootstrap: `${baseUrl}/api/opl-launch/bootstrap`,
-      sessionBind: `${baseUrl}/api/opl-launch/sessions/bind`,
-      message: `${baseUrl}/api/opl-launch/messages`,
-      messageStatus: `${baseUrl}/api/opl-launch/messages/{messageId}/status`,
-      startRun: `${baseUrl}/api/opl-launch/runs`,
-      runStatus: `${baseUrl}/api/opl-launch/runs/{runId}/status`,
-      artifacts: `${baseUrl}/api/opl-launch/runs/{runId}/artifacts`,
+      bootstrap: "/portal-adapter/api/opl/bootstrap",
+      status: "/portal-adapter/api/opl/status",
+      sessionBind: "/portal-adapter/api/opl/sessions/bind",
+      message: "/portal-adapter/api/opl/messages",
+      file: "/portal-adapter/api/opl/files",
+      startRun: "/portal-adapter/api/opl/runs",
+      runStatus: "/portal-adapter/api/opl/runs/{runId}/status",
+      runArtifacts: "/portal-adapter/api/opl/runs/{runId}/artifacts",
+      artifact: "/portal-adapter/api/opl/artifacts/{artifactRef}",
     };
   }
 
@@ -324,12 +541,12 @@ export function createLaunchApi({
     const artifacts = scopedCollection([...(oplResources.artifacts || []), ...adapterArtifacts], scope, {
       workspacePath: scope.workspacePath || undefined,
     });
-    const runtimeSessionView = runtimeSession ? withScope(runtimeSession, scope) : null;
+    const runtimeSessionView = runtimeSession ? publicRuntimeSessionView(withScope(runtimeSession, scope), scope) : null;
 
     return {
       version: "v1",
       traceId: scope.traceId,
-      launch,
+      launch: publicLaunchView(launch, runtimeSession || {}),
       identity: {
         traceId: scope.traceId,
         portalUserId: scope.portalUserId,
@@ -368,6 +585,7 @@ export function createLaunchApi({
       provider: {
         providerConfigured: Boolean(runtimeSession?.providerConfigured),
         providerConfigStatus: runtimeSession?.providerConfigStatus || (runtimeSession?.providerConfigured ? "configured" : "missing"),
+        providerKeyRef: runtimeSession?.providerKeyRef || "",
         providerName: runtimeSession?.providerName || "",
         providerBaseUrl: runtimeSession?.providerBaseUrl || "",
         modelProvider: runtimeSession?.modelProvider || "",
@@ -414,16 +632,16 @@ export function createLaunchApi({
         engines: oplResources.engines || [],
         modules: oplResources.modules || [],
         agents: oplResources.agents || [],
-        workspaces,
-        sessions,
-        messages: adapterMessages,
-        progress,
-        artifacts,
+        workspaces: workspaces.map(publicWorkspaceView),
+        sessions: sessions.map(publicSessionView),
+        messages: adapterMessages.map(publicMessageView),
+        progress: progress.map(publicProgressView),
+        artifacts: artifacts.map(publicArtifactView),
       },
-      runs,
-      runActions,
-      traces,
-      costs,
+      runs: runs.map(publicRunView),
+      runActions: runActions.map(publicRunActionView),
+      traces: traces.map(publicTraceView),
+      costs: costs.map(publicCostView),
     };
   }
 
@@ -452,69 +670,72 @@ export function createLaunchApi({
 
   async function issueLaunchToken(input = {}) {
     const selectedServerPlan = selectServerPlan(input);
-    const state = await readState();
-    const traceId = firstNonEmpty([input.traceId, input.trace_id]) || `opl-trace-${randomUUID()}`;
-    const workspace = upsertWorkspace(state, input);
-    const launchStatus = buildLaunchStatus();
-    const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
-    const runtimeSession = createRuntimeSession(state, buildRuntimeSessionInput({
-      input,
-      traceId,
-      workspaceId: workspace.workspaceId,
-      workspaceSessionId: workspaceSession.workspaceSessionId,
-      k8sNamespace,
-      runnerImage,
-      selectedServerPlan,
-    }));
-    const portalContext = buildPortalContext({
-      input,
-      traceId,
-      workspace,
-      workspaceSessionId: workspaceSession.workspaceSessionId,
-      runtimeSessionId: runtimeSession.runtimeSessionId,
-      selectedServerPlan,
-    });
-    try {
-      await bindWorkspace(portalContext);
-      const oplSession = await createOplSession(portalContext);
-      runtimeSession.oplSessionId = markOplSessionCreated(launchStatus, oplSession);
-      if (oplSession.status === "deferred") {
-        addEvent(state, "opl_session_create_deferred", { ...portalContext, reason: oplSession.reason || "" });
+    let payload = null;
+    await updateState(async (state) => {
+      const traceId = firstNonEmpty([input.traceId, input.trace_id]) || `opl-trace-${randomUUID()}`;
+      const workspace = upsertWorkspace(state, input);
+      const launchStatus = buildLaunchStatus();
+      const workspaceSession = createWorkspaceSession(state, { ...input, workspaceId: workspace.workspaceId });
+      const runtimeSession = createRuntimeSession(state, buildRuntimeSessionInput({
+        input,
+        traceId,
+        workspaceId: workspace.workspaceId,
+        workspaceSessionId: workspaceSession.workspaceSessionId,
+        k8sNamespace,
+        runnerImage,
+        selectedServerPlan,
+      }));
+      await bindProviderConfig(runtimeSession, input.providerKeyPayload || input.provider_key_payload || input);
+      const portalContext = buildPortalContext({
+        input,
+        traceId,
+        workspace,
+        workspaceSessionId: workspaceSession.workspaceSessionId,
+        runtimeSessionId: runtimeSession.runtimeSessionId,
+        selectedServerPlan,
+      });
+      try {
+        await bindWorkspace(portalContext);
+        const oplSession = await createOplSession(portalContext);
+        runtimeSession.oplSessionId = markOplSessionCreated(launchStatus, oplSession);
+        if (oplSession.status === "deferred") {
+          addEvent(state, "opl_session_create_deferred", { ...portalContext, reason: oplSession.reason || "" });
+        }
+      } catch (error) {
+        if (nodeEnv === "production") throw error;
+        addEvent(state, "opl_launch_bind_failed", { ...portalContext, error: String(error.message || error) });
       }
-    } catch (error) {
-      if (nodeEnv === "production") throw error;
-      addEvent(state, "opl_launch_bind_failed", { ...portalContext, error: String(error.message || error) });
-    }
 
-    const launchRecord = buildLaunchRecord({
-      input,
-      traceId,
-      workspace,
-      workspaceSessionId: workspaceSession.workspaceSessionId,
-      runtimeSession,
-      portalContext,
-      selectedServerPlan,
-      launchStatus,
+      const launchRecord = buildLaunchRecord({
+        input,
+        traceId,
+        workspace,
+        workspaceSessionId: workspaceSession.workspaceSessionId,
+        runtimeSession,
+        portalContext,
+        selectedServerPlan,
+        launchStatus,
+      });
+      const launchToken = makeLaunchToken(launchRecord);
+      const resolvedOplWebUrl = buildOplLaunchUrl();
+      const bootstrapUrl = `${baseUrl}/api/opl/bootstrap`;
+      state.launchTokens.push({ ...launchRecord, launchToken, oplWebUrl: resolvedOplWebUrl, bootstrapUrl });
+      addEvent(state, "opl_launch_created", launchRecord);
+      await publishTraceEvent(state, {
+        ...launchRecord,
+        eventType: "launch",
+        traceName: "OPL launch",
+        status: "active",
+      });
+      payload = {
+        ok: true,
+        ...launchRecord,
+        launchToken,
+        oplWebUrl: resolvedOplWebUrl,
+        bootstrapUrl,
+      };
     });
-    const launchToken = makeLaunchToken(launchRecord);
-    const resolvedOplWebUrl = buildOplLaunchUrl(launchToken);
-    const bootstrapUrl = `${baseUrl}/api/opl-launch/bootstrap?launch_token=${encodeURIComponent(launchToken)}`;
-    state.launchTokens.push({ ...launchRecord, launchToken, oplWebUrl: resolvedOplWebUrl, bootstrapUrl });
-    addEvent(state, "opl_launch_created", launchRecord);
-    await publishTraceEvent(state, {
-      ...launchRecord,
-      eventType: "launch",
-      traceName: "OPL launch",
-      status: "active",
-    });
-    await writeState(state);
-    return {
-      ok: true,
-      ...launchRecord,
-      launchToken,
-      oplWebUrl: resolvedOplWebUrl,
-      bootstrapUrl,
-    };
+    return payload;
   }
 
   return {

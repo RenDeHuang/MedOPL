@@ -8,4 +8,5 @@ export * from "./portal/resources";
 export * from "./portal/sessions";
 export * from "./portal/lab";
 export * from "./portal/traces";
+export * from "./portal/opl";
 export * from "./portal/admin";

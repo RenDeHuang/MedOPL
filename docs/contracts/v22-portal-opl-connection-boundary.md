@@ -25,10 +25,26 @@ POST /portal/api/opl/launch
 GET /portal-adapter/api/opl/bootstrap
 POST /portal-adapter/api/opl/sessions/bind
 POST /portal-adapter/api/opl/messages
+GET /portal-adapter/api/opl/messages/{messageId}/status
 POST /portal-adapter/api/opl/files
 POST /portal-adapter/api/opl/runs
 GET /portal-adapter/api/opl/runs/{runId}/status
+GET /portal-adapter/api/opl/runs/{runId}/artifacts
 GET /portal-adapter/api/opl/artifacts/{artifactRef}
+```
+
+Portal 对 OPL Adapter 的代理面必须与 Adapter 稳定接口对齐，至少包含：
+
+```text
+GET /portal/api/opl/bootstrap
+POST /portal/api/opl/sessions/bind
+POST /portal/api/opl/messages
+GET /portal/api/opl/messages/{messageId}/status
+POST /portal/api/opl/files
+POST /portal/api/opl/runs
+GET /portal/api/opl/runs/{runId}/status
+GET /portal/api/opl/runs/{runId}/artifacts
+GET /portal/api/opl/artifacts/{artifactRef}
 ```
 
 现有 Runtime Bridge `/api/opl-launch/*` 可以作为当前实现路径，但它必须语义映射到 Portal OPL Adapter / Runtime Agent 边界。旧 `/api/runtime-sessions` 和 `/api/runtime-sessions/{id}/runs` 不得成为 v22 新主路径。
@@ -151,6 +167,18 @@ bootstrap 和 Adapter status 必须能表达：
 
 如果 upstream OPL 缺少某个能力、能力版本不兼容或映射层尚未实现，Adapter 必须显式返回 `capability_not_supported`，不能隐式兜底、伪装成功或把未知 upstream shape 直接写入 Portal 状态。
 
+每个 API 的验收不得只检查 HTTP 200/201/202。必须同时证明真实访问和真实回流：
+
+- `GET /portal-adapter/api/opl/bootstrap` 必须访问 upstream/Product API 的 health、system、engines、modules、agents、workspaces、sessions、progress 和 artifacts 边界；返回值必须来自这些访问结果和 Adapter state projection，不能只本地构造。
+- `POST /portal-adapter/api/opl/sessions/bind` 必须更新 runtime session 的 `oplSessionId`、workspace、tenant、resourceBinding 和 provider binding 关系，并写入 `opl_session_bound` 事件。
+- `POST /portal-adapter/api/opl/messages` 必须把 normalized message 发到 OPL Product API 或公开 ACP/runtime 边界，并把 message request、reply、message artifact 和 trace 写回 Adapter state。
+- `GET /portal-adapter/api/opl/messages/{messageId}/status` 必须读取前序 message 写入的 request/reply/trace 状态，不能返回静态成功。
+- `POST /portal-adapter/api/opl/files` 必须新增 workspace-scoped input artifact record，并返回该 record 的 public `fileRef`。
+- `POST /portal-adapter/api/opl/runs` 必须调用 Runtime Agent relay/API 边界，并把 run record、runtime artifact、session ledger entry 和 trace 写回 Adapter state。
+- `GET /portal-adapter/api/opl/runs/{runId}/status`、`GET /portal-adapter/api/opl/runs/{runId}/artifacts` 和 `GET /portal-adapter/api/opl/artifacts/{artifactRef}` 必须读取前序 run/file 产生的 state record，且按 launch/session/workspace 鉴权。
+- Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token，跨用户 `launchId` 必须拒绝，成功响应必须来自 Adapter 回流而不是 Portal 本地伪造。
+- Adapter state 写入必须能保留并发 message/file/run 回流，不得因为异步写入互相覆盖、读到半写 JSON 或用最后写入覆盖前序状态。
+
 禁止事项：
 
 - 禁止 Portal 直接追踪 upstream route、DOM selector、frontend store、database schema 或 internal session model。
@@ -163,8 +191,11 @@ bootstrap 和 Adapter status 必须能表达：
 OPL 工作流通过 Portal OPL Adapter / Runtime Agent 边界接入：
 
 - `POST /portal-adapter/api/opl/messages` 记录 OPL message metadata，不保存 raw prompt 到公开 trace。
+- `GET /portal-adapter/api/opl/messages/{messageId}/status` 返回 message 的 sanitized 进度，不暴露 launch token、raw prompt 或 provider secret。
 - `POST /portal-adapter/api/opl/files` 生成 workspace file reference，不返回 objectKey、localPath、signedUrl。
 - `POST /portal-adapter/api/opl/runs` 使用 workspace file reference 发起 run。
+- `GET /portal-adapter/api/opl/runs/{runId}/status` 和 `GET /portal-adapter/api/opl/runs/{runId}/artifacts` 必须按 launch/session/workspace 鉴权后返回。
+- `GET /portal-adapter/api/opl/artifacts/{artifactRef}` 只返回当前 launch/session/workspace 可见的 artifact projection。
 
 run 必须执行以下 gate：
 
@@ -204,11 +235,12 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 1. Portal 点击“进入 OPL 工作台”后打开 clean upstream OPL。
 2. bootstrap 不含 raw key、token 或内部存储路径。
 3. OPL session 绑定到 `portalUserId`、`tenantId`、`workspaceId`、`runtimeSessionId` 和 `resourceBindingId`。
-4. 未绑定 gflabtoken 时不能 start run，返回 `provider_key_required`。
-5. 未开通 runtime / resourceBinding 时不能 start run，返回 `managed_environment_required`。
-6. start run 后平台生成 `runId`。
-7. 输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。
-8. Portal 能按 workspace、session 和 run 看到任务、文件、trace 和账单状态。
+4. bootstrap、message、file、run、status、artifact API 都有真实访问和真实状态回流证据，不接受只返回 200/201/202。
+5. 未绑定 gflabtoken 时不能 start run，返回 `provider_key_required`。
+6. 未开通 runtime / resourceBinding 时不能 start run，返回 `managed_environment_required`。
+7. start run 后平台生成 `runId`。
+8. 输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。
+9. Portal 能按 workspace、session 和 run 看到任务、文件、trace 和账单状态。
 
 ## Non-goals
 
@@ -227,6 +259,8 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 
 ```text
 node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
+node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
+node scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs
 ```
 
-该 smoke 只检查 repo-tracked 合同、索引和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
+这些 smoke 只检查 repo-tracked 合同、索引、本地 fake clean OPL Product API、本地 fake Runtime Agent relay 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。

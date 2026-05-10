@@ -5,6 +5,7 @@ export function portalLaunchClientScript() {
 const STATE_KEY = "portal.opl.launch";
 const BOOTSTRAP_KEY = "portal.opl.bootstrap";
 const PORTAL_ADAPTER_PATH = "/portal-adapter";
+const PORTAL_OPL_API_PATH = PORTAL_ADAPTER_PATH + "/api/opl";
 
 const DIRECT_ENTRY_DISMISS_KEY = "portal.opl.directEntryDismissed";
 
@@ -507,7 +508,7 @@ async function bindLaunchProviderKey(state, bootstrap, providerKey) {
   const launch = bootstrap.launch || {};
   const portal = bootstrap.portal || {};
   const workspace = bootstrap.workspace || {};
-  return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/sessions/bind", {
+  return fetchJson(PORTAL_OPL_API_PATH + "/sessions/bind", {
     method: "POST",
     body: JSON.stringify({
       workspaceId: portal.workspaceId || launch.workspaceId || workspace.workspaceId || "",
@@ -676,7 +677,7 @@ async function handleLaunchProviderPanelSubmit(event, state, bootstrap, panel) {
   try {
     await bindLaunchProviderKey(state, bootstrap, providerKey);
     if (input && "value" in input) input.value = "";
-    const refreshedBootstrap = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/bootstrap");
+    const refreshedBootstrap = await fetchJson(PORTAL_OPL_API_PATH + "/bootstrap");
     writeStoredBootstrap(refreshedBootstrap);
     if (!providerConfiguredFromBootstrap(refreshedBootstrap)) {
       throw new Error("provider_connection_required");
@@ -728,25 +729,25 @@ function buildPortalApi() {
     get state() {
       return readStoredState();
     },
-    get bootstrap() {
-      return readStoredBootstrap();
+    get bootstrap() {
+      return readStoredBootstrap();
     },
     async refreshBootstrap() {
       const state = requireLaunchState();
-      const bootstrap = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/bootstrap");
+      const bootstrap = await fetchJson(PORTAL_OPL_API_PATH + "/bootstrap");
       writeStoredBootstrap(bootstrap);
       return bootstrap;
     },
     async startRun(input = {}) {
       const state = requireLaunchState();
-      return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/runs", {
+      return fetchJson(PORTAL_OPL_API_PATH + "/runs", {
         method: "POST",
         body: JSON.stringify(input)
       });
     },
     async sendMessage(input = {}) {
       const state = requireLaunchState();
-      const accepted = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/messages", {
+      const accepted = await fetchJson(PORTAL_OPL_API_PATH + "/messages", {
         method: "POST",
         body: JSON.stringify(input)
       });
@@ -759,17 +760,17 @@ function buildPortalApi() {
       return accepted;
     },
     async getRunStatus(runId) {
-      if (!runId) throw new Error("runId is required.");
-      const state = requireLaunchState();
-      return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/status");
-    },
-    async getArtifacts(runId) {
-      if (!runId) throw new Error("runId is required.");
-      const state = requireLaunchState();
-      return fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/runs/" + encodeURIComponent(runId) + "/artifacts");
-    }
-  };
-}
+      if (!runId) throw new Error("runId is required.");
+      const state = requireLaunchState();
+      return fetchJson(PORTAL_OPL_API_PATH + "/runs/" + encodeURIComponent(runId) + "/status");
+    },
+    async getArtifacts(runId) {
+      if (!runId) throw new Error("runId is required.");
+      const state = requireLaunchState();
+      return fetchJson(PORTAL_OPL_API_PATH + "/runs/" + encodeURIComponent(runId) + "/artifacts");
+    }
+  };
+}
 
 window.__OPL_PORTAL__ = window.__OPL_PORTAL__ || buildPortalApi();
 window.__OPL_PORTAL_REFRESH_DIRECT_ENTRY__ = refreshDirectEntryShell;
@@ -926,7 +927,7 @@ async function completePortalLaunch(state, bootstrap) {
   const launch = bootstrap.launch || {};
   const portal = bootstrap.portal || {};
   const workspace = bootstrap.workspace || {};
-  const sessionBind = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/sessions/bind", {
+  const sessionBind = await fetchJson(PORTAL_OPL_API_PATH + "/sessions/bind", {
     method: "POST",
     body: JSON.stringify({
       workspaceId: portal.workspaceId || launch.workspaceId || "",
@@ -1033,7 +1034,7 @@ async function initializePortalLaunch() {
     });
     return;
   }
-  const bootstrap = await fetchJson(PORTAL_ADAPTER_PATH + "/api/opl-launch/bootstrap");
+  const bootstrap = await fetchJson(PORTAL_OPL_API_PATH + "/bootstrap");
   writeStoredBootstrap(bootstrap);
   if (!ensureLaunchProviderPanel(state, bootstrap)) return;
   await completePortalLaunch(state, bootstrap);

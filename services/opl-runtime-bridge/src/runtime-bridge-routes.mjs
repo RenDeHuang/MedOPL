@@ -1,12 +1,13 @@
 import { createHash, randomUUID } from "node:crypto";
 import { createLangfusePublisher } from "./langfuse-publisher.mjs";
 import {
+  addArtifactRecord,
   addEvent,
   addTraceRecord,
   ensureRuntime,
   readState,
   upsertMessageRequestRecord,
-  writeState,
+  updateState,
 } from "./state-store.mjs";
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
 import { createLocalFakeRuntimeAgentRelay } from "./local-fake-runtime-agent-relay.mjs";
@@ -51,6 +52,10 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
+function buildLaunchCookie(launchToken = "") {
+  return `opl_portal_launch=${encodeURIComponent(String(launchToken || ""))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=900`;
+}
+
 function sendRetired(res, message, replacement = "") {
   sendJson(res, 410, {
     ok: false,
@@ -76,6 +81,10 @@ function launchTokenHash(token = "") {
 
 function messageIdFromInput(input = {}) {
   return input.messageId || input.message_id || input.runId || input.run_id || randomUUID();
+}
+
+function runIdFromInput(input = {}) {
+  return input.runId || input.run_id || randomUUID();
 }
 
 function messagePromptPreview(input = {}) {
@@ -268,6 +277,53 @@ function launchTokenFrom(input = {}, url, req = null) {
   return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || authorizationBearerFrom(req);
 }
 
+function adapterContractMetadata() {
+  return {
+    adapterContractVersion: "v22.portal-opl.v1",
+    capabilities: [
+      "bootstrap",
+      "session_bind",
+      "message",
+      "file_upload",
+      "run_start",
+      "run_status",
+      "artifact_download",
+    ],
+    supportedEvents: [
+      "session_bound",
+      "message_created",
+      "file_referenced",
+      "run_started",
+      "run_updated",
+      "artifact_created",
+    ],
+  };
+}
+
+function publicRuntimeSession(runtimeSession = {}) {
+  return {
+    runtimeSessionId: emptyText(runtimeSession.runtimeSessionId),
+    oplSessionId: emptyText(runtimeSession.oplSessionId),
+    portalUserId: emptyText(runtimeSession.portalUserId),
+    tenantId: emptyText(runtimeSession.tenantId),
+    workspaceId: emptyText(runtimeSession.workspaceId),
+    workspaceSessionId: emptyText(runtimeSession.workspaceSessionId),
+    resourceBindingId: emptyText(runtimeSession.resourceBindingId),
+    providerKeyRef: emptyText(runtimeSession.providerKeyRef),
+    providerConfigured: Boolean(runtimeSession.providerConfigured),
+    providerConfigStatus: emptyText(runtimeSession.providerConfigStatus || (runtimeSession.providerConfigured ? "configured" : "missing")),
+    providerBound: Boolean(runtimeSession.providerConfigured && runtimeSession.providerKeyRef),
+    status: emptyText(runtimeSession.status || "ready"),
+  };
+}
+
+function adapterBootstrapPayload(bootstrap = {}) {
+  return {
+    ...adapterContractMetadata(),
+    ...bootstrap,
+  };
+}
+
 function messageStatusLookup({ state, tokenHash, match, launch }) {
   const messageId = decodeURIComponent(match[1]);
   return messageRecordInState(state, {
@@ -295,7 +351,7 @@ function messageStatusPayload(record = {}, state = {}) {
 }
 
 function statusUrlForMessage({ messageId }) {
-  return `/api/opl-launch/messages/${encodeURIComponent(messageId)}/status`;
+  return `/portal-adapter/api/opl/messages/${encodeURIComponent(messageId)}/status`;
 }
 
 function mergeUniqueBy(target = [], source = [], keyFn) {
@@ -423,97 +479,129 @@ export function createRuntimeBridgeRuntime() {
     return { launch, state, runtimeSession };
   }
 
+  async function readLaunchForRequest(req, url, res) {
+    const launchToken = launchTokenFrom({}, url, req);
+    const launch = launchApi.verifyLaunchToken(launchToken);
+    if (!launch) {
+      sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
+      return null;
+    }
+    const state = await readState();
+    return { launch, launchToken, state };
+  }
+
+  function runBelongsToLaunch(run = {}, launch = {}) {
+    return run.runtimeSessionId === launch.runtimeSessionId &&
+      run.workspaceSessionId === launch.workspaceSessionId &&
+      run.workspaceId === launch.workspaceId;
+  }
+
+  function artifactBelongsToLaunch(artifact = {}, launch = {}) {
+    return artifact.runtimeSessionId === launch.runtimeSessionId &&
+      artifact.workspaceSessionId === launch.workspaceSessionId &&
+      artifact.workspaceId === launch.workspaceId;
+  }
+
   async function completeMessageInBackground(messageId, runtimeSession, input, req, acceptedAt) {
     try {
       const workerStartedAt = new Date().toISOString();
-      const runningState = await readState();
+      const runningState = await updateState((state) => state);
       const message = await messageApi.submitMessage(runningState, runtimeSession, input, req);
-      const currentState = await readState();
-      const completedState = mergeMessageSideEffects(currentState, runningState, acceptedAt);
-      upsertRuntimeMessage(completedState, {
-        runtimeSession,
-        input,
-        messageId,
-        tokenHash: input.launchTokenHash,
-        status: "succeeded",
-        req,
-        extra: completedMessageExtra({ input, runtimeSession, message, acceptedAt, workerStartedAt }),
+      await updateState((currentState) => {
+        const completedState = mergeMessageSideEffects(currentState, runningState, acceptedAt);
+        upsertRuntimeMessage(completedState, {
+          runtimeSession,
+          input,
+          messageId,
+          tokenHash: input.launchTokenHash,
+          status: "succeeded",
+          req,
+          extra: completedMessageExtra({ input, runtimeSession, message, acceptedAt, workerStartedAt }),
+        });
+        return completedState;
       });
-      await writeState(completedState);
     } catch (error) {
-      const failedState = await readState();
-      upsertRuntimeMessage(failedState, {
-        runtimeSession,
-        input,
-        messageId,
-        tokenHash: input.launchTokenHash,
-        status: "failed",
-        req,
-        extra: failedMessageExtra(error, acceptedAt, new Date().toISOString()),
+      await updateState((failedState) => {
+        upsertRuntimeMessage(failedState, {
+          runtimeSession,
+          input,
+          messageId,
+          tokenHash: input.launchTokenHash,
+          status: "failed",
+          req,
+          extra: failedMessageExtra(error, acceptedAt, new Date().toISOString()),
+        });
+        addEvent(failedState, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
       });
-      addEvent(failedState, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
-      await writeState(failedState);
     }
   }
 
-  async function runMessageToCompletion({ state, runtimeSession, input, req, messageId, tokenHash, res }) {
+  async function runMessageToCompletion({ runtimeSession, input, req, messageId, tokenHash, res }) {
     const acceptedAt = new Date().toISOString();
     const workerStartedAt = acceptedAt;
-    upsertRuntimeMessage(state, {
-      runtimeSession,
-      input,
-      messageId,
-      tokenHash,
-      status: "running",
-      req,
-      extra: { acceptedAt, workerStartedAt },
+    let status = 200;
+    let payload = null;
+    await updateState(async (state) => {
+      const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+      upsertRuntimeMessage(state, {
+        runtimeSession: activeRuntimeSession,
+        input,
+        messageId,
+        tokenHash,
+        status: "running",
+        req,
+        extra: { acceptedAt, workerStartedAt },
+      });
+      try {
+        const message = await messageApi.submitMessage(state, activeRuntimeSession, input, req);
+        upsertRuntimeMessage(state, {
+          runtimeSession: activeRuntimeSession,
+          input,
+          messageId,
+          tokenHash,
+          status: "succeeded",
+          req,
+          extra: completedMessageExtra({ input, runtimeSession: activeRuntimeSession, message, acceptedAt, workerStartedAt }),
+        });
+        const record = messageRecordInState(state, { messageId, runtimeSessionId: activeRuntimeSession.runtimeSessionId, tokenHash });
+        payload = {
+          ok: true,
+          ...publicCompletedMessagePayload(message, record || {}, state, activeRuntimeSession),
+          traceId: input.traceId || activeRuntimeSession.traceId || "",
+          timing: timingPayload(record || {}),
+        };
+      } catch (error) {
+        status = 502;
+        upsertRuntimeMessage(state, {
+          runtimeSession: activeRuntimeSession,
+          input,
+          messageId,
+          tokenHash,
+          status: "failed",
+          req,
+          extra: failedMessageExtra(error, acceptedAt, workerStartedAt),
+        });
+        addEvent(state, "opl_message_reply_failed", { ...activeRuntimeSession, messageId, error: String(error.message || error) });
+        payload = { ok: false, error: String(error.message || error) };
+      }
     });
-    try {
-      const message = await messageApi.submitMessage(state, runtimeSession, input, req);
-      upsertRuntimeMessage(state, {
-        runtimeSession,
-        input,
-        messageId,
-        tokenHash,
-        status: "succeeded",
-        req,
-        extra: completedMessageExtra({ input, runtimeSession, message, acceptedAt, workerStartedAt }),
-      });
-      await writeState(state);
-      const record = messageRecordInState(state, { messageId, runtimeSessionId: runtimeSession.runtimeSessionId, tokenHash });
-      sendJson(res, 200, {
-        ok: true,
-        ...publicCompletedMessagePayload(message, record || {}, state, runtimeSession),
-        traceId: input.traceId || runtimeSession.traceId || "",
-        timing: timingPayload(record || {}),
-      });
-    } catch (error) {
-      upsertRuntimeMessage(state, {
-        runtimeSession,
-        input,
-        messageId,
-        tokenHash,
-        status: "failed",
-        req,
-        extra: failedMessageExtra(error, acceptedAt, workerStartedAt),
-      });
-      addEvent(state, "opl_message_reply_failed", { ...runtimeSession, messageId, error: String(error.message || error) });
-      await writeState(state);
-      sendJson(res, 502, { ok: false, error: String(error.message || error) });
-    }
+    sendJson(res, status, payload);
   }
 
-  async function acceptMessageForBackground({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res }) {
-    const record = upsertRuntimeMessage(state, {
-      runtimeSession,
-      input,
-      messageId,
-      tokenHash,
-      status: "running",
-      req,
-      extra: { acceptedAt },
+  async function acceptMessageForBackground({ runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res }) {
+    let record = null;
+    await updateState((state) => {
+      const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+      record = upsertRuntimeMessage(state, {
+        runtimeSession: activeRuntimeSession,
+        input,
+        messageId,
+        tokenHash,
+        status: "running",
+        req,
+        extra: { acceptedAt },
+      });
     });
-    await writeState(state);
     setImmediate(() => completeMessageInBackground(messageId, runtimeSession, input, req, acceptedAt));
     sendJson(res, 202, {
       ok: true,
@@ -531,14 +619,25 @@ export function createRuntimeBridgeRuntime() {
 
   async function dispatchMessageRequest({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res }) {
     if (waitForMessageCompletion(input)) {
-      await runMessageToCompletion({ state, runtimeSession, input, req, messageId, tokenHash, res });
+      await runMessageToCompletion({ runtimeSession, input, req, messageId, tokenHash, res });
       return;
     }
-    await acceptMessageForBackground({ state, runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res });
+    await acceptMessageForBackground({ runtimeSession, input, req, messageId, tokenHash, launchToken, acceptedAt, res });
   }
 
   async function handleHealth(_req, res) {
-    sendJson(res, 200, launchApi.buildStatusPayload());
+    sendJson(res, 200, {
+      ...launchApi.buildStatusPayload(),
+      ...adapterContractMetadata(),
+    });
+  }
+
+  async function handleAdapterStatus(_req, res) {
+    sendJson(res, 200, {
+      ok: true,
+      service: "portal-opl-adapter",
+      ...adapterContractMetadata(),
+    });
   }
 
   async function handleWorkbenchRetired(_req, res) {
@@ -550,7 +649,11 @@ export function createRuntimeBridgeRuntime() {
   }
 
   async function handleIssueLaunchToken(req, res) {
-    sendJson(res, 200, await launchApi.issueLaunchToken(await readBody(req)));
+    const payload = await launchApi.issueLaunchToken(await readBody(req));
+    if (payload.launchToken) {
+      res.setHeader("set-cookie", buildLaunchCookie(payload.launchToken));
+    }
+    sendJson(res, 200, payload);
   }
 
   async function handleWorkbenchBootstrapRetired(_req, res) {
@@ -563,38 +666,99 @@ export function createRuntimeBridgeRuntime() {
       sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
       return;
     }
-    const state = await readState();
-    const bootstrap = await launchApi.buildBootstrap(state, launch);
-    await writeState(state);
-    sendJson(res, 200, bootstrap);
+    let bootstrap = null;
+    await updateState(async (state) => {
+      bootstrap = await launchApi.buildBootstrap(state, launch);
+    });
+    sendJson(res, 200, adapterBootstrapPayload(bootstrap));
+  }
+
+  async function handleRuntimeRunInput(input, req, res, url, { successStatus = 200 } = {}) {
+    const resolved = await readLaunchRuntimeSession(input, url, req, res);
+    if (!resolved) return;
+    const { runtimeSession } = resolved;
+    let status = successStatus;
+    let payload = null;
+    await updateState(async (state) => {
+      const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+      try {
+        const run = await runApi.submitRuntimeRun(state, activeRuntimeSession, input, req);
+        await publishTraceEvent(state, {
+          ...activeRuntimeSession,
+          runId: run.runId,
+          traceId: run.traceId,
+          eventType: "runtime_run",
+          traceName: "OPL runtime run",
+          status: run.status || "recorded",
+          model: input.model || activeRuntimeSession.model || "opl-runtime",
+          tokenCount: Number(input.tokenCount || input.token_count || 0),
+          userAgent: req?.headers?.["user-agent"] || "",
+        });
+        payload = { ok: true, run, artifacts: run.artifacts || [] };
+      } catch (error) {
+        status = 502;
+        const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
+        addEvent(state, "runner_run_failed", runnerFailureEvent(activeRuntimeSession, mapped));
+        payload = { ok: false, error: mapped };
+      }
+    });
+    sendJson(res, status, payload);
   }
 
   async function handleRuntimeRun(req, res, url) {
+    await handleRuntimeRunInput(await readBody(req), req, res, url);
+  }
+
+  async function handleAdapterFile(req, res, url) {
     const input = await readBody(req);
     const resolved = await readLaunchRuntimeSession(input, url, req, res);
     if (!resolved) return;
-    const { state, runtimeSession } = resolved;
-    try {
-      const run = await runApi.submitRuntimeRun(state, runtimeSession, input, req);
-      await publishTraceEvent(state, {
-        ...runtimeSession,
-        runId: run.runId,
-        traceId: run.traceId,
-        eventType: "runtime_run",
-        traceName: "OPL runtime run",
-        status: run.status || "recorded",
-        model: input.model || runtimeSession.model || "opl-runtime",
-        tokenCount: Number(input.tokenCount || input.token_count || 0),
-        userAgent: req?.headers?.["user-agent"] || "",
-      });
-      await writeState(state);
-      sendJson(res, 200, { ok: true, run });
-    } catch (error) {
-      const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
-      addEvent(state, "runner_run_failed", runnerFailureEvent(runtimeSession, mapped));
-      await writeState(state);
-      sendJson(res, 502, { ok: false, error: mapped });
+    const { runtimeSession } = resolved;
+    const relativePath = String(input.relativePath || input.relative_path || input.fileName || input.file_name || input.name || "").trim().replace(/^\/+/, "");
+    if (!relativePath) {
+      sendJson(res, 422, { ok: false, error: "file_name_required" });
+      return;
     }
+    let artifact = null;
+    let publicArtifact = null;
+    await updateState((state) => {
+      const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+      artifact = addArtifactRecord(state, {
+        ...activeRuntimeSession,
+        runId: String(input.runId || input.run_id || input.sessionId || activeRuntimeSession.oplSessionId || activeRuntimeSession.runtimeSessionId || "").trim(),
+        kind: String(input.kind || "inputs").trim() || "inputs",
+        name: String(input.name || input.fileName || input.file_name || relativePath.split("/").pop() || "").trim(),
+        relativePath,
+        sizeBytes: Number(input.sizeBytes ?? input.size_bytes ?? 0),
+        contentType: String(input.contentType || input.content_type || "application/octet-stream").trim() || "application/octet-stream",
+      });
+      addEvent(state, "opl_file_referenced", {
+        ...activeRuntimeSession,
+        artifactId: artifact.artifactId,
+        kind: artifact.kind,
+      });
+      publicArtifact = publicRunArtifact(artifact, {
+        runId: artifact.runId,
+        workspaceId: activeRuntimeSession.workspaceId,
+        resourceBindingId: activeRuntimeSession.resourceBindingId,
+        providerKeyRef: activeRuntimeSession.providerKeyRef,
+      }, activeRuntimeSession);
+    });
+    sendJson(res, 201, {
+      ok: true,
+      fileRef: publicArtifact.artifactRef,
+      file: publicArtifact,
+    });
+  }
+
+  async function handleAdapterRun(req, res, url) {
+    const input = await readBody(req);
+    Object.assign(input, {
+      mode: input.mode || "full_runtime",
+      runId: runIdFromInput(input),
+      traceId: input.traceId || input.trace_id || `trace-${randomUUID()}`,
+    });
+    await handleRuntimeRunInput(input, req, res, url, { successStatus: 201 });
   }
 
   async function handleMessage(req, res, url) {
@@ -638,14 +802,18 @@ export function createRuntimeBridgeRuntime() {
       sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
       return;
     }
-    const state = await readState();
-    const runtimeSession = await launchApi.bindOplSession(state, launch, input);
+    let runtimeSession = null;
+    await updateState(async (state) => {
+      runtimeSession = await launchApi.bindOplSession(state, launch, input);
+    });
     if (!runtimeSession) {
       sendJson(res, 404, { ok: false, error: "runtime_session_not_found" });
       return;
     }
-    await writeState(state);
-    sendJson(res, 200, { ok: true, runtimeSession });
+    sendJson(res, 200, {
+      ok: true,
+      runtimeSession: publicRuntimeSession(runtimeSession),
+    });
   }
 
   async function handleRuntimeSessionsRetired(_req, res) {
@@ -656,35 +824,67 @@ export function createRuntimeBridgeRuntime() {
     sendRetired(res, "旧 /api/runtime-sessions/:id/runs 已退场；run 必须由 OPL Web 携带 launch token 调 /api/opl-launch/runs。", "/api/opl-launch/runs");
   }
 
-  async function handleRunStatus(_req, res, _url, match) {
-    const state = await readState();
-    const run = state.runs.find((item) => item.runId === match[1]);
-    if (!run) {
-      sendJson(res, 404, { ok: false, error: "run_not_found" });
-      return;
-    }
-    const synced = await runApi.syncRunnerRun(state, run);
-    await writeState(state);
-    sendJson(res, 200, { ok: true, run: synced || run });
+  async function handleRunStatus(req, res, url, match) {
+    const resolved = await readLaunchForRequest(req, url, res);
+    if (!resolved) return;
+    const { launch } = resolved;
+    let status = 200;
+    let payload = null;
+    await updateState(async (state) => {
+      const run = state.runs.find((item) => item.runId === match[1]);
+      if (!run || !runBelongsToLaunch(run, launch)) {
+        status = 404;
+        payload = { ok: false, error: "run_not_found" };
+        return;
+      }
+      const synced = await runApi.syncRunnerRun(state, run);
+      payload = { ok: true, run: synced || run };
+    });
+    sendJson(res, status, payload);
   }
 
-  async function handleRunArtifacts(_req, res, _url, match) {
-    const state = await readState();
-    const run = state.runs.find((item) => item.runId === match[1]);
-    if (!run) {
-      sendJson(res, 404, { ok: false, error: "run_not_found" });
+  async function handleRunArtifacts(req, res, url, match) {
+    const resolved = await readLaunchForRequest(req, url, res);
+    if (!resolved) return;
+    const { launch } = resolved;
+    let status = 200;
+    let payload = null;
+    await updateState(async (state) => {
+      const run = state.runs.find((item) => item.runId === match[1]);
+      if (!run || !runBelongsToLaunch(run, launch)) {
+        status = 404;
+        payload = { ok: false, error: "run_not_found" };
+        return;
+      }
+      await runApi.syncRunnerRun(state, run).catch((error) => {
+        addEvent(state, "runner_artifact_sync_failed", { ...run, error: String(error.message || error) });
+        return null;
+      });
+      payload = {
+        ok: true,
+        items: state.artifacts
+          .filter((item) => item.runId === match[1])
+          .map((item) => publicRunArtifact(item, run, state.runtimeSessions.find((session) => session.runtimeSessionId === run.runtimeSessionId) || {})),
+      };
+    });
+    sendJson(res, status, payload);
+  }
+
+  async function handleAdapterArtifact(req, res, url, match) {
+    const resolved = await readLaunchForRequest(req, url, res);
+    if (!resolved) return;
+    const { launch, state } = resolved;
+    const artifactRef = decodeURIComponent(match[1] || "");
+    const artifact = state.artifacts.find((item) => item.artifactId === artifactRef);
+    if (!artifact || !artifactBelongsToLaunch(artifact, launch)) {
+      sendJson(res, 404, { ok: false, error: "artifact_not_found" });
       return;
     }
-    await runApi.syncRunnerRun(state, run).catch((error) => {
-      addEvent(state, "runner_artifact_sync_failed", { ...run, error: String(error.message || error) });
-      return null;
-    });
-    await writeState(state);
+    const run = state.runs.find((item) => item.runId === artifact.runId) || {};
+    const runtimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === artifact.runtimeSessionId) || {};
     sendJson(res, 200, {
       ok: true,
-      items: state.artifacts
-        .filter((item) => item.runId === match[1])
-        .map((item) => publicRunArtifact(item, run, state.runtimeSessions.find((session) => session.runtimeSessionId === run.runtimeSessionId) || {})),
+      artifact: publicRunArtifact(artifact, run, runtimeSession),
     });
   }
 
@@ -720,12 +920,13 @@ export function createRuntimeBridgeRuntime() {
 
   async function handleTraceEvents(req, res) {
     const input = await readBody(req);
-    const state = await readState();
-    const trace = await publishTraceEvent(state, {
-      ...input,
-      eventType: input.eventType || input.type || "runtime_event",
+    let trace = null;
+    await updateState(async (state) => {
+      trace = await publishTraceEvent(state, {
+        ...input,
+        eventType: input.eventType || input.type || "runtime_event",
+      });
     });
-    await writeState(state);
     sendJson(res, 200, { ok: true, trace });
   }
 
@@ -737,14 +938,20 @@ export function createRuntimeBridgeRuntime() {
   const exactHandlers = new Map([
     ["GET /healthz", handleHealth],
     ["GET /status", handleHealth],
+    ["GET /api/opl/status", handleAdapterStatus],
     ["GET /workbench", handleWorkbenchRetired],
     ["POST /api/launch-tokens", handleLegacyLaunchTokensRetired],
     ["POST /api/opl-launch/tokens", handleIssueLaunchToken],
     ["GET /api/workbench/bootstrap", handleWorkbenchBootstrapRetired],
     ["GET /api/opl-launch/bootstrap", handleBootstrap],
+    ["GET /api/opl/bootstrap", handleBootstrap],
     ["POST /api/opl-launch/runs", handleRuntimeRun],
+    ["POST /api/opl/runs", handleAdapterRun],
     ["POST /api/opl-launch/messages", handleMessage],
+    ["POST /api/opl/messages", handleMessage],
+    ["POST /api/opl/files", handleAdapterFile],
     ["POST /api/opl-launch/sessions/bind", handleBindSession],
+    ["POST /api/opl/sessions/bind", handleBindSession],
     ["POST /api/runtime-sessions", handleRuntimeSessionsRetired],
     ["GET /api/runs", handleRunsList],
     ["GET /api/artifacts", handleArtifactsList],
@@ -757,8 +964,13 @@ export function createRuntimeBridgeRuntime() {
     { method: "POST", pattern: /^\/api\/runtime-sessions\/([^/]+)\/runs$/, handler: handleRuntimeSessionRunsRetired },
     { method: "GET", pattern: /^\/api\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
+    { method: "GET", pattern: /^\/api\/opl\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/artifacts$/, handler: handleRunArtifacts },
+    { method: "GET", pattern: /^\/api\/opl\/runs\/([^/]+)\/artifacts$/, handler: handleRunArtifacts },
+    { method: "GET", pattern: /^\/api\/opl\/artifacts\/([^/]+)$/, handler: handleAdapterArtifact },
     { method: "GET", pattern: /^\/api\/opl-launch\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
+    { method: "GET", pattern: /^\/api\/opl\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
+    { method: "GET", pattern: /^\/portal-adapter\/api\/opl\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
   ];
 
   function routeKey(req, url) {

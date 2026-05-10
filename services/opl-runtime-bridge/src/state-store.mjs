@@ -1,6 +1,6 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -30,6 +30,7 @@ const runtimeRoot = process.env.PORTAL_OPL_ADAPTER_STATE_ROOT
   : path.join(repoRoot, ".runtime", "portal-opl-adapter");
 const stateFile = path.join(runtimeRoot, "state.json");
 const artifactsRoot = path.join(runtimeRoot, "artifacts");
+let stateWriteQueue = Promise.resolve();
 
 const emptyState = {
   version: "v1",
@@ -65,8 +66,46 @@ export async function readState() {
 }
 
 export async function writeState(state) {
+  const write = () => writeStateSnapshot(state);
+  stateWriteQueue = stateWriteQueue.then(write, write);
+  return stateWriteQueue;
+}
+
+async function writeStateSnapshot(state) {
   await mkdir(runtimeRoot, { recursive: true });
-  await writeFile(stateFile, `${JSON.stringify(sanitizeState({ ...emptyState, ...state }), null, 2)}\n`, "utf8");
+  const tempStateFile = path.join(runtimeRoot, `.state.${process.pid}.${randomUUID()}.tmp`);
+  await writeFile(tempStateFile, `${JSON.stringify(sanitizeState({ ...emptyState, ...state }), null, 2)}\n`, "utf8");
+  await rename(tempStateFile, stateFile);
+}
+
+export async function updateState(mutator) {
+  if (typeof mutator !== "function") {
+    throw new TypeError("state_update_mutator_required");
+  }
+  let updatedState;
+  const update = async () => {
+    const current = await readStateUnlocked();
+    const result = await mutator(current);
+    updatedState = sanitizeState({ ...emptyState, ...(result || current) });
+    await writeStateSnapshot(updatedState);
+    return updatedState;
+  };
+  stateWriteQueue = stateWriteQueue.then(update, update);
+  return stateWriteQueue.then(() => updatedState);
+}
+
+async function readStateUnlocked() {
+  await ensureRuntimeUnlocked();
+  const parsed = JSON.parse(await readFile(stateFile, "utf8"));
+  return sanitizeState({ ...emptyState, ...parsed });
+}
+
+async function ensureRuntimeUnlocked() {
+  await mkdir(runtimeRoot, { recursive: true });
+  await mkdir(artifactsRoot, { recursive: true });
+  if (!existsSync(stateFile)) {
+    await writeStateSnapshot(emptyState);
+  }
 }
 
 function sanitizeState(state) {

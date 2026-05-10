@@ -19,9 +19,6 @@ export function createOplAdapterClient({
   function buildConfiguredOplWebUrl(launchToken, bootstrapUrl = "") {
     if (!normalizedOplWebUrl) return "";
     const url = new URL(normalizedOplWebUrl);
-    url.searchParams.set("launch_token", launchToken);
-    url.searchParams.set("portal_adapter_url", normalizedAdapterUrl);
-    if (bootstrapUrl) url.searchParams.set("bootstrap_url", bootstrapUrl);
     return url.toString();
   }
 
@@ -36,6 +33,22 @@ export function createOplAdapterClient({
       portalAdapterUrl: normalizedAdapterUrl,
       runtimeUrl: payload.runtimeUrl || runtimeUrl,
     };
+  }
+
+  function assertStableOplAdapterPath(path = "") {
+    const pathname = new URL(path, `${normalizedAdapterUrl}/`).pathname;
+    const allowed = pathname === "/api/opl/status" ||
+      pathname === "/api/opl/bootstrap" ||
+      pathname === "/api/opl/sessions/bind" ||
+      pathname === "/api/opl/messages" ||
+      /^\/api\/opl\/messages\/[^/]+\/status$/.test(pathname) ||
+      pathname === "/api/opl/files" ||
+      pathname === "/api/opl/runs" ||
+      /^\/api\/opl\/runs\/[^/]+\/status$/.test(pathname) ||
+      /^\/api\/opl\/runs\/[^/]+\/artifacts$/.test(pathname) ||
+      /^\/api\/opl\/artifacts\/[^/]+$/.test(pathname);
+    if (allowed) return pathname;
+    throw new Error(`opl_adapter_api_path_not_allowed:${pathname}`);
   }
 
   async function fetchJson(pathname) {
@@ -131,6 +144,28 @@ export function createOplAdapterClient({
         throw new Error(payload?.error || `opl_launch_failed:${response.status}`);
       }
       return normalizeLaunchPayload(payload, { requireRealOplWeb });
+    },
+
+    async requestAdapterApi({ path, method = "GET", launchToken = "", body = null }) {
+      const pathname = assertStableOplAdapterPath(path);
+      const response = await fetch(new URL(pathname, `${normalizedAdapterUrl}/`), {
+        method,
+        headers: {
+          accept: "application/json",
+          ...(body ? { "content-type": "application/json" } : {}),
+          ...(launchToken ? { authorization: `Bearer ${launchToken}` } : {}),
+        },
+        signal: AbortSignal.timeout(timeoutMs),
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(payload?.error || `opl_adapter_api_failed:${response.status}`);
+        error.status = response.status;
+        error.payload = payload;
+        throw error;
+      }
+      return payload;
     },
 
     async fetchRuns() {

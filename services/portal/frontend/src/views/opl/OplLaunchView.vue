@@ -54,10 +54,12 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
 import { fetchOplLaunchStatus, type OplLaunchStatusPayload } from "@/api/portal/resources";
+import { bindOplSession, fetchOplBootstrap } from "@/api/portal/opl";
 
 const route = useRoute();
 const status = ref<OplLaunchStatusPayload | null>(null);
 const errorMessage = ref("");
+const adapterReady = ref(false);
 let stopped = false;
 
 const stageOrder = ["workspace_ready", "provider_key_bound", "session_created", "gateway_ready", "opl_opening"];
@@ -114,6 +116,7 @@ async function loadStatus() {
     const next = await fetchOplLaunchStatus(launchId);
     status.value = next;
     if (next.status === "ready" && next.oplWebUrl) {
+      await prepareAdapterContext(launchId);
       window.location.assign(status.value.oplWebUrl);
       return;
     }
@@ -130,6 +133,17 @@ async function loadStatus() {
       window.setTimeout(() => void loadStatus(), 800);
     });
   }
+}
+
+async function prepareAdapterContext(launchId: string) {
+  if (adapterReady.value) return;
+  const bootstrap = await fetchOplBootstrap(launchId);
+  await bindOplSession({
+    launchId,
+    oplSessionId: bootstrap.identity?.oplSessionId || bootstrap.identity?.runtimeSessionId || `portal-${launchId}`,
+    clientSessionState: { source: "portal-opl-launch-view" },
+  });
+  adapterReady.value = true;
 }
 
 onMounted(() => {

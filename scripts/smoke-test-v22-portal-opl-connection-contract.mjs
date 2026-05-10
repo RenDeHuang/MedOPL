@@ -17,6 +17,8 @@ const files = {
   portalFiles: "docs/contracts/v22-portal-files-billing-trace-boundary.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   suite: "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  stateStoreSmoke: "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs",
+  adapterApiSmoke: "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs",
 };
 
 async function read(relativePath) {
@@ -56,10 +58,21 @@ assertIncludesAll(contents.connection, [
   "GET /portal-adapter/api/opl/bootstrap",
   "POST /portal-adapter/api/opl/sessions/bind",
   "POST /portal-adapter/api/opl/messages",
+  "GET /portal-adapter/api/opl/messages/{messageId}/status",
   "POST /portal-adapter/api/opl/files",
   "POST /portal-adapter/api/opl/runs",
   "GET /portal-adapter/api/opl/runs/{runId}/status",
+  "GET /portal-adapter/api/opl/runs/{runId}/artifacts",
   "GET /portal-adapter/api/opl/artifacts/{artifactRef}",
+  "GET /portal/api/opl/bootstrap",
+  "POST /portal/api/opl/sessions/bind",
+  "POST /portal/api/opl/messages",
+  "GET /portal/api/opl/messages/{messageId}/status",
+  "POST /portal/api/opl/files",
+  "POST /portal/api/opl/runs",
+  "GET /portal/api/opl/runs/{runId}/status",
+  "GET /portal/api/opl/runs/{runId}/artifacts",
+  "GET /portal/api/opl/artifacts/{artifactRef}",
 ], "connection_required_interfaces");
 
 assertIncludesAll(contents.connection, [
@@ -115,6 +128,14 @@ assertIncludesAll(contents.connection, [
   "不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同",
   "`capability_not_supported`",
   "不同 API 必须低耦合演进",
+  "每个 API 的验收不得只检查 HTTP 200/201/202",
+  "真实访问和真实回流",
+  "必须访问 upstream/Product API 的 health、system、engines、modules、agents、workspaces、sessions、progress 和 artifacts 边界",
+  "message request、reply、message artifact 和 trace 写回 Adapter state",
+  "调用 Runtime Agent relay/API 边界",
+  "run record、runtime artifact、session ledger entry 和 trace 写回 Adapter state",
+  "Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token",
+  "Adapter state 写入必须能保留并发 message/file/run 回流",
 ], "connection_adapter_decoupling_boundary");
 
 assertIncludesAll(contents.connection, [
@@ -133,7 +154,33 @@ assertIncludesAll(contents.readme, [
 
 assertIncludesAll(contents.suite, [
   "smoke-test-v22-portal-opl-connection-contract",
+  "smoke-test-v22-opl-adapter-state-store-atomic-flow",
+  "smoke-test-v22-portal-opl-adapter-api-local-flow",
 ], "mvp_suite_includes_connection_contract");
+
+assertIncludesAll(contents.adapterApiSmoke, [
+  "/portal-adapter/api/opl/status",
+  "/portal-adapter/api/opl/bootstrap",
+  "/portal-adapter/api/opl/sessions/bind",
+  "/portal-adapter/api/opl/messages",
+  "/portal-adapter/api/opl/messages/",
+  "/portal-adapter/api/opl/files",
+  "/portal-adapter/api/opl/runs",
+  "/portal-adapter/api/opl/runs/",
+  "/portal-adapter/api/opl/artifacts/",
+  "opl_web_url_must_not_include_launch_token_query",
+  "launch_cookie_must_be_http_only",
+  "bootstrap_product_api_access_observed",
+  "session_message_file_run_state_backflow",
+  "portal_proxy_backflow",
+  "stable_run_artifacts_must_read_persisted_run_artifact",
+], "adapter_api_local_flow_smoke");
+
+assertIncludesAll(contents.stateStoreSmoke, [
+  "state_store_must_export_transactional_update_state",
+  "state_store_must_preserve_concurrent_message_backflow",
+  "state_store_must_preserve_concurrent_file_backflow",
+], "state_store_atomic_flow_smoke");
 
 assertIncludesAll(contents.runtime, [
   "httpOnly cookie 或服务端 launch session",

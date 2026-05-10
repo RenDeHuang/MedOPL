@@ -35,20 +35,38 @@ function launchErrorPayload(result) {
   };
 }
 
+function publicLaunchPayload(launch = {}) {
+  return {
+    launchId: launch.launchId || "",
+    workspaceId: launch.workspaceId || "",
+    workspaceSessionId: launch.workspaceSessionId || "",
+    runtimeSessionId: launch.runtimeSessionId || "",
+    oplSessionId: launch.oplSessionId || "",
+    providerKeyRef: launch.providerKeyRef || launch.providerConfigSecretRef || "",
+    runtimeUrl: launch.runtimeUrl || "",
+    oplWebUrl: launch.oplWebUrl || "",
+  };
+}
+
 function launchSuccessPayload(result) {
+  const launch = publicLaunchPayload(result.launch || {});
   return {
     ok: true,
-    launchId: result.launch.launchId || "",
-    launchToken: result.launch.launchToken || "",
-    oplWebUrl: result.launch.oplWebUrl || "",
-    runtimeUrl: result.launch.runtimeUrl || "",
+    launchId: launch.launchId || "",
+    openUrl: launch.oplWebUrl || "",
+    oplWebUrl: launch.oplWebUrl || "",
+    runtimeUrl: launch.runtimeUrl || "",
+    launchStatus: "ready",
+    workspaceId: result.taskSpace?.slug || launch.workspaceId || "",
+    providerBound: Boolean(launch.providerKeyRef || launch.providerConfigSecretRef),
+    providerKeyRef: launch.providerKeyRef || launch.providerConfigSecretRef || "",
     workspace: result.taskSpace,
     workspaceSession: result.workspaceSession,
     runtimeSession: {
-      runtimeSessionId: result.launch.runtimeSessionId || "",
-      oplSessionId: result.launch.oplSessionId || "",
+      runtimeSessionId: launch.runtimeSessionId || "",
+      oplSessionId: launch.oplSessionId || "",
     },
-    launch: result.launch,
+    launch,
   };
 }
 
@@ -79,8 +97,20 @@ async function handleOplLaunchApi(context, deps) {
     return true;
   }
 
+  if (result.launch?.launchToken) {
+    deps.appendCookie(res, `opl_portal_launch=${encodeURIComponent(result.launch.launchToken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=900`);
+  }
   deps.sendJson(res, launchSuccessPayload(result));
   return true;
+}
+
+function publicLaunchStatus(status = {}) {
+  const launch = publicLaunchPayload(status.launch || {});
+  return {
+    ...status,
+    openUrl: status.oplWebUrl || launch.oplWebUrl || "",
+    launch,
+  };
 }
 
 async function handleOplLaunchStatusApi(context, deps) {
@@ -95,8 +125,145 @@ async function handleOplLaunchStatusApi(context, deps) {
   if (status.workspaceSession?.id) {
     deps.appendCookie(res, `${deps.workspaceSessionCookie()}=${status.workspaceSession.id}; Path=/; HttpOnly; SameSite=Lax`);
   }
-  deps.sendJson(res, status);
+  if (status.launch?.launchToken) {
+    deps.appendCookie(res, `opl_portal_launch=${encodeURIComponent(status.launch.launchToken)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=900`);
+  }
+  deps.sendJson(res, publicLaunchStatus(status));
   return true;
+}
+
+function launchTokenForRequest(url, deps, user) {
+  const launchId = String(url.searchParams.get("launchId") || url.searchParams.get("launch_id") || "").trim();
+  if (!launchId) return { ok: false, status: 422, error: "launch_id_required" };
+  const status = deps.oplLaunchService.getLaunchStatus(launchId);
+  if (!status?.launch?.launchToken || status.userId !== user.id) return { ok: false, status: 404, error: "opl_launch_status_not_found" };
+  return { ok: true, launchToken: status.launch.launchToken, status };
+}
+
+async function proxyAdapterApi(context, deps, {
+  sourcePath,
+  targetPath,
+  method,
+  body = null,
+  successStatus = 200,
+}) {
+  const resolved = launchTokenForRequest(context.url, deps, context.user);
+  if (!resolved.ok) {
+    deps.sendJson(context.res, { ok: false, error: resolved.error }, resolved.status);
+    return true;
+  }
+  try {
+    const payload = await deps.oplAdapterClient.requestAdapterApi({
+      path: targetPath,
+      method,
+      launchToken: resolved.launchToken,
+      body,
+    });
+    deps.sendJson(context.res, payload, successStatus);
+  } catch (error) {
+    deps.sendJson(context.res, error.payload || { ok: false, error: String(error.message || error) }, error.status || 502);
+  }
+  return true;
+}
+
+async function handlePortalOplBootstrapApi(context, deps) {
+  const { req, url } = context;
+  if (req.method !== "GET" || url.pathname !== "/portal/api/opl/bootstrap") return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: "/api/opl/bootstrap",
+    method: "GET",
+  });
+}
+
+async function handlePortalOplSessionBindApi(context, deps) {
+  const { req, url } = context;
+  if (req.method !== "POST" || url.pathname !== "/portal/api/opl/sessions/bind") return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: "/api/opl/sessions/bind",
+    method: "POST",
+    body: await readJsonBody(req, deps.readBody),
+  });
+}
+
+async function handlePortalOplMessagesApi(context, deps) {
+  const { req, url } = context;
+  if (req.method !== "POST" || url.pathname !== "/portal/api/opl/messages") return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: "/api/opl/messages",
+    method: "POST",
+    body: await readJsonBody(req, deps.readBody),
+  });
+}
+
+async function handlePortalOplMessageStatusApi(context, deps) {
+  const { req, url } = context;
+  const match = url.pathname.match(/^\/portal\/api\/opl\/messages\/(?<messageId>[^/]+)\/status$/);
+  if (req.method !== "GET" || !match?.groups?.messageId) return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: `/api/opl/messages/${encodeURIComponent(decodeURIComponent(match.groups.messageId))}/status`,
+    method: "GET",
+  });
+}
+
+async function handlePortalOplFilesApi(context, deps) {
+  const { req, url } = context;
+  if (req.method !== "POST" || url.pathname !== "/portal/api/opl/files") return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: "/api/opl/files",
+    method: "POST",
+    body: await readJsonBody(req, deps.readBody),
+    successStatus: 201,
+  });
+}
+
+async function handlePortalOplRunsApi(context, deps) {
+  const { req, url } = context;
+  if (req.method !== "POST" || url.pathname !== "/portal/api/opl/runs") return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: "/api/opl/runs",
+    method: "POST",
+    body: await readJsonBody(req, deps.readBody),
+    successStatus: 201,
+  });
+}
+
+async function handlePortalOplRunStatusApi(context, deps) {
+  const { req, url } = context;
+  const match = url.pathname.match(/^\/portal\/api\/opl\/runs\/(?<runId>[^/]+)\/status$/);
+  if (req.method !== "GET" || !match?.groups?.runId) return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: `/api/opl/runs/${encodeURIComponent(decodeURIComponent(match.groups.runId))}/status`,
+    method: "GET",
+  });
+}
+
+async function handlePortalOplRunArtifactsApi(context, deps) {
+  const { req, url } = context;
+  const match = url.pathname.match(/^\/portal\/api\/opl\/runs\/(?<runId>[^/]+)\/artifacts$/);
+  if (req.method !== "GET" || !match?.groups?.runId) return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: `/api/opl/runs/${encodeURIComponent(decodeURIComponent(match.groups.runId))}/artifacts`,
+    method: "GET",
+  });
+}
+
+async function handlePortalOplArtifactApi(context, deps) {
+  const { req, url } = context;
+  const match = url.pathname.match(/^\/portal\/api\/opl\/artifacts\/(?<artifactRef>[^/]+)$/);
+  if (req.method !== "GET" || !match?.groups?.artifactRef) return false;
+  return proxyAdapterApi(context, deps, {
+    sourcePath: url.pathname,
+    targetPath: `/api/opl/artifacts/${encodeURIComponent(decodeURIComponent(match.groups.artifactRef))}`,
+    method: "GET",
+  });
 }
 
 function workspaceBlockedHtml(result) {
@@ -176,6 +343,7 @@ export function createOplRoutes({
   appendCookie,
   layoutV2,
   logPortalEvent,
+  oplAdapterClient,
   oplLaunchService,
   readBody,
   sendHtml,
@@ -187,6 +355,7 @@ export function createOplRoutes({
     appendCookie,
     layoutV2,
     logPortalEvent,
+    oplAdapterClient,
     oplLaunchService,
     readBody,
     sendHtml,
@@ -200,6 +369,15 @@ export function createOplRoutes({
     if (redirectWorkspaceOpl(req, res, url)) return true;
     if (await handleOplLaunchStatusApi(context, deps)) return true;
     if (await handleOplLaunchApi(context, deps)) return true;
+    if (await handlePortalOplBootstrapApi(context, deps)) return true;
+    if (await handlePortalOplSessionBindApi(context, deps)) return true;
+    if (await handlePortalOplMessagesApi(context, deps)) return true;
+    if (await handlePortalOplMessageStatusApi(context, deps)) return true;
+    if (await handlePortalOplFilesApi(context, deps)) return true;
+    if (await handlePortalOplRunsApi(context, deps)) return true;
+    if (await handlePortalOplRunStatusApi(context, deps)) return true;
+    if (await handlePortalOplRunArtifactsApi(context, deps)) return true;
+    if (await handlePortalOplArtifactApi(context, deps)) return true;
     if (await handleOplPage(context, deps)) return true;
     return false;
   };
