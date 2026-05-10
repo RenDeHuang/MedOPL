@@ -2,14 +2,32 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const packagesView = await readFile("services/portal/frontend/src/views/packages/PackagesView.vue", "utf8");
+const packageSurface = await readFile("services/portal/frontend/src/composables/usePackageSurface.ts", "utf8");
 const apiSource = await readFile("services/portal/frontend/src/api/portal/lab.ts", "utf8");
 
+assert(packagesView.includes('import { usePackageSurface } from "@/composables/usePackageSurface"'), "package_view_must_use_package_surface_composable");
+assert.equal(packagesView.includes("@/api/portal/lab"), false, "package_view_must_not_import_lab_api_directly");
+assert.equal(packagesView.includes("async function loadPackageCatalog"), false, "package_view_must_not_own_catalog_loader");
+assert.equal(packagesView.includes("async function loadSubscription"), false, "package_view_must_not_own_subscription_loader");
+assert.equal(packagesView.includes("async function loadEntitlement"), false, "package_view_must_not_own_entitlement_loader");
+assert.equal(packagesView.includes("async function runPackageAction"), false, "package_view_must_not_own_package_action_runner");
+
 for (const apiCall of ["fetchLabPackages", "fetchLabSubscription", "fetchLabEntitlement"]) {
-  assert(packagesView.includes(apiCall), `package_surface_must_load_${apiCall}`);
+  assert(packageSurface.includes(apiCall), `package_surface_composable_must_load_${apiCall}`);
+}
+
+for (const mutationCall of [
+  "activateCustomLabPackage",
+  "activateLabPackage",
+  "purchaseLabStorageAddon",
+  "upgradeLabPackage",
+]) {
+  assert(packageSurface.includes(mutationCall), `package_surface_composable_must_own_action:${mutationCall}`);
+  assert.equal(packagesView.includes(mutationCall), false, `package_view_must_not_own_action:${mutationCall}`);
 }
 
 assert.equal(
-  packagesView.includes("Promise.all(["),
+  packageSurface.includes("Promise.all(["),
   false,
   "package_surface_must_not_couple_catalog_subscription_entitlement_in_one_promise_all",
 );
@@ -22,7 +40,7 @@ for (const state of [
   "entitlementLoading",
   "entitlementError",
 ]) {
-  assert(packagesView.includes(state), `package_surface_state_missing:${state}`);
+  assert(packageSurface.includes(state), `package_surface_state_missing:${state}`);
 }
 
 for (const loader of [
@@ -31,18 +49,25 @@ for (const loader of [
   "async function loadEntitlement",
   "async function reloadAll",
 ]) {
-  assert(packagesView.includes(loader), `package_surface_loader_missing:${loader}`);
+  assert(packageSurface.includes(loader), `package_surface_loader_missing:${loader}`);
 }
 
-assert(packagesView.includes("void loadPackageCatalog()"), "package_surface_must_start_catalog_load_independently");
-assert(packagesView.includes("void loadSubscription()"), "package_surface_must_start_subscription_load_independently");
-assert(packagesView.includes("void loadEntitlement()"), "package_surface_must_start_entitlement_load_independently");
-assert(packagesView.includes("catalogError.value"), "package_surface_must_record_catalog_error");
-assert(packagesView.includes("subscriptionError.value"), "package_surface_must_record_subscription_error");
-assert(packagesView.includes("entitlementError.value"), "package_surface_must_record_entitlement_error");
-assert(packagesView.includes("套餐目录加载失败"), "package_surface_must_explain_catalog_load_failure");
-assert(packagesView.includes("订阅状态加载失败"), "package_surface_must_explain_subscription_load_failure");
-assert(packagesView.includes("套餐权益加载失败"), "package_surface_must_explain_entitlement_load_failure");
+assert(packageSurface.includes("void loadPackageCatalog()"), "package_surface_must_start_catalog_load_independently");
+assert(packageSurface.includes("void loadSubscription()"), "package_surface_must_start_subscription_load_independently");
+assert(packageSurface.includes("void loadEntitlement()"), "package_surface_must_start_entitlement_load_independently");
+assert(packageSurface.includes("catalogError.value"), "package_surface_must_record_catalog_error");
+assert(packageSurface.includes("subscriptionError.value"), "package_surface_must_record_subscription_error");
+assert(packageSurface.includes("entitlementError.value"), "package_surface_must_record_entitlement_error");
+assert(packageSurface.includes("套餐目录加载失败"), "package_surface_must_explain_catalog_load_failure");
+assert(packageSurface.includes("订阅状态加载失败"), "package_surface_must_explain_subscription_load_failure");
+assert(packageSurface.includes("套餐权益加载失败"), "package_surface_must_explain_entitlement_load_failure");
+assert(packageSurface.includes("response?.data?.businessMessage"), "package_surface_error_must_prefer_response_business_message");
+assert(packageSurface.includes("response?.data?.message"), "package_surface_error_must_prefer_response_message");
+assert.equal(
+  packageSurface.includes("Request failed with status code"),
+  false,
+  "package_surface_must_not_surface_transport_error_copy",
+);
 
 assert(apiSource.includes('"/lab-packages"'), "package_api_must_keep_catalog_endpoint");
 assert(apiSource.includes('"/lab-subscription"'), "package_api_must_keep_subscription_endpoint");
