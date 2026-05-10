@@ -58,6 +58,8 @@ program id: v22-cloud-onboarding
 | CC-07 | R-14 TCR repository/tag preflight; R-15 multi-image build and push unique test tag; R-16 deploy dry-run; R-17 authorized deploy rollout; R-18 runtime smoke | `.runtime/v22-registry/`; `.runtime/v22-cloud-deploy/`; `.runtime/v22-runtime-smoke/` | program board blocker; CC-07 blocker |
 | CC-REVIEW | R-21 final reconciliation cleanup and B review | `.runtime/v22-cloud-cleanup/`; stdout JSON and reviewed diff | B review note |
 
+Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。
+
 ## Status Data
 
 <!-- v22-cloud-onboarding-status-table:start -->

@@ -204,11 +204,15 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 - 是否必须独立 worktree: 是。
 - 是否允许读 secret: 是，但仅限用户授权的 deploy secret/kubeconfig/registry allowlist。
 - 是否允许真实云: 是，但仅限用户授权的 production deploy execution。
-- required contracts: `v22-production-cloud-topology-boundary.md`, deploy plan contract, `v22-cloud-onboarding-workflow-boundary.md`
+- required contracts: `v22-production-cloud-topology-boundary.md`, `v22-authorized-tencent-deploy-execution-boundary.md`, `v22-cloud-onboarding-workflow-boundary.md`
 - required smoke: deploy plan smoke, local build/deploy dry-run smoke, workflow gate review
 - success status: deployment executed with versioned evidence and rollback plan
 - blocker 回流到谁: user decides stop/rollback; A fixes deploy plan; B reviews evidence; C runs QA
 - 什么时候必须停下来问用户: before build, before push, before kubectl, before changing deploy, before reading kubeconfig/registry secret, before rollback
+
+Package D production deploy execution 必须订阅 `v22-authorized-tencent-deploy-execution-boundary.md`。Package D release plan 是唯一允许的 deploy 输入形状：它显式列出 portal.medopl.cn、opl.medopl.cn、trace.medopl.cn runtime smoke surfaces，并逐 target 绑定 repository、dockerfile、buildContext、namespace、workload、container、ownerRef、workspaceId、resourceBindingId、operationId 和 expectedVersionMarker。
+
+Package D 不授权 Package C 的资源生命周期动作：不得创建、删除、释放或扩缩容 TKE node pool，不得创建、删除、清空或扩容 COS bucket / prefix / object。Package D 禁止 `kubectl delete`，禁止 `DeleteNodePool`，禁止 `CreateNodePool`、`ScaleNodePool`、`ModifyNodePoolDesiredCapacityAboutAsg`，禁止删除 bucket/prefix/object，禁止跨 namespace 或 cluster-wide mutation。
 
 ### 13. Portal production integration
 
@@ -430,6 +434,78 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
     ],
     "futureProductionPortalMustReplaceTestRoute": true,
     "ordinaryProjectionHidesCloudConsoleObjects": true
+  },
+  "packageD": {
+    "contract": "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md",
+    "authorizationPackage": "deploy_and_production_integration",
+    "readsDeploySecretNow": false,
+    "runsBuildPushKubectlNow": false,
+    "modifiesTkeNodePool": false,
+    "modifiesCosStorage": false,
+    "forbidsLatestTag": true,
+    "requiresUniqueTag": true,
+    "requiresDigestVerification": true,
+    "requiresDeployDryRunBeforeApply": true,
+    "requiresRuntimeSmokeForPushedVersion": true,
+    "requiresRollbackEvidence": true,
+    "runnableSteps": [
+      "R-14",
+      "R-15",
+      "R-16",
+      "R-17",
+      "R-18"
+    ],
+    "secretAllowlist": [
+      "RUN_TENCENT_DEPLOY_EXECUTION",
+      "TCR_ID",
+      "TCR_SECRET",
+      "TENCENT_TCR_REGISTRY",
+      "TENCENT_TCR_NAMESPACE",
+      "TENCENT_TCR_REGION",
+      "TENCENT_DEPLOY_CLUSTER_ID",
+      "TENCENT_DEPLOY_KUBECONFIG_REF"
+    ],
+    "releasePlan": {
+      "required": true,
+      "singleNamespaceOnly": true,
+      "requiresMultipleTargets": true,
+      "forbidsSingleImageAllInOneAssumption": true,
+      "runtimeSmokeTargetsRequired": [
+        "portal",
+        "opl",
+        "trace"
+      ],
+      "defaultRuntimeSmokeUrls": {
+        "portal": "https://portal.medopl.cn/healthz",
+        "opl": "https://opl.medopl.cn/healthz",
+        "trace": "https://trace.medopl.cn/api/public/health"
+      },
+      "traceSurfaceIsNotImplicitImageTarget": true
+    },
+    "allowedKubectlActions": [
+      "kubectl diff",
+      "kubectl server-side dry-run",
+      "kubectl apply",
+      "kubectl rollout status",
+      "kubectl get",
+      "kubectl rollout undo"
+    ],
+    "forbiddenActions": [
+      "kubectl delete",
+      "DeleteNodePool",
+      "CreateNodePool",
+      "ScaleNodePool",
+      "ModifyNodePoolDesiredCapacityAboutAsg",
+      "deleteBucket",
+      "deletePrefix",
+      "deleteObject",
+      "emptyBucket",
+      "crossNamespaceMutation",
+      "clusterWideMutation",
+      "modifySecret",
+      "modifyCRD",
+      "modifyIngress"
+    ]
   },
   "phases": [
     {

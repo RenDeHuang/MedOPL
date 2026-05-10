@@ -57,6 +57,12 @@ verification matrix does not cover:
 | CO-06 live 授权前 | preflight smoke, default gate evidence review | 证明本地 gate 已阻断缺参、越权 API、未脱敏输出和 mutation |
 | live 后 report review 前 | report redaction review, report review checklist | 只审查脱敏 report；需要再次 live 必须重新问用户 |
 
+## Package D Deploy Verification Boundary
+
+Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。
+
+Package D verification 只证明 TCR repository/tag preflight、multi-image build/push unique test tag、deploy dry-run、authorized deploy rollout 和 runtime smoke 的合同边界。它不得被解释为 TKE node pool 开删、COS storage 开删或账单对账已经完成；这些仍归 Package C 和 readonly reconciliation gate。
+
 ## Forbidden Actions By Layer
 
 - contract smoke, loader smoke, shape smoke and preflight smoke must not read secret, source env, call real cloud, create/release resources, build/push/kubectl, or run live-test.

@@ -143,6 +143,8 @@ user confirmation gates:
 | R-20 delete file space | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-21 final reconciliation cleanup and B review | CC-REVIEW | manual_b_review | path defined; B absorption gate |
 
+Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。
+
 ## Board Data
 
 <!-- v22-cloud-onboarding-execution-board:start -->
