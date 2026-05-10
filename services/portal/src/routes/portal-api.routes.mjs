@@ -42,10 +42,15 @@ export function createPortalApiRoutes({
   sendJson,
   buildUserBillingSummary = buildDefaultUserBillingSummary,
   cloudProvisioner = null,
+  enableCloudOperationTestBridge = false,
+  nodeEnv = process.env.NODE_ENV || "",
   visibleAnnouncementRows,
   writeDb = async () => {},
   workspaceChatSessionsForUser,
 }) {
+  const cloudOperationTestBridgeEnabled = Boolean(enableCloudOperationTestBridge)
+    && String(nodeEnv || "").trim().toLowerCase() !== "production";
+
   const handleV22UserCreditProviderKey = createPortalApiV22UserCreditProviderKeyRoutes({
     activeUserStatus,
     buildUserBillingSummary,
@@ -230,7 +235,7 @@ export function createPortalApiRoutes({
 
   return async function handlePortalApiRoutes(context) {
     if (await handleV22UserCreditProviderKey(context)) return true;
-    if (await handleV22CloudOperationsTest(context)) return true;
+    if (cloudOperationTestBridgeEnabled && await handleV22CloudOperationsTest(context)) return true;
     if (await handleV22ManagedEnvironmentRelease(context)) return true;
     if (await handleV22OplWork(context)) return true;
     if (await handlePlatformProvisionedResources(context)) return true;

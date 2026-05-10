@@ -57,44 +57,57 @@ try {
     announcements: [],
   };
   const writes = [];
-  const route = createPortalApiRoutes({
-    activeUserStatus: (status) => status || "active",
-    adminScopeResult: () => ({ ok: false, status: 403, error: "forbidden" }),
-    announcementRows: () => [],
-    buildCommercialProfile: () => ({ accountStatus: "active", billingStatus: "funded", entitlementStatus: "active" }),
-    buildSessionTraceDetailPayload: async () => null,
-    buildSessionTracesApiPayload: async () => ({ items: [] }),
-    collectRunsForUser: async () => [],
-    currentServerPlanSelection: (taskSpace) => ({ id: taskSpace?.serverPlanId || "starter_2c4g_10gb" }),
-    currentTaskSpaceForUser: (targetDb, targetUser) => targetDb.taskSpaces.find((item) => item.userId === targetUser.id) || null,
-    evaluateUserPolicy: async () => ({ ok: true }),
-    fetchBillingSummary: async () => ({ totals: { totalCost: 0 }, items: [] }),
-    fetchHarborSummary: async () => ({ available: false }),
-    fetchOplAdapterCosts: async () => [],
-    fetchOplAdapterRuns: async () => [],
-    fetchOplAdapterTraceRows: async () => ({ rows: [] }),
-    fetchOpsRegistryImageRows: async () => ({ items: [] }),
-    fetchTraceRows: async () => ({ rows: [] }),
-    formatDateTime: (value) => String(value || ""),
-    isRunTerminal: () => true,
-    normalizePageSize: (value) => Number(value || 20),
-    paginateRows: (rows) => ({ rows, page: 1, pageSize: rows.length, total: rows.length, totalPages: 1 }),
-    parsePositiveInt: (value, fallback) => Number(value || fallback),
-    providerSecretStore,
-    readBody,
-    readSessionsRequestOptions: () => ({}),
-    readTracesRequestOptions: () => ({}),
-    sendJson,
-    visibleAnnouncementRows: () => [],
-    workspaceChatSessionsForUser: () => [],
-    writeDb: async (targetDb) => {
-      writes.push(JSON.parse(JSON.stringify(targetDb)));
-    },
+  function createRoute(overrides = {}) {
+    return createPortalApiRoutes({
+      activeUserStatus: (status) => status || "active",
+      adminScopeResult: () => ({ ok: false, status: 403, error: "forbidden" }),
+      announcementRows: () => [],
+      buildCommercialProfile: () => ({ accountStatus: "active", billingStatus: "funded", entitlementStatus: "active" }),
+      buildSessionTraceDetailPayload: async () => null,
+      buildSessionTracesApiPayload: async () => ({ items: [] }),
+      collectRunsForUser: async () => [],
+      currentServerPlanSelection: (taskSpace) => ({ id: taskSpace?.serverPlanId || "starter_2c4g_10gb" }),
+      currentTaskSpaceForUser: (targetDb, targetUser) => targetDb.taskSpaces.find((item) => item.userId === targetUser.id) || null,
+      evaluateUserPolicy: async () => ({ ok: true }),
+      fetchBillingSummary: async () => ({ totals: { totalCost: 0 }, items: [] }),
+      fetchHarborSummary: async () => ({ available: false }),
+      fetchOplAdapterCosts: async () => [],
+      fetchOplAdapterRuns: async () => [],
+      fetchOplAdapterTraceRows: async () => ({ rows: [] }),
+      fetchOpsRegistryImageRows: async () => ({ items: [] }),
+      fetchTraceRows: async () => ({ rows: [] }),
+      formatDateTime: (value) => String(value || ""),
+      isRunTerminal: () => true,
+      normalizePageSize: (value) => Number(value || 20),
+      paginateRows: (rows) => ({ rows, page: 1, pageSize: rows.length, total: rows.length, totalPages: 1 }),
+      parsePositiveInt: (value, fallback) => Number(value || fallback),
+      providerSecretStore,
+      readBody,
+      readSessionsRequestOptions: () => ({}),
+      readTracesRequestOptions: () => ({}),
+      sendJson,
+      visibleAnnouncementRows: () => [],
+      workspaceChatSessionsForUser: () => [],
+      writeDb: async (targetDb) => {
+        writes.push(JSON.parse(JSON.stringify(targetDb)));
+      },
+      ...overrides,
+    });
+  }
+
+  const disabledRoute = createRoute();
+  const productionRoute = createRoute({
+    enableCloudOperationTestBridge: true,
+    nodeEnv: "production",
+  });
+  const route = createRoute({
+    enableCloudOperationTestBridge: true,
+    nodeEnv: "test",
   });
 
-  async function request({ method = "GET", urlPath = "/", body = null, user = null } = {}) {
+  async function request({ method = "GET", urlPath = "/", body = null, user = null, routeHandler = route } = {}) {
     const res = responseRecorder();
-    const handled = await route({
+    const handled = await routeHandler({
       req: { method, body: body ? JSON.stringify(body) : "" },
       res,
       url: new URL(urlPath, "http://portal.local"),
@@ -117,6 +130,32 @@ try {
   });
   const user = db.users.find((item) => item.id === "user-v22-cloud-test");
   assert.ok(user, "prepared_user_must_exist");
+
+  const disabledPost = await request({
+    method: "POST",
+    urlPath: "/portal/api/v22/cloud-operations/test/fake-live",
+    routeHandler: disabledRoute,
+    user,
+    body: {
+      workspaceId: "workspace-v22-cloud-test",
+      operationType: "create_storage",
+      acceptedDryRunId: "disabled-route-proof",
+    },
+  });
+  assert.equal(disabledPost.handled, false, "test_bridge_must_be_disabled_by_default");
+
+  const productionPost = await request({
+    method: "POST",
+    urlPath: "/portal/api/v22/cloud-operations/test/fake-live",
+    routeHandler: productionRoute,
+    user,
+    body: {
+      workspaceId: "workspace-v22-cloud-test",
+      operationType: "create_storage",
+      acceptedDryRunId: "production-route-proof",
+    },
+  });
+  assert.equal(productionPost.handled, false, "test_bridge_must_be_disabled_in_production");
 
   await request({
     method: "POST",

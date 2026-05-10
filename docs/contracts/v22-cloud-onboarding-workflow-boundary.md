@@ -237,6 +237,7 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 边界：
 
 - 该 API 只能用于本地 smoke 和合同验证，必须返回 `testOnly=true`、`productionPortalConnected=false`、`runnerMode=fake-live`、`realCloudCalls=false`。
+- 该 API 默认不注册到 Portal route。只有 `PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1` 且 `NODE_ENV` 不是 `production` 时才允许注册；production 环境必须强制关闭，即使设置该 env 也不能启用。
 - 该 API 不读 secret、不调用真实云、不执行真实 TKE/COS/TCR/deploy、不写真实 `.runtime` evidence。
 - 该 API 只写与未来真实 Portal 一致的 canonical record shape：`cloudOperations`、`computeAllocations`、`fileSpaceEntitlements`、`cloudResourceProjections`、`workspaceResourceBindings`、`weeklyProtectionFreezes` / wallet ledger、`billingReconciliations`、`auditEvents`。
 - 支持的测试操作仅限：`create_storage`、`create_compute`、`expand_storage`、`expand_compute`、`release_compute`、`delete_storage`。
@@ -325,6 +326,10 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
     "runnerMode": "fake-live",
     "realCloudCalls": false,
     "readsSecretNow": false,
+    "defaultRouteEnabled": false,
+    "enableEnv": "PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE",
+    "requiresEnableEnvValue": "1",
+    "forbidsProductionRouteRegistration": true,
     "apiPaths": [
       "POST /portal/api/v22/cloud-operations/test/fake-live",
       "GET /portal/api/v22/cloud-operations/test/projection"

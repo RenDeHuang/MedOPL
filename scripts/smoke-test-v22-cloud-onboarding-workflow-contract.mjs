@@ -74,6 +74,9 @@ assertIncludesAll(contract, [
   "productionPortalConnected=false",
   "runnerMode=fake-live",
   "realCloudCalls=false",
+  "PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1",
+  "`NODE_ENV` 不是 `production`",
+  "production 环境必须强制关闭",
   "不得把该测试 API 当作生产 Portal 已接云",
   "create_storage",
   "create_compute",
@@ -160,6 +163,10 @@ assert.equal(workflow.portalApiTestBridge?.productionPortalConnected, false, "po
 assert.equal(workflow.portalApiTestBridge?.runnerMode, "fake-live", "portal_api_test_bridge_runner_mode");
 assert.equal(workflow.portalApiTestBridge?.realCloudCalls, false, "portal_api_test_bridge_must_not_call_real_cloud");
 assert.equal(workflow.portalApiTestBridge?.readsSecretNow, false, "portal_api_test_bridge_must_not_read_secret");
+assert.equal(workflow.portalApiTestBridge?.defaultRouteEnabled, false, "portal_api_test_bridge_must_be_disabled_by_default");
+assert.equal(workflow.portalApiTestBridge?.enableEnv, "PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE", "portal_api_test_bridge_enable_env");
+assert.equal(workflow.portalApiTestBridge?.requiresEnableEnvValue, "1", "portal_api_test_bridge_enable_env_value");
+assert.equal(workflow.portalApiTestBridge?.forbidsProductionRouteRegistration, true, "portal_api_test_bridge_must_be_disabled_in_production");
 assert.deepEqual(workflow.portalApiTestBridge?.apiPaths, [
   "POST /portal/api/v22/cloud-operations/test/fake-live",
   "GET /portal/api/v22/cloud-operations/test/projection",

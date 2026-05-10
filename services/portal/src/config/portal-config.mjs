@@ -63,6 +63,8 @@ export const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLE
 export const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "").trim() === "1";
 export const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";
 export const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || "unknown";
+export const PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE = String(process.env.PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE || "").trim() === "1"
+  && String(process.env.NODE_ENV || "").trim().toLowerCase() !== "production";
 
 export const adminSeed = {
   email: process.env.PORTAL_ADMIN_EMAIL || "zitadel-admin@zitadel.localhost",

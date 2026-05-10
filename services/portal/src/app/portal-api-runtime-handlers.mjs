@@ -161,6 +161,8 @@ export function createPortalApiRuntimeHandlers({
     readTracesRequestOptions,
     sendJson,
     buildUserBillingSummary,
+    enableCloudOperationTestBridge: portalConfig.PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE,
+    nodeEnv: process.env.NODE_ENV || "",
     visibleAnnouncementRows,
     writeDb,
     workspaceChatSessionsForUser,
