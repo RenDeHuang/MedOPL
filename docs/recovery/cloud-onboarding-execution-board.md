@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 current trunk anchor: 148f5a0
 
-current phase: check-config / default gate / user-authorized official SDK readonly live
+current phase: CO-06 remains needs-user-authorization
 
 本文件是 v22 cloud onboarding 的中央执行板。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
@@ -16,9 +16,9 @@ current phase: check-config / default gate / user-authorized official SDK readon
 
 - program id: v22-cloud-onboarding
 - current trunk anchor: 148f5a0
-- current phase: check-config / default gate / user-authorized official SDK readonly live
-- current lane: CO-05 check-config preparation
-- next lane: CO-06 default gate review, then CO-07 user-authorized official SDK readonly live after explicit user authorization
+- current phase: CO-06 remains needs-user-authorization
+- current lane: readonly-live authorization wait
+- next lane: readonly-report-review after explicit user authorization and redacted report
 - workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - execution board owner: B for board truth, A for implementation task packages, user for live authorization
@@ -30,9 +30,9 @@ current phase: check-config / default gate / user-authorized official SDK readon
 | CO-01 | official SDK provider strategy | A | production default provider strategy 已收敛到 official SDK wrapper，TC3 降为 diagnostic/reference |
 | CO-02 | official SDK wrapper | A | wrapper shell 已完成，业务层不直接暴露 raw SDK client |
 | CO-03 | official SDK dependency loader | A | dependency loader 已完成，默认 fail-closed，不默认加载真实 SDK package |
-| CO-04 | check-config | A | 当前 active lane，准备 readonly live 前的本地静态 gate |
-| CO-05 | default gate | B | 下一棒，确认默认路径不读 secret、不打云、不恢复 TC3 production default |
-| CO-06 | user-authorized readonly live | user | 需要用户显式授权后才可读 allowlist secret 和调用 official SDK 只读真实云 |
+| CO-04 | check-config | A | done，本地静态 gate 已证明 readonly live 前置检查 fail-closed |
+| CO-05 | default gate | B | done，默认路径不读 secret、不打云、不恢复 TC3 production default |
+| CO-06 | user-authorized readonly live | user | 当前 active lane，等待用户显式授权后才可读 allowlist secret 和调用 official SDK 只读真实云 |
 | CO-07 | readonly report review | B | 审查脱敏 readonly report，决定是否进入 cleanup/dry-run 后续 |
 | CO-08 | TC3 cleanup gate | B | pending official SDK live report，未有 report 前不得执行 cleanup |
 | CO-09 | create/release dry-run plan | A | 后续 dry-run 计划，不创建资源、不收费 |
@@ -46,15 +46,15 @@ current phase: check-config / default gate / user-authorized official SDK readon
 
 current lane:
 
-- CO-05 check-config preparation。
-- 只允许本地静态检查、合同补充、smoke 和任务包准备。
+- readonly-live authorization wait。
+- CO-04 check-config 和 CO-05 default gate 已完成；当前不能继续自动推进，只能等待用户显式授权 CO-06。
 - 不读取真实 secret，不 source `.env`，不调用真实腾讯云 API，不读取 COS 对象正文。
 
 next lane:
 
-- CO-06 default gate review。
-- 通过后才可请求用户是否进入 CO-07 user-authorized official SDK readonly live。
-- CO-07 之前必须明确 secret allowlist、readonly API allowlist、region/VPC scope、report 输出位置和 redaction policy。
+- readonly-report-review。
+- 只有 CO-06 用户授权 readonly live 生成脱敏 report 后，B 才能进入 readonly-report-review。
+- CO-06 执行前必须明确 secret allowlist、readonly API allowlist、region/VPC scope、report 输出位置和 redaction policy。
 
 serial real side effects:
 
@@ -80,10 +80,10 @@ parallel lane rules:
 
 exit criteria:
 
-- CO-05 离场：check-config 可证明缺少 RUN gate、mutation API、read-all secret、未脱敏输出会被阻断。
-- CO-06 离场：B 确认默认路径不读 secret、不加载真实 SDK、不调用真实云、不执行 mutation、不恢复 TC3 production default。
-- CO-07 离场：用户显式授权后才可生成脱敏 readonly inventory report，report 存放在 git 外。
-- CO-08 离场：B 对脱敏 report 给出 accept 或 blocker list。
+- CO-04 离场：check-config 可证明缺少 RUN gate、mutation API、read-all secret、未脱敏输出会被阻断。
+- CO-05 离场：B 确认默认路径不读 secret、不加载真实 SDK、不调用真实云、不执行 mutation、不恢复 TC3 production default。
+- CO-06 离场：用户显式授权后才可生成脱敏 readonly inventory report，report 存放在 git 外。
+- CO-07 离场：B 对脱敏 report 给出 accept 或 blocker list。
 - CO-09 离场：official SDK live report 已完成且 B 确认 TC3 可进入 cleanup。
 - CO-10 之后：每阶段必须以对应合同和 smoke 证明不越权，再交给下一 owner。
 
@@ -150,7 +150,7 @@ user confirmation gates:
 {
   "programId": "v22-cloud-onboarding",
   "currentTrunkAnchor": "148f5a0",
-  "currentPhase": "check-config / default gate / user-authorized official SDK readonly live",
+  "currentPhase": "CO-06 remains needs-user-authorization",
   "workflowModel": "authorized_cloud_connection_loop",
   "oldCoPhaseStateMachineRetired": true,
   "activeGatePrefix": "CC",
@@ -162,8 +162,8 @@ user confirmation gates:
     "C04",
     "CO-01..CO-14"
   ],
-  "currentLane": "CO-05 check-config preparation",
-  "nextLane": "CO-06 default gate review, then CO-07 user-authorized official SDK readonly live after explicit user authorization",
+  "currentLane": "readonly-live authorization wait",
+  "nextLane": "readonly-report-review after explicit user authorization and redacted report",
   "workflowContract": "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "statusTable": "docs/recovery/cloud-onboarding-status-table.md",
   "readsSecretNow": false,

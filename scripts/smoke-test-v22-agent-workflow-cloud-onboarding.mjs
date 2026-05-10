@@ -48,7 +48,8 @@ const forbiddenOutputPhrases = [
   "kubeconfig",
   "raw cloud response",
   "rawCloudResponse",
-  "/home/dev/.secrets",
+  "/home/dev/" + ".secrets",
+  "real secret directory",
   "--secret-file",
   "--enable-real-fetch",
   "--live-readonly",
@@ -62,22 +63,23 @@ const statusPayload = parseJson(statusResult.stdout, "cloud_onboarding_status");
 assert.equal(statusPayload.ok, true, "status_ok");
 assert.equal(statusPayload.command, "cloud-onboarding status", "status_command");
 assert.equal(statusPayload.programId, "v22-cloud-onboarding", "program_id");
-assert.equal(statusPayload.currentPhase, "check-config / default gate / user-authorized official SDK readonly live", "current_phase");
-assert.equal(statusPayload.activeLane, "CO-04 check-config", "active_lane");
-assert.equal(statusPayload.nextLane, "CO-06 user-authorized readonly live", "next_lane");
-assert.equal(statusPayload.handoffTarget, "A", "handoff_target");
+assert.equal(statusPayload.currentPhase, "CO-06 remains needs-user-authorization", "current_phase");
+assert.equal(statusPayload.activeLane, "CO-06 user-authorized readonly live", "active_lane");
+assert.equal(statusPayload.nextLane, "CO-07 readonly report review", "next_lane");
+assert.equal(statusPayload.handoffTarget, "D", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
-  "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
-  "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
-  "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs",
+  "scripts/smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs",
+  "scripts/smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs",
+  "check-config output",
 ], "active_required_smoke");
-assert.equal(statusPayload.userGate, "stop if real secret, real cloud, deploy, or dependency install is needed", "active_user_gate");
+assert.equal(statusPayload.userGate, "must explicitly authorize secret allowlist, region/API scope, real cloud call, report location", "active_user_gate");
 
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-01"), "summary_done_must_include_co01");
+assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-04"), "summary_done_must_include_co04");
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-05"), "summary_done_must_include_co05");
 assert(statusPayload.phaseSummary.blocked.some((phase) => phase.phaseId === "CO-08"), "summary_blocked_must_include_co08");
 assert(statusPayload.phaseSummary.needsUserAuthorization.some((phase) => phase.phaseId === "CO-06"), "summary_needs_user_auth_must_include_co06");
-assert(statusPayload.phaseSummary.active.some((phase) => phase.phaseId === "CO-04"), "summary_active_must_include_co04");
+assert.equal(statusPayload.phaseSummary.active.some((phase) => phase.phaseId === "CO-04"), false, "summary_active_must_not_include_done_co04");
 
 assert.deepEqual(statusPayload.serialRealSideEffects, [
   "真实云 live",
@@ -96,7 +98,7 @@ assertIncludesAll(JSON.stringify(statusPayload.handoffGuidance), [
 
 const checkConfigPacket = findPacket(statusPayload, "check-config");
 assert.equal(checkConfigPacket.handoffTarget, "A", "check_config_handoff");
-assert.equal(checkConfigPacket.status, "active", "check_config_status");
+assert.equal(checkConfigPacket.status, "done", "check_config_status");
 assert(checkConfigPacket.suggestedCommands.includes("node scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs"), "check_config_smoke_command");
 assert(checkConfigPacket.suggestedCommands.includes("node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs"), "check_config_shape_smoke_command");
 
@@ -122,8 +124,10 @@ assert.equal(nextResult.status, 0, `cloud_onboarding_next_must_exit_zero:${nextR
 assertNotIncludesAny(nextResult.stdout, forbiddenOutputPhrases, "cloud_onboarding_next_stdout");
 const nextPayload = parseJson(nextResult.stdout, "cloud_onboarding_next");
 assert.equal(nextPayload.command, "cloud-onboarding next", "next_command");
-assert.equal(nextPayload.nextTaskPacket.id, "check-config", "next_task_packet_id");
-assert.equal(nextPayload.nextTaskPacket.handoffTarget, "A", "next_task_handoff");
+assert.equal(nextPayload.nextTaskPacket.id, "user-authorized-readonly-live", "next_task_packet_id");
+assert.equal(nextPayload.nextTaskPacket.handoffTarget, "D", "next_task_handoff");
+assert.equal(nextPayload.nextTaskPacket.needsUserAuthorization, true, "next_task_must_need_user_authorization");
+assert.deepEqual(nextPayload.nextTaskPacket.suggestedCommands, [], "next_task_must_not_emit_live_command");
 
 const humanStatus = runWorkflow(["cloud-onboarding", "status"]);
 assert.equal(humanStatus.status, 0, `cloud_onboarding_human_status_must_exit_zero:${humanStatus.stderr}`);
@@ -131,8 +135,8 @@ assertNotIncludesAny(humanStatus.stdout, forbiddenOutputPhrases, "cloud_onboardi
 assertIncludesAll(humanStatus.stdout, [
   "v22 cloud onboarding workflow",
   "program id: v22-cloud-onboarding",
-  "active lane: CO-04 check-config",
-  "next lane: CO-06 user-authorized readonly live",
+  "active lane: CO-06 user-authorized readonly live",
+  "next lane: CO-07 readonly report review",
   "needs-user-authorization",
   "A/B/C/D handoff",
   "JSON 摘要",

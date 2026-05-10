@@ -877,8 +877,8 @@ function cloudOnboardingHandoffGuidance() {
   };
 }
 
-function buildCloudOnboardingTaskPackets({ activePhase, defaultGatePhase, userLivePhase }) {
-  const checkConfigCommands = nodeCommandsForSmoke(activePhase?.requiredSmoke);
+function buildCloudOnboardingTaskPackets({ checkConfigPhase, defaultGatePhase, userLivePhase }) {
+  const checkConfigCommands = nodeCommandsForSmoke(checkConfigPhase?.requiredSmoke);
   const defaultGateCommands = [
     "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
     ...nodeCommandsForSmoke(defaultGatePhase?.requiredSmoke),
@@ -895,12 +895,12 @@ function buildCloudOnboardingTaskPackets({ activePhase, defaultGatePhase, userLi
     {
       id: "check-config",
       title: "check-config task packet",
-      phaseId: activePhase?.phaseId || "CO-04",
-      phaseName: activePhase?.phaseName || "check-config",
-      status: activePhase?.status || "active",
+      phaseId: checkConfigPhase?.phaseId || "CO-04",
+      phaseName: checkConfigPhase?.phaseName || "check-config",
+      status: checkConfigPhase?.status || "pending",
       handoffTarget: "A",
-      requiredSmoke: activePhase?.requiredSmoke || [],
-      userGate: activePhase?.userGate || "",
+      requiredSmoke: checkConfigPhase?.requiredSmoke || [],
+      userGate: checkConfigPhase?.userGate || "",
       suggestedCommands: checkConfigCommands,
       allowedActions: ["read tracked docs", "run local smoke", "prepare task packet"],
       forbiddenActions: sharedBoundaries,
@@ -968,15 +968,17 @@ async function readCloudOnboardingData() {
 async function createCloudOnboardingStatusPack() {
   const { board, statusTable } = await readCloudOnboardingData();
   const phases = statusTable.phases || [];
-  const activePhase = phases.find((phase) => phase.status === "active");
+  const activePhase = phases.find((phase) => phase.status === "active")
+    || phases.find((phase) => phase.status === "needs-user-authorization" && phase.phaseName.includes("readonly live"));
   const activeIndex = activePhase ? phases.indexOf(activePhase) : -1;
   const nextPhase = phases.slice(activeIndex + 1).find((phase) => ["pending", "needs-user-authorization", "blocked"].includes(phase.status))
     || phases.find((phase) => phase.status === "pending")
     || phases.find((phase) => phase.status === "needs-user-authorization");
+  const checkConfigPhase = phases.find((phase) => phase.phaseName === "check-config");
   const defaultGatePhase = phases.find((phase) => phase.phaseName === "default gate");
   const userLivePhase = phases.find((phase) => phase.status === "needs-user-authorization" && phase.phaseName.includes("readonly live"));
   const taskPackets = buildCloudOnboardingTaskPackets({
-    activePhase,
+    checkConfigPhase,
     defaultGatePhase,
     userLivePhase,
   });
@@ -1015,7 +1017,8 @@ async function createCloudOnboardingStatusPack() {
 
 async function createCloudOnboardingNextPack() {
   const statusPack = await createCloudOnboardingStatusPack();
-  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.status === "active")
+  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.phaseId && statusPack.activeLane === phaseLabel(packet))
+    || statusPack.taskPackets.find((packet) => packet.status === "active")
     || statusPack.taskPackets[0];
   return {
     ...statusPack,

@@ -59,7 +59,7 @@ assertIncludesAll(board, [
   "v22 Cloud Onboarding Central Execution Board",
   "program id: v22-cloud-onboarding",
   "current trunk anchor: 148f5a0",
-  "current phase: check-config / default gate / user-authorized official SDK readonly live",
+  "current phase: CO-06 remains needs-user-authorization",
   "AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒",
   "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "docs/recovery/cloud-onboarding-status-table.md",
@@ -116,7 +116,7 @@ assertIncludesAll(status, [
   "| CO-01 | official SDK provider strategy | done |",
   "| CO-02 | official SDK wrapper | done |",
   "| CO-03 | official SDK dependency loader | done |",
-  "| CO-04 | check-config | active |",
+  "| CO-04 | check-config | done |",
   "| CO-05 | default gate | done |",
   "| CO-06 | user-authorized readonly live | needs-user-authorization |",
   "| CO-07 | readonly report review | pending |",
@@ -193,12 +193,12 @@ const statusById = Object.fromEntries(statusData.phases.map((phase) => [phase.ph
 assert.equal(statusById["CO-01"].status, "done", "co01_must_be_done");
 assert.equal(statusById["CO-02"].status, "done", "co02_must_be_done");
 assert.equal(statusById["CO-03"].status, "done", "co03_must_be_done");
-assert.equal(statusById["CO-04"].status, "active", "co04_must_be_active");
+assert.equal(statusById["CO-04"].status, "done", "co04_must_be_done");
 assertIncludesAll(
   `${statusById["CO-04"].evidenceCommitOrReport} ${statusById["CO-04"].nextAction}`,
   [
     "未读 secret",
-    "未读取 /home/dev/.secrets",
+    "未读取真实 secret 目录",
     "未 source env",
     "未传 --live-readonly",
     "未调用真实 Tencent API",
@@ -227,6 +227,9 @@ assertIncludesAll(
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
 assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
 assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
+assert.equal(boardData.currentPhase, "CO-06 remains needs-user-authorization", "board_current_phase_must_match_co06_wait");
+assert.equal(boardData.currentLane, "readonly-live authorization wait", "board_current_lane_must_match_co06_wait");
+assert.equal(boardData.nextLane, "readonly-report-review after explicit user authorization and redacted report", "board_next_lane_must_match_report_review");
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
 assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");
 assert(statusById["CO-08"].nextAction.includes("wait for official SDK live report and B acceptance"), "co08_next_action_must_wait_for_b_acceptance");
