@@ -5,6 +5,7 @@ import { constants as fsConstants } from "node:fs";
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
+import * as portalConfig from "./portal-runtime-config.mjs";
 import {
   adminSeed,
   BILLING_SERVICE_TIMEOUT_MS,
@@ -602,6 +603,7 @@ const {
     runtimeMode: PRODUCT_RUNTIME_MODE,
     opsProfileEnabled: PRODUCT_OPS_PROFILE,
   },
+  portalConfig,
   providerSecretStore,
   readBody,
   visibleAnnouncementRows,
