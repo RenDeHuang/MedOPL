@@ -20,6 +20,8 @@ const styleSource = await source("services/portal/frontend/src/style.css");
 const workspaceSource = await source("services/portal/frontend/src/views/workspace/WorkspaceView.vue");
 const traceSource = await source("services/portal/frontend/src/views/trace/TraceView.vue");
 const billingSource = await source("services/portal/frontend/src/views/billing/BillingView.vue");
+const workspaceSurfaceSource = await source("services/portal/frontend/src/composables/useWorkspaceSurface.ts");
+const billingSurfaceSource = await source("services/portal/frontend/src/composables/useBillingSurface.ts");
 
 assertIncludes(layoutSource, "mobileNavOpen", "layout_must_own_mobile_nav_state");
 assertIncludes(headerSource, "打开导航", "header_must_expose_mobile_menu_button");
@@ -40,8 +42,8 @@ assertIncludes(workspaceSource, "mobile-card-list", "workspace_must_render_mobil
 assertIncludes(workspaceSource, "desktop-table-shell", "workspace_table_must_be_desktop_only");
 assertIncludes(workspaceSource, "danger-action-group", "workspace_must_group_danger_file_actions");
 assertIncludes(workspaceSource, "需二次确认", "workspace_danger_actions_must_label_confirmation");
-assertIncludes(workspaceSource, "ordinaryDeleteRequiresConfirmation", "workspace_must_keep_delete_policy_copy");
-assertIncludes(workspaceSource, "fileSpaceRetentionDays", "workspace_must_use_one_retention_copy_source");
+assertIncludes(workspaceSurfaceSource, "ordinaryDeleteRequiresConfirmation", "workspace_must_keep_delete_policy_copy");
+assertIncludes(workspaceSurfaceSource, "fileSpaceRetentionDays", "workspace_must_use_one_retention_copy_source");
 assertExcludes(workspaceSource, "普通删除后进入 {{ ordinaryDeleteRequiresConfirmation ? 0", "workspace_must_not_show_conflicting_retention_days");
 
 assertIncludes(traceSource, "mobile-card-list", "trace_must_render_mobile_session_cards");
@@ -50,9 +52,9 @@ assertIncludes(traceSource, "运行轨迹信息", "trace_copy_must_use_user_lang
 assertExcludes(traceSource, "技术 trace 信息", "trace_copy_must_not_use_technical_trace_copy");
 assertExcludes(traceSource, "密钥字段", "trace_copy_must_not_show_secret_term");
 
-assertIncludes(billingSource, "function microMoney", "billing_must_keep_money_formatter");
-assertIncludes(billingSource, "toFixed(2)", "billing_amounts_must_use_two_decimals");
-assertExcludes(billingSource, "toFixed(5)", "billing_amounts_must_not_use_five_decimals");
+assertIncludes(billingSurfaceSource, "function microMoney", "billing_must_keep_money_formatter");
+assertIncludes(billingSurfaceSource, "toFixed(2)", "billing_amounts_must_use_two_decimals");
+assertExcludes(billingSurfaceSource, "toFixed(5)", "billing_amounts_must_not_use_five_decimals");
 
 for (const [label, sourceText] of [
   ["workspace", workspaceSource],

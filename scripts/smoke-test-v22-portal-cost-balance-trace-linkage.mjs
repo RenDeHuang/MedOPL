@@ -240,6 +240,8 @@ assertNoForbiddenLeak(tracePayload, "trace_payload");
 
 const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const traceSurfaceSource = await readFile("services/portal/frontend/src/composables/useTraceSurface.ts", "utf8");
+const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
@@ -247,11 +249,14 @@ const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mj
 assertUserCopy(traceViewSource, "trace_view");
 assertUserCopy(workspaceViewSource, "workspace_view");
 assert(traceViewSource.includes("item.resourceUsage"), "trace_view_must_render_resource_usage");
-assert(traceViewSource.includes("item.costEstimate"), "trace_view_must_render_cost_estimate");
+assert(traceViewSource.includes("costEstimateText(item)"), "trace_view_must_render_cost_estimate");
 assert(traceViewSource.includes("item.balanceLink"), "trace_view_must_render_balance_link");
+assert(traceSurfaceSource.includes("item.costEstimate"), "trace_surface_must_format_cost_estimate");
 assert(workspaceViewSource.includes("item.resourceUsage"), "workspace_view_must_render_resource_usage");
-assert(workspaceViewSource.includes("item.costEstimate"), "workspace_view_must_render_cost_estimate");
+assert(workspaceViewSource.includes("costEstimateText(item)"), "workspace_view_must_render_cost_estimate");
 assert(workspaceViewSource.includes("item.balanceLink"), "workspace_view_must_render_balance_link");
+assert(workspaceSurfaceSource.includes("costEstimateText"), "workspace_surface_must_format_cost_estimate");
+assert(workspaceSurfaceSource.includes("rechargeStatusText"), "workspace_surface_must_format_recharge_status");
 assert(traceTypesSource.includes("resourceUsage"), "trace_types_must_include_resource_usage");
 assert(traceTypesSource.includes("costEstimate"), "trace_types_must_include_cost_estimate");
 assert(traceTypesSource.includes("balanceLink"), "trace_types_must_include_balance_link");

@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const resourcesViewPath = "services/portal/frontend/src/views/resources/ResourcesView.vue";
+const resourcesSurfacePath = "services/portal/frontend/src/composables/useResourcesSurface.ts";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
 const resourcesView = await readFile(resourcesViewPath, "utf8");
+const resourcesSurface = await readFile(resourcesSurfacePath, "utf8");
+const resourcesSurfaceSources = `${resourcesView}\n${resourcesSurface}`;
 const suite = await readFile(suitePath, "utf8");
 
 function assertIncludes(source, expected, label) {
@@ -29,12 +32,12 @@ const forbiddenVisibleCopy = [
 ];
 
 for (const copy of forbiddenVisibleCopy) {
-  assertExcludes(resourcesView, copy, "ordinary_resource_surface_legacy_copy");
+  assertExcludes(resourcesSurfaceSources, copy, "ordinary_resource_surface_legacy_copy");
 }
 
 for (const copy of ["CVM", "COS", "K8s", "TKE"]) {
-  assertExcludes(resourcesView, `>${copy}<`, "ordinary_resource_surface_cloud_console_copy");
-  assertExcludes(resourcesView, `${copy}：`, "ordinary_resource_surface_cloud_console_copy");
+  assertExcludes(resourcesSurfaceSources, `>${copy}<`, "ordinary_resource_surface_cloud_console_copy");
+  assertExcludes(resourcesSurfaceSources, `${copy}：`, "ordinary_resource_surface_cloud_console_copy");
 }
 
 for (const required of [
@@ -56,23 +59,23 @@ for (const required of [
   "增加计算资源",
   "增加存储资源",
 ]) {
-  assertIncludes(resourcesView, required, "ordinary_resource_surface_required_copy");
+  assertIncludes(resourcesSurfaceSources, required, "ordinary_resource_surface_required_copy");
 }
 
-assertIncludes(resourcesView, "dry-run", "resource_adjustment_must_be_dry_run_copy");
-assertIncludes(resourcesView, "不会真实开通", "resource_adjustment_must_not_create_real_resources");
+assertIncludes(resourcesSurfaceSources, "dry-run", "resource_adjustment_must_be_dry_run_copy");
+assertIncludes(resourcesSurfaceSources, "不会真实开通", "resource_adjustment_must_not_create_real_resources");
 assertIncludes(resourcesView, "生成套餐调整计划", "package_card_cta_must_be_dry_run_copy");
 assertIncludes(resourcesView, "shrink-0 whitespace-nowrap", "resource_confirmation_badge_must_not_wrap_on_mobile");
-assertExcludes(resourcesView, "@submit.prevent=\"submitEnsureProtectionFreeze\"", "ordinary_resource_surface_must_not_offer_freeze_form");
-assertExcludes(resourcesView, "@submit.prevent=\"submitCreateCompute\"", "ordinary_resource_surface_must_not_offer_direct_compute_create");
-assertExcludes(resourcesView, "@submit.prevent=\"submitCreateStorage\"", "ordinary_resource_surface_must_not_offer_direct_storage_create");
-assertExcludes(resourcesView, "@submit.prevent=\"submitBindWorkspace\"", "ordinary_resource_surface_must_not_offer_duplicate_environment_open");
-assertExcludes(resourcesView, "ensureProtectionFreeze(", "ordinary_resource_surface_must_not_call_freeze_mutation");
-assertExcludes(resourcesView, "createComputeInstance(", "ordinary_resource_surface_must_not_call_compute_mutation");
-assertExcludes(resourcesView, "createStorageBucket(", "ordinary_resource_surface_must_not_call_storage_mutation");
-assertExcludes(resourcesView, "deleteComputeInstance(", "ordinary_resource_surface_must_not_call_compute_delete");
-assertExcludes(resourcesView, "deleteStorageBucket(", "ordinary_resource_surface_must_not_call_storage_delete");
-assertExcludes(resourcesView, "unbindWorkspaceResource(", "ordinary_resource_surface_must_not_call_unbind_mutation");
+assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitEnsureProtectionFreeze\"", "ordinary_resource_surface_must_not_offer_freeze_form");
+assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateCompute\"", "ordinary_resource_surface_must_not_offer_direct_compute_create");
+assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateStorage\"", "ordinary_resource_surface_must_not_offer_direct_storage_create");
+assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitBindWorkspace\"", "ordinary_resource_surface_must_not_offer_duplicate_environment_open");
+assertExcludes(resourcesSurfaceSources, "ensureProtectionFreeze(", "ordinary_resource_surface_must_not_call_freeze_mutation");
+assertExcludes(resourcesSurfaceSources, "createComputeInstance(", "ordinary_resource_surface_must_not_call_compute_mutation");
+assertExcludes(resourcesSurfaceSources, "createStorageBucket(", "ordinary_resource_surface_must_not_call_storage_mutation");
+assertExcludes(resourcesSurfaceSources, "deleteComputeInstance(", "ordinary_resource_surface_must_not_call_compute_delete");
+assertExcludes(resourcesSurfaceSources, "deleteStorageBucket(", "ordinary_resource_surface_must_not_call_storage_delete");
+assertExcludes(resourcesSurfaceSources, "unbindWorkspaceResource(", "ordinary_resource_surface_must_not_call_unbind_mutation");
 
 assertIncludes(suite, "smoke-test-v22-retire-legacy-resource-user-surface", "mvp_suite_must_run_resource_surface_cleanup_smoke");
 

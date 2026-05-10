@@ -293,13 +293,14 @@ assert.equal(JSON.stringify(workspacePayload).includes("cos_standard_workspace_q
 assert.equal(JSON.stringify(workspacePayload).includes("storageBackend"), false, "workspace_payload_must_not_expose_storage_backend_field");
 
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const contractSource = await readFile("docs/contracts/v22-portal-files-billing-trace-boundary.md", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertUserCopy(workspaceViewSource, "workspace_view");
 assert(workspaceViewSource.includes("payload.fileSpace"), "workspace_view_must_render_file_space_payload");
-assert(workspaceViewSource.includes("ordinaryDeleteRequiresConfirmation"), "workspace_view_must_describe_delete_policy");
+assert(workspaceSurfaceSource.includes("ordinaryDeleteRequiresConfirmation"), "workspace_surface_must_describe_delete_policy");
 assert(workspaceTypesSource.includes("FileSpacePayload"), "workspace_types_must_define_file_space_payload");
 assert(workspaceTypesSource.includes("selectedFileRefs"), "workspace_types_must_include_selected_file_refs");
 const storageEntitlementType = interfaceBody(workspaceTypesSource, "StorageEntitlementPayload");

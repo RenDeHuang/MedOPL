@@ -204,6 +204,7 @@ assertNoForbiddenLeak(tracePayload, "trace_payload");
 
 const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
@@ -214,6 +215,7 @@ assert(traceViewSource.includes("linkedOutputFiles"), "trace_view_must_render_li
 assert(traceViewSource.includes("查看文件空间"), "trace_view_must_link_to_file_space");
 assert(workspaceViewSource.includes("item.artifactRef"), "workspace_view_must_render_artifact_reference_linkage");
 assert(workspaceViewSource.includes("关联任务"), "workspace_view_must_show_task_linkage_in_user_language");
+assert(workspaceSurfaceSource.includes("linkedTaskText"), "workspace_surface_must_format_task_linkage");
 assert(traceTypesSource.includes("linkedOutputFiles"), "trace_types_must_include_linked_output_files");
 assert(workspaceTypesSource.includes("artifactRef"), "workspace_types_must_include_artifact_ref");
 assert(suiteSource.includes("smoke-test-v22-portal-trace-file-linkage"), "mvp_suite_must_include_trace_file_linkage_smoke");
