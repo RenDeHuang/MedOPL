@@ -28,11 +28,11 @@ The former mixed branch `feat/v22-cloud-onboarding-connect-cloud` must not be ab
 
 | order | branch | anchor commit | B absorption role | scope |
 | --- | --- | --- | --- | --- |
-| 1 | `feat/v22-portal-cloud-operation-test-bridge-v2` | `130ecec` | first | Portal test-only fake-live cloud operation API bridge with explicit non-production env gate |
-| 2 | `contract/v22-cloud-onboarding-runnable-path-v2` | `eb91ab0` | after 1 | R-00..R-21 runnable path, CC gates, workflow task packet shape, and CO-06 phase truth alignment |
-| 3 | `feat/v22-tencent-sdk-readonly-connection-v2` | `131bae2` | after 2 | Tencent official SDK / COS SDK dependency diff and readonly connection loader/client with redacted smoke fixtures |
-| 4 | `feat/v22-tencent-resource-lifecycle-gates-v2` | `7eb91ae` | after 3 | Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof with explicit Package C secret path |
-| 5 | `feat/v22-tencent-deploy-execution-gates-v2` | `36df559` | after 4 | Package D TCR/build-push/kubectl deploy/runtime smoke gates |
+| 1 | `feat/v22-portal-cloud-operation-test-bridge-v2` | `b995d1c` | first | Portal test-only fake-live cloud operation API bridge with explicit non-production env gate |
+| 2 | `contract/v22-cloud-onboarding-runnable-path-v2` | `093a065` | after 1 | R-00..R-21 runnable path, CC gates, workflow task packet shape, and CO-06 phase truth alignment |
+| 3 | `feat/v22-tencent-sdk-readonly-connection-v2` | `148da1a` | after 2 | Tencent official SDK / COS SDK dependency diff and readonly connection loader/client with redacted smoke fixtures |
+| 4 | `feat/v22-tencent-resource-lifecycle-gates-v2` | `039b088` | after 3 | Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof with explicit Package C secret path |
+| 5 | `feat/v22-tencent-deploy-execution-gates-v2` | `5308ded` | after 4 | Package D TCR/build-push/kubectl deploy/runtime smoke gates |
 | 6 | `docs/v22-cloud-onboarding-absorption-sequence-v2` | B verifies current branch head | after 5 | This absorption sequence, branch scope map, and B verification checklist |
 
 Required ancestry before B absorbs:
@@ -76,6 +76,7 @@ B should run these smoke commands at the end of the stacked absorption, or on th
 
 ```bash
 node scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs
+node scripts/smoke-test-v22-portal-cloud-operation-runner-loop.mjs
 node scripts/smoke-test-v22-cloud-connection-runnable-path.mjs
 node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs
 node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs
@@ -120,7 +121,7 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     {
       "order": 1,
       "branch": "feat/v22-portal-cloud-operation-test-bridge-v2",
-      "anchorCommit": "130ecec",
+      "anchorCommit": "b995d1c",
       "scope": "portal_test_only_fake_live_bridge",
       "requiresExplicitNonProductionEnvGate": true,
       "productionPortalConnected": false,
@@ -129,7 +130,7 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     {
       "order": 2,
       "branch": "contract/v22-cloud-onboarding-runnable-path-v2",
-      "anchorCommit": "eb91ab0",
+      "anchorCommit": "093a065",
       "scope": "runnable_path_and_cc_gates",
       "co04Status": "done",
       "co05Status": "done",
@@ -139,7 +140,7 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     {
       "order": 3,
       "branch": "feat/v22-tencent-sdk-readonly-connection-v2",
-      "anchorCommit": "131bae2",
+      "anchorCommit": "148da1a",
       "scope": "official_sdk_readonly_connection",
       "redactsSmokeFixtures": true,
       "mutationAllowed": false
@@ -147,7 +148,7 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     {
       "order": 4,
       "branch": "feat/v22-tencent-resource-lifecycle-gates-v2",
-      "anchorCommit": "7eb91ae",
+      "anchorCommit": "039b088",
       "scope": "package_c_resource_lifecycle_gates",
       "requiresExplicitSecretPath": true,
       "forbidsUnownedNodeOrStorageMutation": true
@@ -155,7 +156,7 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     {
       "order": 5,
       "branch": "feat/v22-tencent-deploy-execution-gates-v2",
-      "anchorCommit": "36df559",
+      "anchorCommit": "5308ded",
       "scope": "package_d_deploy_execution_gates",
       "modifiesTkeNodePool": false,
       "modifiesCosStorage": false,

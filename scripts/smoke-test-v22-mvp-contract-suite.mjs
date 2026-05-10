@@ -63,6 +63,7 @@ const smokeScripts = [
   ["smoke-test-v22-cloud-onboarding-board-status", "scripts/smoke-test-v22-cloud-onboarding-board-status.mjs"],
   ["smoke-test-v22-cloud-connection-runnable-path", "scripts/smoke-test-v22-cloud-connection-runnable-path.mjs"],
   ["smoke-test-v22-portal-cloud-operation-test-api-fake-live", "scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs"],
+  ["smoke-test-v22-portal-cloud-operation-runner-loop", "scripts/smoke-test-v22-portal-cloud-operation-runner-loop.mjs"],
   ["smoke-test-v22-program-board", "scripts/smoke-test-v22-program-board.mjs"],
   ["smoke-test-v22-discovery-canary-governance", "scripts/smoke-test-v22-discovery-canary-governance.mjs"],
   ["smoke-test-v22-agent-workflow-cloud-onboarding", "scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs"],

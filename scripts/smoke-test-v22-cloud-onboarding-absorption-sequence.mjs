@@ -59,11 +59,11 @@ assertIncludesAll(sequence, [
 ], "sequence_branch_names");
 
 assertIncludesAll(sequence, [
-  "`130ecec`",
-  "`eb91ab0`",
-  "`131bae2`",
-  "`7eb91ae`",
-  "`36df559`",
+  "`b995d1c`",
+  "`093a065`",
+  "`148da1a`",
+  "`039b088`",
+  "`5308ded`",
   "B verifies current branch head",
 ], "sequence_commits");
 
@@ -101,6 +101,7 @@ assertIncludesAll(sequence, [
   "node scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
   "node scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs",
   "node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs",
+  "node scripts/smoke-test-v22-portal-cloud-operation-runner-loop.mjs",
 ], "sequence_verification_commands");
 
 assertIncludesAll(sequence, [
@@ -177,6 +178,7 @@ assert.deepEqual(data.productionGaps, [
 ], "sequence_production_gaps_data");
 
 assert(suite.includes("smoke-test-v22-cloud-onboarding-absorption-sequence.mjs"), "suite_must_include_absorption_sequence_smoke");
+assert(suite.includes("smoke-test-v22-portal-cloud-operation-runner-loop.mjs"), "suite_must_include_portal_cloud_runner_loop_smoke");
 
 console.log(JSON.stringify({
   ok: true,
@@ -189,5 +191,6 @@ console.log(JSON.stringify({
     "secret_and_live_cloud_non_authorization",
     "production_gaps_not_overclaimed",
     "mvp_suite_integration",
+    "portal_cloud_runner_loop_smoke_integration",
   ],
 }, null, 2));
