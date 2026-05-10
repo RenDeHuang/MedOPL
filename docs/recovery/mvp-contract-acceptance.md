@@ -43,7 +43,7 @@
 - OPL entry/preflight 合同已定义：`portal.medopl.cn` 登录不需要 gflabtoken API Key；`opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
 - OPL 工作流合同覆盖发送信息、上传文件、用文件跑任务、生成输出文件引用和下载引用。
 - Runtime Bridge session/run/file/providerKeyRef 合同已定义，run、artifact、ledger、providerKeyRef 和敏感字段净化已有本地合同 smoke。
-- real OPL workflow adapter 合同已定义，把 Portal SaaS control plane、Gateway entry/proxy、Adapter capability anti-corruption layer、Runtime Bridge / Runtime Agent canonical source、Langfuse `trace.medopl.cn` optional observability attachment 和完整链路验证路径拆开；该合同是后续真实 message/file/run/artifact 开发验收入口，不代表这些真实回流已经完成。
+- Portal-OPL context/backflow 三级执行合同已定义，把 Portal SaaS control plane、Gateway entry/proxy、OPL context bootstrap、Adapter capability/backflow projection、downstream Runtime gate 和 downstream Langfuse `trace.medopl.cn` session trace boundary 拆开；该合同是 Portal 打通 OPL、OPL 获取上下文、OPL 事件反馈 Portal 的开发验收入口，不代表真实云 runtime、真实 Langfuse 部署或完整 run/artifact 回流已经完成。
 - `/home/dev/projects/one-person-lab` 主仓真实 canary 已确认：当前主仓 `opl web` retired，未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 Adapter bootstrap/session bind 的公开映射面。
 - 真实 OPL/AionUI WebUI canary 已确认：独立 WebUI 进程、页面、`/api/auth/status`、`/api/auth/user`、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可访问；`create-conversation` 与数据库回读可形成真实 session 回流；`/api/opl/*` 只是通用 `/api` catch-all 200 placeholder，不是 Product API；`chat.send.message` 当前未形成完整 AI reply 回流，仍为 `capability_not_supported`；run 在没有真实 Runtime Agent relay 时不能伪成功。
 - Portal 后端/API 可表达 workspace 文件、输出文件、账单摘要、冻结/预扣费和 session trace metadata。
@@ -100,7 +100,7 @@
 - `scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`
 - `scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-connection-contract.mjs`
-- `scripts/smoke-test-v22-real-opl-workflow-adapter-contract.mjs`
+- `scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs`
 - `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs`
 - `scripts/smoke-test-v22-real-opl-canary.mjs`（单独真实 upstream canary，不并入默认纯本地 fixture suite）
