@@ -140,6 +140,13 @@ export function createMessageApi({ publishTraceEvent }) {
     const persistedAt = new Date().toISOString();
     const message = addMessageReplyRecord(state, {
       ...context,
+      replyMessageId: response.replyMessageId || response.reply_message_id || "",
+      messageTraceId: response.messageTraceId || response.message_trace_id || "",
+      providerInvocationRef: response.providerInvocationRef || response.provider_invocation_ref || "",
+      capabilitySource: response.capabilitySource || response.capability_source || response.source || "",
+      providerModelRef: response.providerMetadata?.providerModelRef || response.providerModelRef || response.provider_model_ref || "",
+      providerAuthorizationStatus: response.providerMetadata?.providerAuthorizationStatus || response.providerAuthorizationStatus || response.provider_authorization_status || "",
+      replyMetadata: response.replyMetadata || response.reply_metadata || null,
       reply,
       source: response.source || "opl_runtime",
       promptPreview: context.message.slice(0, 120),
@@ -163,6 +170,10 @@ export function createMessageApi({ publishTraceEvent }) {
     });
     const trace = await publishTraceEvent(state, {
       ...context,
+      traceId: response.messageTraceId || response.message_trace_id || context.traceId,
+      replyMessageId: response.replyMessageId || response.reply_message_id || "",
+      providerInvocationRef: response.providerInvocationRef || response.provider_invocation_ref || "",
+      capabilitySource: response.capabilitySource || response.capability_source || response.source || "",
       eventType: "message_reply",
       traceName: "OPL message reply",
       status: "succeeded",

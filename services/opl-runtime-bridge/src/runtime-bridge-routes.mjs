@@ -29,6 +29,7 @@ function urlEnv(name, fallback = "") {
 
 function readConfig() {
   const port = Number(cleanEnv("PORT", "8788"));
+  const webuiMode = cleanEnv("OPL_RUNTIME_MODE", "unknown").toLowerCase() === "webui";
   return {
     port,
     baseUrl: urlEnv("PORTAL_OPL_ADAPTER_PUBLIC_URL", `http://127.0.0.1:${port}`),
@@ -39,6 +40,7 @@ function readConfig() {
     buildSha: cleanEnv("BUILD_SHA", "dev"),
     buildTime: cleanEnv("BUILD_TIME", "unknown"),
     runtimeMode: cleanEnv("OPL_RUNTIME_MODE", "unknown"),
+    webuiProviderMessageEnabled: webuiMode && cleanEnv("OPL_WEBUI_PROVIDER_MESSAGE_ENABLED") === "1",
     oplWebUrl: urlEnv("OPL_WEB_URL"),
     runnerUrl: urlEnv("MED_AUTOSCIENCE_RUNNER_URL"),
     portalInternalBaseUrl: urlEnv("PORTAL_INTERNAL_BASE_URL"),
@@ -165,6 +167,9 @@ function publicTracePayload(trace = {}) {
     runtimeSessionId: emptyText(trace.runtimeSessionId),
     status: emptyText(trace.status || "recorded"),
     traceName: emptyText(trace.traceName),
+    replyMessageId: emptyText(trace.replyMessageId),
+    providerInvocationRef: emptyText(trace.providerInvocationRef),
+    capabilitySource: emptyText(trace.capabilitySource),
     latencyMs: Number(trace.latencyMs || 0),
     model: emptyText(trace.model),
     tokenCount: Number(trace.tokenCount || 0),
@@ -177,9 +182,16 @@ function publicMessageReplyPayload(message = {}, record = {}) {
   return {
     messageId: emptyText(message.messageId || record.messageId),
     runId: emptyText(message.runId || record.runId || message.messageId || record.messageId),
-    traceId: emptyText(message.traceId || record.traceId),
+    traceId: emptyText(message.messageTraceId || message.traceId || record.messageTraceId || record.traceId),
+    replyMessageId: emptyText(message.replyMessageId || record.replyMessageId),
+    messageTraceId: emptyText(message.messageTraceId || record.messageTraceId || message.traceId || record.traceId),
+    providerInvocationRef: emptyText(message.providerInvocationRef || record.providerInvocationRef),
+    capabilitySource: emptyText(message.capabilitySource || record.capabilitySource),
+    providerModelRef: emptyText(message.providerModelRef || record.providerModelRef || message.model || record.model),
+    providerAuthorizationStatus: emptyText(message.providerAuthorizationStatus || record.providerAuthorizationStatus),
     status: emptyText(message.status || record.status || "succeeded"),
     reply: emptyText(message.reply),
+    replyMetadata: message.replyMetadata || null,
     source: emptyText(message.source || "opl_runtime"),
     model: emptyText(message.model || record.model),
     tokenCount: Number(message.tokenCount || record.tokenCount || 0),
@@ -233,6 +245,10 @@ function completedMessageExtra({ input = {}, runtimeSession = {}, message = {}, 
     model: input.model || runtimeSession.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),
     reply: message.message?.reply || "",
+    replyMessageId: message.message?.replyMessageId || "",
+    messageTraceId: message.message?.messageTraceId || message.trace?.traceId || "",
+    providerInvocationRef: message.message?.providerInvocationRef || message.trace?.providerInvocationRef || "",
+    capabilitySource: message.message?.capabilitySource || message.trace?.capabilitySource || "",
     artifactId: message.artifact?.artifactId || "",
     artifactName: message.artifact?.name || "",
     ...messageTimingFields(message, acceptedAt, workerStartedAt),
@@ -281,6 +297,7 @@ function launchTokenFrom(input = {}, url, req = null) {
 
 function adapterContractMetadata() {
   const webuiMode = process.env.OPL_RUNTIME_MODE === "webui";
+  const webuiProviderMessageEnabled = webuiMode && process.env.OPL_WEBUI_PROVIDER_MESSAGE_ENABLED === "1";
   return {
     adapterContractVersion: "v22.portal-opl-context-backflow.v1",
     upstreamProfile: webuiMode ? "webui_bridge" : "opl_product_api",
@@ -288,7 +305,11 @@ function adapterContractMetadata() {
       contextBootstrap: { status: "supported", source: "gateway_adapter" },
       session: { status: "supported", source: webuiMode ? "webui_bridge" : "opl_product_api" },
       messageBackflow: webuiMode
-        ? { status: "capability_not_supported", source: "webui_bridge", reason: "reply_not_verified" }
+        ? {
+            status: webuiProviderMessageEnabled ? "mapped_to_webui_bridge" : "capability_not_supported",
+            source: "webui_bridge",
+            reason: webuiProviderMessageEnabled ? "provider_message_canary_enabled" : "reply_not_verified",
+          }
         : { status: "supported", source: "opl_product_api" },
       fileIntent: { status: "requires_downstream_runtime_boundary", source: "portal_workspace_file_store" },
       runIntent: { status: "requires_runtime_agent", source: "runtime_bridge" },
@@ -555,6 +576,17 @@ export function createRuntimeBridgeRuntime() {
   }
 
   async function runMessageToCompletion({ runtimeSession, input, req, messageId, tokenHash, res }) {
+    if (process.env.OPL_RUNTIME_MODE === "webui" && config.webuiProviderMessageEnabled !== true) {
+      sendJson(res, 409, {
+        ok: false,
+        error: "provider_authorization_required",
+        status: "gated",
+        providerKeyRef: runtimeSession.providerKeyRef || "",
+        capability: "webui_provider_message",
+        message: "Real OPL WebUI provider message canary requires explicit OPL_WEBUI_PROVIDER_MESSAGE_ENABLED=1.",
+      });
+      return;
+    }
     const acceptedAt = new Date().toISOString();
     const workerStartedAt = acceptedAt;
     let status = 200;

@@ -294,8 +294,9 @@ try {
     waitForCompletion: true,
   }, { cookie });
   assert.equal(message.response.status, 409, "webui_adapter_message_must_not_fake_success_without_reply");
-  assert.equal(message.json.error, "capability_not_supported", "webui_adapter_message_error_mismatch");
-  assert.equal(message.json.capability, "websocket_bridge_message", "webui_adapter_message_capability_mismatch");
+  assert.equal(message.json.error, "provider_authorization_required", "webui_adapter_message_error_mismatch");
+  assert.equal(message.json.status, "gated", "webui_adapter_message_gate_status_mismatch");
+  assert.equal(message.json.capability, "webui_provider_message", "webui_adapter_message_capability_mismatch");
   assertNoSecretLeak(message.json, "webui_adapter_message_not_supported");
 
   const state = await readAdapterState(stateRoot);

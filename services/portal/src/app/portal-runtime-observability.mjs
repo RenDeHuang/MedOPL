@@ -49,6 +49,7 @@ export function createPortalRuntimeObservability({
       userId: url.searchParams.get("userId"),
       workspaceId: url.searchParams.get("workspaceId"),
       runId: url.searchParams.get("runId"),
+      messageId: url.searchParams.get("messageId"),
       sessionId: url.searchParams.get("sessionId"),
       status: url.searchParams.get("status"),
       page: url.searchParams.get("page"),

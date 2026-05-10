@@ -28,6 +28,24 @@ Portal user enters OPL
 
 闭环不是只返回 HTTP 200。闭环必须有明确的 `messageId/status/replyMessageId`、`providerInvocationRef`、`messageTraceId` 和 Portal 可查询的 session trace。失败必须 no fake 200。
 
+## Current Live Canary Result
+
+在用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，真实 provider message live canary 已通过：
+
+```text
+node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
+```
+
+脱敏结果：
+
+- `message.status=succeeded`
+- `capabilitySource=mapped_to_webui_bridge`
+- Portal message status projection 与直接 message response 的 `replyMessageId/providerInvocationRef/messageTraceId` 一致
+- Portal session trace projection 能按 `workspaceId + messageId` 查到同一 trace
+- evidence path: `.runtime/real-opl-provider-message-live-canary/evidence.json`
+
+本结果只证明真实 provider message/reply 和 Portal trace 回流；不证明 file、run、artifact、真实云 runtime、生产部署或 Langfuse 已上线。
+
 ## Validation Order
 
 ### Stage 0: Branch contract declaration
@@ -368,3 +386,43 @@ git diff --check -- docs/contracts docs/recovery scripts
 - 是否允许触发真实模型调用。
 - evidence 写入哪个 `.runtime` 路径。
 - 是否允许连接 Langfuse 或 `trace.medopl.cn`。
+
+授权 live canary 命令：
+
+```text
+REAL_OPL_PROVIDER_MESSAGE_CANARY=1 \
+OPL_PROVIDER_SECRET_FILE=<git-outside-provider-secret-file> \
+OPL_REAL_WEBUI_DIR=/home/dev/projects/platform-v19/.runtime/opl-aion-shell-full \
+node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
+```
+
+也可以用已启动 WebUI：
+
+```text
+REAL_OPL_PROVIDER_MESSAGE_CANARY=1 \
+OPL_PROVIDER_SECRET_FILE=<git-outside-provider-secret-file> \
+OPL_REAL_WEBUI_URL=http://127.0.0.1:PORT \
+node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
+```
+
+### Stage 12: Authorized live provider canary
+
+目标：
+
+- 在用户显式授权后读取 `OPL_PROVIDER_SECRET_FILE`。
+- 通过 Portal `/portal/api/opl/launch` 把 raw provider key 写入后端密钥边界，并只向 Adapter/Portal projection 暴露 `providerKeyRef`。
+- 启动或连接真实 OPL WebUI。
+- 走真实 Portal -> Gateway -> Adapter -> WebUI bridge message 路径。
+- 观测真实 assistant reply，并把 `messageId/status/replyMessageId/providerInvocationRef/messageTraceId` 回流 Portal。
+- 通过 `/portal/api/opl/messages/{messageId}/status` 和 `/portal/api/session-traces?workspaceId=...&messageId=...` 查询回流结果。
+
+验收：
+
+- 未设置 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1` 时，脚本必须 fail-closed 为 `provider_authorization_required`，不得读取 secret。
+- 缺 `OPL_PROVIDER_SECRET_FILE` 时返回 `provider_key_required`。
+- 缺 `OPL_REAL_WEBUI_DIR` 和 `OPL_REAL_WEBUI_URL` 时返回 `upstream_unavailable` 或文件缺失错误，不能 fallback 到 fake OPL。
+- 成功时 `message.status=succeeded`，并包含 `replyMessageId`、`providerInvocationRef`、`messageTraceId`、`capabilitySource=mapped_to_webui_bridge`。
+- Portal message status projection 与直接 message response 的 `replyMessageId/providerInvocationRef/messageTraceId` 一致。
+- Portal session trace projection 能按 `workspaceId + messageId` 查到同一 trace。
+- `.runtime/real-opl-provider-message-live-canary/evidence.json` 不包含 raw prompt、raw completion、raw API key、bearer token、launchToken、runtimeToken、secret path 或本地文件路径。
+- 该 live canary 不进入默认 `scripts/smoke-test-v22-mvp-contract-suite.mjs`。

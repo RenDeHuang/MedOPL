@@ -311,9 +311,11 @@ assertIncludesAll(contents.statusMatrix, [
   "2026-05-10 主仓 canary 确认 `opl web` retired",
   "主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
   "独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可接通",
-  "当前可验证公开边界是 `opl session runtime --acp` 和独立 WebUI WebSocket bridge session 创建/DB 回读",
+  "当前可验证公开边界是 `opl session runtime --acp`",
+  "独立 WebUI WebSocket bridge session 创建/DB 回读",
+  "授权 live canary 下的 WebUI bridge provider message reply 回流",
   "未验证或不兼容能力必须显式 `capability_not_supported`",
-  "不能把 run/artifact 伪成功",
+  "不能把 file/run/artifact 伪成功",
 ], "status_matrix_real_opl_canary_alignment");
 
 assertExcludesAll(contents.connection, [

@@ -9,6 +9,8 @@ const CAPABILITY_FLOW_PATH = "docs/recovery/real-opl-capability-canary-validatio
 const ACCEPTANCE_PATH = "docs/recovery/mvp-contract-acceptance.md";
 const STATUS_MATRIX_PATH = "docs/recovery/status-matrix.md";
 const MVP_SUITE_PATH = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
+const LIVE_CANARY_PATH = "scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs";
+const WEBUI_BRIDGE_CLIENT_PATH = "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs";
 
 async function read(path) {
   return readFile(path, "utf8");
@@ -30,6 +32,8 @@ const capabilityFlow = await read(CAPABILITY_FLOW_PATH);
 const acceptance = await read(ACCEPTANCE_PATH);
 const statusMatrix = await read(STATUS_MATRIX_PATH);
 const suite = await read(MVP_SUITE_PATH);
+const liveCanary = await read(LIVE_CANARY_PATH);
+const webuiBridgeClient = await read(WEBUI_BRIDGE_CLIENT_PATH);
 
 assertAllIncluded(contract, [
   "# v22 Real OPL Provider Message Canary Boundary Contract",
@@ -100,6 +104,14 @@ assertAllIncluded(contract, [
   "capability_not_supported",
   "trace_sink_not_configured",
   "deferred_authorization",
+  "REAL_OPL_PROVIDER_MESSAGE_CANARY=1",
+  "OPL_PROVIDER_SECRET_FILE",
+  "OPL_REAL_WEBUI_DIR",
+  "OPL_REAL_WEBUI_URL",
+  "message reply capability 状态为 `mapped_to_webui_bridge`",
+  ".runtime/real-opl-provider-message-live-canary/evidence.json",
+  "不代表真实 file upload",
+  "不证明 file、run、artifact",
 ], "error_gates");
 
 assertAllIncluded(contract, [
@@ -140,6 +152,12 @@ assertAllIncluded(flow, [
   "messageId/status/replyMessageId",
   "providerInvocationRef",
   "messageTraceId",
+  "scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs",
+  "REAL_OPL_PROVIDER_MESSAGE_CANARY=1",
+  "OPL_PROVIDER_SECRET_FILE",
+  "Current Live Canary Result",
+  "capabilitySource=mapped_to_webui_bridge",
+  "本结果只证明真实 provider message/reply",
   "provider_key_required",
   "provider_authorization_required",
   "provider_invocation_not_observed",
@@ -153,8 +171,40 @@ assertIncludes(index, "Real OPL Provider Message Canary 合同包", "contracts_i
 assertIncludes(capabilityContract, "v22-real-opl-provider-message-canary-boundary.md", "capability_contract");
 assertIncludes(capabilityFlow, "real-opl-provider-message-canary-validation-path.md", "capability_flow");
 assertIncludes(acceptance, "Real OPL provider message canary", "mvp_acceptance");
+assertIncludes(acceptance, "授权 live canary 已证明真实 OPL WebUI bridge + gflab provider message 能返回 assistant reply", "mvp_acceptance");
+assertIncludes(acceptance, "不代表真实 file/run/artifact、真实云 runtime 或 Langfuse 部署已上线", "mvp_acceptance");
 assertIncludes(statusMatrix, "Real OPL provider message canary", "status_matrix");
+assertIncludes(statusMatrix, "Real OPL provider message live canary", "status_matrix");
+assertIncludes(statusMatrix, "当前 message reply capability 为 `mapped_to_webui_bridge`", "status_matrix");
+assertIncludes(index, "授权 live canary 已证明真实 assistant reply 可按 `mapped_to_webui_bridge` 回流 Portal", "contracts_index");
 assertIncludes(suite, "smoke-test-v22-real-opl-provider-message-canary-contract.mjs", "mvp_suite");
+assert.equal(
+  suite.includes("smoke-test-v22-real-opl-provider-message-live-canary.mjs"),
+  false,
+  "live_provider_canary_must_not_run_in_default_mvp_suite",
+);
+
+assertAllIncluded(liveCanary, [
+  "REAL_OPL_PROVIDER_MESSAGE_CANARY",
+  "OPL_PROVIDER_SECRET_FILE",
+  "OPL_REAL_WEBUI_DIR",
+  "OPL_REAL_WEBUI_URL",
+  "writeCodexProviderConfig",
+  "model_provider = \"gflab\"",
+  "wire_api = \"responses\"",
+  "experimental_bearer_token",
+  "providerInvocationRef",
+  "replyMessageId",
+  "messageTraceId",
+  "evidencePublicPath",
+  "assertNoSecretLeak",
+], "live_canary_script");
+
+assert.equal(
+  webuiBridgeClient.includes("isHealthCheck: true"),
+  false,
+  "live_provider_message_canary_must_not_create_health_check_conversation",
+);
 
 console.log(JSON.stringify({
   ok: true,
@@ -168,5 +218,7 @@ console.log(JSON.stringify({
     ACCEPTANCE_PATH,
     STATUS_MATRIX_PATH,
     MVP_SUITE_PATH,
+    LIVE_CANARY_PATH,
+    WEBUI_BRIDGE_CLIENT_PATH,
   ],
 }, null, 2));

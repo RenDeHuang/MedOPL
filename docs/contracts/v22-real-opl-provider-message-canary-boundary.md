@@ -63,6 +63,14 @@ one-person-lab upstream remains clean.
 
 真实 provider message canary 只证明 message/reply 这一段。它不证明 file、run、artifact、真实云 runtime、生产部署或 Langfuse 已上线。
 
+当前授权 live canary 事实：
+
+- 用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，Portal -> Gateway -> Adapter -> clean OPL WebUI bridge -> gflab provider message 链路已观测到真实 assistant reply。
+- 当前 message reply capability 状态为 `mapped_to_webui_bridge`。
+- Portal message status 和 Portal session trace 已能回流同一组 `messageId`、`replyMessageId`、`messageTraceId`、`providerInvocationRef` 和 `capabilitySource=mapped_to_webui_bridge`。
+- 脱敏 evidence 只写 `.runtime/real-opl-provider-message-live-canary/evidence.json`，不得进入 git。
+- 该事实仍不代表真实 file upload、workspace-scoped fileRef、run、artifact/output、真实云 runtime、生产部署或 Langfuse 已上线。
+
 一条 message 只有满足以下条件，才能标记为真实 reply 闭环：
 
 - message intent 绑定同一个 `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId`。
@@ -337,6 +345,53 @@ Langfuse is an optional sanitized observability attachment。
 
 禁止发送 raw prompt、raw completion、raw API key、bearer token、launchToken、runtimeToken、objectKey、storageKey、localPath、signedUrl、presignedUrl、secret path 或 `.env` 内容。
 
+## Authorized Live Provider Canary
+
+默认合同 smoke 只验证合同、gate 和本地 projection，不读取 secret、不调用真实 provider。真实 provider message reply canary 必须显式授权后运行：
+
+```text
+REAL_OPL_PROVIDER_MESSAGE_CANARY=1 \
+OPL_PROVIDER_SECRET_FILE=<git-outside-provider-secret-file> \
+OPL_REAL_WEBUI_DIR=/home/dev/projects/platform-v19/.runtime/opl-aion-shell-full \
+node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
+```
+
+授权变量含义：
+
+- `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`: 允许本次 canary 读取指定 provider secret，并触发真实 OPL/WebUI/provider message 调用。
+- `OPL_PROVIDER_SECRET_FILE`: 只允许读取用户明确授权的 provider secret 文件。脚本只能解析 allowlist key，不能打印路径内容或 raw key。
+- `OPL_REAL_WEBUI_DIR`: 启动本地真实 OPL WebUI dist-server 来源。
+- `OPL_REAL_WEBUI_URL`: 使用已启动的真实 OPL WebUI URL；与 `OPL_REAL_WEBUI_DIR` 二选一。
+
+live canary 必须走真实 Portal -> Gateway -> Adapter -> WebUI bridge 路径：
+
+```text
+Portal /portal/api/opl/launch
+  -> Portal backend secret store writes raw key and exposes providerKeyRef only
+  -> Gateway opens clean WebUI
+  -> Adapter creates/binds OPL conversation
+  -> POST /portal/api/opl/messages
+  -> Adapter maps to WebUI bridge chat.send.message
+  -> Adapter observes assistant reply by same conversation readback/event
+  -> GET /portal/api/opl/messages/{messageId}/status
+  -> GET /portal/api/session-traces?workspaceId=...&messageId=...
+```
+
+live canary success evidence 必须包含 `messageId`、`replyMessageId`、`messageTraceId`、`providerInvocationRef`、`capabilitySource=mapped_to_webui_bridge` 和 Portal session trace projection。evidence 只写 `.runtime/real-opl-provider-message-live-canary/evidence.json`，只允许记录 key fingerprint、prompt/reply 长度、hash prefix、ID、状态和 timing metadata。
+
+live canary 不进入默认 `scripts/smoke-test-v22-mvp-contract-suite.mjs`，因为它需要真实 provider key、真实 provider 调用授权和真实 WebUI canary 来源。
+
+最近一次授权 live canary 脱敏结果：
+
+```json
+{
+  "status": "succeeded",
+  "capabilitySource": "mapped_to_webui_bridge",
+  "replyLength": 25,
+  "streamEventCount": 16
+}
+```
+
 ## Error Gates And No-Fake-Success
 
 本合同禁止 fake success。以下情况必须返回明确 gate，不得返回 200 假成功；本合同的验收关键词是 no fake 200：
@@ -411,6 +466,6 @@ canary 成功不自动等于 productionized adapter。进入正式实现前必�
 4. `node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
 5. `node scripts/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
 6. 合同索引、阶段状态和验证链路已更新。
-7. 未使用 raw provider key，未调用真实 provider，未读取 secret，未调用真实云。
+7. 默认合同 smoke 未使用 raw provider key，未调用真实 provider，未读取 secret，未调用真实云；授权 live canary 必须明确记录 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1` 和脱敏 evidence path。
 8. 未修改 one-person-lab upstream、deploy、`.sentrux` 或 adapters。
 9. `git diff --check -- docs/contracts docs/recovery scripts` 通过。

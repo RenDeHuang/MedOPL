@@ -10,6 +10,7 @@ function traceRequestOptions(user, options = {}, parsePositiveInt) {
     userId: user?.role === "admin" ? String(options.userId || "").trim() : user.id,
     workspaceId: String(options.workspaceId || "").trim(),
     runId: String(options.runId || "").trim(),
+    messageId: String(options.messageId || "").trim(),
     sessionId: String(options.sessionId || "").trim(),
     status: String(options.status || "").trim().toLowerCase(),
     limit: parsePositiveInt(options.limit, 200),
@@ -19,6 +20,7 @@ function traceRequestOptions(user, options = {}, parsePositiveInt) {
 function filterMergedTraceRows(rows = [], requestOptions = {}) {
   return rows
     .filter((item) => !requestOptions.sessionId || traceSearchText(item).includes(requestOptions.sessionId))
+    .filter((item) => !requestOptions.messageId || text(item.runId) === requestOptions.messageId || text(item.messageId) === requestOptions.messageId)
     .filter((item) => !requestOptions.status || String(item.status || "").toLowerCase().includes(requestOptions.status))
     .sort((a, b) => String(b.startedAt || b.createdAt || "").localeCompare(String(a.startedAt || a.createdAt || "")));
 }
@@ -327,6 +329,10 @@ function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {
     workspaceSessionId: text(row.workspaceSessionId),
     runtimeSessionId: text(row.runtimeSessionId),
     runId: text(row.runId),
+    messageId: text(row.messageId || row.runId),
+    replyMessageId: text(row.replyMessageId),
+    providerInvocationRef: text(row.providerInvocationRef),
+    capabilitySource: text(row.capabilitySource),
     model: text(row.model),
     sessionId: text(row.sessionId || row.runtimeSessionId || row.workspaceSessionId),
     tokenCount: numberValue(row.tokenCount),

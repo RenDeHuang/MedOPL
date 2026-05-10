@@ -62,6 +62,10 @@ function messageRequestResult(input = {}) {
     artifactId: input.artifactId || input.artifact_id || "",
     artifactName: input.artifactName || input.artifact_name || "",
     error: input.error || "",
+    replyMessageId: input.replyMessageId || input.reply_message_id || "",
+    messageTraceId: input.messageTraceId || input.message_trace_id || "",
+    providerInvocationRef: input.providerInvocationRef || input.provider_invocation_ref || "",
+    capabilitySource: input.capabilitySource || input.capability_source || "",
     ...messageRequestTiming(input),
   };
 }
@@ -88,6 +92,23 @@ export function buildMessageReplyRecord(input = {}) {
     ...runtimeDispatchFields(input),
     promptPreview: input.promptPreview || input.prompt_preview || "",
     reply: input.reply || "",
+    replyMessageId: input.replyMessageId || input.reply_message_id || "",
+    messageTraceId: input.messageTraceId || input.message_trace_id || "",
+    providerInvocationRef: input.providerInvocationRef || input.provider_invocation_ref || "",
+    capabilitySource: input.capabilitySource || input.capability_source || "",
+    providerModelRef: input.providerModelRef || input.provider_model_ref || "",
+    providerAuthorizationStatus: input.providerAuthorizationStatus || input.provider_authorization_status || "",
+    replyMetadata: input.replyMetadata && typeof input.replyMetadata === "object"
+      ? {
+          role: input.replyMetadata.role || "",
+          replyLength: Number(input.replyMetadata.replyLength || 0),
+          replyHashPrefix: input.replyMetadata.replyHashPrefix || "",
+          finishStatus: input.replyMetadata.finishStatus || "",
+          latencyMs: Number(input.replyMetadata.latencyMs || 0),
+          streamEventCount: Number(input.replyMetadata.streamEventCount || 0),
+          createdAt: input.replyMetadata.createdAt || "",
+        }
+      : null,
     source: input.source || "opl_runtime",
     status: input.status || "succeeded",
     model: input.model || "opl-runtime",

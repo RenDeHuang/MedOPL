@@ -470,8 +470,10 @@ async function createOplLaunch({
   taskSpace,
   workspaceSession,
   requireRealOplWeb = false,
+  sourceSurface = "portal-control-plane",
   providerConfig = null,
   providerConfigSecretRef = "",
+  providerKeyPayload = null,
   storageEntitlement = null,
 }) {
   return oplAdapterClient.createLaunch({
@@ -479,8 +481,10 @@ async function createOplLaunch({
     taskSpace,
     workspaceSession,
     requireRealOplWeb,
+    sourceSurface,
     providerConfig,
     providerConfigSecretRef,
+    providerKeyPayload,
     storageEntitlement,
   });
 }

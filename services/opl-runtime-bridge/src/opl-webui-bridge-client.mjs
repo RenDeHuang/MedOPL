@@ -1,7 +1,10 @@
 import path from "node:path";
+import { createHash, randomUUID } from "node:crypto";
 
 const WEBUI_BRIDGE_URL = String(process.env.OPL_WEBUI_BRIDGE_URL || process.env.OPL_WEB_URL || "").replace(/\/$/, "");
 const WEBUI_BRIDGE_TIMEOUT_MS = Number(process.env.OPL_WEBUI_BRIDGE_TIMEOUT_MS || 15000);
+const WEBUI_BRIDGE_REPLY_TIMEOUT_MS = Number(process.env.OPL_WEBUI_BRIDGE_REPLY_TIMEOUT_MS || 120000);
+const WEBUI_BRIDGE_REPLY_POLL_MS = Number(process.env.OPL_WEBUI_BRIDGE_REPLY_POLL_MS || 1000);
 
 export class OplWebuiCapabilityError extends Error {
   constructor(capability, message, details = {}) {
@@ -40,6 +43,146 @@ function bridgeConversationId(context = {}) {
     context.runtime_session_id ||
     `portal-webui-${Date.now()}`,
   ).trim();
+}
+
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function firstText(...values) {
+  for (const value of values) {
+    const normalized = text(value);
+    if (normalized) return normalized;
+  }
+  return "";
+}
+
+function stableRef(prefix, parts = []) {
+  const hash = createHash("sha256")
+    .update(parts.map((part) => text(part)).join(":"))
+    .digest("hex")
+    .slice(0, 24);
+  return `${prefix}-${hash}`;
+}
+
+function safeHashPrefix(value = "") {
+  const normalized = text(value);
+  if (!normalized) return "";
+  return createHash("sha256").update(normalized).digest("hex").slice(0, 16);
+}
+
+function record(value = {}) {
+  return value && typeof value === "object" ? value : {};
+}
+
+function messageCreatedAt(message = {}) {
+  message = record(message);
+  return Number(
+    message.createdAt ||
+    message.created_at ||
+    message.timestamp ||
+    message.time ||
+    message.updatedAt ||
+    message.updated_at ||
+    0
+  ) || 0;
+}
+
+function messageRole(message = {}) {
+  message = record(message);
+  return text(
+    message.role ||
+    message.position ||
+    message.sender ||
+    message.type ||
+    (message.content && typeof message.content === "object" ? message.content.role : "")
+  ).toLowerCase();
+}
+
+function messageText(message = {}) {
+  message = record(message);
+  if (typeof message.content === "string") return text(message.content);
+  if (message.content && typeof message.content === "object") {
+    return firstText(
+      message.content.content,
+      message.content.text,
+      message.content.data,
+      message.content.message,
+      message.content.value,
+    );
+  }
+  return firstText(message.text, message.reply, message.response, message.data, message.message);
+}
+
+function messageId(message = {}) {
+  message = record(message);
+  return firstText(message.msg_id, message.messageId, message.message_id, message.id);
+}
+
+function isAssistantReply(message = {}, clientMessageId = "") {
+  const role = messageRole(message);
+  if (role === "right" || role === "user" || role === "user_content") return false;
+  const id = messageId(message);
+  if (clientMessageId && id === clientMessageId) return false;
+  const content = messageText(message);
+  if (!content) return false;
+  return role === "left" ||
+    role === "assistant" ||
+    role === "content" ||
+    role === "text" ||
+    role === "agent_status" ||
+    role === "" ||
+    message.position === "left";
+}
+
+function latestAssistantReply(messages = [], clientMessageId = "", sentAt = 0) {
+  return [...messages]
+    .filter((message) => message && typeof message === "object")
+    .filter((message) => isAssistantReply(message, clientMessageId))
+    .filter((message) => !sentAt || !messageCreatedAt(message) || messageCreatedAt(message) >= sentAt)
+    .sort((left, right) => messageCreatedAt(right) - messageCreatedAt(left))[0] || null;
+}
+
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function observeAssistantReply(bridge, {
+  conversationId = "",
+  clientMessageId = "",
+  startedAt = 0,
+  explicitReply = "",
+} = {}) {
+  const deadline = Date.now() + Math.max(1, WEBUI_BRIDGE_REPLY_TIMEOUT_MS);
+  let messages = [];
+  let replyMessage = null;
+  while (Date.now() <= deadline) {
+    messages = await bridge.invoke("database.get-conversation-messages", { conversation_id: conversationId }, 5000)
+      .then((items) => Array.isArray(items) ? items : [])
+      .catch(() => []);
+    replyMessage = latestAssistantReply(messages, clientMessageId, startedAt);
+    const reply = explicitReply || messageText(replyMessage);
+    if (reply) return { reply, replyMessage, messages, timedOut: false };
+    await sleep(Math.max(100, WEBUI_BRIDGE_REPLY_POLL_MS));
+  }
+  return { reply: "", replyMessage, messages, timedOut: true };
+}
+
+function providerInvocationRefFrom({ conversationId = "", messageId = "", replyMessageId = "", streamEvents = [] } = {}) {
+  const eventNames = streamEvents.map((event) => event?.name || "").filter(Boolean).join(",");
+  return stableRef("opl-provider-invocation", [conversationId, messageId, replyMessageId, eventNames]);
+}
+
+function normalizedReplyMetadata({ reply = "", replyMessage = {}, streamEvents = [], startedAt = 0, finishedAt = 0 } = {}) {
+  return {
+    role: "assistant",
+    replyLength: reply.length,
+    replyHashPrefix: safeHashPrefix(reply),
+    finishStatus: "observed",
+    latencyMs: startedAt && finishedAt ? Math.max(0, finishedAt - startedAt) : 0,
+    streamEventCount: streamEvents.length,
+    createdAt: messageCreatedAt(replyMessage) || finishedAt || Date.now(),
+  };
 }
 
 function bridgeWorkspacePath(context = {}) {
@@ -217,7 +360,6 @@ export async function createWebuiSession(context = {}) {
         workspace: bridgeWorkspacePath(context) || path.join(process.cwd(), ".runtime", "opl-webui-workspace"),
         backend: "codex",
         customWorkspace: true,
-        isHealthCheck: true,
         presetContext: "Portal OPL adapter context. Do not read secrets.",
       },
     }, WEBUI_BRIDGE_TIMEOUT_MS * 2);
@@ -240,37 +382,71 @@ export async function sendWebuiMessage(input = {}) {
   const prompt = String(input.prompt || input.message || input.text || "").trim();
   if (!prompt) throw new Error("opl_message_prompt_required");
   return withBridge(async (bridge) => {
-    const messageId = input.messageId || input.message_id || `message-${Date.now()}`;
+    const clientMessageId = input.messageId || input.message_id || `message-${Date.now()}`;
+    const startedAt = Date.now();
     const result = await bridge.invoke("chat.send.message", {
       conversation_id: conversationId,
-      msg_id: messageId,
+      msg_id: clientMessageId,
       input: prompt,
       files: [],
     }, WEBUI_BRIDGE_TIMEOUT_MS).then(
       (payload) => ({ ok: true, payload }),
       (error) => ({ ok: false, error: String(error.message || error) }),
     );
-    const messages = await bridge.invoke("database.get-conversation-messages", { conversation_id: conversationId }, 5000)
-      .then((items) => Array.isArray(items) ? items : [])
-      .catch(() => []);
-    if (result.ok && result.payload?.success === true && messages.length > 0) {
-      const reply = String(result.payload.reply || result.payload.response || result.payload.text || "").trim();
-      if (reply) {
-        return {
-          messageId,
-          sessionId: conversationId,
-          runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
+    const explicitReply = String(result.payload?.reply || result.payload?.response || result.payload?.text || "").trim();
+    const { reply, replyMessage, messages } = await observeAssistantReply(bridge, {
+      conversationId,
+      clientMessageId,
+      startedAt,
+      explicitReply,
+    });
+    if (reply) {
+      const finishedAt = Date.now();
+      const replyMessageId = messageId(replyMessage) || stableRef("opl-reply", [conversationId, clientMessageId, safeHashPrefix(reply)]);
+      const messageTraceId = text(input.messageTraceId || input.message_trace_id) ||
+        stableRef("opl-message-trace", [input.traceId || input.trace_id, conversationId, clientMessageId, replyMessageId]);
+      const providerInvocationRef = providerInvocationRefFrom({
+        conversationId,
+        messageId: clientMessageId,
+        replyMessageId,
+        streamEvents: bridge.streamEvents,
+      });
+      return {
+        messageId: clientMessageId,
+        clientMessageId: input.clientMessageId || input.client_message_id || clientMessageId,
+        replyMessageId,
+        messageTraceId,
+        providerInvocationRef,
+        capabilitySource: "mapped_to_webui_bridge",
+        oplConversationId: conversationId,
+        oplSessionId: conversationId,
+        sessionId: conversationId,
+        runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
+        reply,
+        replyMetadata: normalizedReplyMetadata({
           reply,
-          source: "opl_webui_bridge",
-          stopReason: "end_turn",
-        };
-      }
+          replyMessage,
+          streamEvents: bridge.streamEvents,
+          startedAt,
+          finishedAt,
+        }),
+        providerMetadata: {
+          providerInvocationRef,
+          providerModelRef: input.model || input.providerModelRef || input.provider_model_ref || "codex",
+          providerAuthorizationStatus: "authorized",
+        },
+        source: "opl_webui_bridge",
+        stopReason: "end_turn",
+      };
     }
     throw new OplWebuiCapabilityError("websocket_bridge_message", "OPL WebUI bridge message reply is not supported in this canary environment", {
       sendReturned: result.ok,
       reason: result.ok ? "message_send_did_not_persist_reply" : result.error,
       persistedMessageCount: messages.length,
       streamEventCount: bridge.streamEvents.length,
+      promptHashPrefix: safeHashPrefix(prompt),
+      messageId: clientMessageId,
+      oplConversationId: conversationId,
     });
   });
 }
