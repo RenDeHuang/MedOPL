@@ -44,7 +44,16 @@
 - COS prefix 是内部实现。
 - 可选 CBS / CFS / pod ephemeral scratch，仅作为运行时内部实现，不作为用户购买的文件空间主叙事。
 
-MVP 默认是平台共享 TKE 集群，多租户通过 namespace、quota、labels、network policy 和资源标签隔离。普通 CPU 任务可以共享通用 node pool class；GPU 或高规格环境可映射到独立 node pool class；专属节点池属于后续高级隔离套餐。
+MVP 默认使用已有平台共享 TKE 集群，不默认创建新 TKE 集群。多租户通过 namespace、quota、labels、network policy 和资源标签隔离。普通 CPU 任务可以共享通用 node pool class；GPU 或高规格环境可映射到独立 node pool class；专属节点池属于后续高级隔离套餐。
+
+“加计算”必须明确为以下一种或多种授权动作，不能隐式推断：
+
+- 提高 workspace namespace quota。
+- 调整已授权 node pool desired capacity。
+- 绑定更高 workload class。
+- 追加已审查的计算资源绑定记录。
+
+任何 TKE node pool 扩缩容、namespace/quota 变更或 kubectl/deploy 动作都是真实副作用，必须单独授权并串行执行。
 
 ## Create/Release State Machine
 
@@ -121,6 +130,25 @@ T+1 账单用于对账和审计，不作为实时扣费来源。Portal 实时展
 ```
 
 该对象不得包含真实云资源 ID、CVM 实例、COS bucket、TKE 集群、kubeconfig、objectKey、signedUrl 或 secret。
+
+## Portal Canonical Store
+
+Portal canonical truth 存在 PostgreSQL，不存在 Redis、COS 或云标签中。真实 create/release 前必须能写入并审计以下业务记录：
+
+- workspace。
+- resource binding。
+- file space entitlement。
+- compute allocation。
+- cloud operation。
+- cloud resource projection。
+- wallet ledger / freeze。
+- billing reconciliation。
+- audit event。
+- provider secret reference。
+
+Redis 只能作为 queue / lock / session / cache。COS 只保存文件对象。腾讯云 tag / cost allocation 只作为云侧对账证据。
+
+Portal 点击“开通工作台资源”时，必须先写 cloud operation 和审计事件，再进入 dry-run diff 和真实执行授权。真实执行结果必须回写 cloud operation state，不能只靠云侧状态代表 Portal truth。
 
 ## File Space Contract
 

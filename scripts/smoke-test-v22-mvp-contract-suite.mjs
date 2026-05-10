@@ -85,6 +85,8 @@ const smokeScripts = [
   ["smoke-test-v22-authorized-tencent-create-release-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs"],
   ["smoke-test-v22-authorized-tencent-create-release-implementation-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs"],
   ["smoke-test-v22-authorized-tencent-create-release-execution-contract", "scripts/smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs"],
+  ["smoke-test-v22-tencent-authorized-resource-lifecycle-runner", "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs"],
+  ["smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate", "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs"],
   ["smoke-test-v22-real-resource-contract-alignment", "scripts/smoke-test-v22-real-resource-contract-alignment.mjs"],
   ["smoke-test-v22-retire-legacy-resource-user-surface", "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs"],
   ["smoke-test-v22-admin-ops-console-boundary", "scripts/smoke-test-v22-admin-ops-console-boundary.mjs"],

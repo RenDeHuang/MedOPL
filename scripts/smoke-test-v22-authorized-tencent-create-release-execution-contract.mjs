@@ -62,6 +62,17 @@ assertIncludesAll(contract, [
 ], "execution_contract_lifecycle_separation");
 
 assertIncludesAll(contract, [
+  "TKE 节点池必须先分型再 mutation",
+  "DescribeClusterNodePools",
+  "ModifyNodePoolDesiredCapacityAboutAsg",
+  "DescribeNodePools",
+  "ScaleNodePool",
+  "Native",
+  "0 -> 1 -> 0",
+  "不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在",
+], "execution_contract_tke_node_pool_shape_detection");
+
+assertIncludesAll(contract, [
   "删除计算资源：释放计算资源",
   "停止相关新任务/运行",
   "不删除文件空间",
@@ -161,6 +172,11 @@ assertIncludesAll(contract, [
   "\"failClosedOnMissingOrConflictingOwnership\": true",
   "\"computeReleaseDeletesFileSpace\": false",
   "\"storageDeleteTriggersRetentionDays\": 7",
+  "\"tkeNodePoolShapeMustBeDetectedBeforeMutation\": true",
+  "\"nativeNodePoolReadApi\": \"DescribeNodePools\"",
+  "\"nativeNodePoolMutationApi\": \"ScaleNodePool\"",
+  "\"legacyRegularNodePoolMutationApi\": \"ModifyNodePoolDesiredCapacityAboutAsg\"",
+  "\"nativeNodePoolComputeLoop\": \"replicas_0_1_0\"",
 ], "execution_contract_machine_readable_data");
 
 assertNotIncludesAny(contract, [

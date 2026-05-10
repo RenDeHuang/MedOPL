@@ -10,6 +10,8 @@ authorized create/release execution 只在后续单独授权的 feat/* 分支实
 
 本合同不得恢复旧 `user_owned` / `resource-order` 主叙事。用户购买和管理的是工作台资源、计算资源和文件空间，不是云控制台对象。
 
+本合同属于 authorized cloud connection loop 的资源生命周期段。旧 CO-01..CO-14 阶段状态机不再作为本合同的执行入口。
+
 ## Readonly 与 Mutation 分离
 
 readonly inventory 与 authorized create/release 必须分离：
@@ -58,6 +60,36 @@ mutation secret 不得进入 Portal payload、前端状态、URL、日志、evid
 - 计算资源已释放但文件空间仍保留，是合法状态。
 
 文件空间属于工作空间，不属于单个 run。输出文件可以带 `runId`，但仍归属工作空间文件空间。
+
+## Existing TKE Cluster Execution Model
+
+MVP compute execution 默认使用已有 TKE 集群，不默认创建新集群。
+
+TKE 节点池必须先分型再 mutation。普通节点池可以走 TKE `2018-05-25` 的 `DescribeClusterNodePools` / `ModifyNodePoolDesiredCapacityAboutAsg` 旧接口；原生节点池必须走 TKE `2022-05-01` 的 `DescribeNodePools` / `ScaleNodePool`，把用户层“开通计算 / 释放计算”映射成授权节点池 replicas 的 `0 -> 1 -> 0` 或 dry-run 确认的目标值变化。`DescribeNodePools` 返回 `Native` 时，不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在。
+
+计算资源生命周期映射为：
+
+- create compute：创建或更新 namespace、quota、labels、network policy、workload class 绑定和 compute allocation。
+- expand compute：提高 namespace quota、调整已授权 node pool desired capacity，或绑定更高 workload class。
+- release compute：停止新任务、解除 compute allocation、释放或降低 quota，停止计算计费。
+
+release compute 不删除文件空间，不触发文件空间 7 天保护期。
+
+node pool 扩缩容、namespace/quota 变更、kubectl、deploy 都必须由用户在当前会话明确授权，并且必须有 dry-run diff、预算上限和回滚策略。
+
+## Portal Operation Truth
+
+真实 execution 前，Portal 必须先写 PostgreSQL canonical operation。至少需要以下记录类型：
+
+- cloud operation：operationId、operationType、requestedBy、workspaceId、resourceBindingId、status、requestedSpec、dryRunDiffRef、authorizationRef。
+- compute allocation：workspaceId、resourceBindingId、clusterRef、namespaceRef、quota、workloadClass、status。
+- file space entitlement：workspaceId、resourceBindingId、capacityGb、retentionState、status。
+- cloud resource projection：只保存脱敏资源摘要和绑定标签，不保存 raw cloud object。
+- wallet ledger / freeze：预估冻结金额、状态、核对窗口。
+- billing reconciliation：billingReadRef、reconciliationStatus、auditQueueRef。
+- audit event：actor、operationId、before/after summary、decision、reason。
+
+这些记录是 Portal truth。云标签和账单只作为 reconciliation evidence。
 
 ## 用户删除语义
 
@@ -190,6 +222,8 @@ release 分阶段执行：
   "readonlyRunGate": "RUN_TENCENT_READONLY_INVENTORY",
   "mutationRunGate": "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
   "readonlyAndMutationGatesSeparated": true,
+  "workflowModel": "authorized_cloud_connection_loop",
+  "oldCoPhaseStateMachineRetired": true,
   "readonlyAllowedApiVerbs": [
     "Describe",
     "List",
@@ -218,7 +252,30 @@ release 分阶段执行：
     "computeReleaseDeletesFileSpace": false,
     "computeReleaseTriggersRetention": false,
     "storageDeleteTriggersRetentionDays": 7,
-    "computeReleasedWithFileSpaceRetainedIsValid": true
+    "computeReleasedWithFileSpaceRetainedIsValid": true,
+    "usesExistingTkeClusterByDefault": true,
+    "computeCreateUsesNamespaceQuotaWorkloadClass": true,
+    "computeExpandMayAdjustAuthorizedNodePoolCapacity": true,
+    "tkeNodePoolShapeMustBeDetectedBeforeMutation": true,
+    "nativeNodePoolReadApi": "DescribeNodePools",
+    "nativeNodePoolMutationApi": "ScaleNodePool",
+    "legacyRegularNodePoolMutationApi": "ModifyNodePoolDesiredCapacityAboutAsg",
+    "nativeNodePoolComputeLoop": "replicas_0_1_0"
+  },
+  "portalCanonicalTruth": {
+    "store": "PostgreSQL",
+    "redisIsTruth": false,
+    "cosIsTruth": false,
+    "cloudTagsAreReconciliationEvidence": true,
+    "requiredRecords": [
+      "cloud operation",
+      "compute allocation",
+      "file space entitlement",
+      "cloud resource projection",
+      "wallet ledger / freeze",
+      "billing reconciliation",
+      "audit event"
+    ]
   },
   "ownership": {
     "createWritesTags": [
