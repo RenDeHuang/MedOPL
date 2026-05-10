@@ -62,6 +62,7 @@
 - runtime bridge session/run/file/providerKeyRef: [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
 - Portal-OPL connection: [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)。Portal 发起进入 OPL、Gateway bootstrap、OPL session bind、message/file/run、artifact projection、workspace/session/run 归属、token 不进 URL/browser state 和 clean upstream 边界由该合同统一固定。它不修改 one-person-lab upstream，不读取 secret，不调用真实云。
 - Portal-OPL context/backflow: [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。该三级执行合同把 Portal SaaS control plane、Gateway entry/proxy、OPL context bootstrap、Adapter capability/backflow projection、downstream Runtime gate 和 downstream Langfuse `trace.medopl.cn` session trace boundary 拆开；它不修改 one-person-lab upstream，不实现真实云 runtime，不部署 Langfuse，不允许 200 假成功。
+- Real OPL capability canary: [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)。该三级执行合同把真实 OPL WebUI/ACP/Runtime 能力发现、message reply、file、run、artifact、observability 和 Portal projection 的 canary 验证拆开；它只定义真实能力裁定、错误 gate、canary evidence 和 productionization handoff，不代表真实 provider message、真实文件上传、真实 Runtime Agent、真实云 runtime 或 Langfuse 已上线。
 - upstream one-person-lab clean boundary: [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md), [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)。upstream 目录只读/clean；Portal / Gateway / Runtime / Langfuse / 腾讯云逻辑不得写进 upstream；只能通过 Gateway、Adapter、Runtime Agent、公开 API/CLI、WebSocket bridge 或反向代理边界接入。OPL Gateway 本地 proxy 通过 `OPL_UPSTREAM_URL` 显式接入 clean upstream；未配置时返回 `opl_upstream_url_required`，不兜底到旧 v19/v20/v21 direct path 或硬编码 upstream。真实 WebUI canary 已确认独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可接通，但 `/api/opl/*` 是 catch-all placeholder，不是 Product API；message AI reply、file upload 和 run/artifact 回流仍需单独 provider/agent/runtime canary。
 - pricing snapshot: [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
 
@@ -143,6 +144,28 @@
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
 - [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
+
+### Real OPL Capability Canary 合同包
+
+适用于真实 OPL WebUI/ACP/Runtime 能力发现、message reply canary、file capability canary、Runtime Agent / run canary、artifact/output backflow canary、observability metadata canary、Portal projection negative gates 和 productionization handoff。该合同包是三级执行合同包，不修改 one-person-lab upstream，不读取 secret，不调用真实云，不部署 Langfuse，不允许 fake 200。
+
+订阅：
+
+- [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
+- [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
+- [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)
+- [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md)
+- [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)
+- [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
+- [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
+- [v22-token-provider-boundary.md](./v22-token-provider-boundary.md)
+- [v22-trace-metadata-boundary.md](./v22-trace-metadata-boundary.md)
+- [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)
+- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
+- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
+- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
 
 ### Langfuse / Trace 合同包
 
