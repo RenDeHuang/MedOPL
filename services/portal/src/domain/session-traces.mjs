@@ -18,13 +18,23 @@ function traceRequestOptions(user, options = {}, parsePositiveInt) {
 
 function filterMergedTraceRows(rows = [], requestOptions = {}) {
   return rows
-    .filter((item) => !requestOptions.sessionId || String(item.sessionId || item.workspaceSessionId || "").includes(requestOptions.sessionId))
+    .filter((item) => !requestOptions.sessionId || traceSearchText(item).includes(requestOptions.sessionId))
     .filter((item) => !requestOptions.status || String(item.status || "").toLowerCase().includes(requestOptions.status))
     .sort((a, b) => String(b.startedAt || b.createdAt || "").localeCompare(String(a.startedAt || a.createdAt || "")));
 }
 
 function text(value = "") {
   return String(value ?? "").trim();
+}
+
+function traceSearchText(item = {}) {
+  return [
+    item.sessionId,
+    item.workspaceSessionId,
+    item.runtimeSessionId,
+    item.traceId,
+    item.runId,
+  ].map(text).filter(Boolean).join(" ");
 }
 
 function traceTitle(row = {}) {
@@ -97,12 +107,48 @@ function paginationPayload(pagination) {
 }
 
 function timelineForEvents(events = [], item = {}) {
-  return events.map((event) => ({
+  return [
+    ...canonicalTimelineForTrace(item),
+    ...events.map((event) => ({
     type: event.type,
     occurredAt: event.occurredAt,
     workspaceId: event.workspaceId || item.workspaceId,
     runId: event.runId || item.runId,
-  }));
+    })),
+  ];
+}
+
+function canonicalTimelineForTrace(item = {}) {
+  const occurredAt = text(item.updatedAt || item.startedAt);
+  const workspaceId = text(item.workspaceId);
+  const runId = text(item.runId);
+  const events = [];
+  if (item.traceId || item.sessionId) {
+    events.push({
+      type: "portal_session_trace_projected",
+      occurredAt,
+      workspaceId,
+      runId,
+    });
+  }
+  if (runId) {
+    events.push({
+      type: "runtime_run_projected",
+      occurredAt,
+      workspaceId,
+      runId,
+    });
+  }
+  for (const artifactRef of Array.isArray(item.artifactRefs) ? item.artifactRefs : []) {
+    events.push({
+      type: "runtime_artifact_recorded",
+      occurredAt,
+      workspaceId,
+      runId,
+      artifactRef: text(artifactRef),
+    });
+  }
+  return events;
 }
 
 function eventMatchesTrace(event = {}, item = {}, user = {}) {
@@ -112,9 +158,14 @@ function eventMatchesTrace(event = {}, item = {}, user = {}) {
 }
 
 function findTraceDetailItem(items = [], sessionId = "") {
-  return items.find((row) =>
-    String(row.sessionId || row.workspaceSessionId || row.traceId || "") === String(sessionId || "")
-  ) || items[0] || null;
+  const target = String(sessionId || "");
+  return items.find((row) => String(row.traceId || "") === target) ||
+    items.find((row) => String(row.runId || "") === target) ||
+    items.find((row) =>
+      String(row.sessionId || row.workspaceSessionId || "") === target
+    ) ||
+    items[0] ||
+    null;
 }
 
 function numberValue(value = 0) {
@@ -233,7 +284,10 @@ function outputFileMatchesTrace(file = {}, row = {}) {
 }
 
 function linkedOutputFilesForTrace(row = {}, storage = {}) {
-  const linked = outputFilesFromStorage(storage).filter((file) => outputFileMatchesTrace(file, row));
+  const linked = [
+    ...artifactOutputFilesFromTrace(row),
+    ...outputFilesFromStorage(storage).filter((file) => outputFileMatchesTrace(file, row)),
+  ];
   const seen = new Set();
   return linked.filter((file) => {
     const key = file.artifactRef || file.fileRef || `${file.runId}:${file.name}`;
@@ -241,6 +295,25 @@ function linkedOutputFilesForTrace(row = {}, storage = {}) {
     seen.add(key);
     return true;
   });
+}
+
+function artifactOutputFilesFromTrace(row = {}) {
+  return (Array.isArray(row.artifactRefs) ? row.artifactRefs : [])
+    .map(text)
+    .filter(Boolean)
+    .map((artifactRef) => ({
+      artifactRef,
+      fileRef: artifactRef,
+      name: artifactRef,
+      workspaceId: text(row.workspaceId),
+      runId: text(row.runId),
+      sessionId: text(row.sessionId || row.runtimeSessionId || row.workspaceSessionId),
+      kind: "outputs",
+      sizeBytes: 0,
+      contentType: "",
+      status: text(row.status || "active"),
+      source: "runtime_bridge_artifact_reference",
+    }));
 }
 
 function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {

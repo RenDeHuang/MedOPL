@@ -50,6 +50,7 @@ export function buildTraceRecord(input = {}) {
     traceProvider: input.traceProvider || input.trace_provider || "portal-opl-adapter",
     traceName: input.traceName || input.trace_name || "med-autoscience-run",
     status: input.status || "submitted",
+    artifactRefs: Array.isArray(input.artifactRefs) ? input.artifactRefs.map((item) => String(item || "").trim()).filter(Boolean) : [],
     latencyMs: Number(input.latencyMs || input.latency_ms || 0),
     model: input.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),

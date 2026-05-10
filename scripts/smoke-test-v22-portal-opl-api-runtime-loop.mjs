@@ -397,6 +397,28 @@ try {
   assert.equal(artifact.json.artifact.artifactRef, run.json.artifacts[0].artifactRef, "portal_opl_artifact_ref_mismatch");
   assertNoPublicLeak(artifact.json, "portal_opl_artifact");
 
+  const sessionTraces = await getJson(`${portalUrl}/portal/api/session-traces?workspaceId=${encodeURIComponent(WORKSPACE_ID)}&runId=${encodeURIComponent(run.json.run.runId)}&pageSize=20`, { cookie: portalCookie });
+  assert.equal(sessionTraces.response.status, 200, "portal_session_traces_must_return_200");
+  assert.equal(sessionTraces.json.summary?.businessFactSource, "runtime_bridge_canonical_metadata", "portal_session_traces_must_use_runtime_bridge_canonical_source");
+  assert.equal(sessionTraces.json.summary?.canonicalSource, "runtime_bridge_canonical_metadata", "portal_session_traces_canonical_source_mismatch");
+  assert.equal(sessionTraces.json.summary?.billingTruth, false, "portal_session_traces_must_not_use_langfuse_as_billing_truth");
+  assert.equal(sessionTraces.json.customerDefaultLangfuseUi, false, "portal_session_traces_must_default_to_portal_trace_surface");
+  assert.equal(sessionTraces.json.items?.length >= 1, true, "portal_session_traces_must_include_runtime_run");
+  const traceItem = sessionTraces.json.items.find((item) => item.runId === run.json.run.runId);
+  assert(traceItem, "portal_session_traces_must_find_run_trace");
+  assert.equal(traceItem.workspaceId, WORKSPACE_ID, "portal_session_trace_workspace_mismatch");
+  assert.equal(traceItem.runtimeSessionId, bind.json.runtimeSession.runtimeSessionId, "portal_session_trace_runtime_session_mismatch");
+  assert.equal(traceItem.source, "runtime_bridge_canonical_metadata", "portal_session_trace_source_mismatch");
+  assert.equal(traceItem.customerDefaultLangfuseUi, false, "portal_session_trace_item_must_not_default_to_langfuse");
+  assert.equal(traceItem.outputFiles.some((item) => item.artifactRef === run.json.artifacts[0].artifactRef), true, "portal_session_trace_must_link_runtime_artifact");
+  assertNoPublicLeak(sessionTraces.json, "portal_session_traces");
+
+  const traceDetail = await getJson(`${portalUrl}/portal/api/session-traces/${encodeURIComponent(traceItem.traceId)}`, { cookie: portalCookie });
+  assert.equal(traceDetail.response.status, 200, "portal_session_trace_detail_must_return_200");
+  assert.equal(traceDetail.json.runId, run.json.run.runId, "portal_session_trace_detail_run_mismatch");
+  assert.equal(traceDetail.json.timeline.some((event) => event.type === "runner_run_succeeded" || event.type === "runtime_artifact_recorded"), true, "portal_session_trace_detail_must_include_runtime_timeline");
+  assertNoPublicLeak(traceDetail.json, "portal_session_trace_detail");
+
   const crossUser = await getJson(`${portalUrl}/portal/api/opl/bootstrap?launchId=${encodeURIComponent(launchId)}`);
   assert.equal(crossUser.response.status, 401, "portal_opl_bootstrap_without_portal_session_must_return_401");
 
@@ -422,6 +444,7 @@ try {
       "portal_http_opl_launch",
       "portal_http_opl_proxy_to_adapter",
       "session_message_file_run_artifact_backflow",
+      "portal_session_trace_projection",
       "vite_opl_launch_shell",
       "secret_hygiene",
     ],

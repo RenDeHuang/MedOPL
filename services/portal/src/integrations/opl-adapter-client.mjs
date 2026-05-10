@@ -194,6 +194,7 @@ export function createOplAdapterClient({
           model: item.model || "",
           sessionId: item.runtimeSessionId || item.workspaceSessionId || "",
           tokenCount: Number(item.tokenCount || 0),
+          artifactRefs: Array.isArray(item.artifactRefs) ? item.artifactRefs.map((ref) => String(ref || "").trim()).filter(Boolean) : [],
           userAgent: item.userAgent || "",
           latencyMs: Number(item.latencyMs || 0),
           inputPreview: "",

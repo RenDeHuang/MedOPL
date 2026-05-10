@@ -707,6 +707,7 @@ export function createRuntimeBridgeRuntime() {
           ...activeRuntimeSession,
           runId: run.runId,
           traceId: run.traceId,
+          artifactRefs: (run.artifacts || []).map((artifact) => artifact.artifactRef).filter(Boolean),
           eventType: "runtime_run",
           traceName: "OPL runtime run",
           status: run.status || "recorded",
