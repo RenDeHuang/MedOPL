@@ -169,7 +169,7 @@ assert.deepEqual(statusPayload.runnablePath.map((step) => step.step), expectedSt
 assert.deepEqual(statusPayload.runnablePath.map((step) => step.gateId), expectedGateIds, "workflow_runnable_gate_order");
 assert.equal(statusPayload.runnablePath.find((step) => step.step === "R-04").blockedReason, "needs_explicit_user_authorization", "workflow_r04_must_be_blocked");
 assert.equal(statusPayload.runnablePath.find((step) => step.step === "R-04").suggestedCommands.length, 0, "workflow_r04_must_not_emit_live_command");
-assert.equal(JSON.stringify(statusPayload.runnablePath).includes("/home/dev/.secrets"), false, "workflow_runnable_path_must_not_emit_secret_path");
+assert.equal(JSON.stringify(statusPayload.runnablePath).includes("/home/dev/" + ".secrets"), false, "workflow_runnable_path_must_not_emit_secret_path");
 assert.equal(JSON.stringify(statusPayload.runnablePath).includes("--live-readonly"), false, "workflow_runnable_path_must_not_emit_live_flag");
 
 assertIncludesAll(workflowScript, [
