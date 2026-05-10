@@ -24,37 +24,37 @@ This branch subscribes to:
 
 ## Split Branches
 
-The former mixed branch `feat/v22-cloud-onboarding-connect-cloud` must not be absorbed directly. Its material is split into six reviewable branches:
+The former mixed branch `feat/v22-cloud-onboarding-connect-cloud` must not be absorbed directly. Its material is split into six v2 reviewable branches. The earlier non-v2 split is retained only as source material and must not be used for B absorption.
 
 | order | branch | anchor commit | B absorption role | scope |
 | --- | --- | --- | --- | --- |
-| 1 | `feat/v22-portal-cloud-operation-test-bridge` | `9fabaa1` | first | Portal test-only fake-live cloud operation API bridge |
-| 2 | `contract/v22-cloud-onboarding-runnable-path` | `352d00a` | after 1 | R-00..R-21 runnable path, CC gates, workflow task packet shape |
-| 3 | `feat/v22-tencent-sdk-readonly-connection` | `2b6a631` | after 2 | Tencent official SDK / COS SDK dependency diff and readonly connection loader/client |
-| 4 | `feat/v22-tencent-resource-lifecycle-gates` | `5eb3349` | after 3 | Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof |
-| 5 | `feat/v22-tencent-deploy-execution-gates` | `846a381` | after 4 | Package D TCR/build-push/kubectl deploy/runtime smoke gates |
-| 6 | `docs/v22-cloud-onboarding-absorption-sequence` | B verifies current branch head | after 5 | This absorption sequence, branch scope map, and B verification checklist |
+| 1 | `feat/v22-portal-cloud-operation-test-bridge-v2` | `130ecec` | first | Portal test-only fake-live cloud operation API bridge with explicit non-production env gate |
+| 2 | `contract/v22-cloud-onboarding-runnable-path-v2` | `eb91ab0` | after 1 | R-00..R-21 runnable path, CC gates, workflow task packet shape, and CO-06 phase truth alignment |
+| 3 | `feat/v22-tencent-sdk-readonly-connection-v2` | `131bae2` | after 2 | Tencent official SDK / COS SDK dependency diff and readonly connection loader/client with redacted smoke fixtures |
+| 4 | `feat/v22-tencent-resource-lifecycle-gates-v2` | `7eb91ae` | after 3 | Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof with explicit Package C secret path |
+| 5 | `feat/v22-tencent-deploy-execution-gates-v2` | `36df559` | after 4 | Package D TCR/build-push/kubectl deploy/runtime smoke gates |
+| 6 | `docs/v22-cloud-onboarding-absorption-sequence-v2` | B verifies current branch head | after 5 | This absorption sequence, branch scope map, and B verification checklist |
 
 Required ancestry before B absorbs:
 
-- `recovery/platform-v22-trunk -> feat/v22-portal-cloud-operation-test-bridge` must be ff-only.
-- `feat/v22-portal-cloud-operation-test-bridge -> contract/v22-cloud-onboarding-runnable-path` must be ff-only.
-- `contract/v22-cloud-onboarding-runnable-path -> feat/v22-tencent-sdk-readonly-connection` must be ff-only.
-- `feat/v22-tencent-sdk-readonly-connection -> feat/v22-tencent-resource-lifecycle-gates` must be ff-only.
-- `feat/v22-tencent-resource-lifecycle-gates -> feat/v22-tencent-deploy-execution-gates` must be ff-only.
-- `feat/v22-tencent-deploy-execution-gates -> docs/v22-cloud-onboarding-absorption-sequence` must be ff-only.
+- `recovery/platform-v22-trunk -> feat/v22-portal-cloud-operation-test-bridge-v2` must be ff-only.
+- `feat/v22-portal-cloud-operation-test-bridge-v2 -> contract/v22-cloud-onboarding-runnable-path-v2` must be ff-only.
+- `contract/v22-cloud-onboarding-runnable-path-v2 -> feat/v22-tencent-sdk-readonly-connection-v2` must be ff-only.
+- `feat/v22-tencent-sdk-readonly-connection-v2 -> feat/v22-tencent-resource-lifecycle-gates-v2` must be ff-only.
+- `feat/v22-tencent-resource-lifecycle-gates-v2 -> feat/v22-tencent-deploy-execution-gates-v2` must be ff-only.
+- `feat/v22-tencent-deploy-execution-gates-v2 -> docs/v22-cloud-onboarding-absorption-sequence-v2` must be ff-only.
 
 B must stop if any pair is not `0 1` by `git rev-list --left-right --count <previous>...<next>`, if any worktree is dirty, if any branch includes unrelated surface changes, or if any branch introduces secret material.
 
 ## Branch Scope Boundaries
 
-Branch 1 can be absorbed only as a test-only Portal bridge. It must keep `testOnly=true`, `productionPortalConnected=false`, `runnerMode=fake-live`, and `realCloudCalls=false`. It does not prove production Portal, production queue, production PostgreSQL, or real cloud connectivity.
+Branch 1 can be absorbed only as a test-only Portal bridge. It must keep `testOnly=true`, `productionPortalConnected=false`, `runnerMode=fake-live`, and `realCloudCalls=false`. The route must stay disabled unless `PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1` and `NODE_ENV !== production`; production must force the bridge off. It does not prove production Portal, production queue, production PostgreSQL, or real cloud connectivity.
 
-Branch 2 can be absorbed only as workflow and runnable path contract material. It defines R-00..R-21 and CC gate mapping; it does not run live cloud, install dependencies, create resources, deploy, or push images.
+Branch 2 can be absorbed only as workflow and runnable path contract material. It defines R-00..R-21 and CC gate mapping, and it fixes phase truth so CO-04/CO-05 are done while CO-06 remains `needs-user-authorization`. It does not run live cloud, install dependencies, create resources, deploy, or push images.
 
-Branch 3 can be absorbed only as readonly SDK connection material. It may include reviewed package diff and readonly loader/client shape; it does not authorize mutation APIs, real secret reads, real cloud mutation, or production Portal integration.
+Branch 3 can be absorbed only as readonly SDK connection material. It may include reviewed package diff and readonly loader/client shape; fixtures must not use real cloud key shape or real local secret paths. It does not authorize mutation APIs, real secret reads, real cloud mutation, or production Portal integration.
 
-Branch 4 can be absorbed only as Package C lifecycle gates. Package C covers TKE/COS resource lifecycle gate shape, dry-run, and fake-live local proof. It must not delete, close, or scale someone else's nodes or storage. Real resource mutation remains user-authorized, scoped, tagged, audited, and fail-closed.
+Branch 4 can be absorbed only as Package C lifecycle gates. Package C covers TKE/COS resource lifecycle gate shape, dry-run, and fake-live local proof. It must not scan a default local secret directory; the Package C secret file or directory must be explicit. It must not delete, close, or scale someone else's nodes or storage. Real resource mutation remains user-authorized, scoped, tagged, audited, and fail-closed.
 
 Branch 5 can be absorbed only as Package D deploy gates. Package D covers TCR repository/tag preflight, unique test tag, digest verification, deploy dry-run, authorized rollout shape, runtime smoke, and rollback evidence. Package D does not authorize Package C lifecycle actions, does not create/delete/scale TKE node pools, does not create/delete/empty/expand COS bucket/prefix/object, and forbids `kubectl delete`.
 
@@ -119,37 +119,43 @@ After all six branches are absorbed, the cloud onboarding module is better struc
   "branches": [
     {
       "order": 1,
-      "branch": "feat/v22-portal-cloud-operation-test-bridge",
-      "anchorCommit": "9fabaa1",
+      "branch": "feat/v22-portal-cloud-operation-test-bridge-v2",
+      "anchorCommit": "130ecec",
       "scope": "portal_test_only_fake_live_bridge",
+      "requiresExplicitNonProductionEnvGate": true,
       "productionPortalConnected": false,
       "realCloudCalls": false
     },
     {
       "order": 2,
-      "branch": "contract/v22-cloud-onboarding-runnable-path",
-      "anchorCommit": "352d00a",
+      "branch": "contract/v22-cloud-onboarding-runnable-path-v2",
+      "anchorCommit": "eb91ab0",
       "scope": "runnable_path_and_cc_gates",
+      "co04Status": "done",
+      "co05Status": "done",
+      "co06Status": "needs-user-authorization",
       "runnableSteps": "R-00..R-21"
     },
     {
       "order": 3,
-      "branch": "feat/v22-tencent-sdk-readonly-connection",
-      "anchorCommit": "2b6a631",
+      "branch": "feat/v22-tencent-sdk-readonly-connection-v2",
+      "anchorCommit": "131bae2",
       "scope": "official_sdk_readonly_connection",
+      "redactsSmokeFixtures": true,
       "mutationAllowed": false
     },
     {
       "order": 4,
-      "branch": "feat/v22-tencent-resource-lifecycle-gates",
-      "anchorCommit": "5eb3349",
+      "branch": "feat/v22-tencent-resource-lifecycle-gates-v2",
+      "anchorCommit": "7eb91ae",
       "scope": "package_c_resource_lifecycle_gates",
+      "requiresExplicitSecretPath": true,
       "forbidsUnownedNodeOrStorageMutation": true
     },
     {
       "order": 5,
-      "branch": "feat/v22-tencent-deploy-execution-gates",
-      "anchorCommit": "846a381",
+      "branch": "feat/v22-tencent-deploy-execution-gates-v2",
+      "anchorCommit": "36df559",
       "scope": "package_d_deploy_execution_gates",
       "modifiesTkeNodePool": false,
       "modifiesCosStorage": false,
@@ -157,19 +163,19 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     },
     {
       "order": 6,
-      "branch": "docs/v22-cloud-onboarding-absorption-sequence",
+      "branch": "docs/v22-cloud-onboarding-absorption-sequence-v2",
       "anchorCommit": "B verifies current branch head",
       "scope": "b_absorption_sequence_only",
       "addsRunner": false
     }
   ],
   "ffOnlyPairs": [
-    ["recovery/platform-v22-trunk", "feat/v22-portal-cloud-operation-test-bridge"],
-    ["feat/v22-portal-cloud-operation-test-bridge", "contract/v22-cloud-onboarding-runnable-path"],
-    ["contract/v22-cloud-onboarding-runnable-path", "feat/v22-tencent-sdk-readonly-connection"],
-    ["feat/v22-tencent-sdk-readonly-connection", "feat/v22-tencent-resource-lifecycle-gates"],
-    ["feat/v22-tencent-resource-lifecycle-gates", "feat/v22-tencent-deploy-execution-gates"],
-    ["feat/v22-tencent-deploy-execution-gates", "docs/v22-cloud-onboarding-absorption-sequence"]
+    ["recovery/platform-v22-trunk", "feat/v22-portal-cloud-operation-test-bridge-v2"],
+    ["feat/v22-portal-cloud-operation-test-bridge-v2", "contract/v22-cloud-onboarding-runnable-path-v2"],
+    ["contract/v22-cloud-onboarding-runnable-path-v2", "feat/v22-tencent-sdk-readonly-connection-v2"],
+    ["feat/v22-tencent-sdk-readonly-connection-v2", "feat/v22-tencent-resource-lifecycle-gates-v2"],
+    ["feat/v22-tencent-resource-lifecycle-gates-v2", "feat/v22-tencent-deploy-execution-gates-v2"],
+    ["feat/v22-tencent-deploy-execution-gates-v2", "docs/v22-cloud-onboarding-absorption-sequence-v2"]
   ],
   "productionGaps": [
     "production_portal_queue_postgresql_canonical_store",

@@ -50,28 +50,28 @@ assertIncludesAll(sequence, [
 assertIncludesAll(sequence, [
   "feat/v22-cloud-onboarding-connect-cloud",
   "must not be absorbed directly",
-  "feat/v22-portal-cloud-operation-test-bridge",
-  "contract/v22-cloud-onboarding-runnable-path",
-  "feat/v22-tencent-sdk-readonly-connection",
-  "feat/v22-tencent-resource-lifecycle-gates",
-  "feat/v22-tencent-deploy-execution-gates",
-  "docs/v22-cloud-onboarding-absorption-sequence",
+  "feat/v22-portal-cloud-operation-test-bridge-v2",
+  "contract/v22-cloud-onboarding-runnable-path-v2",
+  "feat/v22-tencent-sdk-readonly-connection-v2",
+  "feat/v22-tencent-resource-lifecycle-gates-v2",
+  "feat/v22-tencent-deploy-execution-gates-v2",
+  "docs/v22-cloud-onboarding-absorption-sequence-v2",
 ], "sequence_branch_names");
 
 assertIncludesAll(sequence, [
-  "`9fabaa1`",
-  "`352d00a`",
-  "`2b6a631`",
-  "`5eb3349`",
-  "`846a381`",
+  "`130ecec`",
+  "`eb91ab0`",
+  "`131bae2`",
+  "`7eb91ae`",
+  "`36df559`",
   "B verifies current branch head",
 ], "sequence_commits");
 
 assertIncludesAll(sequence, [
-  "Portal test-only fake-live cloud operation API bridge",
-  "R-00..R-21 runnable path, CC gates, workflow task packet shape",
-  "Tencent official SDK / COS SDK dependency diff and readonly connection loader/client",
-  "Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof",
+  "Portal test-only fake-live cloud operation API bridge with explicit non-production env gate",
+  "R-00..R-21 runnable path, CC gates, workflow task packet shape, and CO-06 phase truth alignment",
+  "Tencent official SDK / COS SDK dependency diff and readonly connection loader/client with redacted smoke fixtures",
+  "Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof with explicit Package C secret path",
   "Package D TCR/build-push/kubectl deploy/runtime smoke gates",
   "This absorption sequence, branch scope map, and B verification checklist",
 ], "sequence_branch_scopes");
@@ -81,6 +81,9 @@ assertIncludesAll(sequence, [
   "productionPortalConnected=false",
   "runnerMode=fake-live",
   "realCloudCalls=false",
+  "PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1",
+  "CO-06 remains `needs-user-authorization`",
+  "must not scan a default local secret directory",
   "does not prove production Portal",
   "does not authorize mutation APIs",
   "Real resource mutation remains user-authorized",
@@ -132,18 +135,24 @@ assert.equal(data.runsDependencyInstallNow, false, "sequence_must_not_install_de
 assert.equal(data.authorizesRealMutationNow, false, "sequence_must_not_authorize_mutation");
 assert.deepEqual(data.branches.map((branch) => branch.order), [1, 2, 3, 4, 5, 6], "sequence_branch_order");
 assert.deepEqual(data.branches.map((branch) => branch.branch), [
-  "feat/v22-portal-cloud-operation-test-bridge",
-  "contract/v22-cloud-onboarding-runnable-path",
-  "feat/v22-tencent-sdk-readonly-connection",
-  "feat/v22-tencent-resource-lifecycle-gates",
-  "feat/v22-tencent-deploy-execution-gates",
-  "docs/v22-cloud-onboarding-absorption-sequence",
+  "feat/v22-portal-cloud-operation-test-bridge-v2",
+  "contract/v22-cloud-onboarding-runnable-path-v2",
+  "feat/v22-tencent-sdk-readonly-connection-v2",
+  "feat/v22-tencent-resource-lifecycle-gates-v2",
+  "feat/v22-tencent-deploy-execution-gates-v2",
+  "docs/v22-cloud-onboarding-absorption-sequence-v2",
 ], "sequence_branch_list");
 
 const branchByOrder = Object.fromEntries(data.branches.map((branch) => [branch.order, branch]));
+assert.equal(branchByOrder[1].requiresExplicitNonProductionEnvGate, true, "branch1_must_require_non_production_gate");
 assert.equal(branchByOrder[1].productionPortalConnected, false, "branch1_must_not_claim_production_portal");
 assert.equal(branchByOrder[1].realCloudCalls, false, "branch1_must_not_call_cloud");
+assert.equal(branchByOrder[2].co04Status, "done", "branch2_co04_done");
+assert.equal(branchByOrder[2].co05Status, "done", "branch2_co05_done");
+assert.equal(branchByOrder[2].co06Status, "needs-user-authorization", "branch2_co06_needs_auth");
+assert.equal(branchByOrder[3].redactsSmokeFixtures, true, "branch3_must_redact_fixtures");
 assert.equal(branchByOrder[3].mutationAllowed, false, "branch3_must_not_allow_mutation");
+assert.equal(branchByOrder[4].requiresExplicitSecretPath, true, "branch4_must_require_explicit_secret_path");
 assert.equal(branchByOrder[4].forbidsUnownedNodeOrStorageMutation, true, "branch4_must_forbid_unowned_mutation");
 assert.equal(branchByOrder[5].modifiesTkeNodePool, false, "branch5_must_not_modify_tke_node_pool");
 assert.equal(branchByOrder[5].modifiesCosStorage, false, "branch5_must_not_modify_cos");
@@ -151,12 +160,12 @@ assert.equal(branchByOrder[5].forbidsKubectlDelete, true, "branch5_must_forbid_k
 assert.equal(branchByOrder[6].addsRunner, false, "branch6_must_not_add_runner");
 
 assert.deepEqual(data.ffOnlyPairs, [
-  ["recovery/platform-v22-trunk", "feat/v22-portal-cloud-operation-test-bridge"],
-  ["feat/v22-portal-cloud-operation-test-bridge", "contract/v22-cloud-onboarding-runnable-path"],
-  ["contract/v22-cloud-onboarding-runnable-path", "feat/v22-tencent-sdk-readonly-connection"],
-  ["feat/v22-tencent-sdk-readonly-connection", "feat/v22-tencent-resource-lifecycle-gates"],
-  ["feat/v22-tencent-resource-lifecycle-gates", "feat/v22-tencent-deploy-execution-gates"],
-  ["feat/v22-tencent-deploy-execution-gates", "docs/v22-cloud-onboarding-absorption-sequence"],
+  ["recovery/platform-v22-trunk", "feat/v22-portal-cloud-operation-test-bridge-v2"],
+  ["feat/v22-portal-cloud-operation-test-bridge-v2", "contract/v22-cloud-onboarding-runnable-path-v2"],
+  ["contract/v22-cloud-onboarding-runnable-path-v2", "feat/v22-tencent-sdk-readonly-connection-v2"],
+  ["feat/v22-tencent-sdk-readonly-connection-v2", "feat/v22-tencent-resource-lifecycle-gates-v2"],
+  ["feat/v22-tencent-resource-lifecycle-gates-v2", "feat/v22-tencent-deploy-execution-gates-v2"],
+  ["feat/v22-tencent-deploy-execution-gates-v2", "docs/v22-cloud-onboarding-absorption-sequence-v2"],
 ], "sequence_ff_only_pairs");
 
 assert.deepEqual(data.productionGaps, [
