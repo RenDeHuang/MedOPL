@@ -20,6 +20,7 @@
 - readonly/tencent quote provider mock boundary
 - Portal frontend MVP UI
 - Portal structure/failure isolation governance contract
+- Portal-OPL connection boundary contract
 - OPL entry/preflight auth flow
 - OPL work message/file/run flow
 - Runtime Bridge session/run/file/providerKeyRef flow
@@ -94,6 +95,7 @@
 - `scripts/smoke-test-v22-managed-environment-open-flow.mjs`
 - `scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`
 - `scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs`
+- `scripts/smoke-test-v22-portal-opl-connection-contract.mjs`
 - `scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
 - `scripts/smoke-test-v22-portal-runtime-startup-config.mjs`
 - `scripts/smoke-test-v22-portal-dev-server-auth-proxy.mjs`

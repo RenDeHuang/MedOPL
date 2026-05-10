@@ -1,0 +1,201 @@
+# v22 Portal-OPL Connection Boundary Contract
+
+本合同定义 MedOPL v22 中 Portal 与 clean upstream OPL Web 的连接闭环。它只定义 Portal、OPL Web Gateway、Portal OPL Adapter / Runtime Agent 之间的边界，不修改 one-person-lab upstream，不 import upstream 内部模块，不读取 secret，不调用真实云 API，不运行 build/push/kubectl/live-test。
+
+## Product Truth
+
+MedOPL 的 OPL 连接闭环不是“能打开 OPL 页面”就完成。闭环必须是：
+
+1. Portal 发起进入 OPL。
+2. Gateway 打开 clean upstream OPL。
+3. OPL 获取 MedOPL 公开上下文。
+4. OPL session 绑定到 Portal 用户、tenant、workspace 和 runtime session。
+5. OPL 发消息、上传文件或发起 run。
+6. Runtime Agent 生成 run record、artifact reference、trace metadata 和 billing metadata。
+7. Portal 按 workspace/session/run 展示文件、账单和运行轨迹。
+
+one-person-lab upstream 只能作为 clean upstream 工作台。Portal 账号、密钥、资源绑定、计费、审计、trace 和腾讯云逻辑不得写进 upstream。
+
+## Required Interfaces
+
+Portal-OPL 连接闭环至少需要以下接口。路径名称表达合同角色；实现可以保留内部旧路径，但用户入口、合同入口和后续新实现必须收敛到这些边界。
+
+```text
+POST /portal/api/opl/launch
+GET /portal-adapter/api/opl/bootstrap
+POST /portal-adapter/api/opl/sessions/bind
+POST /portal-adapter/api/opl/messages
+POST /portal-adapter/api/opl/files
+POST /portal-adapter/api/opl/runs
+GET /portal-adapter/api/opl/runs/{runId}/status
+GET /portal-adapter/api/opl/artifacts/{artifactRef}
+```
+
+现有 Runtime Bridge `/api/opl-launch/*` 可以作为当前实现路径，但它必须语义映射到 Portal OPL Adapter / Runtime Agent 边界。旧 `/api/runtime-sessions` 和 `/api/runtime-sessions/{id}/runs` 不得成为 v22 新主路径。
+
+## Identity And Ownership Fields
+
+Portal-OPL 连接闭环中的公开或后端归属对象必须能表达：
+
+- `portalUserId`
+- `tenantId`
+- `workspaceId`
+- `workspaceSessionId`
+- `oplSessionId`
+- `runtimeSessionId`
+- `resourceBindingId`
+- `runId`
+- `traceId`
+- `providerKeyRef`
+- `providerBound`
+- `artifactRef`
+
+这些字段的用户可见性不同：普通用户界面可以讲“工作空间、任务、文件、运行轨迹”，但 `tenantId`、`resourceBindingId`、内部 trace / billing tags 只属于后台隔离、计费、审计和运维边界。
+
+## Workspace Binding Is Required
+
+workspace 绑定是必需项，不是可选装饰字段。原因是：
+
+- 文件归属：输入文件、输出文件、artifact reference 必须归属到 workspace。
+- 运行归属：runId 必须归属到 workspace、runtimeSession 和 resourceBinding。
+- 计费归属：usage、preauth、freeze、cost summary 必须挂到 billing account 和 workspace。
+- 审计归属：trace、release、T+1 audit 必须能回到 tenant、workspace 和 resourceBinding。
+- 隔离归属：不同用户、tenant 和 workspace 的 OPL session、文件和 run 不得串读。
+
+没有 workspaceId 的 OPL session 或 run 必须失败，不能隐式落到 default workspace 或 legacy task-space。缺少 workspaceId 时应返回稳定错误，例如 `workspace_required`；缺少 active resource binding 时 run 必须失败。
+
+## Launch And Bootstrap
+
+`POST /portal/api/opl/launch` 由 Portal 发起。它必须检查 Portal session、workspace、provider binding、managed environment / resource binding 状态，并创建服务端 launch session。
+
+Portal launch response 可以返回：
+
+- `ok`
+- `launchId`
+- `openUrl`
+- `launchStatus`
+- `workspaceId`
+- `providerBound`
+- `providerKeyRef`
+
+Portal launch response 不得返回 raw API key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 或 provider secret。
+
+`GET /portal-adapter/api/opl/bootstrap` 由 Gateway / OPL 通过 httpOnly cookie 或服务端 launch session 获取公开上下文。bootstrap 只允许包含公开上下文：
+
+- `portalUserId`
+- `tenantId`
+- `workspaceId`
+- `workspaceSessionId`
+- `runtimeSessionId`
+- `oplSessionId`
+- `providerBound`
+- `providerKeyRef`
+- `canStartRun`
+- `launchStatus`
+- Portal return URL
+
+bootstrap 不含 raw key、token 或内部存储路径。
+
+## Token And Secret Boundary
+
+launchToken/runtimeToken 只能保存在 httpOnly cookie 或服务端 launch session，不得暴露给 OPL/browser public state。
+
+必须满足：
+
+- launchToken/runtimeToken 不得进入 URL query。
+- launchToken/runtimeToken 不得进入 localStorage/sessionStorage。
+- raw gflabtoken API key 不得进入 upstream、browser public state、response、log、evidence 或 git。
+- OPL/browser public state 不得持有 raw API key、bearer token、objectKey、localPath、signedUrl。
+- Gateway 必须拒绝 URL query 中的 apiKey、providerApiKey、launchToken、runtimeToken 或 bearer token 类字段。
+- Runtime Agent 只能接收 `providerKeyRef`，不得接收 raw API key。
+
+## Session Binding
+
+`POST /portal-adapter/api/opl/sessions/bind` 用于把 upstream OPL 的 session 与 MedOPL launch context 绑定。
+
+请求可以包含：
+
+- `oplSessionId`
+- `clientSessionState`
+- message / run capability hints
+
+请求不得要求 OPL 回传 raw API key。直接访问 `opl.medopl.cn` 时，账号密码和 gflabtoken API Key 只在 entry/preflight 边界处理；Portal 发起进入 OPL 时复用 Portal session / launch session。
+
+session bind 成功后，平台必须能得到以下关系：
+
+```text
+portalUserId + tenantId + workspaceId + workspaceSessionId + runtimeSessionId + resourceBindingId + oplSessionId
+```
+
+## Messages, Files, Runs
+
+OPL 工作流通过 Portal OPL Adapter / Runtime Agent 边界接入：
+
+- `POST /portal-adapter/api/opl/messages` 记录 OPL message metadata，不保存 raw prompt 到公开 trace。
+- `POST /portal-adapter/api/opl/files` 生成 workspace file reference，不返回 objectKey、localPath、signedUrl。
+- `POST /portal-adapter/api/opl/runs` 使用 workspace file reference 发起 run。
+
+run 必须执行以下 gate：
+
+- 未绑定 gflabtoken provider key 时，run 返回 `provider_key_required`。
+- 未开通托管运行环境或缺少 active `resourceBindingId` 时，run 返回 `managed_environment_required`。
+- 缺少 Runtime Agent identity 或 endpoint 时，run 返回 `platform_isolated_runtime_agent_required`。
+- Runtime Agent 只能接收 `providerKeyRef`，不得接收 raw API key。
+
+run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeSessionId`、`resourceBindingId`、`providerKeyRef`、artifact refs 和 sanitized usage/cost summary 写回 Portal 可投影状态。
+
+## Artifact And Portal Projection
+
+输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。
+
+公开 artifact / output file projection 只允许包含：
+
+- `artifactRef`
+- `outputFileRef`
+- `runId`
+- `sessionId`
+- `workspaceId`
+- `resourceBindingId`
+- `providerKeyRef`
+- `kind`
+- `name`
+- `relativePath`
+- `sizeBytes`
+- `contentType`
+- sanitized status / timestamps
+
+不得包含 objectKey、storageKey、localPath、signedUrl、presignedUrl、raw API key、launchToken、runtimeToken 或 bearer token。
+
+## Acceptance
+
+本合同的闭环验收点：
+
+1. Portal 点击“进入 OPL 工作台”后打开 clean upstream OPL。
+2. bootstrap 不含 raw key、token 或内部存储路径。
+3. OPL session 绑定到 `portalUserId`、`tenantId`、`workspaceId`、`runtimeSessionId` 和 `resourceBindingId`。
+4. 未绑定 gflabtoken 时不能 start run，返回 `provider_key_required`。
+5. 未开通 runtime / resourceBinding 时不能 start run，返回 `managed_environment_required`。
+6. start run 后平台生成 `runId`。
+7. 输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。
+8. Portal 能按 workspace、session 和 run 看到任务、文件、trace 和账单状态。
+
+## Non-goals
+
+- 不修改 one-person-lab upstream。
+- 不 import upstream 内部模块。
+- 不接真实云资源开通。
+- 不读取 secret、kubeconfig、SecretId、SecretKey、SSH private key 或 `.env`。
+- 不调用真实腾讯云、COS、Langfuse、one-person-lab 或外部生产 API。
+- 不运行 build/push/kubectl/live-test。
+- 不修改 deploy、`.sentrux` 或 `adapters`。
+- 不把 `user_owned`、旧 resource-order、旧 runner/provisioner、OpenCost 或 Langfuse 主叙事恢复成 v22 主路径。
+
+## Smoke
+
+本合同由本地 smoke 固化：
+
+```text
+node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
+```
+
+该 smoke 只检查 repo-tracked 合同、索引和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。

@@ -7,7 +7,7 @@
 用户主路径是：
 
 - 用户从 `opl.medopl.cn` 进入 OPL 科研工作台。
-- OPL Web 使用 Portal 签发的 launch token 拉取 bootstrap。
+- OPL Web 通过 httpOnly cookie 或服务端 launch session 拉取 bootstrap；launch token 不得进入 URL query、localStorage、sessionStorage 或 browser public state。
 - OPL Web 绑定工作台 session，并只把 provider 绑定结果传成 `providerKeyRef`。
 - OPL Web 用 workspace file reference 发起 Runtime Bridge run。
 - Runtime Bridge 返回 run record 和公开 artifact reference。
@@ -45,7 +45,7 @@ OPL session 绑定必须满足：
 
 `POST /api/opl-launch/runs` 必须满足：
 
-- 请求必须携带有效 launch token，并命中同一个 `runtimeSessionId`。
+- 请求必须通过 httpOnly cookie 或服务端 launch session 完成授权，并命中同一个 `runtimeSessionId`；launch token 不得通过 URL query 传递。
 - run 只接受 `mode=full_runtime`。
 - 缺少 `resourceBindingId`、`computeInstanceId` 或 `storageBucketId` 时返回 `RESOURCE_BINDING_REQUIRED`。
 - 缺少 Runtime Agent identity/endpoint 时返回 `PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED`。
