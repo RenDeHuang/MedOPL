@@ -480,7 +480,7 @@ assert.equal(/\.Create|\.Delete|\.Modify|\.Run|\.Terminate|\.Put|\.Update|\.Atta
 const contract = await readFile(contractPath, "utf8");
 for (const phrase of [
   "Live Readonly Authorization Note",
-  "live readonly 只允许读取 `/home/dev/.secrets/medopl/tencent-readonly-inventory.env`",
+  "live readonly 只允许读取用户当前会话明确授权的 git 外 readonly inventory secret 文件",
   "只允许读取 `TENCENT_READONLY_*` allowlist key",
   "必须要求 `RUN_TENCENT_READONLY_INVENTORY=1`",
   "只允许调用 check-config 已通过的 Describe/List/Get/Head 类 API",

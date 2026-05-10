@@ -79,6 +79,8 @@ const expectedApiMap = {
   },
 };
 
+const fixtureSecretId = "secret-id-proof";
+
 function assertNotContainsForbidden(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
   const forbidden = [
@@ -235,7 +237,7 @@ function createFakeFetch({ failAction = "", failMode = "" } = {}) {
     calls.push({ url, method: options.method, headers, body });
     assert(expected, `tc3_action_must_be_whitelisted:${action}`);
     assert.equal(options.method, "POST", `tc3_method:${action}`);
-    assert(headers.authorization?.startsWith("TC3-HMAC-SHA256 Credential=AKIDEXAMPLE/"), `tc3_authorization:${action}`);
+    assert(headers.authorization?.startsWith(`TC3-HMAC-SHA256 Credential=${fixtureSecretId}/`), `tc3_authorization:${action}`);
     assert.equal(headers.authorization.includes("secret-key-proof"), false, `authorization_must_not_contain_secret_key:${action}`);
     assert.equal(headers.authorization.includes("token-proof"), false, `authorization_must_not_contain_token:${action}`);
     assert.equal(typeof headers["x-tc-timestamp"], "string", `tc3_timestamp:${action}`);
@@ -300,7 +302,7 @@ assert.equal("sdk" in tc3Modules, false, "tc3_modules_must_not_expose_sdk");
 
 const sdkFactory = createTencentReadonlyInventoryTencentSdkFactory({ sdkModules: tc3Modules });
 const sdk = sdkFactory({
-  credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof", token: "token-proof" },
+  credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof", token: "token-proof" },
   accountId: "tencent-account-1234567890",
   allowedApis,
   regions: ["ap-guangzhou", "ap-shanghai"],
@@ -321,7 +323,7 @@ for (const key of Object.keys(sdk)) {
 
 const client = createTencentReadonlyInventoryRealSdkClient({
   sdkFactory,
-  credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof", token: "token-proof" },
+  credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof", token: "token-proof" },
   accountId: "tencent-account-1234567890",
   allowedApis,
   regions: ["ap-guangzhou", "ap-shanghai"],
@@ -382,7 +384,7 @@ assert.throws(
 );
 assert.throws(
   () => sdkFactory({
-    credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof" },
+    credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof" },
     accountId: "tencent-account-1234567890",
     allowedApis: [],
     regions: ["ap-guangzhou"],
@@ -392,7 +394,7 @@ assert.throws(
 );
 assert.throws(
   () => sdkFactory({
-    credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof" },
+    credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof" },
     accountId: "tencent-account-1234567890",
     allowedApis: ["DescribeAccount", "DeleteObject"],
     regions: ["ap-guangzhou"],
@@ -405,7 +407,7 @@ const permissionClient = createTencentReadonlyInventoryRealSdkClient({
   sdkFactory: createTencentReadonlyInventoryTencentSdkFactory({
     sdkModules: createTencentReadonlyInventoryTc3Modules({ fetchImpl: createFakeFetch({ failAction: "DescribeInstances", failMode: "permission" }), now: () => 1700000000 }),
   }),
-  credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof", token: "token-proof" },
+  credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof", token: "token-proof" },
   accountId: "tencent-account-1234567890",
   allowedApis,
   regions: ["ap-guangzhou"],
@@ -423,7 +425,7 @@ const rateClient = createTencentReadonlyInventoryRealSdkClient({
   sdkFactory: createTencentReadonlyInventoryTencentSdkFactory({
     sdkModules: createTencentReadonlyInventoryTc3Modules({ fetchImpl: createFakeFetch({ failAction: "DescribeBillSummary", failMode: "rate" }), now: () => 1700000000 }),
   }),
-  credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof", token: "token-proof" },
+  credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof", token: "token-proof" },
   accountId: "tencent-account-1234567890",
   allowedApis,
   regions: ["ap-shanghai"],
@@ -441,7 +443,7 @@ const networkClient = createTencentReadonlyInventoryRealSdkClient({
   sdkFactory: createTencentReadonlyInventoryTencentSdkFactory({
     sdkModules: createTencentReadonlyInventoryTc3Modules({ fetchImpl: createFakeFetch({ failAction: "DescribeInstances", failMode: "network" }), now: () => 1700000000 }),
   }),
-  credentials: { SecretId: "AKIDEXAMPLE", SecretKey: "secret-key-proof", token: "token-proof" },
+  credentials: { SecretId: fixtureSecretId, SecretKey: "secret-key-proof", token: "token-proof" },
   accountId: "tencent-account-1234567890",
   allowedApis,
   regions: ["ap-guangzhou"],
@@ -470,7 +472,7 @@ function runRunner(args, expectedStatus = 0) {
 
 const goodSecretText = [
   "RUN_TENCENT_READONLY_INVENTORY=1",
-  "TENCENT_READONLY_SECRET_ID=AKIDEXAMPLE",
+  `TENCENT_READONLY_SECRET_ID=${fixtureSecretId}`,
   "TENCENT_READONLY_SECRET_KEY=secret-key-proof",
   "TENCENT_READONLY_REGIONS=ap-guangzhou,ap-shanghai",
   `TENCENT_READONLY_ALLOWED_APIS=${allowedApis.join(",")}`,

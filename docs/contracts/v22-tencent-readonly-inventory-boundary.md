@@ -28,10 +28,10 @@ inventory 结果只能进入管理员 / 运维审计和后续授权评估，不�
 
 ## Secret 文件模型
 
-允许未来使用单一 secret 文件：
+允许未来使用 git 外 readonly inventory allowlist secret 文件：
 
 ```text
-/home/dev/.secrets/medopl/secrets.env.txt
+<git-outside-readonly-inventory-secret-file>
 ```
 
 但 secret 读取必须是 allowlist_only，不允许“一读全读”。readonly inventory 阶段只允许读取以下 key：
@@ -56,7 +56,7 @@ inventory 结果只能进入管理员 / 运维审计和后续授权评估，不�
 - raw API Key
 - 任何非 readonly inventory allowlist 的 key
 
-当前分支的默认 smoke 不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不验证该文件是否存在，不打印 secret 路径内容。任何真实 readonly live 必须单独授权，并且只允许读取 readonly allowlist key。
+当前分支的默认 smoke 不读取真实 secret 文件，不验证真实 secret 文件是否存在，不打印 secret 路径内容。任何真实 readonly live 必须单独授权，并且只允许读取 readonly allowlist key。
 
 ## API allowlist
 
@@ -154,7 +154,7 @@ inventory 通过不能直接触发删除或释放；它只为 authorized create/
 
 ## 当前分支 Non-Goals
 
-- 不读取 /home/dev/.secrets/medopl/secrets.env.txt。
+- 不读取真实 secret 文件。
 - 不调用真实腾讯云/COS/TKE/CVM/账单 API。
 - 不创建、删除、释放、扩缩容、改标签、改权限。
 - 不真实扣费。
@@ -226,7 +226,7 @@ cleanup 策略：
 
 ## Live Readonly Authorization Note
 
-live readonly 只允许读取 `/home/dev/.secrets/medopl/tencent-readonly-inventory.env`，且只允许读取 `TENCENT_READONLY_*` allowlist key。必须要求 `RUN_TENCENT_READONLY_INVENTORY=1`，并且只允许调用 check-config 已通过的 Describe/List/Get/Head 类 API。
+live readonly 只允许读取用户当前会话明确授权的 git 外 readonly inventory secret 文件，且只允许读取 `TENCENT_READONLY_*` allowlist key。必须要求 `RUN_TENCENT_READONLY_INVENTORY=1`，并且只允许调用 check-config 已通过的 Describe/List/Get/Head 类 API。
 
 禁止 Create/Delete/Modify/Run/Terminate/Put/Update/Attach/Detach/Tag mutation。输出只能写 `.runtime/v22-tencent-readonly-inventory/*.json`，stdout 只打印脱敏摘要；不写 git，不写 docs，不贴 raw response。
 
@@ -287,7 +287,7 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
     "doesNotAuthorizeMutation": true
   },
   "futureSecretFileAllowed": true,
-  "futureSecretFile": "/home/dev/.secrets/medopl/secrets.env.txt",
+  "futureSecretFile": "<git-outside-readonly-inventory-secret-file>",
   "secretLoadMode": "allowlist_only",
   "forbidsReadAllSecretFile": true,
   "allowedReadonlySecretKeys": [

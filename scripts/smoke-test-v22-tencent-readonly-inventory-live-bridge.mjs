@@ -58,6 +58,8 @@ const expectedApiMap = {
   },
 };
 
+const fixtureSecretId = "secret-id-proof";
+
 function assertNotContainsForbidden(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
   const forbidden = [
@@ -218,7 +220,7 @@ function createFakeGlobalFetch() {
     assert.equal(url, `https://${expected.endpoint}`, `live_bridge_endpoint:${action}`);
     assert.equal(headers.host, expected.endpoint, `live_bridge_host:${action}`);
     assert.equal(headers["x-tc-version"], expected.version, `live_bridge_version:${action}`);
-    assert(headers.authorization?.startsWith("TC3-HMAC-SHA256 Credential=AKIDEXAMPLE/"), `live_bridge_authorization_shape:${action}`);
+    assert(headers.authorization?.startsWith(`TC3-HMAC-SHA256 Credential=${fixtureSecretId}/`), `live_bridge_authorization_shape:${action}`);
     assert.equal(headers.authorization.includes("secret-key-proof"), false, `live_bridge_authorization_no_secret_key:${action}`);
     assert.equal(headers.authorization.includes("token-proof"), false, `live_bridge_authorization_no_token:${action}`);
     assert.equal("SemanticApi" in body, false, `live_bridge_body_no_internal_semantic_api:${action}`);
@@ -242,7 +244,7 @@ async function writeSecretFixture(dir, name, content) {
 
 const goodSecretText = [
   "RUN_TENCENT_READONLY_INVENTORY=1",
-  "TENCENT_READONLY_SECRET_ID=AKIDEXAMPLE",
+  `TENCENT_READONLY_SECRET_ID=${fixtureSecretId}`,
   "TENCENT_READONLY_SECRET_KEY=secret-key-proof",
   "TENCENT_READONLY_REGIONS=ap-guangzhou,ap-shanghai",
   `TENCENT_READONLY_ALLOWED_APIS=${allowedApis.join(",")}`,

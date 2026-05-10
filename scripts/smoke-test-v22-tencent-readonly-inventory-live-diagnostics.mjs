@@ -19,9 +19,11 @@ const allowedApis = [
   "DescribeTagResources",
 ];
 
+const fixtureSecretId = "secret-id-proof";
+
 const goodSecretText = [
   "RUN_TENCENT_READONLY_INVENTORY=1",
-  "TENCENT_READONLY_SECRET_ID=AKIDEXAMPLE",
+  `TENCENT_READONLY_SECRET_ID=${fixtureSecretId}`,
   "TENCENT_READONLY_SECRET_KEY=secret-key-proof",
   "TENCENT_READONLY_REGIONS=ap-guangzhou,ap-shanghai",
   `TENCENT_READONLY_ALLOWED_APIS=${allowedApis.join(",")}`,

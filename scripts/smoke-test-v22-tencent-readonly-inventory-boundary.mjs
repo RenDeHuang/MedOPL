@@ -56,7 +56,8 @@ assertIncludesAll(contract, [
 ], "contract_purpose");
 
 assertIncludesAll(contract, [
-  "/home/dev/.secrets/medopl/secrets.env.txt",
+  "<git-outside-readonly-inventory-secret-file>",
+  "当前分支的默认 smoke 不读取真实 secret 文件",
   "allowlist_only",
   "不允许“一读全读”",
   "RUN_TENCENT_READONLY_INVENTORY",
