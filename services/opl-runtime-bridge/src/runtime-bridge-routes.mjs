@@ -129,6 +129,20 @@ function emptyText(value = "") {
   return String(value ?? "");
 }
 
+function publicMetadataRef(value = "") {
+  const ref = emptyText(value).trim();
+  if (!ref || ref.length > 128) return "";
+  if (/[\\/]/.test(ref) || /^https?:/i.test(ref)) return "";
+  return /^[a-zA-Z0-9._:-]+$/.test(ref) ? ref : "";
+}
+
+function runtimeRunMetadataRefs(run = {}) {
+  return {
+    billingMetadataRef: publicMetadataRef(run.billingMetadataRef || run.billing_metadata_ref),
+    usageMetadataRef: publicMetadataRef(run.usageMetadataRef || run.usage_metadata_ref),
+  };
+}
+
 function messageReplyFor(state = {}, messageId = "") {
   return (state.messageReplies || []).find((item) => item.messageId === messageId) || null;
 }
@@ -826,6 +840,7 @@ export function createRuntimeBridgeRuntime() {
           ...activeRuntimeSession,
           runId: run.runId,
           traceId: run.traceId,
+          ...runtimeRunMetadataRefs(run),
           artifactRefs: (run.artifacts || []).map((artifact) => artifact.artifactRef).filter(Boolean),
           eventType: "runtime_run",
           traceName: "OPL runtime run",

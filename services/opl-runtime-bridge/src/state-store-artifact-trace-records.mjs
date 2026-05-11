@@ -54,6 +54,8 @@ export function buildTraceRecord(input = {}) {
     providerInvocationRef: input.providerInvocationRef || input.provider_invocation_ref || "",
     capabilitySource: input.capabilitySource || input.capability_source || "",
     artifactRefs: Array.isArray(input.artifactRefs) ? input.artifactRefs.map((item) => String(item || "").trim()).filter(Boolean) : [],
+    billingMetadataRef: input.billingMetadataRef || input.billing_metadata_ref || "",
+    usageMetadataRef: input.usageMetadataRef || input.usage_metadata_ref || "",
     latencyMs: Number(input.latencyMs || input.latency_ms || 0),
     model: input.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),

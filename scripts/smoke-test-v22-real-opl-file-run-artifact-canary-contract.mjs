@@ -52,6 +52,7 @@ assertAllIncluded(contract, [
   "Trace Projection Gate",
   "Portal Projection Gate",
   "Billing Metadata Boundary",
+  "Production Runtime Agent Binding",
   "Langfuse Attachment Boundary",
   "Canary Evidence Boundary",
   "Productionization Handoff",
@@ -92,6 +93,9 @@ assertAllIncluded(contract, [
   "outputFileRef",
   "billingMetadataRef",
   "usageMetadataRef",
+  "ownerRef",
+  "operationId",
+  "K8s labels",
 ], "identity_map");
 
 assertAllIncluded(contract, [
@@ -117,6 +121,9 @@ assertAllIncluded(contract, [
 assertAllIncluded(contract, [
   "云服务/COS 是真实账单与存储事实源",
   "OPL 分支只传 `billingMetadataRef`、`usageMetadataRef` 或 `resourceBindingId`",
+  "OPL lane 只产出运行身份与 run/artifact projection",
+  "resourceBindingId/workspace runtime identity",
+  "不提供 `ownerRef`、`operationId` 或 K8s labels",
   "不能声称真实 billing/cost 已闭环",
   "Langfuse is an optional sanitized observability attachment",
   "trace.medopl.cn",
@@ -156,8 +163,10 @@ assertAllIncluded(flow, [
 assertAllIncluded(flow, [
   "Portal launch -> Gateway -> clean OPL WebUI -> Adapter -> file intent -> workspace-scoped fileRef -> run intent -> Runtime Agent gate -> runId/status/traceId -> artifactRef or outputFileRef -> Portal projection",
   "Runtime Agent HTTP API relay full-loop",
+  "Production Runtime Agent binding",
   "node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs",
   "不使用 `local-fake-runtime-agent-relay`",
+  "OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels",
   "file_ref_not_observed",
   "workspace_file_scope_missing",
   "requires_runtime_agent",

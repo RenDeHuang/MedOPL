@@ -219,6 +219,8 @@ export function createOplAdapterClient({
           inputPreview: "",
           startedAt: formatDateTime(item.createdAt || ""),
           status: item.status || "recorded",
+          billingMetadataRef: item.billingMetadataRef || "",
+          usageMetadataRef: item.usageMetadataRef || "",
           url: "",
           source: "portal_opl_adapter",
           runActions: actions.filter((action) => action.runId === item.runId),

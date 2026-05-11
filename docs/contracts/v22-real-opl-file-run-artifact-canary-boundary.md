@@ -165,6 +165,9 @@ Portal launch
 | `outputFileRef` | Portal / Runtime Bridge | 输出文件 public reference |
 | `billingMetadataRef` | Runtime Bridge / Portal billing projection | 账单元数据引用，不是账单事实本身 |
 | `usageMetadataRef` | Runtime Bridge / Portal billing projection | 用量元数据引用，不是云账单本身 |
+| `ownerRef` | Package D / deploy lane | Kubernetes/deploy owner reference，不由 OPL lane 生成或解释 |
+| `operationId` | Package D / cloud operation lane | 部署或云操作执行 ID，不由 OPL lane 生成或解释 |
+| K8s labels | Package D / deploy lane | deploy owner labels，不由 OPL lane 生成或解释 |
 
 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`traceId`、`billingMetadataRef` 和 `usageMetadataRef` 必须绑定同一组 `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId`。run 与 artifact 还必须绑定 `resourceBindingId`。无法绑定时返回 `adapter_mapping_failed`。
 
@@ -341,6 +344,20 @@ OPL 分支只传 `billingMetadataRef`、`usageMetadataRef` 或 `resourceBindingI
 - 用本地估算替代云账单事实。
 
 真实 COS 账单、云账单、T+1 对账、冻结/扣费和成本核对由云服务链路负责，不由本 OPL 适配分支伪造。
+
+## Production Runtime Agent Binding
+
+Production Runtime Agent binding 是 OPL lane 对 Package D 和云服务 lane 的上游输入，不是 deploy 实现。OPL lane 只产出运行身份与 run/artifact projection：
+
+- workspace identity: `workspaceId`、`workspaceSessionId`、`runtimeSessionId`。
+- runtime identity: `resourceBindingId`、`providerKeyRef`、Runtime Agent endpoint binding status。
+- file projection: workspace-scoped `fileRef`。
+- run projection: `runId`、`status`、`traceId`、`billingMetadataRef`、`usageMetadataRef`。
+- artifact projection: `artifactRef` 或 `outputFileRef`。
+
+`resourceBindingId/workspace runtime identity` 是 OPL lane 交给下游 lane 的唯一资源绑定上下文。OPL lane 不提供 `ownerRef`、`operationId` 或 K8s labels，不决定 namespace、workload、container、rollout、digest verify、owner labels 或 rollback evidence。这些属于 Package D / deploy lane 和云服务 lane 的合同。
+
+Production Runtime Agent binding 允许 config-only / fake Runtime Agent endpoint binding 来验证公开 HTTP API relay；默认不读取 secret、不调用真实云、不 build/push/deploy、不 kubectl、不修改 one-person-lab upstream。未配置 Runtime Agent endpoint 时必须返回 `requires_runtime_agent`。Runtime Agent 未返回 artifact 时必须返回 `artifact_not_observed` 或 `output_file_ref_not_observed`。Adapter 不得伪造 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 或 `usageMetadataRef`。
 
 ## Langfuse Attachment Boundary
 

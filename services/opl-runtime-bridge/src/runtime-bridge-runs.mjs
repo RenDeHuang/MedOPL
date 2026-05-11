@@ -96,6 +96,26 @@ function normalizeRuntimeArtifacts(response = {}, run = {}, runtimeSession = {})
   return candidates.map((item) => normalizeArtifactRef(item, run, runtimeSession)).filter(Boolean);
 }
 
+function publicMetadataRef(value = "") {
+  const ref = String(value || "").trim();
+  if (!ref || ref.length > 128) return "";
+  if (/[\\/]/.test(ref) || /^https?:/i.test(ref)) return "";
+  return /^[a-zA-Z0-9._:-]+$/.test(ref) ? ref : "";
+}
+
+function runtimeMetadataRefsFromLedgerEntries(entries = []) {
+  const refs = {
+    billingMetadataRef: "",
+    usageMetadataRef: "",
+  };
+  for (const entry of Array.isArray(entries) ? entries : []) {
+    const costSummary = entry?.costSummary && typeof entry.costSummary === "object" ? entry.costSummary : {};
+    refs.billingMetadataRef ||= publicMetadataRef(costSummary.billingMetadataRef || costSummary.billing_metadata_ref);
+    refs.usageMetadataRef ||= publicMetadataRef(costSummary.usageMetadataRef || costSummary.usage_metadata_ref);
+  }
+  return refs;
+}
+
 export function publicRunArtifact(artifact = {}, run = {}, runtimeSession = {}) {
   const artifactId = String(artifact.artifactId || artifact.artifact_id || "").trim();
   return {
@@ -198,6 +218,7 @@ export function createRunApi({
       },
       req,
     });
+    const metadataRefs = runtimeMetadataRefsFromLedgerEntries(response.ledgerEntries);
     const run = createRunRecord(state, {
       ...runtimeSession,
       ...input,
@@ -210,6 +231,7 @@ export function createRunApi({
       userAgent: req?.headers?.["user-agent"] || "",
       providerKeyRef: providerKeyRefFrom(input) || providerKeyRefFrom(runtimeSession),
       resourceBindingId: scope.resourceBindingId,
+      ...metadataRefs,
     });
     const publicArtifacts = normalizeRuntimeArtifacts(response, run, runtimeSession).map((artifact) => {
       const persistedArtifact = addArtifactRecord(state, {
@@ -234,6 +256,7 @@ export function createRunApi({
     return {
       ...run,
       artifacts: publicArtifacts,
+      ...metadataRefs,
       runtimeClaims: publicRuntimeClaims(response.runtimeClaims || response.runtimeTokenClaims, run, runtimeSession),
       ledgerEntryCount: Array.isArray(response.ledgerEntries) ? response.ledgerEntries.length : 0,
     };

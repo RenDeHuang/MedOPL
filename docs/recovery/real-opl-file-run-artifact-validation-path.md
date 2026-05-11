@@ -215,6 +215,7 @@ Runtime Agent output
 目标：
 
 - 用同一条本地 HTTP 链路证明 file/run/artifact 不是 gate-only，也不是 fake Runtime Agent relay。
+- 验证 Production Runtime Agent binding 只产出 OPL lane 的运行身份和 projection，不产出 Package D deploy owner 字段。
 - Runtime Agent canary server 通过公开 HTTP API 返回 workspace-scoped `fileRef`、`runId/status/traceId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 和 `usageMetadataRef`。
 - Portal 通过 `/portal/api/opl/*` 和 `/portal/api/session-traces` 查询同一组 workspace/session/run projection。
 
@@ -229,9 +230,10 @@ node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mj
 - Portal 登录、launch、bootstrap、session bind、file、run、artifact 和 trace 查询都走真实 HTTP。
 - Runtime Agent canary server 至少收到一次 file intake 请求和一次 run dispatch 请求。
 - file response 包含 workspace-scoped `fileRef`，并绑定 `workspaceId + workspaceSessionId + runtimeSessionId`。
-- run response 包含 `runId/status/traceId`，并绑定 `resourceBindingId + providerKeyRef + fileRef`。
+- run response 包含 `runId/status/traceId/billingMetadataRef/usageMetadataRef`，并绑定 `workspaceId + workspaceSessionId + runtimeSessionId + resourceBindingId + providerKeyRef + fileRef`。
 - artifact response 包含 `artifactRef` 或 `outputFileRef`，并绑定 `workspaceId + workspaceSessionId + runId`。
-- Portal session trace 能按 `workspaceId + runId` 查到该 run，并能看到 output artifact reference。
+- Portal session trace 能按 `workspaceId + runId` 查到该 run，并能看到 output artifact reference、`billingMetadataRef` 和 `usageMetadataRef`。
+- OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels；Runtime Agent request、Portal response、trace projection 和 evidence 都不得包含这些 Package D owner 字段。
 - public response、trace、Runtime Agent request body 和 evidence 都不包含 raw provider key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl` 或 `presignedUrl`。
 
 失败验收：

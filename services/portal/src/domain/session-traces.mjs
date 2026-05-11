@@ -343,6 +343,8 @@ function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {
     status: text(row.status || "recorded"),
     source: "runtime_bridge_canonical_metadata",
     artifactRefs: Array.isArray(row.artifactRefs) ? row.artifactRefs.map(text).filter(Boolean) : [],
+    billingMetadataRef: text(row.billingMetadataRef || row.billing_metadata_ref),
+    usageMetadataRef: text(row.usageMetadataRef || row.usage_metadata_ref),
     observability,
     customerDefaultTraceSurface: "Portal 会话轨迹",
     customerDefaultLangfuseUi: false,
@@ -411,6 +413,14 @@ async function enrichSessionTraceRow(deps, db, user, row = {}) {
     },
     outputFiles: linkedOutputFiles,
     linkedOutputFiles,
+    usageMetadataRef: text(row.usageMetadataRef),
+    billingMetadataRef: text(row.billingMetadataRef),
+    runtimeMetadataRefs: {
+      usageMetadataRef: text(row.usageMetadataRef),
+      billingMetadataRef: text(row.billingMetadataRef),
+      source: "runtime_bridge_canonical_metadata",
+      billingTruth: false,
+    },
     billing: billingSummary(billing, relatedCosts),
   };
 }

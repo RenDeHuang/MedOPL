@@ -28,6 +28,8 @@ export function buildRunRecord(input = {}) {
     runnerImage: input.runnerImage || input.runner_image || "",
     namespace: input.namespace || "",
     jobName: input.jobName || input.job_name || "",
+    billingMetadataRef: input.billingMetadataRef || input.billing_metadata_ref || "",
+    usageMetadataRef: input.usageMetadataRef || input.usage_metadata_ref || "",
     manifestPath: input.manifestPath || input.manifest_path || "",
     ...runExecutionFields(input),
     ...providerKeyRefFields(input),

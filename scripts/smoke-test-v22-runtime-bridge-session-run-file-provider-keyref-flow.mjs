@@ -105,6 +105,8 @@ const runtimeAgentRelay = {
         costSummary: {
           currency: "USD",
           estimatedCost: 0.01,
+          billingMetadataRef: "billing-meta-runtime-bridge-v22",
+          usageMetadataRef: "usage-meta-runtime-bridge-v22",
         },
         metadata: {
           publicStatus: "succeeded",
@@ -191,6 +193,8 @@ assert.equal(run.workspaceId, "workspace-runtime-bridge-v22", "run_workspace_mis
 assert.equal(run.runtimeSessionId, "runtime-session-runtime-bridge-v22", "run_runtime_session_mismatch");
 assert.equal(run.resourceBindingId, "binding-runtime-bridge-v22", "run_resource_binding_mismatch");
 assert.equal(run.providerKeyRef, "provider-key-ref-runtime-bridge-v22", "run_provider_key_ref_mismatch");
+assert.equal(run.billingMetadataRef, "billing-meta-runtime-bridge-v22", "run_billing_metadata_ref_mismatch");
+assert.equal(run.usageMetadataRef, "usage-meta-runtime-bridge-v22", "run_usage_metadata_ref_mismatch");
 assert.equal(run.ledgerEntryCount, 1, "run_ledger_entry_count_mismatch");
 assert.equal("ledgerEntries" in run, false, "run_response_must_not_expose_raw_ledger_entries");
 assert.equal(Array.isArray(run.artifacts), true, "run_artifacts_must_be_array");
@@ -218,6 +222,8 @@ assert.equal(state.sessionLedgerEntries[0].sessionId, "runtime-session-runtime-b
 assert.equal(state.sessionLedgerEntries[0].status, "succeeded", "ledger_status_mismatch");
 assert.equal(state.sessionLedgerEntries[0].usage.totalTokens, 20, "ledger_usage_total_tokens_mismatch");
 assert.equal(state.sessionLedgerEntries[0].costSummary.estimatedCost, 0.01, "ledger_cost_summary_mismatch");
+assert.equal(state.sessionLedgerEntries[0].costSummary.billingMetadataRef, "billing-meta-runtime-bridge-v22", "ledger_billing_metadata_ref_mismatch");
+assert.equal(state.sessionLedgerEntries[0].costSummary.usageMetadataRef, "usage-meta-runtime-bridge-v22", "ledger_usage_metadata_ref_mismatch");
 assert.equal(state.sessionLedgerEntries[0].artifactRefs[0], run.artifacts[0].artifactRef, "ledger_artifact_ref_mismatch");
 assert.deepEqual(state.sessionLedgerEntries[0].metadata, { publicStatus: "succeeded" }, "ledger_metadata_must_be_sanitized");
 assert.equal("rawPayload" in state.sessionLedgerEntries[0], false, "ledger_must_not_persist_raw_payload");

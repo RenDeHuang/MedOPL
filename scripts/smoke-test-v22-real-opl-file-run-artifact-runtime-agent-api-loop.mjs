@@ -14,11 +14,17 @@ const RESOURCE_BINDING_ID = "rb-real-opl-file-run-artifact-api-loop";
 const RUNTIME_AGENT_ID = "runtime-agent-api-loop";
 const PROVIDER_SECRET_SENTINEL = "provider-secret-sentinel-real-file-run-artifact-api-loop";
 const PROVIDER_KEY_REF_PREFIX = "gflab-";
+const FORBIDDEN_PACKAGE_D_PATTERN = /ownerRef|operationId|k8sLabels|kubernetesLabels|deployOwnerLabels/i;
 const FORBIDDEN_PUBLIC_PATTERN = /provider-secret-sentinel|gflabtoken_raw_key|rawProviderKey|providerApiKey|apiKey|launchToken|runtimeToken|bearerToken|objectKey|storageKey|localPath|signedUrl|presignedUrl/i;
 
 function assertNoPublicLeak(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value || {});
   assert.equal(FORBIDDEN_PUBLIC_PATTERN.test(serialized), false, `${label}_must_not_expose_secret_or_storage_fields`);
+}
+
+function assertNoPackageDFields(value, label) {
+  const serialized = typeof value === "string" ? value : JSON.stringify(value || {});
+  assert.equal(FORBIDDEN_PACKAGE_D_PATTERN.test(serialized), false, `${label}_must_not_include_package_d_owner_fields`);
 }
 
 function assertWorkspaceScopedFile(file = {}, scope = {}) {
@@ -387,6 +393,7 @@ try {
   assertWorkspaceScopedFile(file.json.file, scope);
   assert.equal(file.json.file.source, "runtime_agent_http_canary", "portal_opl_file_source_must_be_runtime_agent_http_canary");
   assertNoPublicLeak(file.json, "portal_opl_file");
+  assertNoPackageDFields(file.json, "portal_opl_file");
 
   const run = await postJson(`${portalUrl}/portal/api/opl/runs?launchId=${encodeURIComponent(launchId)}`, {
     message: "run Portal OPL file run artifact Runtime Agent API loop",
@@ -399,30 +406,49 @@ try {
   assert(run.json.run.traceId, "portal_opl_run_trace_id_required");
   assert.equal(run.json.run.resourceBindingId, RESOURCE_BINDING_ID, "portal_opl_run_resource_binding_mismatch");
   assert.equal(String(run.json.run.providerKeyRef || "").startsWith(PROVIDER_KEY_REF_PREFIX), true, "portal_opl_run_provider_key_ref_required");
+  assert.equal(run.json.run.workspaceId, WORKSPACE_ID, "portal_opl_run_workspace_mismatch");
+  assert.equal(run.json.run.workspaceSessionId, scope.workspaceSessionId, "portal_opl_run_workspace_session_mismatch");
+  assert.equal(run.json.run.runtimeSessionId, scope.runtimeSessionId, "portal_opl_run_runtime_session_mismatch");
+  assert.equal(run.json.run.billingMetadataRef, `billing-meta-${run.json.run.runId}`, "portal_opl_run_billing_metadata_ref_mismatch");
+  assert.equal(run.json.run.usageMetadataRef, `usage-meta-${run.json.run.runId}`, "portal_opl_run_usage_metadata_ref_mismatch");
   assert(run.json.artifacts?.[0]?.artifactRef, "portal_opl_run_artifact_ref_required");
+  assert.equal(run.json.artifacts[0].resourceBindingId, RESOURCE_BINDING_ID, "portal_opl_run_artifact_resource_binding_mismatch");
+  assert.equal(String(run.json.artifacts[0].providerKeyRef || "").startsWith(PROVIDER_KEY_REF_PREFIX), true, "portal_opl_run_artifact_provider_key_ref_required");
   assertNoPublicLeak(run.json, "portal_opl_run");
+  assertNoPackageDFields(run.json, "portal_opl_run");
 
   const artifacts = await getJson(`${portalUrl}/portal/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts?launchId=${encodeURIComponent(launchId)}`, { cookie: portalCookie });
   assert.equal(artifacts.response.status, 200, "portal_opl_run_artifacts_must_return_200");
   assert.equal(artifacts.json.items.some((item) => item.artifactRef === run.json.artifacts[0].artifactRef), true, "portal_opl_run_artifacts_must_include_runtime_artifact");
+  assert.equal(artifacts.json.items[0].resourceBindingId, RESOURCE_BINDING_ID, "portal_opl_run_artifacts_resource_binding_mismatch");
   assertNoPublicLeak(artifacts.json, "portal_opl_run_artifacts");
+  assertNoPackageDFields(artifacts.json, "portal_opl_run_artifacts");
 
   const artifact = await getJson(`${portalUrl}/portal/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}?launchId=${encodeURIComponent(launchId)}`, { cookie: portalCookie });
   assert.equal(artifact.response.status, 200, "portal_opl_artifact_must_return_200");
   assert.equal(artifact.json.artifact.artifactRef, run.json.artifacts[0].artifactRef, "portal_opl_artifact_ref_mismatch");
   assert.equal(artifact.json.artifact.workspaceId, WORKSPACE_ID, "portal_opl_artifact_workspace_mismatch");
+  assert.equal(artifact.json.artifact.resourceBindingId, RESOURCE_BINDING_ID, "portal_opl_artifact_resource_binding_mismatch");
   assertNoPublicLeak(artifact.json, "portal_opl_artifact");
+  assertNoPackageDFields(artifact.json, "portal_opl_artifact");
 
   const sessionTraces = await getJson(`${portalUrl}/portal/api/session-traces?workspaceId=${encodeURIComponent(WORKSPACE_ID)}&runId=${encodeURIComponent(run.json.run.runId)}&pageSize=20`, { cookie: portalCookie });
   assert.equal(sessionTraces.response.status, 200, "portal_session_traces_must_return_200");
   assert.equal(sessionTraces.json.summary?.businessFactSource, "runtime_bridge_canonical_metadata", "portal_session_traces_must_use_runtime_bridge_canonical_source");
+  assert.equal(sessionTraces.json.summary?.billingTruth, false, "portal_session_traces_must_not_claim_billing_truth");
   const traceItem = sessionTraces.json.items.find((item) => item.runId === run.json.run.runId);
   assert(traceItem, "portal_session_traces_must_find_run_trace");
   assert.equal(traceItem.workspaceId, WORKSPACE_ID, "portal_session_trace_workspace_mismatch");
   assert.equal(traceItem.runtimeSessionId, scope.runtimeSessionId, "portal_session_trace_runtime_session_mismatch");
   assert.equal(traceItem.source, "runtime_bridge_canonical_metadata", "portal_session_trace_source_mismatch");
+  assert.equal(traceItem.billingMetadataRef, `billing-meta-${run.json.run.runId}`, "portal_session_trace_billing_metadata_ref_mismatch");
+  assert.equal(traceItem.usageMetadataRef, `usage-meta-${run.json.run.runId}`, "portal_session_trace_usage_metadata_ref_mismatch");
+  assert.equal(traceItem.runtimeMetadataRefs?.billingMetadataRef, `billing-meta-${run.json.run.runId}`, "portal_session_trace_runtime_billing_metadata_ref_mismatch");
+  assert.equal(traceItem.runtimeMetadataRefs?.usageMetadataRef, `usage-meta-${run.json.run.runId}`, "portal_session_trace_runtime_usage_metadata_ref_mismatch");
+  assert.equal(traceItem.runtimeMetadataRefs?.billingTruth, false, "portal_session_trace_runtime_metadata_must_not_claim_billing_truth");
   assert.equal(traceItem.outputFiles.some((item) => item.artifactRef === run.json.artifacts[0].artifactRef), true, "portal_session_trace_must_link_runtime_artifact");
   assertNoPublicLeak(sessionTraces.json, "portal_session_traces");
+  assertNoPackageDFields(sessionTraces.json, "portal_session_traces");
 
   const fileCalls = runtimeAgentCalls.filter((call) => call.pathname === "/api/runtime/files");
   const runCalls = runtimeAgentCalls.filter((call) => call.pathname === "/api/runtime/runs");
@@ -430,7 +456,11 @@ try {
   assert.equal(runCalls.length, 1, "runtime_agent_run_dispatch_must_be_called_once");
   assert.equal(fileCalls.some((call) => call.headers.authorization || call.headers["x-launch-token"]), false, "runtime_agent_file_request_must_not_forward_tokens");
   assert.equal(runCalls.some((call) => call.headers.authorization || call.headers["x-launch-token"]), false, "runtime_agent_run_request_must_not_forward_tokens");
+  assert.equal(runCalls[0].body.workspaceSessionId, scope.workspaceSessionId, "runtime_agent_run_workspace_session_mismatch");
+  assert.equal(runCalls[0].body.runtimeSessionId, scope.runtimeSessionId, "runtime_agent_run_runtime_session_mismatch");
+  assert.equal(runCalls[0].body.resourceBindingId, RESOURCE_BINDING_ID, "runtime_agent_run_resource_binding_identity_mismatch");
   assertNoPublicLeak(runtimeAgentCalls, "runtime_agent_calls");
+  assertNoPackageDFields(runtimeAgentCalls, "runtime_agent_calls");
 
   console.log(JSON.stringify({
     ok: true,

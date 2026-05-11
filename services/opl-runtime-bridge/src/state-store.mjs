@@ -301,6 +301,8 @@ function safeCostSummary(input = {}) {
     currency: /^[A-Z]{3}$/.test(currency) ? currency : "",
     estimatedCost: safeNonNegativeNumber(costSummary.estimatedCost ?? costSummary.estimated_cost),
     billedCost: safeNonNegativeNumber(costSummary.billedCost ?? costSummary.billed_cost),
+    billingMetadataRef: safePublicRef(costSummary.billingMetadataRef ?? costSummary.billing_metadata_ref),
+    usageMetadataRef: safePublicRef(costSummary.usageMetadataRef ?? costSummary.usage_metadata_ref),
   };
 }
 
