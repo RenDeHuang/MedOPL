@@ -77,7 +77,9 @@ function extractVisibleTemplateCopy(template) {
 
 async function assertPortalLoginHasNoApiKeyField() {
   const source = await readFile(portalLoginPath, "utf8");
-  const body = extractFunctionSection(source, "localLoginBody", "localRegisterBody");
+  const body = source.includes("function renderPortalLoginPage")
+    ? extractFunctionSection(source, "renderPortalLoginPage", "renderPortalRegisterPage")
+    : extractFunctionSection(source, "localLoginBody", "localRegisterBody");
   assert(body.includes('name="email"'), "portal_login_email_field_missing");
   assert(body.includes('name="password"'), "portal_login_password_field_missing");
   assert.equal(/api[_-]?key|provider[_-]?key|gflabtoken|模型调用密钥/i.test(body), false, "portal_login_must_not_include_provider_key_field");

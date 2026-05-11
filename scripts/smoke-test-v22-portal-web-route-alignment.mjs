@@ -8,6 +8,9 @@ const viteSource = await readFile("services/portal/frontend/vite.config.ts", "ut
 const authSource = await readFile("services/portal/src/app/portal-auth-runtime-handler.mjs", "utf8");
 
 const requiredRoutes = [
+  "/home",
+  "/login",
+  "/register",
   "/overview",
   "/packages",
   "/resources",
@@ -19,6 +22,7 @@ const requiredRoutes = [
   "/admin/usage",
   "/admin/users",
   "/admin/system",
+  "/admin/audit",
 ];
 
 for (const route of requiredRoutes) {
@@ -28,8 +32,12 @@ for (const route of requiredRoutes) {
   );
 }
 
-for (const route of ["/overview", "/packages", "/resources", "/workspace", "/billing", "/trace"]) {
+for (const route of ["/overview", "/resources", "/workspace", "/billing", "/trace"]) {
   assert(sidebarSource.includes(`to: "${route}"`), `portal_sidebar_route_missing:${route}`);
+}
+
+for (const label of ["总览", "计算资源", "任务执行", "文件空间", "账务", "平台总览", "客户账户", "资源管理", "任务记录", "账务管理", "审计记录", "站点设置"]) {
+  assert(sidebarSource.includes(`label: "${label}"`), `portal_sidebar_label_missing:${label}`);
 }
 
 for (const redirect of [

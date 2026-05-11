@@ -82,15 +82,15 @@ assertIncludesAll(styleSource, [
 
 const accountOpsSection = sliceBetween(
   adminOpsSource,
-  "<h2 class=\"panel-title\">账号运营</h2>",
-  "<h2 class=\"panel-title\">费用 / 对账</h2>",
+  "<h2 class=\"panel-title\">账号状态</h2>",
+  "<h2 class=\"panel-title\">账务对账</h2>",
   "admin_ops_account_operations_section",
 );
 assertResponsiveTableSection(accountOpsSection, "admin_ops_account_operations_mobile_cards");
 
 const workspaceOpsSection = sliceBetween(
   adminOpsSource,
-  "<h2 class=\"panel-title\">工作空间运营</h2>",
+  "<h2 class=\"panel-title\">工作空间状态</h2>",
   "<h2 class=\"panel-title\">当前运行</h2>",
   "admin_ops_workspace_operations_section",
 );
@@ -99,7 +99,7 @@ assertResponsiveTableSection(workspaceOpsSection, "admin_ops_workspace_operation
 const currentRunsSection = sliceBetween(
   adminOpsSource,
   "<h2 class=\"panel-title\">当前运行</h2>",
-  "<h2 class=\"panel-title\">文件空间运营</h2>",
+  "<h2 class=\"panel-title\">文件空间状态</h2>",
   "admin_ops_current_runs_section",
 );
 assertNotIncludesAny(currentRunsSection, attributionTagFields, "admin_ops_current_runs_attribution_tags");

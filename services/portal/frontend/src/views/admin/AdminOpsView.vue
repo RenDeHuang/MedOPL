@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="运营总览" subtitle="管理员/运维只读视图">
+  <AppLayout title="服务状态" subtitle="管理员只读视图">
     <div class="space-y-6">
       <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载运营数据...</div>
       <template v-else>
@@ -14,7 +14,7 @@
           <div class="card p-6">
             <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 class="panel-title">账号运营</h2>
+                <h2 class="panel-title">账号状态</h2>
                 <p class="panel-subtitle">账号状态、工作空间数量和余额摘要。</p>
               </div>
               <span class="badge badge-primary">只读</span>
@@ -64,7 +64,7 @@
           </div>
 
           <div class="card p-6">
-            <h2 class="panel-title">费用 / 对账</h2>
+            <h2 class="panel-title">账务对账</h2>
             <div class="mt-4 space-y-3">
               <div class="muted-kv"><span class="muted-kv-label">费用估算</span><span class="muted-kv-value">{{ money(payload.costReconciliation.estimatedCost.amount) }}</span></div>
               <div class="muted-kv"><span class="muted-kv-label">冻结金额</span><span class="muted-kv-value">{{ money(payload.costReconciliation.frozenAmount) }}</span></div>
@@ -90,7 +90,7 @@
         <section class="card p-6">
           <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 class="panel-title">工作空间运营</h2>
+              <h2 class="panel-title">工作空间状态</h2>
               <p class="panel-subtitle">套餐、计算规格、文件空间、并发、队列和状态。</p>
             </div>
             <span class="badge badge-success">账号 / 工作空间</span>
@@ -163,7 +163,7 @@
           </div>
 
           <div class="card p-6">
-            <h2 class="panel-title">文件空间运营</h2>
+            <h2 class="panel-title">文件空间状态</h2>
             <div class="mt-4 space-y-3">
               <div v-for="item in payload.fileSpaceOperations.items" :key="item.workspaceId" class="rounded-xl border border-gray-100 p-4 text-sm dark:border-slate-700">
                 <div class="flex items-center justify-between gap-3">
@@ -189,7 +189,7 @@
         <section class="card p-6">
           <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 class="panel-title">审计 / 异常 / 公告</h2>
+              <h2 class="panel-title">审计事项</h2>
               <p class="panel-subtitle">只读查看审计事件、异常、释放失败、账单异常和公告。</p>
             </div>
             <span class="badge badge-primary">不执行真实资源操作</span>

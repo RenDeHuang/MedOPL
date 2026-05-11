@@ -10,7 +10,7 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="max-w-2xl">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="badge badge-primary">OPL SaaS 科研托管平台</span>
+                  <span class="badge badge-primary">OPL 科研托管平台</span>
                   <span class="badge badge-success">面向 AI 小白科研用户</span>
                   <span class="badge badge-warning">科研托管平台控制台</span>
                   <span class="badge" :class="payload.commercial.canEnterWorkbench ? 'badge-success' : 'badge-danger'">
@@ -22,7 +22,7 @@
                 </div>
                 <h2 class="mt-3 text-xl font-semibold tracking-tight text-gray-950 dark:text-white">科研托管平台控制台</h2>
                 <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-slate-300">
-                  MedOPL 是 OPL SaaS 科研托管平台，帮助 AI 小白科研用户查看余额、消费、工作空间、文件空间和运行轨迹。
+                  MedOPL 是 OPL 科研托管平台，帮助科研用户查看余额、消费、工作空间、文件空间和任务执行。
                 </p>
               </div>
               <div class="flex flex-wrap gap-2">
@@ -66,7 +66,7 @@
 
         <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="余额" :value="money(payload.kpis.balance)" hint="账户余额" />
-          <MetricCard label="预扣费 / 冻结金额" :value="money(frozenAmount)" hint="运行中的冻结金额" />
+          <MetricCard label="冻结金额" :value="money(frozenAmount)" hint="运行中的冻结金额" />
           <MetricCard label="会话数" :value="sessionCount" hint="最近可见会话记录" />
           <MetricCard label="任务数" :value="taskCount" hint="工作空间任务数量" />
         </section>
@@ -75,7 +75,7 @@
           <MetricCard label="钱花在哪里" :value="money(exactMonth + pendingMonth)" hint="工作空间、托管运行环境和文件空间消费" />
           <MetricCard label="科研任务进度" :value="taskProgressText" hint="最近任务状态" />
           <MetricCard label="托管运行环境状态" :value="managedEnvironmentStatus" hint="托管运行环境是否可用" />
-          <MetricCard label="文件空间状态" :value="fileSpaceStatus" hint="输入文件 / 输出文件空间" />
+          <MetricCard label="文件空间状态" :value="fileSpaceStatus" hint="输入文件和输出文件空间" />
         </section>
 
         <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
@@ -83,7 +83,7 @@
             <div class="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">托管运行环境</h2>
-                <p class="panel-subtitle">查看托管运行环境状态、文件空间状态和预扣费 / 冻结金额</p>
+                <p class="panel-subtitle">查看托管运行环境状态、文件空间状态和冻结金额</p>
               </div>
               <RouterLink class="btn btn-secondary" to="/resources">去开通</RouterLink>
             </div>
@@ -106,7 +106,7 @@
                 <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-slate-400">
                   <div>预扣费 {{ money(item.protection?.frozenAmount) }}</div>
                   <div>消费 {{ money(item.protection?.consumedAmount) }}</div>
-                  <div>停止计费 / 审计状态 {{ auditStatusText(item.protection?.tPlus1AuditStatus) }}</div>
+                  <div>审计状态 {{ auditStatusText(item.protection?.tPlus1AuditStatus) }}</div>
                   <div>文件空间 {{ displayFileSpace(item) }}</div>
                 </div>
               </div>

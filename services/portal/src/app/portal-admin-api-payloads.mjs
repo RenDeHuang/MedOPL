@@ -1,4 +1,5 @@
 import { getCanonicalResourcePlan } from "../domain/lab-packages.mjs";
+import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 import { buildUserBillingSummary, normalizeLedgerEntries } from "../domain/wallet-ledger.mjs";
 import {
   buildAdminUsersRows,
@@ -596,12 +597,14 @@ export function createPortalAdminApiPayloads(deps) {
     };
   }
 
-  function buildAdminSystemApiPayload(payload) {
+  function buildAdminSystemApiPayload(db, payload) {
     return {
       serviceStatuses: payload.serviceStatuses || [],
       summaries: payload.summaries || {},
       systemMetrics: payload.systemMetrics || {},
       productProfile: payload.productProfile || {},
+      allowRegistration: isRegistrationEnabled(db),
+      publicSettings: ensurePublicSiteSettings(db),
     };
   }
 

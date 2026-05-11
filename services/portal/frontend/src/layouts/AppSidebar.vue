@@ -15,14 +15,14 @@
       </div>
       <div class="min-w-0 flex-1">
         <div class="text-sm font-semibold text-gray-950 dark:text-white">MedOPL</div>
-        <div class="text-[11px] text-gray-500 dark:text-slate-400">MedOPL 工作台</div>
+        <div class="text-[11px] text-gray-500 dark:text-slate-400">工作台</div>
       </div>
       <button type="button" class="btn btn-secondary lg:hidden" aria-label="关闭导航" @click="closeMobileNav">关闭</button>
     </div>
 
     <nav class="flex-1 overflow-y-auto px-3 py-3">
       <div class="mb-5">
-        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">科研工作台</div>
+        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">工作台</div>
         <RouterLink
           v-for="item in userItems"
           :key="item.to"
@@ -36,7 +36,7 @@
       </div>
 
       <div v-if="isAdmin">
-        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">运营</div>
+        <div class="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-slate-500">管理台</div>
         <RouterLink
           v-for="item in adminItems"
           :key="item.to"
@@ -69,23 +69,24 @@ const isAdmin = computed(() => currentUser.value?.role === "admin");
 const opsSurfaceEnabled = computed(() => Boolean(currentUser.value?.productProfile?.opsSurfaceEnabled));
 
 const userItems = [
-  { to: "/overview", label: "SaaS 总览" },
-  { to: "/packages", label: "套餐" },
-  { to: "/resources", label: "托管运行环境" },
-  { to: "/workspace", label: "工作空间" },
-  { to: "/billing", label: "账单" },
-  { to: "/trace", label: "运行轨迹" },
+  { to: "/overview", label: "总览" },
+  { to: "/resources", label: "计算资源" },
+  { to: "/trace", label: "任务执行" },
+  { to: "/workspace", label: "文件空间" },
+  { to: "/billing", label: "账务" },
 ];
 
 const adminItemsBase = [
-  { to: "/admin/dashboard", label: "运营总台" },
-  { to: "/admin/billing-ops", label: "客户账务" },
-  { to: "/admin/usage", label: "账单归因" },
-  { to: "/admin/users", label: "用户管理" },
-  { to: "/admin/system", label: "系统状态" },
+  { to: "/admin/dashboard", label: "平台总览" },
+  { to: "/admin/users", label: "客户账户" },
+  { to: "/admin/sandboxes", label: "资源管理" },
+  { to: "/admin/usage", label: "任务记录" },
+  { to: "/admin/billing-ops", label: "账务管理" },
+  { to: "/admin/audit", label: "审计记录" },
+  { to: "/admin/system", label: "站点设置" },
 ];
 const adminItems = computed(() => (opsSurfaceEnabled.value
-  ? [...adminItemsBase, { to: "/admin/ops", label: "运维面" }]
+  ? [...adminItemsBase, { to: "/admin/ops", label: "服务状态" }]
   : adminItemsBase));
 
 function closeMobileNav() {

@@ -121,6 +121,8 @@ import {
 } from "./portal-presentation-domain.mjs";
 import { createPortalRuntimeBootstrap } from "./portal-runtime-bootstrap.mjs";
 import { createPortalHttpDispatcher } from "./portal-http-dispatcher.mjs";
+import { renderPortalPublicHome } from "./portal-public-home.mjs";
+import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 import { createPortalIdentitySecurityRuntime } from "./portal-identity-security-runtime.mjs";
 import { createPortalRuntimeObservability } from "./portal-runtime-observability.mjs";
 import { createPortalWorkspaceRuntime } from "./portal-workspace-runtime.mjs";
@@ -725,6 +727,8 @@ const dispatchPortalHttpRequest = createPortalHttpDispatcher({
   sendStaticAsset,
   slugify,
   writeDb,
+  renderPortalPublicHome,
+  publicSettingsPayload: ensurePublicSiteSettings,
 });
 
 const server = http.createServer(dispatchPortalHttpRequest);

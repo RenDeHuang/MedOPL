@@ -1,6 +1,9 @@
 import { apiClient } from "../client";
 import type { PortalPagination, PortalAdminActionValue, PortalActionErrorShape } from "./common";
 import type { SessionTracesPayload } from "./traces";
+import type { PublicSettingsPayload } from "./public";
+
+export type { PublicSettingsPayload };
 
 export interface AdminUserListItem {
   id: string;
@@ -32,6 +35,15 @@ export interface AdminUsersPayload {
   financeRows: AdminUserFinanceRow[];
   groups: Array<{ id: string; name: string }>;
   kpis?: Record<string, unknown>;
+}
+
+export interface AdminSystemPayload {
+  serviceStatuses: Array<Record<string, any>>;
+  summaries: Record<string, any>;
+  systemMetrics: Record<string, any>;
+  productProfile: Record<string, any>;
+  allowRegistration: boolean;
+  publicSettings: PublicSettingsPayload;
 }
 
 export async function fetchAdminAgentTraces(params?: Record<string, string | number | undefined>) {
@@ -109,6 +121,20 @@ export async function updateAdminRegistrationSettings(input: {
   await postPortalAdminAction("/portal/admin/settings", {
     allowRegistration: input.allowRegistration,
     redirectTo: input.redirectTo || "/portal/app/admin/users",
+  });
+}
+
+export async function updateAdminSiteSettings(input: PublicSettingsPayload & {
+  allowRegistration: boolean;
+  redirectTo?: string;
+}) {
+  await postPortalAdminAction("/portal/admin/settings", {
+    allowRegistration: input.allowRegistration,
+    siteName: input.siteName,
+    siteLogo: input.siteLogo,
+    siteSubtitle: input.siteSubtitle,
+    homeContent: input.homeContent,
+    redirectTo: input.redirectTo || "/portal/app/admin/system",
   });
 }
 
@@ -191,7 +217,7 @@ export async function fetchAdminUsage(params?: Record<string, string | number | 
 }
 
 export async function fetchAdminSystem() {
-  const { data } = await apiClient.get("/admin/system");
+  const { data } = await apiClient.get<AdminSystemPayload>("/admin/system");
   return data;
 }
 

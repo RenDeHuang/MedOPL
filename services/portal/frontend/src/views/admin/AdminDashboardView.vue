@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="运营总台" subtitle="客户、账务、资源、轨迹与告警的统一处理入口">
+  <AppLayout title="平台总览" subtitle="账号、账务、资源、任务与待处理事项">
     <div class="space-y-4">
       <div v-if="!payload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载运行总台...</div>
       <template v-else>
@@ -93,7 +93,7 @@
                   <h2 class="panel-title">待处理事项</h2>
                   <p class="panel-subtitle">直接看需要处理的客户和资源异常。</p>
                 </div>
-                <RouterLink class="btn btn-secondary" to="/admin/alerts">打开告警中心</RouterLink>
+                <RouterLink class="btn btn-secondary" to="/admin/alerts">查看待处理事项</RouterLink>
               </div>
               <div class="space-y-2.5">
                 <div v-for="item in (payload.alerts || []).slice(0, 5)" :key="`${item.category}-${item.title}-${item.runId || ''}`" class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700">

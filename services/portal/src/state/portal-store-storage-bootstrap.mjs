@@ -75,6 +75,12 @@ export function createPortalStoreStorageBootstrap({
       settings: {
         allowRegistration: String(process.env.PORTAL_ALLOW_REGISTRATION || "1") !== "0",
         announcements: [],
+        publicSite: {
+          siteName: "MedOPL",
+          siteLogo: "",
+          siteSubtitle: "托管 OPL 科研工作台",
+          homeContent: "",
+        },
       },
     };
     await atomicWriteJson(dataFile, seed);

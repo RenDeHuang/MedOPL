@@ -35,7 +35,7 @@
         <div class="card p-5">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 class="panel-title">选择套餐 / 工作台资源计划</h2>
+              <h2 class="panel-title">套餐选择</h2>
               <p class="panel-subtitle">选择套餐后生成 dry-run 调整计划，不会真实开通资源。</p>
             </div>
             <span class="badge badge-primary">dry-run</span>
@@ -148,7 +148,7 @@
 
         <div class="card p-5">
           <div>
-            <h2 class="panel-title">释放策略 / 审计状态</h2>
+            <h2 class="panel-title">释放审计</h2>
             <p class="panel-subtitle">停止计费和审计由平台自动核对。</p>
           </div>
           <div class="mt-4 space-y-3">
@@ -180,8 +180,8 @@ const {
   actionFeedback,
   auditStatusText,
   balanceFreezeStatus,
-  concurrencyText,
   computeSpecText,
+  concurrencyText,
   currentConcurrencyText,
   currentComputeSpec,
   currentFileSpaceText,

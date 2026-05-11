@@ -3,6 +3,7 @@ import { ensureSeedAdminAccount } from "./portal-store-migration-admin-seed.mjs"
 import { runPortalStoreCollectionMigrations } from "./portal-store-migration-collections.mjs";
 import { migrateTaskSpaces } from "./portal-store-migration-taskspaces.mjs";
 import { migrateUsersAndGroups } from "./portal-store-migration-users-groups.mjs";
+import { normalizePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 
 export function createPortalStoreMigrations({
   adminSeed,
@@ -63,6 +64,7 @@ export function createPortalStoreMigrations({
       settings: {
         allowRegistration: String(process.env.PORTAL_ALLOW_REGISTRATION || "1") !== "0",
         announcements: [],
+        publicSite: normalizePublicSiteSettings(),
       },
     };
   }
@@ -93,6 +95,11 @@ export function createPortalStoreMigrations({
         db.settings.announcements = normalizedAnnouncements;
         changed = true;
       }
+    }
+    const normalizedPublicSite = normalizePublicSiteSettings(db.settings.publicSite || {});
+    if (JSON.stringify(db.settings.publicSite || {}) !== JSON.stringify(normalizedPublicSite)) {
+      db.settings.publicSite = normalizedPublicSite;
+      changed = true;
     }
     if (ensureSeedAdminAccount({ adminSeed, adminSeedBalance, db, hashPassword })) {
       changed = true;

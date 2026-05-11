@@ -90,7 +90,7 @@
               <div class="grid gap-3">
                 <RouterLink class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/billing-ops">计费运维</RouterLink>
                 <RouterLink v-if="opsSurfaceEnabled" class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/ops">运维监控</RouterLink>
-                <RouterLink class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/alerts">告警中心</RouterLink>
+                <RouterLink class="rounded-2xl border border-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-primary-400 dark:hover:text-primary-300" to="/admin/alerts">待处理事项</RouterLink>
               </div>
             </div>
           </div>

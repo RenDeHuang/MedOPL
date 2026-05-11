@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="账单" subtitle="钱包余额、运行中预扣、实际结算与账户流水">
+  <AppLayout title="账务" subtitle="余额、冻结金额、消费记录与账户流水">
     <div class="space-y-4">
       <div v-if="summaryLoading && !summaryPayload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单摘要...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -8,7 +8,7 @@
           <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div class="max-w-2xl">
               <div class="flex items-center gap-2">
-                <span class="badge badge-primary">账单摘要</span>
+                <span class="badge badge-primary">账务</span>
                 <span class="badge" :class="payload.breakdown.cloudSource === 'tencent_cloud' ? 'badge-success' : 'badge-warning'">
                   {{ payload.breakdown.cloudSource === "tencent_cloud" ? "账单核对已接入" : "等待账单核对" }}
                 </span>
@@ -27,7 +27,7 @@
           <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard label="余额" :value="money(payload.wallet.balance)" hint="当前账户余额" />
             <MetricCard label="可用余额" :value="money(payload.wallet.availableBalance)" hint="扣除冻结金额后的可用余额" />
-            <MetricCard label="预扣费 / 冻结金额" :value="money(payload.wallet.activeFreeze)" hint="托管运行环境预扣费" />
+            <MetricCard label="冻结金额" :value="money(payload.wallet.activeFreeze)" hint="运行中的冻结金额" />
             <MetricCard label="今日消费" :value="microMoney(payload.todayCost)" hint="今日已核算消费" />
             <MetricCard label="钱花在哪里" :value="microMoney(payload.summary.selectedCost)" hint="当前筛选窗口消费" />
             <MetricCard label="账户流水" :value="payload.ledgerPagination.total" hint="当前窗口内流水数" />

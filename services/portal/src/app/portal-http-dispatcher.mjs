@@ -33,6 +33,8 @@ export function createPortalHttpDispatcher({
   sendStaticAsset,
   slugify,
   writeDb,
+  renderPortalPublicHome,
+  publicSettingsPayload,
 }) {
   function isPortalApiRequest(url) {
     return url.pathname === "/portal/api" || url.pathname.startsWith("/portal/api/");
@@ -49,6 +51,16 @@ export function createPortalHttpDispatcher({
     }
     if (req.method === "GET" && (url.pathname === "/healthz" || url.pathname === "/status")) {
       sendJson(res, buildPortalHealthPayload());
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/portal/api/public/settings") {
+      const { db } = await currentUser(req, { mode: "auth_light" });
+      sendJson(res, publicSettingsPayload(db));
+      return;
+    }
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/home")) {
+      const { db } = await currentUser(req, { mode: "auth_light" });
+      sendHtml(res, renderPortalPublicHome(db));
       return;
     }
     if (req.method === "GET" && url.pathname.startsWith("/portal/app/assets/")) {

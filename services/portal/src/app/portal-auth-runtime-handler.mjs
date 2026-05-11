@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { hashPassword, verifyPassword } from "../domain/portal-auth.mjs";
 import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
+import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 
 const OPL_ENTRY_PREFLIGHT_PATH = "/opl/entry/preflight";
 const OPL_INTERNAL_AUTH_PATH = "/internal/opl/auth/login";
@@ -126,19 +127,36 @@ export async function createPortalUserRecord(db, form, {
   return { ok: true, user: createdUser };
 }
 
-function localLoginBody(db, options = {}) {
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function brandHeader(db, title) {
+  const settings = ensurePublicSiteSettings(db || {});
+  const logo = settings.siteLogo
+    ? `<img src="${escapeHtml(settings.siteLogo)}" alt="${escapeHtml(settings.siteName)}" style="width:48px;height:48px;border-radius:12px;object-fit:contain;border:1px solid rgba(92,126,168,.22);background:#fff;" />`
+    : `<div style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-weight:700;">${escapeHtml(settings.siteName.slice(0, 1) || "M")}</div>`;
+  return `<div class="hero"><div style="display:flex;align-items:center;gap:14px;">${logo}<div><h1>${escapeHtml(title || settings.siteName)}</h1><p>${escapeHtml(settings.siteSubtitle)}</p></div></div></div>`;
+}
+
+export function renderPortalLoginPage(db, options = {}) {
   const registrationEnabled = isRegistrationEnabled(db);
   const note = options.note
     ? `<p class="hint">${options.note}</p>`
     : registrationEnabled
       ? `<p class="hint">还没有账号？<a href="/register">注册新账号</a></p>`
       : `<p class="hint">当前关闭自由注册，请联系管理员。</p>`;
-  return `<div class="hero"><h1>统一门户</h1></div><div class="card"><form method="post" action="/login"><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码" required /></p><p><button type="submit">登录</button></p></form>${note}</div>`;
+  return `${brandHeader(db, "登录")}<div class="card"><form method="post" action="/login"><p><input name="email" type="email" autocomplete="username" placeholder="邮箱" required /></p><p><input name="password" type="password" autocomplete="current-password" placeholder="密码" required /></p><p><button type="submit">登录</button></p></form>${note}<p class="hint"><a href="/home">返回首页</a></p></div>`;
 }
 
-function localRegisterBody(message = "") {
+export function renderPortalRegisterPage(db, message = "") {
   const messageBlock = message ? `<p class="hint">${message}</p>` : "";
-  return `<div class="hero"><h1>注册账号</h1></div><div class="card"><form method="post" action="/register"><p><input name="name" type="text" placeholder="姓名" required /></p><p><input name="email" type="email" placeholder="邮箱" required /></p><p><input name="password" type="password" placeholder="密码，至少 8 位" minlength="8" required /></p><p><button type="submit">创建账号</button></p></form>${messageBlock}<p class="hint"><a href="/login">返回登录</a></p></div>`;
+  return `${brandHeader(db, "注册账号")}<div class="card"><form method="post" action="/register"><p><input name="name" type="text" autocomplete="name" placeholder="姓名" required /></p><p><input name="email" type="email" autocomplete="email" placeholder="邮箱" required /></p><p><input name="password" type="password" autocomplete="new-password" placeholder="密码，至少 8 位" minlength="8" required /></p><p><button type="submit">创建账号</button></p></form>${messageBlock}<p class="hint"><a href="/login">返回登录</a></p></div>`;
 }
 
 function oplEntryPreflightLoginBody({ providerBound = false } = {}) {
@@ -278,9 +296,6 @@ export function createPortalAuthRuntimeHandler({
   }
 
   async function registerLocalPortalUser(db, form) {
-    if (portalOidc.enabled) {
-      return { ok: false, status: 400, title: "注册不可用", message: "统一身份模式下不提供本地注册。" };
-    }
     if (!isRegistrationEnabled(db)) {
       return { ok: false, status: 403, title: "注册已关闭", message: "当前关闭自由注册，请联系管理员。" };
     }
@@ -306,28 +321,22 @@ export function createPortalAuthRuntimeHandler({
   return async function handlePortalAuthRoutes({ req, res, url, db }) {
     if (req.method === "GET" && url.pathname === "/register") {
       if (portalOidc.enabled) {
-        res.writeHead(302, { Location: "/login" });
-        res.end();
+        sendHtml(res, layoutV2("注册", renderPortalRegisterPage(db), null));
         return true;
       }
       if (!isRegistrationEnabled(db)) {
-        sendHtml(res, layoutV2("注册已关闭", localLoginBody(db), null), 403);
+        sendHtml(res, layoutV2("注册已关闭", renderPortalLoginPage(db), null), 403);
         return true;
       }
-      sendHtml(res, layoutV2("注册", localRegisterBody(), null));
+      sendHtml(res, layoutV2("注册", renderPortalRegisterPage(db), null));
       return true;
     }
 
     if (req.method === "POST" && url.pathname === "/register") {
-      if (portalOidc.enabled) {
-        res.writeHead(302, { Location: "/login" });
-        res.end();
-        return true;
-      }
       const form = parseForm((await readBody(req)).toString("utf8"));
       const result = await registerLocalPortalUser(db, form);
       if (!result.ok) {
-        const body = result.status === 403 ? localLoginBody(db, { note: result.message }) : localRegisterBody(result.message);
+        const body = result.status === 403 ? renderPortalLoginPage(db, { note: result.message }) : renderPortalRegisterPage(db, result.message);
         sendHtml(res, layoutV2(result.title, body, null), result.status);
         return true;
       }
@@ -340,21 +349,11 @@ export function createPortalAuthRuntimeHandler({
     }
 
     if (req.method === "GET" && url.pathname === "/login") {
-      if (!portalOidc.enabled) {
-        sendHtml(res, layoutV2("登录", localLoginBody(db), null));
-        return true;
-      }
-      const loginHref = url.searchParams.get("force_login") === "1" ? "/auth/oidc/login?prompt=login" : "/auth/oidc/login";
-      sendHtml(res, layoutV2("统一登录", `<div class="hero"><h1>统一登录</h1></div><div class="card"><p><a href="${loginHref}">使用统一账号登录</a></p><p class="hint">${isRegistrationEnabled(db) ? "如需新账号，请先在统一身份侧注册。" : "当前关闭自由注册，请联系管理员。"}</p></div>`, null));
+      sendHtml(res, layoutV2("登录", renderPortalLoginPage(db), null));
       return true;
     }
 
     if (req.method === "POST" && url.pathname === "/login") {
-      if (portalOidc.enabled) {
-        res.writeHead(302, { Location: "/auth/oidc/login" });
-        res.end();
-        return true;
-      }
       const form = parseForm((await readBody(req)).toString("utf8"));
       const authResult = authenticatePortalPasswordUser(db, form.email, form.password, { isBlockedUserStatus });
       if (!authResult.ok) {

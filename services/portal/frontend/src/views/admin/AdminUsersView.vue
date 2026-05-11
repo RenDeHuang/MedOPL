@@ -11,7 +11,7 @@
             <MetricCard label="用户总数" :value="payload.pagination.total" hint="当前筛选命中的用户数" />
             <MetricCard label="开放注册" :value="payload.allowRegistration ? '开启' : '关闭'" hint="统一门户注册开关" />
             <MetricCard label="可用分组" :value="payload.groups.length" hint="当前配置的资源分组" />
-            <MetricCard label="最近资金动作" :value="payload.financeRows.length" hint="充值 / 退款 / 补扣记录" />
+            <MetricCard label="最近资金动作" :value="payload.financeRows.length" hint="充值、退款和补扣记录" />
           </section>
 
           <section class="card p-5">

@@ -18,7 +18,7 @@
                 <p class="panel-subtitle">用于识别哪些运行还没有完成成本对账。</p>
               </div>
               <div class="flex flex-wrap gap-3">
-                <RouterLink class="btn btn-secondary" to="/admin/alerts">告警中心</RouterLink>
+                <RouterLink class="btn btn-secondary" to="/admin/alerts">待处理事项</RouterLink>
                 <RouterLink class="btn btn-secondary" to="/admin/users">用户管理</RouterLink>
               </div>
             </div>

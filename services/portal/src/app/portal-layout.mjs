@@ -13,7 +13,7 @@
     ] : [];
     const adminItems = user?.role === "admin" ? [
       { href: "/portal/admin", label: "仪表盘", active: page === "admin-dashboard" || page === "admin" },
-      { href: "/portal/admin/alerts", label: "告警中心", active: page === "admin-alerts" },
+      { href: "/portal/admin/alerts", label: "待处理事项", active: page === "admin-alerts" },
       { href: "/portal/admin/users", label: "用户管理", active: page === "admin-users" || page === "admin-user-more" },
       { href: "/portal/admin/groups", label: "分组与订阅", active: page === "admin-groups" },
       { href: "/portal/admin/usage", label: "使用记录", active: page === "admin-usage" },

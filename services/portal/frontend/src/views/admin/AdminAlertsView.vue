@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="告警中心" subtitle="系统告警与公告管理">
+  <AppLayout title="待处理事项" subtitle="系统事项与公告管理">
     <div class="space-y-4">
       <div v-if="loading" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载告警与公告...</div>
       <template v-else>

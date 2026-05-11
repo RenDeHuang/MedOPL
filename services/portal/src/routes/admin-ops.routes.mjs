@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { hashPassword as defaultHashPassword } from "../domain/portal-auth.mjs";
 import { normalizeAnnouncementRecord } from "../domain/portal-presenters.mjs";
+import { updatePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 
 function zitadelErrorDetail(error) {
   return String(error.stdout || error.stderr || error.message || error);
@@ -38,7 +39,18 @@ export function createPortalAdminOpsRoutes({
     const form = await readForm(req);
     const redirectTo = String(form.redirectTo || "/portal/admin/users").trim();
     db.settings.allowRegistration = form.allowRegistration === "1";
-    await logPortalEvent({ type: "portal_settings_updated", userId: user.id, allowRegistration: db.settings.allowRegistration });
+    const publicSettings = updatePublicSiteSettings(db, {
+      siteName: form.siteName,
+      siteLogo: form.siteLogo,
+      siteSubtitle: form.siteSubtitle,
+      homeContent: form.homeContent,
+    });
+    await logPortalEvent({
+      type: "portal_settings_updated",
+      userId: user.id,
+      allowRegistration: db.settings.allowRegistration,
+      siteName: publicSettings.siteName,
+    });
     await writeDb(db);
     redirect(res, redirectTo);
     return true;

@@ -485,19 +485,19 @@ const sidebarSource = await readFile("services/portal/frontend/src/layouts/AppSi
 assertIncludesAll(sidebarSource, [
   "const isAdmin = computed(() => currentUser.value?.role === \"admin\")",
   "opsSurfaceEnabled",
-  "{ to: \"/admin/ops\", label: \"运维面\" }",
+  "{ to: \"/admin/ops\", label: \"服务状态\" }",
 ], "admin_ops_sidebar_guard");
 assert.equal(sidebarSource.includes("adminItems") && sidebarSource.includes("v-if=\"isAdmin\""), true, "admin_items_must_be_admin_only");
 
 const viewSource = await readFile("services/portal/frontend/src/views/admin/AdminOpsView.vue", "utf8");
 assertIncludesAll(viewSource, [
-  "运营总览",
-  "账号运营",
-  "工作空间运营",
+  "服务状态",
+  "账号状态",
+  "工作空间状态",
   "当前运行",
-  "文件空间运营",
-  "费用 / 对账",
-  "审计 / 异常 / 公告",
+  "文件空间状态",
+  "账务对账",
+  "审计事项",
   "账号",
   "工作空间",
   "只读",
@@ -508,7 +508,7 @@ assert.equal(viewSource.includes("租户") || viewSource.includes("运行环境"
 const currentRunsViewSection = sliceBetween(
   viewSource,
   "<h2 class=\"panel-title\">当前运行</h2>",
-  "<h2 class=\"panel-title\">文件空间运营</h2>",
+  "<h2 class=\"panel-title\">文件空间状态</h2>",
   "admin_ops_current_runs_view_section",
 );
 assertNotIncludesAny(currentRunsViewSection, [
@@ -527,7 +527,6 @@ const userSurfaceSources = [
 ].join("\n");
 assertNotIncludesAny(userSurfaceSources, [
   "/admin/ops",
-  "运营总览",
   "全局账号",
   "全局费用",
   "全局审计",

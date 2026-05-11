@@ -88,7 +88,7 @@ export function createPortalAdminApiRoutes({
       return true;
     }
     if (url.pathname === "/portal/api/admin/system") {
-      await withOverview(db, (payload) => sendJson(res, buildAdminSystemApiPayload(payload)));
+      await withOverview(db, (payload) => sendJson(res, buildAdminSystemApiPayload(db, payload)));
       return true;
     }
     if (url.pathname === "/portal/api/admin/ops") {
