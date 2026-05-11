@@ -292,6 +292,14 @@ assertIncludesAll(board + status + verificationMatrix, [
   "accepted R-14 preflight id",
   "cloud-lane/feat/v22-package-d-deploy-dry-run-gate",
   "D2 image digest report",
+  "real R-16 server-side dry-run passed",
+  ".runtime/v22-cloud-deploy/package-d-real-20260511154104-deploy-dry-run.json",
+  "real R-17 rollout passed",
+  ".runtime/v22-cloud-deploy/package-d-real-20260511154104-rollout.json",
+  "real R-18 runtime smoke passed",
+  ".runtime/v22-runtime-smoke/package-d-real-20260511154104-runtime-smoke.json",
+  "do not treat Package D as Package C storage/compute lifecycle or Portal cloud-operation bridge enablement",
+  "live Portal Deployment does not enable production cloud-operation bridge env",
 ], "recovery_deploy_safety");
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");
@@ -306,13 +314,12 @@ assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, 
   "Package D 可以删除节点池",
   "Package D 可以清空 bucket",
   "默认使用 latest",
-  "real push done",
-  "rollout done",
-  "runtime smoke done",
 ], "deploy_forbidden_claims");
 
 assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, [
   "Package D deploy/build/push/kubectl 已完成",
+  "Package D 验证通过，所以 Package C 已完成",
+  "Package D 验证通过，所以 Portal cloud-operation bridge 已启用",
 ], "deploy_status_must_not_claim_done");
 
 console.log(JSON.stringify({

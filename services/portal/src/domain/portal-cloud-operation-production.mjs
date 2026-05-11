@@ -174,7 +174,7 @@ function upsertFileSpaceEntitlement(db = {}, user = {}, binding = {}, input = {}
   return entitlement;
 }
 
-function upsertComputeAllocation(db = {}, user = {}, binding = {}, input = {}, status = "available") {
+function upsertComputeAllocation(db = {}, user = {}, binding = {}, input = {}, status = "available", attribution = {}) {
   const allocations = ensureArrayField(db, "computeAllocations");
   let allocation = allocations.find((item) => text(item.resourceBindingId) === text(binding.resourceBindingId || binding.id)) || null;
   if (!allocation) {
@@ -191,6 +191,7 @@ function upsertComputeAllocation(db = {}, user = {}, binding = {}, input = {}, s
   allocation.planId = planIdFrom(input, binding.planId);
   allocation.computeUnits = positiveNumber(input.computeUnits ?? input.compute_units, positiveNumber(allocation.computeUnits, 1));
   allocation.status = status;
+  allocation.nodePoolRef = text(attribution.nodePoolRef || allocation.nodePoolRef);
   allocation.updatedAt = nowIso();
   binding.computeAllocationId = allocation.id;
   binding.computeStatus = status;
@@ -677,7 +678,9 @@ export function executePortalProductionCloudOperation(db = {}, user = {}, input 
   if (spec.resourceKind === "storage") {
     upsertFileSpaceEntitlement(db, user, binding, input, spec.successStatus);
   } else {
-    upsertComputeAllocation(db, user, binding, input, spec.successStatus);
+    upsertComputeAllocation(db, user, binding, input, spec.successStatus, {
+      nodePoolRef: options.computeNodePoolRef,
+    });
   }
   markOperationSucceeded(operation, job, runner);
   upsertFreeze(db, user, binding, operation);

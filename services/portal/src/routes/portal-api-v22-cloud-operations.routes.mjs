@@ -26,6 +26,7 @@ export function createPortalApiV22CloudOperationsRoutes({
   runnerMode = "fake-live",
   secretFile = "",
   runnerScript = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+  computeNodePoolRef = "",
   repoRoot = "",
 }) {
   const operationRoutes = new Map([
@@ -46,6 +47,7 @@ export function createPortalApiV22CloudOperationsRoutes({
       runnerMode,
       runnerScript,
       secretFile,
+      computeNodePoolRef,
     });
     if (result.ok || result.persistDb) await writeDb(db);
     sendResult(sendJson, res, result, 202);

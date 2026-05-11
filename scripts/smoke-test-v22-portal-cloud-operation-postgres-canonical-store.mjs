@@ -84,6 +84,7 @@ function createRowsForSql(sql = "") {
     status: "released",
     cluster_ref: "",
     namespace_ref: "",
+    node_pool_ref: "np-postgres-attribution-proof",
     quota_json: {},
     workload_class: "",
     created_at: "2026-05-11T00:00:00.000Z",
@@ -307,7 +308,7 @@ await writePortalPostgresSnapshot({
       updatedAt: "2026-05-11T00:01:00.000Z",
     }],
     cloudOperationJobs: [{ id: "job-op-pg-storage-create", operationId: "op-pg-storage-create", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", queueMode: "inline_worker", status: "succeeded", runnerMode: "fake-live", realCloudCalls: false }],
-    computeAllocations: [{ id: "compute-rb-pg-cloud", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", planId: "starter_2c4g_10gb", computeUnits: 2, status: "released", quota: { cpu: 2 }, workloadClass: "starter" }],
+    computeAllocations: [{ id: "compute-rb-pg-cloud", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", planId: "starter_2c4g_10gb", computeUnits: 2, status: "released", nodePoolRef: "np-postgres-attribution-proof", quota: { cpu: 2 }, workloadClass: "starter" }],
     fileSpaceEntitlements: [{ id: "fs-rb-pg-cloud", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", planId: "starter_2c4g_10gb", capacityGb: 20, status: "retention_protected", retentionProtectionStatus: "active", retentionCleanupAfterAt: "2026-05-18T00:01:00.000Z" }],
     cloudResourceProjections: [{ id: "projection-rb-pg-cloud", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", status: "updated", productionPortalConnected: true, runnerMode: "fake-live", realCloudCalls: false, lastOperationId: "op-pg-storage-delete", visibleSummary: { resources: { compute: { statusLabel: "已释放", computeUnits: 2 }, fileSpace: { statusLabel: "文件保护期", capacityGb: 20 } } } }],
     billingReconciliations: [{ id: "recon-op-pg-storage-delete", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", operationId: "op-pg-storage-delete", status: "reconciling", statusLabel: "对账中", source: "portal_production_cloud_operation" }],
@@ -352,6 +353,7 @@ assert.deepEqual(snapshot.cloudOperations.map((item) => item.operationType), [
 assert.equal(snapshot.cloudOperations[0].productionPortalConnected, true, "cloud_operation_production_mapping");
 assert.equal(snapshot.cloudOperationJobs[0].queueMode, "inline_worker", "cloud_operation_job_read_mapping");
 assert.equal(snapshot.computeAllocations[0].status, "released", "compute_allocation_read_mapping");
+assert.equal(snapshot.computeAllocations[0].nodePoolRef, "np-postgres-attribution-proof", "compute_allocation_node_pool_ref_read_mapping");
 assert.equal(snapshot.fileSpaceEntitlements[0].capacityGb, 20, "file_space_read_mapping");
 assert.equal(snapshot.fileSpaceEntitlements[0].status, "retention_protected", "file_space_status_read_mapping");
 assert.equal(snapshot.cloudResourceProjections[0].visibleSummary.resources.fileSpace.statusLabel, "文件保护期", "projection_read_mapping");

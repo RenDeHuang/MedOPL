@@ -382,6 +382,7 @@ export function createPortalStoreSchema({
         status text NOT NULL,
         cluster_ref text NOT NULL DEFAULT '',
         namespace_ref text NOT NULL DEFAULT '',
+        node_pool_ref text NOT NULL DEFAULT '',
         quota_json jsonb NOT NULL DEFAULT '{}'::jsonb,
         workload_class text NOT NULL DEFAULT '',
         created_at timestamptz NOT NULL,
@@ -472,6 +473,7 @@ export function createPortalStoreSchema({
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS idempotency_key text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("compute_allocations")} ADD COLUMN IF NOT EXISTS node_pool_ref text NOT NULL DEFAULT '';
     `);
   }
 

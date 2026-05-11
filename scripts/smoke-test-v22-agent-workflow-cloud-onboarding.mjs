@@ -63,16 +63,17 @@ const statusPayload = parseJson(statusResult.stdout, "cloud_onboarding_status");
 assert.equal(statusPayload.ok, true, "status_ok");
 assert.equal(statusPayload.command, "cloud-onboarding status", "status_command");
 assert.equal(statusPayload.programId, "v22-cloud-onboarding", "program_id");
-assert.equal(statusPayload.currentPhase, "CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization", "current_phase");
-assert.equal(statusPayload.activeLane, "Portal production storage-create evidence review", "active_lane");
-assert.equal(statusPayload.nextLane, "B review / absorption decision, then separate authorization for compute/delete/deploy if needed", "next_lane");
+assert.equal(statusPayload.currentPhase, "CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization", "current_phase");
+assert.equal(statusPayload.activeLane, "Portal production bridge env and canonical writeback blocker review", "active_lane");
+assert.equal(statusPayload.nextLane, "Portal deploy-env/secret-reference gate, then B review / absorption decision", "next_lane");
 assert.equal(statusPayload.handoffTarget, "B", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
   "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+  "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
   "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
 ], "active_required_smoke");
-assert.equal(statusPayload.userGate, "stop if real cloud scope expands beyond authorized storage-create", "active_user_gate");
+assert.equal(statusPayload.userGate, "stop if live Portal bridge env/secret config changes without a deploy gate", "active_user_gate");
 
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-01"), "summary_done_must_include_co01");
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-04"), "summary_done_must_include_co04");
@@ -106,12 +107,13 @@ const defaultGatePacket = findPacket(statusPayload, "default-gate");
 assert.equal(defaultGatePacket.handoffTarget, "B", "default_gate_handoff");
 assert.equal(defaultGatePacket.status, "done", "default_gate_status");
 
-const portalStorageReviewPacket = findPacket(statusPayload, "portal-storage-create-evidence-review");
-assert.equal(portalStorageReviewPacket.handoffTarget, "B", "portal_storage_review_handoff");
-assert.equal(portalStorageReviewPacket.status, "storage-create-canary-done", "portal_storage_review_status");
-assert.equal(portalStorageReviewPacket.requiresManualMergeDecision, true, "portal_storage_review_manual");
-assert(portalStorageReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs"), "portal_storage_review_must_include_production_loop_smoke");
-assert(portalStorageReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs"), "portal_storage_review_must_include_postgres_store_smoke");
+const portalBridgeReviewPacket = findPacket(statusPayload, "portal-production-bridge-env-review");
+assert.equal(portalBridgeReviewPacket.handoffTarget, "B", "portal_bridge_review_handoff");
+assert.equal(portalBridgeReviewPacket.status, "production-bridge-env-blocked", "portal_bridge_review_status");
+assert.equal(portalBridgeReviewPacket.requiresManualMergeDecision, true, "portal_bridge_review_manual");
+assert(portalBridgeReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs"), "portal_bridge_review_must_include_production_loop_smoke");
+assert(portalBridgeReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs"), "portal_bridge_review_must_include_lifecycle_loop_smoke");
+assert(portalBridgeReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs"), "portal_bridge_review_must_include_postgres_store_smoke");
 
 const userLivePacket = findPacket(statusPayload, "user-authorized-readonly-live");
 assert.equal(userLivePacket.handoffTarget, "D", "user_live_handoff");
@@ -131,7 +133,7 @@ assert.equal(nextResult.status, 0, `cloud_onboarding_next_must_exit_zero:${nextR
 assertNotIncludesAny(nextResult.stdout, forbiddenOutputPhrases, "cloud_onboarding_next_stdout");
 const nextPayload = parseJson(nextResult.stdout, "cloud_onboarding_next");
 assert.equal(nextPayload.command, "cloud-onboarding next", "next_command");
-assert.equal(nextPayload.nextTaskPacket.id, "portal-storage-create-evidence-review", "next_task_packet_id");
+assert.equal(nextPayload.nextTaskPacket.id, "portal-production-bridge-env-review", "next_task_packet_id");
 assert.equal(nextPayload.nextTaskPacket.handoffTarget, "B", "next_task_handoff");
 assert.equal(nextPayload.nextTaskPacket.requiresManualMergeDecision, true, "next_task_must_need_b_review");
 assert.equal(nextPayload.nextTaskPacket.suggestedCommands.some((command) => command.includes("kubectl")), false, "next_task_must_not_emit_kubectl_command");
@@ -142,8 +144,8 @@ assertNotIncludesAny(humanStatus.stdout, forbiddenOutputPhrases, "cloud_onboardi
 assertIncludesAll(humanStatus.stdout, [
   "v22 cloud onboarding workflow",
   "program id: v22-cloud-onboarding",
-  "active lane: Portal production storage-create evidence review",
-  "next lane: B review / absorption decision, then separate authorization for compute/delete/deploy if needed",
+  "active lane: Portal production bridge env and canonical writeback blocker review",
+  "next lane: Portal deploy-env/secret-reference gate, then B review / absorption decision",
   "needs-user-authorization",
   "A/B/C/D handoff",
   "JSON 摘要",

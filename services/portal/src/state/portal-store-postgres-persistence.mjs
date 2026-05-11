@@ -351,6 +351,7 @@ export async function readPortalPostgresSnapshot({
       status: row.status,
       clusterRef: row.cluster_ref || "",
       namespaceRef: row.namespace_ref || "",
+      nodePoolRef: row.node_pool_ref || "",
       quota: row.quota_json || {},
       workloadClass: row.workload_class || "",
       createdAt: toIso(row.created_at),

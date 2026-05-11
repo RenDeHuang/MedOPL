@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本状态总表记录 v22 cloud onboarding 每阶段状态、证据、owner、下一棒、required smoke 和 user gate。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
-当前 production loop 分支实现 Portal 正式云操作闭环和 PostgreSQL canonical store shape；本地验证覆盖 fake-live runner，并在用户明确提供 Package C mutation secret file path 后完成最小 `storage-create` 真实 Tencent canary。canary 证据只写 `.runtime`，不进 git；本分支不改 deploy，不 build/push/kubectl，不做 compute/delete/deploy。
+当前 production loop 分支实现 Portal 正式云操作闭环和 PostgreSQL canonical store shape；本地验证覆盖 fake-live runner，并在用户明确提供 Package C mutation secret file path 后完成真实 Package C storage/compute create/expand/release/delete canary。canary 证据只写 `.runtime`，不进 git。本分支还完成 Package D schema migration、rollout 和 runtime smoke，但 live Portal Deployment 尚未启用 production cloud-operation bridge，也未配置 Package C runner secret reference；因此用户在生产 Portal 点击开通还不会写入生产 PostgreSQL cloud operation 表，也不会由 Portal 触发真实 Package C。
 
 Package D / OPL Deployment Discovery 已作为独立 docs/status 分支记录：`docs/v22-package-d-opl-deploy-discovery`，model: gpt-5.4。该分支只写状态和 smoke：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不代表 Package D rollout，不代表 deploy/build/push/kubectl 已完成。
 
@@ -20,11 +20,11 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 - TC3 cleanup: pending official SDK live report
 - create/release dry-run: pending
 - mutation wrapper: pending
-- production deploy: blocked by Portal schema migration after authorized Package D dry-run and rollback
+- production deploy: schema migration, rollout, and runtime smoke passed for Package D; production Portal cloud-operation bridge remains disabled in the live Deployment
 - Package D / OPL deployment discovery: owner guard blocker was real and has now been resolved for the authorized `default` platform-service targets by adding `targetClass/ownerRef/operationId` Kubernetes labels; the guard remains hard for future targets
 - Package D image push gate: authorized real R-14/R-15 TCR preflight/build/push completed for `portal`, `opl-web-gateway`, and `opl-runtime-bridge`; digest report remains under `.runtime/v22-registry/`
-- Package D deploy dry-run gate: authorized real R-16 server-side dry-run passed after owner guard labels were added; rollout reached a new Portal schema migration blocker and was rolled back
-- Portal production integration: local production API + PostgreSQL canonical store smoke done; user-authorized real Tencent `storage-create` canary done for the storage-create sub-loop only
+- Package D deploy dry-run gate: authorized real R-16 server-side dry-run passed after owner guard labels were added; Portal schema migration was run through a separate gate; rollout and pushed-version runtime smoke passed
+- Portal production integration: local production API + PostgreSQL canonical store smoke done; backend compute allocation now records `nodePoolRef` for admin attribution; user-authorized real Tencent Package C canaries exist under `.runtime`; live Deployment production bridge env remains disabled and production PostgreSQL cloud operation tables are currently empty
 - canary/QA/release status: pending
 
 ## Status Table
@@ -42,8 +42,8 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 | CO-09 | create/release dry-run plan | pending | pending | A | design no-mutation dry-run plan after readonly report review | `smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs`; `smoke-test-v22-authorized-tencent-create-release-contract.mjs` | stop if dry-run wants real cloud, mutation secret, charge, or ledger mutation |
 | CO-10 | mutation SDK wrapper | pending | pending | A | define fake-only mutation wrapper and gates | `smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs`; `smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs` | stop if mutation secret, real API, dependency change, build/push/kubectl, or deploy is needed |
 | CO-11 | minimal authorized create/release live | pending | pending | user | only after dry-run, wrapper, B review, and explicit user authorization | execution contract smoke; preflight dry-run diff; rollback/audit smoke | must explicitly authorize each real mutation, budget, tags, retry, rollback, and scope expansion |
-| CO-12 | production deploy execution | blocked-by-portal-schema-migration | Package D authorized real path progressed: owner guard labels added to `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`; real R-16 server-side dry-run passed at `.runtime/v22-cloud-deploy/package-d-real-20260511154104-deploy-dry-run.json`; R-17 rollout attempted `portal` first and failed because the new Portal image reported `portal_schema_missing_tables` for v22 cloud-operation tables. Portal was rolled back to the previous ready image and `portal.medopl.cn`, `opl.medopl.cn`, and `trace.medopl.cn` returned 200 after rollback. | user | run a separate Portal / DB schema migration gate, then re-run Package D dry-run and rollout; do not claim pushed Portal version is running until migration evidence, rollout status, and runtime smoke pass | `smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs`; `smoke-test-v22-package-d-image-push-gate.mjs`; `smoke-test-v22-package-d-deploy-dry-run-gate.mjs`; `smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`; deploy plan smoke; server-side dry-run; rollout status; runtime smoke | must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback, and any Portal schema migration; fail-closed if real target metadata lacks owner guard, if D2 digest report is missing, or if Portal schema migration evidence is missing |
-| CO-13 | Portal production integration | storage-create-canary-done | production Portal route `/portal/api/v22/cloud-operations/storage/create`, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, and user-authorized real Tencent storage-create canary passed; canary report refs stay under `.runtime/v22-cloud-lifecycle/` | A | B review the storage-create evidence and decide absorption; do not widen to compute/delete/deploy without a new explicit authorization and gate | `smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | stop if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create |
+| CO-12 | production deploy execution | deploy-runtime-smoke-done | Package D authorized real path progressed: owner guard labels added to `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`; real R-16 server-side dry-run passed at `.runtime/v22-cloud-deploy/package-d-real-20260511154104-deploy-dry-run.json`; Portal schema migration gate passed at `.runtime/v22-cloud-deploy/portal-schema-migrate-v22-20260511170138.json`; real R-17 rollout passed at `.runtime/v22-cloud-deploy/package-d-real-20260511154104-rollout.json`; real R-18 runtime smoke passed at `.runtime/v22-runtime-smoke/package-d-real-20260511154104-runtime-smoke.json` for Portal, OPL Gateway, and Runtime Bridge. Trace surface returned 200 but does not prove a repo-pushed Langfuse image. | B | review Package D evidence for absorption readiness; do not treat Package D as Package C storage/compute lifecycle or Portal cloud-operation bridge enablement | `smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs`; `smoke-test-v22-package-d-image-push-gate.mjs`; `smoke-test-v22-package-d-deploy-dry-run-gate.mjs`; `smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`; deploy plan smoke; server-side dry-run; rollout status; runtime smoke | must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback, and any future Portal schema migration or env change; fail-closed if real target metadata lacks owner guard or if D2 digest report is missing |
+| CO-13 | Portal production integration | production-bridge-env-blocked | production Portal route `/portal/api/v22/cloud-operations/*`, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, backend `nodePoolRef` attribution, and user-authorized real Tencent Package C canaries exist; however the live `portal-opl` Deployment does not enable `PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE`, does not configure `PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE`, and a read-only production PostgreSQL check found `portal_cloud_operations`, `portal_cloud_operation_jobs`, `portal_compute_allocations`, `portal_file_space_entitlements`, and `portal_billing_reconciliations` currently at 0 rows. | A | add a separate Portal deploy-env/secret-reference gate before claiming user clicks in production Portal trigger real Package C or write canonical cloud operation rows | `smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs`; `smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | stop if Portal would expose secret/internal/cloud console language, if ordinary user projection exposes `nodePoolRef`/TKE/Kubernetes, if billing truth would be altered without reconciliation, or if live Portal bridge env/secret config changes without a deploy gate |
 | CO-14 | canary / QA / release status update | pending | pending | C | run QA/status update after Portal integration and authorized canary scope | canary/QA smoke; `smoke-test-v22-mvp-contract-suite.mjs`; workflow gate review | stop if QA needs live credentials, canary calls real service, or release status implies readiness |
 
 ## Open Issues
@@ -52,7 +52,8 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 - workflow contract phase 14 required contracts still includes role surface contracts and release/status docs. Track as should-fix before canary / QA / release status update can be release-ready.
 - Package D / OPL Deployment Discovery records reachable `kube.medopl.cn`, `portal.medopl.cn`, `opl.medopl.cn`, and `trace.medopl.cn` facts from the authorized discovery lane, but it did not read secret, did not read kubeconfig, did not run kubectl, and did not build/push/deploy.
 - owner guard blocker resolved for the authorized `default` Package D platform-service targets by adding `targetClass/ownerRef/operationId` labels. The rule remains hard: Package D cannot use `k8s-app/qcloud-app`, deployment name, namespace, IP, creation time, or manual memory as ownership proof.
-- Portal schema migration blocker: the pushed Portal image requires v22 cloud-operation PostgreSQL tables that are not present in the production database. Package D rollout must stop until a separate Portal / DB migration gate runs and produces evidence.
+- Portal production cloud bridge blocker: production PostgreSQL schema exists and Package D pushed-version runtime smoke passed, but the live Portal Deployment does not enable production cloud-operation bridge env or Package C runner secret reference. Real Portal clicks therefore do not yet write cloud-operation rows or call Package C.
+- Node pool cleanup blocker: the authorized TKE native node pool is not an idle test-only pool; it currently carries Portal/OPL/trace/billing/system workloads. It must not be deleted or scaled to 0 as cleanup. Releasing a user compute allocation must use Package C ownership and desired-capacity gates, not direct node pool deletion.
 - contract issue resolved for config/fake-live gate: `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` defines `platform_service_target` and `workspace_runtime_target`; real target metadata and authorization are still required before build/push/kubectl.
 - D2 issue resolved for config/fake-live gate: `build-push` now requires `acceptedPreflightId`; real TCR preflight/build/push still requires deploy secret and explicit user authorization.
 - D3a issue resolved for config/fake-live gate: `deploy-dry-run` now requires `imageDigestsFile`; real kubectl server-side dry-run still requires deploy secret/kubeconfig and explicit user authorization.
@@ -121,12 +122,12 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     "status": "blocked_by_owner_guard_and_release_plan_contract",
     "ownershipReleasePlanContract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
     "ownershipReleasePlanContractReady": true,
-    "realRolloutStillBlocked": true,
+    "realRolloutStillBlocked": false,
     "readsSecretNow": false,
     "readsKubeconfigNow": false,
     "runsKubectlNow": false,
     "runsBuildPushDeployNow": false,
-    "rolloutDone": false,
+    "rolloutDone": true,
     "requiresOwnershipReleasePlanSubContract": true,
     "blocker": "candidate deployments only have k8s-app/qcloud-app style labels for this purpose and lack ownerRef/workspaceId/resourceBindingId/operationId",
     "candidateDeployments": {
@@ -336,10 +337,10 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     {
       "phaseId": "CO-12",
       "phaseName": "production deploy execution",
-      "status": "blocked-by-portal-schema-migration",
-      "evidenceCommitOrReport": "Package D authorized real path progressed: owner guard labels added to default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl; real R-16 server-side dry-run passed at .runtime/v22-cloud-deploy/package-d-real-20260511154104-deploy-dry-run.json; R-17 rollout attempted portal first and failed because the new Portal image reported portal_schema_missing_tables for v22 cloud-operation tables. Portal was rolled back to the previous ready image and portal.medopl.cn, opl.medopl.cn, and trace.medopl.cn returned 200 after rollback.",
-      "owner": "user",
-      "nextAction": "run a separate Portal / DB schema migration gate, then re-run Package D dry-run and rollout; do not claim pushed Portal version is running until migration evidence, rollout status, and runtime smoke pass",
+      "status": "deploy-runtime-smoke-done",
+      "evidenceCommitOrReport": "Package D authorized real path progressed: owner guard labels added to default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl; real R-16 server-side dry-run passed at .runtime/v22-cloud-deploy/package-d-real-20260511154104-deploy-dry-run.json; Portal schema migration gate passed at .runtime/v22-cloud-deploy/portal-schema-migrate-v22-20260511170138.json; real R-17 rollout passed at .runtime/v22-cloud-deploy/package-d-real-20260511154104-rollout.json; real R-18 runtime smoke passed at .runtime/v22-runtime-smoke/package-d-real-20260511154104-runtime-smoke.json for Portal, OPL Gateway, and Runtime Bridge. Trace surface returned 200 but does not prove a repo-pushed Langfuse image.",
+      "owner": "B",
+      "nextAction": "review Package D evidence for absorption readiness; do not treat Package D as Package C storage/compute lifecycle or Portal cloud-operation bridge enablement",
       "requiredSmoke": [
         "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
         "scripts/smoke-test-v22-package-d-image-push-gate.mjs",
@@ -350,22 +351,23 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
         "rollout status",
         "runtime smoke"
       ],
-      "userGate": "must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback, and any Portal schema migration; fail-closed if real target metadata lacks owner guard, if D2 digest report is missing, or if Portal schema migration evidence is missing"
+      "userGate": "must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback, and any future Portal schema migration or env change; fail-closed if real target metadata lacks owner guard or if D2 digest report is missing"
     },
     {
       "phaseId": "CO-13",
       "phaseName": "Portal production integration",
-      "status": "storage-create-canary-done",
-      "evidenceCommitOrReport": "production Portal route, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, and user-authorized real Tencent storage-create canary passed; canary report refs stay under .runtime/v22-cloud-lifecycle/",
+      "status": "production-bridge-env-blocked",
+      "evidenceCommitOrReport": "production Portal route /portal/api/v22/cloud-operations/*, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, backend nodePoolRef attribution, and user-authorized real Tencent Package C canaries exist; however the live portal-opl Deployment does not enable PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE, does not configure PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE, and a read-only production PostgreSQL check found portal_cloud_operations, portal_cloud_operation_jobs, portal_compute_allocations, portal_file_space_entitlements, and portal_billing_reconciliations currently at 0 rows.",
       "owner": "A",
-      "nextAction": "B review the storage-create evidence and decide absorption; do not widen to compute/delete/deploy without a new explicit authorization and gate",
+      "nextAction": "add a separate Portal deploy-env/secret-reference gate before claiming user clicks in production Portal trigger real Package C or write canonical cloud operation rows",
       "requiredSmoke": [
         "scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs",
         "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+        "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
         "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
         "scripts/smoke-test-v22-mvp-contract-suite.mjs"
       ],
-      "userGate": "stop if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create"
+      "userGate": "stop if Portal would expose secret/internal/cloud console language, if ordinary user projection exposes nodePoolRef/TKE/Kubernetes, if billing truth would be altered without reconciliation, or if live Portal bridge env/secret config changes without a deploy gate"
     },
     {
       "phaseId": "CO-14",

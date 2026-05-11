@@ -77,12 +77,14 @@ release compute 不删除文件空间，不触发文件空间 7 天保护期。
 
 node pool 扩缩容、namespace/quota 变更、kubectl、deploy 都必须由用户在当前会话明确授权，并且必须有 dry-run diff、预算上限和回滚策略。
 
+MVP 可以使用平台级共享授权节点池。Portal 后台必须能通过 PostgreSQL canonical `compute_allocation` 追踪每个用户 / 工作空间 / `resourceBindingId` 绑定到哪个授权资源池：`nodePoolRef` 是后台审计字段，不是普通用户产品概念，也不表示“一用户一个节点池”。同一个平台节点池可以承载多个用户的计算分配；普通用户只看到“计算资源 / 套餐 / 任务并发 / 状态”，管理员和审计路径可以查看脱敏 `nodePoolRef`、`clusterRef`、`namespaceRef`、quota 和 workload class。
+
 ## Portal Operation Truth
 
 真实 execution 前，Portal 必须先写 PostgreSQL canonical operation。至少需要以下记录类型：
 
 - cloud operation：operationId、operationType、requestedBy、workspaceId、resourceBindingId、status、requestedSpec、dryRunDiffRef、authorizationRef。
-- compute allocation：workspaceId、resourceBindingId、clusterRef、namespaceRef、quota、workloadClass、status。
+- compute allocation：workspaceId、resourceBindingId、clusterRef、namespaceRef、nodePoolRef、quota、workloadClass、status。
 - file space entitlement：workspaceId、resourceBindingId、capacityGb、retentionState、status。
 - cloud resource projection：只保存脱敏资源摘要和绑定标签，不保存 raw cloud object。
 - wallet ledger / freeze：预估冻结金额、状态、核对窗口。
@@ -117,7 +119,7 @@ create 时必须生成并写入以下标签：
 
 release 时必须同时匹配 Portal ledger 和云资源标签。不能只靠资源名称、创建时间、IP、规格或历史任务推断归属。
 
-标签缺失、冲突、归属不一致时 fail-closed，进入 admin 审计队列。审计队列必须保留安全证据、候选 ledger、候选标签摘要、处理状态和重试策略，不得暴露 secret 或 provider raw response。
+标签、Portal `resourceBindingId`、compute allocation 和后台 `nodePoolRef` 缺失、冲突、归属不一致时 fail-closed，进入 admin 审计队列。审计队列必须保留安全证据、候选 ledger、候选标签摘要、处理状态和重试策略，不得暴露 secret 或 provider raw response。
 
 ## 默认风控和 Portal 配置
 
@@ -194,6 +196,8 @@ release 分阶段执行：
 普通用户不展示 CVM/TKE/COS/K8s/nodePool、云资源清单、服务器编号、Secret/token/objectKey 等底层词。普通用户主语言必须是账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额、保护期和审计状态。
 
 管理员/运维可以看到必要后台归因标签、审计状态和异常摘要，但 secret、raw response、objectKey、storageKey、cosPrefix、signedUrl、kubeconfig 仍不可见。
+
+管理员/运维可见的后台归因可以包括脱敏 `nodePoolRef`，用于判断用户计算分配属于哪个授权资源池。普通用户可见 projection、API response、Portal 页面和 OPL session 不得出现 `nodePoolRef`、nodePool、TKE、Kubernetes 或云控制台语言。
 
 ## Non-Goals
 

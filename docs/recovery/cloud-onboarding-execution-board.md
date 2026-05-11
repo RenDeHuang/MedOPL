@@ -4,15 +4,15 @@ program id: v22-cloud-onboarding
 
 current trunk anchor: 148f5a0
 
-current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization
+current phase: CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization
 
 本文件是 v22 cloud onboarding 的中央执行板。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
-本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前分支实现 Portal production storage-create loop，并在用户明确提供 Package C mutation secret file path 后完成最小 real Tencent storage-create canary。它不改 deploy，不 build/push/kubectl，不做 compute/delete/deploy；canary 证据只写 `.runtime`，不进 git。
+本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前分支实现 Portal production cloud-operation loop shape，并在用户明确提供 Package C mutation secret file path 后完成真实 Package C storage/compute canary。它还完成 Package D schema migration、rollout 和 runtime smoke。所有真实 canary 证据只写 `.runtime`，不进 git。当前 blocker 是 live Portal Deployment 未启用 production cloud-operation bridge env 和 Package C runner secret reference。
 
 Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-discovery` 分支，model: gpt-5.4。该 discovery 只回写已知事实和 owner guard blocker：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不是 Package D rollout，does not prove build/push/kubectl/deploy completion，不代表 deploy/build/push/kubectl 已完成。
 
-Cloud-lane Package D stack is intentionally long-lived. The active implementation branch is `cloud-lane/feat/v22-real-cloud-portal-package-cd-loop`, model: `gpt-5.4`. It records authorized real Package C/D evidence, including D owner guard label application, R-16 real server-side dry-run, R-17 rollout attempt, Portal rollback, and the current Portal schema migration blocker. B should not absorb this branch until the blocker is either productionized or split into a clean absorption unit.
+Cloud-lane Package D stack is intentionally long-lived. The active implementation branch is `cloud-lane/feat/v22-real-cloud-portal-package-cd-loop`, model: `gpt-5.4`. It records authorized real Package C/D evidence, including D owner guard label application, R-16 real server-side dry-run, Portal schema migration gate, R-17 rollout, R-18 runtime smoke, and the current Portal production cloud bridge blocker. B should not absorb this branch until the blocker is either productionized or split into a clean absorption unit.
 
 关联状态表：`docs/recovery/cloud-onboarding-status-table.md`。
 
@@ -20,13 +20,13 @@ Cloud-lane Package D stack is intentionally long-lived. The active implementatio
 
 - program id: v22-cloud-onboarding
 - current trunk anchor: 148f5a0
-- current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization
-- current lane: Portal production storage-create evidence review
-- next lane: B review / absorption decision, then separate authorization for compute/delete/deploy if needed
+- current phase: CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization
+- current lane: Portal production bridge env and canonical writeback blocker review
+- next lane: Portal deploy-env/secret-reference gate, then B review / absorption decision
 - cloud-lane branch: `cloud-lane/feat/v22-real-cloud-portal-package-cd-loop`
 - cloud-lane model: `gpt-5.4`
 - cloud-lane stack base: D2 `cloud-lane/feat/v22-package-d-image-push-gate` at `7fbc632`
-- cloud-lane status: real Package D dry-run passed; rollout blocked by Portal PostgreSQL schema migration; Portal rolled back and public surfaces are healthy
+- cloud-lane status: real Package D dry-run passed; schema migration, rollout, and pushed-version runtime smoke passed; production Portal cloud bridge remains disabled in live Deployment
 - workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - execution board owner: B for board truth, A for implementation task packages, user for live authorization
@@ -122,7 +122,8 @@ user confirmation gates:
 
 - open issue: workflow contract phase 12 required contracts still includes deploy plan contract. It must be replaced by a concrete repo-tracked contract path before production deploy execution can leave planning.
 - open issue: workflow contract phase 14 required contracts still includes role surface contracts and release/status docs. It must be replaced by concrete repo-tracked contract/status files before canary / QA / release status update can be treated as release-ready.
-- open issue: Package D owner guard is now resolved for the authorized `default` platform-service targets, but real rollout remains blocked by Portal schema migration. The new Portal image requires v22 cloud-operation PostgreSQL tables before it can become available.
+- open issue: Package D owner guard is resolved for the authorized `default` platform-service targets; Portal schema migration, rollout, and pushed-version runtime smoke passed. The remaining production integration blocker is that the live Portal Deployment does not enable `PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE` or configure the Package C runner secret reference, so real Portal clicks do not yet write cloud operation rows or call Package C.
+- open issue: the authorized native TKE node pool currently carries Portal/OPL/trace/billing/system workloads. It must not be deleted or scaled to 0 as cleanup; user compute release must go through Package C desired-capacity and ownership gates.
 - 本分支只登记 open issue，不修改 workflow 合同。
 
 ## Runnable Path Snapshot
@@ -146,8 +147,8 @@ user confirmation gates:
 | R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; OPL deployment ownership / release plan contract defines target classes; real preflight still requires reviewed plan and authorization |
 | R-15 multi-image build and push unique test tag | CC-07 | deploy_and_production_integration | D2 cloud-lane runner gate requires accepted R-14 preflight id before build-push; real push blocked until deploy secret/build/push authorization |
 | R-16 deploy dry-run | CC-07 | deploy_and_production_integration | authorized real server-side dry-run passed after owner guard labels were applied |
-| R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | attempted; blocked by `portal_schema_missing_tables`; Portal rolled back to previous ready image |
-| R-18 runtime smoke | CC-07 | deploy_and_production_integration | post-rollback surface health passed; pushed Portal version is not running and runtime smoke for pushed version remains blocked by schema migration |
+| R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | passed after Portal schema migration gate; report under `.runtime/v22-cloud-deploy/package-d-real-20260511154104-rollout.json` |
+| R-18 runtime smoke | CC-07 | deploy_and_production_integration | pushed Portal, OPL Gateway, and Runtime Bridge version smoke passed; trace surface is reachable but does not prove a repo-pushed Langfuse image |
 | R-19 release compute | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-20 delete file space | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-21 final reconciliation cleanup and B review | CC-REVIEW | manual_b_review | path defined; B absorption gate |
@@ -201,7 +202,7 @@ Discovery status:
 - not Package D rollout.
 - does not prove build/push/kubectl/deploy completion.
 - 不代表 deploy/build/push/kubectl 已完成。
-- R-14 through R-16 have authorized real evidence for this run; R-17/R-18 remain blocked until Portal schema migration evidence exists, then rollout and pushed-version runtime smoke can be rerun.
+- R-14 through R-18 have authorized real evidence for this run; the next blocker is production Portal cloud bridge env/secret configuration and canonical operation writeback.
 
 ## Board Data
 
@@ -210,7 +211,7 @@ Discovery status:
 {
   "programId": "v22-cloud-onboarding",
   "currentTrunkAnchor": "148f5a0",
-  "currentPhase": "CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization",
+  "currentPhase": "CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization",
   "workflowModel": "authorized_cloud_connection_loop",
   "oldCoPhaseStateMachineRetired": true,
   "activeGatePrefix": "CC",
@@ -222,8 +223,8 @@ Discovery status:
     "C04",
     "CO-01..CO-14"
   ],
-  "currentLane": "Portal production storage-create evidence review",
-  "nextLane": "B review / absorption decision, then separate authorization for compute/delete/deploy if needed",
+  "currentLane": "Portal production bridge env and canonical writeback blocker review",
+  "nextLane": "Portal deploy-env/secret-reference gate, then B review / absorption decision",
   "cloudLane": {
     "branch": "cloud-lane/feat/v22-package-d-deploy-dry-run-gate",
     "model": "gpt-5.4",
@@ -259,14 +260,18 @@ Discovery status:
     "readsKubeconfigNow": false,
     "runsKubectlNow": false,
     "runsBuildPushDeployNow": false,
-    "rolloutDone": false,
+    "rolloutDone": true,
     "ownerGuardBlocked": false,
     "requiresOwnershipReleasePlanSubContract": true,
     "ownershipReleasePlanContract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
     "ownershipReleasePlanContractReady": true,
-    "realRolloutStillBlocked": true,
-    "realRolloutBlocker": "portal_schema_missing_tables",
+    "realRolloutStillBlocked": false,
+    "realRolloutBlocker": null,
     "realDeployDryRunDone": true,
+    "realRuntimeSmokeDone": true,
+    "productionPortalBridgeEnabledInLiveDeployment": false,
+    "productionCloudOperationRowsObserved": 0,
+    "authorizedNodePoolIdle": false,
     "rollbackDone": true,
     "kubeApiEndpoint": "kube.medopl.cn",
     "runtimeSurfaces": [

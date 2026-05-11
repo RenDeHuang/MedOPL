@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本矩阵定义 v22 cloud onboarding 的验证分层。AGENTS 管协作纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒；本文件只说明每类验证证明什么、什么时候必须跑、不能做什么，以及 blocker 应回流到哪里。
 
-本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal schema migration blocker 后回滚。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
+本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal production cloud bridge blocker 后回滚。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
 
 ## Verification Scope
 
@@ -69,8 +69,11 @@ Current real Package D evidence for this branch:
 - real R-14/R-15 TCR preflight/build/push completed for `portal`, `opl-web-gateway`, and `opl-runtime-bridge`.
 - real owner guard labels `targetClass/ownerRef/operationId` were applied to the authorized `default` platform-service deployments.
 - real R-16 server-side deploy dry-run passed.
-- R-17 rollout attempted `portal` first, failed with `portal_schema_missing_tables`, and was rolled back to the previous ready image.
-- R-18 pushed-version runtime smoke is not complete because the pushed Portal version is not running.
+- Portal schema migration gate passed after an initial PostgreSQL deadlock retry.
+- real R-17 rollout passed.
+- R-18 pushed-version runtime smoke is complete for Portal, OPL Gateway, and Runtime Bridge; trace surface health is reachable but does not prove a repo-pushed Langfuse image.
+
+Package D evidence does not prove production Portal clicks execute Package C. A read-only live Deployment check found `PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE` unset, `PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE` unset, and a production PostgreSQL check found the v22 cloud-operation tables currently empty. That blocker belongs to a separate Portal deploy-env/secret-reference gate.
 
 ## Package D / OPL Deployment Discovery Verification
 
@@ -99,7 +102,7 @@ Contract issue for next branch:
 - Portal/Gateway/Adapter/trace may be platform service targets.
 - workspace runtime targets still require workspaceId/resourceBindingId.
 - The next branch must define an OPL deployment ownership / release plan sub-contract with target class, platform service target guard, workspace runtime target guard, release plan fields, dry-run evidence, rollback evidence, and runtime smoke coverage.
-- This discovery does not loosen the current Package D owner guard; it records why real rollout is blocked.
+- This discovery does not loosen the current Package D owner guard. Real rollout is no longer blocked for the authorized `default` platform-service targets, but future targets still fail closed without owner guard evidence.
 
 ## OPL Deployment Ownership Release Plan Verification
 
@@ -169,16 +172,22 @@ It does not verify:
 
 Real D3a canary requires explicit user authorization for deploy secret read, kubeconfig reference, cluster/namespace/workload/container scope, selected release plan, D2 image digest report and `.runtime` deploy dry-run report location.
 
-## Package D Portal Schema Migration Blocker
+## Package D Portal Schema Migration And Portal Bridge Blocker
 
-Real R-17 rollout surfaced a Portal-specific blocker:
+Real R-17 rollout initially surfaced a Portal-specific blocker:
 
 - the pushed Portal image requires v22 cloud-operation PostgreSQL tables.
 - production Portal database did not have those tables at rollout time.
 - the Portal container exited with `portal_schema_missing_tables`.
-- the rollout was stopped and Portal was rolled back.
+- the rollout was stopped and Portal was rolled back before migration.
 
-This verifies the deployment guard is doing useful work, but it does not verify production Portal is running the pushed image. Before re-running R-17/R-18, a separate Portal / DB migration gate must produce evidence that `node src/migrate-schema.mjs` or an equivalent migration job has run against the intended production database/schema namespace.
+The separate Portal / DB migration gate then ran `node src/migrate-schema.mjs` through a Kubernetes Job against the intended production namespace/database, produced `schemaVersion: v20.32`, and allowed R-17/R-18 to pass. The current blocker is different: live Portal does not enable the production cloud-operation bridge env or Package C runner secret reference, so user clicks do not yet write canonical cloud operation rows or call Package C.
+
+## Package C Attribution And Node Pool Cleanup Verification
+
+Portal canonical compute allocation now includes backend `nodePoolRef` so admins can answer which authorized resource pool a user's compute allocation maps to by joining `tenantId/userId/workspaceId/resourceBindingId`. Ordinary user projection must not expose `nodePoolRef`, nodePool, TKE or Kubernetes language.
+
+The authorized TKE native node pool observed during this branch is not an idle test-only node pool: it carries Portal/OPL/trace/billing/system workloads. It must not be deleted or scaled to 0 as cleanup. Package C release should target user compute allocation semantics and desired-capacity reconciliation, not direct node pool deletion.
 
 ## Forbidden Actions By Layer
 
@@ -263,7 +272,7 @@ Required follow-through:
     "smoke": "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
     "realRolloutStillRequiresExplicitAuthorization": true,
     "currentAuthorizedRealDryRunDone": true,
-    "currentAuthorizedRealRolloutBlockedBy": "portal_schema_missing_tables",
+    "currentAuthorizedRealRolloutStatus": "rollout_and_runtime_smoke_passed",
     "currentAuthorizedRollbackDone": true
   },
   "layers": [

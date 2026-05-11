@@ -502,7 +502,7 @@ export async function writeCloudOperationJobs({ client, pgTableName, db }) {
 
 export async function writeComputeAllocations({ client, pgTableName, db }) {
   for (const row of db.computeAllocations || []) {
-    await client.query(`INSERT INTO ${pgTableName("compute_allocations")} (id,tenant_id,user_id,workspace_id,resource_binding_id,plan_id,compute_units,status,cluster_ref,namespace_ref,quota_json,workload_class,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    await client.query(`INSERT INTO ${pgTableName("compute_allocations")} (id,tenant_id,user_id,workspace_id,resource_binding_id,plan_id,compute_units,status,cluster_ref,namespace_ref,node_pool_ref,quota_json,workload_class,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       ON CONFLICT (id) DO UPDATE SET
         tenant_id=EXCLUDED.tenant_id,
         user_id=EXCLUDED.user_id,
@@ -513,6 +513,7 @@ export async function writeComputeAllocations({ client, pgTableName, db }) {
         status=EXCLUDED.status,
         cluster_ref=EXCLUDED.cluster_ref,
         namespace_ref=EXCLUDED.namespace_ref,
+        node_pool_ref=EXCLUDED.node_pool_ref,
         quota_json=EXCLUDED.quota_json,
         workload_class=EXCLUDED.workload_class,
         updated_at=EXCLUDED.updated_at`, [
@@ -526,6 +527,7 @@ export async function writeComputeAllocations({ client, pgTableName, db }) {
       row.status || "",
       row.clusterRef || "",
       row.namespaceRef || "",
+      row.nodePoolRef || "",
       JSON.stringify(row.quota || {}),
       row.workloadClass || "",
       row.createdAt || new Date().toISOString(),

@@ -92,7 +92,7 @@ assertIncludesAll(contract, [
   "resourceType",
   "region",
   "release 时必须同时匹配 Portal ledger 和云资源标签",
-  "标签缺失、冲突、归属不一致时 fail-closed",
+  "标签、Portal `resourceBindingId`、compute allocation 和后台 `nodePoolRef` 缺失、冲突、归属不一致时 fail-closed",
   "admin 审计队列",
 ], "execution_contract_ownership_tags");
 

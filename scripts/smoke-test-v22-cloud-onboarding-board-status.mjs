@@ -59,14 +59,13 @@ assertIncludesAll(board, [
   "v22 Cloud Onboarding Central Execution Board",
   "program id: v22-cloud-onboarding",
   "current trunk anchor: 148f5a0",
-  "current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization",
+  "current phase: CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization",
   "AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒",
   "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "docs/recovery/cloud-onboarding-status-table.md",
-  "real Tencent storage-create canary",
-  "不做 compute/delete/deploy",
-  "不改 deploy",
-  "不 build/push/kubectl",
+  "真实 Package C storage/compute canary",
+  "Package D schema migration、rollout 和 runtime smoke",
+  "production cloud-operation bridge env",
 ], "board_scope");
 
 assertIncludesAll(board, phaseNames, "board_phase_names");
@@ -124,8 +123,8 @@ assertIncludesAll(status, [
   "| CO-09 | create/release dry-run plan | pending |",
   "| CO-10 | mutation SDK wrapper | pending |",
   "| CO-11 | minimal authorized create/release live | pending |",
-  "| CO-12 | production deploy execution | blocked-by-portal-schema-migration |",
-  "| CO-13 | Portal production integration | storage-create-canary-done | production Portal route",
+  "| CO-12 | production deploy execution | deploy-runtime-smoke-done |",
+  "| CO-13 | Portal production integration | production-bridge-env-blocked | production Portal route",
   "| CO-14 | canary / QA / release status update | pending |",
 ], "status_current_truth");
 
@@ -138,9 +137,10 @@ assertIncludesAll(status, [
   "TC3 cleanup: pending official SDK live report",
   "create/release dry-run: pending",
   "mutation wrapper: pending",
-  "production deploy: blocked by Portal schema migration after authorized Package D dry-run and rollback",
-  "Portal schema migration blocker",
-  "Portal production integration: local production API + PostgreSQL canonical store smoke done; user-authorized real Tencent `storage-create` canary done for the storage-create sub-loop only",
+  "production deploy: schema migration, rollout, and runtime smoke passed for Package D; production Portal cloud-operation bridge remains disabled in the live Deployment",
+  "Portal production cloud bridge blocker",
+  "Portal production integration: local production API + PostgreSQL canonical store smoke done; backend compute allocation now records `nodePoolRef` for admin attribution",
+  "live Deployment production bridge env remains disabled and production PostgreSQL cloud operation tables are currently empty",
   "canary/QA/release status: pending",
 ], "status_plain_language_summary");
 
@@ -187,7 +187,7 @@ for (const phase of statusData.phases) {
   ]) {
     assert(Object.hasOwn(phase, key), `status_phase_${phase.phaseId}_missing:${key}`);
   }
-  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done", "blocked-by-portal-schema-migration"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
+  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done", "deploy-runtime-smoke-done", "production-bridge-env-blocked"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
 }
 
 const statusById = Object.fromEntries(statusData.phases.map((phase) => [phase.phaseId, phase]));
@@ -228,39 +228,48 @@ assertIncludesAll(
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
 assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
 assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
-assert.equal(boardData.currentPhase, "CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization", "board_current_phase_must_record_storage_create_canary");
-assert.equal(boardData.currentLane, "Portal production storage-create evidence review", "board_current_lane_must_match_storage_create_review");
-assert.equal(boardData.nextLane, "B review / absorption decision, then separate authorization for compute/delete/deploy if needed", "board_next_lane_must_match_b_review");
+assert.equal(boardData.currentPhase, "CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization", "board_current_phase_must_record_bridge_blocker");
+assert.equal(boardData.currentLane, "Portal production bridge env and canonical writeback blocker review", "board_current_lane_must_match_bridge_blocker_review");
+assert.equal(boardData.nextLane, "Portal deploy-env/secret-reference gate, then B review / absorption decision", "board_next_lane_must_match_env_gate");
 assert.equal(boardData.authorizedStorageCreateCanaryDone, true, "board_must_record_storage_create_canary_done");
+assert.equal(boardData.packageDDiscovery?.realRuntimeSmokeDone, true, "board_must_record_real_runtime_smoke_done");
+assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, false, "board_must_record_live_bridge_disabled");
+assert.equal(boardData.packageDDiscovery?.productionCloudOperationRowsObserved, 0, "board_must_record_empty_production_cloud_operation_rows");
+assert.equal(boardData.packageDDiscovery?.authorizedNodePoolIdle, false, "board_must_record_authorized_node_pool_not_idle");
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
 assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");
 assert(statusById["CO-08"].nextAction.includes("wait for official SDK live report and B acceptance"), "co08_next_action_must_wait_for_b_acceptance");
-assert.equal(statusById["CO-12"].status, "blocked-by-portal-schema-migration", "co12_must_record_portal_schema_blocker");
+assert.equal(statusById["CO-12"].status, "deploy-runtime-smoke-done", "co12_must_record_deploy_runtime_smoke_done");
 assertIncludesAll(
   `${statusById["CO-12"].evidenceCommitOrReport} ${statusById["CO-12"].nextAction} ${statusById["CO-12"].requiredSmoke.join(" ")} ${statusById["CO-12"].userGate}`,
   [
     "owner guard labels added",
     "real R-16 server-side dry-run passed",
-    "portal_schema_missing_tables",
-    "Portal was rolled back",
-    "Portal / DB schema migration gate",
+    "Portal schema migration gate passed",
+    "real R-17 rollout passed",
+    "real R-18 runtime smoke passed",
     "runtime smoke",
   ],
-  "co12_package_d_real_blocker_evidence"
+  "co12_package_d_real_done_evidence"
 );
-assert.equal(statusById["CO-13"].status, "storage-create-canary-done", "co13_must_record_storage_create_canary_done");
+assert.equal(statusById["CO-13"].status, "production-bridge-env-blocked", "co13_must_record_production_bridge_env_blocked");
 assertIncludesAll(
   `${statusById["CO-13"].evidenceCommitOrReport} ${statusById["CO-13"].nextAction} ${statusById["CO-13"].requiredSmoke.join(" ")} ${statusById["CO-13"].userGate}`,
   [
     "production Portal route",
     "PostgreSQL canonical store shape",
     "MVP suite coverage",
-    "user-authorized real Tencent storage-create canary passed",
-    "do not widen to compute/delete/deploy without a new explicit authorization and gate",
+    "backend nodePoolRef attribution",
+    "PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE",
+    "PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE",
+    "0 rows",
+    "Portal deploy-env/secret-reference gate",
+    "ordinary user projection exposes nodePoolRef/TKE/Kubernetes",
     "smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+    "smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
     "smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
   ],
-  "co13_production_portal_local_evidence"
+  "co13_production_portal_bridge_blocker_evidence"
 );
 
 assertIncludesAll(matrix, [
@@ -282,6 +291,8 @@ assertNotIncludesAny(board + status, [
   "默认读取 secret",
   "默认调用真实云",
   "默认修改 deploy",
+  "Portal was rolled back",
+  "pushed Portal version is not running",
 ], "board_status_forbidden_claims");
 
 console.log(JSON.stringify({

@@ -71,6 +71,7 @@ function routeFactory({ providerSecretStore, writes, secretFile } = {}) {
     cloudOperationRunnerMode: "fake-live",
     cloudOperationSecretFile: secretFile,
     cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+    cloudOperationComputeNodePoolRef: "np-backend-attribution-proof",
     nodeEnv: "test",
   });
 }
@@ -298,6 +299,7 @@ try {
   assert.equal(db.cloudOperationJobs.length, 6, "cloud_operation_jobs_must_cover_full_loop");
   assert.equal(db.computeAllocations.length, 1, "compute_allocation_must_be_canonical");
   assert.equal(db.computeAllocations[0].status, "released", "compute_release_must_release_compute_only");
+  assert.equal(db.computeAllocations[0].nodePoolRef, "np-backend-attribution-proof", "compute_allocation_must_keep_backend_node_pool_attribution");
   assert.equal(db.fileSpaceEntitlements.length, 1, "file_space_entitlement_must_be_canonical");
   assert.equal(db.fileSpaceEntitlements[0].capacityGb, 20, "file_space_expand_must_update_capacity");
   assert.equal(db.fileSpaceEntitlements[0].status, "retention_protected", "storage_delete_must_enter_protection");

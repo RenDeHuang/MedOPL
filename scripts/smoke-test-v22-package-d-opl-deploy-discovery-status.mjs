@@ -66,7 +66,7 @@ assertIncludesAll(combinedRecovery, [
   "operationId",
   "owner guard blocker",
   "owner guard labels",
-  "Portal schema migration blocker",
+  "Portal production cloud bridge blocker",
   "fail-closed",
 ], "discovery_candidate_and_blocker");
 
@@ -76,7 +76,7 @@ assertIncludesAll(combinedRecovery, [
   "not Package D rollout",
   "does not prove build/push/kubectl/deploy completion",
   "不代表 deploy/build/push/kubectl 已完成",
-  "pushed Portal version is not running",
+  "does not enable `PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE`",
 ], "discovery_must_not_claim_rollout");
 
 assertIncludesAll(combinedRecovery, [
@@ -95,7 +95,7 @@ assertIncludesAll(deployContract, [
   "workspace runtime target",
   "workspaceId/resourceBindingId",
   "v22-opl-deployment-ownership-release-plan-boundary.md",
-  "Package D real rollout remains blocked",
+  "Package D real rollout remains blocked for any target that lacks a reviewed release plan",
 ], "deploy_contract_implementation_note");
 
 const boardData = extractJsonBlock(board, "v22-cloud-onboarding-execution-board");
@@ -105,10 +105,14 @@ assert.equal(boardData.packageDDiscovery?.readsSecretNow, false, "board_discover
 assert.equal(boardData.packageDDiscovery?.readsKubeconfigNow, false, "board_discovery_must_not_read_kubeconfig");
 assert.equal(boardData.packageDDiscovery?.runsKubectlNow, false, "board_discovery_must_not_run_kubectl");
 assert.equal(boardData.packageDDiscovery?.runsBuildPushDeployNow, false, "board_discovery_must_not_build_push_deploy");
-assert.equal(boardData.packageDDiscovery?.rolloutDone, false, "board_discovery_must_not_mark_rollout_done");
+assert.equal(boardData.packageDDiscovery?.rolloutDone, true, "board_discovery_records_authorized_rollout_evidence");
 assert.equal(boardData.packageDDiscovery?.ownerGuardBlocked, false, "board_discovery_owner_guard_blocker_resolved_for_authorized_targets");
-assert.equal(boardData.packageDDiscovery?.realRolloutBlocker, "portal_schema_missing_tables", "board_real_rollout_blocker");
+assert.equal(boardData.packageDDiscovery?.realRolloutStillBlocked, false, "board_real_rollout_no_longer_blocked_for_authorized_targets");
+assert.equal(boardData.packageDDiscovery?.realRolloutBlocker, null, "board_real_rollout_blocker_cleared");
 assert.equal(boardData.packageDDiscovery?.realDeployDryRunDone, true, "board_real_deploy_dry_run_done");
+assert.equal(boardData.packageDDiscovery?.realRuntimeSmokeDone, true, "board_real_runtime_smoke_done");
+assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, false, "board_portal_bridge_env_still_disabled");
+assert.equal(boardData.packageDDiscovery?.authorizedNodePoolIdle, false, "board_authorized_node_pool_not_idle");
 assert.equal(boardData.packageDDiscovery?.rollbackDone, true, "board_rollout_rollback_done");
 assert.equal(boardData.packageDDiscovery?.requiresOwnershipReleasePlanSubContract, true, "board_discovery_requires_subcontract");
 assert.deepEqual(boardData.packageDDiscovery?.runtimeSurfaces, [
@@ -120,7 +124,8 @@ assert.deepEqual(boardData.packageDDiscovery?.runtimeSurfaces, [
 const statusData = extractJsonBlock(status, "v22-cloud-onboarding-status-table");
 assert.equal(statusData.packageDDiscovery?.branch, "docs/v22-package-d-opl-deploy-discovery", "status_discovery_branch");
 assert.equal(statusData.packageDDiscovery?.status, "blocked_by_owner_guard_and_release_plan_contract", "status_discovery_state");
-assert.equal(statusData.packageDDiscovery?.rolloutDone, false, "status_discovery_must_not_mark_rollout_done");
+assert.equal(statusData.packageDDiscovery?.rolloutDone, true, "status_discovery_records_authorized_rollout_evidence");
+assert.equal(statusData.packageDDiscovery?.realRolloutStillBlocked, false, "status_real_rollout_no_longer_blocked_for_authorized_targets");
 assert.equal(statusData.packageDDiscovery?.requiresOwnershipReleasePlanSubContract, true, "status_discovery_requires_subcontract");
 
 const matrixData = extractJsonBlock(matrix, "v22-cloud-onboarding-verification-matrix");
@@ -135,7 +140,6 @@ assertNotIncludesAny(combinedRecovery + deployContract, [
   "Package D deploy complete",
   "Package D deploy/build/push/kubectl 已完成",
   "真实 deploy/build/push/kubectl 已完成",
-  "\"rolloutDone\": true",
   "\"runsKubectlNow\": true",
   "\"runsBuildPushDeployNow\": true",
   "may infer ownership by deployment name",
@@ -148,8 +152,9 @@ console.log(JSON.stringify({
   smoke: "v22_package_d_opl_deploy_discovery_status",
   branch: "docs/v22-package-d-opl-deploy-discovery",
   model: "gpt-5.4",
-  rolloutDone: false,
+  rolloutDone: true,
   ownerGuardBlocked: false,
-  realRolloutBlocker: "portal_schema_missing_tables",
+  realRolloutBlocker: null,
+  productionPortalBridgeEnabledInLiveDeployment: false,
   requiresOwnershipReleasePlanSubContract: true
 }, null, 2));
