@@ -124,7 +124,7 @@ assertIncludesAll(status, [
   "| CO-09 | create/release dry-run plan | pending |",
   "| CO-10 | mutation SDK wrapper | pending |",
   "| CO-11 | minimal authorized create/release live | pending |",
-  "| CO-12 | production deploy execution | pending |",
+  "| CO-12 | production deploy execution | blocked-by-portal-schema-migration |",
   "| CO-13 | Portal production integration | storage-create-canary-done | production Portal route",
   "| CO-14 | canary / QA / release status update | pending |",
 ], "status_current_truth");
@@ -138,7 +138,8 @@ assertIncludesAll(status, [
   "TC3 cleanup: pending official SDK live report",
   "create/release dry-run: pending",
   "mutation wrapper: pending",
-  "production deploy: pending",
+  "production deploy: blocked by Portal schema migration after authorized Package D dry-run and rollback",
+  "Portal schema migration blocker",
   "Portal production integration: local production API + PostgreSQL canonical store smoke done; user-authorized real Tencent `storage-create` canary done for the storage-create sub-loop only",
   "canary/QA/release status: pending",
 ], "status_plain_language_summary");
@@ -186,7 +187,7 @@ for (const phase of statusData.phases) {
   ]) {
     assert(Object.hasOwn(phase, key), `status_phase_${phase.phaseId}_missing:${key}`);
   }
-  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
+  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done", "blocked-by-portal-schema-migration"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
 }
 
 const statusById = Object.fromEntries(statusData.phases.map((phase) => [phase.phaseId, phase]));
@@ -234,6 +235,19 @@ assert.equal(boardData.authorizedStorageCreateCanaryDone, true, "board_must_reco
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
 assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");
 assert(statusById["CO-08"].nextAction.includes("wait for official SDK live report and B acceptance"), "co08_next_action_must_wait_for_b_acceptance");
+assert.equal(statusById["CO-12"].status, "blocked-by-portal-schema-migration", "co12_must_record_portal_schema_blocker");
+assertIncludesAll(
+  `${statusById["CO-12"].evidenceCommitOrReport} ${statusById["CO-12"].nextAction} ${statusById["CO-12"].requiredSmoke.join(" ")} ${statusById["CO-12"].userGate}`,
+  [
+    "owner guard labels added",
+    "real R-16 server-side dry-run passed",
+    "portal_schema_missing_tables",
+    "Portal was rolled back",
+    "Portal / DB schema migration gate",
+    "runtime smoke",
+  ],
+  "co12_package_d_real_blocker_evidence"
+);
 assert.equal(statusById["CO-13"].status, "storage-create-canary-done", "co13_must_record_storage_create_canary_done");
 assertIncludesAll(
   `${statusById["CO-13"].evidenceCommitOrReport} ${statusById["CO-13"].nextAction} ${statusById["CO-13"].requiredSmoke.join(" ")} ${statusById["CO-13"].userGate}`,

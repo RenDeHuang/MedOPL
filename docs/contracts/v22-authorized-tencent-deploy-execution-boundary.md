@@ -19,6 +19,7 @@ Package D 的定位是“把一组已审查镜像版本接到指定运行面并�
 - runtime smoke。
 - rollback / stop condition 记录。
 - final deploy evidence 写入 `.runtime` 脱敏报告。
+- Portal schema migration preflight / evidence gate：若 Portal image 在启动时要求新的 PostgreSQL 表或 schema version，Package D 必须先停止在 migration gate，不能把 rollout 失败泛化成普通 deploy 失败。
 
 不可以做：
 
@@ -151,6 +152,27 @@ D3a 不授权 `kubectl apply`、rollout、runtime smoke、rollback 或 Package C
 - `kubectl rollout undo`
 
 必须先 `kubectl diff` 或 server-side dry-run，再执行 `kubectl apply`。执行后必须有 rollout status。失败或不确定时必须有 rollback evidence。
+
+## Portal Schema Migration Gate
+
+Portal target rollout 不能假设生产 PostgreSQL schema 已经随镜像自动迁移。Package D 在执行 Portal image rollout 前必须有明确的 schema migration evidence 或显式的 migration step 授权。
+
+如果新 Portal image 启动时报：
+
+- `portal_schema_not_ready`
+- `portal_schema_missing_tables`
+
+runner 必须把 blocker 分类为 `deploy_portal_schema_not_ready` 或 `deploy_portal_schema_missing_tables`，停止后续 target rollout，并保留 rollback evidence。不得把这类故障写成 `deploy_runner_failed` 后继续 rollout。
+
+Package D 不默认授权数据库迁移。执行 `node src/migrate-schema.mjs`、Kubernetes migration Job、直接连接 PostgreSQL 或修改 schema 都必须单独进入 Portal / DB migration gate，并明确：
+
+- 使用哪个 Portal image 运行 migration。
+- 连接哪个 namespace / database / schema namespace。
+- migration 前后 health check。
+- rollback / restore 口径。
+- migration evidence 的脱敏路径。
+
+未完成该 gate 前，Package D 可以证明 TCR push 和 deploy dry-run，但不能宣称 Portal pushed version 已经在生产运行。
 
 ## Ownership Guard
 

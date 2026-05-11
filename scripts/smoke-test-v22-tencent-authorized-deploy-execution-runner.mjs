@@ -318,6 +318,8 @@ try {
   assert.match(source, /"--dry-run=server"[\s\S]*"apply"/, "runner_must_use_server_side_apply_dry_run");
   assert.match(source, /"rollout"[\s\S]*"status"/, "runner_must_wait_for_rollout_status");
   assert.match(source, /deploy_ownership_guard_failed/, "runner_must_fail_closed_on_owner_label_mismatch");
+  assert.match(source, /deploy_portal_schema_missing_tables/, "runner_must_classify_portal_schema_missing_tables");
+  assert.match(source, /deploy_portal_schema_not_ready/, "runner_must_classify_portal_schema_not_ready");
   assert.match(source, /manifest\.Digest[\s\S]*manifest\.digest[\s\S]*manifest\.Descriptor\?\.digest[\s\S]*manifest\.manifest\?\.digest/, "runner_must_read_tcr_digest_from_buildx_json_shapes");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
@@ -339,5 +341,6 @@ console.log(JSON.stringify({
     "fake_registry_preflight_build_push_deploy_rollout_runtime_smoke_per_target",
     "redacted_stdout_and_runtime_reports",
     "no_node_pool_or_cos_mutation_commands",
+    "portal_schema_rollout_failure_classified",
   ],
 }, null, 2));

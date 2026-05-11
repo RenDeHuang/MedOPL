@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本矩阵定义 v22 cloud onboarding 的验证分层。AGENTS 管协作纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒；本文件只说明每类验证证明什么、什么时候必须跑、不能做什么，以及 blocker 应回流到哪里。
 
-本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。canary 证据只在 `.runtime`，不进 git；当前分支不 build/push/kubectl，不 merge，不 push。
+本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal schema migration blocker 后回滚。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
 
 ## Verification Scope
 
@@ -23,6 +23,7 @@ verification matrix does not cover:
 - create/release mutation execution.
 - production deploy/build/push/kubectl execution.
 - Portal production integration real Tencent canary beyond the authorized `storage-create` sub-loop.
+- Portal PostgreSQL schema migration; this requires a separate Portal / DB migration gate.
 - real secret reading without explicit user authorization.
 - real cloud calls without explicit user authorization.
 
@@ -63,6 +64,14 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
 
 Package D verification 只证明 TCR repository/tag preflight、multi-image build/push unique test tag、deploy dry-run、authorized deploy rollout 和 runtime smoke 的合同边界。它不得被解释为 TKE node pool 开删、COS storage 开删或账单对账已经完成；这些仍归 Package C 和 readonly reconciliation gate。
 
+Current real Package D evidence for this branch:
+
+- real R-14/R-15 TCR preflight/build/push completed for `portal`, `opl-web-gateway`, and `opl-runtime-bridge`.
+- real owner guard labels `targetClass/ownerRef/operationId` were applied to the authorized `default` platform-service deployments.
+- real R-16 server-side deploy dry-run passed.
+- R-17 rollout attempted `portal` first, failed with `portal_schema_missing_tables`, and was rolled back to the previous ready image.
+- R-18 pushed-version runtime smoke is not complete because the pushed Portal version is not running.
+
 ## Package D / OPL Deployment Discovery Verification
 
 Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-discovery` 分支，model: gpt-5.4。该 discovery 只写 docs/status/smoke：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。
@@ -80,8 +89,8 @@ Verification verdict:
 - not Package D rollout.
 - does not prove build/push/kubectl/deploy completion.
 - 不代表 deploy/build/push/kubectl 已完成。
-- owner guard blocker remains.
-- Package D must fail-closed because candidate deployments lack `ownerRef`, `workspaceId`, `resourceBindingId`, and `operationId`.
+- owner guard blocker was the correct discovery finding and has been resolved only for the explicitly authorized `default` platform-service targets by adding `targetClass/ownerRef/operationId` labels.
+- Package D must still fail-closed for any future target that lacks the required owner guard labels.
 - cannot infer ownership by deployment name, namespace, IP, creation time, qcloud-app label, or manual memory.
 - 不能靠 deployment 名字、namespace、IP、创建时间、qcloud-app 或人工记忆判断归属。
 
@@ -158,7 +167,18 @@ It does not verify:
 - rollback evidence from a real deployment.
 - Package C compute/storage lifecycle.
 
-Real D3a canary requires explicit user authorization for deploy secret read, kubeconfig reference, cluster/namespace/workload/container scope, selected release plan, D2 digest report and `.runtime` deploy dry-run report location.
+Real D3a canary requires explicit user authorization for deploy secret read, kubeconfig reference, cluster/namespace/workload/container scope, selected release plan, D2 image digest report and `.runtime` deploy dry-run report location.
+
+## Package D Portal Schema Migration Blocker
+
+Real R-17 rollout surfaced a Portal-specific blocker:
+
+- the pushed Portal image requires v22 cloud-operation PostgreSQL tables.
+- production Portal database did not have those tables at rollout time.
+- the Portal container exited with `portal_schema_missing_tables`.
+- the rollout was stopped and Portal was rolled back.
+
+This verifies the deployment guard is doing useful work, but it does not verify production Portal is running the pushed image. Before re-running R-17/R-18, a separate Portal / DB migration gate must produce evidence that `node src/migrate-schema.mjs` or an equivalent migration job has run against the intended production database/schema namespace.
 
 ## Forbidden Actions By Layer
 
@@ -206,8 +226,8 @@ Required follow-through:
   "matrixType": "verification-layering",
   "doesNotReadSecret": false,
   "doesNotCallRealCloud": false,
-  "authorizedSecretReadScope": "Package C mutation secret file path supplied by user for storage-create canary only",
-  "authorizedRealCloudScope": "Tencent COS putObject storage marker for storage-create canary only",
+  "authorizedSecretReadScope": "Package C mutation secret file path plus Package D deploy secret/kubeconfig references supplied by user for the authorized real cloud loop",
+  "authorizedRealCloudScope": "Tencent COS/TKE Package C mutations and Package D TCR build-push/kubectl dry-run/rollout attempt within the authorized test scope",
   "doesNotModifyScriptsOrServices": true,
   "doesNotAuthorizeLive": true,
   "packageDDiscovery": {
@@ -220,7 +240,7 @@ Required follow-through:
     "doesNotBuildPushDeploy": true,
     "ownerGuardMustRemainHard": true,
     "requiresTargetClassContract": true,
-    "blocker": "candidate deployments lack ownerRef/workspaceId/resourceBindingId/operationId and cannot be accepted from k8s-app/qcloud-app labels",
+    "blocker": "historical discovery blocker was owner guard; authorized default platform-service targets now have targetClass/ownerRef/operationId labels, but future targets must still fail-closed without owner guard",
     "targetClassesToDefine": [
       "platform service target",
       "workspace runtime target"
@@ -235,13 +255,16 @@ Required follow-through:
     "contract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
     "level": 4,
     "package": "Package D",
-    "doesNotAuthorizeBuildPushKubectl": true,
+    "doesNotAuthorizeBuildPushKubectlByItself": true,
     "targetClasses": [
       "platform_service_target",
       "workspace_runtime_target"
     ],
     "smoke": "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
-    "realRolloutStillRequiresExplicitAuthorization": true
+    "realRolloutStillRequiresExplicitAuthorization": true,
+    "currentAuthorizedRealDryRunDone": true,
+    "currentAuthorizedRealRolloutBlockedBy": "portal_schema_missing_tables",
+    "currentAuthorizedRollbackDone": true
   },
   "layers": [
     {

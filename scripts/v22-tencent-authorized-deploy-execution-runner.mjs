@@ -496,7 +496,13 @@ function baseSummary({ mode, plan, env, digestMap = new Map(), blockedReason = n
 function runCommand(command, args, { input = "", env = {}, timeoutMs = 120_000 } = {}) {
   const result = runCommandRaw(command, args, { input, env, timeoutMs });
   if (result.status !== 0) {
-    throw new Error("deploy_command_failed");
+    const error = new Error("deploy_command_failed");
+    error.command = command;
+    error.args = args;
+    error.stdout = result.stdout || "";
+    error.stderr = result.stderr || "";
+    error.status = result.status;
+    throw error;
   }
   return result.stdout || "";
 }
@@ -627,6 +633,57 @@ function deploymentCurrentImage(deployment = {}, containerName = "") {
   const container = (deployment.spec?.template?.spec?.containers || [])
     .find((item) => text(item.name) === text(containerName));
   return text(container?.image);
+}
+
+function classifyRolloutFailureFromText(value = "") {
+  const output = text(value);
+  if (/portal_schema_missing_tables/i.test(output)) return "deploy_portal_schema_missing_tables";
+  if (/portal_schema_not_ready/i.test(output)) return "deploy_portal_schema_not_ready";
+  if (/CrashLoopBackOff|Error:|Node\.js/i.test(output)) return "deploy_rollout_target_crashloop";
+  if (/ImagePullBackOff|ErrImagePull|pull access denied|not found/i.test(output)) return "deploy_rollout_image_pull_failed";
+  if (/Readiness probe failed|Liveness probe failed/i.test(output)) return "deploy_rollout_probe_failed";
+  return "";
+}
+
+function podFailureDiagnostics(env = {}, target = {}) {
+  const podsResult = runCommandRaw("kubectl", kubectlArgs(env, text(target.namespace), [
+    "get",
+    "pods",
+    "-o",
+    "json",
+  ]), { timeoutMs: 120_000 });
+  if (podsResult.status !== 0) return "";
+  let pods;
+  try {
+    pods = JSON.parse(podsResult.stdout || "{}");
+  } catch {
+    return "";
+  }
+  const candidates = (pods.items || []).filter((pod) => text(pod.metadata?.name).startsWith(`${text(target.workload)}-`));
+  const latest = candidates.sort((a, b) => text(b.metadata?.creationTimestamp).localeCompare(text(a.metadata?.creationTimestamp)))[0];
+  if (!latest) return "";
+  const containerStatus = (latest.status?.containerStatuses || []).find((item) => text(item.name) === text(target.container));
+  const reason = text(containerStatus?.state?.waiting?.reason || containerStatus?.lastState?.terminated?.reason);
+  const message = text(containerStatus?.state?.waiting?.message || containerStatus?.lastState?.terminated?.message);
+  const logsResult = runCommandRaw("kubectl", kubectlArgs(env, text(target.namespace), [
+    "logs",
+    `pod/${text(latest.metadata?.name)}`,
+    "-c",
+    text(target.container),
+    "--tail=80",
+  ]), { timeoutMs: 120_000 });
+  return [reason, message, logsResult.stdout || "", logsResult.stderr || ""].join("\n");
+}
+
+function classifyRolloutFailure(error = {}, env = {}, target = {}) {
+  const direct = classifyRolloutFailureFromText([
+    error.message,
+    error.stdout,
+    error.stderr,
+  ].join("\n"));
+  if (direct) return direct;
+  const diagnostics = podFailureDiagnostics(env, target);
+  return classifyRolloutFailureFromText(diagnostics) || "deploy_rollout_status_failed";
 }
 
 async function writeSummary(relativePath = "", summary = {}) {
@@ -770,12 +827,16 @@ async function executeMode(options = {}, env = {}, plan = {}) {
           "-f",
           "-",
         ]), { input: manifestJson });
-        runCommand("kubectl", kubectlArgs(env, text(planTarget.namespace), [
-          "rollout",
-          "status",
-          `deployment/${text(planTarget.workload)}`,
-          "--timeout=300s",
-        ]), { timeoutMs: 360_000 });
+        try {
+          runCommand("kubectl", kubectlArgs(env, text(planTarget.namespace), [
+            "rollout",
+            "status",
+            `deployment/${text(planTarget.workload)}`,
+            "--timeout=300s",
+          ]), { timeoutMs: 360_000 });
+        } catch (error) {
+          throw new Error(classifyRolloutFailure(error, env, planTarget));
+        }
         target.deployPreviousImageMasked = maskIdentifier(deploymentCurrentImage(deployment, planTarget.container));
       }
       target.deploy = {
@@ -834,7 +895,7 @@ async function main() {
     process.exitCode = output.status;
   } catch (error) {
     const message = text(error?.message);
-    const blockedReason = /^deploy_(?:docker_login_failed|docker_build_failed|docker_push_failed|registry_digest_readback_failed|ownership_guard_failed|target_kind_mismatch|target_workload_mismatch|target_namespace_mismatch|target_container_missing)$/.test(message)
+    const blockedReason = /^deploy_(?:docker_login_failed|docker_build_failed|docker_push_failed|registry_digest_readback_failed|ownership_guard_failed|target_kind_mismatch|target_workload_mismatch|target_namespace_mismatch|target_container_missing|portal_schema_missing_tables|portal_schema_not_ready|rollout_target_crashloop|rollout_image_pull_failed|rollout_probe_failed|rollout_status_failed)$/.test(message)
       ? message
       : /^tencent_deploy_(?:forbidden_secret_key|non_allowlist_secret_key_rejected|secret_line_invalid|runner_release_plan_required|runner_secret_file_required)/.test(message)
       ? message

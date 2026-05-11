@@ -65,6 +65,8 @@ assertIncludesAll(combinedRecovery, [
   "resourceBindingId",
   "operationId",
   "owner guard blocker",
+  "owner guard labels",
+  "Portal schema migration blocker",
   "fail-closed",
 ], "discovery_candidate_and_blocker");
 
@@ -74,6 +76,7 @@ assertIncludesAll(combinedRecovery, [
   "not Package D rollout",
   "does not prove build/push/kubectl/deploy completion",
   "不代表 deploy/build/push/kubectl 已完成",
+  "pushed Portal version is not running",
 ], "discovery_must_not_claim_rollout");
 
 assertIncludesAll(combinedRecovery, [
@@ -103,7 +106,10 @@ assert.equal(boardData.packageDDiscovery?.readsKubeconfigNow, false, "board_disc
 assert.equal(boardData.packageDDiscovery?.runsKubectlNow, false, "board_discovery_must_not_run_kubectl");
 assert.equal(boardData.packageDDiscovery?.runsBuildPushDeployNow, false, "board_discovery_must_not_build_push_deploy");
 assert.equal(boardData.packageDDiscovery?.rolloutDone, false, "board_discovery_must_not_mark_rollout_done");
-assert.equal(boardData.packageDDiscovery?.ownerGuardBlocked, true, "board_discovery_owner_guard_blocker");
+assert.equal(boardData.packageDDiscovery?.ownerGuardBlocked, false, "board_discovery_owner_guard_blocker_resolved_for_authorized_targets");
+assert.equal(boardData.packageDDiscovery?.realRolloutBlocker, "portal_schema_missing_tables", "board_real_rollout_blocker");
+assert.equal(boardData.packageDDiscovery?.realDeployDryRunDone, true, "board_real_deploy_dry_run_done");
+assert.equal(boardData.packageDDiscovery?.rollbackDone, true, "board_rollout_rollback_done");
 assert.equal(boardData.packageDDiscovery?.requiresOwnershipReleasePlanSubContract, true, "board_discovery_requires_subcontract");
 assert.deepEqual(boardData.packageDDiscovery?.runtimeSurfaces, [
   "portal.medopl.cn",
@@ -132,7 +138,6 @@ assertNotIncludesAny(combinedRecovery + deployContract, [
   "\"rolloutDone\": true",
   "\"runsKubectlNow\": true",
   "\"runsBuildPushDeployNow\": true",
-  "\"ownerGuardBlocked\": false",
   "may infer ownership by deployment name",
   "may infer ownership by namespace",
   "may infer ownership by qcloud-app",
@@ -144,6 +149,7 @@ console.log(JSON.stringify({
   branch: "docs/v22-package-d-opl-deploy-discovery",
   model: "gpt-5.4",
   rolloutDone: false,
-  ownerGuardBlocked: true,
+  ownerGuardBlocked: false,
+  realRolloutBlocker: "portal_schema_missing_tables",
   requiresOwnershipReleasePlanSubContract: true
 }, null, 2));
