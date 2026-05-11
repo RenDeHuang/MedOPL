@@ -260,12 +260,16 @@ try {
   assertSummaryShape(registryPreflightOut.summary, "tcr_preflight");
   assert.equal(registryPreflightOut.summary.targets.every((target) => target.registry?.digestReadable === true), true, "tcr_preflight_digest_readable");
 
-  const buildPush = runRunner(["--build-push", "--provider-mode", "fake-live", ...baseArgs(goodSecretFile), "--release-plan", releasePlanFile]);
+  const buildPushWithoutPreflight = runRunner(["--build-push", "--provider-mode", "fake-live", ...baseArgs(goodSecretFile), "--release-plan", releasePlanFile], 1);
+  assert.equal(parseStdout(buildPushWithoutPreflight.stdout).summary.blockedReason, "deploy_accepted_preflight_required", "build_push_must_require_accepted_preflight");
+
+  const buildPush = runRunner(["--build-push", "--provider-mode", "fake-live", ...baseArgs(goodSecretFile), "--release-plan", releasePlanFile, "--accepted-preflight-id", "pkg-d-proof-tcr-preflight"]);
   const buildPushOut = parseStdout(buildPush.stdout);
   reportPathsToCleanup.push(buildPushOut.reportPath);
   assert.equal(buildPushOut.reportPath.endsWith(".runtime/v22-registry/pkg-d-proof-build-push.json"), true, "build_push_path");
   assertSummaryShape(buildPushOut.summary, "build_push");
   assert.equal(buildPushOut.summary.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.registry?.digest || "")), true, "build_push_digest");
+  assert.equal(buildPushOut.summary.targets.every((target) => target.registry?.acceptedPreflightId.includes("****")), true, "build_push_preflight_id_must_be_masked");
 
   const deployDryRun = runRunner(["--deploy-dry-run", "--provider-mode", "fake-live", ...baseArgs(goodSecretFile), "--release-plan", releasePlanFile, "--image-digests-file", buildPushOut.reportPath]);
   const deployDryRunOut = parseStdout(deployDryRun.stdout);

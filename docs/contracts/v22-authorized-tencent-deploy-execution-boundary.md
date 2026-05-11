@@ -78,6 +78,25 @@ release plan 顶层字段：
 
 `trace.medopl.cn` 是 Langfuse/admin trace surface；除非 release plan 明确包含已审查的 Langfuse image target、Dockerfile、workload 和 owner guard，否则它只能作为 runtime smoke surface，不得被默认建模成“本仓库 Langfuse 镜像 target”。换言之，trace surface 可验证观测入口可达，但不能替代 Portal/Gateway/Runtime Bridge pushed version marker。
 
+## Cloud-Lane D2 Image Push Gate
+
+`cloud-lane/feat/v22-package-d-image-push-gate` 是 Package D cloud-lane 的长期 stack 分支。它基于 D1 `feat/v22-opl-deployment-ownership-release-plan` 的 `eb23e02`，只收敛 R-14/R-15：
+
+- R-14 TCR repository/tag preflight。
+- R-15 multi-image build and push unique test tag。
+
+D2 订阅 D1 owner gate。D2 不能绕过 D1 的 `targetClass`、`ownerRef`、`operationId`、workspace runtime binding、runtime smoke coverage 或 redaction 边界。
+
+D2 的关键硬门：
+
+- `--build-push` 必须显式传入 `--accepted-preflight-id <id>`。
+- `acceptedPreflightId` 必须来自已审查的 R-14 preflight report。
+- 缺失 `acceptedPreflightId` 时 runner 必须返回 `deploy_accepted_preflight_required`。
+- fake-live 只能证明 gate shape、唯一 tag、digest readback shape 和脱敏 report shape。
+- real mode 读取 deploy secret、docker login、docker build、docker push 和真实 TCR digest readback 都需要当前会话显式授权。
+
+D2 不授权 kubectl dry-run、rollout、runtime smoke、rollback 或 Package C 计算/存储生命周期动作。
+
 ## TCR Scope
 
 只能操作指定 TCR registry / namespace，以及 release plan 中列出的 repositories。
@@ -213,6 +232,8 @@ Package D 的闭环链路：
 - `scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs`
 
 runner 必须显式传入 non-secret execution parameter：`--release-plan <json>`。release plan 缺 `runId`、`versionTag`、`targets[]`、`runtimeSmokeTargets[]`、任一 owner guard 字段、任一 target repository/build/deploy 字段或任一 smoke surface 覆盖关系都必须 fail-closed。`--provider-mode real` 才允许真实 `docker` / `kubectl`；默认和 smoke 只能走 `config-only` 或 `fake-live`。
+
+R-15 `build-push` 必须显式传入 `--accepted-preflight-id <id>`，并且该 id 必须来自已审查的 R-14 preflight report。缺失时 fail-closed。这样可以防止绕过 repository/tag/readback preflight 直接 build/push。`acceptedPreflightId` 只能作为脱敏 evidence 出现在 `.runtime` report；不能包含 raw registry credential、docker config、kubeconfig 或 secret path。
 
 只有 R-14..R-18 都通过，且 evidence 脱敏、rollback evidence 存在、没有越权 mutation，才能说 Package D 验证通过。
 
@@ -361,8 +382,12 @@ runner 必须显式传入 non-secret execution parameter：`--release-plan <json
     "smoke": "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs",
     "liveGateSmoke": "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs",
     "requiresExplicitNonSecretExecutionParameters": [
-      "releasePlan"
+      "releasePlan",
+      "acceptedPreflightId",
+      "acceptedDryRunId"
     ],
+    "buildPushRequiresAcceptedPreflightId": true,
+    "acceptedPreflightMissingReason": "deploy_accepted_preflight_required",
     "defaultProviderMode": "config-only",
     "realProviderMode": "real"
   },

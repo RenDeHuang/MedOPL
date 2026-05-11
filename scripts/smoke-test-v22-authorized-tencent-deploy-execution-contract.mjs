@@ -180,6 +180,8 @@ assertIncludesAll(contract, [
   ".runtime/v22-registry/",
   ".runtime/v22-cloud-deploy/",
   ".runtime/v22-runtime-smoke/",
+  "accepted-preflight-id",
+  "deploy_accepted_preflight_required",
 ], "deploy_contract_artifacts");
 
 assertIncludesAll(contract, [
@@ -238,6 +240,8 @@ assert.equal(deployData.runner?.entrypoint, "scripts/v22-tencent-authorized-depl
 assert.equal(deployData.runner?.smoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs", "deploy_runner_smoke");
 assert.equal(deployData.runner?.liveGateSmoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs", "deploy_live_gate_smoke");
 assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("releasePlan"), "deploy_runner_release_plan_param");
+assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("acceptedPreflightId"), "deploy_runner_preflight_param");
+assert.equal(deployData.runner?.buildPushRequiresAcceptedPreflightId, true, "deploy_build_push_must_require_preflight");
 assert.equal(deployData.runner?.defaultProviderMode, "config-only", "deploy_runner_default_mode");
 assert.equal(deployData.runner?.realProviderMode, "real", "deploy_runner_real_mode");
 
@@ -280,6 +284,8 @@ assertIncludesAll(board + status + verificationMatrix, [
   "OPL deployment ownership / release plan",
   "platform_service_target",
   "workspace_runtime_target",
+  "cloud-lane/feat/v22-package-d-image-push-gate",
+  "accepted R-14 preflight id",
 ], "recovery_deploy_safety");
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");
@@ -294,7 +300,12 @@ assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, 
   "Package D 可以删除节点池",
   "Package D 可以清空 bucket",
   "默认使用 latest",
+  "real push done",
 ], "deploy_forbidden_claims");
+
+assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, [
+  "Package D deploy/build/push/kubectl 已完成",
+], "deploy_status_must_not_claim_done");
 
 console.log(JSON.stringify({
   ok: true,

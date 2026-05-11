@@ -94,6 +94,7 @@ function parseArgs(argv = []) {
     secretFile: "",
     releasePlanFile: "",
     imageDigestsFile: "",
+    acceptedPreflightId: "",
     acceptedDryRunId: "",
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -112,6 +113,7 @@ function parseArgs(argv = []) {
     else if (arg === "--secret-file") options.secretFile = nextValue();
     else if (arg === "--release-plan") options.releasePlanFile = nextValue();
     else if (arg === "--image-digests-file") options.imageDigestsFile = nextValue();
+    else if (arg === "--accepted-preflight-id") options.acceptedPreflightId = nextValue();
     else if (arg === "--accepted-dry-run-id") options.acceptedDryRunId = nextValue();
     else throw new Error("tencent_deploy_runner_unknown_arg");
   }
@@ -661,6 +663,9 @@ async function executeMode(options = {}, env = {}, plan = {}) {
   }
 
   if (mode === "build-push") {
+    if (!text(options.acceptedPreflightId)) {
+      return { status: 1, reportPath: null, summary: blockedSummary({ options, env, plan, blockedReason: "deploy_accepted_preflight_required" }) };
+    }
     if (providerMode === "real") dockerLogin(env);
     for (const target of summary.targets) {
       const planTarget = plan.targets.find((item) => text(item.component) === target.component);
@@ -684,6 +689,7 @@ async function executeMode(options = {}, env = {}, plan = {}) {
         pushed: true,
         digest,
         digestReadbackOk: Boolean(digest),
+        acceptedPreflightId: maskIdentifier(options.acceptedPreflightId),
         providerMode,
         selectedTagIsLatest: false,
       };

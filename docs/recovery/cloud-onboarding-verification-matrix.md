@@ -112,6 +112,29 @@ It does not verify:
 - rollback evidence from a real deployment.
 - Package C compute/storage lifecycle.
 
+## Package D Image Push Gate Verification
+
+`cloud-lane/feat/v22-package-d-image-push-gate` is the long-lived cloud-lane D2 branch. It is stacked on D1 commit `eb23e02` and must be reviewed with D1 before trunk absorption.
+
+It verifies:
+
+- D2 only covers R-14/R-15: TCR repository/tag preflight and image build/push gate.
+- `build-push` must explicitly receive `acceptedPreflightId` from an accepted R-14 report.
+- missing `acceptedPreflightId` must fail-closed with `deploy_accepted_preflight_required`.
+- fake-live reports record masked `acceptedPreflightId`, unique tag, digest readback and per-target registry summary.
+- D2 continues to inherit D1 targetClass / owner guard / runtime smoke coverage validation.
+
+It does not verify:
+
+- real docker login.
+- real docker build.
+- real docker push.
+- real TCR digest readback.
+- kubectl dry-run, rollout, runtime smoke or rollback evidence.
+- Package C compute/storage lifecycle.
+
+Real D2 canary requires explicit user authorization for deploy secret read, docker build, docker push, registry scope, selected release plan and `.runtime` report location.
+
 ## Forbidden Actions By Layer
 
 - contract smoke, loader smoke, shape smoke and preflight smoke must not read secret, source env, call real cloud, create/release resources, build/push/kubectl, or run live-test.
