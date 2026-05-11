@@ -66,7 +66,7 @@
 - Portal `/portal/api/opl/*` runtime loop 默认 smoke 当前只证明本地 fake Product API 与 fake Runtime Agent relay 闭环；授权 live canary 另行证明真实 WebUI provider message reply 可通过 Adapter 回流 Portal。两者都不代表真实 OPL Product API、真实文件上传或生产 Runtime Agent 已完成。
 - Real OPL capability canary 当前已完成合同和完整验证链路定义，并已通过 provider message reply 子链路的授权 live canary；workspace-scoped fileRef、真实 Runtime Agent run、artifact/output backflow、sanitized observability projection 和性能 canary 仍需按 `docs/recovery/real-opl-capability-canary-validation-path.md` 与 `docs/recovery/real-opl-file-run-artifact-validation-path.md` 单独验证。
 - Real OPL provider message canary 当前已通过单独授权 live canary：真实 provider key 调用、provider invocation evidence、assistant reply observation、Portal message status projection 和 Portal session trace projection 已在本地真实 WebUI canary 中跑通。结果以 `scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs` 的授权运行结果和 `.runtime/real-opl-provider-message-live-canary/evidence.json` 为准。该 live canary 不代表真实 file/run/artifact、真实云 runtime 或 Langfuse 部署已上线。
-- Real OPL file/run/artifact canary 当前只完成合同和完整验证链路定义：workspace-scoped fileRef、真实 Runtime Agent run、artifact/output backflow、Portal workspace/session/run projection、billingMetadataRef/usageMetadataRef handoff 和 Langfuse optional attachment 仍需后续授权 canary 逐项验证。本合同不读取 secret、不调用真实云、不部署 Langfuse、不实现 COS 账单结算。
+- Real OPL file/run/artifact canary 当前完成合同、完整验证链路定义和本地 Adapter gate 实现验证：`OPL_RUNTIME_MODE=webui` 下 file upload/fileRef、run/Runtime Agent 和 artifact/output 都不会伪成功，分别返回 `file_upload_capability_not_supported`、queryable `requires_runtime_agent` gated run、`artifact_not_observed` / `output_file_ref_not_observed`。workspace-scoped 真实 fileRef、真实 Runtime Agent run、真实 artifact/output backflow、Portal workspace/session/run projection、billingMetadataRef/usageMetadataRef handoff 和 Langfuse optional attachment 仍需后续授权 canary 逐项验证。本合同不读取 secret、不调用真实云、不部署 Langfuse、不实现 COS 账单结算。
 - 真实云资源开通，包含后续真实腾讯云资源开通 / 释放
 - 真实价格审批
 - 真实账单核对
@@ -112,6 +112,7 @@
 - `scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs`
 - `scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs`
 - `scripts/smoke-test-v22-real-opl-file-run-artifact-canary-contract.mjs`
+- `scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`
 - `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs`

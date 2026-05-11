@@ -198,7 +198,7 @@
 
 ### Real OPL File Run Artifact Canary 合同包
 
-适用于真实 OPL file upload 或 file intent、workspace-scoped fileRef、run intent、Runtime Agent gate、run state projection、artifact/output backflow、Portal workspace/session/run 查询、trace metadata、billing metadata handoff 和 Langfuse optional attachment boundary。该合同包是 Real OPL Capability Canary 的三级细分执行合同；默认合同 smoke 不修改 one-person-lab upstream、不读取 secret、不调用真实云 mutation、不部署 Langfuse、不实现 COS 真实账单结算。每个 step 必须有明确 gate，例如 `file_ref_not_observed`、`workspace_file_scope_missing`、`requires_runtime_agent`、`runtime_authorization_required`、`run_not_observed`、`artifact_not_observed`、`output_file_ref_not_observed`、`portal_projection_missing`、`trace_sink_not_configured`，不能用 200 假成功。OPL 分支只传 `billingMetadataRef`、`usageMetadataRef` 或 `resourceBindingId`，真实 COS/云账单核对归云服务链路。
+适用于真实 OPL file upload 或 file intent、workspace-scoped fileRef、run intent、Runtime Agent gate、run state projection、artifact/output backflow、Portal workspace/session/run 查询、trace metadata、billing metadata handoff 和 Langfuse optional attachment boundary。该合同包是 Real OPL Capability Canary 的三级细分执行合同；默认合同 smoke 不修改 one-person-lab upstream、不读取 secret、不调用真实云 mutation、不部署 Langfuse、不实现 COS 真实账单结算。每个 step 必须有明确 gate，例如 `file_ref_not_observed`、`workspace_file_scope_missing`、`requires_runtime_agent`、`runtime_authorization_required`、`run_not_observed`、`artifact_not_observed`、`output_file_ref_not_observed`、`portal_projection_missing`、`trace_sink_not_configured`，不能用 200 假成功。`scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs` 是本合同的 Adapter gate 实现验证，证明真实 WebUI bridge profile 下未验证 file/run/artifact 能力会返回明确 gate 而不是 200 假成功。OPL 分支只传 `billingMetadataRef`、`usageMetadataRef` 或 `resourceBindingId`，真实 COS/云账单核对归云服务链路。
 
 订阅：
 

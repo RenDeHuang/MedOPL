@@ -4,6 +4,7 @@ import {
   addArtifactRecord,
   addEvent,
   addTraceRecord,
+  createRunRecord,
   ensureRuntime,
   readState,
   upsertMessageRequestRecord,
@@ -27,9 +28,13 @@ function urlEnv(name, fallback = "") {
   return stringEnv(name, fallback).replace(/\/$/, "");
 }
 
+function isWebuiRuntimeMode(value = process.env.OPL_RUNTIME_MODE) {
+  return String(value || "").trim().toLowerCase() === "webui";
+}
+
 function readConfig() {
   const port = Number(cleanEnv("PORT", "8788"));
-  const webuiMode = cleanEnv("OPL_RUNTIME_MODE", "unknown").toLowerCase() === "webui";
+  const webuiMode = isWebuiRuntimeMode(cleanEnv("OPL_RUNTIME_MODE", "unknown"));
   return {
     port,
     baseUrl: urlEnv("PORTAL_OPL_ADAPTER_PUBLIC_URL", `http://127.0.0.1:${port}`),
@@ -296,7 +301,7 @@ function launchTokenFrom(input = {}, url, req = null) {
 }
 
 function adapterContractMetadata() {
-  const webuiMode = process.env.OPL_RUNTIME_MODE === "webui";
+  const webuiMode = isWebuiRuntimeMode();
   const webuiProviderMessageEnabled = webuiMode && process.env.OPL_WEBUI_PROVIDER_MESSAGE_ENABLED === "1";
   return {
     adapterContractVersion: "v22.portal-opl-context-backflow.v1",
@@ -311,7 +316,13 @@ function adapterContractMetadata() {
             reason: webuiProviderMessageEnabled ? "provider_message_canary_enabled" : "reply_not_verified",
           }
         : { status: "supported", source: "opl_product_api" },
-      fileIntent: { status: "requires_downstream_runtime_boundary", source: "portal_workspace_file_store" },
+      fileIntent: webuiMode
+        ? {
+            status: "capability_not_supported",
+            source: "webui_bridge",
+            reason: "workspace_scoped_file_ref_not_verified",
+          }
+        : { status: "requires_downstream_runtime_boundary", source: "portal_workspace_file_store" },
       runIntent: { status: "requires_runtime_agent", source: "runtime_bridge" },
       langfuseSessionTrace: { status: "deferred_authorization", source: "trace.medopl.cn" },
     },
@@ -320,7 +331,9 @@ function adapterContractMetadata() {
       "session_bound",
       "message_created",
       "message_reply_observed",
+      "opl_file_gate_evaluated",
       "downstream_runtime_gate_evaluated",
+      "artifact_output_gate_evaluated",
       "session_trace_metadata_projected",
     ],
   };
@@ -444,6 +457,67 @@ function runnerFailureEvent(runtimeSession = {}, mapped = {}) {
     retryable: mapped.retryable,
     error: mapped.message,
     details: mapped.details,
+  };
+}
+
+function runtimeAgentRequiredByContract(error) {
+  return [
+    "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED",
+    "PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED",
+  ].includes(String(error?.code || ""));
+}
+
+function publicGatedRun(run = {}) {
+  return {
+    runId: emptyText(run.runId),
+    traceId: emptyText(run.traceId),
+    status: emptyText(run.status || "gated"),
+    error: emptyText(run.error || "requires_runtime_agent"),
+    workspaceId: emptyText(run.workspaceId),
+    workspaceSessionId: emptyText(run.workspaceSessionId),
+    runtimeSessionId: emptyText(run.runtimeSessionId),
+    resourceBindingId: emptyText(run.resourceBindingId),
+    providerKeyRef: emptyText(run.providerKeyRef),
+    mode: emptyText(run.mode),
+    toolName: emptyText(run.toolName),
+    createdAt: emptyText(run.createdAt),
+    finishedAt: emptyText(run.finishedAt),
+  };
+}
+
+function runStatusUrlFor(runId = "") {
+  return `/api/opl/runs/${encodeURIComponent(String(runId || ""))}/status`;
+}
+
+function fileGatePayload({ runtimeSession = {}, input = {}, relativePath = "" } = {}) {
+  return {
+    ok: false,
+    error: "file_upload_capability_not_supported",
+    gate: "file_ref_not_observed",
+    status: "gated",
+    capability: "file_upload",
+    source: "webui_bridge",
+    file: {
+      status: "gated",
+      workspaceId: emptyText(runtimeSession.workspaceId),
+      workspaceSessionId: emptyText(runtimeSession.workspaceSessionId),
+      runtimeSessionId: emptyText(runtimeSession.runtimeSessionId),
+      name: emptyText(input.name || input.fileName || input.file_name || relativePath.split("/").pop() || ""),
+      relativePath: emptyText(relativePath),
+      sizeBytes: Number(input.sizeBytes ?? input.size_bytes ?? 0),
+      contentType: emptyText(input.contentType || input.content_type || "application/octet-stream"),
+    },
+  };
+}
+
+function artifactGatePayload({ runId = "", artifactRef = "" } = {}) {
+  return {
+    ok: false,
+    error: "artifact_not_observed",
+    gate: "output_file_ref_not_observed",
+    status: "gated",
+    runId: emptyText(runId),
+    artifactRef: emptyText(artifactRef),
   };
 }
 
@@ -749,6 +823,39 @@ export function createRuntimeBridgeRuntime() {
         });
         payload = { ok: true, run, artifacts: run.artifacts || [] };
       } catch (error) {
+        if (isWebuiRuntimeMode(config.runtimeMode) && runtimeAgentRequiredByContract(error)) {
+          const run = createRunRecord(state, {
+            ...activeRuntimeSession,
+            ...input,
+            runId: input.runId || input.run_id || runIdFromInput(input),
+            traceId: input.traceId || input.trace_id || activeRuntimeSession.traceId || "",
+            status: "gated",
+            error: "requires_runtime_agent",
+            kind: input.kind || "opl-runtime",
+            toolName: input.toolName || input.tool_name || "opl-runtime",
+            resourceBindingId: activeRuntimeSession.resourceBindingId || input.resourceBindingId || input.resource_binding_id || "",
+            providerKeyRef: activeRuntimeSession.providerKeyRef || input.providerKeyRef || input.provider_key_ref || "",
+          });
+          addEvent(state, "downstream_runtime_gate_evaluated", {
+            ...activeRuntimeSession,
+            runId: run.runId,
+            traceId: run.traceId,
+            status: "gated",
+            error: "requires_runtime_agent",
+            gate: "run_not_observed",
+            code: error.code || "",
+          });
+          status = 409;
+          payload = {
+            ok: false,
+            error: "requires_runtime_agent",
+            gate: "run_not_observed",
+            status: "gated",
+            run: publicGatedRun(run),
+            statusUrl: runStatusUrlFor(run.runId),
+          };
+          return;
+        }
         status = 502;
         const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
         addEvent(state, "runner_run_failed", runnerFailureEvent(activeRuntimeSession, mapped));
@@ -770,6 +877,25 @@ export function createRuntimeBridgeRuntime() {
     const relativePath = String(input.relativePath || input.relative_path || input.fileName || input.file_name || input.name || "").trim().replace(/^\/+/, "");
     if (!relativePath) {
       sendJson(res, 422, { ok: false, error: "file_name_required" });
+      return;
+    }
+    if (isWebuiRuntimeMode(config.runtimeMode)) {
+      let payload = null;
+      await updateState((state) => {
+        const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+        addEvent(state, "opl_file_gate_evaluated", {
+          ...activeRuntimeSession,
+          error: "file_upload_capability_not_supported",
+          gate: "file_ref_not_observed",
+          capability: "file_upload",
+          source: "webui_bridge",
+          fileName: input.name || input.fileName || input.file_name || relativePath.split("/").pop() || "",
+          sizeBytes: Number(input.sizeBytes ?? input.size_bytes ?? 0),
+          contentType: String(input.contentType || input.content_type || "application/octet-stream").trim() || "application/octet-stream",
+        });
+        payload = fileGatePayload({ runtimeSession: activeRuntimeSession, input, relativePath });
+      });
+      sendJson(res, 409, payload);
       return;
     }
     let artifact = null;
@@ -913,11 +1039,22 @@ export function createRuntimeBridgeRuntime() {
         addEvent(state, "runner_artifact_sync_failed", { ...run, error: String(error.message || error) });
         return null;
       });
+      const items = state.artifacts
+        .filter((item) => item.runId === match[1])
+        .map((item) => publicRunArtifact(item, run, state.runtimeSessions.find((session) => session.runtimeSessionId === run.runtimeSessionId) || {}));
+      if (!items.length && isWebuiRuntimeMode(config.runtimeMode)) {
+        addEvent(state, "artifact_output_gate_evaluated", {
+          ...run,
+          error: "artifact_not_observed",
+          gate: "output_file_ref_not_observed",
+        });
+        status = 409;
+        payload = artifactGatePayload({ runId: run.runId });
+        return;
+      }
       payload = {
         ok: true,
-        items: state.artifacts
-          .filter((item) => item.runId === match[1])
-          .map((item) => publicRunArtifact(item, run, state.runtimeSessions.find((session) => session.runtimeSessionId === run.runtimeSessionId) || {})),
+        items,
       };
     });
     sendJson(res, status, payload);
@@ -930,7 +1067,9 @@ export function createRuntimeBridgeRuntime() {
     const artifactRef = decodeURIComponent(match[1] || "");
     const artifact = state.artifacts.find((item) => item.artifactId === artifactRef);
     if (!artifact || !artifactBelongsToLaunch(artifact, launch)) {
-      sendJson(res, 404, { ok: false, error: "artifact_not_found" });
+      sendJson(res, 404, isWebuiRuntimeMode(config.runtimeMode)
+        ? artifactGatePayload({ artifactRef })
+        : { ok: false, error: "artifact_not_found" });
       return;
     }
     const run = state.runs.find((item) => item.runId === artifact.runId) || {};

@@ -249,6 +249,13 @@ Adapter / Runtime Bridge sanitized metadata
 
 - 验证所有失败都明确 gate。
 - 验证 evidence 只写 `.runtime` 且脱敏。
+- 验证 `OPL_RUNTIME_MODE=webui` 下 Adapter 不把未验证 file/run/artifact 能力伪造成成功。
+
+验证命令：
+
+```text
+node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs
+```
 
 必须覆盖的 gate：
 
@@ -272,6 +279,11 @@ Adapter / Runtime Bridge sanitized metadata
 验收：
 
 - no fake 200。
+- `GET /api/opl/status` 在真实 WebUI bridge profile 下把 file intent 标为 `capability_not_supported`，run intent 标为 `requires_runtime_agent`。
+- `POST /api/opl/files` 在未证明真实 WebUI file upload/fileRef 前返回 409 `file_upload_capability_not_supported` + `file_ref_not_observed`，不得返回 `fileRef`。
+- `POST /api/opl/runs` 在未配置真实 Runtime Agent relay 前返回 409 `requires_runtime_agent` + queryable `gated` run，不得返回 `succeeded`。
+- `GET /api/opl/runs/{runId}/artifacts` 在未观测真实 output 前返回 409 `artifact_not_observed` + `output_file_ref_not_observed`。
+- `GET /api/opl/artifacts/{artifactRef}` 在未观测真实 output 前返回 404 `artifact_not_observed` + `output_file_ref_not_observed`。
 - `.runtime` evidence 不进入 git。
 - response、trace、evidence 和 git 不包含 raw API key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl`、`presignedUrl`、SecretId、SecretKey、kubeconfig 或 `.env` 内容。
 

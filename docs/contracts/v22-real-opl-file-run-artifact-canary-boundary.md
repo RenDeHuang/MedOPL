@@ -412,13 +412,14 @@ canary 发现的事实必须回写合同、status 和 validation path。后续 p
 
 本合同对应分支进入 B 窗口前必须满足：
 
-1. 明确声明订阅本合同包和模型记录。当前合同分支为 `contract/v22-real-opl-file-run-artifact-canary-boundary`，模型记录为 `gpt-5.3-codex`。
+1. 明确声明订阅本合同包和模型记录。当前开发分支为 `feat/v22-real-opl-file-run-artifact-canary`，模型记录为 `gpt-5.3-codex`。
 2. `node scripts/smoke-test-v22-real-opl-file-run-artifact-canary-contract.mjs` 通过。
-3. `node scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs` 通过。
-4. `node scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs` 通过。
-5. `node scripts/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
-6. file/run/artifact/trace/billing metadata 未完成真实 canary 时，必须在状态矩阵标记为未完成或需授权。
-7. 没有修改 one-person-lab upstream。
-8. 没有读取 secret，没有调用真实云，没有 build/push/kubectl/live-test，没有修改 deploy、`.sentrux` 或 adapters。
-9. `git diff --check -- docs/contracts docs/recovery scripts` 通过。
-10. secret/path scan 不发现 raw key、token、本机 secret path、object key、signed URL 或 `.env` 内容。
+3. `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs` 通过，证明 `OPL_RUNTIME_MODE=webui` 下 file/run/artifact 不会伪成功：file 返回 `file_upload_capability_not_supported`，run 返回 queryable `requires_runtime_agent` gated run，artifact 返回 `artifact_not_observed` / `output_file_ref_not_observed`。
+4. `node scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs` 通过。
+5. `node scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs` 通过。
+6. `node scripts/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
+7. file/run/artifact/trace/billing metadata 未完成真实 canary 时，必须在状态矩阵标记为未完成或需授权。
+8. 没有修改 one-person-lab upstream。
+9. 没有读取 secret，没有调用真实云，没有 build/push/kubectl/live-test，没有修改 deploy、`.sentrux` 或 adapters。
+10. `git diff --check -- docs/contracts docs/recovery scripts services/opl-runtime-bridge` 通过。
+11. secret/path scan 不发现 raw key、token、本机 secret path、object key、signed URL 或 `.env` 内容。
