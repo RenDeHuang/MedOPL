@@ -63,6 +63,35 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
 
 Package D verification 只证明 TCR repository/tag preflight、multi-image build/push unique test tag、deploy dry-run、authorized deploy rollout 和 runtime smoke 的合同边界。它不得被解释为 TKE node pool 开删、COS storage 开删或账单对账已经完成；这些仍归 Package C 和 readonly reconciliation gate。
 
+## Package D / OPL Deployment Discovery Verification
+
+Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-discovery` 分支，model: gpt-5.4。该 discovery 只写 docs/status/smoke：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。
+
+Discovery facts:
+
+- kube API endpoint shape: `kube.medopl.cn`.
+- runtime surfaces: `portal.medopl.cn`, `opl.medopl.cn`, `trace.medopl.cn`.
+- candidate deployments: `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`.
+- candidate deployments: `portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter`.
+- candidate label evidence for this purpose: `k8s-app/qcloud-app`.
+
+Verification verdict:
+
+- not Package D rollout.
+- does not prove build/push/kubectl/deploy completion.
+- 不代表 deploy/build/push/kubectl 已完成。
+- owner guard blocker remains.
+- Package D must fail-closed because candidate deployments lack `ownerRef`, `workspaceId`, `resourceBindingId`, and `operationId`.
+- cannot infer ownership by deployment name, namespace, IP, creation time, qcloud-app label, or manual memory.
+- 不能靠 deployment 名字、namespace、IP、创建时间、qcloud-app 或人工记忆判断归属。
+
+Contract issue for next branch:
+
+- Portal/Gateway/Adapter/trace may be platform service targets.
+- workspace runtime targets still require workspaceId/resourceBindingId.
+- The next branch must define an OPL deployment ownership / release plan sub-contract with target class, platform service target guard, workspace runtime target guard, release plan fields, dry-run evidence, rollback evidence, and runtime smoke coverage.
+- This discovery does not loosen the current Package D owner guard; it records why real rollout is blocked.
+
 ## Forbidden Actions By Layer
 
 - contract smoke, loader smoke, shape smoke and preflight smoke must not read secret, source env, call real cloud, create/release resources, build/push/kubectl, or run live-test.
@@ -113,6 +142,27 @@ Required follow-through:
   "authorizedRealCloudScope": "Tencent COS putObject storage marker for storage-create canary only",
   "doesNotModifyScriptsOrServices": true,
   "doesNotAuthorizeLive": true,
+  "packageDDiscovery": {
+    "branch": "docs/v22-package-d-opl-deploy-discovery",
+    "model": "gpt-5.4",
+    "doesNotAuthorizeRollout": true,
+    "doesNotReadSecret": true,
+    "doesNotReadKubeconfig": true,
+    "doesNotRunKubectl": true,
+    "doesNotBuildPushDeploy": true,
+    "ownerGuardMustRemainHard": true,
+    "requiresTargetClassContract": true,
+    "blocker": "candidate deployments lack ownerRef/workspaceId/resourceBindingId/operationId and cannot be accepted from k8s-app/qcloud-app labels",
+    "targetClassesToDefine": [
+      "platform service target",
+      "workspace runtime target"
+    ],
+    "runtimeSurfaces": [
+      "portal.medopl.cn",
+      "opl.medopl.cn",
+      "trace.medopl.cn"
+    ]
+  },
   "layers": [
     {
       "layer": "contract smoke",

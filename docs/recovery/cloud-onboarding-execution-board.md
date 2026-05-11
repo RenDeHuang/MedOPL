@@ -10,6 +10,8 @@ current phase: CO-13 storage-create canary done; CO-06 readonly live remains sep
 
 本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前分支实现 Portal production storage-create loop，并在用户明确提供 Package C mutation secret file path 后完成最小 real Tencent storage-create canary。它不改 deploy，不 build/push/kubectl，不做 compute/delete/deploy；canary 证据只写 `.runtime`，不进 git。
 
+Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-discovery` 分支，model: gpt-5.4。该 discovery 只回写已知事实和 owner guard blocker：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不是 Package D rollout，does not prove build/push/kubectl/deploy completion，不代表 deploy/build/push/kubectl 已完成。
+
 关联状态表：`docs/recovery/cloud-onboarding-status-table.md`。
 
 ## Program Snapshot
@@ -114,6 +116,7 @@ user confirmation gates:
 
 - open issue: workflow contract phase 12 required contracts still includes deploy plan contract. It must be replaced by a concrete repo-tracked contract path before production deploy execution can leave planning.
 - open issue: workflow contract phase 14 required contracts still includes role surface contracts and release/status docs. It must be replaced by concrete repo-tracked contract/status files before canary / QA / release status update can be treated as release-ready.
+- open issue: Package D / OPL deployment discovery found candidate deployments, but real rollout is blocked until a repo-tracked OPL deployment ownership / release plan sub-contract classifies each target as platform service target or workspace runtime target and defines the matching owner guard.
 - 本分支只登记 open issue，不修改 workflow 合同。
 
 ## Runnable Path Snapshot
@@ -134,16 +137,58 @@ user confirmation gates:
 | R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-13 COS billing checkpoint | CC-06 | readonly_connection | path defined; execution remains separate |
-| R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; runner in later Package D branch |
+| R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; Package D / OPL discovery records candidate targets, but release plan ownership remains blocked |
 | R-15 multi-image build and push unique test tag | CC-07 | deploy_and_production_integration | path defined; real push blocked |
-| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | path defined; runner in later Package D branch |
-| R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | path defined; real kubectl blocked |
+| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | path defined; owner guard blocker prevents deploy dry-run from becoming apply readiness |
+| R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | path defined; real kubectl blocked until release plan and owner guard pass |
 | R-18 runtime smoke | CC-07 | deploy_and_production_integration | path defined; execution remains separate |
 | R-19 release compute | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-20 delete file space | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-21 final reconciliation cleanup and B review | CC-REVIEW | manual_b_review | path defined; B absorption gate |
 
 Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。
+
+## Package D / OPL Deployment Discovery
+
+Discovery branch: `docs/v22-package-d-opl-deploy-discovery`; model: gpt-5.4.
+
+Scope:
+
+- no secret read.
+- no kubeconfig read.
+- no kubectl.
+- no build/push/deploy.
+- no real cloud call.
+- no deploy, `.sentrux`, `adapters`, or upstream mutation.
+
+Observed facts supplied by the authorized discovery lane:
+
+- kube API endpoint shape is reachable through `kube.medopl.cn`.
+- runtime smoke surfaces are reachable at `portal.medopl.cn`, `opl.medopl.cn`, and `trace.medopl.cn`.
+- candidate deployments discovered by prior read-only inspection: `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`.
+- candidate deployments discovered by prior read-only inspection: `portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter`.
+- candidate deployments have only `k8s-app/qcloud-app` style labels for this purpose; they do not provide Package D owner guard labels.
+
+Blocker:
+
+- owner guard blocker: candidate deployments lack `ownerRef`, `workspaceId`, `resourceBindingId`, and `operationId`.
+- Package D must fail-closed when ownership labels or Portal truth do not match.
+- cannot infer ownership by deployment name, namespace, IP, creation time, qcloud-app label, or manual memory.
+- 不能靠 deployment 名字、namespace、IP、创建时间、qcloud-app 或人工记忆判断归属。
+
+Contract problem to solve next:
+
+- Portal/Gateway/Adapter/trace may be platform service targets, so they may need a platform-level ownerRef and operation audit identity rather than forced workspace ownership.
+- workspace runtime targets still require workspaceId/resourceBindingId because they represent tenant-scoped runtime capacity.
+- The next branch must define an OPL deployment ownership / release plan sub-contract with explicit target class values: platform service target and workspace runtime target.
+- That sub-contract must decide which labels or Portal canonical records prove each target class without weakening the current Package D owner guard.
+
+Discovery status:
+
+- not Package D rollout.
+- does not prove build/push/kubectl/deploy completion.
+- 不代表 deploy/build/push/kubectl 已完成。
+- R-14 through R-18 remain blocked for real execution until release plan, target class, owner guard, dry-run, rollback evidence, and user authorization are present.
 
 ## Board Data
 
@@ -171,6 +216,46 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
   "readsSecretNow": false,
   "callsRealCloudNow": false,
   "authorizedStorageCreateCanaryDone": true,
+  "packageDDiscovery": {
+    "branch": "docs/v22-package-d-opl-deploy-discovery",
+    "model": "gpt-5.4",
+    "readsSecretNow": false,
+    "readsKubeconfigNow": false,
+    "runsKubectlNow": false,
+    "runsBuildPushDeployNow": false,
+    "rolloutDone": false,
+    "ownerGuardBlocked": true,
+    "requiresOwnershipReleasePlanSubContract": true,
+    "kubeApiEndpoint": "kube.medopl.cn",
+    "runtimeSurfaces": [
+      "portal.medopl.cn",
+      "opl.medopl.cn",
+      "trace.medopl.cn"
+    ],
+    "candidateDeployments": {
+      "default": [
+        "portal-opl",
+        "opl-web-gateway-opl",
+        "portal-opl-adapter-opl"
+      ],
+      "portal-v21-gray": [
+        "portal",
+        "opl-web-gateway",
+        "portal-opl-adapter"
+      ]
+    },
+    "candidateLabelEvidence": "k8s-app/qcloud-app only for this purpose",
+    "missingOwnerGuardFields": [
+      "ownerRef",
+      "workspaceId",
+      "resourceBindingId",
+      "operationId"
+    ],
+    "targetClassContractNeeded": [
+      "platform service target",
+      "workspace runtime target"
+    ]
+  },
   "modifiesDeployNow": false,
   "runsBuildPushKubectlNow": false,
   "automerges": false,

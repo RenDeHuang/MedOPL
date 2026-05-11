@@ -132,6 +132,14 @@ Package D 的每个 deploy target 必须同时通过 Portal truth 和 Kubernetes
 
 这是防止误删、误停或误改别人节点和存储的硬边界。Package D 只能改“已确认属于本次 deploy operation 的指定 workload container image”，不能碰节点池容量、COS 文件空间或其他租户资源。
 
+Implementation note: OPL deployment discovery.
+
+This note does not loosen the current Package D contract. The discovery branch `docs/v22-package-d-opl-deploy-discovery` records that current OPL candidate deployments are visible as possible Portal/Gateway/Adapter/trace targets, but lack Package D owner guard labels for this purpose. `k8s-app/qcloud-app`, deployment name, namespace, IP, creation time, or manual memory cannot prove ownership.
+
+Portal/Gateway/Adapter/trace may be platform service targets. A future OPL deployment ownership / release plan sub-contract may define a platform service target guard that uses platform-level `ownerRef` and `operationId` without forcing `workspaceId/resourceBindingId` on shared platform services. Workspace runtime targets still require workspaceId/resourceBindingId because they represent tenant-scoped runtime capacity.
+
+Until a repo-tracked OPL deployment ownership / release plan sub-contract exists, Package D real rollout remains blocked. That sub-contract must explicitly classify every target as `platform service target` or `workspace runtime target`, define which owner guard fields are mandatory for each class, and keep fail-closed behavior when Portal truth or Kubernetes metadata is missing or conflicting.
+
 ## Forbidden Side Effects
 
 明确禁止：
