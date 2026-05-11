@@ -1,6 +1,6 @@
 import {
   buildPortalProductionCloudOperationProjection,
-  executePortalProductionStorageCreate,
+  executePortalProductionCloudOperation,
 } from "../domain/portal-cloud-operation-production.mjs";
 
 function parseJsonBodyOrEmpty(raw = Buffer.from("")) {
@@ -28,11 +28,21 @@ export function createPortalApiV22CloudOperationsRoutes({
   runnerScript = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
   repoRoot = "",
 }) {
-  async function handleStorageCreate({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/api/v22/cloud-operations/storage/create") return false;
+  const operationRoutes = new Map([
+    ["/portal/api/v22/cloud-operations/storage/create", "create_storage"],
+    ["/portal/api/v22/cloud-operations/compute/create", "create_compute"],
+    ["/portal/api/v22/cloud-operations/storage/expand", "expand_storage"],
+    ["/portal/api/v22/cloud-operations/compute/expand", "expand_compute"],
+    ["/portal/api/v22/cloud-operations/compute/release", "release_compute"],
+    ["/portal/api/v22/cloud-operations/storage/delete", "delete_storage"],
+  ]);
+
+  async function handleMutation({ req, res, url, db, user }) {
+    if (req.method !== "POST" || !operationRoutes.has(url.pathname)) return false;
     const payload = parseJsonBodyOrEmpty(await readBody(req));
-    const result = executePortalProductionStorageCreate(db, user, payload, {
+    const result = executePortalProductionCloudOperation(db, user, payload, {
       repoRoot,
+      operationType: operationRoutes.get(url.pathname),
       runnerMode,
       runnerScript,
       secretFile,
@@ -52,7 +62,7 @@ export function createPortalApiV22CloudOperationsRoutes({
   }
 
   return async function handlePortalApiV22CloudOperationsRoutes(context) {
-    if (await handleStorageCreate(context)) return true;
+    if (await handleMutation(context)) return true;
     if (await handleProjection(context)) return true;
     return false;
   };

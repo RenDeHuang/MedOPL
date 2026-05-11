@@ -37,6 +37,10 @@ function workspaceIdFrom(input = {}) {
   return text(input.workspaceId || input.workspace_id);
 }
 
+function resourceBindingIdFrom(input = {}) {
+  return text(input.resourceBindingId || input.resource_binding_id);
+}
+
 function planIdFrom(input = {}, fallback = "starter_2c4g_10gb") {
   return text(input.planId || input.plan_id || fallback) || fallback;
 }
@@ -116,6 +120,18 @@ function createBinding(db = {}, user = {}, workspaceId = "", planId = "starter_2
   return binding;
 }
 
+function findOwnedBinding(db = {}, user = {}, workspaceId = "", resourceBindingId = "") {
+  const bindingId = text(resourceBindingId);
+  if (!bindingId) return { ok: false, status: 409, error: "resource_binding_required" };
+  const binding = ensureArrayField(db, "workspaceResourceBindings")
+    .find((item) => text(item.resourceBindingId || item.id) === bindingId) || null;
+  if (!binding) return { ok: false, status: 404, error: "resource_binding_not_found" };
+  if (!ownerMatches(binding, user) || !workspaceMatches(binding, workspaceId)) {
+    return { ok: false, status: 403, error: "resource_binding_owner_mismatch" };
+  }
+  return { ok: true, binding };
+}
+
 function latestForBinding(rows = [], binding = {}) {
   const bindingId = text(binding?.resourceBindingId || binding?.id);
   return rows
@@ -141,15 +157,48 @@ function upsertFileSpaceEntitlement(db = {}, user = {}, binding = {}, input = {}
   entitlement.capacityGb = capacityGb;
   entitlement.planId = planIdFrom(input, binding.planId);
   entitlement.status = status;
-  entitlement.retentionProtectionStatus = text(entitlement.retentionProtectionStatus);
-  entitlement.retentionCleanupAfterAt = text(entitlement.retentionCleanupAfterAt);
+  entitlement.retentionProtectionStatus = status === "retention_protected" ? "active" : text(entitlement.retentionProtectionStatus);
+  entitlement.retentionCleanupAfterAt = status === "retention_protected"
+    ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    : text(entitlement.retentionCleanupAfterAt);
   entitlement.updatedAt = nowIso();
   binding.fileSpaceGb = capacityGb;
   binding.storageEntitlementId = entitlement.id;
   binding.storageStatus = status;
-  binding.status = "storage_available";
+  if (status === "retention_protected") {
+    binding.status = text(binding.computeAllocationId) ? "compute_released_storage_protected" : "storage_protected";
+  } else {
+    binding.status = text(binding.computeAllocationId) ? "active" : "storage_available";
+  }
   binding.updatedAt = nowIso();
   return entitlement;
+}
+
+function upsertComputeAllocation(db = {}, user = {}, binding = {}, input = {}, status = "available") {
+  const allocations = ensureArrayField(db, "computeAllocations");
+  let allocation = allocations.find((item) => text(item.resourceBindingId) === text(binding.resourceBindingId || binding.id)) || null;
+  if (!allocation) {
+    allocation = {
+      id: `compute-${text(binding.resourceBindingId || binding.id)}`,
+      tenantId: userTenantId(user),
+      userId: text(user.id),
+      workspaceId: text(binding.workspaceId),
+      resourceBindingId: text(binding.resourceBindingId || binding.id),
+      createdAt: nowIso(),
+    };
+    allocations.push(allocation);
+  }
+  allocation.planId = planIdFrom(input, binding.planId);
+  allocation.computeUnits = positiveNumber(input.computeUnits ?? input.compute_units, positiveNumber(allocation.computeUnits, 1));
+  allocation.status = status;
+  allocation.updatedAt = nowIso();
+  binding.computeAllocationId = allocation.id;
+  binding.computeStatus = status;
+  binding.status = status === "released"
+    ? (text(binding.storageEntitlementId) ? "compute_released_storage_retained" : "compute_released")
+    : "active";
+  binding.updatedAt = nowIso();
+  return allocation;
 }
 
 function upsertFreeze(db = {}, user = {}, binding = {}, operation = {}) {
@@ -314,9 +363,67 @@ function operationPublicView(operation = {}) {
   };
 }
 
-function validateStorageCreate(input = {}) {
+const PACKAGE_C_OPERATIONS = Object.freeze({
+  create_storage: Object.freeze({
+    operationType: "create_storage",
+    runnerOperation: "storage-create",
+    operationIdKind: "create-storage",
+    createsBinding: true,
+    resourceKind: "storage",
+    successStatus: "available",
+  }),
+  create_compute: Object.freeze({
+    operationType: "create_compute",
+    runnerOperation: "compute-create",
+    operationIdKind: "create-compute",
+    resourceKind: "compute",
+    successStatus: "available",
+  }),
+  expand_storage: Object.freeze({
+    operationType: "expand_storage",
+    runnerOperation: "storage-expand",
+    operationIdKind: "expand-storage",
+    resourceKind: "storage",
+    successStatus: "available",
+  }),
+  expand_compute: Object.freeze({
+    operationType: "expand_compute",
+    runnerOperation: "compute-expand",
+    operationIdKind: "expand-compute",
+    resourceKind: "compute",
+    successStatus: "available",
+  }),
+  release_compute: Object.freeze({
+    operationType: "release_compute",
+    runnerOperation: "compute-release",
+    operationIdKind: "release-compute",
+    resourceKind: "compute",
+    successStatus: "released",
+  }),
+  delete_storage: Object.freeze({
+    operationType: "delete_storage",
+    runnerOperation: "storage-delete",
+    operationIdKind: "delete-storage",
+    resourceKind: "storage",
+    successStatus: "retention_protected",
+  }),
+});
+
+function targetDesiredCapacityFrom(input = {}) {
+  const normalized = text(input.targetDesiredCapacity ?? input.target_desired_capacity);
+  if (!/^[0-9]+$/.test(normalized)) return "";
+  return normalized;
+}
+
+function validateProductionOperationInput(input = {}, spec = {}) {
   if (!workspaceIdFrom(input)) return { ok: false, status: 422, error: "workspace_required" };
-  if (positiveNumber(input.fileSpaceGb ?? input.file_space_gb, 0) <= 0) return { ok: false, status: 422, error: "file_space_required" };
+  if (!spec.createsBinding && !resourceBindingIdFrom(input)) return { ok: false, status: 409, error: "resource_binding_required" };
+  if ((spec.operationType === "create_storage" || spec.operationType === "expand_storage") && positiveNumber(input.fileSpaceGb ?? input.file_space_gb, 0) <= 0) {
+    return { ok: false, status: 422, error: "file_space_required" };
+  }
+  if (spec.resourceKind === "compute" && targetDesiredCapacityFrom(input) === "") {
+    return { ok: false, status: 422, error: "target_desired_capacity_required" };
+  }
   return { ok: true };
 }
 
@@ -357,44 +464,48 @@ function runNodeJson({ repoRoot, script, args, label }) {
   return parseJsonOutput(result, label);
 }
 
-function runPackageCStorageCreate({ repoRoot, runnerScript, secretFile, operationId, workspaceId, runnerMode }) {
+function runPackageCOperation({ repoRoot, runnerScript, secretFile, operationId, workspaceId, runnerMode, spec, input = {} }) {
   if (!secretFile) {
     return { ok: false, status: 503, error: "cloud_operation_secret_file_required" };
   }
   const dryRun = runNodeJson({
     repoRoot,
     script: runnerScript,
-    label: "package_c_storage_create_dry_run",
+    label: `package_c_${spec.runnerOperation}_dry_run`,
     args: [
       "--dry-run",
       "--secret-file",
       secretFile,
       "--operation",
-      "storage-create",
+      spec.runnerOperation,
       "--run-id",
       operationId,
     ],
   });
   if (!dryRun.ok) return dryRun;
+  const executeArgs = [
+    "--execute",
+    "--sdk-mode",
+    runnerMode,
+    "--secret-file",
+    secretFile,
+    "--operation",
+    spec.runnerOperation,
+    "--run-id",
+    operationId,
+    "--accepted-dry-run-id",
+    `${operationId}-${spec.runnerOperation}`,
+    "--workspace-id",
+    workspaceId,
+  ];
+  if (spec.resourceKind === "compute") {
+    executeArgs.push("--target-desired-capacity", targetDesiredCapacityFrom(input));
+  }
   const execute = runNodeJson({
     repoRoot,
     script: runnerScript,
-    label: "package_c_storage_create_execute",
-    args: [
-      "--execute",
-      "--sdk-mode",
-      runnerMode,
-      "--secret-file",
-      secretFile,
-      "--operation",
-      "storage-create",
-      "--run-id",
-      operationId,
-      "--accepted-dry-run-id",
-      `${operationId}-storage-create`,
-      "--workspace-id",
-      workspaceId,
-    ],
+    label: `package_c_${spec.runnerOperation}_execute`,
+    args: executeArgs,
   });
   if (!execute.ok) return execute;
   return {
@@ -408,8 +519,8 @@ function runPackageCStorageCreate({ repoRoot, runnerScript, secretFile, operatio
   };
 }
 
-function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, operationId = "") {
-  const id = operationId || operationIdFor("storage-create");
+function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, operationId = "", spec = PACKAGE_C_OPERATIONS.create_storage) {
+  const id = operationId || operationIdFor(spec.operationIdKind);
   const operation = {
     id,
     operationId: id,
@@ -417,7 +528,7 @@ function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, ope
     userId: text(user.id),
     workspaceId: text(binding.workspaceId),
     resourceBindingId: text(binding.resourceBindingId || binding.id),
-    operationType: "create_storage",
+    operationType: spec.operationType,
     status: "queued",
     testOnly: false,
     productionPortalConnected: true,
@@ -427,7 +538,9 @@ function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, ope
     dryRunReportRef: "",
     executionReportRef: "",
     requestedSpec: {
-      fileSpaceGb: positiveNumber(input.fileSpaceGb ?? input.file_space_gb, 0),
+      fileSpaceGb: positiveNumber(input.fileSpaceGb ?? input.file_space_gb, positiveNumber(binding.fileSpaceGb, 0)),
+      computeUnits: positiveNumber(input.computeUnits ?? input.compute_units, 0),
+      targetDesiredCapacity: targetDesiredCapacityFrom(input),
       planId: planIdFrom(input),
     },
     createdAt: nowIso(),
@@ -502,8 +615,10 @@ function markOperationSucceeded(operation = {}, job = {}, runner = {}) {
   job.updatedAt = now;
 }
 
-export function executePortalProductionStorageCreate(db = {}, user = {}, input = {}, options = {}) {
-  const validation = validateStorageCreate(input);
+export function executePortalProductionCloudOperation(db = {}, user = {}, input = {}, options = {}) {
+  const spec = PACKAGE_C_OPERATIONS[text(options.operationType || input.operationType || input.operation_type)];
+  if (!spec) return { ok: false, status: 422, error: "unsupported_operation_type" };
+  const validation = validateProductionOperationInput(input, spec);
   if (!validation.ok) return validation;
 
   const runnerMode = text(options.runnerMode || "fake-live");
@@ -516,22 +631,34 @@ export function executePortalProductionStorageCreate(db = {}, user = {}, input =
   const secretFile = text(options.secretFile);
   const workspaceId = workspaceIdFrom(input);
   const planId = planIdFrom(input);
-  const operationId = operationIdFor("storage-create");
+  const operationId = operationIdFor(spec.operationIdKind);
 
   ensureWorkspace(db, user, workspaceId, planId);
-  const binding = createBinding(db, user, workspaceId, planId);
-  const operation = createOperationRecord(db, user, binding, input, operationId);
+  let binding = null;
+  if (spec.createsBinding) {
+    binding = createBinding(db, user, workspaceId, planId);
+  } else {
+    const found = findOwnedBinding(db, user, workspaceId, resourceBindingIdFrom(input));
+    if (!found.ok) return found;
+    binding = found.binding;
+  }
+  binding.planId = planId;
+  binding.serverPlanId = planId;
+  binding.packageId = planId;
+  const operation = createOperationRecord(db, user, binding, input, operationId, spec);
   const job = createJobRecord(db, user, binding, operation);
   appendAuditEvent(db, user, binding, operation);
   markOperationRunning(operation, job, runnerMode);
 
-  const runner = runPackageCStorageCreate({
+  const runner = runPackageCOperation({
     repoRoot,
     runnerScript,
     secretFile,
     operationId,
     workspaceId,
     runnerMode,
+    spec,
+    input,
   });
   if (!runner.ok) {
     binding.status = "provision_failed";
@@ -547,7 +674,11 @@ export function executePortalProductionStorageCreate(db = {}, user = {}, input =
     };
   }
 
-  upsertFileSpaceEntitlement(db, user, binding, input, "available");
+  if (spec.resourceKind === "storage") {
+    upsertFileSpaceEntitlement(db, user, binding, input, spec.successStatus);
+  } else {
+    upsertComputeAllocation(db, user, binding, input, spec.successStatus);
+  }
   markOperationSucceeded(operation, job, runner);
   upsertFreeze(db, user, binding, operation);
   appendLedger(db, user, binding, operation);
@@ -562,6 +693,13 @@ export function executePortalProductionStorageCreate(db = {}, user = {}, input =
     resourceBindingId: text(binding.resourceBindingId || binding.id),
     publicProjection: publicProjectionForBinding(db, user, binding),
   };
+}
+
+export function executePortalProductionStorageCreate(db = {}, user = {}, input = {}, options = {}) {
+  return executePortalProductionCloudOperation(db, user, input, {
+    ...options,
+    operationType: "create_storage",
+  });
 }
 
 export function buildPortalProductionCloudOperationProjection(db = {}, user = {}, { workspaceId = "" } = {}) {
