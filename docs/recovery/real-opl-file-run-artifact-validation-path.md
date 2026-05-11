@@ -27,6 +27,22 @@ Portal user enters OPL
 
 闭环不是只返回 HTTP 200。闭环必须有 workspace-scoped `fileRef`、`runId/status/traceId`、`artifactRef` 或 `outputFileRef`，以及 Portal 可查询 projection。失败必须 no fake 200。
 
+本分支的可吸收目标不是 gate-only。gate smoke 只证明失败不会伪成功；可吸收目标必须跑通本地 Runtime Agent HTTP API relay full-loop：
+
+```text
+Portal HTTP API
+  -> Gateway clean OPL Web entry
+  -> Adapter launch/bootstrap/session bind
+  -> Runtime Agent HTTP file intake
+  -> workspace-scoped fileRef
+  -> Runtime Agent HTTP run dispatch
+  -> runId/status/traceId + billing/usage metadata ref
+  -> artifactRef/outputFileRef
+  -> Portal /portal/api/session-traces projection
+```
+
+该 full-loop 使用本地独立 Runtime Agent canary server，不使用 `local-fake-runtime-agent-relay`，不调用真实云，不部署 Langfuse，不修改 one-person-lab upstream。真实云 runtime、COS 账单和 `trace.medopl.cn` 仍是单独授权链路。
+
 ## Validation Order
 
 ### Stage 0: Branch contract declaration
@@ -103,6 +119,7 @@ OPL file upload or file intent
 
 - 证明 file upload 或 file intent 形成 workspace-scoped `fileRef`。
 - 证明 Portal 能查询 file projection。
+- 在 Runtime Agent API relay full-loop 中，fileRef 必须来自 Runtime Agent HTTP file intake response，Adapter 只做归一化和 Portal projection，不得本地伪造。
 
 成功验收：
 
@@ -123,6 +140,7 @@ OPL file upload or file intent
 
 - 验证 run intent 是否能进入真实 Runtime Bridge / Runtime Agent boundary。
 - 如果没有真实 Runtime Agent 或真实 runtime 授权，返回明确 gate。
+- 在本地 full-loop canary 中，Runtime Agent boundary 是独立 HTTP canary server；该 server 必须收到 sanitized run dispatch payload。
 
 预期链路：
 
@@ -192,7 +210,37 @@ Runtime Agent output
 - output 未绑定 workspace/session/run 时返回 `adapter_mapping_failed`。
 - Portal 无法查询时返回 `portal_projection_missing`。
 
-### Stage 7: Portal workspace/session/run query
+### Stage 7: Runtime Agent API relay full-loop
+
+目标：
+
+- 用同一条本地 HTTP 链路证明 file/run/artifact 不是 gate-only，也不是 fake Runtime Agent relay。
+- Runtime Agent canary server 通过公开 HTTP API 返回 workspace-scoped `fileRef`、`runId/status/traceId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 和 `usageMetadataRef`。
+- Portal 通过 `/portal/api/opl/*` 和 `/portal/api/session-traces` 查询同一组 workspace/session/run projection。
+
+验证命令：
+
+```text
+node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs
+```
+
+成功验收：
+
+- Portal 登录、launch、bootstrap、session bind、file、run、artifact 和 trace 查询都走真实 HTTP。
+- Runtime Agent canary server 至少收到一次 file intake 请求和一次 run dispatch 请求。
+- file response 包含 workspace-scoped `fileRef`，并绑定 `workspaceId + workspaceSessionId + runtimeSessionId`。
+- run response 包含 `runId/status/traceId`，并绑定 `resourceBindingId + providerKeyRef + fileRef`。
+- artifact response 包含 `artifactRef` 或 `outputFileRef`，并绑定 `workspaceId + workspaceSessionId + runId`。
+- Portal session trace 能按 `workspaceId + runId` 查到该 run，并能看到 output artifact reference。
+- public response、trace、Runtime Agent request body 和 evidence 都不包含 raw provider key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl` 或 `presignedUrl`。
+
+失败验收：
+
+- 未配置 Runtime Agent API endpoint 时，必须保留 Stage 10 的 negative gate。
+- Runtime Agent API 返回缺少 file/run/artifact 必要 ID 时，Adapter 必须返回 `adapter_mapping_failed` 或对应业务 gate，不能返回 200 假成功。
+- Runtime Agent API 不可达时返回 `upstream_unavailable` 或 runtime dispatch error，不得生成伪 `runId`、伪 `fileRef` 或伪 artifact。
+
+### Stage 8: Portal workspace/session/run query
 
 目标：
 
@@ -205,7 +253,7 @@ Runtime Agent output
 - Portal 不读取 WebSocket event shape、DOM、frontend store、upstream database schema 或 upstream internal session model。
 - 无 projection 时返回 `portal_projection_missing`。
 
-### Stage 8: Trace and Langfuse attachment boundary
+### Stage 9: Trace and Langfuse attachment boundary
 
 目标：
 
@@ -228,7 +276,7 @@ Adapter / Runtime Bridge sanitized metadata
 - `trace.medopl.cn` 未部署时不得标记为上线。
 - 不代表 Langfuse 已部署。
 
-### Stage 9: Billing metadata handoff boundary
+### Stage 10: Billing metadata handoff boundary
 
 目标：
 
@@ -243,7 +291,7 @@ Adapter / Runtime Bridge sanitized metadata
 - 不代表真实云 runtime 已接入。
 - 不代表 COS 账单或云账单已核对。
 
-### Stage 10: Negative gates and evidence hygiene
+### Stage 11: Negative gates and evidence hygiene
 
 目标：
 
@@ -287,7 +335,7 @@ node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs
 - `.runtime` evidence 不进入 git。
 - response、trace、evidence 和 git 不包含 raw API key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl`、`presignedUrl`、SecretId、SecretKey、kubeconfig 或 `.env` 内容。
 
-### Stage 11: Productionization handoff
+### Stage 12: Productionization handoff
 
 目标：
 

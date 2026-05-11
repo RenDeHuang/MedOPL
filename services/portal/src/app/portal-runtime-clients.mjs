@@ -20,6 +20,7 @@ export function createPortalRuntimeClients({
   minioApiUrl,
   oplRuntimeTimeoutMs,
   oplWebUrl,
+  portalOplRuntimeAgentConfig,
   portalOplAdapterUrl,
   portalWorkdir,
   provisionerTimeoutMs,
@@ -61,6 +62,7 @@ export function createPortalRuntimeClients({
     oplAdapterClient: createOplAdapterClient({
       adapterUrl: portalOplAdapterUrl,
       oplWebUrl,
+      runtimeAgentConfig: portalOplRuntimeAgentConfig,
       timeoutMs: oplRuntimeTimeoutMs,
       formatDateTime,
     }),

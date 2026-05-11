@@ -1,6 +1,7 @@
 export function createOplAdapterClient({
   adapterUrl,
   oplWebUrl,
+  runtimeAgentConfig = null,
   timeoutMs,
   formatDateTime,
 }) {
@@ -14,6 +15,19 @@ export function createOplAdapterClient({
       if (normalized && normalized !== "default") return normalized;
     }
     return "";
+  }
+
+  function configuredRuntimeAgentFields() {
+    const config = runtimeAgentConfig && typeof runtimeAgentConfig === "object" ? runtimeAgentConfig : {};
+    const fields = {
+      mode: config.mode || (config.runtimeAgentEndpoint ? "full_runtime" : ""),
+      resourceBindingId: config.resourceBindingId || "",
+      computeInstanceId: config.computeInstanceId || "",
+      storageBucketId: config.storageBucketId || "",
+      runtimeAgentId: config.runtimeAgentId || "",
+      runtimeAgentEndpoint: String(config.runtimeAgentEndpoint || "").replace(/\/$/, ""),
+    };
+    return Object.fromEntries(Object.entries(fields).filter(([, value]) => String(value || "").trim()));
   }
 
   function buildConfiguredOplWebUrl(launchToken, bootstrapUrl = "") {
@@ -136,6 +150,7 @@ export function createOplAdapterClient({
             : null,
           storageEntitlement,
           selectedServerPlan,
+          ...configuredRuntimeAgentFields(),
           runtimeUrl,
         }),
       });

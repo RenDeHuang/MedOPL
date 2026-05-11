@@ -13,6 +13,7 @@ import {
 import { createLaunchApi } from "./runtime-bridge-launch.mjs";
 import { createLocalFakeRuntimeAgentRelay } from "./local-fake-runtime-agent-relay.mjs";
 import { createMessageApi } from "./runtime-bridge-messages.mjs";
+import { createRuntimeAgentHttpRelay } from "./runtime-agent-http-relay.mjs";
 import { createRunApi, publicRunArtifact } from "./runtime-bridge-runs.mjs";
 import { mapRunError } from "./run-error-mapper.mjs";
 
@@ -51,6 +52,7 @@ function readConfig() {
     portalInternalBaseUrl: urlEnv("PORTAL_INTERNAL_BASE_URL"),
     portalInternalAuthToken: cleanEnv("PORTAL_INTERNAL_AUTH_TOKEN"),
     localFakeRuntimeRelay: cleanEnv("OPL_RUNTIME_BRIDGE_LOCAL_FAKE_RUNTIME") === "1",
+    runtimeAgentRelayMode: cleanEnv("OPL_RUNTIME_AGENT_RELAY_MODE"),
   };
 }
 
@@ -521,6 +523,16 @@ function artifactGatePayload({ runId = "", artifactRef = "" } = {}) {
   };
 }
 
+function createConfiguredRuntimeAgentRelay(config = {}) {
+  if (config.localFakeRuntimeRelay) return createLocalFakeRuntimeAgentRelay();
+  if (config.runtimeAgentRelayMode === "http") return createRuntimeAgentHttpRelay();
+  return null;
+}
+
+function runtimeAgentRelaySupportsFile(relay = null) {
+  return Boolean(relay && typeof relay.relayFile === "function");
+}
+
 function isCapabilityNotSupported(error) {
   return error?.code === "capability_not_supported";
 }
@@ -537,6 +549,7 @@ function capabilityNotSupportedPayload(error, capabilityFallback = "") {
 export function createRuntimeBridgeRuntime() {
   const config = readConfig();
   const langfusePublisher = createLangfusePublisher();
+  const runtimeAgentRelay = createConfiguredRuntimeAgentRelay(config);
 
   async function publishTraceEvent(state, event = {}) {
     const trace = addTraceRecord(state, {
@@ -571,7 +584,7 @@ export function createRuntimeBridgeRuntime() {
     runnerImage: config.runnerImage,
     k8sNamespace: config.k8sNamespace,
     publishTraceEvent,
-    runtimeAgentRelay: config.localFakeRuntimeRelay ? createLocalFakeRuntimeAgentRelay() : null,
+    runtimeAgentRelay,
   });
   const messageApi = createMessageApi({
     publishTraceEvent,
@@ -879,6 +892,8 @@ export function createRuntimeBridgeRuntime() {
       sendJson(res, 422, { ok: false, error: "file_name_required" });
       return;
     }
+    let artifact = null;
+    let publicArtifact = null;
     if (isWebuiRuntimeMode(config.runtimeMode)) {
       let payload = null;
       await updateState((state) => {
@@ -898,8 +913,55 @@ export function createRuntimeBridgeRuntime() {
       sendJson(res, 409, payload);
       return;
     }
-    let artifact = null;
-    let publicArtifact = null;
+    if (runtimeAgentRelaySupportsFile(runtimeAgentRelay) && (runtimeSession.runtimeAgentEndpoint || input.runtimeAgentEndpoint || input.runtime_agent_endpoint)) {
+      let payload = null;
+      await updateState(async (state) => {
+        const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+        const relayedFile = await runtimeAgentRelay.relayFile({
+          runtimeSession: activeRuntimeSession,
+          input: {
+            ...input,
+            relativePath,
+          },
+          req,
+        });
+        artifact = addArtifactRecord(state, {
+          ...activeRuntimeSession,
+          ...relayedFile,
+          artifactId: relayedFile.fileRef || relayedFile.artifactRef,
+          runId: String(input.runId || input.run_id || activeRuntimeSession.oplSessionId || activeRuntimeSession.runtimeSessionId || "").trim(),
+          kind: relayedFile.kind || "inputs",
+          resourceBindingId: activeRuntimeSession.resourceBindingId || input.resourceBindingId || input.resource_binding_id || "",
+          providerKeyRef: activeRuntimeSession.providerKeyRef || input.providerKeyRef || input.provider_key_ref || "",
+        });
+        addEvent(state, "runtime_agent_file_referenced", {
+          ...activeRuntimeSession,
+          artifactId: artifact.artifactId,
+          fileRef: artifact.artifactId,
+          kind: artifact.kind,
+        });
+        publicArtifact = {
+          ...publicRunArtifact(artifact, {
+            runId: artifact.runId,
+            workspaceId: activeRuntimeSession.workspaceId,
+            resourceBindingId: activeRuntimeSession.resourceBindingId,
+            providerKeyRef: activeRuntimeSession.providerKeyRef,
+          }, activeRuntimeSession),
+          fileRef: artifact.artifactId,
+          workspaceSessionId: activeRuntimeSession.workspaceSessionId || "",
+          runtimeSessionId: activeRuntimeSession.runtimeSessionId || "",
+          status: relayedFile.status || "ready",
+          source: relayedFile.source || "runtime_agent_http",
+        };
+        payload = {
+          ok: true,
+          fileRef: publicArtifact.fileRef,
+          file: publicArtifact,
+        };
+      });
+      sendJson(res, 201, payload);
+      return;
+    }
     await updateState((state) => {
       const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
       artifact = addArtifactRecord(state, {

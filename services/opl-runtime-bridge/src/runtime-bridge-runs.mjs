@@ -76,6 +76,7 @@ function normalizeArtifactRef(item = {}, run = {}, runtimeSession = {}) {
   return {
     ...runtimeSession,
     ...run,
+    artifactId: String(item.artifactId || item.artifact_id || item.artifactRef || item.artifact_ref || item.outputFileRef || item.output_file_ref || "").trim(),
     kind: String(item.kind || item.fileKind || item.file_kind || "outputs").trim() || "outputs",
     name,
     relativePath,
