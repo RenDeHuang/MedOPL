@@ -64,6 +64,8 @@ function assertSummaryShape(summary, label) {
   assert.equal(summary.doesNotModifyCosStorage, true, `${label}_no_cos`);
   assert.equal(summary.releasePlan?.targetCount, 3, `${label}_target_count`);
   assert.deepEqual(summary.releasePlan?.components, ["portal", "opl-web-gateway", "opl-runtime-bridge"], `${label}_components`);
+  assert.equal(summary.releasePlan?.targetClasses?.platformService, 3, `${label}_platform_service_target_count`);
+  assert.equal(summary.releasePlan?.targetClasses?.workspaceRuntime, 0, `${label}_workspace_runtime_target_count`);
   assert.deepEqual(summary.releasePlan?.runtimeSmokeSurfaces, ["portal", "opl", "trace"], `${label}_smoke_surfaces`);
   assert.equal(summary.targets?.length, 3, `${label}_targets_length`);
   assert.equal(summary.runtimeSmokeTargets?.length, 3, `${label}_runtime_smoke_targets_length`);
@@ -146,6 +148,7 @@ try {
     targets: [
       {
         component: "portal",
+        targetClass: "platform_service_target",
         repository: "portal-proof",
         dockerfile: "deploy/local/dockerfiles/portal.Dockerfile",
         buildContext: "services/portal",
@@ -153,13 +156,12 @@ try {
         workload: "portal-deployment-proof",
         container: "portal-container-proof",
         ownerRef: "owner-proof",
-        workspaceId: "workspace-proof",
-        resourceBindingId: "binding-proof",
         operationId: "operation-proof",
         expectedVersionMarker: "pkg-d-proof-20260510-000001",
       },
       {
         component: "opl-web-gateway",
+        targetClass: "platform_service_target",
         repository: "opl-web-gateway-proof",
         dockerfile: "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
         buildContext: "services/opl-web-gateway",
@@ -167,13 +169,12 @@ try {
         workload: "opl-web-gateway-deployment-proof",
         container: "opl-web-gateway-container-proof",
         ownerRef: "owner-proof",
-        workspaceId: "workspace-proof",
-        resourceBindingId: "binding-proof",
         operationId: "operation-proof",
         expectedVersionMarker: "pkg-d-proof-20260510-000001",
       },
       {
         component: "opl-runtime-bridge",
+        targetClass: "platform_service_target",
         repository: "opl-runtime-bridge-proof",
         dockerfile: "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
         buildContext: "services/opl-runtime-bridge",
@@ -181,8 +182,6 @@ try {
         workload: "opl-runtime-bridge-deployment-proof",
         container: "opl-runtime-bridge-container-proof",
         ownerRef: "owner-proof",
-        workspaceId: "workspace-proof",
-        resourceBindingId: "binding-proof",
         operationId: "operation-proof",
         expectedVersionMarker: "pkg-d-proof-20260510-000001",
       },
@@ -231,7 +230,7 @@ try {
   delete missingOwnerPlan.targets[0].ownerRef;
   await writeFile(missingOwnerPlanFile, `${JSON.stringify(missingOwnerPlan, null, 2)}\n`, "utf8");
   const missingOwner = runRunner(["--check-config", ...baseArgs(goodSecretFile), "--release-plan", missingOwnerPlanFile], 1);
-  assert.equal(parseStdout(missingOwner.stdout).summary.blockedReason, "deploy_owner_guard_required", "missing_owner_reason");
+  assert.equal(parseStdout(missingOwner.stdout).summary.blockedReason, "deploy_platform_owner_guard_required", "missing_owner_reason");
 
   const duplicatePlanFile = path.join(tmpDir, "duplicate-release-plan.json");
   const duplicatePlan = JSON.parse(JSON.stringify(releasePlan));

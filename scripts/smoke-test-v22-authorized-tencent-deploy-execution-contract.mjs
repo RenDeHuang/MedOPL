@@ -79,12 +79,16 @@ assertIncludesAll(contract, [
   "`--release-plan <json>`",
   "`targets[]`",
   "`runtimeSmokeTargets[]`",
+  "`targetClass`",
+  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "platform_service_target",
+  "workspace_runtime_target",
   "`component`",
   "`repository`",
   "`dockerfile`",
   "`buildContext`",
   "`namespace`、`workload`、`container`",
-  "`ownerRef`、`workspaceId`、`resourceBindingId`、`operationId`",
+  "`ownerRef`、`operationId`",
   "`portal`、`opl`、`trace`",
   "`https://portal.medopl.cn/healthz`",
   "`https://opl.medopl.cn/healthz`",
@@ -122,6 +126,7 @@ assertIncludesAll(contract, [
 
 assertIncludesAll(contract, [
   "Ownership Guard",
+  "targetClass",
   "ownerRef",
   "workspaceId",
   "resourceBindingId",
@@ -262,6 +267,8 @@ assertIncludesAll(readme, [
   "v22-authorized-tencent-deploy-execution-boundary.md",
   "authorized/tencent deploy execution",
   "Package D",
+  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "OPL deployment ownership release plan",
 ], "readme_deploy_contract");
 
 assertIncludesAll(board + status + verificationMatrix, [
@@ -270,6 +277,9 @@ assertIncludesAll(board + status + verificationMatrix, [
   "禁止 `kubectl delete`",
   "禁止 `DeleteNodePool`",
   "禁止删除 bucket/prefix/object",
+  "OPL deployment ownership / release plan",
+  "platform_service_target",
+  "workspace_runtime_target",
 ], "recovery_deploy_safety");
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");

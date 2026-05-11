@@ -102,6 +102,7 @@ const smokeScripts = [
   ["smoke-test-v22-tencent-authorized-deploy-execution-runner", "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs"],
   ["smoke-test-v22-tencent-authorized-deploy-execution-live-gate", "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs"],
   ["smoke-test-v22-package-d-opl-deploy-discovery-status", "scripts/smoke-test-v22-package-d-opl-deploy-discovery-status.mjs"],
+  ["smoke-test-v22-opl-deployment-ownership-release-plan-contract", "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs"],
   ["smoke-test-v22-cloud-onboarding-absorption-sequence", "scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs"],
   ["smoke-test-v22-real-resource-contract-alignment", "scripts/smoke-test-v22-real-resource-contract-alignment.mjs"],
   ["smoke-test-v22-retire-legacy-resource-user-surface", "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs"],

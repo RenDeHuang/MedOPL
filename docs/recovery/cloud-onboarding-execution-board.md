@@ -116,7 +116,7 @@ user confirmation gates:
 
 - open issue: workflow contract phase 12 required contracts still includes deploy plan contract. It must be replaced by a concrete repo-tracked contract path before production deploy execution can leave planning.
 - open issue: workflow contract phase 14 required contracts still includes role surface contracts and release/status docs. It must be replaced by concrete repo-tracked contract/status files before canary / QA / release status update can be treated as release-ready.
-- open issue: Package D / OPL deployment discovery found candidate deployments, but real rollout is blocked until a repo-tracked OPL deployment ownership / release plan sub-contract classifies each target as platform service target or workspace runtime target and defines the matching owner guard.
+- open issue: Package D / OPL deployment discovery found candidate deployments, but real rollout remains blocked until a reviewed release plan uses the repo-tracked OPL deployment ownership / release plan sub-contract and real target metadata passes owner guard.
 - 本分支只登记 open issue，不修改 workflow 合同。
 
 ## Runnable Path Snapshot
@@ -137,9 +137,9 @@ user confirmation gates:
 | R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-13 COS billing checkpoint | CC-06 | readonly_connection | path defined; execution remains separate |
-| R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; Package D / OPL discovery records candidate targets, but release plan ownership remains blocked |
+| R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; OPL deployment ownership / release plan contract defines target classes; real preflight still requires reviewed plan and authorization |
 | R-15 multi-image build and push unique test tag | CC-07 | deploy_and_production_integration | path defined; real push blocked |
-| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | path defined; owner guard blocker prevents deploy dry-run from becoming apply readiness |
+| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | path defined; owner guard must pass before deploy dry-run can become apply readiness |
 | R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | path defined; real kubectl blocked until release plan and owner guard pass |
 | R-18 runtime smoke | CC-07 | deploy_and_production_integration | path defined; execution remains separate |
 | R-19 release compute | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
@@ -182,6 +182,13 @@ Contract problem to solve next:
 - workspace runtime targets still require workspaceId/resourceBindingId because they represent tenant-scoped runtime capacity.
 - The next branch must define an OPL deployment ownership / release plan sub-contract with explicit target class values: platform service target and workspace runtime target.
 - That sub-contract must decide which labels or Portal canonical records prove each target class without weakening the current Package D owner guard.
+
+Contract update:
+
+- `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` is the repo-tracked OPL deployment ownership / release plan sub-contract.
+- `platform_service_target` covers Portal/Gateway/Adapter/shared Runtime Bridge target classes and requires `ownerRef/operationId`.
+- `workspace_runtime_target` covers workspace Runtime Agent/runtime workload target classes and requires `ownerRef/operationId/workspaceId/resourceBindingId`.
+- This contract only enables config/fake-live ownership validation; real TCR push, kubectl dry-run, rollout, runtime smoke and rollback evidence remain separate Package D steps requiring explicit authorization.
 
 Discovery status:
 
@@ -226,6 +233,9 @@ Discovery status:
     "rolloutDone": false,
     "ownerGuardBlocked": true,
     "requiresOwnershipReleasePlanSubContract": true,
+    "ownershipReleasePlanContract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+    "ownershipReleasePlanContractReady": true,
+    "realRolloutStillBlocked": true,
     "kubeApiEndpoint": "kube.medopl.cn",
     "runtimeSurfaces": [
       "portal.medopl.cn",
@@ -252,8 +262,8 @@ Discovery status:
       "operationId"
     ],
     "targetClassContractNeeded": [
-      "platform service target",
-      "workspace runtime target"
+      "platform_service_target",
+      "workspace_runtime_target"
     ]
   },
   "modifiesDeployNow": false,

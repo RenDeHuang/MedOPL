@@ -260,6 +260,7 @@ function validateReleasePlan(plan = {}) {
   for (const target of plan.targets) {
     const requiredFields = [
       "component",
+      "targetClass",
       "repository",
       "dockerfile",
       "buildContext",
@@ -267,31 +268,39 @@ function validateReleasePlan(plan = {}) {
       "workload",
       "container",
       "ownerRef",
-      "workspaceId",
-      "resourceBindingId",
       "operationId",
       "expectedVersionMarker",
     ];
     if (requiredFields.some((field) => !text(target[field]))) {
-      const ownerFields = ["ownerRef", "workspaceId", "resourceBindingId", "operationId"];
-      if (ownerFields.some((field) => !text(target[field]))) {
-        return { ok: false, reason: "deploy_owner_guard_required" };
+      const platformOwnerFields = ["targetClass", "ownerRef", "operationId"];
+      if (platformOwnerFields.some((field) => !text(target[field]))) {
+        return { ok: false, reason: "deploy_platform_owner_guard_required" };
       }
       return { ok: false, reason: "deploy_target_field_required" };
+    }
+    const targetClass = text(target.targetClass);
+    if (!["platform_service_target", "workspace_runtime_target"].includes(targetClass)) {
+      return { ok: false, reason: "deploy_target_class_invalid" };
+    }
+    if (targetClass === "workspace_runtime_target" && (!text(target.workspaceId) || !text(target.resourceBindingId))) {
+      return { ok: false, reason: "deploy_workspace_runtime_owner_guard_required" };
     }
     if (globalNamespace && text(target.namespace) !== globalNamespace) {
       return { ok: false, reason: "deploy_cross_namespace_target_forbidden" };
     }
     try {
       validateToken(target.component, "deploy_component");
+      validateToken(target.targetClass, "deploy_target_class");
       validateToken(target.repository, "deploy_repository");
       validateToken(target.namespace, "deploy_namespace");
       validateToken(target.workload, "deploy_workload");
       validateToken(target.container, "deploy_container");
       validateToken(target.ownerRef, "deploy_owner_ref");
-      validateToken(target.workspaceId, "deploy_workspace_id");
-      validateToken(target.resourceBindingId, "deploy_resource_binding_id");
       validateToken(target.operationId, "deploy_operation_id");
+      if (targetClass === "workspace_runtime_target") {
+        validateToken(target.workspaceId, "deploy_workspace_id");
+        validateToken(target.resourceBindingId, "deploy_resource_binding_id");
+      }
       validateRelativeExistingPath(target.buildContext, "deploy_build_context");
       validateRelativeExistingPath(target.dockerfile, "deploy_dockerfile");
     } catch {
@@ -401,6 +410,8 @@ function runtimeSmokeTargetSummary(target = {}) {
 }
 
 function targetSummary({ env = {}, target = {}, versionTag = "", digest = "", ownerVerified = true } = {}) {
+  const targetClass = text(target.targetClass);
+  const workspaceRequired = targetClass === "workspace_runtime_target";
   return {
     component: text(target.component),
     imageRefMasked: `${maskIdentifier(env.TENCENT_TCR_REGISTRY)}/${maskIdentifier(env.TENCENT_TCR_NAMESPACE)}/${maskIdentifier(target.repository)}:${text(versionTag)}`,
@@ -419,13 +430,25 @@ function targetSummary({ env = {}, target = {}, versionTag = "", digest = "", ow
     },
     ownerGuard: {
       verified: ownerVerified,
+      targetClass,
       ownerRef: maskIdentifier(target.ownerRef),
-      workspaceId: maskIdentifier(target.workspaceId),
-      resourceBindingId: maskIdentifier(target.resourceBindingId),
+      workspaceId: workspaceRequired ? maskIdentifier(target.workspaceId) : "not-required",
+      resourceBindingId: workspaceRequired ? maskIdentifier(target.resourceBindingId) : "not-required",
       operationId: maskIdentifier(target.operationId),
-      expectedLabels: ["ownerRef", "workspaceId", "resourceBindingId", "operationId"],
+      expectedLabels: workspaceRequired
+        ? ["targetClass", "ownerRef", "workspaceId", "resourceBindingId", "operationId"]
+        : ["targetClass", "ownerRef", "operationId"],
     },
   };
+}
+
+function targetClassCounts(targets = []) {
+  return targets.reduce((counts, target) => {
+    const targetClass = text(target.targetClass);
+    if (targetClass === "platform_service_target") counts.platformService += 1;
+    if (targetClass === "workspace_runtime_target") counts.workspaceRuntime += 1;
+    return counts;
+  }, { platformService: 0, workspaceRuntime: 0 });
 }
 
 function baseSummary({ mode, plan, env, digestMap = new Map(), blockedReason = null } = {}) {
@@ -442,6 +465,7 @@ function baseSummary({ mode, plan, env, digestMap = new Map(), blockedReason = n
     releasePlan: {
       targetCount: plan.targets.length,
       components: plan.targets.map((target) => text(target.component)),
+      targetClasses: targetClassCounts(plan.targets),
       cluster: maskIdentifier(env.TENCENT_DEPLOY_CLUSTER_ID),
       clusterCredentialRef: sanitizeRef(env.TENCENT_DEPLOY_KUBECONFIG_REF),
       registry: maskIdentifier(env.TENCENT_TCR_REGISTRY),
@@ -524,7 +548,7 @@ function deploymentLabel(deployment = {}, key = "") {
   return text(deployment.metadata?.labels?.[key]);
 }
 
-function assertDeploymentOwnership(deployment = {}, target = {}) {
+export function assertDeploymentOwnership(deployment = {}, target = {}) {
   if (deployment.kind !== "Deployment") {
     throw new Error("deploy_target_kind_mismatch");
   }
@@ -535,11 +559,14 @@ function assertDeploymentOwnership(deployment = {}, target = {}) {
     throw new Error("deploy_target_namespace_mismatch");
   }
   const expected = {
+    targetClass: target.targetClass,
     ownerRef: target.ownerRef,
-    workspaceId: target.workspaceId,
-    resourceBindingId: target.resourceBindingId,
     operationId: target.operationId,
   };
+  if (text(target.targetClass) === "workspace_runtime_target") {
+    expected.workspaceId = target.workspaceId;
+    expected.resourceBindingId = target.resourceBindingId;
+  }
   for (const [key, value] of Object.entries(expected)) {
     if (deploymentLabel(deployment, key) !== text(value)) {
       throw new Error("deploy_ownership_guard_failed");

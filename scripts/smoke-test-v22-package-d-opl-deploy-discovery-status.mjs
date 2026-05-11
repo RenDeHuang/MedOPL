@@ -91,7 +91,8 @@ assertIncludesAll(deployContract, [
   "platform service target",
   "workspace runtime target",
   "workspaceId/resourceBindingId",
-  "Until a repo-tracked OPL deployment ownership / release plan sub-contract exists, Package D real rollout remains blocked",
+  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "Package D real rollout remains blocked",
 ], "deploy_contract_implementation_note");
 
 const boardData = extractJsonBlock(board, "v22-cloud-onboarding-execution-board");

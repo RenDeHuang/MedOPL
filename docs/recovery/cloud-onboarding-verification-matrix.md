@@ -92,6 +92,26 @@ Contract issue for next branch:
 - The next branch must define an OPL deployment ownership / release plan sub-contract with target class, platform service target guard, workspace runtime target guard, release plan fields, dry-run evidence, rollback evidence, and runtime smoke coverage.
 - This discovery does not loosen the current Package D owner guard; it records why real rollout is blocked.
 
+## OPL Deployment Ownership Release Plan Verification
+
+`docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` is the Package D Level 4 sub-contract for release plan owner guard.
+
+It verifies:
+
+- `platform_service_target` requires `ownerRef/operationId` and does not require `workspaceId/resourceBindingId`.
+- `workspace_runtime_target` requires `ownerRef/operationId/workspaceId/resourceBindingId`.
+- `k8s-app/qcloud-app`, deployment name, namespace, IP, creation time, or manual memory cannot prove ownership.
+- runtime smoke coverage must cover every pushed component.
+- runner summaries must remain sanitized and must not expose deploy secret, kubeconfig, raw registry credential, object key, signed URL, Authorization header or Cookie.
+
+It does not verify:
+
+- real TCR push.
+- real kubectl dry-run or rollout.
+- pushed version running in production.
+- rollback evidence from a real deployment.
+- Package C compute/storage lifecycle.
+
 ## Forbidden Actions By Layer
 
 - contract smoke, loader smoke, shape smoke and preflight smoke must not read secret, source env, call real cloud, create/release resources, build/push/kubectl, or run live-test.
@@ -162,6 +182,18 @@ Required follow-through:
       "opl.medopl.cn",
       "trace.medopl.cn"
     ]
+  },
+  "oplDeploymentOwnershipReleasePlan": {
+    "contract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+    "level": 4,
+    "package": "Package D",
+    "doesNotAuthorizeBuildPushKubectl": true,
+    "targetClasses": [
+      "platform_service_target",
+      "workspace_runtime_target"
+    ],
+    "smoke": "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
+    "realRolloutStillRequiresExplicitAuthorization": true
   },
   "layers": [
     {

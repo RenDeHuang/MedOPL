@@ -48,6 +48,8 @@ Package D 只能读取以下 key，且必须按 allowlist 精确读取，不允�
 
 Package D 必须通过 `--release-plan <json>` 消费本地受控 release plan。release plan 可以放在 `.runtime` 或用户指定的本地路径，不进入 git，不包含 raw secret、raw kubeconfig、token、cookie、object key、signed URL 或 raw cloud response。
 
+OPL / Portal / Gateway / Runtime Agent target ownership 必须同时订阅 [v22-opl-deployment-ownership-release-plan-boundary.md](./v22-opl-deployment-ownership-release-plan-boundary.md)。该 Level 4 子合同把 target 分为 `platform_service_target` 和 `workspace_runtime_target`：平台服务必须有 `ownerRef/operationId`，但不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须额外绑定 `workspaceId/resourceBindingId`。只有 `k8s-app/qcloud-app`、deployment 名字、namespace、IP、创建时间或人工记忆时必须 fail-closed。
+
 release plan 顶层字段：
 
 - `runId`：本次发布 run id。
@@ -59,10 +61,11 @@ release plan 顶层字段：
 每个 `targets[]` 必须包含：
 
 - `component`：例如 `portal`、`opl-web-gateway`、`opl-runtime-bridge`、`opl-web-upstream`。
+- `targetClass`：`platform_service_target` 或 `workspace_runtime_target`。
 - `repository`：该 component 对应的 TCR repository。
 - `dockerfile`、`buildContext`：repo-relative path，必须存在。
 - `namespace`、`workload`、`container`：指定 Kubernetes Deployment/container。
-- `ownerRef`、`workspaceId`、`resourceBindingId`、`operationId`：owner guard 字段。
+- `ownerRef`、`operationId`，以及按 target class 需要的 `workspaceId`、`resourceBindingId`：owner guard 字段。
 - `expectedVersionMarker`：该 target 被 runtime smoke 证明时应匹配的版本 marker 或 build id。
 
 每个 `runtimeSmokeTargets[]` 必须包含：
@@ -120,10 +123,10 @@ Package D 的每个 deploy target 必须同时通过 Portal truth 和 Kubernetes
 
 必须校验：
 
+- targetClass。
 - ownerRef。
-- workspaceId。
-- resourceBindingId。
 - operationId。
+- workspaceId 和 resourceBindingId，若 targetClass 是 `workspace_runtime_target`。
 - expected labels。
 - 指定 cluster / namespace / workload / container。
 - 目标 workload 当前 image 和回滚 image。
@@ -138,7 +141,7 @@ This note does not loosen the current Package D contract. The discovery branch `
 
 Portal/Gateway/Adapter/trace may be platform service targets. A future OPL deployment ownership / release plan sub-contract may define a platform service target guard that uses platform-level `ownerRef` and `operationId` without forcing `workspaceId/resourceBindingId` on shared platform services. Workspace runtime targets still require workspaceId/resourceBindingId because they represent tenant-scoped runtime capacity.
 
-Until a repo-tracked OPL deployment ownership / release plan sub-contract exists, Package D real rollout remains blocked. That sub-contract must explicitly classify every target as `platform service target` or `workspace runtime target`, define which owner guard fields are mandatory for each class, and keep fail-closed behavior when Portal truth or Kubernetes metadata is missing or conflicting.
+The repo-tracked OPL deployment ownership / release plan sub-contract is [v22-opl-deployment-ownership-release-plan-boundary.md](./v22-opl-deployment-ownership-release-plan-boundary.md). It explicitly classifies every target as `platform_service_target` or `workspace_runtime_target`, defines which owner guard fields are mandatory for each class, and keeps fail-closed behavior when Portal truth or Kubernetes metadata is missing or conflicting. Package D real rollout remains blocked until a reviewed release plan, real target metadata, dry-run evidence, rollback evidence and explicit authorization are present.
 
 ## Forbidden Side Effects
 
@@ -205,6 +208,7 @@ Package D 的闭环链路：
 执行入口：
 
 - `scripts/v22-tencent-authorized-deploy-execution-runner.mjs`
+- `scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs`
 - `scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`
 - `scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs`
 
@@ -270,12 +274,21 @@ runner 必须显式传入 non-secret execution parameter：`--release-plan <json
       "namespace",
       "workload",
       "container",
+      "targetClass",
       "ownerRef",
-      "workspaceId",
-      "resourceBindingId",
       "operationId",
       "expectedVersionMarker"
     ],
+    "targetClasses": {
+      "platform_service_target": {
+        "requiresWorkspaceBinding": false,
+        "requiredOwnerGuard": ["ownerRef", "operationId"]
+      },
+      "workspace_runtime_target": {
+        "requiresWorkspaceBinding": true,
+        "requiredOwnerGuard": ["ownerRef", "operationId", "workspaceId", "resourceBindingId"]
+      }
+    },
     "runtimeSmokeTargetsRequired": [
       "portal",
       "opl",
