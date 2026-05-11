@@ -99,7 +99,7 @@
               <div class="mt-4 flex flex-wrap gap-2">
                 <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.createFolder">创建文件夹</button>
                 <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.renameFolder">重命名文件夹</button>
-                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.moveFileOrFolder">移动文件/文件夹</button>
+                <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.moveFileOrFolder">移动文件或文件夹</button>
               </div>
             </div>
 
@@ -137,7 +137,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.batchDelete">批量删除</button>
-                  <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.deleteFileOrFolder">删除文件/文件夹</button>
+                  <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.deleteFileOrFolder">删除文件或文件夹</button>
                   <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.permanentDeleteRequiresConfirmation">永久删除 <span class="text-[11px] text-amber-700 dark:text-amber-300">需二次确认</span></button>
                   <button class="btn btn-secondary" type="button" :disabled="!payload.fileSpace.actions.clearFileSpaceRequiresConfirmation">清空文件空间 <span class="text-[11px] text-amber-700 dark:text-amber-300">需二次确认</span></button>
                 </div>

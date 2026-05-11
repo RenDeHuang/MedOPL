@@ -93,7 +93,7 @@
               <h2 class="panel-title">工作空间状态</h2>
               <p class="panel-subtitle">套餐、计算规格、文件空间、并发、队列和状态。</p>
             </div>
-            <span class="badge badge-success">账号 / 工作空间</span>
+            <span class="badge badge-success">账号与工作空间</span>
           </div>
           <div class="mt-5 mobile-card-list">
             <div v-for="item in payload.workspaceOperations.workspaces" :key="item.workspaceId" class="mobile-only-card">
@@ -106,9 +106,10 @@
               </div>
               <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-slate-400">
                 <div><span class="block text-gray-400 dark:text-slate-500">套餐</span>{{ item.planLabel }}</div>
-                <div><span class="block text-gray-400 dark:text-slate-500">规格</span>{{ item.cpuCores }} 核 / {{ item.memoryGb }}GB</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">规格</span>{{ item.cpuCores }} 核，{{ item.memoryGb }}GB</div>
                 <div><span class="block text-gray-400 dark:text-slate-500">文件空间</span>{{ item.fileSpaceGb }}GB</div>
-                <div><span class="block text-gray-400 dark:text-slate-500">并发 / 队列</span>{{ item.concurrency }} / {{ item.queueCapacity }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">并发数</span>{{ item.concurrency }}</div>
+                <div><span class="block text-gray-400 dark:text-slate-500">队列容量</span>{{ item.queueCapacity }}</div>
                 <div><span class="block text-gray-400 dark:text-slate-500">审计</span>{{ item.auditStatus || "未开始" }}</div>
               </div>
             </div>
@@ -122,7 +123,8 @@
                   <th class="px-4 py-3">账号</th>
                   <th class="px-4 py-3">套餐</th>
                   <th class="px-4 py-3">规格</th>
-                  <th class="px-4 py-3">并发 / 队列</th>
+                  <th class="px-4 py-3">并发数</th>
+                  <th class="px-4 py-3">队列容量</th>
                   <th class="px-4 py-3">状态</th>
                   <th class="px-4 py-3">审计</th>
                 </tr>
@@ -132,8 +134,9 @@
                   <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ item.workspaceName || item.workspaceId }}</td>
                   <td class="px-4 py-3">{{ item.accountName }}</td>
                   <td class="px-4 py-3">{{ item.planLabel }}</td>
-                  <td class="px-4 py-3">{{ item.cpuCores }} 核 / {{ item.memoryGb }}GB / {{ item.fileSpaceGb }}GB 文件空间</td>
-                  <td class="px-4 py-3">{{ item.concurrency }} / {{ item.queueCapacity }}</td>
+                  <td class="px-4 py-3">{{ item.cpuCores }} 核，{{ item.memoryGb }}GB，{{ item.fileSpaceGb }}GB 文件空间</td>
+                  <td class="px-4 py-3">{{ item.concurrency }}</td>
+                  <td class="px-4 py-3">{{ item.queueCapacity }}</td>
                   <td class="px-4 py-3"><span class="badge" :class="statusClass(item.status)">{{ item.status }}</span></td>
                   <td class="px-4 py-3">{{ item.auditStatus || "未开始" }}</td>
                 </tr>

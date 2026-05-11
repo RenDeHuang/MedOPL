@@ -136,6 +136,8 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
   const availableBalance = computed(() => Number(payload.value?.kpis.availableBalance ?? (payload.value?.kpis.balance || 0) - frozenAmount.value));
   const pendingMonth = computed(() => Number(payload.value?.kpis.pendingCostMonth ?? 0));
   const exactMonth = computed(() => Number(payload.value?.kpis.exactCostMonth ?? payload.value?.kpis.historicalCost ?? 0));
+  const todaySpend = computed(() => Number(payload.value?.kpis.exactCostToday ?? payload.value?.kpis.pendingCostToday ?? payload.value?.kpis.todayCost ?? 0));
+  const totalSpend = computed(() => exactMonth.value + pendingMonth.value);
   const sessionCount = computed(() => Number(payload.value?.kpis.runCount ?? payload.value?.latestRunsPagination.total ?? 0));
   const taskCount = computed(() => Number(payload.value?.kpis.activeTasks ?? payload.value?.taskPagination.total ?? payload.value?.taskCards.length ?? 0));
   const taskProgressText = computed(() => {
@@ -217,6 +219,8 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
     statusBadge,
     taskCount,
     taskProgressText,
+    todaySpend,
+    totalSpend,
     workbenchHref,
   };
 }

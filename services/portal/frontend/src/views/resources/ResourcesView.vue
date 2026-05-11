@@ -15,7 +15,7 @@
           <MetricCard label="文件空间" :value="currentFileSpaceText" hint="输入文件和输出文件" />
           <MetricCard label="并发数" :value="currentConcurrencyText" hint="可同时运行的任务" />
           <MetricCard label="预计费用" :value="money(estimatedCost)" hint="只作估算展示" />
-          <MetricCard label="余额/冻结金额状态" :value="balanceFreezeStatus" hint="系统自动计算" />
+          <MetricCard label="余额状态" :value="balanceFreezeStatus" hint="系统自动计算冻结金额" />
         </div>
       </section>
 

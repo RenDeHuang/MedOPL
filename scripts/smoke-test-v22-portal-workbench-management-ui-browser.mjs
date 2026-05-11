@@ -100,6 +100,12 @@ async function login(page, baseUrl) {
   ]);
 }
 
+async function assertComponentVisible(page, componentId) {
+  await page.locator(`[data-component-id="${componentId}"]`).waitFor({ timeout: 30000 });
+  const visible = await page.locator(`[data-component-id="${componentId}"]`).first().isVisible();
+  assert.equal(visible, true, `component_not_visible:${componentId}`);
+}
+
 const { chromium } = await loadPlaywright();
 const port = await freePort();
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -164,22 +170,37 @@ try {
     assert.equal(loginText.includes("使用统一账号登录"), false, "browser_login_must_not_show_oidc_copy");
 
     await login(page, baseUrl);
+    assert.equal(page.url(), `${baseUrl}/portal/app/overview`, "browser_login_redirect_must_land_on_overview");
     await page.waitForSelector("text=总览", { timeout: 30000 });
     await page.waitForFunction(() => !document.body.innerText.includes("正在加载总览"), null, { timeout: 30000 });
+    for (const componentId of [
+      "overview.hero",
+      "overview.financial_metrics",
+      "overview.managed_environment",
+      "overview.recent_runs",
+      "overview.workspace",
+    ]) {
+      await assertComponentVisible(page, componentId);
+    }
     const overviewText = await page.locator("body").innerText();
     lastBodyText = overviewText;
     assert(overviewText.includes("工作台"), "browser_workbench_shell_missing");
     assert(overviewText.includes("余额"), "browser_workbench_balance_missing");
-    assert(overviewText.includes("累计消费") || overviewText.includes("钱花在哪里"), "browser_workbench_spend_missing");
+    assert(overviewText.includes("累计消费"), "browser_workbench_spend_missing");
+    assert.equal(overviewText.includes("客户工作台"), false, "browser_workbench_forbidden_customer_workbench_copy");
+    assert.equal(overviewText.includes("商业"), false, "browser_workbench_forbidden_commercial_copy");
 
     await page.goto(`${baseUrl}/portal/app/admin/system`, { waitUntil: "networkidle" });
     await page.waitForSelector("text=站点设置", { timeout: 30000 });
+    await assertComponentVisible(page, "admin.system.site_settings");
+    await assertComponentVisible(page, "admin.system.service_status");
     const adminText = await page.locator("body").innerText();
     lastBodyText = adminText;
     assert(adminText.includes("站点 logo") || adminText.includes("站点 Logo"), "browser_admin_logo_field_missing");
     assert(adminText.includes("首页内容"), "browser_admin_home_content_missing");
     assert(adminText.includes("服务状态"), "browser_admin_service_status_missing");
     assert.equal(adminText.includes("告警中心"), false, "browser_admin_forbidden_alert_copy");
+    assert.equal(adminText.includes("商业"), false, "browser_admin_forbidden_commercial_copy");
 
     console.log(JSON.stringify({
       ok: true,

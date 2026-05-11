@@ -57,6 +57,9 @@ assert.equal(contract.publicHome.enabled, true, "public_home_must_be_enabled");
 assert.deepEqual(contract.publicHome.homeContentModes, ["empty_default_opl_intro", "url_iframe", "html_full_page"], "home_content_modes_mismatch");
 assert.equal(contract.loginRegister.loginPrimaryMode, "email_password", "login_primary_mode_mismatch");
 assert.equal(contract.loginRegister.oidcPrimaryButtonAllowed, false, "oidc_primary_button_must_be_forbidden");
+assert.deepEqual(contract.uiArchitecture.layers, ["token", "primitive", "layout", "feature_component", "page_orchestration", "harness_validation"], "ui_architecture_layers_mismatch");
+assert.equal(contract.uiArchitecture.pageRole, "orchestration_only", "page_role_must_be_orchestration_only");
+assert.equal(contract.uiArchitecture.surfaceRegistry, "services/portal/frontend/src/harness/portal-ui-surfaces.ts", "surface_registry_path_mismatch");
 assert.deepEqual(contract.workbenchPages, ["总览", "计算资源", "任务执行", "文件空间", "账务"], "workbench_pages_mismatch");
 assert.deepEqual(contract.managementPages, ["平台总览", "客户账户", "资源管理", "任务记录", "账务管理", "审计记录", "站点设置", "服务状态"], "management_pages_mismatch");
 assert.equal(contract.runtimeSmokeEntrypoint, "scripts/smoke-test-v22-portal-runtime-suite.mjs", "runtime_suite_entrypoint_mismatch");
@@ -70,12 +73,20 @@ const adminApi = await source("services/portal/src/app/portal-admin-api-payloads
 const frontendAdminApi = await source("services/portal/frontend/src/api/portal/admin.ts");
 const frontendPublicApi = await source("services/portal/frontend/src/api/portal/public.ts");
 const adminSystem = await source("services/portal/frontend/src/views/admin/AdminSystemView.vue");
+const surfaceRegistry = await source("services/portal/frontend/src/harness/portal-ui-surfaces.ts");
 const dataTable = await source("services/portal/frontend/src/components/common/DataTable.vue");
 const dateRangeFilter = await source("services/portal/frontend/src/components/common/DateRangeFilter.vue");
 const siteLogoField = await source("services/portal/frontend/src/components/admin/SiteLogoField.vue");
 const homeContentEditor = await source("services/portal/frontend/src/components/admin/HomeContentEditor.vue");
 const statusBadge = await source("services/portal/frontend/src/components/common/StatusBadge.vue");
 const actionPanel = await source("services/portal/frontend/src/components/common/ActionPanel.vue");
+const overviewHero = await source("services/portal/frontend/src/components/overview/OverviewHero.vue");
+const overviewFinancialMetricsPanel = await source("services/portal/frontend/src/components/overview/OverviewFinancialMetricsPanel.vue");
+const overviewManagedEnvironmentPanel = await source("services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue");
+const overviewRecentRunsPanel = await source("services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue");
+const overviewWorkspacePanel = await source("services/portal/frontend/src/components/overview/OverviewWorkspacePanel.vue");
+const adminSiteSettingsPanel = await source("services/portal/frontend/src/components/admin/AdminSiteSettingsPanel.vue");
+const adminServiceStatusPanel = await source("services/portal/frontend/src/components/admin/AdminServiceStatusPanel.vue");
 const overview = await source("services/portal/frontend/src/views/overview/OverviewView.vue");
 const billing = await source("services/portal/frontend/src/views/billing/BillingView.vue");
 const resources = await source("services/portal/frontend/src/views/resources/ResourcesView.vue");
@@ -100,10 +111,6 @@ assertIncludes(frontendPublicApi, '"/public/settings"', "frontend_public_api_mus
 assertIncludes(frontendAdminApi, "PublicSettingsPayload", "frontend_admin_api_must_type_public_settings");
 assertIncludes(frontendAdminApi, "updateAdminSiteSettings", "frontend_admin_api_must_save_site_settings");
 assertIncludes(adminSystem, "站点设置", "admin_system_must_show_site_settings");
-assertAnyIncludes(adminSystem, ["站点 logo", "站点 Logo"], "admin_system_must_show_logo_editor");
-assertIncludes(adminSystem, "SiteLogoField", "admin_system_must_use_site_logo_field");
-assertIncludes(adminSystem, "HomeContentEditor", "admin_system_must_use_home_content_editor");
-assertIncludes(adminSystem, "ActionPanel", "admin_system_must_use_action_panel");
 
 assertIncludes(dataTable, "emptyText", "component_registry_data_table");
 assertIncludes(dateRangeFilter, "开始日期", "component_registry_date_range_filter");
@@ -111,10 +118,50 @@ assertIncludes(siteLogoField, "站点 logo", "component_registry_site_logo_field
 assertIncludes(homeContentEditor, "font-mono", "component_registry_home_content_editor");
 assertIncludes(statusBadge, "badgeClass", "component_registry_status_badge");
 assertIncludes(actionPanel, "panel-title", "component_registry_action_panel");
+assertIncludes(surfaceRegistry, "portalUiSurfaces", "surface_registry_must_export_registry");
+for (const surface of [
+  "overview.hero",
+  "overview.financial_metrics",
+  "overview.managed_environment",
+  "overview.recent_runs",
+  "overview.workspace",
+  "admin.system.site_settings",
+  "admin.system.service_status",
+]) {
+  assertIncludes(surfaceRegistry, `componentId: "${surface}"`, `surface_registry_${surface}`);
+}
+for (const sourceText of [
+  overviewHero,
+  overviewFinancialMetricsPanel,
+  overviewManagedEnvironmentPanel,
+  overviewRecentRunsPanel,
+  overviewWorkspacePanel,
+  adminSiteSettingsPanel,
+  adminServiceStatusPanel,
+]) {
+  assertIncludes(sourceText, "data-route-id", "feature_component_must_declare_route_anchor");
+  assertIncludes(sourceText, "data-component-id", "feature_component_must_declare_component_anchor");
+}
+assertIncludes(overview, "OverviewHero", "overview_view_must_compose_hero_component");
+assertIncludes(overview, "OverviewFinancialMetricsPanel", "overview_view_must_compose_financial_metrics_component");
+assertIncludes(overview, "OverviewManagedEnvironmentPanel", "overview_view_must_compose_managed_environment_component");
+assertIncludes(overview, "OverviewRecentRunsPanel", "overview_view_must_compose_recent_runs_component");
+assertIncludes(overview, "OverviewWorkspacePanel", "overview_view_must_compose_workspace_component");
+assertIncludes(adminSystem, "AdminSiteSettingsPanel", "admin_system_view_must_compose_site_settings_component");
+assertIncludes(adminSystem, "AdminServiceStatusPanel", "admin_system_view_must_compose_service_status_component");
+assertAnyIncludes(adminSiteSettingsPanel, ["站点 logo", "站点 Logo"], "admin_site_settings_must_show_logo_editor");
+assertIncludes(adminSiteSettingsPanel, "SiteLogoField", "admin_site_settings_must_use_site_logo_field");
+assertIncludes(adminSiteSettingsPanel, "HomeContentEditor", "admin_site_settings_must_use_home_content_editor");
+assertIncludes(adminSiteSettingsPanel, "ActionPanel", "admin_site_settings_must_use_action_panel");
 
 const workbenchCopy = [
   visibleVueText(sidebar),
   visibleVueText(overview),
+  visibleVueText(overviewHero),
+  visibleVueText(overviewFinancialMetricsPanel),
+  visibleVueText(overviewManagedEnvironmentPanel),
+  visibleVueText(overviewRecentRunsPanel),
+  visibleVueText(overviewWorkspacePanel),
   visibleVueText(billing),
   visibleVueText(resources),
   visibleVueText(workspace),
@@ -134,8 +181,21 @@ for (const forbiddenSlashCopy of ["预扣费 / 冻结金额", "停止计费 / �
   assertExcludes(workbenchCopy, forbiddenSlashCopy, "slash_separated_ui_copy");
 }
 
+const managementCopy = [
+  sidebar,
+  visibleVueText(adminSystem),
+  visibleVueText(adminSiteSettingsPanel),
+  visibleVueText(adminServiceStatusPanel),
+].join("\n");
+
 for (const page of contract.managementPages) {
-  assertIncludes(sidebar + adminSystem, page, `management_copy_${page}`);
+  assertIncludes(managementCopy, page, `management_copy_${page}`);
+}
+for (const term of contract.entryNaming.forbiddenUiTerms) {
+  assertExcludes(managementCopy, term, "management_forbidden_copy");
+}
+for (const forbiddenSlashCopy of ["默认 secret / 默认口令 / 配置卫生问题", "最近任务 / 会话状态", "账号 / 工作空间", "并发 / 队列"]) {
+  assertExcludes(workbenchCopy + managementCopy, forbiddenSlashCopy, "slash_separated_ui_copy");
 }
 
 console.log(JSON.stringify({

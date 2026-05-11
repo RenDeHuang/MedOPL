@@ -4,6 +4,24 @@
 
 本合同使用 Sub2API 的产品工程模式作为参考：公共首页可以由管理台配置，登录页保持账号密码入口，业务页面由固定组件组合，静态合同检查和运行时验收必须同时存在。
 
+## UI 工程结构
+
+Portal UI 必须把约束落在代码结构中，而不是只写在文档中。结构分层固定为：
+
+- token：`tailwind.config.ts` 和 `src/style.css` 中的颜色、字号、间距、圆角和阴影。
+- primitive：`src/style.css` 中的 `.btn`、`.input`、`.card`、`.badge`、`.table-shell`、`.empty-state` 等共享原语。
+- layout：`src/layouts/AppLayout.vue`、`AppHeader.vue`、`AppSidebar.vue` 只负责页面壳、导航和滚动边界。
+- feature component：`src/components/overview/*`、`src/components/admin/*` 等业务组件回答稳定页面问题，必须有 `data-route-id` 和 `data-component-id`。
+- page orchestration：`src/views/*` 只负责拉取 composable、组合组件和接路由，不沉淀大段业务 UI。
+- harness validation：`src/harness/portal-ui-surfaces.ts` 固定 route、component、question、states、selector 和 invariants，smoke 必须读取该注册表并验证真实 DOM 锚点。
+
+组件化规则：
+
+- common 组件只收跨页面复用的 UI 原语，不收业务专属块。
+- feature 组件按业务域建目录，由页面组合使用。
+- 一个块只有满足独立职责、独立状态、独立验收价值时才进入 feature component。
+- 页面不得绕过注册表新增核心 UI 区块。
+
 ## 分支意图
 
 本分支只处理 Portal 工作台和管理台的 UI 组合、站点设置、公用首页、登录注册、页面命名、组件落点和测试入口统一。
@@ -159,6 +177,37 @@ Portal 必须有公共首页，未登录用户访问根路径时先看到首页�
     "registerPrimaryMode": "name_email_password",
     "oidcPrimaryButtonAllowed": false,
     "usesPublicSettingsBrand": true
+  },
+  "uiArchitecture": {
+    "layers": [
+      "token",
+      "primitive",
+      "layout",
+      "feature_component",
+      "page_orchestration",
+      "harness_validation"
+    ],
+    "tokenSources": [
+      "services/portal/frontend/tailwind.config.ts",
+      "services/portal/frontend/src/style.css"
+    ],
+    "primitiveSources": [
+      "services/portal/frontend/src/style.css",
+      "services/portal/frontend/src/components/common"
+    ],
+    "layoutSources": [
+      "services/portal/frontend/src/layouts"
+    ],
+    "featureComponentSources": [
+      "services/portal/frontend/src/components/overview",
+      "services/portal/frontend/src/components/admin"
+    ],
+    "pageRole": "orchestration_only",
+    "surfaceRegistry": "services/portal/frontend/src/harness/portal-ui-surfaces.ts",
+    "requiredDomAnchors": [
+      "data-route-id",
+      "data-component-id"
+    ]
   },
   "workbenchPages": [
     "总览",
