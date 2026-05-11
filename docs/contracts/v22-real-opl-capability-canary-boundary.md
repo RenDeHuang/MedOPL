@@ -6,7 +6,7 @@
 Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真实 message、file、run、artifact、runtime 和 observability 能力是否能进入真实 OPL/agent/provider/runtime 边界并回流 Portal。
 ```
 
-本合同不替代 [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。前者定义 Portal-OPL 连接骨架，本合同定义剩余真实 OPL 能力 canary 和后续 productionization handoff。message reply 的 provider 细分执行合同是 [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md)。
+本合同不替代 [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。前者定义 Portal-OPL 连接骨架，本合同定义剩余真实 OPL 能力 canary 和后续 productionization handoff。message reply 的 provider 细分执行合同是 [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md)。file/run/artifact 的细分执行合同是 [v22-real-opl-file-run-artifact-canary-boundary.md](./v22-real-opl-file-run-artifact-canary-boundary.md)。
 
 ## Contract Level
 
@@ -26,6 +26,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
 - [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md)
+- [v22-real-opl-file-run-artifact-canary-boundary.md](./v22-real-opl-file-run-artifact-canary-boundary.md)
 - [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md)
 - [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)
 - [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
@@ -38,6 +39,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
 - [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
 - [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
+- [../recovery/real-opl-file-run-artifact-validation-path.md](../recovery/real-opl-file-run-artifact-validation-path.md)
 
 规范路径为：
 
@@ -46,6 +48,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - `docs/recovery/portal-opl-context-backflow-validation-path.md`
 - `docs/recovery/real-opl-capability-canary-validation-path.md`
 - `docs/recovery/real-opl-provider-message-canary-validation-path.md`
+- `docs/recovery/real-opl-file-run-artifact-validation-path.md`
 
 ## Product Truth
 

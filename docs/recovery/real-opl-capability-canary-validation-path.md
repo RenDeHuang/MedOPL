@@ -1,6 +1,6 @@
 # v22 Real OPL Capability Canary Complete Workflow And Validation Path
 
-本文定义真实 OPL 能力 canary 的完整工作流和验证顺序。它是 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 的执行路径，不替代一级主合同、二级 Portal-OPL 连接合同或 [portal-opl-context-backflow-validation-path.md](./portal-opl-context-backflow-validation-path.md)。provider message reply 的细分验证路径是 [real-opl-provider-message-canary-validation-path.md](./real-opl-provider-message-canary-validation-path.md)。
+本文定义真实 OPL 能力 canary 的完整工作流和验证顺序。它是 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 的执行路径，不替代一级主合同、二级 Portal-OPL 连接合同或 [portal-opl-context-backflow-validation-path.md](./portal-opl-context-backflow-validation-path.md)。provider message reply 的细分验证路径是 [real-opl-provider-message-canary-validation-path.md](./real-opl-provider-message-canary-validation-path.md)。file/run/artifact 的细分验证路径是 [real-opl-file-run-artifact-validation-path.md](./real-opl-file-run-artifact-validation-path.md)。
 
 ## Complete Workflow
 
