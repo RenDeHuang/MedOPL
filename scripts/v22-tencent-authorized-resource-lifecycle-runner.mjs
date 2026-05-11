@@ -321,6 +321,14 @@ function objectKeyFor(env = {}, workspaceId = "", operation = "") {
   return [root, workspace, marker].filter(Boolean).join("/");
 }
 
+function storageObjectKeysForOperation(env = {}, workspaceId = "", operation = "") {
+  if (operation !== "storage-delete") return [objectKeyFor(env, workspaceId, operation)];
+  return [
+    objectKeyFor(env, workspaceId, "storage-create"),
+    objectKeyFor(env, workspaceId, "storage-expand"),
+  ];
+}
+
 function summaryFor({ mode, operation, envSummary, blockedReason = null, ok = true, artifactPath = "", operationId = "" } = {}) {
   const spec = OPERATION_SPECS[operation];
   const resolvedOperationId = operationId || operationIdFor(mode === "dry-run" ? currentRunId : "", operation);
@@ -419,7 +427,7 @@ async function executeFakeLive({ operation }) {
   const spec = OPERATION_SPECS[operation];
   return {
     mutationApi: spec.requiredApis[0],
-    target: spec.resourceKind,
+    target: operation === "storage-delete" ? "storage_markers" : spec.resourceKind,
     providerRequestIdPresent: true,
   };
 }
@@ -430,21 +438,27 @@ async function executeCosMutation({ env, operation, workspaceId }) {
     SecretId: text(env.TENCENT_MUTATION_SECRET_ID),
     SecretKey: text(env.TENCENT_MUTATION_SECRET_KEY),
   });
-  const params = {
+  const baseParams = {
     Bucket: text(env.TENCENT_MUTATION_COS_BUCKET),
     Region: text(env.TENCENT_MUTATION_COS_REGION),
-    Key: objectKeyFor(env, workspaceId, operation),
   };
   if (operation === "storage-delete") {
-    const response = await cos.deleteObject(params);
+    const responses = [];
+    for (const key of storageObjectKeysForOperation(env, workspaceId, operation)) {
+      responses.push(await cos.deleteObject({
+        ...baseParams,
+        Key: key,
+      }));
+    }
     return {
       mutationApi: "deleteObject",
-      target: "storage_marker",
-      providerRequestIdPresent: providerRequestIdPresent(response),
+      target: "storage_markers",
+      providerRequestIdPresent: responses.every(providerRequestIdPresent),
     };
   }
   const response = await cos.putObject({
-    ...params,
+    ...baseParams,
+    Key: objectKeyFor(env, workspaceId, operation),
     Body: "",
     ContentLength: 0,
   });

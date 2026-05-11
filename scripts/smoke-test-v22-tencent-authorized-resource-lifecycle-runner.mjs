@@ -253,6 +253,7 @@ try {
     "fake_storage_delete_execution_report_path",
   );
   assertExecutionSummaryShape(fakeStorageDeleteExecutionOut.summary, "fake_storage_delete_execution");
+  assert.equal(fakeStorageDeleteExecutionOut.summary.execution.target, "storage_markers", "storage_delete_must_cover_create_and_expand_markers");
 
   const disabledLive = runRunner(["--execute", "--secret-file", disabledSecretFile, "--operation", "storage-create"], 1);
   assert.equal(parseStdout(disabledLive.stdout).summary.blockedReason, "mutation_run_gate_disabled", "disabled_execute_reason");
