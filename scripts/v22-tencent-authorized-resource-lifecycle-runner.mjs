@@ -378,6 +378,8 @@ function executionSummaryFor({ operation, envSummary, operationId, artifactPath,
     mutationApi: result.mutationApi || "",
     target: result.target || "",
     providerRequestIdPresent: Boolean(result.providerRequestIdPresent),
+    targetDesiredCapacity: Number.isFinite(result.targetDesiredCapacity) ? result.targetDesiredCapacity : null,
+    reconciliation: result.reconciliation || null,
     portalWritebackRequired: true,
     auditEventRequired: true,
   };
@@ -423,6 +425,10 @@ function providerRequestIdPresent(response = {}) {
   return Boolean(text(response.RequestId || response.requestId || response.headers?.["x-cos-request-id"] || response.headers?.["x-cos-requestid"]));
 }
 
+function sleep(ms = 0) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function executeFakeLive({ operation }) {
   const spec = OPERATION_SPECS[operation];
   return {
@@ -430,6 +436,57 @@ async function executeFakeLive({ operation }) {
     target: operation === "storage-delete" ? "storage_markers" : spec.resourceKind,
     providerRequestIdPresent: true,
   };
+}
+
+function nativeReplicaSummary(nodePool = {}) {
+  const native = nodePool.Native || {};
+  return {
+    replicas: Number(native.Replicas ?? 0),
+    readyReplicas: Number(native.ReadyReplicas ?? 0),
+    joiningReplicas: Number(native.JoiningReplicas ?? 0),
+    minReplicas: Number(native.Scaling?.MinReplicas ?? 0),
+    maxReplicas: Number(native.Scaling?.MaxReplicas ?? 0),
+  };
+}
+
+async function describeAuthorizedNodePool(client, env = {}) {
+  const nodePoolsResponse = await client.DescribeNodePools({
+    ClusterId: text(env.TENCENT_MUTATION_TKE_CLUSTER_ID),
+    Filters: [{
+      Name: "NodePoolsId",
+      Values: [text(env.TENCENT_MUTATION_TKE_NODE_POOL_ID)],
+    }],
+    Offset: 0,
+    Limit: 100,
+  });
+  const nodePools = Array.isArray(nodePoolsResponse.NodePools) ? nodePoolsResponse.NodePools : [];
+  const nodePool = nodePools.find((item) => text(item.NodePoolId) === text(env.TENCENT_MUTATION_TKE_NODE_POOL_ID));
+  if (!nodePool) {
+    throw new Error("tencent_resource_lifecycle_tke_node_pool_not_found");
+  }
+  if (text(nodePool.Type) && text(nodePool.Type) !== "Native") {
+    throw new Error(`tencent_resource_lifecycle_tke_node_pool_type_unsupported:${text(nodePool.Type)}`);
+  }
+  return nodePool;
+}
+
+async function waitForNativeNodePoolReplicas(client, env = {}, targetReplicas = 0) {
+  let latest = null;
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const nodePool = await describeAuthorizedNodePool(client, env);
+    latest = nativeReplicaSummary(nodePool);
+    const reachedTarget = latest.replicas === targetReplicas
+      && latest.joiningReplicas === 0
+      && latest.readyReplicas === targetReplicas;
+    if (reachedTarget) {
+      return { reachedTarget: true, targetReplicas, attempts: attempt + 1, observed: latest };
+    }
+    await sleep(10_000);
+  }
+  const error = new Error("tencent_resource_lifecycle_tke_node_pool_replicas_not_reconciled");
+  error.observedReplicas = latest;
+  error.targetReplicas = targetReplicas;
+  throw error;
 }
 
 async function executeCosMutation({ env, operation, workspaceId }) {
@@ -487,32 +544,20 @@ async function executeTkeMutation({ env, operation, options }) {
       },
     },
   });
-  const nodePoolsResponse = await client.DescribeNodePools({
-    ClusterId: text(env.TENCENT_MUTATION_TKE_CLUSTER_ID),
-    Filters: [{
-      Name: "NodePoolsId",
-      Values: [text(env.TENCENT_MUTATION_TKE_NODE_POOL_ID)],
-    }],
-    Offset: 0,
-    Limit: 100,
-  });
-  const nodePools = Array.isArray(nodePoolsResponse.NodePools) ? nodePoolsResponse.NodePools : [];
-  const nodePool = nodePools.find((item) => text(item.NodePoolId) === text(env.TENCENT_MUTATION_TKE_NODE_POOL_ID));
-  if (!nodePool) {
-    throw new Error("tencent_resource_lifecycle_tke_node_pool_not_found");
-  }
-  if (text(nodePool.Type) && text(nodePool.Type) !== "Native") {
-    throw new Error(`tencent_resource_lifecycle_tke_node_pool_type_unsupported:${text(nodePool.Type)}`);
-  }
+  await describeAuthorizedNodePool(client, env);
+  const targetReplicas = desiredCapacityFrom(options.targetDesiredCapacity);
   const response = await client.ScaleNodePool({
     ClusterId: text(env.TENCENT_MUTATION_TKE_CLUSTER_ID),
     NodePoolId: text(env.TENCENT_MUTATION_TKE_NODE_POOL_ID),
-    Replicas: desiredCapacityFrom(options.targetDesiredCapacity),
+    Replicas: targetReplicas,
   });
+  const reconciliation = await waitForNativeNodePoolReplicas(client, env, targetReplicas);
   return {
     mutationApi: operation === "compute-create" ? "ScaleNodePool" : "ScaleNodePool",
     target: "tke_native_node_pool_replicas",
     providerRequestIdPresent: providerRequestIdPresent(response),
+    targetDesiredCapacity: targetReplicas,
+    reconciliation,
   };
 }
 

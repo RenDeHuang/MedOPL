@@ -180,6 +180,7 @@ const {
   actionFeedback,
   auditStatusText,
   balanceFreezeStatus,
+  concurrencyText,
   computeSpecText,
   currentConcurrencyText,
   currentComputeSpec,

@@ -217,6 +217,13 @@ try {
   assert.equal(checkConfigOut.reportPath, null, "check_config_must_not_write_report");
   assertSummaryShape(checkConfigOut.summary, "check_config");
 
+  const repoRootContextPlanFile = path.join(tmpDir, "repo-root-context-release-plan.json");
+  const repoRootContextPlan = JSON.parse(JSON.stringify(releasePlan));
+  for (const target of repoRootContextPlan.targets) target.buildContext = ".";
+  await writeFile(repoRootContextPlanFile, `${JSON.stringify(repoRootContextPlan, null, 2)}\n`, "utf8");
+  const repoRootContext = runRunner(["--check-config", ...baseArgs(goodSecretFile), "--release-plan", repoRootContextPlanFile]);
+  assert.equal(parseStdout(repoRootContext.stdout).summary.ok, true, "repo_root_build_context_must_be_allowed_for_multi_service_dockerfiles");
+
   const disabled = runRunner(["--check-config", ...baseArgs(disabledSecretFile), "--release-plan", releasePlanFile], 1);
   assert.equal(parseStdout(disabled.stdout).summary.blockedReason, "deploy_run_gate_disabled", "disabled_reason");
 
@@ -311,6 +318,7 @@ try {
   assert.match(source, /"--dry-run=server"[\s\S]*"apply"/, "runner_must_use_server_side_apply_dry_run");
   assert.match(source, /"rollout"[\s\S]*"status"/, "runner_must_wait_for_rollout_status");
   assert.match(source, /deploy_ownership_guard_failed/, "runner_must_fail_closed_on_owner_label_mismatch");
+  assert.match(source, /manifest\.Digest[\s\S]*manifest\.digest[\s\S]*manifest\.Descriptor\?\.digest[\s\S]*manifest\.manifest\?\.digest/, "runner_must_read_tcr_digest_from_buildx_json_shapes");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
   await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));

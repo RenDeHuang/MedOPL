@@ -265,6 +265,9 @@ try {
   assert.match(source, /v20220501/, "runner_must_use_tke_20220501_for_native_node_pool");
   assert.match(source, /DescribeNodePools/, "runner_must_plan_native_node_pool_with_describe_nodepools");
   assert.match(source, /ScaleNodePool/, "runner_must_scale_native_node_pool_with_scale_node_pool");
+  assert.match(source, /waitForNativeNodePoolReplicas/, "runner_must_wait_for_native_node_pool_replica_reconciliation");
+  assert.match(source, /tencent_resource_lifecycle_tke_node_pool_replicas_not_reconciled/, "runner_must_fail_closed_when_native_node_pool_does_not_reconcile");
+  assert.match(source, /latest\.readyReplicas === targetReplicas/, "runner_must_wait_for_ready_replicas_to_match_target_even_when_target_is_zero");
   assert.doesNotMatch(source, /\.ModifyNodePoolDesiredCapacityAboutAsg\(/, "runner_must_not_use_legacy_desired_capacity_for_native_node_pool");
   assert.equal(/(^|\n)\s*source\s+/.test(source), false, "runner_must_not_source_secret_file");
   assert.equal(source.includes("/home/dev/" + ".secrets"), false, "runner_must_not_hardcode_real_secret_path");
@@ -287,6 +290,7 @@ console.log(JSON.stringify({
     "dry_run_reports_for_r06_r08_r11_r12_r19_r20",
     "fake_live_execute_reports_for_storage_compute_and_delete",
     "execute_fail_closed_without_run_gate_or_dry_run",
+    "real_compute_execute_waits_for_native_node_pool_replicas",
     "redacted_stdout_and_runtime_reports",
     "mvp_suite_includes_smoke",
   ],

@@ -181,7 +181,7 @@ function validateRelativeExistingPath(value = "", label = "path") {
     throw new Error(`${label}_must_be_repo_relative`);
   }
   const absolute = path.resolve(repoRoot, normalized);
-  if (!absolute.startsWith(`${repoRoot}${path.sep}`)) {
+  if (absolute !== repoRoot && !absolute.startsWith(`${repoRoot}${path.sep}`)) {
     throw new Error(`${label}_outside_repo`);
   }
   if (!existsSync(absolute)) {
@@ -514,9 +514,13 @@ function runCommandRaw(command, args, { input = "", env = {}, timeoutMs = 120_00
 }
 
 function dockerLogin(env = {}) {
-  runCommand("docker", ["login", text(env.TENCENT_TCR_REGISTRY), "-u", text(env.TCR_ID), "--password-stdin"], {
-    input: text(env.TCR_SECRET),
-  });
+  try {
+    runCommand("docker", ["login", text(env.TENCENT_TCR_REGISTRY), "-u", text(env.TCR_ID), "--password-stdin"], {
+      input: text(env.TCR_SECRET),
+    });
+  } catch {
+    throw new Error("deploy_docker_login_failed");
+  }
 }
 
 function dockerRemoteTagExists(imageRef = "") {
@@ -527,9 +531,16 @@ function dockerRemoteTagExists(imageRef = "") {
 }
 
 function dockerRemoteDigest(imageRef = "") {
-  const digest = text(runCommand("docker", ["buildx", "imagetools", "inspect", imageRef, "--format", "{{.Digest}}"], {
-    timeoutMs: 120_000,
-  }));
+  let digest = "";
+  try {
+    const output = text(runCommand("docker", ["buildx", "imagetools", "inspect", imageRef, "--format", "{{json .}}"], {
+      timeoutMs: 120_000,
+    }));
+    const manifest = JSON.parse(output);
+    digest = text(manifest.Digest || manifest.digest || manifest.Descriptor?.digest || manifest.manifest?.digest);
+  } catch {
+    throw new Error("deploy_registry_digest_readback_failed");
+  }
   if (!/^sha256:[a-f0-9]{64}$/.test(digest)) {
     throw new Error("deploy_registry_digest_readback_failed");
   }
@@ -675,8 +686,16 @@ async function executeMode(options = {}, env = {}, plan = {}) {
         if (dockerRemoteTagExists(imageRef)) {
           return { status: 1, reportPath: null, summary: blockedSummary({ options, env, plan, blockedReason: "deploy_image_tag_already_exists" }) };
         }
-        runCommand("docker", ["build", "-f", planTarget.dockerfile, "-t", imageRef, planTarget.buildContext], { timeoutMs: 900_000 });
-        runCommand("docker", ["push", imageRef], { timeoutMs: 900_000 });
+        try {
+          runCommand("docker", ["build", "-f", planTarget.dockerfile, "-t", imageRef, planTarget.buildContext], { timeoutMs: 900_000 });
+        } catch {
+          throw new Error("deploy_docker_build_failed");
+        }
+        try {
+          runCommand("docker", ["push", imageRef], { timeoutMs: 900_000 });
+        } catch {
+          throw new Error("deploy_docker_push_failed");
+        }
         digest = dockerRemoteDigest(imageRef);
       } else {
         digest = fakeDigest(`${plan.runId}:${plan.versionTag}:${planTarget.component}:${planTarget.repository}:${planTarget.buildContext}:${planTarget.dockerfile}`);
@@ -815,7 +834,9 @@ async function main() {
     process.exitCode = output.status;
   } catch (error) {
     const message = text(error?.message);
-    const blockedReason = /^tencent_deploy_(?:forbidden_secret_key|non_allowlist_secret_key_rejected|secret_line_invalid|runner_release_plan_required|runner_secret_file_required)/.test(message)
+    const blockedReason = /^deploy_(?:docker_login_failed|docker_build_failed|docker_push_failed|registry_digest_readback_failed|ownership_guard_failed|target_kind_mismatch|target_workload_mismatch|target_namespace_mismatch|target_container_missing)$/.test(message)
+      ? message
+      : /^tencent_deploy_(?:forbidden_secret_key|non_allowlist_secret_key_rejected|secret_line_invalid|runner_release_plan_required|runner_secret_file_required)/.test(message)
       ? message
       : "deploy_runner_failed";
     console.log(JSON.stringify({
