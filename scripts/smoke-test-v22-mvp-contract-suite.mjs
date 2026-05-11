@@ -101,7 +101,6 @@ const smokeScripts = [
   ["smoke-test-v22-admin-ops-console-boundary", "scripts/smoke-test-v22-admin-ops-console-boundary.mjs"],
   ["smoke-test-v22-portal-role-surface-boundaries", "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs"],
   ["smoke-test-v22-portal-structure-failure-isolation-contract", "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs"],
-  ["smoke-test-v22-portal-customer-ops-ui-composition-contract", "scripts/smoke-test-v22-portal-customer-ops-ui-composition-contract.mjs"],
   ["smoke-test-v22-admin-ops-console-readonly-mvp", "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs"],
   ["smoke-test-v22-workflow-gate", "scripts/smoke-test-v22-workflow-gate.mjs"],
   ["smoke-test-v22-portal-runtime-startup-config", "scripts/smoke-test-v22-portal-runtime-startup-config.mjs"],
