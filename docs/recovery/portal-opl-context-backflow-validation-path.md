@@ -247,12 +247,13 @@ Adapter session/message metadata
 
 ## Current Status
 
-截至 2026-05-10：
+截至 2026-05-12：
 
 - 已完成真实 OPL WebUI session bridge canary。
 - 已完成 Gateway proxy、Adapter launch、session create、database readback 和 state backflow。
 - 已完成 `/api/opl/*` placeholder 的 `capability_not_supported` 分类。
-- 尚未完成真实 provider key message reply canary。
-- 尚未实现真实云 runtime，本合同只定义 downstream runtime gate。
-- 尚未部署真实 Langfuse 或 `trace.medopl.cn`，本合同只定义 downstream Langfuse session trace boundary。
+- 已完成授权真实 provider key message reply canary：Portal -> Gateway -> Adapter -> clean OPL WebUI bridge -> provider message 已观测到 assistant reply，并以 `mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该结果只证明 message/reply，不证明 file/run/artifact、真实云 runtime 或 Langfuse 已上线。
+- 已完成本地独立 Runtime Agent HTTP API relay file/run/artifact canary：Portal launch/bootstrap/session bind/file/run/artifact/session trace 可以形成 workspace-scoped `fileRef`、`runId/status/traceId`、`artifactRef/outputFileRef`、`billingMetadataRef/usageMetadataRef` 和 Portal projection。该结果只证明本地 Runtime Agent API relay，不代表真实云 runtime、COS 账单、Package D deploy 或生产 Runtime Agent 已上线。
+- 尚未实现真实云 runtime，本合同只定义 downstream runtime gate 和 OPL lane projection handoff。
+- 尚未部署真实 Langfuse 或 `trace.medopl.cn`，本合同只定义 downstream Langfuse session trace boundary 和 Portal canonical trace projection。
 - 尚未完成性能 benchmark canary。
