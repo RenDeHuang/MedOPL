@@ -148,6 +148,9 @@ try {
   });
   const user = db.users.find((item) => item.id === "user-v22-production-cloud");
   assert.ok(user, "prepared_user_must_exist");
+  assert.equal(db.taskSpaces.length, 1, "prepared_workspace_must_exist");
+  assert.equal(typeof db.taskSpaces[0].path, "string", "prepared_workspace_path_must_be_string");
+  assert.ok(db.taskSpaces[0].path.includes("workspace-v22-production-cloud"), "prepared_workspace_path_must_include_workspace_id");
 
   await request({
     route,

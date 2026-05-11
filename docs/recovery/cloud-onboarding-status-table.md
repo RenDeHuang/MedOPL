@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本状态总表记录 v22 cloud onboarding 每阶段状态、证据、owner、下一棒、required smoke 和 user gate。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
-当前 production loop 分支实现 Portal 正式云操作本地闭环和 PostgreSQL canonical store shape；本地验证只使用 fake-live runner，不读真实 secret，不调用真实云，不改 deploy，不 build/push/kubectl。
+当前 production loop 分支实现 Portal 正式云操作闭环和 PostgreSQL canonical store shape；本地验证覆盖 fake-live runner，并在用户明确提供 Package C mutation secret file path 后完成最小 `storage-create` 真实 Tencent canary。canary 证据只写 `.runtime`，不进 git；本分支不改 deploy，不 build/push/kubectl，不做 compute/delete/deploy。
 
 ## Plain Status Summary
 
@@ -17,7 +17,7 @@ program id: v22-cloud-onboarding
 - create/release dry-run: pending
 - mutation wrapper: pending
 - production deploy: pending
-- Portal production integration: local production API + PostgreSQL canonical store smoke done; real Tencent storage-create canary pending explicit Package C mutation secret file path
+- Portal production integration: local production API + PostgreSQL canonical store smoke done; user-authorized real Tencent `storage-create` canary done for the storage-create sub-loop only
 - canary/QA/release status: pending
 
 ## Status Table
@@ -36,7 +36,7 @@ program id: v22-cloud-onboarding
 | CO-10 | mutation SDK wrapper | pending | pending | A | define fake-only mutation wrapper and gates | `smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs`; `smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs` | stop if mutation secret, real API, dependency change, build/push/kubectl, or deploy is needed |
 | CO-11 | minimal authorized create/release live | pending | pending | user | only after dry-run, wrapper, B review, and explicit user authorization | execution contract smoke; preflight dry-run diff; rollback/audit smoke | must explicitly authorize each real mutation, budget, tags, retry, rollback, and scope expansion |
 | CO-12 | production deploy execution | pending | pending | user | wait for concrete deploy plan contract and explicit user authorization | deploy plan smoke; local build/deploy dry-run smoke; workflow gate review | must explicitly authorize build, push, kubectl, deploy secret/kubeconfig, registry, rollback |
-| CO-13 | Portal production integration | pending | production Portal route `/portal/api/v22/cloud-operations/storage/create`, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, and MVP suite coverage pass locally; real Tencent storage-create canary has not run | A | run minimal authorized storage-create canary only after explicit Package C mutation secret file path, then review redacted `.runtime/v22-cloud-lifecycle/` report before widening scope | `smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | stop if no explicit mutation secret file path, if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create |
+| CO-13 | Portal production integration | storage-create-canary-done | production Portal route `/portal/api/v22/cloud-operations/storage/create`, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, and user-authorized real Tencent storage-create canary passed; canary report refs stay under `.runtime/v22-cloud-lifecycle/` | A | B review the storage-create evidence and decide absorption; do not widen to compute/delete/deploy without a new explicit authorization and gate | `smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | stop if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create |
 | CO-14 | canary / QA / release status update | pending | pending | C | run QA/status update after Portal integration and authorized canary scope | canary/QA smoke; `smoke-test-v22-mvp-contract-suite.mjs`; workflow gate review | stop if QA needs live credentials, canary calls real service, or release status implies readiness |
 
 ## Open Issues
@@ -282,17 +282,17 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     {
       "phaseId": "CO-13",
       "phaseName": "Portal production integration",
-      "status": "pending",
-      "evidenceCommitOrReport": "production Portal route, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, and MVP suite coverage pass locally; real Tencent storage-create canary has not run",
+      "status": "storage-create-canary-done",
+      "evidenceCommitOrReport": "production Portal route, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, and user-authorized real Tencent storage-create canary passed; canary report refs stay under .runtime/v22-cloud-lifecycle/",
       "owner": "A",
-      "nextAction": "run minimal authorized storage-create canary only after explicit Package C mutation secret file path, then review redacted .runtime/v22-cloud-lifecycle report before widening scope",
+      "nextAction": "B review the storage-create evidence and decide absorption; do not widen to compute/delete/deploy without a new explicit authorization and gate",
       "requiredSmoke": [
         "scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs",
         "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
         "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
         "scripts/smoke-test-v22-mvp-contract-suite.mjs"
       ],
-      "userGate": "stop if no explicit mutation secret file path, if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create"
+      "userGate": "stop if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create"
     },
     {
       "phaseId": "CO-14",

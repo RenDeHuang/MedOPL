@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
+
+const domainRoot = path.dirname(fileURLToPath(import.meta.url));
+const repoRootForDomain = path.resolve(domainRoot, "../../../");
+const medWorkspaceRoot = path.join(repoRootForDomain, ".runtime", "med-autoscience", "workspaces");
 
 function text(value) {
   return String(value ?? "").trim();
@@ -50,6 +55,10 @@ function operationIdFor(kind = "storage-create") {
   return `op-${randomUUID()}-${safeIdPart(kind)}`;
 }
 
+function workspacePathFor(userId = "", workspaceId = "") {
+  return path.join(medWorkspaceRoot, text(userId), text(workspaceId || "default"));
+}
+
 function bindingAuditTag(user = {}, workspaceId = "") {
   return `tenant:${userTenantId(user)}/user:${text(user.id)}/workspace:${workspaceId}`;
 }
@@ -71,6 +80,7 @@ function ensureWorkspace(db = {}, user = {}, workspaceId = "", planId = "starter
       ownerTenantId: userTenantId(user),
       ownerUserId: text(user.id),
       title: workspaceId,
+      path: workspacePathFor(user.id, workspaceId),
       status: "active",
       serverPlanId: planId,
       createdAt: nowIso(),

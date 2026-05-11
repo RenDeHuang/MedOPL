@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { createGflabProviderConfig } from "./provider-config.mjs";
 import { appendLedgerEntry, ensureWallet, moneyAmount } from "./wallet-ledger.mjs";
+
+const domainRoot = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(domainRoot, "../../../");
+const medWorkspaceRoot = path.join(repoRoot, ".runtime", "med-autoscience", "workspaces");
 
 function text(value) {
   return String(value ?? "").trim();
@@ -13,6 +19,10 @@ function lowerText(value) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function workspacePathFor(userId = "", workspaceId = "") {
+  return path.join(medWorkspaceRoot, text(userId), text(workspaceId || "default"));
 }
 
 function userTenantId(user = {}) {
@@ -133,6 +143,7 @@ export function ensureV22PortalUser(db = {}, input = {}) {
       ownerUserId: user.id,
       ownerTenantId: userTenantId(user),
       title: text(input.workspaceTitle || workspaceId),
+      path: workspacePathFor(user.id, workspaceId),
       status: "active",
       serverPlanId: "starter_2c4g_10gb",
       createdAt: nowIso(),

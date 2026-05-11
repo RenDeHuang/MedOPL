@@ -13,6 +13,7 @@ const REQUIRED_TABLES = [
   "file_space_entitlements",
   "cloud_resource_projections",
   "billing_reconciliations",
+  "audit_events",
 ];
 
 const WRITE_TABLES = new Set();
@@ -189,6 +190,7 @@ await writePortalPostgresSnapshot({
     fileSpaceEntitlements: [{ id: "fs-rb-pg-cloud", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", planId: "starter_2c4g_10gb", capacityGb: 10, status: "available" }],
     cloudResourceProjections: [{ id: "projection-rb-pg-cloud", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", status: "updated", productionPortalConnected: true, runnerMode: "fake-live", realCloudCalls: false, lastOperationId: "op-pg-storage-create", visibleSummary: { resources: { fileSpace: { statusLabel: "可用", capacityGb: 10 } } } }],
     billingReconciliations: [{ id: "recon-op-pg-storage-create", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", operationId: "op-pg-storage-create", status: "reconciling", statusLabel: "对账中", source: "portal_production_cloud_operation" }],
+    auditEvents: [{ id: "audit-op-pg-storage-create", tenantId: "tenant-pg-cloud", userId: "user-pg-cloud", workspaceId: "workspace-pg-cloud", resourceBindingId: "rb-pg-cloud", operationId: "op-pg-storage-create", action: "portal_cloud_operation_create_storage", type: "portal_cloud_operation_create_storage", status: "succeeded", decision: "accepted", reason: "user_requested_portal_cloud_operation", createdAt: "2026-05-11T00:01:00.000Z" }],
     labSubscriptions: [],
     labPackageEvents: [],
     labStorageAddons: [],
@@ -223,6 +225,7 @@ assert.equal(snapshot.cloudOperationJobs[0].queueMode, "inline_worker", "cloud_o
 assert.equal(snapshot.fileSpaceEntitlements[0].capacityGb, 10, "file_space_read_mapping");
 assert.equal(snapshot.cloudResourceProjections[0].visibleSummary.resources.fileSpace.statusLabel, "可用", "projection_read_mapping");
 assert.equal(snapshot.billingReconciliations[0].statusLabel, "对账中", "billing_reconciliation_read_mapping");
+assert.equal(WRITE_TABLES.has("audit_events"), true, "audit_events_write_missing");
 
 console.log(JSON.stringify({
   ok: true,

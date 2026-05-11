@@ -954,6 +954,32 @@ function buildCloudOnboardingTaskPackets({ checkConfigPhase, defaultGatePhase, u
   ];
 }
 
+function buildBoardCurrentTaskPacket(board = {}) {
+  return {
+    id: "portal-storage-create-evidence-review",
+    title: "Portal storage-create evidence review task packet",
+    phaseId: "CO-13",
+    phaseName: "Portal production integration",
+    status: board.authorizedStorageCreateCanaryDone ? "storage-create-canary-done" : "pending",
+    handoffTarget: "B",
+    requiredSmoke: [
+      "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+      "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+      "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    ],
+    userGate: "stop if real cloud scope expands beyond authorized storage-create",
+    requiresManualMergeDecision: true,
+    suggestedCommands: [
+      "node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+      "node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "git diff --check -- scripts docs/recovery services/portal",
+    ],
+    allowedActions: ["review storage-create evidence", "record findings", "decide whether manual ff-only absorption is allowed"],
+    forbiddenActions: sharedBoundaries,
+  };
+}
+
 async function readCloudOnboardingData() {
   const [boardSource, statusSource] = await Promise.all([
     readRepoText(cloudOnboardingBoardPath),
@@ -982,22 +1008,24 @@ async function createCloudOnboardingStatusPack() {
     defaultGatePhase,
     userLivePhase,
   });
+  const boardCurrentTaskPacket = buildBoardCurrentTaskPacket(board);
+  const currentTaskPacket = board.authorizedStorageCreateCanaryDone ? boardCurrentTaskPacket : null;
 
   return {
     ok: true,
     command: "cloud-onboarding status",
     programId: statusTable.programId || board.programId,
     currentPhase: board.currentPhase,
-    activeLane: phaseLabel(activePhase),
-    nextLane: phaseLabel(nextPhase),
-    handoffTarget: handoffTargetForCloudOwner(activePhase?.owner),
-    requiredSmoke: activePhase?.requiredSmoke || [],
-    userGate: activePhase?.userGate || "",
+    activeLane: board.currentLane || phaseLabel(activePhase),
+    nextLane: board.nextLane || phaseLabel(nextPhase),
+    handoffTarget: currentTaskPacket?.handoffTarget || handoffTargetForCloudOwner(activePhase?.owner),
+    requiredSmoke: currentTaskPacket?.requiredSmoke || activePhase?.requiredSmoke || [],
+    userGate: currentTaskPacket?.userGate || activePhase?.userGate || "",
     phaseSummary: buildCloudOnboardingPhaseSummary(phases),
     runnablePath: cloudOnboardingRunnablePath,
     serialRealSideEffects: board.serialRealSideEffects || [],
     handoffGuidance: cloudOnboardingHandoffGuidance(),
-    taskPackets,
+    taskPackets: [boardCurrentTaskPacket, ...taskPackets],
     sourceDocuments: {
       executionBoard: cloudOnboardingBoardPath,
       statusTable: cloudOnboardingStatusTablePath,
@@ -1017,7 +1045,8 @@ async function createCloudOnboardingStatusPack() {
 
 async function createCloudOnboardingNextPack() {
   const statusPack = await createCloudOnboardingStatusPack();
-  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.phaseId && statusPack.activeLane === phaseLabel(packet))
+  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.id === "portal-storage-create-evidence-review")
+    || statusPack.taskPackets.find((packet) => packet.phaseId && statusPack.activeLane === phaseLabel(packet))
     || statusPack.taskPackets.find((packet) => packet.status === "active")
     || statusPack.taskPackets[0];
   return {

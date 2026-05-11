@@ -4,11 +4,11 @@ program id: v22-cloud-onboarding
 
 current trunk anchor: 148f5a0
 
-current phase: CO-06 remains needs-user-authorization
+current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization
 
 本文件是 v22 cloud onboarding 的中央执行板。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
-本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前分支只写 docs/smoke，不实现业务代码，不读 secret，不调用真实云，不改 deploy，不 build/push/kubectl。
+本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前分支实现 Portal production storage-create loop，并在用户明确提供 Package C mutation secret file path 后完成最小 real Tencent storage-create canary。它不改 deploy，不 build/push/kubectl，不做 compute/delete/deploy；canary 证据只写 `.runtime`，不进 git。
 
 关联状态表：`docs/recovery/cloud-onboarding-status-table.md`。
 
@@ -16,9 +16,9 @@ current phase: CO-06 remains needs-user-authorization
 
 - program id: v22-cloud-onboarding
 - current trunk anchor: 148f5a0
-- current phase: CO-06 remains needs-user-authorization
-- current lane: readonly-live authorization wait
-- next lane: readonly-report-review after explicit user authorization and redacted report
+- current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization
+- current lane: Portal production storage-create evidence review
+- next lane: B review / absorption decision, then separate authorization for compute/delete/deploy if needed
 - workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - execution board owner: B for board truth, A for implementation task packages, user for live authorization
@@ -126,11 +126,11 @@ user confirmation gates:
 | R-03 readonly preflight | CC-02 | readonly_connection | path defined; execution remains separate |
 | R-04 readonly live report | CC-02 | readonly_connection | path defined; needs explicit authorization |
 | R-05 Portal canonical operation smoke | CC-03 | local_contract_smoke | test-only fake-live bridge and production storage-create fake-live loop covered; production route uses inline operation job and PostgreSQL canonical store shape |
-| R-06 storage dry-run | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
-| R-07 authorized storage execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
+| R-06 storage dry-run | CC-04 | authorized_resource_lifecycle | passed for minimal storage-create canary; report under `.runtime/v22-cloud-lifecycle/` |
+| R-07 authorized storage execution | CC-04 | authorized_resource_lifecycle | passed for minimal storage-create canary via Portal production API and direct Package C runner; report under `.runtime/v22-cloud-lifecycle/` |
 | R-08 compute dry-run | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-09 authorized compute execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
-| R-10 Portal projection smoke | CC-03 | local_contract_smoke | test-only projection and production sanitized projection covered locally; real Tencent storage-create canary still requires explicit Package C mutation secret file path |
+| R-10 Portal projection smoke | CC-03 | local_contract_smoke | test-only projection, production sanitized projection, and real storage-create live projection covered for the storage-create sub-loop |
 | R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
 | R-13 COS billing checkpoint | CC-06 | readonly_connection | path defined; execution remains separate |
@@ -152,7 +152,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
 {
   "programId": "v22-cloud-onboarding",
   "currentTrunkAnchor": "148f5a0",
-  "currentPhase": "CO-06 remains needs-user-authorization",
+  "currentPhase": "CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization",
   "workflowModel": "authorized_cloud_connection_loop",
   "oldCoPhaseStateMachineRetired": true,
   "activeGatePrefix": "CC",
@@ -164,12 +164,13 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     "C04",
     "CO-01..CO-14"
   ],
-  "currentLane": "readonly-live authorization wait",
-  "nextLane": "readonly-report-review after explicit user authorization and redacted report",
+  "currentLane": "Portal production storage-create evidence review",
+  "nextLane": "B review / absorption decision, then separate authorization for compute/delete/deploy if needed",
   "workflowContract": "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "statusTable": "docs/recovery/cloud-onboarding-status-table.md",
   "readsSecretNow": false,
   "callsRealCloudNow": false,
+  "authorizedStorageCreateCanaryDone": true,
   "modifiesDeployNow": false,
   "runsBuildPushKubectlNow": false,
   "automerges": false,

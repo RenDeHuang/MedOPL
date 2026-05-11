@@ -628,6 +628,31 @@ export async function writeBillingReconciliations({ client, pgTableName, db }) {
   }
 }
 
+export async function writeAuditEvents({ client, pgTableName, db }) {
+  for (const row of db.auditEvents || []) {
+    const eventType = row.type || row.action || "";
+    const occurredAt = row.occurredAt || row.createdAt || new Date().toISOString();
+    await client.query(`INSERT INTO ${pgTableName("audit_events")} (id,type,user_id,operator_id,workspace_id,run_id,detail_json,occurred_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT (id) DO UPDATE SET
+        type=EXCLUDED.type,
+        user_id=EXCLUDED.user_id,
+        operator_id=EXCLUDED.operator_id,
+        workspace_id=EXCLUDED.workspace_id,
+        run_id=EXCLUDED.run_id,
+        detail_json=EXCLUDED.detail_json,
+        occurred_at=EXCLUDED.occurred_at`, [
+      row.id,
+      eventType,
+      row.userId || "",
+      row.operatorId || row.userId || "",
+      row.workspaceId || "",
+      row.runId || "",
+      JSON.stringify(row),
+      occurredAt,
+    ]);
+  }
+}
+
 export async function replaceWorkspaceFiles({ client, pgTableName, db }) {
   await client.query(`DELETE FROM ${pgTableName("workspace_files")}`);
   for (const row of db.workspaceFiles || []) {

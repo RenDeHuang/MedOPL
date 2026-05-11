@@ -59,12 +59,12 @@ assertIncludesAll(board, [
   "v22 Cloud Onboarding Central Execution Board",
   "program id: v22-cloud-onboarding",
   "current trunk anchor: 148f5a0",
-  "current phase: CO-06 remains needs-user-authorization",
+  "current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization",
   "AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒",
   "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "docs/recovery/cloud-onboarding-status-table.md",
-  "不读 secret",
-  "不调用真实云",
+  "real Tencent storage-create canary",
+  "不做 compute/delete/deploy",
   "不改 deploy",
   "不 build/push/kubectl",
 ], "board_scope");
@@ -125,7 +125,7 @@ assertIncludesAll(status, [
   "| CO-10 | mutation SDK wrapper | pending |",
   "| CO-11 | minimal authorized create/release live | pending |",
   "| CO-12 | production deploy execution | pending |",
-  "| CO-13 | Portal production integration | pending | production Portal route",
+  "| CO-13 | Portal production integration | storage-create-canary-done | production Portal route",
   "| CO-14 | canary / QA / release status update | pending |",
 ], "status_current_truth");
 
@@ -139,7 +139,7 @@ assertIncludesAll(status, [
   "create/release dry-run: pending",
   "mutation wrapper: pending",
   "production deploy: pending",
-  "Portal production integration: local production API + PostgreSQL canonical store smoke done; real Tencent storage-create canary pending explicit Package C mutation secret file path",
+  "Portal production integration: local production API + PostgreSQL canonical store smoke done; user-authorized real Tencent `storage-create` canary done for the storage-create sub-loop only",
   "canary/QA/release status: pending",
 ], "status_plain_language_summary");
 
@@ -186,7 +186,7 @@ for (const phase of statusData.phases) {
   ]) {
     assert(Object.hasOwn(phase, key), `status_phase_${phase.phaseId}_missing:${key}`);
   }
-  assert(["done", "active", "pending", "blocked", "needs-user-authorization"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
+  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
 }
 
 const statusById = Object.fromEntries(statusData.phases.map((phase) => [phase.phaseId, phase]));
@@ -227,21 +227,22 @@ assertIncludesAll(
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
 assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
 assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
-assert.equal(boardData.currentPhase, "CO-06 remains needs-user-authorization", "board_current_phase_must_match_co06_wait");
-assert.equal(boardData.currentLane, "readonly-live authorization wait", "board_current_lane_must_match_co06_wait");
-assert.equal(boardData.nextLane, "readonly-report-review after explicit user authorization and redacted report", "board_next_lane_must_match_report_review");
+assert.equal(boardData.currentPhase, "CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization", "board_current_phase_must_record_storage_create_canary");
+assert.equal(boardData.currentLane, "Portal production storage-create evidence review", "board_current_lane_must_match_storage_create_review");
+assert.equal(boardData.nextLane, "B review / absorption decision, then separate authorization for compute/delete/deploy if needed", "board_next_lane_must_match_b_review");
+assert.equal(boardData.authorizedStorageCreateCanaryDone, true, "board_must_record_storage_create_canary_done");
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
 assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");
 assert(statusById["CO-08"].nextAction.includes("wait for official SDK live report and B acceptance"), "co08_next_action_must_wait_for_b_acceptance");
-assert.equal(statusById["CO-13"].status, "pending", "co13_must_remain_pending_until_real_canary");
+assert.equal(statusById["CO-13"].status, "storage-create-canary-done", "co13_must_record_storage_create_canary_done");
 assertIncludesAll(
   `${statusById["CO-13"].evidenceCommitOrReport} ${statusById["CO-13"].nextAction} ${statusById["CO-13"].requiredSmoke.join(" ")} ${statusById["CO-13"].userGate}`,
   [
     "production Portal route",
     "PostgreSQL canonical store shape",
-    "MVP suite coverage pass locally",
-    "real Tencent storage-create canary has not run",
-    "explicit Package C mutation secret file path",
+    "MVP suite coverage",
+    "user-authorized real Tencent storage-create canary passed",
+    "do not widen to compute/delete/deploy without a new explicit authorization and gate",
     "smoke-test-v22-portal-production-cloud-operation-loop.mjs",
     "smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
   ],

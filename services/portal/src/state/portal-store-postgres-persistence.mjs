@@ -17,6 +17,7 @@ import {
   writeCloudResourceProjections,
   writeComputeAllocations,
   writeFileSpaceEntitlements,
+  writeAuditEvents,
   writeLedgerEntries,
   writeResourceOrderEvents,
   writeResourceOrders,
@@ -481,6 +482,7 @@ export async function writePortalPostgresSnapshot({
     await writeFileSpaceEntitlements({ client, pgTableName, db });
     await writeCloudResourceProjections({ client, pgTableName, db });
     await writeBillingReconciliations({ client, pgTableName, db });
+    await writeAuditEvents({ client, pgTableName, db });
     await writePortalPostgresLabSnapshot({ client, pgTableName, db });
     await replaceUserSandboxes({ client, pgTableName, db });
     await replaceGroups({ client, pgTableName, db });
