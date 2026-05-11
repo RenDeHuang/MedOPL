@@ -271,6 +271,9 @@ try {
   assert.equal(buildPushOut.summary.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.registry?.digest || "")), true, "build_push_digest");
   assert.equal(buildPushOut.summary.targets.every((target) => target.registry?.acceptedPreflightId.includes("****")), true, "build_push_preflight_id_must_be_masked");
 
+  const deployDryRunWithoutDigests = runRunner(["--deploy-dry-run", "--provider-mode", "fake-live", ...baseArgs(goodSecretFile), "--release-plan", releasePlanFile], 1);
+  assert.equal(parseStdout(deployDryRunWithoutDigests.stdout).summary.blockedReason, "deploy_image_digests_file_required", "deploy_dry_run_must_require_image_digests_file");
+
   const deployDryRun = runRunner(["--deploy-dry-run", "--provider-mode", "fake-live", ...baseArgs(goodSecretFile), "--release-plan", releasePlanFile, "--image-digests-file", buildPushOut.reportPath]);
   const deployDryRunOut = parseStdout(deployDryRun.stdout);
   reportPathsToCleanup.push(deployDryRunOut.reportPath);

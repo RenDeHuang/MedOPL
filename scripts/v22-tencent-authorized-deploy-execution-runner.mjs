@@ -697,6 +697,9 @@ async function executeMode(options = {}, env = {}, plan = {}) {
   }
 
   if (mode === "deploy-dry-run") {
+    if (!text(options.imageDigestsFile)) {
+      return { status: 1, reportPath: null, summary: blockedSummary({ options, env, plan, blockedReason: "deploy_image_digests_file_required" }) };
+    }
     for (const target of summary.targets) {
       const planTarget = plan.targets.find((item) => text(item.component) === target.component);
       const digestCheck = validateDigest(target.imageDigest);

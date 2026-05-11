@@ -135,6 +135,31 @@ It does not verify:
 
 Real D2 canary requires explicit user authorization for deploy secret read, docker build, docker push, registry scope, selected release plan and `.runtime` report location.
 
+## Package D Deploy Dry-Run Gate Verification
+
+`cloud-lane/feat/v22-package-d-deploy-dry-run-gate` is the long-lived cloud-lane D3a branch. It is stacked on D2 commit `7fbc632` and must be reviewed with D1 and D2 before trunk absorption.
+
+It verifies:
+
+- D3a only covers R-16: deploy dry-run gate.
+- `deploy-dry-run` must explicitly receive `imageDigestsFile` from an accepted D2 build-push report.
+- missing `imageDigestsFile` must fail-closed with `deploy_image_digests_file_required`.
+- fake-live reports record per-target digest consumption, dry-run verified shape, rollback image known shape and sanitized deploy target summary.
+- D3a continues to inherit D1 targetClass / owner guard and D2 preflight-before-build-push validation.
+
+It does not verify:
+
+- real kubeconfig read.
+- real `kubectl get deployment`.
+- real server-side dry-run.
+- `kubectl apply`.
+- rollout.
+- runtime smoke.
+- rollback evidence from a real deployment.
+- Package C compute/storage lifecycle.
+
+Real D3a canary requires explicit user authorization for deploy secret read, kubeconfig reference, cluster/namespace/workload/container scope, selected release plan, D2 digest report and `.runtime` deploy dry-run report location.
+
 ## Forbidden Actions By Layer
 
 - contract smoke, loader smoke, shape smoke and preflight smoke must not read secret, source env, call real cloud, create/release resources, build/push/kubectl, or run live-test.

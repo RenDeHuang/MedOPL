@@ -12,7 +12,7 @@ current phase: CO-13 storage-create canary done; CO-06 readonly live remains sep
 
 Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-discovery` 分支，model: gpt-5.4。该 discovery 只回写已知事实和 owner guard blocker：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不是 Package D rollout，does not prove build/push/kubectl/deploy completion，不代表 deploy/build/push/kubectl 已完成。
 
-Cloud-lane Package D stack is intentionally long-lived. `cloud-lane/feat/v22-package-d-image-push-gate` is based on D1 commit `eb23e02` and records the D2 R-14/R-15 image push gate. It must remain a cloud-lane branch until D1/D2/D3 are validated together or explicitly abandoned. B should review the stack as D1 -> D2 -> D3, not absorb D1 early if later gates require D1 correction.
+Cloud-lane Package D stack is intentionally long-lived. `cloud-lane/feat/v22-package-d-deploy-dry-run-gate` is based on D2 commit `7fbc632` and records the D3a R-16 deploy dry-run gate. It must remain a cloud-lane branch until D1/D2/D3 are validated together or explicitly abandoned. B should review the stack as D1 -> D2 -> D3, not absorb D1 early if later gates require D1 correction.
 
 关联状态表：`docs/recovery/cloud-onboarding-status-table.md`。
 
@@ -23,10 +23,10 @@ Cloud-lane Package D stack is intentionally long-lived. `cloud-lane/feat/v22-pac
 - current phase: CO-13 storage-create canary done; CO-06 readonly live remains separate and still needs user authorization
 - current lane: Portal production storage-create evidence review
 - next lane: B review / absorption decision, then separate authorization for compute/delete/deploy if needed
-- cloud-lane branch: `cloud-lane/feat/v22-package-d-image-push-gate`
+- cloud-lane branch: `cloud-lane/feat/v22-package-d-deploy-dry-run-gate`
 - cloud-lane model: `gpt-5.4`
-- cloud-lane stack base: D1 `feat/v22-opl-deployment-ownership-release-plan` at `eb23e02`
-- cloud-lane status: D2 image push gate in progress; no real build/push/kubectl authorized by this status
+- cloud-lane stack base: D2 `cloud-lane/feat/v22-package-d-image-push-gate` at `7fbc632`
+- cloud-lane status: D3a deploy dry-run gate in progress; no real kubectl authorized by this status
 - workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - execution board owner: B for board truth, A for implementation task packages, user for live authorization
@@ -145,7 +145,7 @@ user confirmation gates:
 | R-13 COS billing checkpoint | CC-06 | readonly_connection | path defined; execution remains separate |
 | R-14 TCR repository/tag preflight | CC-07 | deploy_and_production_integration | path defined; OPL deployment ownership / release plan contract defines target classes; real preflight still requires reviewed plan and authorization |
 | R-15 multi-image build and push unique test tag | CC-07 | deploy_and_production_integration | D2 cloud-lane runner gate requires accepted R-14 preflight id before build-push; real push blocked until deploy secret/build/push authorization |
-| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | path defined; owner guard must pass before deploy dry-run can become apply readiness |
+| R-16 deploy dry-run | CC-07 | deploy_and_production_integration | D3a cloud-lane runner gate requires D2 build-push image digest report before deploy dry-run; real kubectl dry-run blocked until deploy secret/kubeconfig authorization |
 | R-17 authorized deploy rollout | CC-07 | deploy_and_production_integration | path defined; real kubectl blocked until release plan and owner guard pass |
 | R-18 runtime smoke | CC-07 | deploy_and_production_integration | path defined; execution remains separate |
 | R-19 release compute | CC-05 | authorized_resource_lifecycle | path defined; runner in later Package C branch |
@@ -225,13 +225,13 @@ Discovery status:
   "currentLane": "Portal production storage-create evidence review",
   "nextLane": "B review / absorption decision, then separate authorization for compute/delete/deploy if needed",
   "cloudLane": {
-    "branch": "cloud-lane/feat/v22-package-d-image-push-gate",
+    "branch": "cloud-lane/feat/v22-package-d-deploy-dry-run-gate",
     "model": "gpt-5.4",
-    "baseCommit": "eb23e02",
+    "baseCommit": "7fbc632",
     "stack": [
       "D1: feat/v22-opl-deployment-ownership-release-plan",
       "D2: cloud-lane/feat/v22-package-d-image-push-gate",
-      "D3: pending deploy dry-run rollout runtime smoke"
+      "D3a: cloud-lane/feat/v22-package-d-deploy-dry-run-gate"
     ],
     "longLived": true,
     "absorbD1Early": false,
@@ -240,7 +240,12 @@ Discovery status:
       "R-15"
     ],
     "d2RealPushDone": false,
-    "requiresAcceptedPreflightBeforeBuildPush": true
+    "requiresAcceptedPreflightBeforeBuildPush": true,
+    "d3aScope": [
+      "R-16"
+    ],
+    "d3aRealKubectlDone": false,
+    "requiresImageDigestsBeforeDeployDryRun": true
   },
   "workflowContract": "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "statusTable": "docs/recovery/cloud-onboarding-status-table.md",

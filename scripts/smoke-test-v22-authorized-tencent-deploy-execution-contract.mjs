@@ -182,6 +182,8 @@ assertIncludesAll(contract, [
   ".runtime/v22-runtime-smoke/",
   "accepted-preflight-id",
   "deploy_accepted_preflight_required",
+  "imageDigestsFile",
+  "deploy_image_digests_file_required",
 ], "deploy_contract_artifacts");
 
 assertIncludesAll(contract, [
@@ -241,7 +243,9 @@ assert.equal(deployData.runner?.smoke, "scripts/smoke-test-v22-tencent-authorize
 assert.equal(deployData.runner?.liveGateSmoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs", "deploy_live_gate_smoke");
 assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("releasePlan"), "deploy_runner_release_plan_param");
 assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("acceptedPreflightId"), "deploy_runner_preflight_param");
+assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("imageDigestsFile"), "deploy_runner_image_digests_file_param");
 assert.equal(deployData.runner?.buildPushRequiresAcceptedPreflightId, true, "deploy_build_push_must_require_preflight");
+assert.equal(deployData.runner?.deployDryRunRequiresImageDigestsFile, true, "deploy_dry_run_must_require_image_digests_file");
 assert.equal(deployData.runner?.defaultProviderMode, "config-only", "deploy_runner_default_mode");
 assert.equal(deployData.runner?.realProviderMode, "real", "deploy_runner_real_mode");
 
@@ -286,6 +290,8 @@ assertIncludesAll(board + status + verificationMatrix, [
   "workspace_runtime_target",
   "cloud-lane/feat/v22-package-d-image-push-gate",
   "accepted R-14 preflight id",
+  "cloud-lane/feat/v22-package-d-deploy-dry-run-gate",
+  "D2 image digest report",
 ], "recovery_deploy_safety");
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");
@@ -301,6 +307,8 @@ assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, 
   "Package D 可以清空 bucket",
   "默认使用 latest",
   "real push done",
+  "rollout done",
+  "runtime smoke done",
 ], "deploy_forbidden_claims");
 
 assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, [

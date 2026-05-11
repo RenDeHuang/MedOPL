@@ -8,7 +8,7 @@ program id: v22-cloud-onboarding
 
 Package D / OPL Deployment Discovery 已作为独立 docs/status 分支记录：`docs/v22-package-d-opl-deploy-discovery`，model: gpt-5.4。该分支只写状态和 smoke：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不代表 Package D rollout，不代表 deploy/build/push/kubectl 已完成。
 
-Cloud-lane Package D stack must be preserved as a long-lived branch chain until D1/D2/D3 are reviewed together. Current cloud-lane branch: `cloud-lane/feat/v22-package-d-image-push-gate`, model: `gpt-5.4`, base: D1 `eb23e02`. D2 covers R-14/R-15 image push gate only; it does not authorize real build/push/kubectl.
+Cloud-lane Package D stack must be preserved as a long-lived branch chain until D1/D2/D3 are reviewed together. Current cloud-lane branch: `cloud-lane/feat/v22-package-d-deploy-dry-run-gate`, model: `gpt-5.4`, base: D2 `7fbc632`. D3a covers R-16 deploy dry-run gate only; it does not authorize real kubectl, rollout or runtime smoke.
 
 ## Plain Status Summary
 
@@ -23,6 +23,7 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 - production deploy: pending
 - Package D / OPL deployment discovery: owner guard blocker remains for discovered workloads; OPL deployment ownership / release plan contract now defines target classes for reviewed release plans before real rollout
 - Package D image push gate: D2 cloud-lane branch records R-14/R-15 preflight-before-build-push gate; real push still requires explicit authorization
+- Package D deploy dry-run gate: D3a cloud-lane branch records R-16 digest-before-deploy-dry-run gate; real kubectl still requires explicit authorization
 - Portal production integration: local production API + PostgreSQL canonical store smoke done; user-authorized real Tencent `storage-create` canary done for the storage-create sub-loop only
 - canary/QA/release status: pending
 
@@ -41,7 +42,7 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 | CO-09 | create/release dry-run plan | pending | pending | A | design no-mutation dry-run plan after readonly report review | `smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs`; `smoke-test-v22-authorized-tencent-create-release-contract.mjs` | stop if dry-run wants real cloud, mutation secret, charge, or ledger mutation |
 | CO-10 | mutation SDK wrapper | pending | pending | A | define fake-only mutation wrapper and gates | `smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs`; `smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs` | stop if mutation secret, real API, dependency change, build/push/kubectl, or deploy is needed |
 | CO-11 | minimal authorized create/release live | pending | pending | user | only after dry-run, wrapper, B review, and explicit user authorization | execution contract smoke; preflight dry-run diff; rollback/audit smoke | must explicitly authorize each real mutation, budget, tags, retry, rollback, and scope expansion |
-| CO-12 | production deploy execution | pending | Package D / OPL Deployment Discovery recorded candidate deployments and runtime surfaces, but no rollout: `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`; `portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter`; candidate labels are only `k8s-app/qcloud-app` for this purpose and lack owner guard. `v22-opl-deployment-ownership-release-plan-boundary.md` defines D1 target classes. `cloud-lane/feat/v22-package-d-image-push-gate` records D2 image push gate: R-15 build-push requires accepted R-14 preflight id. This is not Package D rollout and does not prove build/push/kubectl/deploy completion. | user | preserve cloud-lane stack; run D2 fake-live gate; with explicit authorization, run real TCR preflight / build-push; then continue to D3 deploy dry-run / rollout / runtime smoke | `smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs`; `smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`; deploy plan smoke; local build/deploy dry-run smoke; workflow gate review; `smoke-test-v22-package-d-opl-deploy-discovery-status.mjs` | must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback; fail-closed if real target metadata lacks required owner guard or R-15 lacks accepted R-14 preflight id |
+| CO-12 | production deploy execution | pending | Package D / OPL Deployment Discovery recorded candidate deployments and runtime surfaces, but no rollout: `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`; `portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter`; candidate labels are only `k8s-app/qcloud-app` for this purpose and lack owner guard. `v22-opl-deployment-ownership-release-plan-boundary.md` defines D1 target classes. `cloud-lane/feat/v22-package-d-image-push-gate` records D2 image push gate. `cloud-lane/feat/v22-package-d-deploy-dry-run-gate` records D3a deploy dry-run gate: R-16 deploy-dry-run requires D2 image digest report. This is not Package D rollout and does not prove build/push/kubectl/deploy completion. | user | preserve cloud-lane stack; run D3a fake-live gate; with explicit authorization, run real TCR preflight / build-push and kubectl server-side dry-run; then continue to D3b rollout / runtime smoke | `smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs`; `smoke-test-v22-package-d-image-push-gate.mjs`; `smoke-test-v22-package-d-deploy-dry-run-gate.mjs`; `smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`; deploy plan smoke; local build/deploy dry-run smoke; workflow gate review; `smoke-test-v22-package-d-opl-deploy-discovery-status.mjs` | must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback; fail-closed if real target metadata lacks required owner guard, R-15 lacks accepted R-14 preflight id, or R-16 lacks D2 image digest report |
 | CO-13 | Portal production integration | storage-create-canary-done | production Portal route `/portal/api/v22/cloud-operations/storage/create`, inline operation job, Package C dry-run/fake-live runner bridge, PostgreSQL canonical store shape, sanitized projection, MVP suite coverage, and user-authorized real Tencent storage-create canary passed; canary report refs stay under `.runtime/v22-cloud-lifecycle/` | A | B review the storage-create evidence and decide absorption; do not widen to compute/delete/deploy without a new explicit authorization and gate | `smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | stop if Portal would expose secret/internal/cloud console language, if billing truth would be altered without reconciliation, or if real cloud scope expands beyond authorized storage-create |
 | CO-14 | canary / QA / release status update | pending | pending | C | run QA/status update after Portal integration and authorized canary scope | canary/QA smoke; `smoke-test-v22-mvp-contract-suite.mjs`; workflow gate review | stop if QA needs live credentials, canary calls real service, or release status implies readiness |
 
@@ -53,6 +54,7 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 - owner guard blocker: Package D cannot use `k8s-app/qcloud-app`, deployment name, namespace, IP, creation time, or manual memory as ownership proof. 不能靠 deployment 名字、namespace、IP、创建时间、qcloud-app 或人工记忆判断归属。
 - contract issue resolved for config/fake-live gate: `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` defines `platform_service_target` and `workspace_runtime_target`; real target metadata and authorization are still required before build/push/kubectl.
 - D2 issue resolved for config/fake-live gate: `build-push` now requires `acceptedPreflightId`; real TCR preflight/build/push still requires deploy secret and explicit user authorization.
+- D3a issue resolved for config/fake-live gate: `deploy-dry-run` now requires `imageDigestsFile`; real kubectl server-side dry-run still requires deploy secret/kubeconfig and explicit user authorization.
 - This branch records the open issue only; it does not modify `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`.
 
 ## Runnable Gate Mapping
@@ -90,14 +92,14 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
   ],
   "workflowBoundaryEvidence": "148f5a0",
   "cloudLane": {
-    "branch": "cloud-lane/feat/v22-package-d-image-push-gate",
+    "branch": "cloud-lane/feat/v22-package-d-deploy-dry-run-gate",
     "model": "gpt-5.4",
-    "baseCommit": "eb23e02",
+    "baseCommit": "7fbc632",
     "longLived": true,
     "stack": [
       "D1: feat/v22-opl-deployment-ownership-release-plan",
       "D2: cloud-lane/feat/v22-package-d-image-push-gate",
-      "D3: pending deploy dry-run rollout runtime smoke"
+      "D3a: cloud-lane/feat/v22-package-d-deploy-dry-run-gate"
     ],
     "absorbD1Early": false,
     "d2Scope": [
@@ -105,7 +107,12 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "R-15"
     ],
     "d2RealPushDone": false,
-    "requiresAcceptedPreflightBeforeBuildPush": true
+    "requiresAcceptedPreflightBeforeBuildPush": true,
+    "d3aScope": [
+      "R-16"
+    ],
+    "d3aRealKubectlDone": false,
+    "requiresImageDigestsBeforeDeployDryRun": true
   },
   "packageDDiscovery": {
     "branch": "docs/v22-package-d-opl-deploy-discovery",
@@ -329,18 +336,20 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "phaseId": "CO-12",
       "phaseName": "production deploy execution",
       "status": "pending",
-      "evidenceCommitOrReport": "Package D / OPL Deployment Discovery recorded candidate deployments and runtime surfaces, but no rollout: default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl; portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter; candidate labels are only k8s-app/qcloud-app for this purpose and lack owner guard. v22-opl-deployment-ownership-release-plan-boundary.md defines D1 target classes. cloud-lane/feat/v22-package-d-image-push-gate records D2 image push gate: R-15 build-push requires accepted R-14 preflight id. This is not Package D rollout and does not prove build/push/kubectl/deploy completion.",
+      "evidenceCommitOrReport": "Package D / OPL Deployment Discovery recorded candidate deployments and runtime surfaces, but no rollout: default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl; portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter; candidate labels are only k8s-app/qcloud-app for this purpose and lack owner guard. v22-opl-deployment-ownership-release-plan-boundary.md defines D1 target classes. cloud-lane/feat/v22-package-d-image-push-gate records D2 image push gate. cloud-lane/feat/v22-package-d-deploy-dry-run-gate records D3a deploy dry-run gate: R-16 deploy-dry-run requires D2 image digest report. This is not Package D rollout and does not prove build/push/kubectl/deploy completion.",
       "owner": "user",
-      "nextAction": "preserve cloud-lane stack; run D2 fake-live gate; with explicit authorization, run real TCR preflight / build-push; then continue to D3 deploy dry-run / rollout / runtime smoke",
+      "nextAction": "preserve cloud-lane stack; run D3a fake-live gate; with explicit authorization, run real TCR preflight / build-push and kubectl server-side dry-run; then continue to D3b rollout / runtime smoke",
       "requiredSmoke": [
         "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
+        "scripts/smoke-test-v22-package-d-image-push-gate.mjs",
+        "scripts/smoke-test-v22-package-d-deploy-dry-run-gate.mjs",
         "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs",
         "deploy plan smoke",
         "local build/deploy dry-run smoke",
         "workflow gate review",
         "scripts/smoke-test-v22-package-d-opl-deploy-discovery-status.mjs"
       ],
-      "userGate": "must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback; fail-closed if real target metadata lacks required owner guard or R-15 lacks accepted R-14 preflight id"
+      "userGate": "must explicitly authorize deploy secret, docker build, docker push, kubectl, deploy secret/kubeconfig, registry, rollback; fail-closed if real target metadata lacks required owner guard, R-15 lacks accepted R-14 preflight id, or R-16 lacks D2 image digest report"
     },
     {
       "phaseId": "CO-13",

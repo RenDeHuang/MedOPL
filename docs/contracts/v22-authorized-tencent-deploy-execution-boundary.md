@@ -97,6 +97,22 @@ D2 的关键硬门：
 
 D2 不授权 kubectl dry-run、rollout、runtime smoke、rollback 或 Package C 计算/存储生命周期动作。
 
+## Cloud-Lane D3 Deploy Dry-Run Gate
+
+`cloud-lane/feat/v22-package-d-deploy-dry-run-gate` 是 Package D cloud-lane 的 D3a stack 分支。它基于 D2 `cloud-lane/feat/v22-package-d-image-push-gate` 的 `7fbc632`，只收敛 R-16 deploy dry-run gate。
+
+D3a 订阅 D1 owner gate 和 D2 image push gate。D3a 不能绕过 D2 的 digest readback evidence，也不能绕过 D1 的 target ownership guard。
+
+D3a 的关键硬门：
+
+- `--deploy-dry-run` 必须显式传入 `--image-digests-file <path>`。
+- `imageDigestsFile` 必须来自已审查的 D2 build-push report。
+- 缺失 `imageDigestsFile` 时 runner 必须返回 `deploy_image_digests_file_required`。
+- fake-live 只能证明 per-target digest consumption、dry-run report shape、rollback image known shape 和脱敏 evidence shape。
+- real mode 读取 deploy secret、读取 kubeconfig、调用 `kubectl get deployment` 和执行 server-side dry-run 都需要当前会话显式授权。
+
+D3a 不授权 `kubectl apply`、rollout、runtime smoke、rollback 或 Package C 计算/存储生命周期动作。
+
 ## TCR Scope
 
 只能操作指定 TCR registry / namespace，以及 release plan 中列出的 repositories。
@@ -234,6 +250,8 @@ Package D 的闭环链路：
 runner 必须显式传入 non-secret execution parameter：`--release-plan <json>`。release plan 缺 `runId`、`versionTag`、`targets[]`、`runtimeSmokeTargets[]`、任一 owner guard 字段、任一 target repository/build/deploy 字段或任一 smoke surface 覆盖关系都必须 fail-closed。`--provider-mode real` 才允许真实 `docker` / `kubectl`；默认和 smoke 只能走 `config-only` 或 `fake-live`。
 
 R-15 `build-push` 必须显式传入 `--accepted-preflight-id <id>`，并且该 id 必须来自已审查的 R-14 preflight report。缺失时 fail-closed。这样可以防止绕过 repository/tag/readback preflight 直接 build/push。`acceptedPreflightId` 只能作为脱敏 evidence 出现在 `.runtime` report；不能包含 raw registry credential、docker config、kubeconfig 或 secret path。
+
+R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且该文件必须来自已审查的 R-15 build-push report。缺失时 fail-closed，返回 `deploy_image_digests_file_required`。这样可以防止没有 pushed image digest 的 deploy dry-run 伪通过。
 
 只有 R-14..R-18 都通过，且 evidence 脱敏、rollback evidence 存在、没有越权 mutation，才能说 Package D 验证通过。
 
@@ -384,10 +402,13 @@ R-15 `build-push` 必须显式传入 `--accepted-preflight-id <id>`，并且该 
     "requiresExplicitNonSecretExecutionParameters": [
       "releasePlan",
       "acceptedPreflightId",
+      "imageDigestsFile",
       "acceptedDryRunId"
     ],
     "buildPushRequiresAcceptedPreflightId": true,
     "acceptedPreflightMissingReason": "deploy_accepted_preflight_required",
+    "deployDryRunRequiresImageDigestsFile": true,
+    "imageDigestsFileMissingReason": "deploy_image_digests_file_required",
     "defaultProviderMode": "config-only",
     "realProviderMode": "real"
   },
