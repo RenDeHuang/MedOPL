@@ -65,6 +65,10 @@ export function createPortalHttpDispatcher({
     }
     const isPostAuthEntry = req.method === "POST" && (url.pathname === "/login" || url.pathname === "/register");
     const hasPortalSessionCookie = String(req.headers?.cookie || "").includes("portal_session=");
+    if (isPortalApiRequest(url) && !hasPortalSessionCookie) {
+      sendJson(res, { ok: false, error: "unauthenticated", loginUrl: "/login" }, 401);
+      return;
+    }
     const currentUserMode = isPostAuthEntry && !hasPortalSessionCookie ? "auth_light" : "full";
     if (isPortalAppShellRequest) {
       const shellStartedAt = Date.now();
