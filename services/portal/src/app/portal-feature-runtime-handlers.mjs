@@ -28,6 +28,7 @@ export function createPortalFeatureRuntimeHandlers({
   oplLaunchService,
   path,
   portalInternalAuthAllowed,
+  portalConfig = {},
   productRuntimeMode = "platform_provisioned",
   readBody,
   readDb,
@@ -50,6 +51,12 @@ export function createPortalFeatureRuntimeHandlers({
     readBody,
     sendJson,
     writeDb,
+    enableCloudOperationProductionBridge: portalConfig?.PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE,
+    cloudOperationRunnerMode: portalConfig?.PORTAL_CLOUD_OPERATION_RUNNER_MODE,
+    cloudOperationRunnerScript: portalConfig?.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT,
+    cloudOperationSecretFile: portalConfig?.PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE,
+    cloudOperationComputeNodePoolRef: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF,
+    repoRoot: process.cwd().endsWith("/services/portal") ? "../.." : ".",
   });
   const handleOplRoutes = createOplRoutes({
     appendCookie,

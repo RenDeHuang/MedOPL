@@ -369,6 +369,7 @@ const {
   oplLaunchService,
   path,
   portalInternalAuthAllowed,
+  portalConfig,
   readBody,
   readDb,
   readJsonBody,

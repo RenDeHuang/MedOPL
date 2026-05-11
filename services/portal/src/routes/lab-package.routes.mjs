@@ -8,6 +8,24 @@ import {
 import { resolveLabEntitlement } from "../domain/lab-entitlements.mjs";
 import { ensureWallet } from "../domain/wallet-ledger.mjs";
 import { labActiveFreezeAmount } from "../domain/lab-billing-policy.mjs";
+import { executePortalProductionCloudOperation } from "../domain/portal-cloud-operation-production.mjs";
+
+const PACKAGE_CLOUD_PLANS = Object.freeze({
+  starter: Object.freeze({
+    planId: "starter_2c4g_10gb",
+    fileSpaceGb: 10,
+    computeUnits: 1,
+    targetDesiredCapacity: 1,
+  }),
+  pro: Object.freeze({
+    planId: "pro_8c16g_100gb",
+    fileSpaceGb: 100,
+    computeUnits: 2,
+    targetDesiredCapacity: 2,
+  }),
+});
+
+const DEFAULT_RUNNER_SCRIPT = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
 
 function subscriptionPackageName(subscription) {
   if (!subscription) return null;
@@ -28,6 +46,12 @@ export function createLabPackageRoutes({
   readBody,
   sendJson,
   writeDb,
+  enableCloudOperationProductionBridge = false,
+  cloudOperationRunnerMode = "fake-live",
+  cloudOperationRunnerScript = DEFAULT_RUNNER_SCRIPT,
+  cloudOperationSecretFile = "",
+  cloudOperationComputeNodePoolRef = "",
+  repoRoot = "",
 }) {
   async function readJsonBody(req, res) {
     try {
@@ -68,6 +92,173 @@ export function createLabPackageRoutes({
     await writeDb(db);
   }
 
+  function productionBridgeOptions(operationType) {
+    return {
+      repoRoot,
+      operationType,
+      runnerMode: cloudOperationRunnerMode,
+      runnerScript: cloudOperationRunnerScript || DEFAULT_RUNNER_SCRIPT,
+      secretFile: cloudOperationSecretFile,
+      computeNodePoolRef: cloudOperationComputeNodePoolRef,
+    };
+  }
+
+  function cloudPlanForPackage(packageId = "") {
+    return PACKAGE_CLOUD_PLANS[String(packageId || "").trim()] || null;
+  }
+
+  function currentFileSpaceGb(db = {}, resourceBindingId = "") {
+    const bindingId = String(resourceBindingId || "").trim();
+    const latest = (Array.isArray(db.fileSpaceEntitlements) ? db.fileSpaceEntitlements : [])
+      .filter((item) => String(item.resourceBindingId || "").trim() === bindingId)
+      .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")))[0] || null;
+    return Number(latest?.capacityGb || 0);
+  }
+
+  function cloudOperationPublicView(result = {}) {
+    return {
+      operationId: String(result.operation?.operationId || result.operation?.id || ""),
+      operationType: String(result.operation?.operationType || ""),
+      status: String(result.operation?.status || ""),
+      dryRunReportRef: String(result.operation?.dryRunReportRef || ""),
+      executionReportRef: String(result.operation?.executionReportRef || ""),
+    };
+  }
+
+  function packageCloudResult({ plan, resourceBindingId, operations }) {
+    return {
+      productionPortalConnected: true,
+      planId: plan.planId,
+      fileSpaceGb: plan.fileSpaceGb,
+      computeUnits: plan.computeUnits,
+      targetDesiredCapacity: plan.targetDesiredCapacity,
+      resourceBindingId,
+      operations: operations.map(cloudOperationPublicView),
+    };
+  }
+
+  function cloudFailureResult(result = {}) {
+    return {
+      ok: false,
+      status: result.status || 502,
+      error: result.error || "package_cloud_operation_failed",
+      businessMessage: "套餐资源开通失败，请稍后重试。",
+    };
+  }
+
+  function runCloudOperation(db, user, payload = {}, operationType = "") {
+    return executePortalProductionCloudOperation(db, user, payload, productionBridgeOptions(operationType));
+  }
+
+  function existingBindingForWorkspace(db = {}, user = {}, workspaceId = "") {
+    const userId = String(user?.id || "").trim();
+    const tenantId = String(user?.tenantId || user?.id || "").trim();
+    return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+      .filter((item) => String(item.userId || item.ownerUserId || "").trim() === userId)
+      .filter((item) => String(item.tenantId || item.ownerTenantId || "").trim() === tenantId)
+      .filter((item) => String(item.workspaceId || "").trim() === String(workspaceId || "").trim())
+      .filter((item) => !["retention_protected", "deleted"].includes(String(item.status || "").trim()))
+      .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")))[0] || null;
+  }
+
+  function runPackageOpenCloudOperations(db = {}, user = {}, { workspaceId = "", packageId = "" } = {}) {
+    const plan = cloudPlanForPackage(packageId);
+    if (!plan) return { ok: false, status: 422, error: "unsupported_package_cloud_plan" };
+    const existing = existingBindingForWorkspace(db, user, workspaceId);
+    if (existing) {
+      return runPackageUpgradeCloudOperations(db, user, { workspaceId, packageId });
+    }
+    const createStorage = runCloudOperation(db, user, {
+      workspaceId,
+      fileSpaceGb: plan.fileSpaceGb,
+      planId: plan.planId,
+    }, "create_storage");
+    if (!createStorage.ok) return cloudFailureResult(createStorage);
+    const resourceBindingId = String(createStorage.resourceBindingId || "");
+    const createCompute = runCloudOperation(db, user, {
+      workspaceId,
+      resourceBindingId,
+      computeUnits: plan.computeUnits,
+      targetDesiredCapacity: plan.targetDesiredCapacity,
+      planId: plan.planId,
+    }, "create_compute");
+    if (!createCompute.ok) return cloudFailureResult(createCompute);
+    return {
+      ok: true,
+      cloudOperationPackage: packageCloudResult({
+        plan,
+        resourceBindingId,
+        operations: [createStorage, createCompute],
+      }),
+    };
+  }
+
+  function runPackageUpgradeCloudOperations(db = {}, user = {}, { workspaceId = "", packageId = "" } = {}) {
+    const plan = cloudPlanForPackage(packageId);
+    if (!plan) return { ok: false, status: 422, error: "unsupported_package_cloud_plan" };
+    const binding = existingBindingForWorkspace(db, user, workspaceId);
+    const resourceBindingId = String(binding?.resourceBindingId || binding?.id || "");
+    if (!resourceBindingId) return { ok: false, status: 409, error: "resource_binding_required", businessMessage: "请先开通套餐，再进行升级。" };
+    const operations = [];
+    const currentCapacityGb = currentFileSpaceGb(db, resourceBindingId) || Number(binding.fileSpaceGb || 0);
+    if (currentCapacityGb < plan.fileSpaceGb) {
+      const expandStorage = runCloudOperation(db, user, {
+        workspaceId,
+        resourceBindingId,
+        fileSpaceGb: plan.fileSpaceGb,
+        planId: plan.planId,
+      }, "expand_storage");
+      if (!expandStorage.ok) return cloudFailureResult(expandStorage);
+      operations.push(expandStorage);
+    }
+    const expandCompute = runCloudOperation(db, user, {
+      workspaceId,
+      resourceBindingId,
+      computeUnits: plan.computeUnits,
+      targetDesiredCapacity: plan.targetDesiredCapacity,
+      planId: plan.planId,
+    }, "expand_compute");
+    if (!expandCompute.ok) return cloudFailureResult(expandCompute);
+    operations.push(expandCompute);
+    return {
+      ok: true,
+      cloudOperationPackage: packageCloudResult({
+        plan,
+        resourceBindingId,
+        operations,
+      }),
+    };
+  }
+
+  function runStorageAddonCloudOperation(db = {}, user = {}, { workspaceId = "", addStorageGb = 0 } = {}) {
+    const binding = existingBindingForWorkspace(db, user, workspaceId);
+    const resourceBindingId = String(binding?.resourceBindingId || binding?.id || "");
+    if (!resourceBindingId) return { ok: false, status: 409, error: "resource_binding_required", businessMessage: "请先开通套餐，再进行扩容。" };
+    const currentCapacityGb = currentFileSpaceGb(db, resourceBindingId) || Number(binding.fileSpaceGb || 0);
+    const targetFileSpaceGb = currentCapacityGb + Math.max(0, Number(addStorageGb || 0));
+    const plan = {
+      planId: String(binding.planId || binding.serverPlanId || "starter_2c4g_10gb"),
+      fileSpaceGb: targetFileSpaceGb,
+      computeUnits: Number(binding.computeUnits || 0),
+      targetDesiredCapacity: Number(binding.targetDesiredCapacity || 0),
+    };
+    const expandStorage = runCloudOperation(db, user, {
+      workspaceId,
+      resourceBindingId,
+      fileSpaceGb: targetFileSpaceGb,
+      planId: plan.planId,
+    }, "expand_storage");
+    if (!expandStorage.ok) return cloudFailureResult(expandStorage);
+    return {
+      ok: true,
+      cloudOperationPackage: packageCloudResult({
+        plan,
+        resourceBindingId,
+        operations: [expandStorage],
+      }),
+    };
+  }
+
   async function handleListPackages({ req, res, url }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/lab-packages") return false;
     sendJson(res, {
@@ -105,6 +296,7 @@ export function createLabPackageRoutes({
     const payload = await readJsonBody(req, res);
     if (!payload) return true;
     const workspaceId = String(payload.workspaceId || payload.task || "default").trim() || "default";
+    const labStateBefore = snapshotLabBillingState(db);
     const result = activateLabSubscription(db, {
       user,
       workspaceId,
@@ -120,10 +312,24 @@ export function createLabPackageRoutes({
       }, result.status || 400);
       return true;
     }
+    let packageCloud = null;
+    if (enableCloudOperationProductionBridge) {
+      packageCloud = runPackageOpenCloudOperations(db, user, { workspaceId, packageId: payload.packageId });
+      if (!packageCloud.ok) {
+        rollbackLabBillingState(db, labStateBefore);
+        sendJson(res, {
+          ok: false,
+          error: packageCloud.error,
+          businessMessage: packageCloud.businessMessage || "套餐资源开通失败，请稍后重试。",
+        }, packageCloud.status || 400);
+        return true;
+      }
+    }
     await persistLabBillingState(db, result);
     sendJson(res, {
       ok: true,
       created: result.created,
+      ...(packageCloud?.cloudOperationPackage ? { cloudOperationPackage: packageCloud.cloudOperationPackage } : {}),
       ...subscriptionPayload(db, user, result.subscription, workspaceId),
     }, result.created ? 201 : 200);
     return true;
@@ -136,6 +342,7 @@ export function createLabPackageRoutes({
     const subscription = payload.subscriptionId
       ? { id: String(payload.subscriptionId) }
       : currentLabSubscription(db, { user, workspaceId });
+    const labStateBefore = snapshotLabBillingState(db);
     const result = upgradeLabSubscription(db, {
       user,
       subscriptionId: subscription?.id || "",
@@ -151,10 +358,24 @@ export function createLabPackageRoutes({
       }, result.status || 400);
       return true;
     }
+    let packageCloud = null;
+    if (enableCloudOperationProductionBridge) {
+      packageCloud = runPackageUpgradeCloudOperations(db, user, { workspaceId: result.subscription.workspaceId, packageId: payload.packageId });
+      if (!packageCloud.ok) {
+        rollbackLabBillingState(db, labStateBefore);
+        sendJson(res, {
+          ok: false,
+          error: packageCloud.error,
+          businessMessage: packageCloud.businessMessage || "套餐资源升级失败，请稍后重试。",
+        }, packageCloud.status || 400);
+        return true;
+      }
+    }
     await persistLabBillingState(db, result);
     sendJson(res, {
       ok: true,
       created: result.created,
+      ...(packageCloud?.cloudOperationPackage ? { cloudOperationPackage: packageCloud.cloudOperationPackage } : {}),
       ...subscriptionPayload(db, user, result.subscription, result.subscription.workspaceId),
     });
     return true;
@@ -164,6 +385,7 @@ export function createLabPackageRoutes({
     const payload = await readJsonBody(req, res);
     if (!payload) return true;
     const subscription = resolveTargetSubscription(db, user, payload);
+    const labStateBefore = snapshotLabBillingState(db);
     const result = purchaseLabStorageAddon(db, {
       user,
       subscriptionId: subscription?.id || "",
@@ -178,11 +400,28 @@ export function createLabPackageRoutes({
       }, result.status || 400);
       return true;
     }
+    let packageCloud = null;
+    if (enableCloudOperationProductionBridge) {
+      packageCloud = runStorageAddonCloudOperation(db, user, {
+        workspaceId: result.subscription.workspaceId,
+        addStorageGb: Number(payload.storageGb ?? payload.addStorageGb ?? 100),
+      });
+      if (!packageCloud.ok) {
+        rollbackLabBillingState(db, labStateBefore);
+        sendJson(res, {
+          ok: false,
+          error: packageCloud.error,
+          businessMessage: packageCloud.businessMessage || "存储资源扩容失败，请稍后重试。",
+        }, packageCloud.status || 400);
+        return true;
+      }
+    }
     await persistLabBillingState(db, result);
     sendJson(res, {
       ok: true,
       created: result.created,
       addon: result.addon,
+      ...(packageCloud?.cloudOperationPackage ? { cloudOperationPackage: packageCloud.cloudOperationPackage } : {}),
       ...subscriptionPayload(db, user, result.subscription, result.subscription.workspaceId),
     }, result.created ? 201 : 200);
     return true;
@@ -224,6 +463,22 @@ export function createLabPackageRoutes({
       return upgradeLabSubscription(db, { ...input, subscriptionId: subscription.id });
     }
     return activateLabSubscription(db, { ...input, workspaceId });
+  }
+
+  function snapshotLabBillingState(db = {}) {
+    return {
+      labSubscriptions: JSON.parse(JSON.stringify(Array.isArray(db.labSubscriptions) ? db.labSubscriptions : [])),
+      labPackageEvents: JSON.parse(JSON.stringify(Array.isArray(db.labPackageEvents) ? db.labPackageEvents : [])),
+      labStorageAddons: JSON.parse(JSON.stringify(Array.isArray(db.labStorageAddons) ? db.labStorageAddons : [])),
+      labDailyCharges: JSON.parse(JSON.stringify(Array.isArray(db.labDailyCharges) ? db.labDailyCharges : [])),
+    };
+  }
+
+  function rollbackLabBillingState(db = {}, snapshot = {}) {
+    db.labSubscriptions = JSON.parse(JSON.stringify(Array.isArray(snapshot.labSubscriptions) ? snapshot.labSubscriptions : []));
+    db.labPackageEvents = JSON.parse(JSON.stringify(Array.isArray(snapshot.labPackageEvents) ? snapshot.labPackageEvents : []));
+    db.labStorageAddons = JSON.parse(JSON.stringify(Array.isArray(snapshot.labStorageAddons) ? snapshot.labStorageAddons : []));
+    db.labDailyCharges = JSON.parse(JSON.stringify(Array.isArray(snapshot.labDailyCharges) ? snapshot.labDailyCharges : []));
   }
 
   function resolveTargetSubscription(db, user, payload = {}) {

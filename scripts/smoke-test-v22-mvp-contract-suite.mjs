@@ -120,6 +120,7 @@ const smokeScripts = [
   ["smoke-test-v22-portal-web-route-alignment", "scripts/smoke-test-v22-portal-web-route-alignment.mjs"],
   ["smoke-test-v22-portal-api-auth-boundary", "scripts/smoke-test-v22-portal-api-auth-boundary.mjs"],
   ["smoke-test-v22-portal-package-surface-isolation", "scripts/smoke-test-v22-portal-package-surface-isolation.mjs"],
+  ["smoke-test-v22-portal-package-click-cloud-resource-loop", "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs"],
   ["smoke-test-v22-portal-frontend-surface-composables", "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs"],
   ["smoke-test-v22-opl-work-message-file-run-flow", "scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs"],
   ["smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow", "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs"],

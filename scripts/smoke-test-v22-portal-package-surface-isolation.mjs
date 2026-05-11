@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises";
 const packagesView = await readFile("services/portal/frontend/src/views/packages/PackagesView.vue", "utf8");
 const packageSurface = await readFile("services/portal/frontend/src/composables/usePackageSurface.ts", "utf8");
 const apiSource = await readFile("services/portal/frontend/src/api/portal/lab.ts", "utf8");
+const labRouteSource = await readFile("services/portal/src/routes/lab-package.routes.mjs", "utf8");
+const featureRuntimeSource = await readFile("services/portal/src/app/portal-feature-runtime-handlers.mjs", "utf8");
 
 assert(packagesView.includes('import { usePackageSurface } from "@/composables/usePackageSurface"'), "package_view_must_use_package_surface_composable");
 assert.equal(packagesView.includes("@/api/portal/lab"), false, "package_view_must_not_import_lab_api_directly");
@@ -72,9 +74,17 @@ assert.equal(
 assert(apiSource.includes('"/lab-packages"'), "package_api_must_keep_catalog_endpoint");
 assert(apiSource.includes('"/lab-subscription"'), "package_api_must_keep_subscription_endpoint");
 assert(apiSource.includes('"/lab-entitlement"'), "package_api_must_keep_entitlement_endpoint");
+assert(labRouteSource.includes("executePortalProductionCloudOperation"), "lab_package_route_must_bridge_to_production_cloud_operation");
+assert(labRouteSource.includes("enableCloudOperationProductionBridge"), "lab_package_route_must_gate_production_cloud_bridge");
+assert(labRouteSource.includes("runPackageOpenCloudOperations"), "lab_package_route_must_open_cloud_resources_for_package_click");
+assert(labRouteSource.includes("runPackageUpgradeCloudOperations"), "lab_package_route_must_upgrade_cloud_resources_for_package_click");
+assert(labRouteSource.includes("runStorageAddonCloudOperation"), "lab_package_route_must_expand_storage_for_package_click");
+assert(labRouteSource.includes("cloudOperationPackage"), "lab_package_route_must_return_sanitized_cloud_operation_package_summary");
+assert(featureRuntimeSource.includes("PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE"), "feature_runtime_must_pass_cloud_bridge_env_to_lab_package_route");
+assert(featureRuntimeSource.includes("PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE"), "feature_runtime_must_pass_package_c_secret_file_to_lab_package_route");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_portal_package_surface_isolation",
-  isolatedSurfaces: ["catalog", "subscription", "entitlement"],
+  isolatedSurfaces: ["catalog", "subscription", "entitlement", "production_cloud_operation_bridge"],
 }, null, 2));
