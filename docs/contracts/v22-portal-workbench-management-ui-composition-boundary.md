@@ -279,6 +279,11 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
       "state_composables",
       "contract_harness"
     ],
+    "layoutProtocol": [
+      "DashboardPageLayout",
+      "TablePageLayout",
+      "DetailPageLayout"
+    ],
     "tokenSources": [
       "services/portal/frontend/tailwind.config.ts",
       "services/portal/frontend/src/style.css"

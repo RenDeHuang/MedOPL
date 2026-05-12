@@ -4,69 +4,87 @@
       <div v-if="summaryLoading && !summaryPayload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单摘要...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
       <template v-else-if="payload">
-        <BillingHero
-          :billing-export-href="billingExportHref"
-          :micro-money="microMoney"
-          :money="money"
-          :payload="payload"
-          :task-export-href="taskExportHref"
-        />
+        <DashboardPageLayout>
+          <template #hero>
+            <BillingHero
+              :billing-export-href="billingExportHref"
+              :micro-money="microMoney"
+              :money="money"
+              :payload="payload"
+              :task-export-href="taskExportHref"
+            />
+          </template>
 
-        <BillingCostBreakdownPanel
-          :component-cost-hint="componentCostHint"
-          :micro-money="microMoney"
-          :payload="payload"
-          :source-backfilled-value="sourceBackfilledValue"
-          :source-backfill-hint="sourceBackfillHint"
-        />
+          <template #metrics>
+            <BillingCostBreakdownPanel
+              :component-cost-hint="componentCostHint"
+              :micro-money="microMoney"
+              :payload="payload"
+              :source-backfilled-value="sourceBackfilledValue"
+              :source-backfill-hint="sourceBackfillHint"
+            />
+          </template>
 
-        <BillingTrendAndFilterPanel
-          :current-from="payload.filter.from"
-          :current-to="payload.filter.to"
-          :filter-from="filterDraft.from"
-          :filter-to="filterDraft.to"
-          :loading="detailsLoading && !detailsPayload"
-          :trend-chart-data="trendChartData"
-          @update:filter-from="filterDraft.from = $event"
-          @update:filter-to="filterDraft.to = $event"
-          @apply="applyFilter"
-          @reset="resetFilter"
-        />
+          <template #primary>
+            <TablePageLayout>
+              <template #filters>
+                <BillingTrendAndFilterPanel
+                  :current-from="payload.filter.from"
+                  :current-to="payload.filter.to"
+                  :filter-from="filterDraft.from"
+                  :filter-to="filterDraft.to"
+                  :loading="detailsLoading && !detailsPayload"
+                  :trend-chart-data="trendChartData"
+                  @update:filter-from="filterDraft.from = $event"
+                  @update:filter-to="filterDraft.to = $event"
+                  @apply="applyFilter"
+                  @reset="resetFilter"
+                />
+              </template>
 
-        <BillingWorkspaceCostPanel
-          :billing-query="billingQuery"
-          :items="payload.taskCosts"
-          :loading="detailsLoading && !detailsPayload"
-          :micro-money="microMoney"
-          :next-page="nextPage"
-          :pagination="payload.taskPagination"
-          :previous-page="previousPage"
-        />
+              <BillingWorkspaceCostPanel
+                :billing-query="billingQuery"
+                :items="payload.taskCosts"
+                :loading="detailsLoading && !detailsPayload"
+                :micro-money="microMoney"
+                :next-page="nextPage"
+                :pagination="payload.taskPagination"
+                :previous-page="previousPage"
+              />
+            </TablePageLayout>
+          </template>
 
-        <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_1fr]">
-          <BillingRunCostPanel
-            :billing-query="billingQuery"
-            :humanize-status="humanizeStatus"
-            :items="payload.runCosts"
-            :loading="detailsLoading && !detailsPayload"
-            :micro-money="microMoney"
-            :next-page="nextPage"
-            :pagination="payload.runPagination"
-            :previous-page="previousPage"
-            :status-badge="statusBadge"
-          />
+          <template #secondary>
+            <DetailPageLayout>
+              <template #primary>
+                <BillingRunCostPanel
+                  :billing-query="billingQuery"
+                  :humanize-status="humanizeStatus"
+                  :items="payload.runCosts"
+                  :loading="detailsLoading && !detailsPayload"
+                  :micro-money="microMoney"
+                  :next-page="nextPage"
+                  :pagination="payload.runPagination"
+                  :previous-page="previousPage"
+                  :status-badge="statusBadge"
+                />
+              </template>
 
-          <BillingLedgerPanel
-            :billing-query="billingQuery"
-            :humanize-ledger-type="humanizeLedgerType"
-            :items="payload.ledger"
-            :loading="detailsLoading && !detailsPayload"
-            :money="money"
-            :next-page="nextPage"
-            :pagination="payload.ledgerPagination"
-            :previous-page="previousPage"
-          />
-        </section>
+              <template #secondary>
+                <BillingLedgerPanel
+                  :billing-query="billingQuery"
+                  :humanize-ledger-type="humanizeLedgerType"
+                  :items="payload.ledger"
+                  :loading="detailsLoading && !detailsPayload"
+                  :money="money"
+                  :next-page="nextPage"
+                  :pagination="payload.ledgerPagination"
+                  :previous-page="previousPage"
+                />
+              </template>
+            </DetailPageLayout>
+          </template>
+        </DashboardPageLayout>
       </template>
     </div>
   </AppLayout>
@@ -75,6 +93,9 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
+import DashboardPageLayout from "@/layouts/DashboardPageLayout.vue";
+import DetailPageLayout from "@/layouts/DetailPageLayout.vue";
+import TablePageLayout from "@/layouts/TablePageLayout.vue";
 import BillingCostBreakdownPanel from "@/components/billing/BillingCostBreakdownPanel.vue";
 import BillingHero from "@/components/billing/BillingHero.vue";
 import BillingLedgerPanel from "@/components/billing/BillingLedgerPanel.vue";

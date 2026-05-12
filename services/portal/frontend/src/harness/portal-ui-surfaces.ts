@@ -7,6 +7,38 @@ export interface PortalUiSurface {
   invariants: string[];
 }
 
+export interface PortalUiLayout {
+  layoutId: string;
+  purpose: string;
+  slots: string[];
+  selector: string;
+  invariants: string[];
+}
+
+export const portalUiLayouts: PortalUiLayout[] = [
+  {
+    layoutId: "layout.dashboard_page",
+    purpose: "承载页面结论、指标和主要分区，让总览类页面先回答当前状态",
+    slots: ["hero", "metrics", "primary", "secondary"],
+    selector: '[data-layout-id="layout.dashboard_page"]',
+    invariants: ["hero 必须先于指标出现", "页面级状态不得散落在业务组件外"],
+  },
+  {
+    layoutId: "layout.table_page",
+    purpose: "承载筛选、列表和分页，让列表类页面保持固定信息顺序",
+    slots: ["header", "actions", "filters", "table", "pagination"],
+    selector: '[data-layout-id="layout.table_page"]',
+    invariants: ["filters 必须先于 table 出现", "pagination 必须独立于 table 内容"],
+  },
+  {
+    layoutId: "layout.detail_page",
+    purpose: "承载主详情和辅助信息，让详情类页面避免把所有面板堆在同一层",
+    slots: ["primary", "secondary"],
+    selector: '[data-layout-id="layout.detail_page"]',
+    invariants: ["primary 承载主问题", "secondary 只能承载辅助解释或次级列表"],
+  },
+];
+
 export const portalUiSurfaces: PortalUiSurface[] = [
   {
     routeId: "overview",

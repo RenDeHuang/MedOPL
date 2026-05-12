@@ -67,6 +67,7 @@ assert.equal(contract.uiArchitecture.method, "sub2api_style_layout_first", "ui_a
 assert.deepEqual(contract.uiArchitecture.layers, ["route_entry", "token", "primitive", "layout", "domain_composable", "feature_component", "page_orchestration", "harness_validation"], "ui_architecture_layers_mismatch");
 assert.deepEqual(contract.uiArchitecture.sequence, ["visual_primitives", "page_layouts", "common_patterns", "domain_components", "view_orchestration", "state_composables", "contract_harness"], "ui_architecture_sequence_mismatch");
 assert.equal(contract.uiArchitecture.pageRole, "orchestration_only", "page_role_must_be_orchestration_only");
+assert.deepEqual(contract.uiArchitecture.layoutProtocol, ["DashboardPageLayout", "TablePageLayout", "DetailPageLayout"], "layout_protocol_mismatch");
 assert.deepEqual(contract.uiArchitecture.currentFeatureComponentSources, [
   "services/portal/frontend/src/components/overview",
   "services/portal/frontend/src/components/billing",
@@ -96,6 +97,9 @@ const siteLogoField = await source("services/portal/frontend/src/components/admi
 const homeContentEditor = await source("services/portal/frontend/src/components/admin/HomeContentEditor.vue");
 const statusBadge = await source("services/portal/frontend/src/components/common/StatusBadge.vue");
 const actionPanel = await source("services/portal/frontend/src/components/common/ActionPanel.vue");
+const dashboardPageLayout = await source("services/portal/frontend/src/layouts/DashboardPageLayout.vue");
+const tablePageLayout = await source("services/portal/frontend/src/layouts/TablePageLayout.vue");
+const detailPageLayout = await source("services/portal/frontend/src/layouts/DetailPageLayout.vue");
 const overviewHero = await source("services/portal/frontend/src/components/overview/OverviewHero.vue");
 const overviewFinancialMetricsPanel = await source("services/portal/frontend/src/components/overview/OverviewFinancialMetricsPanel.vue");
 const overviewManagedEnvironmentPanel = await source("services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue");
@@ -145,7 +149,24 @@ assertIncludes(siteLogoField, "站点 logo", "component_registry_site_logo_field
 assertIncludes(homeContentEditor, "font-mono", "component_registry_home_content_editor");
 assertIncludes(statusBadge, "badgeClass", "component_registry_status_badge");
 assertIncludes(actionPanel, "panel-title", "component_registry_action_panel");
+assertIncludes(dashboardPageLayout, "data-layout-id", "dashboard_layout_must_expose_layout_anchor");
+assertIncludes(dashboardPageLayout, "data-layout-slot", "dashboard_layout_must_expose_slot_anchors");
+assertIncludes(dashboardPageLayout, "hero", "dashboard_layout_must_support_hero_slot");
+assertIncludes(tablePageLayout, "data-layout-id", "table_layout_must_expose_layout_anchor");
+assertIncludes(tablePageLayout, "filters", "table_layout_must_support_filters_slot");
+assertIncludes(tablePageLayout, "pagination", "table_layout_must_support_pagination_slot");
+assertIncludes(detailPageLayout, "data-layout-id", "detail_layout_must_expose_layout_anchor");
+assertIncludes(detailPageLayout, "primary", "detail_layout_must_support_primary_slot");
+assertIncludes(detailPageLayout, "secondary", "detail_layout_must_support_secondary_slot");
 assertIncludes(surfaceRegistry, "portalUiSurfaces", "surface_registry_must_export_registry");
+assertIncludes(surfaceRegistry, "portalUiLayouts", "surface_registry_must_export_layout_registry");
+for (const layout of [
+  "layout.dashboard_page",
+  "layout.table_page",
+  "layout.detail_page",
+]) {
+  assertIncludes(surfaceRegistry, `layoutId: "${layout}"`, `surface_registry_${layout}`);
+}
 for (const surface of [
   "overview.hero",
   "overview.financial_metrics",
@@ -187,6 +208,9 @@ assertIncludes(overview, "OverviewManagedEnvironmentPanel", "overview_view_must_
 assertIncludes(overview, "OverviewRecentRunsPanel", "overview_view_must_compose_recent_runs_component");
 assertIncludes(overview, "OverviewWorkspacePanel", "overview_view_must_compose_workspace_component");
 assertIncludes(billing, "BillingHero", "billing_view_must_compose_hero_component");
+assertIncludes(billing, "DashboardPageLayout", "billing_view_must_use_dashboard_page_layout");
+assertIncludes(billing, "TablePageLayout", "billing_view_must_use_table_page_layout");
+assertIncludes(billing, "DetailPageLayout", "billing_view_must_use_detail_page_layout");
 assertIncludes(billing, "BillingCostBreakdownPanel", "billing_view_must_compose_cost_breakdown_component");
 assertIncludes(billing, "BillingTrendAndFilterPanel", "billing_view_must_compose_trend_filter_component");
 assertIncludes(billing, "BillingWorkspaceCostPanel", "billing_view_must_compose_workspace_cost_component");
