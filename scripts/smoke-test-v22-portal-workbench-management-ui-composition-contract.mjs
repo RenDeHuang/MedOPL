@@ -116,6 +116,9 @@ const resourcesPlanSelectionPanel = await source("services/portal/frontend/src/c
 const resourcesAdjustmentPanel = await source("services/portal/frontend/src/components/resources/ResourcesAdjustmentPanel.vue");
 const resourcesCurrentPanel = await source("services/portal/frontend/src/components/resources/ResourcesCurrentPanel.vue");
 const resourcesReleaseAuditPanel = await source("services/portal/frontend/src/components/resources/ResourcesReleaseAuditPanel.vue");
+const traceHero = await source("services/portal/frontend/src/components/trace/TraceHero.vue");
+const traceFilterPanel = await source("services/portal/frontend/src/components/trace/TraceFilterPanel.vue");
+const traceSessionTablePanel = await source("services/portal/frontend/src/components/trace/TraceSessionTablePanel.vue");
 const adminSiteSettingsPanel = await source("services/portal/frontend/src/components/admin/AdminSiteSettingsPanel.vue");
 const adminServiceStatusPanel = await source("services/portal/frontend/src/components/admin/AdminServiceStatusPanel.vue");
 const overview = await source("services/portal/frontend/src/views/overview/OverviewView.vue");
@@ -189,6 +192,9 @@ for (const surface of [
   "resources.adjustment",
   "resources.current",
   "resources.release_audit",
+  "trace.hero",
+  "trace.filter",
+  "trace.session_table",
   "admin.system.site_settings",
   "admin.system.service_status",
 ]) {
@@ -211,6 +217,9 @@ for (const sourceText of [
   resourcesAdjustmentPanel,
   resourcesCurrentPanel,
   resourcesReleaseAuditPanel,
+  traceHero,
+  traceFilterPanel,
+  traceSessionTablePanel,
   adminSiteSettingsPanel,
   adminServiceStatusPanel,
 ]) {
@@ -238,6 +247,11 @@ assertIncludes(resources, "ResourcesPlanSelectionPanel", "resources_view_must_co
 assertIncludes(resources, "ResourcesAdjustmentPanel", "resources_view_must_compose_adjustment_component");
 assertIncludes(resources, "ResourcesCurrentPanel", "resources_view_must_compose_current_component");
 assertIncludes(resources, "ResourcesReleaseAuditPanel", "resources_view_must_compose_release_audit_component");
+assertIncludes(trace, "DashboardPageLayout", "trace_view_must_use_dashboard_page_layout");
+assertIncludes(trace, "TablePageLayout", "trace_view_must_use_table_page_layout");
+assertIncludes(trace, "TraceHero", "trace_view_must_compose_hero_component");
+assertIncludes(trace, "TraceFilterPanel", "trace_view_must_compose_filter_component");
+assertIncludes(trace, "TraceSessionTablePanel", "trace_view_must_compose_session_table_component");
 assertIncludes(adminSystem, "AdminSiteSettingsPanel", "admin_system_view_must_compose_site_settings_component");
 assertIncludes(adminSystem, "AdminServiceStatusPanel", "admin_system_view_must_compose_service_status_component");
 assertAnyIncludes(adminSiteSettingsPanel, ["站点 logo", "站点 Logo"], "admin_site_settings_must_show_logo_editor");
@@ -277,7 +291,7 @@ for (const term of contract.copyArchitecture.forbiddenUiTerms) {
 for (const term of contract.workbenchForbiddenTokens) {
   assertExcludes(workbenchCopy, term, "workbench_forbidden_internal_token");
 }
-for (const forbiddenSlashCopy of ["预扣费 / 冻结金额", "停止计费 / 审计状态", "输入文件 / 输出文件", "选择套餐 / 工作台资源计划", "释放策略 / 审计状态", "充值 / 退款 / 补扣", "核 /", "¥3.20 / 小时", "¥9.60 / 小时"]) {
+for (const forbiddenSlashCopy of ["预扣费 / 冻结金额", "停止计费 / 审计状态", "输入文件 / 输出文件", "选择套餐 / 工作台资源计划", "释放策略 / 审计状态", "充值 / 退款 / 补扣", "核 /", "¥3.20 / 小时", "¥9.60 / 小时", " 入 / ", " 出 / "]) {
   assertExcludes(workbenchCopy, forbiddenSlashCopy, "slash_separated_ui_copy");
 }
 

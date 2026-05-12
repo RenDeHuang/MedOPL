@@ -111,6 +111,10 @@ export function useTraceSurface(route: RouteLocationNormalizedLoaded, router: Ro
     router.push({ path: route.path, query: {} });
   }
 
+  function updateFilter(key: "workspaceId" | "sessionId" | "status", value: string) {
+    filters[key] = value;
+  }
+
   let requestId = 0;
 
   async function load() {
@@ -163,5 +167,6 @@ export function useTraceSurface(route: RouteLocationNormalizedLoaded, router: Ro
     statusBadge,
     totalEstimatedCost,
     traceQuery,
+    updateFilter,
   };
 }
