@@ -119,6 +119,11 @@ const resourcesReleaseAuditPanel = await source("services/portal/frontend/src/co
 const traceHero = await source("services/portal/frontend/src/components/trace/TraceHero.vue");
 const traceFilterPanel = await source("services/portal/frontend/src/components/trace/TraceFilterPanel.vue");
 const traceSessionTablePanel = await source("services/portal/frontend/src/components/trace/TraceSessionTablePanel.vue");
+const workspaceHero = await source("services/portal/frontend/src/components/workspace/WorkspaceHero.vue");
+const workspaceFileSpacePanel = await source("services/portal/frontend/src/components/workspace/WorkspaceFileSpacePanel.vue");
+const workspaceManagedPlanPanel = await source("services/portal/frontend/src/components/workspace/WorkspaceManagedPlanPanel.vue");
+const workspaceListPanel = await source("services/portal/frontend/src/components/workspace/WorkspaceListPanel.vue");
+const workspaceFilesPanel = await source("services/portal/frontend/src/components/workspace/WorkspaceFilesPanel.vue");
 const adminSiteSettingsPanel = await source("services/portal/frontend/src/components/admin/AdminSiteSettingsPanel.vue");
 const adminServiceStatusPanel = await source("services/portal/frontend/src/components/admin/AdminServiceStatusPanel.vue");
 const overview = await source("services/portal/frontend/src/views/overview/OverviewView.vue");
@@ -195,6 +200,11 @@ for (const surface of [
   "trace.hero",
   "trace.filter",
   "trace.session_table",
+  "workspace.hero",
+  "workspace.file_space",
+  "workspace.managed_plan",
+  "workspace.list",
+  "workspace.files",
   "admin.system.site_settings",
   "admin.system.service_status",
 ]) {
@@ -220,6 +230,11 @@ for (const sourceText of [
   traceHero,
   traceFilterPanel,
   traceSessionTablePanel,
+  workspaceHero,
+  workspaceFileSpacePanel,
+  workspaceManagedPlanPanel,
+  workspaceListPanel,
+  workspaceFilesPanel,
   adminSiteSettingsPanel,
   adminServiceStatusPanel,
 ]) {
@@ -252,6 +267,14 @@ assertIncludes(trace, "TablePageLayout", "trace_view_must_use_table_page_layout"
 assertIncludes(trace, "TraceHero", "trace_view_must_compose_hero_component");
 assertIncludes(trace, "TraceFilterPanel", "trace_view_must_compose_filter_component");
 assertIncludes(trace, "TraceSessionTablePanel", "trace_view_must_compose_session_table_component");
+assertIncludes(workspace, "DashboardPageLayout", "workspace_view_must_use_dashboard_page_layout");
+assertIncludes(workspace, "DetailPageLayout", "workspace_view_must_use_detail_page_layout");
+assertIncludes(workspace, "TablePageLayout", "workspace_view_must_use_table_page_layout");
+assertIncludes(workspace, "WorkspaceHero", "workspace_view_must_compose_hero_component");
+assertIncludes(workspace, "WorkspaceFileSpacePanel", "workspace_view_must_compose_file_space_component");
+assertIncludes(workspace, "WorkspaceManagedPlanPanel", "workspace_view_must_compose_managed_plan_component");
+assertIncludes(workspace, "WorkspaceListPanel", "workspace_view_must_compose_list_component");
+assertIncludes(workspace, "WorkspaceFilesPanel", "workspace_view_must_compose_files_component");
 assertIncludes(adminSystem, "AdminSiteSettingsPanel", "admin_system_view_must_compose_site_settings_component");
 assertIncludes(adminSystem, "AdminServiceStatusPanel", "admin_system_view_must_compose_service_status_component");
 assertAnyIncludes(adminSiteSettingsPanel, ["站点 logo", "站点 Logo"], "admin_site_settings_must_show_logo_editor");
