@@ -4,7 +4,9 @@
 
 本合同使用 Sub2API 的产品工程模式作为参考：公共首页可以由管理台配置，登录页保持账号密码入口，业务页面由固定组件组合，静态合同检查和运行时验收必须同时存在。
 
-本合同 v2 不新增独立 UI 架构合同文件。Portal UI 架构治理、页面职责、组件边界、文案边界、API 来源和验证入口统一收敛在本合同内，避免合同数量继续膨胀。
+本合同 v3 不新增独立 UI 架构合同文件。Portal UI 架构治理、页面职责、组件边界、文案边界、API 来源和验证入口统一收敛在本合同内，避免合同数量继续膨胀。
+
+本合同 v3 的核心变化是把 UI 架构规则从“愿景约束”改成“执行矩阵”。每个合同项必须绑定代码 owner、当前状态、验收方式和下一步必须修改的目标；没有代码 owner 和验收方式的 UI 规则不得作为本分支完成项。
 
 ## 设计参考和工程框架
 
@@ -151,6 +153,30 @@ Portal UI 必须区分四类对象：
 - 详情页或详情入口：用于展开某个 surface 的更深操作，例如 `/admin/ops` 的服务状态详情。
 
 “站点设置”作为导航项、页面标题和 `admin.system.site_settings` 组件名称同时出现，不算重复实现；它们属于不同层级。`/admin/system` 可以包含站点设置和服务状态摘要，但 `/admin/ops` 才是服务状态详情入口，且必须受 `opsSurfaceEnabled` 控制。
+
+## 执行矩阵
+
+执行矩阵用于解决合同很多但落地不足的问题。后续 Portal UI 分支不得只写抽象目标；每个目标必须能追踪到 owner、状态和验收。
+
+矩阵字段固定为：
+
+- `contractItem`：合同项名称。
+- `requiredCodeOwner`：必须承接该合同项的代码文件或目录。
+- `currentStatus`：只能是 `done`、`partial` 或 `missing`。
+- `acceptance`：证明该合同项没有漂移的 smoke、类型检查、浏览器验证或人工验收路径。
+- `nextRequiredChange`：下一步必须补的具体代码或验证，不允许写成泛泛优化。
+
+当前执行矩阵的裁定：
+
+- 路由入口层已经有顶层入口和旧 `/portal/app/*` 兼容重定向，但公开页由后端渲染、登录后应用路由由 SPA 承接，仍需要 route smoke 同时覆盖两类入口。
+- 页面壳层已经有 `AppLayout`、`AppHeader`、`AppSidebar`，但壳层只能负责导航和滚动边界，不能沉淀业务判断。
+- 页面编排层在 `billing`、`resources`、`workspace`、`trace` 已按 layout 协议推进；`overview` 和 `admin/system` 仍需要补齐 layout 协议。
+- 业务组件层已经覆盖工作台主页面和 `admin/system`，但管理台其他页面还没有完全进入 surface registry。
+- 通用组件层已经有基础 common，但还缺 section、state、table、pagination、field、filter 和 stat grid 这些稳定原语。
+- 视觉基础层已经有 Tailwind token 和共享样式原语，但还没有 token lint，也没有把 token 与 primitive 拆成独立文件。
+- 文案层已经禁止斜杠组合词、内部治理词和“账务”，但页面文案还需要逐步迁入 i18n 或职责词表。
+- DTO/API 来源已经按页面职责列出，但后续页面不得从 DTO 字段名反推 UI 主叙事。
+- 验证入口已经统一到 Portal runtime suite，但浏览器抽样还需要继续和 surface registry 对齐。
 
 ## UI 架构层级
 
@@ -328,7 +354,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 2,
+  "version": 3,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -663,6 +689,154 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
     "adminAudit": "GET /portal/api/admin/audit",
     "adminSystem": "GET /portal/api/admin/system"
   },
+  "executionMatrix": [
+    {
+      "contractItem": "route_entry_layer",
+      "requiredCodeOwner": [
+        "services/portal/src/app/portal-http-dispatcher.mjs",
+        "services/portal/src/app/portal-auth-runtime-handler.mjs",
+        "services/portal/frontend/src/router/index.ts"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "scripts/smoke-test-v22-portal-runtime-suite.mjs --group all",
+        "browser:/home",
+        "browser:/login",
+        "browser:/overview",
+        "browser:/admin/system"
+      ],
+      "nextRequiredChange": "route_smoke_must_keep_backend_public_entry_and_spa_authenticated_entry_separate"
+    },
+    {
+      "contractItem": "page_shell_layer",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/layouts/AppLayout.vue",
+        "services/portal/frontend/src/layouts/AppHeader.vue",
+        "services/portal/frontend/src/layouts/AppSidebar.vue"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "services/portal/frontend/src/harness/portal-ui-surfaces.ts"
+      ],
+      "nextRequiredChange": "shell_must_keep_navigation_and_scroll_boundary_only_without_billing_resource_task_logic"
+    },
+    {
+      "contractItem": "page_orchestration_billing_resources_workspace_trace",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/views/billing/BillingView.vue",
+        "services/portal/frontend/src/views/resources/ResourcesView.vue",
+        "services/portal/frontend/src/views/workspace/WorkspaceView.vue",
+        "services/portal/frontend/src/views/trace/TraceView.vue"
+      ],
+      "currentStatus": "done",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "npm --prefix services/portal run frontend:typecheck"
+      ],
+      "nextRequiredChange": "keep_views_as_layout_and_component_orchestration_when_adding_new_fields"
+    },
+    {
+      "contractItem": "page_orchestration_overview_admin_system",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/views/overview/OverviewView.vue",
+        "services/portal/frontend/src/views/admin/AdminSystemView.vue",
+        "services/portal/frontend/src/layouts/DashboardPageLayout.vue",
+        "services/portal/frontend/src/layouts/DetailPageLayout.vue"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "browser:/overview",
+        "browser:/admin/system"
+      ],
+      "nextRequiredChange": "overview_and_admin_system_must_use_layout_protocol_before_next_absorption"
+    },
+    {
+      "contractItem": "feature_component_surface_registry",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/components/overview",
+        "services/portal/frontend/src/components/billing",
+        "services/portal/frontend/src/components/resources",
+        "services/portal/frontend/src/components/workspace",
+        "services/portal/frontend/src/components/trace",
+        "services/portal/frontend/src/components/admin",
+        "services/portal/frontend/src/harness/portal-ui-surfaces.ts"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "browser:surface_registry_sample"
+      ],
+      "nextRequiredChange": "add_admin_dashboard_users_billing_ops_usage_audit_surfaces_to_registry"
+    },
+    {
+      "contractItem": "common_component_layer",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/components/common"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "npm --prefix services/portal run frontend:typecheck"
+      ],
+      "nextRequiredChange": "extract_SectionCard_PageState_TableShell_PaginationBar_FormField_FilterBar_StatGrid"
+    },
+    {
+      "contractItem": "visual_foundation_layer",
+      "requiredCodeOwner": [
+        "services/portal/frontend/tailwind.config.ts",
+        "services/portal/frontend/src/style.css"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "git diff --check -- services/portal/frontend"
+      ],
+      "nextRequiredChange": "add_design_token_lint_before_new_visual_pattern_expansion"
+    },
+    {
+      "contractItem": "copy_i18n_layer",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/plugins/i18n.ts",
+        "services/portal/frontend/src/views",
+        "services/portal/frontend/src/components"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs"
+      ],
+      "nextRequiredChange": "move_page_titles_buttons_status_empty_error_feedback_to_i18n_or_responsibility_vocabulary"
+    },
+    {
+      "contractItem": "dto_api_source_layer",
+      "requiredCodeOwner": [
+        "services/portal/frontend/src/api/portal",
+        "services/portal/frontend/src/composables",
+        "services/portal/src/routes",
+        "services/portal/src/app/portal-admin-api-payloads.mjs"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "scripts/smoke-test-v22-portal-runtime-suite.mjs --group all"
+      ],
+      "nextRequiredChange": "page_responsibility_must_drive_api_mapping_instead_of_raw_dto_field_names"
+    },
+    {
+      "contractItem": "validation_entrypoint_layer",
+      "requiredCodeOwner": [
+        "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs"
+      ],
+      "currentStatus": "partial",
+      "acceptance": [
+        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all"
+      ],
+      "nextRequiredChange": "new_portal_ui_acceptance_must_register_in_runtime_suite_group_before_absorption"
+    }
+  ],
   "runtimeSmokeEntrypoint": "scripts/smoke-test-v22-portal-runtime-suite.mjs",
   "validationGroups": [
     "contract",

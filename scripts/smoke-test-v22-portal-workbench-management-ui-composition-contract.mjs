@@ -45,7 +45,7 @@ const markdown = await source(contractPath);
 const contract = extractJson(markdown);
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 2, "contract_version_mismatch");
+assert.equal(contract.version, 3, "contract_version_mismatch");
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
@@ -119,6 +119,56 @@ assert.deepEqual(contract.fixedFeatureComponentRegistry, [
 ], "fixed_feature_component_registry_mismatch");
 assert.equal(contract.runtimeSmokeEntrypoint, "scripts/smoke-test-v22-portal-runtime-suite.mjs", "runtime_suite_entrypoint_mismatch");
 assertIncludes(contract.validationGroups.join("\n"), "architecture", "runtime_suite_must_include_architecture_group");
+
+assert(Array.isArray(contract.executionMatrix), "execution_matrix_must_be_array");
+assert(contract.executionMatrix.length >= 10, "execution_matrix_must_cover_ui_architecture_layers");
+const allowedExecutionStatuses = new Set(["done", "partial", "missing"]);
+const executionItems = new Set();
+for (const [index, item] of contract.executionMatrix.entries()) {
+  assert.equal(typeof item.contractItem, "string", `execution_matrix_${index}_contract_item_must_be_string`);
+  assert(item.contractItem.length > 0, `execution_matrix_${index}_contract_item_must_not_be_empty`);
+  executionItems.add(item.contractItem);
+  assert(Array.isArray(item.requiredCodeOwner), `execution_matrix_${item.contractItem}_owner_must_be_array`);
+  assert(item.requiredCodeOwner.length > 0, `execution_matrix_${item.contractItem}_owner_must_not_be_empty`);
+  for (const owner of item.requiredCodeOwner) {
+    assert.equal(typeof owner, "string", `execution_matrix_${item.contractItem}_owner_must_be_string`);
+    assert(owner.startsWith("services/portal") || owner.startsWith("scripts/"), `execution_matrix_${item.contractItem}_owner_must_be_portal_or_smoke:${owner}`);
+  }
+  assert(allowedExecutionStatuses.has(item.currentStatus), `execution_matrix_${item.contractItem}_status_invalid:${item.currentStatus}`);
+  assert(Array.isArray(item.acceptance), `execution_matrix_${item.contractItem}_acceptance_must_be_array`);
+  assert(item.acceptance.length > 0, `execution_matrix_${item.contractItem}_acceptance_must_not_be_empty`);
+  assert.equal(typeof item.nextRequiredChange, "string", `execution_matrix_${item.contractItem}_next_change_must_be_string`);
+  assert(item.nextRequiredChange.length > 0, `execution_matrix_${item.contractItem}_next_change_must_not_be_empty`);
+  assertExcludes(item.nextRequiredChange, "优化", `execution_matrix_${item.contractItem}_next_change_must_not_be_generic`);
+  assertExcludes(item.nextRequiredChange, "完善", `execution_matrix_${item.contractItem}_next_change_must_not_be_generic`);
+}
+for (const requiredExecutionItem of [
+  "route_entry_layer",
+  "page_shell_layer",
+  "page_orchestration_billing_resources_workspace_trace",
+  "page_orchestration_overview_admin_system",
+  "feature_component_surface_registry",
+  "common_component_layer",
+  "visual_foundation_layer",
+  "copy_i18n_layer",
+  "dto_api_source_layer",
+  "validation_entrypoint_layer",
+]) {
+  assert(executionItems.has(requiredExecutionItem), `execution_matrix_missing:${requiredExecutionItem}`);
+}
+const executionMatrixText = JSON.stringify(contract.executionMatrix);
+for (const requiredOwner of [
+  "services/portal/frontend/src/layouts/AppLayout.vue",
+  "services/portal/frontend/src/layouts/DashboardPageLayout.vue",
+  "services/portal/frontend/src/components/common",
+  "services/portal/frontend/src/harness/portal-ui-surfaces.ts",
+  "services/portal/frontend/src/plugins/i18n.ts",
+  "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+]) {
+  assertIncludes(executionMatrixText, requiredOwner, `execution_matrix_owner_${requiredOwner}`);
+}
+assertIncludes(executionMatrixText, "extract_SectionCard_PageState_TableShell_PaginationBar_FormField_FilterBar_StatGrid", "execution_matrix_common_next_change");
+assertIncludes(executionMatrixText, "overview_and_admin_system_must_use_layout_protocol_before_next_absorption", "execution_matrix_layout_next_change");
 
 const router = await source("services/portal/frontend/src/router/index.ts");
 const sidebar = await source("services/portal/frontend/src/layouts/AppSidebar.vue");
@@ -386,6 +436,7 @@ console.log(JSON.stringify({
     "public_settings_api",
     "auth_pages",
     "admin_site_settings",
+    "execution_matrix",
     "workbench_copy",
     "management_copy",
   ],
