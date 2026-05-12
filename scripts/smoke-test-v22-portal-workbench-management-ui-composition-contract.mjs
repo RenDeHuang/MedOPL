@@ -39,7 +39,7 @@ const roleAdminContract = await source("docs/contracts/v22-portal-admin-ops-surf
 const structureContract = await source("docs/contracts/v22-portal-structure-failure-isolation-boundary.md");
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 4, "contract_version_mismatch");
+assert.equal(contract.version, 5, "contract_version_mismatch");
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
@@ -50,7 +50,10 @@ assert.equal(contract.scope.modifiesDeploy, false, "composition_contract_must_no
 assert.equal(contract.contractRole, "ui_boundary_and_eval_entrypoint_only", "composition_contract_role_mismatch");
 
 assert.equal(contract.evalset.path, evalsetPath, "evalset_path_mismatch");
+assert.equal(contract.evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(contract.evalset.smoke, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "evalset_smoke_mismatch");
+assert.equal(contract.evalset.runtimeReportPath, ".runtime/portal-surface-eval/report.json", "evalset_runtime_report_path_mismatch");
+assert.equal(contract.evalset.runtimeReportCommitted, false, "evalset_runtime_report_must_not_be_committed");
 assert.deepEqual(contract.evalset.owns, [
   "routes",
   "surfaces",
@@ -59,6 +62,10 @@ assert.deepEqual(contract.evalset.owns, [
   "forbiddenCopy",
   "requiredDomAnchors",
   "pageTasks",
+  "owners",
+  "acceptance",
+  "artifactPolicy",
+  "coverage",
 ], "evalset_owned_facts_mismatch");
 
 assert.equal(contract.uiArchitecture.method, "sub2api_style_layout_first_with_executable_evalset", "ui_architecture_method_mismatch");
@@ -107,12 +114,22 @@ for (const group of ["contract", "surface", "architecture", "api", "build", "bro
 }
 assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "runtime_suite_must_include_surface_eval");
 
+assert.equal(evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(evalset.scope.sourceOfExecutableUiTruth, true, "evalset_must_be_executable_truth");
+assert.equal(evalset.artifactPolicy.runtimeReportPath, ".runtime/portal-surface-eval/report.json", "evalset_runtime_report_path_mismatch");
+assert.equal(evalset.artifactPolicy.commitReports, false, "evalset_report_must_not_be_committed");
 for (const key of contract.evalset.owns) {
+  assert(evalset[key], `evalset_${key}_missing`);
+}
+for (const key of ["routes", "surfaces", "layouts", "apiShapes", "forbiddenCopy", "requiredDomAnchors", "pageTasks"]) {
   assert(Array.isArray(evalset[key]), `evalset_${key}_must_be_array`);
 }
 assert(evalset.surfaces.some((surface) => surface.status === "partial"), "evalset_must_record_partial_admin_surfaces");
 assert(evalset.apiShapes.length >= 8, "evalset_must_cover_core_api_shapes");
+for (const apiShape of evalset.apiShapes) {
+  assert(Array.isArray(apiShape.requiredPaths), `evalset_api_shape_required_paths_missing:${apiShape.id}`);
+  assert(apiShape.requiredPaths.length > 0, `evalset_api_shape_required_paths_empty:${apiShape.id}`);
+}
 
 assertIncludes(sharedSurfaceContract, "本合同是共享产品表面合同，不单独实现 UI", "shared_surface_contract_must_not_own_ui_implementation");
 assertIncludes(roleUserContract, "role surface 合同，不实现新 UI", "user_role_contract_must_not_own_ui_implementation");

@@ -19,16 +19,36 @@ function exists(filePath: string) {
 }
 
 describe("portal ui evalset", () => {
-  it("defines executable ui truth instead of another heavy contract", () => {
-    expect(evalset.version).toBe(1);
+  it("defines harness-native executable ui truth instead of another heavy contract", () => {
+    expect(evalset.version).toBe(2);
+    expect(evalset.schemaVersion).toBe("2026-05-harness-native");
     expect(evalset.model).toBe("gpt-5.4");
     expect(evalset.scope.portalOnly).toBe(true);
     expect(evalset.scope.sourceOfExecutableUiTruth).toBe(true);
+    expect(evalset.owners.contract).toBe("docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md");
+    expect(evalset.owners.runner).toBe("scripts/smoke-test-v22-portal-frontend-surface-eval.mjs");
+    expect(evalset.acceptance.unifiedRuntimeSuite).toBe("node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all");
+    expect(evalset.artifactPolicy.runtimeReportPath).toBe(".runtime/portal-surface-eval/report.json");
+    expect(evalset.artifactPolicy.commitReports).toBe(false);
     expect(evalset.requiredDomAnchors).toEqual(["data-route-id", "data-component-id", "data-layout-id"]);
     expect(evalset.routes.length).toBeGreaterThan(0);
     expect(evalset.surfaces.length).toBeGreaterThan(0);
     expect(evalset.layouts.length).toBeGreaterThan(0);
     expect(evalset.apiShapes.length).toBeGreaterThan(0);
+  });
+
+  it("keeps route identifiers canonical across routes, surfaces, page tasks, and api shapes", () => {
+    const routeIds = new Set(evalset.routes.map((route) => route.id));
+    for (const surface of evalset.surfaces) {
+      expect(routeIds.has(surface.routeId)).toBe(true);
+    }
+    for (const pageTask of evalset.pageTasks) {
+      expect(routeIds.has(pageTask.routeId)).toBe(true);
+    }
+    for (const apiShape of evalset.apiShapes) {
+      expect(routeIds.has(apiShape.routeId)).toBe(true);
+      expect(apiShape.requiredPaths.length).toBeGreaterThan(0);
+    }
   });
 
   it("requires partial surfaces to declare the next concrete code change", () => {

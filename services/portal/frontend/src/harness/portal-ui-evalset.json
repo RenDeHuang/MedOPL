@@ -1,11 +1,33 @@
 {
-  "version": 1,
+  "version": 2,
+  "schemaVersion": "2026-05-harness-native",
   "model": "gpt-5.4",
+  "owners": {
+    "contract": "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+    "runner": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+    "surfaceRegistry": "services/portal/frontend/src/harness/portal-ui-surfaces.ts"
+  },
   "scope": {
     "portalOnly": true,
     "sourceOfExecutableUiTruth": true,
     "callsRealCloud": false,
     "readsSecrets": false
+  },
+  "acceptance": {
+    "unifiedRuntimeSuite": "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all",
+    "surfaceSuite": "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+    "requiredGroups": ["contract", "surface", "architecture", "api", "build", "browser"]
+  },
+  "artifactPolicy": {
+    "runtimeReportPath": ".runtime/portal-surface-eval/report.json",
+    "commitReports": false,
+    "includeBrowserEvidence": true
+  },
+  "coverage": {
+    "doneRoutesMustHaveBrowserPath": true,
+    "doneSurfacesMustHaveDomAnchor": true,
+    "apiShapesUseNestedRequiredPaths": true,
+    "partialItemsMustDeclareNextRequiredChange": true
   },
   "requiredDomAnchors": [
     "data-route-id",
@@ -39,8 +61,7 @@
       "path": "/overview",
       "owner": "services/portal/frontend/src/views/overview/OverviewView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "use_DashboardPageLayout"
+      "status": "done"
     },
     {
       "id": "resources",
@@ -71,12 +92,52 @@
       "status": "done"
     },
     {
-      "id": "admin_system",
+      "id": "admin.system",
       "path": "/admin/system",
       "owner": "services/portal/frontend/src/views/admin/AdminSystemView.vue",
       "renderedBy": "spa",
       "status": "partial",
       "nextRequiredChange": "use_layout_protocol_and_move_form_sync_to_composable"
+    },
+    {
+      "id": "admin.dashboard",
+      "path": "/admin/dashboard",
+      "owner": "services/portal/frontend/src/views/admin/AdminDashboardView.vue",
+      "renderedBy": "spa",
+      "status": "partial",
+      "nextRequiredChange": "extract_admin_dashboard_surface_component_and_dom_anchor"
+    },
+    {
+      "id": "admin.users",
+      "path": "/admin/users",
+      "owner": "services/portal/frontend/src/views/admin/AdminUsersView.vue",
+      "renderedBy": "spa",
+      "status": "partial",
+      "nextRequiredChange": "extract_admin_users_table_surface_component_and_dom_anchor"
+    },
+    {
+      "id": "admin.billing_ops",
+      "path": "/admin/billing-ops",
+      "owner": "services/portal/frontend/src/views/admin/AdminBillingOpsView.vue",
+      "renderedBy": "spa",
+      "status": "partial",
+      "nextRequiredChange": "extract_admin_billing_ops_surface_component_and_dom_anchor"
+    },
+    {
+      "id": "admin.usage",
+      "path": "/admin/usage",
+      "owner": "services/portal/frontend/src/views/admin/AdminUsageView.vue",
+      "renderedBy": "spa",
+      "status": "partial",
+      "nextRequiredChange": "extract_admin_usage_surface_component_and_dom_anchor"
+    },
+    {
+      "id": "admin.audit",
+      "path": "/admin/audit",
+      "owner": "services/portal/frontend/src/views/admin/AdminAuditView.vue",
+      "renderedBy": "spa",
+      "status": "partial",
+      "nextRequiredChange": "extract_admin_audit_surface_component_and_dom_anchor"
     }
   ],
   "layouts": [
@@ -326,66 +387,82 @@
   "apiShapes": [
     {
       "id": "public_settings",
+      "routeId": "home_public",
       "method": "GET",
       "path": "/portal/api/public/settings",
       "owner": "services/portal/frontend/src/api/portal/public.ts",
       "requiredKeys": ["siteName", "siteLogo", "siteSubtitle", "homeContent"],
+      "requiredPaths": ["siteName", "siteLogo", "siteSubtitle", "homeContent"],
       "forbiddenKeys": ["SecretId", "SecretKey", "token", "rawApiKey", "raw API Key"]
     },
     {
       "id": "overview",
+      "routeId": "overview",
       "method": "GET",
       "path": "/portal/api/overview",
       "owner": "services/portal/frontend/src/api/portal/overview.ts",
       "requiredKeys": ["kpis", "commercial", "serverPlansSummary", "onboarding", "taskCards", "latestRuns"],
+      "requiredPaths": ["kpis.balance", "commercial.canEnterWorkbench", "serverPlansSummary.quotedCount", "taskCards", "latestRuns"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "objectKey", "storageKey", "signedUrl"]
     },
     {
       "id": "billing_summary",
+      "routeId": "billing",
       "method": "GET",
       "path": "/portal/api/billing/summary",
       "owner": "services/portal/frontend/src/api/portal/billing.ts",
       "requiredKeys": ["wallet", "totals", "breakdown", "summary", "filter", "todayCost"],
+      "requiredPaths": ["wallet.balance", "wallet.frozen", "totals.totalCost", "breakdown", "summary", "filter.from", "filter.to", "todayCost"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "objectKey", "storageKey", "signedUrl"]
     },
     {
       "id": "billing_details",
+      "routeId": "billing",
       "method": "GET",
       "path": "/portal/api/billing/details",
       "owner": "services/portal/frontend/src/api/portal/billing.ts",
       "requiredKeys": ["taskCosts", "taskPagination", "runCosts", "runPagination", "ledger", "ledgerPagination", "trend"],
+      "requiredPaths": ["taskCosts", "taskPagination.page", "runCosts", "runPagination.page", "ledger", "ledgerPagination.page", "trend"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "objectKey", "storageKey", "signedUrl"]
     },
     {
       "id": "resources",
+      "routeId": "resources",
       "method": "GET",
       "path": "/portal/api/platform-provisioned-resources",
       "owner": "services/portal/frontend/src/api/portal/resources.ts",
       "requiredKeys": ["ok", "source", "computeInstances", "storageBuckets", "protectionFreezes", "bindings", "summary"],
+      "requiredPaths": ["ok", "source", "computeInstances", "storageBuckets", "protectionFreezes", "bindings", "summary"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "signedUrl"]
     },
     {
       "id": "workspace",
+      "routeId": "workspace",
       "method": "GET",
       "path": "/portal/api/workspace",
       "owner": "services/portal/frontend/src/api/portal/workspace.ts",
       "requiredKeys": ["workspace", "counts", "costs", "runStatus", "tasks", "files", "outputs"],
+      "requiredPaths": ["workspace", "counts", "costs", "runStatus", "tasks", "files", "outputs"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "storageKey", "signedUrl"]
     },
     {
       "id": "trace",
+      "routeId": "trace",
       "method": "GET",
       "path": "/portal/api/session-traces",
       "owner": "services/portal/frontend/src/api/portal/traces.ts",
       "requiredKeys": ["filters", "summary", "items", "pagination", "dataSource"],
+      "requiredPaths": ["filters", "summary", "items", "pagination.page", "dataSource"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "storageKey", "signedUrl"]
     },
     {
       "id": "admin_system",
+      "routeId": "admin.system",
       "method": "GET",
       "path": "/portal/api/admin/system",
       "owner": "services/portal/frontend/src/api/portal/admin.ts",
       "requiredKeys": ["serviceStatuses", "summaries", "systemMetrics", "productProfile", "allowRegistration", "publicSettings"],
+      "requiredPaths": ["serviceStatuses", "summaries", "systemMetrics", "productProfile", "allowRegistration", "publicSettings.siteName", "publicSettings.homeContent"],
       "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "kubeconfig", "signedUrl"]
     }
   ],

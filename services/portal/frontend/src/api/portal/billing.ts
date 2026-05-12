@@ -14,6 +14,7 @@ export interface BillingPayload {
   wallet: {
     balance: number;
     activeFreeze?: number;
+    frozen?: number;
     availableBalance?: number;
     trialRemaining?: number;
   };

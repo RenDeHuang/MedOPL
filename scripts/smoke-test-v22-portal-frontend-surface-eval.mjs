@@ -3,16 +3,35 @@ import { spawn } from "node:child_process";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { mkdir, mkdtemp, readFile, readdir, rename, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
+import { pathToFileURL } from "node:url";
 
 const repoRoot = process.cwd();
 const evalsetPath = "services/portal/frontend/src/harness/portal-ui-evalset.json";
 const surfaceRegistryPath = "services/portal/frontend/src/harness/portal-ui-surfaces.ts";
 const portalEntrypoint = path.join(repoRoot, "services", "portal", "src", "server.mjs");
 const portalRuntimeRoot = path.join(repoRoot, ".runtime", "portal");
+const reportPath = path.join(repoRoot, ".runtime", "portal-surface-eval", "report.json");
 const adminEmail = "zitadel-admin@zitadel.localhost";
 const adminPassword = "Password1!";
+const report = {
+  ok: false,
+  contract: "v22_portal_frontend_surface_eval",
+  schemaVersion: null,
+  evalset: evalsetPath,
+  baseUrl: null,
+  coverage: {
+    routes: { total: 0, done: 0, partial: 0, missing: 0 },
+    layouts: { total: 0, done: 0, partial: 0, missing: 0 },
+    surfaces: { total: 0, done: 0, partial: 0, missing: 0 },
+    apiShapes: { total: 0, checked: 0 },
+    browserDom: { routes: [], surfaces: [] },
+  },
+  partials: [],
+  checked: [],
+  error: null,
+};
 
 async function source(filePath) {
   return readFile(filePath, "utf8");
@@ -69,6 +88,23 @@ function assertUnique(items, key, label) {
 
 function assertValidStatus(value, label) {
   assert(["done", "partial", "missing"].includes(value), `${label}_invalid_status:${value}`);
+}
+
+function countStatuses(items) {
+  return {
+    total: items.length,
+    done: items.filter((item) => item.status === "done").length,
+    partial: items.filter((item) => item.status === "partial").length,
+    missing: items.filter((item) => item.status === "missing").length,
+  };
+}
+
+function valueAtPath(value, pathExpression) {
+  return pathExpression.split(".").reduce((current, segment) => {
+    if (current == null) return undefined;
+    if (Array.isArray(current)) return current[Number(segment)];
+    return current[segment];
+  }, value);
 }
 
 function listen(server, port = 0) {
@@ -158,6 +194,53 @@ async function getJson(url, { cookie = "" } = {}) {
   return { response, json };
 }
 
+async function loadPlaywright() {
+  const candidates = [
+    process.env.PLAYWRIGHT_ENTRY,
+    path.join(repoRoot, ".runtime", "browser-test", "node_modules", "playwright", "index.js"),
+    path.join(repoRoot, "node_modules", "playwright", "index.js"),
+    path.join(os.homedir(), ".codex", "skills", "gstack", "browse", "node_modules", "playwright", "index.js"),
+    path.join("/home/dev/projects/gstack", "node_modules", "playwright", "index.js"),
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    if (await exists(candidate)) {
+      const loaded = await import(pathToFileURL(candidate).href);
+      return loaded.default || loaded;
+    }
+  }
+  throw new Error(`playwright_not_found:${candidates.join(",")}`);
+}
+
+async function writeReport(nextReport) {
+  await mkdir(path.dirname(reportPath), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(nextReport, null, 2)}\n`);
+}
+
+function runCommand(command, args, label) {
+  return new Promise((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+    const child = spawn(command, args, {
+      cwd: repoRoot,
+      shell: false,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout = `${stdout}${chunk}`.slice(-12000);
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr = `${stderr}${chunk}`.slice(-12000);
+    });
+    child.once("error", reject);
+    child.once("exit", (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error(`${label}_failed:${code}\n${stdout}\n${stderr}`));
+    });
+  });
+}
+
 function assertNoForbiddenKey(value, forbiddenKeys, label) {
   if (Array.isArray(value)) {
     value.forEach((item, index) => assertNoForbiddenKey(item, forbiddenKeys, `${label}[${index}]`));
@@ -177,8 +260,42 @@ const portalPackage = JSON.parse(await source("services/portal/package.json"));
 const frontendPackage = JSON.parse(await source("services/portal/frontend/package.json"));
 const runtimeSuiteSource = await source("scripts/smoke-test-v22-portal-runtime-suite.mjs");
 
-assert.equal(evalset.version, 1, "evalset_version_mismatch");
+report.schemaVersion = evalset.schemaVersion || null;
+report.coverage.routes = countStatuses(evalset.routes);
+report.coverage.layouts = countStatuses(evalset.layouts);
+report.coverage.surfaces = countStatuses(evalset.surfaces);
+report.coverage.apiShapes.total = evalset.apiShapes.length;
+report.partials = [
+  ...evalset.routes.filter((item) => item.status !== "done").map((item) => ({
+    kind: "route",
+    id: item.id,
+    nextRequiredChange: item.nextRequiredChange,
+  })),
+  ...evalset.surfaces.filter((item) => item.status !== "done").map((item) => ({
+    kind: "surface",
+    id: item.componentId,
+    nextRequiredChange: item.nextRequiredChange,
+  })),
+  ...evalset.pageTasks.filter((item) => item.status !== "done").map((item) => ({
+    kind: "pageTask",
+    id: item.routeId,
+    nextRequiredChange: item.nextRequiredChange,
+  })),
+];
+
+assert.equal(evalset.version, 2, "evalset_version_mismatch");
+assert.equal(evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(evalset.model, "gpt-5.4", "evalset_model_mismatch");
+assert.equal(evalset.owners.contract, "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md", "evalset_contract_owner_mismatch");
+assert.equal(evalset.owners.runner, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "evalset_runner_owner_mismatch");
+assert.equal(evalset.owners.surfaceRegistry, surfaceRegistryPath, "evalset_surface_registry_owner_mismatch");
+assert.equal(evalset.acceptance.unifiedRuntimeSuite, "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all", "evalset_unified_suite_mismatch");
+assert.equal(evalset.artifactPolicy.runtimeReportPath, ".runtime/portal-surface-eval/report.json", "evalset_report_path_mismatch");
+assert.equal(evalset.artifactPolicy.commitReports, false, "evalset_reports_must_not_be_committed");
+assert.equal(evalset.coverage.doneRoutesMustHaveBrowserPath, true, "evalset_route_browser_coverage_required");
+assert.equal(evalset.coverage.doneSurfacesMustHaveDomAnchor, true, "evalset_surface_anchor_coverage_required");
+assert.equal(evalset.coverage.apiShapesUseNestedRequiredPaths, true, "evalset_api_shape_required_paths_required");
+assert.equal(evalset.coverage.partialItemsMustDeclareNextRequiredChange, true, "evalset_partial_next_change_required");
 assert.equal(evalset.scope.portalOnly, true, "evalset_must_be_portal_only");
 assert.equal(evalset.scope.sourceOfExecutableUiTruth, true, "evalset_must_be_executable_ui_truth");
 assert.equal(evalset.scope.callsRealCloud, false, "evalset_must_not_call_real_cloud");
@@ -192,6 +309,7 @@ assertUnique(evalset.routes, "id", "evalset_routes");
 assertUnique(evalset.layouts, "layoutId", "evalset_layouts");
 assertUnique(evalset.surfaces, "componentId", "evalset_surfaces");
 assertUnique(evalset.apiShapes, "id", "evalset_api_shapes");
+const routeIds = new Set(evalset.routes.map((route) => route.id));
 
 for (const route of evalset.routes) {
   assertValidStatus(route.status, `route_${route.id}`);
@@ -216,6 +334,7 @@ for (const layout of evalset.layouts) {
 
 for (const surface of evalset.surfaces) {
   assertValidStatus(surface.status, `surface_${surface.componentId}`);
+  assert(routeIds.has(surface.routeId), `surface_route_id_missing:${surface.componentId}:${surface.routeId}`);
   assert(await exists(surface.owner), `surface_owner_missing:${surface.owner}`);
   if (surface.status === "done") {
     const surfaceSource = await source(surface.owner);
@@ -227,12 +346,22 @@ for (const surface of evalset.surfaces) {
   }
 }
 
+for (const pageTask of evalset.pageTasks) {
+  assertValidStatus(pageTask.status, `page_task_${pageTask.routeId}`);
+  assert(routeIds.has(pageTask.routeId), `page_task_route_id_missing:${pageTask.routeId}`);
+  if (pageTask.status !== "done") {
+    assert(pageTask.nextRequiredChange, `page_task_next_required_change_missing:${pageTask.routeId}`);
+  }
+}
+
 for (const apiShape of evalset.apiShapes) {
+  assert(routeIds.has(apiShape.routeId), `api_shape_route_id_missing:${apiShape.id}:${apiShape.routeId}`);
   assert.equal(apiShape.method, "GET", `api_shape_method_must_be_get:${apiShape.id}`);
   assert(apiShape.path.startsWith("/portal/api/"), `api_shape_path_must_be_portal_api:${apiShape.id}`);
   assert(await exists(apiShape.owner), `api_shape_owner_missing:${apiShape.owner}`);
   const ownerSource = await source(apiShape.owner);
   assert(apiShape.requiredKeys.length > 0, `api_shape_required_keys_missing:${apiShape.id}`);
+  assert(apiShape.requiredPaths.length > 0, `api_shape_required_paths_missing:${apiShape.id}`);
   assert(apiShape.forbiddenKeys.length > 0, `api_shape_forbidden_keys_missing:${apiShape.id}`);
   assert(ownerSource.includes(apiShape.path.replace("/portal/api", "")) || ownerSource.includes(apiShape.path), `api_shape_frontend_path_missing:${apiShape.id}`);
 }
@@ -262,11 +391,15 @@ assertIncludes(runtimeSuiteSource, "scripts/smoke-test-v22-portal-frontend-surfa
 
 const port = await freePort();
 const baseUrl = `http://127.0.0.1:${port}`;
+report.baseUrl = baseUrl;
 let portal = null;
+let browser = null;
 let stdout = "";
 let stderr = "";
 
 try {
+  await runCommand("npm", ["--prefix", "services/portal", "run", "frontend:build"], "portal_frontend_build");
+  report.checked.push("frontend_build_before_browser");
   await withIsolatedPortalRuntime(async () => {
     portal = spawn(process.execPath, [portalEntrypoint], {
       cwd: repoRoot,
@@ -306,34 +439,67 @@ try {
       for (const key of apiShape.requiredKeys) {
         assert(key in json, `api_shape_required_key_missing:${apiShape.id}:${key}`);
       }
+      for (const requiredPath of apiShape.requiredPaths) {
+        assert.notEqual(valueAtPath(json, requiredPath), undefined, `api_shape_required_path_missing:${apiShape.id}:${requiredPath}`);
+      }
       assertNoForbiddenKey(json, apiShape.forbiddenKeys, `api_shape_${apiShape.id}`);
+      report.coverage.apiShapes.checked += 1;
+    }
+
+    const { chromium } = await loadPlaywright();
+    browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({ viewport: { width: 1440, height: 920 } });
+    const page = await context.newPage();
+    await page.goto(`${baseUrl}/home`, { waitUntil: "domcontentloaded" });
+    assert(await page.locator("body").innerText().then((text) => text.includes("登录")), "browser_home_login_link_missing");
+    report.coverage.browserDom.routes.push("/home");
+    await page.goto(`${baseUrl}/login`, { waitUntil: "domcontentloaded" });
+    await page.locator('input[name="email"]').waitFor({ timeout: 10000 });
+    report.coverage.browserDom.routes.push("/login");
+    await page.locator('input[name="email"]').fill(adminEmail);
+    await page.locator('input[name="password"]').fill(adminPassword);
+    await Promise.all([
+      page.waitForURL(/\/overview$/, { timeout: 30000 }),
+      page.locator('button[type="submit"]').click(),
+    ]);
+    report.coverage.browserDom.routes.push("/overview");
+    await page.waitForSelector('[data-layout-id="layout.dashboard_page"]', { timeout: 30000 });
+    for (const surface of evalset.surfaces.filter((item) => item.status === "done" && item.routeId === "overview")) {
+      await page.locator(surface.selector).waitFor({ timeout: 30000 });
+      report.coverage.browserDom.surfaces.push(surface.componentId);
+    }
+    await page.goto(`${baseUrl}/admin/system`, { waitUntil: "networkidle" });
+    report.coverage.browserDom.routes.push("/admin/system");
+    for (const surface of evalset.surfaces.filter((item) => item.status === "done" && item.routeId === "admin.system")) {
+      await page.locator(surface.selector).waitFor({ timeout: 30000 });
+      report.coverage.browserDom.surfaces.push(surface.componentId);
     }
   });
 
-  console.log(JSON.stringify({
-    ok: true,
-    contract: "v22_portal_frontend_surface_eval",
-    evalset: evalsetPath,
-    checked: [
-      "routes",
-      "layouts",
-      "surface_dom_anchors",
-      "surface_registry",
-      "forbidden_copy",
-      "frontend_test_entry",
-      "api_shapes",
-    ],
-  }, null, 2));
+  report.ok = true;
+  report.checked = [
+    "harness_native_schema",
+    "routes",
+    "layouts",
+    "surface_dom_anchors",
+    "surface_registry",
+    "forbidden_copy",
+    "frontend_test_entry",
+    "api_shapes_required_paths",
+    "browser_dom_anchors",
+    "runtime_report",
+  ];
+  await writeReport(report);
+  console.log(JSON.stringify(report, null, 2));
 } catch (error) {
-  console.error(JSON.stringify({
-    ok: false,
-    contract: "v22_portal_frontend_surface_eval",
-    baseUrl,
-    error: String(error.message || error),
-    stdout,
-    stderr,
-  }, null, 2));
+  report.ok = false;
+  report.error = String(error.message || error);
+  report.stdout = stdout;
+  report.stderr = stderr;
+  await writeReport(report).catch(() => {});
+  console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } finally {
+  if (browser) await browser.close().catch(() => {});
   await stopChild(portal);
 }

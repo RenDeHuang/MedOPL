@@ -3,12 +3,14 @@ import { spawn } from "node:child_process";
 const groups = new Map([
   ["contract", [
     "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+    "scripts/smoke-test-v22-portal-contract-role-consolidation.mjs",
     "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
     "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
     "scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
   ]],
   ["architecture", [
     "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+    "scripts/smoke-test-v22-portal-contract-role-consolidation.mjs",
     "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
     "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
     "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",

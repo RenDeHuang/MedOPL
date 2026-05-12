@@ -30,9 +30,11 @@ function billingDateFilterOptions({ from = "", to = "" } = {}, formatDateOnly) {
 }
 
 function walletPayload(wallet, commercial) {
+  const activeFreeze = commercial.activeFreeze || 0;
   return {
     balance: Number(wallet.balance || 0),
-    activeFreeze: commercial.activeFreeze || 0,
+    activeFreeze,
+    frozen: activeFreeze,
     availableBalance: commercial.availableBalance || 0,
     trialRemaining: commercial.trialRemaining || 0,
   };

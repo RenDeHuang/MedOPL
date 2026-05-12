@@ -53,6 +53,8 @@ Portal UI 的可执行事实源是：
 services/portal/frontend/src/harness/portal-ui-evalset.json
 ```
 
+evalset 当前 schema 是 `2026-05-harness-native`。它必须作为机器可执行事实源，而不是新的长篇合同正文。
+
 evalset 必须包含：
 
 - `routes`
@@ -62,6 +64,10 @@ evalset 必须包含：
 - `forbiddenCopy`
 - `requiredDomAnchors`
 - `pageTasks`
+- `owners`
+- `acceptance`
+- `artifactPolicy`
+- `coverage`
 
 evalset 中 `status` 只能是 `done`、`partial` 或 `missing`。`partial` 和 `missing` 必须写明 `nextRequiredChange`，不得伪装成完成。
 
@@ -148,9 +154,11 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 - DOM 锚点是否存在。
 - surface registry 是否和 done surface 对齐。
 - 禁词是否出现在可见文案中。
-- API shape 是否有 required keys 和 forbidden keys。
+- API shape 是否有 required keys、required paths 和 forbidden keys。
 - frontend test 入口是否存在。
 - admin 页面 partial 缺口是否明确。
+- 浏览器能真实打开首页、登录页、工作台和管理台站点设置，并能看到关键 DOM 锚点。
+- `.runtime/portal-surface-eval/report.json` 能生成结构化报告；该报告不进 git。
 
 ## 分支边界
 
@@ -166,7 +174,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 4,
+  "version": 5,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -179,6 +187,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
   "contractRole": "ui_boundary_and_eval_entrypoint_only",
   "evalset": {
     "path": "services/portal/frontend/src/harness/portal-ui-evalset.json",
+    "schemaVersion": "2026-05-harness-native",
     "owns": [
       "routes",
       "surfaces",
@@ -186,9 +195,15 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
       "apiShapes",
       "forbiddenCopy",
       "requiredDomAnchors",
-      "pageTasks"
+      "pageTasks",
+      "owners",
+      "acceptance",
+      "artifactPolicy",
+      "coverage"
     ],
-    "smoke": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs"
+    "smoke": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+    "runtimeReportPath": ".runtime/portal-surface-eval/report.json",
+    "runtimeReportCommitted": false
   },
   "uiArchitecture": {
     "method": "sub2api_style_layout_first_with_executable_evalset",
