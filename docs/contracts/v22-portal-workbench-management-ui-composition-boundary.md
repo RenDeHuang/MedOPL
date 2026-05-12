@@ -6,6 +6,14 @@
 
 本合同 v2 不新增独立 UI 架构合同文件。Portal UI 架构治理、页面职责、组件边界、文案边界、API 来源和验证入口统一收敛在本合同内，避免合同数量继续膨胀。
 
+## 设计参考和工程框架
+
+Portal UI 的工程框架以本仓库 Vue、Tailwind、composition API、Portal API module、composable、component 和 smoke harness 为准。
+
+Sub2API 只作为工程化验证模式参考：顶层路由、账号密码登录、role-based surface、token/primitive、layout、common、业务组件、view 组装、store/composable 和 build/test/browser 校验。不得复制 Sub2API 代码、路由、鉴权、存储结构或产品名词。
+
+`nextlevelbuilder/ui-ux-pro-max-skill` 只作为设计 pattern 参考，用于信息层级、card/list/table 选择、配色字体气质和 anti-pattern 检查。它不引入外部框架，不替代本合同的 Portal 架构，不改变工作台/管理台主叙事。
+
 ## UI 工程结构
 
 Portal UI 必须把约束落在代码结构中，而不是只写在文档中。结构分层固定为：
@@ -24,6 +32,125 @@ Portal UI 必须把约束落在代码结构中，而不是只写在文档中。�
 - feature 组件按业务域建目录，由页面组合使用。
 - 一个块只有满足独立职责、独立状态、独立验收价值时才进入 feature component。
 - 页面不得绕过注册表新增核心 UI 区块。
+
+## 六层约束审计
+
+本合同把 Portal UI 约束拆成六层。每一层必须说明当前强约束、当前缺口和后续优化路线，避免把第一版组件化误称为全站完成。
+
+### 1. 路由入口层
+
+当前强约束：
+
+- 后端负责公开首页、登录页、注册页和旧 `/portal/app/*` 兼容重定向。
+- 前端 SPA router 负责登录后的工作台和管理台页面。
+- 可见入口采用顶层路径：`/home`、`/login`、`/register`、`/overview`、`/admin/system`。
+- `/portal/app/*` 只能兼容重定向，不作为新主入口。
+
+当前缺口：
+
+- `src/router/index.ts` 中 `/home`、`/login`、`/register` 是登录后 SPA 兼容 redirect；真实公开页和登录页由后端渲染。合同和 smoke 必须明确这个分工，不能误判为 SPA 内部页面实现。
+
+优化路线：
+
+- route smoke 同时检查后端公开入口和 SPA 登录后入口。
+- 新增顶层可见路由必须先进入合同和 route alignment smoke。
+
+### 2. 页面壳层
+
+当前强约束：
+
+- `AppLayout`、`AppHeader`、`AppSidebar` 负责应用壳、顶部栏、导航、移动端展开和滚动边界。
+- 页面壳可以读取当前用户用于 role-based navigation。
+
+当前缺口：
+
+- 页面壳不得承载账单、资源、任务、文件空间等业务判断；但合同必须允许它做角色导航，否则会和 admin 导航实现冲突。
+
+优化路线：
+
+- 把 role navigation 明确限定在 sidebar/header。
+- 业务状态、金额、套餐、任务、文件逻辑继续下沉到 composable 和业务组件。
+
+### 3. 页面编排层
+
+当前强约束：
+
+- `billing`、`resources`、`workspace`、`trace` 已使用 layout 协议、业务组件和 composable 组合。
+- view 不直接 import 对应业务 API module，不承载 loader、formatter、pagination 和主要 action handler。
+
+当前缺口：
+
+- `overview` 已组件化但还未套 `DashboardPageLayout`。
+- `admin/system` 已拆站点设置和服务状态组件，但仍在 view 中承担表单同步、保存和服务过滤。
+- 部分 admin 页面仍偏大，未纳入本轮完整页面编排治理。
+
+优化路线：
+
+- 下一轮优先让 `overview` 和 `admin/system` 使用页面 layout 协议。
+- 再按管理台页面逐步抽 `admin/dashboard`、`admin/users`、`admin/billing-ops`、`admin/usage` 的业务组件和 composable。
+
+### 4. 业务组件层
+
+当前强约束：
+
+- `overview`、`billing`、`resources`、`workspace`、`trace`、`admin/system` 已有业务组件目录。
+- 核心业务组件必须包含 `data-route-id` 和 `data-component-id`。
+- `src/harness/portal-ui-surfaces.ts` 固定 surface 的 route、component、question、states、selector 和 invariants。
+
+当前缺口：
+
+- 注册表覆盖了主工作台页面和 `admin/system`，还没有覆盖所有管理台页面。
+- 组件 states 和 invariants 目前主要被静态 smoke 检查存在性，浏览器 smoke 只抽样验证关键页面。
+
+优化路线：
+
+- 管理台页面按合同逐步进入 `portal-ui-surfaces.ts`。
+- 浏览器 smoke 从固定页面抽样演进为 surface registry 抽样。
+
+### 5. 通用组件层
+
+当前强约束：
+
+- `src/components/common/*` 只放跨页面复用原语，例如 `MetricCard`、`DataTable`、`DateRangeFilter`、`StatusBadge`、`ActionPanel`。
+- admin 专属组件如 `SiteLogoField`、`HomeContentEditor` 不属于 common；它们是固定业务组件。
+
+当前缺口：
+
+- 还缺 `SectionCard`、`PageState`、`TableShell`、`PaginationBar`、`FormField` 等更稳定的 common 壳。
+- 部分页面仍直接使用 `.card`、`.empty-state`、`.pager-bar` 拼装重复结构。
+
+优化路线：
+
+- 下一轮优先抽 common section 壳，而不是继续盲目拆业务文件。
+- common 组件只能收跨页面稳定模式，不收业务专属块。
+
+### 6. 视觉基础层
+
+当前强约束：
+
+- `tailwind.config.ts` 固定颜色、字体、字号、圆角、阴影和背景 token。
+- `src/style.css` 提供共享样式原语：`.btn`、`.input`、`.card`、`.badge`、`.table-shell`、`.desktop-table-shell`、`.mobile-card-list`、`.empty-state`、`.pager-bar`。
+
+当前缺口：
+
+- 视觉原语仍是 Tailwind utility 与语义 class 混合。
+- 尚未拆成独立 `tokens.css`、`primitives.css`，也没有 lint 禁止页面直接发明颜色、圆角和阴影。
+
+优化路线：
+
+- 保持 Tailwind 作为现有框架，逐步把视觉基础收敛为 token + primitive + common component。
+- 后续增加静态检查，禁止在 feature component 中新增裸十六进制颜色、任意阴影和未登记的重复 UI 原语。
+
+## 导航、页面和 Surface 关系
+
+Portal UI 必须区分四类对象：
+
+- 导航项：侧边栏或页头入口，例如“站点设置”。
+- 页面：路由承载的页面任务，例如 `/admin/system`。
+- surface 组件：页面内可独立验收的业务块，例如 `admin.system.site_settings`。
+- 详情页或详情入口：用于展开某个 surface 的更深操作，例如 `/admin/ops` 的服务状态详情。
+
+“站点设置”作为导航项、页面标题和 `admin.system.site_settings` 组件名称同时出现，不算重复实现；它们属于不同层级。`/admin/system` 可以包含站点设置和服务状态摘要，但 `/admin/ops` 才是服务状态详情入口，且必须受 `opsSurfaceEnabled` 控制。
 
 ## UI 架构层级
 
@@ -179,11 +306,13 @@ Portal 必须有公共首页，未登录用户访问根路径时先看到首页�
 
 验收必须动静态结合：
 
-- 静态 smoke 检查合同 JSON、禁词、路由、前后端 API、组件落点和 Vue 文案。
+- 静态 smoke 检查合同 JSON、旧合同冲突词、六层约束、禁词、路由、前后端 API、组件落点、共享样式原语、Vue 文案和 registry 锚点。
 - API smoke 启动本地 Portal，用真实 HTTP 验证公开站点设置、登录、管理台保存和回读。
-- 浏览器 smoke 打开首页、登录页、工作台和管理台页面，确认页面不是空白、没有不可用 OIDC 主按钮、核心文案存在。
+- 浏览器 smoke 打开首页、登录页、工作台和管理台页面，确认页面不是空白、没有不可用 OIDC 主按钮、核心文案和 registry 抽样组件存在。
 - `npm --prefix services/portal run check` 必须通过。
 - 前端 typecheck 和 build 在依赖安装后必须通过。
+
+验证方式采用 Sub2API 式工程链路，但不复制 Sub2API：合同和代码结构先固定 token、primitive、layout、common、domain component、view orchestration、composable 和 route guard，再用静态 smoke、类型检查、单元测试、构建和浏览器 smoke 证明这些约束没有漂移。
 
 Portal UI 正式验证入口统一为：
 
@@ -256,7 +385,21 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
     "workbenchOverview": "/overview",
     "managementSystem": "/admin/system",
     "legacyPortalAppPrefix": "/portal/app",
-    "legacyPortalAppPrimary": "compat_redirect_only"
+    "legacyPortalAppPrimary": "compat_redirect_only",
+    "publicAuthRenderedByBackend": true,
+    "spaRouterOwnsAuthenticatedApp": true
+  },
+  "designReference": {
+    "sub2apiEngineeringPatternOnly": true,
+    "sub2apiCodeCopied": false,
+    "uiUxProMaxDesignPatternOnly": true,
+    "uiUxProMaxFrameworkDependency": false,
+    "designChecks": [
+      "information_hierarchy",
+      "card_list_table_choice",
+      "color_typography_tone",
+      "anti_patterns"
+    ]
   },
   "uiArchitecture": {
     "method": "sub2api_style_layout_first",
@@ -298,6 +441,9 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
     "currentFeatureComponentSources": [
       "services/portal/frontend/src/components/overview",
       "services/portal/frontend/src/components/billing",
+      "services/portal/frontend/src/components/resources",
+      "services/portal/frontend/src/components/workspace",
+      "services/portal/frontend/src/components/trace",
       "services/portal/frontend/src/components/admin"
     ],
     "targetFeatureComponentSources": [
@@ -319,7 +465,114 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
     "requiredDomAnchors": [
       "data-route-id",
       "data-component-id"
-    ]
+    ],
+    "sixLayerAudit": {
+      "routeEntry": {
+        "status": "partial",
+        "hardConstraints": [
+          "backend_public_home_login_register",
+          "spa_authenticated_routes",
+          "legacy_portal_app_compat_redirect_only"
+        ],
+        "gaps": [
+          "spa_router_redirects_public_auth_paths_after_backend_entry"
+        ],
+        "nextOptimizations": [
+          "route_smoke_checks_backend_public_entry_and_spa_authenticated_entry"
+        ]
+      },
+      "pageShell": {
+        "status": "partial",
+        "hardConstraints": [
+          "AppLayout",
+          "AppHeader",
+          "AppSidebar",
+          "role_based_navigation_allowed"
+        ],
+        "gaps": [
+          "sidebar_must_not_gain_business_surface_logic"
+        ],
+        "nextOptimizations": [
+          "keep_role_navigation_in_shell_and_domain_logic_in_composables"
+        ]
+      },
+      "pageOrchestration": {
+        "status": "partial",
+        "hardConstraints": [
+          "billing_resources_workspace_trace_use_layout_and_composable",
+          "views_do_not_import_domain_api_modules_for_those_surfaces"
+        ],
+        "gaps": [
+          "overview_not_yet_using_DashboardPageLayout",
+          "admin_system_still_owns_form_sync_and_save_wiring",
+          "admin_pages_not_all_componentized"
+        ],
+        "nextOptimizations": [
+          "move_overview_and_admin_system_to_layout_protocol",
+          "split_admin_pages_by_domain_surface"
+        ]
+      },
+      "featureComponents": {
+        "status": "partial",
+        "hardConstraints": [
+          "overview_billing_resources_workspace_trace_admin_system_components",
+          "data_route_id_and_data_component_id",
+          "portal_ui_surfaces_registry"
+        ],
+        "gaps": [
+          "registry_not_covering_all_admin_pages",
+          "browser_smoke_samples_core_surfaces_only"
+        ],
+        "nextOptimizations": [
+          "add_admin_surfaces_to_registry",
+          "browser_smoke_samples_registry_surfaces"
+        ]
+      },
+      "commonComponents": {
+        "status": "partial",
+        "hardConstraints": [
+          "MetricCard",
+          "DataTable",
+          "DateRangeFilter",
+          "StatusBadge",
+          "ActionPanel"
+        ],
+        "gaps": [
+          "missing_SectionCard_PageState_TableShell_PaginationBar_FormField",
+          "some_pages_still_compose_card_empty_state_pager_bar_directly"
+        ],
+        "nextOptimizations": [
+          "extract_common_section_shells_before_more_page_splitting"
+        ]
+      },
+      "visualFoundation": {
+        "status": "partial",
+        "hardConstraints": [
+          "tailwind_config_tokens",
+          "style_css_shared_primitives"
+        ],
+        "gaps": [
+          "tailwind_utility_and_semantic_class_mix",
+          "no_tokens_css_primitives_css_split",
+          "no_lint_for_raw_color_radius_shadow"
+        ],
+        "nextOptimizations": [
+          "keep_tailwind_framework_and_add_design_token_lint"
+        ]
+      }
+    },
+    "navigationPageSurfaceModel": {
+      "navigationItem": "侧边栏或页头入口",
+      "page": "路由承载的页面任务",
+      "surfaceComponent": "页面内可独立验收的业务块",
+      "detailEntry": "用于展开某个 surface 的更深操作",
+      "siteSettingsDuplicate": false,
+      "adminSystemContains": [
+        "admin.system.site_settings",
+        "admin.system.service_status"
+      ],
+      "adminOpsIsServiceStatusDetail": true
+    }
   },
   "copyArchitecture": {
     "i18nEntry": "services/portal/frontend/src/plugins/i18n.ts",
@@ -371,14 +624,16 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
     "storageKey",
     "signedUrl"
   ],
-  "componentRegistry": [
+  "commonComponentRegistry": [
     "MetricCard",
     "DataTable",
     "DateRangeFilter",
-    "SiteLogoField",
-    "HomeContentEditor",
     "StatusBadge",
     "ActionPanel"
+  ],
+  "fixedFeatureComponentRegistry": [
+    "SiteLogoField",
+    "HomeContentEditor"
   ],
   "primitiveRegistry": [
     "empty-state",

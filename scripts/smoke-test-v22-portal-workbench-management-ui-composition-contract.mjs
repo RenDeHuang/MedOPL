@@ -63,6 +63,18 @@ assert.equal(contract.visibleRoutes.routerBase, "/", "visible_router_base_must_b
 assert.equal(contract.visibleRoutes.workbenchOverview, "/overview", "visible_workbench_overview_mismatch");
 assert.equal(contract.visibleRoutes.managementSystem, "/admin/system", "visible_management_system_mismatch");
 assert.equal(contract.visibleRoutes.legacyPortalAppPrimary, "compat_redirect_only", "legacy_portal_app_must_be_compat_only");
+assert.equal(contract.visibleRoutes.publicAuthRenderedByBackend, true, "public_auth_must_be_backend_rendered");
+assert.equal(contract.visibleRoutes.spaRouterOwnsAuthenticatedApp, true, "spa_router_must_own_authenticated_app");
+assert.equal(contract.designReference.sub2apiEngineeringPatternOnly, true, "sub2api_must_be_engineering_pattern_only");
+assert.equal(contract.designReference.sub2apiCodeCopied, false, "sub2api_code_must_not_be_copied");
+assert.equal(contract.designReference.uiUxProMaxDesignPatternOnly, true, "ui_ux_pro_max_must_be_design_pattern_only");
+assert.equal(contract.designReference.uiUxProMaxFrameworkDependency, false, "ui_ux_pro_max_must_not_be_framework_dependency");
+assert.deepEqual(contract.designReference.designChecks, [
+  "information_hierarchy",
+  "card_list_table_choice",
+  "color_typography_tone",
+  "anti_patterns",
+], "design_reference_checks_mismatch");
 assert.equal(contract.uiArchitecture.method, "sub2api_style_layout_first", "ui_architecture_method_mismatch");
 assert.deepEqual(contract.uiArchitecture.layers, ["route_entry", "token", "primitive", "layout", "domain_composable", "feature_component", "page_orchestration", "harness_validation"], "ui_architecture_layers_mismatch");
 assert.deepEqual(contract.uiArchitecture.sequence, ["visual_primitives", "page_layouts", "common_patterns", "domain_components", "view_orchestration", "state_composables", "contract_harness"], "ui_architecture_sequence_mismatch");
@@ -71,13 +83,40 @@ assert.deepEqual(contract.uiArchitecture.layoutProtocol, ["DashboardPageLayout",
 assert.deepEqual(contract.uiArchitecture.currentFeatureComponentSources, [
   "services/portal/frontend/src/components/overview",
   "services/portal/frontend/src/components/billing",
+  "services/portal/frontend/src/components/resources",
+  "services/portal/frontend/src/components/workspace",
+  "services/portal/frontend/src/components/trace",
   "services/portal/frontend/src/components/admin",
 ], "current_feature_component_sources_mismatch");
 assert.equal(contract.uiArchitecture.surfaceRegistry, "services/portal/frontend/src/harness/portal-ui-surfaces.ts", "surface_registry_path_mismatch");
+assert.equal(contract.uiArchitecture.sixLayerAudit.routeEntry.status, "partial", "route_entry_audit_status_mismatch");
+assert.equal(contract.uiArchitecture.sixLayerAudit.pageShell.status, "partial", "page_shell_audit_status_mismatch");
+assert.equal(contract.uiArchitecture.sixLayerAudit.pageOrchestration.status, "partial", "page_orchestration_audit_status_mismatch");
+assert.equal(contract.uiArchitecture.sixLayerAudit.featureComponents.status, "partial", "feature_components_audit_status_mismatch");
+assert.equal(contract.uiArchitecture.sixLayerAudit.commonComponents.status, "partial", "common_components_audit_status_mismatch");
+assert.equal(contract.uiArchitecture.sixLayerAudit.visualFoundation.status, "partial", "visual_foundation_audit_status_mismatch");
+assertIncludes(contract.uiArchitecture.sixLayerAudit.pageOrchestration.gaps.join("\n"), "overview_not_yet_using_DashboardPageLayout", "six_layer_audit_must_record_overview_layout_gap");
+assertIncludes(contract.uiArchitecture.sixLayerAudit.commonComponents.gaps.join("\n"), "missing_SectionCard_PageState_TableShell_PaginationBar_FormField", "six_layer_audit_must_record_common_gap");
+assert.equal(contract.uiArchitecture.navigationPageSurfaceModel.siteSettingsDuplicate, false, "site_settings_must_not_be_treated_as_duplicate");
+assert.deepEqual(contract.uiArchitecture.navigationPageSurfaceModel.adminSystemContains, [
+  "admin.system.site_settings",
+  "admin.system.service_status",
+], "admin_system_surface_model_mismatch");
 assert.equal(contract.copyArchitecture.rawStatusVisible, false, "raw_status_must_not_be_visible");
 assertIncludes(contract.copyArchitecture.forbiddenUiTerms.join("\n"), "账务", "copy_forbidden_ledger_term");
 assert.deepEqual(contract.workbenchPages, ["总览", "计算资源", "任务执行", "文件空间", "账单"], "workbench_pages_mismatch");
 assert.deepEqual(contract.managementPages, ["平台总览", "客户账户", "资源管理", "任务记录", "账单管理", "审计记录", "站点设置", "服务状态"], "management_pages_mismatch");
+assert.deepEqual(contract.commonComponentRegistry, [
+  "MetricCard",
+  "DataTable",
+  "DateRangeFilter",
+  "StatusBadge",
+  "ActionPanel",
+], "common_component_registry_mismatch");
+assert.deepEqual(contract.fixedFeatureComponentRegistry, [
+  "SiteLogoField",
+  "HomeContentEditor",
+], "fixed_feature_component_registry_mismatch");
 assert.equal(contract.runtimeSmokeEntrypoint, "scripts/smoke-test-v22-portal-runtime-suite.mjs", "runtime_suite_entrypoint_mismatch");
 assertIncludes(contract.validationGroups.join("\n"), "architecture", "runtime_suite_must_include_architecture_group");
 

@@ -2,7 +2,7 @@
 
 本合同固定 MedOPL v22 的 Portal、OPL Web、管理台共享产品表面、用户角色、多租户后台边界和腾讯云分账标签边界。
 
-本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。
+本合同是共享产品表面合同，不单独实现 UI。Portal 可运行 UI、组件组合、路由入口和验证链路由 `v22-portal-workbench-management-ui-composition-boundary.md` 承接；本合同不得再声明“本轮不做 UI”作为全局事实。
 
 ## 产品定位
 
@@ -94,7 +94,7 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 - T+1 审计状态
 - 异常账单、异常资源
 
-管理台可以展示后台标识、腾讯云标签映射和异常归因；这些不进入 AI 小白科研用户主叙事。
+管理台可以在排查详情中展示后台标识、腾讯云标签映射和异常归因；这些不进入 AI 小白科研用户主叙事，也不作为管理台一级页面和默认摘要的标题语言。管理台一级页面和默认摘要必须优先使用客户账户、工作空间、资源管理、任务记录、账单管理、审计记录、站点设置和服务状态。
 
 ## 后台多租户边界
 
@@ -202,7 +202,12 @@ AI 小白用户进入 Portal 后能回答：
 ```json
 {
   "contract": "v22_saas_portal_opl_ops_surface_boundary",
-  "version": 1,
+  "version": 2,
+  "implementationBoundary": {
+    "thisContractImplementsUiDirectly": false,
+    "portalUiImplementationContract": "v22-portal-workbench-management-ui-composition-boundary.md",
+    "mustNotClaimNoUiWhenCompositionImplementsUi": true
+  },
   "productPositioning": {
     "statement": "MedOPL 是面向 AI 小白科研用户的 OPL 托管科研工作台。",
     "notCloudConsole": true,
@@ -254,6 +259,17 @@ AI 小白用户进入 Portal 后能回答：
     ]
   },
   "managementSurface": {
+    "primaryPageLanguage": [
+      "客户账户",
+      "工作空间",
+      "资源管理",
+      "任务记录",
+      "账单管理",
+      "审计记录",
+      "站点设置",
+      "服务状态"
+    ],
+    "rawBackendTermsAllowedOnlyInDiagnosticDetail": true,
     "mustShow": [
       "tenant 状态",
       "workspace 状态",
@@ -381,8 +397,8 @@ AI 小白用户进入 Portal 后能回答：
     ]
   },
   "nonGoals": [
-    "不写业务代码",
-    "不做 UI",
+    "本合同不单独实现 UI",
+    "不复制 Sub2API 代码、路由、鉴权或存储结构",
     "不读取 /home/dev/.secrets/medopl/secrets.env.txt",
     "不调用真实云 API",
     "不运行 build/push/kubectl/live-test"
@@ -393,8 +409,8 @@ AI 小白用户进入 Portal 后能回答：
 
 ## Non-goals
 
-- 不写业务代码。
-- 不做 UI。
+- 本合同不单独实现 UI；Portal UI 实现由 `v22-portal-workbench-management-ui-composition-boundary.md` 承接。
+- 不复制 Sub2API 代码、路由、鉴权或存储结构。
 - 不改 frontend、Gateway、Runtime Bridge、deploy、`.sentrux`、adapters 或 one-person-lab upstream。
 - 不读取 `/home/dev/.secrets/medopl/secrets.env.txt`。
 - 不调用真实云 API。

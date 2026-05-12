@@ -217,14 +217,19 @@ async function assertTraceTaskHeaderCopy() {
 const markdown = await readFile(contractPath, "utf8");
 assert(markdown.includes("MedOPL 是面向 AI 小白科研用户的 OPL 托管科研工作台。"), "product_statement_missing");
 assert(markdown.includes("普通用户不需要理解云厂商控制台或工程后台。"), "not_cloud_console_statement_missing");
-assert(markdown.includes("本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。"), "non_implementation_scope_missing");
+assert.equal(markdown.includes("本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。"), false, "saas_surface_contract_must_not_claim_no_ui_globally");
+assert(markdown.includes("本合同不单独实现 UI"), "saas_surface_contract_must_delegate_ui_implementation");
+assert(markdown.includes("v22-portal-workbench-management-ui-composition-boundary.md"), "saas_surface_contract_must_reference_composition_contract");
 await assertFrontendBeginnerSurfaceCopy();
 await assertTraceTaskHeaderCopy();
 
 const contract = extractContractJson(markdown);
 
 assert.equal(contract.contract, "v22_saas_portal_opl_ops_surface_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 1, "contract_version_mismatch");
+assert.equal(contract.version, 2, "contract_version_mismatch");
+assert.equal(contract.implementationBoundary.thisContractImplementsUiDirectly, false, "saas_surface_contract_must_not_implement_ui_directly");
+assert.equal(contract.implementationBoundary.portalUiImplementationContract, "v22-portal-workbench-management-ui-composition-boundary.md", "saas_surface_ui_implementation_contract_mismatch");
+assert.equal(contract.implementationBoundary.mustNotClaimNoUiWhenCompositionImplementsUi, true, "saas_surface_must_not_conflict_with_composition_ui");
 assert.deepEqual(
   sortedKeys(contract),
   [
@@ -233,6 +238,7 @@ assert.deepEqual(
     "cloudResourceBoundary",
     "contract",
     "forbiddenBeginnerUserNarrative",
+    "implementationBoundary",
     "nonGoals",
     "oplWebBeginnerSurface",
     "managementSurface",
@@ -305,6 +311,17 @@ assertIncludesAll(contract.managementSurface.mustShow, [
   "T+1 审计状态",
   "异常账单、异常资源",
 ], "operations_surface");
+assertIncludesAll(contract.managementSurface.primaryPageLanguage, [
+  "客户账户",
+  "工作空间",
+  "资源管理",
+  "任务记录",
+  "账单管理",
+  "审计记录",
+  "站点设置",
+  "服务状态",
+], "management_surface_primary_page_language");
+assert.equal(contract.managementSurface.rawBackendTermsAllowedOnlyInDiagnosticDetail, true, "management_raw_backend_terms_must_be_detail_only");
 
 assert.deepEqual(contract.backendMultiTenantBoundary.fields, [
   "tenantId",
@@ -394,8 +411,8 @@ assertQuestions(contract.productEffectQuestions.managementCanAnswer, [
 ], "ops_questions");
 
 assert.deepEqual(contract.nonGoals, [
-  "不写业务代码",
-  "不做 UI",
+  "本合同不单独实现 UI",
+  "不复制 Sub2API 代码、路由、鉴权或存储结构",
   "不读取 /home/dev/.secrets/medopl/secrets.env.txt",
   "不调用真实云 API",
   "不运行 build/push/kubectl/live-test",
