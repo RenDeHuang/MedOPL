@@ -29,6 +29,11 @@ const report = {
     copyRegistry: { total: 0, checked: 0 },
     fixtures: { total: 0, checked: 0 },
     visualRoutes: { total: 0, checked: 0 },
+    pageComposition: { total: 0, checked: 0 },
+    surfaceStates: { total: 0, checked: 0 },
+    componentFixtures: { total: 0, checked: 0 },
+    designTokens: { total: 0, checked: 0 },
+    presentationRules: { total: 0, checked: 0 },
     browserDom: { routes: [], surfaces: [] },
   },
   partials: [],
@@ -91,6 +96,14 @@ function assertUnique(items, key, label) {
 
 function assertValidStatus(value, label) {
   assert(["done", "partial", "missing"].includes(value), `${label}_invalid_status:${value}`);
+}
+
+function assertOrderedBefore(items, first, second, label) {
+  const firstIndex = items.findIndex((item) => item.kind === first);
+  const secondIndex = items.findIndex((item) => item.kind === second);
+  if (firstIndex !== -1 && secondIndex !== -1) {
+    assert(firstIndex < secondIndex, `${label}_${first}_must_precede_${second}`);
+  }
 }
 
 function countStatuses(items) {
@@ -266,6 +279,11 @@ report.coverage.primitives.total = evalset.primitives?.length || 0;
 report.coverage.copyRegistry.total = evalset.copyRegistry?.length || 0;
 report.coverage.fixtures.total = evalset.fixtures?.length || 0;
 report.coverage.visualRoutes.total = evalset.visualRoutes?.length || 0;
+report.coverage.pageComposition.total = evalset.pageComposition?.length || 0;
+report.coverage.surfaceStates.total = evalset.surfaceStates?.length || 0;
+report.coverage.componentFixtures.total = evalset.componentFixtures?.length || 0;
+report.coverage.designTokens.total = evalset.designTokens?.length || 0;
+report.coverage.presentationRules.total = evalset.presentationRules?.length || 0;
 report.partials = [
   ...evalset.routes.filter((item) => item.status !== "done").map((item) => ({
     kind: "route",
@@ -284,7 +302,7 @@ report.partials = [
   })),
 ];
 
-assert.equal(evalset.version, 3, "evalset_version_mismatch");
+assert.equal(evalset.version, 4, "evalset_version_mismatch");
 assert.equal(evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(evalset.model, "gpt-5.4", "evalset_model_mismatch");
 assert.equal(evalset.owners.contract, "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md", "evalset_contract_owner_mismatch");
@@ -301,13 +319,18 @@ assert.equal(evalset.coverage.primitivesMustHaveDomAnchor, true, "evalset_primit
 assert.equal(evalset.coverage.visualRoutesMustHaveNoHorizontalOverflow, true, "evalset_visual_overflow_coverage_required");
 assert.equal(evalset.coverage.copyRegistryBlocksInternalTerms, true, "evalset_copy_registry_coverage_required");
 assert.equal(evalset.coverage.fixturesMustCoverReadyAndEmpty, true, "evalset_fixture_coverage_required");
+assert.equal(evalset.coverage.pageCompositionMustDeclareProductSections, true, "evalset_page_composition_coverage_required");
+assert.equal(evalset.coverage.surfaceStatesMustMatchRegistry, true, "evalset_surface_state_registry_coverage_required");
+assert.equal(evalset.coverage.componentFixturesMustCoverSurfaceStates, true, "evalset_component_fixture_coverage_required");
+assert.equal(evalset.coverage.designTokensMustBeExecutable, true, "evalset_design_token_coverage_required");
+assert.equal(evalset.coverage.presentationRulesMustBeExecutable, true, "evalset_presentation_rule_coverage_required");
 assert.equal(evalset.scope.portalOnly, true, "evalset_must_be_portal_only");
 assert.equal(evalset.scope.sourceOfExecutableUiTruth, true, "evalset_must_be_executable_ui_truth");
 assert.equal(evalset.scope.callsRealCloud, false, "evalset_must_not_call_real_cloud");
 assert.equal(evalset.scope.readsSecrets, false, "evalset_must_not_read_secrets");
 assert.deepEqual(evalset.requiredDomAnchors, ["data-route-id", "data-component-id", "data-layout-id"], "required_dom_anchors_mismatch");
 
-for (const key of ["routes", "layouts", "surfaces", "apiShapes", "forbiddenCopy", "pageTasks", "primitives", "copyRegistry", "fixtures", "visualRoutes"]) {
+for (const key of ["routes", "layouts", "surfaces", "apiShapes", "forbiddenCopy", "pageTasks", "primitives", "copyRegistry", "fixtures", "visualRoutes", "pageComposition", "surfaceStates", "componentFixtures", "designTokens", "presentationRules"]) {
   assert(Array.isArray(evalset[key]), `evalset_${key}_must_be_array`);
 }
 assertUnique(evalset.routes, "id", "evalset_routes");
@@ -316,7 +339,14 @@ assertUnique(evalset.surfaces, "componentId", "evalset_surfaces");
 assertUnique(evalset.apiShapes, "id", "evalset_api_shapes");
 assertUnique(evalset.primitives, "primitiveId", "evalset_primitives");
 assertUnique(evalset.copyRegistry, "key", "evalset_copy_registry");
+assertUnique(evalset.surfaceStates, "componentId", "evalset_surface_states");
+assertUnique(evalset.pageComposition, "routeId", "evalset_page_composition");
+assertUnique(evalset.componentFixtures, "componentId", "evalset_component_fixtures");
+assertUnique(evalset.designTokens, "tokenId", "evalset_design_tokens");
+assertUnique(evalset.presentationRules, "ruleId", "evalset_presentation_rules");
 const routeIds = new Set(evalset.routes.map((route) => route.id));
+const surfaceIds = new Set(evalset.surfaces.map((surface) => surface.componentId));
+const surfaceStatesByComponent = new Map(evalset.surfaceStates.map((state) => [state.componentId, state.states]));
 
 for (const route of evalset.routes) {
   assertValidStatus(route.status, `route_${route.id}`);
@@ -361,6 +391,38 @@ for (const pageTask of evalset.pageTasks) {
   }
 }
 
+for (const composition of evalset.pageComposition) {
+  assertValidStatus(composition.status, `page_composition_${composition.routeId}`);
+  assert(routeIds.has(composition.routeId), `page_composition_route_id_missing:${composition.routeId}`);
+  assert(composition.task === evalset.pageTasks.find((item) => item.routeId === composition.routeId)?.task, `page_composition_task_mismatch:${composition.routeId}`);
+  assert(composition.layoutId?.startsWith("layout."), `page_composition_layout_missing:${composition.routeId}`);
+  assert(Array.isArray(composition.sections) && composition.sections.length > 0, `page_composition_sections_missing:${composition.routeId}`);
+  const sectionKinds = composition.sections.map((section) => section.kind);
+  assert(sectionKinds.includes("metrics"), `page_composition_metrics_missing:${composition.routeId}`);
+  assert(sectionKinds.includes("actions"), `page_composition_actions_missing:${composition.routeId}`);
+  assert(sectionKinds.some((kind) => ["primaryTable", "primaryList", "primaryPanel"].includes(kind)), `page_composition_primary_surface_missing:${composition.routeId}`);
+  assertOrderedBefore(composition.sections, "filters", "primaryTable", `page_composition_${composition.routeId}`);
+  for (const section of composition.sections) {
+    assert(section.sectionId, `page_composition_section_id_missing:${composition.routeId}`);
+    assert(section.display, `page_composition_display_missing:${composition.routeId}:${section.sectionId}`);
+    assert(Array.isArray(section.componentIds) && section.componentIds.length > 0, `page_composition_component_ids_missing:${composition.routeId}:${section.sectionId}`);
+    for (const componentId of section.componentIds) {
+      assert(surfaceIds.has(componentId), `page_composition_unknown_component:${composition.routeId}:${componentId}`);
+    }
+  }
+  report.coverage.pageComposition.checked += 1;
+}
+
+for (const state of evalset.surfaceStates) {
+  assert(surfaceIds.has(state.componentId), `surface_state_unknown_component:${state.componentId}`);
+  assert(routeIds.has(state.routeId), `surface_state_route_id_missing:${state.componentId}:${state.routeId}`);
+  assert(state.question, `surface_state_question_missing:${state.componentId}`);
+  assert(Array.isArray(state.states) && state.states.length > 0, `surface_state_states_missing:${state.componentId}`);
+  assert(Array.isArray(state.invariants) && state.invariants.length > 0, `surface_state_invariants_missing:${state.componentId}`);
+  assertIncludes(surfaceRegistrySource, `componentId: "${state.componentId}"`, `surface_state_registry_component_${state.componentId}`);
+  report.coverage.surfaceStates.checked += 1;
+}
+
 for (const apiShape of evalset.apiShapes) {
   assert(routeIds.has(apiShape.routeId), `api_shape_route_id_missing:${apiShape.id}:${apiShape.routeId}`);
   assert.equal(apiShape.method, "GET", `api_shape_method_must_be_get:${apiShape.id}`);
@@ -398,6 +460,36 @@ for (const fixture of evalset.fixtures) {
   assert(fixture.states.includes("ready"), `fixture_ready_state_missing:${fixture.routeId}`);
   assert(fixture.states.includes("empty"), `fixture_empty_state_missing:${fixture.routeId}`);
   report.coverage.fixtures.checked += 1;
+}
+
+for (const fixture of evalset.componentFixtures) {
+  assert(routeIds.has(fixture.routeId), `component_fixture_route_id_missing:${fixture.componentId}:${fixture.routeId}`);
+  assert(surfaceIds.has(fixture.componentId), `component_fixture_unknown_surface:${fixture.componentId}`);
+  assert(await exists(fixture.owner), `component_fixture_owner_missing:${fixture.owner}`);
+  assertValidStatus(fixture.status, `component_fixture_${fixture.componentId}`);
+  const fixtureJson = JSON.parse(await source(fixture.owner));
+  assert(fixtureJson[fixture.componentId], `component_fixture_payload_missing:${fixture.componentId}`);
+  assert(Array.isArray(fixture.requiredStates) && fixture.requiredStates.length > 0, `component_fixture_states_missing:${fixture.componentId}`);
+  assert.deepEqual(fixture.requiredStates, surfaceStatesByComponent.get(fixture.componentId), `component_fixture_must_cover_all_surface_states:${fixture.componentId}`);
+  for (const stateName of fixture.requiredStates) {
+    assert(fixtureJson[fixture.componentId][stateName], `component_fixture_state_payload_missing:${fixture.componentId}:${stateName}`);
+  }
+  report.coverage.componentFixtures.checked += 1;
+}
+
+for (const token of evalset.designTokens) {
+  assert(["tailwind", "style", "component"].includes(token.source), `design_token_source_invalid:${token.tokenId}`);
+  assert(await exists(token.requiredIn), `design_token_owner_missing:${token.tokenId}:${token.requiredIn}`);
+  assertIncludes(await source(token.requiredIn), token.assertion, `design_token_assertion_${token.tokenId}`);
+  assertValidStatus(token.status, `design_token_${token.tokenId}`);
+  report.coverage.designTokens.checked += 1;
+}
+
+for (const rule of evalset.presentationRules) {
+  assert(rule.description, `presentation_rule_description_missing:${rule.ruleId}`);
+  assert(rule.assertion, `presentation_rule_assertion_missing:${rule.ruleId}`);
+  assert(["static", "browser", "static_and_browser"].includes(rule.enforcedBy), `presentation_rule_enforcer_invalid:${rule.ruleId}`);
+  report.coverage.presentationRules.checked += 1;
 }
 
 for (const visualRoute of evalset.visualRoutes) {
@@ -554,6 +646,11 @@ try {
     "copy_registry",
     "fixtures",
     "visual_routes",
+    "page_composition",
+    "surface_states",
+    "component_fixtures",
+    "design_tokens",
+    "presentation_rules",
     "browser_dom_anchors",
     "runtime_report",
   ];

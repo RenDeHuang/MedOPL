@@ -1,4 +1,117 @@
 {
-  "ready": {},
-  "empty": {}
+  "workspace.hero": {
+    "loading": {
+      "state": "loading",
+      "label": "正在加载",
+      "items": []
+    },
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "workspace.hero.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "restricted": {
+      "state": "restricted",
+      "label": "当前受限",
+      "items": [
+        {
+          "id": "workspace.hero.sample",
+          "name": "示例项"
+        }
+      ]
+    }
+  },
+  "workspace.file_space": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "workspace.file_space.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    },
+    "restricted": {
+      "state": "restricted",
+      "label": "当前受限",
+      "items": [
+        {
+          "id": "workspace.file_space.sample",
+          "name": "示例项"
+        }
+      ]
+    }
+  },
+  "workspace.managed_plan": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "workspace.managed_plan.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    }
+  },
+  "workspace.list": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "workspace.list.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    }
+  },
+  "workspace.files": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "workspace.files.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    },
+    "restricted": {
+      "state": "restricted",
+      "label": "当前受限",
+      "items": [
+        {
+          "id": "workspace.files.sample",
+          "name": "示例项"
+        }
+      ]
+    }
+  }
 }

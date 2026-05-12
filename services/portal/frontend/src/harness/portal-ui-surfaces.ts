@@ -81,6 +81,14 @@ export const portalUiSurfaces: PortalUiSurface[] = [
     invariants: ["工作空间入口必须可见", "内部资源标识不得展示"],
   },
   {
+    routeId: "overview",
+    componentId: "overview.plans",
+    question: "用户当前可选套餐和入门预计消费是什么",
+    states: ["ready", "empty"],
+    selector: '[data-component-id="overview.plans"]',
+    invariants: ["套餐摘要必须独立于余额指标", "入门预计消费必须清晰标明估算"],
+  },
+  {
     routeId: "billing",
     componentId: "billing.hero",
     question: "用户当前余额、冻结金额、消费和账单核对状态是什么",
@@ -270,7 +278,7 @@ export const portalUiSurfaces: PortalUiSurface[] = [
     question: "管理员如何查看账单对账、待补记录、成本构成和最近调整",
     states: ["loading", "ready", "empty"],
     selector: '[data-component-id="admin.billing_ops.summary"]',
-    invariants: ["账单管理不能命名为账务", "待补记录和最近调整必须分开展示"],
+    invariants: ["账单管理必须使用账单命名", "待补记录和最近调整必须分开展示"],
   },
   {
     routeId: "admin.usage",

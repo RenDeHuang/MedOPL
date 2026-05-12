@@ -43,7 +43,7 @@ const roleAdminContract = await source("docs/contracts/v22-portal-admin-ops-surf
 const structureContract = await source("docs/contracts/v22-portal-structure-failure-isolation-boundary.md");
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 6, "contract_version_mismatch");
+assert.equal(contract.version, 7, "contract_version_mismatch");
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
@@ -70,6 +70,11 @@ assert.deepEqual(contract.evalset.owns, [
   "copyRegistry",
   "fixtures",
   "visualRoutes",
+  "pageComposition",
+  "surfaceStates",
+  "componentFixtures",
+  "designTokens",
+  "presentationRules",
   "owners",
   "acceptance",
   "artifactPolicy",
@@ -80,6 +85,12 @@ assert.equal(contract.uiArchitecture.method, "sub2api_style_layout_first_with_ex
 assert.equal(contract.uiArchitecture.pageRole, "orchestration_only", "page_role_must_be_orchestration_only");
 assert.equal(contract.uiArchitecture.surfaceFactsLiveInEvalset, true, "surface_facts_must_live_in_evalset");
 assert.equal(contract.uiArchitecture.apiShapeFactsLiveInEvalset, true, "api_shape_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.productizedUiSystemFactsLiveInEvalset, true, "productized_ui_system_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.pageCompositionFactsLiveInEvalset, true, "page_composition_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.surfaceStateFactsLiveInEvalset, true, "surface_state_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.componentFixtureFactsLiveInEvalset, true, "component_fixture_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.designTokenFactsLiveInEvalset, true, "design_token_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.presentationRuleFactsLiveInEvalset, true, "presentation_rule_facts_must_live_in_evalset");
 assert.deepEqual(contract.uiArchitecture.layers, [
   "route_entry",
   "page_shell",
@@ -147,6 +158,12 @@ assert(evalset.primitives.length >= 9, "evalset_must_cover_common_primitives");
 assert(evalset.copyRegistry.length >= 20, "evalset_must_cover_copy_registry");
 assert(evalset.fixtures.length >= 6, "evalset_must_cover_core_fixtures");
 assert(evalset.visualRoutes.length >= 8, "evalset_must_cover_visual_routes");
+assert(evalset.version >= 4, "evalset_must_be_productized_ui_system_version");
+assert(evalset.pageComposition.length >= 11, "evalset_must_cover_page_composition");
+assert(evalset.surfaceStates.length >= evalset.surfaces.length, "evalset_must_cover_surface_states");
+assert(evalset.componentFixtures.length >= evalset.surfaces.length, "evalset_must_cover_component_fixtures");
+assert(evalset.designTokens.length >= 10, "evalset_must_cover_design_tokens");
+assert(evalset.presentationRules.length >= 7, "evalset_must_cover_presentation_rules");
 for (const apiShape of evalset.apiShapes) {
   assert(Array.isArray(apiShape.requiredPaths), `evalset_api_shape_required_paths_missing:${apiShape.id}`);
   assert(apiShape.requiredPaths.length > 0, `evalset_api_shape_required_paths_empty:${apiShape.id}`);

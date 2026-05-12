@@ -2,7 +2,7 @@
 
 本合同固定 Portal UI 的产品边界、分层规则、禁词、evalset 入口和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
 
-本合同 v4 的核心变化是合同瘦身：页面任务、组件锚点、route、API shape、禁词和 partial 缺口进入可执行 evalset，由 smoke 读取 evalset 执行检查。合同只作为边界和入口索引。
+本合同 v7 的核心变化是继续瘦身：页面任务、组件锚点、组件状态、组件 fixture、route、API shape、禁词、设计 token 和展示规则进入可执行 evalset，由 smoke 读取 evalset 执行检查。合同只作为边界和入口索引。
 
 ## 合同职责
 
@@ -68,6 +68,11 @@ evalset 必须包含：
 - `copyRegistry`
 - `fixtures`
 - `visualRoutes`
+- `pageComposition`
+- `surfaceStates`
+- `componentFixtures`
+- `designTokens`
+- `presentationRules`
 - `owners`
 - `acceptance`
 - `artifactPolicy`
@@ -84,6 +89,11 @@ DOM 锚点规则：
 
 下一层 UI gate 仍由 evalset 承接：
 
+- 页面组合 gate 固定在 `pageComposition`，用于检查每页是否按指标区、筛选区、主列表或主表格、操作区和详情区组织。
+- 组件状态 gate 固定在 `surfaceStates`，用于检查每个 done surface 是否声明稳定问题、状态和不变量，并与 `portal-ui-surfaces.ts` 对齐。
+- 组件 fixture gate 固定在 `componentFixtures`，用于检查每个 done surface 是否至少有可执行状态样例。
+- 设计 token gate 固定在 `designTokens`，用于检查 Tailwind token 和共享样式原语仍在代码中承接。
+- 展示规则 gate 固定在 `presentationRules`，用于检查指标优先、筛选先于表格、动作明确、表格只用于多对象比较和禁词边界。
 - 通用组件 gate 固定在 `primitives`，用于检查 DataTable、Pagination、EmptyState、StatusBadge、MetricCard、FormField、FilterToolbar、ActionToolbar 和 PageSection 等可复用组件是否有稳定锚点和状态声明。
 - 文案 gate 固定在 `copyRegistry`，用于阻止内部治理词、斜杠组合字段、英文散落和 raw status 成为可见主语言。
 - 数据样例 gate 固定在 `fixtures`，用于保证页面至少覆盖 ready 和 empty 数据态。
@@ -168,7 +178,8 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 - API shape 是否有 required keys、required paths 和 forbidden keys。
 - frontend test 入口是否存在。
 - admin 页面 partial 缺口是否明确。
-- 浏览器能真实打开首页、登录页、工作台和管理台站点设置，并能看到关键 DOM 锚点。
+- 浏览器能真实打开首页、登录页、工作台、管理台站点设置和 evalset visual routes，并能看到关键 DOM 锚点。
+- page composition、surface states、component fixtures、design tokens 和 presentation rules 全部由 surface smoke 静态检查。
 - `.runtime/portal-surface-eval/report.json` 能生成结构化报告；该报告不进 git。
 
 ## 分支边界
@@ -185,7 +196,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 6,
+  "version": 7,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -211,6 +222,11 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
       "copyRegistry",
       "fixtures",
       "visualRoutes",
+      "pageComposition",
+      "surfaceStates",
+      "componentFixtures",
+      "designTokens",
+      "presentationRules",
       "owners",
       "acceptance",
       "artifactPolicy",
@@ -235,7 +251,13 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
     ],
     "pageRole": "orchestration_only",
     "surfaceFactsLiveInEvalset": true,
-    "apiShapeFactsLiveInEvalset": true
+    "apiShapeFactsLiveInEvalset": true,
+    "productizedUiSystemFactsLiveInEvalset": true,
+    "pageCompositionFactsLiveInEvalset": true,
+    "surfaceStateFactsLiveInEvalset": true,
+    "componentFixtureFactsLiveInEvalset": true,
+    "designTokenFactsLiveInEvalset": true,
+    "presentationRuleFactsLiveInEvalset": true
   },
   "copyArchitecture": {
     "rawStatusVisible": false,

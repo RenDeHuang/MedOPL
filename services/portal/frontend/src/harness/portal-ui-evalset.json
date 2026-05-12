@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "schemaVersion": "2026-05-harness-native",
   "model": "gpt-5.4",
   "owners": {
@@ -38,7 +38,12 @@
     "primitivesMustHaveDomAnchor": true,
     "visualRoutesMustHaveNoHorizontalOverflow": true,
     "copyRegistryBlocksInternalTerms": true,
-    "fixturesMustCoverReadyAndEmpty": true
+    "fixturesMustCoverReadyAndEmpty": true,
+    "pageCompositionMustDeclareProductSections": true,
+    "surfaceStatesMustMatchRegistry": true,
+    "componentFixturesMustCoverSurfaceStates": true,
+    "designTokensMustBeExecutable": true,
+    "presentationRulesMustBeExecutable": true
   },
   "requiredDomAnchors": [
     "data-route-id",
@@ -192,6 +197,13 @@
       "componentId": "overview.recent_runs",
       "owner": "services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue",
       "selector": "[data-component-id=\"overview.recent_runs\"]",
+      "status": "done"
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.plans",
+      "owner": "services/portal/frontend/src/components/overview/OverviewPlansPanel.vue",
+      "selector": "[data-component-id=\"overview.plans\"]",
       "status": "done"
     },
     {
@@ -928,7 +940,8 @@
       "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
       "states": [
         "ready",
-        "empty"
+        "empty",
+        "restricted"
       ]
     },
     {
@@ -937,7 +950,8 @@
       "states": [
         "ready",
         "empty",
-        "restricted"
+        "restricted",
+        "degraded"
       ]
     },
     {
@@ -960,6 +974,49 @@
     {
       "routeId": "admin.system",
       "owner": "services/portal/frontend/src/harness/fixtures/admin-system.fixture.json",
+      "states": [
+        "ready",
+        "empty",
+        "saving",
+        "error"
+      ]
+    },
+    {
+      "routeId": "admin.dashboard",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-dashboard.fixture.json",
+      "states": [
+        "ready",
+        "empty"
+      ]
+    },
+    {
+      "routeId": "admin.users",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-users.fixture.json",
+      "states": [
+        "ready",
+        "empty",
+        "error"
+      ]
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-billing-ops.fixture.json",
+      "states": [
+        "ready",
+        "empty"
+      ]
+    },
+    {
+      "routeId": "admin.usage",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-usage.fixture.json",
+      "states": [
+        "ready",
+        "empty"
+      ]
+    },
+    {
+      "routeId": "admin.audit",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-audit.fixture.json",
       "states": [
         "ready",
         "empty"
@@ -1116,6 +1173,1418 @@
       "requiredSelectors": [
         "[data-component-id=\"admin.audit.table\"]"
       ]
+    }
+  ],
+  "pageComposition": [
+    {
+      "routeId": "overview",
+      "task": "回答用户能不能工作、余额是否足够、任务和托管环境是否正常、从哪里进入 OPL 工作台",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "overview.status",
+          "kind": "actions",
+          "componentIds": [
+            "overview.hero"
+          ],
+          "display": "hero_cta"
+        },
+        {
+          "sectionId": "overview.metrics",
+          "kind": "metrics",
+          "componentIds": [
+            "overview.financial_metrics"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "overview.environment",
+          "kind": "primaryPanel",
+          "componentIds": [
+            "overview.managed_environment"
+          ],
+          "display": "status_panel"
+        },
+        {
+          "sectionId": "overview.runs",
+          "kind": "primaryList",
+          "componentIds": [
+            "overview.recent_runs"
+          ],
+          "display": "recent_list"
+        },
+        {
+          "sectionId": "overview.plans",
+          "kind": "details",
+          "componentIds": [
+            "overview.plans"
+          ],
+          "display": "plan_summary"
+        },
+        {
+          "sectionId": "overview.workspace",
+          "kind": "details",
+          "componentIds": [
+            "overview.workspace"
+          ],
+          "display": "workspace_cards"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "resources",
+      "task": "回答当前套餐、计算规格、文件空间、并发数、预计费用和冻结金额状态",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "resources.summary",
+          "kind": "metrics",
+          "componentIds": [
+            "resources.hero"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "resources.plans",
+          "kind": "primaryList",
+          "componentIds": [
+            "resources.plan_selection"
+          ],
+          "display": "plan_cards"
+        },
+        {
+          "sectionId": "resources.adjustment",
+          "kind": "actions",
+          "componentIds": [
+            "resources.adjustment"
+          ],
+          "display": "action_panel"
+        },
+        {
+          "sectionId": "resources.current",
+          "kind": "primaryPanel",
+          "componentIds": [
+            "resources.current"
+          ],
+          "display": "status_panel"
+        },
+        {
+          "sectionId": "resources.audit",
+          "kind": "details",
+          "componentIds": [
+            "resources.release_audit"
+          ],
+          "display": "detail_panel"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "workspace",
+      "task": "回答工作空间文件夹、输入文件、输出文件、保护期和下载入口",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "workspace.summary",
+          "kind": "metrics",
+          "componentIds": [
+            "workspace.hero"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "workspace.file_space",
+          "kind": "primaryPanel",
+          "componentIds": [
+            "workspace.file_space"
+          ],
+          "display": "file_space_panel"
+        },
+        {
+          "sectionId": "workspace.plan",
+          "kind": "details",
+          "componentIds": [
+            "workspace.managed_plan"
+          ],
+          "display": "detail_panel"
+        },
+        {
+          "sectionId": "workspace.list",
+          "kind": "primaryTable",
+          "componentIds": [
+            "workspace.list"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "workspace.files",
+          "kind": "actions",
+          "componentIds": [
+            "workspace.files"
+          ],
+          "display": "file_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "task": "回答余额、可用余额、冻结金额、累计消费、今日消费、账户流水、充值记录和退款记录",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "billing.summary",
+          "kind": "metrics",
+          "componentIds": [
+            "billing.hero"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "billing.breakdown",
+          "kind": "details",
+          "componentIds": [
+            "billing.cost_breakdown"
+          ],
+          "display": "breakdown_cards"
+        },
+        {
+          "sectionId": "billing.filter",
+          "kind": "filters",
+          "componentIds": [
+            "billing.trend_filter"
+          ],
+          "display": "filter_panel"
+        },
+        {
+          "sectionId": "billing.workspace_costs",
+          "kind": "primaryTable",
+          "componentIds": [
+            "billing.workspace_costs"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "billing.run_costs",
+          "kind": "primaryTable",
+          "componentIds": [
+            "billing.run_costs"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "billing.ledger",
+          "kind": "actions",
+          "componentIds": [
+            "billing.ledger"
+          ],
+          "display": "ledger_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "trace",
+      "task": "回答最近任务状态、输出位置、资源用量和费用估算",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "trace.summary",
+          "kind": "metrics",
+          "componentIds": [
+            "trace.hero"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "trace.filter",
+          "kind": "filters",
+          "componentIds": [
+            "trace.filter"
+          ],
+          "display": "filter_panel"
+        },
+        {
+          "sectionId": "trace.sessions",
+          "kind": "primaryTable",
+          "componentIds": [
+            "trace.session_table"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "trace.actions",
+          "kind": "actions",
+          "componentIds": [
+            "trace.session_table"
+          ],
+          "display": "pagination_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.system",
+      "task": "回答站点设置和服务状态当前是什么状态",
+      "layoutId": "layout.detail_page",
+      "sections": [
+        {
+          "sectionId": "admin.system.settings",
+          "kind": "primaryPanel",
+          "componentIds": [
+            "admin.system.site_settings"
+          ],
+          "display": "form_panel"
+        },
+        {
+          "sectionId": "admin.system.status",
+          "kind": "metrics",
+          "componentIds": [
+            "admin.system.service_status"
+          ],
+          "display": "service_status_cards"
+        },
+        {
+          "sectionId": "admin.system.actions",
+          "kind": "actions",
+          "componentIds": [
+            "admin.system.site_settings"
+          ],
+          "display": "save_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.dashboard",
+      "task": "回答平台今日用户、工作空间、任务、消费、待处理事项和管理入口是否正常",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "admin.dashboard.metrics",
+          "kind": "metrics",
+          "componentIds": [
+            "admin.dashboard.summary"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "admin.dashboard.queue",
+          "kind": "primaryList",
+          "componentIds": [
+            "admin.dashboard.summary"
+          ],
+          "display": "summary_list"
+        },
+        {
+          "sectionId": "admin.dashboard.actions",
+          "kind": "actions",
+          "componentIds": [
+            "admin.dashboard.summary"
+          ],
+          "display": "management_links"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.users",
+      "task": "回答客户账户数量、注册状态、余额、账户状态以及充值退款入口",
+      "layoutId": "layout.table_page",
+      "sections": [
+        {
+          "sectionId": "admin.users.metrics",
+          "kind": "metrics",
+          "componentIds": [
+            "admin.users.table"
+          ],
+          "display": "summary_metrics"
+        },
+        {
+          "sectionId": "admin.users.filters",
+          "kind": "filters",
+          "componentIds": [
+            "admin.users.table"
+          ],
+          "display": "filter_toolbar"
+        },
+        {
+          "sectionId": "admin.users.table",
+          "kind": "primaryTable",
+          "componentIds": [
+            "admin.users.table"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "admin.users.actions",
+          "kind": "actions",
+          "componentIds": [
+            "admin.users.table"
+          ],
+          "display": "account_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "task": "回答账单对账、待补记录、成本构成和最近调整状态",
+      "layoutId": "layout.dashboard_page",
+      "sections": [
+        {
+          "sectionId": "admin.billing_ops.metrics",
+          "kind": "metrics",
+          "componentIds": [
+            "admin.billing_ops.summary"
+          ],
+          "display": "metric_cards"
+        },
+        {
+          "sectionId": "admin.billing_ops.reconcile",
+          "kind": "primaryList",
+          "componentIds": [
+            "admin.billing_ops.summary"
+          ],
+          "display": "reconcile_list"
+        },
+        {
+          "sectionId": "admin.billing_ops.actions",
+          "kind": "actions",
+          "componentIds": [
+            "admin.billing_ops.summary"
+          ],
+          "display": "adjustment_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.usage",
+      "task": "回答任务记录、运行状态、成本和下钻入口",
+      "layoutId": "layout.table_page",
+      "sections": [
+        {
+          "sectionId": "admin.usage.metrics",
+          "kind": "metrics",
+          "componentIds": [
+            "admin.usage.table"
+          ],
+          "display": "summary_metrics"
+        },
+        {
+          "sectionId": "admin.usage.filters",
+          "kind": "filters",
+          "componentIds": [
+            "admin.usage.table"
+          ],
+          "display": "filter_toolbar"
+        },
+        {
+          "sectionId": "admin.usage.table",
+          "kind": "primaryTable",
+          "componentIds": [
+            "admin.usage.table"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "admin.usage.actions",
+          "kind": "actions",
+          "componentIds": [
+            "admin.usage.table"
+          ],
+          "display": "drilldown_actions"
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.audit",
+      "task": "回答审计记录、事件来源、操作人和工作空间归属",
+      "layoutId": "layout.table_page",
+      "sections": [
+        {
+          "sectionId": "admin.audit.metrics",
+          "kind": "metrics",
+          "componentIds": [
+            "admin.audit.table"
+          ],
+          "display": "summary_metrics"
+        },
+        {
+          "sectionId": "admin.audit.filters",
+          "kind": "filters",
+          "componentIds": [
+            "admin.audit.table"
+          ],
+          "display": "filter_toolbar"
+        },
+        {
+          "sectionId": "admin.audit.table",
+          "kind": "primaryTable",
+          "componentIds": [
+            "admin.audit.table"
+          ],
+          "display": "responsive_table"
+        },
+        {
+          "sectionId": "admin.audit.actions",
+          "kind": "actions",
+          "componentIds": [
+            "admin.audit.table"
+          ],
+          "display": "audit_actions"
+        }
+      ],
+      "status": "done"
+    }
+  ],
+  "surfaceStates": [
+    {
+      "routeId": "overview",
+      "componentId": "overview.hero",
+      "question": "用户能否进入 OPL 工作台，以及当前平台定位是什么",
+      "states": [
+        "loading",
+        "ready",
+        "restricted"
+      ],
+      "selector": "[data-component-id=\"overview.hero\"]",
+      "invariants": [
+        "主入口必须可见",
+        "工作台状态必须在首屏出现"
+      ]
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.financial_metrics",
+      "question": "用户当前余额、冻结金额、消费和任务数量是什么",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"overview.financial_metrics\"]",
+      "invariants": [
+        "余额和冻结金额必须拆成独立指标",
+        "累计消费必须独立展示"
+      ]
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.managed_environment",
+      "question": "用户的托管运行环境和文件空间是否可用",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"overview.managed_environment\"]",
+      "invariants": [
+        "托管运行环境状态必须可见",
+        "文件空间状态必须可见"
+      ]
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.recent_runs",
+      "question": "最近任务执行进度是什么",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"overview.recent_runs\"]",
+      "invariants": [
+        "任务状态必须使用用户可理解文案",
+        "分页动作必须稳定"
+      ]
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.plans",
+      "question": "用户当前可选套餐和入门预计消费是什么",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"overview.plans\"]",
+      "invariants": [
+        "套餐摘要必须独立于余额指标",
+        "入门预计消费必须清晰标明估算"
+      ]
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.workspace",
+      "question": "用户工作空间和最近任务空间是什么",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"overview.workspace\"]",
+      "invariants": [
+        "工作空间入口必须可见",
+        "内部资源标识不得展示"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.hero",
+      "question": "用户当前余额、冻结金额、消费和账单核对状态是什么",
+      "states": [
+        "loading",
+        "ready",
+        "restricted"
+      ],
+      "selector": "[data-component-id=\"billing.hero\"]",
+      "invariants": [
+        "余额、可用余额和冻结金额必须拆成独立指标",
+        "导出入口必须保留"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.cost_breakdown",
+      "question": "用户的钱花在计算、加速、文件空间和其他服务中的哪一类",
+      "states": [
+        "ready",
+        "degraded"
+      ],
+      "selector": "[data-component-id=\"billing.cost_breakdown\"]",
+      "invariants": [
+        "计算消费和文件空间消费必须独立展示",
+        "账单回补状态必须可见"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.trend_filter",
+      "question": "用户如何按日期查看账单窗口和成本趋势",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"billing.trend_filter\"]",
+      "invariants": [
+        "筛选窗口必须使用日期输入",
+        "趋势为空时必须有空态"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.workspace_costs",
+      "question": "各工作空间产生了多少任务和消费",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"billing.workspace_costs\"]",
+      "invariants": [
+        "移动端卡片和桌面表格必须同时存在",
+        "工作空间成本分页必须稳定"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.run_costs",
+      "question": "单次任务的状态、账单来源和总消费是什么",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"billing.run_costs\"]",
+      "invariants": [
+        "任务状态必须使用用户可理解文案",
+        "任务成本分页必须稳定"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.ledger",
+      "question": "用户账户流水里有哪些充值、资源扣费、退款和补扣",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"billing.ledger\"]",
+      "invariants": [
+        "账户流水必须独立于任务成本展示",
+        "流水分页必须稳定"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.hero",
+      "question": "用户当前租用的套餐、计算规格、文件空间、并发数和冻结金额状态是什么",
+      "states": [
+        "loading",
+        "ready",
+        "degraded"
+      ],
+      "selector": "[data-component-id=\"resources.hero\"]",
+      "invariants": [
+        "计算规格和文件空间必须拆成独立指标",
+        "预计费用必须清晰标明估算"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.plan_selection",
+      "question": "用户可以查看哪些套餐并生成调整计划",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"resources.plan_selection\"]",
+      "invariants": [
+        "套餐卡必须展示计算规格、文件空间、并发数和预计费用",
+        "套餐选择不得真实开通资源"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.adjustment",
+      "question": "用户如何生成计算资源或存储资源调整计划",
+      "states": [
+        "ready",
+        "restricted"
+      ],
+      "selector": "[data-component-id=\"resources.adjustment\"]",
+      "invariants": [
+        "调整动作必须标明 dry-run",
+        "调整动作不得调用真实云"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.current",
+      "question": "用户当前工作台资源是否可用，以及对应规格是什么",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"resources.current\"]",
+      "invariants": [
+        "当前资源状态必须可见",
+        "内部资源标识不得展示"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.release_audit",
+      "question": "用户释放资源后的停止计费和审计状态是什么",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"resources.release_audit\"]",
+      "invariants": [
+        "停止计费和审计状态必须拆成独立字段",
+        "释放策略不得显示云控制台叙事"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.hero",
+      "question": "用户如何进入 OPL 工作台、查看当前工作空间状态和关键文件指标",
+      "states": [
+        "loading",
+        "ready",
+        "restricted"
+      ],
+      "selector": "[data-component-id=\"workspace.hero\"]",
+      "invariants": [
+        "OPL 工作台入口必须可见",
+        "输入文件、输出文件和任务数必须独立展示"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.file_space",
+      "question": "用户如何管理文件夹、选择文件、上传下载和理解保护期",
+      "states": [
+        "ready",
+        "empty",
+        "restricted"
+      ],
+      "selector": "[data-component-id=\"workspace.file_space\"]",
+      "invariants": [
+        "文件空间状态必须可见",
+        "危险操作必须和普通文件操作分离"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.managed_plan",
+      "question": "用户如何查看托管运行环境计划、费用估算、释放策略和审计状态",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"workspace.managed_plan\"]",
+      "invariants": [
+        "计划快照必须标明不代表真实资源已创建",
+        "停止计费和审计状态必须拆分展示"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.list",
+      "question": "用户如何浏览多个工作空间及其文件、任务和状态",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"workspace.list\"]",
+      "invariants": [
+        "列表页必须提供桌面表格和移动卡片",
+        "分页必须独立于表格内容"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.files",
+      "question": "用户如何查看和下载当前工作空间的输入文件与输出文件",
+      "states": [
+        "ready",
+        "empty",
+        "restricted"
+      ],
+      "selector": "[data-component-id=\"workspace.files\"]",
+      "invariants": [
+        "输入文件和输出文件必须拆成独立面板",
+        "上传行为必须保持表单边界"
+      ]
+    },
+    {
+      "routeId": "trace",
+      "componentId": "trace.hero",
+      "question": "用户当前会话、任务、输出文件和费用估算概况是什么",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"trace.hero\"]",
+      "invariants": [
+        "运行记录必须优先于观测摘要",
+        "费用估算必须标明不执行真实扣费"
+      ]
+    },
+    {
+      "routeId": "trace",
+      "componentId": "trace.filter",
+      "question": "用户如何按工作空间、会话和状态筛选运行轨迹",
+      "states": [
+        "ready"
+      ],
+      "selector": "[data-component-id=\"trace.filter\"]",
+      "invariants": [
+        "筛选字段必须是用户可理解字段",
+        "筛选动作不得暴露内部标识说明"
+      ]
+    },
+    {
+      "routeId": "trace",
+      "componentId": "trace.session_table",
+      "question": "用户如何查看会话、任务、文件、费用估算、状态和时间",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"trace.session_table\"]",
+      "invariants": [
+        "输入文件和输出文件必须拆成独立字段",
+        "桌面表格和移动卡片必须都有空态"
+      ]
+    },
+    {
+      "routeId": "admin.system",
+      "componentId": "admin.system.site_settings",
+      "question": "管理员如何配置站点名称、站点 logo、首页内容和注册开关",
+      "states": [
+        "loading",
+        "ready",
+        "saving",
+        "error"
+      ],
+      "selector": "[data-component-id=\"admin.system.site_settings\"]",
+      "invariants": [
+        "站点 logo 必须支持预览",
+        "首页内容必须保留代码编辑框"
+      ]
+    },
+    {
+      "routeId": "admin.system",
+      "componentId": "admin.system.service_status",
+      "question": "管理员如何查看 Portal 主链路服务状态",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"admin.system.service_status\"]",
+      "invariants": [
+        "服务状态必须与站点设置分离",
+        "服务异常数量必须独立展示"
+      ]
+    },
+    {
+      "routeId": "admin.dashboard",
+      "componentId": "admin.dashboard.summary",
+      "question": "管理员如何查看平台今日用户、工作空间、任务、消费和待处理事项",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"admin.dashboard.summary\"]",
+      "invariants": [
+        "平台总览必须先展示指标",
+        "管理入口不能使用云控制台叙事"
+      ]
+    },
+    {
+      "routeId": "admin.users",
+      "componentId": "admin.users.table",
+      "question": "管理员如何搜索客户账户并执行开通、禁用、充值和退款动作",
+      "states": [
+        "loading",
+        "ready",
+        "empty",
+        "error"
+      ],
+      "selector": "[data-component-id=\"admin.users.table\"]",
+      "invariants": [
+        "客户账户和资金动作必须同页可见",
+        "内部编号只能作为排障辅助字段"
+      ]
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "componentId": "admin.billing_ops.summary",
+      "question": "管理员如何查看账单对账、待补记录、成本构成和最近调整",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"admin.billing_ops.summary\"]",
+      "invariants": [
+        "账单管理必须使用账单命名",
+        "待补记录和最近调整必须分开展示"
+      ]
+    },
+    {
+      "routeId": "admin.usage",
+      "componentId": "admin.usage.table",
+      "question": "管理员如何查看任务记录、运行状态、成本和下钻入口",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"admin.usage.table\"]",
+      "invariants": [
+        "任务状态必须映射成中文",
+        "成本必须独立于运行编号展示"
+      ]
+    },
+    {
+      "routeId": "admin.audit",
+      "componentId": "admin.audit.table",
+      "question": "管理员如何查看审计记录、事件来源、操作人和工作空间归属",
+      "states": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "selector": "[data-component-id=\"admin.audit.table\"]",
+      "invariants": [
+        "审计事件必须使用中文类型",
+        "筛选和分页必须独立于表格内容"
+      ]
+    }
+  ],
+  "componentFixtures": [
+    {
+      "routeId": "overview",
+      "componentId": "overview.hero",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "restricted"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.financial_metrics",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.managed_environment",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.recent_runs",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.plans",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "overview",
+      "componentId": "overview.workspace",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.hero",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "restricted"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.cost_breakdown",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "requiredStates": [
+        "ready",
+        "degraded"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.trend_filter",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.workspace_costs",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.run_costs",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "billing",
+      "componentId": "billing.ledger",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.hero",
+      "owner": "services/portal/frontend/src/harness/fixtures/resources.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "degraded"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.plan_selection",
+      "owner": "services/portal/frontend/src/harness/fixtures/resources.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.adjustment",
+      "owner": "services/portal/frontend/src/harness/fixtures/resources.fixture.json",
+      "requiredStates": [
+        "ready",
+        "restricted"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.current",
+      "owner": "services/portal/frontend/src/harness/fixtures/resources.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "resources",
+      "componentId": "resources.release_audit",
+      "owner": "services/portal/frontend/src/harness/fixtures/resources.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.hero",
+      "owner": "services/portal/frontend/src/harness/fixtures/workspace.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "restricted"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.file_space",
+      "owner": "services/portal/frontend/src/harness/fixtures/workspace.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty",
+        "restricted"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.managed_plan",
+      "owner": "services/portal/frontend/src/harness/fixtures/workspace.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.list",
+      "owner": "services/portal/frontend/src/harness/fixtures/workspace.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "workspace",
+      "componentId": "workspace.files",
+      "owner": "services/portal/frontend/src/harness/fixtures/workspace.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty",
+        "restricted"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "trace",
+      "componentId": "trace.hero",
+      "owner": "services/portal/frontend/src/harness/fixtures/trace.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "trace",
+      "componentId": "trace.filter",
+      "owner": "services/portal/frontend/src/harness/fixtures/trace.fixture.json",
+      "requiredStates": [
+        "ready"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "trace",
+      "componentId": "trace.session_table",
+      "owner": "services/portal/frontend/src/harness/fixtures/trace.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.system",
+      "componentId": "admin.system.site_settings",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-system.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "saving",
+        "error"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.system",
+      "componentId": "admin.system.service_status",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-system.fixture.json",
+      "requiredStates": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.dashboard",
+      "componentId": "admin.dashboard.summary",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-dashboard.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.users",
+      "componentId": "admin.users.table",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-users.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty",
+        "error"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "componentId": "admin.billing_ops.summary",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-billing-ops.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.usage",
+      "componentId": "admin.usage.table",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-usage.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "routeId": "admin.audit",
+      "componentId": "admin.audit.table",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-audit.fixture.json",
+      "requiredStates": [
+        "loading",
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    }
+  ],
+  "designTokens": [
+    {
+      "tokenId": "token.color.primary",
+      "source": "tailwind",
+      "requiredIn": "services/portal/frontend/tailwind.config.ts",
+      "assertion": "primary",
+      "status": "done"
+    },
+    {
+      "tokenId": "token.color.dark",
+      "source": "tailwind",
+      "requiredIn": "services/portal/frontend/tailwind.config.ts",
+      "assertion": "dark",
+      "status": "done"
+    },
+    {
+      "tokenId": "token.font.sans",
+      "source": "tailwind",
+      "requiredIn": "services/portal/frontend/tailwind.config.ts",
+      "assertion": "fontFamily",
+      "status": "done"
+    },
+    {
+      "tokenId": "token.radius",
+      "source": "tailwind",
+      "requiredIn": "services/portal/frontend/tailwind.config.ts",
+      "assertion": "borderRadius",
+      "status": "done"
+    },
+    {
+      "tokenId": "token.shadow.card",
+      "source": "tailwind",
+      "requiredIn": "services/portal/frontend/tailwind.config.ts",
+      "assertion": "card",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.btn",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".btn",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.input",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".input",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.card",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".card",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.table_shell",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".table-shell",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.empty_state",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".empty-state",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.badge",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".badge",
+      "status": "done"
+    },
+    {
+      "tokenId": "primitive.class.pager_bar",
+      "source": "style",
+      "requiredIn": "services/portal/frontend/src/style.css",
+      "assertion": ".pager-bar",
+      "status": "done"
+    }
+  ],
+  "presentationRules": [
+    {
+      "ruleId": "presentation.metric_first",
+      "description": "每个登录后页面先给状态或指标，再给解释和明细。",
+      "assertion": "pageComposition.sections contains metrics before details",
+      "enforcedBy": "static_and_browser"
+    },
+    {
+      "ruleId": "presentation.table_for_many_objects",
+      "description": "多对象比较使用表格或移动卡片，单对象状态使用指标卡或状态面板。",
+      "assertion": "primaryTable sections map to table or responsive table display",
+      "enforcedBy": "static"
+    },
+    {
+      "ruleId": "presentation.filters_before_table",
+      "description": "列表页筛选区必须先于主表格区出现。",
+      "assertion": "filters section precedes primaryTable section when both exist",
+      "enforcedBy": "static_and_browser"
+    },
+    {
+      "ruleId": "presentation.actions_are_explicit",
+      "description": "充值、退款、保存、导出、下载等动作必须是明确按钮或表单动作。",
+      "assertion": "actions section exists for routes with mutable or export actions",
+      "enforcedBy": "static"
+    },
+    {
+      "ruleId": "presentation.no_slash_copy",
+      "description": "可见主文案不使用斜杠组合字段。",
+      "assertion": "copyRegistry and Vue visible text do not include slash separated labels",
+      "enforcedBy": "static"
+    },
+    {
+      "ruleId": "presentation.no_internal_terms",
+      "description": "可见主文案不出现内部治理词、旧云控制台叙事和禁词。",
+      "assertion": "forbiddenCopy absent from visible sources",
+      "enforcedBy": "static"
+    },
+    {
+      "ruleId": "presentation.single_primary_task",
+      "description": "每页只回答一个主任务，组件围绕该任务拆成指标、筛选、主表格、操作和详情。",
+      "assertion": "pageComposition.task equals pageTasks.task",
+      "enforcedBy": "static"
     }
   ]
 }

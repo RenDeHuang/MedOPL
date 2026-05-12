@@ -25,7 +25,7 @@ function exists(filePath: string) {
 
 describe("portal ui evalset", () => {
   it("defines harness-native executable ui truth instead of another heavy contract", () => {
-    expect(evalset.version).toBe(3);
+    expect(evalset.version).toBe(4);
     expect(evalset.schemaVersion).toBe("2026-05-harness-native");
     expect(evalset.model).toBe("gpt-5.4");
     expect(evalset.scope.portalOnly).toBe(true);
@@ -44,6 +44,11 @@ describe("portal ui evalset", () => {
     expect(evalset.copyRegistry.length).toBeGreaterThan(0);
     expect(evalset.fixtures.length).toBeGreaterThan(0);
     expect(evalset.visualRoutes.length).toBeGreaterThan(0);
+    expect(evalset.pageComposition.length).toBeGreaterThan(0);
+    expect(evalset.surfaceStates.length).toBeGreaterThan(0);
+    expect(evalset.componentFixtures.length).toBeGreaterThan(0);
+    expect(evalset.designTokens.length).toBeGreaterThan(0);
+    expect(evalset.presentationRules.length).toBeGreaterThan(0);
   });
 
   it("keeps route identifiers canonical across routes, surfaces, page tasks, and api shapes", () => {
@@ -57,6 +62,13 @@ describe("portal ui evalset", () => {
     for (const apiShape of evalset.apiShapes) {
       expect(routeIds.has(apiShape.routeId)).toBe(true);
       expect(apiShape.requiredPaths.length).toBeGreaterThan(0);
+    }
+    for (const composition of evalset.pageComposition) {
+      expect(routeIds.has(composition.routeId)).toBe(true);
+      expect(composition.sections.length).toBeGreaterThan(0);
+    }
+    for (const fixture of evalset.componentFixtures) {
+      expect(routeIds.has(fixture.routeId)).toBe(true);
     }
   });
 
@@ -116,6 +128,128 @@ describe("portal ui evalset", () => {
       const componentSource = source(primitive.owner);
       expect(componentSource).toContain(`data-primitive-id="${primitive.primitiveId}"`);
       expect(primitive.states.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("fixes each page task into productized composition sections", () => {
+    const routeIdsWithTasks = new Set(evalset.pageTasks.map((task) => task.routeId));
+    const requiredRoutes = [
+      "overview",
+      "resources",
+      "workspace",
+      "billing",
+      "trace",
+      "admin.system",
+      "admin.dashboard",
+      "admin.users",
+      "admin.billing_ops",
+      "admin.usage",
+      "admin.audit",
+    ];
+
+    for (const routeId of requiredRoutes) {
+      expect(routeIdsWithTasks.has(routeId)).toBe(true);
+      const composition = evalset.pageComposition.find((item) => item.routeId === routeId);
+      expect(composition).toBeTruthy();
+      if (!composition) throw new Error(`composition_missing:${routeId}`);
+      expect(composition.layoutId).toMatch(/^layout\./);
+      expect(composition.task).toBe(evalset.pageTasks.find((item) => item.routeId === routeId)?.task);
+      expect(composition.sections.map((section) => section.kind)).toContain("metrics");
+      expect(composition.sections.map((section) => section.kind)).toContain("actions");
+      const primarySection = composition.sections.find((section) => ["primaryTable", "primaryList", "primaryPanel"].includes(section.kind));
+      expect(primarySection).toBeTruthy();
+      for (const section of composition.sections) {
+        expect(section.sectionId).toBeTruthy();
+        expect(section.componentIds.length).toBeGreaterThan(0);
+        for (const componentId of section.componentIds) {
+          expect(evalset.surfaces.some((surface) => surface.componentId === componentId)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("aligns surface states with the TypeScript registry", () => {
+    const surfaceStateIds = new Set(evalset.surfaceStates.map((state) => state.componentId));
+    const doneSurfaceIds = new Set(evalset.surfaces.filter((item) => item.status === "done").map((surface) => surface.componentId));
+    expect(surfaceStateIds).toEqual(doneSurfaceIds);
+
+    const registrySource = source(evalset.owners.surfaceRegistry);
+    for (const state of evalset.surfaceStates) {
+      expect(state.question).toBeTruthy();
+      expect(state.states.length).toBeGreaterThan(0);
+      expect(state.invariants.length).toBeGreaterThan(0);
+      expect(registrySource).toContain(`componentId: "${state.componentId}"`);
+      const ownerSource = source(evalset.surfaces.find((surface) => surface.componentId === state.componentId)?.owner || "");
+      expect(ownerSource).toContain(`data-component-id="${state.componentId}"`);
+    }
+  });
+
+  it("defines component fixtures for every done surface and stores concrete state examples", () => {
+    const fixtureIds = new Set(evalset.componentFixtures.map((fixture) => fixture.componentId));
+    const statesByComponent = new Map(evalset.surfaceStates.map((state) => [state.componentId, state.states]));
+    for (const surface of evalset.surfaces.filter((item) => item.status === "done")) {
+      expect(fixtureIds.has(surface.componentId)).toBe(true);
+    }
+
+    for (const fixture of evalset.componentFixtures) {
+      exists(fixture.owner);
+      expect(fixture.requiredStates).toEqual(statesByComponent.get(fixture.componentId));
+      const fixturePayload = JSON.parse(source(fixture.owner));
+      expect(fixturePayload[fixture.componentId]).toBeTruthy();
+      for (const requiredState of fixture.requiredStates) {
+        expect(fixturePayload[fixture.componentId][requiredState]).toBeTruthy();
+      }
+    }
+  });
+
+  it("keeps design token gates executable through Tailwind config and shared primitives", () => {
+    const tokenIds = new Set(evalset.designTokens.map((token) => token.tokenId));
+    for (const required of [
+      "token.color.primary",
+      "token.color.dark",
+      "token.font.sans",
+      "token.radius",
+      "token.shadow.card",
+      "primitive.class.btn",
+      "primitive.class.input",
+      "primitive.class.card",
+      "primitive.class.table_shell",
+      "primitive.class.empty_state",
+    ]) {
+      expect(tokenIds.has(required)).toBe(true);
+    }
+
+    const styleSource = source("services/portal/frontend/src/style.css");
+    const tailwindSource = source("services/portal/frontend/tailwind.config.ts");
+    for (const token of evalset.designTokens) {
+      expect(["tailwind", "style", "component"]).toContain(token.source);
+      expect(token.requiredIn).toBeTruthy();
+      const ownerSource = token.requiredIn.endsWith("tailwind.config.ts") ? tailwindSource : source(token.requiredIn);
+      expect(ownerSource).toContain(token.assertion);
+      if (token.source === "style") {
+        expect(styleSource).toContain(token.assertion);
+      }
+    }
+  });
+
+  it("defines presentation rules that block internal copy and wrong display primitives", () => {
+    const ruleIds = new Set(evalset.presentationRules.map((rule) => rule.ruleId));
+    for (const required of [
+      "presentation.metric_first",
+      "presentation.table_for_many_objects",
+      "presentation.filters_before_table",
+      "presentation.actions_are_explicit",
+      "presentation.no_slash_copy",
+      "presentation.no_internal_terms",
+      "presentation.single_primary_task",
+    ]) {
+      expect(ruleIds.has(required)).toBe(true);
+    }
+
+    for (const rule of evalset.presentationRules) {
+      expect(rule.description).toBeTruthy();
+      expect(rule.assertion).toBeTruthy();
+      expect(["static", "browser", "static_and_browser"]).toContain(rule.enforcedBy);
     }
   });
 

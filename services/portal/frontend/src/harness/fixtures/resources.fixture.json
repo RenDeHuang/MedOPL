@@ -1,4 +1,107 @@
 {
-  "ready": {},
-  "empty": {}
+  "resources.hero": {
+    "loading": {
+      "state": "loading",
+      "label": "正在加载",
+      "items": []
+    },
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "resources.hero.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "degraded": {
+      "state": "degraded",
+      "label": "部分可用",
+      "items": [
+        {
+          "id": "resources.hero.sample",
+          "name": "示例项"
+        }
+      ]
+    }
+  },
+  "resources.plan_selection": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "resources.plan_selection.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    }
+  },
+  "resources.adjustment": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "resources.adjustment.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "restricted": {
+      "state": "restricted",
+      "label": "当前受限",
+      "items": [
+        {
+          "id": "resources.adjustment.sample",
+          "name": "示例项"
+        }
+      ]
+    }
+  },
+  "resources.current": {
+    "loading": {
+      "state": "loading",
+      "label": "正在加载",
+      "items": []
+    },
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "resources.current.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    }
+  },
+  "resources.release_audit": {
+    "ready": {
+      "state": "ready",
+      "label": "示例数据",
+      "items": [
+        {
+          "id": "resources.release_audit.sample",
+          "name": "示例项"
+        }
+      ]
+    },
+    "empty": {
+      "state": "empty",
+      "label": "暂无数据",
+      "items": []
+    }
+  }
 }
