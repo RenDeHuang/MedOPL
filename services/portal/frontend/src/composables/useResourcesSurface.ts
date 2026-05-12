@@ -19,19 +19,19 @@ export function useResourcesSurface() {
       id: "starter_2c4g_10gb",
       name: "基础套餐",
       description: "适合轻量会话和小型任务。",
-      computeSpec: "2 核 / 4GB",
+      computeSpec: "2 核 4GB",
       fileSpace: "10GB 文件空间",
       concurrency: "1 个任务",
-      estimatedCost: "¥3.20 / 小时",
+      estimatedCost: "每小时 ¥3.20",
     },
     {
       id: "pro_8c16g_100gb",
       name: "Pro 套餐",
       description: "适合较大任务和更多输出文件。",
-      computeSpec: "8 核 / 16GB",
+      computeSpec: "8 核 16GB",
       fileSpace: "100GB 文件空间",
       concurrency: "2 个任务",
-      estimatedCost: "¥9.60 / 小时",
+      estimatedCost: "每小时 ¥9.60",
     },
   ];
 
@@ -120,9 +120,9 @@ export function useResourcesSurface() {
 
   function computeSpecText(row?: Partial<CustomerComputeResource> | null) {
     const planId = String(row?.serverPlanId || "").trim();
-    if (planId === "pro_8c16g_100gb") return "8 核 / 16GB";
-    if (planId === "starter_2c4g_10gb") return "2 核 / 4GB";
-    return String(row?.instanceType || "").trim() || "2 核 / 4GB";
+    if (planId === "pro_8c16g_100gb") return "8 核 16GB";
+    if (planId === "starter_2c4g_10gb") return "2 核 4GB";
+    return String(row?.instanceType || "").trim().replace(/\s*\/\s*/g, " ") || "2 核 4GB";
   }
 
   function storageCapacityText(row?: Partial<CustomerStorageResource> | null) {

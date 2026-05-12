@@ -111,6 +111,11 @@ const billingTrendAndFilterPanel = await source("services/portal/frontend/src/co
 const billingWorkspaceCostPanel = await source("services/portal/frontend/src/components/billing/BillingWorkspaceCostPanel.vue");
 const billingRunCostPanel = await source("services/portal/frontend/src/components/billing/BillingRunCostPanel.vue");
 const billingLedgerPanel = await source("services/portal/frontend/src/components/billing/BillingLedgerPanel.vue");
+const resourcesHero = await source("services/portal/frontend/src/components/resources/ResourcesHero.vue");
+const resourcesPlanSelectionPanel = await source("services/portal/frontend/src/components/resources/ResourcesPlanSelectionPanel.vue");
+const resourcesAdjustmentPanel = await source("services/portal/frontend/src/components/resources/ResourcesAdjustmentPanel.vue");
+const resourcesCurrentPanel = await source("services/portal/frontend/src/components/resources/ResourcesCurrentPanel.vue");
+const resourcesReleaseAuditPanel = await source("services/portal/frontend/src/components/resources/ResourcesReleaseAuditPanel.vue");
 const adminSiteSettingsPanel = await source("services/portal/frontend/src/components/admin/AdminSiteSettingsPanel.vue");
 const adminServiceStatusPanel = await source("services/portal/frontend/src/components/admin/AdminServiceStatusPanel.vue");
 const overview = await source("services/portal/frontend/src/views/overview/OverviewView.vue");
@@ -179,6 +184,11 @@ for (const surface of [
   "billing.workspace_costs",
   "billing.run_costs",
   "billing.ledger",
+  "resources.hero",
+  "resources.plan_selection",
+  "resources.adjustment",
+  "resources.current",
+  "resources.release_audit",
   "admin.system.site_settings",
   "admin.system.service_status",
 ]) {
@@ -196,6 +206,11 @@ for (const sourceText of [
   billingWorkspaceCostPanel,
   billingRunCostPanel,
   billingLedgerPanel,
+  resourcesHero,
+  resourcesPlanSelectionPanel,
+  resourcesAdjustmentPanel,
+  resourcesCurrentPanel,
+  resourcesReleaseAuditPanel,
   adminSiteSettingsPanel,
   adminServiceStatusPanel,
 ]) {
@@ -216,6 +231,13 @@ assertIncludes(billing, "BillingTrendAndFilterPanel", "billing_view_must_compose
 assertIncludes(billing, "BillingWorkspaceCostPanel", "billing_view_must_compose_workspace_cost_component");
 assertIncludes(billing, "BillingRunCostPanel", "billing_view_must_compose_run_cost_component");
 assertIncludes(billing, "BillingLedgerPanel", "billing_view_must_compose_ledger_component");
+assertIncludes(resources, "DashboardPageLayout", "resources_view_must_use_dashboard_page_layout");
+assertIncludes(resources, "DetailPageLayout", "resources_view_must_use_detail_page_layout");
+assertIncludes(resources, "ResourcesHero", "resources_view_must_compose_hero_component");
+assertIncludes(resources, "ResourcesPlanSelectionPanel", "resources_view_must_compose_plan_selection_component");
+assertIncludes(resources, "ResourcesAdjustmentPanel", "resources_view_must_compose_adjustment_component");
+assertIncludes(resources, "ResourcesCurrentPanel", "resources_view_must_compose_current_component");
+assertIncludes(resources, "ResourcesReleaseAuditPanel", "resources_view_must_compose_release_audit_component");
 assertIncludes(adminSystem, "AdminSiteSettingsPanel", "admin_system_view_must_compose_site_settings_component");
 assertIncludes(adminSystem, "AdminServiceStatusPanel", "admin_system_view_must_compose_service_status_component");
 assertAnyIncludes(adminSiteSettingsPanel, ["站点 logo", "站点 Logo"], "admin_site_settings_must_show_logo_editor");
@@ -255,7 +277,7 @@ for (const term of contract.copyArchitecture.forbiddenUiTerms) {
 for (const term of contract.workbenchForbiddenTokens) {
   assertExcludes(workbenchCopy, term, "workbench_forbidden_internal_token");
 }
-for (const forbiddenSlashCopy of ["预扣费 / 冻结金额", "停止计费 / 审计状态", "输入文件 / 输出文件", "选择套餐 / 工作台资源计划", "释放策略 / 审计状态", "充值 / 退款 / 补扣"]) {
+for (const forbiddenSlashCopy of ["预扣费 / 冻结金额", "停止计费 / 审计状态", "输入文件 / 输出文件", "选择套餐 / 工作台资源计划", "释放策略 / 审计状态", "充值 / 退款 / 补扣", "核 /", "¥3.20 / 小时", "¥9.60 / 小时"]) {
   assertExcludes(workbenchCopy, forbiddenSlashCopy, "slash_separated_ui_copy");
 }
 
