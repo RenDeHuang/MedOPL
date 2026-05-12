@@ -44,8 +44,18 @@ assertIncludesAll(contract, [
   "AGENTS.md 管 A/B/C/D 纪律",
   "本合同管业务推进顺序",
   "repo-tracked workflow 合同",
+  "2026-05 Framework Mapping",
+  "Microsoft Azure Architecture Center",
+  "Async Request-Reply",
+  "Kubernetes controller pattern",
+  "OpenAI Harness Engineering",
+  "docs/recovery/v22-cloud-harness-manifest.json",
+  "L1 -> L2a -> L2b -> L3 -> L4",
+  "202 Accepted + operationId/status endpoint",
+  "cleanup/reconcile",
+  "baseline 必须是 `2`",
   "Runnable Cloud Connection Path",
-  "authorized_cloud_connection_loop",
+  "cloud_harness_native_async_lifecycle_loop",
 ], "cloud_onboarding_scope");
 
 const requiredStageNames = [
@@ -146,7 +156,11 @@ assert.deepEqual(workflow.retiredLegacyGateAliases, [
   "C04",
   "CO-01..CO-14",
 ], "retired_legacy_aliases_mismatch");
-assert.equal(workflow.loopName, "authorized_cloud_connection_loop", "loop_name_mismatch");
+assert.equal(workflow.loopName, "cloud_harness_native_async_lifecycle_loop", "loop_name_mismatch");
+assert.equal(workflow.harnessManifest, "docs/recovery/v22-cloud-harness-manifest.json", "workflow_harness_manifest");
+assert.deepEqual(workflow.productionAcceptanceLevels, ["L1", "L2a", "L2b", "L3", "L4"], "workflow_l1_l4_levels");
+assert.equal(workflow.liveBaselineDesiredCapacity, 2, "workflow_live_baseline_must_be_2");
+assert.equal(workflow.cleanupRequiredForLiveRuns, true, "workflow_cleanup_required");
 assert.equal(workflow.automerges, false, "workflow_must_not_auto_merge");
 assert.equal(workflow.autopushes, false, "workflow_must_not_auto_push");
 assert.equal(workflow.readsSecretNow, false, "workflow_must_not_read_secret_now");

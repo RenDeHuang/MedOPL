@@ -9,6 +9,7 @@ const FORBIDDEN_PUBLIC_TERMS = /\/test\/fake-live|testOnly|TKE|COS|TCR|Kubernete
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
 const { createLabPackageRoutes } = await import("../services/portal/src/routes/lab-package.routes.mjs");
 const { createProviderSecretStore } = await import("../services/portal/src/domain/provider-secret-store.mjs");
+const { processQueuedPortalProductionCloudOperations } = await import("../services/portal/src/domain/portal-cloud-operation-production.mjs");
 
 function assertNoSecretLeak(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
@@ -143,8 +144,24 @@ function assertPackageCloudResult(payload = {}, { packageId, planId, fileSpaceGb
   assert.equal(payload.cloudOperationPackage?.fileSpaceGb, fileSpaceGb, `${packageId}_file_space_mismatch`);
   assert.ok(payload.cloudOperationPackage?.resourceBindingId, `${packageId}_resource_binding_required`);
   assert.deepEqual(payload.cloudOperationPackage?.operations?.map((item) => item.operationType), operationTypes, `${packageId}_operations_mismatch`);
+  assert.equal(payload.cloudOperationPackage?.operations?.every((item) => item.status === "queued"), true, `${packageId}_operations_must_start_queued`);
   assert.equal(Object.hasOwn(payload.cloudOperationPackage || {}, "runnerMode"), false, `${packageId}_must_not_expose_runner_mode`);
   assert.equal(Object.hasOwn(payload.cloudOperationPackage || {}, "realCloudCalls"), false, `${packageId}_must_not_expose_real_cloud_flag`);
+}
+
+function drainQueued(db, secretFile, expectedCount, label) {
+  for (let index = 0; index < expectedCount; index += 1) {
+    const result = processQueuedPortalProductionCloudOperations(db, {
+      runnerMode: "fake-live",
+      secretFile,
+      computeNodePoolRef: "np-backend-attribution-proof",
+      maxOperations: 1,
+      workerId: `worker-v22-package-click-${label}-${index}`,
+      repoRoot: ".",
+    });
+    assert.equal(result.ok, true, `${label}_${index}_worker_drain_must_succeed`);
+    assert.equal(result.processed.length, 1, `${label}_${index}_worker_drain_must_process_one`);
+  }
 }
 
 async function prepareUser(apiRoute, db, { tenantId, userId, workspaceId }) {
@@ -262,6 +279,7 @@ try {
     fileSpaceGb: 10,
     operationTypes: ["create_storage", "create_compute"],
   });
+  drainQueued(db, secretFile, 2, "starter_open");
   const starterBindingId = starter.res.payload.cloudOperationPackage.resourceBindingId;
   const starterFile = await uploadThroughOpl(apiRoute, db, starterUser, {
     workspaceId: "workspace-package-click-a",
@@ -284,6 +302,7 @@ try {
     fileSpaceGb: 100,
     operationTypes: ["create_storage", "create_compute"],
   });
+  drainQueued(db, secretFile, 2, "pro_open");
   const proBindingId = pro.res.payload.cloudOperationPackage.resourceBindingId;
   const proFile = await uploadThroughOpl(apiRoute, db, proUser, {
     workspaceId: "workspace-package-click-b",
@@ -317,6 +336,7 @@ try {
     fileSpaceGb: 100,
     operationTypes: ["expand_storage", "expand_compute"],
   });
+  drainQueued(db, secretFile, 2, "starter_upgrade");
   assert.equal(upgraded.res.payload.cloudOperationPackage.resourceBindingId, starterBindingId, "upgrade_must_keep_existing_binding");
 
   const addon = await request({
@@ -334,6 +354,7 @@ try {
     fileSpaceGb: 200,
     operationTypes: ["expand_storage"],
   });
+  drainQueued(db, secretFile, 1, "starter_storage_addon");
   assert.equal(addon.res.payload.cloudOperationPackage.resourceBindingId, starterBindingId, "storage_addon_must_keep_existing_binding");
 
   const proComputeExpand = await request({
@@ -352,7 +373,9 @@ try {
   });
   assert.equal(proComputeExpand.res.statusCode, 202, "pro_compute_expand_must_accept");
   assert.equal(proComputeExpand.res.payload.operation?.operationType, "expand_compute", "pro_compute_expand_operation_type_mismatch");
+  assert.equal(proComputeExpand.res.payload.operation?.status, "queued", "pro_compute_expand_must_start_queued");
   assert.equal(proComputeExpand.res.payload.resourceBindingId, proBindingId, "pro_compute_expand_must_keep_own_binding");
+  drainQueued(db, secretFile, 1, "pro_compute_expand");
 
   const proStorageAddon = await request({
     route: labRoute,
@@ -369,6 +392,7 @@ try {
     fileSpaceGb: 200,
     operationTypes: ["expand_storage"],
   });
+  drainQueued(db, secretFile, 1, "pro_storage_addon");
   assert.equal(proStorageAddon.res.payload.cloudOperationPackage.resourceBindingId, proBindingId, "pro_storage_addon_must_keep_own_binding");
 
   for (const [label, user, workspaceId, resourceBindingId, fileSpaceGb] of [
@@ -384,6 +408,8 @@ try {
       body: { workspaceId, resourceBindingId, targetDesiredCapacity: 0 },
     });
     assert.equal(release.res.statusCode, 202, `${label}_compute_release_must_accept`);
+    assert.equal(release.res.payload.operation?.status, "queued", `${label}_compute_release_must_start_queued`);
+    drainQueued(db, secretFile, 1, `${label}_compute_release`);
     const deleteStorage = await request({
       route: apiRoute,
       db,
@@ -393,6 +419,8 @@ try {
       body: { workspaceId, resourceBindingId, fileSpaceGb },
     });
     assert.equal(deleteStorage.res.statusCode, 202, `${label}_storage_delete_must_accept`);
+    assert.equal(deleteStorage.res.payload.operation?.status, "queued", `${label}_storage_delete_must_start_queued`);
+    drainQueued(db, secretFile, 1, `${label}_storage_delete`);
   }
 
   assert.equal(db.workspaceResourceBindings.length, 2, "two_users_must_have_two_bindings");

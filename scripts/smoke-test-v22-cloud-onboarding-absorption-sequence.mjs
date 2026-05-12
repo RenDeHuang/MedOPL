@@ -101,14 +101,19 @@ assertIncludesAll(sequence, [
   "node scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
   "node scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs",
   "node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs",
-  "node scripts/smoke-test-v22-portal-cloud-operation-runner-loop.mjs",
+  "node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+  "node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+  "node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
 ], "sequence_verification_commands");
 
 assertIncludesAll(sequence, [
-  "Production Portal is not yet connected to a real queue and PostgreSQL canonical store",
+  "Historical inline runner evidence is superseded by the async worker harness",
+  "Portal click -> queued operation -> independent worker drain -> PostgreSQL canonical store -> projection",
+  "L3 billing/reconciliation cleanup proof",
   "Real Package C resource lifecycle operations are not authorized by this absorption guide",
   "Real Package D build/push/kubectl operations are not authorized by this absorption guide",
   "The test-only Portal API is not a production cloud operation API",
+  "L1 -> L2a -> L2b -> L3 -> L4 harness path",
 ], "sequence_production_gaps");
 
 assertNotIncludesAny(sequence, [
@@ -170,7 +175,8 @@ assert.deepEqual(data.ffOnlyPairs, [
 ], "sequence_ff_only_pairs");
 
 assert.deepEqual(data.productionGaps, [
-  "production_portal_queue_postgresql_canonical_store",
+  "l2b_online_portal_click_independent_worker_drain",
+  "l3_120min_billing_reconciliation_cleanup",
   "user_authorized_real_package_c_lifecycle_execution",
   "user_authorized_real_package_d_build_push_kubectl",
   "cos_billing_reconciliation_live_evidence",
@@ -178,7 +184,7 @@ assert.deepEqual(data.productionGaps, [
 ], "sequence_production_gaps_data");
 
 assert(suite.includes("smoke-test-v22-cloud-onboarding-absorption-sequence.mjs"), "suite_must_include_absorption_sequence_smoke");
-assert(suite.includes("smoke-test-v22-portal-cloud-operation-runner-loop.mjs"), "suite_must_include_portal_cloud_runner_loop_smoke");
+assert(suite.includes("smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"), "suite_must_include_portal_cloud_async_worker_loop_smoke");
 
 console.log(JSON.stringify({
   ok: true,
@@ -191,6 +197,6 @@ console.log(JSON.stringify({
     "secret_and_live_cloud_non_authorization",
     "production_gaps_not_overclaimed",
     "mvp_suite_integration",
-    "portal_cloud_runner_loop_smoke_integration",
+    "portal_cloud_async_worker_loop_smoke_integration",
   ],
 }, null, 2));

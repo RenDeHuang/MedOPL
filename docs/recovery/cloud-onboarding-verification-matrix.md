@@ -79,7 +79,7 @@ Current real Package D evidence for this branch:
 - real R-17 rollout passed.
 - R-18 pushed-version runtime smoke is complete for Portal, OPL Gateway, and Runtime Bridge; trace surface health is reachable but does not prove a repo-pushed Langfuse image.
 
-Package D evidence does not prove production Portal clicks execute Package C. A read-only live Deployment check found `PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE` unset, `PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE` unset, and a production PostgreSQL check found the v22 cloud-operation tables currently empty. That blocker belongs to a separate Portal deploy-env/secret-reference gate.
+Package D evidence does not prove production Portal clicks execute Package C. Historical read-only Deployment and PostgreSQL checks remain useful evidence, but the active completion gate is now L1 -> L2a -> L2b -> L3 -> L4 from `docs/recovery/v22-cloud-harness-manifest.json`: production env/secret/schema reference check, direct Package C lifecycle canary, Portal click -> queued operation -> independent worker drain -> projection, 120min billing/reconciliation/delete cleanup, and ordinary user product acceptance. L2b/L3 must show cleanup proof and node pool baseline desired/current returning to `2`.
 
 ## Package D / OPL Deployment Discovery Verification
 

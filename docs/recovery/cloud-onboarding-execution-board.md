@@ -2,36 +2,57 @@
 
 program id: v22-cloud-onboarding
 
-current trunk anchor: 148f5a0
+current trunk anchor: f27dbd2
 
-current phase: CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization
+current phase: L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only
 
 本文件是 v22 cloud onboarding 的中央执行板。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
-本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前分支实现 Portal production cloud-operation loop shape，并在用户明确提供 Package C mutation secret file path 后完成真实 Package C storage/compute canary。它还完成 Package D schema migration、rollout 和 runtime smoke。所有真实 canary 证据只写 `.runtime`，不进 git。当前 blocker 是 live Portal Deployment 未启用 production cloud-operation bridge env 和 Package C runner secret reference。
+本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前 cloud-lane 分支清退旧 CO/bridge-blocker 口径，落地 harness manifest、selector/check smoke 和 Portal async worker 控制面。生产真实验收必须按 L1 -> L2a -> L2b -> L3 -> L4 串联执行，不能把 direct canary、deploy runtime smoke 或本地 fake-live 当作完整产品闭环。
+
+2026-05 framework mapping：Portal API 采用 async request-reply，只写 operation/outbox 并返回 `202 + operationId`；真实 COS/TKE mutation 由独立 leased worker drain；reconciliation 使用 controller desired/current 模型，恢复时 cleanup-first/reconcile-first；harness engineering 要求合同、manifest、selector、smoke、evidence 和 handoff 全部 repo-tracked。
 
 资源共享裁定：标准套餐走共享用户计算池 + 硬 quota，不是一用户一个节点池。共享池内每个 workspace 由 compute allocation、ResourceQuota / LimitRange / admission policy、resourceBinding 和审计标签隔离；超过 allocation 的 workload 必须 fail-closed。高级隔离套餐才允许 `dedicated_node_pool` 或 `dedicated_node`。Package D 不授权 Package C 的资源生命周期动作，不能修改 compute allocation、quota、node pool capacity 或 COS 文件空间。
 
 Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-discovery` 分支，model: gpt-5.4。该 discovery 只回写已知事实和 owner guard blocker：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不是 Package D rollout，does not prove build/push/kubectl/deploy completion，不代表 deploy/build/push/kubectl 已完成。
 
-Cloud-lane Package D stack is intentionally long-lived. The active implementation branch is `cloud-lane/feat/v22-real-cloud-portal-package-cd-loop`, model: `gpt-5.4`. It records authorized real Package C/D evidence, including D owner guard label application, R-16 real server-side dry-run, Portal schema migration gate, R-17 rollout, R-18 runtime smoke, and the current Portal production cloud bridge blocker. B should not absorb this branch until the blocker is either productionized or split into a clean absorption unit.
+Cloud-lane is intentionally long-lived. The active implementation branch is `cloud-lane/feat/v22-cloud-operation-harness-refactor`, model: `gpt-5.4`. It records the production cloud operation harness refactor:旧合同清退、L1-L4 manifest、diff selector、cleanup gate、Portal queued API、independent worker drain、nodePoolRef attribution hard gate。B should not absorb this branch until local L1-L4 harness gates are green and any live evidence has cleanup proof.
 
 关联状态表：`docs/recovery/cloud-onboarding-status-table.md`。
 
 ## Program Snapshot
 
 - program id: v22-cloud-onboarding
-- current trunk anchor: 148f5a0
-- current phase: CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization
-- current lane: Portal production bridge env and canonical writeback blocker review
-- next lane: Portal deploy-env/secret-reference gate, then B review / absorption decision
-- cloud-lane branch: `cloud-lane/feat/v22-real-cloud-portal-package-cd-loop`
+- current trunk anchor: f27dbd2
+- current phase: L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only
+- current lane: cloud operation harness manifest + async worker + cleanup gate
+- next lane: local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4
+- cloud-lane branch: `cloud-lane/feat/v22-cloud-operation-harness-refactor`
 - cloud-lane model: `gpt-5.4`
-- cloud-lane stack base: D2 `cloud-lane/feat/v22-package-d-image-push-gate` at `7fbc632`
-- cloud-lane status: real Package D dry-run passed; schema migration, rollout, and pushed-version runtime smoke passed; production Portal cloud bridge remains disabled in live Deployment
+- cloud-lane stack base: `origin/recovery/platform-v22-trunk` at `f27dbd2`
+- cloud-lane status: harness refactor in progress; local async worker and cleanup gates are being validated; production live acceptance not yet claimed
 - workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
+- harness manifest: `docs/recovery/v22-cloud-harness-manifest.json`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - execution board owner: B for board truth, A for implementation task packages, user for live authorization
+
+## Active Harness Levels
+
+| level | status | owner | next action |
+| --- | --- | --- | --- |
+| L1 | in-progress | A | verify production env/secret/schema references and fail-closed defaults |
+| L2a | pending local gate | A/user | direct Package C dry-run/execute only after cleanup-first baseline check |
+| L2b | in-progress | A | Portal click queues operation; independent worker drains with lease and nodePoolRef attribution |
+| L3 | pending | A/user/B | 120min billing checkpoint, release stop billing, cleanup proof |
+| L4 | pending | C/B/user | ordinary user open/upload/upgrade/delete lifecycle evidence |
+
+Live cost control gate:
+
+- node pool desired/current baseline must be `2` before mutation.
+- post-cleanup desired/current must return to `2`.
+- every live run must include `baselineSnapshot`, `cleanupPlan`, `cleanupOperationId`, and `postCleanupSnapshot`.
+- no queued/running operation may remain after cleanup.
+- Package C may release only owned compute allocations; Package D must not scale or delete node pools.
 
 ## 14 阶段 Workflow 摘要
 
@@ -204,7 +225,8 @@ Discovery status:
 - not Package D rollout.
 - does not prove build/push/kubectl/deploy completion.
 - 不代表 deploy/build/push/kubectl 已完成。
-- R-14 through R-18 have authorized real evidence for this run; the next blocker is production Portal cloud bridge env/secret configuration and canonical operation writeback.
+- R-14 through R-18 have historical authorized real evidence for the prior deploy lane; they are not the current completion gate.
+- Current completion gate is L1 -> L2a -> L2b -> L3 -> L4 with cleanup proof and baseline `2`.
 
 ## Board Data
 
@@ -212,9 +234,9 @@ Discovery status:
 ```json
 {
   "programId": "v22-cloud-onboarding",
-  "currentTrunkAnchor": "148f5a0",
-  "currentPhase": "CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization",
-  "workflowModel": "authorized_cloud_connection_loop",
+  "currentTrunkAnchor": "f27dbd2",
+  "currentPhase": "L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only",
+  "workflowModel": "cloud_harness_native_async_lifecycle_loop",
   "oldCoPhaseStateMachineRetired": true,
   "activeGatePrefix": "CC",
   "retiredLegacyGateAliases": [
@@ -225,36 +247,64 @@ Discovery status:
     "C04",
     "CO-01..CO-14"
   ],
-  "currentLane": "Portal production bridge env and canonical writeback blocker review",
-  "nextLane": "Portal deploy-env/secret-reference gate, then B review / absorption decision",
+  "currentLane": "cloud operation harness manifest + async worker + cleanup gate",
+  "nextLane": "local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4",
   "cloudLane": {
-    "branch": "cloud-lane/feat/v22-package-d-deploy-dry-run-gate",
+    "branch": "cloud-lane/feat/v22-cloud-operation-harness-refactor",
     "model": "gpt-5.4",
-    "baseCommit": "7fbc632",
+    "baseCommit": "f27dbd2",
     "stack": [
-      "D1: feat/v22-opl-deployment-ownership-release-plan",
-      "D2: cloud-lane/feat/v22-package-d-image-push-gate",
-      "D3a: cloud-lane/feat/v22-package-d-deploy-dry-run-gate"
+      "cloud-lane/feat/v22-cloud-operation-harness-refactor"
     ],
     "longLived": true,
     "absorbD1Early": false,
-    "d2Scope": [
-      "R-14",
-      "R-15"
+    "scope": [
+      "old cloud contract cleanup",
+      "L1-L4 harness manifest",
+      "diff selector/check smoke",
+      "Portal queued API",
+      "independent worker drain",
+      "nodePoolRef attribution hard gate",
+      "cleanup-first/reconcile-first gate"
     ],
-    "d2RealPushDone": false,
-    "requiresAcceptedPreflightBeforeBuildPush": true,
-    "d3aScope": [
-      "R-16"
-    ],
-    "d3aRealKubectlDone": false,
-    "requiresImageDigestsBeforeDeployDryRun": true
+    "requiresHarnessManifestBeforeLive": true,
+    "requiresCleanupProofBeforeAbsorption": true
   },
   "workflowContract": "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "statusTable": "docs/recovery/cloud-onboarding-status-table.md",
   "readsSecretNow": false,
   "callsRealCloudNow": false,
   "authorizedStorageCreateCanaryDone": true,
+  "harnessManifest": "docs/recovery/v22-cloud-harness-manifest.json",
+  "liveBaselineDesiredCapacity": 2,
+  "cleanupRequiredForLiveRuns": true,
+  "activeHarnessLevels": [
+    {
+      "level": "L1",
+      "status": "in-progress",
+      "purpose": "production env secret schema gate"
+    },
+    {
+      "level": "L2a",
+      "status": "pending-local-gate",
+      "purpose": "direct Package C resource lifecycle canary"
+    },
+    {
+      "level": "L2b",
+      "status": "in-progress",
+      "purpose": "Portal click -> queued -> worker -> projection"
+    },
+    {
+      "level": "L3",
+      "status": "pending",
+      "purpose": "billing reconciliation and cleanup"
+    },
+    {
+      "level": "L4",
+      "status": "pending",
+      "purpose": "ordinary user product lifecycle"
+    }
+  ],
   "packageDDiscovery": {
     "branch": "docs/v22-package-d-opl-deploy-discovery",
     "model": "gpt-5.4",
@@ -336,8 +386,10 @@ Discovery status:
     ".runtime/v22-cloud-cleanup/"
   ],
   "openIssues": [
-    "workflow contract phase 12 required contracts still includes deploy plan contract",
-    "workflow contract phase 14 required contracts still includes role surface contracts and release/status docs"
+    "L1 live Deployment env/secret/schema gate must be rechecked after this async worker refactor",
+    "L2b online Portal click evidence is not complete until independent worker drains production queue without 504",
+    "L3 120min billing reconciliation and cleanup evidence still pending",
+    "L4 ordinary user product acceptance still pending"
   ]
 }
 ```

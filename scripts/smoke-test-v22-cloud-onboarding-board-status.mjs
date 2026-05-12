@@ -5,6 +5,7 @@ const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const matrixPath = "docs/recovery/status-matrix.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
+const manifestPath = "docs/recovery/v22-cloud-harness-manifest.json";
 
 const phaseNames = [
   "official SDK provider strategy",
@@ -54,18 +55,21 @@ const [board, status, matrix, suite] = await Promise.all([
   readFile(matrixPath, "utf8"),
   readFile(suitePath, "utf8"),
 ]);
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
 assertIncludesAll(board, [
   "v22 Cloud Onboarding Central Execution Board",
   "program id: v22-cloud-onboarding",
-  "current trunk anchor: 148f5a0",
-  "current phase: CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization",
+  "current trunk anchor: f27dbd2",
+  "current phase: L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only",
   "AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒",
   "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "docs/recovery/cloud-onboarding-status-table.md",
-  "真实 Package C storage/compute canary",
-  "Package D schema migration、rollout 和 runtime smoke",
-  "production cloud-operation bridge env",
+  "docs/recovery/v22-cloud-harness-manifest.json",
+  "async request-reply",
+  "independent worker drain",
+  "cleanup-first/reconcile-first",
+  "L1 -> L2a -> L2b -> L3 -> L4",
 ], "board_scope");
 
 assertIncludesAll(board, phaseNames, "board_phase_names");
@@ -91,9 +95,10 @@ assertIncludesAll(board, [
 ], "board_execution_rules");
 
 assertIncludesAll(board, [
-  "open issue: workflow contract phase 12 required contracts still includes deploy plan contract",
-  "open issue: workflow contract phase 14 required contracts still includes role surface contracts and release/status docs",
-  "本分支只登记 open issue，不修改 workflow 合同",
+  "L1 live Deployment env/secret/schema gate must be rechecked",
+  "L2b online Portal click evidence is not complete",
+  "L3 120min billing reconciliation and cleanup evidence still pending",
+  "L4 ordinary user product acceptance still pending",
 ], "board_open_issues");
 
 assertIncludesAll(status, [
@@ -124,7 +129,7 @@ assertIncludesAll(status, [
   "| CO-10 | mutation SDK wrapper | pending |",
   "| CO-11 | minimal authorized create/release live | pending |",
   "| CO-12 | production deploy execution | deploy-runtime-smoke-done |",
-  "| CO-13 | Portal production integration | production-bridge-env-blocked | production Portal route",
+  "| CO-13 | Portal production integration | superseded-by-L2b |",
   "| CO-14 | canary / QA / release status update | pending |",
 ], "status_current_truth");
 
@@ -137,16 +142,22 @@ assertIncludesAll(status, [
   "TC3 cleanup: pending official SDK live report",
   "create/release dry-run: pending",
   "mutation wrapper: pending",
-  "production deploy: schema migration, rollout, and runtime smoke passed for Package D; production Portal cloud-operation bridge remains disabled in the live Deployment",
-  "Portal production cloud bridge blocker",
-  "Portal production integration: local production API + PostgreSQL canonical store smoke done; backend compute allocation now records `nodePoolRef` for admin attribution",
-  "live Deployment production bridge env remains disabled and production PostgreSQL cloud operation tables are currently empty",
+  "production deploy: schema migration, rollout, and runtime smoke passed for Package D",
+  "Portal production integration: current branch changes the production API shape from inline execution to queued operation + independent worker",
+  "missing nodePoolRef fails closed and must mark the operation/job failed instead of leaving queued work behind",
   "canary/QA/release status: pending",
 ], "status_plain_language_summary");
 
 const boardData = extractJsonBlock(board, "v22-cloud-onboarding-execution-board");
 assert.equal(boardData.programId, "v22-cloud-onboarding", "board_program_id_mismatch");
-assert.equal(boardData.currentTrunkAnchor, "148f5a0", "board_trunk_anchor_mismatch");
+assert.equal(boardData.currentTrunkAnchor, "f27dbd2", "board_trunk_anchor_mismatch");
+assert.equal(boardData.workflowModel, "cloud_harness_native_async_lifecycle_loop", "board_workflow_model_mismatch");
+assert.equal(boardData.cloudLane?.branch, "cloud-lane/feat/v22-cloud-operation-harness-refactor", "board_cloud_lane_branch_mismatch");
+assert.equal(boardData.cloudLane?.model, "gpt-5.4", "board_cloud_lane_model_mismatch");
+assert.equal(boardData.harnessManifest, "docs/recovery/v22-cloud-harness-manifest.json", "board_harness_manifest_missing");
+assert.equal(boardData.liveBaselineDesiredCapacity, 2, "board_live_baseline_must_be_2");
+assert.equal(boardData.cleanupRequiredForLiveRuns, true, "board_cleanup_required");
+assert.deepEqual(boardData.activeHarnessLevels.map((item) => item.level), ["L1", "L2a", "L2b", "L3", "L4"], "board_active_harness_levels");
 assert.equal(boardData.readsSecretNow, false, "board_must_not_read_secret_now");
 assert.equal(boardData.callsRealCloudNow, false, "board_must_not_call_real_cloud_now");
 assert.equal(boardData.modifiesDeployNow, false, "board_must_not_modify_deploy_now");
@@ -170,8 +181,13 @@ assert.deepEqual(boardData.parallelLaneRules, [
 
 const statusData = extractJsonBlock(status, "v22-cloud-onboarding-status-table");
 assert.equal(statusData.programId, "v22-cloud-onboarding", "status_program_id_mismatch");
-assert.equal(statusData.currentTrunkAnchor, "148f5a0", "status_trunk_anchor_mismatch");
-assert.equal(statusData.workflowBoundaryEvidence, "148f5a0", "status_workflow_boundary_evidence_mismatch");
+assert.equal(statusData.currentTrunkAnchor, "f27dbd2", "status_trunk_anchor_mismatch");
+assert.equal(statusData.workflowBoundaryEvidence, "f27dbd2", "status_workflow_boundary_evidence_mismatch");
+assert.equal(statusData.workflowModel, "cloud_harness_native_async_lifecycle_loop", "status_workflow_model_mismatch");
+assert.equal(statusData.cloudLane?.branch, "cloud-lane/feat/v22-cloud-operation-harness-refactor", "status_cloud_lane_branch_mismatch");
+assert.equal(statusData.harnessManifest, "docs/recovery/v22-cloud-harness-manifest.json", "status_harness_manifest_missing");
+assert.equal(statusData.liveBaselineDesiredCapacity, 2, "status_live_baseline_must_be_2");
+assert.deepEqual(statusData.harnessLevels.map((item) => item.level), ["L1", "L2a", "L2b", "L3", "L4"], "status_harness_levels");
 assert.equal(statusData.phases.length, 14, "status_phase_count_mismatch");
 assert.deepEqual(statusData.phases.map((phase) => phase.phaseName), phaseNames, "status_phase_order_mismatch");
 for (const phase of statusData.phases) {
@@ -187,7 +203,7 @@ for (const phase of statusData.phases) {
   ]) {
     assert(Object.hasOwn(phase, key), `status_phase_${phase.phaseId}_missing:${key}`);
   }
-  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done", "deploy-runtime-smoke-done", "production-bridge-env-blocked"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
+  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done", "deploy-runtime-smoke-done", "production-bridge-env-blocked", "superseded-by-L2b"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
 }
 
 const statusById = Object.fromEntries(statusData.phases.map((phase) => [phase.phaseId, phase]));
@@ -228,9 +244,9 @@ assertIncludesAll(
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
 assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
 assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
-assert.equal(boardData.currentPhase, "CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization", "board_current_phase_must_record_bridge_blocker");
-assert.equal(boardData.currentLane, "Portal production bridge env and canonical writeback blocker review", "board_current_lane_must_match_bridge_blocker_review");
-assert.equal(boardData.nextLane, "Portal deploy-env/secret-reference gate, then B review / absorption decision", "board_next_lane_must_match_env_gate");
+assert.equal(boardData.currentPhase, "L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only", "board_current_phase_must_record_harness_refactor");
+assert.equal(boardData.currentLane, "cloud operation harness manifest + async worker + cleanup gate", "board_current_lane_must_match_harness_refactor");
+assert.equal(boardData.nextLane, "local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4", "board_next_lane_must_match_l1_l4");
 assert.equal(boardData.authorizedStorageCreateCanaryDone, true, "board_must_record_storage_create_canary_done");
 assert.equal(boardData.packageDDiscovery?.realRuntimeSmokeDone, true, "board_must_record_real_runtime_smoke_done");
 assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, false, "board_must_record_live_bridge_disabled");
@@ -252,25 +268,23 @@ assertIncludesAll(
   ],
   "co12_package_d_real_done_evidence"
 );
-assert.equal(statusById["CO-13"].status, "production-bridge-env-blocked", "co13_must_record_production_bridge_env_blocked");
+assert.equal(statusById["CO-13"].status, "superseded-by-L2b", "co13_must_be_superseded_by_l2b");
 assertIncludesAll(
   `${statusById["CO-13"].evidenceCommitOrReport} ${statusById["CO-13"].nextAction} ${statusById["CO-13"].requiredSmoke.join(" ")} ${statusById["CO-13"].userGate}`,
   [
-    "production Portal route",
-    "PostgreSQL canonical store shape",
-    "MVP suite coverage",
-    "backend nodePoolRef attribution",
-    "PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE",
-    "PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE",
-    "0 rows",
-    "Portal deploy-env/secret-reference gate",
+    "queued operation + independent worker drain",
+    "L2b/L3 harness gates",
+    "cleanup proof",
+    "smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
     "ordinary user projection exposes nodePoolRef/TKE/Kubernetes",
-    "smoke-test-v22-portal-production-cloud-operation-loop.mjs",
-    "smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
-    "smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
   ],
-  "co13_production_portal_bridge_blocker_evidence"
+  "co13_superseded_l2b_evidence"
 );
+
+assert.equal(manifest.schemaVersion, "2026-05-cloud-harness-native", "manifest_schema_version");
+assert.equal(manifest.cleanupPolicy?.baselineDesiredCapacity, 2, "manifest_baseline_must_be_2");
+assert.equal(manifest.cleanupPolicy?.cleanupRequiredForLiveRuns, true, "manifest_cleanup_required");
+assert.deepEqual(manifest.gates.map((gate) => gate.id), ["L1", "L2a", "L2b", "L3", "L4"], "manifest_l1_l4_order");
 
 assertIncludesAll(matrix, [
   "cloud onboarding execution board",
@@ -305,5 +319,6 @@ console.log(JSON.stringify({
     "serial_and_parallel_rules",
     "open_issues_for_generic_required_contract_names",
     "status_matrix_and_suite_references",
+    "harness_manifest_l1_l4_status",
   ],
 }, null, 2));

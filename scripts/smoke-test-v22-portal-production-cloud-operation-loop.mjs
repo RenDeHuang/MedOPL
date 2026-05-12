@@ -8,6 +8,7 @@ const FORBIDDEN_PUBLIC_TERMS = /\/test\/fake-live|testOnly|TKE|COS|TCR|Kubernete
 
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
 const { createProviderSecretStore } = await import("../services/portal/src/domain/provider-secret-store.mjs");
+const { processQueuedPortalProductionCloudOperations } = await import("../services/portal/src/domain/portal-cloud-operation-production.mjs");
 
 function assertNoSecretLeak(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
@@ -199,14 +200,22 @@ try {
   assert.equal(Object.hasOwn(createStorage.res.payload, "runnerMode"), false, "production_payload_must_not_expose_runner_mode");
   assert.equal(Object.hasOwn(createStorage.res.payload, "realCloudCalls"), false, "production_payload_must_not_expose_real_cloud_flag");
   assert.equal(createStorage.res.payload.operation?.operationType, "create_storage", "operation_type_mismatch");
-  assert.equal(createStorage.res.payload.operation?.status, "succeeded", "operation_status_mismatch");
+  assert.equal(createStorage.res.payload.operation?.status, "queued", "operation_status_mismatch");
   assert.equal(Object.hasOwn(createStorage.res.payload, "testOnly"), false, "production_payload_must_not_expose_test_only_flag");
   assert.equal(Object.hasOwn(createStorage.res.payload.operation || {}, "runnerMode"), false, "operation_payload_must_not_expose_runner_mode");
   assert.equal(Object.hasOwn(createStorage.res.payload.operation || {}, "realCloudCalls"), false, "operation_payload_must_not_expose_real_cloud_flag");
-  assert.match(createStorage.res.payload.operation?.dryRunReportRef || "", /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-storage-create-storage-dry-run\.json$/, "dry_run_report_ref_must_be_sanitized");
-  assert.match(createStorage.res.payload.operation?.executionReportRef || "", /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-storage-create-storage-execution\.json$/, "execution_report_ref_must_be_sanitized");
   assert.ok(createStorage.res.payload.resourceBindingId, "resource_binding_id_must_be_returned");
-  assert.equal(createStorage.res.payload.publicProjection.resources.fileSpace.capacityGb, 10, "public_projection_file_space_capacity");
+  assert.equal(createStorage.res.payload.publicProjection.resources.fileSpace.statusLabel, "未开通", "queued_projection_must_not_claim_file_space_available");
+
+  const drain = processQueuedPortalProductionCloudOperations(db, {
+    runnerMode: "fake-live",
+    secretFile,
+    maxOperations: 1,
+    workerId: "worker-v22-production-storage-smoke",
+    repoRoot: ".",
+  });
+  assert.equal(drain.ok, true, "worker_drain_must_succeed");
+  assert.equal(drain.processed.length, 1, "worker_drain_must_process_storage_create");
 
   const projection = await request({
     route,
@@ -232,7 +241,8 @@ try {
   assert.equal(db.cloudOperations[0].acceptedDryRunId, db.cloudOperations[0].operationId, "accepted_dry_run_must_match_operation_id");
   assert.equal(db.cloudOperationJobs.length, 1, "cloud_operation_job_must_be_recorded");
   assert.equal(db.cloudOperationJobs[0].status, "succeeded", "cloud_operation_job_status");
-  assert.equal(db.cloudOperationJobs[0].queueMode, "inline_worker", "cloud_operation_job_queue_mode");
+  assert.equal(db.cloudOperationJobs[0].queueMode, "independent_worker", "cloud_operation_job_queue_mode");
+  assert.equal(db.cloudOperationJobs[0].leaseOwner, "worker-v22-production-storage-smoke", "cloud_operation_job_lease_owner");
   assert.equal(db.fileSpaceEntitlements.length, 1, "file_space_entitlement_must_be_canonical");
   assert.equal(db.fileSpaceEntitlements[0].capacityGb, 10, "file_space_capacity_mismatch");
   assert.equal(db.billingReconciliations.length, 1, "billing_reconciliation_must_be_written");
@@ -240,8 +250,8 @@ try {
   assert.equal(db.cloudResourceProjections.length, 1, "cloud_resource_projection_must_be_written");
   assert.equal(writes.length >= 3, true, "mutating_routes_must_persist_db");
 
-  const dryRunReport = JSON.parse(await readFile(path.resolve(createStorage.res.payload.operation.dryRunReportRef), "utf8"));
-  const executionReport = JSON.parse(await readFile(path.resolve(createStorage.res.payload.operation.executionReportRef), "utf8"));
+  const dryRunReport = JSON.parse(await readFile(path.resolve(db.cloudOperations[0].dryRunReportRef), "utf8"));
+  const executionReport = JSON.parse(await readFile(path.resolve(db.cloudOperations[0].executionReportRef), "utf8"));
   assert.equal(dryRunReport.gateId, "R-06", "dry_run_gate_mismatch");
   assert.equal(executionReport.execution.providerMode, "fake-live", "execution_report_provider_mode");
   assert.equal(executionReport.execution.acceptedDryRunVerified, true, "execution_report_must_accept_dry_run");
@@ -252,7 +262,7 @@ try {
     checked: [
       "production_route_not_test_route",
       "canonical_cloud_operation_written",
-      "inline_queue_job_written",
+      "independent_worker_queue_job_written",
       "package_c_runner_dry_run_and_fake_live_execute",
       "file_space_entitlement_written",
       "billing_reconciliation_written",

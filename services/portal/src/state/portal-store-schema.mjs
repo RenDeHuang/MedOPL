@@ -368,6 +368,9 @@ export function createPortalStoreSchema({
         real_cloud_calls boolean NOT NULL,
         dry_run_report_ref text NOT NULL,
         execution_report_ref text NOT NULL,
+        lease_owner text NOT NULL DEFAULT '',
+        lease_acquired_at text NOT NULL DEFAULT '',
+        failure_reason text NOT NULL DEFAULT '',
         created_at timestamptz NOT NULL,
         updated_at timestamptz NOT NULL
       );
@@ -474,6 +477,9 @@ export function createPortalStoreSchema({
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS idempotency_key text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("compute_allocations")} ADD COLUMN IF NOT EXISTS node_pool_ref text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("cloud_operation_jobs")} ADD COLUMN IF NOT EXISTS lease_owner text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("cloud_operation_jobs")} ADD COLUMN IF NOT EXISTS lease_acquired_at text NOT NULL DEFAULT '';
+      ALTER TABLE ${pgTableName("cloud_operation_jobs")} ADD COLUMN IF NOT EXISTS failure_reason text NOT NULL DEFAULT '';
     `);
   }
 

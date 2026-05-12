@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "2026-05-cloud-harness-native",
+  "programId": "v22-cloud-onboarding",
+  "model": "gpt-5.4",
+  "purpose": "用户点击套餐后由 Portal 记录 operation，独立 worker 开通或释放平台托管计算与文件空间，PostgreSQL 作为 canonical truth，普通用户只看到工作台产品语言。",
+  "executionModel": {
+    "portalApi": "async_request_reply",
+    "operationAcceptedStatus": 202,
+    "worker": "independent_leased_worker",
+    "queue": "postgres_outbox",
+    "store": "postgres_canonical_store",
+    "reconciliation": "controller_reconcile_cleanup_first",
+    "idempotency": "operation_id_and_accepted_dry_run_id",
+    "packageCScope": "compute_storage_lifecycle",
+    "packageDScope": "image_deploy_runtime_smoke_only"
+  },
+  "cleanupPolicy": {
+    "baselineDesiredCapacity": 2,
+    "cleanupRequiredForLiveRuns": true,
+    "cleanupFirstOnResume": true,
+    "mustReturnToBaseline": true,
+    "mustReleaseComputeAllocations": true,
+    "mustDeleteOrProtectOwnedStorage": true,
+    "forbidOrphanRunningOperations": true,
+    "forbidScalingPlatformServicePoolToZero": true,
+    "forbidKubectlDelete": true,
+    "forbidDeleteNodePool": true
+  },
+  "ordinaryUserForbiddenTerms": [
+    "CVM",
+    "COS",
+    "TKE",
+    "Kubernetes",
+    "node pool",
+    "nodePool",
+    "节点池",
+    "bucket",
+    "objectKey",
+    "kubeconfig",
+    "SecretId",
+    "SecretKey"
+  ],
+  "forbiddenPaths": [
+    "deploy/*",
+    ".sentrux/*",
+    "adapters/*",
+    "one-person-lab/*"
+  ],
+  "gates": [
+    {
+      "id": "L1",
+      "name": "production env secret schema gate",
+      "contracts": [
+        "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+        "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
+        "docs/contracts/v22-production-cloud-topology-boundary.md"
+      ],
+      "ownedPaths": [
+        "docs/recovery/v22-cloud-harness-manifest.json",
+        "scripts/v22-cloud-harness-select-checks.mjs",
+        "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+        "services/portal/src/config/portal-config.mjs"
+      ],
+      "requiredSmoke": [
+        "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+        "scripts/smoke-test-v22-portal-runtime-startup-config.mjs"
+      ],
+      "requiredEvidence": [
+        "productionEnvSummary",
+        "schemaReady",
+        "secretReferencePresent"
+      ],
+      "cleanupRequired": false,
+      "authorizationBoundary": "no_secret_read_by_default"
+    },
+    {
+      "id": "L2a",
+      "name": "direct package c resource lifecycle canary",
+      "contracts": [
+        "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
+        "docs/contracts/v22-resource-plan-boundary.md"
+      ],
+      "ownedPaths": [
+        "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+        "scripts/v22-tencent-authorized-resource-lifecycle-live-sequence.mjs",
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs"
+      ],
+      "requiredSmoke": [
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs",
+        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
+      ],
+      "requiredEvidence": [
+        "baselineSnapshot",
+        "dryRunReport",
+        "executionReport",
+        "cleanupPlan",
+        "postCleanupSnapshot"
+      ],
+      "cleanupRequired": true,
+      "authorizationBoundary": "mutation_secret_and_real_cloud_required"
+    },
+    {
+      "id": "L2b",
+      "name": "portal click to worker to projection",
+      "contracts": [
+        "docs/contracts/v22-managed-environment-open-boundary.md",
+        "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
+        "docs/contracts/v22-portal-user-surface-boundary.md"
+      ],
+      "ownedPaths": [
+        "services/portal/src/domain/portal-cloud-operation-production.mjs",
+        "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs",
+        "services/portal/src/routes/lab-package.routes.mjs",
+        "services/portal/src/portal-cloud-operation-worker.mjs",
+        "services/portal/src/workers/portal-cloud-operation-worker.mjs",
+        "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+        "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"
+      ],
+      "requiredSmoke": [
+        "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+        "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+        "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+        "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
+      ],
+      "requiredEvidence": [
+        "baselineSnapshot",
+        "operationAccepted",
+        "workerLease",
+        "packageCReport",
+        "projection",
+        "cleanupPlan",
+        "postCleanupSnapshot"
+      ],
+      "cleanupRequired": true,
+      "authorizationBoundary": "portal_live_click_requires_mutation_secret_and_worker_deploy_gate"
+    },
+    {
+      "id": "L3",
+      "name": "billing reconciliation and cleanup",
+      "contracts": [
+        "docs/contracts/v22-billing-freeze-boundary.md",
+        "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+        "docs/contracts/v22-authorized-tencent-create-release-implementation-boundary.md"
+      ],
+      "ownedPaths": [
+        "services/portal/src/domain/portal-cloud-operation-production.mjs",
+        "services/portal/src/domain/wallet-ledger.mjs",
+        "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
+      ],
+      "requiredSmoke": [
+        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+        "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+        "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"
+      ],
+      "requiredEvidence": [
+        "billingFreeze",
+        "reconcile120Min",
+        "tPlusOneStatus",
+        "cleanupReport"
+      ],
+      "cleanupRequired": true,
+      "authorizationBoundary": "billing_read_requires_separate_readonly_authorization"
+    },
+    {
+      "id": "L4",
+      "name": "ordinary user product lifecycle",
+      "contracts": [
+        "docs/contracts/v22-mvp-managed-opl-loop.md",
+        "docs/contracts/v22-portal-user-surface-boundary.md",
+        "docs/contracts/v22-portal-files-billing-trace-boundary.md"
+      ],
+      "ownedPaths": [
+        "services/portal/frontend/src/views/packages/*",
+        "services/portal/frontend/src/views/resources/*",
+        "services/portal/frontend/src/views/workspace/*",
+        "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs"
+      ],
+      "requiredSmoke": [
+        "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ],
+      "requiredEvidence": [
+        "ordinaryUserClick",
+        "ordinaryUserProjection",
+        "noCloudConsoleLanguage",
+        "cleanupComplete"
+      ],
+      "cleanupRequired": true,
+      "authorizationBoundary": "live_product_click_requires_l1_l2_l3_green"
+    }
+  ]
+}

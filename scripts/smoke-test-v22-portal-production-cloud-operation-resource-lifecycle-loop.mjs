@@ -8,6 +8,7 @@ const FORBIDDEN_PUBLIC_TERMS = /\/test\/fake-live|testOnly|TKE|COS|TCR|Kubernete
 
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
 const { createProviderSecretStore } = await import("../services/portal/src/domain/provider-secret-store.mjs");
+const { processQueuedPortalProductionCloudOperations } = await import("../services/portal/src/domain/portal-cloud-operation-production.mjs");
 
 function assertNoSecretLeak(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value);
@@ -97,14 +98,12 @@ function assertProductionOperationPayload(payload = {}, operationType = "") {
   assert.equal(Object.hasOwn(payload, "realCloudCalls"), false, `${operationType}_payload_must_not_expose_real_cloud_flag`);
   assert.equal(Object.hasOwn(payload, "testOnly"), false, `${operationType}_payload_must_not_expose_test_only_flag`);
   assert.equal(payload.operation?.operationType, operationType, `${operationType}_operation_type_mismatch`);
-  assert.equal(payload.operation?.status, "succeeded", `${operationType}_operation_status_mismatch`);
+  assert.equal(payload.operation?.status, "queued", `${operationType}_operation_status_mismatch`);
   assert.equal(Object.hasOwn(payload.operation || {}, "runnerMode"), false, `${operationType}_operation_must_not_expose_runner_mode`);
   assert.equal(Object.hasOwn(payload.operation || {}, "realCloudCalls"), false, `${operationType}_operation_must_not_expose_real_cloud_flag`);
-  assert.match(payload.operation?.dryRunReportRef || "", /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-[a-z-]+-[a-z-]+\.json$/, `${operationType}_dry_run_ref_must_be_sanitized`);
-  assert.match(payload.operation?.executionReportRef || "", /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-[a-z-]+-(storage|compute)-execution\.json$/, `${operationType}_execution_ref_must_be_sanitized`);
 }
 
-async function execute(route, db, user, operationType, urlPath, body = {}) {
+async function execute(route, db, user, operationType, urlPath, body = {}, { secretFile = "" } = {}) {
   const response = await request({
     route,
     db,
@@ -116,6 +115,16 @@ async function execute(route, db, user, operationType, urlPath, body = {}) {
   assert.equal(response.handled, true, `${operationType}_route_must_be_handled`);
   assert.equal(response.res.statusCode, 202, `${operationType}_must_return_202`);
   assertProductionOperationPayload(response.res.payload, operationType);
+  const drain = processQueuedPortalProductionCloudOperations(db, {
+    runnerMode: "fake-live",
+    secretFile,
+    computeNodePoolRef: "np-backend-attribution-proof",
+    maxOperations: 1,
+    workerId: `worker-v22-lifecycle-${operationType}`,
+    repoRoot: ".",
+  });
+  assert.equal(drain.ok, true, `${operationType}_worker_drain_must_succeed`);
+  assert.equal(drain.processed.length, 1, `${operationType}_worker_drain_must_process_one`);
   return response.res.payload;
 }
 
@@ -218,7 +227,7 @@ try {
     workspaceId: "workspace-v22-production-cloud-lifecycle",
     fileSpaceGb: 10,
     planId: "starter_2c4g_10gb",
-  });
+  }, { secretFile });
   const resourceBindingId = createStorage.resourceBindingId;
   assert.ok(resourceBindingId, "create_storage_must_return_resource_binding_id");
 
@@ -228,28 +237,28 @@ try {
     computeUnits: 1,
     targetDesiredCapacity: 1,
     planId: "starter_2c4g_10gb",
-  });
+  }, { secretFile });
   await execute(route, db, user, "expand_storage", "/portal/api/v22/cloud-operations/storage/expand", {
     workspaceId: "workspace-v22-production-cloud-lifecycle",
     resourceBindingId,
     fileSpaceGb: 20,
-  });
+  }, { secretFile });
   await execute(route, db, user, "expand_compute", "/portal/api/v22/cloud-operations/compute/expand", {
     workspaceId: "workspace-v22-production-cloud-lifecycle",
     resourceBindingId,
     computeUnits: 2,
     targetDesiredCapacity: 2,
-  });
+  }, { secretFile });
   await execute(route, db, user, "release_compute", "/portal/api/v22/cloud-operations/compute/release", {
     workspaceId: "workspace-v22-production-cloud-lifecycle",
     resourceBindingId,
     targetDesiredCapacity: 0,
-  });
+  }, { secretFile });
   await execute(route, db, user, "delete_storage", "/portal/api/v22/cloud-operations/storage/delete", {
     workspaceId: "workspace-v22-production-cloud-lifecycle",
     resourceBindingId,
     fileSpaceGb: 20,
-  });
+  }, { secretFile });
 
   const foreignDelete = await request({
     route,

@@ -310,7 +310,10 @@ assertIncludesAll(board + status + verificationMatrix, [
   "real R-18 runtime smoke passed",
   ".runtime/v22-runtime-smoke/package-d-real-20260511154104-runtime-smoke.json",
   "do not treat Package D as Package C storage/compute lifecycle or Portal cloud-operation bridge enablement",
-  "live Portal Deployment does not enable production cloud-operation bridge env",
+  "active completion gate is now L1 -> L2a -> L2b -> L3 -> L4",
+  "independent worker drain",
+  "cleanup proof",
+  "node pool baseline desired/current returning to `2`",
 ], "recovery_deploy_safety");
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");

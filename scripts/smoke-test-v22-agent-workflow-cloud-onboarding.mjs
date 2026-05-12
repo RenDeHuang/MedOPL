@@ -63,17 +63,26 @@ const statusPayload = parseJson(statusResult.stdout, "cloud_onboarding_status");
 assert.equal(statusPayload.ok, true, "status_ok");
 assert.equal(statusPayload.command, "cloud-onboarding status", "status_command");
 assert.equal(statusPayload.programId, "v22-cloud-onboarding", "program_id");
-assert.equal(statusPayload.currentPhase, "CO-13 production bridge env blocked; CO-12 deploy/runtime smoke done; CO-06 readonly live remains separate and still needs user authorization", "current_phase");
-assert.equal(statusPayload.activeLane, "Portal production bridge env and canonical writeback blocker review", "active_lane");
-assert.equal(statusPayload.nextLane, "Portal deploy-env/secret-reference gate, then B review / absorption decision", "next_lane");
-assert.equal(statusPayload.handoffTarget, "B", "handoff_target");
+assert.equal(statusPayload.currentPhase, "L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only", "current_phase");
+assert.equal(statusPayload.activeLane, "cloud operation harness manifest + async worker + cleanup gate", "active_lane");
+assert.equal(statusPayload.nextLane, "local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4", "next_lane");
+assert.equal(statusPayload.handoffTarget, "A", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
+  "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+  "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
+  "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+  "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+  "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
   "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
   "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
   "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+  "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+  "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+  "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+  "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
 ], "active_required_smoke");
-assert.equal(statusPayload.userGate, "stop if live Portal bridge env/secret config changes without a deploy gate", "active_user_gate");
+assert.equal(statusPayload.userGate, "live L1-L4 may run only after local harness gates pass; node pool baseline desired/current must be 2 and cleanup must return to 2", "active_user_gate");
 
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-01"), "summary_done_must_include_co01");
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-04"), "summary_done_must_include_co04");
@@ -107,13 +116,20 @@ const defaultGatePacket = findPacket(statusPayload, "default-gate");
 assert.equal(defaultGatePacket.handoffTarget, "B", "default_gate_handoff");
 assert.equal(defaultGatePacket.status, "done", "default_gate_status");
 
-const portalBridgeReviewPacket = findPacket(statusPayload, "portal-production-bridge-env-review");
-assert.equal(portalBridgeReviewPacket.handoffTarget, "B", "portal_bridge_review_handoff");
-assert.equal(portalBridgeReviewPacket.status, "production-bridge-env-blocked", "portal_bridge_review_status");
-assert.equal(portalBridgeReviewPacket.requiresManualMergeDecision, true, "portal_bridge_review_manual");
-assert(portalBridgeReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs"), "portal_bridge_review_must_include_production_loop_smoke");
-assert(portalBridgeReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs"), "portal_bridge_review_must_include_lifecycle_loop_smoke");
-assert(portalBridgeReviewPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs"), "portal_bridge_review_must_include_postgres_store_smoke");
+const harnessPacket = findPacket(statusPayload, "cloud-harness-l1-l4-refactor");
+assert.equal(harnessPacket.handoffTarget, "A", "harness_packet_handoff");
+assert.equal(harnessPacket.status, "in-progress", "harness_packet_status");
+assert.equal(harnessPacket.requiresManualMergeDecision, false, "harness_packet_manual");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs"), "harness_packet_must_include_manifest_selector_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-runtime-startup-config.mjs"), "harness_packet_must_include_l1_runtime_config_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"), "harness_packet_must_include_cleanup_gate_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs"), "harness_packet_must_include_worker_entrypoint_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"), "harness_packet_must_include_async_worker_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs"), "harness_packet_must_include_package_click_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"), "harness_packet_must_include_l3_release_billing_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"), "harness_packet_must_include_l3_files_billing_trace_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs"), "harness_packet_must_include_l4_frontend_surface_smoke");
+assert(harnessPacket.userGate.includes("baseline desired/current must be 2"), "harness_packet_must_record_baseline_two");
 
 const userLivePacket = findPacket(statusPayload, "user-authorized-readonly-live");
 assert.equal(userLivePacket.handoffTarget, "D", "user_live_handoff");
@@ -133,9 +149,9 @@ assert.equal(nextResult.status, 0, `cloud_onboarding_next_must_exit_zero:${nextR
 assertNotIncludesAny(nextResult.stdout, forbiddenOutputPhrases, "cloud_onboarding_next_stdout");
 const nextPayload = parseJson(nextResult.stdout, "cloud_onboarding_next");
 assert.equal(nextPayload.command, "cloud-onboarding next", "next_command");
-assert.equal(nextPayload.nextTaskPacket.id, "portal-production-bridge-env-review", "next_task_packet_id");
-assert.equal(nextPayload.nextTaskPacket.handoffTarget, "B", "next_task_handoff");
-assert.equal(nextPayload.nextTaskPacket.requiresManualMergeDecision, true, "next_task_must_need_b_review");
+assert.equal(nextPayload.nextTaskPacket.id, "cloud-harness-l1-l4-refactor", "next_task_packet_id");
+assert.equal(nextPayload.nextTaskPacket.handoffTarget, "A", "next_task_handoff");
+assert.equal(nextPayload.nextTaskPacket.requiresManualMergeDecision, false, "next_task_must_not_need_b_review_yet");
 assert.equal(nextPayload.nextTaskPacket.suggestedCommands.some((command) => command.includes("kubectl")), false, "next_task_must_not_emit_kubectl_command");
 
 const humanStatus = runWorkflow(["cloud-onboarding", "status"]);
@@ -144,8 +160,8 @@ assertNotIncludesAny(humanStatus.stdout, forbiddenOutputPhrases, "cloud_onboardi
 assertIncludesAll(humanStatus.stdout, [
   "v22 cloud onboarding workflow",
   "program id: v22-cloud-onboarding",
-  "active lane: Portal production bridge env and canonical writeback blocker review",
-  "next lane: Portal deploy-env/secret-reference gate, then B review / absorption decision",
+  "active lane: cloud operation harness manifest + async worker + cleanup gate",
+  "next lane: local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4",
   "needs-user-authorization",
   "A/B/C/D handoff",
   "JSON 摘要",
@@ -162,7 +178,7 @@ console.log(JSON.stringify({
     "current_phase_active_lane_next_lane",
     "phase_summary_done_pending_blocked_needs_user_authorization",
     "required_smoke_user_gate_handoff_target",
-    "check_config_default_gate_user_authorized_live_and_b_review_merge_packets",
+    "harness_l1_l4_check_config_default_gate_user_authorized_live_and_b_review_merge_packets",
     "needs_user_authorization_has_no_executable_live_command",
     "serial_real_side_effects",
     "stable_a_b_c_d_handoff_copy",

@@ -55,6 +55,7 @@ const laneStateDir = `${runtimeStateRoot}/lanes`;
 const cloudOnboardingBoardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const cloudOnboardingStatusTablePath = "docs/recovery/cloud-onboarding-status-table.md";
 const cloudOnboardingWorkflowContractPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
+const cloudHarnessManifestPath = "docs/recovery/v22-cloud-harness-manifest.json";
 
 const cloudOnboardingRunnablePath = Object.freeze([
   ["R-00", "CC-01", "none", "local contract guard", "stdout JSON only"],
@@ -956,28 +957,46 @@ function buildCloudOnboardingTaskPackets({ checkConfigPhase, defaultGatePhase, u
 
 function buildBoardCurrentTaskPacket(board = {}) {
   return {
-    id: "portal-production-bridge-env-review",
-    title: "Portal production bridge env review task packet",
-    phaseId: "CO-13",
-    phaseName: "Portal production integration",
-    status: "production-bridge-env-blocked",
-    handoffTarget: "B",
+    id: "cloud-harness-l1-l4-refactor",
+    title: "Cloud harness L1-L4 refactor task packet",
+    phaseId: "L1-L4",
+    phaseName: "production cloud operation harness",
+    status: "in-progress",
+    handoffTarget: "A",
     requiredSmoke: [
+      "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+      "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
+      "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+      "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+      "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
       "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
       "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
       "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+      "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+      "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+      "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
       "scripts/smoke-test-v22-mvp-contract-suite.mjs",
     ],
-    userGate: "stop if live Portal bridge env/secret config changes without a deploy gate",
-    requiresManualMergeDecision: true,
+    userGate: "live L1-L4 may run only after local harness gates pass; node pool baseline desired/current must be 2 and cleanup must return to 2",
+    requiresManualMergeDecision: false,
     suggestedCommands: [
+      "node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+      "node scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
+      "node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+      "node scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+      "node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
       "node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
       "node scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
       "node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+      "node scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+      "node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+      "node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
       "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
-      "git diff --check -- scripts docs/recovery services/portal",
+      "git diff --check -- scripts docs/recovery docs/contracts services/portal",
     ],
-    allowedActions: ["review production bridge env blocker", "record findings", "decide whether a separate deploy-env gate is required"],
+    allowedActions: ["update old cloud contracts/status", "run local harness smoke", "prepare cost-capped live L1-L4 task package"],
     forbiddenActions: sharedBoundaries,
   };
 }
@@ -1032,6 +1051,7 @@ async function createCloudOnboardingStatusPack() {
       executionBoard: cloudOnboardingBoardPath,
       statusTable: cloudOnboardingStatusTablePath,
       workflowContract: cloudOnboardingWorkflowContractPath,
+      harnessManifest: cloudHarnessManifestPath,
     },
     safety: {
       printsRecommendationsOnly: true,
@@ -1047,7 +1067,7 @@ async function createCloudOnboardingStatusPack() {
 
 async function createCloudOnboardingNextPack() {
   const statusPack = await createCloudOnboardingStatusPack();
-  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.id === "portal-production-bridge-env-review")
+  const nextTaskPacket = statusPack.taskPackets.find((packet) => packet.id === "cloud-harness-l1-l4-refactor")
     || statusPack.taskPackets.find((packet) => packet.phaseId && statusPack.activeLane === phaseLabel(packet))
     || statusPack.taskPackets.find((packet) => packet.status === "active")
     || statusPack.taskPackets[0];

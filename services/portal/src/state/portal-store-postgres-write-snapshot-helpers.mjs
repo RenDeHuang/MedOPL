@@ -468,7 +468,7 @@ export async function writeCloudOperations({ client, pgTableName, db }) {
 
 export async function writeCloudOperationJobs({ client, pgTableName, db }) {
   for (const row of db.cloudOperationJobs || []) {
-    await client.query(`INSERT INTO ${pgTableName("cloud_operation_jobs")} (id,operation_id,tenant_id,user_id,workspace_id,resource_binding_id,queue_mode,status,runner_mode,real_cloud_calls,dry_run_report_ref,execution_report_ref,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    await client.query(`INSERT INTO ${pgTableName("cloud_operation_jobs")} (id,operation_id,tenant_id,user_id,workspace_id,resource_binding_id,queue_mode,status,runner_mode,real_cloud_calls,dry_run_report_ref,execution_report_ref,lease_owner,lease_acquired_at,failure_reason,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
       ON CONFLICT (id) DO UPDATE SET
         operation_id=EXCLUDED.operation_id,
         tenant_id=EXCLUDED.tenant_id,
@@ -481,6 +481,9 @@ export async function writeCloudOperationJobs({ client, pgTableName, db }) {
         real_cloud_calls=EXCLUDED.real_cloud_calls,
         dry_run_report_ref=EXCLUDED.dry_run_report_ref,
         execution_report_ref=EXCLUDED.execution_report_ref,
+        lease_owner=EXCLUDED.lease_owner,
+        lease_acquired_at=EXCLUDED.lease_acquired_at,
+        failure_reason=EXCLUDED.failure_reason,
         updated_at=EXCLUDED.updated_at`, [
       row.id,
       row.operationId || "",
@@ -488,12 +491,15 @@ export async function writeCloudOperationJobs({ client, pgTableName, db }) {
       row.userId || "",
       row.workspaceId || "",
       row.resourceBindingId || "",
-      row.queueMode || "inline_worker",
+      row.queueMode || "independent_worker",
       row.status || "",
       row.runnerMode || "",
       Boolean(row.realCloudCalls),
       row.dryRunReportRef || "",
       row.executionReportRef || "",
+      row.leaseOwner || "",
+      row.leaseAcquiredAt || "",
+      row.failureReason || "",
       row.createdAt || new Date().toISOString(),
       row.updatedAt || row.createdAt || new Date().toISOString(),
     ]);

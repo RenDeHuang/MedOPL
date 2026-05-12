@@ -1,10 +1,34 @@
 # v22 Cloud Onboarding Workflow Boundary
 
-本合同定义 v22 接云上线的 repo-tracked workflow 合同，把从 official SDK provider strategy 到生产发布状态更新的业务推进顺序写成状态机。
+本合同定义 v22 接云上线的 repo-tracked workflow 合同，把旧 cloud onboarding 阶段、当前 Package C/D 边界和生产 Portal 点击闭环验收路径写成同一个可审计状态机。
 
 本合同不替代 AGENTS.md。AGENTS.md 管 A/B/C/D 纪律、授权红线、协作规则和禁止路径；本合同管业务推进顺序、阶段依赖、验收状态和 blocker 回流。后续 cloud onboarding 不得只依赖聊天记忆推进，必须以 repo-tracked workflow 合同、合同索引、status/execution board 和 smoke 为准。
 
-当前分支只写合同和 smoke，不实现业务代码，不读取 secret，不调用真实云，不执行 build/push/kubectl/live-test，不安装依赖，不 merge，不 push。
+旧 `CO-01..CO-14` 只保留为历史阶段和证据索引，不再作为当前验收主线。当前 cloud-lane 执行入口是 `docs/recovery/v22-cloud-harness-manifest.json` 中的 L1 -> L2a -> L2b -> L3 -> L4 串联验收；该 manifest 不是新大合同，而是本合同的 harness-native 执行路由层。
+
+当前分支允许修改旧 cloud 合同、recovery 状态、selector/check smoke 和 Portal cloud operation 控制面；读取 secret、调用真实云、build/push、kubectl、live-test 仍只能发生在本地 gate 通过后的 L1-L4 授权验收步骤中。
+
+## 2026-05 Framework Mapping
+
+本合同采用 2026-05 的三层工程框架：
+
+- Microsoft Azure Architecture Center 的 Async Request-Reply pattern：Portal HTTP API 只接收请求、写入 operation/outbox，并返回 `202 Accepted + operationId/status endpoint`；长耗时真实云开通不得阻塞 Portal 请求。
+- Kubernetes controller pattern：独立 worker/controller 持续把 canonical store 的 desired state 推进到 cloud current state；每次恢复先 cleanup/reconcile，再执行新 mutation。
+- OpenAI Harness Engineering / Codex App Server：repo 内合同、manifest、selector、smoke、evidence 和 handoff 是系统事实；不能靠聊天记忆判断要跑哪些 gate 或是否完成。
+
+## Current Production Acceptance Path
+
+当前生产验收只认以下 L-level，不再把单个 CO 阶段或单次 canary 当作完成态：
+
+| level | gate | purpose | pass condition |
+| --- | --- | --- | --- |
+| L1 | production env/secret/schema gate | 证明生产 Portal/worker 所需 env、secret reference、PostgreSQL schema 和 route 注册形状存在 | 不读 secret 内容、不打云；只证明引用、schema 和 fail-closed 行为 |
+| L2a | direct Package C lifecycle canary | 直接用 Package C runner 验证 storage/compute create/expand/release/delete | 先 dry-run，后执行，最后清理回 baseline |
+| L2b | Portal click -> queued -> worker -> projection | 证明用户点击套餐只入队，独立 worker drain，projection 只读 canonical store | Portal 返回 202；worker 带 lease；普通用户不见云控制台语言 |
+| L3 | billing/reconciliation/cleanup | 证明冻结金额、释放停止计费、120min 对账、T+1 状态和 cleanup evidence | 没有 queued/running orphan operation；compute released；storage 删除或保护期可审计 |
+| L4 | ordinary user product lifecycle | 证明普通用户可开通、上传文件、升级、删除并看到产品态 | 用户只看到工作台资源、计算资源、文件空间、套餐、余额、冻结金额和审计状态 |
+
+Live 验收成本控制是硬 gate：测试前 node pool desired/current baseline 必须是 `2`；测试后必须回到 `2`，并且本次创建的 compute allocation 已 release，本次创建的 storage marker 已删除或进入合同允许的保护期。禁止把平台服务池删到 0，禁止 `kubectl delete`，禁止删除 node pool 或 bucket。
 
 ## Workflow Principle
 
@@ -351,7 +375,17 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     "C04",
     "CO-01..CO-14"
   ],
-  "loopName": "authorized_cloud_connection_loop",
+  "loopName": "cloud_harness_native_async_lifecycle_loop",
+  "harnessManifest": "docs/recovery/v22-cloud-harness-manifest.json",
+  "productionAcceptanceLevels": [
+    "L1",
+    "L2a",
+    "L2b",
+    "L3",
+    "L4"
+  ],
+  "liveBaselineDesiredCapacity": 2,
+  "cleanupRequiredForLiveRuns": true,
   "generatesOnlyTaskPackagesAndNextStepSuggestions": true,
   "scriptLaneType": "cloud-onboarding",
   "implementsScriptLogicNow": true,

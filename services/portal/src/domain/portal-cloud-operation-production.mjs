@@ -559,12 +559,15 @@ function createJobRecord(db = {}, user = {}, binding = {}, operation = {}) {
     userId: text(user.id),
     workspaceId: text(binding.workspaceId),
     resourceBindingId: text(binding.resourceBindingId || binding.id),
-    queueMode: "inline_worker",
+    queueMode: "independent_worker",
     status: "queued",
     runnerMode: "",
     realCloudCalls: false,
     dryRunReportRef: "",
     executionReportRef: "",
+    leaseOwner: "",
+    leaseAcquiredAt: "",
+    failureReason: "",
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
@@ -572,7 +575,7 @@ function createJobRecord(db = {}, user = {}, binding = {}, operation = {}) {
   return job;
 }
 
-function markOperationRunning(operation = {}, job = {}, runnerMode = "") {
+function markOperationRunning(operation = {}, job = {}, runnerMode = "", workerId = "") {
   const now = nowIso();
   operation.status = "running";
   operation.runnerMode = runnerMode;
@@ -582,6 +585,8 @@ function markOperationRunning(operation = {}, job = {}, runnerMode = "") {
   job.status = "running";
   job.runnerMode = runnerMode;
   job.realCloudCalls = operation.realCloudCalls;
+  job.leaseOwner = text(workerId || job.leaseOwner);
+  job.leaseAcquiredAt = now;
   job.startedAt = now;
   job.updatedAt = now;
 }
@@ -649,48 +654,10 @@ export function executePortalProductionCloudOperation(db = {}, user = {}, input 
   const operation = createOperationRecord(db, user, binding, input, operationId, spec);
   const job = createJobRecord(db, user, binding, operation);
   appendAuditEvent(db, user, binding, operation);
-  markOperationRunning(operation, job, runnerMode);
-
-  const runner = runPackageCOperation({
-    repoRoot,
-    runnerScript,
-    secretFile,
-    operationId,
-    workspaceId,
-    runnerMode,
-    spec,
-    input,
-  });
-  if (!runner.ok) {
-    binding.status = "provision_failed";
-    binding.updatedAt = nowIso();
-    markOperationFailed(operation, job, { ...runner, runnerMode, realCloudCalls: runnerMode === "tencent-official-sdk-live" });
-    appendAuditEvent(db, user, binding, operation);
-    return {
-      ...runner,
-      persistDb: true,
-      productionPortalConnected: true,
-      operation: operationPublicView(operation),
-      resourceBindingId: text(binding.resourceBindingId || binding.id),
-    };
-  }
-
-  if (spec.resourceKind === "storage") {
-    upsertFileSpaceEntitlement(db, user, binding, input, spec.successStatus);
-  } else {
-    upsertComputeAllocation(db, user, binding, input, spec.successStatus, {
-      nodePoolRef: options.computeNodePoolRef,
-    });
-  }
-  markOperationSucceeded(operation, job, runner);
-  upsertFreeze(db, user, binding, operation);
-  appendLedger(db, user, binding, operation);
-  appendBillingReconciliation(db, user, binding, operation);
-  appendAuditEvent(db, user, binding, operation);
-  upsertProjection(db, user, binding, operation, runner);
 
   return {
     ok: true,
+    workerExecutedNow: false,
     productionPortalConnected: true,
     operation: operationPublicView(operation),
     resourceBindingId: text(binding.resourceBindingId || binding.id),
@@ -726,10 +693,145 @@ export function buildPortalProductionCloudOperationProjection(db = {}, user = {}
       billing: { reconciliationStatusLabel: "对账中" },
     };
   }
-  const operation = latestForBinding(ensureArrayField(db, "cloudOperations"), binding);
   return {
     ok: true,
     productionPortalConnected: true,
     ...publicProjectionForBinding(db, user, binding),
+  };
+}
+
+function operationById(db = {}, operationId = "") {
+  return ensureArrayField(db, "cloudOperations")
+    .find((item) => text(item.operationId || item.id) === text(operationId)) || null;
+}
+
+function bindingById(db = {}, bindingId = "") {
+  return ensureArrayField(db, "workspaceResourceBindings")
+    .find((item) => text(item.resourceBindingId || item.id) === text(bindingId)) || null;
+}
+
+function userForOperation(operation = {}) {
+  return {
+    id: text(operation.userId),
+    tenantId: text(operation.tenantId || operation.userId),
+  };
+}
+
+function inputFromOperation(operation = {}) {
+  return {
+    workspaceId: text(operation.workspaceId),
+    resourceBindingId: text(operation.resourceBindingId),
+    ...(operation.requestedSpec || {}),
+  };
+}
+
+function applyRunnerSuccess(db = {}, operation = {}, job = {}, runner = {}, attribution = {}) {
+  const spec = PACKAGE_C_OPERATIONS[text(operation.operationType)];
+  const binding = bindingById(db, operation.resourceBindingId);
+  if (!spec || !binding) {
+    markOperationFailed(operation, job, {
+      error: spec ? "resource_binding_not_found" : "unsupported_operation_type",
+      runnerMode: text(job.runnerMode || operation.runnerMode),
+      realCloudCalls: Boolean(operation.realCloudCalls),
+    });
+    return { ok: false, error: operation.failureReason };
+  }
+  const user = userForOperation(operation);
+  const input = inputFromOperation(operation);
+  if (spec.resourceKind === "storage") {
+    upsertFileSpaceEntitlement(db, user, binding, input, spec.successStatus);
+  } else {
+    const nodePoolRef = text(attribution.computeNodePoolRef);
+    if (!nodePoolRef) {
+      markOperationFailed(operation, job, {
+        error: "compute_node_pool_ref_required",
+        runnerMode: text(job.runnerMode || operation.runnerMode),
+        realCloudCalls: Boolean(operation.realCloudCalls),
+      });
+      return { ok: false, error: "compute_node_pool_ref_required" };
+    }
+    upsertComputeAllocation(db, user, binding, input, spec.successStatus, {
+      nodePoolRef,
+    });
+  }
+  markOperationSucceeded(operation, job, runner);
+  upsertFreeze(db, user, binding, operation);
+  appendLedger(db, user, binding, operation);
+  appendBillingReconciliation(db, user, binding, operation);
+  appendAuditEvent(db, user, binding, operation);
+  upsertProjection(db, user, binding, operation, runner);
+  return { ok: true };
+}
+
+function processOneQueuedJob(db = {}, job = {}, options = {}) {
+  const operation = operationById(db, job.operationId);
+  if (!operation) {
+    job.status = "failed";
+    job.failureReason = "cloud_operation_not_found";
+    job.updatedAt = nowIso();
+    return { ok: false, error: "cloud_operation_not_found", jobId: text(job.id) };
+  }
+  const spec = PACKAGE_C_OPERATIONS[text(operation.operationType)];
+  if (!spec) {
+    markOperationFailed(operation, job, { error: "unsupported_operation_type" });
+    return { ok: false, error: "unsupported_operation_type", operationId: text(operation.operationId || operation.id) };
+  }
+  if (spec.resourceKind === "compute" && !text(options.computeNodePoolRef)) {
+    markOperationFailed(operation, job, {
+      error: "compute_node_pool_ref_required",
+      runnerMode: text(options.runnerMode || operation.runnerMode || job.runnerMode || "fake-live"),
+      realCloudCalls: text(options.runnerMode || "") === "tencent-official-sdk-live",
+    });
+    return { ok: false, error: "compute_node_pool_ref_required", operationId: text(operation.operationId || operation.id) };
+  }
+  const runnerMode = text(options.runnerMode || "fake-live");
+  markOperationRunning(operation, job, runnerMode, options.workerId || "portal-cloud-worker");
+  const runner = runPackageCOperation({
+    repoRoot: path.resolve(options.repoRoot || path.resolve(process.cwd())),
+    runnerScript: text(options.runnerScript || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs"),
+    secretFile: text(options.secretFile),
+    operationId: text(operation.operationId || operation.id),
+    workspaceId: text(operation.workspaceId),
+    runnerMode,
+    spec,
+    input: inputFromOperation(operation),
+  });
+  if (!runner.ok) {
+    markOperationFailed(operation, job, { ...runner, runnerMode, realCloudCalls: runnerMode === "tencent-official-sdk-live" });
+    return { ok: false, error: operation.failureReason, operationId: text(operation.operationId || operation.id) };
+  }
+  const applied = applyRunnerSuccess(db, operation, job, runner, {
+    computeNodePoolRef: options.computeNodePoolRef,
+  });
+  if (!applied.ok) return { ...applied, operationId: text(operation.operationId || operation.id) };
+  return {
+    ok: true,
+    operationId: text(operation.operationId || operation.id),
+    operationType: text(operation.operationType),
+  };
+}
+
+export function processQueuedPortalProductionCloudOperations(db = {}, options = {}) {
+  const maxOperations = Math.max(1, Number(options.maxOperations || 1));
+  const queuedJobs = ensureArrayField(db, "cloudOperationJobs")
+    .filter((job) => text(job.status) === "queued")
+    .sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")))
+    .slice(0, maxOperations);
+  const processed = [];
+  for (const job of queuedJobs) {
+    const result = processOneQueuedJob(db, job, options);
+    if (!result.ok) {
+      return {
+        ok: false,
+        error: result.error,
+        processed,
+        blockedOperationId: result.operationId || "",
+      };
+    }
+    processed.push(result);
+  }
+  return {
+    ok: true,
+    processed,
   };
 }

@@ -198,6 +198,15 @@ async function waitFor(url, { allowStatus = (status) => status < 500, timeoutMs 
   throw new Error(`timeout_waiting_for:${url}`);
 }
 
+async function waitForChildUrl(child, url, label, options = {}) {
+  try {
+    return await waitFor(url, options);
+  } catch (error) {
+    error.message = `${error.message}:${label}:exitCode=${child?.exitCode ?? ""}:signal=${child?.signalCode ?? ""}:stdout=${child?.stdoutTail || ""}:stderr=${child?.stderrTail || ""}`;
+    throw error;
+  }
+}
+
 function cookieHeaderFrom(response, name) {
   const setCookie = response.headers.get("set-cookie") || "";
   const match = setCookie.match(new RegExp(`${name}=([^;]+)`));
@@ -313,7 +322,7 @@ try {
   await waitFor(`${portalUrl}/healthz`);
 
   vite = spawnVite({ port: vitePort, backendUrl: portalUrl });
-  await waitFor(`http://127.0.0.1:${vitePort}/overview`, { allowStatus: (status) => status === 200 });
+  await waitForChildUrl(vite, `http://127.0.0.1:${vitePort}/overview`, "vite_overview", { allowStatus: (status) => status === 200 });
 
   const login = await postForm(`${portalUrl}/login`, { email: USER_EMAIL, password: USER_PASSWORD });
   assert.equal(login.status, 302, "portal_login_must_redirect_after_success");

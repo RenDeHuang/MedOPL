@@ -76,7 +76,9 @@ B should run these smoke commands at the end of the stacked absorption, or on th
 
 ```bash
 node scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs
-node scripts/smoke-test-v22-portal-cloud-operation-runner-loop.mjs
+node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs
+node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs
+node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs
 node scripts/smoke-test-v22-cloud-connection-runnable-path.mjs
 node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs
 node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs
@@ -94,11 +96,11 @@ node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs
 
 After all six branches are absorbed, the cloud onboarding module is better structured and locally gated, but these production claims remain false:
 
-- Production Portal is not yet connected to a real queue and PostgreSQL canonical store for cloud operations.
+- Historical inline runner evidence is superseded by the async worker harness. Production completion now requires Portal click -> queued operation -> independent worker drain -> PostgreSQL canonical store -> projection through L2b, plus L3 billing/reconciliation cleanup proof.
 - Real Package C resource lifecycle operations are not authorized by this absorption guide.
 - Real Package D build/push/kubectl operations are not authorized by this absorption guide.
 - TKE node creation/deletion, COS storage creation/deletion, TCR push, runtime deployment, COS billing reconciliation, and final cleanup are not complete unless separately proven by user-authorized live evidence outside git.
-- The test-only Portal API is not a production cloud operation API.
+- The test-only Portal API is not a production cloud operation API; it remains reference evidence only and cannot replace the L1 -> L2a -> L2b -> L3 -> L4 harness path.
 
 ## Machine Data
 
@@ -179,7 +181,8 @@ After all six branches are absorbed, the cloud onboarding module is better struc
     ["feat/v22-tencent-deploy-execution-gates-v2", "docs/v22-cloud-onboarding-absorption-sequence-v2"]
   ],
   "productionGaps": [
-    "production_portal_queue_postgresql_canonical_store",
+    "l2b_online_portal_click_independent_worker_drain",
+    "l3_120min_billing_reconciliation_cleanup",
     "user_authorized_real_package_c_lifecycle_execution",
     "user_authorized_real_package_d_build_push_kubectl",
     "cos_billing_reconciliation_live_evidence",
