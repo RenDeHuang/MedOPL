@@ -41,9 +41,14 @@ const surfaceSpecs = [
       "fetchWorkspace",
       "disabledStorageEntitlement",
       "workspaceQuery",
+      "fileSpaceUsageText",
+    ],
+    componentPath: "services/portal/frontend/src/components/workspace/WorkspaceFilesPanel.vue",
+    requiredComponentFragments: [
       "triggerUpload",
       "submitUpload",
-      "fileSpaceUsageText",
+      "uploadInput",
+      "data-component-id=\"workspace.files\"",
     ],
   },
   {
@@ -141,6 +146,12 @@ for (const spec of surfaceSpecs) {
   }
   for (const required of spec.requiredComposableFragments) {
     assert(composable.includes(required), `surface_composable_missing_fragment:${spec.name}:${required}`);
+  }
+  if (spec.componentPath) {
+    const component = await readFile(spec.componentPath, "utf8");
+    for (const required of spec.requiredComponentFragments || []) {
+      assert(component.includes(required), `surface_component_missing_fragment:${spec.name}:${required}`);
+    }
   }
 }
 
