@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { mkdir, mkdtemp, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 
@@ -11,7 +11,6 @@ const repoRoot = process.cwd();
 const evalsetPath = "services/portal/frontend/src/harness/portal-ui-evalset.json";
 const surfaceRegistryPath = "services/portal/frontend/src/harness/portal-ui-surfaces.ts";
 const portalEntrypoint = path.join(repoRoot, "services", "portal", "src", "server.mjs");
-const portalRuntimeRoot = path.join(repoRoot, ".runtime", "portal");
 const reportPath = path.join(repoRoot, ".runtime", "portal-surface-eval", "report.json");
 const adminEmail = "zitadel-admin@zitadel.localhost";
 const adminPassword = "Password1!";
@@ -152,17 +151,11 @@ async function stopChild(child) {
 }
 
 async function withIsolatedPortalRuntime(fn) {
-  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-frontend-surface-eval-"));
-  const backupRoot = path.join(tempRoot, "portal-runtime-backup");
-  const hadRuntime = await exists(portalRuntimeRoot);
-  if (hadRuntime) await rename(portalRuntimeRoot, backupRoot);
+  const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-frontend-surface-eval-"));
   try {
-    await mkdir(path.dirname(portalRuntimeRoot), { recursive: true });
-    return await fn();
+    return await fn(runtimeRoot);
   } finally {
-    await rm(portalRuntimeRoot, { recursive: true, force: true }).catch(() => {});
-    if (hadRuntime && await exists(backupRoot)) await rename(backupRoot, portalRuntimeRoot);
-    await rm(tempRoot, { recursive: true, force: true }).catch(() => {});
+    await rm(runtimeRoot, { recursive: true, force: true }).catch(() => {});
   }
 }
 
@@ -449,13 +442,14 @@ let stderr = "";
 try {
   await runCommand("npm", ["--prefix", "services/portal", "run", "frontend:build"], "portal_frontend_build");
   report.checked.push("frontend_build_before_browser");
-  await withIsolatedPortalRuntime(async () => {
+  await withIsolatedPortalRuntime(async (runtimeRoot) => {
     portal = spawn(process.execPath, [portalEntrypoint], {
       cwd: repoRoot,
       env: {
         ...process.env,
         NODE_ENV: "test",
         PORT: String(port),
+        PORTAL_RUNTIME_ROOT: runtimeRoot,
         PORTAL_STORAGE_MODE: "json",
         PORTAL_OIDC_ENABLED: "0",
         PORTAL_IDENTITY_SYNC_MODE: "local",

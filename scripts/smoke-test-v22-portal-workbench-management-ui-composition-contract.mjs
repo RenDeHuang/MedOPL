@@ -33,6 +33,10 @@ const markdown = await source(contractPath);
 const contract = extractJson(markdown);
 const evalset = JSON.parse(await source(evalsetPath));
 const runtimeSuite = await source("scripts/smoke-test-v22-portal-runtime-suite.mjs");
+const portalConfig = await source("services/portal/src/config/portal-config.mjs");
+const surfaceEvalSmoke = await source("scripts/smoke-test-v22-portal-frontend-surface-eval.mjs");
+const browserSmoke = await source("scripts/smoke-test-v22-portal-workbench-management-ui-browser.mjs");
+const apiSmoke = await source("scripts/smoke-test-v22-portal-workbench-management-ui-api.mjs");
 const sharedSurfaceContract = await source("docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md");
 const roleUserContract = await source("docs/contracts/v22-portal-user-surface-boundary.md");
 const roleAdminContract = await source("docs/contracts/v22-portal-admin-ops-surface-boundary.md");
@@ -117,6 +121,15 @@ for (const group of ["contract", "surface", "architecture", "api", "build", "bro
   assertIncludes(runtimeSuite, `"${group}"`, `runtime_suite_group_${group}`);
 }
 assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "runtime_suite_must_include_surface_eval");
+assertIncludes(portalConfig, "PORTAL_RUNTIME_ROOT", "portal_config_must_support_runtime_root_override");
+for (const [label, smoke] of [
+  ["surface_eval", surfaceEvalSmoke],
+  ["browser", browserSmoke],
+  ["api", apiSmoke],
+]) {
+  assertIncludes(smoke, "PORTAL_RUNTIME_ROOT", `portal_${label}_smoke_must_use_runtime_root_override`);
+  assertExcludes(smoke, "rename(", `portal_${label}_smoke_must_not_rename_shared_runtime_root`);
+}
 
 assert.equal(evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(evalset.scope.sourceOfExecutableUiTruth, true, "evalset_must_be_executable_truth");
@@ -158,5 +171,6 @@ console.log(JSON.stringify({
     "contract_demotion",
     "runtime_suite_groups",
     "ui_copy_boundary",
+    "isolated_runtime_root",
   ],
 }, null, 2));
