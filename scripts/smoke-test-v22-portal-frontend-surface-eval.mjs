@@ -32,6 +32,8 @@ const report = {
     pageComposition: { total: 0, checked: 0 },
     surfaceStates: { total: 0, checked: 0 },
     componentFixtures: { total: 0, checked: 0 },
+    visualWorkbench: { total: 0, checked: 0 },
+    screenshotRegression: { total: 0, checked: 0 },
     designTokens: { total: 0, checked: 0 },
     presentationRules: { total: 0, checked: 0 },
     browserDom: { routes: [], surfaces: [] },
@@ -282,6 +284,8 @@ report.coverage.visualRoutes.total = evalset.visualRoutes?.length || 0;
 report.coverage.pageComposition.total = evalset.pageComposition?.length || 0;
 report.coverage.surfaceStates.total = evalset.surfaceStates?.length || 0;
 report.coverage.componentFixtures.total = evalset.componentFixtures?.length || 0;
+report.coverage.visualWorkbench.total = evalset.visualWorkbench?.sampleRoutes?.length || 0;
+report.coverage.screenshotRegression.total = evalset.screenshotRegression?.routes?.length || 0;
 report.coverage.designTokens.total = evalset.designTokens?.length || 0;
 report.coverage.presentationRules.total = evalset.presentationRules?.length || 0;
 report.partials = [
@@ -302,7 +306,7 @@ report.partials = [
   })),
 ];
 
-assert.equal(evalset.version, 4, "evalset_version_mismatch");
+assert.equal(evalset.version, 5, "evalset_version_mismatch");
 assert.equal(evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(evalset.model, "gpt-5.4", "evalset_model_mismatch");
 assert.equal(evalset.owners.contract, "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md", "evalset_contract_owner_mismatch");
@@ -322,8 +326,10 @@ assert.equal(evalset.coverage.fixturesMustCoverReadyAndEmpty, true, "evalset_fix
 assert.equal(evalset.coverage.pageCompositionMustDeclareProductSections, true, "evalset_page_composition_coverage_required");
 assert.equal(evalset.coverage.surfaceStatesMustMatchRegistry, true, "evalset_surface_state_registry_coverage_required");
 assert.equal(evalset.coverage.componentFixturesMustCoverSurfaceStates, true, "evalset_component_fixture_coverage_required");
+assert.equal(evalset.coverage.componentFixturesMustHaveBrowseableRoutes, true, "evalset_component_fixture_browseable_route_required");
 assert.equal(evalset.coverage.designTokensMustBeExecutable, true, "evalset_design_token_coverage_required");
 assert.equal(evalset.coverage.presentationRulesMustBeExecutable, true, "evalset_presentation_rule_coverage_required");
+assert.equal(evalset.coverage.screenshotBaselinesMustBeCommitted, true, "evalset_screenshot_baseline_coverage_required");
 assert.equal(evalset.scope.portalOnly, true, "evalset_must_be_portal_only");
 assert.equal(evalset.scope.sourceOfExecutableUiTruth, true, "evalset_must_be_executable_ui_truth");
 assert.equal(evalset.scope.callsRealCloud, false, "evalset_must_not_call_real_cloud");
@@ -333,6 +339,8 @@ assert.deepEqual(evalset.requiredDomAnchors, ["data-route-id", "data-component-i
 for (const key of ["routes", "layouts", "surfaces", "apiShapes", "forbiddenCopy", "pageTasks", "primitives", "copyRegistry", "fixtures", "visualRoutes", "pageComposition", "surfaceStates", "componentFixtures", "designTokens", "presentationRules"]) {
   assert(Array.isArray(evalset[key]), `evalset_${key}_must_be_array`);
 }
+assert(evalset.visualWorkbench && typeof evalset.visualWorkbench === "object", "evalset_visual_workbench_missing");
+assert(evalset.screenshotRegression && typeof evalset.screenshotRegression === "object", "evalset_screenshot_regression_missing");
 assertUnique(evalset.routes, "id", "evalset_routes");
 assertUnique(evalset.layouts, "layoutId", "evalset_layouts");
 assertUnique(evalset.surfaces, "componentId", "evalset_surfaces");
@@ -476,6 +484,51 @@ for (const fixture of evalset.componentFixtures) {
   }
   report.coverage.componentFixtures.checked += 1;
 }
+
+assert.equal(evalset.visualWorkbench.status, "done", "visual_workbench_must_be_done");
+assert.equal(evalset.visualWorkbench.basePath, "/__portal-harness/components", "visual_workbench_base_path_mismatch");
+assert.equal(evalset.visualWorkbench.indexRouteName, "portal-harness-components", "visual_workbench_index_route_name_mismatch");
+assert.equal(evalset.visualWorkbench.detailRouteName, "portal-harness-component-state", "visual_workbench_detail_route_name_mismatch");
+assert.equal(evalset.visualWorkbench.source, "portal-ui-evalset.json + harness fixtures", "visual_workbench_source_mismatch");
+assert.deepEqual(evalset.visualWorkbench.requiredGroupBy, ["route", "domain", "state"], "visual_workbench_grouping_mismatch");
+assert(await exists(evalset.visualWorkbench.owner), `visual_workbench_owner_missing:${evalset.visualWorkbench.owner}`);
+assertIncludes(routerSource, `path: "${evalset.visualWorkbench.basePath}"`, "visual_workbench_index_route_missing");
+assertIncludes(routerSource, `path: "${evalset.visualWorkbench.basePath}/:componentId/:state"`, "visual_workbench_detail_route_missing");
+const workbenchSource = await source(evalset.visualWorkbench.owner);
+for (const selector of evalset.visualWorkbench.requiredSelectors) {
+  const anchor = selector.match(/\[([^=]+)="([^"]+)"\]/);
+  assert(anchor, `visual_workbench_selector_invalid:${selector}`);
+  assertIncludes(workbenchSource, `${anchor[1]}="${anchor[2]}"`, `visual_workbench_selector_${selector}`);
+}
+for (const sampleRoute of evalset.visualWorkbench.sampleRoutes) {
+  assert(sampleRoute.startsWith(`${evalset.visualWorkbench.basePath}/`), `visual_workbench_sample_route_invalid:${sampleRoute}`);
+  const [, componentId, stateName] = sampleRoute.match(/\/__portal-harness\/components\/(.+)\/([^/]+)$/) || [];
+  assert(surfaceIds.has(componentId), `visual_workbench_sample_unknown_component:${sampleRoute}`);
+  assert(surfaceStatesByComponent.get(componentId)?.includes(stateName), `visual_workbench_sample_unknown_state:${sampleRoute}`);
+  report.coverage.visualWorkbench.checked += 1;
+}
+
+assert.equal(evalset.screenshotRegression.status, "done", "screenshot_regression_must_be_done");
+assert.equal(evalset.screenshotRegression.runner, "playwright", "screenshot_regression_runner_mismatch");
+assert.equal(evalset.screenshotRegression.command, "npm --prefix services/portal/frontend run test:visual", "screenshot_regression_command_mismatch");
+assert.equal(evalset.screenshotRegression.baselineCommitted, true, "screenshot_regression_baseline_must_be_committed");
+assert.equal(evalset.screenshotRegression.routeDomVerifiedBy, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "screenshot_regression_route_dom_owner_mismatch");
+assert.equal(evalset.screenshotRegression.snapshotScope, "component_fixture_state_pages", "screenshot_regression_snapshot_scope_mismatch");
+assert(await exists(evalset.screenshotRegression.config), `screenshot_regression_config_missing:${evalset.screenshotRegression.config}`);
+assert(await exists(evalset.screenshotRegression.spec), `screenshot_regression_spec_missing:${evalset.screenshotRegression.spec}`);
+assert(await exists(evalset.screenshotRegression.baselineDir), `screenshot_regression_baseline_dir_missing:${evalset.screenshotRegression.baselineDir}`);
+const screenshotRouteIds = evalset.screenshotRegression.routes.map((item) => item.routeId);
+assert.deepEqual(screenshotRouteIds, ["overview", "billing", "resources", "workspace", "trace", "admin.system", "admin.users"], "screenshot_regression_routes_mismatch");
+const screenshotSpec = await source(evalset.screenshotRegression.spec);
+assertIncludes(screenshotSpec, "toHaveScreenshot", "screenshot_regression_spec_must_use_to_have_screenshot");
+for (const route of evalset.screenshotRegression.routes) {
+  assert(routeIds.has(route.routeId), `screenshot_regression_route_unknown:${route.routeId}`);
+  assert(surfaceIds.has(route.surfaceId), `screenshot_regression_surface_unknown:${route.surfaceId}`);
+  assert(route.fixturePath.startsWith(`${evalset.visualWorkbench.basePath}/`), `screenshot_regression_fixture_path_invalid:${route.routeId}`);
+  report.coverage.screenshotRegression.checked += 1;
+}
+assertIncludes(screenshotSpec, "route.fixturePath", "screenshot_regression_spec_must_use_evalset_fixture_path");
+assertIncludes(screenshotSpec, "route.surfaceId", "screenshot_regression_spec_must_use_evalset_surface_id");
 
 for (const token of evalset.designTokens) {
   assert(["tailwind", "style", "component"].includes(token.source), `design_token_source_invalid:${token.tokenId}`);
@@ -630,6 +683,18 @@ try {
       report.coverage.visualRoutes.checked += 1;
     }
     report.coverage.visualRoutes.checked += evalset.visualRoutes.filter((item) => ["/home", "/login", "/overview", "/admin/system"].includes(item.path)).length;
+    await page.setViewportSize({ width: 1440, height: 920 });
+    await page.goto(`${baseUrl}${evalset.visualWorkbench.basePath}`, { waitUntil: "networkidle" });
+    await page.locator('[data-component-id="portal-harness.component_index"]').waitFor({ timeout: 30000 });
+    await page.locator('[data-component-id="portal-harness.component_state"]').waitFor({ timeout: 30000 });
+    await assertNoHorizontalOverflow("portal-harness.components");
+    report.coverage.browserDom.routes.push(evalset.visualWorkbench.basePath);
+    for (const sampleRoute of evalset.visualWorkbench.sampleRoutes) {
+      await page.goto(`${baseUrl}${sampleRoute}`, { waitUntil: "networkidle" });
+      await page.locator('[data-component-id="portal-harness.component_state"]').waitFor({ timeout: 30000 });
+      await assertNoHorizontalOverflow(`portal-harness.components:${sampleRoute}`);
+      report.coverage.browserDom.routes.push(sampleRoute);
+    }
   });
 
   report.ok = true;
@@ -649,6 +714,8 @@ try {
     "page_composition",
     "surface_states",
     "component_fixtures",
+    "visual_workbench",
+    "screenshot_regression",
     "design_tokens",
     "presentation_rules",
     "browser_dom_anchors",

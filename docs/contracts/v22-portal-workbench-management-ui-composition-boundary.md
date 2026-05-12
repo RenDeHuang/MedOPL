@@ -2,7 +2,7 @@
 
 本合同固定 Portal UI 的产品边界、分层规则、禁词、evalset 入口和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
 
-本合同 v7 的核心变化是继续瘦身：页面任务、组件锚点、组件状态、组件 fixture、route、API shape、禁词、设计 token 和展示规则进入可执行 evalset，由 smoke 读取 evalset 执行检查。合同只作为边界和入口索引。
+本合同 v8 的核心变化是继续瘦身：页面任务、组件锚点、组件状态、组件 fixture、组件可视化工作台、截图回归、route、API shape、禁词、设计 token 和展示规则进入可执行 evalset，由 smoke 读取 evalset 执行检查。合同只作为边界和入口索引。
 
 ## 合同职责
 
@@ -73,6 +73,8 @@ evalset 必须包含：
 - `componentFixtures`
 - `designTokens`
 - `presentationRules`
+- `visualWorkbench`
+- `screenshotRegression`
 - `owners`
 - `acceptance`
 - `artifactPolicy`
@@ -98,6 +100,8 @@ DOM 锚点规则：
 - 文案 gate 固定在 `copyRegistry`，用于阻止内部治理词、斜杠组合字段、英文散落和 raw status 成为可见主语言。
 - 数据样例 gate 固定在 `fixtures`，用于保证页面至少覆盖 ready 和 empty 数据态。
 - 视觉 gate 固定在 `visualRoutes`，用于浏览器打开关键页面并检查关键 selector 与横向溢出。
+- 组件可视化工作台 gate 固定在 `visualWorkbench`，用于检查 `/__portal-harness/components` 和每个 fixture state 独立 URL；页面从 evalset 和 fixtures 生成，不新增 Storybook stories 第二事实源。
+- 截图回归 gate 固定在 `screenshotRegression`，用于检查 Playwright `toHaveScreenshot()` 视觉测试入口、关键页面和 fixture URL、以及提交到 git 的 baseline 目录。
 
 ## 文案边界
 
@@ -196,7 +200,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 7,
+  "version": 8,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -227,6 +231,8 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
       "componentFixtures",
       "designTokens",
       "presentationRules",
+      "visualWorkbench",
+      "screenshotRegression",
       "owners",
       "acceptance",
       "artifactPolicy",
@@ -257,7 +263,9 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
     "surfaceStateFactsLiveInEvalset": true,
     "componentFixtureFactsLiveInEvalset": true,
     "designTokenFactsLiveInEvalset": true,
-    "presentationRuleFactsLiveInEvalset": true
+    "presentationRuleFactsLiveInEvalset": true,
+    "visualWorkbenchFactsLiveInEvalset": true,
+    "screenshotRegressionFactsLiveInEvalset": true
   },
   "copyArchitecture": {
     "rawStatusVisible": false,

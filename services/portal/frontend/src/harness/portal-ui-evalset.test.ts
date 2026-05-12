@@ -25,7 +25,7 @@ function exists(filePath: string) {
 
 describe("portal ui evalset", () => {
   it("defines harness-native executable ui truth instead of another heavy contract", () => {
-    expect(evalset.version).toBe(4);
+    expect(evalset.version).toBe(5);
     expect(evalset.schemaVersion).toBe("2026-05-harness-native");
     expect(evalset.model).toBe("gpt-5.4");
     expect(evalset.scope.portalOnly).toBe(true);
@@ -49,6 +49,8 @@ describe("portal ui evalset", () => {
     expect(evalset.componentFixtures.length).toBeGreaterThan(0);
     expect(evalset.designTokens.length).toBeGreaterThan(0);
     expect(evalset.presentationRules.length).toBeGreaterThan(0);
+    expect(evalset.visualWorkbench.basePath).toBe("/__portal-harness/components");
+    expect(evalset.screenshotRegression.runner).toBe("playwright");
   });
 
   it("keeps route identifiers canonical across routes, surfaces, page tasks, and api shapes", () => {
@@ -282,6 +284,36 @@ describe("portal ui evalset", () => {
       expect(visualRoute.viewport.height).toBeGreaterThanOrEqual(760);
       expect(visualRoute.requiredSelectors.length).toBeGreaterThan(0);
     }
+  });
+
+  it("defines evalset-driven component workbench routes and screenshot regression gates", () => {
+    expect(evalset.coverage.componentFixturesMustHaveBrowseableRoutes).toBe(true);
+    expect(evalset.coverage.screenshotBaselinesMustBeCommitted).toBe(true);
+    expect(evalset.visualWorkbench.status).toBe("done");
+    expect(evalset.visualWorkbench.basePath).toBe("/__portal-harness/components");
+    expect(evalset.visualWorkbench.indexRouteName).toBe("portal-harness-components");
+    expect(evalset.visualWorkbench.detailRouteName).toBe("portal-harness-component-state");
+    expect(evalset.visualWorkbench.source).toBe("portal-ui-evalset.json + harness fixtures");
+    expect(evalset.visualWorkbench.requiredGroupBy).toEqual(["route", "domain", "state"]);
+    expect(source("services/portal/frontend/src/router/index.ts")).toContain("/__portal-harness/components");
+    exists(evalset.visualWorkbench.owner);
+
+    expect(evalset.screenshotRegression.status).toBe("done");
+    expect(evalset.screenshotRegression.runner).toBe("playwright");
+    expect(evalset.screenshotRegression.command).toBe("npm --prefix services/portal/frontend run test:visual");
+    expect(evalset.screenshotRegression.baselineDir).toBe("services/portal/frontend/tests/visual/portal-surfaces.visual.ts-snapshots");
+    expect(evalset.screenshotRegression.routes.map((route) => route.routeId)).toEqual([
+      "overview",
+      "billing",
+      "resources",
+      "workspace",
+      "trace",
+      "admin.system",
+      "admin.users",
+    ]);
+    exists("services/portal/frontend/playwright.config.ts");
+    exists("services/portal/frontend/tests/visual/portal-surfaces.visual.ts");
+    expect(JSON.parse(source("services/portal/frontend/package.json")).scripts["test:visual"]).toBe("playwright test");
   });
 
   it("keeps done surfaces anchored in their owner component", () => {

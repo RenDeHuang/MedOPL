@@ -43,7 +43,7 @@ const roleAdminContract = await source("docs/contracts/v22-portal-admin-ops-surf
 const structureContract = await source("docs/contracts/v22-portal-structure-failure-isolation-boundary.md");
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 7, "contract_version_mismatch");
+assert.equal(contract.version, 8, "contract_version_mismatch");
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
@@ -75,6 +75,8 @@ assert.deepEqual(contract.evalset.owns, [
   "componentFixtures",
   "designTokens",
   "presentationRules",
+  "visualWorkbench",
+  "screenshotRegression",
   "owners",
   "acceptance",
   "artifactPolicy",
@@ -91,6 +93,8 @@ assert.equal(contract.uiArchitecture.surfaceStateFactsLiveInEvalset, true, "surf
 assert.equal(contract.uiArchitecture.componentFixtureFactsLiveInEvalset, true, "component_fixture_facts_must_live_in_evalset");
 assert.equal(contract.uiArchitecture.designTokenFactsLiveInEvalset, true, "design_token_facts_must_live_in_evalset");
 assert.equal(contract.uiArchitecture.presentationRuleFactsLiveInEvalset, true, "presentation_rule_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.visualWorkbenchFactsLiveInEvalset, true, "visual_workbench_facts_must_live_in_evalset");
+assert.equal(contract.uiArchitecture.screenshotRegressionFactsLiveInEvalset, true, "screenshot_regression_facts_must_live_in_evalset");
 assert.deepEqual(contract.uiArchitecture.layers, [
   "route_entry",
   "page_shell",
@@ -164,6 +168,8 @@ assert(evalset.surfaceStates.length >= evalset.surfaces.length, "evalset_must_co
 assert(evalset.componentFixtures.length >= evalset.surfaces.length, "evalset_must_cover_component_fixtures");
 assert(evalset.designTokens.length >= 10, "evalset_must_cover_design_tokens");
 assert(evalset.presentationRules.length >= 7, "evalset_must_cover_presentation_rules");
+assert.equal(evalset.visualWorkbench.basePath, "/__portal-harness/components", "evalset_must_define_visual_workbench");
+assert.equal(evalset.screenshotRegression.runner, "playwright", "evalset_must_define_playwright_screenshot_regression");
 for (const apiShape of evalset.apiShapes) {
   assert(Array.isArray(apiShape.requiredPaths), `evalset_api_shape_required_paths_missing:${apiShape.id}`);
   assert(apiShape.requiredPaths.length > 0, `evalset_api_shape_required_paths_empty:${apiShape.id}`);

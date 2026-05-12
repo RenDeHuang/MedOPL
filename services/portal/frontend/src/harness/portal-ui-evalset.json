@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "schemaVersion": "2026-05-harness-native",
   "model": "gpt-5.4",
   "owners": {
@@ -42,14 +42,99 @@
     "pageCompositionMustDeclareProductSections": true,
     "surfaceStatesMustMatchRegistry": true,
     "componentFixturesMustCoverSurfaceStates": true,
+    "componentFixturesMustHaveBrowseableRoutes": true,
     "designTokensMustBeExecutable": true,
-    "presentationRulesMustBeExecutable": true
+    "presentationRulesMustBeExecutable": true,
+    "screenshotBaselinesMustBeCommitted": true
   },
   "requiredDomAnchors": [
     "data-route-id",
     "data-component-id",
     "data-layout-id"
   ],
+  "visualWorkbench": {
+    "status": "done",
+    "basePath": "/__portal-harness/components",
+    "indexRouteName": "portal-harness-components",
+    "detailRouteName": "portal-harness-component-state",
+    "owner": "services/portal/frontend/src/views/harness/PortalComponentWorkbenchView.vue",
+    "source": "portal-ui-evalset.json + harness fixtures",
+    "requiredGroupBy": [
+      "route",
+      "domain",
+      "state"
+    ],
+    "requiredSelectors": [
+      "[data-route-id=\"portal-harness.components\"]",
+      "[data-component-id=\"portal-harness.component_index\"]",
+      "[data-component-id=\"portal-harness.component_state\"]"
+    ],
+    "routePattern": "/__portal-harness/components/:componentId/:state",
+    "sampleRoutes": [
+      "/__portal-harness/components/overview.hero/ready",
+      "/__portal-harness/components/billing.ledger/empty",
+      "/__portal-harness/components/resources.hero/degraded",
+      "/__portal-harness/components/workspace.files/restricted",
+      "/__portal-harness/components/trace.session_table/ready",
+      "/__portal-harness/components/admin.system.site_settings/error",
+      "/__portal-harness/components/admin.users.table/ready"
+    ]
+  },
+  "screenshotRegression": {
+    "status": "done",
+    "runner": "playwright",
+    "command": "npm --prefix services/portal/frontend run test:visual",
+    "config": "services/portal/frontend/playwright.config.ts",
+    "spec": "services/portal/frontend/tests/visual/portal-surfaces.visual.ts",
+    "baselineDir": "services/portal/frontend/tests/visual/portal-surfaces.visual.ts-snapshots",
+    "baselineCommitted": true,
+    "routeDomVerifiedBy": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+    "snapshotScope": "component_fixture_state_pages",
+    "routes": [
+      {
+        "routeId": "overview",
+        "path": "/overview",
+        "surfaceId": "overview.hero",
+        "fixturePath": "/__portal-harness/components/overview.hero/ready"
+      },
+      {
+        "routeId": "billing",
+        "path": "/billing",
+        "surfaceId": "billing.ledger",
+        "fixturePath": "/__portal-harness/components/billing.ledger/empty"
+      },
+      {
+        "routeId": "resources",
+        "path": "/resources",
+        "surfaceId": "resources.hero",
+        "fixturePath": "/__portal-harness/components/resources.hero/degraded"
+      },
+      {
+        "routeId": "workspace",
+        "path": "/workspace",
+        "surfaceId": "workspace.files",
+        "fixturePath": "/__portal-harness/components/workspace.files/restricted"
+      },
+      {
+        "routeId": "trace",
+        "path": "/trace",
+        "surfaceId": "trace.session_table",
+        "fixturePath": "/__portal-harness/components/trace.session_table/ready"
+      },
+      {
+        "routeId": "admin.system",
+        "path": "/admin/system",
+        "surfaceId": "admin.system.site_settings",
+        "fixturePath": "/__portal-harness/components/admin.system.site_settings/error"
+      },
+      {
+        "routeId": "admin.users",
+        "path": "/admin/users",
+        "surfaceId": "admin.users.table",
+        "fixturePath": "/__portal-harness/components/admin.users.table/ready"
+      }
+    ]
+  },
   "routes": [
     {
       "id": "home_public",

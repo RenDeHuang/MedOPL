@@ -52,6 +52,7 @@ export function createPortalHttpDispatcher({
       "/advanced/servers",
       "/billing",
       "/trace",
+      "/__portal-harness/components",
       "/admin/dashboard",
       "/admin/users",
       "/admin/trace",
@@ -67,7 +68,8 @@ export function createPortalHttpDispatcher({
       "/admin/sandboxes",
       "/admin/audit",
     ]);
-    const isPortalAppShellRequest = req.method === "GET" && spaShellPaths.has(url.pathname);
+    const isHarnessComponentShellRequest = req.method === "GET" && url.pathname.startsWith("/__portal-harness/components/");
+    const isPortalAppShellRequest = req.method === "GET" && (spaShellPaths.has(url.pathname) || isHarnessComponentShellRequest);
     if (isGetAuthPage) {
       const authHandled = await handleAuthRoutes({ req, res, url, db: null });
       if (authHandled) return;
