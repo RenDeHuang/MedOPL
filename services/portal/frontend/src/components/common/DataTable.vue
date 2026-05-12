@@ -1,5 +1,5 @@
 <template>
-  <div class="desktop-table-shell">
+  <div data-primitive-id="primitive.data_table" class="table-shell">
     <table class="min-w-full text-sm">
       <thead>
         <tr class="table-head">

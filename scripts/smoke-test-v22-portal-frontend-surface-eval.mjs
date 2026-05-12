@@ -26,6 +26,10 @@ const report = {
     layouts: { total: 0, done: 0, partial: 0, missing: 0 },
     surfaces: { total: 0, done: 0, partial: 0, missing: 0 },
     apiShapes: { total: 0, checked: 0 },
+    primitives: { total: 0, checked: 0 },
+    copyRegistry: { total: 0, checked: 0 },
+    fixtures: { total: 0, checked: 0 },
+    visualRoutes: { total: 0, checked: 0 },
     browserDom: { routes: [], surfaces: [] },
   },
   partials: [],
@@ -265,6 +269,10 @@ report.coverage.routes = countStatuses(evalset.routes);
 report.coverage.layouts = countStatuses(evalset.layouts);
 report.coverage.surfaces = countStatuses(evalset.surfaces);
 report.coverage.apiShapes.total = evalset.apiShapes.length;
+report.coverage.primitives.total = evalset.primitives?.length || 0;
+report.coverage.copyRegistry.total = evalset.copyRegistry?.length || 0;
+report.coverage.fixtures.total = evalset.fixtures?.length || 0;
+report.coverage.visualRoutes.total = evalset.visualRoutes?.length || 0;
 report.partials = [
   ...evalset.routes.filter((item) => item.status !== "done").map((item) => ({
     kind: "route",
@@ -283,7 +291,7 @@ report.partials = [
   })),
 ];
 
-assert.equal(evalset.version, 2, "evalset_version_mismatch");
+assert.equal(evalset.version, 3, "evalset_version_mismatch");
 assert.equal(evalset.schemaVersion, "2026-05-harness-native", "evalset_schema_version_mismatch");
 assert.equal(evalset.model, "gpt-5.4", "evalset_model_mismatch");
 assert.equal(evalset.owners.contract, "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md", "evalset_contract_owner_mismatch");
@@ -296,19 +304,25 @@ assert.equal(evalset.coverage.doneRoutesMustHaveBrowserPath, true, "evalset_rout
 assert.equal(evalset.coverage.doneSurfacesMustHaveDomAnchor, true, "evalset_surface_anchor_coverage_required");
 assert.equal(evalset.coverage.apiShapesUseNestedRequiredPaths, true, "evalset_api_shape_required_paths_required");
 assert.equal(evalset.coverage.partialItemsMustDeclareNextRequiredChange, true, "evalset_partial_next_change_required");
+assert.equal(evalset.coverage.primitivesMustHaveDomAnchor, true, "evalset_primitive_anchor_coverage_required");
+assert.equal(evalset.coverage.visualRoutesMustHaveNoHorizontalOverflow, true, "evalset_visual_overflow_coverage_required");
+assert.equal(evalset.coverage.copyRegistryBlocksInternalTerms, true, "evalset_copy_registry_coverage_required");
+assert.equal(evalset.coverage.fixturesMustCoverReadyAndEmpty, true, "evalset_fixture_coverage_required");
 assert.equal(evalset.scope.portalOnly, true, "evalset_must_be_portal_only");
 assert.equal(evalset.scope.sourceOfExecutableUiTruth, true, "evalset_must_be_executable_ui_truth");
 assert.equal(evalset.scope.callsRealCloud, false, "evalset_must_not_call_real_cloud");
 assert.equal(evalset.scope.readsSecrets, false, "evalset_must_not_read_secrets");
 assert.deepEqual(evalset.requiredDomAnchors, ["data-route-id", "data-component-id", "data-layout-id"], "required_dom_anchors_mismatch");
 
-for (const key of ["routes", "layouts", "surfaces", "apiShapes", "forbiddenCopy", "pageTasks"]) {
+for (const key of ["routes", "layouts", "surfaces", "apiShapes", "forbiddenCopy", "pageTasks", "primitives", "copyRegistry", "fixtures", "visualRoutes"]) {
   assert(Array.isArray(evalset[key]), `evalset_${key}_must_be_array`);
 }
 assertUnique(evalset.routes, "id", "evalset_routes");
 assertUnique(evalset.layouts, "layoutId", "evalset_layouts");
 assertUnique(evalset.surfaces, "componentId", "evalset_surfaces");
 assertUnique(evalset.apiShapes, "id", "evalset_api_shapes");
+assertUnique(evalset.primitives, "primitiveId", "evalset_primitives");
+assertUnique(evalset.copyRegistry, "key", "evalset_copy_registry");
 const routeIds = new Set(evalset.routes.map((route) => route.id));
 
 for (const route of evalset.routes) {
@@ -364,6 +378,41 @@ for (const apiShape of evalset.apiShapes) {
   assert(apiShape.requiredPaths.length > 0, `api_shape_required_paths_missing:${apiShape.id}`);
   assert(apiShape.forbiddenKeys.length > 0, `api_shape_forbidden_keys_missing:${apiShape.id}`);
   assert(ownerSource.includes(apiShape.path.replace("/portal/api", "")) || ownerSource.includes(apiShape.path), `api_shape_frontend_path_missing:${apiShape.id}`);
+}
+
+for (const primitive of evalset.primitives) {
+  assert.equal(primitive.status, "done", `primitive_must_be_done:${primitive.primitiveId}`);
+  assert(await exists(primitive.owner), `primitive_owner_missing:${primitive.owner}`);
+  assert(Array.isArray(primitive.states) && primitive.states.length > 0, `primitive_states_missing:${primitive.primitiveId}`);
+  assertIncludes(await source(primitive.owner), `data-primitive-id="${primitive.primitiveId}"`, `primitive_anchor_${primitive.primitiveId}`);
+  report.coverage.primitives.checked += 1;
+}
+
+for (const copyItem of evalset.copyRegistry) {
+  assert(routeIds.has(copyItem.routeId), `copy_registry_route_id_missing:${copyItem.key}:${copyItem.routeId}`);
+  assert(copyItem.key, `copy_registry_key_missing:${copyItem.routeId}`);
+  assert(copyItem.text, `copy_registry_text_missing:${copyItem.key}`);
+  assert(!copyItem.text.includes("/"), `copy_registry_slash_copy_forbidden:${copyItem.key}`);
+  for (const forbidden of evalset.forbiddenCopy) {
+    assertExcludes(copyItem.text, forbidden, `copy_registry_forbidden_copy:${copyItem.key}`);
+  }
+  report.coverage.copyRegistry.checked += 1;
+}
+
+for (const fixture of evalset.fixtures) {
+  assert(routeIds.has(fixture.routeId), `fixture_route_id_missing:${fixture.routeId}`);
+  assert(await exists(fixture.owner), `fixture_owner_missing:${fixture.owner}`);
+  assert(fixture.states.includes("ready"), `fixture_ready_state_missing:${fixture.routeId}`);
+  assert(fixture.states.includes("empty"), `fixture_empty_state_missing:${fixture.routeId}`);
+  report.coverage.fixtures.checked += 1;
+}
+
+for (const visualRoute of evalset.visualRoutes) {
+  assert(routeIds.has(visualRoute.routeId), `visual_route_id_missing:${visualRoute.routeId}`);
+  assert(visualRoute.path.startsWith("/"), `visual_route_path_invalid:${visualRoute.routeId}`);
+  assert(Number(visualRoute.viewport?.width || 0) >= 390, `visual_route_width_invalid:${visualRoute.routeId}`);
+  assert(Number(visualRoute.viewport?.height || 0) >= 760, `visual_route_height_invalid:${visualRoute.routeId}`);
+  assert(Array.isArray(visualRoute.requiredSelectors) && visualRoute.requiredSelectors.length > 0, `visual_route_selectors_missing:${visualRoute.routeId}`);
 }
 
 const visibleSources = [];
@@ -450,11 +499,18 @@ try {
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport: { width: 1440, height: 920 } });
     const page = await context.newPage();
+    async function assertNoHorizontalOverflow(routeId) {
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      assert(overflow <= 2, `visual_route_horizontal_overflow:${routeId}:${overflow}`);
+    }
+
     await page.goto(`${baseUrl}/home`, { waitUntil: "domcontentloaded" });
     assert(await page.locator("body").innerText().then((text) => text.includes("登录")), "browser_home_login_link_missing");
+    await assertNoHorizontalOverflow("home_public");
     report.coverage.browserDom.routes.push("/home");
     await page.goto(`${baseUrl}/login`, { waitUntil: "domcontentloaded" });
     await page.locator('input[name="email"]').waitFor({ timeout: 10000 });
+    await assertNoHorizontalOverflow("login_public");
     report.coverage.browserDom.routes.push("/login");
     await page.locator('input[name="email"]').fill(adminEmail);
     await page.locator('input[name="password"]').fill(adminPassword);
@@ -468,12 +524,26 @@ try {
       await page.locator(surface.selector).waitFor({ timeout: 30000 });
       report.coverage.browserDom.surfaces.push(surface.componentId);
     }
+    await assertNoHorizontalOverflow("overview");
     await page.goto(`${baseUrl}/admin/system`, { waitUntil: "networkidle" });
     report.coverage.browserDom.routes.push("/admin/system");
     for (const surface of evalset.surfaces.filter((item) => item.status === "done" && item.routeId === "admin.system")) {
       await page.locator(surface.selector).waitFor({ timeout: 30000 });
       report.coverage.browserDom.surfaces.push(surface.componentId);
     }
+    await assertNoHorizontalOverflow("admin.system");
+
+    for (const visualRoute of evalset.visualRoutes.filter((item) => !["/home", "/login", "/overview", "/admin/system"].includes(item.path))) {
+      await page.setViewportSize(visualRoute.viewport);
+      await page.goto(`${baseUrl}${visualRoute.path}`, { waitUntil: "networkidle" });
+      report.coverage.browserDom.routes.push(visualRoute.path);
+      for (const selector of visualRoute.requiredSelectors) {
+        await page.locator(selector).waitFor({ timeout: 30000 });
+      }
+      await assertNoHorizontalOverflow(visualRoute.routeId);
+      report.coverage.visualRoutes.checked += 1;
+    }
+    report.coverage.visualRoutes.checked += evalset.visualRoutes.filter((item) => ["/home", "/login", "/overview", "/admin/system"].includes(item.path)).length;
   });
 
   report.ok = true;
@@ -486,6 +556,10 @@ try {
     "forbidden_copy",
     "frontend_test_entry",
     "api_shapes_required_paths",
+    "primitive_dom_anchors",
+    "copy_registry",
+    "fixtures",
+    "visual_routes",
     "browser_dom_anchors",
     "runtime_report",
   ];

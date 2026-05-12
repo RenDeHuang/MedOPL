@@ -64,6 +64,10 @@ evalset 必须包含：
 - `forbiddenCopy`
 - `requiredDomAnchors`
 - `pageTasks`
+- `primitives`
+- `copyRegistry`
+- `fixtures`
+- `visualRoutes`
 - `owners`
 - `acceptance`
 - `artifactPolicy`
@@ -77,6 +81,13 @@ DOM 锚点规则：
 - feature surface 使用 `data-route-id` 和 `data-component-id`。
 - 已标记 `done` 的 surface 必须真实埋锚点，并进入 `portal-ui-surfaces.ts`。
 - 管理台尚未组件化页面必须在 evalset 中标为 `partial`，不能在合同中写成已完成。
+
+下一层 UI gate 仍由 evalset 承接：
+
+- 通用组件 gate 固定在 `primitives`，用于检查 DataTable、Pagination、EmptyState、StatusBadge、MetricCard、FormField、FilterToolbar、ActionToolbar 和 PageSection 等可复用组件是否有稳定锚点和状态声明。
+- 文案 gate 固定在 `copyRegistry`，用于阻止内部治理词、斜杠组合字段、英文散落和 raw status 成为可见主语言。
+- 数据样例 gate 固定在 `fixtures`，用于保证页面至少覆盖 ready 和 empty 数据态。
+- 视觉 gate 固定在 `visualRoutes`，用于浏览器打开关键页面并检查关键 selector 与横向溢出。
 
 ## 文案边界
 
@@ -174,7 +185,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 5,
+  "version": 6,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -196,6 +207,10 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
       "forbiddenCopy",
       "requiredDomAnchors",
       "pageTasks",
+      "primitives",
+      "copyRegistry",
+      "fixtures",
+      "visualRoutes",
       "owners",
       "acceptance",
       "artifactPolicy",

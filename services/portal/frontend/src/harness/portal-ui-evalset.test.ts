@@ -6,6 +6,11 @@ import evalset from "./portal-ui-evalset.json";
 const repoRoot = path.resolve(process.cwd(), "../../..");
 const allowedStatuses = new Set(["done", "partial", "missing"]);
 
+type MaybePartial = {
+  nextRequiredChange?: string;
+  status: string;
+};
+
 function repoPath(filePath: string) {
   return path.join(repoRoot, filePath);
 }
@@ -20,7 +25,7 @@ function exists(filePath: string) {
 
 describe("portal ui evalset", () => {
   it("defines harness-native executable ui truth instead of another heavy contract", () => {
-    expect(evalset.version).toBe(2);
+    expect(evalset.version).toBe(3);
     expect(evalset.schemaVersion).toBe("2026-05-harness-native");
     expect(evalset.model).toBe("gpt-5.4");
     expect(evalset.scope.portalOnly).toBe(true);
@@ -35,6 +40,10 @@ describe("portal ui evalset", () => {
     expect(evalset.surfaces.length).toBeGreaterThan(0);
     expect(evalset.layouts.length).toBeGreaterThan(0);
     expect(evalset.apiShapes.length).toBeGreaterThan(0);
+    expect(evalset.primitives.length).toBeGreaterThan(0);
+    expect(evalset.copyRegistry.length).toBeGreaterThan(0);
+    expect(evalset.fixtures.length).toBeGreaterThan(0);
+    expect(evalset.visualRoutes.length).toBeGreaterThan(0);
   });
 
   it("keeps route identifiers canonical across routes, surfaces, page tasks, and api shapes", () => {
@@ -56,7 +65,7 @@ describe("portal ui evalset", () => {
       expect(allowedStatuses.has(route.status)).toBe(true);
       exists(route.owner);
       if (route.status !== "done") {
-        expect(route.nextRequiredChange).toBeTruthy();
+        expect((route as MaybePartial).nextRequiredChange).toBeTruthy();
       }
     }
 
@@ -64,8 +73,80 @@ describe("portal ui evalset", () => {
       expect(allowedStatuses.has(surface.status)).toBe(true);
       exists(surface.owner);
       if (surface.status !== "done") {
-        expect(surface.nextRequiredChange).toBeTruthy();
+        expect((surface as MaybePartial).nextRequiredChange).toBeTruthy();
       }
+    }
+  });
+
+  it("requires admin routes and surfaces to be explicit done surfaces before absorption", () => {
+    const adminRoutes = evalset.routes.filter((route) => route.id.startsWith("admin."));
+    expect(adminRoutes.length).toBeGreaterThanOrEqual(6);
+    for (const route of adminRoutes) {
+      expect(route.status).toBe("done");
+      expect((route as MaybePartial).nextRequiredChange).toBeUndefined();
+    }
+
+    const adminSurfaces = evalset.surfaces.filter((surface) => surface.routeId.startsWith("admin."));
+    expect(adminSurfaces.length).toBeGreaterThanOrEqual(7);
+    for (const surface of adminSurfaces) {
+      expect(surface.status).toBe("done");
+      expect((surface as MaybePartial).nextRequiredChange).toBeUndefined();
+    }
+  });
+
+  it("defines reusable primitive gates with anchored component files", () => {
+    const primitiveIds = new Set(evalset.primitives.map((primitive) => primitive.primitiveId));
+    for (const required of [
+      "primitive.data_table",
+      "primitive.pagination",
+      "primitive.empty_state",
+      "primitive.status_badge",
+      "primitive.metric_card",
+      "primitive.form_field",
+      "primitive.filter_toolbar",
+      "primitive.action_toolbar",
+      "primitive.page_section",
+    ]) {
+      expect(primitiveIds.has(required)).toBe(true);
+    }
+
+    for (const primitive of evalset.primitives) {
+      expect(primitive.status).toBe("done");
+      exists(primitive.owner);
+      const componentSource = source(primitive.owner);
+      expect(componentSource).toContain(`data-primitive-id="${primitive.primitiveId}"`);
+      expect(primitive.states.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps visible copy in a registry that blocks internal terms and slash labels", () => {
+    const registry = evalset.copyRegistry;
+    expect(registry.length).toBeGreaterThan(20);
+    for (const item of registry) {
+      expect(item.routeId).toBeTruthy();
+      expect(item.key).toBeTruthy();
+      expect(item.text).toBeTruthy();
+      expect(item.text).not.toContain("/");
+      for (const forbidden of evalset.forbiddenCopy) {
+        expect(item.text).not.toContain(forbidden);
+      }
+    }
+  });
+
+  it("defines fixture and visual route gates for browser-backed surfaces", () => {
+    for (const fixture of evalset.fixtures) {
+      expect(fixture.routeId).toBeTruthy();
+      expect(fixture.owner).toBeTruthy();
+      exists(fixture.owner);
+      expect(fixture.states).toContain("ready");
+      expect(fixture.states).toContain("empty");
+    }
+
+    for (const visualRoute of evalset.visualRoutes) {
+      expect(visualRoute.path).toMatch(/^\//);
+      expect(visualRoute.viewport.width).toBeGreaterThanOrEqual(390);
+      expect(visualRoute.viewport.height).toBeGreaterThanOrEqual(760);
+      expect(visualRoute.requiredSelectors.length).toBeGreaterThan(0);
     }
   });
 

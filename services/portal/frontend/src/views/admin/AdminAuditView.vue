@@ -3,67 +3,22 @@
     <div class="space-y-6">
       <div v-if="!payload" class="card p-8 text-sm text-gray-500 dark:text-slate-400">正在加载审计日志...</div>
       <template v-else>
-        <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="审计条数" :value="payload.pagination?.total ?? 0" hint="当前总记录数" />
-          <MetricCard label="配置变更" :value="settingsCount" hint="settings / theme 相关" />
-          <MetricCard label="任务空间事件" :value="workspaceCount" hint="workspace 生命周期" />
-          <MetricCard label="运行事件" :value="runCount" hint="run / runtime 相关" />
-        </section>
-
-        <section class="card p-6">
-          <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <h2 class="panel-title">审计记录</h2>
-              <p class="panel-subtitle">当前页面展示 Portal 的关键审计事件。</p>
-            </div>
-            <div class="flex flex-wrap gap-3">
-              <input v-model.trim="keyword" class="input w-[220px]" type="text" placeholder="按事件关键词筛选" />
-              <select v-model="pageSize" class="input w-[120px]">
-                <option :value="10">10 行</option>
-                <option :value="20">20 行</option>
-                <option :value="50">50 行</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="mt-6 table-shell">
-            <table class="text-sm">
-              <thead>
-                <tr class="table-head">
-                  <th class="px-4 py-3">事件</th>
-                  <th class="px-4 py-3">来源</th>
-                  <th class="px-4 py-3">用户</th>
-                  <th class="px-4 py-3">操作人</th>
-                  <th class="px-4 py-3">任务空间</th>
-                  <th class="px-4 py-3">时间</th>
-                  <th class="px-4 py-3">详情</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in pagedItems" :key="`${item.type}-${item.occurredAt}-${item.userId}`" class="table-row">
-                  <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ humanizeAuditType(item.type) }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ sourceLabel(item.type) }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.userId || "-" }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.operatorId || "-" }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.workspaceId || "-" }}</td>
-                  <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.occurredAt || "-" }}</td>
-                  <td class="px-4 py-3 text-xs text-gray-500 dark:text-slate-400">{{ shortDetail(item.detail) }}</td>
-                </tr>
-                <tr v-if="!pagedItems.length">
-                  <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400">暂无审计记录</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="pager-bar">
-            <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
-            <div class="flex gap-3">
-              <button class="btn btn-secondary" type="button" :disabled="currentPage === 1" @click="currentPage -= 1">上一页</button>
-              <button class="btn btn-secondary" type="button" :disabled="currentPage === totalPages" @click="currentPage += 1">下一页</button>
-            </div>
-          </div>
-        </section>
+        <AdminAuditTablePanel
+          v-model:keyword="keyword"
+          v-model:page-size="pageSize"
+          :audit-type-label="humanizeAuditType"
+          :current-page="currentPage"
+          :items="pagedItems"
+          :payload="payload"
+          :run-count="runCount"
+          :settings-count="settingsCount"
+          :short-detail="shortDetail"
+          :source-label="sourceLabel"
+          :total-pages="totalPages"
+          :workspace-count="workspaceCount"
+          @next-page="currentPage += 1"
+          @previous-page="currentPage -= 1"
+        />
       </template>
     </div>
   </AppLayout>
@@ -72,7 +27,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import AppLayout from "@/layouts/AppLayout.vue";
-import MetricCard from "@/components/common/MetricCard.vue";
+import AdminAuditTablePanel from "@/components/admin/AdminAuditTablePanel.vue";
 import { fetchAdminAudit } from "@/api/portal/admin";
 
 const payload = ref<any>(null);

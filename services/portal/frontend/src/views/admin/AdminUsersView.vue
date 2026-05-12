@@ -7,110 +7,25 @@
         <div v-if="error" class="card p-4 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
 
         <template v-if="payload">
-          <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="用户总数" :value="payload.pagination.total" hint="当前筛选命中的用户数" />
-            <MetricCard label="开放注册" :value="payload.allowRegistration ? '开启' : '关闭'" hint="统一门户注册开关" />
-            <MetricCard label="可用分组" :value="payload.groups.length" hint="当前配置的资源分组" />
-            <MetricCard label="最近资金动作" :value="payload.financeRows.length" hint="充值、退款和补扣记录" />
-          </section>
-
-          <section class="card p-5">
-            <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <div class="flex items-center gap-2">
-                  <h2 class="panel-title">用户搜索</h2>
-                  <span v-if="isRefreshing" class="text-xs text-gray-500 dark:text-slate-400">刷新中...</span>
-                </div>
-                <p class="panel-subtitle">支持 workspace、用户 ID、用户名、邮箱筛选。</p>
-              </div>
-              <div class="grid gap-3 md:grid-cols-4">
-                <input v-model.trim="filters.workspace" class="input" type="text" placeholder="workspace" />
-                <input v-model.trim="filters.userId" class="input" type="text" placeholder="用户 ID" />
-                <input v-model.trim="filters.username" class="input" type="text" placeholder="用户名" />
-                <input v-model.trim="filters.email" class="input" type="text" placeholder="邮箱" />
-              </div>
-            </div>
-
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button class="btn btn-primary" type="button" @click="applyFilters">应用筛选</button>
-              <button class="btn btn-secondary" type="button" @click="resetFilters">重置</button>
-              <button class="btn btn-primary" type="button" @click="openCreateModal">开通账号</button>
-              <button class="btn btn-secondary" type="button" @click="openSettingsModal">注册设置</button>
-            </div>
-          </section>
-
-          <section class="card p-5">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h2 class="panel-title">用户列表</h2>
-                <p class="panel-subtitle">操作分为编辑、禁用/恢复、充值、退款与删除。</p>
-              </div>
-              <span class="badge badge-primary">{{ payload.pagination.total }} 人</span>
-            </div>
-
-            <div class="table-shell">
-              <table class="text-sm">
-                <thead>
-                  <tr class="table-head">
-                    <th class="px-4 py-3">用户</th>
-                    <th class="px-4 py-3">用户名</th>
-                    <th class="px-4 py-3">余额</th>
-                    <th class="px-4 py-3">状态</th>
-                    <th class="px-4 py-3">最后活跃</th>
-                    <th class="px-4 py-3">最后使用</th>
-                    <th class="px-4 py-3">创建时间</th>
-                    <th class="px-4 py-3">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in payload.items" :key="item.id" class="table-row">
-                    <td class="px-4 py-3">
-                      <div class="font-medium text-gray-950 dark:text-white">{{ item.email }}</div>
-                      <div v-if="item.name" class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ item.name }}</div>
-                      <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
-                        <span>内部 ID: {{ item.id }}</span>
-                        <button class="btn btn-secondary !px-2 !py-1 text-xs" type="button" @click="copyInternalId(item.id)">
-                          {{ copiedUserId === item.id ? "已复制" : "复制排障" }}
-                        </button>
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">{{ item.name || "-" }}</td>
-                    <td class="px-4 py-3 text-gray-700 dark:text-slate-300">￥{{ Number(item.balance || 0).toFixed(2) }}</td>
-                    <td class="px-4 py-3">
-                      <span class="badge" :class="item.status === 'disabled' ? 'badge-danger' : 'badge-success'">
-                        {{ item.status === "disabled" ? "已禁用" : "正常" }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.lastActiveAt || "-" }}</td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.lastUsedAt || "-" }}</td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-slate-400">{{ item.createdAt || "-" }}</td>
-                    <td class="px-4 py-3">
-                      <div class="flex flex-wrap gap-2">
-                        <button class="btn btn-secondary" type="button" @click="openEditModal(item)">编辑</button>
-                        <form @submit.prevent="submitToggleUser(item)">
-                          <button class="btn btn-secondary" type="submit" :disabled="submittingAction === `toggle:${item.id}`">
-                            {{ submittingAction === `toggle:${item.id}` ? "处理中..." : item.status === "disabled" ? "恢复" : "禁用" }}
-                          </button>
-                        </form>
-                        <button class="btn btn-secondary" type="button" @click="openMoreModal(item)">更多</button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="!payload.items.length">
-                    <td colspan="8" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">暂无用户</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="pager-bar">
-              <span>第 {{ payload.pagination.page }} / {{ payload.pagination.totalPages }} 页</span>
-              <div class="flex gap-2">
-                <RouterLink class="btn btn-secondary" :to="usersQuery({ page: previousPage(payload.pagination.page) })">上一页</RouterLink>
-                <RouterLink class="btn btn-secondary" :to="usersQuery({ page: nextPage(payload.pagination.page, payload.pagination.totalPages) })">下一页</RouterLink>
-              </div>
-            </div>
-          </section>
+          <AdminUsersTablePanel
+            :copied-user-id="copiedUserId"
+            :filters="filters"
+            :next-page="nextPage"
+            :payload="payload"
+            :previous-page="previousPage"
+            :refreshing="isRefreshing"
+            :submitting-action="submittingAction"
+            :users-query="usersQuery"
+            @apply-filters="applyFilters"
+            @copy-internal-id="copyInternalId"
+            @open-create="openCreateModal"
+            @open-edit="openEditModal"
+            @open-more="openMoreModal"
+            @open-settings="openSettingsModal"
+            @reset-filters="resetFilters"
+            @toggle-user="submitToggleUser"
+            @update-filter="updateFilter"
+          />
         </template>
       </template>
     </div>
@@ -250,7 +165,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import AppLayout from "@/layouts/AppLayout.vue";
-import MetricCard from "@/components/common/MetricCard.vue";
+import AdminUsersTablePanel from "@/components/admin/AdminUsersTablePanel.vue";
 import BaseDialog from "@/components/common/BaseDialog.vue";
 import { useAdminUsersSurface } from "@/composables/useAdminUsersSurface";
 
@@ -301,4 +216,10 @@ const {
   submitToggleUser,
   usersQuery,
 } = useAdminUsersSurface(route, router);
+
+function updateFilter(key: string, value: string) {
+  if (key in filters) {
+    filters[key as keyof typeof filters] = value;
+  }
+}
 </script>

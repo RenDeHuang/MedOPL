@@ -248,6 +248,46 @@ export const portalUiSurfaces: PortalUiSurface[] = [
     selector: '[data-component-id="admin.system.service_status"]',
     invariants: ["服务状态必须与站点设置分离", "服务异常数量必须独立展示"],
   },
+  {
+    routeId: "admin.dashboard",
+    componentId: "admin.dashboard.summary",
+    question: "管理员如何查看平台今日用户、工作空间、任务、消费和待处理事项",
+    states: ["loading", "ready", "empty"],
+    selector: '[data-component-id="admin.dashboard.summary"]',
+    invariants: ["平台总览必须先展示指标", "管理入口不能使用云控制台叙事"],
+  },
+  {
+    routeId: "admin.users",
+    componentId: "admin.users.table",
+    question: "管理员如何搜索客户账户并执行开通、禁用、充值和退款动作",
+    states: ["loading", "ready", "empty", "error"],
+    selector: '[data-component-id="admin.users.table"]',
+    invariants: ["客户账户和资金动作必须同页可见", "内部编号只能作为排障辅助字段"],
+  },
+  {
+    routeId: "admin.billing_ops",
+    componentId: "admin.billing_ops.summary",
+    question: "管理员如何查看账单对账、待补记录、成本构成和最近调整",
+    states: ["loading", "ready", "empty"],
+    selector: '[data-component-id="admin.billing_ops.summary"]',
+    invariants: ["账单管理不能命名为账务", "待补记录和最近调整必须分开展示"],
+  },
+  {
+    routeId: "admin.usage",
+    componentId: "admin.usage.table",
+    question: "管理员如何查看任务记录、运行状态、成本和下钻入口",
+    states: ["loading", "ready", "empty"],
+    selector: '[data-component-id="admin.usage.table"]',
+    invariants: ["任务状态必须映射成中文", "成本必须独立于运行编号展示"],
+  },
+  {
+    routeId: "admin.audit",
+    componentId: "admin.audit.table",
+    question: "管理员如何查看审计记录、事件来源、操作人和工作空间归属",
+    states: ["loading", "ready", "empty"],
+    selector: '[data-component-id="admin.audit.table"]',
+    invariants: ["审计事件必须使用中文类型", "筛选和分页必须独立于表格内容"],
+  },
 ];
 
 export const portalUiSurfaceSelectors = portalUiSurfaces.map((surface) => surface.selector);

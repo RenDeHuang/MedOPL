@@ -39,7 +39,7 @@ const roleAdminContract = await source("docs/contracts/v22-portal-admin-ops-surf
 const structureContract = await source("docs/contracts/v22-portal-structure-failure-isolation-boundary.md");
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 5, "contract_version_mismatch");
+assert.equal(contract.version, 6, "contract_version_mismatch");
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
@@ -62,6 +62,10 @@ assert.deepEqual(contract.evalset.owns, [
   "forbiddenCopy",
   "requiredDomAnchors",
   "pageTasks",
+  "primitives",
+  "copyRegistry",
+  "fixtures",
+  "visualRoutes",
   "owners",
   "acceptance",
   "artifactPolicy",
@@ -121,11 +125,15 @@ assert.equal(evalset.artifactPolicy.commitReports, false, "evalset_report_must_n
 for (const key of contract.evalset.owns) {
   assert(evalset[key], `evalset_${key}_missing`);
 }
-for (const key of ["routes", "surfaces", "layouts", "apiShapes", "forbiddenCopy", "requiredDomAnchors", "pageTasks"]) {
+for (const key of ["routes", "surfaces", "layouts", "apiShapes", "forbiddenCopy", "requiredDomAnchors", "pageTasks", "primitives", "copyRegistry", "fixtures", "visualRoutes"]) {
   assert(Array.isArray(evalset[key]), `evalset_${key}_must_be_array`);
 }
-assert(evalset.surfaces.some((surface) => surface.status === "partial"), "evalset_must_record_partial_admin_surfaces");
+assert.equal(evalset.surfaces.some((surface) => surface.status === "partial"), false, "evalset_must_not_leave_partial_admin_surfaces_in_absorbable_branch");
 assert(evalset.apiShapes.length >= 8, "evalset_must_cover_core_api_shapes");
+assert(evalset.primitives.length >= 9, "evalset_must_cover_common_primitives");
+assert(evalset.copyRegistry.length >= 20, "evalset_must_cover_copy_registry");
+assert(evalset.fixtures.length >= 6, "evalset_must_cover_core_fixtures");
+assert(evalset.visualRoutes.length >= 8, "evalset_must_cover_visual_routes");
 for (const apiShape of evalset.apiShapes) {
   assert(Array.isArray(apiShape.requiredPaths), `evalset_api_shape_required_paths_missing:${apiShape.id}`);
   assert(apiShape.requiredPaths.length > 0, `evalset_api_shape_required_paths_empty:${apiShape.id}`);

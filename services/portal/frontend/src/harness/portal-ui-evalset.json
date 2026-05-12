@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "schemaVersion": "2026-05-harness-native",
   "model": "gpt-5.4",
   "owners": {
@@ -16,7 +16,14 @@
   "acceptance": {
     "unifiedRuntimeSuite": "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all",
     "surfaceSuite": "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-    "requiredGroups": ["contract", "surface", "architecture", "api", "build", "browser"]
+    "requiredGroups": [
+      "contract",
+      "surface",
+      "architecture",
+      "api",
+      "build",
+      "browser"
+    ]
   },
   "artifactPolicy": {
     "runtimeReportPath": ".runtime/portal-surface-eval/report.json",
@@ -27,7 +34,11 @@
     "doneRoutesMustHaveBrowserPath": true,
     "doneSurfacesMustHaveDomAnchor": true,
     "apiShapesUseNestedRequiredPaths": true,
-    "partialItemsMustDeclareNextRequiredChange": true
+    "partialItemsMustDeclareNextRequiredChange": true,
+    "primitivesMustHaveDomAnchor": true,
+    "visualRoutesMustHaveNoHorizontalOverflow": true,
+    "copyRegistryBlocksInternalTerms": true,
+    "fixturesMustCoverReadyAndEmpty": true
   },
   "requiredDomAnchors": [
     "data-route-id",
@@ -96,48 +107,42 @@
       "path": "/admin/system",
       "owner": "services/portal/frontend/src/views/admin/AdminSystemView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "use_layout_protocol_and_move_form_sync_to_composable"
+      "status": "done"
     },
     {
       "id": "admin.dashboard",
       "path": "/admin/dashboard",
       "owner": "services/portal/frontend/src/views/admin/AdminDashboardView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_dashboard_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "id": "admin.users",
       "path": "/admin/users",
       "owner": "services/portal/frontend/src/views/admin/AdminUsersView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_users_table_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "id": "admin.billing_ops",
       "path": "/admin/billing-ops",
       "owner": "services/portal/frontend/src/views/admin/AdminBillingOpsView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_billing_ops_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "id": "admin.usage",
       "path": "/admin/usage",
       "owner": "services/portal/frontend/src/views/admin/AdminUsageView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_usage_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "id": "admin.audit",
       "path": "/admin/audit",
       "owner": "services/portal/frontend/src/views/admin/AdminAuditView.vue",
       "renderedBy": "spa",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_audit_surface_component_and_dom_anchor"
+      "status": "done"
     }
   ],
   "layouts": [
@@ -346,42 +351,37 @@
     {
       "routeId": "admin.dashboard",
       "componentId": "admin.dashboard.summary",
-      "owner": "services/portal/frontend/src/views/admin/AdminDashboardView.vue",
+      "owner": "services/portal/frontend/src/components/admin/AdminDashboardSummaryPanel.vue",
       "selector": "[data-component-id=\"admin.dashboard.summary\"]",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_dashboard_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "routeId": "admin.users",
       "componentId": "admin.users.table",
-      "owner": "services/portal/frontend/src/views/admin/AdminUsersView.vue",
+      "owner": "services/portal/frontend/src/components/admin/AdminUsersTablePanel.vue",
       "selector": "[data-component-id=\"admin.users.table\"]",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_users_table_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "routeId": "admin.billing_ops",
       "componentId": "admin.billing_ops.summary",
-      "owner": "services/portal/frontend/src/views/admin/AdminBillingOpsView.vue",
+      "owner": "services/portal/frontend/src/components/admin/AdminBillingOpsSummaryPanel.vue",
       "selector": "[data-component-id=\"admin.billing_ops.summary\"]",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_billing_ops_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "routeId": "admin.usage",
       "componentId": "admin.usage.table",
-      "owner": "services/portal/frontend/src/views/admin/AdminUsageView.vue",
+      "owner": "services/portal/frontend/src/components/admin/AdminUsageTablePanel.vue",
       "selector": "[data-component-id=\"admin.usage.table\"]",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_usage_surface_component_and_dom_anchor"
+      "status": "done"
     },
     {
       "routeId": "admin.audit",
       "componentId": "admin.audit.table",
-      "owner": "services/portal/frontend/src/views/admin/AdminAuditView.vue",
+      "owner": "services/portal/frontend/src/components/admin/AdminAuditTablePanel.vue",
       "selector": "[data-component-id=\"admin.audit.table\"]",
-      "status": "partial",
-      "nextRequiredChange": "extract_admin_audit_surface_component_and_dom_anchor"
+      "status": "done"
     }
   ],
   "apiShapes": [
@@ -391,9 +391,25 @@
       "method": "GET",
       "path": "/portal/api/public/settings",
       "owner": "services/portal/frontend/src/api/portal/public.ts",
-      "requiredKeys": ["siteName", "siteLogo", "siteSubtitle", "homeContent"],
-      "requiredPaths": ["siteName", "siteLogo", "siteSubtitle", "homeContent"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "token", "rawApiKey", "raw API Key"]
+      "requiredKeys": [
+        "siteName",
+        "siteLogo",
+        "siteSubtitle",
+        "homeContent"
+      ],
+      "requiredPaths": [
+        "siteName",
+        "siteLogo",
+        "siteSubtitle",
+        "homeContent"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "token",
+        "rawApiKey",
+        "raw API Key"
+      ]
     },
     {
       "id": "overview",
@@ -401,9 +417,29 @@
       "method": "GET",
       "path": "/portal/api/overview",
       "owner": "services/portal/frontend/src/api/portal/overview.ts",
-      "requiredKeys": ["kpis", "commercial", "serverPlansSummary", "onboarding", "taskCards", "latestRuns"],
-      "requiredPaths": ["kpis.balance", "commercial.canEnterWorkbench", "serverPlansSummary.quotedCount", "taskCards", "latestRuns"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "objectKey", "storageKey", "signedUrl"]
+      "requiredKeys": [
+        "kpis",
+        "commercial",
+        "serverPlansSummary",
+        "onboarding",
+        "taskCards",
+        "latestRuns"
+      ],
+      "requiredPaths": [
+        "kpis.balance",
+        "commercial.canEnterWorkbench",
+        "serverPlansSummary.quotedCount",
+        "taskCards",
+        "latestRuns"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "objectKey",
+        "storageKey",
+        "signedUrl"
+      ]
     },
     {
       "id": "billing_summary",
@@ -411,9 +447,32 @@
       "method": "GET",
       "path": "/portal/api/billing/summary",
       "owner": "services/portal/frontend/src/api/portal/billing.ts",
-      "requiredKeys": ["wallet", "totals", "breakdown", "summary", "filter", "todayCost"],
-      "requiredPaths": ["wallet.balance", "wallet.frozen", "totals.totalCost", "breakdown", "summary", "filter.from", "filter.to", "todayCost"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "objectKey", "storageKey", "signedUrl"]
+      "requiredKeys": [
+        "wallet",
+        "totals",
+        "breakdown",
+        "summary",
+        "filter",
+        "todayCost"
+      ],
+      "requiredPaths": [
+        "wallet.balance",
+        "wallet.frozen",
+        "totals.totalCost",
+        "breakdown",
+        "summary",
+        "filter.from",
+        "filter.to",
+        "todayCost"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "objectKey",
+        "storageKey",
+        "signedUrl"
+      ]
     },
     {
       "id": "billing_details",
@@ -421,9 +480,32 @@
       "method": "GET",
       "path": "/portal/api/billing/details",
       "owner": "services/portal/frontend/src/api/portal/billing.ts",
-      "requiredKeys": ["taskCosts", "taskPagination", "runCosts", "runPagination", "ledger", "ledgerPagination", "trend"],
-      "requiredPaths": ["taskCosts", "taskPagination.page", "runCosts", "runPagination.page", "ledger", "ledgerPagination.page", "trend"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "objectKey", "storageKey", "signedUrl"]
+      "requiredKeys": [
+        "taskCosts",
+        "taskPagination",
+        "runCosts",
+        "runPagination",
+        "ledger",
+        "ledgerPagination",
+        "trend"
+      ],
+      "requiredPaths": [
+        "taskCosts",
+        "taskPagination.page",
+        "runCosts",
+        "runPagination.page",
+        "ledger",
+        "ledgerPagination.page",
+        "trend"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "objectKey",
+        "storageKey",
+        "signedUrl"
+      ]
     },
     {
       "id": "resources",
@@ -431,9 +513,30 @@
       "method": "GET",
       "path": "/portal/api/platform-provisioned-resources",
       "owner": "services/portal/frontend/src/api/portal/resources.ts",
-      "requiredKeys": ["ok", "source", "computeInstances", "storageBuckets", "protectionFreezes", "bindings", "summary"],
-      "requiredPaths": ["ok", "source", "computeInstances", "storageBuckets", "protectionFreezes", "bindings", "summary"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "signedUrl"]
+      "requiredKeys": [
+        "ok",
+        "source",
+        "computeInstances",
+        "storageBuckets",
+        "protectionFreezes",
+        "bindings",
+        "summary"
+      ],
+      "requiredPaths": [
+        "ok",
+        "source",
+        "computeInstances",
+        "storageBuckets",
+        "protectionFreezes",
+        "bindings",
+        "summary"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "signedUrl"
+      ]
     },
     {
       "id": "workspace",
@@ -441,9 +544,31 @@
       "method": "GET",
       "path": "/portal/api/workspace",
       "owner": "services/portal/frontend/src/api/portal/workspace.ts",
-      "requiredKeys": ["workspace", "counts", "costs", "runStatus", "tasks", "files", "outputs"],
-      "requiredPaths": ["workspace", "counts", "costs", "runStatus", "tasks", "files", "outputs"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "storageKey", "signedUrl"]
+      "requiredKeys": [
+        "workspace",
+        "counts",
+        "costs",
+        "runStatus",
+        "tasks",
+        "files",
+        "outputs"
+      ],
+      "requiredPaths": [
+        "workspace",
+        "counts",
+        "costs",
+        "runStatus",
+        "tasks",
+        "files",
+        "outputs"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "storageKey",
+        "signedUrl"
+      ]
     },
     {
       "id": "trace",
@@ -451,9 +576,27 @@
       "method": "GET",
       "path": "/portal/api/session-traces",
       "owner": "services/portal/frontend/src/api/portal/traces.ts",
-      "requiredKeys": ["filters", "summary", "items", "pagination", "dataSource"],
-      "requiredPaths": ["filters", "summary", "items", "pagination.page", "dataSource"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "storageKey", "signedUrl"]
+      "requiredKeys": [
+        "filters",
+        "summary",
+        "items",
+        "pagination",
+        "dataSource"
+      ],
+      "requiredPaths": [
+        "filters",
+        "summary",
+        "items",
+        "pagination.page",
+        "dataSource"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "storageKey",
+        "signedUrl"
+      ]
     },
     {
       "id": "admin_system",
@@ -461,9 +604,30 @@
       "method": "GET",
       "path": "/portal/api/admin/system",
       "owner": "services/portal/frontend/src/api/portal/admin.ts",
-      "requiredKeys": ["serviceStatuses", "summaries", "systemMetrics", "productProfile", "allowRegistration", "publicSettings"],
-      "requiredPaths": ["serviceStatuses", "summaries", "systemMetrics", "productProfile", "allowRegistration", "publicSettings.siteName", "publicSettings.homeContent"],
-      "forbiddenKeys": ["SecretId", "SecretKey", "rawApiKey", "kubeconfig", "signedUrl"]
+      "requiredKeys": [
+        "serviceStatuses",
+        "summaries",
+        "systemMetrics",
+        "productProfile",
+        "allowRegistration",
+        "publicSettings"
+      ],
+      "requiredPaths": [
+        "serviceStatuses",
+        "summaries",
+        "systemMetrics",
+        "productProfile",
+        "allowRegistration",
+        "publicSettings.siteName",
+        "publicSettings.homeContent"
+      ],
+      "forbiddenKeys": [
+        "SecretId",
+        "SecretKey",
+        "rawApiKey",
+        "kubeconfig",
+        "signedUrl"
+      ]
     }
   ],
   "forbiddenCopy": [
@@ -507,8 +671,451 @@
     {
       "routeId": "admin.system",
       "task": "回答站点设置和服务状态当前是什么状态",
-      "status": "partial",
-      "nextRequiredChange": "move_form_sync_to_composable_and_keep_service_status_as_separate_surface"
+      "status": "done"
+    },
+    {
+      "routeId": "admin.dashboard",
+      "task": "回答平台今日用户、工作空间、任务、消费、待处理事项和管理入口是否正常",
+      "status": "done"
+    },
+    {
+      "routeId": "admin.users",
+      "task": "回答客户账户数量、注册状态、余额、账户状态以及充值退款入口",
+      "status": "done"
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "task": "回答账单对账、待补记录、成本构成和最近调整状态",
+      "status": "done"
+    },
+    {
+      "routeId": "admin.usage",
+      "task": "回答任务记录、运行状态、成本和下钻入口",
+      "status": "done"
+    },
+    {
+      "routeId": "admin.audit",
+      "task": "回答审计记录、事件来源、操作人和工作空间归属",
+      "status": "done"
+    }
+  ],
+  "primitives": [
+    {
+      "primitiveId": "primitive.data_table",
+      "owner": "services/portal/frontend/src/components/common/DataTable.vue",
+      "states": [
+        "ready",
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.pagination",
+      "owner": "services/portal/frontend/src/components/common/PaginationBar.vue",
+      "states": [
+        "ready",
+        "disabled"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.empty_state",
+      "owner": "services/portal/frontend/src/components/common/EmptyState.vue",
+      "states": [
+        "empty"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.status_badge",
+      "owner": "services/portal/frontend/src/components/common/StatusBadge.vue",
+      "states": [
+        "success",
+        "warning",
+        "danger",
+        "primary"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.metric_card",
+      "owner": "services/portal/frontend/src/components/common/MetricCard.vue",
+      "states": [
+        "ready"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.form_field",
+      "owner": "services/portal/frontend/src/components/common/FormField.vue",
+      "states": [
+        "ready",
+        "hint"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.filter_toolbar",
+      "owner": "services/portal/frontend/src/components/common/FilterToolbar.vue",
+      "states": [
+        "ready",
+        "withActions"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.action_toolbar",
+      "owner": "services/portal/frontend/src/components/common/ActionToolbar.vue",
+      "states": [
+        "ready"
+      ],
+      "status": "done"
+    },
+    {
+      "primitiveId": "primitive.page_section",
+      "owner": "services/portal/frontend/src/components/common/PageSection.vue",
+      "states": [
+        "ready",
+        "withActions"
+      ],
+      "status": "done"
+    }
+  ],
+  "copyRegistry": [
+    {
+      "routeId": "home_public",
+      "key": "home.title",
+      "text": "OPL 托管科研工作台"
+    },
+    {
+      "routeId": "login_public",
+      "key": "login.title",
+      "text": "登录 MedOPL"
+    },
+    {
+      "routeId": "register_public",
+      "key": "register.title",
+      "text": "注册 MedOPL"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.title",
+      "text": "总览"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.balance",
+      "text": "余额"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.frozen",
+      "text": "冻结金额"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.consume",
+      "text": "累计消费"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.today",
+      "text": "今日消费"
+    },
+    {
+      "routeId": "resources",
+      "key": "resources.title",
+      "text": "计算资源"
+    },
+    {
+      "routeId": "resources",
+      "key": "resources.plan",
+      "text": "套餐"
+    },
+    {
+      "routeId": "resources",
+      "key": "resources.fileSpace",
+      "text": "文件空间"
+    },
+    {
+      "routeId": "workspace",
+      "key": "workspace.title",
+      "text": "文件空间"
+    },
+    {
+      "routeId": "workspace",
+      "key": "workspace.input",
+      "text": "输入文件"
+    },
+    {
+      "routeId": "workspace",
+      "key": "workspace.output",
+      "text": "输出文件"
+    },
+    {
+      "routeId": "trace",
+      "key": "trace.title",
+      "text": "任务执行"
+    },
+    {
+      "routeId": "trace",
+      "key": "trace.status",
+      "text": "运行轨迹"
+    },
+    {
+      "routeId": "billing",
+      "key": "billing.title",
+      "text": "账单"
+    },
+    {
+      "routeId": "billing",
+      "key": "billing.ledger",
+      "text": "账户流水"
+    },
+    {
+      "routeId": "billing",
+      "key": "billing.refund",
+      "text": "退款记录"
+    },
+    {
+      "routeId": "admin.dashboard",
+      "key": "admin.dashboard.title",
+      "text": "平台总览"
+    },
+    {
+      "routeId": "admin.users",
+      "key": "admin.users.title",
+      "text": "客户账户"
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "key": "admin.billing.title",
+      "text": "账单管理"
+    },
+    {
+      "routeId": "admin.usage",
+      "key": "admin.usage.title",
+      "text": "任务记录"
+    },
+    {
+      "routeId": "admin.audit",
+      "key": "admin.audit.title",
+      "text": "审计记录"
+    },
+    {
+      "routeId": "admin.system",
+      "key": "admin.system.title",
+      "text": "站点设置"
+    },
+    {
+      "routeId": "admin.system",
+      "key": "admin.system.service",
+      "text": "服务状态"
+    }
+  ],
+  "fixtures": [
+    {
+      "routeId": "overview",
+      "owner": "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+      "states": [
+        "ready",
+        "empty",
+        "restricted"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "owner": "services/portal/frontend/src/harness/fixtures/billing.fixture.json",
+      "states": [
+        "ready",
+        "empty"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "owner": "services/portal/frontend/src/harness/fixtures/resources.fixture.json",
+      "states": [
+        "ready",
+        "empty",
+        "restricted"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "owner": "services/portal/frontend/src/harness/fixtures/workspace.fixture.json",
+      "states": [
+        "ready",
+        "empty",
+        "restricted"
+      ]
+    },
+    {
+      "routeId": "trace",
+      "owner": "services/portal/frontend/src/harness/fixtures/trace.fixture.json",
+      "states": [
+        "ready",
+        "empty"
+      ]
+    },
+    {
+      "routeId": "admin.system",
+      "owner": "services/portal/frontend/src/harness/fixtures/admin-system.fixture.json",
+      "states": [
+        "ready",
+        "empty"
+      ]
+    }
+  ],
+  "visualRoutes": [
+    {
+      "routeId": "home_public",
+      "path": "/home",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "body"
+      ]
+    },
+    {
+      "routeId": "login_public",
+      "path": "/login",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "input[name=\"email\"]",
+        "input[name=\"password\"]"
+      ]
+    },
+    {
+      "routeId": "overview",
+      "path": "/overview",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"overview.hero\"]",
+        "[data-component-id=\"overview.financial_metrics\"]"
+      ]
+    },
+    {
+      "routeId": "billing",
+      "path": "/billing",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"billing.hero\"]",
+        "[data-component-id=\"billing.ledger\"]"
+      ]
+    },
+    {
+      "routeId": "resources",
+      "path": "/resources",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"resources.hero\"]",
+        "[data-component-id=\"resources.current\"]"
+      ]
+    },
+    {
+      "routeId": "workspace",
+      "path": "/workspace",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"workspace.hero\"]",
+        "[data-component-id=\"workspace.files\"]"
+      ]
+    },
+    {
+      "routeId": "trace",
+      "path": "/trace",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"trace.hero\"]",
+        "[data-component-id=\"trace.session_table\"]"
+      ]
+    },
+    {
+      "routeId": "admin.system",
+      "path": "/admin/system",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"admin.system.site_settings\"]",
+        "[data-component-id=\"admin.system.service_status\"]"
+      ]
+    },
+    {
+      "routeId": "admin.dashboard",
+      "path": "/admin/dashboard",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"admin.dashboard.summary\"]"
+      ]
+    },
+    {
+      "routeId": "admin.users",
+      "path": "/admin/users",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"admin.users.table\"]"
+      ]
+    },
+    {
+      "routeId": "admin.billing_ops",
+      "path": "/admin/billing-ops",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"admin.billing_ops.summary\"]"
+      ]
+    },
+    {
+      "routeId": "admin.usage",
+      "path": "/admin/usage",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"admin.usage.table\"]"
+      ]
+    },
+    {
+      "routeId": "admin.audit",
+      "path": "/admin/audit",
+      "viewport": {
+        "width": 1440,
+        "height": 920
+      },
+      "requiredSelectors": [
+        "[data-component-id=\"admin.audit.table\"]"
+      ]
     }
   ]
 }

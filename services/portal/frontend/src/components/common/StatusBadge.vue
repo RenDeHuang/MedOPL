@@ -1,5 +1,5 @@
 <template>
-  <span class="badge" :class="badgeClass">{{ label }}</span>
+  <span data-primitive-id="primitive.status_badge" class="badge" :class="badgeClass">{{ label }}</span>
 </template>
 
 <script setup lang="ts">
