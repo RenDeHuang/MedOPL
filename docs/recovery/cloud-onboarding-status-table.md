@@ -6,6 +6,8 @@ program id: v22-cloud-onboarding
 
 当前 production loop 分支实现 Portal 正式云操作闭环和 PostgreSQL canonical store shape；本地验证覆盖 fake-live runner，并在用户明确提供 Package C mutation secret file path 后完成真实 Package C storage/compute create/expand/release/delete canary。canary 证据只写 `.runtime`，不进 git。本分支还完成 Package D schema migration、rollout 和 runtime smoke，但 live Portal Deployment 尚未启用 production cloud-operation bridge，也未配置 Package C runner secret reference；因此用户在生产 Portal 点击开通还不会写入生产 PostgreSQL cloud operation 表，也不会由 Portal 触发真实 Package C。
 
+资源隔离口径：标准套餐使用共享用户计算池 + 硬 quota；用户购买计算资源套餐和工作台能力，不购买节点、节点池或云控制台资源。Package C 必须把 compute allocation 写入 Portal canonical store，并落到 workspace namespace 的 ResourceQuota / LimitRange / admission policy；超过 allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付。高级隔离套餐可以使用 `dedicated_node_pool` 或 `dedicated_node`，但仍由平台开通、隔离、计费、审计和释放。
+
 Package D / OPL Deployment Discovery 已作为独立 docs/status 分支记录：`docs/v22-package-d-opl-deploy-discovery`，model: gpt-5.4。该分支只写状态和 smoke：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不代表 Package D rollout，不代表 deploy/build/push/kubectl 已完成。
 
 Cloud-lane Package D stack must be preserved as a long-lived branch chain until D1/D2/D3 are reviewed together. Current cloud-lane branch: `cloud-lane/feat/v22-package-d-deploy-dry-run-gate`, model: `gpt-5.4`, base: D2 `7fbc632`. D3a covers R-16 deploy dry-run gate only; it does not authorize real kubectl, rollout or runtime smoke.
@@ -72,7 +74,7 @@ Cloud-lane Package D stack must be preserved as a long-lived branch chain until 
 | CC-07 | R-14 TCR repository/tag preflight; R-15 multi-image build and push unique test tag; R-16 deploy dry-run; R-17 authorized deploy rollout; R-18 runtime smoke | `.runtime/v22-registry/`; `.runtime/v22-cloud-deploy/`; `.runtime/v22-runtime-smoke/` | program board blocker; CC-07 blocker |
 | CC-REVIEW | R-21 final reconciliation cleanup and B review | `.runtime/v22-cloud-cleanup/`; stdout JSON and reviewed diff | B review note |
 
-Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。
+Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。Package D 只能改已确认属于本次 deploy operation 的指定 workload container image，不能碰 Package C 的 compute allocation、ResourceQuota / LimitRange / admission policy、node pool capacity 或 COS 文件空间。
 
 ## Status Data
 

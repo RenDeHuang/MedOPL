@@ -238,6 +238,17 @@ assert(deployData.forbiddenActions.includes("kubectl delete"), "deploy_forbid_ku
 assert(deployData.forbiddenActions.includes("DeleteNodePool"), "deploy_forbid_delete_nodepool");
 assert(deployData.forbiddenActions.includes("deleteObject"), "deploy_forbid_delete_object");
 assert.equal(deployData.ownershipGuard.failClosedOnMissingOrConflictingOwner, true, "deploy_ownership_fail_closed");
+assert.deepEqual(
+  deployData.ownershipGuard.requiredLabelsByTargetClass?.platform_service_target,
+  ["ownerRef", "operationId"],
+  "deploy_platform_service_owner_guard",
+);
+assert.deepEqual(
+  deployData.ownershipGuard.requiredLabelsByTargetClass?.workspace_runtime_target,
+  ["ownerRef", "operationId", "workspaceId", "resourceBindingId"],
+  "deploy_workspace_runtime_owner_guard",
+);
+assert.equal("requiredLabels" in deployData.ownershipGuard, false, "deploy_global_required_labels_must_be_removed");
 assert.equal(deployData.runner?.entrypoint, "scripts/v22-tencent-authorized-deploy-execution-runner.mjs", "deploy_runner_entrypoint");
 assert.equal(deployData.runner?.smoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs", "deploy_runner_smoke");
 assert.equal(deployData.runner?.liveGateSmoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs", "deploy_live_gate_smoke");

@@ -48,6 +48,11 @@ assertIncludesAll(contract, [
   "TENCENT_MUTATION_ACCOUNT_ID",
   "TENCENT_MUTATION_DAILY_BUDGET_CNY",
   "TENCENT_MUTATION_MAX_OPERATION_COUNT",
+  "TENCENT_MUTATION_TKE_CLUSTER_ID",
+  "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+  "TENCENT_MUTATION_COS_BUCKET",
+  "TENCENT_MUTATION_COS_REGION",
+  "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT",
   "不允许 source env",
 ], "execution_contract_mutation_secret_allowlist");
 
@@ -63,12 +68,18 @@ assertIncludesAll(contract, [
 
 assertIncludesAll(contract, [
   "TKE 节点池必须先分型再 mutation",
+  "标准套餐不是一用户一个 node pool",
+  "Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy",
+  "共享用户计算池只能做池级容量补足",
   "DescribeClusterNodePools",
   "ModifyNodePoolDesiredCapacityAboutAsg",
   "DescribeNodePools",
   "ScaleNodePool",
   "Native",
-  "0 -> 1 -> 0",
+  "专属 node pool 只能绑定到一个 resourceBindingId 或一个明确的账号组",
+  "专属池必须使用 taint / label / nodeSelector / toleration 防止平台服务和其他用户调度进入",
+  "当前混跑 Portal/OPL/trace/billing/system 的节点池不得缩到 0",
+  "replicas_0_1_0 只允许用于空闲测试池或专属计算池的闭环 canary",
   "不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在",
 ], "execution_contract_tke_node_pool_shape_detection");
 
@@ -176,7 +187,11 @@ assertIncludesAll(contract, [
   "\"nativeNodePoolReadApi\": \"DescribeNodePools\"",
   "\"nativeNodePoolMutationApi\": \"ScaleNodePool\"",
   "\"legacyRegularNodePoolMutationApi\": \"ModifyNodePoolDesiredCapacityAboutAsg\"",
-  "\"nativeNodePoolComputeLoop\": \"replicas_0_1_0\"",
+  "\"nativeNodePoolCanaryLoop\": \"replicas_0_1_0_only_for_idle_canary_or_dedicated_pool\"",
+  "\"standardPlansUseSharedUserComputePool\": true",
+  "\"standardPlansRequireNamespaceQuota\": true",
+  "\"overAllocationMustFailClosed\": true",
+  "\"dedicatedNodePoolSupportedAsAdvancedIsolation\": true",
 ], "execution_contract_machine_readable_data");
 
 assertNotIncludesAny(contract, [

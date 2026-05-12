@@ -36,6 +36,14 @@ production cloud topology contract 只回答：
 
 这些资源属于生产基础设施拓扑，不等于用户购买的“文件空间主叙事”或“云控制台清单”。普通用户产品语言不展示 CLB/TKE/CBS/NAT/Redis/PostgreSQL。
 
+TKE 内部节点池必须区分资源角色：
+
+- platform service node pool：承载 Portal、OPL Gateway、shared Adapter、trace、billing、system 等平台服务。
+- shared user compute pool：承载标准套餐 workspace workload，通过 namespace quota、limit 和 admission policy 隔离。
+- dedicated user compute pool：承载高级隔离套餐绑定的 workspace runtime 或账号组 runtime。
+
+平台服务不得调度到 dedicated user compute pool。用户 workload 不得调度到 platform service node pool。shared user compute pool 可以承载多个用户的 workload，但必须通过 ResourceQuota / LimitRange / admission policy 和 Portal resource binding 硬隔离。
+
 ## User Product Language Boundary
 
 普通用户页面只表达：
@@ -134,7 +142,15 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
     "CBS": "TKE 节点盘/必要持久卷，不作为普通用户文件空间主叙事",
     "NAT": "TKE 私网出公网、拉镜像、访问模型/API/云 API",
     "Redis": "session/queue/lock/cache",
-    "PostgreSQL": "Portal canonical store、账本、资源绑定、审计、文件索引"
+    "PostgreSQL": "Portal canonical store、账本、资源绑定、审计、文件索引",
+    "platform service node pool": "Portal/OPL Gateway/shared Adapter/trace/billing/system 平台服务池",
+    "shared user compute pool": "标准套餐 workspace workload 共享池，必须由 quota/limit/admission 隔离",
+    "dedicated user compute pool": "高级隔离套餐专属池，只能由绑定 resourceBindingId 或账号组调度"
+  },
+  "schedulingIsolation": {
+    "platformServicesMustNotScheduleToDedicatedUserComputePool": true,
+    "userWorkloadMustNotScheduleToPlatformServiceNodePool": true,
+    "sharedUserComputePoolRequiresQuotaLimitAdmission": true
   },
   "ordinaryUserProductLanguageHides": [
     "CLB",

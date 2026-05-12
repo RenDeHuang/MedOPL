@@ -403,11 +403,18 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
   ],
   "ownershipGuard": {
     "requiresOwnerRef": true,
-    "requiredLabels": [
-      "workspaceId",
-      "resourceBindingId",
-      "operationId"
-    ],
+    "requiredLabelsByTargetClass": {
+      "platform_service_target": [
+        "ownerRef",
+        "operationId"
+      ],
+      "workspace_runtime_target": [
+        "ownerRef",
+        "operationId",
+        "workspaceId",
+        "resourceBindingId"
+      ]
+    },
     "scope": [
       "cluster",
       "namespace",

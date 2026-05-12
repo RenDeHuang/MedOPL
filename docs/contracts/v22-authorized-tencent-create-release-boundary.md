@@ -6,7 +6,7 @@
 
 ## Product Model
 
-用户购买和管理的是“工作台资源”，不是云资源控制台对象。
+用户购买和管理的是“工作台资源”，不是云资源控制台对象。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源。
 
 用户可见套餐必须使用产品语言：
 
@@ -45,6 +45,10 @@
 - 可选 CBS / CFS / pod ephemeral scratch，仅作为运行时内部实现，不作为用户购买的文件空间主叙事。
 
 MVP 默认使用已有平台共享 TKE 集群，不默认创建新 TKE 集群。多租户通过 namespace、quota、labels、network policy 和资源标签隔离。普通 CPU 任务可以共享通用 node pool class；GPU 或高规格环境可映射到独立 node pool class；专属节点池属于后续高级隔离套餐。
+
+标准套餐使用共享用户计算池 + workspace namespace ResourceQuota / LimitRange / admission policy。`starter_2c4g_10gb`、`pro_8c16g_100gb` 和叠加计算默认都是 `shared_quota`：用户 A 和用户 B 可以在同一个共享用户计算池运行 workload，但必须落在各自 namespace、resourceBinding、quota、limit 和 admission policy 内。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
+
+计算升级必须先完成 Portal 套餐变更、冻结金额或余额校验、cloud operation 和审计记录，然后 Package C 才能更新 compute allocation、ResourceQuota / LimitRange / admission policy，并在需要时做池级容量补足。高级客户需要更强隔离时，专属计算池属于高级隔离套餐，内部 isolation mode 可以是 `dedicated_node_pool` 或 `dedicated_node`；普通用户仍看到“专属计算资源 / 高级隔离套餐”，不是节点池。
 
 “加计算”必须明确为以下一种或多种授权动作，不能隐式推断：
 

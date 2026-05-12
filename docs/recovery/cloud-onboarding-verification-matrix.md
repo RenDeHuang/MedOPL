@@ -6,6 +6,8 @@ program id: v22-cloud-onboarding
 
 本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal production cloud bridge blocker 后回滚。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
 
+资源隔离验证必须覆盖共享用户计算池 + 硬 quota、高级隔离套餐、`dedicated_node_pool` 和 Package C / Package D 边界。标准套餐验证不能证明“一用户一个节点池”；它必须证明 compute allocation、ResourceQuota / LimitRange / admission policy 和 fail-closed over-allocation 语义。Package D 不授权 Package C 的资源生命周期动作。
+
 ## Verification Scope
 
 verification matrix covers:
@@ -58,9 +60,13 @@ verification matrix does not cover:
 | CO-06 live 授权前 | preflight smoke, default gate evidence review | 证明本地 gate 已阻断缺参、越权 API、未脱敏输出和 mutation |
 | live 后 report review 前 | report redaction review, report review checklist | 只审查脱敏 report；需要再次 live 必须重新问用户 |
 
+## Smoke Entry Policy
+
+smoke 数量较多是因为每个合同都有原子验收入口，方便 B 定位漂移原因；但 B 审 cloud resource isolation 分支时不应从聊天记录里拼命令。`scripts/smoke-test-v22-cloud-resource-contract-suite.mjs` 是本分支的 scoped review entry：它聚合 Package C resource isolation、pricing/resource plan/topology、Package D no-resource-lifecycle-mutation、workflow 和 board/status 相关 smoke。它不替代 `scripts/smoke-test-v22-mvp-contract-suite.mjs`，不读取 secret，不调用真实云，不 build/push/kubectl。
+
 ## Package D Deploy Verification Boundary
 
-Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。
+Package D 不授权 Package C 的资源生命周期动作。不得删除、关闭或扩缩容别人的节点和存储；禁止 `kubectl delete`；禁止 `DeleteNodePool`；禁止删除 bucket/prefix/object。Package D 只能改已确认属于本次 deploy operation 的指定 workload container image，不能碰 Package C 的 compute allocation、ResourceQuota / LimitRange / admission policy、node pool capacity 或 COS 文件空间。
 
 Package D verification 只证明 TCR repository/tag preflight、multi-image build/push unique test tag、deploy dry-run、authorized deploy rollout 和 runtime smoke 的合同边界。它不得被解释为 TKE node pool 开删、COS storage 开删或账单对账已经完成；这些仍归 Package C 和 readonly reconciliation gate。
 

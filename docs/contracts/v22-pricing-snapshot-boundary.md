@@ -23,12 +23,18 @@
 {
   "contract": "v22_pricing_snapshot_boundary",
   "version": 1,
+  "advancedIsolationModes": [
+    "dedicated_node_pool",
+    "dedicated_node"
+  ],
   "plans": [
     {
       "id": "starter_2c4g_10gb",
       "compute": {
         "cpuCores": 2,
-        "memoryGb": 4
+        "memoryGb": 4,
+        "isolationMode": "shared_quota",
+        "userBuysNodePool": false
       },
       "storage": {
         "capacityGb": 10
@@ -57,7 +63,9 @@
       "id": "pro_8c16g_100gb",
       "compute": {
         "cpuCores": 8,
-        "memoryGb": 16
+        "memoryGb": 16,
+        "isolationMode": "shared_quota",
+        "userBuysNodePool": false
       },
       "storage": {
         "capacityGb": 100

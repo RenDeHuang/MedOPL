@@ -44,6 +44,11 @@ mutation secret allowlist 必须独立于 readonly secret allowlist：
 - `TENCENT_MUTATION_ACCOUNT_ID`
 - `TENCENT_MUTATION_DAILY_BUDGET_CNY`
 - `TENCENT_MUTATION_MAX_OPERATION_COUNT`
+- `TENCENT_MUTATION_TKE_CLUSTER_ID`
+- `TENCENT_MUTATION_TKE_NODE_POOL_ID`
+- `TENCENT_MUTATION_COS_BUCKET`
+- `TENCENT_MUTATION_COS_REGION`
+- `TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT`
 
 mutation secret 不得进入 Portal payload、前端状态、URL、日志、evidence、git、GitHub、one-person-lab upstream 或普通用户可见界面。
 
@@ -65,7 +70,9 @@ mutation secret 不得进入 Portal payload、前端状态、URL、日志、evid
 
 MVP compute execution 默认使用已有 TKE 集群，不默认创建新集群。
 
-TKE 节点池必须先分型再 mutation。普通节点池可以走 TKE `2018-05-25` 的 `DescribeClusterNodePools` / `ModifyNodePoolDesiredCapacityAboutAsg` 旧接口；原生节点池必须走 TKE `2022-05-01` 的 `DescribeNodePools` / `ScaleNodePool`，把用户层“开通计算 / 释放计算”映射成授权节点池 replicas 的 `0 -> 1 -> 0` 或 dry-run 确认的目标值变化。`DescribeNodePools` 返回 `Native` 时，不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在。
+标准套餐不是一用户一个 node pool。Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy。共享用户计算池只能做池级容量补足；它不能把某个用户的套餐直接解释成独占节点池，也不能因单个 workspace 超 allocation 自动扩容并让平台垫付。超过 allocation 的 workload 必须 fail-closed，回到 Portal 套餐升级、余额/冻结校验、cloud operation 和审计链路。
+
+TKE 节点池必须先分型再 mutation。普通节点池可以走 TKE `2018-05-25` 的 `DescribeClusterNodePools` / `ModifyNodePoolDesiredCapacityAboutAsg` 旧接口；原生节点池必须走 TKE `2022-05-01` 的 `DescribeNodePools` / `ScaleNodePool`。授权计算开通和释放默认映射为 compute allocation、namespace quota、workload class 和 admission policy 的状态变化；节点池扩缩容只用于共享池池级容量补足、空闲测试池 canary 或高级专属计算池。`DescribeNodePools` 返回 `Native` 时，不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在。
 
 计算资源生命周期映射为：
 
@@ -78,6 +85,10 @@ release compute 不删除文件空间，不触发文件空间 7 天保护期。
 node pool 扩缩容、namespace/quota 变更、kubectl、deploy 都必须由用户在当前会话明确授权，并且必须有 dry-run diff、预算上限和回滚策略。
 
 MVP 可以使用平台级共享授权节点池。Portal 后台必须能通过 PostgreSQL canonical `compute_allocation` 追踪每个用户 / 工作空间 / `resourceBindingId` 绑定到哪个授权资源池：`nodePoolRef` 是后台审计字段，不是普通用户产品概念，也不表示“一用户一个节点池”。同一个平台节点池可以承载多个用户的计算分配；普通用户只看到“计算资源 / 套餐 / 任务并发 / 状态”，管理员和审计路径可以查看脱敏 `nodePoolRef`、`clusterRef`、`namespaceRef`、quota 和 workload class。
+
+专属 node pool 只能绑定到一个 resourceBindingId 或一个明确的账号组。专属池必须使用 taint / label / nodeSelector / toleration 防止平台服务和其他用户调度进入。平台服务不得依赖专属用户池，其他用户 workload 也不得通过共享 toleration 进入该专属池。
+
+当前混跑 Portal/OPL/trace/billing/system 的节点池不得缩到 0。replicas_0_1_0 只允许用于空闲测试池或专属计算池的闭环 canary；它不能作为混跑平台服务节点池的默认 cleanup 或 release compute 语义。
 
 ## Portal Operation Truth
 
@@ -242,7 +253,12 @@ release 分阶段执行：
     "TENCENT_MUTATION_REGIONS",
     "TENCENT_MUTATION_ACCOUNT_ID",
     "TENCENT_MUTATION_DAILY_BUDGET_CNY",
-    "TENCENT_MUTATION_MAX_OPERATION_COUNT"
+    "TENCENT_MUTATION_MAX_OPERATION_COUNT",
+    "TENCENT_MUTATION_TKE_CLUSTER_ID",
+    "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+    "TENCENT_MUTATION_COS_BUCKET",
+    "TENCENT_MUTATION_COS_REGION",
+    "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT"
   ],
   "forbiddenReuseOfReadonlySecrets": [
     "RUN_TENCENT_READONLY_INVENTORY",
@@ -264,7 +280,11 @@ release 分阶段执行：
     "nativeNodePoolReadApi": "DescribeNodePools",
     "nativeNodePoolMutationApi": "ScaleNodePool",
     "legacyRegularNodePoolMutationApi": "ModifyNodePoolDesiredCapacityAboutAsg",
-    "nativeNodePoolComputeLoop": "replicas_0_1_0"
+    "nativeNodePoolCanaryLoop": "replicas_0_1_0_only_for_idle_canary_or_dedicated_pool",
+    "standardPlansUseSharedUserComputePool": true,
+    "standardPlansRequireNamespaceQuota": true,
+    "overAllocationMustFailClosed": true,
+    "dedicatedNodePoolSupportedAsAdvancedIsolation": true
   },
   "portalCanonicalTruth": {
     "store": "PostgreSQL",

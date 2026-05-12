@@ -44,17 +44,17 @@
 ## 共享边界合同
 
 - token/provider key: [v22-token-provider-boundary.md](./v22-token-provider-boundary.md), [v22-user-credit-provider-key-boundary.md](./v22-user-credit-provider-key-boundary.md), [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md)。API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
-- resource plan: [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)
+- resource plan: [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
 - managed resource binding plan / mock snapshot: [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider`，真实接入另开 feat/* 并单独授权。
 - readonly/tencent quote provider: [v22-tencent-readonly-quote-provider-boundary.md](./v22-tencent-readonly-quote-provider-boundary.md)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
 - dry-run/tencent resource plan provider: [v22-tencent-dry-run-resource-plan-provider-boundary.md](./v22-tencent-dry-run-resource-plan-provider-boundary.md)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段；`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段。
 - readonly/tencent inventory: [v22-tencent-readonly-inventory-boundary.md](./v22-tencent-readonly-inventory-boundary.md)。当前只定义真实云只读盘点合同，用来验证云上事实和 Portal 账本是否一致；未来 secret 文件只能 allowlist_only 读取 readonly inventory keys，不允许“一读全读”；仅允许 Describe/List/Get/Head 类只读 API，不读取 COS 对象正文，不调用 mutation API，不创建、删除、释放、扩缩容或改标签。
-- production cloud topology: [v22-production-cloud-topology-boundary.md](./v22-production-cloud-topology-boundary.md)。当前只是合同，定义 CLB / TKE / CBS / NAT / Redis / PostgreSQL 在 MedOPL v22 生产拓扑中的角色；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
+- production cloud topology: [v22-production-cloud-topology-boundary.md](./v22-production-cloud-topology-boundary.md)。当前只是合同，定义 CLB / TKE / CBS / NAT / Redis / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool、shared user compute pool、dedicated user compute pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
 - cloud onboarding workflow: [v22-cloud-onboarding-workflow-boundary.md](./v22-cloud-onboarding-workflow-boundary.md)。该 repo-tracked cloud onboarding workflow 合同把 official SDK provider strategy、wrapper、dependency loader、check-config、default gate、user-authorized readonly live、report review、TC3 cleanup、dry-run create/release、mutation wrapper、authorized live、deploy、Portal production integration 和 canary/QA/status update 定成业务推进顺序；它不替代 AGENTS.md，AGENTS.md 管 A/B/C/D 纪律和授权红线，本合同管业务推进顺序、阶段状态、blocker 回流和下一步任务包。
-- authorized/tencent create/release: [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、共享 TKE 集群、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
+- authorized/tencent create/release: [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、共享 TKE 集群、共享用户计算池 + 硬 quota、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐不是一用户一个 node pool，高级隔离套餐可以映射 `dedicated_node_pool`；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release implementation: [v22-authorized-tencent-create-release-implementation-boundary.md](./v22-authorized-tencent-create-release-implementation-boundary.md)。当前只定义后续真实 create/release implementation 前的授权、风控、失败回滚、费用保护和审计合同；默认风控上限不是默认开通规格，计算资源和存储资源生命周期分离，且风控可由 Portal 管理员按账号修改；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
-- authorized/tencent create/release execution: [v22-authorized-tencent-create-release-execution-boundary.md](./v22-authorized-tencent-create-release-execution-boundary.md)。当前只收敛真实变更资源执行前的 gate、mutation secret allowlist、资源生命周期、Portal ledger + 云标签双重校验、风控 override、冻结金额、120 分钟核对、T+1 COS 对账、回滚和 admin 审计边界；readonly inventory 与 create/release mutation gate、secret 和 runner/bridge 必须分离；本合同不读取 mutation secret，不调用真实云，不执行真实 create/release。
+- authorized/tencent create/release execution: [v22-authorized-tencent-create-release-execution-boundary.md](./v22-authorized-tencent-create-release-execution-boundary.md)。当前只收敛真实变更资源执行前的 gate、mutation secret allowlist、资源生命周期、Portal ledger + 云标签双重校验、风控 override、冻结金额、120 分钟核对、T+1 COS 对账、回滚和 admin 审计边界；Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy，超过 allocation 必须 fail-closed；readonly inventory 与 create/release mutation gate、secret 和 runner/bridge 必须分离；本合同不读取 mutation secret，不调用真实云，不执行真实 create/release。
 - authorized/tencent deploy execution: [v22-authorized-tencent-deploy-execution-boundary.md](./v22-authorized-tencent-deploy-execution-boundary.md)。Package D 合同，定义 TCR 镜像、push 唯一 test tag、digest verify、kubectl deploy dry-run、指定 namespace/workload/container rollout、runtime smoke 和 rollback evidence 边界；Package D 不授权 Package C 的资源生命周期动作，不创建、删除、释放或扩缩容 TKE node pool，不创建、删除、清空或扩容 COS bucket/prefix/object，不允许误删、误停或误改别人的节点和存储。
 - OPL deployment ownership release plan: [v22-opl-deployment-ownership-release-plan-boundary.md](./v22-opl-deployment-ownership-release-plan-boundary.md)。Package D 的 Level 4 子合同，定义 `platform_service_target` 与 `workspace_runtime_target` 的 release plan owner guard。平台服务 target 需要 `ownerRef/operationId`，不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须绑定 `workspaceId/resourceBindingId`。该合同只证明 release plan ownership gate，不授权 build/push/kubectl，也不把 OPL lane 扩权成 deploy lane。
 - Package D image push gate: [v22-authorized-tencent-deploy-execution-boundary.md](./v22-authorized-tencent-deploy-execution-boundary.md) 的 R-14/R-15 子链路。`build-push` 必须先有已审查的 TCR preflight evidence，并显式传入 `acceptedPreflightId`；缺失时 runner fail-closed。cloud-lane 分支可长期保存 D1/D2/D3 stacked evidence，但不得把 fake-live 或未授权真实 push 当作 production deploy 完成。
@@ -239,7 +239,7 @@
 
 ### Resource / Billing / Audit 合同包
 
-适用于套餐、托管环境开通、资源绑定、预扣费、冻结金额、释放停止计费、审计状态。
+适用于套餐、托管环境开通、资源绑定、预扣费、冻结金额、释放停止计费、审计状态。默认资源模型是共享用户计算池 + 硬 quota；高级隔离套餐可使用 `dedicated_node_pool`，但普通用户仍购买专属计算资源/工作台能力，不购买节点池。
 
 订阅：
 
@@ -254,7 +254,7 @@
 
 ### Tencent Provider 合同包
 
-适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、readonly/tencent inventory、authorized/tencent create/release boundary、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划、真实云只读盘点和后续真实腾讯云接入前的授权边界。阶段路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release`。
+适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、readonly/tencent inventory、authorized/tencent create/release boundary、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划、真实云只读盘点和后续真实腾讯云接入前的授权边界。阶段路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release`。Package C 负责计算/存储生命周期；Package D 不授权 Package C 的资源生命周期动作。
 
 订阅：
 
@@ -276,6 +276,8 @@
 真实腾讯云 API、真实 SecretId/SecretKey、真实资源创建/释放、deploy、build/push、kubectl 和 live-test 必须另开 feat/* 并单独授权。
 
 readonly inventory 的 official Tencent SDK wrapper 是 production default provider strategy；TC3 仅作为 diagnostic/reference，不能作为默认 readonly live 主路径或 create/release provider。新增官方 SDK 依赖必须另开 feat/* 并经 package diff 审查。
+
+Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-test-v22-cloud-resource-contract-suite.mjs`。它只聚合本分支相关合同 smoke，方便 B 审查 Package C resource isolation、Package D no-resource-lifecycle-mutation、workflow 和 recovery 状态是否一致；它不替代 `node scripts/smoke-test-v22-mvp-contract-suite.mjs`，也不读取 secret、不调用真实云、不 build/push/kubectl。
 
 [v22-tencent-tc3-diagnostic-cleanup-plan.md](./v22-tencent-tc3-diagnostic-cleanup-plan.md) 是 TC3 diagnostic cleanup plan。它规定 official SDK wrapper 合并、official SDK 依赖合并、official SDK readonly live 成功生成脱敏 report、B 审查确认 production default 不再依赖 TC3 之后，才能另开 cleanup 分支让 runner production default 不再使用 `tencent-tc3-readonly`，并将 TC3 smoke 改为 diagnostic fixture 或删除、让 TC3 live bridge 从生产路径退场。本计划当前不删除 TC3、不读 secret、不调用真实云、不改 official SDK implementation、不改 create/release。
 

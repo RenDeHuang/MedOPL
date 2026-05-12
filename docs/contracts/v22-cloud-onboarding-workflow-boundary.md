@@ -210,7 +210,7 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 - blocker 回流到谁: user decides stop/rollback; A fixes deploy plan; B reviews evidence; C runs QA
 - 什么时候必须停下来问用户: before build, before push, before kubectl, before changing deploy, before reading kubeconfig/registry secret, before rollback
 
-Package D production deploy execution 必须订阅 `v22-authorized-tencent-deploy-execution-boundary.md`。Package D release plan 是唯一允许的 deploy 输入形状：它显式列出 portal.medopl.cn、opl.medopl.cn、trace.medopl.cn runtime smoke surfaces，并逐 target 绑定 repository、dockerfile、buildContext、namespace、workload、container、ownerRef、workspaceId、resourceBindingId、operationId 和 expectedVersionMarker。
+Package D production deploy execution 必须订阅 `v22-authorized-tencent-deploy-execution-boundary.md`。Package D release plan 是唯一允许的 deploy 输入形状：它显式列出 portal.medopl.cn、opl.medopl.cn、trace.medopl.cn runtime smoke surfaces，并逐 target 绑定 repository、dockerfile、buildContext、namespace、workload、container、targetClass、ownerRef、operationId 和 expectedVersionMarker。平台服务 target 使用 `platform_service_target`，只强制 `ownerRef/operationId`；workspace runtime target 使用 `workspace_runtime_target`，必须额外绑定 `workspaceId/resourceBindingId`。
 
 Package D 不授权 Package C 的资源生命周期动作：不得创建、删除、释放或扩缩容 TKE node pool，不得创建、删除、清空或扩容 COS bucket / prefix / object。Package D 禁止 `kubectl delete`，禁止 `DeleteNodePool`，禁止 `CreateNodePool`、`ScaleNodePool`、`ModifyNodePoolDesiredCapacityAboutAsg`，禁止删除 bucket/prefix/object，禁止跨 namespace 或 cluster-wide mutation。
 
@@ -470,6 +470,24 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       "singleNamespaceOnly": true,
       "requiresMultipleTargets": true,
       "forbidsSingleImageAllInOneAssumption": true,
+      "targetClasses": {
+        "platform_service_target": {
+          "requiresWorkspaceBinding": false,
+          "requiredOwnerGuard": [
+            "ownerRef",
+            "operationId"
+          ]
+        },
+        "workspace_runtime_target": {
+          "requiresWorkspaceBinding": true,
+          "requiredOwnerGuard": [
+            "ownerRef",
+            "operationId",
+            "workspaceId",
+            "resourceBindingId"
+          ]
+        }
+      },
       "runtimeSmokeTargetsRequired": [
         "portal",
         "opl",
