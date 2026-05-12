@@ -69,6 +69,7 @@ assert.deepEqual(contract.uiArchitecture.sequence, ["visual_primitives", "page_l
 assert.equal(contract.uiArchitecture.pageRole, "orchestration_only", "page_role_must_be_orchestration_only");
 assert.deepEqual(contract.uiArchitecture.currentFeatureComponentSources, [
   "services/portal/frontend/src/components/overview",
+  "services/portal/frontend/src/components/billing",
   "services/portal/frontend/src/components/admin",
 ], "current_feature_component_sources_mismatch");
 assert.equal(contract.uiArchitecture.surfaceRegistry, "services/portal/frontend/src/harness/portal-ui-surfaces.ts", "surface_registry_path_mismatch");
@@ -100,6 +101,12 @@ const overviewFinancialMetricsPanel = await source("services/portal/frontend/src
 const overviewManagedEnvironmentPanel = await source("services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue");
 const overviewRecentRunsPanel = await source("services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue");
 const overviewWorkspacePanel = await source("services/portal/frontend/src/components/overview/OverviewWorkspacePanel.vue");
+const billingHero = await source("services/portal/frontend/src/components/billing/BillingHero.vue");
+const billingCostBreakdownPanel = await source("services/portal/frontend/src/components/billing/BillingCostBreakdownPanel.vue");
+const billingTrendAndFilterPanel = await source("services/portal/frontend/src/components/billing/BillingTrendAndFilterPanel.vue");
+const billingWorkspaceCostPanel = await source("services/portal/frontend/src/components/billing/BillingWorkspaceCostPanel.vue");
+const billingRunCostPanel = await source("services/portal/frontend/src/components/billing/BillingRunCostPanel.vue");
+const billingLedgerPanel = await source("services/portal/frontend/src/components/billing/BillingLedgerPanel.vue");
 const adminSiteSettingsPanel = await source("services/portal/frontend/src/components/admin/AdminSiteSettingsPanel.vue");
 const adminServiceStatusPanel = await source("services/portal/frontend/src/components/admin/AdminServiceStatusPanel.vue");
 const overview = await source("services/portal/frontend/src/views/overview/OverviewView.vue");
@@ -145,6 +152,12 @@ for (const surface of [
   "overview.managed_environment",
   "overview.recent_runs",
   "overview.workspace",
+  "billing.hero",
+  "billing.cost_breakdown",
+  "billing.trend_filter",
+  "billing.workspace_costs",
+  "billing.run_costs",
+  "billing.ledger",
   "admin.system.site_settings",
   "admin.system.service_status",
 ]) {
@@ -156,6 +169,12 @@ for (const sourceText of [
   overviewManagedEnvironmentPanel,
   overviewRecentRunsPanel,
   overviewWorkspacePanel,
+  billingHero,
+  billingCostBreakdownPanel,
+  billingTrendAndFilterPanel,
+  billingWorkspaceCostPanel,
+  billingRunCostPanel,
+  billingLedgerPanel,
   adminSiteSettingsPanel,
   adminServiceStatusPanel,
 ]) {
@@ -167,6 +186,12 @@ assertIncludes(overview, "OverviewFinancialMetricsPanel", "overview_view_must_co
 assertIncludes(overview, "OverviewManagedEnvironmentPanel", "overview_view_must_compose_managed_environment_component");
 assertIncludes(overview, "OverviewRecentRunsPanel", "overview_view_must_compose_recent_runs_component");
 assertIncludes(overview, "OverviewWorkspacePanel", "overview_view_must_compose_workspace_component");
+assertIncludes(billing, "BillingHero", "billing_view_must_compose_hero_component");
+assertIncludes(billing, "BillingCostBreakdownPanel", "billing_view_must_compose_cost_breakdown_component");
+assertIncludes(billing, "BillingTrendAndFilterPanel", "billing_view_must_compose_trend_filter_component");
+assertIncludes(billing, "BillingWorkspaceCostPanel", "billing_view_must_compose_workspace_cost_component");
+assertIncludes(billing, "BillingRunCostPanel", "billing_view_must_compose_run_cost_component");
+assertIncludes(billing, "BillingLedgerPanel", "billing_view_must_compose_ledger_component");
 assertIncludes(adminSystem, "AdminSiteSettingsPanel", "admin_system_view_must_compose_site_settings_component");
 assertIncludes(adminSystem, "AdminServiceStatusPanel", "admin_system_view_must_compose_service_status_component");
 assertAnyIncludes(adminSiteSettingsPanel, ["站点 logo", "站点 Logo"], "admin_site_settings_must_show_logo_editor");
@@ -183,6 +208,12 @@ const workbenchCopy = [
   visibleVueText(overviewRecentRunsPanel),
   visibleVueText(overviewWorkspacePanel),
   visibleVueText(billing),
+  visibleVueText(billingHero),
+  visibleVueText(billingCostBreakdownPanel),
+  visibleVueText(billingTrendAndFilterPanel),
+  visibleVueText(billingWorkspaceCostPanel),
+  visibleVueText(billingRunCostPanel),
+  visibleVueText(billingLedgerPanel),
   visibleVueText(resources),
   visibleVueText(workspace),
   visibleVueText(trace),

@@ -292,6 +292,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
     ],
     "currentFeatureComponentSources": [
       "services/portal/frontend/src/components/overview",
+      "services/portal/frontend/src/components/billing",
       "services/portal/frontend/src/components/admin"
     ],
     "targetFeatureComponentSources": [
