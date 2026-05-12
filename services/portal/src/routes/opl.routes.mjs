@@ -330,7 +330,7 @@ async function handleOplPage(context, deps) {
     }
   }).catch((error) => recordBackgroundLaunchFailure({ error, intent, taskSlug, user, deps }));
 
-  res.writeHead(302, { Location: `/portal/app/opl-launch?launchId=${encodeURIComponent(intent.launchId)}` });
+  res.writeHead(302, { Location: `/opl-launch?launchId=${encodeURIComponent(intent.launchId)}` });
   res.end();
   return true;
 }

@@ -41,11 +41,13 @@ for (const label of ["总览", "计算资源", "任务执行", "文件空间", "
 }
 
 for (const redirect of [
-  '["/portal", "/portal/app/overview"]',
-  '["/portal/billing", "/portal/app/billing"]',
-  '["/portal/servers", "/portal/app/resources"]',
-  '["/portal/workspace", "/portal/app/workspace"]',
-  '["/portal/admin", "/portal/app/admin/dashboard"]',
+  '["/portal", "/overview"]',
+  '["/portal/billing", "/billing"]',
+  '["/portal/servers", "/resources"]',
+  '["/portal/workspace", "/workspace"]',
+  '["/portal/admin", "/admin/dashboard"]',
+  '["/portal/app/overview", "/overview"]',
+  '["/portal/app/admin/system", "/admin/system"]',
 ]) {
   assert(legacyRedirectSource.includes(redirect), `portal_legacy_redirect_missing:${redirect}`);
 }
@@ -64,15 +66,15 @@ for (const proxyPrefix of [
   assert(viteSource.includes(proxyPrefix), `portal_vite_proxy_missing:${proxyPrefix}`);
 }
 
-assert(routerSource.includes('createWebHistory("/portal/app/")'), "portal_router_base_must_be_portal_app");
+assert(routerSource.includes("createWebHistory()"), "portal_router_base_must_be_top_level");
 assert(routerSource.includes('{ path: "/portal", redirect: "/overview" }'), "portal_router_must_absorb_legacy_inner_portal_path");
-assert(authSource.includes('const PORTAL_AUTH_SUCCESS_LOCATION = "/portal/app/overview"'), "portal_auth_success_location_must_be_canonical_app_route");
-assert.equal(authSource.includes('Location: "/portal"'), false, "portal_auth_must_not_redirect_success_to_legacy_portal_shell");
+assert(authSource.includes('const PORTAL_AUTH_SUCCESS_LOCATION = "/overview"'), "portal_auth_success_location_must_be_overview");
+assert.equal(authSource.includes('const PORTAL_AUTH_SUCCESS_LOCATION = "/portal/app/overview"'), false, "portal_auth_must_not_redirect_success_to_internal_portal_app");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_portal_web_route_alignment",
-  routerBase: "/portal/app/",
-  canonicalLanding: "/portal/app/overview",
+  routerBase: "/",
+  canonicalLanding: "/overview",
   checkedRoutes: requiredRoutes,
 }, null, 2));

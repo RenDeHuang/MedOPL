@@ -36,6 +36,19 @@ Portal UI 必须把约束落在代码结构中，而不是只写在文档中。�
 - UI 不使用斜杠组合词表达一个字段；需要两个含义时拆成两个字段。
 - 管理台可以展示后台排查信息，但页面名和按钮名必须面向管理动作，不使用云控制台叙事。
 
+## 可见路由
+
+Portal 可见路由必须采用 Sub2API 式顶层路径，不把用户暴露到内部 `/portal/app/*` 前缀。
+
+- 公开首页：`/` 和 `/home`
+- 登录页：`/login`
+- 注册页：`/register`
+- 工作台总览：`/overview`
+- 管理台站点设置：`/admin/system`
+- 管理台总览：`/admin/dashboard`
+
+登录成功必须跳转 `/overview`。首页“进入工作台”必须链接 `/overview`。旧 `/portal/app/*` 只能作为兼容入口，必须重定向到对应顶层路径。
+
 ## 公共首页
 
 Portal 必须有公共首页，未登录用户访问根路径时先看到首页，而不是直接跳转登录。
@@ -175,8 +188,19 @@ Portal 必须有公共首页，未登录用户访问根路径时先看到首页�
   "loginRegister": {
     "loginPrimaryMode": "email_password",
     "registerPrimaryMode": "name_email_password",
+    "loginSuccessLocation": "/overview",
     "oidcPrimaryButtonAllowed": false,
     "usesPublicSettingsBrand": true
+  },
+  "visibleRoutes": {
+    "routerBase": "/",
+    "publicHome": "/",
+    "login": "/login",
+    "register": "/register",
+    "workbenchOverview": "/overview",
+    "managementSystem": "/admin/system",
+    "legacyPortalAppPrefix": "/portal/app",
+    "legacyPortalAppPrimary": "compat_redirect_only"
   },
   "uiArchitecture": {
     "layers": [

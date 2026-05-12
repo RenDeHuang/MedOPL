@@ -174,9 +174,23 @@ try {
     assertPageHas(loginHtml, "注册新账号", "login_page_register_link");
     assert.equal(loginHtml.includes("使用统一账号登录"), false, "login_page_must_not_show_oidc_primary_copy");
 
+    const legacyOverview = await fetch(`${baseUrl}/portal/app/overview`, { redirect: "manual" });
+    assert.equal(legacyOverview.status, 302, "legacy_overview_must_redirect");
+    assert.equal(legacyOverview.headers.get("location"), "/overview", "legacy_overview_location_mismatch");
+    const legacyAdminSystem = await fetch(`${baseUrl}/portal/app/admin/system`, { redirect: "manual" });
+    assert.equal(legacyAdminSystem.status, 302, "legacy_admin_system_must_redirect");
+    assert.equal(legacyAdminSystem.headers.get("location"), "/admin/system", "legacy_admin_system_location_mismatch");
+
+    const protectedOverview = await fetch(`${baseUrl}/overview`, { redirect: "manual" });
+    assert.equal(protectedOverview.status, 302, "protected_overview_must_redirect_when_logged_out");
+    assert.equal(protectedOverview.headers.get("location"), "/login", "protected_overview_login_location_mismatch");
+    const protectedAdminSystem = await fetch(`${baseUrl}/admin/system`, { redirect: "manual" });
+    assert.equal(protectedAdminSystem.status, 302, "protected_admin_system_must_redirect_when_logged_out");
+    assert.equal(protectedAdminSystem.headers.get("location"), "/login", "protected_admin_system_login_location_mismatch");
+
     const login = await postForm(`${baseUrl}/login`, { email: adminEmail, password: adminPassword });
     assert.equal(login.status, 302, "login_must_redirect");
-    assert.equal(login.headers.get("location"), "/portal/app/overview", "login_success_location_mismatch");
+    assert.equal(login.headers.get("location"), "/overview", "login_success_location_mismatch");
     const cookie = cookieHeaderFrom(login, "portal_session");
 
     const adminSystemBefore = await getJson(`${baseUrl}/portal/api/admin/system`, { cookie });
@@ -190,7 +204,7 @@ try {
       siteLogo: "https://example.test/logo.png",
       siteSubtitle: "托管 OPL 科研工作台",
       homeContent: customHome,
-      redirectTo: "/portal/app/admin/system",
+      redirectTo: "/admin/system",
     }, { cookie });
     assert.equal(saveSettings.status, 302, "admin_settings_save_must_redirect");
 

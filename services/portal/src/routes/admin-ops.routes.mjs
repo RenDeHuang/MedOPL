@@ -60,7 +60,7 @@ export function createPortalAdminOpsRoutes({
     if (req.method !== "POST" || url.pathname !== "/portal/admin/announcements/save") return false;
     if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
     const form = await readForm(req);
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/alerts").trim();
+    const redirectTo = String(form.redirectTo || "/admin/alerts").trim();
     const title = String(form.title || "").trim();
     const content = String(form.content || "").trim();
     if (!title || !content) {
@@ -101,7 +101,7 @@ export function createPortalAdminOpsRoutes({
     if (req.method !== "POST" || url.pathname !== "/portal/admin/announcements/toggle") return false;
     if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
     const form = await readForm(req);
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/alerts").trim();
+    const redirectTo = String(form.redirectTo || "/admin/alerts").trim();
     const announcementId = String(form.id || "").trim();
     const action = String(form.actionType || "").trim();
     const rows = Array.isArray(db.settings.announcements) ? db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean) : [];
@@ -133,7 +133,7 @@ export function createPortalAdminOpsRoutes({
     if (req.method !== "POST" || url.pathname !== "/portal/admin/announcements/delete") return false;
     if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
     const form = await readForm(req);
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/alerts").trim();
+    const redirectTo = String(form.redirectTo || "/admin/alerts").trim();
     const announcementId = String(form.id || "").trim();
     const rows = Array.isArray(db.settings.announcements) ? db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean) : [];
     db.settings.announcements = rows.filter((item) => item.id !== announcementId);

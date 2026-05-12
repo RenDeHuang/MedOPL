@@ -41,7 +41,7 @@ async function loadCurrentUser() {
 }
 
 const router = createRouter({
-  history: createWebHistory("/portal/app/"),
+  history: createWebHistory(),
   routes
 });
 

@@ -70,7 +70,7 @@ export function createPortalAdminUserRoutes({
     if (req.method !== "POST" || url.pathname !== "/portal/admin/update-user") return false;
     if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
     const form = await readForm(req);
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/users").trim();
+    const redirectTo = String(form.redirectTo || "/admin/users").trim();
     const target = db.users.find((item) => item.id === form.userId && item.role !== "admin" && activeUserStatus(item.status) !== "deleted");
     if (!target) {
       sendHtml(res, layoutV2("更新失败", `<div class="card">未找到目标用户。</div>`, user), 404);
@@ -147,7 +147,7 @@ export function createPortalAdminUserRoutes({
     if (req.method !== "POST" || url.pathname !== "/portal/admin/delete-user") return false;
     if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
     const form = await readForm(req);
-    const redirectTo = String(form.redirectTo || "/portal/app/admin/users").trim();
+    const redirectTo = String(form.redirectTo || "/admin/users").trim();
     const target = db.users.find((item) => item.id === form.userId && item.role !== "admin");
     if (!target) {
       sendHtml(res, layoutV2("删除失败", `<div class="card">未找到目标用户。</div>`, user), 404);

@@ -14,7 +14,7 @@ import {
   type AdminUsersPayload,
 } from "@/api/portal/admin";
 
-const ADMIN_USERS_REDIRECT = "/portal/app/admin/users";
+const ADMIN_USERS_REDIRECT = "/admin/users";
 
 function normalizeErrorMessage(err: unknown, fallback: string) {
   if (err instanceof Error && err.message) return err.message;

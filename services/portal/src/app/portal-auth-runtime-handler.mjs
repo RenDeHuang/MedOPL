@@ -5,7 +5,7 @@ import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 
 const OPL_ENTRY_PREFLIGHT_PATH = "/opl/entry/preflight";
 const OPL_INTERNAL_AUTH_PATH = "/internal/opl/auth/login";
-const PORTAL_AUTH_SUCCESS_LOCATION = "/portal/app/overview";
+const PORTAL_AUTH_SUCCESS_LOCATION = "/overview";
 
 export function isRegistrationEnabled(db) {
   return db?.settings?.allowRegistration !== false;

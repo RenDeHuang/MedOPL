@@ -43,8 +43,31 @@ export function createPortalHttpDispatcher({
   return async function dispatchPortalHttpRequest(req, res) {
     const url = new URL(req.url || "/", "http://local");
     const isGetAuthPage = req.method === "GET" && (url.pathname === "/login" || url.pathname === "/register");
-    const isPortalAppShellRequest = req.method === "GET" &&
-      (url.pathname === "/portal/app" || url.pathname === "/portal/app/" || url.pathname.startsWith("/portal/app/"));
+    const spaShellPaths = new Set([
+      "/overview",
+      "/packages",
+      "/resources",
+      "/workspace",
+      "/opl-launch",
+      "/advanced/servers",
+      "/billing",
+      "/trace",
+      "/admin/dashboard",
+      "/admin/users",
+      "/admin/trace",
+      "/admin/user",
+      "/admin/groups",
+      "/admin/workspace",
+      "/admin/run",
+      "/admin/billing-ops",
+      "/admin/alerts",
+      "/admin/usage",
+      "/admin/system",
+      "/admin/ops",
+      "/admin/sandboxes",
+      "/admin/audit",
+    ]);
+    const isPortalAppShellRequest = req.method === "GET" && spaShellPaths.has(url.pathname);
     if (isGetAuthPage) {
       const authHandled = await handleAuthRoutes({ req, res, url, db: null });
       if (authHandled) return;
@@ -63,6 +86,7 @@ export function createPortalHttpDispatcher({
       sendHtml(res, renderPortalPublicHome(db));
       return;
     }
+    if (await handlePortalLegacyRedirectRoutes({ req, res, url, user: null, allowAdminRedirect: true })) return;
     if (req.method === "GET" && url.pathname.startsWith("/portal/app/assets/")) {
       const relative = url.pathname.replace("/portal/app/assets/", "");
       const filePath = path.join(frontendDistRoot, "assets", relative);
@@ -82,18 +106,6 @@ export function createPortalHttpDispatcher({
       return;
     }
     const currentUserMode = isPostAuthEntry && !hasPortalSessionCookie ? "auth_light" : "full";
-    if (isPortalAppShellRequest) {
-      const shellStartedAt = Date.now();
-      const { user } = await currentUser(req, { mode: "shell" });
-      const shell_ms = Date.now() - shellStartedAt;
-      if (!user) {
-        res.writeHead(302, { Location: "/login", "server-timing": `shell_ms;dur=${shell_ms}` });
-        res.end();
-        return;
-      }
-      await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");
-      return;
-    }
     const { db, user } = await currentUser(req, { mode: currentUserMode });
     if (!isGetAuthPage && (await handleAuthRoutes({ req, res, url, db }))) return;
     if (await handleResourceOrderRoutes({ req, res, url, db, user: null })) return;
@@ -104,6 +116,10 @@ export function createPortalHttpDispatcher({
       }
       res.writeHead(302, { Location: "/login" });
       res.end();
+      return;
+    }
+    if (isPortalAppShellRequest) {
+      await sendStaticAsset(res, path.join(frontendDistRoot, "index.html"), "text/html; charset=utf-8");
       return;
     }
     if (await handleOplRoutes({ req, res, url, db, user })) return;

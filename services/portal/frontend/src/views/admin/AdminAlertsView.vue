@@ -21,7 +21,7 @@
             </div>
 
             <form class="grid gap-4 md:grid-cols-2" method="post" action="/portal/admin/announcements/save">
-              <input type="hidden" name="redirectTo" value="/portal/app/admin/alerts" />
+              <input type="hidden" name="redirectTo" value="/admin/alerts" />
               <div class="space-y-2 md:col-span-2">
                 <label class="text-sm font-medium text-gray-700 dark:text-slate-200">标题</label>
                 <input class="input" name="title" type="text" placeholder="公告标题" required />
@@ -70,19 +70,19 @@
                   </div>
                   <div class="flex flex-wrap gap-2">
                     <form method="post" action="/portal/admin/announcements/toggle">
-                      <input type="hidden" name="redirectTo" value="/portal/app/admin/alerts" />
+                      <input type="hidden" name="redirectTo" value="/admin/alerts" />
                       <input type="hidden" name="id" :value="item.id" />
                       <input type="hidden" name="actionType" value="pin" />
                       <button class="btn btn-secondary" type="submit">置顶</button>
                     </form>
                     <form method="post" action="/portal/admin/announcements/toggle">
-                      <input type="hidden" name="redirectTo" value="/portal/app/admin/alerts" />
+                      <input type="hidden" name="redirectTo" value="/admin/alerts" />
                       <input type="hidden" name="id" :value="item.id" />
                       <input type="hidden" name="actionType" :value="item.status === 'active' ? 'deactivate' : 'activate'" />
                       <button class="btn btn-secondary" type="submit">{{ item.status === "active" ? "下线" : "上线" }}</button>
                     </form>
                     <form method="post" action="/portal/admin/announcements/delete">
-                      <input type="hidden" name="redirectTo" value="/portal/app/admin/alerts" />
+                      <input type="hidden" name="redirectTo" value="/admin/alerts" />
                       <input type="hidden" name="id" :value="item.id" />
                       <button class="btn btn-secondary" type="submit">删除</button>
                     </form>

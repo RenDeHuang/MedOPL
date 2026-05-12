@@ -95,7 +95,7 @@ async function login(page, baseUrl) {
   await page.locator('input[name="email"]').fill(adminEmail);
   await page.locator('input[name="password"]').fill(adminPassword);
   await Promise.all([
-    page.waitForURL(/\/portal\/app\/overview$/, { timeout: 30000 }),
+    page.waitForURL(/\/overview$/, { timeout: 30000 }),
     page.locator('button[type="submit"]').click(),
   ]);
 }
@@ -169,8 +169,12 @@ try {
     assert(loginText.includes("注册新账号"), "browser_login_register_link_missing");
     assert.equal(loginText.includes("使用统一账号登录"), false, "browser_login_must_not_show_oidc_copy");
 
+    const legacyOverviewResponse = await page.goto(`${baseUrl}/portal/app/overview`, { waitUntil: "domcontentloaded" });
+    assert.equal(legacyOverviewResponse?.status(), 200, "browser_legacy_overview_redirect_must_end_on_login_page");
+    assert.equal(page.url(), `${baseUrl}/login`, "browser_legacy_overview_must_follow_top_level_login_redirect_when_logged_out");
+
     await login(page, baseUrl);
-    assert.equal(page.url(), `${baseUrl}/portal/app/overview`, "browser_login_redirect_must_land_on_overview");
+    assert.equal(page.url(), `${baseUrl}/overview`, "browser_login_redirect_must_land_on_overview");
     await page.waitForSelector("text=总览", { timeout: 30000 });
     await page.waitForFunction(() => !document.body.innerText.includes("正在加载总览"), null, { timeout: 30000 });
     for (const componentId of [
@@ -190,7 +194,11 @@ try {
     assert.equal(overviewText.includes("客户工作台"), false, "browser_workbench_forbidden_customer_workbench_copy");
     assert.equal(overviewText.includes("商业"), false, "browser_workbench_forbidden_commercial_copy");
 
-    await page.goto(`${baseUrl}/portal/app/admin/system`, { waitUntil: "networkidle" });
+    const legacyLoggedInResponse = await page.goto(`${baseUrl}/portal/app/overview`, { waitUntil: "networkidle" });
+    assert.equal(legacyLoggedInResponse?.status(), 200, "browser_legacy_overview_redirect_must_load_when_logged_in");
+    assert.equal(page.url(), `${baseUrl}/overview`, "browser_legacy_overview_must_follow_top_level_overview_when_logged_in");
+
+    await page.goto(`${baseUrl}/admin/system`, { waitUntil: "networkidle" });
     await page.waitForSelector("text=站点设置", { timeout: 30000 });
     await assertComponentVisible(page, "admin.system.site_settings");
     await assertComponentVisible(page, "admin.system.service_status");

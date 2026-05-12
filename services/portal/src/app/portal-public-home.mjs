@@ -82,7 +82,7 @@ function homeShell({ title, settings, content, fullBleed = false }) {
         <nav class="portal-home-actions" aria-label="Portal 入口">
           <a class="portal-home-button" href="/login">登录</a>
           <a class="portal-home-button" href="/register">注册</a>
-          <a class="portal-home-button primary" href="/portal/app/overview">进入工作台</a>
+          <a class="portal-home-button primary" href="/overview">进入工作台</a>
         </nav>
       </header>
       <main class="portal-home-main">${content}</main>

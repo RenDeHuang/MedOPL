@@ -269,7 +269,7 @@ try {
   const adapterUrl = `http://127.0.0.1:${adapterPort}`;
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
   const portalUrl = `http://127.0.0.1:${portalPort}`;
-  const frontendUrl = `http://127.0.0.1:${vitePort}/portal/app/opl-launch`;
+  const frontendUrl = `http://127.0.0.1:${vitePort}/opl-launch`;
 
   adapter = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
     port: adapterPort,
@@ -313,11 +313,11 @@ try {
   await waitFor(`${portalUrl}/healthz`);
 
   vite = spawnVite({ port: vitePort, backendUrl: portalUrl });
-  await waitFor(`http://127.0.0.1:${vitePort}/portal/app/overview`, { allowStatus: (status) => status === 200 });
+  await waitFor(`http://127.0.0.1:${vitePort}/overview`, { allowStatus: (status) => status === 200 });
 
   const login = await postForm(`${portalUrl}/login`, { email: USER_EMAIL, password: USER_PASSWORD });
   assert.equal(login.status, 302, "portal_login_must_redirect_after_success");
-  assert.equal(login.headers.get("location"), "/portal/app/overview", "portal_login_success_location_mismatch");
+  assert.equal(login.headers.get("location"), "/overview", "portal_login_success_location_mismatch");
   const portalCookie = cookieHeaderFrom(login, "portal_session");
 
   const me = await getJson(`${portalUrl}/portal/api/me`, { cookie: portalCookie });
@@ -422,7 +422,7 @@ try {
   const crossUser = await getJson(`${portalUrl}/portal/api/opl/bootstrap?launchId=${encodeURIComponent(launchId)}`);
   assert.equal(crossUser.response.status, 401, "portal_opl_bootstrap_without_portal_session_must_return_401");
 
-  const frontendShell = await fetch(`http://127.0.0.1:${vitePort}/portal/app/opl-launch?launchId=${encodeURIComponent(launchId)}`, {
+  const frontendShell = await fetch(`http://127.0.0.1:${vitePort}/opl-launch?launchId=${encodeURIComponent(launchId)}`, {
     headers: { cookie: portalCookie },
     redirect: "manual",
   });

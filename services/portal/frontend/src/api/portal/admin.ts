@@ -110,7 +110,7 @@ export async function createAdminUser(input: {
     name: input.name,
     email: input.email,
     password: input.password,
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
@@ -120,7 +120,7 @@ export async function updateAdminRegistrationSettings(input: {
 }) {
   await postPortalAdminAction("/portal/admin/settings", {
     allowRegistration: input.allowRegistration,
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
@@ -134,7 +134,7 @@ export async function updateAdminSiteSettings(input: PublicSettingsPayload & {
     siteLogo: input.siteLogo,
     siteSubtitle: input.siteSubtitle,
     homeContent: input.homeContent,
-    redirectTo: input.redirectTo || "/portal/app/admin/system",
+    redirectTo: input.redirectTo || "/admin/system",
   });
 }
 
@@ -150,7 +150,7 @@ export async function updateAdminUser(input: {
     name: input.name,
     email: input.email,
     password: input.password || "",
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
@@ -160,7 +160,7 @@ export async function toggleAdminUser(input: {
 }) {
   await postPortalAdminAction("/portal/admin/toggle-user", {
     userId: input.userId,
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
@@ -172,7 +172,7 @@ export async function rechargeAdminUser(input: {
   await postPortalAdminAction("/portal/admin/recharge", {
     userId: input.userId,
     amount: input.amount,
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
@@ -187,7 +187,7 @@ export async function refundAdminUser(input: {
     amount: input.amount,
     reason: input.reason,
     actionType: "refund",
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
@@ -197,7 +197,7 @@ export async function deleteAdminUser(input: {
 }) {
   await postPortalAdminAction("/portal/admin/delete-user", {
     userId: input.userId,
-    redirectTo: input.redirectTo || "/portal/app/admin/users",
+    redirectTo: input.redirectTo || "/admin/users",
   });
 }
 
