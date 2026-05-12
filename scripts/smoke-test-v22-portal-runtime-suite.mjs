@@ -11,13 +11,13 @@ const groups = new Map([
     "scripts/smoke-test-v22-portal-api-auth-boundary.mjs",
     "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
   ]],
-  ["browser", [
-    "scripts/smoke-test-v22-portal-workbench-management-ui-browser.mjs",
-  ]],
   ["build", [
     "services/portal:check",
     "services/portal:frontend:typecheck",
     "services/portal:frontend:build",
+  ]],
+  ["browser", [
+    "scripts/smoke-test-v22-portal-workbench-management-ui-browser.mjs",
   ]],
 ]);
 
