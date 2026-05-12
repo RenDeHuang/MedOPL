@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
@@ -204,17 +204,30 @@ assertNoForbiddenLeak(tracePayload, "trace_payload");
 
 const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const traceComponentSources = await Promise.all(
+  (await readdir("services/portal/frontend/src/components/trace"))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`services/portal/frontend/src/components/trace/${entry}`, "utf8")),
+);
+const workspaceComponentSources = await Promise.all(
+  (await readdir("services/portal/frontend/src/components/workspace"))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`services/portal/frontend/src/components/workspace/${entry}`, "utf8")),
+);
+const traceSurfaceSource = `${traceViewSource}\n${traceComponentSources.join("\n")}`;
+const workspaceSurfaceSourceText = `${workspaceViewSource}\n${workspaceComponentSources.join("\n")}`;
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(traceViewSource, "trace_view");
-assertUserCopy(workspaceViewSource, "workspace_view");
-assert(traceViewSource.includes("linkedOutputFiles"), "trace_view_must_render_linked_output_files");
-assert(traceViewSource.includes("查看文件空间"), "trace_view_must_link_to_file_space");
-assert(workspaceViewSource.includes("item.artifactRef"), "workspace_view_must_render_artifact_reference_linkage");
-assert(workspaceViewSource.includes("关联任务"), "workspace_view_must_show_task_linkage_in_user_language");
+assertUserCopy(traceSurfaceSource, "trace_surface");
+assertUserCopy(workspaceSurfaceSourceText, "workspace_surface");
+assert(traceViewSource.includes("TraceSessionTablePanel"), "trace_view_must_render_session_table_component");
+assert(traceSurfaceSource.includes("linkedOutputFiles"), "trace_surface_must_render_linked_output_files");
+assert(traceSurfaceSource.includes("查看文件空间"), "trace_surface_must_link_to_file_space");
+assert(workspaceSurfaceSourceText.includes("item.artifactRef"), "workspace_surface_must_render_artifact_reference_linkage");
+assert(workspaceSurfaceSourceText.includes("关联任务"), "workspace_surface_must_show_task_linkage_in_user_language");
 assert(workspaceSurfaceSource.includes("linkedTaskText"), "workspace_surface_must_format_task_linkage");
 assert(traceTypesSource.includes("linkedOutputFiles"), "trace_types_must_include_linked_output_files");
 assert(workspaceTypesSource.includes("artifactRef"), "workspace_types_must_include_artifact_ref");

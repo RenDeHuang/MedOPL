@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
@@ -240,21 +240,34 @@ assertNoForbiddenLeak(tracePayload, "trace_payload");
 
 const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const traceComponentSources = await Promise.all(
+  (await readdir("services/portal/frontend/src/components/trace"))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`services/portal/frontend/src/components/trace/${entry}`, "utf8")),
+);
+const workspaceComponentSources = await Promise.all(
+  (await readdir("services/portal/frontend/src/components/workspace"))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`services/portal/frontend/src/components/workspace/${entry}`, "utf8")),
+);
+const traceSurfaceSourceText = `${traceViewSource}\n${traceComponentSources.join("\n")}`;
+const workspaceSurfaceSourceText = `${workspaceViewSource}\n${workspaceComponentSources.join("\n")}`;
 const traceSurfaceSource = await readFile("services/portal/frontend/src/composables/useTraceSurface.ts", "utf8");
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(traceViewSource, "trace_view");
-assertUserCopy(workspaceViewSource, "workspace_view");
-assert(traceViewSource.includes("item.resourceUsage"), "trace_view_must_render_resource_usage");
-assert(traceViewSource.includes("costEstimateText(item)"), "trace_view_must_render_cost_estimate");
-assert(traceViewSource.includes("item.balanceLink"), "trace_view_must_render_balance_link");
+assertUserCopy(traceSurfaceSourceText, "trace_surface");
+assertUserCopy(workspaceSurfaceSourceText, "workspace_surface");
+assert(traceViewSource.includes("TraceSessionTablePanel"), "trace_view_must_render_session_table_component");
+assert(traceSurfaceSourceText.includes("item.resourceUsage"), "trace_surface_must_render_resource_usage");
+assert(traceSurfaceSourceText.includes("costEstimateText(item)"), "trace_surface_must_render_cost_estimate");
+assert(traceSurfaceSourceText.includes("item.balanceLink"), "trace_surface_must_render_balance_link");
 assert(traceSurfaceSource.includes("item.costEstimate"), "trace_surface_must_format_cost_estimate");
-assert(workspaceViewSource.includes("item.resourceUsage"), "workspace_view_must_render_resource_usage");
-assert(workspaceViewSource.includes("costEstimateText(item)"), "workspace_view_must_render_cost_estimate");
-assert(workspaceViewSource.includes("item.balanceLink"), "workspace_view_must_render_balance_link");
+assert(workspaceSurfaceSourceText.includes("item.resourceUsage"), "workspace_surface_must_render_resource_usage");
+assert(workspaceSurfaceSourceText.includes("costEstimateText(item)"), "workspace_surface_must_render_cost_estimate");
+assert(workspaceSurfaceSourceText.includes("item.balanceLink"), "workspace_surface_must_render_balance_link");
 assert(workspaceSurfaceSource.includes("costEstimateText"), "workspace_surface_must_format_cost_estimate");
 assert(workspaceSurfaceSource.includes("rechargeStatusText"), "workspace_surface_must_format_recharge_status");
 assert(traceTypesSource.includes("resourceUsage"), "trace_types_must_include_resource_usage");

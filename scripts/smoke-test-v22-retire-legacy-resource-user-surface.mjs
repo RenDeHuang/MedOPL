@@ -1,13 +1,19 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 const resourcesViewPath = "services/portal/frontend/src/views/resources/ResourcesView.vue";
+const resourcesComponentsDir = "services/portal/frontend/src/components/resources";
 const resourcesSurfacePath = "services/portal/frontend/src/composables/useResourcesSurface.ts";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
 const resourcesView = await readFile(resourcesViewPath, "utf8");
+const resourcesComponents = await Promise.all(
+  (await readdir(resourcesComponentsDir))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`${resourcesComponentsDir}/${entry}`, "utf8")),
+);
 const resourcesSurface = await readFile(resourcesSurfacePath, "utf8");
-const resourcesSurfaceSources = `${resourcesView}\n${resourcesSurface}`;
+const resourcesSurfaceSources = `${resourcesView}\n${resourcesComponents.join("\n")}\n${resourcesSurface}`;
 const suite = await readFile(suitePath, "utf8");
 
 function assertIncludes(source, expected, label) {
@@ -44,8 +50,8 @@ for (const required of [
   "工作台资源",
   "基础套餐",
   "Pro 套餐",
-  "2 核 / 4GB",
-  "8 核 / 16GB",
+  "2 核 4GB",
+  "8 核 16GB",
   "10GB 文件空间",
   "100GB 文件空间",
   "当前套餐",
@@ -65,8 +71,8 @@ for (const required of [
 
 assertIncludes(resourcesSurfaceSources, "dry-run", "resource_adjustment_must_be_dry_run_copy");
 assertIncludes(resourcesSurfaceSources, "不会真实开通", "resource_adjustment_must_not_create_real_resources");
-assertIncludes(resourcesView, "生成套餐调整计划", "package_card_cta_must_be_dry_run_copy");
-assertIncludes(resourcesView, "shrink-0 whitespace-nowrap", "resource_confirmation_badge_must_not_wrap_on_mobile");
+assertIncludes(resourcesSurfaceSources, "生成套餐调整计划", "package_card_cta_must_be_dry_run_copy");
+assertIncludes(resourcesSurfaceSources, "shrink-0 whitespace-nowrap", "resource_confirmation_badge_must_not_wrap_on_mobile");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitEnsureProtectionFreeze\"", "ordinary_resource_surface_must_not_offer_freeze_form");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateCompute\"", "ordinary_resource_surface_must_not_offer_direct_compute_create");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateStorage\"", "ordinary_resource_surface_must_not_offer_direct_storage_create");

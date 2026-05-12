@@ -161,13 +161,17 @@ assert.equal(planView.snapshot.providerAdapterStage, "mock_snapshot_provider", "
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const workspaceManagedPlanPanelSource = await readFile("services/portal/frontend/src/components/workspace/WorkspaceManagedPlanPanel.vue", "utf8");
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const contractSource = await readFile("docs/contracts/v22-managed-environment-open-boundary.md", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(workspaceViewSource, "workspace_view");
+assertUserCopy(workspaceManagedPlanPanelSource, "workspace_managed_plan_panel");
+assert(workspaceViewSource.includes("WorkspaceManagedPlanPanel"), "workspace_view_must_render_managed_plan_panel_component");
+assert(workspaceViewSource.includes(':managed-plan="managedPlan"'), "workspace_view_must_pass_managed_plan_to_panel");
 assert(workspaceViewSource.includes("managedPlan"), "workspace_view_must_render_managed_resource_binding_plan");
+assert(workspaceManagedPlanPanelSource.includes('data-component-id="workspace.managed_plan"'), "managed_plan_panel_must_keep_dom_anchor");
 assert(workspaceSurfaceSource.includes("managedResourceBindingPlan"), "workspace_surface_must_bind_managed_resource_binding_plan");
 assert(workspaceTypesSource.includes("managedResourceBindingPlan"), "workspace_types_must_include_managed_resource_binding_plan");
 assert(contractSource.includes("本分支允许的最小 Portal frontend 展示范围"), "contract_must_allow_minimal_portal_frontend_display");

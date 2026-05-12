@@ -70,6 +70,9 @@ const forbiddenUserCloudConsoleCopy = [
 
 const adminOpsSource = await readFile("services/portal/frontend/src/views/admin/AdminOpsView.vue", "utf8");
 const billingSource = await readFile("services/portal/frontend/src/views/billing/BillingView.vue", "utf8");
+const billingWorkspaceCostsSource = await readFile("services/portal/frontend/src/components/billing/BillingWorkspaceCostPanel.vue", "utf8");
+const billingRunCostsSource = await readFile("services/portal/frontend/src/components/billing/BillingRunCostPanel.vue", "utf8");
+const billingSurfaceSource = `${billingSource}\n${billingWorkspaceCostsSource}\n${billingRunCostsSource}`;
 const styleSource = await readFile("services/portal/frontend/src/style.css", "utf8");
 
 assertIncludesAll(styleSource, [
@@ -104,25 +107,24 @@ const currentRunsSection = sliceBetween(
 );
 assertNotIncludesAny(currentRunsSection, attributionTagFields, "admin_ops_current_runs_attribution_tags");
 
-const billingWorkspaceCostsSection = sliceBetween(
-  billingSource,
+assertIncludesAll(billingSource, [
+  "BillingWorkspaceCostPanel",
+  "BillingRunCostPanel",
+], "billing_view_must_render_cost_table_components");
+assertIncludesAll(billingWorkspaceCostsSource, [
+  'data-component-id="billing.workspace_costs"',
   "<h2 class=\"panel-title\">工作空间成本明细</h2>",
+], "billing_workspace_costs_component_contract");
+assertResponsiveTableSection(billingWorkspaceCostsSource, "billing_workspace_costs_mobile_cards");
+assertIncludesAll(billingRunCostsSource, [
+  'data-component-id="billing.run_costs"',
   "<h2 class=\"panel-title\">任务明细</h2>",
-  "billing_workspace_costs_section",
-);
-assertResponsiveTableSection(billingWorkspaceCostsSection, "billing_workspace_costs_mobile_cards");
-
-const billingRunCostsSection = sliceBetween(
-  billingSource,
-  "<h2 class=\"panel-title\">任务明细</h2>",
-  "<h2 class=\"panel-title\">账户流水</h2>",
-  "billing_run_costs_section",
-);
-assertResponsiveTableSection(billingRunCostsSection, "billing_run_costs_mobile_cards");
+], "billing_run_costs_component_contract");
+assertResponsiveTableSection(billingRunCostsSource, "billing_run_costs_mobile_cards");
 
 assertNotIncludesAny(adminOpsSource, forbiddenSecretsAndStorage, "admin_ops_mobile_table_secret_storage_copy");
-assertNotIncludesAny(billingSource, forbiddenSecretsAndStorage, "billing_mobile_table_secret_storage_copy");
-assertNotIncludesAny(billingSource, forbiddenUserCloudConsoleCopy, "billing_user_surface_admin_or_cloud_console_copy");
+assertNotIncludesAny(billingSurfaceSource, forbiddenSecretsAndStorage, "billing_mobile_table_secret_storage_copy");
+assertNotIncludesAny(billingSurfaceSource, forbiddenUserCloudConsoleCopy, "billing_user_surface_admin_or_cloud_console_copy");
 
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 assertIncludesAll(suiteSource, [

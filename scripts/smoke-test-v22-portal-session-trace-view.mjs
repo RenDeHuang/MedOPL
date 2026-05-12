@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
 
@@ -157,14 +157,22 @@ assert.equal(item.customerDefaultLangfuseUi, false, "item_must_not_default_to_la
 assertNoForbiddenLeak(payload, "session_trace_payload");
 
 const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
+const traceComponentSources = await Promise.all(
+  (await readdir("services/portal/frontend/src/components/trace"))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`services/portal/frontend/src/components/trace/${entry}`, "utf8")),
+);
+const traceSurfaceSourceText = `${traceViewSource}\n${traceComponentSources.join("\n")}`;
 const traceSurfaceSource = await readFile("services/portal/frontend/src/composables/useTraceSurface.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertPortalUserCopy(traceViewSource, "trace_view");
-assert(traceViewSource.includes("item.observability"), "trace_view_must_consume_observability_attachment");
-assert(traceViewSource.includes("payload.summary.businessFactSource"), "trace_view_must_read_business_fact_source");
-assert(traceViewSource.includes("payload.customerDefaultLangfuseUi"), "trace_view_must_keep_portal_as_customer_default_trace_surface");
+assertPortalUserCopy(traceSurfaceSourceText, "trace_surface");
+assert(traceViewSource.includes("TraceHero"), "trace_view_must_render_trace_hero_component");
+assert(traceViewSource.includes("TraceSessionTablePanel"), "trace_view_must_render_session_table_component");
+assert(traceSurfaceSourceText.includes("item.observability"), "trace_surface_must_consume_observability_attachment");
+assert(traceSurfaceSourceText.includes("payload.summary.businessFactSource"), "trace_surface_must_read_business_fact_source");
+assert(traceSurfaceSourceText.includes("payload.customerDefaultLangfuseUi"), "trace_surface_must_keep_portal_as_customer_default_trace_surface");
 assert(traceSurfaceSource.includes("fetchSessionTraces"), "trace_surface_must_load_session_traces");
 assert(traceTypesSource.includes("observability"), "trace_api_types_must_include_observability_attachment");
 assert(traceTypesSource.includes("businessFactSource"), "trace_api_types_must_include_business_fact_source");

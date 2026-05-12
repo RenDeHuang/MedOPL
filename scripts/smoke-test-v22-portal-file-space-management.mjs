@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 
@@ -293,13 +293,22 @@ assert.equal(JSON.stringify(workspacePayload).includes("cos_standard_workspace_q
 assert.equal(JSON.stringify(workspacePayload).includes("storageBackend"), false, "workspace_payload_must_not_expose_storage_backend_field");
 
 const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
+const workspaceComponentSources = await Promise.all(
+  (await readdir("services/portal/frontend/src/components/workspace"))
+    .filter((entry) => entry.endsWith(".vue"))
+    .map((entry) => readFile(`services/portal/frontend/src/components/workspace/${entry}`, "utf8")),
+);
+const workspaceSurfaceSources = `${workspaceViewSource}\n${workspaceComponentSources.join("\n")}`;
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const contractSource = await readFile("docs/contracts/v22-portal-files-billing-trace-boundary.md", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(workspaceViewSource, "workspace_view");
-assert(workspaceViewSource.includes("payload.fileSpace"), "workspace_view_must_render_file_space_payload");
+assertUserCopy(workspaceSurfaceSources, "workspace_surface");
+assert(workspaceViewSource.includes("WorkspaceFileSpacePanel"), "workspace_view_must_render_file_space_panel_component");
+assert(workspaceViewSource.includes("WorkspaceFilesPanel"), "workspace_view_must_render_workspace_files_panel_component");
+assert(workspaceSurfaceSources.includes("payload.fileSpace"), "workspace_surface_must_render_file_space_payload");
+assert(workspaceSurfaceSources.includes('data-component-id="workspace.file_space"'), "file_space_panel_must_keep_dom_anchor");
 assert(workspaceSurfaceSource.includes("ordinaryDeleteRequiresConfirmation"), "workspace_surface_must_describe_delete_policy");
 assert(workspaceTypesSource.includes("FileSpacePayload"), "workspace_types_must_define_file_space_payload");
 assert(workspaceTypesSource.includes("selectedFileRefs"), "workspace_types_must_include_selected_file_refs");
