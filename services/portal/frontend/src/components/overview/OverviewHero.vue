@@ -4,7 +4,7 @@
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="max-w-2xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="badge badge-primary">OPL 科研托管平台</span>
+            <span class="badge badge-primary">托管 OPL 工作台</span>
             <span class="badge badge-success">科研用户工作台</span>
             <span class="badge" :class="canEnterWorkbench ? 'badge-success' : 'badge-danger'">
               {{ canEnterWorkbench ? "工作台可用" : "工作台受限" }}
@@ -21,7 +21,7 @@
         <div class="flex flex-wrap gap-2">
           <a class="btn btn-primary" :href="workbenchHref">进入 OPL 工作台</a>
           <RouterLink class="btn btn-secondary" to="/packages">查看套餐</RouterLink>
-          <RouterLink class="btn btn-secondary" to="/billing">查看账务</RouterLink>
+          <RouterLink class="btn btn-secondary" to="/billing">查看账单</RouterLink>
         </div>
       </div>
     </div>

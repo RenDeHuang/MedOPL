@@ -65,7 +65,7 @@ for (const phrase of [
   "账号 / 工作空间 是 UI 主语言",
   "租户 / 运行环境 不是 UI 主叙事",
   "角色真相由 `v22-portal-user-surface-boundary.md` 和 `v22-portal-admin-ops-surface-boundary.md` 共同定义",
-  "`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal / OPL / 运维共享界面总述，不替代这两份 role surface 合同",
+  "`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal、OPL 和管理台共享界面总述，不替代这两份 role surface 合同",
 ]) {
   assertIncludes(combinedMarkdown, phrase, "role_surface_shared_boundary_copy");
 }

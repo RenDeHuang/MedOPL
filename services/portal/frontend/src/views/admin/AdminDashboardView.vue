@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="平台总览" subtitle="账号、账务、资源、任务与待处理事项">
+  <AppLayout title="平台总览" subtitle="账号、账单、资源、任务与待处理事项">
     <div class="space-y-4">
       <div v-if="!payload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载运行总台...</div>
       <template v-else>
@@ -76,12 +76,12 @@
               <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h2 class="panel-title">运营入口</h2>
-                  <p class="panel-subtitle">按客户、账务、归因和资源异常继续处理。</p>
+                  <p class="panel-subtitle">按客户、账单、归因和资源异常继续处理。</p>
                 </div>
               </div>
               <div class="grid gap-2">
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/users">用户管理</RouterLink>
-                <RouterLink class="btn btn-secondary justify-start" to="/admin/billing-ops">客户账务</RouterLink>
+                <RouterLink class="btn btn-secondary justify-start" to="/admin/billing-ops">客户账单</RouterLink>
                 <RouterLink class="btn btn-secondary justify-start" to="/admin/usage">账单归因</RouterLink>
                 <RouterLink v-if="opsSurfaceEnabled" class="btn btn-secondary justify-start" to="/admin/ops">云资源状态</RouterLink>
               </div>

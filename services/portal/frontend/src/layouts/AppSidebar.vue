@@ -73,7 +73,7 @@ const userItems = [
   { to: "/resources", label: "计算资源" },
   { to: "/trace", label: "任务执行" },
   { to: "/workspace", label: "文件空间" },
-  { to: "/billing", label: "账务" },
+  { to: "/billing", label: "账单" },
 ];
 
 const adminItemsBase = [
@@ -81,7 +81,7 @@ const adminItemsBase = [
   { to: "/admin/users", label: "客户账户" },
   { to: "/admin/sandboxes", label: "资源管理" },
   { to: "/admin/usage", label: "任务记录" },
-  { to: "/admin/billing-ops", label: "账务管理" },
+  { to: "/admin/billing-ops", label: "账单管理" },
   { to: "/admin/audit", label: "审计记录" },
   { to: "/admin/system", label: "站点设置" },
 ];

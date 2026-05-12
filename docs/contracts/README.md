@@ -28,7 +28,7 @@
 ## v22 主合同
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md): MVP 托管 OPL 用户闭环主合同，定义从平台创建用户、充值、登录 Portal、在 OPL entry/preflight 输入或确认 gflabtoken 模型调用密钥、开通托管运行环境、进入 OPL 科研工作台、产出文件到释放环境和审计的 contract-level 主路径。portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
-- [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md): Portal SaaS、OPL Web、平台运维视图/运维面的共享界面合同，固定普通用户中文产品语言、OPL 双入口、运维可见边界、多租户后台边界和腾讯云分账标签边界。路径 1：从 Portal SaaS 后台进入；路径 2：直接访问 OPL 工作台；两条路径最终进入同一套 Gateway / preflight / launch 逻辑。
+- [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md): Portal 工作台、OPL Web 和管理台共享界面合同，固定普通用户中文产品语言、OPL 双入口、管理台可见边界、多租户后台边界和腾讯云分账标签边界。路径 1：从 Portal 工作台进入；路径 2：直接访问 OPL 工作台；两条路径最终进入同一套 Gateway、preflight 和 launch 逻辑。
 
 ## 用户闭环段合同
 
@@ -65,7 +65,7 @@
 - Langfuse 观测附件: [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)。该合同只定义 sanitized trace/session metadata 边界，不代表 Langfuse 部署、ClickHouse、真实 API key 或真实 trace source 已接入。
 - runtime bridge session/run/file/providerKeyRef: [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
 - Portal-OPL connection: [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)。Portal 发起进入 OPL、Gateway bootstrap、OPL session bind、message/file/run、artifact projection、workspace/session/run 归属、token 不进 URL/browser state 和 clean upstream 边界由该合同统一固定。它不修改 one-person-lab upstream，不读取 secret，不调用真实云。
-- Portal-OPL context/backflow: [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。该三级执行合同把 Portal SaaS control plane、Gateway entry/proxy、OPL context bootstrap、Adapter capability/backflow projection、downstream Runtime gate 和 downstream Langfuse `trace.medopl.cn` session trace boundary 拆开；它不修改 one-person-lab upstream，不实现真实云 runtime，不部署 Langfuse，不允许 200 假成功。
+- Portal-OPL context/backflow: [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)。该三级执行合同把 Portal 工作台控制面、Gateway entry/proxy、OPL context bootstrap、Adapter capability/backflow projection、downstream Runtime gate 和 downstream Langfuse `trace.medopl.cn` session trace boundary 拆开；它不修改 one-person-lab upstream，不实现真实云 runtime，不部署 Langfuse，不允许 200 假成功。
 - Real OPL capability canary: [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)。该三级执行合同把真实 OPL WebUI/ACP/Runtime 能力发现、message reply、file、run、artifact、observability 和 Portal projection 的 canary 验证拆开；它只定义真实能力裁定、错误 gate、canary evidence 和 productionization handoff。当前 provider message reply 子链路已通过授权 live canary，但不代表真实文件上传、真实 Runtime Agent、真实云 runtime 或 Langfuse 已上线。
 - Real OPL provider message canary: [v22-real-opl-provider-message-canary-boundary.md](./v22-real-opl-provider-message-canary-boundary.md)。该四级细分执行合同只定义真实 provider message reply canary 的 provider key gate、message send、reply observation、Adapter normalization、Portal message status、Portal session trace、Langfuse attachment boundary 和 no fake 200；默认 smoke 不读取 raw provider key、不调用真实 provider；授权 live canary 已证明真实 assistant reply 可按 `mapped_to_webui_bridge` 回流 Portal。
 - Real OPL file/run/artifact canary: [v22-real-opl-file-run-artifact-canary-boundary.md](./v22-real-opl-file-run-artifact-canary-boundary.md)。该三级执行合同细化真实 file upload 或 file intent、workspace-scoped fileRef、run intent、Runtime Agent gate、artifact/output backflow、Portal projection、billing metadata handoff、Production Runtime Agent binding、Langfuse optional attachment 和 no fake 200。它不部署 Langfuse，不调用真实云 mutation，不实现 COS 真实账单结算，不把 `/api/opl/*` placeholder 当 Product API；每个 step 必须 gate，不能用 200 假成功。当前本地 Runtime Agent HTTP API relay full-loop canary 已证明 file/run/artifact 可通过独立 Runtime Agent API 回流 Portal projection，并明确 OPL lane 只提供 `resourceBindingId/workspace runtime identity`、`billingMetadataRef`、`usageMetadataRef`、run/artifact projection；OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels，不代表真实云 runtime、COS 账单或 Langfuse 已上线。
@@ -75,10 +75,10 @@
 ## 界面/运维合同
 
 - 普通用户 Portal 中文产品语言: [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
-- Portal role surface 边界: [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md)。MedOPL 是同一个 Portal 应用、同一套登录、同一套 UI shell；普通用户 surface 和管理员/运维 surface 严格分离，管理员页面/API 使用独立分区，普通用户不能看到 admin/ops 入口、全局数据或管理操作。这两份合同是 Portal 角色真相；[v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md) 是更宽的 Portal / OPL / 运维共享界面总述，不替代 role surface 合同。
+- Portal role surface 边界: [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md)。MedOPL 是同一个 Portal 应用、同一套登录、同一套 UI shell；普通用户 surface 和管理员 surface 严格分离，管理员页面/API 使用独立分区，普通用户不能看到 admin/ops 入口、全局数据或管理操作。这两份合同是 Portal 角色真相；[v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md) 是更宽的 Portal、OPL 和管理台共享界面总述，不替代 role surface 合同。
 - Portal 结构治理 / failure isolation: [v22-portal-structure-failure-isolation-boundary.md](./v22-portal-structure-failure-isolation-boundary.md)。这是 Portal 三级结构治理合同，只定义 Portal 后端 route/dispatcher、payload/DTO builder、frontend view/composable、frontend API module 和 smoke 分层边界；不定义新产品主叙事，不替代 role surface 合同，不调用真实云，不改 OPL Gateway / Runtime Bridge。
 - OPL Web entry/preflight: [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md), [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md), [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md), [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight；/internal/opl/auth/login 只能是 internal implementation path，不是用户入口。Gateway local proxy 只注入 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL；raw API Key、launchToken、runtimeToken、bearer token、objectKey、localPath、signedUrl 不进入 upstream、URL query 或浏览器持久化存储。
-- 平台运维可见边界: [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md)
+- 管理台可见边界: [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md)
 - Admin / Ops Console 边界: [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md)。该合同只定义管理员/运维界面边界，不实现 UI，不调用真实云，不读取 secret；普通用户资源页不得恢复云控制台或运维语义。
 - 腾讯云分账标签后台边界: [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
 
@@ -100,8 +100,15 @@
 - [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md)
 - [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
 - [v22-portal-structure-failure-isolation-boundary.md](./v22-portal-structure-failure-isolation-boundary.md)
+- [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
+
+统一验证入口：
+
+```bash
+node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
+```
 
 ### OPL Entry / Gateway 合同包
 

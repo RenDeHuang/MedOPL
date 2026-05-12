@@ -303,7 +303,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
 | R-07 authorized storage execution | CC-04 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-storage-execution.json` | 授权后执行最小 storage create/expand/delete，并回写 Portal/audit |
 | R-08 compute dry-run | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-dry-run.json` | dry-run 写明已有 TKE cluster、namespace/quota/workload class/node pool capacity，且不 mutation |
 | R-09 authorized compute execution | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-execution.json` | 授权后执行最小 compute create/expand/release，并保持 file space retained |
-| R-10 Portal projection smoke | CC-03 | local_contract_smoke | repo root | stdout JSON only | 普通用户 projection 只展示工作台/计算/文件空间/账务状态，不展示云控制台对象 |
+| R-10 Portal projection smoke | CC-03 | local_contract_smoke | repo root | stdout JSON only | 普通用户 projection 只展示工作台/计算/文件空间/账单状态，不展示云控制台对象 |
 | R-11 expand storage dry-run and execution | CC-04 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-storage-expand.json` | 文件空间 entitlement、费用冻结估算和 audit event 更新 |
 | R-12 expand compute dry-run and execution | CC-05 | authorized_resource_lifecycle | repo root | `.runtime/v22-cloud-lifecycle/<operation-id>-compute-expand.json` | namespace quota、workload class 或 node pool capacity 更新，Portal projection 同步 |
 | R-13 COS billing checkpoint | CC-06 | readonly_connection | repo root | `.runtime/v22-cloud-reconciliation/<run-id>.json` | billing summary、COS usage、Portal ledger、cloud tag/cost allocation 可对账或产出 blocker |

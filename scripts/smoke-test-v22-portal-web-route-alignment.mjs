@@ -36,7 +36,7 @@ for (const route of ["/overview", "/resources", "/workspace", "/billing", "/trac
   assert(sidebarSource.includes(`to: "${route}"`), `portal_sidebar_route_missing:${route}`);
 }
 
-for (const label of ["总览", "计算资源", "任务执行", "文件空间", "账务", "平台总览", "客户账户", "资源管理", "任务记录", "账务管理", "审计记录", "站点设置"]) {
+for (const label of ["总览", "计算资源", "任务执行", "文件空间", "账单", "平台总览", "客户账户", "资源管理", "任务记录", "账单管理", "审计记录", "站点设置"]) {
   assert(sidebarSource.includes(`label: "${label}"`), `portal_sidebar_label_missing:${label}`);
 }
 

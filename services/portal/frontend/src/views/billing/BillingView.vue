@@ -1,5 +1,5 @@
 <template>
-  <AppLayout title="账务" subtitle="余额、冻结金额、消费记录与账户流水">
+  <AppLayout title="账单" subtitle="余额、冻结金额、消费记录与账户流水">
     <div class="space-y-4">
       <div v-if="summaryLoading && !summaryPayload" class="card p-6 text-sm text-gray-500 dark:text-slate-400">正在加载账单摘要...</div>
       <div v-else-if="error" class="card p-6 text-sm text-red-600 dark:text-red-400">{{ error }}</div>
@@ -8,7 +8,7 @@
           <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div class="max-w-2xl">
               <div class="flex items-center gap-2">
-                <span class="badge badge-primary">账务</span>
+                <span class="badge badge-primary">账单</span>
                 <span class="badge" :class="payload.breakdown.cloudSource === 'tencent_cloud' ? 'badge-success' : 'badge-warning'">
                   {{ payload.breakdown.cloudSource === "tencent_cloud" ? "账单核对已接入" : "等待账单核对" }}
                 </span>

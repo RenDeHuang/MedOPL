@@ -5,6 +5,12 @@ const groups = new Map([
     "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
     "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
     "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+    "scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
+  ]],
+  ["architecture", [
+    "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+    "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
+    "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
   ]],
   ["api", [
     "scripts/smoke-test-v22-portal-workbench-management-ui-api.mjs",

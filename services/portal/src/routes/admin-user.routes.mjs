@@ -109,7 +109,7 @@ export function createPortalAdminUserRoutes({
       return true;
     }
     if (typeof writeDb.topupWallet !== "function") {
-      sendHtml(res, layoutV2("充值失败", `<div class="card">账务事务未启用</div>`, user), 503);
+      sendHtml(res, layoutV2("充值失败", `<div class="card">账单事务未启用</div>`, user), 503);
       return true;
     }
     const idempotencyKey = String(form.idempotencyKey || `admin-recharge:${form.userId}:${amount}:${Date.now()}:${randomUUID()}`);

@@ -83,7 +83,7 @@ assertIncludesAll(styleSource, [
 const accountOpsSection = sliceBetween(
   adminOpsSource,
   "<h2 class=\"panel-title\">账号状态</h2>",
-  "<h2 class=\"panel-title\">账务对账</h2>",
+  "<h2 class=\"panel-title\">账单对账</h2>",
   "admin_ops_account_operations_section",
 );
 assertResponsiveTableSection(accountOpsSection, "admin_ops_account_operations_mobile_cards");

@@ -11,7 +11,7 @@ MedOPL 是同一个 Portal 应用、同一套登录、同一套 UI shell。普�
 
 本合同只整理普通用户 role-based surface 边界，不复制外部代码。借鉴 Sub2API 的 role-based Web app 模式：同一个 Web 产品内按角色拆分 surface，而不是拆成两个产品。
 
-角色真相由 `v22-portal-user-surface-boundary.md` 和 `v22-portal-admin-ops-surface-boundary.md` 共同定义。`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal / OPL / 运维共享界面总述，不替代这两份 role surface 合同。
+角色真相由 `v22-portal-user-surface-boundary.md` 和 `v22-portal-admin-ops-surface-boundary.md` 共同定义。`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal、OPL 和管理台共享界面总述，不替代这两份 role surface 合同。
 
 ## 普通用户入口
 

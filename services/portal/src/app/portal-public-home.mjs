@@ -96,7 +96,7 @@ function defaultOplIntro(settings) {
     <section class="opl-intro">
       <div>
         <h1>One Person Lab</h1>
-        <p>OPL 是面向个人科研工作的实验室环境。MedOPL 提供托管入口、账号、计算资源、文件空间、任务执行和账务记录，让用户专注于科研任务本身。</p>
+        <p>OPL 是面向个人科研工作的实验室环境。MedOPL 提供托管入口、账号、计算资源、文件空间、任务执行和账单记录，让用户专注于科研任务本身。</p>
         <p>平台负责开通工作空间、隔离运行环境、记录费用和保留输出文件。用户登录后进入工作台查看余额、资源、任务和文件。</p>
       </div>
       <aside class="opl-panel">
@@ -105,7 +105,7 @@ function defaultOplIntro(settings) {
           <li><strong>计算资源</strong><span>查看套餐、计算规格、并发数和费用估算。</span></li>
           <li><strong>任务执行</strong><span>查看会话、任务状态、输出文件和资源用量。</span></li>
           <li><strong>文件空间</strong><span>管理输入文件、输出文件、文件夹和保护期。</span></li>
-          <li><strong>账务记录</strong><span>查看余额、可用余额、冻结金额、累计消费和账户流水。</span></li>
+          <li><strong>账单记录</strong><span>查看余额、可用余额、冻结金额、累计消费和账户流水。</span></li>
         </ul>
       </aside>
     </section>`;

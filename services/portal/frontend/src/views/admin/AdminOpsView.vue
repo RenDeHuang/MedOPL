@@ -64,7 +64,7 @@
           </div>
 
           <div class="card p-6">
-            <h2 class="panel-title">账务对账</h2>
+            <h2 class="panel-title">账单对账</h2>
             <div class="mt-4 space-y-3">
               <div class="muted-kv"><span class="muted-kv-label">费用估算</span><span class="muted-kv-value">{{ money(payload.costReconciliation.estimatedCost.amount) }}</span></div>
               <div class="muted-kv"><span class="muted-kv-label">冻结金额</span><span class="muted-kv-value">{{ money(payload.costReconciliation.frozenAmount) }}</span></div>

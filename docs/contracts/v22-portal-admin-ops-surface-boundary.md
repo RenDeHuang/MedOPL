@@ -10,7 +10,7 @@
 
 管理员页面/API 独立分区。普通用户 surface 和管理员/运维 surface 严格分离。借鉴 Sub2API 的 role-based Web app 模式：同一个 Web 产品中按角色隔离页面、API、导航和操作权限，不复制外部代码。
 
-角色真相由 `v22-portal-user-surface-boundary.md` 和 `v22-portal-admin-ops-surface-boundary.md` 共同定义。`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal / OPL / 运维共享界面总述，不替代这两份 role surface 合同。
+角色真相由 `v22-portal-user-surface-boundary.md` 和 `v22-portal-admin-ops-surface-boundary.md` 共同定义。`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal、OPL 和管理台共享界面总述，不替代这两份 role surface 合同。
 
 账号 / 工作空间 是 UI 主语言。租户 / 运行环境 不是 UI 主叙事；`tenantId`、`environmentId`、`resourceBindingId` 只能作为内部标签、对账标签或审计字段。
 

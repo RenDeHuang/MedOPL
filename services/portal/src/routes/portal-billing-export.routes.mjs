@@ -240,12 +240,12 @@ export function createPortalBillingExportRoutes({
     const reason = String(form.reason || "").trim();
     const redirectTo = String(form.redirectTo || "/portal/admin/billing-ops").trim();
     if (!targetUser || !wallet || !["refund", "makeup_charge"].includes(actionType) || !Number.isFinite(amount) || amount <= 0 || !reason) {
-      sendHtml(res, layoutV2("账务调整失败", `<div class="card">参数错误，请检查用户、动作类型、金额和原因。</div>`, user), 400);
+      sendHtml(res, layoutV2("账单调整失败", `<div class="card">参数错误，请检查用户、动作类型、金额和原因。</div>`, user), 400);
       return true;
     }
     const transactionHandler = actionType === "refund" ? writeDb.refundWallet : writeDb.makeupChargeWallet;
     if (typeof transactionHandler !== "function") {
-      sendHtml(res, layoutV2("账务调整失败", `<div class="card">账务事务未启用</div>`, user), 503);
+      sendHtml(res, layoutV2("账单调整失败", `<div class="card">账单事务未启用</div>`, user), 503);
       return true;
     }
     const normalizedAmount = Math.abs(amount);

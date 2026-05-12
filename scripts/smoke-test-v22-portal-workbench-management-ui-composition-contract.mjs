@@ -45,7 +45,8 @@ const markdown = await source(contractPath);
 const contract = extractJson(markdown);
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 1, "contract_version_mismatch");
+assert.equal(contract.version, 2, "contract_version_mismatch");
+assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
 assert.equal(contract.scope.callsRealCloud, false, "composition_contract_must_not_call_real_cloud");
@@ -62,12 +63,21 @@ assert.equal(contract.visibleRoutes.routerBase, "/", "visible_router_base_must_b
 assert.equal(contract.visibleRoutes.workbenchOverview, "/overview", "visible_workbench_overview_mismatch");
 assert.equal(contract.visibleRoutes.managementSystem, "/admin/system", "visible_management_system_mismatch");
 assert.equal(contract.visibleRoutes.legacyPortalAppPrimary, "compat_redirect_only", "legacy_portal_app_must_be_compat_only");
-assert.deepEqual(contract.uiArchitecture.layers, ["token", "primitive", "layout", "feature_component", "page_orchestration", "harness_validation"], "ui_architecture_layers_mismatch");
+assert.equal(contract.uiArchitecture.method, "sub2api_style_layout_first", "ui_architecture_method_mismatch");
+assert.deepEqual(contract.uiArchitecture.layers, ["route_entry", "token", "primitive", "layout", "domain_composable", "feature_component", "page_orchestration", "harness_validation"], "ui_architecture_layers_mismatch");
+assert.deepEqual(contract.uiArchitecture.sequence, ["visual_primitives", "page_layouts", "common_patterns", "domain_components", "view_orchestration", "state_composables", "contract_harness"], "ui_architecture_sequence_mismatch");
 assert.equal(contract.uiArchitecture.pageRole, "orchestration_only", "page_role_must_be_orchestration_only");
+assert.deepEqual(contract.uiArchitecture.currentFeatureComponentSources, [
+  "services/portal/frontend/src/components/overview",
+  "services/portal/frontend/src/components/admin",
+], "current_feature_component_sources_mismatch");
 assert.equal(contract.uiArchitecture.surfaceRegistry, "services/portal/frontend/src/harness/portal-ui-surfaces.ts", "surface_registry_path_mismatch");
-assert.deepEqual(contract.workbenchPages, ["总览", "计算资源", "任务执行", "文件空间", "账务"], "workbench_pages_mismatch");
-assert.deepEqual(contract.managementPages, ["平台总览", "客户账户", "资源管理", "任务记录", "账务管理", "审计记录", "站点设置", "服务状态"], "management_pages_mismatch");
+assert.equal(contract.copyArchitecture.rawStatusVisible, false, "raw_status_must_not_be_visible");
+assertIncludes(contract.copyArchitecture.forbiddenUiTerms.join("\n"), "账务", "copy_forbidden_ledger_term");
+assert.deepEqual(contract.workbenchPages, ["总览", "计算资源", "任务执行", "文件空间", "账单"], "workbench_pages_mismatch");
+assert.deepEqual(contract.managementPages, ["平台总览", "客户账户", "资源管理", "任务记录", "账单管理", "审计记录", "站点设置", "服务状态"], "management_pages_mismatch");
 assert.equal(contract.runtimeSmokeEntrypoint, "scripts/smoke-test-v22-portal-runtime-suite.mjs", "runtime_suite_entrypoint_mismatch");
+assertIncludes(contract.validationGroups.join("\n"), "architecture", "runtime_suite_must_include_architecture_group");
 
 const router = await source("services/portal/frontend/src/router/index.ts");
 const sidebar = await source("services/portal/frontend/src/layouts/AppSidebar.vue");
@@ -184,6 +194,9 @@ for (const page of contract.workbenchPages) {
 for (const term of contract.entryNaming.forbiddenUiTerms) {
   assertExcludes(workbenchCopy, term, "workbench_forbidden_copy");
 }
+for (const term of contract.copyArchitecture.forbiddenUiTerms) {
+  assertExcludes(workbenchCopy, term, "workbench_copy_forbidden_architecture_term");
+}
 for (const term of contract.workbenchForbiddenTokens) {
   assertExcludes(workbenchCopy, term, "workbench_forbidden_internal_token");
 }
@@ -203,6 +216,9 @@ for (const page of contract.managementPages) {
 }
 for (const term of contract.entryNaming.forbiddenUiTerms) {
   assertExcludes(managementCopy, term, "management_forbidden_copy");
+}
+for (const term of contract.copyArchitecture.forbiddenUiTerms) {
+  assertExcludes(managementCopy, term, "management_copy_forbidden_architecture_term");
 }
 for (const forbiddenSlashCopy of ["默认 secret / 默认口令 / 配置卫生问题", "最近任务 / 会话状态", "账号 / 工作空间", "并发 / 队列"]) {
   assertExcludes(workbenchCopy + managementCopy, forbiddenSlashCopy, "slash_separated_ui_copy");
