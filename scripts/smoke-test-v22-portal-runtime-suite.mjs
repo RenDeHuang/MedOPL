@@ -9,8 +9,13 @@ const groups = new Map([
   ]],
   ["architecture", [
     "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+    "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
     "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
     "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
+  ]],
+  ["surface", [
+    "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+    "scripts/smoke-test-v22-portal-workbench-management-ui-browser.mjs",
   ]],
   ["api", [
     "scripts/smoke-test-v22-portal-workbench-management-ui-api.mjs",

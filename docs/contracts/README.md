@@ -100,7 +100,7 @@
 - [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md)
 - [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
 - [v22-portal-structure-failure-isolation-boundary.md](./v22-portal-structure-failure-isolation-boundary.md)
-- [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md)
+- [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md): Portal UI composition 合同只管产品边界、UI 分层、禁词、evalset 路径和统一验证入口；具体 route、surface、layout、API shape、DOM 锚点和 partial 缺口由 `services/portal/frontend/src/harness/portal-ui-evalset.json` 承接。
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
 
@@ -108,6 +108,12 @@
 
 ```bash
 node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
+```
+
+Portal frontend surface 可执行验证入口：
+
+```bash
+node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 ```
 
 ### OPL Entry / Gateway 合同包
