@@ -1,12 +1,22 @@
 import { computed, onMounted, ref } from "vue";
 import {
   fetchMyResources,
-  type CustomerComputeResource,
-  type CustomerStorageResource,
   type PlatformProvisionedResourcesPayload,
   type WeeklyProtectionFreeze,
   type WorkspaceResourceBinding,
 } from "@/api/portal/resources";
+import {
+  auditStatusText,
+  computeSpecText,
+  concurrencyText,
+  money,
+  planLabel,
+  protectionEstimateText,
+  resourceStatusBadge,
+  resourceStatusText,
+  storageCapacityText,
+  workspaceDisplayName,
+} from "@/composables/resourceFormatters";
 
 export function useResourcesSurface() {
   const resourcesLoading = ref(false);
@@ -59,87 +69,6 @@ export function useResourcesSurface() {
     return releasedAmount > 0 ? `已确认 ${money(releasedAmount)}` : "待释放";
   });
 
-  function money(value: number | undefined) {
-    return `¥${Number(value || 0).toFixed(2)}`;
-  }
-
-  function displayOrdinalFromId(value?: string) {
-    const text = String(value || "").trim();
-    const match = /(\d+)(?!.*\d)/.exec(text);
-    return match ? match[1] : "";
-  }
-
-  function workspaceDisplayName(value?: string) {
-    const ordinal = displayOrdinalFromId(value);
-    return ordinal ? `工作空间 ${ordinal}` : "工作空间";
-  }
-
-  function statusBadge(status?: string) {
-    const normalized = String(status || "").trim().toLowerCase();
-    if (["active", "done", "matched", "released"].includes(normalized)) return "badge-success";
-    if (["pending", "inactive"].includes(normalized)) return "badge-warning";
-    if (["failed", "error", "deleted"].includes(normalized)) return "badge-danger";
-    return "badge-primary";
-  }
-
-  function statusText(status?: string) {
-    const normalized = String(status || "").trim().toLowerCase();
-    const labels: Record<string, string> = {
-      active: "可用",
-      inactive: "已停用",
-      deleted: "已删除",
-      released: "已释放",
-      pending: "待处理",
-      done: "已完成",
-      matched: "已核对",
-      skipped: "已跳过",
-    };
-    return labels[normalized] || status || "-";
-  }
-
-  function auditStatusText(status?: string) {
-    const normalized = String(status || "").trim().toLowerCase();
-    const labels: Record<string, string> = {
-      pending: "待处理",
-      done: "已完成",
-      matched: "已核对",
-      released: "已释放",
-      skipped: "已跳过",
-    };
-    return labels[normalized] || "待处理";
-  }
-
-  function planLabel(planId?: string) {
-    const normalized = String(planId || "").trim();
-    const labels: Record<string, string> = {
-      starter_2c4g_10gb: "基础套餐",
-      pro_8c16g_100gb: "Pro 套餐",
-    };
-    return labels[normalized] || "基础套餐";
-  }
-
-  function computeSpecText(row?: Partial<CustomerComputeResource> | null) {
-    const planId = String(row?.serverPlanId || "").trim();
-    if (planId === "pro_8c16g_100gb") return "8 核 16GB";
-    if (planId === "starter_2c4g_10gb") return "2 核 4GB";
-    return String(row?.instanceType || "").trim().replace(/\s*\/\s*/g, " ") || "2 核 4GB";
-  }
-
-  function storageCapacityText(row?: Partial<CustomerStorageResource> | null) {
-    const value = Number(row?.storageCapacityGb || 0);
-    if (value >= 100) return "100GB 文件空间";
-    if (value > 0) return `${value}GB 文件空间`;
-    return "10GB 文件空间";
-  }
-
-  function concurrencyText(planId?: string) {
-    return String(planId || "").trim() === "pro_8c16g_100gb" ? "2 个任务" : "1 个任务";
-  }
-
-  function protectionEstimateText(protection?: WeeklyProtectionFreeze | null) {
-    return money(protection?.weeklyAmount || protection?.frozenAmount || 0);
-  }
-
   function setAdjustmentPlan(label: string) {
     actionFeedback.value = `${label} 已生成 dry-run 调整计划，不会真实开通资源。`;
   }
@@ -184,8 +113,8 @@ export function useResourcesSurface() {
     reload,
     resourcesLoading,
     setAdjustmentPlan,
-    statusBadge,
-    statusText,
+    statusBadge: resourceStatusBadge,
+    statusText: resourceStatusText,
     stopBillingText,
     storageCapacityText,
     workspaceDisplayName,

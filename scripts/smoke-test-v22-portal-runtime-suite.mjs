@@ -20,6 +20,7 @@ const groups = new Map([
   ["build", [
     "services/portal:check",
     "services/portal:frontend:typecheck",
+    "services/portal:frontend:test",
     "services/portal:frontend:build",
   ]],
   ["browser", [

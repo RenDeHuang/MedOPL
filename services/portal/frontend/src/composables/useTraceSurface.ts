@@ -2,6 +2,14 @@ import { computed, reactive, ref, watch } from "vue";
 import type { RouteLocationNormalizedLoaded, Router } from "vue-router";
 import type { SessionTracesPayload } from "@/api/portal/traces";
 import { fetchSessionTraces } from "@/api/portal/traces";
+import {
+  costEstimateText,
+  displayIndex,
+  humanizeStatus,
+  money,
+  rechargeStatusText,
+  statusBadge,
+} from "@/composables/traceFormatters";
 
 type SessionTraceItem = SessionTracesPayload["items"][number];
 
@@ -24,18 +32,6 @@ export function useTraceSurface(route: RouteLocationNormalizedLoaded, router: Ro
 
   function linkedOutputFiles(item: SessionTraceItem) {
     return item.linkedOutputFiles || item.files?.linkedOutputFiles || [];
-  }
-
-  function money(value?: number, currency = "CNY") {
-    return `${Number(value || 0).toFixed(2)} ${currency}`;
-  }
-
-  function costEstimateText(item: SessionTraceItem) {
-    return money(item.costEstimate?.amount, item.costEstimate?.currency || "CNY");
-  }
-
-  function rechargeStatusText(value?: string) {
-    return value === "display_only" ? "仅展示" : "待估算";
   }
 
   function routeQueryObject() {
@@ -68,27 +64,6 @@ export function useTraceSurface(route: RouteLocationNormalizedLoaded, router: Ro
 
   function nextPage(page: number, totalPages: number) {
     return Math.min(Number(totalPages || 1), Number(page || 1) + 1);
-  }
-
-  function displayIndex(index: number) {
-    return String(Number(index || 0) + 1);
-  }
-
-  function statusBadge(status = "") {
-    const normalized = String(status || "").toLowerCase();
-    if (["completed", "success", "settled"].includes(normalized)) return "badge-success";
-    if (["failed", "error"].includes(normalized)) return "badge-danger";
-    if (["running", "active"].includes(normalized)) return "badge-primary";
-    return "badge-warning";
-  }
-
-  function humanizeStatus(status = "") {
-    const normalized = String(status || "").toLowerCase();
-    if (["completed", "success", "settled"].includes(normalized)) return "已完成";
-    if (["failed", "error"].includes(normalized)) return "失败";
-    if (["running", "active"].includes(normalized)) return "运行中";
-    if (normalized === "released") return "已释放";
-    return status || "已记录";
   }
 
   function applyFilters() {

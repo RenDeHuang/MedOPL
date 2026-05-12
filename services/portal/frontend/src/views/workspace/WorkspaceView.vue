@@ -69,9 +69,6 @@
           :payload="payload"
           :recharge-status-text="rechargeStatusText"
           :upload-action="uploadAction"
-          :upload-input="uploadInput"
-          @submit-upload="submitUpload"
-          @trigger-upload="triggerUpload"
         />
       </template>
     </div>
@@ -121,11 +118,8 @@ const {
   snapshotText,
   statusBadge,
   storageEntitlement,
-  submitUpload,
   totalEstimatedCost,
-  triggerUpload,
   uploadAction,
-  uploadInput,
   workspaceMasHref,
   workspaceQuery,
 } = useWorkspaceSurface(route);

@@ -13,7 +13,6 @@ export function useWorkspaceSurface(route: RouteLocationNormalizedLoaded) {
   const loading = ref(true);
   const error = ref("");
   const payload = ref<WorkspacePayload | null>(null);
-  const uploadInput = ref<HTMLInputElement | null>(null);
 
   const currentTask = computed(() => {
     const value = route.query.task;
@@ -157,17 +156,6 @@ export function useWorkspaceSurface(route: RouteLocationNormalizedLoaded) {
     return `/portal/workspace/download-file?task=${encodeURIComponent(payload.value?.workspace.slug || currentTask.value || "default")}&kind=${encodeURIComponent(kind)}&file=${encodeURIComponent(fileName)}`;
   }
 
-  function submitUpload() {
-    const input = uploadInput.value;
-    if (!input?.files?.length) return;
-    const form = input.closest("form");
-    form?.submit();
-  }
-
-  function triggerUpload() {
-    uploadInput.value?.click();
-  }
-
   let requestId = 0;
 
   async function load() {
@@ -227,11 +215,8 @@ export function useWorkspaceSurface(route: RouteLocationNormalizedLoaded) {
     snapshotText,
     statusBadge,
     storageEntitlement,
-    submitUpload,
     totalEstimatedCost,
-    triggerUpload,
     uploadAction,
-    uploadInput,
     workspaceMasHref,
     workspaceQuery,
   };

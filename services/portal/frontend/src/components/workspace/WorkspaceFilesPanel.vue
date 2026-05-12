@@ -8,10 +8,10 @@
               <h2 class="panel-title">输入文件</h2>
               <p class="panel-subtitle">当前工作空间文件夹中的输入文件。</p>
             </div>
-            <button v-if="payload.storageEntitlement?.enabled" class="btn btn-secondary" type="button" @click="$emit('triggerUpload')">上传文件到当前文件夹</button>
+            <button v-if="payload.storageEntitlement?.enabled" class="btn btn-secondary" type="button" @click="triggerUpload">上传文件到当前文件夹</button>
             <RouterLink v-else class="btn btn-secondary" to="/packages">去套餐页</RouterLink>
             <form class="hidden" method="post" :action="uploadAction" enctype="multipart/form-data">
-              <input ref="uploadInput" class="hidden" name="file" type="file" @change="$emit('submitUpload')" />
+              <input ref="uploadInput" class="hidden" name="file" type="file" @change="submitUpload" />
             </form>
           </div>
           <div class="space-y-2.5">
@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Ref } from "vue";
+import { ref } from "vue";
 import type { WorkspacePayload } from "@/api/portal/workspace";
 import DetailPageLayout from "@/layouts/DetailPageLayout.vue";
 
@@ -73,11 +73,18 @@ defineProps<{
   payload: WorkspacePayload;
   rechargeStatusText: (value?: string) => string;
   uploadAction: string;
-  uploadInput: Ref<HTMLInputElement | null>;
 }>();
 
-defineEmits<{
-  submitUpload: [];
-  triggerUpload: [];
-}>();
+const uploadInput = ref<HTMLInputElement | null>(null);
+
+function submitUpload() {
+  const input = uploadInput.value;
+  if (!input?.files?.length) return;
+  const form = input.closest("form");
+  form?.submit();
+}
+
+function triggerUpload() {
+  uploadInput.value?.click();
+}
 </script>
