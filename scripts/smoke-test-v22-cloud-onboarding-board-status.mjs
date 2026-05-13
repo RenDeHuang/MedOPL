@@ -60,8 +60,8 @@ const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 assertIncludesAll(board, [
   "v22 Cloud Onboarding Central Execution Board",
   "program id: v22-cloud-onboarding",
-  "current trunk anchor: f27dbd2",
-  "current phase: L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only",
+  "current trunk anchor: 9b68c44",
+  "current phase: starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only",
   "AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒",
   "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
   "docs/recovery/cloud-onboarding-status-table.md",
@@ -95,10 +95,9 @@ assertIncludesAll(board, [
 ], "board_execution_rules");
 
 assertIncludesAll(board, [
-  "L1 live Deployment env/secret/schema gate must be rechecked",
-  "L2b online Portal click evidence is not complete",
-  "L3 120min billing reconciliation and cleanup evidence still pending",
-  "L4 ordinary user product acceptance still pending",
+  "starter minimal live loop evidence is recorded",
+  "exact 120min billing settlement remains an audit checkpoint",
+  "Package D rollout/build/push/kubectl readiness is outside the starter Package C lifecycle proof",
 ], "board_open_issues");
 
 assertIncludesAll(status, [
@@ -145,19 +144,43 @@ assertIncludesAll(status, [
   "production deploy: schema migration, rollout, and runtime smoke passed for Package D",
   "Portal production integration: current branch changes the production API shape from inline execution to queued operation + independent worker",
   "missing nodePoolRef fails closed and must mark the operation/job failed instead of leaving queued work behind",
-  "canary/QA/release status: pending",
+  "starter minimal production loop: done with cleanup proof",
+  "pro/upgrade/add-storage/full matrix live acceptance: not claimed",
+  "canary/QA/release status: pending for full product matrix",
 ], "status_plain_language_summary");
 
 const boardData = extractJsonBlock(board, "v22-cloud-onboarding-execution-board");
 assert.equal(boardData.programId, "v22-cloud-onboarding", "board_program_id_mismatch");
-assert.equal(boardData.currentTrunkAnchor, "f27dbd2", "board_trunk_anchor_mismatch");
+assert.equal(boardData.currentTrunkAnchor, "9b68c44", "board_trunk_anchor_mismatch");
 assert.equal(boardData.workflowModel, "cloud_harness_native_async_lifecycle_loop", "board_workflow_model_mismatch");
 assert.equal(boardData.cloudLane?.branch, "cloud-lane/feat/v22-cloud-operation-harness-refactor", "board_cloud_lane_branch_mismatch");
 assert.equal(boardData.cloudLane?.model, "gpt-5.4", "board_cloud_lane_model_mismatch");
+assert.equal(boardData.cloudLane?.baseCommit, "9b68c44", "board_cloud_lane_base_commit_mismatch");
 assert.equal(boardData.harnessManifest, "docs/recovery/v22-cloud-harness-manifest.json", "board_harness_manifest_missing");
 assert.equal(boardData.liveBaselineDesiredCapacity, 2, "board_live_baseline_must_be_2");
 assert.equal(boardData.cleanupRequiredForLiveRuns, true, "board_cleanup_required");
 assert.deepEqual(boardData.activeHarnessLevels.map((item) => item.level), ["L1", "L2a", "L2b", "L3", "L4"], "board_active_harness_levels");
+assert.deepEqual(boardData.activeHarnessLevels.map((item) => item.status), [
+  "starter-live-done",
+  "starter-live-done",
+  "starter-live-done",
+  "starter-cleanup-done-reconciling",
+  "starter-product-accepted",
+], "board_active_harness_level_statuses");
+assert.equal(boardData.starterMinimalLiveLoopDone, true, "board_starter_minimal_live_loop_must_be_done");
+assert.equal(boardData.productionFullMatrixLiveAcceptanceClaimed, false, "board_must_not_claim_full_matrix_live");
+assert.equal(boardData.starterLiveEvidence?.runId, "live-l2b-8c8cff2-20260513T031510Z", "board_starter_live_run_id");
+assert.deepEqual(boardData.starterLiveEvidence?.operationStatuses, [
+  "create_storage:succeeded",
+  "create_compute:succeeded",
+  "release_compute:succeeded",
+  "delete_storage:succeeded",
+], "board_starter_live_operation_statuses");
+assert.equal(boardData.starterLiveEvidence?.activeOperations, 0, "board_starter_live_active_operations_zero");
+assert.equal(boardData.starterLiveEvidence?.computeStatus, "released", "board_starter_compute_released");
+assert.equal(boardData.starterLiveEvidence?.storageStatus, "retention_protected", "board_starter_storage_protected");
+assert.equal(boardData.starterLiveEvidence?.billingStatusLabel, "对账中", "board_starter_billing_reconciling");
+assert.deepEqual(boardData.starterLiveEvidence?.nodePoolFinal, { desired: 2, current: 2, joining: 0 }, "board_starter_node_pool_final_baseline");
 assert.equal(boardData.readsSecretNow, false, "board_must_not_read_secret_now");
 assert.equal(boardData.callsRealCloudNow, false, "board_must_not_call_real_cloud_now");
 assert.equal(boardData.modifiesDeployNow, false, "board_must_not_modify_deploy_now");
@@ -181,13 +204,25 @@ assert.deepEqual(boardData.parallelLaneRules, [
 
 const statusData = extractJsonBlock(status, "v22-cloud-onboarding-status-table");
 assert.equal(statusData.programId, "v22-cloud-onboarding", "status_program_id_mismatch");
-assert.equal(statusData.currentTrunkAnchor, "f27dbd2", "status_trunk_anchor_mismatch");
-assert.equal(statusData.workflowBoundaryEvidence, "f27dbd2", "status_workflow_boundary_evidence_mismatch");
+assert.equal(statusData.currentTrunkAnchor, "9b68c44", "status_trunk_anchor_mismatch");
+assert.equal(statusData.workflowBoundaryEvidence, "9b68c44", "status_workflow_boundary_evidence_mismatch");
 assert.equal(statusData.workflowModel, "cloud_harness_native_async_lifecycle_loop", "status_workflow_model_mismatch");
 assert.equal(statusData.cloudLane?.branch, "cloud-lane/feat/v22-cloud-operation-harness-refactor", "status_cloud_lane_branch_mismatch");
+assert.equal(statusData.cloudLane?.baseCommit, "9b68c44", "status_cloud_lane_base_commit_mismatch");
 assert.equal(statusData.harnessManifest, "docs/recovery/v22-cloud-harness-manifest.json", "status_harness_manifest_missing");
 assert.equal(statusData.liveBaselineDesiredCapacity, 2, "status_live_baseline_must_be_2");
 assert.deepEqual(statusData.harnessLevels.map((item) => item.level), ["L1", "L2a", "L2b", "L3", "L4"], "status_harness_levels");
+assert.deepEqual(statusData.harnessLevels.map((item) => item.status), [
+  "starter-live-done",
+  "starter-live-done",
+  "starter-live-done",
+  "starter-cleanup-done-reconciling",
+  "starter-product-accepted",
+], "status_harness_level_statuses");
+assert.equal(statusData.cloudLane?.productionStarterMinimalLiveAcceptanceClaimed, true, "status_starter_minimal_live_claimed");
+assert.equal(statusData.cloudLane?.productionFullMatrixLiveAcceptanceClaimed, false, "status_full_matrix_live_not_claimed");
+assert.equal(statusData.cloudLane?.starterLiveEvidence?.runId, "live-l2b-8c8cff2-20260513T031510Z", "status_starter_live_run_id");
+assert.deepEqual(statusData.cloudLane?.starterLiveEvidence?.nodePoolFinal, { desired: 2, current: 2, joining: 0 }, "status_starter_node_pool_final_baseline");
 assert.equal(statusData.phases.length, 14, "status_phase_count_mismatch");
 assert.deepEqual(statusData.phases.map((phase) => phase.phaseName), phaseNames, "status_phase_order_mismatch");
 for (const phase of statusData.phases) {
@@ -203,7 +238,20 @@ for (const phase of statusData.phases) {
   ]) {
     assert(Object.hasOwn(phase, key), `status_phase_${phase.phaseId}_missing:${key}`);
   }
-  assert(["done", "active", "pending", "blocked", "needs-user-authorization", "storage-create-canary-done", "deploy-runtime-smoke-done", "production-bridge-env-blocked", "superseded-by-L2b"].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
+  assert([
+    "done",
+    "active",
+    "pending",
+    "blocked",
+    "needs-user-authorization",
+    "storage-create-canary-done",
+    "deploy-runtime-smoke-done",
+    "production-bridge-env-blocked",
+    "superseded-by-L2b",
+    "starter-live-done",
+    "starter-cleanup-done-reconciling",
+    "starter-product-accepted",
+  ].includes(phase.status), `status_phase_${phase.phaseId}_invalid_status:${phase.status}`);
 }
 
 const statusById = Object.fromEntries(statusData.phases.map((phase) => [phase.phaseId, phase]));
@@ -244,13 +292,13 @@ assertIncludesAll(
 assert.equal(statusById["CO-06"].status, "needs-user-authorization", "co06_must_need_user_authorization");
 assert.equal(statusById["CO-06"].owner, "user", "co06_owner_must_remain_user");
 assert.equal(statusById["CO-06"].evidenceCommitOrReport, "no live report yet", "co06_must_not_gain_live_report");
-assert.equal(boardData.currentPhase, "L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only", "board_current_phase_must_record_harness_refactor");
-assert.equal(boardData.currentLane, "cloud operation harness manifest + async worker + cleanup gate", "board_current_lane_must_match_harness_refactor");
-assert.equal(boardData.nextLane, "local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4", "board_next_lane_must_match_l1_l4");
+assert.equal(boardData.currentPhase, "starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only", "board_current_phase_must_record_starter_live");
+assert.equal(boardData.currentLane, "starter minimal live evidence reconciliation + rebase verification", "board_current_lane_must_match_starter_live_review");
+assert.equal(boardData.nextLane, "B review / ff-only absorption decision; future pro, upgrade, add-storage and full matrix live reruns require separate authorization", "board_next_lane_must_match_b_review");
 assert.equal(boardData.authorizedStorageCreateCanaryDone, true, "board_must_record_storage_create_canary_done");
 assert.equal(boardData.packageDDiscovery?.realRuntimeSmokeDone, true, "board_must_record_real_runtime_smoke_done");
-assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, false, "board_must_record_live_bridge_disabled");
-assert.equal(boardData.packageDDiscovery?.productionCloudOperationRowsObserved, 0, "board_must_record_empty_production_cloud_operation_rows");
+assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, true, "board_must_record_live_bridge_enabled_for_starter");
+assert.equal(boardData.packageDDiscovery?.productionCloudOperationRowsObserved, 4, "board_must_record_starter_production_cloud_operation_rows");
 assert.equal(boardData.packageDDiscovery?.authorizedNodePoolIdle, false, "board_must_record_authorized_node_pool_not_idle");
 assert.equal(statusById["CO-08"].status, "blocked", "co08_must_be_blocked_until_live_report");
 assert.equal(statusById["CO-08"].evidenceCommitOrReport, "pending official SDK live report", "co08_evidence_must_wait_for_live_report");

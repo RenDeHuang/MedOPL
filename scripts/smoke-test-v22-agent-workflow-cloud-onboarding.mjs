@@ -63,10 +63,10 @@ const statusPayload = parseJson(statusResult.stdout, "cloud_onboarding_status");
 assert.equal(statusPayload.ok, true, "status_ok");
 assert.equal(statusPayload.command, "cloud-onboarding status", "status_command");
 assert.equal(statusPayload.programId, "v22-cloud-onboarding", "program_id");
-assert.equal(statusPayload.currentPhase, "L1-L4 production cloud operation harness refactor in progress; legacy CO phases are historical aliases only", "current_phase");
-assert.equal(statusPayload.activeLane, "cloud operation harness manifest + async worker + cleanup gate", "active_lane");
-assert.equal(statusPayload.nextLane, "local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4", "next_lane");
-assert.equal(statusPayload.handoffTarget, "A", "handoff_target");
+assert.equal(statusPayload.currentPhase, "starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only", "current_phase");
+assert.equal(statusPayload.activeLane, "starter minimal live evidence reconciliation + rebase verification", "active_lane");
+assert.equal(statusPayload.nextLane, "B review / ff-only absorption decision; future pro, upgrade, add-storage and full matrix live reruns require separate authorization", "next_lane");
+assert.equal(statusPayload.handoffTarget, "B", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
   "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
   "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
@@ -82,7 +82,7 @@ assert.deepEqual(statusPayload.requiredSmoke, [
   "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
 ], "active_required_smoke");
-assert.equal(statusPayload.userGate, "live L1-L4 may run only after local harness gates pass; node pool baseline desired/current must be 2 and cleanup must return to 2", "active_user_gate");
+assert.equal(statusPayload.userGate, "starter minimal live loop is recorded; future pro, upgrade, add-storage, dedicated node pool, or full matrix live reruns need separate authorization; node pool baseline desired/current must remain 2 and cleanup must return to 2", "active_user_gate");
 
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-01"), "summary_done_must_include_co01");
 assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-04"), "summary_done_must_include_co04");
@@ -90,6 +90,7 @@ assert(statusPayload.phaseSummary.done.some((phase) => phase.phaseId === "CO-05"
 assert(statusPayload.phaseSummary.blocked.some((phase) => phase.phaseId === "CO-08"), "summary_blocked_must_include_co08");
 assert(statusPayload.phaseSummary.needsUserAuthorization.some((phase) => phase.phaseId === "CO-06"), "summary_needs_user_auth_must_include_co06");
 assert.equal(statusPayload.phaseSummary.active.some((phase) => phase.phaseId === "CO-04"), false, "summary_active_must_not_include_done_co04");
+assert.deepEqual(statusPayload.phaseSummary.starterLiveDone, [], "co_phase_summary_must_not_reclassify_legacy_co_as_starter_live_done");
 
 assert.deepEqual(statusPayload.serialRealSideEffects, [
   "真实云 live",
@@ -117,9 +118,9 @@ assert.equal(defaultGatePacket.handoffTarget, "B", "default_gate_handoff");
 assert.equal(defaultGatePacket.status, "done", "default_gate_status");
 
 const harnessPacket = findPacket(statusPayload, "cloud-harness-l1-l4-refactor");
-assert.equal(harnessPacket.handoffTarget, "A", "harness_packet_handoff");
-assert.equal(harnessPacket.status, "in-progress", "harness_packet_status");
-assert.equal(harnessPacket.requiresManualMergeDecision, false, "harness_packet_manual");
+assert.equal(harnessPacket.handoffTarget, "B", "harness_packet_handoff");
+assert.equal(harnessPacket.status, "starter-live-done", "harness_packet_status");
+assert.equal(harnessPacket.requiresManualMergeDecision, true, "harness_packet_manual");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs"), "harness_packet_must_include_manifest_selector_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-runtime-startup-config.mjs"), "harness_packet_must_include_l1_runtime_config_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"), "harness_packet_must_include_cleanup_gate_smoke");
@@ -129,7 +130,12 @@ assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-por
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"), "harness_packet_must_include_l3_release_billing_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"), "harness_packet_must_include_l3_files_billing_trace_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs"), "harness_packet_must_include_l4_frontend_surface_smoke");
-assert(harnessPacket.userGate.includes("baseline desired/current must be 2"), "harness_packet_must_record_baseline_two");
+assertIncludesAll(harnessPacket.userGate, [
+  "baseline desired/current",
+  "must remain 2",
+  "cleanup must return to 2",
+], "harness_packet_must_record_baseline_two");
+assert(harnessPacket.userGate.includes("future pro, upgrade, add-storage"), "harness_packet_must_not_claim_full_matrix_live");
 
 const userLivePacket = findPacket(statusPayload, "user-authorized-readonly-live");
 assert.equal(userLivePacket.handoffTarget, "D", "user_live_handoff");
@@ -150,8 +156,8 @@ assertNotIncludesAny(nextResult.stdout, forbiddenOutputPhrases, "cloud_onboardin
 const nextPayload = parseJson(nextResult.stdout, "cloud_onboarding_next");
 assert.equal(nextPayload.command, "cloud-onboarding next", "next_command");
 assert.equal(nextPayload.nextTaskPacket.id, "cloud-harness-l1-l4-refactor", "next_task_packet_id");
-assert.equal(nextPayload.nextTaskPacket.handoffTarget, "A", "next_task_handoff");
-assert.equal(nextPayload.nextTaskPacket.requiresManualMergeDecision, false, "next_task_must_not_need_b_review_yet");
+assert.equal(nextPayload.nextTaskPacket.handoffTarget, "B", "next_task_handoff");
+assert.equal(nextPayload.nextTaskPacket.requiresManualMergeDecision, true, "next_task_must_need_b_review_after_starter_live");
 assert.equal(nextPayload.nextTaskPacket.suggestedCommands.some((command) => command.includes("kubectl")), false, "next_task_must_not_emit_kubectl_command");
 
 const humanStatus = runWorkflow(["cloud-onboarding", "status"]);
@@ -160,9 +166,10 @@ assertNotIncludesAny(humanStatus.stdout, forbiddenOutputPhrases, "cloud_onboardi
 assertIncludesAll(humanStatus.stdout, [
   "v22 cloud onboarding workflow",
   "program id: v22-cloud-onboarding",
-  "active lane: cloud operation harness manifest + async worker + cleanup gate",
-  "next lane: local L1-L4 harness verification, then cost-capped live L1 -> L2a -> L2b -> L3 -> L4",
+  "active lane: starter minimal live evidence reconciliation + rebase verification",
+  "next lane: B review / ff-only absorption decision; future pro, upgrade, add-storage and full matrix live reruns require separate authorization",
   "needs-user-authorization",
+  "starter-live-done",
   "A/B/C/D handoff",
   "JSON 摘要",
 ], "cloud_onboarding_human_status");

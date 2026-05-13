@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本矩阵定义 v22 cloud onboarding 的验证分层。AGENTS 管协作纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒；本文件只说明每类验证证明什么、什么时候必须跑、不能做什么，以及 blocker 应回流到哪里。
 
-本矩阵不推进 CO-06，不授权 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal production cloud bridge blocker 后回滚。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
+本矩阵不推进 CO-06，不授权新的 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal production cloud bridge blocker 后回滚。之后的 Portal async worker live deployment 已跑通 starter 最小生产闭环，并 cleanup 回 node pool baseline `2`。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
 
 资源隔离验证必须覆盖共享用户计算池 + 硬 quota、高级隔离套餐、`dedicated_node_pool` 和 Package C / Package D 边界。标准套餐验证不能证明“一用户一个节点池”；它必须证明 compute allocation、ResourceQuota / LimitRange / admission policy 和 fail-closed over-allocation 语义。Package D 不授权 Package C 的资源生命周期动作。
 
@@ -24,10 +24,11 @@ verification matrix does not cover:
 
 - create/release mutation execution.
 - production deploy/build/push/kubectl execution.
-- Portal production integration real Tencent canary beyond the authorized `storage-create` sub-loop.
+- Portal production integration real Tencent canary beyond the starter minimal loop.
 - Portal PostgreSQL schema migration; this requires a separate Portal / DB migration gate.
 - real secret reading without explicit user authorization.
 - real cloud calls without explicit user authorization.
+- pro 8c16g/100GB, upgrade/add-storage, dedicated node pool, or full matrix live acceptance.
 
 ## Plain Verification Summary
 
@@ -79,7 +80,7 @@ Current real Package D evidence for this branch:
 - real R-17 rollout passed.
 - R-18 pushed-version runtime smoke is complete for Portal, OPL Gateway, and Runtime Bridge; trace surface health is reachable but does not prove a repo-pushed Langfuse image.
 
-Package D evidence does not prove production Portal clicks execute Package C. Historical read-only Deployment and PostgreSQL checks remain useful evidence, but the active completion gate is now L1 -> L2a -> L2b -> L3 -> L4 from `docs/recovery/v22-cloud-harness-manifest.json`: production env/secret/schema reference check, direct Package C lifecycle canary, Portal click -> queued operation -> independent worker drain -> projection, 120min billing/reconciliation/delete cleanup, and ordinary user product acceptance. L2b/L3 must show cleanup proof and node pool baseline desired/current returning to `2`.
+Package D evidence does not prove production Portal clicks execute Package C. Historical read-only Deployment and PostgreSQL checks remain useful evidence, but the active completion gate is now L1 -> L2a -> L2b -> L3 -> L4 from `docs/recovery/v22-cloud-harness-manifest.json`: production env/secret/schema reference check, direct Package C lifecycle canary, Portal click -> queued operation -> independent worker drain -> projection, 120min billing/reconciliation/delete cleanup, and ordinary user product acceptance. The starter minimal live loop now has L2b/L3 cleanup proof, node pool baseline desired/current returning to `2`, and final desired/current/joining returned to `2/2/0`; pro, upgrade/add-storage and full matrix live reruns are not claimed.
 
 ## Package D / OPL Deployment Discovery Verification
 
@@ -187,7 +188,7 @@ Real R-17 rollout initially surfaced a Portal-specific blocker:
 - the Portal container exited with `portal_schema_missing_tables`.
 - the rollout was stopped and Portal was rolled back before migration.
 
-The separate Portal / DB migration gate then ran `node src/migrate-schema.mjs` through a Kubernetes Job against the intended production namespace/database, produced `schemaVersion: v20.32`, and allowed R-17/R-18 to pass. The current blocker is different: live Portal does not enable the production cloud-operation bridge env or Package C runner secret reference, so user clicks do not yet write canonical cloud operation rows or call Package C.
+The separate Portal / DB migration gate then ran `node src/migrate-schema.mjs` through a Kubernetes Job against the intended production namespace/database, produced `schemaVersion: v20.32`, and allowed R-17/R-18 to pass. The later Portal async worker deployment cleared the old production bridge env/secret blocker for the starter minimal loop: online Portal accepted a starter package click as queued work, an independent worker drained Package C, PostgreSQL canonical store recorded create/cleanup operations, and the user projection stayed sanitized. This does not extend to pro 8c16g/100GB, upgrade/add-storage, dedicated node pool, exact 120min settlement, or full product-matrix live acceptance.
 
 ## Package C Attribution And Node Pool Cleanup Verification
 

@@ -6,23 +6,23 @@ program id: v22-cloud-onboarding
 
 当前 cloud-lane 分支是 `cloud-lane/feat/v22-cloud-operation-harness-refactor`，model: gpt-5.4。它不是新增大合同，而是清退旧 cloud 合同/状态中的阶段性口径，把当前执行入口收敛到 `docs/recovery/v22-cloud-harness-manifest.json` 的 L1 -> L2a -> L2b -> L3 -> L4。Portal API 必须 async-first：只写 canonical operation/outbox 并返回 `202 + operationId`；真实 Package C 由独立 leased worker drain；恢复时 cleanup-first/reconcile-first。
 
-历史 Package C/D canary 和 rollout evidence 仍作为 evidence 参考，但不能替代当前完成态。当前完成态必须证明：用户在 Portal 点击套餐后，平台真实开通 COS/TKE/配额/绑定，账本冻结/扣费/120min 对账，用户看到计算资源/文件空间/状态/账单，并且用户可以释放计算、删除文件空间。测试前 node pool baseline desired/current 必须是 `2`；测试后必须回到 `2`，不允许遗留节点或 queued/running operation。
+历史 Package C/D canary 和 rollout evidence 仍作为 evidence 参考，但不能替代当前完成态。当前完成态必须证明：用户在 Portal 点击套餐后，平台真实开通 COS/TKE/配额/绑定，账本冻结/扣费/120min 对账，用户看到计算资源/文件空间/状态/账单，并且用户可以释放计算、删除文件空间。测试前 node pool baseline desired/current 必须是 `2`；测试后必须回到 `2`，不允许遗留节点或 queued/running operation。当前已记录 starter 最小生产闭环；这不是 pro/升级/加存储/全矩阵 live 完成态。
 
 资源隔离口径：标准套餐使用共享用户计算池 + 硬 quota；用户购买计算资源套餐和工作台能力，不购买节点、节点池或云控制台资源。Package C 必须把 compute allocation 写入 Portal canonical store，并落到 workspace namespace 的 ResourceQuota / LimitRange / admission policy；超过 allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付。高级隔离套餐可以使用 `dedicated_node_pool` 或 `dedicated_node`，但仍由平台开通、隔离、计费、审计和释放。
 
 Package D / OPL Deployment Discovery 已作为独立 docs/status 分支记录：`docs/v22-package-d-opl-deploy-discovery`，model: gpt-5.4。该分支只写状态和 smoke：no secret read、no kubeconfig read、no kubectl、no build/push/deploy。它不代表 Package D rollout，不代表 deploy/build/push/kubectl 已完成。
 
-Cloud-lane must be preserved as a long-lived branch family, but the current active branch is `cloud-lane/feat/v22-cloud-operation-harness-refactor`, model: `gpt-5.4`, base `f27dbd2`. Older D1/D2/D3 Package D stack evidence remains historical deploy evidence only; it does not authorize Package C resource lifecycle and does not prove the Portal user click product loop.
+Cloud-lane must be preserved as a long-lived branch family, but the current active branch is `cloud-lane/feat/v22-cloud-operation-harness-refactor`, model: `gpt-5.4`, base `9b68c44`. Older D1/D2/D3 Package D stack evidence remains historical deploy evidence only; it does not authorize Package C resource lifecycle and does not prove the Portal user click product loop.
 
 ## Harness L1-L4 Status
 
 | level | status | evidence / blocker | owner | next action | required smoke | cleanup gate |
 | --- | --- | --- | --- | --- | --- | --- |
-| L1 | in-progress | production env/secret/schema references must be rechecked after async worker refactor | A | verify route/schema/secret-reference gate without reading secret content | `smoke-test-v22-cloud-harness-manifest-selector.mjs`; `smoke-test-v22-portal-runtime-startup-config.mjs` | not required |
-| L2a | pending-local-gate | direct Package C canary must start from baseline 2 and clean back to 2 | A/user | run dry-run before any live mutation, then execute minimal lifecycle only if cleanup plan exists | `smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs`; `smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs`; `smoke-test-v22-cloud-live-cleanup-gate.mjs` | required |
-| L2b | in-progress | Portal API now queues; independent worker drain and nodePoolRef attribution hard gate are under local verification | A | prove Portal click -> queued -> worker -> projection without HTTP 504 | `smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs` | required |
-| L3 | pending | 120min billing/reconciliation and release-stop-billing evidence pending | A/B/user | prove billing freeze, reconcile checkpoint, release compute, cleanup report | `smoke-test-v22-cloud-live-cleanup-gate.mjs`; `smoke-test-v22-release-stop-billing-audit-flow.mjs`; `smoke-test-v22-portal-files-billing-trace-flow.mjs` | required |
-| L4 | pending | ordinary user product lifecycle evidence pending | C/B/user | prove user can open, upload, upgrade, release/delete and see sanitized product state | `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | required |
+| L1 | starter-live-done | production env/secret/schema gate passed for the live Portal deployment that ran the starter minimal loop | A/B | rebase verification and B review before absorption | `smoke-test-v22-cloud-harness-manifest-selector.mjs`; `smoke-test-v22-portal-runtime-startup-config.mjs` | not required |
+| L2a | starter-live-done | direct Package C storage/compute create evidence supports the starter live loop; final node pool baseline is `2/2/0` | A/user | preserve evidence boundary; no new live mutation before B decision | `smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs`; `smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs`; `smoke-test-v22-cloud-live-cleanup-gate.mjs` | required |
+| L2b | starter-live-done | Portal starter click queued operation; independent worker drained Package C; PostgreSQL/projection updated without HTTP 504 | A | re-run local smoke after rebase; do not rerun live unless separately authorized | `smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs` | required |
+| L3 | starter-cleanup-done-reconciling | release compute and delete storage succeeded; canonical activeOperations is `0`; billing label is `对账中` | A/B/user | keep exact 120min settlement as an audit checkpoint; do not claim fully settled billing | `smoke-test-v22-cloud-live-cleanup-gate.mjs`; `smoke-test-v22-release-stop-billing-audit-flow.mjs`; `smoke-test-v22-portal-files-billing-trace-flow.mjs` | required |
+| L4 | starter-product-accepted | ordinary user starter projection is sanitized and shows compute released, file protection, workbench available, billing reconciling | C/B/user | pro/upgrade/add-storage/full matrix remains local smoke unless a new live run is authorized | `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | required |
 
 ## Plain Status Summary
 
@@ -34,12 +34,13 @@ Cloud-lane must be preserved as a long-lived branch family, but the current acti
 - TC3 cleanup: pending official SDK live report
 - create/release dry-run: pending
 - mutation wrapper: pending
-- production deploy: schema migration, rollout, and runtime smoke passed for Package D; production Portal cloud-operation bridge remains disabled in the live Deployment
+- production deploy: schema migration, rollout, and runtime smoke passed for Package D; later Portal live deployment enabled the cloud-operation worker path for the starter minimal loop only
 - Package D / OPL deployment discovery: owner guard blocker was real and has now been resolved for the authorized `default` platform-service targets by adding `targetClass/ownerRef/operationId` Kubernetes labels; the guard remains hard for future targets
 - Package D image push gate: authorized real R-14/R-15 TCR preflight/build/push completed for `portal`, `opl-web-gateway`, and `opl-runtime-bridge`; digest report remains under `.runtime/v22-registry/`
 - Package D deploy dry-run gate: authorized real R-16 server-side dry-run passed after owner guard labels were added; Portal schema migration was run through a separate gate; rollout and pushed-version runtime smoke passed
 - Portal production integration: current branch changes the production API shape from inline execution to queued operation + independent worker; backend compute allocation records `nodePoolRef` for admin attribution; missing nodePoolRef fails closed and must mark the operation/job failed instead of leaving queued work behind
-- canary/QA/release status: pending
+- starter minimal production loop: done with cleanup proof; pro/upgrade/add-storage/full matrix live acceptance: not claimed
+- canary/QA/release status: pending for full product matrix
 
 ## Status Table
 
@@ -62,10 +63,9 @@ Cloud-lane must be preserved as a long-lived branch family, but the current acti
 
 ## Open Issues
 
-- L1 live Deployment env/secret/schema gate must be rechecked after this async worker refactor.
-- L2b online Portal click evidence is not complete until independent worker drains production queue without 504.
-- L3 120min billing reconciliation and cleanup evidence still pending.
-- L4 ordinary user product acceptance still pending.
+- starter minimal live loop evidence is recorded, but pro 8c16g/100GB, upgrade/add-storage and full matrix live reruns are not claimed.
+- exact 120min billing settlement remains an audit checkpoint; current starter evidence shows reconciliation status `对账中`.
+- Package D rollout/build/push/kubectl readiness is outside the starter Package C lifecycle proof.
 - Package D / OPL Deployment Discovery records reachable `kube.medopl.cn`, `portal.medopl.cn`, `opl.medopl.cn`, and `trace.medopl.cn` facts from the authorized discovery lane, but it did not read secret, did not read kubeconfig, did not run kubectl, and did not build/push/deploy.
 - owner guard blocker resolved for the authorized `default` Package D platform-service targets by adding `targetClass/ownerRef/operationId` labels. The rule remains hard: Package D cannot use `k8s-app/qcloud-app`, deployment name, namespace, IP, creation time, or manual memory as ownership proof.
 - Legacy Portal production cloud bridge blocker is superseded by L2b/L3: the active blocker is no longer only env presence, but whether Portal click queues operation, independent worker drains, PostgreSQL canonical store updates, billing/reconciliation records exist, and cleanup returns baseline to 2.
@@ -96,7 +96,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
 ```json
 {
   "programId": "v22-cloud-onboarding",
-  "currentTrunkAnchor": "f27dbd2",
+  "currentTrunkAnchor": "9b68c44",
   "workflowModel": "cloud_harness_native_async_lifecycle_loop",
   "oldCoPhaseStateMachineRetired": true,
   "activeGatePrefix": "CC",
@@ -108,14 +108,14 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     "C04",
     "CO-01..CO-14"
   ],
-  "workflowBoundaryEvidence": "f27dbd2",
+  "workflowBoundaryEvidence": "9b68c44",
   "harnessManifest": "docs/recovery/v22-cloud-harness-manifest.json",
   "liveBaselineDesiredCapacity": 2,
   "cleanupRequiredForLiveRuns": true,
   "harnessLevels": [
     {
       "level": "L1",
-      "status": "in-progress",
+      "status": "starter-live-done",
       "owner": "A",
       "purpose": "production env/secret/schema gate without reading secret content",
       "requiredSmoke": [
@@ -126,7 +126,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     },
     {
       "level": "L2a",
-      "status": "pending-local-gate",
+      "status": "starter-live-done",
       "owner": "A/user",
       "purpose": "direct Package C resource lifecycle canary from baseline 2 back to baseline 2",
       "requiredSmoke": [
@@ -138,7 +138,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     },
     {
       "level": "L2b",
-      "status": "in-progress",
+      "status": "starter-live-done",
       "owner": "A",
       "purpose": "Portal click queues operation, independent worker drains, projection updates without HTTP 504",
       "requiredSmoke": [
@@ -151,7 +151,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     },
     {
       "level": "L3",
-      "status": "pending",
+      "status": "starter-cleanup-done-reconciling",
       "owner": "A/B/user",
       "purpose": "120min billing reconciliation, release stop billing, and cleanup proof",
       "requiredSmoke": [
@@ -163,7 +163,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     },
     {
       "level": "L4",
-      "status": "pending",
+      "status": "starter-product-accepted",
       "owner": "C/B/user",
       "purpose": "ordinary user open/upload/upgrade/release/delete product lifecycle with sanitized language",
       "requiredSmoke": [
@@ -177,7 +177,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
   "cloudLane": {
     "branch": "cloud-lane/feat/v22-cloud-operation-harness-refactor",
     "model": "gpt-5.4",
-    "baseCommit": "f27dbd2",
+    "baseCommit": "9b68c44",
     "longLived": true,
     "stack": [
       "cloud-lane/feat/v22-cloud-operation-harness-refactor"
@@ -192,7 +192,32 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "independent worker drain",
       "nodePoolRef attribution hard gate"
     ],
-    "productionLiveAcceptanceClaimed": false
+    "productionStarterMinimalLiveAcceptanceClaimed": true,
+    "productionFullMatrixLiveAcceptanceClaimed": false,
+    "starterLiveEvidence": {
+      "runId": "live-l2b-8c8cff2-20260513T031510Z",
+      "portalImageTag": "cloud-harness-20260513T043146Z-becd258",
+      "portalImageDigest": "sha256:7073a9b063b3b2ff789d5cc26adea7d231cfca16083083fbfe91479e0c2f2d9f",
+      "deployment": "default/portal-opl",
+      "operationStatuses": [
+        "create_storage:succeeded",
+        "create_compute:succeeded",
+        "release_compute:succeeded",
+        "delete_storage:succeeded"
+      ],
+      "activeOperations": 0,
+      "computeStatus": "released",
+      "storageStatus": "retention_protected",
+      "billingStatusLabel": "对账中",
+      "userProjectionProviderLanguageForbidden": false,
+      "nodePoolFinal": {
+        "desired": 2,
+        "current": 2,
+        "joining": 0
+      },
+      "evidenceRoot": ".runtime/v22-live-portal-loop/live-l2b-8c8cff2-20260513T031510Z/",
+      "cleanupSnapshot": ".runtime/v22-cloud-cleanup/final-becd258-20260513T043410Z-node-pool-snapshot.json"
+    }
   },
   "packageDDiscovery": {
     "branch": "docs/v22-package-d-opl-deploy-discovery",

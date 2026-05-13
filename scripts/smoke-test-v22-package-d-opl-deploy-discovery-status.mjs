@@ -76,7 +76,8 @@ assertIncludesAll(combinedRecovery, [
   "not Package D rollout",
   "does not prove build/push/kubectl/deploy completion",
   "不代表 deploy/build/push/kubectl 已完成",
-  "does not enable `PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE`",
+  "old production bridge env/secret blocker is cleared for the starter minimal loop",
+  "does not prove pro 8c16g/100GB",
 ], "discovery_must_not_claim_rollout");
 
 assertIncludesAll(combinedRecovery, [
@@ -111,7 +112,9 @@ assert.equal(boardData.packageDDiscovery?.realRolloutStillBlocked, false, "board
 assert.equal(boardData.packageDDiscovery?.realRolloutBlocker, null, "board_real_rollout_blocker_cleared");
 assert.equal(boardData.packageDDiscovery?.realDeployDryRunDone, true, "board_real_deploy_dry_run_done");
 assert.equal(boardData.packageDDiscovery?.realRuntimeSmokeDone, true, "board_real_runtime_smoke_done");
-assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, false, "board_portal_bridge_env_still_disabled");
+assert.equal(boardData.packageDDiscovery?.productionPortalBridgeEnabledInLiveDeployment, true, "board_portal_bridge_env_enabled_for_starter_loop");
+assert.equal(boardData.starterMinimalLiveLoopDone, true, "board_starter_minimal_live_loop_done");
+assert.equal(boardData.productionFullMatrixLiveAcceptanceClaimed, false, "board_full_matrix_live_not_claimed");
 assert.equal(boardData.packageDDiscovery?.authorizedNodePoolIdle, false, "board_authorized_node_pool_not_idle");
 assert.equal(boardData.packageDDiscovery?.rollbackDone, true, "board_rollout_rollback_done");
 assert.equal(boardData.packageDDiscovery?.requiresOwnershipReleasePlanSubContract, true, "board_discovery_requires_subcontract");
@@ -155,6 +158,6 @@ console.log(JSON.stringify({
   rolloutDone: true,
   ownerGuardBlocked: false,
   realRolloutBlocker: null,
-  productionPortalBridgeEnabledInLiveDeployment: false,
+  productionPortalBridgeEnabledInLiveDeployment: true,
   requiresOwnershipReleasePlanSubContract: true
 }, null, 2));

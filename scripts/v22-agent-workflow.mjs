@@ -857,11 +857,14 @@ function buildCloudOnboardingPhaseSummary(phases) {
     blocked: [],
     needsUserAuthorization: [],
     active: [],
+    starterLiveDone: [],
   };
   for (const phase of phases) {
     const compact = compactCloudOnboardingPhase(phase);
     if (phase.status === "needs-user-authorization") {
       summary.needsUserAuthorization.push(compact);
+    } else if (String(phase.status).startsWith("starter-")) {
+      summary.starterLiveDone.push(compact);
     } else if (summary[phase.status]) {
       summary[phase.status].push(compact);
     }
@@ -961,8 +964,8 @@ function buildBoardCurrentTaskPacket(board = {}) {
     title: "Cloud harness L1-L4 refactor task packet",
     phaseId: "L1-L4",
     phaseName: "production cloud operation harness",
-    status: "in-progress",
-    handoffTarget: "A",
+    status: "starter-live-done",
+    handoffTarget: "B",
     requiredSmoke: [
       "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
       "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
@@ -978,8 +981,8 @@ function buildBoardCurrentTaskPacket(board = {}) {
       "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
       "scripts/smoke-test-v22-mvp-contract-suite.mjs",
     ],
-    userGate: "live L1-L4 may run only after local harness gates pass; node pool baseline desired/current must be 2 and cleanup must return to 2",
-    requiresManualMergeDecision: false,
+    userGate: "starter minimal live loop is recorded; future pro, upgrade, add-storage, dedicated node pool, or full matrix live reruns need separate authorization; node pool baseline desired/current must remain 2 and cleanup must return to 2",
+    requiresManualMergeDecision: true,
     suggestedCommands: [
       "node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
       "node scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
@@ -996,7 +999,7 @@ function buildBoardCurrentTaskPacket(board = {}) {
       "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
       "git diff --check -- scripts docs/recovery docs/contracts services/portal",
     ],
-    allowedActions: ["update old cloud contracts/status", "run local harness smoke", "prepare cost-capped live L1-L4 task package"],
+    allowedActions: ["review rebase", "run local harness smoke", "record B absorption decision"],
     forbiddenActions: sharedBoundaries,
   };
 }
@@ -2072,6 +2075,7 @@ function renderCloudOnboardingStatus(pack) {
       ["blocked", pack.phaseSummary.blocked.map((phase) => phase.phaseId).join(", ")],
       ["needs-user-authorization", pack.phaseSummary.needsUserAuthorization.map((phase) => phase.phaseId).join(", ")],
       ["active", pack.phaseSummary.active.map((phase) => phase.phaseId).join(", ")],
+      ["starter-live-done", pack.phaseSummary.starterLiveDone.map((phase) => phase.phaseId).join(", ")],
     ]),
     "",
     "## required smoke",
