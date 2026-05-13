@@ -24,6 +24,7 @@ const allowedDiffPaths = new Set([
   "docs/recovery/repo-zoning.md",
   "docs/recovery/legacy-cleanup-backlog.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
 ]);
 
 const forbiddenDefaultEntryTerms = [
