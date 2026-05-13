@@ -35,6 +35,18 @@ async function readBody(req) {
   return Buffer.from(req.body || "");
 }
 
+async function routeRequest(route, { db, method = "GET", urlPath = "/", body = null, user = null } = {}) {
+  const res = responseRecorder();
+  const handled = await route({
+    req: { method, body: body ? JSON.stringify(body) : "" },
+    res,
+    url: new URL(urlPath, "http://portal.local"),
+    db,
+    user,
+  });
+  return { handled, res };
+}
+
 function baseDb() {
   return {
     users: [],
@@ -124,14 +136,7 @@ function routeFactories({ db, providerSecretStore, writes, secretFile } = {}) {
 }
 
 async function request({ route, db, method = "GET", urlPath = "/", body = null, user = null } = {}) {
-  const res = responseRecorder();
-  const handled = await route({
-    req: { method, body: body ? JSON.stringify(body) : "" },
-    res,
-    url: new URL(urlPath, "http://portal.local"),
-    db,
-    user,
-  });
+  const { handled, res } = await routeRequest(route, { db, method, urlPath, body, user });
   assertNoSecretLeak(res.payload, `${method}_${urlPath}_payload`);
   assertNoCloudConsoleLanguage(res.payload, `${method}_${urlPath}_payload`);
   return { handled, res };
@@ -252,6 +257,53 @@ try {
   const db = baseDb();
   const writes = [];
   const { apiRoute, labRoute } = routeFactories({ db, providerSecretStore, writes, secretFile });
+
+  {
+    const regressionDb = baseDb();
+    const fullWrites = [];
+    const labSubsetWrites = [];
+    const regressionRoute = createLabPackageRoutes({
+      readBody,
+      sendJson,
+      writeDb: Object.assign(async (targetDb) => {
+        fullWrites.push(JSON.parse(JSON.stringify(targetDb)));
+      }, {
+        persistLabBillingState: async (payload = {}) => {
+          labSubsetWrites.push(JSON.parse(JSON.stringify(payload)));
+        },
+      }),
+      enableCloudOperationProductionBridge: true,
+      cloudOperationRunnerMode: "fake-live",
+      cloudOperationSecretFile: secretFile,
+      cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+      cloudOperationComputeNodePoolRef: "np-backend-attribution-proof",
+      repoRoot: ".",
+    });
+    const regressionUser = {
+      id: "user-package-click-regression",
+      tenantId: "tenant-package-click-regression",
+      currentTaskSlug: "workspace-package-click-regression",
+      status: "active",
+    };
+    regressionDb.users.push(regressionUser);
+    regressionDb.wallets.push({ userId: regressionUser.id, balance: 1000, updatedAt: new Date().toISOString() });
+    const regression = await routeRequest(regressionRoute, {
+      db: regressionDb,
+      method: "POST",
+      urlPath: "/portal/api/lab-packages/activate",
+      user: regressionUser,
+      body: {
+        workspaceId: "workspace-package-click-regression",
+        packageId: "starter",
+        idempotencyKey: "regression-cloud-persist",
+      },
+    });
+    assert.equal(regression.res.statusCode, 201, "regression_activate_must_create");
+    assert.equal(regressionDb.cloudOperationJobs.length, 2, "regression_activate_must_create_queued_jobs");
+    assert.equal(fullWrites.length, 1, "cloud_bridge_package_activate_must_full_persist_once");
+    assert.equal(fullWrites[0].cloudOperationJobs.length, 2, "full_persist_must_include_cloud_operation_jobs");
+    assert.equal(labSubsetWrites.length, 0, "cloud_bridge_package_activate_must_not_use_lab_subset_persist");
+  }
 
   const starterUser = await prepareUser(apiRoute, db, {
     tenantId: "tenant-package-click-a",

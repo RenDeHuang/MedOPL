@@ -81,6 +81,10 @@ export function createLabPackageRoutes({
   }
 
   async function persistLabBillingState(db, result = {}) {
+    if (enableCloudOperationProductionBridge) {
+      await writeDb(db);
+      return;
+    }
     if (typeof writeDb.persistLabBillingState === "function") {
       await writeDb.persistLabBillingState({
         db,
