@@ -32,11 +32,21 @@ Portal 可以保留必要 session trace metadata，用于：
 metadata 不能包含：
 
 - raw prompt
+- raw input
+- raw output
+- raw completion
 - raw API key
+- provider key
 - bearer token
 - launchToken
 - runtimeToken
 - secret
+- object path
+- objectKey
+- storageKey
+- localPath
+- signedUrl
+- presignedUrl
 - 可还原敏感内容的完整请求或响应正文
 
 ## Langfuse

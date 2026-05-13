@@ -152,8 +152,6 @@ function traceUsageFields(metadata) {
     tokenCount: Number(firstValue(metadata.totalTokens, metadata.tokenCount, metadata.usage?.totalTokens, 0)),
     userAgent: String(firstValue(metadata.userAgent, metadata.user_agent)),
     latencyMs: Number(firstValue(metadata.latencyMs, metadata.latency_ms, metadata.durationMs, metadata.duration_ms, 0)),
-    inputPreview: String(firstValue(metadata.inputText, metadata.input, metadata.prompt, metadata.question)),
-    outputPreview: String(firstValue(metadata.outputText, metadata.output, metadata.answer)),
   };
 }
 

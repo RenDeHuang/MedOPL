@@ -10,6 +10,8 @@ Runtime Bridge metadata 责任字段按合同表达为：workspace、run、artif
 
 Langfuse session/trace 是 optional observability attachment，负责 trace/session 可视化、模型调用耗时、usage、debug、错误链路，不承担 Portal 事实源角色，不是结算真相源，不决定余额、扣费、资源状态、文件归属、释放状态。
 
+Langfuse 也不是 Portal session、run、artifact 或 billing 的业务事实源。
+
 trace.medopl.cn 是 Langfuse admin/ops console（管理员/运维原生观测台）入口。
 
 客户侧 trace 浏览仍在 Portal 的“会话轨迹”页面。
@@ -37,6 +39,8 @@ Portal 可展示的 Langfuse projection 只能是：
 换成字段摘要即：traceId、sessionId、runId、status、latencyMs、usage summary、cost estimate、traceUrl、tags。
 
 Langfuse 不能保存 raw prompt / raw completion / raw API key / bearer token / launchToken / runtimeToken / objectKey / storageKey / localPath / signedUrl。
+
+Portal projection 不能暴露 raw prompt、raw input、raw output、raw completion、provider key、token、object path、signed URL 或任何可还原敏感内容的请求/响应片段。
 
 Langfuse 部署、ClickHouse、真实 API key、真实 trace source 后续单独授权；当前分支不改 runtime 实现，不接真实 Langfuse。
 
@@ -74,7 +78,7 @@ Portal 的 sanitized projection 允许保留的字段仅限：
 - `traceUrl`
 - `tags`
 
-projection 中不得出现 raw prompt、raw completion、raw API key、bearer token、launchToken、runtimeToken、objectKey、storageKey、localPath 或 signedUrl。
+projection 中不得出现 raw prompt、raw input、raw output、raw completion、raw API key、provider key、bearer token、launchToken、runtimeToken、object path、objectKey、storageKey、localPath、signedUrl 或 presignedUrl。
 
 ## Deferred Authorization
 
@@ -132,6 +136,11 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
       "错误链路"
     ],
     "notCanonicalFor": [
+      "Portal",
+      "run",
+      "artifact",
+      "billing",
+      "Portal session",
       "用户",
       "账单",
       "文件",
@@ -202,6 +211,23 @@ projection 中不得出现 raw prompt、raw completion、raw API key、bearer to
     "storageKey",
     "localPath",
     "signedUrl"
+  ],
+  "portalProjectionForbiddenData": [
+    "raw prompt",
+    "raw input",
+    "raw output",
+    "raw completion",
+    "raw API key",
+    "provider key",
+    "bearer token",
+    "launchToken",
+    "runtimeToken",
+    "object path",
+    "objectKey",
+    "storageKey",
+    "localPath",
+    "signedUrl",
+    "presignedUrl"
   ],
   "deferredAuthorization": [
     "trace.medopl.cn 真实部署",
