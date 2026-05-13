@@ -176,15 +176,15 @@ assertIncludesAll(contents.validationPath, [
 ], "validation_path_productionization_eval");
 
 assertIncludesAll(contents.gapMatrix, [
-  "next_leaf_step: leaf-opl-connection-productionization-eval-shell",
+  "next_leaf_step: leaf-opl-connection-productionization-local-implementation",
   "eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`",
   "block canary-only production claims, fake success, raw secret/token/storage leakage, upstream modification, cloud/deploy owner-field leakage, and unauthorized cloud/deploy operations",
 ], "gap_matrix_productionization_eval");
 
 assertIncludesAll(contents.goalState, [
-  "leaf-opl-connection-productionization-eval-shell",
-  "OPL connection productionization eval shell",
-  "create a local productionization eval shell",
+  "leaf-opl-connection-productionization-local-implementation",
+  "OPL connection productionization local implementation",
+  "implement the smallest local OPL productionization slice",
   "production implementation must not treat canary evidence as production deploy evidence",
   "node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
   "no service/upstream/deploy/cloud/secret operation may be present",

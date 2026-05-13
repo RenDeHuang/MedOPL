@@ -101,17 +101,17 @@ Every gap entry must contain:
 ### Gap: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
 
 - id: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
-- current_fact: local contracts prove Gateway/preflight/Runtime Bridge and selected file/run/artifact gates; production connection is not fully live.
+- current_fact: local contracts prove Gateway/preflight/Runtime Bridge, selected file/run/artifact gates, and a local OPL productionization eval shell. Production connection is not fully live.
 - ideal_state: Portal -> Gateway -> clean upstream OPL -> Runtime Agent -> file/run/artifact -> Portal trace works without fake 200.
 - problem: canary facts must not become production truth without productionized branch absorption.
 - dependency: OPL capability and file/run/artifact contracts.
-- status: gated
-- next_leaf_step: leaf-opl-connection-productionization-eval-shell
+- status: in_progress
+- next_leaf_step: leaf-opl-connection-productionization-local-implementation
 - eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
-- allowed_files: eval-shell-only updates to OPL productionization smoke, `docs/recovery/status-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/v22-goal-state.md`, branch-scoped harness allowlists; future production implementation must be a separate branch
+- allowed_files: local OPL productionization implementation only under `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/portal/src/domain/opl-work-flow.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs`, `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-messages.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs`, `services/opl-runtime-bridge/src/run-contract.mjs`, OPL productionization smokes, and scoped recovery truth writeback
 - forbidden_files: upstream one-person-lab, `deploy/*` without authorization, raw provider key paths
 - truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B confirms clean upstream one-person-lab boundary and no fake success path.
+- B_absorb_criteria: B confirms clean upstream one-person-lab boundary, no fake success path, no Package D owner-field leakage, no raw secret/token/storage/path leakage, no canary-only production claim, and no secret/live/cloud/deploy/upstream operation.
 
 ### Gap: cloud-lane-mock-readonly-dry-run-authorized
 
@@ -137,6 +137,7 @@ truth writeback section:
 - leaf-opl-connection-productionization-contract-refresh: `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` gates contract_refresh_only OPL productionization handoff status. Local Runtime Agent HTTP API relay full-loop and WebUI bridge no-fake-success gates are absorbed only as canary facts; provider message reply remains message/reply only. Real cloud runtime, COS billing reconciliation, Langfuse / `trace.medopl.cn`, one-person-lab HTTP Product API, deploy owner fields, Package D owner labels, raw provider key, tokens, object/storage keys, local paths, and signed URLs remain outside OPL production truth until separately authorized and productionized.
 - next executable OPL leaf: `leaf-opl-connection-productionization-eval-shell` must create a local eval shell before any production implementation. It may only prove allowed OPL-lane production inputs and block canary-only production claims, fake success, raw secret/token/storage leakage, upstream modification, cloud/deploy owner-field leakage, and unauthorized cloud/deploy operations.
 - leaf-opl-connection-productionization-eval-shell: `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` now provides the local eval shell for the next OPL production implementation. It reads only repo-tracked contracts/recovery/gates, asserts OPL projection inputs are limited to `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`, and fail-closes on Package D owner fields, raw key/token/storage/path leakage, fake success, upstream drift, and canary evidence promoted to production truth.
+- leaf-opl-connection-productionization-eval-shell B absorbed on `6a939de05efa8967fa2b0bf8da3c53768471fc89`. The next executable OPL leaf is `leaf-opl-connection-productionization-local-implementation`: a local-only implementation slice that may productionize repo-local Portal/Adapter/Runtime Bridge projection boundaries, but must not read secret, call a live provider, call true cloud, build/push/kubectl, deploy, modify upstream, or claim real cloud/COS/Langfuse production truth.
 - Authorization model: Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps；Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。
 - No auth record means the risky step remains deferred_authorized.
 - Cloud live baseline / cleanup / minimum spend policy requires desired/current baseline 应为 2，且测试后必须回到 2.

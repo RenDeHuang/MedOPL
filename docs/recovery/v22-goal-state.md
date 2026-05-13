@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `634fbd6b9b41b55312b6bd76fbb9fe8e45d1814f`
+- 当前 trunk HEAD: `6a939de05efa8967fa2b0bf8da3c53768471fc89`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `test/v22-opl-productionization-eval-shell`
+- current branch: `docs/v22-advance-opl-productionization-eval-shell-cursor`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-opl-connection-productionization-eval-shell`
-- highest-priority executable leaf step: `leaf-opl-connection-productionization-eval-shell`
-- 当前下一问题：OPL connection productionization eval shell
+- 当前 goal cursor: `leaf-opl-connection-productionization-local-implementation`
+- highest-priority executable leaf step: `leaf-opl-connection-productionization-local-implementation`
+- 当前下一问题：OPL connection productionization local implementation
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -91,7 +91,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
@@ -112,6 +112,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Leaf 7 failure analysis: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` first failed with `MODULE_NOT_FOUND`, which was the intended RED for the missing eval shell. After creating the eval shell, the same gate failed once with `upstream_opl_productionization_eval_missing:one-person-lab upstream remains clean` because the eval used a non-canonical English phrase while the upstream contract records the clean upstream fact in Chinese/mixed wording. It then failed twice on stale future-placeholder expectations after the gap matrix correctly promoted the new eval shell from future placeholder to active eval command: `gap_matrix_productionization_eval_missing:future ...` and `refresh_gate_productionization_eval_missing:future ...`. `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` also failed once with `gap_matrix_leaf6_missing:future ...` for the same stale placeholder expectation. `node scripts/smoke-test-v22-product-goal-harness.mjs` then failed once with `product_goal_harness_modified_unsubscribed_file:scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` because the branch allowlist missed the refresh gate file updated for active eval-shell expectations. failure_category: `eval_wrong`; attempt_count: 6 total; root_cause_id: `leaf7_eval_shell_missing_then_stale_eval_phrases`; changed_strategy: create the eval shell, keep it repo-tracked/local only, align upstream clean-boundary assertions to exact contract wording, update both new eval and Leaf 6 refresh gate assertions to require the active eval command, and add the refresh gate file to exact branch allowlists; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun the new eval shell, OPL refresh gate, product-goal harness, default-entry gate, resource-order retirement gate, MVP suite, workflow review, diff-scoped sensitive hygiene, and whitespace checks.
 - Leaf 7 B self-fix: after local ff-only absorb, B verification first failed with `product_goal_harness_modified_unsubscribed_file:scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` because trunk-branch allowlists did not include the new eval shell file. failure_category: `eval_wrong`; attempt_count: 1 B absorb blocker; root_cause_id: `leaf7_trunk_allowlist_missing_eval_shell`; changed_strategy: add the new eval shell to trunk allowlists in product-goal harness, default-entry gate, and resource-order retirement gate, then rerun B checks before push; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun full B verification on trunk.
 - leaf-opl-connection-productionization-eval-shell completed on branch `test/v22-opl-productionization-eval-shell`: `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` is now a local productionization eval shell for the next OPL implementation branch. The gate reads only repo-tracked contracts, recovery truth, and existing OPL smoke scripts; it asserts that OPL production code may consume only `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`, while forbidding `ownerRef`, `operationId`, K8s/deploy owner labels, raw provider key, provider API key, launchToken, runtimeToken, bearer token, object/storage keys, local paths, signed URLs, and presigned URLs. It also checks canary-only evidence remains non-production truth, unverified file/run/artifact capabilities remain gated, upstream stays clean/fail-closed, and MVP acceptance still treats Leaf 6 as contract_refresh_only. No service code, upstream, deploy, adapters, `.sentrux`, `.env.demo.template`, package/dependency files, secret, live provider, true cloud, build/push, kubectl, deploy, or live-test was touched or run.
+- Leaf 7 B absorb/push result: OPL connection productionization eval shell branch `test/v22-opl-productionization-eval-shell`, commit `6a939de05efa8967fa2b0bf8da3c53768471fc89`, changed files `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with the new OPL productionization eval shell, OPL productionization refresh gate, real OPL no-fake-success gate, real OPL Runtime Agent HTTP API loop, real OPL provider message canary contract, Portal-OPL context/backflow contract, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `6a939de05efa8967fa2b0bf8da3c53768471fc89`; next cursor is `leaf-opl-connection-productionization-local-implementation`.
 
 ## Later Problems
 
@@ -299,6 +300,31 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: `services/*`, upstream one-person-lab, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, package/dependency files, secret-like paths, real cloud runners.
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`
 - B_absorb_criteria: B reruns the new eval shell, OPL productionization refresh gate, real OPL no-fake-success/runtime-agent gates, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check; no service/upstream/deploy/cloud/secret operation may be present.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
+
+### Leaf Step 8
+
+- step_id: leaf-opl-connection-productionization-local-implementation
+- problem: OPL productionization has a local eval shell, but repo-local Portal/Adapter/Runtime Bridge production boundaries must be implemented without promoting canary facts into live/cloud/deploy truth.
+- input_state: `leaf-opl-connection-productionization-eval-shell` is absorbed on trunk at `6a939de05efa8967fa2b0bf8da3c53768471fc89`; local Runtime Agent HTTP API relay and WebUI bridge no-fake-success gates are available as local proof only.
+- expected_output: implement the smallest local OPL productionization slice that preserves Gateway/preflight/Runtime Agent projection, fail-closes unverified file/run/artifact paths, and exposes only allowed OPL-lane projection fields.
+- light_contract_card:
+  - problem: productionization must make local OPL work boundaries stricter without claiming real cloud/runtime/deploy production.
+  - subscribed_contracts: `docs/contracts/v22-portal-opl-connection-boundary.md`, `docs/contracts/v22-upstream-opl-boundary.md`, `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`, `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `docs/contracts/v22-portal-files-billing-trace-boundary.md`, `docs/recovery/status-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`
+  - in_scope: local Portal OPL route/work API projection, Runtime Bridge HTTP route/relay/run/message boundaries, productionization eval updates, and sanitized recovery truth writeback.
+  - out_of_scope: true provider call, raw provider key handling beyond existing backend secret boundary, true cloud runtime, COS billing reconciliation, Langfuse deployment, Package D deploy ownership, build/push/kubectl, deploy, live-test, upstream one-person-lab modification, package/dependency changes.
+  - data_or_field_truth: OPL lane may expose only `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef` as production projection facts; `providerKeyRef` may remain a backend-bound reference. OPL lane must not emit Package D owner fields, raw secret/token fields, object/storage paths, local paths, signed URLs, or canary-only production claims.
+  - auth_boundary: local repo implementation only; no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test. If any of these becomes necessary, this leaf must stop at `deferred_authorized` with a step-local auth record requirement.
+  - pollution_risks: canary promoted to production truth, fake 200, upstream internal import, Package D owner-field leakage, raw key/token/storage/path leakage, old user-owned/resource-order/managed-runtime primary path language.
+  - verification_commands: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`, `npm --prefix services/portal run check`
+  - B_absorb_criteria: B confirms allowed OPL projection fields only, no fake success, no upstream/deploy/cloud/secret operation, Portal check passes, and full local OPL productionization gate suite passes.
+- eval_command: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
+- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
+- trace_or_evidence_expectation: local stdout and repo-tracked sanitized truth only; no `.runtime` evidence unless a future canary is separately authorized.
+- allowed_files: `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/portal/src/domain/opl-work-flow.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs`, `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-messages.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs`, `services/opl-runtime-bridge/src/run-contract.mjs`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `docs/recovery/v22-goal-state.md`
+- forbidden_files: upstream one-person-lab, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, package/dependency files, secret-like paths, real cloud runners, unrelated Portal/frontend/backend surfaces.
+- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`
+- B_absorb_criteria: B reruns the OPL eval shell, OPL refresh gate, real OPL no-fake-success/runtime-agent gates, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, Portal check, and diff whitespace check; no service changes outside allowed files and no risky operation may be present.
 - attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ## 禁止并行写入的区域
