@@ -283,6 +283,12 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
       "scripts/smoke-test-v22-product-goal-harness.mjs",
     ])],
+    ["docs/v22-advance-frontend-evalset-cursor", new Set([
+      gatePath,
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+    ])],
     ["cleanup/v22-product-goal-harness", new Set([
       gatePath,
       "docs/recovery/v22-product-goal.md",

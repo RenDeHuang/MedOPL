@@ -78,6 +78,12 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
+  ["docs/v22-advance-frontend-evalset-cursor", new Set([
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["contract/v22-opl-productionization-contract-refresh", new Set([
     "docs/contracts/v22-portal-opl-connection-boundary.md",
     "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
@@ -427,6 +433,8 @@ const goalStatePhrases = [
   "Leaf 8 B absorb/push result",
   "f114ee587db2a41a3a85fc5f67bbed4fbe63e57b",
   "leaf-frontend-product-evalset-gap",
+  "Leaf 9 B absorb/push result",
+  "6acb92e03c07e580191d77e1a5389a94fbe137fc",
   "leaf-backend-contract-eval-template",
   "secret hygiene",
   "legacy scripts archive",
