@@ -25,16 +25,55 @@ const PREAUTH_HOLD_TYPES = new Set(["preauth_hold"]);
 const PREAUTH_RELEASE_TYPES = new Set(["preauth_release"]);
 const PREAUTH_SETTLEMENT_TYPES = new Set(["exact_resource_charge", "makeup_charge"]);
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function resourceBindingIdFrom(record = {}) {
+  return text(record.resourceBindingId || record.resource_binding_id || record.bindingId || record.binding_id);
+}
+
+function legacyResourceOrderIdFrom(record = {}) {
+  const legacyResourceOrderId = text(
+    record.legacyResourceOrderId
+    || record.legacy_resource_order_id
+    || record.resourceOrderId
+    || record.resource_order_id
+    || record.orderId
+    || record.order_id
+  );
+  return legacyResourceOrderId;
+}
+
+function billingAttributionIdFrom(record = {}, resourceBindingId = "") {
+  return text(record.billingAttributionId || record.billing_attribution_id || resourceBindingId);
+}
+
+function accountIdFrom(record = {}, user = {}) {
+  return text(record.accountId || record.account_id || record.billingAccountId || record.billing_account_id || record.userId || record.user_id || user?.id);
+}
+
+function serverPlanIdFrom(record = {}) {
+  return text(record.serverPlanId || record.server_plan_id || record.planId || record.plan_id || record.packageId || record.package_id);
+}
+
 function orderLedgerContext(user, order = {}) {
-  const userId = order.userId || user?.id || "";
-  const tenantId = order.tenantId || user?.id || userId;
+  const userId = text(order.userId || user?.id);
+  const tenantId = text(order.tenantId || user?.tenantId || userId) || userId;
+  const resourceBindingId = resourceBindingIdFrom(order);
+  const billingAttributionId = billingAttributionIdFrom(order, resourceBindingId);
+  const accountId = accountIdFrom(order, user) || tenantId || userId;
   return {
     tenantId,
     userId,
-    workspaceId: order.workspaceId,
-    runId: order.runId || "",
-    resourceOrderId: order.id,
-    billingAccountId: order.billingAccountId || tenantId || userId,
+    accountId,
+    workspaceId: text(order.workspaceId || order.workspace_id),
+    runId: text(order.runId || order.run_id),
+    resourceBindingId,
+    billingAttributionId,
+    legacyResourceOrderId: legacyResourceOrderIdFrom(order),
+    billingAccountId: text(order.billingAccountId || order.billing_account_id || accountId || tenantId || userId),
+    serverPlanId: serverPlanIdFrom(order),
     currency: order.currency || "CNY",
   };
 }
@@ -188,7 +227,12 @@ function sumEntryCents(entries = []) {
 function pendingUsageSummary(entry = {}) {
   return {
     id: entry.id,
-    resourceOrderId: entry.resourceOrderId,
+    resourceBindingId: entry.resourceBindingId,
+    billingAttributionId: entry.billingAttributionId,
+    workspaceId: entry.workspaceId,
+    accountId: entry.accountId,
+    serverPlanId: entry.serverPlanId,
+    legacyResourceOrderId: entry.legacyResourceOrderId,
     runId: entry.runId,
     plainType: "运行中预扣",
     copy: "这次任务正在按运行中费用预扣，最终金额会在 T+1 账单回来后校准。",
@@ -244,10 +288,15 @@ export function normalizeLedgerEntry(entry = {}) {
   const createdAt = String(entry.createdAt || entry.created_at || "").trim() || new Date().toISOString();
   const rawType = String(entry.type || "").trim() || "manual_adjustment";
   const type = LEDGER_TYPE_ALIASES.get(rawType) || rawType;
-  const resourceOrderId = String(entry.resourceOrderId || entry.resource_order_id || entry.orderId || entry.order_id || "").trim();
+  const resourceBindingId = resourceBindingIdFrom(entry);
+  const billingAttributionId = billingAttributionIdFrom(entry, resourceBindingId);
+  const legacyResourceOrderId = legacyResourceOrderIdFrom(entry);
+  const accountId = accountIdFrom(entry);
+  const serverPlanId = serverPlanIdFrom(entry);
   const billingAccountId = String(
     entry.billingAccountId
     || entry.billing_account_id
+    || accountId
     || entry.userId
     || entry.user_id
     || entry.tenantId
@@ -261,8 +310,11 @@ export function normalizeLedgerEntry(entry = {}) {
     userId: String(entry.userId || entry.user_id || entry.tenantId || entry.tenant_id || "").trim(),
     workspaceId: String(entry.workspaceId || entry.workspace_id || "").trim(),
     runId: String(entry.runId || entry.run_id || "").trim(),
-    resourceOrderId,
-    orderId: resourceOrderId,
+    resourceBindingId,
+    billingAttributionId,
+    legacyResourceOrderId,
+    accountId,
+    serverPlanId,
     billingAccountId,
     type: LEDGER_TYPES.has(type) ? type : "manual_adjustment",
     amount: moneyAmount(entry.amount, 0),
@@ -317,6 +369,9 @@ export function appendUnattributedBill(db, bill = {}) {
 }
 
 function normalizeBillQueueRecord(bill = {}) {
+  const resourceBindingId = resourceBindingIdFrom(bill);
+  const billingAttributionId = billingAttributionIdFrom(bill, resourceBindingId);
+  const accountId = accountIdFrom(bill);
   return {
     id: String(bill.id || randomUUID()),
     idempotencyKey: String(bill.idempotencyKey || bill.idempotency_key || "").trim(),
@@ -325,9 +380,12 @@ function normalizeBillQueueRecord(bill = {}) {
     reason: String(bill.reason || "missing_required_cost_tags").trim(),
     tenantId: String(bill.tenantId || bill.tenant_id || "").trim(),
     workspaceId: String(bill.workspaceId || bill.workspace_id || "").trim(),
-    resourceOrderId: String(bill.resourceOrderId || bill.resource_order_id || bill.orderId || bill.order_id || "").trim(),
+    resourceBindingId,
+    billingAttributionId,
+    legacyResourceOrderId: legacyResourceOrderIdFrom(bill),
+    accountId,
     runId: String(bill.runId || bill.run_id || "").trim(),
-    serverPlanId: String(bill.serverPlanId || bill.server_plan_id || "").trim(),
+    serverPlanId: serverPlanIdFrom(bill),
     amount: moneyAmount(bill.amount, 0),
     currency: String(bill.currency || "CNY").trim() || "CNY",
     raw: bill.raw && typeof bill.raw === "object" ? bill.raw : {},
@@ -342,29 +400,29 @@ export function trialRemainingForUser(user) {
   return moneyAmount(entitlement.remainingCredit, 0);
 }
 
-export function activeFreezeByOrder(db, userId = "") {
+export function activeFreezeByBinding(db, userId = "") {
   const entries = normalizeLedgerEntries(db?.ledger || [])
     .filter((entry) => !userId || entry.userId === userId || entry.tenantId === userId);
-  const byOrder = new Map();
+  const byBinding = new Map();
   for (const entry of entries) {
-    if (!entry.resourceOrderId) continue;
-    const current = byOrder.get(entry.resourceOrderId) || 0;
+    if (!entry.resourceBindingId) continue;
+    const current = byBinding.get(entry.resourceBindingId) || 0;
     if (PREAUTH_HOLD_TYPES.has(entry.type)) {
-      byOrder.set(entry.resourceOrderId, moneyAmount(current + Math.abs(entry.amount)));
+      byBinding.set(entry.resourceBindingId, moneyAmount(current + Math.abs(entry.amount)));
     } else if (PREAUTH_RELEASE_TYPES.has(entry.type) || PREAUTH_SETTLEMENT_TYPES.has(entry.type)) {
-      byOrder.set(entry.resourceOrderId, moneyAmount(current - Math.abs(entry.amount)));
+      byBinding.set(entry.resourceBindingId, moneyAmount(current - Math.abs(entry.amount)));
     }
   }
-  for (const [resourceOrderId, amount] of byOrder.entries()) {
-    byOrder.set(resourceOrderId, Math.max(0, moneyAmount(amount)));
+  for (const [resourceBindingId, amount] of byBinding.entries()) {
+    byBinding.set(resourceBindingId, Math.max(0, moneyAmount(amount)));
   }
-  return byOrder;
+  return byBinding;
 }
 
 export function activeFreezeAmount(db, userId = "") {
-  const byOrder = activeFreezeByOrder(db, userId);
+  const byBinding = activeFreezeByBinding(db, userId);
   let total = 0;
-  for (const amount of byOrder.values()) total += amount;
+  for (const amount of byBinding.values()) total += amount;
   return moneyAmount(total);
 }
 
@@ -381,7 +439,7 @@ export function walletCommercialSnapshot(db, user) {
   };
 }
 
-export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_order_preauth_hold" }) {
+export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_binding_preauth_hold" }) {
   const freezeAmount = moneyAmount(amount, 0);
   if (!user?.id || !order?.id || freezeAmount <= 0) {
     return { ok: false, error: "invalid_freeze_request", status: 400 };
@@ -409,9 +467,10 @@ export function holdFreezeForOrder(db, { user, order, amount, idempotencyKey = "
   return { ok: true, entry: result.entry, created: result.created, snapshot: walletCommercialSnapshot(db, user) };
 }
 
-export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_order_preauth_release" }) {
-  const byOrder = activeFreezeByOrder(db, user?.id || order?.tenantId || order?.userId || "");
-  const activeAmount = byOrder.get(order.id) || 0;
+export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey = "", reason = "resource_binding_preauth_release" }) {
+  const bindingId = resourceBindingIdFrom(order);
+  const byBinding = activeFreezeByBinding(db, user?.id || order?.tenantId || order?.userId || "");
+  const activeAmount = byBinding.get(bindingId) || 0;
   const releaseAmount = moneyAmount(Math.min(activeAmount, moneyAmount(amount, activeAmount)), 0);
   if (!order?.id || releaseAmount <= 0) {
     return { ok: true, releasedAmount: 0, skipped: true };
@@ -420,7 +479,7 @@ export function releaseFreezeForOrder(db, { user, order, amount, idempotencyKey 
     ...orderLedgerContext(user, order),
     type: "preauth_release",
     amount: releaseAmount,
-    sourceType: "resource_order",
+    sourceType: "resource_binding",
     sourceId: order.id,
     idempotencyKey: idempotencyKey || `preauth_release:${order.id}`,
     reason,
@@ -450,7 +509,7 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
     sourceType: "tencent_bill",
     sourceId,
     idempotencyKey: chargeIdempotencyKey,
-    reason: "resource_order_exact_bill_settlement",
+    reason: "resource_binding_exact_bill_settlement",
     operatorId: "billing-aggregator",
   });
   return { ok: true, chargedAmount: chargeAmount, entry: result.entry, wallet, created: result.created };
@@ -463,7 +522,7 @@ export function appendPendingUsageForOrder(db, {
   sourceId = "",
   idempotencyKey = "",
   sourceType = "pending_metering",
-  reason = "resource_order_pending_usage",
+  reason = "resource_binding_pending_usage",
 }) {
   const amount = moneyAmount(pendingCost, 0);
   if (order?.pendingStoppedAt || ["released", "settled", "failed", "cancelled"].includes(String(order?.status || "").toLowerCase())) {
@@ -492,7 +551,7 @@ export function applySettlementAdjustmentForOrder(db, {
   amount,
   sourceId = "",
   idempotencyKey = "",
-  reason = "resource_order_exact_bill_delta",
+  reason = "resource_binding_exact_bill_delta",
 }) {
   const normalizedType = LEDGER_TYPE_ALIASES.get(String(type || "").trim()) || String(type || "").trim();
   const adjustmentAmount = moneyAmount(amount, 0);

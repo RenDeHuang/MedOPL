@@ -25,8 +25,6 @@ export function createOverviewPayloadBuilder({
   formatDateTime,
   isRunTerminal,
   listTaskSpacesForUser,
-  resourceOrderPublicView,
-  resourceOrdersForUser,
 }) {
   return async function buildOverviewPayload(db, user, options = {}) {
     const timing = createPayloadTimingRecorder();
@@ -43,7 +41,7 @@ export function createOverviewPayloadBuilder({
     const pendingBilling = await fetchPendingSummary(user.id, "", "168h");
     timing.mark("billing");
     const items = billing?.items || [];
-    const resourceOrders = resourceOrdersForUser(db, user.id);
+    const resourceBindings = latestResourceBindingsForUser(db, user);
     const todayRange = rangeBounds("today");
     const todayCost = items
       .filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, todayRange))
@@ -73,12 +71,12 @@ export function createOverviewPayloadBuilder({
         tasks,
         workspaceCount,
         runs,
-        resourceOrderCount: resourceOrders.length,
+        resourceBindingCount: resourceBindings.length,
       }),
       commercial,
       serverPlansSummary,
       selectedServerPlan: currentServerPlanSelection(currentTask),
-      latestResourceOrders: resourceOrders.slice(0, 5).map((order) => resourceOrderPublicView(order, db.resourceOrderEvents || [])),
+      latestResourceBindings: resourceBindings.slice(0, 5),
       onboarding: buildOverviewOnboarding({ commercial, workspaceCount, sessionCount, serverPlansSummary }),
       taskCards: taskPagination.rows,
       taskPagination: {
@@ -97,4 +95,52 @@ export function createOverviewPayloadBuilder({
       performance: timing.done(),
     };
   };
+}
+
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function userTenantId(user = {}) {
+  return text(user.tenantId || user.tenant_id || user.id);
+}
+
+function bindingId(binding = {}) {
+  return text(binding.resourceBindingId || binding.id);
+}
+
+function billingAttributionId(binding = {}) {
+  return text(binding.billingAttributionId || binding.billing_attribution_id || binding.cloudOperationId || binding.cloud_operation_id || binding.costAllocationTag || bindingId(binding));
+}
+
+function accountId(binding = {}) {
+  return text(binding.accountId || binding.account_id || binding.userId || binding.user_id || binding.ownerUserId || binding.tenantId || binding.tenant_id || binding.ownerTenantId);
+}
+
+function serverPlanId(binding = {}) {
+  return text(binding.serverPlanId || binding.server_plan_id || binding.planId || binding.plan_id || binding.packageId || binding.package_id);
+}
+
+function publicResourceBindingView(binding = {}) {
+  return {
+    id: bindingId(binding),
+    resourceBindingId: bindingId(binding),
+    billingAttributionId: billingAttributionId(binding),
+    workspaceId: text(binding.workspaceId),
+    accountId: accountId(binding),
+    serverPlanId: serverPlanId(binding),
+    status: text(binding.status || "active"),
+    createdAt: text(binding.createdAt),
+    updatedAt: text(binding.updatedAt),
+  };
+}
+
+function latestResourceBindingsForUser(db = {}, user = {}) {
+  const userId = text(user.id);
+  const tenantId = userTenantId(user);
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((binding) => text(binding.userId || binding.ownerUserId) === userId)
+    .filter((binding) => !tenantId || text(binding.tenantId || binding.ownerTenantId) === tenantId)
+    .map(publicResourceBindingView)
+    .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")));
 }

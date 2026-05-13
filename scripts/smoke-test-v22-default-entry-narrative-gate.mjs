@@ -54,6 +54,18 @@ const branchScopedAllowedDiffPaths = new Map([
     "services/portal/src/routes/resource-order-provisioning-service.mjs",
     "services/portal/src/routes/resource-order-route-support.mjs",
   ])],
+  ["cleanup/v22-retire-resource-order-billing-payloads", new Set([
+    "services/portal/src/domain/wallet-ledger.mjs",
+    "services/portal/src/domain/user-resource-bindings.mjs",
+    "services/portal/src/app/portal-page-overview-payloads.mjs",
+    "services/portal/src/app/portal-page-payload-helpers.mjs",
+    "services/portal/src/app/portal-page-runtime-payloads.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/domain/portal-api-payloads.mjs",
+    "services/portal/src/domain/lab-entitlements.mjs",
+    "services/portal/src/domain/lab-billing-policy.mjs",
+    "services/portal/src/domain/workspace-storage.mjs",
+  ])],
 ]);
 
 const forbiddenDefaultEntryTerms = [

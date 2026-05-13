@@ -1,5 +1,7 @@
-import { RESOURCE_ORDER_PENDING_STOP_STATUSES, ensureResourceOrderCollections, resourceOrdersForUser } from "./resource-orders.mjs";
 import { ensureWorkspaceStorageCollections } from "./workspace-storage.mjs";
+
+const BINDING_PENDING_STOP_STATUSES = new Set(["release_requested", "billing_stop_confirming", "deleting"]);
+const ACTIVE_BINDING_STATUSES = new Set(["active", "release_requested", "billing_stop_confirming", "billing_stopped", "audit_pending", "audit_ready", "audited"]);
 
 function stringValue(value) {
   return String(value ?? "").trim();
@@ -17,17 +19,37 @@ function normalizeStringList(...values) {
   return result;
 }
 
-function ownerMatches(order = {}, storageOrder = {}) {
-  if (stringValue(storageOrder.workspaceId) !== stringValue(order.workspaceId)) return false;
+function bindingId(binding = {}) {
+  return stringValue(binding.resourceBindingId || binding.id);
+}
+
+function accountId(binding = {}) {
+  return stringValue(binding.accountId || binding.account_id || binding.userId || binding.user_id || binding.ownerUserId || binding.tenantId || binding.tenant_id || binding.ownerTenantId);
+}
+
+function billingAttributionId(binding = {}) {
+  return stringValue(binding.billingAttributionId || binding.billing_attribution_id || binding.cloudOperationId || binding.cloud_operation_id || binding.costAllocationTag || bindingId(binding));
+}
+
+function serverPlanId(binding = {}) {
+  return stringValue(binding.serverPlanId || binding.server_plan_id || binding.planId || binding.plan_id || binding.packageId || binding.package_id);
+}
+
+function legacyResourceOrderAlias(binding = {}) {
+  return stringValue(binding.legacyResourceOrderId || binding.legacy_resource_order_id);
+}
+
+function ownerMatches(binding = {}, storageOrder = {}) {
+  if (stringValue(storageOrder.workspaceId) !== stringValue(binding.workspaceId)) return false;
   return (
-    stringValue(storageOrder.userId) === stringValue(order.userId) ||
-    stringValue(storageOrder.tenantId) === stringValue(order.tenantId)
+    stringValue(storageOrder.userId) === stringValue(binding.userId || binding.ownerUserId) ||
+    stringValue(storageOrder.tenantId) === stringValue(binding.tenantId || binding.ownerTenantId)
   );
 }
 
-function activeStorageOrdersForOrder(db = {}, order = {}) {
+function activeStorageOrdersForBinding(db = {}, binding = {}) {
   return (db.storageOrders || [])
-    .filter((item) => ownerMatches(order, item))
+    .filter((item) => ownerMatches(binding, item))
     .filter((item) => !["deleted", "cancelled"].includes(stringValue(item.status).toLowerCase()))
     .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")));
 }
@@ -39,11 +61,11 @@ function minutesBetween(startAt = "", endAt = "") {
   return Math.floor((endMs - startMs) / 60000);
 }
 
-function buildResourceTiming(order = {}) {
-  const createdAt = stringValue(order.createdAt);
-  const updatedAt = stringValue(order.updatedAt);
-  const billingStartedAt = stringValue(order.billingStartedAt || createdAt);
-  const billingStoppedAt = stringValue(order.billingStoppedAt || order.pendingStoppedAt);
+function buildResourceTiming(binding = {}) {
+  const createdAt = stringValue(binding.createdAt);
+  const updatedAt = stringValue(binding.updatedAt);
+  const billingStartedAt = stringValue(binding.billingStartedAt || binding.createdAt);
+  const billingStoppedAt = stringValue(binding.billingStoppedAt || binding.releasedAt);
   const usageEndAt = billingStoppedAt || updatedAt || createdAt;
   const usageMinutes = minutesBetween(billingStartedAt, usageEndAt);
   return {
@@ -71,8 +93,10 @@ function buildStorageTiming(storageOrder = {}) {
   };
 }
 
-function resolveNodePoolId(order = {}) {
-  const cloudResourceIds = order.cloudResourceIds;
+function resolveNodePoolId(binding = {}) {
+  const cloudResourceIds = binding.cloudResourceIds || binding.cloud_resource_ids;
+  const explicitRef = stringValue(binding.nodePoolRef || binding.node_pool_ref);
+  if (explicitRef) return explicitRef;
   if (Array.isArray(cloudResourceIds)) return stringValue(cloudResourceIds[0]);
   if (!cloudResourceIds || typeof cloudResourceIds !== "object") return "";
   const explicit = stringValue(cloudResourceIds.nodePoolId || cloudResourceIds.node_pool_id);
@@ -84,8 +108,8 @@ function resolveNodePoolId(order = {}) {
   return "";
 }
 
-function resolveCvmInstanceIds(order = {}) {
-  const cloudResourceIds = order.cloudResourceIds;
+function resolveCvmInstanceIds(binding = {}) {
+  const cloudResourceIds = binding.cloudResourceIds || binding.cloud_resource_ids;
   if (Array.isArray(cloudResourceIds)) {
     return normalizeStringList(cloudResourceIds.slice(1).filter((item) => /^ins-[a-z0-9-]+$/i.test(stringValue(item))));
   }
@@ -98,58 +122,67 @@ function resolveCvmInstanceIds(order = {}) {
   );
 }
 
-export function buildBillingTags(order = {}) {
+export function buildBillingTags(binding = {}) {
   return {
-    resourceorderid: stringValue(order.id),
-    runid: stringValue(order.runId),
-    serverplanid: stringValue(order.serverPlanId),
-    tenantid: stringValue(order.tenantId),
-    workspaceid: stringValue(order.workspaceId),
+    resourcebindingid: bindingId(binding),
+    billingattributionid: billingAttributionId(binding),
+    workspaceid: stringValue(binding.workspaceId),
+    accountid: accountId(binding),
+    serverplanid: serverPlanId(binding),
+    runid: stringValue(binding.runId),
+    tenantid: stringValue(binding.tenantId || binding.ownerTenantId),
   };
 }
 
-function buildDeleteState(order = {}, nodePoolId = "") {
-  const normalizedStatus = stringValue(order.status).toLowerCase();
+function buildDeleteState(binding = {}, nodePoolId = "") {
+  const normalizedStatus = stringValue(binding.status).toLowerCase();
   if (!nodePoolId) {
-    return { canDelete: false, deleteBlockedReason: "resource_order_node_pool_missing" };
+    return { canDelete: false, deleteBlockedReason: "resource_binding_node_pool_missing" };
   }
-  if (RESOURCE_ORDER_PENDING_STOP_STATUSES.has(normalizedStatus)) {
-    return { canDelete: false, deleteBlockedReason: `resource_order_status_${normalizedStatus}` };
+  if (BINDING_PENDING_STOP_STATUSES.has(normalizedStatus)) {
+    return { canDelete: false, deleteBlockedReason: `resource_binding_status_${normalizedStatus}` };
   }
   return { canDelete: true, deleteBlockedReason: "" };
 }
 
-function buildBindingItem(db = {}, order = {}) {
-  const [storageOrder] = activeStorageOrdersForOrder(db, order);
-  const nodePoolId = resolveNodePoolId(order);
-  const cvmInstanceIds = resolveCvmInstanceIds(order);
-  const deleteState = buildDeleteState(order, nodePoolId);
-  const resourceTiming = buildResourceTiming(order);
+function buildBindingItem(db = {}, binding = {}) {
+  const [storageOrder] = activeStorageOrdersForBinding(db, binding);
+  const nodePoolId = resolveNodePoolId(binding);
+  const cvmInstanceIds = resolveCvmInstanceIds(binding);
+  const deleteState = buildDeleteState(binding, nodePoolId);
+  const resourceTiming = buildResourceTiming(binding);
   const storageTiming = buildStorageTiming(storageOrder || {});
   return {
-    tenantId: stringValue(order.tenantId),
-    workspaceId: stringValue(order.workspaceId),
-    runId: stringValue(order.runId),
-    resourceOrderId: stringValue(order.id),
-    serverPlanId: stringValue(order.serverPlanId),
+    tenantId: stringValue(binding.tenantId || binding.ownerTenantId),
+    workspaceId: stringValue(binding.workspaceId),
+    runId: stringValue(binding.runId),
+    resourceBindingId: bindingId(binding),
+    billingAttributionId: billingAttributionId(binding),
+    accountId: accountId(binding),
+    serverPlanId: serverPlanId(binding),
+    legacyResourceOrderId: legacyResourceOrderAlias(binding),
     nodePoolId,
     cvmInstanceIds,
     storageOrderId: stringValue(storageOrder?.id),
     cosPrefix: stringValue(storageOrder?.cosPrefix),
-    status: stringValue(order.status).toLowerCase(),
+    status: stringValue(binding.status).toLowerCase(),
     canDelete: deleteState.canDelete,
     deleteBlockedReason: deleteState.deleteBlockedReason,
-    billingTags: buildBillingTags(order),
+    billingTags: buildBillingTags(binding),
     ...resourceTiming,
     ...storageTiming,
   };
 }
 
 export function buildUserResourceBindings(db = {}, user = {}) {
-  ensureResourceOrderCollections(db);
   ensureWorkspaceStorageCollections(db);
-  const items = resourceOrdersForUser(db, stringValue(user.id))
-    .map((order) => buildBindingItem(db, order))
+  const userId = stringValue(user.id);
+  const tenantId = stringValue(user.tenantId || user.tenant_id || userId);
+  const items = (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((binding) => stringValue(binding.userId || binding.ownerUserId) === userId)
+    .filter((binding) => !tenantId || stringValue(binding.tenantId || binding.ownerTenantId) === tenantId)
+    .filter((binding) => ACTIVE_BINDING_STATUSES.has(stringValue(binding.status).toLowerCase()))
+    .map((binding) => buildBindingItem(db, binding))
     .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")));
   const summary = {
     total: items.length,

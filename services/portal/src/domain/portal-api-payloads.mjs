@@ -260,7 +260,12 @@ function billingSummaryPayload(balance = {}, freeze = null) {
   const pendingItems = Array.isArray(balance.pending) ? balance.pending.map((item) => ({
     id: text(item.id),
     runId: text(item.runId),
-    resourceOrderId: text(item.resourceOrderId),
+    resourceBindingId: text(item.resourceBindingId),
+    billingAttributionId: text(item.billingAttributionId),
+    workspaceId: text(item.workspaceId),
+    accountId: text(item.accountId),
+    serverPlanId: text(item.serverPlanId),
+    legacyResourceOrderId: text(item.legacyResourceOrderId),
     amountCents: cents(item.amountCents),
     status: text(item.status || "waiting_exact_bill"),
     createdAt: text(item.createdAt),

@@ -1,4 +1,3 @@
-import { resourceOrderPublicView, resourceOrdersForUser } from "../domain/resource-orders.mjs";
 import { createPortalPagePayloads } from "./portal-page-payloads.mjs";
 
 export function createPortalPageRuntimePayloads({
@@ -55,8 +54,6 @@ export function createPortalPageRuntimePayloads({
     mkdir,
     path,
     readPortalEvents,
-    resourceOrderPublicView,
-    resourceOrdersForUser,
     sanitizeTaskTitle,
     stat,
     workspaceStorageEntitlement,

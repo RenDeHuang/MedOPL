@@ -78,6 +78,34 @@ function stringFromFields(record = {}, fields = [], defaultValue = "") {
   return String(defaultValue).trim();
 }
 
+function activeBindingForWorkspace(db = {}, { user, workspaceId = "" } = {}) {
+  const tenantId = String(user?.tenantId || user?.tenant_id || user?.id || "").trim();
+  const userId = String(user?.id || "").trim();
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((item) => String(item.workspaceId || "").trim() === String(workspaceId || "").trim())
+    .filter((item) => String(item.userId || item.ownerUserId || "").trim() === userId)
+    .filter((item) => !tenantId || String(item.tenantId || item.ownerTenantId || "").trim() === tenantId)
+    .filter((item) => ["active", "release_requested", "billing_stop_confirming", "billing_stopped", "audit_pending", "audit_ready", "audited"].includes(String(item.status || "active").trim().toLowerCase()))
+    .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")))[0] || null;
+}
+
+function bindingId(binding = {}) {
+  return String(binding?.resourceBindingId || binding?.id || "").trim();
+}
+
+function bindingBillingAttributionId(binding = {}) {
+  const id = bindingId(binding);
+  return String(binding?.billingAttributionId || binding?.billing_attribution_id || binding?.cloudOperationId || binding?.cloud_operation_id || binding?.costAllocationTag || id || "").trim();
+}
+
+function bindingAccountId(binding = {}, user = {}) {
+  return String(binding?.accountId || binding?.account_id || binding?.userId || binding?.user_id || binding?.ownerUserId || user?.id || "").trim();
+}
+
+function bindingServerPlanId(binding = {}, fallback = "") {
+  return String(binding?.serverPlanId || binding?.server_plan_id || binding?.planId || binding?.plan_id || binding?.packageId || binding?.package_id || fallback || "").trim();
+}
+
 function storageOrderCosPrefix(tenantId, workspaceId) {
   return `workspaces/${String(tenantId || "").trim()}/${String(workspaceId || "").trim()}/`;
 }
@@ -313,6 +341,7 @@ export function resolveWorkspaceStorageEntitlement(db, user, workspaceId) {
 
 function resolveStorageOrderEntitlement(db, { user, workspaceId, tenantId, cosPrefix }) {
   const activeStatuses = new Set(["active"]);
+  const binding = activeBindingForWorkspace(db, { user, workspaceId });
   const order = (db.storageOrders || [])
     .filter((item) => item.workspaceId === workspaceId)
     .filter((item) => item.userId === user.id)
@@ -327,8 +356,12 @@ function resolveStorageOrderEntitlement(db, { user, workspaceId, tenantId, cosPr
     storageBackend: "cos",
     retentionPolicy: order?.retentionPolicy || "order_lifecycle",
     cosPrefix: order?.cosPrefix || cosPrefix,
-    resourceOrderId: "",
+    resourceBindingId: bindingId(binding),
+    billingAttributionId: bindingBillingAttributionId(binding),
+    accountId: bindingAccountId(binding, user),
+    legacyResourceOrderId: String(binding?.legacyResourceOrderId || binding?.legacy_resource_order_id || "").trim(),
     storagePlanId: order?.storagePlanId || "",
+    serverPlanId: bindingServerPlanId(binding, order?.storagePlanId || ""),
     storageSizeGb: order?.storageSizeGb || 0,
     sourceType: order ? "portal_storage_order" : "none",
     gates: {

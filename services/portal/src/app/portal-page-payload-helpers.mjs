@@ -57,7 +57,7 @@ export function buildOverviewKpis({
   tasks,
   workspaceCount,
   runs,
-  resourceOrderCount,
+  resourceBindingCount,
 }) {
   return {
     accountStatus: commercial.accountStatus,
@@ -73,7 +73,7 @@ export function buildOverviewKpis({
     activeTasks: tasks.filter((item) => item.status === "active").length,
     workspaceCount,
     runCount: runs.length,
-    resourceOrderCount,
+    resourceBindingCount,
   };
 }
 

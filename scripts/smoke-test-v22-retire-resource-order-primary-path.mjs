@@ -21,6 +21,23 @@ const allowedResourceOrderRouteTombstoneDiffPaths = new Set([
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
 ]);
 
+const allowedBillingPayloadRewriteDiffPaths = new Set([
+  gatePath,
+  "services/portal/src/domain/wallet-ledger.mjs",
+  "services/portal/src/domain/user-resource-bindings.mjs",
+  "services/portal/src/app/portal-page-overview-payloads.mjs",
+  "services/portal/src/app/portal-page-payload-helpers.mjs",
+  "services/portal/src/app/portal-page-runtime-payloads.mjs",
+  "services/portal/src/app/portal-page-workspace-payloads.mjs",
+  "services/portal/src/domain/portal-api-payloads.mjs",
+  "services/portal/src/domain/lab-entitlements.mjs",
+  "services/portal/src/domain/lab-billing-policy.mjs",
+  "services/portal/src/domain/workspace-storage.mjs",
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/repo-zoning.md",
+  "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const activePortalFeatureRoutesPath = "services/portal/src/app/portal-feature-runtime-handlers.mjs";
@@ -37,6 +54,18 @@ const defaultEntryPaths = [
   "docs/product.md",
   "docs/architecture.md",
   "compose.product.yaml",
+];
+
+const activeBillingPayloadPaths = [
+  "services/portal/src/domain/wallet-ledger.mjs",
+  "services/portal/src/domain/user-resource-bindings.mjs",
+  "services/portal/src/app/portal-page-overview-payloads.mjs",
+  "services/portal/src/app/portal-page-runtime-payloads.mjs",
+  "services/portal/src/app/portal-page-workspace-payloads.mjs",
+  "services/portal/src/domain/portal-api-payloads.mjs",
+  "services/portal/src/domain/lab-entitlements.mjs",
+  "services/portal/src/domain/lab-billing-policy.mjs",
+  "services/portal/src/domain/workspace-storage.mjs",
 ];
 
 const retiredSuccessPathTokens = [
@@ -119,12 +148,26 @@ function changedFilesFromBase() {
 }
 
 function assertOnlyGateChanged() {
+  const branchName = currentBranchName();
+  const allowedDiffPaths = branchName === "cleanup/v22-retire-resource-order-billing-payloads"
+    ? allowedBillingPayloadRewriteDiffPaths
+    : allowedResourceOrderRouteTombstoneDiffPaths;
   for (const filePath of changedFilesFromBase()) {
     assert(
-      allowedResourceOrderRouteTombstoneDiffPaths.has(filePath),
+      allowedDiffPaths.has(filePath),
       `resource_order_route_tombstone_branch_must_not_modify:${filePath}`,
     );
   }
+}
+
+function currentBranchName() {
+  const result = spawnSync("git", ["branch", "--show-current"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_branch_show_current_failed:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
 }
 
 function lineNumber(source, offset) {
@@ -235,6 +278,96 @@ function assertResourceOrderTombstoneRoute(source) {
   }
 }
 
+function assertNoPrimaryResourceOrderAttribution(filePath, source) {
+  const findings = [];
+  const forbiddenPatterns = [
+    /\bresourceOrderId\b/gu,
+    /\bresource_order_id\b/giu,
+    /\bresourceorderid\b/giu,
+    /\borderId\b/gu,
+    /\border_id\b/giu,
+    /\bresource-order\b/giu,
+    /\bresource_order\b/giu,
+  ];
+  for (const pattern of forbiddenPatterns) {
+    for (const match of source.matchAll(pattern)) {
+      const index = match.index ?? 0;
+      const context = source.slice(Math.max(0, index - 180), Math.min(source.length, index + 220));
+      if (context.includes("legacyResourceOrderId") && /optional|migration-only|legacy|retired|退场|迁移/iu.test(context)) continue;
+      findings.push({
+        file: filePath,
+        line: lineNumber(source, index),
+        token: match[0],
+        lineText: lineAt(source, index).trim(),
+      });
+    }
+  }
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "active_billing_payload_resource_order_primary_attribution",
+    detail: "Use resourceBindingId, billingAttributionId, workspaceId, accountId, and serverPlanId. Legacy identifiers must be legacyResourceOrderId optional/migration-only.",
+    findings,
+  }, null, 2));
+}
+
+function assertRequiredPrimaryFields(filePath, source, required = ["resourceBindingId", "billingAttributionId", "workspaceId"]) {
+  const findings = required
+    .filter((token) => !source.includes(token))
+    .map((token) => ({ file: filePath, missing: token }));
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "active_billing_payload_missing_v22_attribution",
+    findings,
+  }, null, 2));
+}
+
+function assertNoRetiredPayloadShape(filePath, source) {
+  const retiredPayloadTokens = [
+    "latestResourceOrders",
+    "resourceOrderCount",
+    "resourceOrderPublicView",
+    "resourceOrdersForUser",
+    "resourceorderid",
+  ];
+  const findings = retiredPayloadTokens
+    .filter((token) => source.includes(token))
+    .map((token) => ({ file: filePath, token }));
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "active_payload_must_not_expose_resource_order_shape",
+    findings,
+  }, null, 2));
+}
+
+function requiredPrimaryFieldsFor(filePath) {
+  const fieldsByPath = new Map([
+    ["services/portal/src/app/portal-page-runtime-payloads.mjs", []],
+    ["services/portal/src/app/portal-page-payload-helpers.mjs", ["resourceBindingCount"]],
+  ]);
+  return fieldsByPath.get(filePath) || ["resourceBindingId", "billingAttributionId", "workspaceId"];
+}
+
+function assertRequiredRetirementDocs({ repoZoning, legacyBacklog }) {
+  assertIncludes(
+    repoZoning,
+    "resource-order billing/payload second-slice cleanup completed",
+    "repo_zoning_resource_order_billing_payload_second_slice",
+  );
+  assertIncludes(
+    legacyBacklog,
+    "第二刀 billing/payload 字段 rewrite",
+    "legacy_backlog_resource_order_billing_payload_second_slice",
+  );
+  assertIncludes(
+    legacyBacklog,
+    "active ledger、binding 和 Portal payload 主归因迁到 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`",
+    "legacy_backlog_resource_order_billing_payload_attribution",
+  );
+}
+
 function assertNoRequiredResourceOrderIdInContracts(filePath, source) {
   const findings = [];
   const requiredPrimaryPattern = /(?:fixed|required|mandatory|must|必须|固定|必填|主标签|主归因|primary|requiredTag|requiredTags|fixedTags)[^\n`|,[\]]{0,160}\bresourceOrderId\b|\bresourceOrderId\b[^\n`|,[\]]{0,160}(?:fixed|required|mandatory|must|必须|固定|必填|主标签|主归因|primary|requiredTag|requiredTags|fixedTags)/gu;
@@ -306,6 +439,7 @@ assertIncludes(legacyBacklog, "Portal 导航不链接 `resource-order` 主路径
 assertIncludes(legacyBacklog, "新开通路径走 managed environment / resource binding", "legacy_backlog_resource_binding_replacement");
 assertIncludes(legacyBacklog, "旧 prepare-run 或 resource-order public flow 只能 tombstone 或 legacy internal fence", "legacy_backlog_resource_order_tombstone_scope");
 assertIncludes(legacyBacklog, "第一刀 route success path 清退", "legacy_backlog_resource_order_route_tombstone_first_slice");
+assertRequiredRetirementDocs({ repoZoning, legacyBacklog });
 
 for (const filePath of defaultEntryPaths) {
   assertNoDefaultResourceOrderPath(filePath, await readRepoFile(filePath));
@@ -314,6 +448,17 @@ for (const filePath of defaultEntryPaths) {
 assertResourceOrderTombstoneRoute(await readRepoFile(resourceOrderTombstoneRoutePath));
 await assertOnlyTombstoneRouteIsImported();
 await assertRetiredSuccessPathModulesRemoved();
+
+for (const filePath of activeBillingPayloadPaths) {
+  const source = await readRepoFile(filePath);
+  assertRequiredPrimaryFields(filePath, source, requiredPrimaryFieldsFor(filePath));
+  assertNoPrimaryResourceOrderAttribution(filePath, source);
+  assertNoRetiredPayloadShape(filePath, source);
+}
+
+const payloadHelperSource = await readRepoFile("services/portal/src/app/portal-page-payload-helpers.mjs");
+assertRequiredPrimaryFields("services/portal/src/app/portal-page-payload-helpers.mjs", payloadHelperSource, requiredPrimaryFieldsFor("services/portal/src/app/portal-page-payload-helpers.mjs"));
+assertNoRetiredPayloadShape("services/portal/src/app/portal-page-payload-helpers.mjs", payloadHelperSource);
 
 const requiredLegacyAliasContracts = [
   "docs/contracts/v22-admin-ops-console-boundary.md",
@@ -339,8 +484,11 @@ console.log(JSON.stringify({
   contract: "v22_retire_resource_order_primary_path",
   branchScope: {
     routeTombstoneFirstSlice: true,
+    billingPayloadRewriteSlice: currentBranchName() === "cleanup/v22-retire-resource-order-billing-payloads",
     leavesDomainStoreAndFrontendForLater: true,
-    allowedTrackedChanges: [...allowedResourceOrderRouteTombstoneDiffPaths],
+    allowedTrackedChanges: [...(currentBranchName() === "cleanup/v22-retire-resource-order-billing-payloads"
+      ? allowedBillingPayloadRewriteDiffPaths
+      : allowedResourceOrderRouteTombstoneDiffPaths)],
     deletedRetiredRouteModules: retiredResourceOrderRouteModulePaths,
   },
   checked: {
@@ -349,6 +497,7 @@ console.log(JSON.stringify({
     activePortalFeatureRoutes: activePortalFeatureRoutesPath,
     resourceOrderTombstoneRoute: resourceOrderTombstoneRoutePath,
     retiredResourceOrderRouteModules: retiredResourceOrderRouteModulePaths,
+    activeBillingPayloads: activeBillingPayloadPaths,
     defaultEntrypoints: defaultEntryPaths,
     contractFiles: await contractFiles(),
   },

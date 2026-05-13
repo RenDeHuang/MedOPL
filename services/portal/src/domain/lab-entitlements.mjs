@@ -7,6 +7,37 @@ function userTenantId(user = {}) {
   return String(user.tenantId || user.id || "").trim();
 }
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function activeBindingForWorkspace(db = {}, { user, workspaceId = "" } = {}) {
+  const tenantId = userTenantId(user);
+  const userId = text(user?.id);
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((item) => text(item.workspaceId) === text(workspaceId))
+    .filter((item) => text(item.userId || item.ownerUserId) === userId)
+    .filter((item) => !tenantId || text(item.tenantId || item.ownerTenantId) === tenantId)
+    .filter((item) => ["active", "release_requested", "billing_stop_confirming", "billing_stopped", "audit_pending", "audit_ready", "audited"].includes(text(item.status || "active").toLowerCase()))
+    .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")))[0] || null;
+}
+
+function bindingId(binding = {}) {
+  return text(binding.resourceBindingId || binding.id);
+}
+
+function billingAttributionId(binding = {}) {
+  return text(binding.billingAttributionId || binding.billing_attribution_id || binding.cloudOperationId || binding.cloud_operation_id || binding.costAllocationTag || bindingId(binding));
+}
+
+function accountId(binding = {}, user = {}) {
+  return text(binding.accountId || binding.account_id || binding.userId || binding.user_id || binding.ownerUserId || user.id);
+}
+
+function serverPlanId(binding = {}, fallback = "") {
+  return text(binding.serverPlanId || binding.server_plan_id || binding.planId || binding.plan_id || binding.packageId || binding.package_id || fallback);
+}
+
 export function activeLabStorageAddons(db, subscriptionId = "") {
   ensureLabSubscriptionCollections(db);
   return db.labStorageAddons
@@ -110,6 +141,8 @@ export function storageUsageRatio(db, { user, workspaceId = "default" } = {}) {
 export function resolveWorkspaceLabStorageEntitlement(db, { user, workspaceId, tenantId, cosPrefix } = {}) {
   const labEntitlement = resolveLabEntitlement(db, { user, workspaceId });
   if (!labEntitlement.enabled) return null;
+  const binding = activeBindingForWorkspace(db, { user, workspaceId });
+  const resourceBindingId = bindingId(binding);
   return {
     enabled: true,
     status: labEntitlement.status,
@@ -118,8 +151,12 @@ export function resolveWorkspaceLabStorageEntitlement(db, { user, workspaceId, t
     storageBackend: "package_storage",
     retentionPolicy: "lab_subscription_lifecycle",
     cosPrefix,
-    resourceOrderId: "",
+    resourceBindingId,
+    billingAttributionId: billingAttributionId(binding),
+    accountId: accountId(binding, user),
+    legacyResourceOrderId: text(binding?.legacyResourceOrderId || binding?.legacy_resource_order_id),
     storagePlanId: labEntitlement.packageId,
+    serverPlanId: serverPlanId(binding, labEntitlement.packageId),
     storageSizeGb: labEntitlement.storage.totalGb,
     sourceType: "lab_package",
     labEntitlement,

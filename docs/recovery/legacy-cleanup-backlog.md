@@ -94,6 +94,7 @@
 - 旧 prepare-run 或 resource-order public flow 只能 tombstone 或 legacy internal fence。
 - 新 smoke 不依赖 resource-order 作为默认成功路径。
 - 第一刀 route success path 清退只处理旧 public/internal/provision/release/freeze/quote/delete-node-pool route 链路：保留 `services/portal/src/routes/resource-order.routes.mjs` 作为唯一 410 tombstone 壳，指向 managed environment / resource binding；domain/store/billing/admin payload/frontend 后续单独 rewrite 或 tombstone。
+- 第二刀 billing/payload 字段 rewrite 只处理 active ledger、binding 和 Portal payload 主归因迁到 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`；旧标识只能作为 `legacyResourceOrderId` optional、migration-only alias 留在迁移输入，不作为 fixed required tag，也不恢复任何 route success path。
 
 ## Slice 4: Legacy Script Archive Boundary
 

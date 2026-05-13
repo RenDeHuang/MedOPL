@@ -3,6 +3,10 @@ import { appendLabPackageEvent, ensureLabSubscriptionCollections, normalizeLabDa
 
 const GRACE_DAYS = 7;
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
 function cents(value, fallback = 0) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -70,14 +74,22 @@ export function evaluateBillingRisk({
 }
 
 function subscriptionContext(user, subscription = {}) {
-  const userId = String(subscription.userId || user?.id || "").trim();
-  const tenantId = String(subscription.tenantId || user?.tenantId || userId).trim() || userId;
+  const userId = text(subscription.userId || user?.id);
+  const tenantId = text(subscription.tenantId || user?.tenantId || userId) || userId;
+  const resourceBindingId = text(subscription.resourceBindingId || subscription.resource_binding_id);
+  const billingAttributionId = text(subscription.billingAttributionId || subscription.billing_attribution_id || resourceBindingId || subscription.id);
+  const accountId = text(subscription.accountId || subscription.account_id || subscription.billingAccountId || subscription.billing_account_id || userId);
+  const serverPlanId = text(subscription.serverPlanId || subscription.server_plan_id || subscription.packageId || subscription.package_id);
   return {
     tenantId,
     userId,
+    accountId,
     workspaceId: subscription.workspaceId || "default",
     runId: "",
-    resourceOrderId: "",
+    resourceBindingId,
+    billingAttributionId,
+    legacyResourceOrderId: text(subscription.legacyResourceOrderId || subscription.legacy_resource_order_id),
+    serverPlanId,
     billingAccountId: tenantId,
     currency: "CNY",
   };

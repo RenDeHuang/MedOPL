@@ -130,8 +130,12 @@ function publicStorageEntitlementView(storageEntitlement = {}) {
     freeQuotaGb: Number(storageEntitlement.freeQuotaGb || 0),
     minimumPurchaseGb: Number(storageEntitlement.minimumPurchaseGb || 10),
     retentionPolicy: text(storageEntitlement.retentionPolicy || "workspace_lifecycle"),
-    resourceOrderId: text(storageEntitlement.resourceOrderId),
+    resourceBindingId: text(storageEntitlement.resourceBindingId),
+    billingAttributionId: text(storageEntitlement.billingAttributionId),
+    accountId: text(storageEntitlement.accountId),
+    legacyResourceOrderId: text(storageEntitlement.legacyResourceOrderId),
     storagePlanId: text(storageEntitlement.storagePlanId),
+    serverPlanId: text(storageEntitlement.serverPlanId || storageEntitlement.storagePlanId),
     storageSizeGb: Number(storageEntitlement.storageSizeGb || storageEntitlement.capacityGb || 0),
     message: text(storageEntitlement.message || (storageEntitlement.enabled ? "active" : "storage_required")),
   };
