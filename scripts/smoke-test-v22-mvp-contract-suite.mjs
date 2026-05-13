@@ -71,6 +71,7 @@ const smokeScripts = [
   ["smoke-test-v22-cloud-onboarding-board-status", "scripts/smoke-test-v22-cloud-onboarding-board-status.mjs"],
   ["smoke-test-v22-cloud-harness-manifest-selector", "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs"],
   ["smoke-test-v22-cloud-live-cleanup-gate", "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"],
+  ["smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot", "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs"],
   ["smoke-test-v22-cloud-connection-runnable-path", "scripts/smoke-test-v22-cloud-connection-runnable-path.mjs"],
   ["smoke-test-v22-portal-cloud-operation-test-api-fake-live", "scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs"],
   ["smoke-test-v22-portal-cloud-operation-worker-entrypoint", "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs"],

@@ -82,13 +82,16 @@
       ],
       "ownedPaths": [
         "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+        "scripts/v22-tencent-authorized-resource-lifecycle-node-pool-snapshot.mjs",
         "scripts/v22-tencent-authorized-resource-lifecycle-live-sequence.mjs",
         "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
-        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs"
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs",
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs"
       ],
       "requiredSmoke": [
         "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
         "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs",
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs",
         "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
       ],
       "requiredEvidence": [
@@ -123,6 +126,7 @@
         "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
         "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
         "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs",
         "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
       ],
       "requiredEvidence": [
@@ -152,6 +156,7 @@
         "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
       ],
       "requiredSmoke": [
+        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs",
         "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
         "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
         "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"
