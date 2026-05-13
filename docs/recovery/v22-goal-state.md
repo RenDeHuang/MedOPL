@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`
+- 当前 trunk HEAD: `26b426547f3f3c5d34558feb7a2bf4f0bf8d0dab`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `docs/v22-advance-opl-productionization-cursor`
+- current branch: `test/v22-frontend-product-evalset-gap`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-frontend-product-evalset-gap`
-- highest-priority executable leaf step: `leaf-frontend-product-evalset-gap`
-- 当前下一问题：Portal frontend product evalset gap
+- 当前 goal cursor: `leaf-backend-contract-eval-template`
+- highest-priority executable leaf step: `leaf-backend-contract-eval-template`
+- 当前下一问题：Backend contract eval template
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -91,7 +91,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
@@ -119,6 +119,9 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Leaf 8 B absorb/push result: OPL connection productionization local implementation branch `feat/v22-opl-productionization-local-implementation`, commit `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`, previous current problem phrase `当前下一问题：OPL connection productionization local implementation`, changed files `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, and `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`; verification passed with OPL eval shell, OPL refresh gate, real OPL no-fake-success/runtime-agent gates, provider message canary contract, Portal-OPL context/backflow contract, runtime bridge providerKeyRef flow, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, Portal check, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`; next cursor is `leaf-frontend-product-evalset-gap`.
 - Leaf 8 cursor-advance failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs` first failed with `product_goal_harness_modified_unsubscribed_file:scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` because the cursor-advance branch allowlists in product-goal, default-entry, and resource-order gates expected the refresh gate but not the eval shell whose assertions now follow the deferred-authorized OPL state. The same product-goal gate then failed with `goal_state_missing:当前下一问题：OPL connection productionization local implementation` because the harness still requires the absorbed Leaf 8 problem phrase while the active cursor correctly moved to `leaf-frontend-product-evalset-gap`. failure_category: `eval_wrong`; attempt_count: 2; root_cause_id: `leaf8_cursor_advance_allowlist_and_phrase_expectation`; changed_strategy: add the exact eval shell path to cursor-advance branch allowlists and keep the previous current problem phrase inside the Leaf 8 B result record while preserving the new active frontend cursor; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness, OPL eval shell, OPL refresh gate, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before commit.
 - Leaf 8 cursor-advance rationale: OPL local productionization hardening is now gated, but true cloud runtime, COS billing reconciliation, Langfuse / `trace.medopl.cn`, deploy evidence, build/push/kubectl, live-test, and any secret-backed live provider operation still require a future step-local auth record. Without that record, those OPL/cloud/deploy leaves remain `deferred_authorized`; the next highest-priority executable local leaf is `leaf-frontend-product-evalset-gap`.
+- leaf-frontend-product-evalset-gap completed on branch `test/v22-frontend-product-evalset-gap`: previous current problem phrase `当前下一问题：Portal frontend product evalset gap`; Portal frontend product evalset is characterized as an executable local truth source. `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs` proved six view/composable boundaries; `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs` proved 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface` additionally ran Playwright visual coverage with 8 passed screenshot tests and browser checks. `.runtime/portal-surface-eval/report.json` remains uncommitted runtime evidence. No Portal UI implementation, package/dependency file, deploy, adapter, `.sentrux`, `.env.demo.template`, upstream one-person-lab, secret, true cloud, build/push/kubectl, deploy, or live-test was touched or run.
+- Leaf 9 failure analysis: initial frontend evalset characterization gates passed; no implementation failure occurred. Non-failure warning observed during Playwright web server startup: `NO_COLOR` ignored due to `FORCE_COLOR`; it did not affect exit status and produced no tracked diff. `node scripts/smoke-test-v22-product-goal-harness.mjs` then failed once with `goal_state_missing:当前下一问题：Portal frontend product evalset gap` because the harness still requires the absorbed Leaf 9 problem phrase while the active cursor correctly moved to `leaf-backend-contract-eval-template`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf9_cursor_advance_goal_state_phrase_expectation`; changed_strategy: keep the previous current problem phrase inside the Leaf 9 completion record while preserving the new active backend cursor; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and full B checks.
+- Leaf 9 B absorb plan: changed files stay within frontend evalset truth writeback and exact branch-scoped gate metadata. B must rerun frontend surface composables/evalset gates, Portal runtime surface suite, Portal workbench management UI composition contract, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push. The next cursor after B absorb is `leaf-backend-contract-eval-template`.
 
 ## Later Problems
 
@@ -356,6 +359,31 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, real cloud runners, unrelated backend/OPL/cloud surfaces.
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
 - B_absorb_criteria: B reruns frontend surface composables/evalset gates, Portal runtime surface suite, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
+
+### Leaf Step 10
+
+- step_id: leaf-backend-contract-eval-template
+- problem: backend product changes need a reusable contract/eval template so future route/app/domain/state work cannot bypass layering or hide missing fields behind fallback/shim.
+- input_state: `leaf-frontend-product-evalset-gap` is the active frontend characterization leaf; Portal structure characterization already exists, and frontend evalset coverage is ready to be absorbed before backend work.
+- expected_output: create or tighten a backend contract/eval template that anchors Node 22 ESM route/app/domain/state/persistence expectations before any backend implementation leaf.
+- light_contract_card:
+  - problem: backend route logic can drift around app/domain/state boundaries without a dedicated implementation template.
+  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/contracts/v22-portal-user-surface-boundary.md`, `docs/contracts/v22-portal-admin-ops-surface-boundary.md`, `docs/recovery/status-matrix.md`
+  - in_scope: backend eval template, Portal structure/failure isolation gate alignment, local smoke metadata, and sanitized recovery truth writeback.
+  - out_of_scope: broad backend refactor, frontend UI changes, deploy, true cloud, live-test, secret reading, upstream one-person-lab, package/dependency upgrade.
+  - data_or_field_truth: backend baseline is Node 22 ESM and route -> app payload -> domain -> state/persistence; no `user_owned` primary path, resource-order primary path, OpenCost/Langfuse main path, or implicit fallback/shim.
+  - auth_boundary: local repo eval only; no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test.
+  - pollution_risks: hidden fallback, route-to-state bypass, old primary-path revival, product language drift, smoke that passes with default/missing fields.
+  - verification_commands: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, `npm --prefix services/portal run check`, `node scripts/smoke-test-v22-product-goal-harness.mjs`
+  - B_absorb_criteria: B confirms backend eval template and structure gate alignment, Portal check, product-goal gates, diff-scoped sensitive hygiene, and no forbidden/risky operation.
+- eval_command: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
+- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
+- trace_or_evidence_expectation: local stdout only; no `.runtime` evidence unless a future canary is separately authorized.
+- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, and exact branch-scoped harness allowlist updates.
+- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, real cloud runners, unrelated frontend/OPL/cloud surfaces.
+- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, backend contracts
+- B_absorb_criteria: B reruns Portal structure gate, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push.
 - attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ## 禁止并行写入的区域

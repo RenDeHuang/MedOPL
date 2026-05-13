@@ -186,6 +186,18 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 - page composition、surface states、component fixtures、design tokens 和 presentation rules 全部由 surface smoke 静态检查。
 - `.runtime/portal-surface-eval/report.json` 能生成结构化报告；该报告不进 git。
 
+## Product Goal Characterization
+
+`leaf-frontend-product-evalset-gap` has characterized the Portal UI evalset as the current executable frontend product truth source. The absorbed local gates are:
+
+- `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`
+- `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
+- `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
+
+The evalset currently proves 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation. The surface runtime suite also runs 8 Playwright visual tests through component fixture pages. Runtime evidence remains under `.runtime/portal-surface-eval/report.json` and is not committed.
+
+This characterization does not change Portal UI implementation, does not upgrade dependencies, does not run deploy/live/cloud/build/push/kubectl, does not read secrets, and does not modify upstream one-person-lab.
+
 ## 分支边界
 
 本分支只处理 Portal 工作台和管理台的 UI composition、evalset、surface harness、站点设置、公用首页、登录注册、页面命名、组件落点、架构边界和测试入口统一。

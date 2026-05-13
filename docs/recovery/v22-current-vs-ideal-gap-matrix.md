@@ -150,26 +150,28 @@ truth writeback section:
 ### Gap: frontend-product-vue-vite-ts-pinia
 
 - id: frontend-product-vue-vite-ts-pinia
-- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` and Portal frontend surface smokes already exist, but the product-goal cursor has not yet characterized this gap as the next executable local leaf after OPL local hardening.
+- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` is now characterized as the executable Portal UI truth source: it covers 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation.
 - ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, and API contracts are eval-covered.
 - problem: visual or API changes can ship without responsive or component-state verification.
 - dependency: current Portal UI contracts.
-- status: in_progress
-- next_leaf_step: leaf-frontend-product-evalset-gap
+- status: gated
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`
 - allowed_files: future frontend branch under `services/portal/frontend/**` plus evalset/smoke
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, Portal UI contracts
 - B_absorb_criteria: B requires API contract, component states, mobile/table responsive evidence, and typecheck.
 
+- leaf-frontend-product-evalset-gap: frontend evalset characterization passed locally with `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`, `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`, and `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`. The runtime suite ran 8 Playwright visual tests successfully and generated only uncommitted `.runtime` evidence. This leaf did not change UI implementation, package/dependency files, deploy, adapters, `.sentrux`, `.env.demo.template`, upstream, secrets, live/cloud/build/push/kubectl/deploy, or live-test. The next local executable leaf is `leaf-backend-contract-eval-template`.
+
 ### Gap: backend-product-node22-esm-layering
 
 - id: backend-product-node22-esm-layering
-- current_fact: backend baseline uses Node 22 ESM and route/app/domain/state/persistence conventions across Portal services.
+- current_fact: backend baseline uses Node 22 ESM and route/app/domain/state/persistence conventions across Portal services; Portal structure characterization already exists and can be promoted into a reusable backend implementation eval template.
 - ideal_state: every backend change has route smoke, payload/domain contract smoke, node --check or npm check, and workflow gate coverage.
 - problem: route logic can bypass app/domain/state layering or hide missing fields behind fallback/shim.
 - dependency: Portal structure contract.
-- status: open
+- status: in_progress
 - next_leaf_step: leaf-backend-contract-eval-template
 - eval: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
 - allowed_files: future backend branch under `services/portal/**` plus smoke

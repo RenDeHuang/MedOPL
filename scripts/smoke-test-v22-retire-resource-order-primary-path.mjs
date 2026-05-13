@@ -275,6 +275,14 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
       "scripts/smoke-test-v22-product-goal-harness.mjs",
     ])],
+    ["test/v22-frontend-product-evalset-gap", new Set([
+      gatePath,
+      "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+    ])],
     ["cleanup/v22-product-goal-harness", new Set([
       gatePath,
       "docs/recovery/v22-product-goal.md",
