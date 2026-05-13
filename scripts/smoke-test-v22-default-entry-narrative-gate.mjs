@@ -25,6 +25,7 @@ const allowedDiffPaths = new Set([
   "docs/recovery/legacy-cleanup-backlog.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+  "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
 ]);
 
 const forbiddenDefaultEntryTerms = [
