@@ -846,6 +846,62 @@ function applyRunnerSuccess(db = {}, operation = {}, job = {}, runner = {}, attr
   return { ok: true };
 }
 
+function terminalOperationHasEvidence(operation = {}) {
+  return Boolean(
+    operation.realCloudCalls
+    || text(operation.executionReportRef)
+    || text(operation.dryRunReportRef)
+  );
+}
+
+function reconcileSucceededOperationResource(db = {}, operation = {}, options = {}) {
+  if (text(operation.status) !== "succeeded" || !terminalOperationHasEvidence(operation)) return null;
+  const spec = PACKAGE_C_OPERATIONS[text(operation.operationType)];
+  const binding = bindingById(db, operation.resourceBindingId);
+  if (!spec || !binding) return null;
+  const user = userForOperation(operation);
+  const input = inputFromOperation(operation);
+  if (spec.resourceKind === "storage") {
+    const entitlement = latestForBinding(ensureArrayField(db, "fileSpaceEntitlements"), binding);
+    if (text(entitlement?.status) !== spec.successStatus) {
+      upsertFileSpaceEntitlement(db, user, binding, input, spec.successStatus);
+    }
+  } else {
+    const currentAllocation = latestForBinding(ensureArrayField(db, "computeAllocations"), binding);
+    const nodePoolRef = text(currentAllocation?.nodePoolRef || options.computeNodePoolRef);
+    if (!nodePoolRef) return null;
+    if (text(currentAllocation?.status) !== spec.successStatus) {
+      upsertComputeAllocation(db, user, binding, input, spec.successStatus, {
+        nodePoolRef,
+      });
+    }
+  }
+  upsertProjection(db, user, binding, operation, {
+    runnerMode: text(operation.runnerMode || options.runnerMode || "tencent-official-sdk-live"),
+    realCloudCalls: Boolean(operation.realCloudCalls || text(options.runnerMode) === "tencent-official-sdk-live"),
+    dryRunReportRef: text(operation.dryRunReportRef),
+    executionReportRef: text(operation.executionReportRef),
+  });
+  return {
+    ok: true,
+    operationId: text(operation.operationId || operation.id),
+    operationType: text(operation.operationType),
+    reconciledTerminalResourceState: true,
+  };
+}
+
+function reconcileSucceededOperationResources(db = {}, options = {}) {
+  const processed = [];
+  const terminalOperations = ensureArrayField(db, "cloudOperations")
+    .filter((operation) => text(operation.status) === "succeeded")
+    .sort((left, right) => String(left.updatedAt || left.createdAt || "").localeCompare(String(right.updatedAt || right.createdAt || "")));
+  for (const operation of terminalOperations) {
+    const result = reconcileSucceededOperationResource(db, operation, options);
+    if (result) processed.push(result);
+  }
+  return processed;
+}
+
 function processOneQueuedJob(db = {}, job = {}, options = {}) {
   const operation = operationById(db, job.operationId);
   if (!operation) {
@@ -907,6 +963,7 @@ function processOneQueuedJob(db = {}, job = {}, options = {}) {
 
 export function processQueuedPortalProductionCloudOperations(db = {}, options = {}) {
   const maxOperations = Math.max(1, Number(options.maxOperations || 1));
+  const reconciled = reconcileSucceededOperationResources(db, options);
   const queuedJobs = ensureArrayField(db, "cloudOperationJobs")
     .filter((job) => text(job.status) === "queued")
     .sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")))
@@ -926,6 +983,6 @@ export function processQueuedPortalProductionCloudOperations(db = {}, options = 
   }
   return {
     ok: true,
-    processed,
+    processed: [...reconciled, ...processed],
   };
 }

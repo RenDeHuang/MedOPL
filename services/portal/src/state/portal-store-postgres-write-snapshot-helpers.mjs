@@ -539,14 +539,29 @@ export async function writeComputeAllocations({ client, pgTableName, db }) {
         workspace_id=EXCLUDED.workspace_id,
         resource_binding_id=EXCLUDED.resource_binding_id,
         plan_id=EXCLUDED.plan_id,
-        compute_units=EXCLUDED.compute_units,
-        status=EXCLUDED.status,
-        cluster_ref=EXCLUDED.cluster_ref,
-        namespace_ref=EXCLUDED.namespace_ref,
-        node_pool_ref=EXCLUDED.node_pool_ref,
-        quota_json=EXCLUDED.quota_json,
-        workload_class=EXCLUDED.workload_class,
-        updated_at=EXCLUDED.updated_at`, [
+        compute_units=CASE
+          WHEN ${pgTableName("compute_allocations")}.status = 'released' AND EXCLUDED.status <> 'released' THEN ${pgTableName("compute_allocations")}.compute_units
+          WHEN ${pgTableName("compute_allocations")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("compute_allocations")}.compute_units
+          ELSE EXCLUDED.compute_units
+        END,
+        status=CASE
+          WHEN ${pgTableName("compute_allocations")}.status = 'released' AND EXCLUDED.status <> 'released' THEN ${pgTableName("compute_allocations")}.status
+          WHEN ${pgTableName("compute_allocations")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("compute_allocations")}.status
+          ELSE EXCLUDED.status
+        END,
+        cluster_ref=COALESCE(NULLIF(EXCLUDED.cluster_ref, ''), ${pgTableName("compute_allocations")}.cluster_ref),
+        namespace_ref=COALESCE(NULLIF(EXCLUDED.namespace_ref, ''), ${pgTableName("compute_allocations")}.namespace_ref),
+        node_pool_ref=COALESCE(NULLIF(EXCLUDED.node_pool_ref, ''), ${pgTableName("compute_allocations")}.node_pool_ref),
+        quota_json=CASE
+          WHEN ${pgTableName("compute_allocations")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("compute_allocations")}.quota_json
+          ELSE EXCLUDED.quota_json
+        END,
+        workload_class=COALESCE(NULLIF(EXCLUDED.workload_class, ''), ${pgTableName("compute_allocations")}.workload_class),
+        updated_at=CASE
+          WHEN ${pgTableName("compute_allocations")}.status = 'released' AND EXCLUDED.status <> 'released' THEN ${pgTableName("compute_allocations")}.updated_at
+          WHEN ${pgTableName("compute_allocations")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("compute_allocations")}.updated_at
+          ELSE EXCLUDED.updated_at
+        END`, [
       row.id,
       row.tenantId || row.userId || "",
       row.userId || "",
@@ -575,11 +590,23 @@ export async function writeFileSpaceEntitlements({ client, pgTableName, db }) {
         workspace_id=EXCLUDED.workspace_id,
         resource_binding_id=EXCLUDED.resource_binding_id,
         plan_id=EXCLUDED.plan_id,
-        capacity_gb=EXCLUDED.capacity_gb,
-        status=EXCLUDED.status,
-        retention_protection_status=EXCLUDED.retention_protection_status,
-        retention_cleanup_after_at=EXCLUDED.retention_cleanup_after_at,
-        updated_at=EXCLUDED.updated_at`, [
+        capacity_gb=CASE
+          WHEN ${pgTableName("file_space_entitlements")}.status = 'retention_protected' AND EXCLUDED.status <> 'retention_protected' THEN ${pgTableName("file_space_entitlements")}.capacity_gb
+          WHEN ${pgTableName("file_space_entitlements")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("file_space_entitlements")}.capacity_gb
+          ELSE EXCLUDED.capacity_gb
+        END,
+        status=CASE
+          WHEN ${pgTableName("file_space_entitlements")}.status = 'retention_protected' AND EXCLUDED.status <> 'retention_protected' THEN ${pgTableName("file_space_entitlements")}.status
+          WHEN ${pgTableName("file_space_entitlements")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("file_space_entitlements")}.status
+          ELSE EXCLUDED.status
+        END,
+        retention_protection_status=COALESCE(NULLIF(EXCLUDED.retention_protection_status, ''), ${pgTableName("file_space_entitlements")}.retention_protection_status),
+        retention_cleanup_after_at=COALESCE(NULLIF(EXCLUDED.retention_cleanup_after_at, ''), ${pgTableName("file_space_entitlements")}.retention_cleanup_after_at),
+        updated_at=CASE
+          WHEN ${pgTableName("file_space_entitlements")}.status = 'retention_protected' AND EXCLUDED.status <> 'retention_protected' THEN ${pgTableName("file_space_entitlements")}.updated_at
+          WHEN ${pgTableName("file_space_entitlements")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("file_space_entitlements")}.updated_at
+          ELSE EXCLUDED.updated_at
+        END`, [
       row.id,
       row.tenantId || row.userId || "",
       row.userId || "",

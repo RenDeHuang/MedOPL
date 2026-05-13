@@ -189,6 +189,98 @@ try {
   assert.equal(reconcileDb.cloudOperationJobs[0].leaseOwner, "worker-v22-reconcile-smoke", "materialized_storage_job_must_record_reconcile_worker");
   assert.equal(reconcileDb.fileSpaceEntitlements.length, 1, "materialized_storage_reconcile_must_not_duplicate_entitlement");
 
+  const cleanupReconcileDb = dbFixture();
+  cleanupReconcileDb.workspaceResourceBindings.push({
+    id: "rb-reconciled-cleanup",
+    resourceBindingId: "rb-reconciled-cleanup",
+    tenantId: user.tenantId,
+    userId: user.id,
+    ownerTenantId: user.tenantId,
+    ownerUserId: user.id,
+    workspaceId: "workspace-v22-reconcile-cleanup",
+    planId: "starter_2c4g_10gb",
+    status: "active",
+  });
+  cleanupReconcileDb.computeAllocations.push({
+    id: "compute-rb-reconciled-cleanup",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cleanup",
+    resourceBindingId: "rb-reconciled-cleanup",
+    planId: "starter_2c4g_10gb",
+    computeUnits: 1,
+    status: "available",
+    nodePoolRef: "np-backend-attribution-proof",
+    createdAt: "2026-05-13T00:01:00.000Z",
+    updatedAt: "2026-05-13T00:01:00.000Z",
+  });
+  cleanupReconcileDb.fileSpaceEntitlements.push({
+    id: "fs-rb-reconciled-cleanup",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cleanup",
+    resourceBindingId: "rb-reconciled-cleanup",
+    planId: "starter_2c4g_10gb",
+    capacityGb: 10,
+    status: "available",
+    createdAt: "2026-05-13T00:01:00.000Z",
+    updatedAt: "2026-05-13T00:01:00.000Z",
+  });
+  cleanupReconcileDb.cloudOperations.push({
+    id: "op-reconciled-release-compute",
+    operationId: "op-reconciled-release-compute",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cleanup",
+    resourceBindingId: "rb-reconciled-cleanup",
+    operationType: "release_compute",
+    status: "succeeded",
+    runnerMode: "tencent-official-sdk-live",
+    realCloudCalls: true,
+    productionPortalConnected: true,
+    testOnly: false,
+    acceptedDryRunId: "op-reconciled-release-compute",
+    dryRunReportRef: ".runtime/v22-cloud-lifecycle/op-reconciled-release-compute-dry-run.json",
+    executionReportRef: ".runtime/v22-cloud-lifecycle/op-reconciled-release-compute-execution.json",
+    requestedSpec: { targetDesiredCapacity: "0", providerTargetDesiredCapacity: "2", planId: "starter_2c4g_10gb" },
+    createdAt: "2026-05-13T00:02:00.000Z",
+    updatedAt: "2026-05-13T00:02:00.000Z",
+  }, {
+    id: "op-reconciled-delete-storage",
+    operationId: "op-reconciled-delete-storage",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cleanup",
+    resourceBindingId: "rb-reconciled-cleanup",
+    operationType: "delete_storage",
+    status: "succeeded",
+    runnerMode: "tencent-official-sdk-live",
+    realCloudCalls: true,
+    productionPortalConnected: true,
+    testOnly: false,
+    acceptedDryRunId: "op-reconciled-delete-storage",
+    dryRunReportRef: ".runtime/v22-cloud-lifecycle/op-reconciled-delete-storage-dry-run.json",
+    executionReportRef: ".runtime/v22-cloud-lifecycle/op-reconciled-delete-storage-execution.json",
+    requestedSpec: { fileSpaceGb: 10, planId: "starter_2c4g_10gb" },
+    createdAt: "2026-05-13T00:03:00.000Z",
+    updatedAt: "2026-05-13T00:03:00.000Z",
+  });
+  const cleanupReconciled = processQueuedPortalProductionCloudOperations(cleanupReconcileDb, {
+    runnerMode: "tencent-official-sdk-live",
+    secretFile: "",
+    computeNodePoolRef: "np-backend-attribution-proof",
+    maxOperations: 1,
+    workerId: "worker-v22-cleanup-reconcile-smoke",
+  });
+  assert.equal(cleanupReconciled.ok, true, "cleanup_first_reconcile_must_succeed_without_queued_job");
+  assert.equal(cleanupReconcileDb.computeAllocations[0].status, "released", "succeeded_release_compute_must_reconcile_compute_allocation");
+  assert.equal(cleanupReconcileDb.fileSpaceEntitlements[0].status, "retention_protected", "succeeded_delete_storage_must_reconcile_file_space_entitlement");
+  const cleanupProjection = buildPortalProductionCloudOperationProjection(cleanupReconcileDb, user, {
+    workspaceId: "workspace-v22-reconcile-cleanup",
+  });
+  assert.equal(cleanupProjection.resources.compute.statusLabel, "已释放", "cleanup_reconcile_projection_must_show_compute_released");
+  assert.equal(cleanupProjection.resources.fileSpace.statusLabel, "文件保护期", "cleanup_reconcile_projection_must_show_file_protected");
+
   const drain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "fake-live",
     secretFile,

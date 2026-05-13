@@ -353,10 +353,14 @@ const cloudOperationWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_
 const cloudOperationJobWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_cloud_operation_jobs"/i.test(sql)) || "";
 const bindingWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_workspace_resource_bindings"/i.test(sql)) || "";
 const projectionWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_cloud_resource_projections"/i.test(sql)) || "";
+const computeAllocationWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_compute_allocations"/i.test(sql)) || "";
+const fileSpaceEntitlementWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_file_space_entitlements"/i.test(sql)) || "";
 assert.match(cloudOperationWriteSql, /status=CASE[\s\S]*succeeded[\s\S]*failed[\s\S]*queued[\s\S]*running/i, "cloud_operation_upsert_must_not_downgrade_terminal_status");
 assert.match(cloudOperationJobWriteSql, /status=CASE[\s\S]*succeeded[\s\S]*failed[\s\S]*queued[\s\S]*running/i, "cloud_operation_job_upsert_must_not_downgrade_terminal_status");
 assert.match(bindingWriteSql, /updated_at=CASE[\s\S]*updated_at\s*>\s*EXCLUDED\.updated_at/i, "workspace_binding_upsert_must_not_downgrade_newer_snapshot");
 assert.match(projectionWriteSql, /updated_at=CASE[\s\S]*updated_at\s*>\s*EXCLUDED\.updated_at/i, "cloud_resource_projection_upsert_must_not_downgrade_newer_snapshot");
+assert.match(computeAllocationWriteSql, /status=CASE[\s\S]*released[\s\S]*updated_at\s*>\s*EXCLUDED\.updated_at/i, "compute_allocation_upsert_must_not_downgrade_released_or_newer_snapshot");
+assert.match(fileSpaceEntitlementWriteSql, /status=CASE[\s\S]*retention_protected[\s\S]*updated_at\s*>\s*EXCLUDED\.updated_at/i, "file_space_entitlement_upsert_must_not_downgrade_retention_or_newer_snapshot");
 
 const snapshot = await readPortalPostgresSnapshot({
   pool: fakePool,
