@@ -162,16 +162,42 @@ B blocker report 也必须写入 goal-state 或 gap matrix 的 truth writeback s
 
 Suggested thresholds:
 
-- max_attempts_per_leaf_step = 3
+- max_attempts_per_leaf_step = 10
+- max_attempts_per_root_cause = 10
+- max_consecutive_same_gate_failure = 2
 - max_changed_files_without_B_review = 12
 
 Budget rules:
 
-- 每个 leaf step 最多允许 3 次 implementation attempt。
-- 同一个 gate 连续失败 2 次，必须停止实现，进入 failure analysis。
-- 同一个 leaf step 第 3 次失败后，禁止继续 patch。
-- After the third failed attempt, the leaf step state must become blocked.
+- 每个 leaf step 最多允许 10 次 implementation attempt。
+- 同一个 root cause 最多允许 10 次 failed attempt。
+- 同一个 gate 连续失败 2 次后，必须进入 failure analysis；分析后可以继续 attempt，但必须记录 root cause 和策略变化。
+- 第 10 次 leaf step attempt 失败后，才必须 blocked truth writeback。
+- 同一个 root cause 达到 10 次失败后，也必须 blocked truth writeback。
 - blocked writeback must include: failed gate, attempts summary, suspected root cause, whether problem should be split, whether contract/eval is wrong, whether external authorization/canary is required, and proposed next smaller leaf steps.
+- attempt failure 只统计以下 blocker:
+  - test/gate exit non-zero
+  - B absorb blocker
+  - contract/eval mismatch
+  - scope drift
+  - forbidden action needed without auth record
+  - baseline_not_restored
+  - cleanup_incomplete
+  - budget_or_stop_condition_hit
+- 以下不算 attempt failure，除非它们导致验证命令失败或 tracked diff 污染:
+  - warning
+  - formatting suggestion
+  - one-time local dependency install
+  - ignored node_modules / .runtime output
+  - transient command retry with no tracked change
+- failure analysis 必须记录:
+  - failed gate
+  - attempt number
+  - root cause id
+  - whether this is same gate failure
+  - whether this is same root cause failure
+  - changed strategy
+  - whether split is needed
 - 如果失败原因是 eval_wrong 或 contract_wrong，下一步必须先修 contract/eval，不得继续实现。
 - 如果失败原因是 problem_too_large，必须拆成更小 leaf steps，并更新 gap matrix/execution line。
 - 如果失败原因是 environment_missing 或 authorization_required，必须停在 deferred_authorized，不得用 mock/fallback 硬过。

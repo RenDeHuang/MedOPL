@@ -206,6 +206,13 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-product-goal-harness.mjs",
       "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     ])],
+    ["cleanup/v22-product-goal-loop-budget-10", new Set([
+      gatePath,
+      "docs/recovery/v22-codex-goal-loop.md",
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    ])],
     ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],
     ["cleanup/v22-retire-resource-order-store-admin-frontend", allowedStoreAdminFrontendRewriteDiffPaths],
   ]);

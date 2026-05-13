@@ -66,11 +66,21 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 ## Loop Budget State
 
 - Loop budget / escalation policy: active.
-- max_attempts_per_leaf_step = 3
+- max_attempts_per_leaf_step = 10
+- max_attempts_per_root_cause = 10
+- max_consecutive_same_gate_failure = 2
 - max_changed_files_without_B_review = 12
 - gate_failure_budget: same gate may fail at most 2 consecutive times before failure analysis.
+- 同一个 gate 连续失败 2 次后，必须进入 failure analysis；分析后可以继续 attempt，但必须记录 root cause 和策略变化。
+- 每个 leaf step 最多允许 10 次 implementation attempt。
+- 同一个 root cause 最多允许 10 次 failed attempt。
+- 第 10 次 leaf step attempt 失败后，才必须 blocked truth writeback。
+- 同一个 root cause 达到 10 次失败后，也必须 blocked truth writeback。
 - blocked, reconciling, and deferred_authorized are valid cursor-hold states.
-- If the same leaf step fails for the third time, mark it blocked and stop patching.
+- attempt failure 只统计以下 blocker: test/gate exit non-zero, B absorb blocker, contract/eval mismatch, scope drift, forbidden action needed without auth record, baseline_not_restored, cleanup_incomplete, budget_or_stop_condition_hit.
+- 以下不算 attempt failure，除非它们导致验证命令失败或 tracked diff 污染: warning, formatting suggestion, one-time local dependency install, ignored node_modules / .runtime output, transient command retry with no tracked change.
+- failure analysis 必须记录: failed gate, attempt number, root cause id, whether this is same gate failure, whether this is same root cause failure, changed strategy, whether split is needed.
+- If the same leaf step fails for the tenth time, mark it blocked and stop patching until B absorbs blocked truth writeback.
 - blocked writeback must include failed gate, attempts summary, suspected root cause, whether problem should be split, whether contract/eval is wrong, whether external authorization/canary is required, and proposed next smaller leaf steps.
 - If failure is eval_wrong or contract_wrong, repair contract/eval first.
 - If failure is problem_too_large, split into smaller leaf steps and update gap matrix/execution line.
@@ -122,7 +132,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, unrelated frontend/backend.
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`
 - B_absorb_criteria: B reruns evals, checks diff-scoped secret scan, ff-only absorbs and pushes before cursor moves.
-- attempt_budget: max_attempts_per_leaf_step = 3; same gate may fail 2 times before failure analysis; third failed attempt becomes blocked.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ### Leaf Step 2
 
@@ -147,7 +157,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: `.env*`, secret files, kubeconfig, `deploy/*`, `adapters/*`, `.sentrux/*`
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`
 - B_absorb_criteria: B reruns gate and confirms no secret content was read.
-- attempt_budget: max_attempts_per_leaf_step = 3; same gate may fail 2 times before failure analysis; third failed attempt becomes blocked.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ### Leaf Step 3
 
@@ -172,7 +182,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: `scripts/live-test-*` execution, `deploy/*`, `adapters/*`, `.sentrux/*`
 - truth_writeback_target: `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/v22-goal-state.md`
 - B_absorb_criteria: B reruns MVP suite and archive gate.
-- attempt_budget: max_attempts_per_leaf_step = 3; same gate may fail 2 times before failure analysis; third failed attempt becomes blocked.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ### Leaf Step 4
 
@@ -197,7 +207,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab.
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`
 - B_absorb_criteria: B reruns characterization gate and type checks.
-- attempt_budget: max_attempts_per_leaf_step = 3; same gate may fail 2 times before failure analysis; third failed attempt becomes blocked.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ### Leaf Step 5
 
@@ -222,7 +232,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - forbidden_files: upstream one-person-lab, `deploy/*`, `.env*`, raw secret paths.
 - truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/v22-goal-state.md`
 - B_absorb_criteria: B confirms clean upstream one-person-lab and no fake success.
-- attempt_budget: max_attempts_per_leaf_step = 3; same gate may fail 2 times before failure analysis; third failed attempt becomes blocked.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
 ## 禁止并行写入的区域
 
