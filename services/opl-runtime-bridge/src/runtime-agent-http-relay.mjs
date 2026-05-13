@@ -35,7 +35,7 @@ function relayError(message, code, details = {}) {
 
 function assertNoForbiddenRelayFields(payload = {}, label = "runtime_agent_http_relay") {
   const serialized = JSON.stringify(payload || {});
-  if (!/apiKey|providerApiKey|rawProviderKey|launchToken|runtimeToken|bearerToken|objectKey|storageKey|localPath|signedUrl|presignedUrl/i.test(serialized)) return;
+  if (!/ownerRef|operationId|k8sLabels|kubernetesLabels|deployOwnerLabels|apiKey|providerApiKey|rawProviderKey|launchToken|runtimeToken|bearerToken|objectKey|storageKey|localPath|signedUrl|presignedUrl/i.test(serialized)) return;
   throw relayError(`${label}_forbidden_field_detected`, "RUNTIME_AGENT_HTTP_RELAY_FORBIDDEN_FIELD", { label });
 }
 

@@ -364,6 +364,14 @@ Leaf 7: OPL productionization eval shell
 - It does not modify services, upstream, deploy, adapters, `.sentrux`, `.env.demo.template`, package/dependency files, or secret-like paths.
 - no secret, live provider, real cloud, build/push, kubectl, deploy, upstream modification, or live-test ran in this leaf.
 
+Leaf 8: OPL productionization local implementation
+
+- This leaf is local implementation hardening only.
+- Runtime Agent HTTP relay request and response validation rejects Package D owner fields: `ownerRef`, `operationId`, K8s labels, and deploy owner labels.
+- The same relay boundary continues to reject raw provider key, provider API key, launchToken, runtimeToken, bearer token, objectKey, storageKey, localPath, signedUrl, and presignedUrl.
+- The local eval shell proves the owner-field rejection with an in-process mocked `fetch` response; it does not call live provider, true cloud, deploy, build/push, kubectl, live-test, or upstream.
+- This leaf does not claim real cloud runtime, COS billing reconciliation, Langfuse deployment, deploy evidence, or one-person-lab HTTP Product API production availability.
+
 验收：
 
 - file 成功后，production 分支才能实现稳定 file projection。

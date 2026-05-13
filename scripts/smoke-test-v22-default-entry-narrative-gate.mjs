@@ -31,6 +31,16 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["feat/v22-opl-productionization-local-implementation", new Set([
+    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
+    "docs/recovery/status-matrix.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+    "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
+  ])],
   ["docs/v22-advance-opl-productionization-eval-shell-cursor", new Set([
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
@@ -154,6 +164,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
     "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
     "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
+    "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
     "services/portal/src/state/portal-resource-order-store.mjs",
     "services/portal/src/state/portal-store-db-delegates.mjs",
     "services/portal/src/state/portal-store-postgres-persistence.mjs",

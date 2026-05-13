@@ -63,6 +63,7 @@
 - OPL production branch may consume `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef` only as OPL-lane projection facts; cloud/deploy owner facts remain outside this lane.
 - Leaf 7 productionization eval shell: `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` is a local repo-tracked gate for the next OPL production implementation branch.
 - production_eval_gate: OPL production branch must fail closed if it promotes local canary evidence to production truth, emits Package D owner fields, leaks raw key/token/storage/path fields, treats fake success as real file/run/artifact success, modifies upstream, or requires cloud/deploy/live operations without a step-local auth record.
+- Leaf 8 local productionization implementation: Runtime Agent HTTP relay now rejects Package D owner fields (`ownerRef`, `operationId`, K8s labels, deploy owner labels) in relay request/response payloads, alongside raw key/token/storage/path guards. This is local hardening only and is not true cloud runtime, COS billing reconciliation, Langfuse deployment, deploy evidence, or upstream production truth.
 
 ## v22 Program Board
 

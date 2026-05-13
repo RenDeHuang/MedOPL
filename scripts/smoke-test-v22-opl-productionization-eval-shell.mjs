@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createRuntimeAgentHttpRelay } from "../services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs";
 
 const files = {
   portalOplConnection: "docs/contracts/v22-portal-opl-connection-boundary.md",
@@ -15,6 +16,7 @@ const files = {
   refreshGate: "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
   noFakeSuccessGate: "scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs",
   runtimeAgentLoopGate: "scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs",
+  runtimeAgentHttpRelay: "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
 };
 
 const allowedOplProjectionFields = [
@@ -109,6 +111,36 @@ function assertProductionProjectionRejected(payload, label) {
     /must_not_include_forbidden_production_field|allowed_projection_keys_mismatch/u,
     `${label}_must_fail_closed`,
   );
+}
+
+async function assertRuntimeAgentRelayRejectsPackageDOwnerResponse() {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    fileRef: "file-package-d-owner-leak",
+    ownerRef: "package-d-owner",
+  }), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+  try {
+    const relay = createRuntimeAgentHttpRelay({ timeoutMs: 1000 });
+    await assert.rejects(
+      () => relay.relayFile({
+        runtimeSession: {
+          workspaceId: "workspace-production-eval",
+          runtimeAgentEndpoint: "http://runtime-agent.invalid",
+        },
+        input: {
+          fileName: "input.md",
+          contentType: "text/markdown",
+        },
+      }),
+      /RUNTIME_AGENT_HTTP_RELAY_FORBIDDEN_FIELD|forbidden_field/u,
+      "runtime_agent_http_relay_must_reject_package_d_owner_fields",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 }
 
 const contents = Object.fromEntries(await Promise.all(
@@ -212,6 +244,15 @@ assertIncludesAll(contents.runtimeAgentLoopGate, [
   "fileRef",
   "artifactRef",
 ], "runtime_agent_loop_gate_productionization_eval");
+
+assertIncludesAll(contents.runtimeAgentHttpRelay, [
+  "ownerRef",
+  "operationId",
+  "k8sLabels",
+  "deployOwnerLabels",
+], "runtime_agent_http_relay_package_d_owner_guard");
+
+await assertRuntimeAgentRelayRejectsPackageDOwnerResponse();
 
 assertProductionProjectionPayload({
   resourceBindingId: "rb-production-eval",
