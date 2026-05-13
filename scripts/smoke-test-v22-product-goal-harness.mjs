@@ -87,6 +87,14 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
+  ["test/v22-billing-audit-characterization", new Set([
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["docs/v22-record-backend-template-b-absorb", new Set([
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
@@ -146,6 +154,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-mvp-contract-suite.mjs",
     "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
     "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
+    "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",

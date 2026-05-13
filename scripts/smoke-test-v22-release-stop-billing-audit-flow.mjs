@@ -31,6 +31,20 @@ function assertNoCloudConsoleLanguage(value, label) {
   assert.equal(/CVM|COS|K8s|TKE|云资源控制台/.test(serialized), false, `${label}_must_not_use_cloud_console_language`);
 }
 
+function assertNoActiveResourceOrderId(value, label) {
+  const serialized = JSON.stringify(value);
+  assert.equal(/"resourceOrderId"\s*:/.test(serialized), false, `${label}_must_not_use_resourceOrderId_as_active_truth`);
+}
+
+function assertBillingIdentity(record, label, expected = {}) {
+  assert.equal(record.resourceBindingId, expected.resourceBindingId, `${label}_resource_binding_id_mismatch`);
+  assert.equal(record.billingAttributionId, expected.billingAttributionId, `${label}_billing_attribution_id_mismatch`);
+  assert.equal(record.workspaceId, expected.workspaceId, `${label}_workspace_id_mismatch`);
+  assert.equal(record.accountId, expected.accountId, `${label}_account_id_mismatch`);
+  assert.equal(record.serverPlanId, expected.serverPlanId, `${label}_server_plan_id_mismatch`);
+  assert.equal(Object.hasOwn(record, "resourceOrderId"), false, `${label}_must_not_have_active_resource_order_id`);
+}
+
 function responseRecorder() {
   return { statusCode: 0, payload: null };
 }
@@ -180,6 +194,19 @@ try {
   });
   assert.equal(opened.res.statusCode, 201, "managed_environment_must_open");
   const resourceBindingId = opened.res.payload.resourceBinding.resourceBindingId;
+  const billingIdentity = {
+    resourceBindingId,
+    billingAttributionId: opened.res.payload.resourceBinding.costAllocationTag,
+    workspaceId: "workspace-v22-release",
+    accountId: user.id,
+    serverPlanId: "starter_2c4g_10gb",
+  };
+  assert.equal(opened.res.payload.resourceBinding.resourceBindingId, resourceBindingId, "opened_binding_id_mismatch");
+  assertNoActiveResourceOrderId(opened.res.payload.resourceBinding, "opened_resource_binding");
+  assert.equal(opened.res.payload.freeze.status, "active_pending_product_approval", "opened_freeze_status_mismatch");
+  assert.equal(opened.res.payload.freeze.preauthStatus, "pending_product_approval", "opened_preauth_status_mismatch");
+  assert.equal(opened.res.payload.freeze.frozenAmountCents, 5600, "opened_frozen_amount_cents_mismatch");
+  assert.equal(opened.res.payload.freeze.remainingAmountCents ?? opened.res.payload.freeze.remainingAmount * 100, 5600, "opened_remaining_amount_cents_mismatch");
 
   const session = await request(route, db, {
     method: "POST",
@@ -222,9 +249,12 @@ try {
   db.ledger.push({
     tenantId: user.tenantId,
     userId: user.id,
-    workspaceId: "workspace-v22-release",
+    workspaceId: billingIdentity.workspaceId,
     runId: run.res.payload.run.runId,
-    resourceOrderId: resourceBindingId,
+    resourceBindingId: billingIdentity.resourceBindingId,
+    billingAttributionId: billingIdentity.billingAttributionId,
+    accountId: billingIdentity.accountId,
+    serverPlanId: billingIdentity.serverPlanId,
     billingAccountId: user.tenantId,
     type: "pending_usage",
     amount: 9.99,
@@ -236,6 +266,7 @@ try {
     operatorId: "portal-smoke",
     createdAt: RELEASED_AT,
   });
+  assertNoActiveResourceOrderId(db.ledger, "billing_ledger_fixture");
 
   const ledgerCountBeforeRelease = db.ledger.length;
   const release = await request(route, db, {
@@ -268,6 +299,18 @@ try {
   assert.equal(release.res.payload.fileProtection.workspaceFileCount, 2, "file_protection_count_mismatch");
   assertNoSecretLeak(release.res.payload, "release_response");
   assertNoInternalStorageLeak(release.res.payload, "release_response");
+  assertNoActiveResourceOrderId(release.res.payload, "release_response");
+
+  assert.equal(db.managedEnvironmentReleaseAudits.length, 1, "release_audit_record_count_mismatch");
+  const releaseAuditRecord = db.managedEnvironmentReleaseAudits[0];
+  assert.equal(releaseAuditRecord.resourceBindingId, resourceBindingId, "release_audit_binding_mismatch");
+  assert.equal(releaseAuditRecord.workspaceId, billingIdentity.workspaceId, "release_audit_workspace_mismatch");
+  assert.equal(releaseAuditRecord.billingStoppedAt, RELEASED_AT, "release_audit_billing_stopped_at_mismatch");
+  assert.equal(releaseAuditRecord.billingStopConfirmBy, BILLING_STOP_CONFIRM_BY, "release_audit_confirm_by_mismatch");
+  assert.equal(releaseAuditRecord.auditReadyAt, AUDIT_READY_AT, "release_audit_ready_at_mismatch");
+  assert.equal(releaseAuditRecord.status, release.res.payload.audit.status, "release_audit_status_projection_mismatch");
+  assert.equal(releaseAuditRecord.auditReadyAt, release.res.payload.audit.auditReadyAt, "release_audit_ready_projection_mismatch");
+  assertNoActiveResourceOrderId(releaseAuditRecord, "release_audit_record");
 
   const repeatedRelease = await request(route, db, {
     method: "POST",
@@ -314,10 +357,21 @@ try {
   assert.equal(state.stopBilling.billingStoppedAt, RELEASED_AT, "state_billing_stopped_at_mismatch");
   assert.equal(state.stopBilling.billingStopConfirmBy, BILLING_STOP_CONFIRM_BY, "state_billing_stop_confirm_by_mismatch");
   assert.equal(state.audit.status, "audit_pending", "state_audit_status_mismatch");
+  assert.equal(state.freeze.status, "released", "released_freeze_status_mismatch");
+  assert.equal(state.freeze.preauthStatus, "billing_stopped", "released_freeze_preauth_status_mismatch");
+  assert.equal(state.freeze.frozenAmountCents, 0, "released_freeze_frozen_amount_cents_mismatch");
+  assert.equal(state.freeze.remainingAmount, 0, "released_freeze_remaining_amount_mismatch");
+  assert.equal(state.preauth.status, "billing_stopped", "released_preauth_status_mismatch");
+  assert.equal(state.preauth.amountCents, 0, "released_preauth_amount_cents_mismatch");
   assert.equal(state.billingSummary.billingLifecycle.activeBilling, false, "billing_summary_active_billing_mismatch");
   assert.equal(state.billingSummary.billingLifecycle.billingStopped, true, "billing_summary_billing_stopped_mismatch");
   assert.equal(state.billingSummary.billingLifecycle.auditPending, true, "billing_summary_audit_pending_mismatch");
   assert.equal(state.billingSummary.releaseStopBillingStatus, "billing_stopped", "billing_summary_release_stop_status_mismatch");
+  assert.equal(state.billingSummary.estimatedUsage.items.length, 1, "billing_summary_pending_usage_count_mismatch");
+  assertBillingIdentity(state.billingSummary.estimatedUsage.items[0], "billing_summary_pending_usage", billingIdentity);
+  assertBillingIdentity(state.billingSummary.pendingReconciliation.items[0], "billing_summary_pending_reconciliation", billingIdentity);
+  assertNoActiveResourceOrderId(state.billingSummary, "billing_summary");
+  assertNoActiveResourceOrderId(state.sessionTraceMetadata, "session_trace_metadata");
   assert.equal(state.workspaceFiles.every((item) => item.status === "retention_protected"), true, "workspace_files_must_enter_retention_protection");
   assert.equal(state.artifacts.every((item) => item.status === "retention_protected"), true, "artifacts_must_enter_retention_protection");
   assertNoSecretLeak(state, "released_canonical_state");

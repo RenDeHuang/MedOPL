@@ -292,6 +292,14 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
       "scripts/smoke-test-v22-product-goal-harness.mjs",
     ])],
+    ["test/v22-billing-audit-characterization", new Set([
+      gatePath,
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+      "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+    ])],
     ["docs/v22-record-backend-template-b-absorb", new Set([
       gatePath,
       "docs/recovery/v22-goal-state.md",
@@ -372,6 +380,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
       "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
       "scripts/smoke-test-v22-product-goal-harness.mjs",
+      "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
       "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
     ])],
     ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],

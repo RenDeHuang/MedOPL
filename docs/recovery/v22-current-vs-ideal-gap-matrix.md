@@ -184,17 +184,19 @@ truth writeback section:
 ### Gap: billing-audit-preauth-ledger-release-t1
 
 - id: billing-audit-preauth-ledger-release-t1
-- current_fact: contract-level release stop billing and audit flow exists.
+- current_fact: contract-level release stop billing and audit flow exists; characterization now gates release/preauth/freeze/audit and billing attribution fields before deeper billing production work.
 - ideal_state: preauth, ledger, release stop billing within 120 minutes, and T+1 audit are production-ready and traceable.
 - problem: billing truth can be confused with trace metadata, Langfuse, or cloud raw facts.
 - dependency: managed environment/resource binding and cloud lane facts.
 - status: gated
 - next_leaf_step: leaf-billing-audit-characterization
 - eval: `node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
-- allowed_files: future billing branch and v22 billing smoke
+- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, and exact branch-scoped harness allowlist updates; future implementation branches must declare a narrower billing/service write set separately.
 - forbidden_files: OpenCost primary narrative, Langfuse billing truth, real cloud mutation without authorization
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, billing contracts
 - B_absorb_criteria: B confirms release stops charging and audit record exists without treating observability as billing truth.
+
+- leaf-billing-audit-characterization: `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs` now characterizes the local release stop billing/audit loop beyond contract existence. The RED phase failed on `billing_ledger_fixture_must_not_use_resourceOrderId_as_active_truth`, proving the gate detects active `resourceOrderId` billing attribution. The GREEN phase rewrites the fixture to use `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`, verifies active freeze/preauth before release, zeroed/billing-stopped preauth after release, pending ledger identity projection, release audit record/API projection parity, no active `resourceOrderId`, no raw secret/storage leakage, and no billing truth dependency on trace metadata, Langfuse, or cloud raw facts. No `services/*`, package/dependency files, deploy, adapters, `.sentrux`, `.env.demo.template`, upstream, secrets, live/cloud/build/push/kubectl/deploy, or live-test was touched or run.
 
 ### Gap: release-readiness-authorized-deploy-only
 
