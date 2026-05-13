@@ -71,14 +71,14 @@
               <div class="muted-kv"><span class="muted-kv-label">T+1 对账状态</span><span class="muted-kv-value">{{ payload.costReconciliation.tPlus1Status }}</span></div>
             </div>
             <div class="mt-5 space-y-3">
-              <div v-for="item in payload.costReconciliation.costAllocationTags.slice(0, 4)" :key="item.resourceOrderId" class="rounded-xl border border-gray-100 p-3 text-xs dark:border-slate-700">
-                <div class="font-medium text-gray-950 dark:text-white">{{ item.resourceOrderId }}</div>
+              <div v-for="item in payload.costReconciliation.costAllocationTags.slice(0, 4)" :key="item.resourceBindingId" class="rounded-xl border border-gray-100 p-3 text-xs dark:border-slate-700">
+                <div class="font-medium text-gray-950 dark:text-white">{{ item.resourceBindingId }}</div>
                 <div class="mt-2 grid grid-cols-2 gap-2 text-gray-500 dark:text-slate-400">
                   <span>runId: {{ item.runId || "未归因" }}</span>
                   <span>serverPlanId: {{ item.serverPlanId || "-" }}</span>
-                  <span>tenantId: {{ item.tenantId || "-" }}</span>
+                  <span>accountId: {{ item.accountId || "-" }}</span>
                   <span>workspaceId: {{ item.workspaceId || "-" }}</span>
-                  <span>resourceBindingId: {{ item.resourceBindingId || "-" }}</span>
+                  <span>billingAttributionId: {{ item.billingAttributionId || "-" }}</span>
                   <span>environmentId: {{ item.environmentId || "-" }}</span>
                 </div>
               </div>

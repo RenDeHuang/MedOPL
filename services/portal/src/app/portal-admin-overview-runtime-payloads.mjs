@@ -7,8 +7,8 @@ import {
   buildAdminRecentUsage,
   buildAdminTopUsers,
   buildAdminUsageRows,
-  cloudResourceRows,
   commercialCustomers,
+  managedResourceBindingRows,
 } from "./portal-admin-api-payload-helpers.mjs";
 
 function overviewServiceTargets(urls, opsSurfaceEnabled) {
@@ -287,7 +287,7 @@ export function createPortalAdminOverviewPayloadBuilder({
           };
         })
         .sort((a, b) => String(b.updatedAt || b.lastActiveAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.lastActiveAt || a.createdAt || ""))),
-      cloudResourceRows: cloudResourceRows(db, formatDateTime),
+      managedResourceBindingRows: managedResourceBindingRows(db, formatDateTime),
       serviceStatuses: serviceStatuses.map((item) => ({ name: item.name, status: item.probe.status, ok: item.probe.ok, responseMs: item.probe.responseMs || null })),
       productProfile: {
         runtimeMode,

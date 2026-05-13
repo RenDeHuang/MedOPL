@@ -89,8 +89,13 @@ export interface StorageEntitlementPayload {
   freeQuotaGb: number;
   minimumPurchaseGb: number;
   retentionPolicy: string;
-  resourceOrderId: string;
+  resourceBindingId: string;
+  billingAttributionId: string;
+  accountId: string;
+  // Optional migration-only alias for old imported snapshots.
+  legacyResourceOrderId: string;
   storagePlanId: string;
+  serverPlanId: string;
   storageSizeGb: number;
   message: string;
 }
@@ -156,9 +161,13 @@ export function disabledStorageEntitlement(): StorageEntitlementPayload {
     status: "disabled",
     freeQuotaGb: 0,
     minimumPurchaseGb: 10,
-    retentionPolicy: "order_lifecycle",
-    resourceOrderId: "",
+    retentionPolicy: "workspace_lifecycle",
+    resourceBindingId: "",
+    billingAttributionId: "",
+    accountId: "",
+    legacyResourceOrderId: "",
     storagePlanId: "",
+    serverPlanId: "",
     storageSizeGb: 0,
     message: "storage_required",
   };

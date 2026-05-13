@@ -256,34 +256,39 @@ export function commercialCustomers(db, options = {}) {
     .filter((item) => includeAdminSegment(item, options));
 }
 
-export function commercialResourceOrders(db, options = {}) {
-  const usersById = new Map((Array.isArray(db.users) ? db.users : []).map((user) => [String(user.id || ""), user]));
-  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
-    .filter((order) => {
-      const user = usersById.get(String(order.userId || order.portalUserId || "")) || {};
-      return includeAdminSegment(user, options);
-    });
+function userForBinding(binding = {}, usersById = new Map()) {
+  return usersById.get(String(binding.userId || binding.ownerUserId || binding.accountId || binding.ownerTenantId || "")) || {};
 }
 
-export function cloudResourceRow(order = {}, formatDateTime = (value) => value || "") {
-  const resourceIds = Array.isArray(order.cloudResourceIds) ? order.cloudResourceIds : [];
-  const stoppedAt = String(order.billingStoppedAt || order.pendingStoppedAt || order.settledAt || "").trim();
+export function commercialResourceBindings(db, options = {}) {
+  const usersById = new Map((Array.isArray(db.users) ? db.users : []).map((user) => [String(user.id || ""), user]));
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((binding) => includeAdminSegment(userForBinding(binding, usersById), options));
+}
+
+export function managedResourceBindingRow(binding = {}, formatDateTime = (value) => value || "") {
+  const resourceIds = Array.isArray(binding.cloudResourceIds) ? binding.cloudResourceIds : [];
+  const stoppedAt = String(binding.billingStoppedAt || binding.releasedAt || binding.auditReadyAt || "").trim();
+  const resourceBindingId = String(binding.resourceBindingId || binding.id || "").trim();
   return {
-    name: order.serverPlanId || order.id,
-    status: String(order.status || "unknown").trim() || "unknown",
-    resourceOrderId: order.id,
-    runId: order.runId || "",
-    workspaceId: order.workspaceId || "",
+    name: binding.serverPlanId || binding.planId || resourceBindingId,
+    status: String(binding.status || "unknown").trim() || "unknown",
+    resourceBindingId,
+    billingAttributionId: String(binding.billingAttributionId || binding.cloudOperationId || binding.costAllocationTag || resourceBindingId),
+    accountId: String(binding.accountId || binding.userId || binding.ownerUserId || binding.tenantId || binding.ownerTenantId || ""),
+    serverPlanId: String(binding.serverPlanId || binding.planId || binding.packageId || ""),
+    runId: binding.runId || "",
+    workspaceId: binding.workspaceId || "",
     cloudResourceCount: resourceIds.length,
     cleanupEvidence: stoppedAt ? `释放时间 ${formatDateTime(stoppedAt)}` : (resourceIds.length ? `${resourceIds.length} 个云资源编号` : "等待资源编号"),
-    billingStopped: Boolean(stoppedAt) || ["released", "settled", "failed", "cancelled"].includes(String(order.status || "").toLowerCase()),
-    updatedAt: order.updatedAt || order.createdAt || "",
+    billingStopped: Boolean(stoppedAt) || ["released", "billing_stopped", "audit_ready", "audited", "failed", "cancelled"].includes(String(binding.status || "").toLowerCase()),
+    updatedAt: binding.updatedAt || binding.createdAt || "",
   };
 }
 
-export function cloudResourceRows(db, formatDateTime) {
-  return commercialResourceOrders(db)
-    .map((order) => cloudResourceRow(order, formatDateTime))
+export function managedResourceBindingRows(db, formatDateTime) {
+  return commercialResourceBindings(db)
+    .map((binding) => managedResourceBindingRow(binding, formatDateTime))
     .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
     .slice(0, 50);
 }

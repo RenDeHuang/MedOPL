@@ -44,11 +44,11 @@ function userLedgerEntries(db, user = {}) {
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 }
 
-function activeResourceOrdersForUser(db, user = {}) {
+function activeResourceBindingsForUser(db, user = {}) {
   const tenantId = userTenantId(user);
   const userId = String(user.id || "").trim();
-  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : [])
-    .filter((item) => item.userId === userId || item.tenantId === tenantId)
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .filter((item) => item.userId === userId || item.ownerUserId === userId || item.accountId === userId || item.tenantId === tenantId || item.ownerTenantId === tenantId)
     .filter((item) => !["released", "settled", "failed", "cancelled", "deleted"].includes(String(item.status || "").toLowerCase()));
 }
 
@@ -248,17 +248,21 @@ function fileSpaceOperationRows(db = {}) {
 }
 
 function costAllocationTagRows(db = {}) {
-  return (Array.isArray(db.resourceOrders) ? db.resourceOrders : []).map((order) => ({
-    resourceOrderId: String(order.resourceOrderId || order.id || ""),
-    runId: String(order.runId || ""),
-    serverPlanId: String(order.serverPlanId || order.planId || ""),
-    tenantId: String(order.tenantId || ""),
-    workspaceId: String(order.workspaceId || ""),
-    resourceBindingId: String(order.resourceBindingId || ""),
-    environmentId: String(order.environmentId || ""),
-    estimatedCost: moneyAmount(order.estimatedCost || order.totalCost || 0),
-    status: String(order.status || ""),
-  }));
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : []).map((binding) => {
+    const resourceBindingId = String(binding.resourceBindingId || binding.id || "");
+    return {
+      resourceBindingId,
+      billingAttributionId: String(binding.billingAttributionId || binding.cloudOperationId || binding.costAllocationTag || resourceBindingId),
+      accountId: String(binding.accountId || binding.userId || binding.ownerUserId || binding.tenantId || binding.ownerTenantId || ""),
+      runId: String(binding.runId || ""),
+      serverPlanId: String(binding.serverPlanId || binding.planId || binding.packageId || ""),
+      tenantId: String(binding.tenantId || binding.ownerTenantId || ""),
+      workspaceId: String(binding.workspaceId || ""),
+      environmentId: String(binding.environmentId || binding.managedEnvironmentId || ""),
+      estimatedCost: moneyAmount(binding.estimatedCost || binding.totalCost || binding.freezeAmount || 0),
+      status: String(binding.status || ""),
+    };
+  });
 }
 
 function tPlus1Status(db = {}) {
@@ -342,7 +346,7 @@ function customerAccountingRow(db, user, { now }) {
     monthSpendCents: summary.monthSpendCents,
     totalSpendCents: summary.totalSpendCents,
     rechargeTotalCents: summary.rechargeTotalCents,
-    runningResourceCount: activeResourceOrdersForUser(db, user).length,
+    activeResourceBindingCount: activeResourceBindingsForUser(db, user).length,
     billingRiskStatus: customerBillingRiskStatus(summary.risk),
     lastRechargeAt: lastRecharge?.createdAt || "",
     lastSpendAt: lastSpend?.createdAt || "",
@@ -356,7 +360,7 @@ function sumCustomerCents(customers = [], key) {
 function customerAccountingSummary(db, customers = []) {
   return {
     customerCount: customers.length,
-    activeCustomerCount: customers.filter((item) => item.runningResourceCount > 0).length,
+    activeCustomerCount: customers.filter((item) => item.activeResourceBindingCount > 0).length,
     todaySpendCents: sumCustomerCents(customers, "todaySpendCents"),
     monthSpendCents: sumCustomerCents(customers, "monthSpendCents"),
     pendingExactCents: customers.reduce((sum, item) => sum + pendingExactForCustomer(db, item.userId, item.tenantId), 0),
@@ -408,7 +412,7 @@ export function buildAdminCustomerAccountingDetailPayload(db, tenantIdOrUserId =
     },
     recharges: entries.filter((entry) => entry.type === "topup"),
     ledger: entries,
-    activeResourceOrders: activeResourceOrdersForUser(db, user),
+    activeResourceBindings: activeResourceBindingsForUser(db, user),
     historicalRuns: userScopedRows(db, "runs", userId, tenantId),
     workspaceFiles: userScopedRows(db, "workspaceFiles", userId, tenantId),
     sessionTraces: userScopedRows(db, "workspaceSessions", userId, tenantId),
@@ -612,7 +616,7 @@ export function createPortalAdminApiPayloads(deps) {
     if (!maybePayload) {
       const payload = dbOrPayload || {};
       return {
-        cloudResourceRows: payload.cloudResourceRows || [],
+        managedResourceBindingRows: payload.managedResourceBindingRows || [],
         systemMetrics: payload.systemMetrics || {},
         pending: payload.pending || {},
         warningEvents: payload.warningEvents || [],

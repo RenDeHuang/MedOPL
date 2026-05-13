@@ -139,6 +139,10 @@ const db = {
       planId: "starter_2c4g_10gb",
       serverPlanId: "starter_2c4g_10gb",
       packageId: "starter_2c4g_10gb",
+      billingAttributionId: "bill-rb-alpha",
+      accountId: "user-alpha",
+      runId: "run-alpha",
+      estimatedCost: 9.6,
       cpuCores: 2,
       memoryGb: 4,
       fileSpaceGb: 10,
@@ -160,6 +164,9 @@ const db = {
       planId: "pro_8c16g_100gb",
       serverPlanId: "pro_8c16g_100gb",
       packageId: "pro_8c16g_100gb",
+      billingAttributionId: "bill-rb-beta",
+      accountId: "user-beta",
+      estimatedCost: 1.2,
       cpuCores: 8,
       memoryGb: 16,
       fileSpaceGb: 100,
@@ -229,38 +236,6 @@ const db = {
       frozenAmount: 18,
       status: "active",
       tPlus1AuditStatus: "pending",
-      createdAt: now,
-      updatedAt: now,
-    },
-  ],
-  resourceOrders: [
-    {
-      id: "order-alpha",
-      resourceOrderId: "resource-order-alpha",
-      userId: "user-alpha",
-      tenantId: "tenant-alpha",
-      workspaceId: "workspace-alpha",
-      resourceBindingId: "rb-alpha",
-      environmentId: "env-alpha",
-      serverPlanId: "starter_2c4g_10gb",
-      runId: "run-alpha",
-      status: "running",
-      estimatedCost: 9.6,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "order-unattributed",
-      resourceOrderId: "resource-order-unattributed",
-      userId: "user-alpha",
-      tenantId: "tenant-alpha",
-      workspaceId: "workspace-alpha",
-      resourceBindingId: "rb-alpha",
-      environmentId: "env-alpha",
-      serverPlanId: "starter_2c4g_10gb",
-      runId: "",
-      status: "pending_reconcile",
-      estimatedCost: 1.2,
       createdAt: now,
       updatedAt: now,
     },
@@ -454,14 +429,17 @@ assert.equal(adminOpsPayload.costReconciliation.frozenAmount, 18, "cost_reconcil
 assert.equal(adminOpsPayload.costReconciliation.tPlus1Status, "待对账", "cost_reconciliation_must_include_t_plus_1_status");
 assert.equal(adminOpsPayload.costReconciliation.costAllocationTags.some((item) => item.runId === ""), true, "cost_items_with_empty_run_id_must_be_represented");
 assertIncludesAll(JSON.stringify(adminOpsPayload.costReconciliation.costAllocationTags), [
-  "resourceOrderId",
+  "resourceBindingId",
+  "billingAttributionId",
+  "accountId",
   "runId",
   "serverPlanId",
-  "tenantId",
   "workspaceId",
-  "resourceBindingId",
   "environmentId",
 ], "cost_allocation_tags");
+assertNotIncludesAny(JSON.stringify(adminOpsPayload.costReconciliation.costAllocationTags), [
+  "resourceOrderId",
+], "cost_allocation_tags_must_not_expose_retired_resource_order_id");
 
 assert.equal(adminOpsPayload.auditAndAnnouncements.auditEvents.length >= 1, true, "admin_ops_must_include_audit_events");
 assert.equal(adminOpsPayload.auditAndAnnouncements.exceptions.length >= 1, true, "admin_ops_must_include_exceptions");

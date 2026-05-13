@@ -1,7 +1,7 @@
 import { apiClient } from "../client";
 import type { PortalPagination, PortalQueryValue } from "./common";
 import type { CommercialProfile, OnboardingPayload } from "./commercial";
-import type { ResourceOrdersPayload } from "./resources";
+import type { WorkspaceResourceBinding } from "./resources";
 import type { SelectedServerPlan, ServerPlansSummary } from "./server-plans";
 
 export interface OverviewQuery {
@@ -31,7 +31,7 @@ export interface OverviewPayload {
   serverPlansSummary: ServerPlansSummary;
   selectedServerPlan?: SelectedServerPlan | null;
   onboarding: OnboardingPayload;
-  resourceOrders?: ResourceOrdersPayload;
+  latestResourceBindings?: WorkspaceResourceBinding[];
   taskCards: Array<{
     slug: string;
     title: string;

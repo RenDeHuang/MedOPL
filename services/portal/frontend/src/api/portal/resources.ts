@@ -1,38 +1,5 @@
 import { apiClient } from "../client";
 
-export interface ResourceOrderItem {
-  id: string;
-  status: string;
-  workspaceId: string;
-  workspaceTitle?: string;
-  runId?: string;
-  serverPlanId?: string;
-  serverPlanName?: string;
-  region?: string;
-  quotedAmount?: number;
-  frozenAmount?: number;
-  freezeAmount?: number;
-  pendingCost?: number;
-  exactCost?: number;
-  currency?: string;
-  pricingSource?: string;
-  provisionRequestId?: string;
-  cloudResourceIds?: string[];
-  failedReason?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface ResourceOrdersPayload {
-  items: ResourceOrderItem[];
-  summary?: {
-    activeCount?: number;
-    frozenAmount?: number;
-    pendingAmount?: number;
-    exactAmount?: number;
-  };
-}
-
 export interface CustomerComputeResource {
   id: string;
   provider?: string;
@@ -116,6 +83,11 @@ export interface WorkspaceResourceBinding {
   id: string;
   workspaceId: string;
   resourceBindingId: string;
+  billingAttributionId?: string;
+  accountId?: string;
+  serverPlanId?: string;
+  // Optional migration-only alias for old imported snapshots.
+  legacyResourceOrderId?: string;
   computeInstanceId: string;
   storageBucketId: string;
   rootPrefix?: string;
@@ -232,28 +204,27 @@ export interface OplLaunchStatusPayload {
   }>;
 }
 
-export interface ResourceOrderQuoteInput {
+export interface ResourceBindingQuoteInput {
   workspaceId?: string;
   workspaceSessionId?: string;
   serverPlanId: string;
   estimatedHours?: number;
 }
 
-export interface ResourceOrderFreezeInput {
+export interface ResourceBindingFreezeInput {
   quoteId?: string;
-  resourceOrderId?: string;
+  resourceBindingId?: string;
   workspaceId?: string;
   workspaceSessionId?: string;
   serverPlanId?: string;
   estimatedHours?: number;
 }
 
-export interface ResourceOrderMutationResult {
+export interface ResourceBindingMutationResult {
   ok: boolean;
-  resourceOrderId?: string;
+  resourceBindingId?: string;
   quoteId?: string;
-  order?: ResourceOrderItem | null;
-  provisioner?: unknown;
+  binding?: WorkspaceResourceBinding | null;
 }
 
 type RawBinding = Omit<WorkspaceResourceBinding, "computeInstances" | "storageBuckets">;

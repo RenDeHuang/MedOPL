@@ -31,10 +31,14 @@ export function createPortalStoreHealth({
       },
       identity,
       billing,
-      resourceOrders: {
+      resourceBindings: {
         enabled: true,
-        states: ["quoted", "frozen", "provisioning", "running", "released", "reconciling", "settled"],
-        exactBillingSource: "billing-aggregator:tencent_cloud_bill",
+        states: ["planned", "preparing", "active", "release_requested", "billing_stop_confirming", "billing_stopped", "audit_pending", "audit_ready", "audited"],
+        requiredAttributionFields: ["resourceBindingId", "billingAttributionId", "workspaceId", "accountId", "serverPlanId"],
+        billingAttributionId: "required",
+        workspaceId: "required",
+        accountId: "required",
+        serverPlanId: "required",
       },
       runtime,
       storage: {

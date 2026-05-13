@@ -66,6 +66,22 @@ const branchScopedAllowedDiffPaths = new Map([
     "services/portal/src/domain/lab-billing-policy.mjs",
     "services/portal/src/domain/workspace-storage.mjs",
   ])],
+  ["cleanup/v22-retire-resource-order-store-admin-frontend", new Set([
+    "services/portal/src/app/portal-admin-api-payload-helpers.mjs",
+    "services/portal/src/app/portal-admin-api-payloads.mjs",
+    "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+    "services/portal/src/app/portal-module-source-payloads.mjs",
+    "services/portal/src/state/portal-store-health.mjs",
+    "services/portal/frontend/src/api/portal/overview.ts",
+    "services/portal/frontend/src/api/portal/resources.ts",
+    "services/portal/frontend/src/api/portal/traces.ts",
+    "services/portal/frontend/src/api/portal/workspace.ts",
+    "services/portal/frontend/src/views/admin/AdminOpsView.vue",
+    "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+    "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
+    "scripts/smoke-test-v22-portal-admin-shared-helper-structure.mjs",
+    "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
+  ])],
 ]);
 
 const forbiddenDefaultEntryTerms = [

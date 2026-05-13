@@ -35,9 +35,9 @@ const sharedFunctionNames = [
   "customerSegment",
   "includeAdminSegment",
   "commercialCustomers",
-  "commercialResourceOrders",
-  "cloudResourceRow",
-  "cloudResourceRows",
+  "commercialResourceBindings",
+  "managedResourceBindingRow",
+  "managedResourceBindingRows",
 ];
 
 for (const name of sharedFunctionNames) {
@@ -50,12 +50,12 @@ const apiPayloadHelperUsages = [
   "userTenantId",
   "customerSegment",
   "commercialCustomers",
-  "cloudResourceRows",
+  "managedResourceBindingRows",
 ];
 
 const runtimeOverviewHelperUsages = [
   "commercialCustomers",
-  "cloudResourceRows",
+  "managedResourceBindingRows",
 ];
 
 for (const name of apiPayloadHelperUsages) {

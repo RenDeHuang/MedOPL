@@ -38,6 +38,27 @@ const allowedBillingPayloadRewriteDiffPaths = new Set([
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
 ]);
 
+const allowedStoreAdminFrontendRewriteDiffPaths = new Set([
+  gatePath,
+  "services/portal/src/app/portal-admin-api-payload-helpers.mjs",
+  "services/portal/src/app/portal-admin-api-payloads.mjs",
+  "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+  "services/portal/src/app/portal-module-source-payloads.mjs",
+  "services/portal/src/state/portal-store-health.mjs",
+  "services/portal/frontend/src/api/portal/overview.ts",
+  "services/portal/frontend/src/api/portal/resources.ts",
+  "services/portal/frontend/src/api/portal/traces.ts",
+  "services/portal/frontend/src/api/portal/workspace.ts",
+  "services/portal/frontend/src/views/admin/AdminOpsView.vue",
+  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/repo-zoning.md",
+  "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
+  "scripts/smoke-test-v22-portal-admin-shared-helper-structure.mjs",
+  "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const activePortalFeatureRoutesPath = "services/portal/src/app/portal-feature-runtime-handlers.mjs";
@@ -66,6 +87,20 @@ const activeBillingPayloadPaths = [
   "services/portal/src/domain/lab-entitlements.mjs",
   "services/portal/src/domain/lab-billing-policy.mjs",
   "services/portal/src/domain/workspace-storage.mjs",
+];
+
+const activeStoreAdminFrontendPaths = [
+  "services/portal/src/app/portal-admin-api-payload-helpers.mjs",
+  "services/portal/src/app/portal-admin-api-payloads.mjs",
+  "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+  "services/portal/src/app/portal-module-source-payloads.mjs",
+  "services/portal/src/state/portal-store-health.mjs",
+  "services/portal/frontend/src/api/portal/overview.ts",
+  "services/portal/frontend/src/api/portal/resources.ts",
+  "services/portal/frontend/src/api/portal/traces.ts",
+  "services/portal/frontend/src/api/portal/workspace.ts",
+  "services/portal/frontend/src/views/admin/AdminOpsView.vue",
+  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
 ];
 
 const retiredSuccessPathTokens = [
@@ -149,15 +184,21 @@ function changedFilesFromBase() {
 
 function assertOnlyGateChanged() {
   const branchName = currentBranchName();
-  const allowedDiffPaths = branchName === "cleanup/v22-retire-resource-order-billing-payloads"
-    ? allowedBillingPayloadRewriteDiffPaths
-    : allowedResourceOrderRouteTombstoneDiffPaths;
+  const allowedDiffPaths = allowedDiffPathsForBranch(branchName);
   for (const filePath of changedFilesFromBase()) {
     assert(
       allowedDiffPaths.has(filePath),
-      `resource_order_route_tombstone_branch_must_not_modify:${filePath}`,
+      `resource_order_retirement_branch_must_not_modify:${branchName}:${filePath}`,
     );
   }
+}
+
+function allowedDiffPathsForBranch(branchName = currentBranchName()) {
+  const allowedDiffPathsByBranch = new Map([
+    ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],
+    ["cleanup/v22-retire-resource-order-store-admin-frontend", allowedStoreAdminFrontendRewriteDiffPaths],
+  ]);
+  return allowedDiffPathsByBranch.get(branchName) || allowedResourceOrderRouteTombstoneDiffPaths;
 }
 
 function currentBranchName() {
@@ -366,6 +407,93 @@ function assertRequiredRetirementDocs({ repoZoning, legacyBacklog }) {
     "active ledger、binding 和 Portal payload 主归因迁到 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`",
     "legacy_backlog_resource_order_billing_payload_attribution",
   );
+  assertIncludes(
+    repoZoning,
+    "resource-order store/admin/frontend third-slice cleanup completed",
+    "repo_zoning_resource_order_store_admin_frontend_third_slice",
+  );
+  assertIncludes(
+    legacyBacklog,
+    "第三刀 store health / admin / frontend surface 清退",
+    "legacy_backlog_resource_order_store_admin_frontend_third_slice",
+  );
+  assertIncludes(
+    legacyBacklog,
+    "active admin、module source、store health 和 frontend surface 不再把 resource-order 作为默认展示字段或主归因字段",
+    "legacy_backlog_resource_order_store_admin_frontend_surface",
+  );
+}
+
+function assertStoreHealthUsesResourceBindingSurface(source) {
+  assertIncludes(source, "resourceBindings", "store_health_resource_binding_surface");
+  assertIncludes(source, "billingAttributionId", "store_health_billing_attribution_surface");
+  assertIncludes(source, "workspaceId", "store_health_workspace_surface");
+  assertIncludes(source, "accountId", "store_health_account_surface");
+  assertIncludes(source, "serverPlanId", "store_health_server_plan_surface");
+  assert(!source.includes("resourceOrders"), "store_health_must_not_expose_resource_orders_surface");
+  assert(!source.includes("exactBillingSource"), "store_health_must_not_retain_resource_order_billing_source");
+}
+
+function assertModuleSourceUsesResourceBindingSurface(source) {
+  assertIncludes(source, "resource_bindings", "module_source_resource_bindings_module");
+  assertIncludes(source, "/portal/api/platform-provisioned-resources", "module_source_platform_provisioned_resources_api");
+  assertIncludes(source, "resource_binding_status", "module_source_resource_binding_capability");
+  assert(!source.includes("resource_orders"), "module_source_must_not_expose_resource_orders_module");
+  assert(!source.includes("/portal/api/resource-orders"), "module_source_must_not_point_to_resource_orders_api");
+  assert(!source.includes("resource_order_status"), "module_source_must_not_expose_resource_order_capability");
+}
+
+function assertFrontendAdminUsesResourceBindingSurface(source) {
+  assertIncludes(source, "item.resourceBindingId", "admin_ops_view_resource_binding_key");
+  assertIncludes(source, "billingAttributionId", "admin_ops_view_billing_attribution");
+  assert(!source.includes("item.resourceOrderId"), "admin_ops_view_must_not_display_resource_order_id");
+}
+
+function assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, source) {
+  const allowedLegacyAlias = /\blegacyResourceOrderId\b/g;
+  const allowedRanges = [];
+  for (const match of source.matchAll(allowedLegacyAlias)) {
+    const index = match.index ?? 0;
+    const context = source.slice(Math.max(0, index - 220), Math.min(source.length, index + 260));
+    assert(
+      /optional|migration-only|legacy|retired|退场|迁移/iu.test(context),
+      `${filePath}:${lineNumber(source, index)}_legacy_resource_order_id_must_be_optional_migration_only`,
+    );
+    allowedRanges.push([Math.max(0, index - 32), Math.min(source.length, index + "legacyResourceOrderId".length + 32)]);
+  }
+
+  const forbiddenPatterns = [
+    /\bresourceOrderId\b/gu,
+    /\bresource_order_id\b/giu,
+    /\bresourceorderid\b/giu,
+    /\bresourceOrders\b/gu,
+    /\bresourceOrder\b/gu,
+    /\bResourceOrder\b/gu,
+    /\bResourceOrders\b/gu,
+    /\bresource-order\b/giu,
+    /\bresource_order\b/giu,
+    /\bresource order\b/giu,
+  ];
+  const findings = [];
+  for (const pattern of forbiddenPatterns) {
+    for (const match of source.matchAll(pattern)) {
+      const index = match.index ?? 0;
+      if (allowedRanges.some(([start, end]) => index >= start && index <= end)) continue;
+      findings.push({
+        file: filePath,
+        line: lineNumber(source, index),
+        token: match[0],
+        lineText: lineAt(source, index).trim(),
+      });
+    }
+  }
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "active_store_admin_frontend_resource_order_surface",
+    detail: "Admin/frontend/module source/store health must use resourceBindingId, billingAttributionId, workspaceId, accountId, and serverPlanId. Retained old identifiers must be legacyResourceOrderId optional/migration-only.",
+    findings,
+  }, null, 2));
 }
 
 function assertNoRequiredResourceOrderIdInContracts(filePath, source) {
@@ -460,6 +588,14 @@ const payloadHelperSource = await readRepoFile("services/portal/src/app/portal-p
 assertRequiredPrimaryFields("services/portal/src/app/portal-page-payload-helpers.mjs", payloadHelperSource, requiredPrimaryFieldsFor("services/portal/src/app/portal-page-payload-helpers.mjs"));
 assertNoRetiredPayloadShape("services/portal/src/app/portal-page-payload-helpers.mjs", payloadHelperSource);
 
+assertStoreHealthUsesResourceBindingSurface(await readRepoFile("services/portal/src/state/portal-store-health.mjs"));
+assertModuleSourceUsesResourceBindingSurface(await readRepoFile("services/portal/src/app/portal-module-source-payloads.mjs"));
+assertFrontendAdminUsesResourceBindingSurface(await readRepoFile("services/portal/frontend/src/views/admin/AdminOpsView.vue"));
+
+for (const filePath of activeStoreAdminFrontendPaths) {
+  assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, await readRepoFile(filePath));
+}
+
 const requiredLegacyAliasContracts = [
   "docs/contracts/v22-admin-ops-console-boundary.md",
   "docs/contracts/v22-portal-admin-ops-surface-boundary.md",
@@ -483,12 +619,11 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_retire_resource_order_primary_path",
   branchScope: {
-    routeTombstoneFirstSlice: true,
+    routeTombstoneFirstSlice: currentBranchName() === "cleanup/v22-retire-resource-order-route-tombstones",
     billingPayloadRewriteSlice: currentBranchName() === "cleanup/v22-retire-resource-order-billing-payloads",
-    leavesDomainStoreAndFrontendForLater: true,
-    allowedTrackedChanges: [...(currentBranchName() === "cleanup/v22-retire-resource-order-billing-payloads"
-      ? allowedBillingPayloadRewriteDiffPaths
-      : allowedResourceOrderRouteTombstoneDiffPaths)],
+    storeAdminFrontendRewriteSlice: currentBranchName() === "cleanup/v22-retire-resource-order-store-admin-frontend",
+    leavesStoreSchemaPostgresAndMigrationKeysForLater: true,
+    allowedTrackedChanges: [...allowedDiffPathsForBranch()],
     deletedRetiredRouteModules: retiredResourceOrderRouteModulePaths,
   },
   checked: {
@@ -498,6 +633,7 @@ console.log(JSON.stringify({
     resourceOrderTombstoneRoute: resourceOrderTombstoneRoutePath,
     retiredResourceOrderRouteModules: retiredResourceOrderRouteModulePaths,
     activeBillingPayloads: activeBillingPayloadPaths,
+    activeStoreAdminFrontendPaths,
     defaultEntrypoints: defaultEntryPaths,
     contractFiles: await contractFiles(),
   },

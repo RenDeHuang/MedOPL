@@ -9,7 +9,7 @@ export const REQUIRED_PORTAL_MODULE_SOURCES = Object.freeze([
   Object.freeze({ module: "overview", apiSource: "/portal/api/overview", capability: "overview_snapshot" }),
   Object.freeze({ module: "billing", apiSource: "/portal/api/billing", capability: "billing_summary" }),
   Object.freeze({ module: "workspace", apiSource: "/portal/api/workspace", capability: "workspace_file_io" }),
-  Object.freeze({ module: "resource_orders", apiSource: "/portal/api/resource-orders", capability: "resource_order_status" }),
+  Object.freeze({ module: "resource_bindings", apiSource: "/portal/api/platform-provisioned-resources", capability: "resource_binding_status" }),
   Object.freeze({ module: "opl_launch", apiSource: "/portal/api/opl/launch", capability: "launch_bridge" }),
   Object.freeze({ module: "session_trace", apiSource: "/portal/api/session-traces", capability: "trace_lookup" }),
 ]);

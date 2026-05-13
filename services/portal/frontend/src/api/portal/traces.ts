@@ -74,7 +74,8 @@ export interface TracesPayload {
     workspaceSessionId: string;
     runtimeSessionId?: string;
     runId: string;
-    resourceOrderId?: string;
+    resourceBindingId?: string;
+    billingAttributionId?: string;
     serverPlanId?: string;
     model: string;
     sessionId: string;
