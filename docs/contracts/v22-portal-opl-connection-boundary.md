@@ -221,6 +221,20 @@ run 必须执行以下 gate：
 
 run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeSessionId`、`resourceBindingId`、`providerKeyRef`、artifact refs 和 sanitized usage/cost summary 写回 Portal 可投影状态。
 
+## Current Productionization Boundary Status
+
+- productionization_status: contract_refresh_only
+- absorbed_canary_fact: local Runtime Agent HTTP API relay full-loop
+- absorbed_canary_fact: WebUI bridge negative no-fake-success gates
+- absorbed_canary_fact: provider message reply is message-only
+- not_production_truth: real cloud runtime is not上线
+- not_production_truth: COS billing reconciliation is not上线
+- not_production_truth: Langfuse / trace.medopl.cn is not deployed
+- not_production_truth: one-person-lab upstream HTTP Product API is not available
+- production implementation must not treat local canary evidence as deployment evidence
+
+当前可吸收事实只说明 Portal / Gateway / Adapter / Runtime Agent HTTP API 本地 relay 的接口形状、workspace-scoped fileRef、run/artifact projection、no-fake-success gate 和 message reply canary 边界已被本地或授权 canary 证明。它不说明真实云 runtime、真实 COS 账单、生产部署、Langfuse 或 `trace.medopl.cn` 已上线。后续 production implementation 必须继续把这些事实作为输入边界，而不是把 canary evidence 当作生产部署证据。
+
 ## Artifact And Portal Projection
 
 输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。

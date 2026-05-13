@@ -344,6 +344,15 @@ node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs
 - 把 canary 事实回写合同、status 和 validation path。
 - 把已验证能力交给后续 production implementation 分支。
 
+Leaf 6: OPL productionization contract refresh
+
+- This leaf is contract/status refresh only.
+- local Runtime Agent HTTP API relay full-loop is absorbed as canary evidence.
+- WebUI bridge negative no-fake-success gates are absorbed as canary evidence.
+- provider message live canary remains message/reply only.
+- production implementation remains separate.
+- no secret, live provider, real cloud, build/push, kubectl, deploy, upstream modification, or live-test ran in this leaf.
+
 验收：
 
 - file 成功后，production 分支才能实现稳定 file projection。

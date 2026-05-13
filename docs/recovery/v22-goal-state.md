@@ -4,9 +4,9 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `299fee19459192b09fac836c3aba78faa5b9a3b3`
+- 当前 trunk HEAD: `3fc92e627124329825746f4a71afa17d49d9c5a1`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `recovery/platform-v22-trunk`
+- current branch: `contract/v22-opl-productionization-contract-refresh`
 - model: gpt-5.4
 
 ## Current Goal Cursor
@@ -91,7 +91,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
@@ -105,6 +105,8 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-portal-layering-characterization-gate completed on branch `refactor/v22-portal-layering-characterization-gate`: Portal structure smoke now validates `currentPortalCodeShape` in `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`. The gate pins stable backend route/app/domain/state anchors, frontend view/composable/API module anchors, smoke-layer files, and future refactor risks without changing Portal business code or running live-test/build/push/kubectl/cloud. Recorded future refactor truths include large `portal-runtime.mjs` composition root, route-to-state direct import shape, domain payload/provider bridge mixing, app orchestration plus view-model payload mixing, non-default frontend API barrel, large harness registry, partial admin direct API usage, and controlled retired `resource-order` / `user-owned` tombstones.
 - Leaf 5 failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs` initially failed with `goal_state_missing:当前下一问题：Portal architecture layering characterization gate`. failure_category: `implementation_wrong`; attempt_count: 1; root_cause_id: `leaf5_goal_state_cursor_pre_advanced_before_B_absorb`; changed_strategy: keep the current cursor on `leaf-portal-layering-characterization-gate` until B ff-only absorb/push, while recording the characterization truth for B review; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and B checks before commit.
 - Leaf 5 B absorb/push result: branch `refactor/v22-portal-layering-characterization-gate`, commit `299fee19459192b09fac836c3aba78faa5b9a3b3`, changed files `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with Portal structure gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, Portal check, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `299fee19459192b09fac836c3aba78faa5b9a3b3`; next cursor is `leaf-opl-connection-productionization-contract-refresh`.
+- Leaf 6 failure analysis: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` initially failed on missing productionization boundary status, which was the intended RED for this leaf. After adding contract/status refresh text, the same eval failed twice on stale eval expectations: first it expected `next_leaf_step: leaf-opl-connection-productionization-eval-shell` before B absorb, then it expected the old two-file `truth_writeback_target`. failure_category: `eval_wrong`; attempt_count: 2 for stale eval expectation after RED; root_cause_id: `leaf6_contract_refresh_eval_stale_cursor_and_truth_target`; changed_strategy: keep gap matrix next leaf on current leaf until B absorb and update eval to require the new three-file truth writeback target including `docs/recovery/status-matrix.md`; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: run OPL productionization refresh smoke, no-fake-success gate, runtime-agent full-loop, product-goal harness, MVP suite, workflow review, and B checks.
+- leaf-opl-connection-productionization-contract-refresh completed on branch `contract/v22-opl-productionization-contract-refresh`: `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` now gates OPL productionization handoff status across Portal-OPL connection, Real OPL file/run/artifact, validation path, status matrix, gap matrix, goal-state, MVP acceptance, and MVP suite. The refresh records `contract_refresh_only`, separates local Runtime Agent HTTP API relay full-loop and WebUI bridge no-fake-success canary facts from production truth, and keeps real cloud runtime, COS billing reconciliation, Langfuse / `trace.medopl.cn`, upstream HTTP Product API, deploy owner fields, raw provider key, launchToken/runtimeToken, storage keys, local paths, signed URLs, and Package D ownership outside OPL production truth. Verification passed locally with OPL productionization refresh smoke, real OPL file/run/artifact no-fake-success gate, real OPL Runtime Agent HTTP API loop, provider message canary contract, Portal-OPL context/backflow contract, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, and diff whitespace check. No secret, live provider call, true cloud, build/push, kubectl, deploy, upstream modification, or live-test ran.
 
 ## Later Problems
 
@@ -258,14 +260,14 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
   - data_or_field_truth: OPL lane provides fileRef/run/artifact projection and resourceBindingId/workspace runtime identity; deploy ownership stays Package D.
   - auth_boundary: no raw provider key, no live canary unless separately authorized.
   - pollution_risks: fake 200, upstream internal import, direct path as user entry.
-  - verification_commands: `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`
+  - verification_commands: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
   - B_absorb_criteria: B confirms no production truth claim from canary alone.
-- eval_command: `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`
+- eval_command: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
 - failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
 - trace_or_evidence_expectation: sanitized `.runtime` evidence only for separately authorized canary; otherwise local stdout.
 - allowed_files: `docs/recovery/*`, `docs/contracts/v22-*`, `scripts/smoke-test-v22-*` in future branch.
 - forbidden_files: upstream one-person-lab, `deploy/*`, `.env*`, raw secret paths.
-- truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/v22-goal-state.md`
+- truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`
 - B_absorb_criteria: B confirms clean upstream one-person-lab and no fake success.
 - attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 

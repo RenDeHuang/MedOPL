@@ -359,6 +359,21 @@ Production Runtime Agent binding 是 OPL lane 对 Package D 和云服务 lane �
 
 Production Runtime Agent binding 允许 config-only / fake Runtime Agent endpoint binding 来验证公开 HTTP API relay；默认不读取 secret、不调用真实云、不 build/push/deploy、不 kubectl、不修改 one-person-lab upstream。未配置 Runtime Agent endpoint 时必须返回 `requires_runtime_agent`。Runtime Agent 未返回 artifact 时必须返回 `artifact_not_observed` 或 `output_file_ref_not_observed`。Adapter 不得伪造 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 或 `usageMetadataRef`。
 
+## Current Productionization Boundary Status
+
+- productionization_status: contract_refresh_only
+- absorbed_local_canary: runtime_agent_http_api_full_loop
+- absorbed_local_canary: webui_file_run_artifact_no_fake_success_gate
+- absorbed_authorized_canary: provider_message_reply_only
+- production_truth_blocked_until: stable Runtime Agent endpoint binding
+- production_truth_blocked_until: authorized cloud runtime lane
+- production_truth_blocked_until: COS billing reconciliation lane
+- production_truth_blocked_until: authorized Langfuse attachment lane
+- OPL production branch may consume only `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`
+- OPL production branch must not emit `ownerRef`, `operationId`, K8s labels, deploy owner labels, raw provider key, launchToken, runtimeToken, objectKey, storageKey, localPath, signedUrl, or presignedUrl
+
+当前 refresh 只把已吸收 canary facts 分流给后续 production branch。`runtime_agent_http_api_full_loop` 证明的是本地独立 Runtime Agent HTTP API relay shape；`webui_file_run_artifact_no_fake_success_gate` 证明未验证 file/run/artifact 不会伪成功；`provider_message_reply_only` 只证明授权 message/reply。它们都不是真实云 runtime、COS 账单、Langfuse 或 deploy evidence。
+
 ## Langfuse Attachment Boundary
 
 Langfuse is an optional sanitized observability attachment。`trace.medopl.cn` 是后续 Langfuse admin/ops console 目标域，不是本合同默认部署目标。

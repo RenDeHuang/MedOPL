@@ -30,6 +30,20 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["contract/v22-opl-productionization-contract-refresh", new Set([
+    "docs/contracts/v22-portal-opl-connection-boundary.md",
+    "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
+    "docs/recovery/mvp-contract-acceptance.md",
+    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
+    "docs/recovery/status-matrix.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["refactor/v22-portal-layering-characterization-gate", new Set([
     "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
@@ -55,6 +69,13 @@ const branchScopedAllowedDiffPaths = new Map([
   ])],
   ["recovery/platform-v22-trunk", new Set([
     "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+    "docs/contracts/v22-portal-opl-connection-boundary.md",
+    "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
+    "docs/recovery/mvp-contract-acceptance.md",
+    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
+    "docs/recovery/status-matrix.md",
+    "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",

@@ -54,6 +54,7 @@ const smokeScripts = [
   ["smoke-test-v22-real-opl-capability-canary-contract", "scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs"],
   ["smoke-test-v22-real-opl-provider-message-canary-contract", "scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs"],
   ["smoke-test-v22-real-opl-file-run-artifact-canary-contract", "scripts/smoke-test-v22-real-opl-file-run-artifact-canary-contract.mjs"],
+  ["smoke-test-v22-opl-productionization-contract-refresh", "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs"],
   ["smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop", "scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"],
   ["smoke-test-v22-real-opl-file-run-artifact-gates", "scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs"],
   ["smoke-test-v22-opl-adapter-state-store-atomic-flow", "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs"],

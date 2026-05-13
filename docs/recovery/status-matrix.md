@@ -53,6 +53,15 @@
 | K8s Job 主叙事 | 无正式入口 | archive/reference，非 v22 主线 |
 | OpenCost 主叙事 | 无正式入口 | archive/reference，非 v22 主线 |
 
+### OPL Productionization Truth Split
+
+- Leaf 6 productionization contract refresh: contract_refresh_only.
+- canary_proven_local_fact: local Runtime Agent HTTP API relay full-loop canary proves workspace-scoped `fileRef`, `runId`, `artifactRef` / `outputFileRef`, Portal projection, `billingMetadataRef`, `usageMetadataRef`, and no Package D owner fields in a local HTTP relay.
+- canary_proven_local_fact: WebUI bridge negative no-fake-success gate proves unsupported file/run/artifact paths stay gated instead of returning fake success.
+- canary_proven_authorized_fact: provider message reply canary proves message reply only.
+- not_production_truth_yet: these are not production deploy evidence, not true cloud runtime evidence, not COS billing reconciliation evidence, and not Langfuse / `trace.medopl.cn` deployment evidence.
+- OPL production branch may consume `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef` only as OPL-lane projection facts; cloud/deploy owner facts remain outside this lane.
+
 ## v22 Program Board
 
 - v22 program board: [v22-program-board.md](./v22-program-board.md)
