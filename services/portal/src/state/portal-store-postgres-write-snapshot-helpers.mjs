@@ -358,12 +358,18 @@ export async function writeWorkspaceResourceBindings({ client, pgTableName, db }
         tenant_id=EXCLUDED.tenant_id,
         user_id=EXCLUDED.user_id,
         workspace_id=EXCLUDED.workspace_id,
-        compute_instance_id=EXCLUDED.compute_instance_id,
-        storage_bucket_id=EXCLUDED.storage_bucket_id,
-        root_prefix=EXCLUDED.root_prefix,
-        protection_policy_id=EXCLUDED.protection_policy_id,
-        status=EXCLUDED.status,
-        updated_at=EXCLUDED.updated_at`, [
+        compute_instance_id=COALESCE(NULLIF(EXCLUDED.compute_instance_id, ''), ${pgTableName("workspace_resource_bindings")}.compute_instance_id),
+        storage_bucket_id=COALESCE(NULLIF(EXCLUDED.storage_bucket_id, ''), ${pgTableName("workspace_resource_bindings")}.storage_bucket_id),
+        root_prefix=COALESCE(NULLIF(EXCLUDED.root_prefix, ''), ${pgTableName("workspace_resource_bindings")}.root_prefix),
+        protection_policy_id=COALESCE(NULLIF(EXCLUDED.protection_policy_id, ''), ${pgTableName("workspace_resource_bindings")}.protection_policy_id),
+        status=CASE
+          WHEN ${pgTableName("workspace_resource_bindings")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("workspace_resource_bindings")}.status
+          ELSE EXCLUDED.status
+        END,
+        updated_at=CASE
+          WHEN ${pgTableName("workspace_resource_bindings")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("workspace_resource_bindings")}.updated_at
+          ELSE EXCLUDED.updated_at
+        END`, [
       row.id,
       row.resourceBindingId || row.id,
       row.ownerTenantId || row.tenantId || row.userId || "",
@@ -600,11 +606,23 @@ export async function writeCloudResourceProjections({ client, pgTableName, db })
         resource_binding_id=EXCLUDED.resource_binding_id,
         status=EXCLUDED.status,
         production_portal_connected=EXCLUDED.production_portal_connected,
-        runner_mode=EXCLUDED.runner_mode,
-        real_cloud_calls=EXCLUDED.real_cloud_calls,
-        last_operation_id=EXCLUDED.last_operation_id,
-        visible_summary_json=EXCLUDED.visible_summary_json,
-        updated_at=EXCLUDED.updated_at`, [
+        runner_mode=COALESCE(NULLIF(EXCLUDED.runner_mode, ''), ${pgTableName("cloud_resource_projections")}.runner_mode),
+        real_cloud_calls=CASE
+          WHEN ${pgTableName("cloud_resource_projections")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("cloud_resource_projections")}.real_cloud_calls
+          ELSE EXCLUDED.real_cloud_calls
+        END,
+        last_operation_id=CASE
+          WHEN ${pgTableName("cloud_resource_projections")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("cloud_resource_projections")}.last_operation_id
+          ELSE EXCLUDED.last_operation_id
+        END,
+        visible_summary_json=CASE
+          WHEN ${pgTableName("cloud_resource_projections")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("cloud_resource_projections")}.visible_summary_json
+          ELSE EXCLUDED.visible_summary_json
+        END,
+        updated_at=CASE
+          WHEN ${pgTableName("cloud_resource_projections")}.updated_at > EXCLUDED.updated_at THEN ${pgTableName("cloud_resource_projections")}.updated_at
+          ELSE EXCLUDED.updated_at
+        END`, [
       row.id,
       row.tenantId || row.userId || "",
       row.userId || "",

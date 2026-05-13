@@ -262,6 +262,15 @@ try {
   assert.equal(computeDrain.ok, true, "compute_worker_drain_must_succeed_with_node_pool_ref");
   assert.equal(db.computeAllocations.length, 1, "compute_allocation_must_be_written");
   assert.equal(db.computeAllocations[0].nodePoolRef, "np-backend-attribution-proof", "node_pool_ref_must_be_recorded_for_admin_attribution");
+  db.cloudResourceProjections[0].visibleSummary = {
+    resources: {
+      compute: { statusLabel: "未开通", computeUnits: 0, planId: "" },
+      fileSpace: { statusLabel: "可用", capacityGb: 10 },
+      workbench: { statusLabel: "可用" },
+    },
+    billing: { reconciliationStatusLabel: "对账中" },
+  };
+  db.cloudResourceProjections[0].lastOperationId = createStorage.operation.operationId;
 
   const projectionAfter = buildPortalProductionCloudOperationProjection(db, user, {
     workspaceId: "workspace-v22-async-cloud",
