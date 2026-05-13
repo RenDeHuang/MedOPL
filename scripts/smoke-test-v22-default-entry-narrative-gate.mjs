@@ -31,6 +31,17 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["cleanup/v22-product-goal-harness", new Set([
+    "docs/recovery/v22-product-goal.md",
+    "docs/recovery/v22-product-e2e-contract.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-codex-goal-loop.md",
+    "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["cleanup/v22-retire-user-owned-primary-path", new Set([
     "docs/recovery/status-matrix.md",
     "services/portal/src/app/portal-admin-api-payloads.mjs",

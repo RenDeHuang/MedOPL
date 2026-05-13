@@ -195,6 +195,17 @@ function assertOnlyGateChanged() {
 
 function allowedDiffPathsForBranch(branchName = currentBranchName()) {
   const allowedDiffPathsByBranch = new Map([
+    ["cleanup/v22-product-goal-harness", new Set([
+      gatePath,
+      "docs/recovery/v22-product-goal.md",
+      "docs/recovery/v22-product-e2e-contract.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-codex-goal-loop.md",
+      "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    ])],
     ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],
     ["cleanup/v22-retire-resource-order-store-admin-frontend", allowedStoreAdminFrontendRewriteDiffPaths],
   ]);
