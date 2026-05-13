@@ -315,7 +315,170 @@ Portal 必须按低耦合目标治理：
     "docs/contracts/v22-portal-files-billing-trace-boundary.md",
     "docs/recovery/mvp-contract-acceptance.md",
     "docs/recovery/status-matrix.md"
-  ]
+  ],
+  "currentPortalCodeShape": {
+    "characterizationOnly": true,
+    "modifiesPortalBusinessCode": false,
+    "runsLiveTest": false,
+    "readsSecrets": false,
+    "backendRoutesDispatcher": {
+      "dispatcherFile": "services/portal/src/routes/portal-api.routes.mjs",
+      "dispatcherMustReference": [
+        "createPortalApiV22UserCreditProviderKeyRoutes",
+        "createPortalApiV22OplWorkRoutes",
+        "createPortalApiV22CloudOperationsRoutes",
+        "createPlatformProvisionedResourceRoutes",
+        "createUserOwnedResourceRoutes"
+      ],
+      "currentRouteFiles": [
+        "services/portal/src/routes/portal-api.routes.mjs",
+        "services/portal/src/routes/admin-api.routes.mjs",
+        "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
+        "services/portal/src/routes/portal-api-state.routes.mjs",
+        "services/portal/src/routes/portal-api-runs.routes.mjs",
+        "services/portal/src/routes/portal-api-sessions.routes.mjs",
+        "services/portal/src/routes/portal-api-traces.routes.mjs",
+        "services/portal/src/routes/resource-order.routes.mjs",
+        "services/portal/src/routes/user-owned-resource.routes.mjs"
+      ]
+    },
+    "backendAppPayloadBuilders": {
+      "payloadEntryFile": "services/portal/src/app/portal-page-payloads.mjs",
+      "payloadEntryMustReference": [
+        "createBillingPayloadBuilders",
+        "createOverviewPayloadBuilder",
+        "createWorkspacePayloadBuilder"
+      ],
+      "currentAppPayloadFiles": [
+        "services/portal/src/app/portal-app.mjs",
+        "services/portal/src/app/portal-runtime.mjs",
+        "services/portal/src/app/portal-runtime-bootstrap.mjs",
+        "services/portal/src/app/portal-http-dispatcher.mjs",
+        "services/portal/src/app/portal-api-runtime-handlers.mjs",
+        "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+        "services/portal/src/app/portal-store-runtime.mjs",
+        "services/portal/src/app/portal-page-payloads.mjs",
+        "services/portal/src/app/portal-page-runtime-payloads.mjs",
+        "services/portal/src/app/portal-admin-api-payloads.mjs"
+      ]
+    },
+    "backendDomainModules": {
+      "currentDomainFiles": [
+        "services/portal/src/domain/portal-api-payloads.mjs",
+        "services/portal/src/domain/commercial-state.mjs",
+        "services/portal/src/domain/wallet-ledger.mjs",
+        "services/portal/src/domain/platform-provisioned-resources.mjs",
+        "services/portal/src/domain/user-resource-bindings.mjs",
+        "services/portal/src/domain/managed-environment-open-flow.mjs",
+        "services/portal/src/domain/managed-environment-release-flow.mjs",
+        "services/portal/src/domain/workspace-storage.mjs",
+        "services/portal/src/domain/user-owned-resources.mjs"
+      ]
+    },
+    "backendStatePersistence": {
+      "currentStateFiles": [
+        "services/portal/src/state/portal-store.mjs",
+        "services/portal/src/state/portal-store-db-facade.mjs",
+        "services/portal/src/state/portal-store-runtime-connections.mjs",
+        "services/portal/src/state/portal-store-schema.mjs",
+        "services/portal/src/state/portal-store-migrations.mjs",
+        "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+        "services/portal/src/state/portal-workspace-store.mjs",
+        "services/portal/src/state/portal-accounting-store.mjs",
+        "services/portal/src/state/portal-lab-billing-store.mjs",
+        "services/portal/src/state/portal-resource-order-store.mjs",
+        "services/portal/src/state/portal-user-owned-resource-store.mjs"
+      ]
+    },
+    "frontendViewsComposables": {
+      "currentViewFiles": [
+        "services/portal/frontend/src/views/overview/OverviewView.vue",
+        "services/portal/frontend/src/views/resources/ResourcesView.vue",
+        "services/portal/frontend/src/views/workspace/WorkspaceView.vue",
+        "services/portal/frontend/src/views/billing/BillingView.vue",
+        "services/portal/frontend/src/views/trace/TraceView.vue",
+        "services/portal/frontend/src/views/packages/PackagesView.vue",
+        "services/portal/frontend/src/views/admin/AdminDashboardView.vue",
+        "services/portal/frontend/src/views/admin/AdminUsersView.vue"
+      ],
+      "currentComposableFiles": [
+        "services/portal/frontend/src/composables/useOverviewSurface.ts",
+        "services/portal/frontend/src/composables/useResourcesSurface.ts",
+        "services/portal/frontend/src/composables/useWorkspaceSurface.ts",
+        "services/portal/frontend/src/composables/useBillingSurface.ts",
+        "services/portal/frontend/src/composables/useTraceSurface.ts",
+        "services/portal/frontend/src/composables/usePackageSurface.ts",
+        "services/portal/frontend/src/composables/useAdminUsersSurface.ts",
+        "services/portal/frontend/src/composables/resourceFormatters.ts",
+        "services/portal/frontend/src/composables/traceFormatters.ts"
+      ],
+      "coreViewComposableImports": [
+        {
+          "viewFile": "services/portal/frontend/src/views/overview/OverviewView.vue",
+          "composableImport": "useOverviewSurface"
+        },
+        {
+          "viewFile": "services/portal/frontend/src/views/resources/ResourcesView.vue",
+          "composableImport": "useResourcesSurface"
+        },
+        {
+          "viewFile": "services/portal/frontend/src/views/workspace/WorkspaceView.vue",
+          "composableImport": "useWorkspaceSurface"
+        },
+        {
+          "viewFile": "services/portal/frontend/src/views/billing/BillingView.vue",
+          "composableImport": "useBillingSurface"
+        },
+        {
+          "viewFile": "services/portal/frontend/src/views/trace/TraceView.vue",
+          "composableImport": "useTraceSurface"
+        },
+        {
+          "viewFile": "services/portal/frontend/src/views/packages/PackagesView.vue",
+          "composableImport": "usePackageSurface"
+        },
+        {
+          "viewFile": "services/portal/frontend/src/views/admin/AdminUsersView.vue",
+          "composableImport": "useAdminUsersSurface"
+        }
+      ]
+    },
+    "frontendApiModules": {
+      "currentApiModuleFiles": [
+        "services/portal/frontend/src/api/client.ts",
+        "services/portal/frontend/src/api/portal.ts",
+        "services/portal/frontend/src/api/portal/overview.ts",
+        "services/portal/frontend/src/api/portal/resources.ts",
+        "services/portal/frontend/src/api/portal/workspace.ts",
+        "services/portal/frontend/src/api/portal/billing.ts",
+        "services/portal/frontend/src/api/portal/traces.ts",
+        "services/portal/frontend/src/api/portal/admin.ts",
+        "services/portal/frontend/src/api/portal/opl.ts"
+      ]
+    },
+    "portalSmokeLayers": {
+      "currentSmokeFiles": [
+        "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+        "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
+        "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
+        "scripts/smoke-test-v22-portal-mobile-usability.mjs",
+        "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
+        "scripts/smoke-test-v22-portal-runtime-suite.mjs"
+      ]
+    },
+    "knownFutureRefactorRisks": [
+      "portal_runtime_composition_root_is_large",
+      "route_to_state_direct_import_exists",
+      "domain_contains_payload_and_provider_bridge_modules",
+      "app_layer_mixes_orchestration_and_view_model_payloads",
+      "frontend_api_barrel_exists_but_not_page_default",
+      "harness_renderer_is_large_cross_domain_registry",
+      "some_admin_views_directly_call_admin_api_module",
+      "retired_resource_order_route_tombstone_still_present",
+      "retired_user_owned_route_tombstone_still_present",
+      "duplicate_announcement_dialog_names"
+    ]
+  }
 }
 ```
 <!-- v22-portal-structure-failure-isolation-contract:end -->

@@ -4,9 +4,9 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `f9844fe818cb8e686fd119dc0db80dca9b197a32`
+- 当前 trunk HEAD: `0050ef76d9da117299a30ae519bbb82164e70a04`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `cleanup/v22-legacy-scripts-archive-eval-shell`
+- current branch: `refactor/v22-portal-layering-characterization-gate`
 - model: gpt-5.4
 
 ## Current Goal Cursor
@@ -91,7 +91,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
@@ -102,6 +102,8 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-secret-hygiene-diff-scan-eval-shell completed on branch `cleanup/v22-secret-hygiene-diff-scan-eval-shell`: `scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs` provides a reusable local changed-files / added-lines hygiene eval using a temporary git repo only. It proves added-line sensitive-value detection, ignores unchanged historical content, skips secret-like paths instead of reading their content, and keeps workflow path-gate fail-closed behavior. No real `.env`, secret, kubeconfig, token, key, cloud, live-test, build/push, kubectl, deploy, or upstream path was read or touched.
 - leaf-legacy-scripts-archive-eval-shell completed on branch `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` is now the goal-state eval for default validation staying v22-only. The gate proves README and `docs/vibe-coding.md` default commands avoid v19/v20/v21/live-test/check scripts, MVP suite references only `scripts/smoke-test-v22-*`, and `docs/recovery/repo-zoning.md` classifies v19/v20/v21/live-test/check scripts as archive or review/rewrite. This leaf did not execute live-test, delete or edit legacy scripts, read secrets, touch services, deploy, adapters, `.sentrux`, package files, or upstream one-person-lab.
 - Leaf 4 failure analysis: supplemental resource-order retirement gate initially failed with `resource_order_retirement_branch_must_not_modify:cleanup/v22-legacy-scripts-archive-eval-shell:docs/recovery/v22-current-vs-ideal-gap-matrix.md`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf4_resource_order_gate_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlist for the legacy-scripts archive eval shell because the leaf only updates recovery truth and harness gate metadata, not resource-order behavior; whether_contract_wrong: false; whether_problem_should_split: false; whether_authorization_required: false.
+- leaf-portal-layering-characterization-gate completed on branch `refactor/v22-portal-layering-characterization-gate`: Portal structure smoke now validates `currentPortalCodeShape` in `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`. The gate pins stable backend route/app/domain/state anchors, frontend view/composable/API module anchors, smoke-layer files, and future refactor risks without changing Portal business code or running live-test/build/push/kubectl/cloud. Recorded future refactor truths include large `portal-runtime.mjs` composition root, route-to-state direct import shape, domain payload/provider bridge mixing, app orchestration plus view-model payload mixing, non-default frontend API barrel, large harness registry, partial admin direct API usage, and controlled retired `resource-order` / `user-owned` tombstones.
+- Leaf 5 failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs` initially failed with `goal_state_missing:当前下一问题：Portal architecture layering characterization gate`. failure_category: `implementation_wrong`; attempt_count: 1; root_cause_id: `leaf5_goal_state_cursor_pre_advanced_before_B_absorb`; changed_strategy: keep the current cursor on `leaf-portal-layering-characterization-gate` until B ff-only absorb/push, while recording the characterization truth for B review; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and B checks before commit.
 
 ## Later Problems
 

@@ -34,6 +34,37 @@ function assertIncludesAll(actualItems, expectedItems, label) {
   }
 }
 
+async function assertFilesExist(filePaths, label) {
+  for (const filePath of filePaths) {
+    await readFile(path.join(repoRoot, filePath), "utf8").catch((error) => {
+      throw new Error(`${label}_missing_file:${filePath}:${error.message}`);
+    });
+  }
+}
+
+async function assertFileIncludes(filePath, expectedItems, label) {
+  const source = await readFile(path.join(repoRoot, filePath), "utf8");
+  for (const expected of expectedItems) {
+    assert(source.includes(expected), `${label}_missing:${expected}`);
+  }
+}
+
+async function assertViewComposableImports(mappings) {
+  for (const mapping of mappings) {
+    const source = await readFile(path.join(repoRoot, mapping.viewFile), "utf8");
+    assert(source.includes(mapping.composableImport), `portal_structure_view_must_import_composable:${mapping.viewFile}:${mapping.composableImport}`);
+  }
+}
+
+async function assertNoBarePortalApiBarrelInViews(viewFiles) {
+  const findings = [];
+  for (const filePath of viewFiles) {
+    const source = await readFile(path.join(repoRoot, filePath), "utf8");
+    if (/from\s+["']@\/api\/portal["']/u.test(source)) findings.push(filePath);
+  }
+  assert.deepEqual(findings, [], `portal_structure_views_must_not_import_large_portal_api_barrel:${findings.join(",")}`);
+}
+
 const markdown = await readFile(path.join(repoRoot, contractPath), "utf8");
 const readme = await readFile(path.join(repoRoot, readmePath), "utf8");
 const contract = extractContractJson(markdown);
@@ -172,6 +203,39 @@ assertIncludesAll(contract.subscribedContracts, [
   "docs/recovery/mvp-contract-acceptance.md",
   "docs/recovery/status-matrix.md",
 ], "portal_structure_subscribed_contract");
+
+const currentCodeShape = contract.currentPortalCodeShape;
+assert(currentCodeShape, "portal_structure_current_code_shape_missing");
+assert.equal(currentCodeShape.characterizationOnly, true, "portal_structure_current_code_shape_must_be_characterization_only");
+assert.equal(currentCodeShape.modifiesPortalBusinessCode, false, "portal_structure_characterization_must_not_modify_business_code");
+assert.equal(currentCodeShape.runsLiveTest, false, "portal_structure_characterization_must_not_run_live_test");
+assert.equal(currentCodeShape.readsSecrets, false, "portal_structure_characterization_must_not_read_secrets");
+
+await assertFilesExist(currentCodeShape.backendRoutesDispatcher.currentRouteFiles, "portal_structure_backend_route");
+await assertFileIncludes(
+  currentCodeShape.backendRoutesDispatcher.dispatcherFile,
+  currentCodeShape.backendRoutesDispatcher.dispatcherMustReference,
+  "portal_structure_backend_dispatcher_reference",
+);
+await assertFilesExist(currentCodeShape.backendAppPayloadBuilders.currentAppPayloadFiles, "portal_structure_backend_app_payload");
+await assertFileIncludes(
+  currentCodeShape.backendAppPayloadBuilders.payloadEntryFile,
+  currentCodeShape.backendAppPayloadBuilders.payloadEntryMustReference,
+  "portal_structure_payload_entry_reference",
+);
+await assertFilesExist(currentCodeShape.backendDomainModules.currentDomainFiles, "portal_structure_backend_domain");
+await assertFilesExist(currentCodeShape.backendStatePersistence.currentStateFiles, "portal_structure_backend_state");
+await assertFilesExist(currentCodeShape.frontendViewsComposables.currentViewFiles, "portal_structure_frontend_view");
+await assertFilesExist(currentCodeShape.frontendViewsComposables.currentComposableFiles, "portal_structure_frontend_composable");
+await assertViewComposableImports(currentCodeShape.frontendViewsComposables.coreViewComposableImports);
+await assertNoBarePortalApiBarrelInViews(currentCodeShape.frontendViewsComposables.currentViewFiles);
+await assertFilesExist(currentCodeShape.frontendApiModules.currentApiModuleFiles, "portal_structure_frontend_api_module");
+await assertFilesExist(currentCodeShape.portalSmokeLayers.currentSmokeFiles, "portal_structure_smoke_file");
+assertIncludesAll(currentCodeShape.knownFutureRefactorRisks, [
+  "frontend_api_barrel_exists_but_not_page_default",
+  "retired_resource_order_route_tombstone_still_present",
+  "some_admin_views_directly_call_admin_api_module",
+], "portal_structure_known_future_refactor_risk");
 
 assert(readme.includes("v22-portal-structure-failure-isolation-boundary.md"), "portal_structure_contract_must_be_indexed");
 assert(readme.includes("Portal 结构治理 / failure isolation"), "portal_structure_contract_readme_label_missing");

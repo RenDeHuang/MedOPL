@@ -30,6 +30,15 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["refactor/v22-portal-layering-characterization-gate", new Set([
+    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["cleanup/v22-secret-hygiene-diff-scan-eval-shell", new Set([
     "docs/recovery/status-matrix.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
@@ -45,6 +54,13 @@ const branchScopedAllowedDiffPaths = new Map([
     "services/portal/src/state/portal-store.mjs",
   ])],
   ["recovery/platform-v22-trunk", new Set([
+    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
     "services/portal/src/state/portal-resource-order-store.mjs",
     "services/portal/src/state/portal-store-db-delegates.mjs",
     "services/portal/src/state/portal-store-postgres-persistence.mjs",
