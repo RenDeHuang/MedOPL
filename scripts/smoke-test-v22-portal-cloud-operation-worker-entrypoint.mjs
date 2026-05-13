@@ -17,6 +17,7 @@ for (const phrase of [
 }
 
 assert.equal(/setInterval|while\s*\(\s*true\s*\)/.test(source), false, "worker_entrypoint_must_not_poll_forever_without_contract");
+assert.match(source, /finally\s*\{[\s\S]*process\.exit\(/, "worker_entrypoint_must_exit_after_once_to_close_open_store_handles");
 assert.equal(/console\.log\([^)]*secretFile/i.test(source), false, "worker_entrypoint_must_not_log_secret_file");
 assert.equal(/console\.log\([^)]*computeNodePoolRef/i.test(source), false, "worker_entrypoint_must_not_log_node_pool_ref");
 

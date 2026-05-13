@@ -65,13 +65,18 @@ async function main() {
     console.error("portal_cloud_operation_worker_requires_once");
     process.exit(1);
   }
-  const result = await runPortalCloudOperationWorkerOnce();
-  console.log(JSON.stringify({
-    ok: Boolean(result.ok),
-    processedCount: Array.isArray(result.processed) ? result.processed.length : 0,
-    error: result.ok ? "" : String(result.error || "worker_failed"),
-  }, null, 2));
-  if (!result.ok) process.exit(1);
+  let exitCode = 0;
+  try {
+    const result = await runPortalCloudOperationWorkerOnce();
+    console.log(JSON.stringify({
+      ok: Boolean(result.ok),
+      processedCount: Array.isArray(result.processed) ? result.processed.length : 0,
+      error: result.ok ? "" : String(result.error || "worker_failed"),
+    }, null, 2));
+    if (!result.ok) exitCode = 1;
+  } finally {
+    process.exit(exitCode);
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
