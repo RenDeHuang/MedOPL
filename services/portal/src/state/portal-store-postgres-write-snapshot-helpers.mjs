@@ -434,16 +434,25 @@ export async function writeCloudOperations({ client, pgTableName, db }) {
         workspace_id=EXCLUDED.workspace_id,
         resource_binding_id=EXCLUDED.resource_binding_id,
         operation_type=EXCLUDED.operation_type,
-        status=EXCLUDED.status,
-        runner_mode=EXCLUDED.runner_mode,
-        real_cloud_calls=EXCLUDED.real_cloud_calls,
+        status=CASE
+          WHEN ${pgTableName("cloud_operations")}.status IN ('succeeded','failed') AND EXCLUDED.status IN ('queued','running') THEN ${pgTableName("cloud_operations")}.status
+          ELSE EXCLUDED.status
+        END,
+        runner_mode=COALESCE(NULLIF(EXCLUDED.runner_mode, ''), ${pgTableName("cloud_operations")}.runner_mode),
+        real_cloud_calls=CASE
+          WHEN ${pgTableName("cloud_operations")}.status IN ('succeeded','failed') AND EXCLUDED.status IN ('queued','running') THEN ${pgTableName("cloud_operations")}.real_cloud_calls
+          ELSE EXCLUDED.real_cloud_calls
+        END,
         production_portal_connected=EXCLUDED.production_portal_connected,
         test_only=EXCLUDED.test_only,
         accepted_dry_run_id=EXCLUDED.accepted_dry_run_id,
-        dry_run_report_ref=EXCLUDED.dry_run_report_ref,
-        execution_report_ref=EXCLUDED.execution_report_ref,
+        dry_run_report_ref=COALESCE(NULLIF(EXCLUDED.dry_run_report_ref, ''), ${pgTableName("cloud_operations")}.dry_run_report_ref),
+        execution_report_ref=COALESCE(NULLIF(EXCLUDED.execution_report_ref, ''), ${pgTableName("cloud_operations")}.execution_report_ref),
         requested_spec_json=EXCLUDED.requested_spec_json,
-        updated_at=EXCLUDED.updated_at`, [
+        updated_at=CASE
+          WHEN ${pgTableName("cloud_operations")}.status IN ('succeeded','failed') AND EXCLUDED.status IN ('queued','running') THEN ${pgTableName("cloud_operations")}.updated_at
+          ELSE EXCLUDED.updated_at
+        END`, [
       row.id || row.operationId,
       row.operationId || row.id || "",
       row.tenantId || row.userId || "",
@@ -476,15 +485,24 @@ export async function writeCloudOperationJobs({ client, pgTableName, db }) {
         workspace_id=EXCLUDED.workspace_id,
         resource_binding_id=EXCLUDED.resource_binding_id,
         queue_mode=EXCLUDED.queue_mode,
-        status=EXCLUDED.status,
-        runner_mode=EXCLUDED.runner_mode,
-        real_cloud_calls=EXCLUDED.real_cloud_calls,
-        dry_run_report_ref=EXCLUDED.dry_run_report_ref,
-        execution_report_ref=EXCLUDED.execution_report_ref,
-        lease_owner=EXCLUDED.lease_owner,
-        lease_acquired_at=EXCLUDED.lease_acquired_at,
-        failure_reason=EXCLUDED.failure_reason,
-        updated_at=EXCLUDED.updated_at`, [
+        status=CASE
+          WHEN ${pgTableName("cloud_operation_jobs")}.status IN ('succeeded','failed') AND EXCLUDED.status IN ('queued','running') THEN ${pgTableName("cloud_operation_jobs")}.status
+          ELSE EXCLUDED.status
+        END,
+        runner_mode=COALESCE(NULLIF(EXCLUDED.runner_mode, ''), ${pgTableName("cloud_operation_jobs")}.runner_mode),
+        real_cloud_calls=CASE
+          WHEN ${pgTableName("cloud_operation_jobs")}.status IN ('succeeded','failed') AND EXCLUDED.status IN ('queued','running') THEN ${pgTableName("cloud_operation_jobs")}.real_cloud_calls
+          ELSE EXCLUDED.real_cloud_calls
+        END,
+        dry_run_report_ref=COALESCE(NULLIF(EXCLUDED.dry_run_report_ref, ''), ${pgTableName("cloud_operation_jobs")}.dry_run_report_ref),
+        execution_report_ref=COALESCE(NULLIF(EXCLUDED.execution_report_ref, ''), ${pgTableName("cloud_operation_jobs")}.execution_report_ref),
+        lease_owner=COALESCE(NULLIF(EXCLUDED.lease_owner, ''), ${pgTableName("cloud_operation_jobs")}.lease_owner),
+        lease_acquired_at=COALESCE(NULLIF(EXCLUDED.lease_acquired_at, ''), ${pgTableName("cloud_operation_jobs")}.lease_acquired_at),
+        failure_reason=COALESCE(NULLIF(EXCLUDED.failure_reason, ''), ${pgTableName("cloud_operation_jobs")}.failure_reason),
+        updated_at=CASE
+          WHEN ${pgTableName("cloud_operation_jobs")}.status IN ('succeeded','failed') AND EXCLUDED.status IN ('queued','running') THEN ${pgTableName("cloud_operation_jobs")}.updated_at
+          ELSE EXCLUDED.updated_at
+        END`, [
       row.id,
       row.operationId || "",
       row.tenantId || row.userId || "",

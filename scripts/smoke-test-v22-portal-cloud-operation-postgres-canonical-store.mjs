@@ -17,6 +17,7 @@ const REQUIRED_TABLES = [
 ];
 
 const WRITE_TABLES = new Set();
+const WRITE_SQL = [];
 const DDL = [];
 
 function cloudOperationRow({ id, operationType, requestedSpec }) {
@@ -146,7 +147,10 @@ function createFakeClient() {
       const source = String(sql || "");
       const writeMatch = source.match(/INSERT\s+INTO\s+"portal_([a-z_]+)"/i)
         || source.match(/DELETE\s+FROM\s+"portal_([a-z_]+)"/i);
-      if (writeMatch) WRITE_TABLES.add(writeMatch[1]);
+      if (writeMatch) {
+        WRITE_TABLES.add(writeMatch[1]);
+        WRITE_SQL.push(source);
+      }
       return { rows: createRowsForSql(source) };
     },
     release() {},
@@ -335,6 +339,11 @@ await writePortalPostgresSnapshot({
 for (const table of REQUIRED_TABLES) {
   assert.equal(WRITE_TABLES.has(table), true, `${table}_write_missing`);
 }
+
+const cloudOperationWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_cloud_operations"/i.test(sql)) || "";
+const cloudOperationJobWriteSql = WRITE_SQL.find((sql) => /INSERT\s+INTO\s+"portal_cloud_operation_jobs"/i.test(sql)) || "";
+assert.match(cloudOperationWriteSql, /status=CASE[\s\S]*succeeded[\s\S]*failed[\s\S]*queued[\s\S]*running/i, "cloud_operation_upsert_must_not_downgrade_terminal_status");
+assert.match(cloudOperationJobWriteSql, /status=CASE[\s\S]*succeeded[\s\S]*failed[\s\S]*queued[\s\S]*running/i, "cloud_operation_job_upsert_must_not_downgrade_terminal_status");
 
 const snapshot = await readPortalPostgresSnapshot({
   pool: fakePool,

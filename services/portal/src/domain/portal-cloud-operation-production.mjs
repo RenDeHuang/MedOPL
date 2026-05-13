@@ -741,6 +741,73 @@ function inputFromOperation(operation = {}) {
   };
 }
 
+function materializedResourceForOperation(db = {}, operation = {}) {
+  const bindingId = text(operation.resourceBindingId);
+  const operationType = text(operation.operationType);
+  const operationId = text(operation.operationId || operation.id);
+  if (!bindingId) return null;
+  const projection = ensureArrayField(db, "cloudResourceProjections")
+    .find((item) => text(item.resourceBindingId) === bindingId && text(item.lastOperationId) === operationId) || null;
+  const reconciliation = ensureArrayField(db, "billingReconciliations")
+    .find((item) => text(item.resourceBindingId) === bindingId && text(item.operationId) === operationId) || null;
+  if (!projection && !reconciliation && !text(operation.executionReportRef) && !text(operation.dryRunReportRef)) return null;
+  if (operationType === "create_storage" || operationType === "expand_storage") {
+    const entitlement = ensureArrayField(db, "fileSpaceEntitlements")
+      .find((item) => text(item.resourceBindingId) === bindingId && text(item.status) === "available") || null;
+    if (!entitlement) return null;
+    return {
+      ok: true,
+      runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
+      realCloudCalls: true,
+      dryRunReportRef: text(operation.dryRunReportRef),
+      executionReportRef: text(operation.executionReportRef),
+      materializedResourceKind: "storage",
+    };
+  }
+  if (operationType === "delete_storage") {
+    const entitlement = ensureArrayField(db, "fileSpaceEntitlements")
+      .find((item) => text(item.resourceBindingId) === bindingId && text(item.status) === "retention_protected") || null;
+    if (!entitlement) return null;
+    return {
+      ok: true,
+      runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
+      realCloudCalls: true,
+      dryRunReportRef: text(operation.dryRunReportRef),
+      executionReportRef: text(operation.executionReportRef),
+      materializedResourceKind: "storage",
+    };
+  }
+  if (operationType === "create_compute" || operationType === "expand_compute") {
+    const allocation = ensureArrayField(db, "computeAllocations")
+      .find((item) => text(item.resourceBindingId) === bindingId && text(item.status) === "available" && text(item.nodePoolRef)) || null;
+    if (!allocation) return null;
+    return {
+      ok: true,
+      runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
+      realCloudCalls: true,
+      dryRunReportRef: text(operation.dryRunReportRef),
+      executionReportRef: text(operation.executionReportRef),
+      materializedResourceKind: "compute",
+      computeNodePoolRef: text(allocation.nodePoolRef),
+    };
+  }
+  if (operationType === "release_compute") {
+    const allocation = ensureArrayField(db, "computeAllocations")
+      .find((item) => text(item.resourceBindingId) === bindingId && text(item.status) === "released" && text(item.nodePoolRef)) || null;
+    if (!allocation) return null;
+    return {
+      ok: true,
+      runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
+      realCloudCalls: true,
+      dryRunReportRef: text(operation.dryRunReportRef),
+      executionReportRef: text(operation.executionReportRef),
+      materializedResourceKind: "compute",
+      computeNodePoolRef: text(allocation.nodePoolRef),
+    };
+  }
+  return null;
+}
+
 function applyRunnerSuccess(db = {}, operation = {}, job = {}, runner = {}, attribution = {}) {
   const spec = PACKAGE_C_OPERATIONS[text(operation.operationType)];
   const binding = bindingById(db, operation.resourceBindingId);
@@ -791,6 +858,17 @@ function processOneQueuedJob(db = {}, job = {}, options = {}) {
   if (!spec) {
     markOperationFailed(operation, job, { error: "unsupported_operation_type" });
     return { ok: false, error: "unsupported_operation_type", operationId: text(operation.operationId || operation.id) };
+  }
+  const materialized = materializedResourceForOperation(db, operation);
+  if (materialized) {
+    markOperationRunning(operation, job, materialized.runnerMode, options.workerId || "portal-cloud-worker");
+    markOperationSucceeded(operation, job, materialized);
+    return {
+      ok: true,
+      operationId: text(operation.operationId || operation.id),
+      operationType: text(operation.operationType),
+      reconciledFromMaterializedState: true,
+    };
   }
   if (spec.resourceKind === "compute" && !text(options.computeNodePoolRef)) {
     markOperationFailed(operation, job, {

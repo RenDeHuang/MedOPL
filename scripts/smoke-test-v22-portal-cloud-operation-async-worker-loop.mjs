@@ -85,6 +85,110 @@ try {
   });
   assert.equal(projectionBefore.resources.fileSpace.statusLabel, "未开通", "queued_projection_must_not_claim_file_space_available");
 
+  const reconcileDb = dbFixture();
+  reconcileDb.workspaceResourceBindings.push({
+    id: "rb-reconciled-storage",
+    resourceBindingId: "rb-reconciled-storage",
+    tenantId: user.tenantId,
+    userId: user.id,
+    ownerTenantId: user.tenantId,
+    ownerUserId: user.id,
+    workspaceId: "workspace-v22-reconcile-cloud",
+    planId: "starter_2c4g_10gb",
+    status: "storage_available",
+  });
+  reconcileDb.cloudOperations.push({
+    id: "op-reconciled-storage-create",
+    operationId: "op-reconciled-storage-create",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cloud",
+    resourceBindingId: "rb-reconciled-storage",
+    operationType: "create_storage",
+    status: "queued",
+    runnerMode: "",
+    realCloudCalls: false,
+    productionPortalConnected: true,
+    testOnly: false,
+    acceptedDryRunId: "op-reconciled-storage-create",
+    dryRunReportRef: "",
+    executionReportRef: "",
+    requestedSpec: { fileSpaceGb: 10, planId: "starter_2c4g_10gb" },
+    createdAt: "2026-05-13T00:00:00.000Z",
+    updatedAt: "2026-05-13T00:00:00.000Z",
+  });
+  reconcileDb.cloudOperationJobs.push({
+    id: "job-op-reconciled-storage-create",
+    operationId: "op-reconciled-storage-create",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cloud",
+    resourceBindingId: "rb-reconciled-storage",
+    queueMode: "independent_worker",
+    status: "queued",
+    runnerMode: "",
+    realCloudCalls: false,
+    dryRunReportRef: "",
+    executionReportRef: "",
+    leaseOwner: "",
+    leaseAcquiredAt: "",
+    failureReason: "",
+    createdAt: "2026-05-13T00:00:00.000Z",
+    updatedAt: "2026-05-13T00:00:00.000Z",
+  });
+  reconcileDb.fileSpaceEntitlements.push({
+    id: "fs-rb-reconciled-storage",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cloud",
+    resourceBindingId: "rb-reconciled-storage",
+    planId: "starter_2c4g_10gb",
+    capacityGb: 10,
+    status: "available",
+    createdAt: "2026-05-13T00:01:00.000Z",
+    updatedAt: "2026-05-13T00:01:00.000Z",
+  });
+  reconcileDb.cloudResourceProjections.push({
+    id: "projection-rb-reconciled-storage",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cloud",
+    resourceBindingId: "rb-reconciled-storage",
+    status: "updated",
+    productionPortalConnected: true,
+    runnerMode: "tencent-official-sdk-live",
+    realCloudCalls: true,
+    lastOperationId: "op-reconciled-storage-create",
+    visibleSummary: { resources: { fileSpace: { capacityGb: 10, statusLabel: "可用" } } },
+    createdAt: "2026-05-13T00:01:00.000Z",
+    updatedAt: "2026-05-13T00:01:00.000Z",
+  });
+  reconcileDb.billingReconciliations.push({
+    id: "recon-op-reconciled-storage-create",
+    tenantId: user.tenantId,
+    userId: user.id,
+    workspaceId: "workspace-v22-reconcile-cloud",
+    resourceBindingId: "rb-reconciled-storage",
+    operationId: "op-reconciled-storage-create",
+    status: "reconciling",
+    statusLabel: "对账中",
+    source: "portal_production_cloud_operation",
+    createdAt: "2026-05-13T00:01:00.000Z",
+    updatedAt: "2026-05-13T00:01:00.000Z",
+  });
+  const reconciled = processQueuedPortalProductionCloudOperations(reconcileDb, {
+    runnerMode: "tencent-official-sdk-live",
+    secretFile: "",
+    maxOperations: 1,
+    workerId: "worker-v22-reconcile-smoke",
+  });
+  assert.equal(reconciled.ok, true, "materialized_storage_worker_must_reconcile_without_reexecuting_runner");
+  assert.equal(reconciled.processed[0].reconciledFromMaterializedState, true, "materialized_storage_must_report_reconciled");
+  assert.equal(reconcileDb.cloudOperations[0].status, "succeeded", "materialized_storage_operation_must_be_terminal");
+  assert.equal(reconcileDb.cloudOperationJobs[0].status, "succeeded", "materialized_storage_job_must_be_terminal");
+  assert.equal(reconcileDb.cloudOperationJobs[0].leaseOwner, "worker-v22-reconcile-smoke", "materialized_storage_job_must_record_reconcile_worker");
+  assert.equal(reconcileDb.fileSpaceEntitlements.length, 1, "materialized_storage_reconcile_must_not_duplicate_entitlement");
+
   const drain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "fake-live",
     secretFile,
