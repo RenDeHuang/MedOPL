@@ -103,7 +103,11 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 - `tenantId`
 - `userId`
 - `workspaceId`
-- `resourceBindingId、resourceOrderId`
+- `resourceBindingId`
+- `cloudOperationId`
+- `billingAttributionId`
+- `accountId`
+- `legacyResourceOrderId`（optional、migration-only，不得作为 v22 fixed required tag）
 - `billingAccountId`
 - `runId`
 - `serverPlanId`
@@ -112,15 +116,18 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 
 ## 腾讯云分账标签
 
-当前腾讯云分账标签固定为：
+当前腾讯云分账标签主字段为：
 
-- `resourceorderid`
+- `resourcebindingid`
+- `cloudoperationid`
+- `billingattributionid`
+- `accountid`
 - `runid`
 - `serverplanid`
-- `tenantid`
 - `workspaceid`
+- `tenantid`
 
-这些标签用于腾讯云账单核对、COS 存储桶列表、成本归因和审计。普通用户不直接操作这些标签；管理人员可以在管理台查看标签映射和异常。
+`legacyresourceorderid` 仅可作为 optional、migration-only alias，不得作为 fixed required tag。上述标签用于腾讯云账单核对、COS 存储桶列表、成本归因和审计。普通用户不直接操作这些标签；管理人员可以在管理台查看标签映射和异常。
 
 ## 腾讯云资源边界
 
@@ -161,7 +168,7 @@ one-person-lab 是 clean upstream：
 - COS bucket
 - K8s
 - TKE
-- resourceOrderId
+- legacyResourceOrderId
 - raw billing tags
 - raw provider API key
 - `launchToken`
@@ -188,9 +195,9 @@ AI 小白用户进入 Portal 后能回答：
 
 管理人员进入管理台后能回答：
 
-- 哪个 tenant、workspace、run、serverPlan、resourceOrder 产生了费用？
+- 哪个 account、workspace、resourceBinding、cloudOperation、billingAttribution、run、serverPlan 产生了费用？
 - 腾讯云账单标签是否完整？
-- COS 对象是否有正确 tenantid、workspaceid、runid、serverplanid、resourceorderid 归因？
+- COS 对象是否有正确 accountid、workspaceid、resourcebindingid、cloudoperationid、billingattributionid、runid、serverplanid 归因？
 - 哪些任务失败？
 - 哪些停止计费还在 120min 确认中？
 - 哪些审计是 T+1 pending 或 ready？
@@ -291,7 +298,10 @@ AI 小白用户进入 Portal 后能回答：
       "userId",
       "workspaceId",
       "resourceBindingId",
-      "resourceOrderId",
+      "cloudOperationId",
+      "billingAttributionId",
+      "accountId",
+      "legacyResourceOrderId",
       "billingAccountId",
       "runId",
       "serverPlanId"
@@ -306,11 +316,15 @@ AI 小白用户进入 Portal 后能回答：
   },
   "tencentCostAllocationTags": {
     "fixedKeys": [
-      "resourceorderid",
+      "resourcebindingid",
+      "cloudoperationid",
+      "billingattributionid",
+      "accountid",
       "runid",
       "serverplanid",
+      "workspaceid",
       "tenantid",
-      "workspaceid"
+      "legacyresourceorderid_optional_migration_only"
     ],
     "usedFor": [
       "腾讯云账单核对",
@@ -363,7 +377,7 @@ AI 小白用户进入 Portal 后能回答：
     "COS bucket",
     "K8s",
     "TKE",
-    "resourceOrderId",
+    "legacyResourceOrderId",
     "raw billing tags",
     "raw provider API key",
     "launchToken",
@@ -387,9 +401,9 @@ AI 小白用户进入 Portal 后能回答：
       "账单核对和审计是否完成？"
     ],
     "managementCanAnswer": [
-      "哪个 tenant、workspace、run、serverPlan、resourceOrder 产生了费用？",
+      "哪个 account、workspace、resourceBinding、cloudOperation、billingAttribution、run、serverPlan 产生了费用？",
       "腾讯云账单标签是否完整？",
-      "COS 对象是否有正确 tenantid、workspaceid、runid、serverplanid、resourceorderid 归因？",
+      "COS 对象是否有正确 accountid、workspaceid、resourcebindingid、cloudoperationid、billingattributionid、runid、serverplanid 归因？",
       "哪些任务失败？",
       "哪些停止计费还在 120min 确认中？",
       "哪些审计是 T+1 pending 或 ready？",

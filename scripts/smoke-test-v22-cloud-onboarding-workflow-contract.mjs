@@ -54,7 +54,7 @@ assertIncludesAll(contract, [
   "202 Accepted + operationId/status endpoint",
   "cleanup/reconcile",
   "baseline 必须是 `2`",
-  "Runnable Cloud Connection Path",
+  "Future Authorized Cloud Connection Path",
   "cloud_harness_native_async_lifecycle_loop",
 ], "cloud_onboarding_scope");
 
@@ -195,7 +195,7 @@ assert.deepEqual(workflow.authorizationPackages, [
   "deploy_and_production_integration",
 ], "authorization_packages_mismatch");
 
-assert.deepEqual(workflow.runnablePath.map((step) => step.step), [
+assert.deepEqual(workflow.futureAuthorizedPath.map((step) => step.step), [
   "R-00",
   "R-01",
   "R-02",
@@ -218,13 +218,13 @@ assert.deepEqual(workflow.runnablePath.map((step) => step.step), [
   "R-19",
   "R-20",
   "R-21",
-], "runnable_path_step_order_mismatch");
-assert(workflow.runnablePath.every((step) => step.gateId.startsWith("CC-")), "runnable_path_must_use_cc_gate_ids");
-assert(workflow.runnablePath.some((step) => step.artifactPath === ".runtime/v22-registry/<run-id>.json"), "runnable_path_registry_artifact_missing");
-assert(workflow.runnablePath.some((step) => step.artifactPath === ".runtime/v22-runtime-smoke/<run-id>.json"), "runnable_path_runtime_smoke_artifact_missing");
-for (const step of workflow.runnablePath) {
+], "future_authorized_path_step_order_mismatch");
+assert(workflow.futureAuthorizedPath.every((step) => step.gateId.startsWith("CC-")), "future_authorized_path_must_use_cc_gate_ids");
+assert(workflow.futureAuthorizedPath.some((step) => step.artifactPath === ".runtime/v22-registry/<run-id>.json"), "future_authorized_path_registry_artifact_missing");
+assert(workflow.futureAuthorizedPath.some((step) => step.artifactPath === ".runtime/v22-runtime-smoke/<run-id>.json"), "future_authorized_path_runtime_smoke_artifact_missing");
+for (const step of workflow.futureAuthorizedPath) {
   for (const key of ["step", "gateId", "authorizationPackage", "entrypoint", "artifactPath", "blockerWriteback"]) {
-    assert(Object.hasOwn(step, key), `runnable_path_${step.step}_missing:${key}`);
+    assert(Object.hasOwn(step, key), `future_authorized_path_${step.step}_missing:${key}`);
   }
 }
 

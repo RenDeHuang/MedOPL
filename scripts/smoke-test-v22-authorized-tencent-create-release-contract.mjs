@@ -20,7 +20,11 @@ const requiredPhrases = [
   "5 个必须写成任务并发，不是 session 并发",
   "`runId` 是任务级成本标签，可为空",
   "T+1 账单用于对账和审计，不作为实时扣费来源",
-  "resourceOrderId",
+  "resourceBindingId",
+  "cloudOperationId",
+  "billingAttributionId",
+  "accountId",
+  "legacyResourceOrderId",
   "runId",
   "serverPlanId",
   "tenantId",
@@ -69,7 +73,11 @@ for (const phrase of forbiddenOrdinaryUserLanguage) {
 }
 
 const requiredJsonFields = [
-  '"resourceOrderId"',
+  '"resourceBindingId"',
+  '"cloudOperationId"',
+  '"billingAttributionId"',
+  '"accountId"',
+  '"legacyResourceOrderId"',
   '"serverPlanId"',
   '"tenantId"',
   '"workspaceId"',

@@ -121,7 +121,9 @@ create 时必须生成并写入以下标签：
 - `accountId`
 - `workspaceId`
 - `resourceBindingId`
-- `resourceOrderId`
+- `cloudOperationId`
+- `billingAttributionId`
+- `legacyResourceOrderId`（optional、migration-only，不得作为 fixed required tag）
 - `serverPlanId`
 - `resourceType`
 - `region`
@@ -306,7 +308,9 @@ release 分阶段执行：
       "accountId",
       "workspaceId",
       "resourceBindingId",
-      "resourceOrderId",
+      "cloudOperationId",
+      "billingAttributionId",
+      "legacyResourceOrderId",
       "serverPlanId",
       "resourceType",
       "region"

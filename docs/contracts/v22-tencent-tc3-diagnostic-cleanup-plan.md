@@ -4,9 +4,9 @@
 
 ## 背景
 
-v22 provider strategy 已切到 Tencent official SDK wrapper as production default。
+v22 provider strategy 的 future authorized provider candidate 是 Tencent official SDK wrapper；当前 trunk 默认路径仍是合同级、本地 smoke 和 fail-closed gate。
 
-hand-rolled TC3 当前降级为 diagnostic/reference only。它可以继续作为诊断和参考实现存在，但不能重新成为 production default readonly live path，不能成为 create/release provider，也不能扩大 mutation 权限。
+hand-rolled TC3 当前降级为 diagnostic/reference only。它可以继续作为诊断和参考实现存在，但不能重新成为 future authorized default readonly live path，不能成为 create/release provider，也不能扩大 mutation 权限。
 
 official SDK readonly live 跑通前，不删除 TC3。
 
@@ -19,7 +19,7 @@ TC3 production path cleanup 必须等以下条件全部满足后才能启动：
 - official SDK wrapper 合并。
 - official SDK 依赖合并。
 - official SDK readonly live 成功生成脱敏 report。
-- B 审查确认 production default 不再依赖 TC3。
+- B 审查确认 future authorized provider candidate 不再依赖 TC3。
 
 任何条件不满足时，TC3 只能保持 diagnostic/reference only，不能删除，也不能把 cleanup 当作已完成。
 
@@ -27,12 +27,12 @@ TC3 production path cleanup 必须等以下条件全部满足后才能启动：
 
 后续 cleanup 分支需要处理以下内容：
 
-- runner production default 不再使用 tencent-tc3-readonly。
+- runner future authorized default candidate 不再使用 tencent-tc3-readonly。
 - TC3 smoke 改为 diagnostic fixture 或删除。
 - TC3 live bridge 从生产路径退场。
 - 保留/删除策略由 cleanup 分支决定。
 
-cleanup 分支必须证明 production default provider strategy 仍是 Tencent official SDK wrapper，业务层仍只依赖 v22 readonly inventory interface，TC3 没有被 create/release 或默认 readonly live 主路径继续引用。
+cleanup 分支必须证明 future authorized provider candidate 仍是 Tencent official SDK wrapper，业务层仍只依赖 v22 readonly inventory interface，TC3 没有被 create/release 或默认 readonly live 主路径继续引用。
 
 ## 保留 / 删除策略
 
@@ -52,7 +52,7 @@ cleanup 分支可以选择：
 - 不改 official SDK implementation。
 - 不改 create/release。
 - 不安装 SDK 依赖。
-- 不修改 runner production default。
+- 不修改 runner future authorized default candidate。
 - 不修改 TC3 live bridge。
 
 ## 验收

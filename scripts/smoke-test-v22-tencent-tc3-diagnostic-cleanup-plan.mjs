@@ -34,11 +34,11 @@ assertIncludesAll(contract, [
   "official SDK wrapper 合并",
   "official SDK 依赖合并",
   "official SDK readonly live 成功生成脱敏 report",
-  "B 审查确认 production default 不再依赖 TC3",
+  "B 审查确认 future authorized provider candidate 不再依赖 TC3",
 ], "tc3_cleanup_exit_conditions");
 
 assertIncludesAll(contract, [
-  "runner production default 不再使用 tencent-tc3-readonly",
+  "runner future authorized default candidate 不再使用 tencent-tc3-readonly",
   "TC3 smoke 改为 diagnostic fixture 或删除",
   "TC3 live bridge 从生产路径退场",
   "保留/删除策略由 cleanup 分支决定",

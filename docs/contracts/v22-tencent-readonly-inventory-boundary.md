@@ -20,7 +20,7 @@ readonly inventory 要验证：
 
 - 云上有哪些 MedOPL 资源。
 - 资源标签是否完整。
-- 资源是否能映射到账号、工作空间、resourceOrderId、resourceBindingId。
+- 资源是否能映射到账号、工作空间、resourceBindingId、cloudOperationId / billingAttributionId；`legacyResourceOrderId` 仅作为 optional、migration-only alias。
 - 是否存在孤儿资源、标签缺失、标签冲突、区域不一致。
 - 是否支持后续 T+1 对账和 create/release 安全执行。
 
@@ -130,8 +130,11 @@ readonly inventory 必须用 Portal 账本 + 云标签双重校验：
 
 - accountId / portal account
 - workspaceId
-- resourceOrderId
 - resourceBindingId
+- cloudOperationId
+- billingAttributionId
+- accountId
+- legacyResourceOrderId（optional、migration-only，不得作为 fixed required tag）
 - serverPlanId
 - runId 可为空
 - resource type
@@ -173,9 +176,9 @@ SDK wrapper 仍必须遵守 allowlist_only、Describe/List/Get/Head only、COS m
 
 ## Official SDK Provider Strategy
 
-readonly inventory 的 production default provider = Tencent official SDK wrapper。业务层只允许依赖 v22 自己的 readonly inventory interface，不直接依赖 Tencent SDK raw client。
+readonly inventory 的 future authorized provider candidate = Tencent official SDK wrapper。当前 trunk 默认路径仍是合同级、本地 smoke 和 fail-closed gate；业务层只允许依赖 v22 自己的 readonly inventory interface，不直接依赖 Tencent SDK raw client。
 
-hand-rolled TC3 = diagnostic/reference only, not production default。TC3 暂不删除，但不能作为 production default readonly live path，不能作为 create/release provider，也不能扩大 mutation 权限。
+hand-rolled TC3 = diagnostic/reference only, not future authorized default readonly live path。TC3 暂不删除，但不能作为 create/release provider，也不能扩大 mutation 权限。
 
 official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、redaction、RUN gate、no raw SDK exposure。它只能暴露现有语义接口：
 
@@ -190,7 +193,7 @@ official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、reda
 
 禁止 raw SDK client 泄露到业务层。禁止通用 call(apiName, params)。禁止 mutation API。SDK raw response 不得进入 stdout/report/Portal payload。
 
-新增或升级 tencentcloud-sdk-nodejs / cos-nodejs-sdk-v5 依赖必须有用户授权，并由 B 审查 package diff。Package A 已安装 SDK dependency diff 到本分支：`tencentcloud-sdk-nodejs@4.1.227` 和 `cos-nodejs-sdk-v5@2.15.4`。
+新增或升级 tencentcloud-sdk-nodejs / cos-nodejs-sdk-v5 依赖必须有用户授权，并由 B 审查 package diff。Package A SDK dependency diff 属于 cloud-lane candidate 事实，不得写成 trunk 当前默认可执行事实；默认合同 smoke 不加载真实 SDK package、不读 secret、不打云。
 
 ## Implementation Note: Official SDK Dependency Loader
 
@@ -204,7 +207,7 @@ Implementation shape note: `tencentcloud-sdk-nodejs` covers the readonly account
 
 ## COS SDK Dependency Decision
 
-`cos-nodejs-sdk-v5` is part of the authorized SDK dependency package for the cloud connection loop. Package A has installed it in `services/portal`.
+`cos-nodejs-sdk-v5` is part of the future authorized SDK dependency package for the cloud connection loop. Package A installation is cloud-lane candidate evidence, not a current trunk executable default.
 
 Before a full readonly cloud report can be accepted, shape smoke must prove:
 
@@ -218,11 +221,11 @@ If `cos-nodejs-sdk-v5` is not installed or COS shape is unavailable, the officia
 cleanup 策略：
 
 - official SDK readonly live 跑通前，不删除 TC3。
-- official SDK readonly live 跑通后，另开 cleanup 分支将 TC3 从 production default 退场。
+- official SDK readonly live 跑通并由 B 接受后，另开 cleanup 分支将 TC3 从 future authorized default candidate 退场。
 - TC3 可保留为 isolated diagnostic fixture。
 - TC3 不能作为 create/release 或默认 readonly live 主路径。
 
-本分支已在 Package A/B 授权下安装 SDK，并落地 SDK dependency / loader / readonly client 连接形状；默认 smoke 不读 secret、不调用真实腾讯云。调用真实 readonly 云 API 只能发生在用户显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本分支不删除 TC3、不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
+cloud-lane candidate 已记录 SDK dependency / loader / readonly client 连接形状；当前 trunk 默认状态是 `defaultExecutable=false`、`readsSecretNow=false`、`implementsRealCloudCallNow=false`。调用真实 readonly 云 API 只能发生在用户当前会话显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本合同不删除 TC3、不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
 
 ## Live Readonly Authorization Note
 
@@ -234,7 +237,7 @@ live readonly 不创建、不删除、不释放、不扩缩容、不改标签、
 
 runner 只有在 `--sdk-mode tencent-official-sdk-readonly`、`--enable-official-sdk-loader`、`RUN_TENCENT_READONLY_INVENTORY=1`、allowlist 通过、用户单独授权执行时，才允许加载 official SDK package 并调用真实只读 SDK。默认 smoke 和 CI 不运行真实云。
 
-`--sdk-mode tencent-real-readonly` 只保留为 dependency-injected SDK modules 的兼容测试入口，用来证明 runner 的 readonly gate、regions、API allowlist、redaction 和 mutation rejection；它不能作为 production default provider，不能加载 raw SDK package，不能绕过 official SDK dependency loader 合同。
+`--sdk-mode tencent-real-readonly` 只保留为 dependency-injected SDK modules 的兼容测试入口，用来证明 runner 的 readonly gate、regions、API allowlist、redaction 和 mutation rejection；它不能作为 future authorized provider candidate，不能加载 raw SDK package，不能绕过 official SDK dependency loader 合同。
 
 TC3 readonly modules 属于 readonly inventory live client implementation，不是 create/release，不扩大 mutation 权限。TC3 modules 只能通过注入 fetch 和 readonly credentials 生成 Describe/List/Get/Head 请求，不读取 secret 文件、不 source env、不暴露 raw client 或通用 call(apiName, params)。
 
@@ -250,7 +253,7 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
   "providerPackage": "Tencent Provider",
   "stage": "readonly/tencent inventory",
   "route": "mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release",
-  "productionDefaultProviderStrategy": "tencent_official_sdk_wrapper",
+  "futureAuthorizedProviderCandidate": "tencent_official_sdk_wrapper",
   "tc3ProviderStrategy": "diagnostic_reference_only",
   "officialSdkWrapperExposesOnlyReadonlyInventoryInterface": true,
   "rawSdkClientExposedToBusinessLayer": false,
@@ -261,7 +264,8 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
     "tencentcloud-sdk-nodejs",
     "cos-nodejs-sdk-v5"
   ],
-  "contractBranchInstallsSdkDependency": true,
+  "contractBranchInstallsSdkDependency": false,
+  "cloudLaneCandidateInstallsSdkDependency": true,
   "installedSdkDependencies": [
     {
       "name": "tencentcloud-sdk-nodejs",
@@ -276,9 +280,12 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
   "removeTc3BeforeOfficialSdkLivePass": false,
   "tc3AllowedAsCreateReleaseProvider": false,
   "changesCreateReleaseMutationBoundary": false,
-  "implementsRealCloudCall": true,
-  "readsSecretNow": true,
+  "defaultExecutable": false,
+  "implementsRealCloudCallNow": false,
+  "readsSecretNow": false,
+  "authorizedReadonlyLiveCapable": true,
   "defaultUnauthorizedPathFailsClosed": true,
+  "requiresCurrentSessionExplicitAuthorization": true,
   "authorizedReadonlyLiveReport": {
     "path": ".runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json",
     "redactedOnly": true,
@@ -364,8 +371,10 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
   "requiredOwnershipTags": [
     "accountId",
     "workspaceId",
-    "resourceOrderId",
     "resourceBindingId",
+    "cloudOperationId",
+    "billingAttributionId",
+    "legacyResourceOrderId",
     "serverPlanId",
     "resourceType",
     "region"

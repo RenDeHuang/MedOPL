@@ -127,7 +127,10 @@ assertArrayIncludesAll(userContract.invisibleContent, [
   "云资源清单",
   "tenantId",
   "resourceBindingId",
-  "resourceOrderId",
+  "cloudOperationId",
+  "billingAttributionId",
+  "accountId",
+  "legacyResourceOrderId",
   "serverPlanId",
   "runId",
   "SecretId",
@@ -200,12 +203,15 @@ assertArrayIncludesAll(adminContract.visibleContent, [
 ], "admin_surface_visible_content");
 
 assertArrayIncludesAll(adminContract.costAllocationTags, [
-  "resourceOrderId",
+  "resourceBindingId",
+  "cloudOperationId",
+  "billingAttributionId",
+  "accountId",
+  "legacyResourceOrderId",
   "runId",
   "serverPlanId",
   "tenantId",
   "workspaceId",
-  "resourceBindingId",
   "environmentId",
 ], "admin_surface_cost_allocation_tags");
 

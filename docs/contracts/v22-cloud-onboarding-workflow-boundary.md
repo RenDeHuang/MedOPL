@@ -311,9 +311,9 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
 
 这些工作仍必须使用独立 worktree，并且不得读取 secret、不得调用真实云、不得执行 build/push/kubectl/live-test。
 
-## Runnable Cloud Connection Path
+## Future Authorized Cloud Connection Path
 
-当前接云模块收敛为 R-00 到 R-21 的闭环验证路径；旧 `CO-01..CO-14` 只保留为历史阶段和状态说明，不再作为新验收主线。`C00`、`C01`、`C02`、`C03`、`C04` 也不得作为当前 gate id、task packet id 或完成状态使用。
+当前接云模块只把 R-00 到 R-21 记录为 future authorized / cloud-lane candidate 闭环验证路径；它不是默认可运行路径。旧 `CO-01..CO-14` 只保留为历史阶段和状态说明，不再作为新验收主线。`C00`、`C01`、`C02`、`C03`、`C04` 也不得作为当前 gate id、task packet id 或完成状态使用。
 
 | step | gate | authorization package | entrypoint | artifact path | pass condition |
 | --- | --- | --- | --- | --- | --- |
@@ -346,7 +346,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
 
 本 workflow 不自动 merge、不自动 push、不读 secret、不调用真实云；只能生成任务包、可跑路径和下一步建议。
 
-本分支让 `scripts/v22-agent-workflow.mjs cloud-onboarding status --json` 输出 runnable path task packet 形状，但不新增真实云执行能力、不读 secret、不执行 build/push/kubectl。
+本分支只允许 `scripts/v22-agent-workflow.mjs cloud-onboarding status --json` 输出 future authorized task packet 形状；这些 task packet 默认 blocked，不新增真实云执行能力、不读 secret、不执行 build/push/kubectl。
 
 ## Contract Data
 
@@ -409,7 +409,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     "authorized_resource_lifecycle",
     "deploy_and_production_integration"
   ],
-  "runnablePath": [
+  "futureAuthorizedPath": [
     { "step": "R-00", "gateId": "CC-01", "authorizationPackage": "none", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
     { "step": "R-01", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "services/portal", "artifactPath": "services/portal/package.json and services/portal/package-lock.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
     { "step": "R-02", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-verification-matrix.md" },
@@ -534,7 +534,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       },
       "traceSurfaceIsNotImplicitImageTarget": true
     },
-    "allowedKubectlActions": [
+    "allowedAfterCurrentSessionExplicitAuthorizationKubectlActions": [
       "kubectl diff",
       "kubectl server-side dry-run",
       "kubectl apply",

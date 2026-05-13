@@ -97,9 +97,9 @@
 
 是否修改 frontend、Gateway、Runtime Bridge、Portal domain、docs 或 smoke，由本次分支意图和订阅合同决定，不能从旧阶段快照推断。
 
-## 总 smoke
+## 默认本地 MVP suite
 
-`scripts/smoke-test-v22-mvp-contract-suite.mjs` 作为 v22 MVP contract acceptance suite，串联运行以下 smoke，并输出 `ok: true` 与 passed smoke 名称：
+`scripts/smoke-test-v22-mvp-contract-suite.mjs` 作为默认本地 v22 MVP contract acceptance suite，只串联运行合同级、本地 fixture、fake-live、fail-closed 和不读取 secret 的 smoke，并输出 `ok: true` 与 passed smoke 名称。该 suite 不读取 secret、不调用真实云、不运行真实 upstream/WebUI/provider live canary、不执行 build/push/kubectl、不执行真实 runtime smoke。
 
 - `scripts/smoke-test-v22-pricing-plan-contract.mjs`
 - `scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs`
@@ -117,10 +117,6 @@
 - `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs`
-- `scripts/smoke-test-v22-real-opl-canary.mjs`（单独真实 upstream canary，不并入默认纯本地 fixture suite）
-- `scripts/smoke-test-v22-real-opl-webui-canary.mjs`（单独真实 WebUI canary，不并入默认纯本地 fixture suite；需 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向真实 WebUI 来源）
-- `scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs`（单独真实 WebUI Adapter flow，不并入默认纯本地 fixture suite；需 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向真实 WebUI 来源）
-- `scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs`（单独授权真实 provider message live canary，不并入默认 MVP suite；需 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL`）
 - `scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
 - `scripts/smoke-test-v22-portal-runtime-startup-config.mjs`
 - `scripts/smoke-test-v22-portal-dev-server-auth-proxy.mjs`
@@ -132,3 +128,15 @@
 - `scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`
 - `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
 - `scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs`
+
+## 授权外部 canary 清单
+
+以下脚本不属于默认本地 MVP suite。只有用户在当前会话明确授权对应 secret、真实云、真实 WebUI/upstream、build/push、kubectl、deploy 或 live-test 边界后，才允许按单独合同运行；evidence 只写 `.runtime` 脱敏输出，不进 git。
+
+- `scripts/smoke-test-v22-real-opl-canary.mjs`（真实 upstream canary；需用户授权真实 upstream 来源）
+- `scripts/smoke-test-v22-real-opl-webui-canary.mjs`（真实 WebUI canary；需 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向授权来源）
+- `scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs`（真实 WebUI Adapter flow；需 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向授权来源）
+- `scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs`（真实 provider message live canary；需 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和授权 WebUI 来源）
+- `scripts/smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`（真实腾讯云 readonly inventory live；需当前会话授权 readonly secret allowlist、region/API scope 和 `.runtime` report）
+- `scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs`（真实资源 lifecycle runner；需当前会话逐次授权 mutation secret、预算、scope、rollback 和 cleanup）
+- `scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`（真实 deploy/build/push/kubectl runner；需当前会话逐次授权 registry、kubeconfig/secret、release plan、rollback 和 runtime smoke）

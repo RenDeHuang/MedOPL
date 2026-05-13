@@ -232,8 +232,8 @@ assert.equal(deployData.releasePlan?.defaultRuntimeSmokeUrls?.portal, "https://p
 assert.equal(deployData.releasePlan?.defaultRuntimeSmokeUrls?.opl, "https://opl.medopl.cn/healthz", "deploy_opl_smoke_url");
 assert.equal(deployData.releasePlan?.defaultRuntimeSmokeUrls?.trace, "https://trace.medopl.cn/api/public/health", "deploy_trace_smoke_url");
 assert.equal(deployData.releasePlan?.traceSurfaceIsNotImplicitImageTarget, true, "deploy_trace_not_implicit_image_target");
-assert(deployData.allowedKubectlActions.includes("kubectl diff"), "deploy_kubectl_diff_missing");
-assert(deployData.allowedKubectlActions.includes("kubectl apply"), "deploy_kubectl_apply_missing");
+assert(deployData.allowedAfterCurrentSessionExplicitAuthorizationKubectlActions.includes("kubectl diff"), "deploy_kubectl_diff_missing");
+assert(deployData.allowedAfterCurrentSessionExplicitAuthorizationKubectlActions.includes("kubectl apply"), "deploy_kubectl_apply_missing");
 assert(deployData.forbiddenActions.includes("kubectl delete"), "deploy_forbid_kubectl_delete");
 assert(deployData.forbiddenActions.includes("DeleteNodePool"), "deploy_forbid_delete_nodepool");
 assert(deployData.forbiddenActions.includes("deleteObject"), "deploy_forbid_delete_object");
@@ -317,7 +317,7 @@ assertIncludesAll(board + status + verificationMatrix, [
 ], "recovery_deploy_safety");
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");
-assert(suite.includes("smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs"), "suite_must_include_deploy_runner_smoke");
+assert.equal(suite.includes("smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs"), false, "suite_must_not_include_authorized_deploy_runner_smoke");
 assert(suite.includes("smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs"), "suite_must_include_deploy_live_gate_smoke");
 
 assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, [

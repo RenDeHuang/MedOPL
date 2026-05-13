@@ -74,7 +74,7 @@ MVP 默认使用已有平台共享 TKE 集群，不默认创建新 TKE 集群。
 
 - 用户明确授权。
 - 余额、冻结金额或 quota 满足本次计划。
-- `resourceBindingId`、`environmentId`、`tenantId`、`workspaceId`、`serverPlanId` 和 `resourceOrderId` 已确定。
+- `resourceBindingId`、`cloudOperationId`、`billingAttributionId`、`environmentId`、`accountId`、`tenantId`、`workspaceId` 和 `serverPlanId` 已确定；`legacyResourceOrderId` 仅可作为 optional、migration-only alias，不得作为 v22 fixed required tag。
 - readonly quote 和 dry-run plan 已生成。
 - secret boundary 已授权，且 SecretId / SecretKey / kubeconfig 只进入后端 secret boundary。
 - billing tags 完整。
@@ -87,17 +87,20 @@ MVP 默认使用已有平台共享 TKE 集群，不默认创建新 TKE 集群。
 
 ```json
 {
-  "resourceOrderId": "order id",
-  "runId": "run id or null",
+  "resourceBindingId": "resource binding id",
+  "cloudOperationId": "cloud operation id",
+  "billingAttributionId": "billing attribution id",
+  "workspaceId": "workspace id",
+  "accountId": "account id",
   "serverPlanId": "starter_2c4g_10gb or pro_8c16g_100gb or custom",
   "tenantId": "tenant id",
-  "workspaceId": "workspace id",
-  "resourceBindingId": "resource binding id",
+  "runId": "run id or null",
+  "legacyResourceOrderId": "legacy order id or null",
   "environmentId": "environment id"
 }
 ```
 
-`runId` 可以为空，但 `tenantId`、`workspaceId`、`resourceBindingId` 和 `environmentId` 不得为空。标签缺失、标签与 resource binding 不一致、或资源无法归属到 tenant/workspace 时，真实 create path 必须阻断或进入审计失败。
+`runId` 和 `legacyResourceOrderId` 可以为空，但 `accountId`、`workspaceId`、`resourceBindingId`、`cloudOperationId`、`billingAttributionId`、`serverPlanId` 和 `environmentId` 不得为空。标签缺失、标签与 resource binding 不一致、或资源无法归属到 account/workspace 时，真实 create path 必须阻断或进入审计失败。
 
 T+1 账单用于对账和审计，不作为实时扣费来源。Portal 实时展示仍以费用估算、余额、冻结金额和预计消耗为准。T+1 结果只能用于账单校准、异常审计、补扣或退还依据。
 
@@ -116,12 +119,15 @@ T+1 账单用于对账和审计，不作为实时扣费来源。Portal 实时展
   },
   "createReleaseState": "待授权",
   "billingTags": {
-    "resourceOrderId": "order id",
-    "runId": null,
+    "resourceBindingId": "resource binding id",
+    "cloudOperationId": "cloud operation id",
+    "billingAttributionId": "billing attribution id",
+    "workspaceId": "workspace id",
+    "accountId": "account id",
     "serverPlanId": "pro_8c16g_100gb",
     "tenantId": "tenant id",
-    "workspaceId": "workspace id",
-    "resourceBindingId": "resource binding id",
+    "runId": null,
+    "legacyResourceOrderId": null,
     "environmentId": "environment id"
   },
   "fileSpacePolicy": {

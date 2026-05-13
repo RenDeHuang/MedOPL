@@ -123,25 +123,25 @@ const [contract, board, status, workflowScript, suite] = await Promise.all([
 ]);
 
 assertIncludesAll(contract, [
-  "Runnable Cloud Connection Path",
+  "Future Authorized Cloud Connection Path",
   "R-00 local contract guard",
   "R-01 SDK dependency install",
   "R-04 readonly live report",
   "R-12 expand compute dry-run and execution",
   "R-18 runtime smoke",
   "R-21 final reconciliation cleanup and B review",
-], "contract_runnable_path");
+], "contract_future_authorized_path");
 
 assertIncludesAll(contract + board + status, retiredAliases, "retired_aliases_documented");
 
 const contractData = extractJsonBlock(contract, "v22-cloud-onboarding-workflow-contract");
 assert.equal(contractData.activeGatePrefix, "CC", "contract_active_gate_prefix");
 assert.deepEqual(contractData.retiredLegacyGateAliases, retiredAliases, "contract_retired_aliases");
-assert.deepEqual(contractData.runnablePath.map((step) => step.step), expectedSteps, "contract_runnable_step_order");
-assert.deepEqual(contractData.runnablePath.map((step) => step.gateId), expectedGateIds, "contract_runnable_gate_order");
-for (const step of contractData.runnablePath) {
+assert.deepEqual(contractData.futureAuthorizedPath.map((step) => step.step), expectedSteps, "contract_future_authorized_step_order");
+assert.deepEqual(contractData.futureAuthorizedPath.map((step) => step.gateId), expectedGateIds, "contract_future_authorized_gate_order");
+for (const step of contractData.futureAuthorizedPath) {
   for (const key of ["step", "gateId", "authorizationPackage", "entrypoint", "artifactPath", "blockerWriteback"]) {
-    assert(Object.hasOwn(step, key), `contract_runnable_${step.step}_missing:${key}`);
+    assert(Object.hasOwn(step, key), `contract_future_authorized_${step.step}_missing:${key}`);
   }
 }
 

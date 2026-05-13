@@ -362,7 +362,7 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     },
     "traceSurfaceIsNotImplicitImageTarget": true
   },
-  "allowedRegistryActions": [
+  "allowedAfterCurrentSessionExplicitAuthorizationRegistryActions": [
     "DescribeRepositories",
     "DescribeImages",
     "docker login",
@@ -371,7 +371,7 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     "docker push",
     "digest readback"
   ],
-  "allowedKubectlActions": [
+  "allowedAfterCurrentSessionExplicitAuthorizationKubectlActions": [
     "kubectl diff",
     "kubectl server-side dry-run",
     "kubectl apply",

@@ -95,12 +95,15 @@ assertArrayIncludesAll(contract.resourceStates, [
 ], "admin_ops_resource_states");
 
 assertArrayIncludesAll(contract.costAllocationTags, [
-  "resourceOrderId",
+  "resourceBindingId",
+  "cloudOperationId",
+  "billingAttributionId",
+  "accountId",
+  "legacyResourceOrderId",
   "runId",
   "serverPlanId",
   "tenantId",
   "workspaceId",
-  "resourceBindingId",
   "environmentId",
 ], "admin_ops_cost_allocation_tags");
 
@@ -141,7 +144,7 @@ assertArrayIncludesAll(contract.beginnerSurface.mustShowOnlyProductLanguage, [
 assertArrayIncludesAll(contract.beginnerSurface.mustNotShow, [
   "tenantId",
   "resourceBindingId",
-  "resourceOrderId",
+  "legacyResourceOrderId",
   "serverPlanId",
   "runId",
   "CVM",

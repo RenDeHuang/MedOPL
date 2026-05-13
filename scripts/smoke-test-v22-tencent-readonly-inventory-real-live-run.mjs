@@ -565,7 +565,7 @@ assert(contract.includes("--sdk-mode tencent-real-readonly"), "contract_must_doc
 assert(contract.includes("默认 smoke 和 CI 不运行真实云"), "contract_must_document_default_smoke_no_real_cloud");
 
 const suite = await readFile(suitePath, "utf8");
-assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs"), "mvp_suite_must_include_real_live_run_smoke");
+assert.equal(suite.includes("smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs"), false, "mvp_suite_must_not_include_authorized_real_live_run_smoke");
 
 console.log(JSON.stringify({
   ok: true,

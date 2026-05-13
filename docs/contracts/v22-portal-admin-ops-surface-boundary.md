@@ -24,7 +24,7 @@
 - 当前运行中的 session/run/task
 - 文件空间用量和 7 天保护期占用
 - 费用估算、冻结金额、T+1 对账状态
-- 分账标签：resourceOrderId、runId、serverPlanId、tenantId、workspaceId、resourceBindingId、environmentId
+- 分账标签：resourceBindingId、cloudOperationId、billingAttributionId、workspaceId、accountId、serverPlanId、tenantId、environmentId、runId；`legacyResourceOrderId` 仅可作为 optional、migration-only alias，不得作为 v22 fixed required tag
 - 审计事件、异常、释放失败、账单异常
 - 公告管理入口
 
@@ -106,12 +106,15 @@ Cleanup 要清掉旧入口、旧文案、旧 API 暴露和权限绕过。清理�
     "公告管理入口"
   ],
   "costAllocationTags": [
-    "resourceOrderId",
+    "resourceBindingId",
+    "cloudOperationId",
+    "billingAttributionId",
+    "accountId",
+    "legacyResourceOrderId",
     "runId",
     "serverPlanId",
     "tenantId",
     "workspaceId",
-    "resourceBindingId",
     "environmentId"
   ],
   "forbiddenVisibilityAndActions": [

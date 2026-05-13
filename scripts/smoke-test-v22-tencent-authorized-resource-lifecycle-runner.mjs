@@ -274,7 +274,7 @@ try {
   assert.equal(/\.CreateClusterNodePool|\.DeleteClusterNodePool|\.deleteBucket|\.putBucket/.test(source), false, "runner_must_not_create_or_delete_cluster_node_pool_or_bucket");
 
   const suite = await readFile(suitePath, "utf8");
-  assert(suite.includes("smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs"), "mvp_suite_must_include_resource_lifecycle_runner_smoke");
+  assert.equal(suite.includes("smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs"), false, "mvp_suite_must_not_include_authorized_resource_lifecycle_runner_smoke");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
   await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));

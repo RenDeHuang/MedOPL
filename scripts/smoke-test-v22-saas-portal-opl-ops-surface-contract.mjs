@@ -90,8 +90,7 @@ function assertNoForbiddenBeginnerText(text, label) {
     "tenant",
     "tenantId",
     "workspaceId",
-    "resourceOrder",
-    "resourceOrderId",
+    "legacyResourceOrderId",
     "resourceBinding",
     "serverPlan",
     "runId",
@@ -300,7 +299,7 @@ assert.equal(contract.oplWebBeginnerSurface.entrypoint, "opl.medopl.cn", "opl_en
 assertIncludesAll(contract.managementSurface.mustShow, [
   "tenant 状态",
   "workspace 状态",
-  "resourceOrder、resourceBinding 状态",
+  "resourceBinding、cloudOperation、billingAttribution 状态",
   "serverPlan 状态",
   "run 状态",
   "COS bucket、prefix、object 状态",
@@ -328,7 +327,10 @@ assert.deepEqual(contract.backendMultiTenantBoundary.fields, [
   "userId",
   "workspaceId",
   "resourceBindingId",
-  "resourceOrderId",
+  "cloudOperationId",
+  "billingAttributionId",
+  "accountId",
+  "legacyResourceOrderId",
   "billingAccountId",
   "runId",
   "serverPlanId",
@@ -337,11 +339,15 @@ assertIncludesAll(contract.backendMultiTenantBoundary.usedFor, ["隔离", "计�
 assert.equal(contract.backendMultiTenantBoundary.beginnerUserPrimaryLanguage, false, "backend_fields_must_not_be_beginner_user_language");
 
 assert.deepEqual(contract.tencentCostAllocationTags.fixedKeys, [
-  "resourceorderid",
+  "resourcebindingid",
+  "cloudoperationid",
+  "billingattributionid",
+  "accountid",
   "runid",
   "serverplanid",
-  "tenantid",
   "workspaceid",
+  "tenantid",
+  "legacyresourceorderid_optional_migration_only",
 ], "tencent_cost_allocation_tags_mismatch");
 assertIncludesAll(contract.tencentCostAllocationTags.usedFor, [
   "腾讯云账单核对",
@@ -376,7 +382,7 @@ assertIncludesAll(contract.forbiddenBeginnerUserNarrative, [
   "COS bucket",
   "K8s",
   "TKE",
-  "resourceOrderId",
+  "legacyResourceOrderId",
   "raw billing tags",
   "raw provider API key",
   "launchToken",
@@ -401,9 +407,9 @@ assertQuestions(contract.productEffectQuestions.beginnerUserCanAnswer, [
 ], "beginner_user_questions");
 
 assertQuestions(contract.productEffectQuestions.managementCanAnswer, [
-  "哪个 tenant、workspace、run、serverPlan、resourceOrder 产生了费用？",
+  "哪个 account、workspace、resourceBinding、cloudOperation、billingAttribution、run、serverPlan 产生了费用？",
   "腾讯云账单标签是否完整？",
-  "COS 对象是否有正确 tenantid、workspaceid、runid、serverplanid、resourceorderid 归因？",
+  "COS 对象是否有正确 accountid、workspaceid、resourcebindingid、cloudoperationid、billingattributionid、runid、serverplanid 归因？",
   "哪些任务失败？",
   "哪些停止计费还在 120min 确认中？",
   "哪些审计是 T+1 pending 或 ready？",
