@@ -23,11 +23,18 @@ const allowedDiffPaths = new Set([
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
+  "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
   "docs/recovery/legacy-cleanup-backlog.md",
   "docs/recovery/repo-zoning.md",
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["cleanup/v22-secret-hygiene-diff-scan-eval-shell", new Set([
+    "docs/recovery/status-matrix.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+  ])],
   ["cleanup/v22-resource-order-store-postgres-schema-implementation", new Set([
     "services/portal/src/state/portal-resource-order-store.mjs",
     "services/portal/src/state/portal-store-db-delegates.mjs",
@@ -326,7 +333,7 @@ const goalStatePhrases = [
   "当前 trunk HEAD",
   "当前 goal cursor",
   "已完成事实：default entry、user_owned、resource-order 前四刀",
-  "当前下一问题：secret hygiene changed-files / added-lines diff-scoped eval shell",
+  "当前下一问题：legacy scripts archive boundary eval shell",
   "secret hygiene",
   "legacy scripts archive",
   "Portal architecture refactor",

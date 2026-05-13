@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `316d3245142c447c2b0f6016af9fa437b99100e9`
+- 当前 trunk HEAD: `f9ee4404e94804a5397d85bd37a54832ec94095e`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `cleanup/v22-resource-order-store-postgres-schema-implementation`
+- current branch: `cleanup/v22-secret-hygiene-diff-scan-eval-shell`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-secret-hygiene-diff-scan-eval-shell`
-- highest-priority executable leaf step: `leaf-secret-hygiene-diff-scan-eval-shell`
-- 当前下一问题：secret hygiene changed-files / added-lines diff-scoped eval shell
+- 当前 goal cursor: `leaf-legacy-scripts-archive-eval-shell`
+- highest-priority executable leaf step: `leaf-legacy-scripts-archive-eval-shell`
+- 当前下一问题：legacy scripts archive boundary eval shell
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -99,6 +99,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-resource-order-store-postgres-schema-implementation completed on branch `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer instantiates or wires resource-order store/Postgres persistence. `portal-resource-order-store.mjs` is fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres snapshot persistence no longer read/write `resource_orders` or `resource_order_events` as active truth. `resource_orders`, `resource_order_events`, snapshot helper writers, and JSON migration collections remain migration-only/tombstone facts; no real DB migration, live DB connection, cloud, build/push, kubectl, deploy, secret read, or upstream modification was performed.
 - Leaf 2 verification summary: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `npm --prefix services/portal run check`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `node scripts/smoke-test-v22-mvp-contract-suite.mjs`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, `git diff --check -- services/portal/src/state services/portal/src/app scripts docs/recovery`, and scoped `node --check` passed locally.
 - Leaf 2 failure analysis: initial failures were gate subscription mismatches, not product behavior failures. `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` first failed with `resource_order_retirement_branch_must_not_modify` because the fourth-slice implementation branch and characterization gate were not registered in its exact branch allowlist. `node scripts/smoke-test-v22-product-goal-harness.mjs` and `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs` then failed on branch-scoped allowed files for the same reason. failure_category: `eval_wrong`; attempt_count: 1 per affected gate; root_cause_id: `leaf2_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlists for this leaf, including `portal-store-storage-bootstrap.mjs` because active storage bootstrap instantiated the retired store; whether_contract_wrong: false; whether_problem_should_split: false; whether_authorization_required: false.
+- leaf-secret-hygiene-diff-scan-eval-shell completed on branch `cleanup/v22-secret-hygiene-diff-scan-eval-shell`: `scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs` provides a reusable local changed-files / added-lines hygiene eval using a temporary git repo only. It proves added-line sensitive-value detection, ignores unchanged historical content, skips secret-like paths instead of reading their content, and keeps workflow path-gate fail-closed behavior. No real `.env`, secret, kubeconfig, token, key, cloud, live-test, build/push, kubectl, deploy, or upstream path was read or touched.
 
 ## Later Problems
 
@@ -179,7 +180,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
   - pollution_risks: secret-like path bypass, full-repo scan used as false pass.
   - verification_commands: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
   - B_absorb_criteria: B confirms changed-files / added-lines diff-scoped secret scan.
-- eval_command: future `node scripts/smoke-test-v22-diff-scoped-secret-hygiene.mjs`
+- eval_command: `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`
 - failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
 - trace_or_evidence_expectation: no secret values; only pass/fail and changed path summaries.
 - allowed_files: `scripts/smoke-test-v22-*`, `docs/recovery/*`

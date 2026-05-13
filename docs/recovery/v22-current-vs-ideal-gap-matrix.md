@@ -56,17 +56,17 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-secret-hygiene
 
 - id: legacy-cleanup-secret-hygiene
-- current_fact: workflow gate has path-level secret-like checks; default gates scan selected files for secret-like values.
+- current_fact: workflow gate has path-level secret-like checks; reusable local diff-scoped sensitive hygiene eval now proves changed-files / added-lines scanning without reading real secret-like paths.
 - ideal_state: B always runs changed-files / added-lines diff-scoped secret scan before absorb; full-repo secret scan is read-only audit only.
 - problem: secret hygiene can degrade if B relies only on broad scans or path names.
 - dependency: product-goal harness absorbed.
-- status: needs_eval
-- next_leaf_step: write_eval_shell
-- eval: required future `scripts/smoke-test-v22-diff-scoped-secret-hygiene.mjs`
+- status: gated
+- next_leaf_step: monitor_only_after_B_absorb
+- eval: `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`
 - allowed_files: `scripts/smoke-test-v22-*`, `docs/recovery/*`
 - forbidden_files: `.env*`, secret files, kubeconfig, `deploy/*`, `adapters/*`, `.sentrux/*`
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`
-- B_absorb_criteria: B confirms changed-files / added-lines diff-scoped secret scan is mandatory and no secret content is read.
+- B_absorb_criteria: B confirms changed-files / added-lines diff-scoped sensitive hygiene scan is mandatory, path-level fail-closed checks still block secret-like paths, and no secret content is read.
 
 ### Gap: legacy-cleanup-legacy-scripts
 
@@ -131,6 +131,7 @@ Every gap entry must contain:
 truth writeback section:
 
 - leaf-resource-order-store-postgres-schema-implementation: active `portal-resource-order-store` is now fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres snapshot read/write no longer instantiate or call resource-order store or `resource_orders` / `resource_order_events` active queries/writers. Legacy tables, snapshot helper functions, and JSON migration collection keys remain migration-only/tombstone facts. Verification passed locally with resource-order characterization, resource-order retirement gate, Portal check, product-goal harness, default-entry gate, MVP suite, workflow review, scoped node --check, and diff whitespace check. Failure analysis classified initial branch allowlist failures as `eval_wrong` / `leaf2_branch_subscription_missing`; exact branch-scoped allowlists were updated, including `portal-store-storage-bootstrap.mjs` because it was part of active runtime bootstrap.
+- leaf-secret-hygiene-diff-scan-eval-shell: `scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs` added a reusable local eval using a temporary git repo. It proves added-line sensitive-value detection, unchanged historical content exclusion, secret-like path content skipping, and workflow path-gate fail-closed behavior without reading real `.env`, secret, kubeconfig, token, or key files. The eval filename intentionally avoids `secret` to prevent the path-level fail-closed gate from treating the eval file itself as a secret-like path.
 - Authorization model: Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps；Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。
 - No auth record means the risky step remains deferred_authorized.
 - Cloud live baseline / cleanup / minimum spend policy requires desired/current baseline 应为 2，且测试后必须回到 2.

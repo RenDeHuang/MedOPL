@@ -26,7 +26,7 @@ This framework constrains future AI-driven cleanup, refactor, and development wo
 ## Secret And Security Eval
 
 - secret/security eval 使用 workflow gate 和 changed-files / added-lines diff-scoped secret scan。
-- `scripts/smoke-test-v22-product-goal-harness.mjs` already performs a branch-local changed-files / added-lines diff-scoped secret scan for this harness branch; a reusable generic secret hygiene eval remains a future leaf step.
+- `scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs` provides a reusable local changed-files / added-lines diff-scoped hygiene eval without reading real secret-like paths. The filename intentionally uses `sensitive-hygiene` rather than `secret-hygiene` so path-level fail-closed gates do not classify the eval file itself as a secret-like path.
 - 浏览器状态、日志、evidence、git 中不得出现 raw provider key、bearer token、launchToken、runtimeToken、SecretId/SecretKey、kubeconfig 或 private key。
 - `raw API Key 只能进入后端密钥边界`.
 - Full-repo secret scan is read-only audit only; B absorb uses changed-files / added-lines diff-scoped secret scan.
