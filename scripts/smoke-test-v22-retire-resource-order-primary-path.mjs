@@ -8,18 +8,61 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
 const gatePath = "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs";
-const allowedGateOnlyDiffPaths = new Set([
+const allowedResourceOrderRouteTombstoneDiffPaths = new Set([
   gatePath,
+  "services/portal/src/routes/resource-order.routes.mjs",
+  "services/portal/src/routes/resource-order-public.routes.mjs",
+  "services/portal/src/routes/resource-order-internal.routes.mjs",
+  "services/portal/src/routes/resource-order-public-delete.routes.mjs",
+  "services/portal/src/routes/resource-order-provisioning-service.mjs",
+  "services/portal/src/routes/resource-order-route-support.mjs",
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/repo-zoning.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
 ]);
 
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
+const activePortalFeatureRoutesPath = "services/portal/src/app/portal-feature-runtime-handlers.mjs";
+const resourceOrderTombstoneRoutePath = "services/portal/src/routes/resource-order.routes.mjs";
+const retiredResourceOrderRouteModulePaths = [
+  "services/portal/src/routes/resource-order-public.routes.mjs",
+  "services/portal/src/routes/resource-order-internal.routes.mjs",
+  "services/portal/src/routes/resource-order-public-delete.routes.mjs",
+  "services/portal/src/routes/resource-order-provisioning-service.mjs",
+  "services/portal/src/routes/resource-order-route-support.mjs",
+];
 const defaultEntryPaths = [
   "README.md",
   "docs/product.md",
   "docs/architecture.md",
   "compose.product.yaml",
+];
+
+const retiredSuccessPathTokens = [
+  "createQuotedResourceOrder",
+  "freezeResourceOrder",
+  "releaseResourceOrder",
+  "transitionResourceOrder",
+  "resourceProvisionerClient",
+  "fetchCloudResources",
+  "scaleToZero",
+  "deleteNodePool",
+  "resourceOrderProvisionInput",
+  "collectResourceOrderAttribution",
+  "resourceOrderResponse",
+  "findUserResourceOrder",
+  "resolveOrderNodePoolMutation",
+  "/portal/api/resource-orders/quote",
+  "/portal/api/resource-orders/freeze",
+  "/portal/api/resource-orders/provision",
+  "/portal/api/resource-orders/release",
+  "/portal/api/resource-orders/delete-node-pool",
+  "/portal/api/resource-orders/delete-resource",
+  "/portal/internal/resource-orders/prepare-run",
+  "/portal/internal/resource-orders/mark-running",
+  "/portal/internal/resource-orders/provisioning-result",
+  "/portal/internal/resource-orders/release",
 ];
 
 const resourceOrderTokens = [
@@ -33,6 +76,15 @@ const allowedRetirementContext = /不是|不得|不作为|退场|退役|清退|l
 
 async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
+}
+
+async function readOptionalRepoFile(filePath) {
+  try {
+    return await readRepoFile(filePath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 function assertIncludes(source, expected, label) {
@@ -68,7 +120,10 @@ function changedFilesFromBase() {
 
 function assertOnlyGateChanged() {
   for (const filePath of changedFilesFromBase()) {
-    assert(allowedGateOnlyDiffPaths.has(filePath), `resource_order_gate_branch_must_not_modify:${filePath}`);
+    assert(
+      allowedResourceOrderRouteTombstoneDiffPaths.has(filePath),
+      `resource_order_route_tombstone_branch_must_not_modify:${filePath}`,
+    );
   }
 }
 
@@ -91,6 +146,92 @@ function assertNoDefaultResourceOrderPath(filePath, source) {
         `${filePath}:${lineNumber(source, match.index ?? 0)}_must_not_make_resource_order_default_path:${line.trim()}`,
       );
     }
+  }
+}
+
+async function listPortalSourceFiles(relativeDir = "services/portal/src") {
+  const root = path.join(repoRoot, relativeDir);
+  const entries = await readdir(root, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const entryPath = `${relativeDir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      files.push(...await listPortalSourceFiles(entryPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith(".mjs")) files.push(entryPath);
+  }
+  return files.sort();
+}
+
+async function assertOnlyTombstoneRouteIsImported() {
+  const portalFeatureRoutes = await readRepoFile(activePortalFeatureRoutesPath);
+  assertIncludes(
+    portalFeatureRoutes,
+    "../routes/resource-order.routes.mjs",
+    "portal_feature_runtime_resource_order_tombstone_route_import",
+  );
+
+  const forbiddenRouteImports = retiredResourceOrderRouteModulePaths.map((filePath) =>
+    `../routes/${path.basename(filePath)}`);
+  const importFindings = [];
+  for (const filePath of await listPortalSourceFiles()) {
+    const source = await readRepoFile(filePath);
+    for (const forbiddenImport of forbiddenRouteImports) {
+      if (source.includes(forbiddenImport)) {
+        importFindings.push({ file: filePath, forbiddenImport });
+      }
+    }
+  }
+  assert.deepEqual(importFindings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "retired_resource_order_route_module_import",
+    importFindings,
+  }, null, 2));
+}
+
+async function assertRetiredSuccessPathModulesRemoved() {
+  const findings = [];
+  for (const filePath of retiredResourceOrderRouteModulePaths) {
+    const source = await readOptionalRepoFile(filePath);
+    if (source === null) continue;
+    findings.push({
+      file: filePath,
+      type: "retired_route_module_still_present",
+    });
+    for (const token of retiredSuccessPathTokens) {
+      if (source.includes(token)) {
+        findings.push({
+          file: filePath,
+          type: "retired_success_path_token_present",
+          token,
+        });
+      }
+    }
+  }
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "retired_resource_order_route_success_path",
+    findings,
+  }, null, 2));
+}
+
+function assertResourceOrderTombstoneRoute(source) {
+  assertIncludes(source, "function isRetiredResourceOrderPath", "resource_order_tombstone_path_matcher");
+  assertIncludes(source, "/portal/api/resource-orders", "resource_order_tombstone_public_prefix");
+  assertIncludes(source, "/portal/internal/resource-orders", "resource_order_tombstone_internal_prefix");
+  assertIncludes(source, "/portal/api/my/resources", "resource_order_tombstone_my_resources_route");
+  assertIncludes(source, "resource_order_primary_path_retired", "resource_order_tombstone_error");
+  assertIncludes(source, "managed environment", "resource_order_tombstone_managed_environment_replacement");
+  assertIncludes(source, "resource binding", "resource_order_tombstone_resource_binding_replacement");
+  assertIncludes(source, "410", "resource_order_tombstone_status_code");
+  for (const forbidden of ["legacyUse", "user-owned", "user_owned", "/portal/api/user-owned-resources"]) {
+    assert(
+      !source.includes(forbidden),
+      `resource_order_tombstone_must_not_point_to_user_owned:${forbidden}`,
+    );
   }
 }
 
@@ -164,10 +305,15 @@ assertIncludes(legacyBacklog, "scripts/smoke-test-v22-retire-resource-order-prim
 assertIncludes(legacyBacklog, "Portal 导航不链接 `resource-order` 主路径", "legacy_backlog_resource_order_navigation_gate");
 assertIncludes(legacyBacklog, "新开通路径走 managed environment / resource binding", "legacy_backlog_resource_binding_replacement");
 assertIncludes(legacyBacklog, "旧 prepare-run 或 resource-order public flow 只能 tombstone 或 legacy internal fence", "legacy_backlog_resource_order_tombstone_scope");
+assertIncludes(legacyBacklog, "第一刀 route success path 清退", "legacy_backlog_resource_order_route_tombstone_first_slice");
 
 for (const filePath of defaultEntryPaths) {
   assertNoDefaultResourceOrderPath(filePath, await readRepoFile(filePath));
 }
+
+assertResourceOrderTombstoneRoute(await readRepoFile(resourceOrderTombstoneRoutePath));
+await assertOnlyTombstoneRouteIsImported();
+await assertRetiredSuccessPathModulesRemoved();
 
 const requiredLegacyAliasContracts = [
   "docs/contracts/v22-admin-ops-console-boundary.md",
@@ -192,13 +338,17 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_retire_resource_order_primary_path",
   branchScope: {
-    gateOnly: true,
-    doesNotRequireServiceDeletion: true,
-    allowedTrackedChanges: [...allowedGateOnlyDiffPaths],
+    routeTombstoneFirstSlice: true,
+    leavesDomainStoreAndFrontendForLater: true,
+    allowedTrackedChanges: [...allowedResourceOrderRouteTombstoneDiffPaths],
+    deletedRetiredRouteModules: retiredResourceOrderRouteModulePaths,
   },
   checked: {
     repoZoning: repoZoningPath,
     legacyBacklog: legacyBacklogPath,
+    activePortalFeatureRoutes: activePortalFeatureRoutesPath,
+    resourceOrderTombstoneRoute: resourceOrderTombstoneRoutePath,
+    retiredResourceOrderRouteModules: retiredResourceOrderRouteModulePaths,
     defaultEntrypoints: defaultEntryPaths,
     contractFiles: await contractFiles(),
   },

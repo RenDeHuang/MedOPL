@@ -14,11 +14,13 @@ export function createResourceOrderRoutes({
     if (!isRetiredResourceOrderPath(url)) return false;
     sendJson(res, {
       ok: false,
-      error: "retired_in_v21",
+      error: "resource_order_primary_path_retired",
       runtimeMode: "platform_provisioned",
-      message: "v21 已移除旧资源订单入口，请使用平台托管运行环境接口。",
-      use: "/portal/api/platform-provisioned-resources",
-      legacyUse: "/portal/api/user-owned-resources",
+      message: "resource-order primary path 已退场；请使用 managed environment / resource binding 托管资源路径。",
+      replacement: {
+        managedEnvironment: "/portal/api/platform-provisioned-resources",
+        resourceBinding: "/portal/api/platform-provisioned-resources",
+      },
     }, 410);
     return true;
   };

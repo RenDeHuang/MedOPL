@@ -46,6 +46,14 @@ const branchScopedAllowedDiffPaths = new Map([
     "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
     "services/portal/src/state/portal-user-owned-resource-store.mjs",
   ])],
+  ["cleanup/v22-retire-resource-order-route-tombstones", new Set([
+    "services/portal/src/routes/resource-order.routes.mjs",
+    "services/portal/src/routes/resource-order-public.routes.mjs",
+    "services/portal/src/routes/resource-order-internal.routes.mjs",
+    "services/portal/src/routes/resource-order-public-delete.routes.mjs",
+    "services/portal/src/routes/resource-order-provisioning-service.mjs",
+    "services/portal/src/routes/resource-order-route-support.mjs",
+  ])],
 ]);
 
 const forbiddenDefaultEntryTerms = [

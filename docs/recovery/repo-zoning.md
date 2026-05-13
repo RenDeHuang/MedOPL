@@ -140,6 +140,8 @@ env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.en
 
 user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; legacy `user-owned` route/domain/store now fail-closed as tombstones; `user_owned` lifecycle mode is no longer silently normalized into the platform-provisioned resource path. `resource-order` pointers are intentionally left for the resource-order retirement slice.
 
+resource-order route success path first-slice cleanup completed on `cleanup/v22-retire-resource-order-route-tombstones`: `services/portal/src/routes/resource-order.routes.mjs` is the only active 410 tombstone shell for old `resource-order` public/internal paths, and the retired public/internal/provision/delete/support route modules no longer carry success handlers. Domain/store/billing/admin payload/frontend cleanup remains in later resource-order retirement slices.
+
 Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `scripts/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
 
 ## Adjudication Rules
