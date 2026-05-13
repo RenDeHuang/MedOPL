@@ -983,6 +983,7 @@ export function processQueuedPortalProductionCloudOperations(db = {}, options = 
   }
   return {
     ok: true,
-    processed: [...reconciled, ...processed],
+    processed,
+    reconciled,
   };
 }
