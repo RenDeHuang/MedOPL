@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `0050ef76d9da117299a30ae519bbb82164e70a04`
+- 当前 trunk HEAD: `299fee19459192b09fac836c3aba78faa5b9a3b3`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `refactor/v22-portal-layering-characterization-gate`
+- current branch: `recovery/platform-v22-trunk`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-portal-layering-characterization-gate`
-- highest-priority executable leaf step: `leaf-portal-layering-characterization-gate`
-- 当前下一问题：Portal architecture layering characterization gate
+- 当前 goal cursor: `leaf-opl-connection-productionization-contract-refresh`
+- highest-priority executable leaf step: `leaf-opl-connection-productionization-contract-refresh`
+- 当前下一问题：OPL connection productionization contract refresh
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -104,6 +104,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Leaf 4 failure analysis: supplemental resource-order retirement gate initially failed with `resource_order_retirement_branch_must_not_modify:cleanup/v22-legacy-scripts-archive-eval-shell:docs/recovery/v22-current-vs-ideal-gap-matrix.md`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf4_resource_order_gate_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlist for the legacy-scripts archive eval shell because the leaf only updates recovery truth and harness gate metadata, not resource-order behavior; whether_contract_wrong: false; whether_problem_should_split: false; whether_authorization_required: false.
 - leaf-portal-layering-characterization-gate completed on branch `refactor/v22-portal-layering-characterization-gate`: Portal structure smoke now validates `currentPortalCodeShape` in `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`. The gate pins stable backend route/app/domain/state anchors, frontend view/composable/API module anchors, smoke-layer files, and future refactor risks without changing Portal business code or running live-test/build/push/kubectl/cloud. Recorded future refactor truths include large `portal-runtime.mjs` composition root, route-to-state direct import shape, domain payload/provider bridge mixing, app orchestration plus view-model payload mixing, non-default frontend API barrel, large harness registry, partial admin direct API usage, and controlled retired `resource-order` / `user-owned` tombstones.
 - Leaf 5 failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs` initially failed with `goal_state_missing:当前下一问题：Portal architecture layering characterization gate`. failure_category: `implementation_wrong`; attempt_count: 1; root_cause_id: `leaf5_goal_state_cursor_pre_advanced_before_B_absorb`; changed_strategy: keep the current cursor on `leaf-portal-layering-characterization-gate` until B ff-only absorb/push, while recording the characterization truth for B review; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and B checks before commit.
+- Leaf 5 B absorb/push result: branch `refactor/v22-portal-layering-characterization-gate`, commit `299fee19459192b09fac836c3aba78faa5b9a3b3`, changed files `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with Portal structure gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, Portal check, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `299fee19459192b09fac836c3aba78faa5b9a3b3`; next cursor is `leaf-opl-connection-productionization-contract-refresh`.
 
 ## Later Problems
 

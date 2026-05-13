@@ -350,7 +350,7 @@ const goalStatePhrases = [
   "当前 trunk HEAD",
   "当前 goal cursor",
   "已完成事实：default entry、user_owned、resource-order 前四刀",
-  "当前下一问题：Portal architecture layering characterization gate",
+  "当前下一问题：OPL connection productionization contract refresh",
   "secret hygiene",
   "legacy scripts archive",
   "Portal architecture refactor",
