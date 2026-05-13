@@ -23,7 +23,7 @@
 
 | order | slice | suggested_branch | primary_zone | action | hold_point |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Default Entry Legacy Narrative | `cleanup/v22-default-entry-legacy-narrative` | Zone 1/2 | rewrite | 等 portal/cloud-lane 当前实现分支完成 B review 后再改共享入口。 |
+| 1 | Default Entry Legacy Narrative | `cleanup/v22-default-entry-legacy-narrative` | Zone 1/2 | rewrite | completed on cleanup/v22-default-entry-legacy-narrative after contract-conflict, legacy-script, and observability/billing gates were absorbed. |
 | 2 | user_owned Primary Path Retirement | `cleanup/v22-retire-user-owned-primary-path` | Zone 2 | tombstone/delete | 需先确认 Portal 当前 user-owned alias 是否仍被 smoke 引用。 |
 | 3 | resource-order Primary Path Retirement | `cleanup/v22-retire-resource-order-primary-path` | Zone 2 | tombstone/delete | 需先确认 managed environment/resource binding 替代路径完整。 |
 | 4 | Legacy Script Archive Boundary | `cleanup/v22-legacy-script-archive-boundary` | Zone 2/3 | archive/rewrite | 需避免和 cloud-lane 正在改的 v22 smoke suite 冲突。 |
@@ -32,7 +32,7 @@
 
 ## Slice 1: Default Entry Legacy Narrative
 
-目标：清理默认入口中的旧主叙事，让 README、product、architecture、默认 env 和默认启动说明只表达 v22 托管科研工作台。
+目标：清理默认入口中的旧主叙事，让 README、product、architecture 和默认启动说明只表达 v22 托管科研工作台。
 
 建议 smoke/gate：
 
@@ -43,7 +43,8 @@
 - `README.md`、`docs/product.md`、`docs/architecture.md` 不把 MedOPL 写成云资源控制台。
 - 默认入口只指向 Portal、OPL entry/preflight、v22 contracts 和 v22 recovery。
 - v19/v20/v21/live-test 不作为默认验证入口。
-- 默认环境变量不得把 `user_owned` 作为主运行模式。
+- completed on cleanup/v22-default-entry-legacy-narrative：默认入口清退 v19 appliance、`user_owned`、旧 runner/provisioner、OpenCost/Langfuse 主叙事，以及 `deploy/*` / `adapters/*` 默认接线。
+- `.env.demo.template` 因 secret-like path gate 不在本 slice 写入清退；后续需要单独授权分支 `cleanup/v22-env-template-default-entry` 处理默认 env 叙事。
 
 ## Slice 2: user_owned Primary Path Retirement
 

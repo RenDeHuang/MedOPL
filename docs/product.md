@@ -1,11 +1,11 @@
 # MedOPL v22 Product
 
-MedOPL v22 是面向 AI 小白科研用户的 `platform-provisioned / customer-dedicated` OPL SaaS 科研托管平台，不是云资源控制台。用户通过 `portal.medopl.cn` 登录账号，查看余额、充值状态、计算资源、套餐、工作空间、文件空间、账单、文件状态和 gflabtoken 模型调用密钥已绑定/未绑定状态；Portal 普通登录和普通入口不输入 gflabtoken API Key。用户通过 `opl.medopl.cn` entry/preflight 输入或确认 gflabtoken API Key，并进入 clean upstream OPL Web 工作。
+MedOPL v22 是 One Person Lab 的开箱即用 SaaS 托管科研工作台，面向 AI 小白科研用户，采用 `platform-provisioned / customer-dedicated` OPL SaaS 产品语义，不是云资源控制台，不是用户自配云资源。用户通过 `portal.medopl.cn` 登录账号，查看余额、充值状态、计算资源、套餐、工作空间、文件空间、账单、文件状态和 gflabtoken 模型调用密钥已绑定/未绑定状态；Portal 普通登录和普通入口不输入 gflabtoken API Key。用户从 Portal “进入 OPL 工作台”或访问 `/opl/entry/preflight`，输入或确认 gflabtoken API Key，并进入 clean One Person Lab upstream OPL Web 工作。
 
 ## 当前产品定位
 
 - 用户不需要懂 CVM、COS、K8s。
-- 用户不直接配置云资源。
+- 用户不直接配置云资源，不走用户自配云资源默认路径。
 - 平台管理自己的 TKE 和存储资源池。
 - 用户可以选择套餐、计算资源和文件空间。
 - 平台负责开通、隔离、计费、审计、冻结保护、释放和清理。
@@ -81,7 +81,7 @@ Portal 必须能展示用户的计算资源、套餐、工作空间、文件空�
 8. 平台在后台资源池里给用户准备可组合资源，计算资源与文件空间可独立保留或释放。
 9. Portal 展示用户的计算资源、套餐、工作空间、文件空间和账单状态。
 10. 开通后开始预扣费或冻结金额。
-11. 用户从 Portal “进入 OPL 工作台”或 `opl.medopl.cn` entry/preflight 进入 clean upstream OPL Web 工作。
+11. 用户从 Portal “进入 OPL 工作台”或 `/opl/entry/preflight` 进入 clean One Person Lab upstream OPL Web 工作。
 12. 两条入口最终收敛到同一套 Gateway / preflight / launch 逻辑；one-person-lab 保持 clean upstream，不修改源码，不 import 内部模块。
 13. 用户可以发送消息、上传文件、跑任务、下载输出文件。
 14. Portal 可以看到工作空间文件、账单和 session trace metadata。
@@ -98,7 +98,7 @@ Langfuse 可以作为后续 trace metadata 来源，但不是当前主产品叙�
 
 ## Upstream OPL
 
-one-person-lab 是 clean upstream：
+One Person Lab 是 clean upstream：
 
 ```text
 https://github.com/gaofeng21cn/one-person-lab

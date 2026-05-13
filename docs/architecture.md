@@ -1,13 +1,11 @@
 # MedOPL v22 Architecture
 
-MedOPL v22 架构围绕 `platform-provisioned / customer-dedicated` 托管科研工作台组织，不围绕云资源控制台组织。用户在 Portal 和 OPL Web 中使用科研工作台；平台在后台管理 TKE 和存储资源池。
+MedOPL v22 架构围绕 One Person Lab 的开箱即用 SaaS 托管科研工作台组织，采用 `platform-provisioned / customer-dedicated` 产品语义，不是云资源控制台，也不是用户自配云资源。用户在 Portal 和 OPL Web 中使用科研工作台；平台在后台管理 TKE 和存储资源池。
 
 ## Canonical Chain
 
 ```text
-Portal
-  -> OPL Web Gateway
-  -> clean upstream OPL Web
+Portal -> OPL Web Gateway -> clean One Person Lab upstream
   -> Portal OPL Adapter / Runtime Agent
   -> platform-managed TKE/storage resource pools
   -> Billing/Quota/Audit/Admin
@@ -28,7 +26,7 @@ runtime 是租户可选开通能力。Portal OPL Adapter / Runtime Agent 在调�
 
 ## Resource Pools
 
-平台管理自己的 TKE 和存储资源池。资源池不作为用户可直接配置的 CVM/COS/K8s 暴露。
+平台管理自己的 TKE 和存储资源池。资源池不作为用户可直接配置的 CVM/COS/K8s 暴露，不形成用户自配云资源入口。
 
 默认基础套餐：
 
@@ -66,7 +64,7 @@ raw API key 只能进入后端密钥边界。前端最多保留一次性输入�
 
 ## Upstream Boundary
 
-one-person-lab 是 clean upstream：
+One Person Lab 是 clean upstream：
 
 ```text
 https://github.com/gaofeng21cn/one-person-lab

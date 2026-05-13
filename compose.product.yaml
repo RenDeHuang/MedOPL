@@ -1,5 +1,5 @@
 {
-  "name": "opl-v19-product-appliance",
+  "name": "medopl-v22-managed-workbench",
   "services": {
     "postgres": {
       "profiles": [
@@ -63,7 +63,7 @@
         "product",
         "dev"
       ],
-      "image": "${OPL_WEB_IMAGE:-opl-web-opl:local}",
+      "image": "${OPL_WEB_IMAGE:-medopl-v22/one-person-lab-web:local}",
       "ports": [
         "13030:3000"
       ],
@@ -85,11 +85,13 @@
       "profiles": [
         "product"
       ],
-      "image": "${PORTAL_IMAGE:-opl-v19/portal:local}",
-      "build": {
-        "context": ".",
-        "dockerfile": "deploy/local/dockerfiles/portal.Dockerfile"
-      },
+      "image": "node:22-alpine",
+      "working_dir": "/workspace/services/portal",
+      "command": [
+        "sh",
+        "-lc",
+        "npm ci && npm start"
+      ],
       "environment": {
         "NODE_ENV": "production",
         "PORT": "17080",
@@ -100,21 +102,18 @@
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
         "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter:8788",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
-        "PRODUCT_RUNTIME_MODE": "user_owned",
+        "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "PRODUCT_OPS_PROFILE": "${PRODUCT_OPS_PROFILE:-0}",
         "OPL_RUNTIME_MODE": "acp",
         "OPL_WEBUI_AUTH_MODE": "portal_launch_token",
         "PORTAL_OIDC_ENABLED": "0",
         "PORTAL_IDENTITY_SYNC_MODE": "local",
-        "PORTAL_ADMIN_EMAIL": "${PORTAL_ADMIN_EMAIL:-admin@product-appliance.local}",
-        "PORTAL_ADMIN_NAME": "${PORTAL_ADMIN_NAME:-Product Appliance Admin}",
+        "PORTAL_ADMIN_EMAIL": "${PORTAL_ADMIN_EMAIL:-admin@medopl.local}",
+        "PORTAL_ADMIN_NAME": "${PORTAL_ADMIN_NAME:-MedOPL Admin}",
         "PORTAL_ADMIN_PASSWORD": "${PORTAL_ADMIN_PASSWORD:-PortalAdmin-ChangeOnFirstRun1!}",
         "PORTAL_ADMIN_SEED_BALANCE": "${PORTAL_ADMIN_SEED_BALANCE:-100}",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
-        "BILLING_SERVICE_URL": "http://billing-aggregator:3001",
-        "RESOURCE_PROVISIONER_URL": "",
-        "TENCENT_BILLING_ENABLED": "0",
-        "TENCENT_BILLING_REQUIRED": "0"
+        "BILLING_SERVICE_URL": ""
       },
       "ports": [
         "17080:17080"
@@ -128,13 +127,11 @@
         },
         "portal-opl-adapter": {
           "condition": "service_healthy"
-        },
-        "billing-aggregator": {
-          "condition": "service_healthy"
         }
       },
       "volumes": [
-        "portal-runtime:/app/.runtime/portal"
+        ".:/workspace",
+        "portal-runtime:/workspace/.runtime/portal"
       ],
       "healthcheck": {
         "test": [
@@ -153,37 +150,35 @@
       "profiles": [
         "product"
       ],
-      "image": "${PORTAL_OPL_ADAPTER_IMAGE:-opl-v19/portal-opl-adapter:local}",
-      "build": {
-        "context": ".",
-        "dockerfile": "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile"
-      },
+      "image": "node:22-alpine",
+      "working_dir": "/workspace/services/opl-runtime-bridge",
+      "command": [
+        "sh",
+        "-lc",
+        "npm start"
+      ],
       "environment": {
         "NODE_ENV": "production",
         "PORT": "8788",
         "PORTAL_OPL_ADAPTER_PUBLIC_URL": "http://127.0.0.1:13031/portal-adapter",
-        "PORTAL_OPL_ADAPTER_STATE_ROOT": "/app/.runtime/portal-opl-adapter",
+        "PORTAL_OPL_ADAPTER_STATE_ROOT": "/workspace/.runtime/portal-opl-adapter",
         "PORTAL_INTERNAL_BASE_URL": "http://portal:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
-        "PRODUCT_RUNTIME_MODE": "user_owned",
+        "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "OPL_RUNTIME_MODE": "acp",
         "OPL_PRODUCT_API_URL": "",
         "OPL_PRODUCT_API_TOKEN": "",
         "OPL_DEFAULT_PROJECT_ID": "medautoscience",
-        "MED_AUTOSCIENCE_RUNNER_URL": "",
-        "MED_AUTOSCIENCE_RUNNER_TOKEN": "",
-        "MED_AUTOSCIENCE_RUNNER_IMAGE": "",
-        "K8S_NAMESPACE": "",
-        "OPL_LAUNCH_SECRET": "${OPL_LAUNCH_SECRET:-LocalProductApplianceLaunchSecret-2026}"
+        "OPL_LAUNCH_SECRET": "${OPL_LAUNCH_SECRET:-LocalWorkbenchLaunchSecret-2026}"
       },
       "ports": [
         "8788:8788"
       ],
-      "depends_on": {},
       "volumes": [
-        "adapter-runtime:/app/.runtime/portal-opl-adapter",
-        "portal-runtime:/app/.runtime/portal"
+        ".:/workspace",
+        "adapter-runtime:/workspace/.runtime/portal-opl-adapter",
+        "portal-runtime:/workspace/.runtime/portal"
       ],
       "healthcheck": {
         "test": [
@@ -202,11 +197,13 @@
       "profiles": [
         "product"
       ],
-      "image": "${OPL_WEB_GATEWAY_IMAGE:-opl-v19/opl-web-gateway:local}",
-      "build": {
-        "context": ".",
-        "dockerfile": "deploy/local/dockerfiles/opl-web-gateway.Dockerfile"
-      },
+      "image": "node:22-alpine",
+      "working_dir": "/workspace/services/opl-web-gateway",
+      "command": [
+        "sh",
+        "-lc",
+        "node src/server.mjs"
+      ],
       "environment": {
         "NODE_ENV": "production",
         "PORT": "13031",
@@ -216,7 +213,7 @@
         "PORTAL_INTERNAL_URL": "http://portal:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_GATEWAY_PUBLIC_URL": "http://127.0.0.1:13031",
-        "PRODUCT_RUNTIME_MODE": "user_owned",
+        "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "OPL_WEBUI_AUTH_MODE": "portal_launch_token"
       },
       "ports": [
@@ -230,154 +227,15 @@
           "condition": "service_healthy"
         }
       },
+      "volumes": [
+        ".:/workspace"
+      ],
       "healthcheck": {
         "test": [
           "CMD",
           "node",
           "-e",
           "fetch('http://127.0.0.1:13031/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-        ],
-        "interval": "15s",
-        "timeout": "5s",
-        "retries": 20,
-        "start_period": "20s"
-      }
-    },
-    "billing-aggregator": {
-      "profiles": [
-        "product"
-      ],
-      "image": "${BILLING_IMAGE:-opl-v19/billing-aggregator:local}",
-      "build": {
-        "context": ".",
-        "dockerfile": "adapters/billing-aggregator/Dockerfile"
-      },
-      "environment": {
-        "NODE_ENV": "production",
-        "PORT": "3001",
-        "PORTAL_STORAGE_MODE": "postgres_redis",
-        "PORTAL_POSTGRES_URL": "postgres://portal:${PORTAL_POSTGRES_PASSWORD:-portal-local-change-me}@postgres:5432/portal",
-        "PORTAL_REDIS_URL": "redis://redis:6379",
-        "PORTAL_DB_NAMESPACE": "portal",
-        "PRODUCT_RUNTIME_MODE": "user_owned",
-        "TENCENT_BILLING_ENABLED": "0",
-        "TENCENT_BILLING_REQUIRED": "0",
-        "TENCENT_PRICE_ENABLED": "0",
-        "OPENCOST_BASE_URL": "",
-        "AUTO_RECONCILE_ENABLED": "0"
-      },
-      "ports": [
-        "3001:3001"
-      ],
-      "depends_on": {
-        "postgres": {
-          "condition": "service_healthy"
-        }
-      },
-      "volumes": [
-        "portal-runtime:/app/.runtime/portal",
-        "billing-runtime:/app/.runtime/billing-aggregator"
-      ],
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3001/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-        ],
-        "interval": "15s",
-        "timeout": "5s",
-        "retries": 20,
-        "start_period": "20s"
-      }
-    },
-    "resource-provisioner": {
-      "profiles": [
-        "managed-runtime",
-        "ops"
-      ],
-      "image": "${RESOURCE_PROVISIONER_IMAGE:-opl-v19/resource-provisioner:local}",
-      "build": {
-        "context": ".",
-        "dockerfile": "deploy/local/dockerfiles/resource-provisioner.Dockerfile"
-      },
-      "environment": {
-        "NODE_ENV": "production",
-        "PORT": "18893",
-        "RESOURCE_PROVISIONER_PORT": "18893",
-        "RESOURCE_PROVISIONING_ENABLED": "0",
-        "TENCENT_CLOUD_REGION": "na-siliconvalley",
-        "TENCENT_TKE_ZONE": "na-siliconvalley-1"
-      },
-      "ports": [
-        "18893:18893"
-      ],
-      "volumes": [
-        "resource-provisioner-runtime:/app/.runtime/resource-provisioner"
-      ],
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:18893/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-        ],
-        "interval": "15s",
-        "timeout": "5s",
-        "retries": 20,
-        "start_period": "20s"
-      }
-    },
-    "med-autoscience-runner": {
-      "profiles": [
-        "managed-runtime",
-        "ops"
-      ],
-      "image": "${MED_AUTOSCIENCE_RUNNER_IMAGE:-opl-v19/med-autoscience-runner:local}",
-      "build": {
-        "context": ".",
-        "dockerfile": "deploy/local/dockerfiles/med-autoscience-runner.Dockerfile"
-      },
-      "environment": {
-        "NODE_ENV": "production",
-        "MED_AUTOSCIENCE_RUNNER_PORT": "18890",
-        "K8S_NAMESPACE": "mock-cloud-fixture",
-        "PORTAL_STORAGE_MODE": "postgres_redis",
-        "PORTAL_POSTGRES_URL": "postgres://portal:${PORTAL_POSTGRES_PASSWORD:-portal-local-change-me}@postgres:5432/portal",
-        "PORTAL_REDIS_URL": "redis://redis:6379",
-        "PORTAL_DB_NAMESPACE": "portal",
-        "RESOURCE_PROVISIONER_URL": "http://resource-provisioner:18893",
-        "BILLING_RECONCILE_URL": "http://billing-aggregator:3001/reconcile",
-        "RESOURCE_PROVISIONING_ENABLED": "0",
-        "MED_AUTOSCIENCE_RUNNER_IMAGE": "local/mock-cloud-fixture-runner:disabled"
-      },
-      "ports": [
-        "18890:18890"
-      ],
-      "depends_on": {
-        "resource-provisioner": {
-          "condition": "service_healthy"
-        },
-        "billing-aggregator": {
-          "condition": "service_healthy"
-        },
-        "postgres": {
-          "condition": "service_healthy"
-        },
-        "redis": {
-          "condition": "service_healthy"
-        }
-      },
-      "volumes": [
-        "portal-runtime:/app/.runtime/portal",
-        "med-autoscience-runtime:/app/.runtime/med-autoscience"
-      ],
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:18890/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
         ],
         "interval": "15s",
         "timeout": "5s",
@@ -406,19 +264,17 @@
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
         "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter-dev:8788",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
+        "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "OPL_RUNTIME_MODE": "acp",
         "OPL_WEBUI_AUTH_MODE": "portal_launch_token",
         "PORTAL_OIDC_ENABLED": "0",
         "PORTAL_IDENTITY_SYNC_MODE": "local",
-        "PORTAL_ADMIN_EMAIL": "${PORTAL_ADMIN_EMAIL:-admin@product-appliance.local}",
-        "PORTAL_ADMIN_NAME": "${PORTAL_ADMIN_NAME:-Product Appliance Admin}",
+        "PORTAL_ADMIN_EMAIL": "${PORTAL_ADMIN_EMAIL:-admin@medopl.local}",
+        "PORTAL_ADMIN_NAME": "${PORTAL_ADMIN_NAME:-MedOPL Admin}",
         "PORTAL_ADMIN_PASSWORD": "${PORTAL_ADMIN_PASSWORD:-PortalAdmin-ChangeOnFirstRun1!}",
         "PORTAL_ADMIN_SEED_BALANCE": "${PORTAL_ADMIN_SEED_BALANCE:-100}",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
-        "BILLING_SERVICE_URL": "http://billing-aggregator-dev:3001",
-        "RESOURCE_PROVISIONER_URL": "http://resource-provisioner-dev:18893",
-        "TENCENT_BILLING_ENABLED": "0",
-        "TENCENT_BILLING_REQUIRED": "0"
+        "BILLING_SERVICE_URL": ""
       },
       "ports": [
         "17080:17080"
@@ -432,18 +288,11 @@
         },
         "portal-opl-adapter-dev": {
           "condition": "service_healthy"
-        },
-        "billing-aggregator-dev": {
-          "condition": "service_healthy"
-        },
-        "resource-provisioner-dev": {
-          "condition": "service_healthy"
         }
       },
       "volumes": [
         ".:/workspace",
-        "portal-runtime:/workspace/.runtime/portal",
-        "med-autoscience-runtime:/workspace/.runtime/med-autoscience"
+        "portal-runtime:/workspace/.runtime/portal"
       ],
       "healthcheck": {
         "test": [
@@ -477,28 +326,19 @@
         "PORTAL_INTERNAL_BASE_URL": "http://portal-dev:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
+        "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "OPL_RUNTIME_MODE": "acp",
         "OPL_PRODUCT_API_URL": "",
         "OPL_PRODUCT_API_TOKEN": "",
         "OPL_DEFAULT_PROJECT_ID": "medautoscience",
-        "MED_AUTOSCIENCE_RUNNER_URL": "http://med-autoscience-runner-dev:18890",
-        "MED_AUTOSCIENCE_RUNNER_TOKEN": "",
-        "MED_AUTOSCIENCE_RUNNER_IMAGE": "local/mock-cloud-fixture-runner:disabled",
-        "K8S_NAMESPACE": "mock-cloud-fixture",
-        "OPL_LAUNCH_SECRET": "${OPL_LAUNCH_SECRET:-LocalProductApplianceLaunchSecret-2026}"
+        "OPL_LAUNCH_SECRET": "${OPL_LAUNCH_SECRET:-LocalWorkbenchLaunchSecret-2026}"
       },
       "ports": [
         "8788:8788"
       ],
-      "depends_on": {
-        "med-autoscience-runner-dev": {
-          "condition": "service_healthy"
-        }
-      },
       "volumes": [
         ".:/workspace",
         "adapter-runtime:/workspace/.runtime/portal-opl-adapter",
-        "med-autoscience-runtime:/workspace/.runtime/med-autoscience",
         "portal-runtime:/workspace/.runtime/portal"
       ],
       "healthcheck": {
@@ -534,6 +374,7 @@
         "PORTAL_INTERNAL_URL": "http://portal-dev:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_GATEWAY_PUBLIC_URL": "http://127.0.0.1:13031",
+        "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "OPL_WEBUI_AUTH_MODE": "portal_launch_token"
       },
       "ports": [
@@ -562,155 +403,6 @@
         "retries": 20,
         "start_period": "20s"
       }
-    },
-    "billing-aggregator-dev": {
-      "profiles": [
-        "dev"
-      ],
-      "image": "node:22-alpine",
-      "working_dir": "/workspace/adapters/billing-aggregator",
-      "command": [
-        "sh",
-        "-lc",
-        "npm ci && npm start"
-      ],
-      "environment": {
-        "NODE_ENV": "development",
-        "PORT": "3001",
-        "PORTAL_STORAGE_MODE": "postgres_redis",
-        "PORTAL_POSTGRES_URL": "postgres://portal:${PORTAL_POSTGRES_PASSWORD:-portal-local-change-me}@postgres:5432/portal",
-        "PORTAL_REDIS_URL": "redis://redis:6379",
-        "PORTAL_DB_NAMESPACE": "portal",
-        "TENCENT_BILLING_ENABLED": "0",
-        "TENCENT_BILLING_REQUIRED": "0",
-        "TENCENT_PRICE_ENABLED": "0",
-        "OPENCOST_BASE_URL": "",
-        "AUTO_RECONCILE_ENABLED": "0"
-      },
-      "ports": [
-        "3001:3001"
-      ],
-      "depends_on": {
-        "postgres": {
-          "condition": "service_healthy"
-        }
-      },
-      "volumes": [
-        ".:/workspace",
-        "portal-runtime:/workspace/.runtime/portal",
-        "billing-runtime:/workspace/.runtime/billing-aggregator",
-        "med-autoscience-runtime:/workspace/.runtime/med-autoscience"
-      ],
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3001/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-        ],
-        "interval": "15s",
-        "timeout": "5s",
-        "retries": 20,
-        "start_period": "20s"
-      }
-    },
-    "resource-provisioner-dev": {
-      "profiles": [
-        "dev"
-      ],
-      "image": "node:22-alpine",
-      "working_dir": "/workspace/adapters/resource-provisioner",
-      "command": [
-        "sh",
-        "-lc",
-        "node src/server.mjs"
-      ],
-      "environment": {
-        "NODE_ENV": "development",
-        "PORT": "18893",
-        "RESOURCE_PROVISIONER_PORT": "18893",
-        "RESOURCE_PROVISIONING_ENABLED": "0",
-        "TENCENT_CLOUD_REGION": "na-siliconvalley",
-        "TENCENT_TKE_ZONE": "na-siliconvalley-1"
-      },
-      "ports": [
-        "18893:18893"
-      ],
-      "volumes": [
-        ".:/workspace",
-        "resource-provisioner-runtime:/workspace/.runtime/resource-provisioner"
-      ],
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:18893/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-        ],
-        "interval": "15s",
-        "timeout": "5s",
-        "retries": 20,
-        "start_period": "20s"
-      }
-    },
-    "med-autoscience-runner-dev": {
-      "profiles": [
-        "dev"
-      ],
-      "image": "node:22-alpine",
-      "working_dir": "/workspace/adapters/med-autoscience-runner",
-      "command": [
-        "sh",
-        "-lc",
-        "node src/server.mjs"
-      ],
-      "environment": {
-        "NODE_ENV": "development",
-        "MED_AUTOSCIENCE_RUNNER_PORT": "18890",
-        "K8S_NAMESPACE": "mock-cloud-fixture",
-        "PORTAL_STORAGE_MODE": "postgres_redis",
-        "PORTAL_POSTGRES_URL": "postgres://portal:${PORTAL_POSTGRES_PASSWORD:-portal-local-change-me}@postgres:5432/portal",
-        "PORTAL_REDIS_URL": "redis://redis:6379",
-        "PORTAL_DB_NAMESPACE": "portal",
-        "RESOURCE_PROVISIONER_URL": "http://resource-provisioner-dev:18893",
-        "BILLING_RECONCILE_URL": "http://billing-aggregator-dev:3001/reconcile",
-        "RESOURCE_PROVISIONING_ENABLED": "0",
-        "MED_AUTOSCIENCE_RUNNER_IMAGE": "local/mock-cloud-fixture-runner:disabled"
-      },
-      "ports": [
-        "18890:18890"
-      ],
-      "depends_on": {
-        "resource-provisioner-dev": {
-          "condition": "service_healthy"
-        },
-        "billing-aggregator-dev": {
-          "condition": "service_healthy"
-        },
-        "postgres": {
-          "condition": "service_healthy"
-        },
-        "redis": {
-          "condition": "service_healthy"
-        }
-      },
-      "volumes": [
-        ".:/workspace",
-        "portal-runtime:/workspace/.runtime/portal",
-        "med-autoscience-runtime:/workspace/.runtime/med-autoscience"
-      ],
-      "healthcheck": {
-        "test": [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:18890/healthz').then((r)=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-        ],
-        "interval": "15s",
-        "timeout": "5s",
-        "retries": 20,
-        "start_period": "20s"
-      }
     }
   },
   "volumes": {
@@ -718,9 +410,6 @@
     "redis-data": {},
     "opl-web-data": {},
     "portal-runtime": {},
-    "adapter-runtime": {},
-    "billing-runtime": {},
-    "resource-provisioner-runtime": {},
-    "med-autoscience-runtime": {}
+    "adapter-runtime": {}
   }
 }

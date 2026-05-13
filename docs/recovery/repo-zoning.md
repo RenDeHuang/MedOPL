@@ -54,7 +54,7 @@
 
 | path_or_group | zone | action | reason | replacement | cleanup_slice |
 | --- | --- | --- | --- | --- | --- |
-| `.env.demo.template` | Zone 2 | review/rewrite | 默认环境变量会影响 AI 和新人对主线的理解 | v22 platform-provisioned defaults | default-entry |
+| `.env.demo.template` | Zone 2 | review/rewrite | 默认环境变量会影响 AI 和新人对主线的理解，且会触发 secret-like path gate | v22 platform-provisioned defaults | cleanup/v22-env-template-default-entry |
 | `compose.product.yaml` | Zone 2 | review/rewrite | 默认 product compose 可能携带旧运行叙事 | v22 product runtime entry | default-entry |
 | `configs/**` | Zone 2 | review/rewrite | 配置面可能携带旧默认值或真实外部系统暗示 | explicit v22 config | default-entry |
 | `scripts/smoke-test-portal-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 Portal 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
@@ -133,6 +133,10 @@
 | non-v22 smoke families | Zone 2 | review/rewrite/archive | 无 v22 前缀但仍有用的 smoke 需要迁名或明确 archive。 |
 | v19/v20/v21 and live scripts | Zone 3 | archive | 只保留历史证据，不作为默认入口。 |
 | deploy/adapters/infra/sentrux | Zone 4 | forbidden_without_authorization | 普通 cleanup 分支不得触碰。 |
+
+default-entry cleanup completed on `cleanup/v22-default-entry-legacy-narrative`: `compose.product.yaml` is a v22 product runtime entry without v19 appliance naming, `user_owned` default mode, legacy runner/provisioner services, or deploy/adapters default wiring.
+
+`.env.demo.template` remains a Zone 2 review/rewrite item because the workflow gate treats `.env*` files as secret-like paths. Its default-entry cleanup requires a separate explicitly authorized branch: `cleanup/v22-env-template-default-entry`.
 
 ## Adjudication Rules
 
