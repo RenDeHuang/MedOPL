@@ -207,13 +207,14 @@ truth writeback section:
 - dependency: product e2e, cloud lane, OPL connection, billing/audit.
 - status: deferred_authorized
 - next_leaf_step: leaf-release-readiness-auth-boundary
-- eval: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
-- allowed_files: docs/recovery and future authorized deploy contracts
+- eval: `node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`; `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- allowed_files: docs/recovery and future authorized deploy contracts; current local auth-boundary leaf may add `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` and exact harness allowlist updates only
 - forbidden_files: `deploy/*`, build/push/kubectl/live-test without explicit authorization
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, deploy contracts
 - B_absorb_criteria: B confirms release readiness does not execute deploy unless authorized.
 
 - next leaf selection after billing audit characterization: `leaf-release-readiness-auth-boundary` is the next product-goal cursor but remains `deferred_authorized` until a concrete step-local auth record exists for any build/push/kubectl/live-test/deploy/cloud/secret action. The billing characterization leaf did not create or authorize such a record.
+- leaf-release-readiness-auth-boundary: `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` records `generic_chat_authorization_insufficient_for_risky_release`: 用户笼统允许不等于可执行 build/push/kubectl/live-test/deploy/cloud/secret. The required concrete step-local auth record must provide `step_id`, `authorized_operation_type`, `secret_scope`, `cloud_scope`, `region`, `resource_scope`, `budget_limit`, `baseline_requirement`, `rollback_plan`, `cleanup_plan`, `evidence_path`, and `stop_conditions`, plus Package D release-plan owner guard fields before any risky release action. This local leaf executes no release/deploy operation and records `no_release_deploy_operation_executed`; status remains `deferred_authorized`.
 
 ### Gap: dependency-modernization-node24-vite-vitest-readiness
 
