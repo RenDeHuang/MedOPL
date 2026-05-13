@@ -189,7 +189,7 @@ truth writeback section:
 - problem: billing truth can be confused with trace metadata, Langfuse, or cloud raw facts.
 - dependency: managed environment/resource binding and cloud lane facts.
 - status: gated
-- next_leaf_step: leaf-billing-audit-characterization
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
 - allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, and exact branch-scoped harness allowlist updates; future implementation branches must declare a narrower billing/service write set separately.
 - forbidden_files: OpenCost primary narrative, Langfuse billing truth, real cloud mutation without authorization
@@ -212,6 +212,8 @@ truth writeback section:
 - forbidden_files: `deploy/*`, build/push/kubectl/live-test without explicit authorization
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, deploy contracts
 - B_absorb_criteria: B confirms release readiness does not execute deploy unless authorized.
+
+- next leaf selection after billing audit characterization: `leaf-release-readiness-auth-boundary` is the next product-goal cursor but remains `deferred_authorized` until a concrete step-local auth record exists for any build/push/kubectl/live-test/deploy/cloud/secret action. The billing characterization leaf did not create or authorize such a record.
 
 ### Gap: dependency-modernization-node24-vite-vitest-readiness
 
