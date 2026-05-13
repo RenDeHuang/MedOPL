@@ -22,6 +22,9 @@ const allowedDiffPaths = new Set([
   gatePath,
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/repo-zoning.md",
 ]);
 
 const productLoopItems = [

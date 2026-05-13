@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `744854dd21d43073bb1ac54c34e46b04aef1490e`
+- 当前 trunk HEAD: `c5c1e8d49e08e335f839ca7ae0c0d0f4fe44350f`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `cleanup/v22-product-goal-harness`
+- current branch: `cleanup/v22-resource-order-store-postgres-schema-eval-shell`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-resource-order-store-postgres-schema-eval-shell`
-- highest-priority executable leaf step: `leaf-resource-order-store-postgres-schema-eval-shell`
-- 当前下一问题：resource-order store/Postgres/schema 第四刀
+- 当前 goal cursor: `leaf-resource-order-store-postgres-schema-implementation`
+- highest-priority executable leaf step: `leaf-resource-order-store-postgres-schema-implementation`
+- 当前下一问题：resource-order store/Postgres/schema 第四刀实现
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -95,6 +95,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first three slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup.
+- leaf-resource-order-store-postgres-schema-eval-shell completed on branch `cleanup/v22-resource-order-store-postgres-schema-eval-shell`: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` now statically characterizes the remaining store/Postgres/schema/runtime connection legacy facts without touching `services/*`, without connecting to Postgres, and without running live/cloud/build/kubectl. The gate records current legacy tables/collections (`resource_orders`, `resource_order_events`, `ledger_entries.order_id`, `resourceOrders`, `resourceOrderEvents`) and confirms replacement truth (`resource_binding_id`, `workspace_resource_bindings`) is present before fourth-slice implementation.
 
 ## Later Problems
 
@@ -136,6 +137,31 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ### Leaf Step 2
 
+- step_id: leaf-resource-order-store-postgres-schema-implementation
+- problem: resource-order store/Postgres/schema remains as active persistence truth after characterization.
+- input_state: `leaf-resource-order-store-postgres-schema-eval-shell` is absorbed; characterization gate covers store, schema, Postgres persistence, snapshot writer, runtime connection, db delegate, runtime store, and JSON migration collection facts.
+- expected_output: retire active resource-order store/Postgres/schema primary-path dependency so resource-order remains only retired/tombstone/migration-only semantics.
+- light_contract_card:
+  - problem: resource-order persistence must stop being active v22 runtime truth.
+  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-resource-plan-boundary.md`, `docs/contracts/v22-tenant-resource-binding-boundary.md`, `docs/recovery/status-matrix.md`
+  - in_scope: scoped state/schema/runtime connection cleanup and matching gates.
+  - out_of_scope: real DB migration execution, deploy, cloud, upstream, fallback/shim/adapter compatibility.
+  - data_or_field_truth: active fields are `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; retained old identifier can only be `legacyResourceOrderId` optional migration-only alias.
+  - auth_boundary: no secret, no live-test, no build/push/kubectl, no true DB/cloud operation.
+  - pollution_risks: restoring resource-order success route, required `resourceOrderId`, fallback/shim compatibility layer, hidden migration success path.
+  - verification_commands: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `npm --prefix services/portal run check`
+  - B_absorb_criteria: B verifies characterization gate is intentionally updated for fourth-slice implementation, route success path stays tombstoned, services check passes, and no real DB/cloud operation ran.
+- eval_command: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` and `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
+- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
+- trace_or_evidence_expectation: local stdout JSON only; no `.runtime` evidence unless future canary is explicitly authorized.
+- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, `scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `docs/recovery/*`
+- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, unrelated frontend/backend.
+- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
+- B_absorb_criteria: B reruns evals, checks diff-scoped secret scan, confirms no real DB/cloud operation, then ff-only absorbs and pushes before cursor moves.
+- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
+
+### Leaf Step 3
+
 - step_id: leaf-secret-hygiene-diff-scan-eval-shell
 - problem: secret hygiene must be enforced by changed-files / added-lines diff-scoped secret scan.
 - input_state: workflow gate has broad secret-like path checks.
@@ -159,7 +185,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - B_absorb_criteria: B reruns gate and confirms no secret content was read.
 - attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
-### Leaf Step 3
+### Leaf Step 4
 
 - step_id: leaf-legacy-scripts-archive-eval-shell
 - problem: legacy scripts can re-enter default validation.
@@ -184,7 +210,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - B_absorb_criteria: B reruns MVP suite and archive gate.
 - attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
-### Leaf Step 4
+### Leaf Step 5
 
 - step_id: leaf-portal-layering-characterization-gate
 - problem: future Portal refactor needs route/app/domain/state/frontend characterization.
@@ -209,7 +235,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - B_absorb_criteria: B reruns characterization gate and type checks.
 - attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
 
-### Leaf Step 5
+### Leaf Step 6
 
 - step_id: leaf-opl-connection-productionization-contract-refresh
 - problem: OPL connection has canary facts that must not be treated as production truth.

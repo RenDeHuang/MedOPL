@@ -41,17 +41,17 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-resource-order
 
 - id: legacy-cleanup-resource-order
-- current_fact: resource-order route tombstones, billing/payload rewrite, and store/admin/frontend third slice are complete; store/Postgres/schema remains.
+- current_fact: resource-order route tombstones, billing/payload rewrite, store/admin/frontend third slice, and store/Postgres/schema characterization are complete; store/Postgres/schema active implementation cleanup remains.
 - ideal_state: managed environment/resource binding/billing/audit is the only active resource attribution path.
 - problem: remaining store/Postgres/schema surfaces can keep resource-order as persistence truth.
 - dependency: route, billing/payload, store/admin/frontend cleanup absorbed.
 - status: open
-- next_leaf_step: leaf-resource-order-store-postgres-schema-eval-shell
-- eval: `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` plus a future store/Postgres/schema characterization gate
-- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, relevant v22 smoke after a dedicated branch is opened
+- next_leaf_step: leaf-resource-order-store-postgres-schema-implementation
+- eval: `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; store/Postgres/schema characterization is now covered by `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` and dedicated static gate `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`
+- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, relevant v22 smoke and recovery docs after a dedicated implementation branch is opened
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, unrelated frontend
 - truth_writeback_target: `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B confirms the characterization gate exists, resource binding replacement path stays green, and no route success path returns.
+- B_absorb_criteria: B confirms the characterization gate exists, resource binding replacement path stays green, no route success path returns, and fourth-slice implementation does not run real DB/cloud operations.
 
 ### Gap: legacy-cleanup-secret-hygiene
 

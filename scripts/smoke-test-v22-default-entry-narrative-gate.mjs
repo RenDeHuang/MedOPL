@@ -49,6 +49,16 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
+  ["cleanup/v22-resource-order-store-postgres-schema-eval-shell", new Set([
+    "docs/recovery/legacy-cleanup-backlog.md",
+    "docs/recovery/repo-zoning.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+    "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
+  ])],
   ["cleanup/v22-retire-user-owned-primary-path", new Set([
     "docs/recovery/status-matrix.md",
     "services/portal/src/app/portal-admin-api-payloads.mjs",

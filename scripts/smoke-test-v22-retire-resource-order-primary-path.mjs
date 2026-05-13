@@ -59,10 +59,33 @@ const allowedStoreAdminFrontendRewriteDiffPaths = new Set([
   "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
 ]);
 
+const allowedStorePostgresSchemaEvalShellDiffPaths = new Set([
+  gatePath,
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/repo-zoning.md",
+  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+  "docs/recovery/v22-goal-state.md",
+  "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "scripts/smoke-test-v22-product-goal-harness.mjs",
+  "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
+const goalStatePath = "docs/recovery/v22-goal-state.md";
+const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
 const activePortalFeatureRoutesPath = "services/portal/src/app/portal-feature-runtime-handlers.mjs";
 const resourceOrderTombstoneRoutePath = "services/portal/src/routes/resource-order.routes.mjs";
+const resourceOrderStorePath = "services/portal/src/state/portal-resource-order-store.mjs";
+const portalStoreSchemaPath = "services/portal/src/state/portal-store-schema.mjs";
+const portalStorePostgresPersistencePath = "services/portal/src/state/portal-store-postgres-persistence.mjs";
+const portalStorePostgresWriteSnapshotHelpersPath = "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs";
+const portalStoreRuntimeConnectionsPath = "services/portal/src/state/portal-store-runtime-connections.mjs";
+const portalStorePath = "services/portal/src/state/portal-store.mjs";
+const portalStoreDbDelegatesPath = "services/portal/src/state/portal-store-db-delegates.mjs";
+const portalStoreRuntimePath = "services/portal/src/app/portal-store-runtime.mjs";
+const portalStoreMigrationsPath = "services/portal/src/state/portal-store-migrations.mjs";
+const portalStoreMigrationCollectionsPath = "services/portal/src/state/portal-store-migration-collections.mjs";
 const retiredResourceOrderRouteModulePaths = [
   "services/portal/src/routes/resource-order-public.routes.mjs",
   "services/portal/src/routes/resource-order-internal.routes.mjs",
@@ -213,6 +236,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-product-goal-harness.mjs",
       "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     ])],
+    ["cleanup/v22-resource-order-store-postgres-schema-eval-shell", allowedStorePostgresSchemaEvalShellDiffPaths],
     ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],
     ["cleanup/v22-retire-resource-order-store-admin-frontend", allowedStoreAdminFrontendRewriteDiffPaths],
   ]);
@@ -547,6 +571,133 @@ function assertNoRequiredResourceOrderIdInContracts(filePath, source) {
   }, null, 2));
 }
 
+function assertFunctionExport(source, functionName, label) {
+  assert(
+    source.includes(`export function ${functionName}`) || source.includes(`export async function ${functionName}`),
+    `${label}_${functionName}_export_missing:${functionName}`,
+  );
+}
+
+function assertStorePostgresSchemaCharacterization({
+  goalState,
+  gapMatrix,
+  legacyBacklog,
+  repoZoning,
+  resourceOrderStore,
+  schema,
+  postgresPersistence,
+  snapshotHelpers,
+  runtimeConnections,
+  portalStore,
+  dbDelegates,
+  portalStoreRuntime,
+  migrations,
+  migrationCollections,
+  activePortalFeatureRoutes,
+}) {
+  assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-eval-shell completed", "goal_state_resource_order_store_postgres_eval_shell_completion");
+  assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-implementation", "goal_state_resource_order_store_postgres_next_cursor");
+  assertIncludes(gapMatrix, "store/Postgres/schema characterization is now covered by `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`", "gap_matrix_resource_order_store_postgres_characterization_gate");
+  assertIncludes(legacyBacklog, "第四刀 store/Postgres/schema characterization", "legacy_backlog_resource_order_store_postgres_characterization");
+  assertIncludes(repoZoning, "resource-order store/Postgres/schema characterization gate completed", "repo_zoning_resource_order_store_postgres_characterization");
+
+  assertFunctionExport(resourceOrderStore, "createPortalResourceOrderStore", "resource_order_store");
+  for (const expected of [
+    "upsertResourceOrder",
+    "appendResourceOrderEvent",
+    "persistResourceOrderState",
+    "resource_orders",
+    "resource_order_events",
+    "ledger_entries",
+    "order_id",
+    "resourceOrderId: targetOrderId",
+  ]) {
+    assertIncludes(resourceOrderStore, expected, "resource_order_store_characterization");
+  }
+
+  for (const expected of [
+    'CREATE TABLE IF NOT EXISTS ${pgTableName("resource_orders")}',
+    'CREATE TABLE IF NOT EXISTS ${pgTableName("resource_order_events")}',
+    "order_id text NOT NULL DEFAULT ''",
+    "resource_binding_id text NOT NULL DEFAULT ''",
+    'CREATE TABLE IF NOT EXISTS ${pgTableName("workspace_resource_bindings")}',
+  ]) {
+    assertIncludes(schema, expected, "resource_order_postgres_schema_characterization");
+  }
+
+  for (const expected of [
+    'pool.query(`SELECT * FROM ${pgTableName("resource_orders")}`)',
+    'pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`)',
+    "resourceOrdersRes",
+    "resourceOrderEventsRes",
+    "resourceOrders:",
+    "resourceOrderEvents:",
+    "writeResourceOrders",
+    "writeResourceOrderEvents",
+    "await writeResourceOrders({ client, pgTableName, db })",
+    "await writeResourceOrderEvents({ client, pgTableName, db })",
+  ]) {
+    assertIncludes(postgresPersistence, expected, "resource_order_postgres_persistence_characterization");
+  }
+
+  assertFunctionExport(snapshotHelpers, "writeResourceOrders", "resource_order_snapshot_helper");
+  assertFunctionExport(snapshotHelpers, "writeResourceOrderEvents", "resource_order_snapshot_helper");
+  for (const expected of [
+    'pgTableName("resource_orders")',
+    'pgTableName("resource_order_events")',
+  ]) {
+    assertIncludes(snapshotHelpers, expected, "resource_order_snapshot_helper_characterization");
+  }
+
+  for (const expected of [
+    'import { createPortalResourceOrderStore } from "./portal-resource-order-store.mjs";',
+    "let resourceOrderStore = null;",
+    "function getResourceOrderStore()",
+    "portal_resource_order_store_requires_pg_pool",
+    "createPortalResourceOrderStore({",
+    "getResourceOrderStore,",
+  ]) {
+    assertIncludes(runtimeConnections, expected, "resource_order_runtime_connection_characterization");
+  }
+
+  for (const expected of [
+    "ensureResourceOrderCollections",
+    "getResourceOrderStore",
+    "persistResourceOrderState: dbFacade.persistResourceOrderState",
+    "readPortalPostgresSnapshot",
+    "writePortalPostgresSnapshot",
+    'targetVersion: "v20.32"',
+  ]) {
+    assertIncludes(portalStore, expected, "resource_order_portal_store_characterization");
+  }
+
+  for (const expected of [
+    "getResourceOrderStore",
+    "persistResourceOrderState(params)",
+    "return getResourceOrderStore().persistResourceOrderState(params)",
+  ]) {
+    assertIncludes(dbDelegates, expected, "resource_order_db_delegate_characterization");
+  }
+
+  assertIncludes(portalStoreRuntime, "ensureResourceOrderCollections", "resource_order_portal_store_runtime_characterization");
+  assertIncludes(migrations, "resourceOrders: []", "resource_order_migrations_seed_collection");
+  assertIncludes(migrations, "resourceOrderEvents: []", "resource_order_migrations_seed_collection");
+  assertIncludes(migrationCollections, '"resourceOrders"', "resource_order_migration_collection_key");
+  assertIncludes(migrationCollections, '"resourceOrderEvents"', "resource_order_migration_collection_key");
+  assertIncludes(migrationCollections, 'runSnapshotMigration(db, ["ledger", "resourceOrders", "resourceOrderEvents"], ensureResourceOrderCollections)', "resource_order_migration_collection_snapshot");
+
+  assertIncludes(activePortalFeatureRoutes, "../routes/resource-order.routes.mjs", "resource_order_active_app_tombstone_route_only");
+  for (const forbiddenImport of [
+    "../routes/resource-order-public.routes.mjs",
+    "../routes/resource-order-internal.routes.mjs",
+    "../routes/resource-order-public-delete.routes.mjs",
+    "../routes/resource-order-provisioning-service.mjs",
+    "../routes/resource-order-route-support.mjs",
+  ]) {
+    assert(!activePortalFeatureRoutes.includes(forbiddenImport), `resource_order_active_app_must_not_import_retired_success_route:${forbiddenImport}`);
+  }
+}
+
 async function contractFiles() {
   const contractsDir = path.join(repoRoot, "docs/contracts");
   const names = await readdir(contractsDir);
@@ -563,6 +714,8 @@ assertOnlyGateChanged();
 
 const repoZoning = await readRepoFile(repoZoningPath);
 const legacyBacklog = await readRepoFile(legacyBacklogPath);
+const goalState = await readRepoFile(goalStatePath);
+const gapMatrix = await readRepoFile(gapMatrixPath);
 
 for (const [pathPattern, action] of [
   ["services/portal/src/domain/resource-orders.mjs", "tombstone/rewrite"],
@@ -594,6 +747,24 @@ for (const filePath of defaultEntryPaths) {
 assertResourceOrderTombstoneRoute(await readRepoFile(resourceOrderTombstoneRoutePath));
 await assertOnlyTombstoneRouteIsImported();
 await assertRetiredSuccessPathModulesRemoved();
+
+assertStorePostgresSchemaCharacterization({
+  goalState,
+  gapMatrix,
+  legacyBacklog,
+  repoZoning,
+  resourceOrderStore: await readRepoFile(resourceOrderStorePath),
+  schema: await readRepoFile(portalStoreSchemaPath),
+  postgresPersistence: await readRepoFile(portalStorePostgresPersistencePath),
+  snapshotHelpers: await readRepoFile(portalStorePostgresWriteSnapshotHelpersPath),
+  runtimeConnections: await readRepoFile(portalStoreRuntimeConnectionsPath),
+  portalStore: await readRepoFile(portalStorePath),
+  dbDelegates: await readRepoFile(portalStoreDbDelegatesPath),
+  portalStoreRuntime: await readRepoFile(portalStoreRuntimePath),
+  migrations: await readRepoFile(portalStoreMigrationsPath),
+  migrationCollections: await readRepoFile(portalStoreMigrationCollectionsPath),
+  activePortalFeatureRoutes: await readRepoFile(activePortalFeatureRoutesPath),
+});
 
 for (const filePath of activeBillingPayloadPaths) {
   const source = await readRepoFile(filePath);
@@ -640,7 +811,9 @@ console.log(JSON.stringify({
     routeTombstoneFirstSlice: currentBranchName() === "cleanup/v22-retire-resource-order-route-tombstones",
     billingPayloadRewriteSlice: currentBranchName() === "cleanup/v22-retire-resource-order-billing-payloads",
     storeAdminFrontendRewriteSlice: currentBranchName() === "cleanup/v22-retire-resource-order-store-admin-frontend",
-    leavesStoreSchemaPostgresAndMigrationKeysForLater: true,
+    storePostgresSchemaCharacterizationSlice: currentBranchName() === "cleanup/v22-resource-order-store-postgres-schema-eval-shell",
+    storePostgresSchemaCharacterizationGate: "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+    leavesStoreSchemaPostgresAndMigrationKeysForFourthSliceImplementation: true,
     allowedTrackedChanges: [...allowedDiffPathsForBranch()],
     deletedRetiredRouteModules: retiredResourceOrderRouteModulePaths,
   },
@@ -652,6 +825,18 @@ console.log(JSON.stringify({
     retiredResourceOrderRouteModules: retiredResourceOrderRouteModulePaths,
     activeBillingPayloads: activeBillingPayloadPaths,
     activeStoreAdminFrontendPaths,
+    storePostgresSchemaCharacterizationPaths: [
+      resourceOrderStorePath,
+      portalStoreSchemaPath,
+      portalStorePostgresPersistencePath,
+      portalStorePostgresWriteSnapshotHelpersPath,
+      portalStoreRuntimeConnectionsPath,
+      portalStorePath,
+      portalStoreDbDelegatesPath,
+      portalStoreRuntimePath,
+      portalStoreMigrationsPath,
+      portalStoreMigrationCollectionsPath,
+    ],
     defaultEntrypoints: defaultEntryPaths,
     contractFiles: await contractFiles(),
   },
