@@ -28,7 +28,8 @@
 | 3 | resource-order Primary Path Retirement | `cleanup/v22-retire-resource-order-primary-path` | Zone 2 | tombstone/delete | 需先确认 managed environment/resource binding 替代路径完整。 |
 | 4 | Legacy Script Archive Boundary | `cleanup/v22-legacy-script-archive-boundary` | Zone 2/3 | archive/rewrite | 需避免和 cloud-lane 正在改的 v22 smoke suite 冲突。 |
 | 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-observability-billing-primary-narrative` | Zone 2/3 | rewrite/archive | 需保持 sanitized trace metadata boundary。 |
-| 6 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
+| 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
+| 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
 
 ## Slice 1: Default Entry Legacy Narrative
 
@@ -45,6 +46,22 @@
 - v19/v20/v21/live-test 不作为默认验证入口。
 - completed on cleanup/v22-default-entry-legacy-narrative：默认入口清退 v19 appliance、`user_owned`、旧 runner/provisioner、OpenCost/Langfuse 主叙事，以及 `deploy/*` / `adapters/*` 默认接线。
 - `.env.demo.template` 因 secret-like path gate 不在本 slice 写入清退；后续需要单独授权分支 `cleanup/v22-env-template-default-entry` 处理默认 env 叙事。
+
+## Slice 1b: Env Template Default Entry
+
+目标：清退 `.env.demo.template` 中的旧 runner/K8s/OpenCost/Langfuse 默认主叙事，让 tracked template 只保留 v22 Portal/Gateway/Runtime Bridge 本地模板配置。
+
+建议 smoke/gate：
+
+- `scripts/smoke-test-v22-env-template-default-entry.mjs`
+
+检查要点：
+
+- `.env.demo.template` 不含真实 secret-like value。
+- `.env.demo.template` 不含旧 `MED_AUTOSCIENCE_RUNNER_*`、`med-autoscience-runner`、`K8S_NAMESPACE`、`resource-provisioner`、`user_owned` 或 `resource-order` 默认项。
+- OpenCost 不作为 billing truth；Langfuse 只能作为 optional sanitized trace attachment，且默认值为空。
+- completed on cleanup/v22-env-template-default-entry：本 slice 显式授权修改 `.env.demo.template`，并由 gate 执行 content-level secret scan。
+- workflow gate `secret_like_path_changed` disposition：`.env.demo.template` 会触发路径级 fail-closed blocker；B 吸收前需明确接受本分支授权和内容级 secret scan 证据。
 
 ## Slice 2: user_owned Primary Path Retirement
 

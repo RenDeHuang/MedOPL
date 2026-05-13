@@ -17,6 +17,7 @@ const filePaths = {
 };
 
 const allowedDiffPaths = new Set([
+  ".env.demo.template",
   "README.md",
   "docs/product.md",
   "docs/architecture.md",
@@ -26,6 +27,7 @@ const allowedDiffPaths = new Set([
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
   "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  "scripts/smoke-test-v22-env-template-default-entry.mjs",
 ]);
 
 const forbiddenDefaultEntryTerms = [
@@ -194,6 +196,7 @@ function assertRecoveryDocs({ repoZoning, legacyBacklog }) {
   assertIncludes(repoZoning, "| `.env.demo.template` | Zone 2 | review/rewrite |", "repo_zoning_env_template_zone2_record");
   assertIncludes(repoZoning, "cleanup/v22-env-template-default-entry", "repo_zoning_env_template_followup_branch");
   assertIncludes(repoZoning, "secret-like path gate", "repo_zoning_env_template_secret_like_gate_record");
+  assertIncludes(repoZoning, "env-template cleanup completed", "repo_zoning_env_template_completed_note");
   assertIncludes(legacyBacklog, "Default Entry Legacy Narrative", "legacy_backlog_default_entry_slice");
   assertIncludes(legacyBacklog, "completed on cleanup/v22-default-entry-legacy-narrative", "legacy_backlog_default_entry_completed_note");
   assertIncludes(legacyBacklog, ".env.demo.template", "legacy_backlog_env_template_followup_record");
