@@ -353,6 +353,17 @@ Leaf 6: OPL productionization contract refresh
 - production implementation remains separate.
 - no secret, live provider, real cloud, build/push, kubectl, deploy, upstream modification, or live-test ran in this leaf.
 
+Leaf 7: OPL productionization eval shell
+
+- This leaf is eval-shell only.
+- `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` is the local gate before any production implementation.
+- The eval shell reads only repo-tracked contracts, recovery truth, and existing smoke scripts.
+- It proves the next production branch must keep canary facts out of production truth, keep upstream clean, and keep unverified file/run/artifact capabilities gated.
+- It allows only OPL-lane projection fields: `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`.
+- It fail-closes on `ownerRef`, `operationId`, K8s labels, deploy owner labels, raw provider key, provider API key, launchToken, runtimeToken, bearer token, objectKey, storageKey, localPath, signedUrl, and presignedUrl.
+- It does not modify services, upstream, deploy, adapters, `.sentrux`, `.env.demo.template`, package/dependency files, or secret-like paths.
+- no secret, live provider, real cloud, build/push, kubectl, deploy, upstream modification, or live-test ran in this leaf.
+
 验收：
 
 - file 成功后，production 分支才能实现稳定 file projection。

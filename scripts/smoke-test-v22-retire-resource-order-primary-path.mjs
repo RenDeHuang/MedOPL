@@ -235,6 +235,17 @@ function assertOnlyGateChanged() {
 
 function allowedDiffPathsForBranch(branchName = currentBranchName()) {
   const allowedDiffPathsByBranch = new Map([
+    ["test/v22-opl-productionization-eval-shell", new Set([
+      gatePath,
+      "docs/recovery/real-opl-file-run-artifact-validation-path.md",
+      "docs/recovery/status-matrix.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+      "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+      "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+    ])],
     ["docs/v22-advance-opl-productionization-cursor", new Set([
       gatePath,
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
@@ -308,6 +319,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
       "scripts/smoke-test-v22-mvp-contract-suite.mjs",
       "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+      "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
       "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
       "scripts/smoke-test-v22-product-goal-harness.mjs",
     ])],

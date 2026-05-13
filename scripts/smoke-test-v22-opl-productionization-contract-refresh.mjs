@@ -77,7 +77,7 @@ assertIncludesAll(contents.gapMatrix, [
   "leaf-opl-connection-productionization-eval-shell",
   "contract_refresh_only",
   "next_leaf_step: leaf-opl-connection-productionization-eval-shell",
-  "future `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`",
+  "eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`",
   "canary facts must not become production truth without productionized branch absorption",
 ], "gap_matrix_leaf6");
 

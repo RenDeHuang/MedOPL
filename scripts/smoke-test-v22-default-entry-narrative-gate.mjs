@@ -31,6 +31,16 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["test/v22-opl-productionization-eval-shell", new Set([
+    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
+    "docs/recovery/status-matrix.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["docs/v22-advance-opl-productionization-cursor", new Set([
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
@@ -130,6 +140,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     "scripts/smoke-test-v22-mvp-contract-suite.mjs",
     "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
     "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
