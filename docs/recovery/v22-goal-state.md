@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `6acb92e03c07e580191d77e1a5389a94fbe137fc`
+- 当前 trunk HEAD: `bf5819b30baf5fb342cc6e3f765baa3d63337a22`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `docs/v22-advance-frontend-evalset-cursor`
+- current branch: `test/v22-backend-contract-eval-template`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-backend-contract-eval-template`
-- highest-priority executable leaf step: `leaf-backend-contract-eval-template`
-- 当前下一问题：Backend contract eval template
+- 当前 goal cursor: `leaf-billing-audit-characterization`
+- highest-priority executable leaf step: `leaf-billing-audit-characterization`
+- 当前下一问题：Billing audit characterization
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -91,7 +91,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap、Backend contract eval template
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
@@ -122,6 +122,9 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-frontend-product-evalset-gap completed on branch `test/v22-frontend-product-evalset-gap`: previous current problem phrase `当前下一问题：Portal frontend product evalset gap`; Portal frontend product evalset is characterized as an executable local truth source. `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs` proved six view/composable boundaries; `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs` proved 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface` additionally ran Playwright visual coverage with 8 passed screenshot tests and browser checks. `.runtime/portal-surface-eval/report.json` remains uncommitted runtime evidence. No Portal UI implementation, package/dependency file, deploy, adapter, `.sentrux`, `.env.demo.template`, upstream one-person-lab, secret, true cloud, build/push/kubectl, deploy, or live-test was touched or run.
 - Leaf 9 failure analysis: initial frontend evalset characterization gates passed; no implementation failure occurred. Non-failure warning observed during Playwright web server startup: `NO_COLOR` ignored due to `FORCE_COLOR`; it did not affect exit status and produced no tracked diff. `node scripts/smoke-test-v22-product-goal-harness.mjs` then failed once with `goal_state_missing:当前下一问题：Portal frontend product evalset gap` because the harness still requires the absorbed Leaf 9 problem phrase while the active cursor correctly moved to `leaf-backend-contract-eval-template`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf9_cursor_advance_goal_state_phrase_expectation`; changed_strategy: keep the previous current problem phrase inside the Leaf 9 completion record while preserving the new active backend cursor; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and full B checks.
 - Leaf 9 B absorb/push result: Portal frontend product evalset gap branch `test/v22-frontend-product-evalset-gap`, commit `6acb92e03c07e580191d77e1a5389a94fbe137fc`, changed files `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, and `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with frontend surface composables/evalset gates, Portal runtime surface suite, Portal workbench management UI composition contract, Portal check, frontend typecheck, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `6acb92e03c07e580191d77e1a5389a94fbe137fc`; next cursor is `leaf-backend-contract-eval-template`.
+- leaf-backend-contract-eval-template completed on branch `test/v22-backend-contract-eval-template`: previous current problem phrase `当前下一问题：Backend contract eval template`; `docs/contracts/v22-portal-structure-failure-isolation-boundary.md` now contains a backend implementation eval template for future Portal backend leaves. The template fixes Node 22 ESM, route -> app payload -> domain -> state/persistence, required structure/Portal check/product-goal/workflow verification, route forbidden state imports, missing-field `implicit_default` / `silent_fallback` / `shim_adapter_compatibility` bans, domain legacy primary-path bans, and state/persistence responsibility bans. `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs` now verifies that template and still requires the current `route_to_state_direct_import_exists` risk to stay recorded as characterization truth, so this leaf does not claim backend refactor completion. No `services/*`, package/dependency file, deploy, adapter, `.sentrux`, `.env.demo.template`, upstream one-person-lab, secret, true cloud, build/push/kubectl, deploy, or live-test was touched or run.
+- Leaf 10 failure analysis: RED/GREEN TDD was intentional. `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs` first failed with `portal_structure_required_surface_missing:backend_implementation_eval_template` after the smoke was tightened before the contract template existed. failure_category: `implementation_wrong` for the current leaf's missing contract implementation; attempt_count: 1; root_cause_id: `leaf10_backend_eval_template_missing`; changed_strategy: add the structured backend eval template to the Portal structure contract, then extend the smoke to verify template fields while preserving current route-to-state risk as characterization-only; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun Portal structure gate, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before B absorb.
+- Leaf 10 B absorb plan: changed files stay within backend eval template truth writeback and exact branch-scoped gate metadata. B must rerun Portal structure gate, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push. The next cursor after B absorb is `leaf-billing-audit-characterization`.
 
 ## Later Problems
 

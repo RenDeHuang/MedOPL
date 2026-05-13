@@ -84,6 +84,7 @@ assert.equal(contract.modifiesUpstream, false, "portal_structure_must_not_modify
 
 assertIncludesAll(contract.requiredSurfaces, [
   "backend_routes_dispatcher",
+  "backend_implementation_eval_template",
   "payload_dto_builders",
   "frontend_views_composables",
   "frontend_api_modules",
@@ -113,6 +114,52 @@ assertIncludesAll(contract.backendRoutesDispatcher.forbiddenResponsibilities, [
   "secret_reading",
   "raw_provider_key_handling",
 ], "portal_structure_backend_forbidden_responsibility");
+
+const backendImplementationEvalTemplate = contract.backendImplementationEvalTemplate;
+assert(backendImplementationEvalTemplate, "portal_structure_backend_implementation_eval_template_missing");
+assert.equal(
+  backendImplementationEvalTemplate.templateKind,
+  "backend_implementation_gate",
+  "portal_structure_backend_eval_template_kind_mismatch",
+);
+assert.equal(backendImplementationEvalTemplate.runtime, "node_22_esm", "portal_structure_backend_eval_template_runtime_mismatch");
+assert.deepEqual(
+  backendImplementationEvalTemplate.layerFlow,
+  ["route", "app_payload", "domain", "state_persistence"],
+  "portal_structure_backend_eval_template_layer_flow_mismatch",
+);
+assert.equal(
+  backendImplementationEvalTemplate.requiredForFutureBackendChanges,
+  true,
+  "portal_structure_backend_eval_template_must_be_required_for_future_backend_changes",
+);
+assertIncludesAll(backendImplementationEvalTemplate.requiredVerificationCommands, [
+  "node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+  "npm --prefix services/portal run check",
+  "node scripts/smoke-test-v22-product-goal-harness.mjs",
+  "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+], "portal_structure_backend_eval_template_required_verification_command");
+assertIncludesAll(backendImplementationEvalTemplate.routeLayer.forbiddenDirectImports, [
+  "services/portal/src/state/**",
+  "services/portal/src/state/*",
+], "portal_structure_backend_eval_template_route_forbidden_direct_import");
+assertIncludesAll(backendImplementationEvalTemplate.routeLayer.forbiddenMissingFieldBehaviors, [
+  "implicit_default",
+  "silent_fallback",
+  "shim_adapter_compatibility",
+], "portal_structure_backend_eval_template_route_forbidden_missing_field_behavior");
+assertIncludesAll(backendImplementationEvalTemplate.domainLayer.forbiddenPrimaryPaths, [
+  "user_owned_primary_path",
+  "resource_order_primary_path",
+  "opencost_main_path",
+  "langfuse_main_path",
+], "portal_structure_backend_eval_template_domain_forbidden_primary_path");
+assertIncludesAll(backendImplementationEvalTemplate.statePersistenceLayer.forbiddenResponsibilities, [
+  "route_response_building",
+  "user_facing_product_copy",
+  "cloud_console_language",
+  "live_cloud_call_without_auth_record",
+], "portal_structure_backend_eval_template_state_forbidden_responsibility");
 
 assertIncludesAll(contract.payloadDtoBuilders.builderFamilies, [
   "overview",
@@ -232,6 +279,7 @@ await assertNoBarePortalApiBarrelInViews(currentCodeShape.frontendViewsComposabl
 await assertFilesExist(currentCodeShape.frontendApiModules.currentApiModuleFiles, "portal_structure_frontend_api_module");
 await assertFilesExist(currentCodeShape.portalSmokeLayers.currentSmokeFiles, "portal_structure_smoke_file");
 assertIncludesAll(currentCodeShape.knownFutureRefactorRisks, [
+  "route_to_state_direct_import_exists",
   "frontend_api_barrel_exists_but_not_page_default",
   "retired_resource_order_route_tombstone_still_present",
   "some_admin_views_directly_call_admin_api_module",

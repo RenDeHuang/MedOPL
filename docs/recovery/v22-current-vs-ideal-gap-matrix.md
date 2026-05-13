@@ -167,17 +167,19 @@ truth writeback section:
 ### Gap: backend-product-node22-esm-layering
 
 - id: backend-product-node22-esm-layering
-- current_fact: backend baseline uses Node 22 ESM and route/app/domain/state/persistence conventions across Portal services; Portal structure characterization already exists and can be promoted into a reusable backend implementation eval template.
+- current_fact: backend baseline uses Node 22 ESM and route/app/domain/state/persistence conventions across Portal services; Portal structure characterization now includes a reusable backend implementation eval template with route -> app payload -> domain -> state/persistence, required verification commands, forbidden route-to-state shortcut, forbidden fallback/shim missing-field behavior, and legacy primary-path guards.
 - ideal_state: every backend change has route smoke, payload/domain contract smoke, node --check or npm check, and workflow gate coverage.
 - problem: route logic can bypass app/domain/state layering or hide missing fields behind fallback/shim.
 - dependency: Portal structure contract.
-- status: in_progress
-- next_leaf_step: leaf-backend-contract-eval-template
+- status: gated
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
 - allowed_files: future backend branch under `services/portal/**` plus smoke
 - forbidden_files: implicit fallback/shim, `user_owned` primary path, `resource-order` primary path, OpenCost/Langfuse main path
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, backend contracts
 - B_absorb_criteria: B confirms route -> app payload -> domain -> state/persistence and no hidden fallback.
+
+- leaf-backend-contract-eval-template: backend implementation eval template was added to `docs/contracts/v22-portal-structure-failure-isolation-boundary.md` and gated by `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`. The RED phase failed on `portal_structure_required_surface_missing:backend_implementation_eval_template`; the GREEN phase proves `backendImplementationEvalTemplate` with Node 22 ESM, route/app_payload/domain/state_persistence flow, required verification commands, route forbidden state imports, missing-field `implicit_default` / `silent_fallback` / `shim_adapter_compatibility` bans, domain legacy primary-path bans, and state/persistence responsibility bans. Existing `route_to_state_direct_import_exists` remains recorded as characterization risk, so this leaf does not claim backend refactor completion. No `services/*`, package/dependency files, deploy, adapters, `.sentrux`, `.env.demo.template`, upstream, secrets, live/cloud/build/push/kubectl/deploy, or live-test was touched or run. The next local executable leaf after B absorb is `leaf-billing-audit-characterization`.
 
 ### Gap: billing-audit-preauth-ledger-release-t1
 

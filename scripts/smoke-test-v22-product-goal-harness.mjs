@@ -78,6 +78,15 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
+  ["test/v22-backend-contract-eval-template", new Set([
+    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["docs/v22-advance-frontend-evalset-cursor", new Set([
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
@@ -430,6 +439,7 @@ const goalStatePhrases = [
   "当前下一问题：OPL connection productionization local implementation",
   "当前下一问题：Portal frontend product evalset gap",
   "当前下一问题：Backend contract eval template",
+  "当前下一问题：Billing audit characterization",
   "Leaf 8 B absorb/push result",
   "f114ee587db2a41a3a85fc5f67bbed4fbe63e57b",
   "leaf-frontend-product-evalset-gap",

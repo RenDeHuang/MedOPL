@@ -67,6 +67,21 @@ Portal route handler 不承担：
 
 真实云资源创建/释放、真实扣费、真实 OPL runtime 执行都必须留在接云或接 OPL 合同和授权边界内。Portal 可以展示已清洗 projection、状态、计划、审计、错误态和空态，但不能把外部实现揉进 Portal。
 
+## Backend implementation eval template
+
+未来任何 Portal 后端实现 leaf 都必须先订阅本模板，并在自己的分支内补充 route smoke、payload/domain contract smoke、`npm --prefix services/portal run check` 或同等 Node 22 ESM 语法检查，以及 workflow gate。
+
+模板固定的后端路径是：
+
+- route
+- app payload
+- domain
+- state/persistence
+
+route 层只能处理 auth、role、request parsing、service/store call 和 DTO response，不得直接 import state/persistence 作为业务快捷路径。app payload / DTO builder 只能组合、裁剪和格式化已传入数据，不得做 IO、读 secret、调用外部服务或 role authorization。domain 层不得恢复 `user_owned` primary path、`resource-order` primary path、OpenCost 主路径或 Langfuse 主路径。state/persistence 层不得生成用户产品文案、route response、云控制台语言，且不得执行缺少 step-local auth record 的真实云/live 操作。
+
+缺字段必须合同化 fail-closed 或显式错误态；不得用 implicit default、silent fallback 或 shim/adapter compatibility 让 smoke 伪通过。
+
 ## Payload / DTO builder 边界
 
 Portal payload / DTO builder 应按 payload 家族拆分：
@@ -192,6 +207,7 @@ Portal 必须按低耦合目标治理：
   "modifiesUpstream": false,
   "requiredSurfaces": [
     "backend_routes_dispatcher",
+    "backend_implementation_eval_template",
     "payload_dto_builders",
     "frontend_views_composables",
     "frontend_api_modules",
@@ -221,6 +237,81 @@ Portal 必须按低耦合目标治理：
       "secret_reading",
       "raw_provider_key_handling"
     ]
+  },
+  "backendImplementationEvalTemplate": {
+    "templateKind": "backend_implementation_gate",
+    "runtime": "node_22_esm",
+    "requiredForFutureBackendChanges": true,
+    "layerFlow": [
+      "route",
+      "app_payload",
+      "domain",
+      "state_persistence"
+    ],
+    "requiredVerificationCommands": [
+      "node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+      "npm --prefix services/portal run check",
+      "node scripts/smoke-test-v22-product-goal-harness.mjs",
+      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
+    ],
+    "routeLayer": {
+      "allowedResponsibilities": [
+        "auth",
+        "role",
+        "request_parsing",
+        "service_or_store_call",
+        "dto_response"
+      ],
+      "forbiddenDirectImports": [
+        "services/portal/src/state/**",
+        "services/portal/src/state/*"
+      ],
+      "forbiddenMissingFieldBehaviors": [
+        "implicit_default",
+        "silent_fallback",
+        "shim_adapter_compatibility"
+      ]
+    },
+    "appPayloadLayer": {
+      "allowedResponsibilities": [
+        "compose_passed_data",
+        "trim_fields",
+        "format_dto"
+      ],
+      "forbiddenEffects": [
+        "io",
+        "secret_reading",
+        "external_service_call",
+        "role_authorization"
+      ],
+      "missingFieldPolicy": "fail_closed_or_explicit_error_state"
+    },
+    "domainLayer": {
+      "allowedResponsibilities": [
+        "business_rules",
+        "contract_field_validation",
+        "state_adapter_call"
+      ],
+      "forbiddenPrimaryPaths": [
+        "user_owned_primary_path",
+        "resource_order_primary_path",
+        "opencost_main_path",
+        "langfuse_main_path"
+      ]
+    },
+    "statePersistenceLayer": {
+      "allowedResponsibilities": [
+        "state_read",
+        "state_write",
+        "migration_only_legacy_tombstone"
+      ],
+      "forbiddenResponsibilities": [
+        "route_response_building",
+        "user_facing_product_copy",
+        "cloud_console_language",
+        "live_cloud_call_without_auth_record"
+      ]
+    }
   },
   "payloadDtoBuilders": {
     "builderFamilies": [

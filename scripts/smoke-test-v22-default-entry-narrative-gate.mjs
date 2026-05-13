@@ -74,6 +74,14 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
+  ["test/v22-backend-contract-eval-template", new Set([
+    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["docs/v22-advance-frontend-evalset-cursor", new Set([
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
