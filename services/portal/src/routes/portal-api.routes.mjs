@@ -47,6 +47,7 @@ export function createPortalApiRoutes({
   cloudOperationRunnerScript = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
   cloudOperationSecretFile = "",
   cloudOperationComputeNodePoolRef = "",
+  cloudOperationComputePoolBaselineCapacity = 2,
   enableCloudOperationProductionBridge = false,
   enableCloudOperationTestBridge = false,
   nodeEnv = process.env.NODE_ENV || "",
@@ -94,6 +95,7 @@ export function createPortalApiRoutes({
     runnerScript: cloudOperationRunnerScript,
     secretFile: cloudOperationSecretFile,
     computeNodePoolRef: cloudOperationComputeNodePoolRef,
+    computePoolBaselineCapacity: cloudOperationComputePoolBaselineCapacity,
     sendJson,
     writeDb,
   });

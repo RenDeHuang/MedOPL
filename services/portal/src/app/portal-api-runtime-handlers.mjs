@@ -166,6 +166,7 @@ export function createPortalApiRuntimeHandlers({
     cloudOperationRunnerScript: portalConfig?.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT,
     cloudOperationSecretFile: portalConfig?.PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE,
     cloudOperationComputeNodePoolRef: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF,
+    cloudOperationComputePoolBaselineCapacity: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY,
     enableCloudOperationProductionBridge: portalConfig?.PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE,
     enableCloudOperationTestBridge: portalConfig?.PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE,
     nodeEnv: process.env.NODE_ENV || "",

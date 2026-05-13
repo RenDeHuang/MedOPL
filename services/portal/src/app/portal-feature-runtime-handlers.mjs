@@ -56,6 +56,7 @@ export function createPortalFeatureRuntimeHandlers({
     cloudOperationRunnerScript: portalConfig?.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT,
     cloudOperationSecretFile: portalConfig?.PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE,
     cloudOperationComputeNodePoolRef: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF,
+    cloudOperationComputePoolBaselineCapacity: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY,
     repoRoot: process.cwd().endsWith("/services/portal") ? "../.." : ".",
   });
   const handleOplRoutes = createOplRoutes({

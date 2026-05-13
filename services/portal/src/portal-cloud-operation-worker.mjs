@@ -9,6 +9,7 @@ import { createPortalRuntimeStore } from "./app/portal-store-runtime.mjs";
 import { medWorkspaceRoot, repoRoot } from "./config/portal-config.mjs";
 import {
   PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF,
+  PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY,
   PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE,
   PORTAL_CLOUD_OPERATION_RUNNER_MODE,
   PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT,
@@ -49,6 +50,7 @@ export async function runPortalCloudOperationWorkerOnce(options = {}) {
     secretFile: options.secretFile || PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE,
     runnerScript: options.runnerScript || PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT,
     computeNodePoolRef: options.computeNodePoolRef || PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF,
+    computePoolBaselineCapacity: options.computePoolBaselineCapacity ?? PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY,
     repoRoot: options.repoRoot || repoRoot,
     workerId: options.workerId || `portal-cloud-operation-worker-${process.pid}`,
     maxOperations: options.maxOperations || 1,

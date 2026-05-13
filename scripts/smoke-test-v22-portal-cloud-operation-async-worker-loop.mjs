@@ -112,6 +112,9 @@ try {
     repoRoot: ".",
   });
   assert.equal(createCompute.ok, true, "create_compute_must_be_accepted");
+  assert.equal(db.cloudOperations[1].requestedSpec.computeUnits, 1, "compute_units_must_keep_user_allocation");
+  assert.equal(db.cloudOperations[1].requestedSpec.targetDesiredCapacity, "1", "requested_target_must_preserve_user_plan_capacity");
+  assert.equal(db.cloudOperations[1].requestedSpec.providerTargetDesiredCapacity, "2", "provider_target_must_not_go_below_shared_pool_baseline");
 
   const blockedDrain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "fake-live",
@@ -140,8 +143,10 @@ try {
     runnerMode: "fake-live",
     secretFile,
     repoRoot: ".",
+    computePoolBaselineCapacity: 2,
   });
   assert.equal(createComputeWithAttribution.ok, true, "create_compute_with_attribution_must_be_accepted");
+  assert.equal(db.cloudOperations.at(-1).requestedSpec.providerTargetDesiredCapacity, "2", "attributed_compute_provider_target_must_use_baseline");
 
   const computeDrain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "fake-live",
@@ -160,6 +165,22 @@ try {
   assert.equal(projectionAfter.resources.fileSpace.statusLabel, "可用", "projection_file_space_available_after_worker");
   assert.equal(projectionAfter.resources.compute.statusLabel, "可用", "projection_compute_available_after_worker");
   assertNoForbidden(projectionAfter, "projection_after_worker");
+
+  const releaseCompute = executePortalProductionCloudOperation(db, user, {
+    workspaceId: "workspace-v22-async-cloud",
+    resourceBindingId: createStorage.resourceBindingId,
+    targetDesiredCapacity: 0,
+    planId: "starter_2c4g_10gb",
+  }, {
+    operationType: "release_compute",
+    runnerMode: "fake-live",
+    secretFile,
+    repoRoot: ".",
+    computePoolBaselineCapacity: 2,
+  });
+  assert.equal(releaseCompute.ok, true, "release_compute_must_be_accepted");
+  assert.equal(db.cloudOperations.at(-1).requestedSpec.targetDesiredCapacity, "0", "release_requested_target_must_preserve_user_release_intent");
+  assert.equal(db.cloudOperations.at(-1).requestedSpec.providerTargetDesiredCapacity, "2", "release_provider_target_must_keep_shared_pool_baseline");
 
   console.log(JSON.stringify({
     ok: true,

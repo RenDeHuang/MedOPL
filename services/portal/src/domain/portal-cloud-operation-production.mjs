@@ -416,6 +416,21 @@ function targetDesiredCapacityFrom(input = {}) {
   return normalized;
 }
 
+function baselineCapacityFrom(value = 2) {
+  const normalized = text(value);
+  if (!/^[0-9]+$/.test(normalized)) return 2;
+  const parsed = Number(normalized);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) return 2;
+  return parsed;
+}
+
+function providerTargetDesiredCapacityFrom(input = {}, options = {}) {
+  const requested = targetDesiredCapacityFrom(input);
+  if (requested === "") return "";
+  const baseline = baselineCapacityFrom(options.computePoolBaselineCapacity ?? input.computePoolBaselineCapacity ?? 2);
+  return String(Math.max(Number(requested), baseline));
+}
+
 function validateProductionOperationInput(input = {}, spec = {}) {
   if (!workspaceIdFrom(input)) return { ok: false, status: 422, error: "workspace_required" };
   if (!spec.createsBinding && !resourceBindingIdFrom(input)) return { ok: false, status: 409, error: "resource_binding_required" };
@@ -500,7 +515,7 @@ function runPackageCOperation({ repoRoot, runnerScript, secretFile, operationId,
     workspaceId,
   ];
   if (spec.resourceKind === "compute") {
-    executeArgs.push("--target-desired-capacity", targetDesiredCapacityFrom(input));
+    executeArgs.push("--target-desired-capacity", text(input.providerTargetDesiredCapacity || targetDesiredCapacityFrom(input)));
   }
   const execute = runNodeJson({
     repoRoot,
@@ -520,7 +535,7 @@ function runPackageCOperation({ repoRoot, runnerScript, secretFile, operationId,
   };
 }
 
-function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, operationId = "", spec = PACKAGE_C_OPERATIONS.create_storage) {
+function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, operationId = "", spec = PACKAGE_C_OPERATIONS.create_storage, options = {}) {
   const id = operationId || operationIdFor(spec.operationIdKind);
   const operation = {
     id,
@@ -542,6 +557,7 @@ function createOperationRecord(db = {}, user = {}, binding = {}, input = {}, ope
       fileSpaceGb: positiveNumber(input.fileSpaceGb ?? input.file_space_gb, positiveNumber(binding.fileSpaceGb, 0)),
       computeUnits: positiveNumber(input.computeUnits ?? input.compute_units, 0),
       targetDesiredCapacity: targetDesiredCapacityFrom(input),
+      providerTargetDesiredCapacity: spec.resourceKind === "compute" ? providerTargetDesiredCapacityFrom(input, options) : "",
       planId: planIdFrom(input),
     },
     createdAt: nowIso(),
@@ -651,7 +667,7 @@ export function executePortalProductionCloudOperation(db = {}, user = {}, input 
   binding.planId = planId;
   binding.serverPlanId = planId;
   binding.packageId = planId;
-  const operation = createOperationRecord(db, user, binding, input, operationId, spec);
+  const operation = createOperationRecord(db, user, binding, input, operationId, spec, options);
   const job = createJobRecord(db, user, binding, operation);
   appendAuditEvent(db, user, binding, operation);
 

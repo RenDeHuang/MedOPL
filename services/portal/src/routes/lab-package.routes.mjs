@@ -51,6 +51,7 @@ export function createLabPackageRoutes({
   cloudOperationRunnerScript = DEFAULT_RUNNER_SCRIPT,
   cloudOperationSecretFile = "",
   cloudOperationComputeNodePoolRef = "",
+  cloudOperationComputePoolBaselineCapacity = 2,
   repoRoot = "",
 }) {
   async function readJsonBody(req, res) {
@@ -100,6 +101,7 @@ export function createLabPackageRoutes({
       runnerScript: cloudOperationRunnerScript || DEFAULT_RUNNER_SCRIPT,
       secretFile: cloudOperationSecretFile,
       computeNodePoolRef: cloudOperationComputeNodePoolRef,
+      computePoolBaselineCapacity: cloudOperationComputePoolBaselineCapacity,
     };
   }
 

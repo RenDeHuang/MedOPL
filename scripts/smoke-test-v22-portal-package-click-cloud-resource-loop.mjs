@@ -430,6 +430,16 @@ try {
   assert.equal(db.workspaceFiles.every((item) => item.resourceBindingId && item.userId && item.workspaceId), true, "workspace_files_must_keep_binding_scope");
   assert.equal(db.computeAllocations.length, 2, "compute_allocations_must_be_per_binding");
   assert.equal(db.fileSpaceEntitlements.length, 2, "file_space_entitlements_must_be_per_binding");
+  const computeOperationSpecs = db.cloudOperations
+    .filter((item) => String(item.operationType || "").includes("compute"))
+    .map((item) => ({
+      operationType: item.operationType,
+      targetDesiredCapacity: item.requestedSpec?.targetDesiredCapacity,
+      providerTargetDesiredCapacity: item.requestedSpec?.providerTargetDesiredCapacity,
+    }));
+  assert.equal(computeOperationSpecs.some((item) => item.operationType === "create_compute" && item.targetDesiredCapacity === "1" && item.providerTargetDesiredCapacity === "2"), true, "starter_compute_must_keep_user_plan_but_not_scale_provider_below_baseline");
+  assert.equal(computeOperationSpecs.every((item) => Number(item.providerTargetDesiredCapacity || 0) >= 2), true, "compute_provider_target_must_never_drop_below_baseline");
+  assert.equal(computeOperationSpecs.filter((item) => item.operationType === "release_compute").every((item) => item.targetDesiredCapacity === "0" && item.providerTargetDesiredCapacity === "2"), true, "compute_release_must_release_user_allocation_without_scaling_shared_pool_to_zero");
   assert.equal(db.computeAllocations.every((item) => item.status === "released"), true, "compute_release_must_release_each_user_compute");
   assert.equal(db.fileSpaceEntitlements.every((item) => item.status === "retention_protected"), true, "storage_delete_must_protect_each_user_file_space");
   assert.equal(db.billingReconciliations.length >= 13, true, "billing_reconciliation_must_cover_package_lifecycle");

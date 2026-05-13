@@ -158,6 +158,13 @@ try {
         ownerRef: "owner-proof",
         operationId: "operation-proof",
         expectedVersionMarker: "pkg-d-proof-20260510-000001",
+        requiredEnv: {
+          PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE: "1",
+          PORTAL_CLOUD_OPERATION_RUNNER_MODE: "tencent-official-sdk-live",
+          PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE: "/var/run/secrets/medopl/package-c-mutation.env",
+          PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF: "np-backend-attribution-proof",
+          PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY: "2",
+        },
       },
       {
         component: "opl-web-gateway",
@@ -238,6 +245,13 @@ try {
   await writeFile(missingOwnerPlanFile, `${JSON.stringify(missingOwnerPlan, null, 2)}\n`, "utf8");
   const missingOwner = runRunner(["--check-config", ...baseArgs(goodSecretFile), "--release-plan", missingOwnerPlanFile], 1);
   assert.equal(parseStdout(missingOwner.stdout).summary.blockedReason, "deploy_platform_owner_guard_required", "missing_owner_reason");
+
+  const missingPortalEnvPlanFile = path.join(tmpDir, "missing-portal-env-release-plan.json");
+  const missingPortalEnvPlan = JSON.parse(JSON.stringify(releasePlan));
+  delete missingPortalEnvPlan.targets[0].requiredEnv;
+  await writeFile(missingPortalEnvPlanFile, `${JSON.stringify(missingPortalEnvPlan, null, 2)}\n`, "utf8");
+  const missingPortalEnv = runRunner(["--check-config", ...baseArgs(goodSecretFile), "--release-plan", missingPortalEnvPlanFile], 1);
+  assert.equal(parseStdout(missingPortalEnv.stdout).summary.blockedReason, "deploy_portal_cloud_operation_env_guard_required", "missing_portal_env_reason");
 
   const duplicatePlanFile = path.join(tmpDir, "duplicate-release-plan.json");
   const duplicatePlan = JSON.parse(JSON.stringify(releasePlan));

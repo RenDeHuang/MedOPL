@@ -76,6 +76,7 @@ export const PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE = String(process.env.P
 export const PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs").trim()
   || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
 export const PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF = String(process.env.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF || "").trim();
+export const PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY = Number(process.env.PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY || 2);
 
 export const adminSeed = {
   email: process.env.PORTAL_ADMIN_EMAIL || "zitadel-admin@zitadel.localhost",

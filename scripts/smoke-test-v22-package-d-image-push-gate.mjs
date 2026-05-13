@@ -61,6 +61,13 @@ function releasePlan() {
         ownerRef: "owner-proof",
         operationId: "operation-proof",
         expectedVersionMarker: "pkg-d-image-push-proof-20260511-000001",
+        requiredEnv: {
+          PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE: "1",
+          PORTAL_CLOUD_OPERATION_RUNNER_MODE: "tencent-official-sdk-live",
+          PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE: "/var/run/secrets/medopl/package-c-mutation.env",
+          PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF: "np-backend-attribution-proof",
+          PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY: "2",
+        },
       },
       {
         component: "opl-web-gateway",

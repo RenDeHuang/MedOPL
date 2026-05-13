@@ -305,6 +305,13 @@ try {
     "delete_storage",
   ], "production_operations_must_cover_full_package_c_loop");
   assert.equal(db.cloudOperations.every((item) => item.status === "succeeded" && item.testOnly === false && item.productionPortalConnected === true), true, "production_operations_must_be_canonical");
+  const computeOperationSpecs = db.cloudOperations
+    .filter((item) => String(item.operationType || "").includes("compute"))
+    .map((item) => item.requestedSpec || {});
+  assert.equal(computeOperationSpecs[0].targetDesiredCapacity, "1", "create_compute_must_preserve_user_plan_target");
+  assert.equal(computeOperationSpecs[0].providerTargetDesiredCapacity, "2", "create_compute_provider_target_must_not_drop_below_baseline");
+  assert.equal(computeOperationSpecs[2].targetDesiredCapacity, "0", "release_compute_must_preserve_user_release_intent");
+  assert.equal(computeOperationSpecs[2].providerTargetDesiredCapacity, "2", "release_compute_provider_target_must_keep_baseline");
   assert.equal(db.cloudOperationJobs.length, 6, "cloud_operation_jobs_must_cover_full_loop");
   assert.equal(db.computeAllocations.length, 1, "compute_allocation_must_be_canonical");
   assert.equal(db.computeAllocations[0].status, "released", "compute_release_must_release_compute_only");

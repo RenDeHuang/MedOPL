@@ -50,6 +50,13 @@ const MODES = new Map([
   ["runtime-smoke", { reportRoot: ".runtime/v22-runtime-smoke", reportSuffix: "runtime-smoke", writesReport: true }],
 ]);
 
+const PORTAL_CLOUD_OPERATION_REQUIRED_ENV = Object.freeze({
+  PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE: "1",
+  PORTAL_CLOUD_OPERATION_RUNNER_MODE: "tencent-official-sdk-live",
+  PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE: "/var/run/secrets/medopl/package-c-mutation.env",
+  PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY: "2",
+});
+
 function text(value = "") {
   return String(value ?? "").trim();
 }
@@ -173,6 +180,39 @@ function validateDigest(value = "") {
     return { ok: false, reason: "deploy_image_digest_required" };
   }
   return { ok: true, digest };
+}
+
+function requiredEnvEntries(target = {}) {
+  const requiredEnv = target.requiredEnv && typeof target.requiredEnv === "object" && !Array.isArray(target.requiredEnv)
+    ? target.requiredEnv
+    : {};
+  return Object.entries(requiredEnv)
+    .map(([name, value]) => [text(name), text(value)])
+    .filter(([name, value]) => name && value);
+}
+
+function validateRequiredEnv(target = {}) {
+  const entries = requiredEnvEntries(target);
+  if (!entries.length && text(target.component) !== "portal") return { ok: true };
+  const seen = new Set();
+  for (const [name, value] of entries) {
+    if (!/^[A-Z][A-Z0-9_]{1,100}$/.test(name)) return { ok: false, reason: "deploy_required_env_invalid" };
+    if (seen.has(name)) return { ok: false, reason: "deploy_required_env_duplicate" };
+    if (/SECRET_ID|SECRET_KEY|TOKEN|PASSWORD|PRIVATE_KEY|DATABASE_URL/i.test(name)) return { ok: false, reason: "deploy_required_env_secret_forbidden" };
+    if (!value || value.length > 240) return { ok: false, reason: "deploy_required_env_invalid" };
+    seen.add(name);
+  }
+  if (text(target.component) === "portal") {
+    for (const [name, expectedValue] of Object.entries(PORTAL_CLOUD_OPERATION_REQUIRED_ENV)) {
+      if (text(target.requiredEnv?.[name]) !== expectedValue) {
+        return { ok: false, reason: "deploy_portal_cloud_operation_env_guard_required" };
+      }
+    }
+    if (!text(target.requiredEnv?.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF)) {
+      return { ok: false, reason: "deploy_portal_cloud_operation_env_guard_required" };
+    }
+  }
+  return { ok: true };
 }
 
 function validateRelativeExistingPath(value = "", label = "path") {
@@ -308,6 +348,8 @@ function validateReleasePlan(plan = {}) {
     } catch {
       return { ok: false, reason: "deploy_release_plan_invalid" };
     }
+    const requiredEnv = validateRequiredEnv(target);
+    if (!requiredEnv.ok) return requiredEnv;
     const repositoryTag = `${text(target.repository)}:${versionTag.tag}`;
     if (seenRepositoryTags.has(repositoryTag)) {
       return { ok: false, reason: "deploy_duplicate_repository_tag_forbidden" };
@@ -440,6 +482,12 @@ function targetSummary({ env = {}, target = {}, versionTag = "", digest = "", ow
       expectedLabels: workspaceRequired
         ? ["targetClass", "ownerRef", "workspaceId", "resourceBindingId", "operationId"]
         : ["targetClass", "ownerRef", "operationId"],
+    },
+    productionEnvGuard: {
+      required: requiredEnvEntries(target).map(([name]) => name),
+      requiredCount: requiredEnvEntries(target).length,
+      valuesRedacted: true,
+      verified: false,
     },
   };
 }
@@ -613,7 +661,45 @@ function deploymentManifestWithImage(deployment = {}, target = {}, imageRef = ""
       container.image = imageRef;
     }
   }
+  applyRequiredEnvToManifest(manifest, target);
+  assertDeploymentRequiredEnv(manifest, target);
   return manifest;
+}
+
+function deploymentContainer(deployment = {}, containerName = "") {
+  return (deployment.spec?.template?.spec?.containers || [])
+    .find((item) => text(item.name) === text(containerName)) || null;
+}
+
+function deploymentEnvMap(deployment = {}, containerName = "") {
+  const container = deploymentContainer(deployment, containerName);
+  const map = new Map();
+  for (const item of container?.env || []) {
+    if (text(item.name)) map.set(text(item.name), text(item.value));
+  }
+  return map;
+}
+
+function assertDeploymentRequiredEnv(deployment = {}, target = {}) {
+  const entries = requiredEnvEntries(target);
+  if (!entries.length) return;
+  const envMap = deploymentEnvMap(deployment, target.container);
+  for (const [name, value] of entries) {
+    if (envMap.get(name) !== value) throw new Error("deploy_required_env_missing");
+  }
+}
+
+function applyRequiredEnvToManifest(manifest = {}, target = {}) {
+  const entries = requiredEnvEntries(target);
+  if (!entries.length) return;
+  const container = deploymentContainer(manifest, target.container);
+  if (!container) throw new Error("deploy_target_container_missing");
+  const requiredNames = new Set(entries.map(([name]) => name));
+  const existing = Array.isArray(container.env) ? container.env.filter((item) => !requiredNames.has(text(item.name))) : [];
+  container.env = [
+    ...existing,
+    ...entries.map(([name, value]) => ({ name, value })),
+  ];
 }
 
 function readDeployment(env = {}, target = {}) {
@@ -637,6 +723,7 @@ function deploymentCurrentImage(deployment = {}, containerName = "") {
 
 function classifyRolloutFailureFromText(value = "") {
   const output = text(value);
+  if (/deploy_required_env_missing/i.test(output)) return "deploy_required_env_missing";
   if (/portal_schema_missing_tables/i.test(output)) return "deploy_portal_schema_missing_tables";
   if (/portal_schema_not_ready/i.test(output)) return "deploy_portal_schema_not_ready";
   if (/CrashLoopBackOff|Error:|Node\.js/i.test(output)) return "deploy_rollout_target_crashloop";
@@ -799,6 +886,7 @@ async function executeMode(options = {}, env = {}, plan = {}) {
       }
       target.deploy = {
         dryRunVerified: true,
+        requiredEnvVerified: target.productionEnvGuard.requiredCount > 0,
         targetKind: "Deployment",
         targetScope: "multi-target-single-namespace-workload-container",
         rollbackImageKnown: true,
@@ -834,6 +922,7 @@ async function executeMode(options = {}, env = {}, plan = {}) {
             `deployment/${text(planTarget.workload)}`,
             "--timeout=300s",
           ]), { timeoutMs: 360_000 });
+          assertDeploymentRequiredEnv(readDeployment(env, planTarget), planTarget);
         } catch (error) {
           throw new Error(classifyRolloutFailure(error, env, planTarget));
         }
@@ -841,6 +930,7 @@ async function executeMode(options = {}, env = {}, plan = {}) {
       }
       target.deploy = {
         rolloutStatus: "available",
+        requiredEnvVerified: target.productionEnvGuard.requiredCount > 0,
         acceptedDryRunId: maskIdentifier(options.acceptedDryRunId),
         rollbackEvidenceRef: `.runtime/v22-cloud-deploy/${plan.runId}-${target.component}-rollback-evidence.json`,
         providerMode,
@@ -895,7 +985,7 @@ async function main() {
     process.exitCode = output.status;
   } catch (error) {
     const message = text(error?.message);
-    const blockedReason = /^deploy_(?:docker_login_failed|docker_build_failed|docker_push_failed|registry_digest_readback_failed|ownership_guard_failed|target_kind_mismatch|target_workload_mismatch|target_namespace_mismatch|target_container_missing|portal_schema_missing_tables|portal_schema_not_ready|rollout_target_crashloop|rollout_image_pull_failed|rollout_probe_failed|rollout_status_failed)$/.test(message)
+    const blockedReason = /^deploy_(?:docker_login_failed|docker_build_failed|docker_push_failed|registry_digest_readback_failed|ownership_guard_failed|required_env_missing|target_kind_mismatch|target_workload_mismatch|target_namespace_mismatch|target_container_missing|portal_schema_missing_tables|portal_schema_not_ready|rollout_target_crashloop|rollout_image_pull_failed|rollout_probe_failed|rollout_status_failed)$/.test(message)
       ? message
       : /^tencent_deploy_(?:forbidden_secret_key|non_allowlist_secret_key_rejected|secret_line_invalid|runner_release_plan_required|runner_secret_file_required)/.test(message)
       ? message
