@@ -24,6 +24,7 @@ const allowedDiffPaths = new Set([
   "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
   "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
+  "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
   "docs/recovery/legacy-cleanup-backlog.md",
   "docs/recovery/repo-zoning.md",
 ]);
@@ -333,7 +334,7 @@ const goalStatePhrases = [
   "当前 trunk HEAD",
   "当前 goal cursor",
   "已完成事实：default entry、user_owned、resource-order 前四刀",
-  "当前下一问题：legacy scripts archive boundary eval shell",
+  "当前下一问题：Portal architecture layering characterization gate",
   "secret hygiene",
   "legacy scripts archive",
   "Portal architecture refactor",

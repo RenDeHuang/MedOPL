@@ -71,14 +71,14 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-legacy-scripts
 
 - id: legacy-cleanup-legacy-scripts
-- current_fact: v19/v20/v21/live-test scripts remain archive/reference, not default validation.
+- current_fact: v19/v20/v21/live-test scripts remain archive/reference, not default validation; `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` now gates default docs and MVP suite against legacy script re-entry.
 - ideal_state: default execution line uses only v22 local smoke unless a canary is explicitly authorized.
 - problem: old scripts can re-enter AI context as default truth.
-- dependency: secret hygiene eval shell can run independently as C read-only audit.
-- status: needs_eval
-- next_leaf_step: write_eval_shell
-- eval: required future `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
-- allowed_files: `docs/recovery/*`, `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
+- dependency: secret hygiene eval shell absorbed; archive boundary gate exists and is runnable locally.
+- status: gated
+- next_leaf_step: monitor_only_after_B_absorb
+- eval: `node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
+- allowed_files: `docs/recovery/*`, `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`, branch-scoped harness allowlist updates
 - forbidden_files: `scripts/live-test-*`, `scripts/smoke-test-v19-*`, `scripts/smoke-test-v20*`, `scripts/smoke-test-v21-*` unless archiving is explicitly scoped
 - truth_writeback_target: `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/v22-goal-state.md`
 - B_absorb_criteria: B verifies MVP suite does not include old scripts and no live-test is run.
@@ -132,6 +132,7 @@ truth writeback section:
 
 - leaf-resource-order-store-postgres-schema-implementation: active `portal-resource-order-store` is now fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres snapshot read/write no longer instantiate or call resource-order store or `resource_orders` / `resource_order_events` active queries/writers. Legacy tables, snapshot helper functions, and JSON migration collection keys remain migration-only/tombstone facts. Verification passed locally with resource-order characterization, resource-order retirement gate, Portal check, product-goal harness, default-entry gate, MVP suite, workflow review, scoped node --check, and diff whitespace check. Failure analysis classified initial branch allowlist failures as `eval_wrong` / `leaf2_branch_subscription_missing`; exact branch-scoped allowlists were updated, including `portal-store-storage-bootstrap.mjs` because it was part of active runtime bootstrap.
 - leaf-secret-hygiene-diff-scan-eval-shell: `scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs` added a reusable local eval using a temporary git repo. It proves added-line sensitive-value detection, unchanged historical content exclusion, secret-like path content skipping, and workflow path-gate fail-closed behavior without reading real `.env`, secret, kubeconfig, token, or key files. The eval filename intentionally avoids `secret` to prevent the path-level fail-closed gate from treating the eval file itself as a secret-like path.
+- leaf-legacy-scripts-archive-eval-shell: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` is absorbed as the legacy script archive boundary eval. It checks README and `docs/vibe-coding.md` code blocks, enforces MVP suite references to `scripts/smoke-test-v22-*`, and verifies `docs/recovery/repo-zoning.md` archive/review-rewrite rows for v19/v20/v21/live-test/check legacy script families. No live-test was run, no legacy script was deleted or modified, and no service/deploy/adapter/upstream/package/secret path was touched.
 - Authorization model: Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps；Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。
 - No auth record means the risky step remains deferred_authorized.
 - Cloud live baseline / cleanup / minimum spend policy requires desired/current baseline 应为 2，且测试后必须回到 2.

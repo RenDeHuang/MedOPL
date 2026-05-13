@@ -26,7 +26,7 @@
 | 1 | Default Entry Legacy Narrative | `cleanup/v22-default-entry-legacy-narrative` | Zone 1/2 | rewrite | completed on cleanup/v22-default-entry-legacy-narrative after contract-conflict, legacy-script, and observability/billing gates were absorbed. |
 | 2 | user_owned Primary Path Retirement | `cleanup/v22-retire-user-owned-primary-path` | Zone 2 | tombstone/delete | 需先确认 Portal 当前 user-owned alias 是否仍被 smoke 引用。 |
 | 3 | resource-order Primary Path Retirement | `cleanup/v22-retire-resource-order-primary-path` | Zone 2 | tombstone/delete | 需先确认 managed environment/resource binding 替代路径完整。 |
-| 4 | Legacy Script Archive Boundary | `cleanup/v22-legacy-script-archive-boundary` | Zone 2/3 | archive/rewrite | 需避免和 cloud-lane 正在改的 v22 smoke suite 冲突。 |
+| 4 | Legacy Script Archive Boundary | `cleanup/v22-legacy-script-archive-boundary` | Zone 2/3 | archive/rewrite | gate absorbed via `cleanup/v22-legacy-scripts-archive-eval-shell`; legacy scripts remain archive/reference and are not default validation. |
 | 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-observability-billing-primary-narrative` | Zone 2/3 | rewrite/archive | 需保持 sanitized trace metadata boundary。 |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
@@ -113,6 +113,7 @@
 - `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite。
 - `scripts/live-test-*` 必须标记为授权外部操作，不可默认运行。
 - 无 v22 前缀但仍有价值的 smoke 必须迁名或在台账中标明 archive/rewrite。
+- completed on `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` verifies default README / vibe-coding commands, v22 MVP suite script references, and repo-zoning archive/review-rewrite rows without running live-test, deleting legacy scripts, touching services, or reading secrets.
 
 ## Slice 5: OpenCost and Langfuse Primary Narrative Retirement
 

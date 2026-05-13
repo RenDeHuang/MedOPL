@@ -57,6 +57,11 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
   ])],
+  ["cleanup/v22-legacy-scripts-archive-eval-shell", new Set([
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+  ])],
   ["cleanup/v22-resource-order-store-postgres-schema-eval-shell", new Set([
     "docs/recovery/legacy-cleanup-backlog.md",
     "docs/recovery/repo-zoning.md",
