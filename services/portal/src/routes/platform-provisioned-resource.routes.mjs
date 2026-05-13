@@ -33,18 +33,6 @@ const PLATFORM_PROVISIONED_RESOURCE_PATHS = {
   ensureProtectionFreeze: ["/portal/api/platform-provisioned-resources/protection-freezes/ensure"],
 };
 
-const LEGACY_USER_OWNED_RESOURCE_PATHS = {
-  list: ["/portal/api/user-owned-resources"],
-  computeInstances: ["/portal/api/user-owned-resources/compute-instances"],
-  storageBuckets: ["/portal/api/user-owned-resources/storage-buckets"],
-  deleteCompute: ["/portal/api/user-owned-resources/compute-instances/delete"],
-  deleteStorage: ["/portal/api/user-owned-resources/storage-buckets/delete"],
-  bind: ["/portal/api/user-owned-resources/bind"],
-  unbind: ["/portal/api/user-owned-resources/unbind"],
-  protectionFreezes: ["/portal/api/user-owned-resources/protection-freezes"],
-  ensureProtectionFreeze: ["/portal/api/user-owned-resources/protection-freezes/ensure"],
-};
-
 function resourcePath(url, paths, key = "list") {
   return (paths[key] || []).includes(String(url?.pathname || ""));
 }
@@ -167,8 +155,4 @@ function createResourceRoutes({ readBody, sendJson, writeDb, cloudProvisioner = 
 
 export function createPlatformProvisionedResourceRoutes(options = {}) {
   return createResourceRoutes({ ...options, paths: PLATFORM_PROVISIONED_RESOURCE_PATHS });
-}
-
-export function createLegacyUserOwnedResourceRoutes(options = {}) {
-  return createResourceRoutes({ ...options, paths: LEGACY_USER_OWNED_RESOURCE_PATHS });
 }

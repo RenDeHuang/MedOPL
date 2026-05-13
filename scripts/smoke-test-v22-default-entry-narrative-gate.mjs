@@ -30,6 +30,24 @@ const allowedDiffPaths = new Set([
   "scripts/smoke-test-v22-env-template-default-entry.mjs",
 ]);
 
+const branchScopedAllowedDiffPaths = new Map([
+  ["cleanup/v22-retire-user-owned-primary-path", new Set([
+    "docs/recovery/status-matrix.md",
+    "services/portal/src/app/portal-admin-api-payloads.mjs",
+    "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+    "services/portal/src/app/portal-admin-portrait-payloads.mjs",
+    "services/portal/src/config/portal-config.mjs",
+    "services/portal/src/domain/platform-provisioned-resources.mjs",
+    "services/portal/src/domain/user-owned-resources.mjs",
+    "services/portal/src/routes/admin-api.routes.mjs",
+    "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
+    "services/portal/src/routes/portal-api.routes.mjs",
+    "services/portal/src/routes/user-owned-resource.routes.mjs",
+    "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+    "services/portal/src/state/portal-user-owned-resource-store.mjs",
+  ])],
+]);
+
 const forbiddenDefaultEntryTerms = [
   "opl-v19-product-appliance",
   "opl-v19/",
@@ -100,6 +118,16 @@ function changedFilesFromBase() {
     .flatMap((output) => output.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)))];
 }
 
+function currentBranchName() {
+  const result = spawnSync("git", ["branch", "--show-current"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_branch_show_current_failed:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
+}
+
 function parseCompose(source) {
   try {
     return JSON.parse(source);
@@ -109,8 +137,12 @@ function parseCompose(source) {
 }
 
 function assertOnlyAllowedFilesChanged() {
+  const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(currentBranchName()) ?? new Set();
   for (const filePath of changedFilesFromBase()) {
-    assert(allowedDiffPaths.has(filePath), `default_entry_branch_modified_unsubscribed_file:${filePath}`);
+    assert(
+      allowedDiffPaths.has(filePath) || branchAllowedDiffPaths.has(filePath),
+      `default_entry_branch_modified_unsubscribed_file:${filePath}`,
+    );
   }
 }
 

@@ -19,6 +19,12 @@ function resourceLifecycleMode(payload = {}) {
   const raw = text(payload.provisioningMode || payload.provisioning_mode || payload.resourceLifecycleMode || payload.resource_lifecycle_mode || "platform_provisioned")
     .toLowerCase()
     .replace(/-/g, "_");
+  if (raw === "user_owned") {
+    const error = new Error("legacy_user_owned_lifecycle_mode_retired");
+    error.code = "legacy_user_owned_lifecycle_mode_retired";
+    error.status = 410;
+    throw error;
+  }
   const aliases = {
     cloud: "platform_provisioned",
     cloud_provisioned: "platform_provisioned",
@@ -26,7 +32,6 @@ function resourceLifecycleMode(payload = {}) {
     platform_provisioned: "platform_provisioned",
     registered: "platform_provisioned",
     registered_only: "platform_provisioned",
-    user_owned: "platform_provisioned",
   };
   return aliases[raw] || "platform_provisioned";
 }

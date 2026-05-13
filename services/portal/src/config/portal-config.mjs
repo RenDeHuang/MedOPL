@@ -38,7 +38,7 @@ export const PORTAL_PUBLIC_URL = String(process.env.PORTAL_PUBLIC_URL || "").rep
 export const OPL_WEB_URL = String(process.env.OPL_WEB_URL || "").replace(/\/$/, "");
 export const OPL_RUNTIME_MODE = String(process.env.OPL_RUNTIME_MODE || "unknown").trim() || "unknown";
 export const OPL_WEBUI_AUTH_MODE = String(process.env.OPL_WEBUI_AUTH_MODE || "unknown").trim() || "unknown";
-export const PRODUCT_RUNTIME_MODE = String(process.env.PRODUCT_RUNTIME_MODE || "user_owned").trim().toLowerCase() || "user_owned";
+export const PRODUCT_RUNTIME_MODE = String(process.env.PRODUCT_RUNTIME_MODE || "platform_provisioned").trim().toLowerCase() || "platform_provisioned";
 export const PRODUCT_OPS_PROFILE = String(process.env.PRODUCT_OPS_PROFILE || "").trim() === "1";
 export const OPL_RUNTIME_TIMEOUT_MS = Number(process.env.OPL_RUNTIME_TIMEOUT_MS || 10000);
 export const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://127.0.0.1:13000";

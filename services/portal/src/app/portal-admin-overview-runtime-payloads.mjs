@@ -116,7 +116,7 @@ export function createPortalAdminOverviewPayloadBuilder({
       allRuns.push(...(await collectRunsForUser(item.id, { limit: 50 })).map((run) => ({ ...run, userId: item.id, userName: item.name, userEmail: item.email })));
     }
     const serviceStatuses = await Promise.all(overviewServiceTargets(urls, opsSurfaceEnabled).map(async (item) => ({ ...item, probe: await probe(item.url) })));
-    const disabledOpsSummary = { available: false, mode: "disabled", note: "默认 user-owned 模式下未启用运维入口" };
+    const disabledOpsSummary = { available: false, mode: "disabled", note: "未启用平台托管运维入口" };
     const [minioSummary, harborSummary, langfuseSummary] = await Promise.all([
       opsSurfaceEnabled ? fetchMinioSummary() : Promise.resolve(disabledOpsSummary),
       opsSurfaceEnabled ? fetchHarborSummary() : Promise.resolve(disabledOpsSummary),
@@ -272,7 +272,7 @@ export function createPortalAdminOverviewPayloadBuilder({
         rancher: {
           available: opsSurfaceEnabled && Boolean(urls.rancherUrl),
           mode: opsSurfaceEnabled ? "status_only" : "disabled",
-          note: !opsSurfaceEnabled ? "默认 user-owned 模式下未启用 Rancher 入口" : (urls.rancherUrl ? "当前仅展示入口与可达状态" : "未配置 Rancher 入口"),
+          note: !opsSurfaceEnabled ? "未启用平台托管运维入口" : (urls.rancherUrl ? "当前仅展示入口与可达状态" : "未配置 Rancher 入口"),
         },
         security: securitySummary,
         performance: performanceSummary,

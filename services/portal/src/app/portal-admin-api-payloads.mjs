@@ -453,7 +453,7 @@ export function createPortalAdminApiPayloads(deps) {
     workspaceChatSessionsForUser,
   } = deps;
   const urls = defaultUrls(configuredUrls);
-  const runtimeMode = String(productProfile.runtimeMode || "user_owned").trim().toLowerCase() || "user_owned";
+  const runtimeMode = String(productProfile.runtimeMode || "platform_provisioned").trim().toLowerCase() || "platform_provisioned";
   const opsProfileEnabled = Boolean(productProfile.opsProfileEnabled);
   const opsSurfaceEnabled = opsProfileEnabled || runtimeMode === "managed_runtime";
 

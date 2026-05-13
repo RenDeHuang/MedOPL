@@ -105,7 +105,7 @@ export function createPortalApiRoutes({
     writeDb,
     cloudProvisioner,
   });
-  const handleLegacyUserOwnedResources = createUserOwnedResourceRoutes({
+  const handleRetiredUserOwnedResources = createUserOwnedResourceRoutes({
     readBody,
     sendJson,
     writeDb,
@@ -259,7 +259,7 @@ export function createPortalApiRoutes({
     if (await handleV22ManagedEnvironmentRelease(context)) return true;
     if (await handleV22OplWork(context)) return true;
     if (await handlePlatformProvisionedResources(context)) return true;
-    if (await handleLegacyUserOwnedResources(context)) return true;
+    if (await handleRetiredUserOwnedResources(context)) return true;
     if (await handleState(context)) return true;
     if (await handleAnnouncements(context)) return true;
     if (await handleMe(context)) return true;

@@ -77,6 +77,7 @@
 - 普通用户页面不展示用户自配云资源。
 - 新代码不得新增 `user-owned` route/domain/store 作为正式入口。
 - 若旧 route 暂保留，只能返回 tombstone、removed 或 legacy alias，不做兼容翻译。
+- completed on cleanup/v22-retire-user-owned-primary-path：Portal 默认 runtime 收敛到 `platform_provisioned`；旧 `user-owned` route/domain/store 改为 fail-closed tombstone；`user_owned` lifecycle mode 不再静默兼容到平台托管路径。`resource-order` 引用保留给 Slice 3 单独清退。
 
 ## Slice 3: resource-order Primary Path Retirement
 

@@ -138,6 +138,8 @@ default-entry cleanup completed on `cleanup/v22-default-entry-legacy-narrative`:
 
 env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.env.demo.template` is now a tracked v22 local template for Portal, OPL Web Gateway, Runtime Bridge / Adapter, and clean One Person Lab upstream entry wiring. It no longer carries legacy runner, K8s namespace, resource-provisioner, OpenCost billing truth, Langfuse stack image, `user_owned`, or `resource-order` defaults.
 
+user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; legacy `user-owned` route/domain/store now fail-closed as tombstones; `user_owned` lifecycle mode is no longer silently normalized into the platform-provisioned resource path. `resource-order` pointers are intentionally left for the resource-order retirement slice.
+
 Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `scripts/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
 
 ## Adjudication Rules

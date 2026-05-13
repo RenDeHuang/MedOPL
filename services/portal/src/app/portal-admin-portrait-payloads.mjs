@@ -112,7 +112,7 @@ export function createPortalAdminPortraitPayloads({
     const storage = await fetchWorkspaceStorageSnapshot(taskSpace);
     const minio = opsSurfaceEnabled
       ? await fetchWorkspaceMinioState(userId, workspaceId)
-      : { source: "user_owned_storage", type: "disabled", available: false, synced: false, note: "默认 user-owned 模式下不展示 MinIO 同步状态" };
+      : { source: "platform_provisioned_storage", type: "disabled", available: false, synced: false, note: "未启用平台托管运维入口时不展示 MinIO 同步状态" };
     const traces = await fetchTraceRows({ workspaceId, limit: 20 });
 
     return {

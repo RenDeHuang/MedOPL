@@ -34,7 +34,7 @@ export function createPortalAdminApiRoutes({
     sendJson(res, {
       ok: false,
       error: "ops_surface_disabled",
-      message: "默认 user-owned 模式未启用平台托管运维入口。",
+      message: "未启用平台托管运维入口。",
     }, 404);
   }
 
