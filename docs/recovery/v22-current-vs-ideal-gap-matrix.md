@@ -101,12 +101,12 @@ Every gap entry must contain:
 ### Gap: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
 
 - id: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
-- current_fact: local contracts prove Gateway/preflight/Runtime Bridge, selected file/run/artifact gates, and a local OPL productionization eval shell. Production connection is not fully live.
+- current_fact: local contracts prove Gateway/preflight/Runtime Bridge, selected file/run/artifact gates, a local OPL productionization eval shell, and Runtime Agent HTTP relay rejection of Package D owner fields. Production connection is not fully live.
 - ideal_state: Portal -> Gateway -> clean upstream OPL -> Runtime Agent -> file/run/artifact -> Portal trace works without fake 200.
 - problem: canary facts must not become production truth without productionized branch absorption.
 - dependency: OPL capability and file/run/artifact contracts.
-- status: in_progress
-- next_leaf_step: leaf-opl-connection-productionization-local-implementation
+- status: gated
+- next_leaf_step: deferred_authorized_without_step_local_auth_record
 - eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
 - allowed_files: local OPL productionization implementation only under `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/portal/src/domain/opl-work-flow.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs`, `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-messages.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs`, `services/opl-runtime-bridge/src/run-contract.mjs`, OPL productionization smokes, and scoped recovery truth writeback
 - forbidden_files: upstream one-person-lab, `deploy/*` without authorization, raw provider key paths
@@ -139,6 +139,7 @@ truth writeback section:
 - leaf-opl-connection-productionization-eval-shell: `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` now provides the local eval shell for the next OPL production implementation. It reads only repo-tracked contracts/recovery/gates, asserts OPL projection inputs are limited to `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`, and fail-closes on Package D owner fields, raw key/token/storage/path leakage, fake success, upstream drift, and canary evidence promoted to production truth.
 - leaf-opl-connection-productionization-eval-shell B absorbed on `6a939de05efa8967fa2b0bf8da3c53768471fc89`. The next executable OPL leaf is `leaf-opl-connection-productionization-local-implementation`: a local-only implementation slice that may productionize repo-local Portal/Adapter/Runtime Bridge projection boundaries, but must not read secret, call a live provider, call true cloud, build/push/kubectl, deploy, modify upstream, or claim real cloud/COS/Langfuse production truth.
 - leaf-opl-connection-productionization-local-implementation attempt 1: the local eval now proves `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs` rejects Package D owner fields (`ownerRef`, `operationId`, K8s/deploy owner labels) in Runtime Agent HTTP relay payloads, in addition to existing raw key/token/storage/path leakage guards. This remains local productionization hardening only and does not claim true cloud runtime, COS billing, Langfuse, deploy, or upstream production truth.
+- leaf-opl-connection-productionization-local-implementation B absorbed on `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`. The remaining OPL productionization work that requires true cloud runtime, COS billing reconciliation, Langfuse / `trace.medopl.cn`, deploy evidence, build/push/kubectl, live-test, or secret-backed live provider calls is not executable without a step-local auth record and remains `deferred_authorized`; the next local executable leaf is `leaf-frontend-product-evalset-gap`.
 - Authorization model: Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps；Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。
 - No auth record means the risky step remains deferred_authorized.
 - Cloud live baseline / cleanup / minimum spend policy requires desired/current baseline 应为 2，且测试后必须回到 2.
@@ -149,11 +150,11 @@ truth writeback section:
 ### Gap: frontend-product-vue-vite-ts-pinia
 
 - id: frontend-product-vue-vite-ts-pinia
-- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts.
+- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` and Portal frontend surface smokes already exist, but the product-goal cursor has not yet characterized this gap as the next executable local leaf after OPL local hardening.
 - ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, and API contracts are eval-covered.
 - problem: visual or API changes can ship without responsive or component-state verification.
 - dependency: current Portal UI contracts.
-- status: open
+- status: in_progress
 - next_leaf_step: leaf-frontend-product-evalset-gap
 - eval: `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`
 - allowed_files: future frontend branch under `services/portal/frontend/**` plus evalset/smoke

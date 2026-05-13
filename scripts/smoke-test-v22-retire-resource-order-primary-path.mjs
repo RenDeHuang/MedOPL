@@ -272,6 +272,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "docs/recovery/v22-goal-state.md",
       "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
       "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+      "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
       "scripts/smoke-test-v22-product-goal-harness.mjs",
     ])],
     ["cleanup/v22-product-goal-harness", new Set([

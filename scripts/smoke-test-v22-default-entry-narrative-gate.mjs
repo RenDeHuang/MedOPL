@@ -63,6 +63,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],

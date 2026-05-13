@@ -77,9 +77,10 @@ assertIncludesAll(contents.gapMatrix, [
   "leaf-opl-connection-productionization-eval-shell",
   "leaf-opl-connection-productionization-local-implementation",
   "contract_refresh_only",
-  "next_leaf_step: leaf-opl-connection-productionization-local-implementation",
+  "next_leaf_step: deferred_authorized_without_step_local_auth_record",
   "eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`",
   "canary facts must not become production truth without productionized branch absorption",
+  "f114ee587db2a41a3a85fc5f67bbed4fbe63e57b",
 ], "gap_matrix_leaf6");
 
 assertIncludesAll(contents.goalState, [
