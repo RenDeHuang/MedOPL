@@ -4,16 +4,16 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `c5c1e8d49e08e335f839ca7ae0c0d0f4fe44350f`
+- 当前 trunk HEAD: `316d3245142c447c2b0f6016af9fa437b99100e9`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `cleanup/v22-resource-order-store-postgres-schema-eval-shell`
+- current branch: `cleanup/v22-resource-order-store-postgres-schema-implementation`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-resource-order-store-postgres-schema-implementation`
-- highest-priority executable leaf step: `leaf-resource-order-store-postgres-schema-implementation`
-- 当前下一问题：resource-order store/Postgres/schema 第四刀实现
+- 当前 goal cursor: `leaf-secret-hygiene-diff-scan-eval-shell`
+- highest-priority executable leaf step: `leaf-secret-hygiene-diff-scan-eval-shell`
+- 当前下一问题：secret hygiene changed-files / added-lines diff-scoped eval shell
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
@@ -91,11 +91,14 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前三刀
+- 已完成事实：default entry、user_owned、resource-order 前四刀
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
-- resource-order first three slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup.
+- resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
 - leaf-resource-order-store-postgres-schema-eval-shell completed on branch `cleanup/v22-resource-order-store-postgres-schema-eval-shell`: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` now statically characterizes the remaining store/Postgres/schema/runtime connection legacy facts without touching `services/*`, without connecting to Postgres, and without running live/cloud/build/kubectl. The gate records current legacy tables/collections (`resource_orders`, `resource_order_events`, `ledger_entries.order_id`, `resourceOrders`, `resourceOrderEvents`) and confirms replacement truth (`resource_binding_id`, `workspace_resource_bindings`) is present before fourth-slice implementation.
+- leaf-resource-order-store-postgres-schema-implementation completed on branch `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer instantiates or wires resource-order store/Postgres persistence. `portal-resource-order-store.mjs` is fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres snapshot persistence no longer read/write `resource_orders` or `resource_order_events` as active truth. `resource_orders`, `resource_order_events`, snapshot helper writers, and JSON migration collections remain migration-only/tombstone facts; no real DB migration, live DB connection, cloud, build/push, kubectl, deploy, secret read, or upstream modification was performed.
+- Leaf 2 verification summary: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `npm --prefix services/portal run check`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `node scripts/smoke-test-v22-mvp-contract-suite.mjs`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, `git diff --check -- services/portal/src/state services/portal/src/app scripts docs/recovery`, and scoped `node --check` passed locally.
+- Leaf 2 failure analysis: initial failures were gate subscription mismatches, not product behavior failures. `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` first failed with `resource_order_retirement_branch_must_not_modify` because the fourth-slice implementation branch and characterization gate were not registered in its exact branch allowlist. `node scripts/smoke-test-v22-product-goal-harness.mjs` and `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs` then failed on branch-scoped allowed files for the same reason. failure_category: `eval_wrong`; attempt_count: 1 per affected gate; root_cause_id: `leaf2_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlists for this leaf, including `portal-store-storage-bootstrap.mjs` because active storage bootstrap instantiated the retired store; whether_contract_wrong: false; whether_problem_should_split: false; whether_authorization_required: false.
 
 ## Later Problems
 
@@ -154,7 +157,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - eval_command: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` and `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
 - failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
 - trace_or_evidence_expectation: local stdout JSON only; no `.runtime` evidence unless future canary is explicitly authorized.
-- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, `scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `docs/recovery/*`
+- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/state/portal-store-storage-bootstrap.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, `scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `docs/recovery/*`
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, unrelated frontend/backend.
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
 - B_absorb_criteria: B reruns evals, checks diff-scoped secret scan, confirms no real DB/cloud operation, then ff-only absorbs and pushes before cursor moves.

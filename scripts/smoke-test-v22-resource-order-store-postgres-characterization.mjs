@@ -45,16 +45,24 @@ const sources = Object.fromEntries(await Promise.all(
 
 assertFunctionExport(sources.resourceOrderStore, "createPortalResourceOrderStore", "resource_order_store");
 for (const expected of [
-  "upsertResourceOrder",
+  "RESOURCE_ORDER_STORE_RETIRED_ERROR",
+  "portal_resource_order_store_retired",
+  "retiredResourceOrderStoreOperation",
   "appendResourceOrderEvent",
   "persistResourceOrderState",
+  "upsertResourceOrder",
+]) {
+  assertIncludes(sources.resourceOrderStore, expected, "resource_order_store_retired_fact");
+}
+for (const forbidden of [
+  "pgTableName",
   "resource_orders",
   "resource_order_events",
   "ledger_entries",
-  "order_id",
-  "resourceOrderId: targetOrderId",
+  "pool.connect",
+  "INSERT INTO",
 ]) {
-  assertIncludes(sources.resourceOrderStore, expected, "resource_order_store_legacy_persistence_fact");
+  assertNotIncludes(sources.resourceOrderStore, forbidden, "resource_order_store_must_not_keep_active_postgres_dependency");
 }
 
 for (const expected of [
@@ -68,6 +76,13 @@ for (const expected of [
 }
 
 for (const expected of [
+  "resourceBindingId: row.resource_binding_id",
+  "workspaceResourceBindings:",
+  "writeWorkspaceResourceBindings",
+]) {
+  assertIncludes(sources.postgresPersistence, expected, "resource_binding_postgres_persistence_fact");
+}
+for (const forbidden of [
   'pool.query(`SELECT * FROM ${pgTableName("resource_orders")}`)',
   'pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`)',
   "resourceOrdersRes",
@@ -79,7 +94,7 @@ for (const expected of [
   "await writeResourceOrders({ client, pgTableName, db })",
   "await writeResourceOrderEvents({ client, pgTableName, db })",
 ]) {
-  assertIncludes(sources.postgresPersistence, expected, "resource_order_postgres_persistence_fact");
+  assertNotIncludes(sources.postgresPersistence, forbidden, "postgres_persistence_must_not_use_resource_order_runtime_path");
 }
 
 assertFunctionExport(sources.snapshotHelpers, "writeResourceOrders", "resource_order_snapshot_helper");
@@ -92,19 +107,26 @@ for (const expected of [
 }
 
 for (const expected of [
+  "getAccountingStore",
+  "getWorkspaceStore",
+  "getLabBillingStore",
+]) {
+  assertIncludes(sources.runtimeConnections, expected, "resource_order_runtime_connection_retired_fact");
+}
+for (const forbidden of [
   'import { createPortalResourceOrderStore } from "./portal-resource-order-store.mjs";',
+  "getResourceOrderStore",
+  "RESOURCE_ORDER_STORE_RETIRED_ERROR",
+  "retiredResourceOrderStoreOperation",
   "let resourceOrderStore = null;",
-  "function getResourceOrderStore()",
   "portal_resource_order_store_requires_pg_pool",
   "createPortalResourceOrderStore({",
-  "getResourceOrderStore,",
 ]) {
-  assertIncludes(sources.runtimeConnections, expected, "resource_order_runtime_connection_fact");
+  assertNotIncludes(sources.runtimeConnections, forbidden, "runtime_connections_must_not_create_resource_order_store");
 }
 
 for (const expected of [
   "ensureResourceOrderCollections",
-  "getResourceOrderStore",
   "persistResourceOrderState: dbFacade.persistResourceOrderState",
   "readPortalPostgresSnapshot",
   "writePortalPostgresSnapshot",
@@ -112,13 +134,19 @@ for (const expected of [
 ]) {
   assertIncludes(sources.portalStore, expected, "resource_order_portal_store_fact");
 }
+assertNotIncludes(sources.portalStore, "getResourceOrderStore", "portal_store_must_not_wire_resource_order_runtime_store");
 
 for (const expected of [
-  "getResourceOrderStore",
+  "RESOURCE_ORDER_STATE_RETIRED_ERROR",
   "persistResourceOrderState(params)",
+  "portal_resource_order_state_retired",
+]) {
+  assertIncludes(sources.dbDelegates, expected, "resource_order_db_delegate_retired_fact");
+}
+for (const forbidden of [
   "return getResourceOrderStore().persistResourceOrderState(params)",
 ]) {
-  assertIncludes(sources.dbDelegates, expected, "resource_order_db_delegate_fact");
+  assertNotIncludes(sources.dbDelegates, forbidden, "db_delegate_must_not_call_resource_order_store");
 }
 
 assertIncludes(sources.portalStoreRuntime, "ensureResourceOrderCollections", "resource_order_portal_store_runtime_fact");
@@ -144,12 +172,15 @@ console.log(JSON.stringify({
   contract: "v22_resource_order_store_postgres_characterization",
   mode: "static_source_characterization_only",
   noDbConnection: true,
-  characterizedLegacyFacts: {
+  retiredActiveRuntimeFacts: {
     resourceOrderStore: paths.resourceOrderStore,
-    postgresSchema: paths.schema,
     postgresPersistence: paths.postgresPersistence,
-    snapshotHelpers: paths.snapshotHelpers,
     runtimeConnections: paths.runtimeConnections,
+    dbDelegates: paths.dbDelegates,
+  },
+  migrationOnlyFacts: {
+    postgresSchema: paths.schema,
+    snapshotHelpers: paths.snapshotHelpers,
     jsonCollections: [paths.migrations, paths.migrationCollections],
   },
   replacementTruthStillPresent: [

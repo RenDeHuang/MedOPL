@@ -67,7 +67,6 @@ export function createPortalStore({
     ensureRedis,
     getAccountingStore,
     getLabBillingStore,
-    getResourceOrderStore,
     getWorkspaceStore,
   } = createPortalStoreRuntimeConnections({
     createRedisClient,
@@ -162,7 +161,6 @@ export function createPortalStore({
     pgTableName,
     getAccountingStore,
     getWorkspaceStore,
-    getResourceOrderStore,
     getLabBillingStore,
     migrateDb,
     buildSeedDb,
@@ -180,7 +178,6 @@ export function createPortalStore({
     exists,
     getAccountingStore,
     getLabBillingStore,
-    getResourceOrderStore,
     getWorkspaceStore,
     migrateDb,
     mkdir,

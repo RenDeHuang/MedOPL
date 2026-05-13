@@ -27,6 +27,25 @@ const allowedDiffPaths = new Set([
   "docs/recovery/repo-zoning.md",
 ]);
 
+const branchScopedAllowedDiffPaths = new Map([
+  ["cleanup/v22-resource-order-store-postgres-schema-implementation", new Set([
+    "services/portal/src/state/portal-resource-order-store.mjs",
+    "services/portal/src/state/portal-store-db-delegates.mjs",
+    "services/portal/src/state/portal-store-postgres-persistence.mjs",
+    "services/portal/src/state/portal-store-runtime-connections.mjs",
+    "services/portal/src/state/portal-store-storage-bootstrap.mjs",
+    "services/portal/src/state/portal-store.mjs",
+  ])],
+  ["recovery/platform-v22-trunk", new Set([
+    "services/portal/src/state/portal-resource-order-store.mjs",
+    "services/portal/src/state/portal-store-db-delegates.mjs",
+    "services/portal/src/state/portal-store-postgres-persistence.mjs",
+    "services/portal/src/state/portal-store-runtime-connections.mjs",
+    "services/portal/src/state/portal-store-storage-bootstrap.mjs",
+    "services/portal/src/state/portal-store.mjs",
+  ])],
+]);
+
 const productLoopItems = [
   "1. 平台创建 1 名用户。",
   "2. 给用户充值额度。",
@@ -306,8 +325,8 @@ const frameworkPhrases = [
 const goalStatePhrases = [
   "当前 trunk HEAD",
   "当前 goal cursor",
-  "已完成事实：default entry、user_owned、resource-order 前三刀",
-  "当前下一问题：resource-order store/Postgres/schema 第四刀",
+  "已完成事实：default entry、user_owned、resource-order 前四刀",
+  "当前下一问题：secret hygiene changed-files / added-lines diff-scoped eval shell",
   "secret hygiene",
   "legacy scripts archive",
   "Portal architecture refactor",
@@ -393,9 +412,23 @@ function changedFilesFromBase() {
   return [...new Set(outputs.flatMap((output) => output.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)))];
 }
 
+function currentBranchName() {
+  const result = spawnSync("git", ["branch", "--show-current"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_branch_show_current_failed:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
+}
+
 function assertOnlyAllowedFilesChanged() {
+  const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(currentBranchName()) ?? new Set();
   for (const filePath of changedFilesFromBase()) {
-    assert(allowedDiffPaths.has(filePath), `product_goal_harness_modified_unsubscribed_file:${filePath}`);
+    assert(
+      allowedDiffPaths.has(filePath) || branchAllowedDiffPaths.has(filePath),
+      `product_goal_harness_modified_unsubscribed_file:${filePath}`,
+    );
   }
 }
 

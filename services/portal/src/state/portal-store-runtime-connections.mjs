@@ -1,6 +1,5 @@
 import { createPortalAccountingStore } from "./portal-accounting-store.mjs";
 import { createPortalWorkspaceStore } from "./portal-workspace-store.mjs";
-import { createPortalResourceOrderStore } from "./portal-resource-order-store.mjs";
 import { createPortalLabBillingStore } from "./portal-lab-billing-store.mjs";
 
 export function createPortalStoreRuntimeConnections({
@@ -15,7 +14,6 @@ export function createPortalStoreRuntimeConnections({
   let redisClient = null;
   let accountingStore = null;
   let workspaceStore = null;
-  let resourceOrderStore = null;
   let labBillingStore = null;
 
   async function ensurePgPool() {
@@ -64,19 +62,6 @@ export function createPortalStoreRuntimeConnections({
     return workspaceStore;
   }
 
-  function getResourceOrderStore() {
-    if (!resourceOrderStore) {
-      if (!pgPool) {
-        throw new Error("portal_resource_order_store_requires_pg_pool");
-      }
-      resourceOrderStore = createPortalResourceOrderStore({
-        pool: pgPool,
-        pgTableName,
-      });
-    }
-    return resourceOrderStore;
-  }
-
   function getLabBillingStore() {
     if (!labBillingStore) {
       if (!pgPool) {
@@ -95,7 +80,6 @@ export function createPortalStoreRuntimeConnections({
     ensureRedis,
     getAccountingStore,
     getLabBillingStore,
-    getResourceOrderStore,
     getWorkspaceStore,
   };
 }

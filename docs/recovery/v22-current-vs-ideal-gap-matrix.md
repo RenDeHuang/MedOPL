@@ -41,17 +41,17 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-resource-order
 
 - id: legacy-cleanup-resource-order
-- current_fact: resource-order route tombstones, billing/payload rewrite, store/admin/frontend third slice, and store/Postgres/schema characterization are complete; store/Postgres/schema active implementation cleanup remains.
+- current_fact: resource-order route tombstones, billing/payload rewrite, store/admin/frontend third slice, store/Postgres/schema characterization, and fourth-slice active runtime persistence retirement are complete. Resource-order remains only retired/tombstone/migration-only in store/Postgres/schema surfaces.
 - ideal_state: managed environment/resource binding/billing/audit is the only active resource attribution path.
-- problem: remaining store/Postgres/schema surfaces can keep resource-order as persistence truth.
+- problem: prevent resource-order persistence from returning as active runtime truth while retaining migration-only legacy tables/collections until a later schema-drop/archive leaf proves it is safe.
 - dependency: route, billing/payload, store/admin/frontend cleanup absorbed.
-- status: open
-- next_leaf_step: leaf-resource-order-store-postgres-schema-implementation
-- eval: `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; store/Postgres/schema characterization is now covered by `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` and dedicated static gate `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`
-- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, relevant v22 smoke and recovery docs after a dedicated implementation branch is opened
+- status: cleaned
+- next_leaf_step: monitor_only_after_B_absorb
+- eval: `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; store/Postgres/schema retired-active-runtime facts are covered by `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` and dedicated static gate `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`
+- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/state/portal-store-storage-bootstrap.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, relevant v22 smoke and recovery docs for monitoring or a future dedicated schema-drop/archive leaf
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, unrelated frontend
 - truth_writeback_target: `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B confirms the characterization gate exists, resource binding replacement path stays green, no route success path returns, and fourth-slice implementation does not run real DB/cloud operations.
+- B_absorb_criteria: B confirms the characterization gate now describes retired active runtime behavior, resource binding replacement path stays green, no route success path returns, no active runtime resource-order store/Postgres read/write remains, and fourth-slice implementation did not run real DB/cloud operations.
 
 ### Gap: legacy-cleanup-secret-hygiene
 
@@ -130,6 +130,7 @@ Every gap entry must contain:
 
 truth writeback section:
 
+- leaf-resource-order-store-postgres-schema-implementation: active `portal-resource-order-store` is now fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres snapshot read/write no longer instantiate or call resource-order store or `resource_orders` / `resource_order_events` active queries/writers. Legacy tables, snapshot helper functions, and JSON migration collection keys remain migration-only/tombstone facts. Verification passed locally with resource-order characterization, resource-order retirement gate, Portal check, product-goal harness, default-entry gate, MVP suite, workflow review, scoped node --check, and diff whitespace check. Failure analysis classified initial branch allowlist failures as `eval_wrong` / `leaf2_branch_subscription_missing`; exact branch-scoped allowlists were updated, including `portal-store-storage-bootstrap.mjs` because it was part of active runtime bootstrap.
 - Authorization model: Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps；Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。
 - No auth record means the risky step remains deferred_authorized.
 - Cloud live baseline / cleanup / minimum spend policy requires desired/current baseline 应为 2，且测试后必须回到 2.

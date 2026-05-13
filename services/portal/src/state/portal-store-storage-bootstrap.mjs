@@ -19,7 +19,6 @@ export function createPortalStoreStorageBootstrap({
   pgTableName,
   getAccountingStore,
   getWorkspaceStore,
-  getResourceOrderStore,
   getLabBillingStore,
   migrateDb,
   buildSeedDb,
@@ -103,7 +102,6 @@ export function createPortalStoreStorageBootstrap({
     });
     getAccountingStore();
     getWorkspaceStore();
-    getResourceOrderStore();
     getLabBillingStore();
   }
 

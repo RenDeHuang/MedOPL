@@ -19,8 +19,6 @@ import {
   writeFileSpaceEntitlements,
   writeAuditEvents,
   writeLedgerEntries,
-  writeResourceOrderEvents,
-  writeResourceOrders,
   writeStorageOrders,
   writeTaskSpaces,
   writeUserComputeInstances,
@@ -42,13 +40,11 @@ export async function readPortalPostgresSnapshot({
   namespace,
   normalizeServerPlanSelection,
 }) {
-  const [usersRes, walletsRes, ledgerRes, taskSpacesRes, resourceOrdersRes, resourceOrderEventsRes, storageOrdersRes, userComputeInstancesRes, userStorageBucketsRes, workspaceResourceBindingsRes, weeklyProtectionFreezesRes, workspaceFilesRes, cloudOperationsRes, cloudOperationJobsRes, computeAllocationsRes, fileSpaceEntitlementsRes, cloudResourceProjectionsRes, billingReconciliationsRes, labSnapshot, sandboxesRes, groupsRes, settingsRes, eventsRes] = await Promise.all([
+  const [usersRes, walletsRes, ledgerRes, taskSpacesRes, storageOrdersRes, userComputeInstancesRes, userStorageBucketsRes, workspaceResourceBindingsRes, weeklyProtectionFreezesRes, workspaceFilesRes, cloudOperationsRes, cloudOperationJobsRes, computeAllocationsRes, fileSpaceEntitlementsRes, cloudResourceProjectionsRes, billingReconciliationsRes, labSnapshot, sandboxesRes, groupsRes, settingsRes, eventsRes] = await Promise.all([
     pool.query(`SELECT * FROM ${pgTableName("users")}`),
     pool.query(`SELECT * FROM ${pgTableName("wallets")}`),
     pool.query(`SELECT * FROM ${pgTableName("ledger_entries")}`),
     pool.query(`SELECT * FROM ${pgTableName("task_spaces")}`),
-    pool.query(`SELECT * FROM ${pgTableName("resource_orders")}`),
-    pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`),
     pool.query(`SELECT * FROM ${pgTableName("storage_orders")}`),
     pool.query(`SELECT * FROM ${pgTableName("user_compute_instances")}`),
     pool.query(`SELECT * FROM ${pgTableName("user_storage_buckets")}`),
@@ -122,56 +118,6 @@ export async function readPortalPostgresSnapshot({
       updatedAt: toIso(row.updated_at),
       archivedAt: toIso(row.archived_at),
       deletedAt: toIso(row.deleted_at),
-    })),
-    resourceOrders: resourceOrdersRes.rows.map((row) => ({
-      id: row.id,
-      tenantId: row.tenant_id,
-      userId: row.user_id,
-      portalUserId: row.portal_user_id,
-      workspaceId: row.workspace_id,
-      workspaceSessionId: row.workspace_session_id,
-      runId: row.run_id,
-      status: row.status,
-      serverPlanId: row.server_plan_id,
-      region: row.region,
-      zone: row.zone,
-      cpu: Number(row.cpu || 0),
-      memoryGb: Number(row.memory_gb || 0),
-      gpuType: row.gpu_type || "",
-      gpuCount: Number(row.gpu_count || 0),
-      storagePlanId: row.storage_plan_id || "",
-      storageSizeGb: Number(row.storage_size_gb || 0),
-      retentionPolicy: row.retention_policy || "",
-      estimatedHours: Number(row.estimated_hours || 0),
-      autoStopAt: row.auto_stop_at || "",
-      quoteId: row.quote_id || "",
-      freezeId: row.freeze_id || "",
-      provisionRequestId: row.provision_request_id || "",
-      cloudResourceIds: row.cloud_resource_ids_json || [],
-      currency: row.currency || "CNY",
-      unitPrice: Number(row.unit_price || 0),
-      minBillableHours: Number(row.min_billable_hours || 1),
-      riskFactor: Number(row.risk_factor || 1),
-      quoteAmount: Number(row.quote_amount || 0),
-      freezeAmount: Number(row.freeze_amount || 0),
-      exactCost: row.exact_cost === null ? null : Number(row.exact_cost || 0),
-      pricingSource: row.pricing_source || "",
-      priceUpdatedAt: row.price_updated_at || "",
-      idempotencyKey: row.idempotency_key || "",
-      failedReason: row.failed_reason || "",
-      createdAt: toIso(row.created_at),
-      updatedAt: toIso(row.updated_at),
-      settledAt: toIso(row.settled_at),
-    })),
-    resourceOrderEvents: resourceOrderEventsRes.rows.map((row) => ({
-      id: row.id,
-      orderId: row.order_id,
-      eventType: row.event_type,
-      eventPayload: row.event_payload_json || {},
-      actorType: row.actor_type,
-      actorId: row.actor_id,
-      idempotencyKey: row.idempotency_key || "",
-      createdAt: toIso(row.created_at),
     })),
     storageOrders: storageOrdersRes.rows.map((row) => ({
       id: row.id,
@@ -472,8 +418,6 @@ export async function writePortalPostgresSnapshot({
     await writeWallets({ client, pgTableName, db });
     await writeLedgerEntries({ client, pgTableName, db, normalizeLedgerEntries });
     await writeTaskSpaces({ client, pgTableName, db, normalizeServerPlanSelection });
-    await writeResourceOrders({ client, pgTableName, db });
-    await writeResourceOrderEvents({ client, pgTableName, db });
     await writeStorageOrders({ client, pgTableName, db });
     await writeUserComputeInstances({ client, pgTableName, db });
     await writeUserStorageBuckets({ client, pgTableName, db });

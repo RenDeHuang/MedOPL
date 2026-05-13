@@ -70,6 +70,23 @@ const allowedStorePostgresSchemaEvalShellDiffPaths = new Set([
   "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
 ]);
 
+const allowedStorePostgresSchemaImplementationDiffPaths = new Set([
+  gatePath,
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/repo-zoning.md",
+  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+  "docs/recovery/v22-goal-state.md",
+  "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "scripts/smoke-test-v22-product-goal-harness.mjs",
+  "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
+  "services/portal/src/state/portal-resource-order-store.mjs",
+  "services/portal/src/state/portal-store-db-delegates.mjs",
+  "services/portal/src/state/portal-store-postgres-persistence.mjs",
+  "services/portal/src/state/portal-store-runtime-connections.mjs",
+  "services/portal/src/state/portal-store-storage-bootstrap.mjs",
+  "services/portal/src/state/portal-store.mjs",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const goalStatePath = "docs/recovery/v22-goal-state.md";
@@ -237,6 +254,8 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     ])],
     ["cleanup/v22-resource-order-store-postgres-schema-eval-shell", allowedStorePostgresSchemaEvalShellDiffPaths],
+    ["cleanup/v22-resource-order-store-postgres-schema-implementation", allowedStorePostgresSchemaImplementationDiffPaths],
+    ["recovery/platform-v22-trunk", allowedStorePostgresSchemaImplementationDiffPaths],
     ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],
     ["cleanup/v22-retire-resource-order-store-admin-frontend", allowedStoreAdminFrontendRewriteDiffPaths],
   ]);
@@ -596,23 +615,35 @@ function assertStorePostgresSchemaCharacterization({
   activePortalFeatureRoutes,
 }) {
   assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-eval-shell completed", "goal_state_resource_order_store_postgres_eval_shell_completion");
-  assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-implementation", "goal_state_resource_order_store_postgres_next_cursor");
-  assertIncludes(gapMatrix, "store/Postgres/schema characterization is now covered by `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`", "gap_matrix_resource_order_store_postgres_characterization_gate");
+  assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-implementation completed", "goal_state_resource_order_store_postgres_implementation_completion");
+  assertIncludes(goalState, "leaf-secret-hygiene-diff-scan-eval-shell", "goal_state_resource_order_store_postgres_next_cursor");
+  assertIncludes(gapMatrix, "store/Postgres/schema retired-active-runtime facts are covered", "gap_matrix_resource_order_store_postgres_characterization_gate");
+  assertIncludes(gapMatrix, "status: cleaned", "gap_matrix_resource_order_store_postgres_cleaned");
   assertIncludes(legacyBacklog, "第四刀 store/Postgres/schema characterization", "legacy_backlog_resource_order_store_postgres_characterization");
+  assertIncludes(legacyBacklog, "第四刀 store/Postgres/schema implementation completed", "legacy_backlog_resource_order_store_postgres_implementation");
   assertIncludes(repoZoning, "resource-order store/Postgres/schema characterization gate completed", "repo_zoning_resource_order_store_postgres_characterization");
+  assertIncludes(repoZoning, "resource-order store/Postgres/schema implementation completed", "repo_zoning_resource_order_store_postgres_implementation");
 
   assertFunctionExport(resourceOrderStore, "createPortalResourceOrderStore", "resource_order_store");
   for (const expected of [
+    "RESOURCE_ORDER_STORE_RETIRED_ERROR",
+    "portal_resource_order_store_retired",
+    "retiredResourceOrderStoreOperation",
     "upsertResourceOrder",
     "appendResourceOrderEvent",
     "persistResourceOrderState",
+  ]) {
+    assertIncludes(resourceOrderStore, expected, "resource_order_store_retired_characterization");
+  }
+  for (const forbidden of [
+    "pgTableName",
     "resource_orders",
     "resource_order_events",
     "ledger_entries",
-    "order_id",
-    "resourceOrderId: targetOrderId",
+    "pool.connect",
+    "INSERT INTO",
   ]) {
-    assertIncludes(resourceOrderStore, expected, "resource_order_store_characterization");
+    assert(!resourceOrderStore.includes(forbidden), `resource_order_store_must_not_keep_active_postgres_dependency:${forbidden}`);
   }
 
   for (const expected of [
@@ -626,6 +657,13 @@ function assertStorePostgresSchemaCharacterization({
   }
 
   for (const expected of [
+    "resourceBindingId: row.resource_binding_id",
+    "workspaceResourceBindings:",
+    "writeWorkspaceResourceBindings",
+  ]) {
+    assertIncludes(postgresPersistence, expected, "resource_binding_postgres_persistence_characterization");
+  }
+  for (const forbidden of [
     'pool.query(`SELECT * FROM ${pgTableName("resource_orders")}`)',
     'pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`)',
     "resourceOrdersRes",
@@ -637,7 +675,7 @@ function assertStorePostgresSchemaCharacterization({
     "await writeResourceOrders({ client, pgTableName, db })",
     "await writeResourceOrderEvents({ client, pgTableName, db })",
   ]) {
-    assertIncludes(postgresPersistence, expected, "resource_order_postgres_persistence_characterization");
+    assert(!postgresPersistence.includes(forbidden), `postgres_persistence_must_not_use_resource_order_runtime_path:${forbidden}`);
   }
 
   assertFunctionExport(snapshotHelpers, "writeResourceOrders", "resource_order_snapshot_helper");
@@ -650,19 +688,24 @@ function assertStorePostgresSchemaCharacterization({
   }
 
   for (const expected of [
+    "getAccountingStore",
+    "getWorkspaceStore",
+    "getLabBillingStore",
+  ]) {
+    assertIncludes(runtimeConnections, expected, "resource_order_runtime_connection_retired_characterization");
+  }
+  for (const forbidden of [
     'import { createPortalResourceOrderStore } from "./portal-resource-order-store.mjs";',
+    "getResourceOrderStore",
     "let resourceOrderStore = null;",
-    "function getResourceOrderStore()",
     "portal_resource_order_store_requires_pg_pool",
     "createPortalResourceOrderStore({",
-    "getResourceOrderStore,",
   ]) {
-    assertIncludes(runtimeConnections, expected, "resource_order_runtime_connection_characterization");
+    assert(!runtimeConnections.includes(forbidden), `runtime_connections_must_not_create_resource_order_store:${forbidden}`);
   }
 
   for (const expected of [
     "ensureResourceOrderCollections",
-    "getResourceOrderStore",
     "persistResourceOrderState: dbFacade.persistResourceOrderState",
     "readPortalPostgresSnapshot",
     "writePortalPostgresSnapshot",
@@ -670,13 +713,19 @@ function assertStorePostgresSchemaCharacterization({
   ]) {
     assertIncludes(portalStore, expected, "resource_order_portal_store_characterization");
   }
+  assert(!portalStore.includes("getResourceOrderStore"), "portal_store_must_not_wire_resource_order_runtime_store");
 
   for (const expected of [
-    "getResourceOrderStore",
+    "RESOURCE_ORDER_STATE_RETIRED_ERROR",
     "persistResourceOrderState(params)",
+    "portal_resource_order_state_retired",
+  ]) {
+    assertIncludes(dbDelegates, expected, "resource_order_db_delegate_retired_characterization");
+  }
+  for (const forbidden of [
     "return getResourceOrderStore().persistResourceOrderState(params)",
   ]) {
-    assertIncludes(dbDelegates, expected, "resource_order_db_delegate_characterization");
+    assert(!dbDelegates.includes(forbidden), `db_delegate_must_not_call_resource_order_store:${forbidden}`);
   }
 
   assertIncludes(portalStoreRuntime, "ensureResourceOrderCollections", "resource_order_portal_store_runtime_characterization");

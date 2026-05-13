@@ -2,11 +2,17 @@ export function createPortalStoreDbDelegates({
   ensureStorageInfra,
   getAccountingStore,
   getLabBillingStore,
-  getResourceOrderStore,
   getWorkspaceStore,
   storageMode,
-  writeDb,
 }) {
+  const RESOURCE_ORDER_STATE_RETIRED_ERROR = "portal_resource_order_state_retired";
+
+  function retiredResourceOrderStateOperation() {
+    const error = new Error(RESOURCE_ORDER_STATE_RETIRED_ERROR);
+    error.code = RESOURCE_ORDER_STATE_RETIRED_ERROR;
+    return Promise.reject(error);
+  }
+
   async function topupWallet(params) {
     await ensureStorageInfra();
     if (storageMode() !== "postgres_redis") {
@@ -48,10 +54,7 @@ export function createPortalStoreDbDelegates({
 
   async function persistResourceOrderState(params) {
     await ensureStorageInfra();
-    if (storageMode() === "postgres_redis") {
-      return getResourceOrderStore().persistResourceOrderState(params);
-    }
-    return writeDb(params?.db || {});
+    return retiredResourceOrderStateOperation();
   }
 
   async function persistLabBillingState(params) {
