@@ -34,18 +34,18 @@
         </div>
       </section>
 
-      <section data-component-id="portal-harness.component_state" class="grid grid-cols-1 gap-5 xl:grid-cols-[0.95fr_1.25fr]">
-        <div class="space-y-5">
+      <section data-component-id="portal-harness.component_state" class="grid grid-cols-1 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div class="min-w-0 space-y-5">
           <section class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <h2 class="panel-title">按路由查看</h2>
-                <p class="panel-subtitle">每个路由下的 surface 和可浏览状态。</p>
+                <h2 class="panel-title">{{ isDetailRoute ? "同路由组件" : "按路由查看" }}</h2>
+                <p class="panel-subtitle">{{ isDetailRoute ? "只展示当前路由下的组件状态。" : "每个路由下的 surface 和可浏览状态。" }}</p>
               </div>
-              <span class="badge badge-primary">{{ routeCount }} 组</span>
+              <span class="badge badge-primary">{{ visibleRouteGroups.length }} 组</span>
             </div>
             <div class="mt-4 space-y-4">
-              <div v-for="[routeId, items] in routeGroups" :key="routeId" class="rounded-2xl border border-gray-100 p-3 dark:border-slate-700">
+              <div v-for="[routeId, items] in visibleRouteGroups" :key="routeId" class="rounded-2xl border border-gray-100 p-3 dark:border-slate-700">
                 <div class="text-sm font-semibold text-gray-950 dark:text-white">{{ routeId }}</div>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <RouterLink
@@ -62,7 +62,7 @@
             </div>
           </section>
 
-          <section class="card p-5">
+          <section v-if="!isDetailRoute" class="card p-5">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <h2 class="panel-title">按领域查看</h2>
@@ -79,7 +79,7 @@
           </section>
         </div>
 
-        <section class="card p-5">
+        <section class="card min-w-0 p-5">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 class="panel-title">{{ selected?.componentId || "选择组件状态" }}</h2>
@@ -123,8 +123,44 @@
               </div>
             </div>
 
+            <div class="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto]">
+              <div class="rounded-2xl border border-gray-100 p-3 dark:border-slate-700">
+                <div class="text-xs text-gray-500 dark:text-slate-400">渲染模式</div>
+                <div class="mt-1 text-sm font-medium text-gray-950 dark:text-white">真实业务组件</div>
+              </div>
+              <div class="flex flex-wrap gap-2 rounded-2xl border border-gray-100 p-3 dark:border-slate-700" aria-label="视口">
+                <button class="btn" :class="selectedViewport === 'desktop' ? 'btn-primary' : 'btn-secondary'" type="button" @click="selectedViewport = 'desktop'">桌面</button>
+                <button class="btn" :class="selectedViewport === 'tablet' ? 'btn-primary' : 'btn-secondary'" type="button" @click="selectedViewport = 'tablet'">平板</button>
+                <button class="btn" :class="selectedViewport === 'mobile' ? 'btn-primary' : 'btn-secondary'" type="button" @click="selectedViewport = 'mobile'">手机</button>
+              </div>
+              <div class="flex flex-wrap gap-2 rounded-2xl border border-gray-100 p-3 dark:border-slate-700" aria-label="主题">
+                <button class="btn" :class="selectedTheme === 'light' ? 'btn-primary' : 'btn-secondary'" type="button" @click="selectedTheme = 'light'">亮色</button>
+                <button class="btn" :class="selectedTheme === 'dark' ? 'btn-primary' : 'btn-secondary'" type="button" @click="selectedTheme = 'dark'">暗色</button>
+              </div>
+            </div>
+
+            <section class="mt-5 min-w-0 rounded-2xl border border-gray-100 bg-slate-100 p-4 dark:border-slate-700 dark:bg-slate-950">
+              <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-950 dark:text-white">组件预览</h3>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">直接渲染业务组件，fixture 数据只作为状态输入。</p>
+                </div>
+                <span class="badge badge-success">{{ selectedViewport }} · {{ selectedTheme }}</span>
+              </div>
+              <div
+                data-component-id="portal-harness.component_preview"
+                class="min-w-0 overflow-auto rounded-2xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                :class="selectedTheme === 'dark' ? 'dark' : ''"
+                :data-theme="selectedTheme"
+              >
+                <div class="min-w-0" :class="previewShellClass">
+                  <PortalComponentFixtureRenderer :selected="selected" />
+                </div>
+              </div>
+            </section>
+
             <div class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
-              <section class="rounded-2xl border border-gray-100 p-4 dark:border-slate-700">
+              <section class="min-w-0 rounded-2xl border border-gray-100 p-4 dark:border-slate-700">
                 <h3 class="text-sm font-semibold text-gray-950 dark:text-white">组件不变量</h3>
                 <ul class="mt-3 space-y-2 text-sm text-gray-600 dark:text-slate-300">
                   <li v-for="invariant in selected.invariants" :key="invariant" class="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900">
@@ -132,9 +168,9 @@
                   </li>
                 </ul>
               </section>
-              <section class="rounded-2xl border border-gray-100 p-4 dark:border-slate-700">
+              <section class="min-w-0 rounded-2xl border border-gray-100 p-4 dark:border-slate-700">
                 <h3 class="text-sm font-semibold text-gray-950 dark:text-white">Fixture 数据</h3>
-                <pre class="mt-3 max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs leading-5 text-slate-100">{{ selectedPayload }}</pre>
+                <pre class="mt-3 max-h-[360px] max-w-full overflow-auto rounded-2xl bg-slate-950 p-4 text-xs leading-5 text-slate-100">{{ selectedPayload }}</pre>
               </section>
             </div>
           </template>
@@ -143,7 +179,7 @@
         </section>
       </section>
 
-      <section class="card p-5">
+      <section v-if="!isDetailRoute" class="card p-5">
         <div class="flex items-center justify-between gap-3">
           <div>
             <h2 class="panel-title">按状态查看</h2>
@@ -163,7 +199,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
 import {
   findWorkbenchFixtureState,
@@ -175,8 +211,11 @@ import {
   portalWorkbenchFixtureStates,
   portalWorkbenchSurfaces,
 } from "@/harness/portal-component-workbench";
+import PortalComponentFixtureRenderer from "@/views/harness/PortalComponentFixtureRenderer.vue";
 
 const route = useRoute();
+const selectedViewport = ref<"desktop" | "tablet" | "mobile">("desktop");
+const selectedTheme = ref<"light" | "dark">("light");
 const basePath = portalComponentWorkbench.basePath;
 const surfaces = portalWorkbenchSurfaces;
 const fixtureStates = portalWorkbenchFixtureStates;
@@ -185,12 +224,22 @@ const domainGroups = computed(() => Object.entries(groupWorkbenchSurfacesByDomai
 const stateGroups = computed(() => Object.entries(groupWorkbenchStatesByState()));
 const routeCount = computed(() => routeGroups.value.length);
 const screenshotCount = computed(() => portalScreenshotRegression.routes.length);
+const isDetailRoute = computed(() => Boolean(route.params.componentId && route.params.state));
 const selected = computed(() => {
   const componentId = String(route.params.componentId || "overview.hero");
   const state = String(route.params.state || "ready");
   return findWorkbenchFixtureState(componentId, state);
 });
+const visibleRouteGroups = computed(() => {
+  if (!isDetailRoute.value || !selected.value) return routeGroups.value;
+  return routeGroups.value.filter(([routeId]) => routeId === selected.value?.routeId);
+});
 const selectedPayload = computed(() => JSON.stringify(selected.value?.payload || null, null, 2));
+const previewShellClass = computed(() => ({
+  desktop: "max-w-full",
+  tablet: "mx-auto max-w-[820px]",
+  mobile: "mx-auto max-w-[390px]",
+}[selectedViewport.value]));
 
 function firstStatePath(componentId: string) {
   const first = fixtureStates.find((item) => item.componentId === componentId);

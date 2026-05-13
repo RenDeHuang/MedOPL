@@ -21,7 +21,8 @@ test.describe("Portal component visual workbench", () => {
     test(`captures ${route.routeId} fixture state`, async ({ page }) => {
       await page.goto(route.fixturePath);
       await expect(page.locator('[data-component-id="portal-harness.component_state"]')).toBeVisible();
-      await expect(page.locator("body")).toContainText(route.surfaceId);
+      await expect(page.locator('[data-component-id="portal-harness.component_preview"]')).toBeVisible();
+      await expect(page.locator(`[data-component-id="${route.surfaceId}"]`)).toBeVisible();
       await expect(page).toHaveScreenshot(`${route.routeId.replaceAll(".", "-")}-${route.surfaceId.replaceAll(".", "-")}-fixture.png`, {
         fullPage: true,
         animations: "disabled",

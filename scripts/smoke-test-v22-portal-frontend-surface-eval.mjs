@@ -327,6 +327,7 @@ assert.equal(evalset.coverage.pageCompositionMustDeclareProductSections, true, "
 assert.equal(evalset.coverage.surfaceStatesMustMatchRegistry, true, "evalset_surface_state_registry_coverage_required");
 assert.equal(evalset.coverage.componentFixturesMustCoverSurfaceStates, true, "evalset_component_fixture_coverage_required");
 assert.equal(evalset.coverage.componentFixturesMustHaveBrowseableRoutes, true, "evalset_component_fixture_browseable_route_required");
+assert.equal(evalset.coverage.componentFixturesMustRenderRealComponents, true, "evalset_component_fixture_real_component_required");
 assert.equal(evalset.coverage.designTokensMustBeExecutable, true, "evalset_design_token_coverage_required");
 assert.equal(evalset.coverage.presentationRulesMustBeExecutable, true, "evalset_presentation_rule_coverage_required");
 assert.equal(evalset.coverage.screenshotBaselinesMustBeCommitted, true, "evalset_screenshot_baseline_coverage_required");
@@ -489,12 +490,20 @@ assert.equal(evalset.visualWorkbench.status, "done", "visual_workbench_must_be_d
 assert.equal(evalset.visualWorkbench.basePath, "/__portal-harness/components", "visual_workbench_base_path_mismatch");
 assert.equal(evalset.visualWorkbench.indexRouteName, "portal-harness-components", "visual_workbench_index_route_name_mismatch");
 assert.equal(evalset.visualWorkbench.detailRouteName, "portal-harness-component-state", "visual_workbench_detail_route_name_mismatch");
-assert.equal(evalset.visualWorkbench.source, "portal-ui-evalset.json + harness fixtures", "visual_workbench_source_mismatch");
+assert.equal(evalset.visualWorkbench.source, "portal-ui-evalset.json + harness fixtures + real component registry", "visual_workbench_source_mismatch");
+assert.equal(evalset.visualWorkbench.renderMode, "actual_component", "visual_workbench_render_mode_mismatch");
+assert.equal(evalset.visualWorkbench.jsonPayloadIsSecondary, true, "visual_workbench_json_payload_must_be_secondary");
 assert.deepEqual(evalset.visualWorkbench.requiredGroupBy, ["route", "domain", "state"], "visual_workbench_grouping_mismatch");
+assert.deepEqual(evalset.visualWorkbench.requiredControls, ["route", "domain", "state", "viewport", "theme"], "visual_workbench_controls_mismatch");
 assert(await exists(evalset.visualWorkbench.owner), `visual_workbench_owner_missing:${evalset.visualWorkbench.owner}`);
 assertIncludes(routerSource, `path: "${evalset.visualWorkbench.basePath}"`, "visual_workbench_index_route_missing");
 assertIncludes(routerSource, `path: "${evalset.visualWorkbench.basePath}/:componentId/:state"`, "visual_workbench_detail_route_missing");
 const workbenchSource = await source(evalset.visualWorkbench.owner);
+assertIncludes(workbenchSource, "PortalComponentFixtureRenderer", "visual_workbench_must_use_real_component_renderer");
+assert(await exists("services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue"), "visual_workbench_real_component_renderer_missing");
+const fixtureRendererSource = await source("services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue");
+assert(!fixtureRendererSource.includes("|| componentRegistry[0]"), "visual_workbench_renderer_must_not_fallback_to_first_component");
+assertIncludes(fixtureRendererSource, "Portal component fixture renderer missing", "visual_workbench_renderer_must_fail_fast_when_surface_missing");
 for (const selector of evalset.visualWorkbench.requiredSelectors) {
   const anchor = selector.match(/\[([^=]+)="([^"]+)"\]/);
   assert(anchor, `visual_workbench_selector_invalid:${selector}`);
@@ -692,6 +701,9 @@ try {
     for (const sampleRoute of evalset.visualWorkbench.sampleRoutes) {
       await page.goto(`${baseUrl}${sampleRoute}`, { waitUntil: "networkidle" });
       await page.locator('[data-component-id="portal-harness.component_state"]').waitFor({ timeout: 30000 });
+      const [, componentId] = sampleRoute.match(/\/__portal-harness\/components\/(.+)\/([^/]+)$/) || [];
+      await page.locator(`[data-component-id="${componentId}"]`).waitFor({ timeout: 30000 });
+      await page.locator('[data-component-id="portal-harness.component_preview"]').waitFor({ timeout: 30000 });
       await assertNoHorizontalOverflow(`portal-harness.components:${sampleRoute}`);
       report.coverage.browserDom.routes.push(sampleRoute);
     }

@@ -43,6 +43,7 @@
     "surfaceStatesMustMatchRegistry": true,
     "componentFixturesMustCoverSurfaceStates": true,
     "componentFixturesMustHaveBrowseableRoutes": true,
+    "componentFixturesMustRenderRealComponents": true,
     "designTokensMustBeExecutable": true,
     "presentationRulesMustBeExecutable": true,
     "screenshotBaselinesMustBeCommitted": true
@@ -58,16 +59,26 @@
     "indexRouteName": "portal-harness-components",
     "detailRouteName": "portal-harness-component-state",
     "owner": "services/portal/frontend/src/views/harness/PortalComponentWorkbenchView.vue",
-    "source": "portal-ui-evalset.json + harness fixtures",
+    "source": "portal-ui-evalset.json + harness fixtures + real component registry",
+    "renderMode": "actual_component",
+    "jsonPayloadIsSecondary": true,
     "requiredGroupBy": [
       "route",
       "domain",
       "state"
     ],
+    "requiredControls": [
+      "route",
+      "domain",
+      "state",
+      "viewport",
+      "theme"
+    ],
     "requiredSelectors": [
       "[data-route-id=\"portal-harness.components\"]",
       "[data-component-id=\"portal-harness.component_index\"]",
-      "[data-component-id=\"portal-harness.component_state\"]"
+      "[data-component-id=\"portal-harness.component_state\"]",
+      "[data-component-id=\"portal-harness.component_preview\"]"
     ],
     "routePattern": "/__portal-harness/components/:componentId/:state",
     "sampleRoutes": [

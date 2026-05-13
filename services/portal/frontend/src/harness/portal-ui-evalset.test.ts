@@ -289,14 +289,30 @@ describe("portal ui evalset", () => {
   it("defines evalset-driven component workbench routes and screenshot regression gates", () => {
     expect(evalset.coverage.componentFixturesMustHaveBrowseableRoutes).toBe(true);
     expect(evalset.coverage.screenshotBaselinesMustBeCommitted).toBe(true);
+    expect(evalset.coverage.componentFixturesMustRenderRealComponents).toBe(true);
     expect(evalset.visualWorkbench.status).toBe("done");
     expect(evalset.visualWorkbench.basePath).toBe("/__portal-harness/components");
     expect(evalset.visualWorkbench.indexRouteName).toBe("portal-harness-components");
     expect(evalset.visualWorkbench.detailRouteName).toBe("portal-harness-component-state");
-    expect(evalset.visualWorkbench.source).toBe("portal-ui-evalset.json + harness fixtures");
+    expect(evalset.visualWorkbench.source).toBe("portal-ui-evalset.json + harness fixtures + real component registry");
+    expect(evalset.visualWorkbench.renderMode).toBe("actual_component");
+    expect(evalset.visualWorkbench.jsonPayloadIsSecondary).toBe(true);
     expect(evalset.visualWorkbench.requiredGroupBy).toEqual(["route", "domain", "state"]);
+    expect(evalset.visualWorkbench.requiredControls).toEqual(["route", "domain", "state", "viewport", "theme"]);
+    expect(evalset.visualWorkbench.requiredSelectors).toContain('[data-component-id="portal-harness.component_preview"]');
     expect(source("services/portal/frontend/src/router/index.ts")).toContain("/__portal-harness/components");
     exists(evalset.visualWorkbench.owner);
+    const workbenchSource = source(evalset.visualWorkbench.owner);
+    const rendererSource = source("services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue");
+    expect(workbenchSource).toContain("PortalComponentFixtureRenderer");
+    expect(source(evalset.visualWorkbench.owner)).toContain('data-component-id="portal-harness.component_preview"');
+    expect(rendererSource).not.toContain("还没有进入真实渲染工作台");
+    expect(rendererSource).not.toContain("|| componentRegistry[0]");
+    expect(rendererSource).toContain("Portal component fixture renderer missing");
+    for (const surface of evalset.surfaces.filter((item) => item.status === "done")) {
+      expect(rendererSource).toContain(`componentId: "${surface.componentId}"`);
+      expect(rendererSource).toContain(surface.owner.split("/").pop()?.replace(".vue", "") || surface.componentId);
+    }
 
     expect(evalset.screenshotRegression.status).toBe("done");
     expect(evalset.screenshotRegression.runner).toBe("playwright");
@@ -314,6 +330,7 @@ describe("portal ui evalset", () => {
     exists("services/portal/frontend/playwright.config.ts");
     exists("services/portal/frontend/tests/visual/portal-surfaces.visual.ts");
     expect(JSON.parse(source("services/portal/frontend/package.json")).scripts["test:visual"]).toBe("playwright test");
+    expect(source("services/portal/frontend/tests/visual/portal-surfaces.visual.ts")).toContain("route.surfaceId");
   });
 
   it("keeps done surfaces anchored in their owner component", () => {

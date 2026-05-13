@@ -100,8 +100,8 @@ DOM 锚点规则：
 - 文案 gate 固定在 `copyRegistry`，用于阻止内部治理词、斜杠组合字段、英文散落和 raw status 成为可见主语言。
 - 数据样例 gate 固定在 `fixtures`，用于保证页面至少覆盖 ready 和 empty 数据态。
 - 视觉 gate 固定在 `visualRoutes`，用于浏览器打开关键页面并检查关键 selector 与横向溢出。
-- 组件可视化工作台 gate 固定在 `visualWorkbench`，用于检查 `/__portal-harness/components` 和每个 fixture state 独立 URL；页面从 evalset 和 fixtures 生成，不新增 Storybook stories 第二事实源。
-- 截图回归 gate 固定在 `screenshotRegression`，用于检查 Playwright `toHaveScreenshot()` 视觉测试入口、关键页面和 fixture URL、以及提交到 git 的 baseline 目录。
+- 组件可视化工作台 gate 固定在 `visualWorkbench`，用于检查 `/__portal-harness/components` 和每个 fixture state 独立 URL；页面从 evalset、fixtures 和真实组件 registry 生成，不新增 Storybook stories 第二事实源。`done` 必须代表 fixture state 页面真实渲染对应业务组件，JSON payload 只能作为辅助检查信息。
+- 截图回归 gate 固定在 `screenshotRegression`，用于检查 Playwright `toHaveScreenshot()` 视觉测试入口、关键页面和真实组件 fixture URL、以及提交到 git 的 baseline 目录。
 
 ## 文案边界
 
