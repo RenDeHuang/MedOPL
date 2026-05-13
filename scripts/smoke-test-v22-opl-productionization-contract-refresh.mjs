@@ -74,14 +74,21 @@ assertIncludesAll(contents.statusMatrix, [
 
 assertIncludesAll(contents.gapMatrix, [
   "leaf-opl-connection-productionization-contract-refresh",
+  "leaf-opl-connection-productionization-eval-shell",
   "contract_refresh_only",
-  "next_leaf_step: leaf-opl-connection-productionization-contract-refresh",
+  "next_leaf_step: leaf-opl-connection-productionization-eval-shell",
+  "future `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`",
   "canary facts must not become production truth without productionized branch absorption",
 ], "gap_matrix_leaf6");
 
 assertIncludesAll(contents.goalState, [
   "leaf-opl-connection-productionization-contract-refresh",
+  "Leaf 6 B absorb/push result",
+  "bc22a76b4776f54c10bcc659f1c777e30791b72d",
+  "next cursor is `leaf-opl-connection-productionization-eval-shell`",
+  "leaf-opl-connection-productionization-eval-shell",
   "OPL connection productionization contract refresh",
+  "OPL connection productionization eval shell",
   "no raw provider key, no live canary unless separately authorized",
   "truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`",
 ], "goal_state_leaf6");

@@ -31,6 +31,13 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["docs/v22-advance-opl-productionization-cursor", new Set([
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["cleanup/v22-product-goal-harness", new Set([
     "docs/recovery/v22-product-goal.md",
     "docs/recovery/v22-product-e2e-contract.md",

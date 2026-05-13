@@ -30,6 +30,14 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["docs/v22-advance-opl-productionization-cursor", new Set([
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["contract/v22-opl-productionization-contract-refresh", new Set([
     "docs/contracts/v22-portal-opl-connection-boundary.md",
     "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
@@ -371,7 +379,7 @@ const goalStatePhrases = [
   "当前 trunk HEAD",
   "当前 goal cursor",
   "已完成事实：default entry、user_owned、resource-order 前四刀",
-  "当前下一问题：OPL connection productionization contract refresh",
+  "当前下一问题：OPL connection productionization eval shell",
   "secret hygiene",
   "legacy scripts archive",
   "Portal architecture refactor",
