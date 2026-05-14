@@ -6,12 +6,12 @@
   "base_branch": "origin/recovery/platform-v22-trunk",
   "target_branch": "recovery/platform-v22-trunk",
   "current_status": "batch_manifest_ready",
-  "current_slice": "slice-2-legacy-script-archive-delete-boundary",
+  "current_slice": "slice-3-observability-runner-physical-retirement-boundary",
   "completed_slices": [
-    "slice-1-user-owned-retired-domain-store-physical-delete"
+    "slice-1-user-owned-retired-domain-store-physical-delete",
+    "slice-2-legacy-script-archive-delete-boundary"
   ],
   "next_slices": [
-    "slice-2-legacy-script-archive-delete-boundary",
     "slice-3-observability-runner-physical-retirement-boundary",
     "slice-final-completion-truth-and-temporary-goal-removal"
   ],
@@ -79,9 +79,9 @@
     },
     {
       "id": "slice-2-legacy-script-archive-delete-boundary",
-      "status": "ready",
-      "decision_scope": "archive_reference_to_default-exclusion_or_explicit_delete_candidates_only",
-      "red_gate_policy": "must_fail_before_slice_if_default_suite_or_default_docs_reference_legacy_scripts",
+      "status": "completed",
+      "decision_scope": "archive_reference_or_blocked_without_auth_or_explicit_delete_candidates_only",
+      "red_gate_policy": "must_fail_before_slice_if_default_suite_or_default_docs_reference_legacy_scripts_or_target_paths_still_need_truth_writeback",
       "target_paths": [
         "scripts/smoke-test-v19-*",
         "scripts/smoke-test-v20*",
@@ -102,7 +102,9 @@
       "stop_conditions": [
         "live_test_delete_requested_without_explicit_authorization",
         "default_suite_references_archive_or_delete_candidate",
-        "legacy_script_has_unmigrated_contract_value"
+        "legacy_script_has_unmigrated_contract_value",
+        "group_level_truth_not_split",
+        "archive_reference_docs_still_depend_on_candidate_without_truth_writeback"
       ]
     },
     {

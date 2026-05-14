@@ -59,6 +59,34 @@ function assertNoForbiddenWriteSet(slice) {
   }
 }
 
+function assertSliceQueueState(manifest) {
+  const completed = manifest.completed_slices ?? [];
+  const next = manifest.next_slices ?? [];
+
+  assert(completed.includes("slice-1-user-owned-retired-domain-store-physical-delete"), "slice1_completion_missing");
+  for (const sliceId of expectedSlices) {
+    assert(
+      completed.includes(sliceId) || next.includes(sliceId),
+      `slice_must_be_completed_or_queued:${sliceId}`,
+    );
+    assert(
+      !(completed.includes(sliceId) && next.includes(sliceId)),
+      `slice_must_not_be_completed_and_queued:${sliceId}`,
+    );
+  }
+
+  const firstNext = next[0];
+  if (firstNext) {
+    assert.equal(manifest.current_slice, firstNext, "manifest_current_slice_must_match_next_queue_head");
+  } else {
+    assert.equal(
+      manifest.current_slice,
+      "batch_complete_waiting_b_review",
+      "manifest_current_slice_mismatch_after_batch_completion",
+    );
+  }
+}
+
 const [manifest, goal, inventory] = await Promise.all([
   readJson(manifestPath),
   readRepoFile(goalPath),
@@ -87,12 +115,7 @@ assertArrayIncludesAll(manifest.required_global_gates, [
   "git diff --check -- docs/recovery docs/contracts scripts services",
 ], "manifest_required_global_gate");
 
-assert.deepEqual(manifest.completed_slices, [
-  "slice-1-user-owned-retired-domain-store-physical-delete",
-], "manifest_completed_slices_mismatch");
-
-assert.equal(manifest.current_slice, "slice-2-legacy-script-archive-delete-boundary", "manifest_current_slice_mismatch");
-assert.deepEqual(manifest.next_slices, expectedSlices, "manifest_next_slices_mismatch");
+assertSliceQueueState(manifest);
 
 const sliceById = new Map((manifest.slices ?? []).map((slice) => [slice.id, slice]));
 for (const expectedSlice of [
@@ -103,9 +126,34 @@ for (const expectedSlice of [
 }
 
 const slice2 = sliceById.get("slice-2-legacy-script-archive-delete-boundary");
-assert.equal(slice2.status, "ready", "slice2_status_mismatch");
-assert.equal(slice2.decision_scope, "archive_reference_to_default-exclusion_or_explicit_delete_candidates_only", "slice2_decision_scope_mismatch");
-assert.equal(slice2.red_gate_policy, "must_fail_before_slice_if_default_suite_or_default_docs_reference_legacy_scripts", "slice2_red_gate_policy_mismatch");
+assert(
+  ["ready", "completed"].includes(slice2.status),
+  "slice2_status_mismatch",
+);
+assert(
+  [
+    "archive_reference_to_default-exclusion_or_explicit_delete_candidates_only",
+    "archive_reference_or_blocked_without_auth_or_explicit_delete_candidates_only",
+  ].includes(slice2.decision_scope),
+  "slice2_decision_scope_mismatch",
+);
+assert(
+  slice2.red_gate_policy.includes("default_suite_or_default_docs_reference_legacy_scripts"),
+  "slice2_red_gate_policy_mismatch",
+);
+if (slice2.status === "completed") {
+  assert(manifest.completed_slices.includes(slice2.id), "slice2_completed_status_requires_completed_slices");
+  assert(!manifest.next_slices.includes(slice2.id), "slice2_completed_status_must_leave_next_slices");
+  assert(
+    slice2.red_gate_policy.includes("target_paths_still_need_truth_writeback"),
+    "slice2_completed_policy_must_record_truth_writeback_red_gate",
+  );
+  assertIncludes(
+    inventory,
+    "slice-2 truth writeback: completed",
+    "inventory_slice2_completion_truth",
+  );
+}
 assertArrayIncludesAll(slice2.required_gates, [
   "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
   "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
