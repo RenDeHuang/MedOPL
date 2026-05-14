@@ -39,7 +39,7 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `cleanup/v22-retire-cleanup-stop-current-lock`.
+- authoring/source branch: `contract/v22-portal-ui-design-quality-audit`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
@@ -80,6 +80,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-opl-connection-productionization-eval-shell completed: local eval shell blocks canary-only production claims, fake success, raw secret/token/storage leakage, upstream modification, cloud/deploy owner-field leakage, and unauthorized cloud/deploy operations.
 - leaf-opl-connection-productionization-local-implementation completed: Runtime Agent HTTP relay rejects Package D owner fields; no service/upstream/deploy/cloud/secret operation may be present beyond the scoped local hardening.
 - leaf-frontend-product-evalset-gap completed: Portal frontend evalset characterization covers API contract, component states, responsive/mobile/table usability, loading/empty/error, and typecheck gates.
+- leaf-portal-ui-design-quality-audit is added as the future S5 frontend audit leaf: it only defines boundary/rubric/eval for design quality, does not implement UI, and does not freeze a specific aesthetic solution.
 - leaf-backend-contract-eval-template completed: backend implementation eval template covers Node 22 ESM, route -> app payload -> domain -> state/persistence, missing-field fallback bans, and legacy primary-path guards.
 - leaf-billing-audit-characterization completed: release stop billing/audit characterization pins `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; `resourceOrderId` is not active billing truth.
 - leaf-release-readiness-auth-boundary completed: generic_chat_authorization_insufficient_for_risky_release is recorded; no_release_deploy_operation_executed.
@@ -125,6 +126,7 @@ This subsection is historical evidence only. It is intentionally not the current
 - OPL connection
 - Cloud lane
 - frontend/backend product completion
+- Portal UI design quality audit
 - release readiness
 - dependency modernization future gap: Node 24 Active LTS migration readiness and Vite/Vitest modernization readiness only; no dependency upgrade in this branch.
 

@@ -100,7 +100,7 @@
 | 权限/角色真相 | [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md) | 普通用户、管理员和运维的可见、不可见和可操作边界。 |
 | 状态/数据源真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
 | 操作风险真相 | [v22-authorized-tencent-create-release-execution-boundary.md](./v22-authorized-tencent-create-release-execution-boundary.md), [v22-cloud-onboarding-workflow-boundary.md](./v22-cloud-onboarding-workflow-boundary.md) | 真实资源、真实扣费、release、rollback、审计队列和 fail-closed gate。 |
-| UI composition 真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [../../services/portal/frontend/src/harness/portal-ui-evalset.json](../../services/portal/frontend/src/harness/portal-ui-evalset.json) | 页面层级、组件状态、空态、错误态、可视化工作台、截图回归和 eval。 |
+| UI composition 真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [v22-portal-ui-design-quality-audit-boundary.md](./v22-portal-ui-design-quality-audit-boundary.md), [../../services/portal/frontend/src/harness/portal-ui-evalset.json](../../services/portal/frontend/src/harness/portal-ui-evalset.json) | 页面层级、组件状态、空态、错误态、可视化工作台、截图回归、design quality audit 和 eval。 |
 | 交付/平台真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-production-cloud-topology-boundary.md](./v22-production-cloud-topology-boundary.md) | 开通、隔离、计费、审计、释放、secret 和 deploy 授权边界。 |
 | 运营/支持真相 | [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md) | 服务状态、异常账单、失败任务、释放失败、审计查询和排障。 |
 
@@ -122,6 +122,7 @@
 - [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
 - [v22-portal-structure-failure-isolation-boundary.md](./v22-portal-structure-failure-isolation-boundary.md)
 - [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md): Portal UI composition 合同只管产品边界、UI 分层、禁词、evalset 路径和统一验证入口；具体 route、surface、layout、API shape、DOM 锚点和 partial 缺口由 `services/portal/frontend/src/harness/portal-ui-evalset.json` 承接。
+- [v22-portal-ui-design-quality-audit-boundary.md](./v22-portal-ui-design-quality-audit-boundary.md): UI design quality audit 合同只管边界和评价标准，不替代 UI composition 合同，不冻结具体布局、配色、字体、圆角或组件库；它审计 Portal 是否回答用户买了什么、能不能用、缺什么、下一步点哪里、结果在哪里和费用是否正常。
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
 

@@ -281,9 +281,9 @@ truth writeback section:
 ### Gap: frontend-product-vue-vite-ts-pinia
 
 - id: frontend-product-vue-vite-ts-pinia
-- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` is now characterized as the executable Portal UI truth source: it covers 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation.
-- ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, and API contracts are eval-covered.
-- problem: visual or API changes can ship without responsive or component-state verification.
+- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` is now characterized as the executable Portal UI truth source: it covers 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation. UI design quality audit boundary now exists as a future leaf to judge whether those surfaces answer the SaaS control-plane mainline questions without freezing a specific aesthetic solution.
+- ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, API contracts, and design quality audit are eval-covered.
+- problem: visual or API changes can ship without responsive or component-state verification; screenshot regression can also preserve a weak UI baseline unless design quality audit checks service clarity, next action clarity, workbench scanability, and mainline-question coverage.
 - dependency: current Portal UI contracts.
 - depends_on: [cloud-lane-mock-readonly-dry-run-authorized]
 - blocked_by: []
@@ -292,14 +292,16 @@ truth writeback section:
 - priority: 80
 - cursor_eligible: false
 - status: gated
-- next_leaf_step: monitor_only_after_B_absorb
-- eval: `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`
-- allowed_files: future frontend branch under `services/portal/frontend/**` plus evalset/smoke
+- next_leaf_step: leaf-portal-ui-design-quality-audit
+- eval: `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`
+- allowed_files: `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/README.md`, `docs/recovery/*`, `scripts/smoke-test-v22-*`; future UI implementation branch under `services/portal/frontend/**` must be a separate leaf after audit evidence
 - forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, Portal UI contracts
-- B_absorb_criteria: B requires API contract, component states, mobile/table responsive evidence, and typecheck.
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, Portal UI contracts
+- B_absorb_criteria: B confirms UI design quality audit is boundary/rubric only, does not freeze a specific aesthetic solution, does not touch `services/*`, and preserves Portal as the SaaS control plane for the托管 OPL 科研工作台服务.
 
 - leaf-frontend-product-evalset-gap: frontend evalset characterization passed locally with `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`, `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`, and `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`. The runtime suite ran 8 Playwright visual tests successfully and generated only uncommitted `.runtime` evidence. This leaf did not change UI implementation, package/dependency files, deploy, adapters, `.sentrux`, `.env.demo.template`, upstream, secrets, live/cloud/build/push/kubectl/deploy, or live-test. The next local executable leaf is `leaf-backend-contract-eval-template`.
+
+- leaf-portal-ui-design-quality-audit: future S5 audit leaf. It must add or run only contract/rubric/eval checks for design quality, with hard constraints for mainline question coverage, Portal/OPL responsibility boundary, no cloud-console language, no OPL chatbot reimplementation, role boundary, secret/browser hygiene, responsive no-overflow, state coverage, and runtime-only audit report. Soft scoring may evaluate modern SaaS information hierarchy, workbench scanability, service clarity, next action clarity, research workspace feel, visual density balance, and copy tone. It must not implement UI, freeze layout/color/font/radius/component-library choices, or update screenshot baselines without `.runtime/portal-ui-design-quality/report.json` audit evidence.
 
 ### Gap: backend-product-node22-esm-layering
 
