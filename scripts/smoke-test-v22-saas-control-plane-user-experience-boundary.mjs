@@ -6,9 +6,38 @@ const contractIndexPath = "docs/contracts/README.md";
 const productTruthPath = "docs/recovery/product-truth.md";
 const architectureTruthPath = "docs/recovery/architecture-truth.md";
 const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
+const mvpAcceptancePath = "docs/recovery/mvp-contract-acceptance.md";
 
 const startMarker = "<!-- v22-saas-control-plane-user-experience-contract:start -->";
 const endMarker = "<!-- v22-saas-control-plane-user-experience-contract:end -->";
+const uxContractRef = "v22-saas-control-plane-user-experience-boundary.md";
+
+const truthLayerNames = [
+  "服务商品真相",
+  "用户体验真相",
+  "信息架构真相",
+  "生命周期真相",
+  "权限/角色真相",
+  "状态/数据源真相",
+  "操作风险真相",
+  "UI composition 真相",
+  "交付/平台真相",
+  "运营/支持真相",
+];
+
+const userVisiblePackageNames = [
+  "Portal / UI",
+  "OPL Entry / Gateway",
+  "Runtime Bridge",
+  "Portal-OPL Context Backflow",
+  "Real OPL Capability Canary",
+  "Real OPL Provider Message Canary",
+  "Real OPL File Run Artifact Canary",
+  "Langfuse / Trace",
+  "Resource / Billing / Audit",
+  "Tencent Provider",
+  "Cleanup",
+];
 
 async function source(path) {
   return readFile(path, "utf8");
@@ -42,18 +71,28 @@ function assertIncludesAll(items, expectedItems, label) {
   }
 }
 
+function extractContractPackageSection(markdown, packageName) {
+  const escaped = packageName.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`### ${escaped} 合同包\\n(?<section>[\\s\\S]*?)(?=\\n### |\\n$)`, "u");
+  const match = markdown.match(pattern);
+  assert(match?.groups?.section, `contract_package_section_missing:${packageName}`);
+  return match.groups.section;
+}
+
 const [
   contractMarkdown,
   contractIndex,
   productTruth,
   architectureTruth,
   gapMatrix,
+  mvpAcceptance,
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
   source(productTruthPath),
   source(architectureTruthPath),
   source(gapMatrixPath),
+  source(mvpAcceptancePath),
 ]);
 
 const contract = extractJson(contractMarkdown);
@@ -110,13 +149,26 @@ assertIncludes(contractMarkdown, "Portal 不回答科研问题，不复制 OPL �
 assertIncludes(contractMarkdown, "OPL 负责科研执行", "contract_opl_execution_boundary");
 assertIncludes(contractMarkdown, "Portal 负责准备、管理、进入、回流、计费、审计和释放", "contract_portal_lifecycle_boundary");
 
-assertIncludes(contractIndex, "v22-saas-control-plane-user-experience-boundary.md", "contract_index_must_reference_new_contract");
+assertIncludes(contractIndex, uxContractRef, "contract_index_must_reference_new_contract");
+assertIncludes(contractIndex, "Truth Layer 索引", "contract_index_must_have_truth_layer_index");
+for (const truthLayerName of truthLayerNames) {
+  assertIncludes(contractIndex, truthLayerName, "contract_index_truth_layer");
+}
+assertIncludes(contractIndex, "凡是会改变普通用户可见页面、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支", "contract_index_subscription_rule");
+for (const packageName of userVisiblePackageNames) {
+  const section = extractContractPackageSection(contractIndex, packageName);
+  assertIncludes(section, uxContractRef, `contract_package_must_subscribe_ux_truth:${packageName}`);
+}
 assertIncludes(productTruth, "SaaS 控制面", "product_truth_must_name_saas_control_plane");
 assertIncludes(productTruth, "托管交付平台", "product_truth_must_name_managed_delivery_platform");
 assertIncludes(architectureTruth, "Portal 不重做 OPL chatbot", "architecture_truth_must_keep_opl_chatbot_boundary");
 assertIncludes(architectureTruth, "OPL 负责科研执行", "architecture_truth_must_assign_opl_execution");
 assertIncludes(gapMatrix, "saas-control-plane-user-experience-truth", "gap_matrix_must_track_truth_layer_gap");
-assertIncludes(gapMatrix, "v22-saas-control-plane-user-experience-boundary.md", "gap_matrix_must_reference_contract");
+assertIncludes(gapMatrix, uxContractRef, "gap_matrix_must_reference_contract");
+assertIncludes(gapMatrix, "status: completed", "gap_matrix_must_mark_truth_completed");
+assertIncludes(mvpAcceptance, "SaaS control plane user experience truth contract", "mvp_acceptance_must_list_ux_truth_contract");
+assertIncludes(mvpAcceptance, "十层 truth", "mvp_acceptance_must_record_truth_layer_index");
+assertIncludes(mvpAcceptance, "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs", "mvp_acceptance_must_include_ux_truth_smoke");
 
 for (const text of [
   contractMarkdown,
@@ -136,5 +188,6 @@ console.log(JSON.stringify({
     productTruthPath,
     architectureTruthPath,
     gapMatrixPath,
+    mvpAcceptancePath,
   ],
 }, null, 2));

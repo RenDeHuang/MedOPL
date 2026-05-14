@@ -199,22 +199,22 @@ Every gap entry must contain:
 ### Gap: saas-control-plane-user-experience-truth
 
 - id: saas-control-plane-user-experience-truth
-- current_fact: Portal/UI contracts already define shared product surface, role surfaces, structure/failure isolation, UI composition, and executable evalset, but the product truth did not yet promote "MedOPL is the SaaS control plane and managed delivery platform for One Person Lab" into a dedicated subscribable contract.
+- current_fact: dedicated subscribable contract now promotes "MedOPL is the SaaS control plane and managed delivery platform for One Person Lab" into product truth, and the contract index now maps service product, user experience, information architecture, lifecycle, role, state source, operation risk, UI composition, delivery/platform, and support truth layers.
 - ideal_state: every Portal/UI branch can subscribe to a single contract that states MedOPL makes clean upstream OPL open-box SaaS: Portal explains what service the user bought, whether the OPL workbench is usable, what is missing, what to click next, where files/tasks/results are, and whether billing/release state is normal; OPL remains responsible for chatbot, agent, scientific task execution, file understanding, result generation, and in-workbench interaction.
 - problem: without this truth layer, Portal UI can pass execution-layer contracts while still reading like a resource delivery dashboard instead of an OPL SaaS control plane.
 - dependency: Portal role surface and UI composition contracts exist.
 - depends_on: [architecture-refactor-portal-layering]
 - blocked_by: []
-- executable_when: local contract/recovery/smoke truth writeback only; no services, UI implementation, secret, true cloud, build/push/kubectl, deploy, live-test, adapters, `.sentrux`, or upstream change.
+- executable_when: monitor-only after B absorb; future Portal/UI, OPL entry, runtime, resource/billing, trace, and cloud/provider branches must subscribe to the SaaS control plane UX truth before changing user-visible behavior.
 - stage: S2 architecture refactor
 - priority: 55
 - cursor_eligible: false
-- status: gated
-- next_leaf_step: leaf-saas-control-plane-user-experience-truth
+- status: completed
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
-- allowed_files: `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`, `docs/contracts/README.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
+- allowed_files: `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`, `docs/contracts/README.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/mvp-contract-acceptance.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-current.json`, `scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`, `scripts/smoke-test-v22-mvp-contract-suite.mjs`, `scripts/v22-workflow-gate.mjs`, `scripts/smoke-test-v22-workflow-gate.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`
 - forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, true cloud runners
-- truth_writeback_target: `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`, `docs/contracts/README.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
+- truth_writeback_target: `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`, `docs/contracts/README.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/mvp-contract-acceptance.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-current.json`
 - B_absorb_criteria: B confirms this is an additive truth layer, not a UI implementation; Portal remains a SaaS control plane, OPL remains the scientific execution/chatbot surface, cloud resources remain后台交付边界, and no current goal cursor is advanced without B absorption.
 
 ### Gap: opl-connection-gateway-preflight-runtime-file-run-artifact-trace

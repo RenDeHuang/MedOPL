@@ -121,8 +121,8 @@
       "stage": "S2 architecture refactor",
       "priority": 55,
       "cursor_eligible": false,
-      "status": "gated",
-      "next_leaf_step": "leaf-saas-control-plane-user-experience-truth",
+      "status": "completed",
+      "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "architecture-refactor-portal-layering"
       ]

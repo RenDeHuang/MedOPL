@@ -45,6 +45,7 @@ assertIncludesAll(startResult.stdout, [
   "docs/recovery/status-matrix.md",
   "推荐合同包",
   "Portal / UI 合同包",
+  "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
   "本次不修改项",
   "污染防护",
   "推荐验证命令",
@@ -55,9 +56,16 @@ assertIncludesAll(startResult.stdout, [
 const startTemplate = renderStartTemplate({ type: "tencent-quote" });
 assertIncludesAll(startTemplate, [
   "Tencent Quote Provider 合同包",
+  "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
   "docs/contracts/v22-tencent-readonly-quote-provider-boundary.md",
   "node scripts/smoke-test-v22-tencent-readonly-quote-provider-boundary.mjs",
 ], "tencent_quote_start_template");
+
+for (const type of contractPackageTypes) {
+  assertIncludesAll(renderStartTemplate({ type }), [
+    "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+  ], `workflow_start_template_must_subscribe_ux_truth:${type}`);
+}
 
 assert.deepEqual(contractPackageTypes, [
   "portal-ui",

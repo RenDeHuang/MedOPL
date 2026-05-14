@@ -87,6 +87,25 @@
 
 - [v22-canonical-user-loop.md](./v22-canonical-user-loop.md): canonical user loop 的早期/共享参考合同，阅读时以 v22 主合同和各段边界合同为当前执行入口。
 
+## Truth Layer 索引
+
+以下索引用于回答“当前真相在哪里”。它不新增产品方向，只把已经存在的 truth 固定到可订阅入口，避免后续 coding 只订阅交付层、漏读用户体验层。
+
+| Truth layer | 当前事实源 | 订阅用途 |
+| --- | --- | --- |
+| 服务商品真相 | [../recovery/product-truth.md](../recovery/product-truth.md), [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 用户购买的是托管 OPL 科研工作台服务，不是云资源控制台对象。 |
+| 用户体验真相 | [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md) | Portal 必须解释买了什么、能不能用、缺什么、下一步点哪里、结果和费用在哪里。 |
+| 信息架构真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [../../services/portal/frontend/src/harness/portal-ui-evalset.json](../../services/portal/frontend/src/harness/portal-ui-evalset.json) | route、page task、page composition、DOM anchor、copy registry 和 evalset。 |
+| 生命周期真相 | [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md), [v22-canonical-user-loop.md](./v22-canonical-user-loop.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
+| 权限/角色真相 | [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md) | 普通用户、管理员和运维的可见、不可见和可操作边界。 |
+| 状态/数据源真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
+| 操作风险真相 | [v22-authorized-tencent-create-release-execution-boundary.md](./v22-authorized-tencent-create-release-execution-boundary.md), [v22-cloud-onboarding-workflow-boundary.md](./v22-cloud-onboarding-workflow-boundary.md) | 真实资源、真实扣费、release、rollback、审计队列和 fail-closed gate。 |
+| UI composition 真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [../../services/portal/frontend/src/harness/portal-ui-evalset.json](../../services/portal/frontend/src/harness/portal-ui-evalset.json) | 页面层级、组件状态、空态、错误态、可视化工作台、截图回归和 eval。 |
+| 交付/平台真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-production-cloud-topology-boundary.md](./v22-production-cloud-topology-boundary.md) | 开通、隔离、计费、审计、释放、secret 和 deploy 授权边界。 |
+| 运营/支持真相 | [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md) | 服务状态、异常账单、失败任务、释放失败、审计查询和排障。 |
+
+订阅规则：凡是会改变普通用户可见页面、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支，都必须订阅 [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)，再订阅对应实现合同。
+
 ## 合同包模板
 
 ### Portal / UI 合同包
@@ -125,6 +144,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md)
 - [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md)
@@ -139,6 +159,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
 - [v22-runtime-bridge-session-run-file-provider-keyref-boundary.md](./v22-runtime-bridge-session-run-file-provider-keyref-boundary.md)
@@ -154,6 +175,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
 - [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md)
@@ -173,6 +195,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
 - [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)
@@ -197,6 +220,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
 - [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)
@@ -221,6 +245,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)
 - [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md)
 - [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)
@@ -247,6 +272,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)
 - [v22-trace-metadata-boundary.md](./v22-trace-metadata-boundary.md)
 - [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
@@ -259,6 +285,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
 - [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)
 - [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
@@ -274,6 +301,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
 - [v22-tencent-readonly-quote-provider-boundary.md](./v22-tencent-readonly-quote-provider-boundary.md)
 - [v22-tencent-dry-run-resource-plan-provider-boundary.md](./v22-tencent-dry-run-resource-plan-provider-boundary.md)
@@ -303,6 +331,7 @@ Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-t
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
 - [../recovery/archive-policy.md](../recovery/archive-policy.md)

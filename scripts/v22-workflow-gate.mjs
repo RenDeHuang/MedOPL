@@ -43,6 +43,7 @@ const packageDefinitions = {
     intent: "Portal 普通用户界面、工作空间、托管运行环境、文件、账单和会话轨迹。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
       "docs/contracts/v22-portal-files-billing-trace-boundary.md",
       "docs/contracts/v22-release-stop-billing-audit-boundary.md",
@@ -61,6 +62,7 @@ const packageDefinitions = {
     intent: "OPL entry/preflight、Gateway launch/proxy、Portal 进入 OPL 工作台和 direct OPL 入口。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/contracts/v22-opl-entry-preflight-auth-boundary.md",
       "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
       "docs/contracts/v22-token-provider-boundary.md",
@@ -79,6 +81,7 @@ const packageDefinitions = {
     intent: "Runtime Bridge session/run/file/providerKeyRef、artifact reference 和 Runtime Agent relay。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
       "docs/contracts/v22-opl-work-message-file-run-boundary.md",
       "docs/contracts/v22-token-provider-boundary.md",
@@ -96,6 +99,7 @@ const packageDefinitions = {
     intent: "Langfuse sanitized projection、Portal 会话轨迹和非 canonical source 边界。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/contracts/v22-langfuse-observability-metadata-boundary.md",
       "docs/contracts/v22-trace-metadata-boundary.md",
       "docs/contracts/v22-portal-files-billing-trace-boundary.md",
@@ -112,6 +116,7 @@ const packageDefinitions = {
     intent: "托管运行环境、资源绑定、预扣费、冻结金额、释放停止计费和审计状态。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/contracts/v22-managed-environment-open-boundary.md",
       "docs/contracts/v22-resource-plan-boundary.md",
       "docs/contracts/v22-pricing-snapshot-boundary.md",
@@ -132,6 +137,7 @@ const packageDefinitions = {
     intent: "readonly/tencent quote provider、mock adapter、套餐估算和 quote snapshot。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/contracts/v22-managed-environment-open-boundary.md",
       "docs/contracts/v22-tencent-readonly-quote-provider-boundary.md",
       "docs/contracts/v22-pricing-snapshot-boundary.md",
@@ -149,6 +155,7 @@ const packageDefinitions = {
     intent: "旧路线退役、入口收敛、文档归档和污染防护。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
       "docs/recovery/status-matrix.md",
       "docs/recovery/active-surface.md",
       "docs/recovery/archive-policy.md",

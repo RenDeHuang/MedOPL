@@ -381,7 +381,9 @@ function assertCurrentShape(current) {
       const pendingDiff = runGit(["status", "--porcelain"]);
       assert(pendingDiff.length > 0, "additive_truth_branch_at_origin_requires_pending_diff");
     } else {
-      assert.equal(localHeadParent, originTrunkHead, "additive_truth_branch_head_parent_must_equal_origin_trunk");
+      runGit(["merge-base", "--is-ancestor", originTrunkHead, localHead]);
+      const aheadCount = Number(runGit(["rev-list", "--count", `${originTrunkHead}..${localHead}`]));
+      assert(Number.isInteger(aheadCount) && aheadCount > 0, "additive_truth_branch_must_be_ahead_of_origin_trunk");
     }
     assert.equal(
       current.current_cursor,

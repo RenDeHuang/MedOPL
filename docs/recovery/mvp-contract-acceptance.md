@@ -14,6 +14,7 @@
 
 - pricing snapshot contract
 - MVP managed OPL loop contract
+- SaaS control plane user experience truth contract
 - user credit provider key flow
 - managed environment open flow
 - managed resource binding plan / mock snapshot view
@@ -33,7 +34,9 @@
 当前已完成的是 `contract-level + Portal API/domain 小闭包 + Portal UI MVP 基础界面`：
 
 - MedOPL 产品语言已收敛为面向 AI 小白科研用户的 OPL 科研托管平台，不是云资源控制台。
+- SaaS 控制面用户体验真相已收敛：MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台；Portal 负责让用户知道自己买的是什么托管 OPL 工作台服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里，以及余额、预扣费、冻结金额和停止计费状态是否正常；OPL 继续负责 chatbot、agent、科研任务执行、文件理解、结果生成和工作台内交互体验。
 - v22 合同索引已建立，主合同、用户闭环段合同、共享边界合同、界面/运维合同和合同包模板已有明确入口。
+- v22 合同索引已将服务商品、用户体验、信息架构、生命周期、权限/角色、状态/数据源、操作风险、UI composition、交付/平台、运营/支持十层 truth 映射到现有合同和 evalset；后续会改变普通用户可见体验、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支，必须订阅 SaaS 控制面用户体验 truth。
 - 默认套餐边界已收敛到 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
 - pricing snapshot 与 MedOPL 售卖价保持分离，`basePrice = null`，`pendingProductApproval = true`。
 - 用户、充值、gflabtoken provider key 绑定、canonical state readiness 已具备合同级闭环；provider key 已从 Portal 普通登录/普通入口退场，进入 OPL entry/preflight 和后端密钥边界。
@@ -103,6 +106,7 @@
 `scripts/smoke-test-v22-mvp-contract-suite.mjs` 作为默认本地 v22 MVP contract acceptance suite，只串联运行合同级、本地 fixture、fake-live、fail-closed 和不读取 secret 的 smoke，并输出 `ok: true` 与 passed smoke 名称。该 suite 不读取 secret、不调用真实云、不运行真实 upstream/WebUI/provider live canary、不执行 build/push/kubectl、不执行真实 runtime smoke。
 
 - `scripts/smoke-test-v22-pricing-plan-contract.mjs`
+- `scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
 - `scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs`
 - `scripts/smoke-test-v22-user-credit-provider-key-flow.mjs`
 - `scripts/smoke-test-v22-managed-environment-open-flow.mjs`

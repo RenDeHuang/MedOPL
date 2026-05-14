@@ -11,6 +11,7 @@ const reportPath = "docs/recovery/mvp-contract-acceptance.md";
 const requiredReportPhrases = [
   "pricing snapshot contract",
   "MVP managed OPL loop contract",
+  "SaaS control plane user experience truth contract",
   "user credit provider key flow",
   "managed environment open flow",
   "OPL work message/file/run flow",
@@ -18,6 +19,7 @@ const requiredReportPhrases = [
   "Portal structure/failure isolation governance contract",
   "release stop billing audit flow",
   "contract-level + Portal API/domain 小闭包",
+  "十层 truth",
   "不是完整真实上线",
   "Portal frontend MVP UI",
   "Gateway / Runtime Bridge 生产联通",
@@ -44,6 +46,7 @@ const requiredReportPhrases = [
 
 const smokeScripts = [
   ["smoke-test-v22-pricing-plan-contract", "scripts/smoke-test-v22-pricing-plan-contract.mjs"],
+  ["smoke-test-v22-saas-control-plane-user-experience-boundary", "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"],
   ["smoke-test-v22-gflabtoken-entry-contract", "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs"],
   ["smoke-test-v22-retire-portal-provider-key-entry", "scripts/smoke-test-v22-retire-portal-provider-key-entry.mjs"],
   ["smoke-test-v22-opl-entry-preflight-auth-flow", "scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs"],
