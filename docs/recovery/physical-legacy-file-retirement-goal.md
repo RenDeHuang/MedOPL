@@ -6,13 +6,13 @@
 - model: `gpt-5.4`
 - role: temporary physical-deletion goal
 - name: 物理删除 goal
-- intent: 为 v22 已完成的主路径清退补一条临时物理文件删除目标线，先定义导台、gate、分刀删除顺序和自治规则，不在本分支删除文件。
+- intent: 为 v22 已完成的主路径清退补一条临时物理文件删除目标线，先定义导台、gate、分刀删除顺序和自治规则；后续授权 deletion slice 只能按导台和 gate 删除明确安全的文件。
 - current truth: 主路径清退已经完成，不等于物理文件清退完成。
 - cursor policy: 本 goal 不写入常驻 product cursor；它是 cleanup 后的临时物理清退工作包。
 - removal policy: 完成后可由用户删除本 goal 文件或对应分支，避免长期污染常规 v22 目标推进。
 - physical_delete_batch_status: completed_waiting_b_review
 - latest_batch_branch: `cleanup/v22-physical-legacy-batch-run`
-- latest_batch_truth: run manifest queue 已跑完；final slice 只写 completion truth / remaining blockers truth，不新增删除。
+- latest_batch_truth: run manifest queue 已跑完；final slice 只写 completion truth / remaining blockers truth；用户随后授权的 live-test physical delete follow-up slice 已物理删除 `scripts/live-test-*`。
 
 ## Contract Subscription
 
@@ -38,7 +38,7 @@
 
 ## Non Goals
 
-- 不在本分支删除文件。
+- 不在 goal bootstrap 分支删除文件；后续授权 deletion slice 必须先 RED gate、证明无 active reference，再按导台删除。
 - 不在本分支移动 scripts。
 - 不在本分支修改 service implementation。
 - 不在本分支修改默认 MVP suite。
@@ -194,10 +194,14 @@ next_slice queue 固定为：
 
 Latest batch run truth:
 
-- `slice-2-legacy-script-archive-delete-boundary`: completed. v19/v20/v21 smoke families remain `archive_reference`; `scripts/live-test-*` remains blocked for execution/deletion without explicit authorization.
+- `slice-2-legacy-script-archive-delete-boundary`: completed. v19/v20/v21 smoke families remain `archive_reference`; `scripts/live-test-*` was later explicitly authorized for physical deletion and deleted without running live-test.
 - `slice-3-observability-runner-physical-retirement-boundary`: completed. `compose.langfuse.yaml` remains `archive_reference`; `langfuse-trace-client.mjs` and `langfuse-publisher.mjs` remain active trace metadata boundary implementation points; `adapters/*` and `infra/opencost/**` remain `forbidden_without_auth`.
 - `slice-final-completion-truth-and-temporary-goal-removal`: completed_waiting_b_review. No additional deletion is performed in the final slice.
-- Remaining blockers: public 410 tombstone removal requires explicit confirmation; resource-order schema/drop stays in schema leaf; deploy/adapters/infra/upstream need separate authorization; live-test execution/deletion needs explicit authorization; Langfuse runtime implementation requires a future migration branch before any physical removal.
+- Remaining blockers: public 410 tombstone removal requires explicit confirmation; resource-order schema/drop stays in schema leaf; deploy/adapters/infra/upstream need separate authorization; future real live/canary execution needs explicit authorization; Langfuse runtime implementation requires a future migration branch before any physical removal.
+
+Authorized follow-up physical delete truth:
+
+- `slice-authorized-live-test-physical-delete`: user authorized physical deletion on 2026-05-14. `scripts/live-test-*` files were removed from the repo without executing live-test, reading secrets, touching deploy/adapters/infra/upstream, or changing public tombstones/schema.
 
 ### A1: sync-baseline
 

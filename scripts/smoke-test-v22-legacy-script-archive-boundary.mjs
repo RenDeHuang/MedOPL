@@ -129,13 +129,13 @@ for (const archivedPattern of [
   "scripts/smoke-test-v19-*",
   "scripts/smoke-test-v20*",
   "scripts/smoke-test-v21-*",
-  "scripts/live-test-*",
   "scripts/check-v18-*",
   "scripts/check-v20*",
   "scripts/check-v21-*",
 ]) {
   assertZoningRow(repoZoning, archivedPattern, "Zone 3", "archive");
 }
+assertZoningRow(repoZoning, "scripts/live-test-*", "Zone 3", "delete");
 
 for (const rewritePattern of [
   "scripts/smoke-test-portal-*",
@@ -150,7 +150,6 @@ for (const [pathOrGroup, status] of [
   ["`scripts/smoke-test-v19-*`", "`archive_reference`"],
   ["`scripts/smoke-test-v20*`", "`archive_reference`"],
   ["`scripts/smoke-test-v21-*`", "`archive_reference`"],
-  ["`scripts/live-test-*`", "`blocked_without_auth`"],
 ]) {
   assertInventoryDecisionStatus(inventory, pathOrGroup, "`archive_reference`", status);
 }
@@ -158,7 +157,7 @@ for (const [pathOrGroup, status] of [
 for (const phrase of [
   "slice-2 truth writeback: completed",
   "no active/default/workflow refs to v19/v20/v21/live-test script families",
-  "live-test execution and deletion remain blocked without explicit authorization",
+  "v19/v20/v21 smoke families remain archive_reference",
 ]) {
   assertIncludes(inventory, phrase, "inventory_slice2_truth");
 }
@@ -192,7 +191,7 @@ console.log(JSON.stringify({
       "scripts/smoke-test-v19-*",
       "scripts/smoke-test-v20*",
       "scripts/smoke-test-v21-*",
-      "scripts/live-test-*",
+      "scripts/live-test-* delete-adjudicated outside default entry",
       "scripts/check-v18-*",
       "scripts/check-v20*",
       "scripts/check-v21-*",

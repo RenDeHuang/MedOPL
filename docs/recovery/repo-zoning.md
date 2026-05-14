@@ -92,7 +92,7 @@
 | `scripts/smoke-test-v19-*` | Zone 3 | archive | v19 smoke 只作历史证据 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-v20*` | Zone 3 | archive | v20 smoke 只作历史证据 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-v21-*` | Zone 3 | archive | v21 smoke 只作历史证据 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/live-test-*` | Zone 3 | archive | live-test 是高风险历史/授权操作，不是默认验证入口 | authorized canary only | legacy-scripts |
+| `scripts/live-test-*` | Zone 3 | delete | live-test 是高风险历史/授权操作，不是默认验证入口；2026-05-14 用户已授权物理删除仓库内旧 live-test 文件，不授权执行 live-test | v22 local smoke / authorized future canary contract | legacy-scripts |
 | `scripts/daily-check-v19-*` | Zone 3 | archive | v19 daily check 只作历史证据 | v22 smoke/canary | legacy-scripts |
 | `scripts/check-v18-*` | Zone 3 | archive | v18 check 只作历史证据 | v22 smoke | legacy-scripts |
 | `scripts/check-v20*` | Zone 3 | archive | v20 check 只作历史证据 | v22 smoke | legacy-scripts |

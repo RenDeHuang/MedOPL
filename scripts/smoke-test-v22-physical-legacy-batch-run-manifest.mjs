@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +17,7 @@ const expectedSlices = [
 ];
 const slice3Id = "slice-3-observability-runner-physical-retirement-boundary";
 const finalSliceId = "slice-final-completion-truth-and-temporary-goal-removal";
+const authorizedLiveTestDeleteSliceId = "slice-authorized-live-test-physical-delete";
 
 const forbiddenTargets = [
   "deploy/**",
@@ -89,10 +90,11 @@ function assertSliceQueueState(manifest) {
   }
 }
 
-const [manifest, goal, inventory] = await Promise.all([
+const [manifest, goal, inventory, scriptNames] = await Promise.all([
   readJson(manifestPath),
   readRepoFile(goalPath),
   readRepoFile(inventoryPath),
+  readdir(path.join(repoRoot, "scripts")),
 ]);
 
 assert.equal(manifest.schema_version, 1, "manifest_schema_version_mismatch");
@@ -212,6 +214,32 @@ assertIncludes(inventory, "physical_delete_batch_status: completed_waiting_b_rev
 assertIncludes(goal, "physical_delete_batch_status: completed_waiting_b_review", "goal_final_batch_status");
 assertArrayIncludesAll(finalSlice.required_gates, manifest.required_global_gates, "final_slice_required_gate");
 assertNoForbiddenWriteSet(finalSlice);
+
+const authorizedLiveTestDeleteSlice = sliceById.get(authorizedLiveTestDeleteSliceId);
+assert.equal(authorizedLiveTestDeleteSlice.status, "completed", "authorized_live_test_delete_slice_status_mismatch");
+assert.equal(authorizedLiveTestDeleteSlice.slice_role, "authorized_follow_up", "authorized_live_test_delete_slice_role_mismatch");
+assert.equal(authorizedLiveTestDeleteSlice.batch_queue_member, false, "authorized_live_test_delete_batch_queue_member_mismatch");
+assertArrayIncludesAll(
+  manifest.authorized_follow_up_slices,
+  [authorizedLiveTestDeleteSliceId],
+  "manifest_authorized_follow_up_slice",
+);
+assert(!expectedSlices.includes(authorizedLiveTestDeleteSliceId), "authorized_live_test_delete_must_not_be_batch_queue_slice");
+assert.equal(authorizedLiveTestDeleteSlice.authorization?.authorized_by_user, true, "authorized_live_test_delete_auth_missing");
+assert.equal(authorizedLiveTestDeleteSlice.authorization?.authorized_at, "2026-05-14", "authorized_live_test_delete_auth_date_mismatch");
+assert(manifest.completed_slices.includes(authorizedLiveTestDeleteSliceId), "authorized_live_test_delete_slice_completion_missing");
+assertArrayIncludesAll(authorizedLiveTestDeleteSlice.target_paths, ["scripts/live-test-*"], "authorized_live_test_delete_target");
+assertArrayIncludesAll(authorizedLiveTestDeleteSlice.required_gates, [
+  "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+], "authorized_live_test_delete_required_gate");
+assertIncludes(inventory, "live-test physical delete authorized and completed", "inventory_authorized_live_test_delete_truth");
+assertIncludes(goal, "`slice-authorized-live-test-physical-delete`", "goal_authorized_live_test_delete_truth");
+
+const liveTestScripts = scriptNames.filter((name) => name.startsWith("live-test-")).sort();
+assert.deepEqual(liveTestScripts, [], `live_test_scripts_must_be_physically_deleted:${liveTestScripts.join(",")}`);
 
 for (const phrase of [
   "agent_run_batch_mode: physical_delete_goal_batch_driven",

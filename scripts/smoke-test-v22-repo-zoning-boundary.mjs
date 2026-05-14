@@ -66,6 +66,12 @@ for (const requiredToken of [
   assertIncludes(zoning, requiredToken, "repo_zoning_required_token");
 }
 
+assertIncludes(
+  zoning,
+  "| `scripts/live-test-*` | Zone 3 | delete |",
+  "repo_zoning_authorized_live_test_delete",
+);
+
 for (const forbiddenInstruction of [
   "move scripts",
   "delete files in this branch",

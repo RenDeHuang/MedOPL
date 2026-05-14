@@ -84,7 +84,7 @@ assertDecisionRow(inventory, "`services/portal/src/state/portal-store-schema.mjs
 assertDecisionRow(inventory, "`scripts/smoke-test-v19-*`", "`archive_reference`");
 assertDecisionRow(inventory, "`scripts/smoke-test-v20*`", "`archive_reference`");
 assertDecisionRow(inventory, "`scripts/smoke-test-v21-*`", "`archive_reference`");
-assertDecisionRow(inventory, "`scripts/live-test-*`", "`archive_reference`");
+assertDecisionRow(inventory, "`scripts/live-test-*`", "`delete`");
 assertDecisionRow(inventory, "`infra/opencost/**`", "`forbidden_without_auth`");
 assertDecisionRow(inventory, "`compose.langfuse.yaml`", "`archive_reference`");
 assertDecisionRow(inventory, "`adapters/resource-provisioner/**`", "`forbidden_without_auth`");
@@ -107,13 +107,16 @@ const familiesWithExistingScripts = [
   ["scripts/smoke-test-v19-", "`scripts/smoke-test-v19-*`"],
   ["scripts/smoke-test-v20", "`scripts/smoke-test-v20*`"],
   ["scripts/smoke-test-v21-", "`scripts/smoke-test-v21-*`"],
-  ["scripts/live-test-", "`scripts/live-test-*`"],
 ];
 
 for (const [prefix, inventoryGroup] of familiesWithExistingScripts) {
   const repoHasFamily = scriptNames.some((name) => `scripts/${name}`.startsWith(prefix));
   if (repoHasFamily) assertIncludes(inventory, inventoryGroup, `inventory_family_coverage:${inventoryGroup}`);
 }
+
+const liveTestScripts = scriptNames.filter((name) => name.startsWith("live-test-")).sort();
+assert.deepEqual(liveTestScripts, [], `live_test_scripts_must_be_physically_deleted:${liveTestScripts.join(",")}`);
+assertIncludes(inventory, "live-test physical delete authorized and completed", "inventory_live_test_delete_truth");
 
 for (const forbidden of [
   "TBD",

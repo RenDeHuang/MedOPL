@@ -11,7 +11,11 @@
     "slice-1-user-owned-retired-domain-store-physical-delete",
     "slice-2-legacy-script-archive-delete-boundary",
     "slice-3-observability-runner-physical-retirement-boundary",
-    "slice-final-completion-truth-and-temporary-goal-removal"
+    "slice-final-completion-truth-and-temporary-goal-removal",
+    "slice-authorized-live-test-physical-delete"
+  ],
+  "authorized_follow_up_slices": [
+    "slice-authorized-live-test-physical-delete"
   ],
   "next_slices": [],
   "batch_policy": {
@@ -152,7 +156,7 @@
           "public_410_tombstone_removal_requires_explicit_confirmation",
           "resource_order_schema_drop_transferred_to_schema_leaf",
           "deploy_adapters_infra_upstream_require_separate_authorization",
-          "live_test_execution_or_deletion_requires_explicit_authorization",
+          "future_live_test_or_real_canary_execution_requires_explicit_authorization",
           "langfuse_runtime_modules_require_future_trace_metadata_migration_before_physical_removal"
         ]
       },
@@ -181,6 +185,49 @@
         "unresolved_not_started_inventory_item",
         "forbidden_without_auth_item_modified",
         "needs_schema_drop_leaf_not_transferred"
+      ]
+    },
+    {
+      "id": "slice-authorized-live-test-physical-delete",
+      "status": "completed",
+      "slice_role": "authorized_follow_up",
+      "batch_queue_member": false,
+      "decision_scope": "delete_authorized_live_test_files_only",
+      "authorization": {
+        "authorized_by_user": true,
+        "authorized_at": "2026-05-14",
+        "authorization_text": "我授权"
+      },
+      "target_paths": [
+        "scripts/live-test-*"
+      ],
+      "required_gates": [
+        "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs"
+      ],
+      "allowed_write_set": [
+        "docs/recovery/active-surface.md",
+        "docs/recovery/archive-policy.md",
+        "docs/recovery/legacy-cleanup-backlog.md",
+        "docs/recovery/physical-legacy-file-retirement-goal.md",
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "docs/recovery/repo-zoning.md",
+        "docs/recovery/status-matrix.md",
+        "scripts/live-test-*",
+        "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+        "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+        "scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+        "scripts/smoke-test-v22-repo-zoning-boundary.mjs"
+      ],
+      "stop_conditions": [
+        "active_reference_to_live_test_script",
+        "attempt_to_run_live_test",
+        "deploy_or_adapter_or_infra_or_upstream_change",
+        "secret_read_requested"
       ]
     }
   ]

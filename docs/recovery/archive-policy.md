@@ -18,8 +18,9 @@
 - `docs/logs/*`
 - `scripts/smoke-test-v19-*`
 - `scripts/smoke-test-v20*`
-- `scripts/live-test-*`
 - `OPL-v20-商业化产品套餐开发方案.md`
+
+旧 `scripts/live-test-*` 文件已由用户授权的物理删除 slice 删除；未来真实外部 canary 只能通过新的授权合同和新的 v22 gate 重新引入。
 
 Archive/reference 资产可以被阅读、摘取事实或转写为新的 v22 contract，但不能被当成 v22 active 入口、默认验证入口或当前产品叙事。
 

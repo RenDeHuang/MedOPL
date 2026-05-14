@@ -38,6 +38,7 @@ for (const phrase of [
   "主路径清退已经完成，不等于物理文件清退完成",
   "本 goal 不写入常驻 product cursor",
   "完成后可由用户删除本 goal 文件或对应分支",
+  "用户随后授权的 live-test physical delete follow-up slice 已物理删除 `scripts/live-test-*`",
 ]) {
   assertIncludes(goal, phrase, "goal_identity");
 }
@@ -188,11 +189,19 @@ for (const phrase of [
 }
 
 for (const phrase of [
+  "不在 goal bootstrap 分支删除文件",
+  "后续授权 deletion slice 必须先 RED gate、证明无 active reference，再按导台删除。",
+]) {
+  assertIncludes(goal, phrase, "goal_bootstrap_delete_boundary");
+}
+
+for (const phrase of [
   "本台账把仓库上下文裁定为四个区",
   "Zone 2: Migration Observation Surface",
   "Zone 3: Historical Archive Surface",
   "Zone 4: Authorization Forbidden Surface",
-  "不在本分支 delete files in this branch",
+  "| `scripts/live-test-*` | Zone 3 | delete |",
+  "2026-05-14 用户已授权物理删除仓库内旧 live-test 文件，不授权执行 live-test",
 ]) {
   assertIncludes(repoZoning, phrase, "repo_zoning_sample_contract");
 }

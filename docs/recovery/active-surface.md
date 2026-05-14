@@ -46,8 +46,9 @@ active surface 不允许修改 one-person-lab upstream。one-person-lab upstream
 - `docs/logs/*`
 - `scripts/smoke-test-v19-*`
 - `scripts/smoke-test-v20*`
-- `scripts/live-test-*`
 - `OPL-v20-商业化产品套餐开发方案.md`
+
+旧 `scripts/live-test-*` 文件已在用户授权的物理删除 slice 中删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 默认入口。
 
 ## Delete / Cleanup Target
 

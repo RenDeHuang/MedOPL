@@ -101,7 +101,7 @@
 
 ## Slice 4: Legacy Script Archive Boundary
 
-目标：让 v19/v20/v21/live-test 脚本从默认 AI 上下文退场，只作为历史证据或授权 canary 参考。
+目标：让 v19/v20/v21/live-test 脚本从默认 AI 上下文退场。v19/v20/v21 smoke 只作为历史证据；live-test 只记录为高风险授权外部操作，后续物理删除必须走单独授权 slice。
 
 建议 smoke/gate：
 
@@ -111,9 +111,10 @@
 
 - MVP suite 只串 v22 默认 smoke。
 - `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite。
-- `scripts/live-test-*` 必须标记为授权外部操作，不可默认运行。
+- `scripts/live-test-*` 不进入默认 suite；当前物理删除事实由 `slice-authorized-live-test-physical-delete` 单独记录，不属于 Slice 4 archive boundary 本体。
 - 无 v22 前缀但仍有价值的 smoke 必须迁名或在台账中标明 archive/rewrite。
 - completed on `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` verifies default README / vibe-coding commands, v22 MVP suite script references, and repo-zoning archive/review-rewrite rows without running live-test, deleting legacy scripts, touching services, or reading secrets.
+- follow-up physical delete on `cleanup/v22-physical-legacy-batch-run`: `slice-authorized-live-test-physical-delete` physically deletes `scripts/live-test-*` after explicit user authorization; future real external canary must use a new v22 authorization contract and must not restore the old default entry.
 
 ## Slice 5: OpenCost and Langfuse Primary Narrative Retirement
 
