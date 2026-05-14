@@ -79,28 +79,20 @@ assert.deepEqual(
   `cleanup_completion_blocking_gaps:${blockingCleanupGaps.join(",")}`,
 );
 
-assert.equal(current.current_cursor, cleanupCompletionStepId, "cleanup_completion_cursor_mismatch");
-assert.equal(current.next_leaf, cleanupCompletionStepId, "cleanup_completion_next_leaf_mismatch");
-assert.equal(current.current_stage, "S1 legacy cleanup", "cleanup_completion_stage_mismatch");
-assert(current.current_blockers.includes("none_for_cleanup_completion_truth_writeback"), "cleanup_completion_blocker_truth_missing");
-assertIncludes(current.current_problem, "cleanup_completion", "cleanup_completion_current_problem");
+assert.notEqual(current.current_cursor, cleanupCompletionStepId, "cleanup_completion_must_not_remain_current_cursor");
+assert.notEqual(current.next_leaf, cleanupCompletionStepId, "cleanup_completion_must_not_remain_next_leaf");
+assertIncludes(current.current_problem, "cleanup_completion is historical", "cleanup_completion_historical_current_problem");
 assertIncludes(current.current_problem, "leaf-cloud-lane-readonly-status-audit", "cleanup_completion_remaining_next_stage");
 
 const completionGap = gapById(current, cleanupCompletionGapId);
 assert.equal(completionGap.stage, "S1 legacy cleanup", "cleanup_completion_gap_stage_mismatch");
 assert.equal(completionGap.status, "cleaned", "cleanup_completion_gap_status_mismatch");
-assert.equal(completionGap.cursor_eligible, true, "cleanup_completion_gap_cursor_eligible_mismatch");
-assert.equal(completionGap.next_leaf_step, cleanupCompletionStepId, "cleanup_completion_gap_leaf_mismatch");
+assert.equal(completionGap.cursor_eligible, false, "cleanup_completion_must_be_history_not_cursor_eligible");
+assert.equal(completionGap.next_leaf_step, "monitor_only_after_B_absorb", "cleanup_completion_gap_must_be_monitor_only");
 assert.deepEqual(completionGap.depends_on, cleanupGapIds, "cleanup_completion_gap_dependencies_mismatch");
 
-assert.equal(current.current_leaf.step_id, cleanupCompletionStepId, "current_leaf_cleanup_completion_step_mismatch");
-assert.equal(current.current_leaf.gap_id, cleanupCompletionGapId, "current_leaf_cleanup_completion_gap_mismatch");
-assert.equal(current.current_leaf.stage, "S1 legacy cleanup", "current_leaf_cleanup_completion_stage_mismatch");
-assert.deepEqual(current.current_leaf.depends_on, cleanupGapIds, "current_leaf_cleanup_completion_dependencies_mismatch");
-assertIncludes(current.current_leaf.executable_when, "cleanup-only", "current_leaf_cleanup_only_boundary");
 assertIncludes(current.current_leaf.executable_when, "no secret", "current_leaf_no_secret_boundary");
 assertIncludes(current.current_leaf.executable_when, "no build/push/kubectl", "current_leaf_no_build_push_kubectl_boundary");
-assert(current.current_leaf.verification_commands.includes("node scripts/smoke-test-v22-cleanup-completion-truth.mjs"), "cleanup_completion_verification_command_missing");
 
 for (const phrase of [
   "`user_owned` primary path",
@@ -120,7 +112,9 @@ assertIncludes(legacyBacklog, "completed by cleanup/v22-cleanup-completion-truth
 assertIncludes(repoZoning, "observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`", "repo_zoning_observability_completion");
 assertIncludes(gapMatrix, "### Gap: cleanup-completion-truth", "gap_matrix_cleanup_completion_gap");
 assertIncludes(gapMatrix, "cleanup_completion truth", "gap_matrix_cleanup_completion_truth");
+assertIncludes(gapMatrix, "cleanup_completion truth is historical", "gap_matrix_cleanup_completion_historical_truth");
 assertIncludes(goalState, "cleanup_completion truth", "goal_state_cleanup_completion_truth");
+assertIncludes(goalState, "cleanup_completion truth is historical", "goal_state_cleanup_completion_historical_truth");
 
 console.log(JSON.stringify({
   ok: true,

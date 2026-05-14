@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-14",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "60e587a79c47d1a70538757e20d78c7b528d404f",
+  "base_trunk_head": "502036173189f153ec8eec8aabc86178f5ec40a7",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "cleanup/v22-cleanup-completion-truth",
+  "current_branch": "cleanup/v22-retire-cleanup-stop-current-lock",
   "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
-  "authoring_branch": "cleanup/v22-cleanup-completion-truth",
+  "authoring_branch": "cleanup/v22-retire-cleanup-stop-current-lock",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "60e587a79c47d1a70538757e20d78c7b528d404f",
+    "observed_git_head": "502036173189f153ec8eec8aabc86178f5ec40a7",
     "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "60e587a79c47d1a70538757e20d78c7b528d404f",
-  "current_cursor": "leaf-cleanup-completion-truth-writeback",
-  "next_leaf": "leaf-cleanup-completion-truth-writeback",
-  "current_stage": "S1 legacy cleanup",
+  "last_absorbed_commit": "502036173189f153ec8eec8aabc86178f5ec40a7",
+  "current_cursor": "leaf-cloud-lane-readonly-status-audit",
+  "next_leaf": "leaf-cloud-lane-readonly-status-audit",
+  "current_stage": "S4 Cloud lane productionization",
   "current_risk_class": "local_doc_eval",
   "current_blockers": [
-    "none_for_cleanup_completion_truth_writeback"
+    "none_for_cloud_lane_readonly_status_audit_local_doc_eval"
   ],
-  "current_problem": "cleanup_completion truth writeback: all cleanup gaps are cleaned, tombstone-only, archive-only, or intentionally retained. Remaining non-cleanup next stage is leaf-cloud-lane-readonly-status-audit, but this cleanup-only goal must stop before Cloud lane.",
+  "current_problem": "cleanup_completion is historical: all cleanup gaps are cleaned, tombstone-only, archive-only, or intentionally retained. The cleanup-only execution lock is retired, and the current normal product-goal cursor resumes at leaf-cloud-lane-readonly-status-audit without secret, live cloud, build/push/kubectl, deploy, live-test, deploy/adapters/.sentrux, services implementation, or upstream changes.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -46,7 +46,7 @@
     "S6 release readiness"
   ],
   "ordering": {
-    "selection_rule": "cleanup-only goal selects cleanup cursor correction/completion before any non-cleanup executable leaf; normal product-goal runs choose the lowest-priority-number gap whose cursor_eligible is true, whose dependencies are satisfied, and whose next_leaf_step is executable",
+    "selection_rule": "normal product-goal runs choose the lowest-priority-number gap whose cursor_eligible is true, whose dependencies are satisfied, and whose next_leaf_step is executable; cleanup_completion remains a historical completed fact and must not remain the current cursor",
     "future_stage_blocker_policy": "deferred_authorized_future_stage does not block earlier executable cleanup/refactor/dev leaves",
     "cleanup_blocking_statuses": [
       "open",
@@ -57,8 +57,8 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-cleanup-completion-truth-writeback",
-    "rule": "cleanup-only goal stops at cleanup_completion truth when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path; Cloud lane remains the next non-cleanup stage for a separate goal."
+    "repaired_current_cursor": "leaf-cloud-lane-readonly-status-audit",
+    "rule": "cleanup_completion truth is historical after B absorption; when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path, normal product-goal selection resumes at the lowest-priority eligible non-cleanup leaf."
   },
   "gaps": [
     {
@@ -142,7 +142,7 @@
       "id": "cloud-lane-mock-readonly-dry-run-authorized",
       "stage": "S4 Cloud lane productionization",
       "priority": 70,
-      "cursor_eligible": false,
+      "cursor_eligible": true,
       "status": "in_progress",
       "next_leaf_step": "leaf-cloud-lane-readonly-status-audit",
       "depends_on": [
@@ -222,9 +222,9 @@
       "id": "cleanup-completion-truth",
       "stage": "S1 legacy cleanup",
       "priority": 45,
-      "cursor_eligible": true,
+      "cursor_eligible": false,
       "status": "cleaned",
-      "next_leaf_step": "leaf-cleanup-completion-truth-writeback",
+      "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "legacy-cleanup-user-owned",
         "legacy-cleanup-resource-order",
@@ -234,32 +234,33 @@
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-cleanup-completion-truth-writeback",
-    "gap_id": "cleanup-completion-truth",
-    "stage": "S1 legacy cleanup",
+    "step_id": "leaf-cloud-lane-readonly-status-audit",
+    "gap_id": "cloud-lane-mock-readonly-dry-run-authorized",
+    "stage": "S4 Cloud lane productionization",
     "cursor_eligible": true,
     "depends_on": [
       "legacy-cleanup-user-owned",
       "legacy-cleanup-resource-order",
       "legacy-cleanup-secret-hygiene",
-      "legacy-cleanup-legacy-scripts"
+      "legacy-cleanup-legacy-scripts",
+      "architecture-refactor-portal-layering",
+      "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
     ],
-    "problem": "cleanup-only cursor correction writes cleanup_completion truth and stops before Cloud lane.",
-    "executable_when": "cleanup-only truth writeback only; all cleanup gaps are cleaned/tombstone-only/archive-only/intentionally retained; no secret, no true cloud, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no services, no upstream, and no dependency files",
-    "failure_state": "blocked_cleanup_completion_truth if any cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path",
+    "problem": "Cloud lane readonly status audit is the next normal product-goal leaf after cleanup_completion becomes historical; it must only audit repo-tracked/local status and authorization boundaries.",
+    "executable_when": "readonly/local status audit only; cleanup_completion is historical; dependencies are satisfied or gated; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no services implementation, no upstream, and no dependency files",
+    "failure_state": "blocked_cloud_lane_readonly_status_audit if any required dependency becomes open, needs_eval, or deferred_authorized_current_path, or if the leaf requires secret, live cloud, build/push/kubectl, deploy, live-test, services implementation, or upstream changes",
     "verification_commands": [
-      "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+      "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
-      "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-      "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
       "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- docs/recovery scripts services"
+      "git diff --check -- docs/recovery scripts"
     ],
     "allowed_files": [
       "docs/recovery/*",
+      "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
       "scripts/smoke-test-v22-*"
     ],
     "forbidden_files": [

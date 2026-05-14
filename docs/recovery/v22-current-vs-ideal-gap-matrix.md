@@ -29,7 +29,7 @@ Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Before 
 - `legacy-cleanup-secret-hygiene` status must be cleaned or gated by the diff-scoped scan eval.
 - `legacy-cleanup-legacy-scripts` status must be cleaned or gated by the archive boundary eval.
 - open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
-- cleanup-only goal stop condition is stricter than Cloud lane dependency eligibility: all cleanup gaps must be `cleaned`, `tombstone_only`, `archive_only`, or `intentionally_retained`, then Codex writes `cleanup_completion` truth and stops before any Cloud/development/release leaf.
+- cleanup-only goal stop condition is stricter than Cloud lane dependency eligibility: all cleanup gaps must be `cleaned`, `tombstone_only`, `archive_only`, or `intentionally_retained`, then Codex writes `cleanup_completion` truth and stops before any Cloud/development/release leaf. After B absorbs a dedicated cleanup-stop retirement, `cleanup_completion` becomes historical and normal product-goal selection may resume at the lowest-priority eligible non-cleanup leaf.
 
 ## Release Readiness Dependency Gate
 
@@ -157,23 +157,23 @@ Every gap entry must contain:
 ### Gap: cleanup-completion-truth
 
 - id: cleanup-completion-truth
-- current_fact: cleanup-only cursor correction records that user_owned, resource-order, secret hygiene, legacy scripts, default narrative, and OpenCost/Langfuse primary narrative cleanup are no longer active primary paths.
-- ideal_state: all cleanup gaps are cleaned, tombstone_only, archive_only, or intentionally_retained, and the goal stops before Cloud lane or product development.
-- problem: the canonical cursor pointed at a Cloud lane leaf while this run is cleanup-only; cleanup_completion truth must be written before stopping.
+- current_fact: cleanup_completion truth is historical after cleanup-stop current-lock retirement; user_owned, resource-order, secret hygiene, legacy scripts, default narrative, and OpenCost/Langfuse primary narrative cleanup are no longer active primary paths.
+- ideal_state: all cleanup gaps are cleaned, tombstone_only, archive_only, or intentionally_retained, and cleanup_completion remains a historical completion fact rather than the active current cursor.
+- problem: cleanup_completion correctly stopped a cleanup-only run, but its execution lock must not remain the normal product-goal current cursor after B absorption.
 - dependency: cleanup gates for user_owned, resource-order, secret hygiene, legacy scripts, default entry, and OpenCost/Langfuse narrative are absorbed or represented as tombstone/archive facts.
 - depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts]
 - blocked_by: []
-- executable_when: cleanup-only goal observes no cleanup gap with open, in_progress, needs_eval, or deferred_authorized_current_path status.
+- executable_when: monitor-only after B absorb; it becomes executable again only if cleanup regression reopens a cleanup gap.
 - stage: S1 legacy cleanup
 - priority: 45
-- cursor_eligible: true
+- cursor_eligible: false
 - status: cleaned
-- next_leaf_step: leaf-cleanup-completion-truth-writeback
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-cleanup-completion-truth.mjs`
 - allowed_files: `docs/recovery/*`, `scripts/smoke-test-v22-*`
 - forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, secret-like paths, true cloud runners, package/dependency files
 - truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`
-- B_absorb_criteria: B reruns cleanup completion and required v22 gates, confirms no cleanup gap remains unfinished, confirms OpenCost/Langfuse remain non-primary, and stops without entering Cloud lane.
+- B_absorb_criteria: B reruns cleanup completion and required v22 gates, confirms no cleanup gap remains unfinished, confirms OpenCost/Langfuse remain non-primary, and confirms cleanup_completion truth remains historical rather than the active current cursor.
 
 ### Gap: architecture-refactor-portal-layering
 
@@ -250,7 +250,7 @@ Every gap entry must contain:
 - executable_when: readonly/local status audit can run without secret/live/cloud/build/push/kubectl/deploy and without touching deploy/adapters/.sentrux.
 - stage: S4 Cloud lane productionization
 - priority: 70
-- cursor_eligible: false
+- cursor_eligible: true
 - status: in_progress
 - next_leaf_step: leaf-cloud-lane-readonly-status-audit
 - eval: `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`

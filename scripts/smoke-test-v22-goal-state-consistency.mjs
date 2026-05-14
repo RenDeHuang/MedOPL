@@ -303,7 +303,6 @@ function assertCurrentShape(current) {
   assert.equal(current.model, "gpt-5.4", "current_model_mismatch");
   assert.equal(current.branch_baseline, "origin/recovery/platform-v22-trunk", "branch_baseline_mismatch");
   assert.equal(current.target_branch, "recovery/platform-v22-trunk", "target_branch_mismatch");
-  assert.equal(current.authoring_branch, "cleanup/v22-cleanup-completion-truth", "authoring_branch_mismatch");
   assert.equal(current.current_branch, current.authoring_branch, "current_branch_must_be_authoring_source_branch");
   assert.equal(
     current.current_branch_role,
@@ -318,10 +317,13 @@ function assertCurrentShape(current) {
     `runtime_branch_must_be_authoring_or_target_or_additive_truth:${runtimeBranch}`,
   );
   assert.deepEqual(current.stage_order, expectedStageOrder, "stage_order_mismatch");
-  assert.equal(current.current_cursor, "leaf-cleanup-completion-truth-writeback", "current_cursor_must_preserve_cleanup_completion_fact");
+  assert.equal(current.current_cursor, computeExecutableLeaf(current), "current_cursor_must_match_computed_executable_leaf");
   assert.equal(current.next_leaf, current.current_cursor, "next_leaf_must_match_current_cursor_for_active_leaf");
-  assert.equal(current.current_stage, "S1 legacy cleanup", "current_stage_mismatch");
-  assert.equal(current.current_risk_class, "local_doc_eval", "current_risk_class_mismatch");
+  assert(expectedStageOrder.includes(current.current_stage), `current_stage_unknown:${current.current_stage}`);
+  assert(
+    ["local_doc_eval", "local_service_code", "sensitive_boundary", "live_external"].includes(current.current_risk_class),
+    `current_risk_class_unknown:${current.current_risk_class}`,
+  );
   assert.equal(current.release_readiness_state?.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
   assert.equal(current.release_readiness_state?.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
   assert.equal(current.release_readiness_state?.authorized_intent_recorded, true, "release_readiness_authorized_intent_missing");
@@ -336,10 +338,7 @@ function assertCurrentShape(current) {
     assert(current.release_readiness_state.missing_evidence.includes(missing), `release_readiness_missing_evidence_not_recorded:${missing}`);
   }
   assert(Array.isArray(current.current_blockers), "current_blockers_must_be_array");
-  assert(
-    current.current_blockers.includes("none_for_cleanup_completion_truth_writeback"),
-    "current_blockers_must_record_no_cleanup_completion_blocker",
-  );
+  assert(current.current_blockers.length > 0, "current_blockers_must_record_current_leaf_blocker_state");
   assertPlainObject(current.dependency_ordering_repair, "dependency_ordering_repair");
   assert.equal(current.dependency_ordering_repair.status, "active", "dependency_ordering_repair_status_mismatch");
   assert.equal(current.dependency_ordering_repair.repaired_current_cursor, current.current_cursor, "dependency_ordering_repair_cursor_mismatch");
@@ -387,11 +386,6 @@ function assertCurrentShape(current) {
       localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
       "target_branch_head_must_descend_from_base_trunk_head",
     );
-    assert.equal(
-      current.current_cursor,
-      "leaf-cleanup-completion-truth-writeback",
-      "target_branch_additive_truth_must_not_advance_current_cursor",
-    );
   } else if (additiveTruthBranches.has(runtimeBranch)) {
     if (localHead === originTrunkHead) {
       const pendingDiff = runGit(["status", "--porcelain"]);
@@ -401,11 +395,6 @@ function assertCurrentShape(current) {
       const aheadCount = Number(runGit(["rev-list", "--count", `${originTrunkHead}..${localHead}`]));
       assert(Number.isInteger(aheadCount) && aheadCount > 0, "additive_truth_branch_must_be_ahead_of_origin_trunk");
     }
-    assert.equal(
-      current.current_cursor,
-      "leaf-cleanup-completion-truth-writeback",
-      "additive_truth_branch_must_not_advance_current_cursor",
-    );
   } else {
     assert.fail(`runtime_branch_must_be_authoring_or_target_or_additive_truth:${runtimeBranch}`);
   }
@@ -454,6 +443,11 @@ function assertSchemaShape(schema) {
   for (const field of requiredCurrentSchemaFields) {
     assert(schema.required.includes(field), `schema_required_field_missing:${field}`);
   }
+  assert.notEqual(
+    schema.properties?.authoring_branch?.const,
+    "cleanup/v22-cleanup-completion-truth",
+    "schema_authoring_branch_must_not_lock_historical_cleanup_branch",
+  );
 }
 
 function assertGapConsistency(current, gapMatrix) {

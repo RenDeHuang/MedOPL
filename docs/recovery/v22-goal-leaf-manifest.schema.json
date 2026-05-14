@@ -50,7 +50,7 @@
     "trunk_head": { "type": "string", "const": "compatibility_alias_for_expected_absorbed_head_not_static_base" },
     "current_branch": { "type": "string" },
     "current_branch_role": { "type": "string", "const": "authoring_source_branch_not_runtime_git_branch" },
-    "authoring_branch": { "type": "string", "const": "cleanup/v22-cleanup-completion-truth" },
+    "authoring_branch": { "type": "string" },
     "target_branch": { "type": "string", "const": "recovery/platform-v22-trunk" },
     "git_observation": {
       "type": "object",

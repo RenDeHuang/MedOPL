@@ -88,6 +88,15 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-goal-state-consistency.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
   ])],
+  ["cleanup/v22-retire-cleanup-stop-current-lock", new Set([
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+  ])],
   ["recovery/platform-v22-trunk", allowedDiffPaths],
 ]);
 
