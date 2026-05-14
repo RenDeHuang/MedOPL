@@ -6,13 +6,13 @@
   "base_branch": "origin/recovery/platform-v22-trunk",
   "target_branch": "recovery/platform-v22-trunk",
   "current_status": "batch_manifest_ready",
-  "current_slice": "slice-3-observability-runner-physical-retirement-boundary",
+  "current_slice": "slice-final-completion-truth-and-temporary-goal-removal",
   "completed_slices": [
     "slice-1-user-owned-retired-domain-store-physical-delete",
-    "slice-2-legacy-script-archive-delete-boundary"
+    "slice-2-legacy-script-archive-delete-boundary",
+    "slice-3-observability-runner-physical-retirement-boundary"
   ],
   "next_slices": [
-    "slice-3-observability-runner-physical-retirement-boundary",
     "slice-final-completion-truth-and-temporary-goal-removal"
   ],
   "batch_policy": {
@@ -109,9 +109,9 @@
     },
     {
       "id": "slice-3-observability-runner-physical-retirement-boundary",
-      "status": "ready_after_slice_2",
+      "status": "completed",
       "decision_scope": "archive_reference_or_migrate_only_for_langfuse_and_blocked_without_auth_for_runner_provider",
-      "red_gate_policy": "must_fail_before_slice_if_langfuse_or_runner_provider_is_default_product_truth",
+      "red_gate_policy": "must_fail_before_slice_if_langfuse_runtime_modules_have_active_imports_or_default_suite_dependencies_or_contract_index_truth",
       "target_paths": [
         "compose.langfuse.yaml",
         "services/portal/src/integrations/langfuse-trace-client.mjs",
@@ -136,7 +136,10 @@
       "stop_conditions": [
         "deploy_or_adapter_or_infra_delete_requested_without_auth",
         "trace_metadata_boundary_conflict",
-        "raw_secret_or_token_observed"
+        "raw_secret_or_token_observed",
+        "active_runtime_import_to_langfuse_module",
+        "default_mvp_suite_depends_on_langfuse_contract_smoke",
+        "contracts_index_still_requires_langfuse_boundary"
       ]
     },
     {

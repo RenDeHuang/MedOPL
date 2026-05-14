@@ -9,6 +9,9 @@ const contractPath = "docs/contracts/v22-langfuse-observability-metadata-boundar
 const readmePath = "docs/contracts/README.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const portalPayloadPath = "services/portal/src/domain/portal-api-payloads.mjs";
+const portalRuntimeClientsPath = "services/portal/src/app/portal-runtime-clients.mjs";
+const runtimeBridgeRoutesPath = "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs";
+const inventoryPath = "docs/recovery/physical-legacy-file-retirement-inventory.md";
 
 const CONTRACT_START = "<!-- v22-langfuse-observability-metadata-contract:start -->";
 const CONTRACT_END = "<!-- v22-langfuse-observability-metadata-contract:end -->";
@@ -156,6 +159,9 @@ const suite = await readFile(path.join(repoRoot, suitePath), "utf8");
 const { createLangfuseSanitizedProjectionAdapter } = await import("../services/portal/src/integrations/langfuse-trace-client.mjs");
 const { createPortalApiPayloads } = await import("../services/portal/src/domain/portal-api-payloads.mjs");
 const portalPayloadSource = await readFile(path.join(repoRoot, portalPayloadPath), "utf8");
+const portalRuntimeClientsSource = await readFile(path.join(repoRoot, portalRuntimeClientsPath), "utf8");
+const runtimeBridgeRoutesSource = await readFile(path.join(repoRoot, runtimeBridgeRoutesPath), "utf8");
+const inventory = await readFile(path.join(repoRoot, inventoryPath), "utf8");
 
 assertNoOldNarrative(markdown, "langfuse_contract");
 assertNoOldNarrative(portalPayloadSource, "portal_api_payloads");
@@ -454,6 +460,26 @@ assert(readme.includes("观测附件"), "contracts_readme_must_describe_langfuse
 assert(suite.includes("smoke-test-v22-langfuse-observability-metadata-contract"), "mvp_suite_missing_langfuse_smoke");
 assert(portalPayloadSource.includes("Portal 会话轨迹 sanitized projection"), "portal_payload_trace_summary_datasource_mismatch");
 assert(portalPayloadSource.includes('source: traceRows.source || "langfuse_sanitized_projection"'), "portal_payload_must_preserve_sanitized_projection_source");
+assert(
+  portalRuntimeClientsSource.includes("../integrations/langfuse-trace-client.mjs"),
+  "langfuse_trace_client_active_import_missing",
+);
+assert(
+  runtimeBridgeRoutesSource.includes("./langfuse-publisher.mjs"),
+  "langfuse_publisher_active_import_missing",
+);
+assert(
+  inventory.includes("active import from `services/portal/src/app/portal-runtime-clients.mjs`"),
+  "inventory_must_record_langfuse_trace_client_active_import",
+);
+assert(
+  inventory.includes("active import from `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`"),
+  "inventory_must_record_langfuse_publisher_active_import",
+);
+assert(
+  inventory.includes("slice-3 truth writeback: completed"),
+  "inventory_must_record_slice3_truth_writeback",
+);
 
 console.log(JSON.stringify({
   ok: true,

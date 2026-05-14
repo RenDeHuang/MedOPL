@@ -15,6 +15,7 @@ const expectedSlices = [
   "slice-3-observability-runner-physical-retirement-boundary",
   "slice-final-completion-truth-and-temporary-goal-removal",
 ];
+const slice3Id = "slice-3-observability-runner-physical-retirement-boundary";
 
 const forbiddenTargets = [
   "deploy/**",
@@ -167,8 +168,19 @@ assertArrayIncludesAll(slice2.allowed_write_set, [
 assertNoForbiddenWriteSet(slice2);
 
 const slice3 = sliceById.get("slice-3-observability-runner-physical-retirement-boundary");
-assert.equal(slice3.status, "ready_after_slice_2", "slice3_status_mismatch");
+assert(
+  ["ready_after_slice_2", "completed"].includes(slice3.status),
+  "slice3_status_mismatch",
+);
 assert.equal(slice3.decision_scope, "archive_reference_or_migrate_only_for_langfuse_and_blocked_without_auth_for_runner_provider", "slice3_decision_scope_mismatch");
+assert(
+  slice3.red_gate_policy.includes("langfuse"),
+  "slice3_red_gate_policy_must_reference_langfuse_boundary",
+);
+assert.notEqual(slice3.status, "ready_after_slice_2", "slice3_truth_writeback_missing");
+assert(manifest.completed_slices.includes(slice3Id), "slice3_completion_truth_missing");
+assert(!manifest.next_slices.includes(slice3Id), "slice3_must_not_remain_in_next_slices");
+assertIncludes(inventory, "slice-3 truth writeback: completed", "inventory_slice3_completion_truth");
 assertArrayIncludesAll(slice3.required_gates, [
   "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
   "node scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs",
