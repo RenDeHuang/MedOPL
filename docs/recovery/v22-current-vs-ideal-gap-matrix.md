@@ -2,7 +2,42 @@
 
 Every gap below is part of the product-goal harness, not a free-form roadmap. Each gap must have an eval. 每个 gap 必须有 eval；没有 eval 的 gap 不得实现，状态只能是 needs_eval，下一步只能是 write_eval_shell。
 
-Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `deferred_authorized`.
+Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
+
+## Dependency Stage Order
+
+- S1 legacy cleanup
+- S2 architecture refactor
+- S3 OPL connection productionization
+- S4 Cloud lane productionization
+- S5 frontend/backend product completion
+- S6 release readiness
+
+Codex must execute the product-goal dependency graph in stage order: cleanup -> refactor -> OPL connection -> Cloud lane -> frontend/backend product completion -> release readiness. A future-stage blocker must not be treated as the current blocker when an earlier cleanup/refactor/dev leaf is still executable.
+
+## Cleanup Stage Completion Gate
+
+Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Before any Cloud lane leaf may set `cursor_eligible: true`, legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true:
+
+- `legacy-cleanup-user-owned` status must be cleaned or intentionally_retained.
+- resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane.
+- `legacy-cleanup-secret-hygiene` status must be cleaned or gated by the diff-scoped scan eval.
+- `legacy-cleanup-legacy-scripts` status must be cleaned or gated by the archive boundary eval.
+- open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
+
+## Release Readiness Dependency Gate
+
+Release readiness dependency gate: release-readiness leaf steps may set `cursor_eligible: true` only after all prerequisites below are true:
+
+- resource-order store/Postgres/schema cleaned 或 intentionally_retained
+- secret hygiene cleaned
+- legacy scripts archive cleaned
+- Portal architecture refactor characterized/cleaned
+- OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker
+- Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker
+- frontend/backend product completion completed
+
+If any dependency is not satisfied, release readiness 未满足依赖时不能成为 current cursor, release readiness may only be `pending` or `deferred_authorized_future_stage`, and Codex 不得请求 deploy/cloud 授权 for release readiness. Codex must choose the highest-priority executable cleanup/refactor/product leaf instead.
 
 ## Gap Field Schema
 
@@ -13,6 +48,12 @@ Every gap entry must contain:
 - ideal_state:
 - problem:
 - dependency:
+- depends_on:
+- blocked_by:
+- executable_when:
+- stage:
+- priority:
+- cursor_eligible:
 - status:
 - next_leaf_step:
 - eval:
@@ -30,6 +71,12 @@ Every gap entry must contain:
 - ideal_state: no new implementation, doc, eval, or product language treats `user_owned` as user-owned cloud resource configuration.
 - problem: prevent user-owned meaning from returning through active docs or tests.
 - dependency: default-entry cleanup and user_owned primary path retirement absorbed.
+- depends_on: []
+- blocked_by: []
+- executable_when: monitoring detects user_owned primary-path regression or B requests a focused cleanup audit.
+- stage: S1 legacy cleanup
+- priority: 10
+- cursor_eligible: false
 - status: cleaned
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
@@ -45,6 +92,12 @@ Every gap entry must contain:
 - ideal_state: managed environment/resource binding/billing/audit is the only active resource attribution path.
 - problem: prevent resource-order persistence from returning as active runtime truth while retaining migration-only legacy tables/collections until a later schema-drop/archive leaf proves it is safe.
 - dependency: route, billing/payload, store/admin/frontend cleanup absorbed.
+- depends_on: [legacy-cleanup-user-owned]
+- blocked_by: []
+- executable_when: monitoring detects active resource-order primary-path regression, or a future schema-drop/archive leaf is explicitly scoped.
+- stage: S1 legacy cleanup
+- priority: 20
+- cursor_eligible: false
 - status: cleaned
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; store/Postgres/schema retired-active-runtime facts are covered by `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` and dedicated static gate `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`
@@ -60,6 +113,12 @@ Every gap entry must contain:
 - ideal_state: B always runs changed-files / added-lines diff-scoped secret scan before absorb; full-repo secret scan is read-only audit only.
 - problem: secret hygiene can degrade if B relies only on broad scans or path names.
 - dependency: product-goal harness absorbed.
+- depends_on: [legacy-cleanup-resource-order]
+- blocked_by: []
+- executable_when: any branch changes docs/scripts/contracts/services or B needs diff-scoped scan evidence.
+- stage: S1 legacy cleanup
+- priority: 30
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`
@@ -75,6 +134,12 @@ Every gap entry must contain:
 - ideal_state: default execution line uses only v22 local smoke unless a canary is explicitly authorized.
 - problem: old scripts can re-enter AI context as default truth.
 - dependency: secret hygiene eval shell absorbed; archive boundary gate exists and is runnable locally.
+- depends_on: [legacy-cleanup-secret-hygiene]
+- blocked_by: []
+- executable_when: default validation docs or MVP suite mention archive/reference legacy scripts.
+- stage: S1 legacy cleanup
+- priority: 40
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
@@ -90,6 +155,12 @@ Every gap entry must contain:
 - ideal_state: backend route -> app payload -> domain -> state/persistence and frontend view/composable/API module boundaries are enforceable by characterization gates.
 - problem: refactors can move behavior without proving contract parity.
 - dependency: cleanup of resource-order store/Postgres/schema should land first for related surfaces.
+- depends_on: [legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts]
+- blocked_by: []
+- executable_when: a Portal refactor branch is opened; characterization gate must run before moving or splitting code.
+- stage: S2 architecture refactor
+- priority: 50
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
@@ -105,6 +176,12 @@ Every gap entry must contain:
 - ideal_state: Portal -> Gateway -> clean upstream OPL -> Runtime Agent -> file/run/artifact -> Portal trace works without fake 200.
 - problem: canary facts must not become production truth without productionized branch absorption.
 - dependency: OPL capability and file/run/artifact contracts.
+- depends_on: [architecture-refactor-portal-layering]
+- blocked_by: [true cloud runtime, COS billing reconciliation, Langfuse / trace.medopl.cn, deploy evidence, secret-backed live provider calls]
+- executable_when: repo-local OPL contract/eval/local projection work is scoped and does not require secret/live/cloud/deploy/upstream actions.
+- stage: S3 OPL connection productionization
+- priority: 60
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: deferred_authorized_without_step_local_auth_record
 - eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
@@ -120,7 +197,13 @@ Every gap entry must contain:
 - ideal_state: production cloud lifecycle follows authorized gates, secret allowlists, billing checks, rollback, and audit without exposing cloud console language to users.
 - problem: cloud facts and Portal product facts can be mixed if authorization boundaries are not explicit.
 - dependency: cloud onboarding workflow boundary.
-- status: deferred_authorized
+- depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace]
+- blocked_by: [authorized create/release, true cloud mutation, secret-backed live inventory]
+- executable_when: readonly/local status audit can run without secret/live/cloud/build/push/kubectl/deploy and without touching deploy/adapters/.sentrux.
+- stage: S4 Cloud lane productionization
+- priority: 70
+- cursor_eligible: true
+- status: in_progress
 - next_leaf_step: leaf-cloud-lane-readonly-status-audit
 - eval: `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`
 - allowed_files: cloud-lane contract/docs/smoke in a dedicated authorized branch
@@ -154,6 +237,12 @@ truth writeback section:
 - ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, and API contracts are eval-covered.
 - problem: visual or API changes can ship without responsive or component-state verification.
 - dependency: current Portal UI contracts.
+- depends_on: [cloud-lane-mock-readonly-dry-run-authorized]
+- blocked_by: []
+- executable_when: Cloud lane readonly/dry-run/product language boundaries are characterized or B accepts any cloud live gap as a future-stage blocker.
+- stage: S5 frontend/backend product completion
+- priority: 80
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`
@@ -171,6 +260,12 @@ truth writeback section:
 - ideal_state: every backend change has route smoke, payload/domain contract smoke, node --check or npm check, and workflow gate coverage.
 - problem: route logic can bypass app/domain/state layering or hide missing fields behind fallback/shim.
 - dependency: Portal structure contract.
+- depends_on: [frontend-product-vue-vite-ts-pinia]
+- blocked_by: []
+- executable_when: frontend product evalset is absorbed and a backend route/payload/domain contract leaf is scoped.
+- stage: S5 frontend/backend product completion
+- priority: 90
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
@@ -188,6 +283,12 @@ truth writeback section:
 - ideal_state: preauth, ledger, release stop billing within 120 minutes, and T+1 audit are production-ready and traceable.
 - problem: billing truth can be confused with trace metadata, Langfuse, or cloud raw facts.
 - dependency: managed environment/resource binding and cloud lane facts.
+- depends_on: [backend-product-node22-esm-layering, cloud-lane-mock-readonly-dry-run-authorized]
+- blocked_by: []
+- executable_when: billing/audit work is local contract/eval scoped or cloud live billing reconciliation has a step-local auth record.
+- stage: S5 frontend/backend product completion
+- priority: 100
+- cursor_eligible: false
 - status: gated
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
@@ -205,7 +306,13 @@ truth writeback section:
 - ideal_state: release readiness is evaluated only after contracts, local suite, secret scan, and authorized deploy plan pass.
 - problem: deploy readiness can be falsely inferred from local smoke or from operation-type authorization without a concrete release plan/evidence package.
 - dependency: product e2e, cloud lane, OPL connection, billing/audit.
-- status: deferred_authorized
+- depends_on: [legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace, cloud-lane-mock-readonly-dry-run-authorized, frontend-product-vue-vite-ts-pinia, backend-product-node22-esm-layering, billing-audit-preauth-ledger-release-t1]
+- blocked_by: [missing concrete Package D release plan, missing region, missing accepted preflight/build-push/dry-run evidence, missing rollback evidence, missing baseline/cleanup evidence]
+- executable_when: all release readiness dependency gate prerequisites are satisfied and a step-local release auth record includes concrete plan, scope, budget, baseline, rollback, cleanup, evidence path, and stop conditions.
+- stage: S6 release readiness
+- priority: 999
+- cursor_eligible: false
+- status: deferred_authorized_future_stage
 - next_leaf_step: leaf-release-readiness-auth-boundary
 - eval: `node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`; `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
 - allowed_files: docs/recovery and future authorized deploy contracts; current local auth-boundary leaf may add `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` and exact harness allowlist updates only
@@ -223,6 +330,12 @@ truth writeback section:
 - ideal_state: Node 24 Active LTS migration readiness and Vite/Vitest modernization readiness are tracked as future eval-backed gaps.
 - problem: dependency upgrades can mix with product harness and destabilize unrelated lanes.
 - dependency: product-goal harness only records the future gap.
+- depends_on: [release-readiness-authorized-deploy-only]
+- blocked_by: [future modernization authorization and dedicated dependency migration branch]
+- executable_when: a future dependency modernization branch is explicitly scoped; this harness branch must not upgrade dependencies.
+- stage: S6 release readiness
+- priority: 1000
+- cursor_eligible: false
 - status: needs_eval
 - next_leaf_step: write_eval_shell
 - eval: future dependency readiness characterization gate; no upgrade in this branch

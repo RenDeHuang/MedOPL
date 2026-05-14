@@ -4,18 +4,99 @@ This file is the product-goal cursor. Codex goal 不是自然语言愿望，而�
 
 ## Current Trunk
 
-- 当前 trunk HEAD: `3d4e156dd03166baee4baa02341afbed63bb4189`
+- 当前 trunk HEAD: `45acffcdc85cb141d77e6b7deeecdacddd95a5fb`
 - branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `docs/v22-record-release-readiness-authorized-blocker-b-result`
+- current branch: `cleanup/v22-product-goal-dependency-ordering`
 - model: gpt-5.4
 
 ## Current Goal Cursor
 
-- 当前 goal cursor: `leaf-release-readiness-auth-boundary`
-- highest-priority executable leaf step: `deferred_authorized`
-- 当前下一问题：Release readiness auth boundary deferred authorization; authorized deploy/runtime smoke is blocked until concrete release plan and local Package D evidence exist.
+- 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`
+- highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`
+- 当前下一问题：Cloud lane readonly status audit; repair product-goal ordering so release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.
+- release readiness 当前状态: `deferred_authorized_future_stage`
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
+
+## Dependency Ordering State
+
+Stage order is strict:
+
+- S1 legacy cleanup
+- S2 architecture refactor
+- S3 OPL connection productionization
+- S4 Cloud lane productionization
+- S5 frontend/backend product completion
+- S6 release readiness
+
+Current cursor_ordering_repair:
+
+- previous cursor: `leaf-release-readiness-auth-boundary`
+- repair_reason: release readiness dependencies are not satisfied, so release readiness 未满足依赖时不能成为 current cursor.
+- repaired current cursor: `leaf-cloud-lane-readonly-status-audit`
+- repaired selection rule: choose the highest-priority executable cleanup/refactor/product leaf; current resource-order store/Postgres/schema fourth-slice cleanup is already cleaned, secret hygiene and legacy scripts are gated, Portal architecture is characterized, and OPL local productionization is gated/completed, so the next actual executable leaf is the Cloud lane readonly status audit.
+- future-stage blocker 不阻塞当前 cleanup/refactor/dev leaf.
+- Codex 不得请求 deploy/cloud 授权 for release readiness while this repair is active.
+- Codex 不得把 future-stage deferred blocker 当作当前 blocker.
+
+Cleanup stage completion gate:
+
+- Cloud lane 不得跳过未完成 cleanup.
+- legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true.
+- resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane.
+- open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
+- current cleanup prerequisite statuses: user_owned=`cleaned`, resource-order store/Postgres/schema=`cleaned`, secret hygiene=`gated`, legacy scripts archive=`gated`.
+
+Release readiness dependency gate:
+
+- resource-order store/Postgres/schema cleaned 或 intentionally_retained
+- secret hygiene cleaned
+- legacy scripts archive cleaned
+- Portal architecture refactor characterized/cleaned
+- OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker
+- Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker
+- frontend/backend product completion completed
+
+Release readiness authorized-blocker fact:
+
+- 用户授权意图已记录.
+- 缺 concrete Package D release plan, region, accepted preflight/build-push/dry-run evidence, rollback evidence, and baseline/cleanup evidence.
+- release readiness 保持 deferred_authorized_future_stage.
+- The future-stage blocker does not stop the current cleanup/refactor/product execution line.
+
+Deferred authorization split:
+
+- deferred_authorized_current_path: current leaf cannot continue until a step-local auth record, B blocker acceptance, or explicit authorization boundary exists.
+- deferred_authorized_future_stage: future-stage authorization or evidence gap is recorded but does not block current executable cleanup/refactor/dev leaf.
+
+## Current Executable Leaf Step
+
+- step_id: leaf-cloud-lane-readonly-status-audit
+- problem: Cloud lane productionization needs a readonly/local status audit before any dry-run or authorized create/release work, and release readiness must stay future-stage until Cloud/frontend/backend prerequisites are satisfied.
+- depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, leaf-opl-connection-productionization-local-implementation]
+- executable_when: the work is readonly/local, does not read secret, does not call true cloud, does not build/push/kubectl/deploy/live-test, and only updates Cloud lane status/contracts/eval truth.
+- cursor_eligible: true
+- stage: S4 Cloud lane productionization
+- failure_state: deferred_authorized_current_path if readonly audit needs secret/live cloud or forbidden paths; blocked if the ordering gate or Cloud lane contract gate fails after budgeted attempts.
+- input_state: OPL local productionization is absorbed; Cloud lane remains mock -> readonly -> dry-run -> authorized create/release with live operations separately authorized.
+- expected_output: characterize Cloud lane readiness and next executable local/dry-run leaf without promoting release readiness or requesting deploy/cloud authorization.
+- light_contract_card:
+  - problem: Cloud lane must progress before release readiness, but only through readonly/local evidence unless a step-local risky-operation auth record exists.
+  - subscribed_contracts: `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-codex-goal-loop.md`, `docs/recovery/v22-goal-state.md`, Cloud lane contracts/status docs.
+  - in_scope: Cloud lane readonly status audit, dependency ordering truth, local eval/gate updates, sanitized recovery writeback.
+  - out_of_scope: true cloud, secret read, build/push/kubectl, deploy, live-test, Package D release readiness, services implementation.
+  - data_or_field_truth: Cloud lane advances mock -> readonly -> dry-run -> authorized create/release; ordinary users still see managed workbench/product language, not cloud console control-plane language.
+  - auth_boundary: no secret/live/cloud/build/push/kubectl/deploy/live-test; any risky step needs step-local auth record, scope, budget, baseline, rollback, cleanup, and evidence path.
+  - pollution_risks: future-stage release blocker treated as current blocker, cloud raw facts exposed as user truth, live cloud side effects without owner guard.
+  - verification_commands: `node scripts/smoke-test-v22-product-goal-execution-order.mjs`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`
+  - B_absorb_criteria: B confirms current cursor is a real executable Cloud/product leaf, release readiness remains `deferred_authorized_future_stage`, and no risky operation or forbidden path was touched.
+- eval_command: `node scripts/smoke-test-v22-product-goal-execution-order.mjs`; next Cloud lane leaf should also run `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`
+- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
+- trace_or_evidence_expectation: local stdout and sanitized docs/recovery truth only; no `.runtime` evidence unless a future canary is separately authorized.
+- allowed_files: Cloud lane docs/contracts/status and exact smoke gates in a future dedicated branch; this ordering-repair branch may only touch `docs/recovery/*` and `scripts/smoke-test-v22-*`.
+- forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, true cloud runners.
+- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, Cloud lane status docs.
+- B_absorb_criteria: B reruns execution-order gate, product-goal harness, default-entry gate, resource-order retirement gate, MVP suite, workflow review, diff-scoped secret scan, and diff whitespace check before ff-only absorb/push.
 
 ## Autonomous Run State
 

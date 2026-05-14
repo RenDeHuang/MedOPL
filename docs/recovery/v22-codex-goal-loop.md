@@ -26,6 +26,40 @@ This document defines the repeatable loop that Codex must use after reading `doc
 - development 必须先 contract/eval，再最小实现。
 - 禁止用 fallback/shim/adapter 兼容层掩盖旧主路径。
 
+## Dependency Graph / Execution Order Policy
+
+Stage order is strict:
+
+- S1 legacy cleanup
+- S2 architecture refactor
+- S3 OPL connection productionization
+- S4 Cloud lane productionization
+- S5 frontend/backend product completion
+- S6 release readiness
+
+Codex must read the dependency graph before selecting a leaf step. A leaf is executable only when its `depends_on` entries are satisfied, its `blocked_by` entries are empty or B-accepted as future-stage blockers, and its `executable_when` condition is true.
+
+Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Cloud lane leaves may become `cursor_eligible: true` only when legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true: user_owned is cleaned or intentionally_retained, resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane, secret hygiene is cleaned/gated by diff-scoped scan, legacy scripts archive is cleaned/gated by archive eval, and open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
+
+Release readiness dependency gate: release readiness may become `cursor_eligible: true` only after:
+
+- resource-order store/Postgres/schema cleaned 或 intentionally_retained
+- secret hygiene cleaned
+- legacy scripts archive cleaned
+- Portal architecture refactor characterized/cleaned
+- OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker
+- Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker
+- frontend/backend product completion completed
+
+If these dependencies are not satisfied, release readiness 未满足依赖时不能成为 current cursor. It may only be `pending` or `deferred_authorized_future_stage`; Codex 不得请求 deploy/cloud 授权 for release readiness and must select the highest-priority executable cleanup/refactor/product leaf.
+
+`deferred_authorized` is split into two statuses:
+
+- `deferred_authorized_current_path`: the current execution path needs authorization and cannot continue until B accepts the blocked truth or a step-local auth record exists.
+- `deferred_authorized_future_stage`: a future-stage authorization gap exists, but future-stage blocker 不阻塞当前 cleanup/refactor/dev leaf.
+
+Cursor repair rule: if the current cursor points to a leaf whose dependencies are unmet, Codex must record `cursor_ordering_repair`, 将 current cursor 改回 highest-priority executable leaf, and 不得把 future-stage deferred blocker 当作当前 blocker. Until release readiness prerequisites are met, release readiness cannot be the current cursor or executable leaf.
+
 ## Autonomous run policy
 
 Codex may continue through multiple leaf steps inside this goal harness only when each leaf step is independently closed before the next one starts. 允许 Codex 在本 goal harness 内连续推进多个 leaf step，但每个 leaf step 必须独立完成。
@@ -225,6 +259,11 @@ Every leaf step must contain:
 
 - step_id:
 - problem:
+- depends_on:
+- executable_when:
+- cursor_eligible:
+- stage:
+- failure_state:
 - input_state:
 - expected_output:
 - light_contract_card:
@@ -275,6 +314,7 @@ Handling:
 ## Validation Commands
 
 - `node scripts/smoke-test-v22-product-goal-harness.mjs`
+- `node scripts/smoke-test-v22-product-goal-execution-order.mjs`
 - `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
 - `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
 - `node scripts/smoke-test-v22-mvp-contract-suite.mjs`
