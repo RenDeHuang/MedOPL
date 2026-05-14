@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "manifest_role": "temporary_physical_delete_goal_run_manifest",
+  "model": "gpt-5.4",
+  "agent_run_mode": "physical_delete_goal_batch_driven",
+  "base_branch": "origin/recovery/platform-v22-trunk",
+  "target_branch": "recovery/platform-v22-trunk",
+  "current_status": "batch_manifest_ready",
+  "current_slice": "slice-2-legacy-script-archive-delete-boundary",
+  "completed_slices": [
+    "slice-1-user-owned-retired-domain-store-physical-delete"
+  ],
+  "next_slices": [
+    "slice-2-legacy-script-archive-delete-boundary",
+    "slice-3-observability-runner-physical-retirement-boundary",
+    "slice-final-completion-truth-and-temporary-goal-removal"
+  ],
+  "batch_policy": {
+    "enabled": true,
+    "max_slices_per_branch": 3,
+    "commit_policy": "one_commit_per_slice_plus_optional_final_truth",
+    "b_absorb_policy": "B_may_absorb_whole_batch_after_all_slice_gates_pass",
+    "branch_policy": "start_from_latest_origin_recovery_platform_v22_trunk",
+    "stop_after_batch": true
+  },
+  "global_forbidden_targets": [
+    "deploy/**",
+    "adapters/**",
+    "infra/**",
+    ".sentrux/**",
+    "one-person-lab upstream",
+    "public 410 tombstone",
+    "schema/drop/migration collection",
+    "secret-like paths",
+    "live-test/build/push/kubectl/true cloud"
+  ],
+  "required_global_gates": [
+    "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+    "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+    "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+    "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+    "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+    "git diff --check -- docs/recovery docs/contracts scripts services"
+  ],
+  "slices": [
+    {
+      "id": "slice-1-user-owned-retired-domain-store-physical-delete",
+      "status": "absorbed",
+      "decision_scope": "delete_candidates_only",
+      "target_paths": [
+        "services/portal/src/domain/user-owned-resources.mjs",
+        "services/portal/src/state/portal-user-owned-resource-store.mjs"
+      ],
+      "required_gates": [
+        "node scripts/smoke-test-v22-physical-delete-user-owned-retired-domain-store.mjs",
+        "node scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs"
+      ],
+      "allowed_write_set": [
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/repo-zoning.md",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/architecture-truth.md",
+        "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+        "scripts/smoke-test-v22-physical-delete-user-owned-retired-domain-store.mjs",
+        "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+        "scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+        "scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+        "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "scripts/smoke-test-v22-repo-zoning-boundary.mjs",
+        "services/portal/src/domain/user-owned-resources.mjs",
+        "services/portal/src/state/portal-user-owned-resource-store.mjs"
+      ],
+      "stop_conditions": [
+        "public_tombstone_delete_requested",
+        "active_reference_to_delete_candidate",
+        "schema_or_migration_delete_requested"
+      ]
+    },
+    {
+      "id": "slice-2-legacy-script-archive-delete-boundary",
+      "status": "ready",
+      "decision_scope": "archive_reference_to_default-exclusion_or_explicit_delete_candidates_only",
+      "red_gate_policy": "must_fail_before_slice_if_default_suite_or_default_docs_reference_legacy_scripts",
+      "target_paths": [
+        "scripts/smoke-test-v19-*",
+        "scripts/smoke-test-v20*",
+        "scripts/smoke-test-v21-*",
+        "scripts/live-test-*"
+      ],
+      "required_gates": [
+        "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs"
+      ],
+      "allowed_write_set": [
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs"
+      ],
+      "stop_conditions": [
+        "live_test_delete_requested_without_explicit_authorization",
+        "default_suite_references_archive_or_delete_candidate",
+        "legacy_script_has_unmigrated_contract_value"
+      ]
+    },
+    {
+      "id": "slice-3-observability-runner-physical-retirement-boundary",
+      "status": "ready_after_slice_2",
+      "decision_scope": "archive_reference_or_migrate_only_for_langfuse_and_blocked_without_auth_for_runner_provider",
+      "red_gate_policy": "must_fail_before_slice_if_langfuse_or_runner_provider_is_default_product_truth",
+      "target_paths": [
+        "compose.langfuse.yaml",
+        "services/portal/src/integrations/langfuse-trace-client.mjs",
+        "services/opl-runtime-bridge/src/langfuse-publisher.mjs"
+      ],
+      "observe_only_forbidden_paths": [
+        "adapters/resource-provisioner/**",
+        "adapters/med-autoscience-runner/**",
+        "infra/opencost/**"
+      ],
+      "required_gates": [
+        "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "node scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs"
+      ],
+      "allowed_write_set": [
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs"
+      ],
+      "stop_conditions": [
+        "deploy_or_adapter_or_infra_delete_requested_without_auth",
+        "trace_metadata_boundary_conflict",
+        "raw_secret_or_token_observed"
+      ]
+    },
+    {
+      "id": "slice-final-completion-truth-and-temporary-goal-removal",
+      "status": "ready_after_slice_2_and_slice_3",
+      "decision_scope": "truth_writeback_only_no_more_deletion",
+      "target_paths": [
+        "docs/recovery/physical-legacy-file-retirement-goal.md",
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json"
+      ],
+      "required_gates": [
+        "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+        "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+        "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery docs/contracts scripts services"
+      ],
+      "allowed_write_set": [
+        "docs/recovery/physical-legacy-file-retirement-goal.md",
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+        "scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+        "scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs"
+      ],
+      "stop_conditions": [
+        "unresolved_not_started_inventory_item",
+        "forbidden_without_auth_item_modified",
+        "needs_schema_drop_leaf_not_transferred"
+      ]
+    }
+  ]
+}

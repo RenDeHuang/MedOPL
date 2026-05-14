@@ -6,6 +6,7 @@
 - model: `gpt-5.4`
 - inventory_status: first_delete_slice_applied
 - agent_run_mode: physical_delete_goal_driven
+- run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`
 - goal: 物理删除 goal
 - purpose: 本导台固定旧文件物理删除的第一批裁定入口，供后续 agent 按 slice 执行 deletion-only 分支。
 - boundary: 本导台不授权直接删除；不得跳过导台直接删除。
@@ -16,6 +17,14 @@ physical_delete_status values: `not_started`, `deleted`, `kept_tombstone`, `arch
 ## Policy
 
 本导台服务于物理删除 goal。agent 必须先读取 goal、导台和 inventory gate，再选择一个 slice。inventory gate 只证明裁定覆盖和边界，不执行删除。
+
+next_slice queue:
+
+1. `slice-2-legacy-script-archive-delete-boundary`
+2. `slice-3-observability-runner-physical-retirement-boundary`
+3. `slice-final-completion-truth-and-temporary-goal-removal`
+
+batch mode 由 run manifest 固定。agent 可以在同一个 cleanup 分支连续执行 queue 中的 slice，但必须 one commit per slice，并且每刀都要先 RED gate、再执行、再 GREEN gate、再 writeback。B may absorb the whole batch after all slice gates pass。
 
 - `delete`: delete candidate 可由后续 deletion-only 分支处理；处理前必须先证明无 active reference。
 - `keep_tombstone`: 保留最小 fail-closed 壳，不做兼容翻译。

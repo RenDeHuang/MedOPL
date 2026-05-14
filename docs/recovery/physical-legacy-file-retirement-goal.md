@@ -173,6 +173,20 @@ B ff-only 吸收并 push 后才允许更新物理清退完成事实。用户可�
 
 agent_run_mode: physical_delete_goal_driven
 
+agent_run_batch_mode: physical_delete_goal_batch_driven
+
+Run manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`.
+
+本物理删除 goal 参考 v22 总 goal 的控制面模式：总 goal 用 `docs/recovery/v22-goal-current.json` 固定 current cursor、next leaf、gap 依赖、allowed files、forbidden files 和 verification；本物理删除 goal 不写入常驻 product cursor，但用临时 batch manifest 固定 batch manifest、next_slice queue、one commit per slice、B may absorb the whole batch 和每刀 gate。
+
+batch mode 允许 agent 在同一个 cleanup 分支中连续执行最多 3 个低风险 slice，但每个 slice 必须独立 RED gate、独立 GREEN gate、独立 inventory writeback 和独立 commit。任何 slice 触发 stop condition 时，agent 必须停止 batch，不得跳到下一刀。
+
+next_slice queue 固定为：
+
+1. `slice-2-legacy-script-archive-delete-boundary`
+2. `slice-3-observability-runner-physical-retirement-boundary`
+3. `slice-final-completion-truth-and-temporary-goal-removal`
+
 任何 agent 进入本物理删除 goal 时，必须按以下 8 步运行，不得跳过导台直接删除。
 
 ### A1: sync-baseline
@@ -185,7 +199,7 @@ agent_run_mode: physical_delete_goal_driven
 
 ### A3: select-one-slice
 
-一次只选一个 deletion slice。优先顺序为 low-risk delete、legacy script archive/delete、Portal tombstone minimization、OpenCost/Langfuse/runner physical retirement、schema/migration future leaf。不得在同一分支混入 Cloud lane、OPL lane、Portal feature 或 release readiness。
+一次只选一个 deletion slice。非 batch mode 的优先顺序为 low-risk delete、legacy script archive/delete、Portal tombstone minimization、OpenCost/Langfuse/runner physical retirement、schema/migration future leaf。batch mode 必须按 run manifest 的 next_slice queue 顺序推进。不得在同一分支混入 Cloud lane、OPL lane、Portal feature 或 release readiness。
 
 ### A4: red-gate
 
@@ -205,7 +219,7 @@ agent_run_mode: physical_delete_goal_driven
 
 ### A8: B-review-handoff
 
-提交 deletion-only commit，交给 B 复审。B ff-only 吸收并 push 后，下一 slice 才能从最新 trunk 继续。物理删除完成后写 completion truth；用户可删除本临时 goal 文件或分支。
+提交 deletion-only commit，交给 B 复审。非 batch mode 下，B ff-only 吸收并 push 后，下一 slice 才能从最新 trunk 继续。batch mode 下，agent 可在同一分支连续产生 one commit per slice，B may absorb the whole batch after all slice gates pass。物理删除完成后写 completion truth；用户可删除本临时 goal 文件或分支。
 
 ## Autonomy Rules
 
@@ -232,6 +246,7 @@ agent_run_mode: physical_delete_goal_driven
 本 goal 分支验收命令：
 
 ```bash
+node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs
 node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs
 node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs
 node scripts/smoke-test-v22-cleanup-completion-truth.mjs

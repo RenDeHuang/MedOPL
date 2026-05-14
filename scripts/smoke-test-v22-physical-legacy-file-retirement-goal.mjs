@@ -89,6 +89,7 @@ for (const phrase of [
 }
 
 for (const phrase of [
+  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
   "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
   "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -120,6 +121,12 @@ for (const phrase of [
 for (const phrase of [
   "## Agent Run Workflow",
   "agent_run_mode: physical_delete_goal_driven",
+  "agent_run_batch_mode: physical_delete_goal_batch_driven",
+  "Run manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
+  "batch manifest",
+  "next_slice queue",
+  "one commit per slice",
+  "B may absorb the whole batch",
   "A1: sync-baseline",
   "A2: read-goal-and-inventory",
   "A3: select-one-slice",
@@ -136,6 +143,10 @@ for (const phrase of [
 for (const phrase of [
   "# MedOPL v22 Physical Legacy File Retirement Inventory",
   "inventory_status: first_delete_slice_applied",
+  "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
+  "next_slice queue",
+  "slice-2-legacy-script-archive-delete-boundary",
+  "slice-3-observability-runner-physical-retirement-boundary",
   "decision values: `delete`, `keep_tombstone`, `archive_reference`, `migrate`, `forbidden_without_auth`, `needs_schema_drop_leaf`",
   "physical_delete_status values: `not_started`, `deleted`, `kept_tombstone`, `archive_reference`, `migrated`, `blocked_without_auth`, `transferred_to_schema_drop_leaf`",
   "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | physical_delete_status | required_gate | deletion_branch | stop_condition |",
