@@ -135,9 +135,10 @@ for (const phrase of [
 
 for (const phrase of [
   "# MedOPL v22 Physical Legacy File Retirement Inventory",
-  "inventory_status: bootstrap_ready",
+  "inventory_status: first_delete_slice_applied",
   "decision values: `delete`, `keep_tombstone`, `archive_reference`, `migrate`, `forbidden_without_auth`, `needs_schema_drop_leaf`",
-  "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | required_gate | deletion_branch | stop_condition |",
+  "physical_delete_status values: `not_started`, `deleted`, `kept_tombstone`, `archive_reference`, `migrated`, `blocked_without_auth`, `transferred_to_schema_drop_leaf`",
+  "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | physical_delete_status | required_gate | deletion_branch | stop_condition |",
   "`services/portal/src/routes/resource-order.routes.mjs`",
   "`services/portal/src/routes/user-owned-resource.routes.mjs`",
   "`scripts/smoke-test-v19-*`",

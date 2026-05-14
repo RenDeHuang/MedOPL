@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
@@ -17,9 +17,7 @@ const filePaths = {
   defaultEntryGate: "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   statusMatrix: "docs/recovery/status-matrix.md",
   portalConfig: "services/portal/src/config/portal-config.mjs",
-  userOwnedDomain: "services/portal/src/domain/user-owned-resources.mjs",
   userOwnedRoutes: "services/portal/src/routes/user-owned-resource.routes.mjs",
-  userOwnedStore: "services/portal/src/state/portal-user-owned-resource-store.mjs",
   platformProvisionedDomain: "services/portal/src/domain/platform-provisioned-resources.mjs",
   platformProvisionedRoutes: "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
   platformProvisionedStore: "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
@@ -30,10 +28,18 @@ const filePaths = {
   adminOverviewRuntimePayloads: "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
 };
 
-const serviceDeletionTargets = [
+const userOwnedPhysicalDeleteTargets = [
   "services/portal/src/domain/user-owned-resources.mjs",
-  "services/portal/src/routes/user-owned-resource.routes.mjs",
   "services/portal/src/state/portal-user-owned-resource-store.mjs",
+];
+
+const userOwnedKeptTombstoneTargets = [
+  "services/portal/src/routes/user-owned-resource.routes.mjs",
+];
+
+const userOwnedRetirementTargets = [
+  ...userOwnedPhysicalDeleteTargets,
+  ...userOwnedKeptTombstoneTargets,
 ];
 
 const forbiddenDefaultUserOwnedPatterns = [
@@ -75,6 +81,15 @@ async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
 }
 
+async function fileExists(filePath) {
+  try {
+    await access(path.join(repoRoot, filePath));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
 }
@@ -92,13 +107,20 @@ function markdownRows(source) {
 
 function assertRepoZoningUserOwnedTombstones(source) {
   const rows = markdownRows(source);
-  for (const targetPath of serviceDeletionTargets) {
+  for (const targetPath of userOwnedKeptTombstoneTargets) {
     const row = rows.find((cells) => cells[0] === `\`${targetPath}\``);
     assert(row, `repo_zoning_user_owned_target_missing:${targetPath}`);
     assert.equal(row[1], "Zone 2", `repo_zoning_user_owned_target_must_be_zone_2:${targetPath}`);
     assert.equal(row[2], "tombstone/delete", `repo_zoning_user_owned_target_must_be_tombstone_delete:${targetPath}`);
     assert.match(row[3], /legacy alias|旧用户自带资源|user-owned/iu, `repo_zoning_user_owned_reason_missing:${targetPath}`);
     assert.equal(row[5], "user-owned-retirement", `repo_zoning_user_owned_cleanup_slice_mismatch:${targetPath}`);
+  }
+  for (const targetPath of userOwnedPhysicalDeleteTargets) {
+    assertIncludes(
+      source,
+      `physical-delete completed: \`${targetPath}\``,
+      `repo_zoning_user_owned_physical_delete_record:${targetPath}`,
+    );
   }
 }
 
@@ -177,11 +199,11 @@ function assertDefaultEntryGateCoversUserOwned(source) {
   assertIncludes(source, "assertComposeBoundary", "default_entry_gate_compose_boundary");
 }
 
-function assertGateDoesNotRequireServiceDeletion() {
-  for (const targetPath of serviceDeletionTargets) {
+function assertGateDoesNotRequirePhysicalDeletedFiles() {
+  for (const targetPath of userOwnedPhysicalDeleteTargets) {
     assert(
-      Object.values(filePaths).includes(targetPath),
-      `retirement_gate_must_read_user_owned_target:${targetPath}`,
+      !Object.values(filePaths).includes(targetPath),
+      `retirement_gate_must_not_read_physical_deleted_user_owned_target:${targetPath}`,
     );
   }
 }
@@ -195,27 +217,17 @@ function assertPortalConfigDefault(source) {
   );
 }
 
-function assertUserOwnedDomainTombstone(source) {
-  assert(!source.includes("export * from \"./platform-provisioned-resources.mjs\""), "user_owned_domain_must_not_re_export_platform_domain");
-  assert(!source.includes("normalizeCustomerComputeResource as normalizeUserComputeInstance"), "user_owned_domain_must_not_alias_compute_normalizer");
-  assert(!source.includes("normalizeCustomerStorageResource as normalizeUserStorageBucket"), "user_owned_domain_must_not_alias_storage_normalizer");
-  assertIncludes(source, "USER_OWNED_RESOURCES_RETIRED", "user_owned_domain_retired_marker");
-  assertIncludes(source, "legacy_user_owned_resources_retired", "user_owned_domain_retired_error");
-}
-
-function assertUserOwnedStoreTombstone(source) {
-  assert(!source.includes("export * from \"./portal-platform-provisioned-resource-store.mjs\""), "user_owned_store_must_not_re_export_platform_store");
-  assert(!source.includes("createPortalPlatformProvisionedResourceStore as createPortalUserOwnedResourceStore"), "user_owned_store_must_not_alias_platform_store");
-  assertIncludes(source, "USER_OWNED_RESOURCE_STORE_RETIRED", "user_owned_store_retired_marker");
-  assertIncludes(source, "legacy_user_owned_resource_store_retired", "user_owned_store_retired_error");
-}
-
 function assertUserOwnedRoutesTombstone(source) {
   assert(!source.includes("platform-provisioned-resource.routes.mjs"), "user_owned_routes_must_not_import_platform_routes");
   assert(!source.includes("createLegacyUserOwnedResourceRoutes"), "user_owned_routes_must_not_export_legacy_platform_route");
   assertIncludes(source, "createUserOwnedResourceRoutes", "user_owned_routes_create_function");
   assertIncludes(source, "legacy_user_owned_resources_retired", "user_owned_routes_retired_error");
   assert.match(source, /\b410\b/u, "user_owned_routes_must_return_http_410");
+  for (const targetPath of userOwnedPhysicalDeleteTargets) {
+    assert(!source.includes(targetPath), `user_owned_routes_must_not_reference_physical_deleted_target:${targetPath}`);
+  }
+  assert(!source.includes("normalizeUserComputeInstance"), "user_owned_routes_must_not_reference_deleted_domain_export");
+  assert(!source.includes("createPortalUserOwnedResourceStore"), "user_owned_routes_must_not_reference_deleted_store_export");
 }
 
 function assertPlatformProvisionedRoutesDoNotServeLegacyUserOwned(source) {
@@ -270,9 +282,10 @@ function assertStatusMatrixCompleted(source) {
     "cleanup/v22-retire-user-owned-primary-path 已把 `services/portal/src/config/portal-config.mjs` 默认 runtime 收敛到 `platform_provisioned`",
     "status_matrix_user_owned_config_completion_record",
   );
-  assertIncludes(source, "legacy user-owned route/domain/store 改为 fail-closed tombstone", "status_matrix_user_owned_tombstone_record");
+  assertIncludes(source, "legacy user-owned route 保留 fail-closed tombstone", "status_matrix_user_owned_route_tombstone_record");
+  assertIncludes(source, "retired domain/store 已物理删除", "status_matrix_user_owned_physical_delete_record");
   assertIncludes(source, "不得恢复 `user_owned` 正式产品语义", "status_matrix_user_owned_no_restore_record");
-  assertIncludes(source, "只作为 retired tombstone", "status_matrix_user_owned_archive_tombstone_record");
+  assertIncludes(source, "route 只作为 retired tombstone", "status_matrix_user_owned_archive_tombstone_record");
 }
 
 async function importRepoModule(filePath) {
@@ -305,33 +318,19 @@ async function assertUserOwnedRouteRuntimeTombstone() {
   assert.equal(response.payload?.replacement, "/portal/api/platform-provisioned-resources", "user_owned_route_tombstone_replacement_mismatch");
 }
 
-async function assertUserOwnedDomainRuntimeTombstone() {
-  const module = await importRepoModule(filePaths.userOwnedDomain);
-  assert.equal(module.USER_OWNED_RESOURCES_RETIRED, true, "user_owned_domain_retired_constant_mismatch");
-  assert.equal(typeof module.normalizeUserComputeInstance, "function", "user_owned_domain_compute_tombstone_export_missing");
-  assert.throws(
-    () => module.normalizeUserComputeInstance(),
-    /legacy_user_owned_resources_retired/u,
-    "user_owned_domain_compute_normalizer_must_throw_retired",
-  );
-}
-
-async function assertUserOwnedStoreRuntimeTombstone() {
-  const module = await importRepoModule(filePaths.userOwnedStore);
-  assert.equal(module.USER_OWNED_RESOURCE_STORE_RETIRED, true, "user_owned_store_retired_constant_mismatch");
-  assert.equal(typeof module.createPortalUserOwnedResourceStore, "function", "user_owned_store_tombstone_export_missing");
-  assert.throws(
-    () => module.createPortalUserOwnedResourceStore(),
-    /legacy_user_owned_resource_store_retired/u,
-    "user_owned_store_must_throw_retired",
-  );
+async function assertPhysicalDeleteTargetsAbsent() {
+  const stillPresent = [];
+  for (const targetPath of userOwnedPhysicalDeleteTargets) {
+    if (await fileExists(targetPath)) stillPresent.push(targetPath);
+  }
+  assert.deepEqual(stillPresent, [], `user_owned_physical_delete_targets_still_present:${stillPresent.join(",")}`);
 }
 
 const sources = Object.fromEntries(await Promise.all(
   Object.entries(filePaths).map(async ([key, filePath]) => [key, await readRepoFile(filePath)]),
 ));
 
-assertGateDoesNotRequireServiceDeletion();
+assertGateDoesNotRequirePhysicalDeletedFiles();
 assertRepoZoningUserOwnedTombstones(sources.repoZoning);
 assertRepoZoningCompleted(sources.repoZoning);
 assertLegacyBacklogSlice(sources.legacyBacklog);
@@ -349,9 +348,7 @@ for (const [label, source] of Object.entries({
 assertComposeDoesNotUseUserOwnedDefault(sources.productCompose);
 assertDefaultEntryGateCoversUserOwned(sources.defaultEntryGate);
 assertPortalConfigDefault(sources.portalConfig);
-assertUserOwnedDomainTombstone(sources.userOwnedDomain);
 assertUserOwnedRoutesTombstone(sources.userOwnedRoutes);
-assertUserOwnedStoreTombstone(sources.userOwnedStore);
 assertPlatformProvisionedRoutesDoNotServeLegacyUserOwned(sources.platformProvisionedRoutes);
 assertNoUserOwnedLifecycleCompatibility(sources.platformProvisionedDomain, "platform_provisioned_domain");
 assertNoUserOwnedLifecycleCompatibility(sources.platformProvisionedStore, "platform_provisioned_store");
@@ -362,8 +359,7 @@ assertNoDefaultUserOwnedCopy(sources.adminPortraitPayloads, "admin_portrait_payl
 assertNoDefaultUserOwnedCopy(sources.adminOverviewRuntimePayloads, "admin_overview_runtime_payloads");
 
 await assertUserOwnedRouteRuntimeTombstone();
-await assertUserOwnedDomainRuntimeTombstone();
-await assertUserOwnedStoreRuntimeTombstone();
+await assertPhysicalDeleteTargetsAbsent();
 
 console.log(JSON.stringify({
   ok: true,
@@ -380,18 +376,18 @@ console.log(JSON.stringify({
     defaultEntryGate: filePaths.defaultEntryGate,
     portalServiceFiles: [
       filePaths.portalConfig,
-      filePaths.userOwnedDomain,
       filePaths.userOwnedRoutes,
-      filePaths.userOwnedStore,
       filePaths.platformProvisionedDomain,
       filePaths.platformProvisionedRoutes,
       filePaths.platformProvisionedStore,
       filePaths.portalApiRoutes,
     ],
   },
-  retirementTargets: serviceDeletionTargets,
+  retirementTargets: userOwnedRetirementTargets,
+  physicallyDeletedTargets: userOwnedPhysicalDeleteTargets,
+  keptTombstoneTargets: userOwnedKeptTombstoneTargets,
   gateOnly: {
     requiresServiceDeletionNow: false,
-    serviceFilesRead: true,
+    physicalDeletedFilesRead: false,
   },
 }, null, 2));

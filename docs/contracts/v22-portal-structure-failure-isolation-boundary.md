@@ -462,8 +462,7 @@ Portal 必须按低耦合目标治理：
         "services/portal/src/domain/user-resource-bindings.mjs",
         "services/portal/src/domain/managed-environment-open-flow.mjs",
         "services/portal/src/domain/managed-environment-release-flow.mjs",
-        "services/portal/src/domain/workspace-storage.mjs",
-        "services/portal/src/domain/user-owned-resources.mjs"
+        "services/portal/src/domain/workspace-storage.mjs"
       ]
     },
     "backendStatePersistence": {
@@ -477,8 +476,7 @@ Portal 必须按低耦合目标治理：
         "services/portal/src/state/portal-workspace-store.mjs",
         "services/portal/src/state/portal-accounting-store.mjs",
         "services/portal/src/state/portal-lab-billing-store.mjs",
-        "services/portal/src/state/portal-resource-order-store.mjs",
-        "services/portal/src/state/portal-user-owned-resource-store.mjs"
+        "services/portal/src/state/portal-resource-order-store.mjs"
       ]
     },
     "frontendViewsComposables": {

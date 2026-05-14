@@ -62,9 +62,7 @@
 | `scripts/smoke-test-billing-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 billing 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-resource-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否恢复旧 resource-order 或 provisioner 叙事 | managed environment/resource binding smoke | legacy-scripts |
 | `services/portal/src/config/portal-config.mjs` | Zone 2 | rewrite | active config 中存在 legacy runtime mode 风险 | `platform_provisioned` / `customer_dedicated` | default-entry |
-| `services/portal/src/domain/user-owned-resources.mjs` | Zone 2 | tombstone/delete | `user-owned` 只能是 legacy alias，不得作为主路径 | platform-provisioned resources | user-owned-retirement |
 | `services/portal/src/routes/user-owned-resource.routes.mjs` | Zone 2 | tombstone/delete | 旧用户自带资源 route 风险 | managed environment / resource binding routes | user-owned-retirement |
-| `services/portal/src/state/portal-user-owned-resource-store.mjs` | Zone 2 | tombstone/delete | 旧 user-owned store 风险 | platform-provisioned resource store | user-owned-retirement |
 | `services/portal/src/domain/resource-orders.mjs` | Zone 2 | tombstone/rewrite | `resource-order` 不得作为 v22 主产品叙事 | managed environment/resource binding lifecycle | resource-order-retirement |
 | `services/portal/src/domain/resource-order-*.mjs` | Zone 2 | tombstone/rewrite | 旧 resource-order domain 家族 | managed environment/resource binding lifecycle | resource-order-retirement |
 | `services/portal/src/routes/resource-order*.mjs` | Zone 2 | tombstone/delete | 旧 resource-order public/internal routes | managed environment/resource binding routes | resource-order-retirement |
@@ -138,7 +136,9 @@ default-entry cleanup completed on `cleanup/v22-default-entry-legacy-narrative`:
 
 env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.env.demo.template` is now a tracked v22 local template for Portal, OPL Web Gateway, Runtime Bridge / Adapter, and clean One Person Lab upstream entry wiring. It no longer carries legacy runner, K8s namespace, resource-provisioner, OpenCost billing truth, Langfuse stack image, `user_owned`, or `resource-order` defaults.
 
-user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; legacy `user-owned` route/domain/store now fail-closed as tombstones; `user_owned` lifecycle mode is no longer silently normalized into the platform-provisioned resource path. `resource-order` pointers are intentionally left for the resource-order retirement slice.
+user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; legacy `user-owned` route/domain/store became fail-closed tombstones; `user_owned` lifecycle mode is no longer silently normalized into the platform-provisioned resource path. `resource-order` pointers are intentionally left for the resource-order retirement slice.
+
+user-owned physical-delete completed on `cleanup/v22-physical-legacy-goal`: physical-delete completed: `services/portal/src/domain/user-owned-resources.mjs`; physical-delete completed: `services/portal/src/state/portal-user-owned-resource-store.mjs`; `services/portal/src/routes/user-owned-resource.routes.mjs` remains the only public fail-closed route tombstone until explicit tombstone removal authorization.
 
 resource-order route success path first-slice cleanup completed on `cleanup/v22-retire-resource-order-route-tombstones`: `services/portal/src/routes/resource-order.routes.mjs` is the only active 410 tombstone shell for old `resource-order` public/internal paths, and the retired public/internal/provision/delete/support route modules no longer carry success handlers. Domain/store/billing/admin payload/frontend cleanup remains in later resource-order retirement slices.
 
