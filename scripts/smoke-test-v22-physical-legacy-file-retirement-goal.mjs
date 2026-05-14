@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
 const goalPath = "docs/recovery/physical-legacy-file-retirement-goal.md";
+const inventoryPath = "docs/recovery/physical-legacy-file-retirement-inventory.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 
@@ -22,8 +23,9 @@ function assertNotIncludes(source, forbidden, label) {
   assert(!source.includes(forbidden), `${label}_forbidden:${forbidden}`);
 }
 
-const [goal, legacyBacklog, repoZoning] = await Promise.all([
+const [goal, inventory, legacyBacklog, repoZoning] = await Promise.all([
   readRepoFile(goalPath),
+  readRepoFile(inventoryPath),
   readRepoFile(legacyBacklogPath),
   readRepoFile(repoZoningPath),
 ]);
@@ -31,7 +33,8 @@ const [goal, legacyBacklog, repoZoning] = await Promise.all([
 for (const phrase of [
   "branch: `cleanup/v22-physical-legacy-goal`",
   "model: `gpt-5.4`",
-  "temporary physical-retirement goal",
+  "temporary physical-deletion goal",
+  "物理删除 goal",
   "主路径清退已经完成，不等于物理文件清退完成",
   "本 goal 不写入常驻 product cursor",
   "完成后可由用户删除本 goal 文件或对应分支",
@@ -41,7 +44,7 @@ for (const phrase of [
 
 for (const phrase of [
   "Step 0: Baseline and Contract Subscription",
-  "Step 1: Physical Inventory",
+  "Step 1: 导台 Physical Inventory",
   "Step 2: Inventory Gate",
   "Step 3: Low-Risk Delete Slice",
   "Step 4: Legacy Script Archive/Delete Slice",
@@ -104,6 +107,7 @@ for (const phrase of [
 
 for (const phrase of [
   "physical-legacy-file-retirement-inventory",
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
   "physical_legacy_file_retirement_inventory_missing",
   "unadjudicated_legacy_file",
   "active_reference_to_delete_candidate",
@@ -111,6 +115,54 @@ for (const phrase of [
   "public_tombstone_delete_requires_user_confirmation",
 ]) {
   assertIncludes(goal, phrase, "future_gate_requirements");
+}
+
+for (const phrase of [
+  "## Agent Run Workflow",
+  "agent_run_mode: physical_delete_goal_driven",
+  "A1: sync-baseline",
+  "A2: read-goal-and-inventory",
+  "A3: select-one-slice",
+  "A4: red-gate",
+  "A5: apply-deletion-only-change",
+  "A6: green-gates",
+  "A7: writeback",
+  "A8: B-review-handoff",
+  "不得跳过导台直接删除",
+]) {
+  assertIncludes(goal, phrase, "agent_workflow");
+}
+
+for (const phrase of [
+  "# MedOPL v22 Physical Legacy File Retirement Inventory",
+  "inventory_status: bootstrap_ready",
+  "decision values: `delete`, `keep_tombstone`, `archive_reference`, `migrate`, `forbidden_without_auth`, `needs_schema_drop_leaf`",
+  "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | required_gate | deletion_branch | stop_condition |",
+  "`services/portal/src/routes/resource-order.routes.mjs`",
+  "`services/portal/src/routes/user-owned-resource.routes.mjs`",
+  "`scripts/smoke-test-v19-*`",
+  "`scripts/smoke-test-v20*`",
+  "`scripts/smoke-test-v21-*`",
+  "`scripts/live-test-*`",
+  "`infra/opencost/**`",
+  "`compose.langfuse.yaml`",
+  "`adapters/resource-provisioner/**`",
+  "`adapters/med-autoscience-runner/**`",
+  "`deploy/**`",
+]) {
+  assertIncludes(inventory, phrase, "inventory_bootstrap");
+}
+
+for (const phrase of [
+  "物理删除 goal",
+  "导台",
+  "inventory gate",
+  "delete candidate",
+  "keep_tombstone",
+  "forbidden_without_auth",
+  "needs_schema_drop_leaf",
+]) {
+  assertIncludes(inventory, phrase, "inventory_policy_terms");
 }
 
 for (const phrase of [
@@ -138,8 +190,9 @@ assertNotIncludes(goal, "兜底", "goal_no_fallback_wording");
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_physical_legacy_file_retirement_goal",
+  contract: "v22_physical_legacy_file_deletion_goal",
   goalPath,
+  inventoryPath,
   branch: "cleanup/v22-physical-legacy-goal",
   model: "gpt-5.4",
 }, null, 2));

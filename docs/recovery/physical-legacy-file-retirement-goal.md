@@ -1,11 +1,12 @@
-# MedOPL v22 Physical Legacy File Retirement Goal
+# MedOPL v22 物理删除 Goal
 
 ## Branch Declaration
 
 - branch: `cleanup/v22-physical-legacy-goal`
 - model: `gpt-5.4`
-- role: temporary physical-retirement goal
-- intent: 为 v22 已完成的主路径清退补一条临时物理文件清退目标线，先定义 inventory、gate、分刀删除顺序和自治规则，不在本分支删除文件。
+- role: temporary physical-deletion goal
+- name: 物理删除 goal
+- intent: 为 v22 已完成的主路径清退补一条临时物理文件删除目标线，先定义导台、gate、分刀删除顺序和自治规则，不在本分支删除文件。
 - current truth: 主路径清退已经完成，不等于物理文件清退完成。
 - cursor policy: 本 goal 不写入常驻 product cursor；它是 cleanup 后的临时物理清退工作包。
 - removal policy: 完成后可由用户删除本 goal 文件或对应分支，避免长期污染常规 v22 目标推进。
@@ -30,7 +31,7 @@
 
 把仍留在 trunk 的 legacy 文件、旧脚本、旧部署资产和旧命名 active surface 按证据裁定为可删除、保留 tombstone、归档参考、迁移输入、需授权禁区或需单独 schema/drop leaf，并在后续独立 deletion-only 分支中逐步物理删除可安全删除项。
 
-本 goal 的第一阶段只创建目标定义和 gate。后续执行必须从 inventory 开始，不允许直接删除。
+本 goal 的第一阶段只创建目标定义、导台和 gate。后续执行必须从导台开始，不允许直接删除。
 
 ## Non Goals
 
@@ -75,7 +76,7 @@ git status --short --branch
 node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs
 ```
 
-### Step 1: Physical Inventory
+### Step 1: 导台 Physical Inventory
 
 创建 `docs/recovery/physical-legacy-file-retirement-inventory.md`，列出以下文件族的每个命中项或文件组：
 
@@ -168,6 +169,44 @@ inventory gate 只读仓库文件，不读 secret，不执行 legacy script，�
 
 B ff-only 吸收并 push 后才允许更新物理清退完成事实。用户可在完成后删除本 goal 文件、删除临时分支或把本 goal 归档为历史 evidence。
 
+## Agent Run Workflow
+
+agent_run_mode: physical_delete_goal_driven
+
+任何 agent 进入本物理删除 goal 时，必须按以下 8 步运行，不得跳过导台直接删除。
+
+### A1: sync-baseline
+
+从最新 `origin/recovery/platform-v22-trunk` 新开或更新当前 cleanup 分支，确认本分支只属于物理删除 goal。读取 `AGENTS.md`、合同索引、阶段文档、本 goal 和导台。
+
+### A2: read-goal-and-inventory
+
+读取 `docs/recovery/physical-legacy-file-retirement-goal.md` 和 `docs/recovery/physical-legacy-file-retirement-inventory.md`。只允许处理导台里已有明确 decision 的项；遇到未覆盖旧文件必须先扩展导台和 inventory gate。
+
+### A3: select-one-slice
+
+一次只选一个 deletion slice。优先顺序为 low-risk delete、legacy script archive/delete、Portal tombstone minimization、OpenCost/Langfuse/runner physical retirement、schema/migration future leaf。不得在同一分支混入 Cloud lane、OPL lane、Portal feature 或 release readiness。
+
+### A4: red-gate
+
+先写或扩展 slice gate，让当前未清退状态产生明确失败。失败信息必须指向具体 path、decision 或 active reference，不得用泛化断言掩盖原因。
+
+### A5: apply-deletion-only-change
+
+只执行导台允许的 deletion-only change。删除前必须用 `rg` 或静态 import/ref scan 证明 delete candidate 没有 active reference。禁止删除 `keep_tombstone`、`forbidden_without_auth` 或 `needs_schema_drop_leaf` 项。
+
+### A6: green-gates
+
+运行本 goal gate、inventory gate、slice gate、cleanup completion gate、workflow gate 和 diff check。必要时运行 MVP suite。不得把失败 gate 改弱来通过。
+
+### A7: writeback
+
+更新导台中对应项的处理状态、commit、验证命令和剩余风险。若发现合同冲突或授权缺口，写 blocker，不继续删除。
+
+### A8: B-review-handoff
+
+提交 deletion-only commit，交给 B 复审。B ff-only 吸收并 push 后，下一 slice 才能从最新 trunk 继续。物理删除完成后写 completion truth；用户可删除本临时 goal 文件或分支。
+
 ## Autonomy Rules
 
 可自治：
@@ -194,6 +233,7 @@ B ff-only 吸收并 push 后才允许更新物理清退完成事实。用户可�
 
 ```bash
 node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs
+node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs
 node scripts/smoke-test-v22-cleanup-completion-truth.mjs
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 git diff --check -- docs/recovery scripts
@@ -201,7 +241,7 @@ git diff --check -- docs/recovery scripts
 
 本临时 goal 不要求在分支内运行 `node scripts/smoke-test-v22-goal-state-consistency.mjs`，因为该 gate 要求 runtime branch 是 `cleanup/v22-cleanup-completion-truth` 或 `recovery/platform-v22-trunk`。本分支不得为了通过该 gate 改写 `docs/recovery/v22-goal-current.json`；物理清退 goal 是临时工作包，不是常驻 product cursor。
 
-后续 inventory 分支必须额外运行：
+后续 deletion 分支必须运行：
 
 ```bash
 node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs
