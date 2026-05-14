@@ -316,6 +316,12 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
       "scripts/smoke-test-v22-product-goal-harness.mjs",
       "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
     ])],
+    ["docs/v22-record-release-readiness-authorized-blocker-b-result", new Set([
+      gatePath,
+      "docs/recovery/v22-goal-state.md",
+      "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+      "scripts/smoke-test-v22-product-goal-harness.mjs",
+    ])],
     ["docs/v22-record-billing-audit-b-absorb", new Set([
       gatePath,
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

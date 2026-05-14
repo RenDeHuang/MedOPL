@@ -111,6 +111,12 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
+  ["docs/v22-record-release-readiness-authorized-blocker-b-result", new Set([
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["docs/v22-record-billing-audit-b-absorb", new Set([
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
