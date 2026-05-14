@@ -201,20 +201,20 @@ truth writeback section:
 ### Gap: release-readiness-authorized-deploy-only
 
 - id: release-readiness-authorized-deploy-only
-- current_fact: deploy/build/push/kubectl/live-test are outside default development and require explicit authorization.
+- current_fact: deploy/build/push/kubectl/live-test are outside default development and require explicit authorization. The current session now authorizes `release_readiness_deploy_runtime_smoke`, `build_push_kubectl_deploy`, and `live_runtime_smoke`, but local discovery found no concrete Package D release plan file, no concrete region, no local accepted preflight/build-push/deploy-dry-run/runtime-smoke evidence package, no previous image digest / rollback evidence, no node pool desired/current=2 baseline evidence for this step, and no cleanup evidence.
 - ideal_state: release readiness is evaluated only after contracts, local suite, secret scan, and authorized deploy plan pass.
-- problem: deploy readiness can be falsely inferred from local smoke.
+- problem: deploy readiness can be falsely inferred from local smoke or from operation-type authorization without a concrete release plan/evidence package.
 - dependency: product e2e, cloud lane, OPL connection, billing/audit.
 - status: deferred_authorized
 - next_leaf_step: leaf-release-readiness-auth-boundary
 - eval: `node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`; `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
 - allowed_files: docs/recovery and future authorized deploy contracts; current local auth-boundary leaf may add `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` and exact harness allowlist updates only
-- forbidden_files: `deploy/*`, build/push/kubectl/live-test without explicit authorization
+- forbidden_files: `deploy/*`, build/push/kubectl/live-test without explicit authorization or without concrete release plan/evidence closure
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, deploy contracts
 - B_absorb_criteria: B confirms release readiness does not execute deploy unless authorized.
 
 - next leaf selection after billing audit characterization: `leaf-release-readiness-auth-boundary` is the next product-goal cursor but remains `deferred_authorized` until a concrete step-local auth record exists for any build/push/kubectl/live-test/deploy/cloud/secret action. The billing characterization leaf did not create or authorize such a record.
-- leaf-release-readiness-auth-boundary: `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` records `generic_chat_authorization_insufficient_for_risky_release`: 用户笼统允许不等于可执行 build/push/kubectl/live-test/deploy/cloud/secret. The required concrete step-local auth record must provide `step_id`, `authorized_operation_type`, `secret_scope`, `cloud_scope`, `region`, `resource_scope`, `budget_limit`, `baseline_requirement`, `rollback_plan`, `cleanup_plan`, `evidence_path`, and `stop_conditions`, plus Package D release-plan owner guard fields before any risky release action. This local leaf executes no release/deploy operation and records `no_release_deploy_operation_executed`; status remains `deferred_authorized`.
+- leaf-release-readiness-auth-boundary: `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` records `generic_chat_authorization_insufficient_for_risky_release`: 用户笼统允许不等于可执行 build/push/kubectl/live-test/deploy/cloud/secret. The current session adds `user_authorized_release_readiness_deploy_runtime_smoke_2026_05_14` for `release_readiness_deploy_runtime_smoke`, `build_push_kubectl_deploy`, and `live_runtime_smoke`, but the step-local auth record still blocks with `authorized_but_missing_concrete_release_plan`, `missing_local_release_plan_file`, `missing_concrete_region`, `missing_local_package_d_evidence`, and `blocked_before_secret_or_cloud_execution`. The required concrete step-local auth record must provide `step_id`, `authorized_operation_type`, `secret_scope`, `cloud_scope`, concrete `region`, `resource_scope`, `budget_limit`, `baseline_requirement`, `rollback_plan`, `cleanup_plan`, `evidence_path`, and `stop_conditions`, plus Package D release-plan owner guard fields before any risky release action. This local leaf executes no release/deploy operation and records `no_release_deploy_operation_executed`; status remains `deferred_authorized`.
 
 ### Gap: dependency-modernization-node24-vite-vitest-readiness
 

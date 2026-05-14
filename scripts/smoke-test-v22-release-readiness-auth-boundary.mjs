@@ -48,6 +48,17 @@ const forbiddenRiskyOperations = [
   "secret",
 ];
 
+const concreteAuthorizationPhrases = [
+  "user_authorized_release_readiness_deploy_runtime_smoke_2026_05_14",
+  "release_readiness_deploy_runtime_smoke",
+  "build_push_kubectl_deploy",
+  "live_runtime_smoke",
+  "authorized_but_missing_concrete_release_plan",
+  "missing_local_release_plan_file",
+  "missing_local_package_d_evidence",
+  "blocked_before_secret_or_cloud_execution",
+];
+
 async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
 }
@@ -89,6 +100,10 @@ for (const phrase of [
 
 for (const operation of forbiddenRiskyOperations) {
   assertIncludes(allRecovery, operation, "release_readiness_forbidden_operation_record");
+}
+
+for (const phrase of concreteAuthorizationPhrases) {
+  assertIncludes(allRecovery, phrase, "release_readiness_concrete_authorization_blocker_truth");
 }
 
 for (const field of releasePlanFields) {
