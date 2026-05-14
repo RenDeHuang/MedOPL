@@ -14,14 +14,20 @@ const docs = {
   goalLoop: "docs/recovery/v22-codex-goal-loop.md",
   developmentFramework: "docs/recovery/v22-ai-frontend-backend-development-framework.md",
   goalState: "docs/recovery/v22-goal-state.md",
+  currentState: "docs/recovery/v22-goal-current.json",
+  scoreboard: "docs/recovery/v22-product-completion-scoreboard.json",
+  schema: "docs/recovery/v22-goal-leaf-manifest.schema.json",
 };
 
 const gatePath = "scripts/smoke-test-v22-product-goal-harness.mjs";
 const executionOrderGatePath = "scripts/smoke-test-v22-product-goal-execution-order.mjs";
+const consistencyGatePath = "scripts/smoke-test-v22-goal-state-consistency.mjs";
+
 const allowedDiffPaths = new Set([
   ...Object.values(docs),
   gatePath,
   executionOrderGatePath,
+  consistencyGatePath,
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
@@ -32,184 +38,18 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
-  ["cleanup/v22-product-goal-dependency-ordering", new Set([
+  ["cleanup/v22-goal-harness-consolidation", new Set([
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-product-completion-scoreboard.json",
+    "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-goal-state.md",
     "docs/recovery/v22-codex-goal-loop.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-product-goal-execution-order.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   ])],
-  ["feat/v22-opl-productionization-local-implementation", new Set([
-    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
-    "docs/recovery/status-matrix.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-    "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
-  ])],
-  ["docs/v22-advance-opl-productionization-eval-shell-cursor", new Set([
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
-    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["test/v22-opl-productionization-eval-shell", new Set([
-    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
-    "docs/recovery/status-matrix.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
-    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["docs/v22-advance-opl-productionization-cursor", new Set([
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
-    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["test/v22-frontend-product-evalset-gap", new Set([
-    "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["test/v22-backend-contract-eval-template", new Set([
-    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["test/v22-billing-audit-characterization", new Set([
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["test/v22-release-readiness-auth-boundary", new Set([
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["test/v22-release-readiness-authorized-blocker", new Set([
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["docs/v22-record-release-readiness-authorized-blocker-b-result", new Set([
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["docs/v22-record-billing-audit-b-absorb", new Set([
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["docs/v22-record-backend-template-b-absorb", new Set([
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["docs/v22-advance-frontend-evalset-cursor", new Set([
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["contract/v22-opl-productionization-contract-refresh", new Set([
-    "docs/contracts/v22-portal-opl-connection-boundary.md",
-    "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
-    "docs/recovery/mvp-contract-acceptance.md",
-    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
-    "docs/recovery/status-matrix.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["refactor/v22-portal-layering-characterization-gate", new Set([
-    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  ])],
-  ["cleanup/v22-secret-hygiene-diff-scan-eval-shell", new Set([
-    "docs/recovery/status-matrix.md",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "docs/recovery/v22-ai-frontend-backend-development-framework.md",
-  ])],
-  ["cleanup/v22-resource-order-store-postgres-schema-implementation", new Set([
-    "services/portal/src/state/portal-resource-order-store.mjs",
-    "services/portal/src/state/portal-store-db-delegates.mjs",
-    "services/portal/src/state/portal-store-postgres-persistence.mjs",
-    "services/portal/src/state/portal-store-runtime-connections.mjs",
-    "services/portal/src/state/portal-store-storage-bootstrap.mjs",
-    "services/portal/src/state/portal-store.mjs",
-  ])],
-  ["recovery/platform-v22-trunk", new Set([
-    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
-    "docs/contracts/v22-portal-opl-connection-boundary.md",
-    "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
-    "docs/recovery/mvp-contract-acceptance.md",
-    "docs/recovery/real-opl-file-run-artifact-validation-path.md",
-    "docs/recovery/status-matrix.md",
-    "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-    "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
-    "scripts/smoke-test-v22-opl-productionization-eval-shell.mjs",
-    "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
-    "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "docs/recovery/v22-goal-state.md",
-    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-    "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-    "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
-    "services/portal/src/state/portal-resource-order-store.mjs",
-    "services/portal/src/state/portal-store-db-delegates.mjs",
-    "services/portal/src/state/portal-store-postgres-persistence.mjs",
-    "services/portal/src/state/portal-store-runtime-connections.mjs",
-    "services/portal/src/state/portal-store-storage-bootstrap.mjs",
-    "services/portal/src/state/portal-store.mjs",
-  ])],
+  ["recovery/platform-v22-trunk", allowedDiffPaths],
 ]);
 
 const productLoopItems = [
@@ -241,7 +81,6 @@ const goalLoopSteps = [
 
 const hardRulePhrases = [
   "Codex goal 不是自然语言愿望，而是 repo 内的 goal-state state machine。",
-  "Codex 每轮必须读取 docs/recovery/v22-goal-state.md",
   "每个 gap 必须有 eval；没有 eval 的 gap 不得实现，状态只能是 needs_eval，下一步只能是 write_eval_shell。",
   "每个 leaf step 必须有 eval_command 或 characterization gate。",
   "B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。",
@@ -252,351 +91,23 @@ const hardRulePhrases = [
   "禁止用 fallback/shim/adapter 兼容层掩盖旧主路径。",
 ];
 
-const autonomousRunPolicyPhrases = [
-  "Autonomous run policy",
-  "允许 Codex 在本 goal harness 内连续推进多个 leaf step",
-  "每个 leaf step 必须独立完成",
-  "light contract card",
-  "eval/gate",
-  "implementation",
-  "verification",
-  "failure analysis",
-  "truth writeback",
-  "commit",
-  "B absorb/push 或 B blocker report",
-  "每个 leaf step 完成后必须产生",
-  "commit SHA",
-  "changed files",
-  "verification output summary",
-  "truth writeback files",
-  "next cursor",
-  "如果任一 gate 失败，Codex 不得继续下一个 leaf step，必须先执行 failure_analysis_rule。",
-  "如果 B absorb 条件不满足，Codex 不得推进 goal-state cursor。",
-  "每个 push 后必须重新 fetch/rebase 最新 origin/recovery/platform-v22-trunk，再继续下一 leaf step。",
-  "禁止把多个无关 leaf steps 合成一个大提交。",
-  "禁止在未更新 goal-state 的情况下继续跑下一阶段。",
-  "secret/live/cloud/kubectl/build/push",
-  "auth record",
-  "scope",
-  "budget",
-  "rollback",
-  "evidence path",
-  "A 只能提交 leaf step",
-  "B 或被明确授权的 auto-B lane 才能 ff-only absorb/push trunk",
-  "A 不得伪装 B 吸收。",
+const requiredCurrentFields = [
+  "schemaVersion",
+  "canonical",
+  "machineReadableCurrentTruth",
+  "markdownRole",
+  "currentCursor",
+  "highestPriorityExecutableLeafStep",
+  "stageOrder",
+  "gaps",
+  "currentLeaf",
+  "releaseReadiness",
 ];
 
-const loopBudgetPhrases = [
-  "Loop budget / escalation policy",
-  "max_attempts_per_leaf_step = 10",
-  "max_attempts_per_root_cause = 10",
-  "max_consecutive_same_gate_failure = 2",
-  "max_changed_files_without_B_review = 12",
-  "每个 leaf step 最多允许 10 次 implementation attempt。",
-  "同一个 root cause 最多允许 10 次 failed attempt。",
-  "同一个 gate 连续失败 2 次后，必须进入 failure analysis；分析后可以继续 attempt，但必须记录 root cause 和策略变化。",
-  "第 10 次 leaf step attempt 失败后，才必须 blocked truth writeback。",
-  "同一个 root cause 达到 10 次失败后，也必须 blocked truth writeback。",
-  "attempt failure 只统计以下 blocker",
-  "test/gate exit non-zero",
-  "B absorb blocker",
-  "contract/eval mismatch",
-  "scope drift",
-  "forbidden action needed without auth record",
-  "baseline_not_restored",
-  "cleanup_incomplete",
-  "budget_or_stop_condition_hit",
-  "以下不算 attempt failure，除非它们导致验证命令失败或 tracked diff 污染",
-  "warning",
-  "formatting suggestion",
-  "one-time local dependency install",
-  "ignored node_modules / .runtime output",
-  "transient command retry with no tracked change",
-  "blocked",
-  "failed gate",
-  "attempt number",
-  "root cause id",
-  "whether this is same gate failure",
-  "whether this is same root cause failure",
-  "changed strategy",
-  "whether split is needed",
-  "attempts summary",
-  "suspected root cause",
-  "whether problem should be split",
-  "whether contract/eval is wrong",
-  "whether external authorization/canary is required",
-  "proposed next smaller leaf steps",
-  "如果失败原因是 eval_wrong 或 contract_wrong，下一步必须先修 contract/eval，不得继续实现。",
-  "如果失败原因是 problem_too_large，必须拆成更小 leaf steps，并更新 gap matrix/execution line。",
-  "如果失败原因是 environment_missing 或 authorization_required，必须停在 deferred_authorized，不得用 mock/fallback 硬过。",
-  "如果失败原因是 architecture_blocker，必须开 refactor leaf step，不得在当前 feature step 里顺手重构大面。",
-  "blocked leaf step 不允许推进 goal-state cursor，除非 B 明确吸收 blocked truth writeback。",
-];
-
-const authorizationModelPhrases = [
-  "Authorization model",
-  "Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps。",
-  "Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。",
-  "risky leaf step",
-  "step-local auth record",
-  "authorized_operation_type:",
-  "secret_scope:",
-  "cloud_scope:",
-  "region:",
-  "resource_scope:",
-  "budget_limit:",
-  "baseline_requirement:",
-  "rollback_plan:",
-  "cleanup_plan:",
-  "evidence_path:",
-  "stop_conditions:",
-  "auth record 默认写入 .runtime，不进入 git。",
-  "docs/recovery 只写脱敏摘要和 truth writeback",
-  "raw secret、kubeconfig、token、SecretId/SecretKey、raw cloud response",
-  "没有 auth record 的 risky leaf step 必须停在 deferred_authorized。",
-  "default/local cleanup/refactor/dev steps 不得读取 secret、不调真实云、不 build/push/kubectl。",
-];
-
-const cloudLivePolicyPhrases = [
-  "Cloud live baseline / cleanup / minimum spend policy",
-  "云上 live step 前必须记录 baseline。",
-  "desired/current baseline 应为 2，且测试后必须回到 2。",
-  "平台共享 baseline，不得删除或 scale to 0",
-  "本 step 创建的测试资源，必须 cleanup/release",
-  "开通/创建类 cloud step 必须有 cleanup-first 或 cleanup-after 计划。",
-  "release/delete 类 cloud step 必须证明只释放本 step 或本用户绑定的资源",
-  "不能删除共享节点池、别人的节点、别人的存储或平台服务资源",
-  "cleanup evidence",
-  "created resources",
-  "released resources",
-  "remaining resources",
-  "baseline after cleanup",
-  "active operations count",
-  "billing/reconciliation status",
-  "若 cleanup 不能完成，goal-state 不得前进，必须进入 blocked 或 reconciling。",
-  "minimum spend",
-  "max_runtime",
-  "cleanup deadline",
-  "不得自动扩容或长时间保留测试资源。",
-  "任何无法证明 ownerRef/resourceBindingId/workspaceId/operationId 的资源，不得删除，只能记录 blocker。",
-];
-
-const failureTruthWritebackPhrases = [
-  "Failure truth writeback",
-  "成功和失败都必须回写真相。",
-  "failed_step_id:",
-  "failed_gate:",
-  "attempt_count:",
-  "failure_category:",
-  "suspected_root_cause:",
-  "whether_contract_wrong:",
-  "whether_eval_wrong:",
-  "whether_problem_should_split:",
-  "whether_authorization_required:",
-  "next_recommended_action:",
-  "baseline_not_restored",
-  "cleanup_incomplete",
-  "budget_or_stop_condition_hit",
-  "失败后不得继续下一个 leaf step，除非 B 明确吸收 blocked truth writeback。",
-  "B blocker report 也必须写入 goal-state 或 gap matrix 的 truth writeback section。",
-];
-
-const gapIds = [
-  "legacy-cleanup-user-owned",
-  "legacy-cleanup-resource-order",
-  "legacy-cleanup-secret-hygiene",
-  "legacy-cleanup-legacy-scripts",
-  "architecture-refactor-portal-layering",
-  "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
-  "cloud-lane-mock-readonly-dry-run-authorized",
-  "frontend-product-vue-vite-ts-pinia",
-  "backend-product-node22-esm-layering",
-  "billing-audit-preauth-ledger-release-t1",
-  "release-readiness-authorized-deploy-only",
-  "dependency-modernization-node24-vite-vitest-readiness",
-];
-
-const gapFields = [
-  "id:",
-  "current_fact:",
-  "ideal_state:",
-  "problem:",
-  "dependency:",
-  "depends_on:",
-  "blocked_by:",
-  "executable_when:",
-  "stage:",
-  "priority:",
-  "cursor_eligible:",
-  "status:",
-  "next_leaf_step:",
-  "eval:",
-  "allowed_files:",
-  "forbidden_files:",
-  "truth_writeback_target:",
-  "B_absorb_criteria:",
-];
-
-const leafStepFields = [
-  "step_id:",
-  "problem:",
-  "depends_on:",
-  "executable_when:",
-  "cursor_eligible:",
-  "stage:",
-  "failure_state:",
-  "input_state:",
-  "expected_output:",
-  "light_contract_card:",
-  "eval_command:",
-  "failure_analysis_rule:",
-  "trace_or_evidence_expectation:",
-  "allowed_files:",
-  "forbidden_files:",
-  "truth_writeback_target:",
-  "B_absorb_criteria:",
-];
-
-const lightContractCardFields = [
-  "problem:",
-  "subscribed_contracts:",
-  "in_scope:",
-  "out_of_scope:",
-  "data_or_field_truth:",
-  "auth_boundary:",
-  "pollution_risks:",
-  "verification_commands:",
-  "B_absorb_criteria:",
-];
-
-const failureCategories = [
-  "contract_wrong",
-  "eval_wrong",
-  "implementation_wrong",
-  "environment_missing",
-  "authorization_required",
-  "upstream_or_cloud_fact_unknown",
-  "problem_too_large",
-  "architecture_blocker",
-  "baseline_not_restored",
-  "cleanup_incomplete",
-  "budget_or_stop_condition_hit",
-];
-
-const dependencyOrderingPhrases = [
-  "Dependency Graph / Execution Order Policy",
-  "Dependency Stage Order",
-  "S1 legacy cleanup",
-  "S2 architecture refactor",
-  "S3 OPL connection productionization",
-  "S4 Cloud lane productionization",
-  "S5 frontend/backend product completion",
-  "S6 release readiness",
-  "cleanup -> refactor -> OPL connection -> Cloud lane -> frontend/backend product completion -> release readiness",
-  "Cleanup stage completion gate",
-  "Cloud lane 不得跳过未完成 cleanup",
-  "legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true",
-  "resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane",
-  "open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility",
-  "Release readiness dependency gate",
-  "resource-order store/Postgres/schema cleaned 或 intentionally_retained",
-  "secret hygiene cleaned",
-  "legacy scripts archive cleaned",
-  "Portal architecture refactor characterized/cleaned",
-  "OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker",
-  "Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker",
-  "frontend/backend product completion completed",
-  "release readiness 未满足依赖时不能成为 current cursor",
-  "Codex 不得请求 deploy/cloud 授权",
-  "highest-priority executable cleanup/refactor/product leaf",
-  "deferred_authorized_current_path",
-  "deferred_authorized_future_stage",
-  "cursor_ordering_repair",
-  "将 current cursor 改回 highest-priority executable leaf",
-  "不得把 future-stage deferred blocker 当作当前 blocker",
-  "future-stage blocker 不阻塞当前 cleanup/refactor/dev leaf",
-  "用户授权意图已记录",
-  "缺 concrete Package D release plan",
-  "accepted preflight/build-push/dry-run evidence",
-  "rollback evidence",
-  "baseline/cleanup evidence",
-  "release readiness 保持 deferred_authorized_future_stage",
-];
-
-const frameworkPhrases = [
-  "backend 当前基线使用 Node 22 ESM，route -> app payload -> domain -> state/persistence。",
-  "Node 24 Active LTS migration readiness 作为 future gap 记录，不在本 harness 分支升级。",
-  "backend 禁止隐式 fallback/shim",
-  "backend eval 必须覆盖 route smoke、payload/domain contract smoke、node --check 或 npm check、workflow gate。",
-  "frontend 当前基线使用 Vue 3 + Vite + TypeScript + Pinia。",
-  "frontend eval 必须覆盖 vue-tsc typecheck、Vitest 或 component eval、Playwright/UI evalset、desktop/mobile responsive check、loading/empty/error state、table/card usability。",
-  "Vite/Vitest modernization 作为 future gap 记录，不在本 harness 分支升级。",
-  "每个 frontend 改动必须有 API contract、组件状态、响应式/mobile/table 可用性验证。",
-  "每个 backend 改动必须有 route/payload/domain smoke 或 contract eval。",
-  "secret/security eval 使用 workflow gate 和 changed-files / added-lines diff-scoped secret scan。",
-  "浏览器状态、日志、evidence、git 中不得出现 raw provider key、bearer token、launchToken、runtimeToken、SecretId/SecretKey、kubeconfig 或 private key。",
-  "OPL Web 必须保持 clean upstream one-person-lab，不修改 upstream 源码，不 import upstream 内部模块。",
-  "Cloud lane 必须按 mock -> readonly -> dry-run -> authorized create/release 推进；真实云、secret、build/push/kubectl/live-test 必须单独授权。",
-];
-
-const goalStatePhrases = [
-  "当前 trunk HEAD",
-  "当前 goal cursor",
-  "当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`",
-  "highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`",
-  "当前下一问题：Cloud lane readonly status audit",
-  "release readiness 当前状态: `deferred_authorized_future_stage`",
-  "已完成事实：default entry、user_owned、resource-order 前四刀",
-  "当前下一问题：OPL connection productionization local implementation",
-  "当前下一问题：Portal frontend product evalset gap",
-  "当前下一问题：Backend contract eval template",
-  "当前下一问题：Billing audit characterization",
-  "Leaf 8 B absorb/push result",
-  "f114ee587db2a41a3a85fc5f67bbed4fbe63e57b",
-  "leaf-frontend-product-evalset-gap",
-  "Leaf 9 B absorb/push result",
-  "6acb92e03c07e580191d77e1a5389a94fbe137fc",
-  "leaf-backend-contract-eval-template",
-  "secret hygiene",
-  "legacy scripts archive",
-  "Portal architecture refactor",
-  "OPL connection",
-  "Cloud lane",
-  "frontend/backend product completion",
-  "release readiness",
-  "当前 execution line 的前 5 个 leaf steps",
-  "禁止并行写入的区域",
-  "允许只读审计的区域",
-  "B 吸收后 cursor 才能前进",
-];
-
-const windowPhrases = [
-  "A：执行 8-step goal loop，写 gate/eval，做最小实现，提交。",
-  "B：审计 diff、复跑验证、执行 changed-files / added-lines diff-scoped secret scan，无 blocker 时 ff-only absorb 并 push。",
-  "C：只做只读审计或明确不冲突的小片段；合并前必须 rebase 最新 trunk 并交 B。",
-];
-
-const boundaryPhrases = [
-  "不改 services/*",
-  "不改 deploy/adapters/.sentrux/.env.demo.template",
-  "不跑 live-test",
-  "不读 secret",
-  "不 build/push/kubectl",
-  "不改 upstream one-person-lab",
-  "不升级依赖",
-  "deploy/*",
-  "adapters/*",
-  ".sentrux/*",
-  ".env.demo.template",
-  "Cloud lane 授权边界",
-  "clean upstream one-person-lab",
-];
-
-const validationCommands = [
+const requiredValidationCommands = [
+  "node scripts/smoke-test-v22-goal-state-consistency.mjs",
   "node scripts/smoke-test-v22-product-goal-harness.mjs",
   "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
-  "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-  "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
   "git diff --check -- docs/recovery scripts",
@@ -617,6 +128,10 @@ async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
 }
 
+async function readJson(filePath) {
+  return JSON.parse(await readRepoFile(filePath));
+}
+
 async function assertFileExists(filePath) {
   await access(path.join(repoRoot, filePath)).catch((error) => {
     throw new Error(`required_file_missing:${filePath}:${error.message}`);
@@ -625,6 +140,23 @@ async function assertFileExists(filePath) {
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
+}
+
+function assertNotIncludes(source, forbidden, label) {
+  assert(!source.includes(forbidden), `${label}_forbidden:${forbidden}`);
+}
+
+function runGate(scriptPath) {
+  const result = spawnSync(process.execPath, [scriptPath], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  if (result.status !== 0) {
+    if (result.stdout) process.stderr.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    throw new Error(`${scriptPath}_failed`);
+  }
 }
 
 function changedFilesFromBase() {
@@ -686,8 +218,7 @@ async function untrackedFileLines() {
   const lines = [];
   for (const filePath of result.stdout.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)) {
     if (!allowedDiffPaths.has(filePath)) continue;
-    const source = await readRepoFile(filePath);
-    lines.push(...source.split(/\r?\n/u));
+    lines.push(...(await readRepoFile(filePath)).split(/\r?\n/u));
   }
   return lines;
 }
@@ -701,10 +232,7 @@ async function assertNoSecretLikeValuesInAddedLines() {
   for (const [index, source] of addedLines.entries()) {
     for (const pattern of secretLikeValuePatterns) {
       if (pattern.test(source)) {
-        findings.push({
-          lineIndex: index + 1,
-          pattern: pattern.source,
-        });
+        findings.push({ lineIndex: index + 1, pattern: pattern.source });
       }
     }
   }
@@ -716,71 +244,61 @@ async function assertNoSecretLikeValuesInAddedLines() {
   }, null, 2));
 }
 
-function assertFields(source, fields, label) {
-  for (const field of fields) {
-    assertIncludes(source, field, `${label}_${field.replace(/[^a-z0-9]+/giu, "_")}`);
-  }
-}
-
-for (const filePath of [...Object.values(docs), gatePath, executionOrderGatePath]) {
+for (const filePath of [...Object.values(docs), gatePath, executionOrderGatePath, consistencyGatePath]) {
   await assertFileExists(filePath);
 }
 
 assertOnlyAllowedFilesChanged();
 await assertNoSecretLikeValuesInAddedLines();
+runGate(consistencyGatePath);
 
 const sources = Object.fromEntries(await Promise.all(
   Object.entries(docs).map(async ([key, filePath]) => [key, await readRepoFile(filePath)]),
 ));
+const currentState = await readJson(docs.currentState);
+const scoreboard = await readJson(docs.scoreboard);
 const allDocs = Object.values(sources).join("\n");
 
 for (const phrase of productLoopItems) assertIncludes(sources.productE2eContract, phrase, "product_loop_13_items");
 for (const phrase of goalLoopSteps) assertIncludes(sources.goalLoop, phrase, "goal_loop_8_steps");
 for (const phrase of hardRulePhrases) assertIncludes(allDocs, phrase, "hard_rule");
-for (const phrase of autonomousRunPolicyPhrases) assertIncludes(allDocs, phrase, "autonomous_run_policy");
-for (const phrase of loopBudgetPhrases) assertIncludes(allDocs, phrase, "loop_budget_escalation_policy");
-for (const phrase of authorizationModelPhrases) assertIncludes(allDocs, phrase, "authorization_model");
-for (const phrase of cloudLivePolicyPhrases) assertIncludes(allDocs, phrase, "cloud_live_policy");
-for (const phrase of failureTruthWritebackPhrases) assertIncludes(allDocs, phrase, "failure_truth_writeback");
-for (const phrase of dependencyOrderingPhrases) assertIncludes(allDocs, phrase, "dependency_ordering");
-for (const phrase of gapIds) assertIncludes(sources.gapMatrix, phrase, "gap_matrix_id");
-assertFields(sources.gapMatrix, gapFields, "gap_matrix_required_field");
-assertFields(allDocs, leafStepFields, "leaf_step_required_field");
-assertFields(allDocs, lightContractCardFields, "light_contract_card_required_field");
-for (const category of failureCategories) assertIncludes(allDocs, category, "failure_analysis_category");
-for (const phrase of frameworkPhrases) assertIncludes(sources.developmentFramework, phrase, "development_framework");
-for (const phrase of goalStatePhrases) assertIncludes(sources.goalState, phrase, "goal_state");
-for (const phrase of windowPhrases) assertIncludes(allDocs, phrase, "abc_window");
-for (const phrase of boundaryPhrases) assertIncludes(allDocs, phrase, "boundary");
-for (const command of validationCommands) assertIncludes(allDocs, command, "validation_command");
+for (const command of requiredValidationCommands) assertIncludes(allDocs, command, "validation_command");
+for (const field of requiredCurrentFields) assert(Object.hasOwn(currentState, field), `current_state_field_missing:${field}`);
 
+assert.equal(currentState.canonical, true, "current_state_must_be_canonical");
+assert.equal(currentState.markdownRole, "summary_history_pointer_only", "markdown_role_mismatch");
+assert.equal(currentState.currentCursor, currentState.highestPriorityExecutableLeafStep, "current_cursor_highest_priority_mismatch");
+assert.equal(currentState.currentLeaf.stepId, currentState.currentCursor, "current_leaf_step_mismatch");
+assert.equal(currentState.releaseReadiness.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
+assert.equal(currentState.releaseReadiness.cursorEligible, false, "release_readiness_cursor_eligible_mismatch");
+
+assertIncludes(sources.goalState, "JSON 是机器可读 current truth", "goal_state_json_truth_language");
+assertIncludes(sources.goalState, "Markdown 是人类说明/历史", "goal_state_markdown_role_language");
+assertIncludes(sources.gapMatrix, "Product Completion Scoreboard", "gap_matrix_scoreboard_pointer");
+assertIncludes(sources.gapMatrix, docs.scoreboard, "gap_matrix_scoreboard_path");
 assertIncludes(sources.productGoal, "goal tree -> execution line", "goal_tree_execution_line_rule");
 assertIncludes(sources.productGoal, "contract-driven", "contract_driven");
 assertIncludes(sources.productGoal, "eval-driven", "eval_driven");
-assertIncludes(sources.productGoal, "cleanup", "cleanup_work_covered");
-assertIncludes(sources.productGoal, "refactor", "refactor_work_covered");
-assertIncludes(sources.productGoal, "development", "development_work_covered");
-assertIncludes(sources.goalState, "highest-priority executable leaf step", "highest_priority_leaf_step_rule");
-assertIncludes(sources.goalState, "- 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`", "release_readiness_not_current_cursor");
-assertIncludes(sources.goalState, "- highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`", "deferred_authorized_not_executable_leaf");
-assertIncludes(sources.goalState, "release readiness 当前状态: `deferred_authorized_future_stage`", "release_readiness_future_stage_state");
-assertIncludes(sources.gapMatrix, "needs_eval", "needs_eval_status");
-assertIncludes(sources.gapMatrix, "write_eval_shell", "write_eval_shell_next_step");
+
+assert(Array.isArray(scoreboard.capabilities), "scoreboard_capabilities_missing");
+assert(scoreboard.capabilities.length >= 23, "scoreboard_capability_coverage_incomplete");
+assert(scoreboard.capabilities.some((capability) => capability.id === "release-readiness-deploy-runtime-smoke"), "scoreboard_release_readiness_missing");
+
+assertNotIncludes(allDocs, "release_readiness_authorized_to_run_build_push_kubectl_now", "must_not_claim_risky_release_authorization");
+assertNotIncludes(allDocs, "release_readiness_authorized_to_read_secret_now", "must_not_claim_secret_read_authorization");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_product_goal_harness",
-  documents: docs,
+  canonicalCurrentState: docs.currentState,
+  scoreboard: docs.scoreboard,
   checked: {
     productLoopItems: productLoopItems.length,
     goalLoopSteps: goalLoopSteps.length,
-    autonomousRunPolicy: true,
-    loopBudgetEscalationPolicy: true,
-    authorizationModel: true,
-    cloudLiveBaselineCleanupMinimumSpend: true,
-    failureTruthWriteback: true,
-    gapIds: gapIds.length,
+    currentCursor: currentState.currentCursor,
+    releaseReadinessStatus: currentState.releaseReadiness.status,
     diffScopedSecretScan: "changed_files_added_lines",
-    validationCommands,
+    capabilities: scoreboard.capabilities.length,
+    validationCommands: requiredValidationCommands,
   },
 }, null, 2));

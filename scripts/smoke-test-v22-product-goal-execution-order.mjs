@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,76 +8,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
 const files = {
+  current: "docs/recovery/v22-goal-current.json",
   gapMatrix: "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-  goalLoop: "docs/recovery/v22-codex-goal-loop.md",
   goalState: "docs/recovery/v22-goal-state.md",
 };
-
-async function readRepoFile(filePath) {
-  return readFile(path.join(repoRoot, filePath), "utf8");
-}
-
-function assertIncludes(source, expected, label) {
-  assert(source.includes(expected), `${label}_missing:${expected}`);
-}
-
-function assertNotIncludes(source, forbidden, label) {
-  assert(!source.includes(forbidden), `${label}_forbidden:${forbidden}`);
-}
-
-function extractCurrentCursor(goalState) {
-  const match = goalState.match(/^- 当前 goal cursor: `([^`]+)`/mu);
-  assert(match, "current_goal_cursor_missing");
-  return match[1];
-}
-
-function extractGapSection(gapMatrix, gapId) {
-  const pattern = new RegExp(
-    `### Gap: ${gapId}\\n(?<section>[\\s\\S]*?)(?=\\n### Gap: |\\ntruth writeback section:|\\n$)`,
-    "u",
-  );
-  const match = gapMatrix.match(pattern);
-  assert(match?.groups?.section, `gap_section_missing:${gapId}`);
-  return match.groups.section;
-}
-
-function extractField(section, fieldName) {
-  const pattern = new RegExp(`^- ${fieldName}: (?<value>.+)$`, "mu");
-  const match = section.match(pattern);
-  assert(match?.groups?.value, `gap_field_missing:${fieldName}`);
-  return match.groups.value.trim();
-}
-
-function assertStatusIn(section, gapId, allowedStatuses) {
-  const status = extractField(section, "status");
-  assert(
-    allowedStatuses.includes(status),
-    `gap_status_not_cloud_eligible:${gapId}:${status}:expected=${allowedStatuses.join("|")}`,
-  );
-  return status;
-}
-
-const sources = Object.fromEntries(await Promise.all(
-  Object.entries(files).map(async ([key, filePath]) => [key, await readRepoFile(filePath)]),
-));
-const allDocs = Object.values(sources).join("\n");
-
-const dependencyFields = [
-  "depends_on:",
-  "blocked_by:",
-  "executable_when:",
-  "stage:",
-  "priority:",
-  "cursor_eligible:",
-];
-
-const leafDependencyFields = [
-  "depends_on:",
-  "executable_when:",
-  "cursor_eligible:",
-  "stage:",
-  "failure_state:",
-];
 
 const stageOrder = [
   "S1 legacy cleanup",
@@ -87,125 +22,152 @@ const stageOrder = [
   "S6 release readiness",
 ];
 
-const releaseReadinessGatePhrases = [
-  "Release readiness dependency gate",
-  "resource-order store/Postgres/schema cleaned 或 intentionally_retained",
-  "secret hygiene cleaned",
-  "legacy scripts archive cleaned",
-  "Portal architecture refactor characterized/cleaned",
-  "OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker",
-  "Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker",
-  "frontend/backend product completion completed",
-  "release readiness 未满足依赖时不能成为 current cursor",
-  "Codex 不得请求 deploy/cloud 授权",
-  "highest-priority executable cleanup/refactor/product leaf",
-];
-
-const deferredStatusPhrases = [
-  "deferred_authorized_current_path",
+const satisfiedStatuses = new Set([
+  "cleaned",
+  "intentionally_retained",
+  "gated",
+  "characterized",
+  "completed",
   "deferred_authorized_future_stage",
-  "future-stage blocker 不阻塞当前 cleanup/refactor/dev leaf",
+]);
+
+const releasePrerequisites = [
+  "legacy-cleanup-resource-order",
+  "legacy-cleanup-secret-hygiene",
+  "legacy-cleanup-legacy-scripts",
+  "architecture-refactor-portal-layering",
+  "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
+  "cloud-lane-mock-readonly-dry-run-authorized",
+  "frontend-product-vue-vite-ts-pinia",
+  "backend-product-node22-esm-layering",
+  "billing-audit-preauth-ledger-release-t1",
 ];
 
-const cursorRepairPhrases = [
-  "cursor_ordering_repair",
-  "将 current cursor 改回 highest-priority executable leaf",
-  "不得把 future-stage deferred blocker 当作当前 blocker",
-];
-
-const releaseReadinessFactPhrases = [
-  "用户授权意图已记录",
-  "缺 concrete Package D release plan",
-  "accepted preflight/build-push/dry-run evidence",
-  "rollback evidence",
-  "baseline/cleanup evidence",
-  "release readiness 保持 deferred_authorized_future_stage",
-];
-
-const cleanupStageGatePhrases = [
-  "Cleanup stage completion gate",
-  "Cloud lane 不得跳过未完成 cleanup",
-  "legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true",
-  "resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane",
-  "open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility",
-];
-
-for (const field of dependencyFields) assertIncludes(sources.gapMatrix, field, "gap_dependency_field");
-for (const field of leafDependencyFields) assertIncludes(sources.goalState, field, "leaf_dependency_field");
-for (const stage of stageOrder) assertIncludes(allDocs, stage, "stage_order");
-for (const phrase of releaseReadinessGatePhrases) assertIncludes(allDocs, phrase, "release_readiness_dependency_gate");
-for (const phrase of deferredStatusPhrases) assertIncludes(allDocs, phrase, "deferred_authorized_status");
-for (const phrase of cursorRepairPhrases) assertIncludes(allDocs, phrase, "cursor_ordering_repair");
-for (const phrase of releaseReadinessFactPhrases) assertIncludes(allDocs, phrase, "release_readiness_authorized_blocker_fact");
-for (const phrase of cleanupStageGatePhrases) assertIncludes(allDocs, phrase, "cleanup_stage_completion_gate");
-
-const currentCursor = extractCurrentCursor(sources.goalState);
-assert.notEqual(
-  currentCursor,
-  "leaf-release-readiness-auth-boundary",
-  "release_readiness_must_not_be_current_cursor_when_dependencies_unmet",
-);
-assertIncludes(
-  sources.goalState,
-  "- 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`",
-  "current_cursor_highest_priority_executable_leaf",
-);
-assertIncludes(
-  sources.goalState,
-  "- highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`",
-  "highest_priority_executable_leaf",
-);
-assertIncludes(
-  sources.goalState,
-  "release readiness 当前状态: `deferred_authorized_future_stage`",
-  "release_readiness_future_stage_state",
-);
-assertNotIncludes(
-  sources.goalState,
-  "- highest-priority executable leaf step: `deferred_authorized`",
-  "deferred_authorized_is_not_executable_leaf",
-);
-
-const cleanupPrerequisites = [
-  ["legacy-cleanup-user-owned", ["cleaned", "intentionally_retained"]],
-  ["legacy-cleanup-resource-order", ["cleaned", "intentionally_retained"]],
-  ["legacy-cleanup-secret-hygiene", ["cleaned", "gated"]],
-  ["legacy-cleanup-legacy-scripts", ["cleaned", "gated"]],
-];
-
-const priorStagePrerequisites = [
-  ["architecture-refactor-portal-layering", ["characterized", "cleaned", "gated"]],
-  ["opl-connection-gateway-preflight-runtime-file-run-artifact-trace", ["completed", "gated", "deferred_authorized_future_stage"]],
-];
-
-const cloudLaneSection = extractGapSection(sources.gapMatrix, "cloud-lane-mock-readonly-dry-run-authorized");
-const cloudLaneDependsOn = extractField(cloudLaneSection, "depends_on");
-
-if (currentCursor === "leaf-cloud-lane-readonly-status-audit") {
-  for (const [gapId, allowedStatuses] of [...cleanupPrerequisites, ...priorStagePrerequisites]) {
-    const section = extractGapSection(sources.gapMatrix, gapId);
-    assertStatusIn(section, gapId, allowedStatuses);
-    assertIncludes(
-      cloudLaneDependsOn,
-      gapId,
-      `cloud_lane_must_depend_on_prior_stage_${gapId}`,
-    );
-  }
-  assertIncludes(
-    cloudLaneSection,
-    "cursor_eligible: true",
-    "cloud_lane_cursor_eligible_true_only_after_prerequisites",
-  );
+async function readRepoFile(filePath) {
+  return readFile(path.join(repoRoot, filePath), "utf8");
 }
+
+async function readJson(filePath) {
+  return JSON.parse(await readRepoFile(filePath));
+}
+
+function assertIncludes(source, expected, label) {
+  assert(source.includes(expected), `${label}_missing:${expected}`);
+}
+
+function assertNotIncludes(source, forbidden, label) {
+  assert(!source.includes(forbidden), `${label}_forbidden:${forbidden}`);
+}
+
+function runConsistencyGate() {
+  const result = spawnSync(process.execPath, ["scripts/smoke-test-v22-goal-state-consistency.mjs"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  if (result.status !== 0) {
+    if (result.stdout) process.stderr.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+    throw new Error("goal_state_consistency_gate_failed");
+  }
+}
+
+function gapMap(current) {
+  return new Map(current.gaps.map((gap) => [gap.id, gap]));
+}
+
+function stageIndex(stage) {
+  const index = stageOrder.indexOf(stage);
+  assert(index >= 0, `unknown_stage:${stage}`);
+  return index;
+}
+
+function assertAcyclicDependencies(current) {
+  const gaps = gapMap(current);
+  const visiting = new Set();
+  const visited = new Set();
+
+  function visit(gapId, pathIds = []) {
+    if (visited.has(gapId)) return;
+    assert(!visiting.has(gapId), `dependency_cycle_detected:${[...pathIds, gapId].join("->")}`);
+    const gap = gaps.get(gapId);
+    assert(gap, `dependency_gap_missing:${gapId}`);
+    visiting.add(gapId);
+    for (const dependencyId of gap.dependsOn) {
+      assert(gaps.has(dependencyId), `dependency_reference_missing:${gapId}:${dependencyId}`);
+      const dependency = gaps.get(dependencyId);
+      assert(
+        stageIndex(dependency.stage) <= stageIndex(gap.stage),
+        `dependency_stage_order_violation:${gapId}:${dependencyId}`,
+      );
+      visit(dependencyId, [...pathIds, gapId]);
+    }
+    visiting.delete(gapId);
+    visited.add(gapId);
+  }
+
+  for (const gap of current.gaps) visit(gap.id);
+}
+
+function computeExecutableLeaf(current) {
+  const gaps = gapMap(current);
+  const candidates = current.gaps
+    .filter((gap) => gap.cursorEligible)
+    .filter((gap) => gap.nextLeafStep && !["monitor_only_after_B_absorb", "write_eval_shell"].includes(gap.nextLeafStep))
+    .filter((gap) => gap.dependsOn.every((dependencyId) => satisfiedStatuses.has(gaps.get(dependencyId)?.status)))
+    .sort((left, right) => left.priority - right.priority);
+
+  assert(candidates.length > 0, "no_executable_leaf_candidates");
+  return candidates[0];
+}
+
+function assertReleaseReadinessOrdering(current) {
+  const gaps = gapMap(current);
+  const releaseGap = gaps.get("release-readiness-authorized-deploy-only");
+  assert(releaseGap, "release_readiness_gap_missing");
+  assert.equal(releaseGap.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
+  assert.equal(releaseGap.cursorEligible, false, "release_readiness_must_not_be_cursor_eligible");
+  assert.equal(current.releaseReadiness.status, "deferred_authorized_future_stage", "release_readiness_current_state_status_mismatch");
+  assert.equal(current.releaseReadiness.cursorEligible, false, "release_readiness_current_state_cursor_eligible_mismatch");
+  for (const prerequisite of releasePrerequisites) {
+    assert(releaseGap.dependsOn.includes(prerequisite), `release_readiness_prerequisite_missing:${prerequisite}`);
+  }
+}
+
+runConsistencyGate();
+
+const [current, gapMatrix, goalState] = await Promise.all([
+  readJson(files.current),
+  readRepoFile(files.gapMatrix),
+  readRepoFile(files.goalState),
+]);
+
+assert.deepEqual(current.stageOrder, stageOrder, "stage_order_mismatch");
+assertAcyclicDependencies(current);
+
+const executable = computeExecutableLeaf(current);
+assert.equal(executable.nextLeafStep, current.highestPriorityExecutableLeafStep, "highest_priority_executable_leaf_mismatch");
+assert.equal(current.currentCursor, current.highestPriorityExecutableLeafStep, "current_cursor_must_match_highest_priority_leaf");
+assert.equal(executable.id, current.currentLeaf.gapId, "current_leaf_gap_mismatch");
+assert.equal(executable.stage, current.currentLeaf.stage, "current_leaf_stage_mismatch");
+
+assertReleaseReadinessOrdering(current);
+
+assertIncludes(gapMatrix, "Dependency Stage Order", "gap_matrix_stage_order");
+assertIncludes(gapMatrix, "Release readiness dependency gate", "gap_matrix_release_readiness_gate");
+assertIncludes(gapMatrix, "Product Completion Scoreboard", "gap_matrix_scoreboard_pointer");
+assertIncludes(goalState, "canonical current state: `docs/recovery/v22-goal-current.json`", "goal_state_current_json_pointer");
+assertNotIncludes(goalState, "- highest-priority executable leaf step: `deferred_authorized`", "deferred_authorized_is_not_current_executable_leaf");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_product_goal_execution_order",
-  currentCursor,
-  releaseReadinessState: "deferred_authorized_future_stage",
+  currentCursor: current.currentCursor,
+  computedExecutableLeaf: executable.nextLeafStep,
+  releaseReadinessState: current.releaseReadiness.status,
   checked: {
-    dependencyFields,
-    leafDependencyFields,
+    canonicalCurrentState: files.current,
     stageOrder,
+    releasePrerequisites,
   },
 }, null, 2));

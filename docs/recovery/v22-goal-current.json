@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "canonical": true,
+  "machineReadableCurrentTruth": true,
+  "markdownRole": "summary_history_pointer_only",
+  "updatedAt": "2026-05-14",
+  "model": "gpt-5.4",
+  "branchBaseline": "origin/recovery/platform-v22-trunk",
+  "git": {
+    "originTrunkHead": "e7e1c7c50eb4cde1b300ea3b5922667ba0b23bad",
+    "branchBaseHead": "e7e1c7c50eb4cde1b300ea3b5922667ba0b23bad",
+    "headCheck": "branch_base_head_must_equal_origin_trunk_head"
+  },
+  "currentCursor": "leaf-cloud-lane-readonly-status-audit",
+  "highestPriorityExecutableLeafStep": "leaf-cloud-lane-readonly-status-audit",
+  "currentProblem": "Cloud lane readonly status audit; release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.",
+  "stageOrder": [
+    "S1 legacy cleanup",
+    "S2 architecture refactor",
+    "S3 OPL connection productionization",
+    "S4 Cloud lane productionization",
+    "S5 frontend/backend product completion",
+    "S6 release readiness"
+  ],
+  "ordering": {
+    "selectionRule": "choose the lowest-priority-number gap whose cursorEligible is true, whose dependencies are satisfied, and whose nextLeafStep is executable",
+    "futureStageBlockerPolicy": "deferred_authorized_future_stage does not block earlier executable cleanup/refactor/dev leaves",
+    "cleanupBlockingStatuses": [
+      "open",
+      "in_progress",
+      "needs_eval",
+      "deferred_authorized_current_path"
+    ]
+  },
+  "gaps": [
+    {
+      "id": "legacy-cleanup-user-owned",
+      "stage": "S1 legacy cleanup",
+      "priority": 10,
+      "cursorEligible": false,
+      "status": "cleaned",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": []
+    },
+    {
+      "id": "legacy-cleanup-resource-order",
+      "stage": "S1 legacy cleanup",
+      "priority": 20,
+      "cursorEligible": false,
+      "status": "cleaned",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "legacy-cleanup-user-owned"
+      ]
+    },
+    {
+      "id": "legacy-cleanup-secret-hygiene",
+      "stage": "S1 legacy cleanup",
+      "priority": 30,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "legacy-cleanup-resource-order"
+      ]
+    },
+    {
+      "id": "legacy-cleanup-legacy-scripts",
+      "stage": "S1 legacy cleanup",
+      "priority": 40,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "legacy-cleanup-secret-hygiene"
+      ]
+    },
+    {
+      "id": "architecture-refactor-portal-layering",
+      "stage": "S2 architecture refactor",
+      "priority": 50,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "legacy-cleanup-resource-order",
+        "legacy-cleanup-secret-hygiene",
+        "legacy-cleanup-legacy-scripts"
+      ]
+    },
+    {
+      "id": "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
+      "stage": "S3 OPL connection productionization",
+      "priority": 60,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "deferred_authorized_without_step_local_auth_record",
+      "dependsOn": [
+        "architecture-refactor-portal-layering"
+      ]
+    },
+    {
+      "id": "cloud-lane-mock-readonly-dry-run-authorized",
+      "stage": "S4 Cloud lane productionization",
+      "priority": 70,
+      "cursorEligible": true,
+      "status": "in_progress",
+      "nextLeafStep": "leaf-cloud-lane-readonly-status-audit",
+      "dependsOn": [
+        "legacy-cleanup-user-owned",
+        "legacy-cleanup-resource-order",
+        "legacy-cleanup-secret-hygiene",
+        "legacy-cleanup-legacy-scripts",
+        "architecture-refactor-portal-layering",
+        "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+      ]
+    },
+    {
+      "id": "frontend-product-vue-vite-ts-pinia",
+      "stage": "S5 frontend/backend product completion",
+      "priority": 80,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "cloud-lane-mock-readonly-dry-run-authorized"
+      ]
+    },
+    {
+      "id": "backend-product-node22-esm-layering",
+      "stage": "S5 frontend/backend product completion",
+      "priority": 90,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "frontend-product-vue-vite-ts-pinia"
+      ]
+    },
+    {
+      "id": "billing-audit-preauth-ledger-release-t1",
+      "stage": "S5 frontend/backend product completion",
+      "priority": 100,
+      "cursorEligible": false,
+      "status": "gated",
+      "nextLeafStep": "monitor_only_after_B_absorb",
+      "dependsOn": [
+        "backend-product-node22-esm-layering",
+        "cloud-lane-mock-readonly-dry-run-authorized"
+      ]
+    },
+    {
+      "id": "release-readiness-authorized-deploy-only",
+      "stage": "S6 release readiness",
+      "priority": 999,
+      "cursorEligible": false,
+      "status": "deferred_authorized_future_stage",
+      "nextLeafStep": "leaf-release-readiness-auth-boundary",
+      "dependsOn": [
+        "legacy-cleanup-resource-order",
+        "legacy-cleanup-secret-hygiene",
+        "legacy-cleanup-legacy-scripts",
+        "architecture-refactor-portal-layering",
+        "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
+        "cloud-lane-mock-readonly-dry-run-authorized",
+        "frontend-product-vue-vite-ts-pinia",
+        "backend-product-node22-esm-layering",
+        "billing-audit-preauth-ledger-release-t1"
+      ]
+    },
+    {
+      "id": "dependency-modernization-node24-vite-vitest-readiness",
+      "stage": "S6 release readiness",
+      "priority": 1000,
+      "cursorEligible": false,
+      "status": "needs_eval",
+      "nextLeafStep": "write_eval_shell",
+      "dependsOn": [
+        "release-readiness-authorized-deploy-only"
+      ]
+    }
+  ],
+  "currentLeaf": {
+    "stepId": "leaf-cloud-lane-readonly-status-audit",
+    "gapId": "cloud-lane-mock-readonly-dry-run-authorized",
+    "stage": "S4 Cloud lane productionization",
+    "cursorEligible": true,
+    "dependsOn": [
+      "legacy-cleanup-user-owned",
+      "legacy-cleanup-resource-order",
+      "legacy-cleanup-secret-hygiene",
+      "legacy-cleanup-legacy-scripts",
+      "architecture-refactor-portal-layering",
+      "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+    ],
+    "problem": "Cloud lane productionization needs a readonly/local status audit before any dry-run or authorized create/release work.",
+    "executableWhen": "readonly/local audit only; no secret, true cloud, build/push/kubectl, deploy, live-test, deploy/adapters/.sentrux, services, upstream, or dependency files",
+    "failureState": "deferred_authorized_current_path if readonly audit needs secret/live cloud or forbidden paths",
+    "verificationCommands": [
+      "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+      "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
+      "node scripts/smoke-test-v22-product-goal-harness.mjs",
+      "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs"
+    ],
+    "allowedFiles": [
+      "docs/recovery/*",
+      "scripts/smoke-test-v22-*"
+    ],
+    "forbiddenFiles": [
+      "services/*",
+      "deploy/*",
+      "adapters/*",
+      ".sentrux/*",
+      ".env.demo.template",
+      "upstream one-person-lab",
+      "package/dependency files",
+      "secret-like paths",
+      "true cloud runners"
+    ],
+    "truthWritebackTarget": [
+      "docs/recovery/v22-goal-current.json",
+      "docs/recovery/v22-goal-state.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+    ]
+  },
+  "releaseReadiness": {
+    "status": "deferred_authorized_future_stage",
+    "cursorEligible": false,
+    "authorizedIntentRecorded": true,
+    "blockedBeforeRiskyExecution": true,
+    "missingEvidence": [
+      "concrete Package D release plan",
+      "concrete region",
+      "accepted preflight/build-push/dry-run evidence",
+      "rollback evidence",
+      "baseline/cleanup evidence"
+    ],
+    "forbiddenUntilExecutable": [
+      "secret read",
+      "true cloud call",
+      "build/push/kubectl",
+      "deploy",
+      "live-test"
+    ]
+  },
+  "verificationCommands": [
+    "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "node scripts/smoke-test-v22-product-goal-harness.mjs",
+    "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
+    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+    "git diff --check -- docs/recovery scripts"
+  ]
+}

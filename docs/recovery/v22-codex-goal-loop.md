@@ -1,6 +1,10 @@
 # v22 Codex Goal Loop
 
-This document defines the repeatable loop that Codex must use after reading `docs/recovery/v22-goal-state.md`.
+This document keeps the repeatable runner rules only. Current state, dependency graph, cursor, gap ordering, and scoreboard truth live in JSON:
+
+- current state: `docs/recovery/v22-goal-current.json`
+- scoreboard: `docs/recovery/v22-product-completion-scoreboard.json`
+- schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
 
 ## 8-step goal loop
 
@@ -16,7 +20,7 @@ This document defines the repeatable loop that Codex must use after reading `doc
 ## Loop Rules
 
 - Codex goal 不是自然语言愿望，而是 repo 内的 goal-state state machine。
-- Codex 每轮必须读取 docs/recovery/v22-goal-state.md，选择当前 highest-priority executable leaf step。
+- Codex 每轮必须读取 `docs/recovery/v22-goal-current.json`，并用 `node scripts/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。
 - 每个 gap 必须有 eval；没有 eval 的 gap 不得实现，状态只能是 needs_eval，下一步只能是 write_eval_shell。
 - 每个 leaf step 必须有 eval_command 或 characterization gate。
 - B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。
@@ -25,40 +29,6 @@ This document defines the repeatable loop that Codex must use after reading `doc
 - cleanup 必须先 tombstone/archive/gate，再删除 active dependency。
 - development 必须先 contract/eval，再最小实现。
 - 禁止用 fallback/shim/adapter 兼容层掩盖旧主路径。
-
-## Dependency Graph / Execution Order Policy
-
-Stage order is strict:
-
-- S1 legacy cleanup
-- S2 architecture refactor
-- S3 OPL connection productionization
-- S4 Cloud lane productionization
-- S5 frontend/backend product completion
-- S6 release readiness
-
-Codex must read the dependency graph before selecting a leaf step. A leaf is executable only when its `depends_on` entries are satisfied, its `blocked_by` entries are empty or B-accepted as future-stage blockers, and its `executable_when` condition is true.
-
-Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Cloud lane leaves may become `cursor_eligible: true` only when legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true: user_owned is cleaned or intentionally_retained, resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane, secret hygiene is cleaned/gated by diff-scoped scan, legacy scripts archive is cleaned/gated by archive eval, and open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
-
-Release readiness dependency gate: release readiness may become `cursor_eligible: true` only after:
-
-- resource-order store/Postgres/schema cleaned 或 intentionally_retained
-- secret hygiene cleaned
-- legacy scripts archive cleaned
-- Portal architecture refactor characterized/cleaned
-- OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker
-- Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker
-- frontend/backend product completion completed
-
-If these dependencies are not satisfied, release readiness 未满足依赖时不能成为 current cursor. It may only be `pending` or `deferred_authorized_future_stage`; Codex 不得请求 deploy/cloud 授权 for release readiness and must select the highest-priority executable cleanup/refactor/product leaf.
-
-`deferred_authorized` is split into two statuses:
-
-- `deferred_authorized_current_path`: the current execution path needs authorization and cannot continue until B accepts the blocked truth or a step-local auth record exists.
-- `deferred_authorized_future_stage`: a future-stage authorization gap exists, but future-stage blocker 不阻塞当前 cleanup/refactor/dev leaf.
-
-Cursor repair rule: if the current cursor points to a leaf whose dependencies are unmet, Codex must record `cursor_ordering_repair`, 将 current cursor 改回 highest-priority executable leaf, and 不得把 future-stage deferred blocker 当作当前 blocker. Until release readiness prerequisites are met, release readiness cannot be the current cursor or executable leaf.
 
 ## Autonomous run policy
 
@@ -93,8 +63,6 @@ Codex must not combine unrelated leaf steps into one large commit. 禁止把多�
 
 Codex must not continue to the next phase without updating goal-state. 禁止在未更新 goal-state 的情况下继续跑下一阶段。
 
-For any secret/live/cloud/kubectl/build/push/deploy action, even if broad authorization exists, the current leaf step must record auth record, scope, budget, baseline, rollback, cleanup, and evidence path before action. secret/live/cloud/kubectl/build/push/deploy 类动作必须写入当前 step 的 auth record、scope、budget、baseline、rollback、cleanup 和 evidence path。
-
 Actor split is mandatory: A 只能提交 leaf step；B 或被明确授权的 auto-B lane 才能 ff-only absorb/push trunk。A 不得伪装 B 吸收。
 
 ## Authorization model
@@ -117,6 +85,8 @@ Every risky leaf step must have a step-local auth record before execution. The a
 - cleanup_plan:
 - evidence_path:
 - stop_conditions:
+
+For any secret/live/cloud/kubectl/build/push/deploy action, even if broad authorization exists, the current leaf step must record auth record, scope, budget, baseline, rollback, cleanup, and evidence path before action. secret/live/cloud/kubectl/build/push/deploy 类动作必须写入当前 step 的 auth record、scope、budget、baseline、rollback、cleanup 和 evidence path。
 
 auth record 默认写入 .runtime，不进入 git。
 
@@ -152,7 +122,7 @@ release/delete 类 cloud step 必须证明只释放本 step 或本用户绑定�
 
 若 cleanup 不能完成，goal-state 不得前进，必须进入 blocked 或 reconciling。
 
-费用策略：cloud live step 必须以最低消费为目标，设置 budget_limit、stop_conditions、max_runtime、cleanup deadline；minimum spend is required and must be recorded before live action.
+费用策略：cloud live step 必须以最低消费为目标，设置 budget_limit、stop_conditions、max_runtime、cleanup deadline；minimum spend is required and must be recorded before live action。
 
 不得自动扩容或长时间保留测试资源。
 
@@ -184,6 +154,8 @@ failure_category 必须允许：
 - environment_missing
 - authorization_required
 - upstream_or_cloud_fact_unknown
+- problem_too_large
+- architecture_blocker
 - baseline_not_restored
 - cleanup_incomplete
 - budget_or_stop_condition_hit
@@ -274,36 +246,7 @@ Every leaf step must contain:
 - forbidden_files:
 - truth_writeback_target:
 - B_absorb_criteria:
-
-## Failure Analysis Rule
-
-failure_analysis_rule must classify every failure as one of:
-
-- contract_wrong
-- eval_wrong
-- implementation_wrong
-- environment_missing
-- authorization_required
-- upstream_or_cloud_fact_unknown
-- problem_too_large
-- architecture_blocker
-- baseline_not_restored
-- cleanup_incomplete
-- budget_or_stop_condition_hit
-
-Handling:
-
-- contract_wrong: stop implementation, update or review contract before further work.
-- eval_wrong: fix the eval shell or characterization gate before implementation.
-- implementation_wrong: fix implementation inside the leaf step scope.
-- environment_missing: record missing local dependency without adding fallback/shim.
-- authorization_required: stop and ask for explicit authorization.
-- upstream_or_cloud_fact_unknown: move to Discovery/Canary lane, write sanitized `.runtime` evidence only, then write back contract/status before productionization.
-- problem_too_large: split into smaller leaf steps and update gap matrix/execution line.
-- architecture_blocker: open a refactor leaf step; do not perform broad refactor inside the current feature step.
-- baseline_not_restored: stop at blocked or reconciling until baseline after cleanup is proven.
-- cleanup_incomplete: stop cursor advancement and write cleanup evidence plus blocker.
-- budget_or_stop_condition_hit: stop live work, preserve evidence, and write the budget or stop-condition truth.
+- attempt_budget:
 
 ## A/B/C Window Responsibilities
 
@@ -311,8 +254,25 @@ Handling:
 - B：审计 diff、复跑验证、执行 changed-files / added-lines diff-scoped secret scan，无 blocker 时 ff-only absorb 并 push。
 - C：只做只读审计或明确不冲突的小片段；合并前必须 rebase 最新 trunk 并交 B。
 
-## Validation Commands
+## Boundary Summary
 
+- 不改 services/*
+- 不改 deploy/adapters/.sentrux/.env.demo.template
+- 不跑 live-test
+- 不读 secret
+- 不 build/push/kubectl
+- 不改 upstream one-person-lab
+- 不升级依赖
+- deploy/*
+- adapters/*
+- .sentrux/*
+- .env.demo.template
+- Cloud lane 授权边界
+- clean upstream one-person-lab
+
+## Required Local Validation
+
+- `node scripts/smoke-test-v22-goal-state-consistency.mjs`
 - `node scripts/smoke-test-v22-product-goal-harness.mjs`
 - `node scripts/smoke-test-v22-product-goal-execution-order.mjs`
 - `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`

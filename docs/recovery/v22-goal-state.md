@@ -1,220 +1,94 @@
 # MedOPL v22 Goal State
 
-This file is the product-goal cursor. Codex goal 不是自然语言愿望，而是 repo 内的 goal-state state machine。Codex 每轮必须读取 docs/recovery/v22-goal-state.md，选择当前 highest-priority executable leaf step。
+## Canonical Current State
 
-## Current Trunk
+JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承载唯一 current truth。
 
-- 当前 trunk HEAD: `45acffcdc85cb141d77e6b7deeecdacddd95a5fb`
-- branch baseline: `origin/recovery/platform-v22-trunk`
-- current branch: `cleanup/v22-product-goal-dependency-ordering`
-- model: gpt-5.4
+- canonical current state: `docs/recovery/v22-goal-current.json`
+- product completion scoreboard: `docs/recovery/v22-product-completion-scoreboard.json`
+- leaf manifest schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
+- current cursor summary: `leaf-cloud-lane-readonly-status-audit`
+- highest-priority executable leaf summary: `leaf-cloud-lane-readonly-status-audit`
+- release readiness summary: `deferred_authorized_future_stage`
 
-## Current Goal Cursor
+下面的中文摘要只帮助人读状态；任何 runner、gate、B review 选择 current leaf 时必须读取 `docs/recovery/v22-goal-current.json`，再用 consistency gate 对齐 Markdown/gap/scoreboard。
 
-- 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`
-- highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`
-- 当前下一问题：Cloud lane readonly status audit; repair product-goal ordering so release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.
-- release readiness 当前状态: `deferred_authorized_future_stage`
+## Human Summary
+
+- 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
+- branch baseline: `origin/recovery/platform-v22-trunk`.
+- current branch: `cleanup/v22-goal-harness-consolidation`.
+- model: gpt-5.4.
+- 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`.
+- highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`.
+- 当前下一问题：Cloud lane readonly status audit; release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.
+- release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
-## Dependency Ordering State
+## Current Leaf Summary
 
-Stage order is strict:
-
-- S1 legacy cleanup
-- S2 architecture refactor
-- S3 OPL connection productionization
-- S4 Cloud lane productionization
-- S5 frontend/backend product completion
-- S6 release readiness
-
-Current cursor_ordering_repair:
-
-- previous cursor: `leaf-release-readiness-auth-boundary`
-- repair_reason: release readiness dependencies are not satisfied, so release readiness 未满足依赖时不能成为 current cursor.
-- repaired current cursor: `leaf-cloud-lane-readonly-status-audit`
-- repaired selection rule: choose the highest-priority executable cleanup/refactor/product leaf; current resource-order store/Postgres/schema fourth-slice cleanup is already cleaned, secret hygiene and legacy scripts are gated, Portal architecture is characterized, and OPL local productionization is gated/completed, so the next actual executable leaf is the Cloud lane readonly status audit.
-- future-stage blocker 不阻塞当前 cleanup/refactor/dev leaf.
-- Codex 不得请求 deploy/cloud 授权 for release readiness while this repair is active.
-- Codex 不得把 future-stage deferred blocker 当作当前 blocker.
-
-Cleanup stage completion gate:
-
-- Cloud lane 不得跳过未完成 cleanup.
-- legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true.
-- resource-order store/Postgres/schema status must be cleaned or intentionally_retained before Cloud lane.
-- open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
-- current cleanup prerequisite statuses: user_owned=`cleaned`, resource-order store/Postgres/schema=`cleaned`, secret hygiene=`gated`, legacy scripts archive=`gated`.
-
-Release readiness dependency gate:
-
-- resource-order store/Postgres/schema cleaned 或 intentionally_retained
-- secret hygiene cleaned
-- legacy scripts archive cleaned
-- Portal architecture refactor characterized/cleaned
-- OPL connection productionization completed 或 deferred_authorized with B-accepted future-stage blocker
-- Cloud lane productionization completed 或 deferred_authorized with B-accepted future-stage blocker
-- frontend/backend product completion completed
-
-Release readiness authorized-blocker fact:
-
-- 用户授权意图已记录.
-- 缺 concrete Package D release plan, region, accepted preflight/build-push/dry-run evidence, rollback evidence, and baseline/cleanup evidence.
-- release readiness 保持 deferred_authorized_future_stage.
-- The future-stage blocker does not stop the current cleanup/refactor/product execution line.
-
-Deferred authorization split:
-
-- deferred_authorized_current_path: current leaf cannot continue until a step-local auth record, B blocker acceptance, or explicit authorization boundary exists.
-- deferred_authorized_future_stage: future-stage authorization or evidence gap is recorded but does not block current executable cleanup/refactor/dev leaf.
-
-## Current Executable Leaf Step
-
-- step_id: leaf-cloud-lane-readonly-status-audit
-- problem: Cloud lane productionization needs a readonly/local status audit before any dry-run or authorized create/release work, and release readiness must stay future-stage until Cloud/frontend/backend prerequisites are satisfied.
-- depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, leaf-opl-connection-productionization-local-implementation]
-- executable_when: the work is readonly/local, does not read secret, does not call true cloud, does not build/push/kubectl/deploy/live-test, and only updates Cloud lane status/contracts/eval truth.
-- cursor_eligible: true
-- stage: S4 Cloud lane productionization
-- failure_state: deferred_authorized_current_path if readonly audit needs secret/live cloud or forbidden paths; blocked if the ordering gate or Cloud lane contract gate fails after budgeted attempts.
-- input_state: OPL local productionization is absorbed; Cloud lane remains mock -> readonly -> dry-run -> authorized create/release with live operations separately authorized.
-- expected_output: characterize Cloud lane readiness and next executable local/dry-run leaf without promoting release readiness or requesting deploy/cloud authorization.
-- light_contract_card:
-  - problem: Cloud lane must progress before release readiness, but only through readonly/local evidence unless a step-local risky-operation auth record exists.
-  - subscribed_contracts: `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-codex-goal-loop.md`, `docs/recovery/v22-goal-state.md`, Cloud lane contracts/status docs.
-  - in_scope: Cloud lane readonly status audit, dependency ordering truth, local eval/gate updates, sanitized recovery writeback.
-  - out_of_scope: true cloud, secret read, build/push/kubectl, deploy, live-test, Package D release readiness, services implementation.
-  - data_or_field_truth: Cloud lane advances mock -> readonly -> dry-run -> authorized create/release; ordinary users still see managed workbench/product language, not cloud console control-plane language.
-  - auth_boundary: no secret/live/cloud/build/push/kubectl/deploy/live-test; any risky step needs step-local auth record, scope, budget, baseline, rollback, cleanup, and evidence path.
-  - pollution_risks: future-stage release blocker treated as current blocker, cloud raw facts exposed as user truth, live cloud side effects without owner guard.
-  - verification_commands: `node scripts/smoke-test-v22-product-goal-execution-order.mjs`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`
-  - B_absorb_criteria: B confirms current cursor is a real executable Cloud/product leaf, release readiness remains `deferred_authorized_future_stage`, and no risky operation or forbidden path was touched.
-- eval_command: `node scripts/smoke-test-v22-product-goal-execution-order.mjs`; next Cloud lane leaf should also run `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
-- trace_or_evidence_expectation: local stdout and sanitized docs/recovery truth only; no `.runtime` evidence unless a future canary is separately authorized.
-- allowed_files: Cloud lane docs/contracts/status and exact smoke gates in a future dedicated branch; this ordering-repair branch may only touch `docs/recovery/*` and `scripts/smoke-test-v22-*`.
-- forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, true cloud runners.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, Cloud lane status docs.
-- B_absorb_criteria: B reruns execution-order gate, product-goal harness, default-entry gate, resource-order retirement gate, MVP suite, workflow review, diff-scoped secret scan, and diff whitespace check before ff-only absorb/push.
-
-## Autonomous Run State
-
-- Autonomous run policy: active.
-- Codex may run multiple leaf steps only when each leaf step independently completes light contract card, eval/gate, implementation, verification, failure analysis, truth writeback, commit, and B absorb/push 或 B blocker report.
-- Each finished leaf step must write commit SHA, changed files, verification output summary, truth writeback files, and next cursor.
-- If any gate fails, Codex must stop before the next leaf step and execute failure_analysis_rule.
-- If B absorb criteria are not satisfied, Codex must not advance the goal-state cursor.
-- After each push, fetch/rebase latest `origin/recovery/platform-v22-trunk` before continuing.
-- Do not combine unrelated leaf steps into one large commit.
-- Do not continue to the next phase without updating this goal-state file.
-- For secret/live/cloud/kubectl/build/push/deploy actions, the leaf step must record auth record, scope, budget, baseline, rollback, cleanup, and evidence path before execution.
-- Actor split: A 只能提交 leaf step；B 或被明确授权的 auto-B lane 才能 ff-only absorb/push trunk。A 不得伪装 B 吸收。
-
-## Authorization State
-
-- Authorization model: active.
-- Global authorization 只授权 Codex 按 product-goal harness 连续推进 leaf steps。
-- Global authorization 不等于直接授权所有未来 secret/live/cloud/kubectl/build/push/deploy 动作。
-- risky leaf step must have a step-local auth record with step_id, authorized_operation_type, secret_scope, cloud_scope, region, resource_scope, budget_limit, baseline_requirement, rollback_plan, cleanup_plan, evidence_path, and stop_conditions.
-- auth record 默认写入 .runtime，不进入 git。
-- docs/recovery 只写脱敏摘要和 truth writeback，不写 raw secret、kubeconfig、token、SecretId/SecretKey、raw cloud response。
-- 没有 auth record 的 risky leaf step 必须停在 deferred_authorized。
-- default/local cleanup/refactor/dev steps 不得读取 secret、不调真实云、不 build/push/kubectl。
-
-## Cloud Live State
-
-- Cloud live baseline / cleanup / minimum spend policy: active.
-- 云上 live step 前必须记录 baseline。
-- TKE/node pool desired/current baseline 应为 2，且测试后必须回到 2。
-- baseline must separate 平台共享 baseline，不得删除或 scale to 0, from 本 step 创建的测试资源，必须 cleanup/release.
-- 开通/创建类 cloud step 必须有 cleanup-first 或 cleanup-after 计划。
-- release/delete 类 cloud step 必须证明只释放本 step 或本用户绑定的资源，不能删除共享节点池、别人的节点、别人的存储或平台服务资源。
-- cleanup evidence must record created resources, released resources, remaining resources, baseline after cleanup, active operations count, and billing/reconciliation status.
-- 若 cleanup 不能完成，goal-state 不得前进，必须进入 blocked 或 reconciling。
-- minimum spend policy requires budget_limit, stop_conditions, max_runtime, and cleanup deadline; 不得自动扩容或长时间保留测试资源。
-- 任何无法证明 ownerRef/resourceBindingId/workspaceId/operationId 的资源，不得删除，只能记录 blocker。
-
-## Failure Truth Writeback State
-
-- Failure truth writeback: active.
-- 成功和失败都必须回写真相。
-- failure writeback fields: failed_step_id, failed_gate, attempt_count, failure_category, evidence_path, suspected_root_cause, whether_contract_wrong, whether_eval_wrong, whether_problem_should_split, whether_authorization_required, next_recommended_action.
-- failure_category allows contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, baseline_not_restored, cleanup_incomplete, and budget_or_stop_condition_hit.
-- 失败后不得继续下一个 leaf step，除非 B 明确吸收 blocked truth writeback。
-- B blocker report 也必须写入 goal-state 或 gap matrix 的 truth writeback section。
-
-## Loop Budget State
-
-- Loop budget / escalation policy: active.
-- max_attempts_per_leaf_step = 10
-- max_attempts_per_root_cause = 10
-- max_consecutive_same_gate_failure = 2
-- max_changed_files_without_B_review = 12
-- gate_failure_budget: same gate may fail at most 2 consecutive times before failure analysis.
-- 同一个 gate 连续失败 2 次后，必须进入 failure analysis；分析后可以继续 attempt，但必须记录 root cause 和策略变化。
-- 每个 leaf step 最多允许 10 次 implementation attempt。
-- 同一个 root cause 最多允许 10 次 failed attempt。
-- 第 10 次 leaf step attempt 失败后，才必须 blocked truth writeback。
-- 同一个 root cause 达到 10 次失败后，也必须 blocked truth writeback。
-- blocked, reconciling, and deferred_authorized are valid cursor-hold states.
-- attempt failure 只统计以下 blocker: test/gate exit non-zero, B absorb blocker, contract/eval mismatch, scope drift, forbidden action needed without auth record, baseline_not_restored, cleanup_incomplete, budget_or_stop_condition_hit.
-- 以下不算 attempt failure，除非它们导致验证命令失败或 tracked diff 污染: warning, formatting suggestion, one-time local dependency install, ignored node_modules / .runtime output, transient command retry with no tracked change.
-- failure analysis 必须记录: failed gate, attempt number, root cause id, whether this is same gate failure, whether this is same root cause failure, changed strategy, whether split is needed.
-- If the same leaf step fails for the tenth time, mark it blocked and stop patching until B absorbs blocked truth writeback.
-- blocked writeback must include failed gate, attempts summary, suspected root cause, whether problem should be split, whether contract/eval is wrong, whether external authorization/canary is required, and proposed next smaller leaf steps.
-- If failure is eval_wrong or contract_wrong, repair contract/eval first.
-- If failure is problem_too_large, split into smaller leaf steps and update gap matrix/execution line.
-- If failure is environment_missing or authorization_required, stop at deferred_authorized and do not force a mock/fallback pass.
-- If failure is architecture_blocker, open a refactor leaf step and do not do broad refactor inside the current feature step.
-- If failure is baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit, stop cursor advancement and write failure truth before any next leaf step.
-- blocked leaf step 不允许推进 goal-state cursor，除非 B 明确吸收 blocked truth writeback。
+- step_id: `leaf-cloud-lane-readonly-status-audit`.
+- gap_id: `cloud-lane-mock-readonly-dry-run-authorized`.
+- stage: `S4 Cloud lane productionization`.
+- cursor_eligible: true.
+- eval_command: `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-product-goal-execution-order.mjs`.
+- auth_boundary: local readonly/docs/scripts only; no secret, no live-test, no true cloud, no build/push/kubectl, no deploy, no services implementation.
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`.
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap、Backend contract eval template
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap、Backend contract eval template、Billing audit characterization、release readiness auth boundary、release readiness authorized blocker truth writeback.
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
-- leaf-resource-order-store-postgres-schema-eval-shell completed on branch `cleanup/v22-resource-order-store-postgres-schema-eval-shell`: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` now statically characterizes the remaining store/Postgres/schema/runtime connection legacy facts without touching `services/*`, without connecting to Postgres, and without running live/cloud/build/kubectl. The gate records current legacy tables/collections (`resource_orders`, `resource_order_events`, `ledger_entries.order_id`, `resourceOrders`, `resourceOrderEvents`) and confirms replacement truth (`resource_binding_id`, `workspace_resource_bindings`) is present before fourth-slice implementation.
-- leaf-resource-order-store-postgres-schema-implementation completed on branch `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer instantiates or wires resource-order store/Postgres persistence. `portal-resource-order-store.mjs` is fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres snapshot persistence no longer read/write `resource_orders` or `resource_order_events` as active truth. `resource_orders`, `resource_order_events`, snapshot helper writers, and JSON migration collections remain migration-only/tombstone facts; no real DB migration, live DB connection, cloud, build/push, kubectl, deploy, secret read, or upstream modification was performed.
-- Leaf 2 verification summary: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `npm --prefix services/portal run check`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `node scripts/smoke-test-v22-mvp-contract-suite.mjs`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, `git diff --check -- services/portal/src/state services/portal/src/app scripts docs/recovery`, and scoped `node --check` passed locally.
-- Leaf 2 failure analysis: initial failures were gate subscription mismatches, not product behavior failures. `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` first failed with `resource_order_retirement_branch_must_not_modify` because the fourth-slice implementation branch and characterization gate were not registered in its exact branch allowlist. `node scripts/smoke-test-v22-product-goal-harness.mjs` and `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs` then failed on branch-scoped allowed files for the same reason. failure_category: `eval_wrong`; attempt_count: 1 per affected gate; root_cause_id: `leaf2_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlists for this leaf, including `portal-store-storage-bootstrap.mjs` because active storage bootstrap instantiated the retired store; whether_contract_wrong: false; whether_problem_should_split: false; whether_authorization_required: false.
-- leaf-secret-hygiene-diff-scan-eval-shell completed on branch `cleanup/v22-secret-hygiene-diff-scan-eval-shell`: `scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs` provides a reusable local changed-files / added-lines hygiene eval using a temporary git repo only. It proves added-line sensitive-value detection, ignores unchanged historical content, skips secret-like paths instead of reading their content, and keeps workflow path-gate fail-closed behavior. No real `.env`, secret, kubeconfig, token, key, cloud, live-test, build/push, kubectl, deploy, or upstream path was read or touched.
-- leaf-legacy-scripts-archive-eval-shell completed on branch `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` is now the goal-state eval for default validation staying v22-only. The gate proves README and `docs/vibe-coding.md` default commands avoid v19/v20/v21/live-test/check scripts, MVP suite references only `scripts/smoke-test-v22-*`, and `docs/recovery/repo-zoning.md` classifies v19/v20/v21/live-test/check scripts as archive or review/rewrite. This leaf did not execute live-test, delete or edit legacy scripts, read secrets, touch services, deploy, adapters, `.sentrux`, package files, or upstream one-person-lab.
-- Leaf 4 failure analysis: supplemental resource-order retirement gate initially failed with `resource_order_retirement_branch_must_not_modify:cleanup/v22-legacy-scripts-archive-eval-shell:docs/recovery/v22-current-vs-ideal-gap-matrix.md`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf4_resource_order_gate_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlist for the legacy-scripts archive eval shell because the leaf only updates recovery truth and harness gate metadata, not resource-order behavior; whether_contract_wrong: false; whether_problem_should_split: false; whether_authorization_required: false.
-- leaf-portal-layering-characterization-gate completed on branch `refactor/v22-portal-layering-characterization-gate`: Portal structure smoke now validates `currentPortalCodeShape` in `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`. The gate pins stable backend route/app/domain/state anchors, frontend view/composable/API module anchors, smoke-layer files, and future refactor risks without changing Portal business code or running live-test/build/push/kubectl/cloud. Recorded future refactor truths include large `portal-runtime.mjs` composition root, route-to-state direct import shape, domain payload/provider bridge mixing, app orchestration plus view-model payload mixing, non-default frontend API barrel, large harness registry, partial admin direct API usage, and controlled retired `resource-order` / `user-owned` tombstones.
-- Leaf 5 failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs` initially failed with `goal_state_missing:当前下一问题：Portal architecture layering characterization gate`. failure_category: `implementation_wrong`; attempt_count: 1; root_cause_id: `leaf5_goal_state_cursor_pre_advanced_before_B_absorb`; changed_strategy: keep the current cursor on `leaf-portal-layering-characterization-gate` until B ff-only absorb/push, while recording the characterization truth for B review; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and B checks before commit.
-- Leaf 5 B absorb/push result: branch `refactor/v22-portal-layering-characterization-gate`, commit `299fee19459192b09fac836c3aba78faa5b9a3b3`, changed files `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with Portal structure gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, Portal check, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `299fee19459192b09fac836c3aba78faa5b9a3b3`; next cursor is `leaf-opl-connection-productionization-contract-refresh`.
-- Leaf 6 failure analysis: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` initially failed on missing productionization boundary status, which was the intended RED for this leaf. After adding contract/status refresh text, the same eval failed twice on stale eval expectations: first it expected `next_leaf_step: leaf-opl-connection-productionization-eval-shell` before B absorb, then it expected the old two-file `truth_writeback_target`. failure_category: `eval_wrong`; attempt_count: 2 for stale eval expectation after RED; root_cause_id: `leaf6_contract_refresh_eval_stale_cursor_and_truth_target`; changed_strategy: keep gap matrix next leaf on current leaf until B absorb and update eval to require the new three-file truth writeback target including `docs/recovery/status-matrix.md`; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: run OPL productionization refresh smoke, no-fake-success gate, runtime-agent full-loop, product-goal harness, MVP suite, workflow review, and B checks.
-- leaf-opl-connection-productionization-contract-refresh completed on branch `contract/v22-opl-productionization-contract-refresh`: `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` now gates OPL productionization handoff status across Portal-OPL connection, Real OPL file/run/artifact, validation path, status matrix, gap matrix, goal-state, MVP acceptance, and MVP suite. The refresh records `contract_refresh_only`, separates local Runtime Agent HTTP API relay full-loop and WebUI bridge no-fake-success canary facts from production truth, and keeps real cloud runtime, COS billing reconciliation, Langfuse / `trace.medopl.cn`, upstream HTTP Product API, deploy owner fields, raw provider key, launchToken/runtimeToken, storage keys, local paths, signed URLs, and Package D ownership outside OPL production truth. Verification passed locally with OPL productionization refresh smoke, real OPL file/run/artifact no-fake-success gate, real OPL Runtime Agent HTTP API loop, provider message canary contract, Portal-OPL context/backflow contract, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, and diff whitespace check. No secret, live provider call, true cloud, build/push, kubectl, deploy, upstream modification, or live-test ran.
-- Leaf 6 B absorb/push result: OPL connection productionization contract refresh branch `contract/v22-opl-productionization-contract-refresh`, commit `bc22a76b4776f54c10bcc659f1c777e30791b72d`, changed files `docs/contracts/v22-portal-opl-connection-boundary.md`, `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`, `docs/recovery/mvp-contract-acceptance.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-mvp-contract-suite.mjs`, `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with OPL productionization refresh smoke, real OPL file/run/artifact no-fake-success gate, real OPL Runtime Agent HTTP API loop, provider message canary contract, Portal-OPL context/backflow contract, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `bc22a76b4776f54c10bcc659f1c777e30791b72d`; next cursor is `leaf-opl-connection-productionization-eval-shell`.
-- Leaf 6 cursor-advance failure analysis: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` first failed after cursor advance with `goal_state_leaf6_missing:OPL connection productionization contract refresh`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf6_cursor_advance_goal_state_phrase_mismatch`; changed_strategy: keep current cursor on `leaf-opl-connection-productionization-eval-shell` while retaining the absorbed Leaf 6 problem phrase in the B result record; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun OPL productionization refresh smoke and full cursor-advance B checks.
-- Leaf 7 failure analysis: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` first failed with `MODULE_NOT_FOUND`, which was the intended RED for the missing eval shell. After creating the eval shell, the same gate failed once with `upstream_opl_productionization_eval_missing:one-person-lab upstream remains clean` because the eval used a non-canonical English phrase while the upstream contract records the clean upstream fact in Chinese/mixed wording. It then failed twice on stale future-placeholder expectations after the gap matrix correctly promoted the new eval shell from future placeholder to active eval command: `gap_matrix_productionization_eval_missing:future ...` and `refresh_gate_productionization_eval_missing:future ...`. `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` also failed once with `gap_matrix_leaf6_missing:future ...` for the same stale placeholder expectation. `node scripts/smoke-test-v22-product-goal-harness.mjs` then failed once with `product_goal_harness_modified_unsubscribed_file:scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs` because the branch allowlist missed the refresh gate file updated for active eval-shell expectations. failure_category: `eval_wrong`; attempt_count: 6 total; root_cause_id: `leaf7_eval_shell_missing_then_stale_eval_phrases`; changed_strategy: create the eval shell, keep it repo-tracked/local only, align upstream clean-boundary assertions to exact contract wording, update both new eval and Leaf 6 refresh gate assertions to require the active eval command, and add the refresh gate file to exact branch allowlists; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun the new eval shell, OPL refresh gate, product-goal harness, default-entry gate, resource-order retirement gate, MVP suite, workflow review, diff-scoped sensitive hygiene, and whitespace checks.
-- Leaf 7 B self-fix: after local ff-only absorb, B verification first failed with `product_goal_harness_modified_unsubscribed_file:scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` because trunk-branch allowlists did not include the new eval shell file. failure_category: `eval_wrong`; attempt_count: 1 B absorb blocker; root_cause_id: `leaf7_trunk_allowlist_missing_eval_shell`; changed_strategy: add the new eval shell to trunk allowlists in product-goal harness, default-entry gate, and resource-order retirement gate, then rerun B checks before push; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun full B verification on trunk.
-- leaf-opl-connection-productionization-eval-shell completed on branch `test/v22-opl-productionization-eval-shell`: `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` is now a local productionization eval shell for the next OPL implementation branch. The gate reads only repo-tracked contracts, recovery truth, and existing OPL smoke scripts; it asserts that OPL production code may consume only `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`, while forbidding `ownerRef`, `operationId`, K8s/deploy owner labels, raw provider key, provider API key, launchToken, runtimeToken, bearer token, object/storage keys, local paths, signed URLs, and presigned URLs. It also checks canary-only evidence remains non-production truth, unverified file/run/artifact capabilities remain gated, upstream stays clean/fail-closed, and MVP acceptance still treats Leaf 6 as contract_refresh_only. No service code, upstream, deploy, adapters, `.sentrux`, `.env.demo.template`, package/dependency files, secret, live provider, true cloud, build/push, kubectl, deploy, or live-test was touched or run.
-- Leaf 7 B absorb/push result: OPL connection productionization eval shell branch `test/v22-opl-productionization-eval-shell`, commit `6a939de05efa8967fa2b0bf8da3c53768471fc89`, changed files `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with the new OPL productionization eval shell, OPL productionization refresh gate, real OPL no-fake-success gate, real OPL Runtime Agent HTTP API loop, real OPL provider message canary contract, Portal-OPL context/backflow contract, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP contract suite, workflow review, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `6a939de05efa8967fa2b0bf8da3c53768471fc89`; next cursor is `leaf-opl-connection-productionization-local-implementation`.
-- Leaf 8 attempt 1 RED/GREEN: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` first failed with `runtime_agent_http_relay_package_d_owner_guard_missing:ownerRef`, proving the Runtime Agent HTTP relay did not yet gate Package D owner fields. failure_category: `implementation_wrong`; attempt_count: 1; root_cause_id: `leaf8_runtime_agent_http_relay_missing_package_d_owner_guard`; changed_strategy: extend the existing forbidden-field guard in `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs` to reject `ownerRef`, `operationId`, `k8sLabels`, `kubernetesLabels`, and `deployOwnerLabels` in request/response payloads; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false. The eval then passed locally without reading secret, calling live provider/cloud, build/push/kubectl, deploy, live-test, or modifying upstream.
-- Leaf 8 gate failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, and `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs` first failed on exact branch allowlists for `feat/v22-opl-productionization-local-implementation` (`scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` and recovery truth files), then again after adding mandatory truth writeback files `docs/recovery/real-opl-file-run-artifact-validation-path.md` and `docs/recovery/status-matrix.md`. failure_category: `eval_wrong`; attempt_count: 2 for the branch subscription root cause across affected gates; root_cause_id: `leaf8_branch_subscription_missing`; changed_strategy: add exact branch-scoped allowlists for this local OPL productionization leaf, limited to the eval shell, runtime-agent HTTP relay, recovery truth writeback, and gate metadata files; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false.
-- Leaf 8 B self-fix: after local ff-only absorb, B verification first failed on trunk allowlists for `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs` in product-goal harness, default-entry gate, and resource-order retirement gate. failure_category: `eval_wrong`; attempt_count: 1 B absorb blocker; root_cause_id: `leaf8_trunk_allowlist_missing_runtime_agent_http_relay`; changed_strategy: add the exact runtime-agent HTTP relay path to trunk allowlists and rerun B verification before push; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false.
-- Leaf 8 B absorb/push result: OPL connection productionization local implementation branch `feat/v22-opl-productionization-local-implementation`, commit `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`, previous current problem phrase `当前下一问题：OPL connection productionization local implementation`, changed files `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, and `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`; verification passed with OPL eval shell, OPL refresh gate, real OPL no-fake-success/runtime-agent gates, provider message canary contract, Portal-OPL context/backflow contract, runtime bridge providerKeyRef flow, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, Portal check, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`; next cursor is `leaf-frontend-product-evalset-gap`.
-- Leaf 8 cursor-advance failure analysis: `node scripts/smoke-test-v22-product-goal-harness.mjs` first failed with `product_goal_harness_modified_unsubscribed_file:scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` because the cursor-advance branch allowlists in product-goal, default-entry, and resource-order gates expected the refresh gate but not the eval shell whose assertions now follow the deferred-authorized OPL state. The same product-goal gate then failed with `goal_state_missing:当前下一问题：OPL connection productionization local implementation` because the harness still requires the absorbed Leaf 8 problem phrase while the active cursor correctly moved to `leaf-frontend-product-evalset-gap`. failure_category: `eval_wrong`; attempt_count: 2; root_cause_id: `leaf8_cursor_advance_allowlist_and_phrase_expectation`; changed_strategy: add the exact eval shell path to cursor-advance branch allowlists and keep the previous current problem phrase inside the Leaf 8 B result record while preserving the new active frontend cursor; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness, OPL eval shell, OPL refresh gate, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before commit.
-- Leaf 8 cursor-advance rationale: OPL local productionization hardening is now gated, but true cloud runtime, COS billing reconciliation, Langfuse / `trace.medopl.cn`, deploy evidence, build/push/kubectl, live-test, and any secret-backed live provider operation still require a future step-local auth record. Without that record, those OPL/cloud/deploy leaves remain `deferred_authorized`; the next highest-priority executable local leaf is `leaf-frontend-product-evalset-gap`.
-- leaf-frontend-product-evalset-gap completed on branch `test/v22-frontend-product-evalset-gap`: previous current problem phrase `当前下一问题：Portal frontend product evalset gap`; Portal frontend product evalset is characterized as an executable local truth source. `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs` proved six view/composable boundaries; `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs` proved 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface` additionally ran Playwright visual coverage with 8 passed screenshot tests and browser checks. `.runtime/portal-surface-eval/report.json` remains uncommitted runtime evidence. No Portal UI implementation, package/dependency file, deploy, adapter, `.sentrux`, `.env.demo.template`, upstream one-person-lab, secret, true cloud, build/push/kubectl, deploy, or live-test was touched or run.
-- Leaf 9 failure analysis: initial frontend evalset characterization gates passed; no implementation failure occurred. Non-failure warning observed during Playwright web server startup: `NO_COLOR` ignored due to `FORCE_COLOR`; it did not affect exit status and produced no tracked diff. `node scripts/smoke-test-v22-product-goal-harness.mjs` then failed once with `goal_state_missing:当前下一问题：Portal frontend product evalset gap` because the harness still requires the absorbed Leaf 9 problem phrase while the active cursor correctly moved to `leaf-backend-contract-eval-template`. failure_category: `eval_wrong`; attempt_count: 1; root_cause_id: `leaf9_cursor_advance_goal_state_phrase_expectation`; changed_strategy: keep the previous current problem phrase inside the Leaf 9 completion record while preserving the new active backend cursor; whether_contract_wrong: false; whether_eval_wrong: true; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun product-goal harness and full B checks.
-- Leaf 9 B absorb/push result: Portal frontend product evalset gap branch `test/v22-frontend-product-evalset-gap`, commit `6acb92e03c07e580191d77e1a5389a94fbe137fc`, changed files `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, and `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with frontend surface composables/evalset gates, Portal runtime surface suite, Portal workbench management UI composition contract, Portal check, frontend typecheck, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `6acb92e03c07e580191d77e1a5389a94fbe137fc`; next cursor is `leaf-backend-contract-eval-template`.
-- leaf-backend-contract-eval-template completed on branch `test/v22-backend-contract-eval-template`: previous current problem phrase `当前下一问题：Backend contract eval template`; `docs/contracts/v22-portal-structure-failure-isolation-boundary.md` now contains a backend implementation eval template for future Portal backend leaves. The template fixes Node 22 ESM, route -> app payload -> domain -> state/persistence, required structure/Portal check/product-goal/workflow verification, route forbidden state imports, missing-field `implicit_default` / `silent_fallback` / `shim_adapter_compatibility` bans, domain legacy primary-path bans, and state/persistence responsibility bans. `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs` now verifies that template and still requires the current `route_to_state_direct_import_exists` risk to stay recorded as characterization truth, so this leaf does not claim backend refactor completion. No `services/*`, package/dependency file, deploy, adapter, `.sentrux`, `.env.demo.template`, upstream one-person-lab, secret, true cloud, build/push/kubectl, deploy, or live-test was touched or run.
-- Leaf 10 failure analysis: RED/GREEN TDD was intentional. `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs` first failed with `portal_structure_required_surface_missing:backend_implementation_eval_template` after the smoke was tightened before the contract template existed. failure_category: `implementation_wrong` for the current leaf's missing contract implementation; attempt_count: 1; root_cause_id: `leaf10_backend_eval_template_missing`; changed_strategy: add the structured backend eval template to the Portal structure contract, then extend the smoke to verify template fields while preserving current route-to-state risk as characterization-only; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun Portal structure gate, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before B absorb.
-- Leaf 10 B absorb/push result: Backend contract eval template branch `test/v22-backend-contract-eval-template`, commit `dfc4997ce76121eac0e11879e9230819ba8b200e`, previous current problem phrase `当前下一问题：Backend contract eval template`, changed files `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, and `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with Portal structure gate, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check; step-local git push auth record was written under ignored `.runtime/v22-goal/leaf-backend-contract-eval-template-auth-record.json`; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `dfc4997ce76121eac0e11879e9230819ba8b200e`; next cursor is `leaf-billing-audit-characterization`.
-- leaf-billing-audit-characterization in progress on branch `test/v22-billing-audit-characterization`: previous current problem phrase `当前下一问题：Billing audit characterization`; `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs` now characterizes billing/audit identity facts around release stop billing. The gate proves active ledger and public billing projections use `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; `resourceOrderId` is not active billing truth; preauth/freeze is pending with 5600 cents before release and zeroed with `billing_stopped` after release; release creates one `managedEnvironmentReleaseAudits` record whose fields match API/canonical projections; trace metadata, Langfuse, and cloud raw facts are not billing truth. No `services/*`, package/dependency file, deploy, adapter, `.sentrux`, `.env.demo.template`, upstream one-person-lab, secret, true cloud, build/push/kubectl, deploy, or live-test was touched or run.
-- Leaf 11 failure analysis: RED/GREEN TDD was intentional. `node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs` first failed with `billing_ledger_fixture_must_not_use_resourceOrderId_as_active_truth` after the characterization gate was tightened before the local ledger fixture used v22 billing identity fields. failure_category: `implementation_wrong` for the current leaf's smoke fixture fact; attempt_count: 1; root_cause_id: `leaf11_billing_ledger_fixture_active_resource_order_id`; changed_strategy: replace the fixture's active `resourceOrderId` with `resourceBindingId`, keep legacy resource-order out of public billing/audit projections, then add release/audit/freeze/preauth and trace/billing separation assertions; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: false; next_recommended_action: rerun release stop billing audit flow, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before B absorb.
-- Leaf 11 B absorb/push result: Billing audit characterization branch `test/v22-billing-audit-characterization`, commit `f497ef7a2b50724609ce7d837f4b2781b645c925`, previous current problem phrase `当前下一问题：Billing audit characterization`, changed files `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`, and `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with release stop billing audit flow, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, Portal check, and diff whitespace check; step-local git push auth record was written under ignored `.runtime/v22-goal/leaf-billing-audit-characterization-auth-record.json`; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `f497ef7a2b50724609ce7d837f4b2781b645c925`; next cursor is `leaf-release-readiness-auth-boundary`, currently `deferred_authorized`.
-- Leaf 11 cursor-advance rationale: billing/audit characterization is now absorbed. The next product-goal gap in the matrix is release readiness, but release readiness can require build/push/kubectl/live-test/deploy/cloud/secret operations. No step-local auth record for those risky operations exists in this leaf, so the cursor moves only to `leaf-release-readiness-auth-boundary` with `highest-priority executable leaf step: deferred_authorized`; no release/deploy operation was executed.
-- leaf-release-readiness-auth-boundary completed on branch `test/v22-release-readiness-auth-boundary`: previous current problem phrase `当前下一问题：Release readiness auth boundary deferred authorization`; `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` now gates the deferred authorization boundary for release readiness. The gate records `generic_chat_authorization_insufficient_for_risky_release`: 用户笼统允许不等于可执行 build/push/kubectl/live-test/deploy/cloud/secret. It requires a concrete step-local auth record before any risky release action, keeps the cursor at `deferred_authorized`, and records `no_release_deploy_operation_executed`. docs/recovery 只写脱敏摘要和 truth writeback; no raw secret, kubeconfig, token, SecretId/SecretKey, raw cloud response, release plan, registry credential, or kubectl output is written to git.
-- Leaf 12 failure analysis: RED/GREEN TDD was intentional. `node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs` first failed with `release_readiness_auth_boundary_truth_missing:generic_chat_authorization_insufficient_for_risky_release`, proving the repo did not yet pin why the user's generic "我允许" message is insufficient for build/push/kubectl/live-test/deploy/cloud/secret execution. failure_category: `implementation_wrong` for missing sanitized truth writeback; attempt_count: 1; root_cause_id: `leaf12_release_readiness_generic_auth_truth_missing`; changed_strategy: add a local auth-boundary gate and recovery truth that preserves `deferred_authorized` until a concrete step-local auth record exists; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: false; whether_authorization_required: true; next_recommended_action: rerun the release readiness auth-boundary gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before B absorb. No release/deploy operation was executed.
-- Leaf 12 B absorb/push result: Release readiness auth boundary branch `test/v22-release-readiness-auth-boundary`, commit `bb095519fff76da9210de5313ceafe37817690cf`, changed files `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`, and `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with release-readiness auth-boundary gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check; step-local git push auth record was written under ignored `.runtime/v22-goal/leaf-release-readiness-auth-boundary-b-push-auth-record.json`; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `bb095519fff76da9210de5313ceafe37817690cf`; next cursor remains `leaf-release-readiness-auth-boundary` with `highest-priority executable leaf step: deferred_authorized`.
-- leaf-release-readiness-authorized-blocker completed on branch `test/v22-release-readiness-authorized-blocker`: current session user authorization is now specific for `release_readiness_deploy_runtime_smoke`, `build_push_kubectl_deploy`, and `live_runtime_smoke`; step-local auth record `user_authorized_release_readiness_deploy_runtime_smoke_2026_05_14` was written under ignored `.runtime/v22-goal/leaf-release-readiness-authorized-blocker-auth-record.json`. The auth record is still not executable because local discovery found `missing_local_release_plan_file`, `missing_concrete_region`, `missing_local_package_d_evidence`, missing accepted preflight/build-push/dry-run evidence, missing previous image digest / rollback evidence, missing baseline desired/current=2 evidence, and missing cleanup evidence for this step. failure_category: `upstream_or_cloud_fact_unknown`; root_cause_id: `leaf13_authorized_but_missing_concrete_release_plan`; changed_strategy: record a fail-closed blocker truth and block before any secret, cloud, build/push, kubectl, deploy, or live runtime smoke execution; whether_contract_wrong: false; whether_eval_wrong: false; whether_problem_should_split: true; whether_authorization_required: true but insufficient without concrete release plan and evidence; next_recommended_action: provide or generate a concrete Package D release plan, concrete region, selected deploy secret/kubeconfig reference, accepted preflight evidence, image digest report, deploy dry-run evidence, rollback baseline, node pool baseline proof, and cleanup plan before retrying any risky execution. `authorized_but_missing_concrete_release_plan` and `missing_local_package_d_evidence` keep the cursor at `leaf-release-readiness-auth-boundary` / `deferred_authorized`; `blocked_before_secret_or_cloud_execution` is the required stop decision. No release/deploy operation was executed.
-- Leaf 13 B absorb/push result: Release readiness authorized blocker branch `test/v22-release-readiness-authorized-blocker`, commit `3d4e156dd03166baee4baa02341afbed63bb4189`, previous current problem phrase `当前下一问题：Release readiness auth boundary deferred authorization; authorized deploy/runtime smoke is blocked until concrete release plan and local Package D evidence exist.`, changed files `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-goal-state.md`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`, and `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`; verification passed with release-readiness auth-boundary gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, node --check, and diff whitespace check; step-local auth/blocker records were written under ignored `.runtime/v22-goal/leaf-release-readiness-authorized-blocker-auth-record.json` and `.runtime/v22-release-readiness/release-readiness-authorized-blocker-20260514T000000Z/blocker-summary.json`; auto-B ff-only absorbed and pushed `origin/recovery/platform-v22-trunk` to `3d4e156dd03166baee4baa02341afbed63bb4189`; next cursor remains `leaf-release-readiness-auth-boundary` with `highest-priority executable leaf step: deferred_authorized` because concrete Package D release plan/evidence is still missing.
+- leaf-resource-order-store-postgres-schema-eval-shell completed: characterization gate fixed store/Postgres/schema legacy facts without touching `services/*`, connecting to Postgres, running live/cloud/build/kubectl, or deleting schema.
+- leaf-resource-order-store-postgres-schema-implementation completed: active runtime no longer instantiates or wires resource-order store/Postgres persistence; legacy tables/collections remain migration-only/tombstone facts.
+- leaf-secret-hygiene-diff-scan-eval-shell completed: diff-scoped sensitive hygiene eval proves changed-files / added-lines scanning without reading real secret-like paths.
+- leaf-legacy-scripts-archive-eval-shell completed: legacy script archive boundary eval keeps v19/v20/v21/live-test scripts out of default validation.
+- leaf-portal-layering-characterization-gate completed: Portal structure/failure isolation characterization is recorded.
+- leaf-opl-connection-productionization-contract-refresh completed: OPL productionization handoff status is `contract_refresh_only`.
+- leaf-opl-connection-productionization-eval-shell completed: local eval shell blocks canary-only production claims, fake success, raw secret/token/storage leakage, upstream modification, cloud/deploy owner-field leakage, and unauthorized cloud/deploy operations.
+- leaf-opl-connection-productionization-local-implementation completed: Runtime Agent HTTP relay rejects Package D owner fields; no service/upstream/deploy/cloud/secret operation may be present beyond the scoped local hardening.
+- leaf-frontend-product-evalset-gap completed: Portal frontend evalset characterization covers API contract, component states, responsive/mobile/table usability, loading/empty/error, and typecheck gates.
+- leaf-backend-contract-eval-template completed: backend implementation eval template covers Node 22 ESM, route -> app payload -> domain -> state/persistence, missing-field fallback bans, and legacy primary-path guards.
+- leaf-billing-audit-characterization completed: release stop billing/audit characterization pins `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; `resourceOrderId` is not active billing truth.
+- leaf-release-readiness-auth-boundary completed: generic_chat_authorization_insufficient_for_risky_release is recorded; no_release_deploy_operation_executed.
+- leaf-release-readiness-authorized-blocker completed: user_authorized_release_readiness_deploy_runtime_smoke_2026_05_14 is recorded, but authorized_but_missing_concrete_release_plan, missing_local_release_plan_file, missing_concrete_region, missing_local_package_d_evidence, and blocked_before_secret_or_cloud_execution keep release readiness non-executable.
+
+## Historical Leaf Results
+
+- Leaf 6 B absorb/push result: OPL connection productionization contract refresh branch `contract/v22-opl-productionization-contract-refresh`, commit `bc22a76b4776f54c10bcc659f1c777e30791b72d`; next cursor is `leaf-opl-connection-productionization-eval-shell`.
+- OPL connection productionization contract refresh; OPL connection productionization eval shell; OPL connection productionization local implementation.
+- no raw provider key, no live canary unless separately authorized.
+- truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`.
+- leaf-opl-connection-productionization-local-implementation: implement the smallest local OPL productionization slice; production implementation must not treat canary evidence as production deploy evidence; verification includes `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`.
+- Leaf 8 B absorb/push result: commit `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`; next cursor is `leaf-frontend-product-evalset-gap`.
+- Leaf 9 B absorb/push result: Portal frontend product evalset gap commit `6acb92e03c07e580191d77e1a5389a94fbe137fc`; next cursor is `leaf-backend-contract-eval-template`.
+- leaf-backend-contract-eval-template was absorbed after frontend evalset characterization.
+- 当前下一问题：OPL connection productionization local implementation.
+- 当前下一问题：Portal frontend product evalset gap.
+- 当前下一问题：Backend contract eval template.
+- 当前下一问题：Billing audit characterization.
+
+### Historical Release Readiness Blocker Record
+
+This subsection is historical evidence only. It is intentionally not the current cursor; canonical current state is the JSON file above.
+
+- historical phrase for prior gate: 当前 goal cursor: `leaf-release-readiness-auth-boundary`.
+- historical phrase for prior gate: highest-priority executable leaf step: `deferred_authorized`.
+- Release readiness auth boundary deferred authorization.
+- generic_chat_authorization_insufficient_for_risky_release.
+- 用户笼统允许不等于可执行 build/push/kubectl/live-test/deploy/cloud/secret.
+- no_release_deploy_operation_executed.
+- deferred_authorized.
+- step-local auth record.
+- docs/recovery 只写脱敏摘要和 truth writeback.
+- release_readiness_deploy_runtime_smoke.
+- build_push_kubectl_deploy.
+- live_runtime_smoke.
+- node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs.
+- build/push/kubectl, live-test, deploy, true cloud, and secret remain forbidden until the JSON current state marks a risky release leaf executable with a concrete step-local auth record, release plan, owner guard, baseline, rollback, cleanup, and evidence path.
 
 ## Later Problems
 
@@ -227,317 +101,20 @@ Deferred authorization split:
 - release readiness
 - dependency modernization future gap: Node 24 Active LTS migration readiness and Vite/Vitest modernization readiness only; no dependency upgrade in this branch.
 
-## 当前 execution line 的前 5 个 leaf steps
+## Historical Execution Line Note
 
-### Leaf Step 1
+历史记录保留：当前 execution line 的前 5 个 leaf steps 已迁入 `docs/recovery/v22-goal-current.json` 和 git history；本 Markdown 不再维护机器可读 execution manifest。
 
-- step_id: leaf-resource-order-store-postgres-schema-eval-shell
-- problem: resource-order store/Postgres/schema fourth slice lacks a dedicated characterization gate.
-- input_state: resource-order route, billing/payload, and store/admin/frontend first three slices are absorbed; store/Postgres/schema remains a future cleanup surface.
-- expected_output: write an eval shell that characterizes store/Postgres/schema resource-order persistence before any implementation.
-- light_contract_card:
-  - problem: resource-order persistence must not remain v22 primary truth.
-  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-resource-plan-boundary.md`, `docs/contracts/v22-tenant-resource-binding-boundary.md`, `docs/recovery/status-matrix.md`
-  - in_scope: eval shell and recovery writeback for store/Postgres/schema gap.
-  - out_of_scope: service implementation, DB migration, deploy, cloud, upstream.
-  - data_or_field_truth: v22 attribution fields are `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; old id may only be `legacyResourceOrderId` optional migration alias.
-  - auth_boundary: no secret, no live-test, no build/push/kubectl, no true DB/cloud operation.
-  - pollution_risks: resource-order primary path, fallback/shim compatibility, hidden migration success path.
-  - verification_commands: `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
-  - B_absorb_criteria: B verifies the characterization gate fails closed before implementation and replacement truth remains green.
-- eval_command: characterization gate to be created; current guard is `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: local stdout JSON only; no `.runtime` evidence unless future canary is explicitly authorized.
-- allowed_files: `docs/recovery/*`, future `scripts/smoke-test-v22-*`, then scoped state/schema files only in a later branch.
-- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, unrelated frontend/backend.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`
-- B_absorb_criteria: B reruns evals, checks diff-scoped secret scan, ff-only absorbs and pushes before cursor moves.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
+## Coordination Notes
 
-### Leaf Step 2
+### 禁止并行写入的区域
 
-- step_id: leaf-resource-order-store-postgres-schema-implementation
-- problem: resource-order store/Postgres/schema remains as active persistence truth after characterization.
-- input_state: `leaf-resource-order-store-postgres-schema-eval-shell` is absorbed; characterization gate covers store, schema, Postgres persistence, snapshot writer, runtime connection, db delegate, runtime store, and JSON migration collection facts.
-- expected_output: retire active resource-order store/Postgres/schema primary-path dependency so resource-order remains only retired/tombstone/migration-only semantics.
-- light_contract_card:
-  - problem: resource-order persistence must stop being active v22 runtime truth.
-  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-resource-plan-boundary.md`, `docs/contracts/v22-tenant-resource-binding-boundary.md`, `docs/recovery/status-matrix.md`
-  - in_scope: scoped state/schema/runtime connection cleanup and matching gates.
-  - out_of_scope: real DB migration execution, deploy, cloud, upstream, fallback/shim/adapter compatibility.
-  - data_or_field_truth: active fields are `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; retained old identifier can only be `legacyResourceOrderId` optional migration-only alias.
-  - auth_boundary: no secret, no live-test, no build/push/kubectl, no true DB/cloud operation.
-  - pollution_risks: restoring resource-order success route, required `resourceOrderId`, fallback/shim compatibility layer, hidden migration success path.
-  - verification_commands: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `npm --prefix services/portal run check`
-  - B_absorb_criteria: B verifies characterization gate is intentionally updated for fourth-slice implementation, route success path stays tombstoned, services check passes, and no real DB/cloud operation ran.
-- eval_command: `node scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` and `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: local stdout JSON only; no `.runtime` evidence unless future canary is explicitly authorized.
-- allowed_files: `services/portal/src/state/portal-resource-order-store.mjs`, `services/portal/src/state/portal-store-schema.mjs`, `services/portal/src/state/portal-store-postgres-persistence.mjs`, `services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs`, `services/portal/src/state/portal-store-runtime-connections.mjs`, `services/portal/src/state/portal-store-storage-bootstrap.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, `services/portal/src/state/portal-store-db-delegates.mjs`, `scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `docs/recovery/*`
-- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, unrelated frontend/backend.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-- B_absorb_criteria: B reruns evals, checks diff-scoped secret scan, confirms no real DB/cloud operation, then ff-only absorbs and pushes before cursor moves.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
+- Portal route/app/domain/state refactor overlapping the same route or payload module.
+- OPL Gateway/Runtime Bridge connection files.
+- Cloud lane authorized create/release and deploy lanes.
+- `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, package/dependency files, upstream one-person-lab.
 
-### Leaf Step 3
-
-- step_id: leaf-secret-hygiene-diff-scan-eval-shell
-- problem: secret hygiene must be enforced by changed-files / added-lines diff-scoped secret scan.
-- input_state: workflow gate has broad secret-like path checks.
-- expected_output: eval shell requires B diff-scoped scan and treats full-repo scan as read-only audit.
-- light_contract_card:
-  - problem: prevent raw secrets in diff, browser state, logs, evidence, or git.
-  - subscribed_contracts: `docs/contracts/v22-token-provider-boundary.md`, `docs/recovery/status-matrix.md`
-  - in_scope: local eval shell and docs.
-  - out_of_scope: reading secret files or `.env`.
-  - data_or_field_truth: raw provider key, bearer token, launchToken, runtimeToken, SecretId/SecretKey, kubeconfig, private key never enter git.
-  - auth_boundary: 不读 secret.
-  - pollution_risks: secret-like path bypass, full-repo scan used as false pass.
-  - verification_commands: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
-  - B_absorb_criteria: B confirms changed-files / added-lines diff-scoped secret scan.
-- eval_command: `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: no secret values; only pass/fail and changed path summaries.
-- allowed_files: `scripts/smoke-test-v22-*`, `docs/recovery/*`
-- forbidden_files: `.env*`, secret files, kubeconfig, `deploy/*`, `adapters/*`, `.sentrux/*`
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`
-- B_absorb_criteria: B reruns gate and confirms no secret content was read.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 4
-
-- step_id: leaf-legacy-scripts-archive-eval-shell
-- problem: legacy scripts can re-enter default validation.
-- input_state: v19/v20/v21/live-test scripts are archive/reference only.
-- expected_output: eval shell proves default suite and docs do not route through legacy scripts.
-- light_contract_card:
-  - problem: keep default validation v22-only.
-  - subscribed_contracts: `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md`
-  - in_scope: docs and smoke gate.
-  - out_of_scope: deleting scripts or running live-test.
-  - data_or_field_truth: old scripts are archive/reference, not default proof.
-  - auth_boundary: no live-test.
-  - pollution_risks: old v19/v20/v21 truth, live-test as default.
-  - verification_commands: `node scripts/smoke-test-v22-mvp-contract-suite.mjs`
-  - B_absorb_criteria: B confirms no live-test ran.
-- eval_command: `node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: local stdout only.
-- allowed_files: `docs/recovery/*`, `scripts/smoke-test-v22-*`
-- forbidden_files: `scripts/live-test-*` execution, `deploy/*`, `adapters/*`, `.sentrux/*`
-- truth_writeback_target: `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B reruns MVP suite and archive gate.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 5
-
-- step_id: leaf-portal-layering-characterization-gate
-- problem: future Portal refactor needs route/app/domain/state/frontend characterization.
-- input_state: Portal structure/failure isolation contract exists.
-- expected_output: characterization gate proves behavior before moving or splitting code.
-- light_contract_card:
-  - problem: prevent refactor drift.
-  - subscribed_contracts: `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/contracts/v22-portal-user-surface-boundary.md`
-  - in_scope: characterization gate and scoped refactor plan.
-  - out_of_scope: OPL Gateway, Runtime Bridge, deploy, true cloud.
-  - data_or_field_truth: backend route -> app payload -> domain -> state/persistence; frontend API module -> composable/view.
-  - auth_boundary: local smoke only.
-  - pollution_risks: fallback/shim, route logic in payload builders, UI cloud-console language.
-  - verification_commands: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
-  - B_absorb_criteria: B confirms contract parity.
-- eval_command: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: local smoke output, no live data.
-- allowed_files: future dedicated refactor branch.
-- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B reruns characterization gate and type checks.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 6
-
-- step_id: leaf-opl-connection-productionization-contract-refresh
-- problem: OPL connection has canary facts that must not be treated as production truth.
-- input_state: local Runtime Agent HTTP API relay canary exists; real production file/run/artifact is not claimed.
-- expected_output: refresh contracts/status before any productionized OPL connection branch.
-- light_contract_card:
-  - problem: separate canary evidence from production truth.
-  - subscribed_contracts: `docs/contracts/v22-portal-opl-connection-boundary.md`, `docs/contracts/v22-upstream-opl-boundary.md`, `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`
-  - in_scope: contract/status refresh and local gate.
-  - out_of_scope: modifying upstream, true provider secret, true cloud runtime, deploy.
-  - data_or_field_truth: OPL lane provides fileRef/run/artifact projection and resourceBindingId/workspace runtime identity; deploy ownership stays Package D.
-  - auth_boundary: no raw provider key, no live canary unless separately authorized.
-  - pollution_risks: fake 200, upstream internal import, direct path as user entry.
-  - verification_commands: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
-  - B_absorb_criteria: B confirms no production truth claim from canary alone.
-- eval_command: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: sanitized `.runtime` evidence only for separately authorized canary; otherwise local stdout.
-- allowed_files: `docs/recovery/*`, `docs/contracts/v22-*`, `scripts/smoke-test-v22-*` in future branch.
-- forbidden_files: upstream one-person-lab, `deploy/*`, `.env*`, raw secret paths.
-- truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B confirms clean upstream one-person-lab and no fake success.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 7
-
-- step_id: leaf-opl-connection-productionization-eval-shell
-- problem: OPL productionization now has refreshed contract truth, but the next production implementation must first have a local eval shell that proves allowed production inputs and blocks canary-only, cloud/deploy, raw secret, fake success, and Package D owner-field leakage.
-- input_state: `leaf-opl-connection-productionization-contract-refresh` is absorbed on trunk; local Runtime Agent HTTP API relay and WebUI bridge no-fake-success are canary facts only.
-- expected_output: create a local productionization eval shell and recovery writeback for the next implementation branch, without modifying services, upstream, deploy, adapters, package files, secrets, or real cloud.
-- light_contract_card:
-  - problem: production implementation must not treat canary evidence as production deploy evidence.
-  - subscribed_contracts: `docs/contracts/v22-portal-opl-connection-boundary.md`, `docs/contracts/v22-upstream-opl-boundary.md`, `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`, `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `docs/contracts/v22-portal-files-billing-trace-boundary.md`, `docs/recovery/status-matrix.md`
-  - in_scope: local eval shell, branch-scoped gate metadata, and recovery truth for the future OPL production implementation.
-  - out_of_scope: service implementation, upstream modification, true provider secret, true cloud runtime, COS billing reconciliation, Langfuse deployment, deploy/build/push/kubectl/live-test.
-  - data_or_field_truth: OPL lane may consume `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`; it must not emit `ownerRef`, `operationId`, K8s labels, deploy owner labels, raw provider key, launchToken, runtimeToken, objectKey, storageKey, localPath, signedUrl, or presignedUrl.
-  - auth_boundary: no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test; any future risky production step must first generate a step-local auth record.
-  - pollution_risks: fake 200, upstream internal import, local canary promoted to production truth, cloud/deploy owner facts leaking into OPL lane, browser/token/storage leakage.
-  - verification_commands: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
-  - B_absorb_criteria: B confirms the eval shell fails closed for canary-only production claims, raw secret/token/storage leakage, owner-field leakage, fake success, upstream modification, and unauthorized cloud/deploy actions before any implementation cursor can advance.
-- eval_command: to be created in this leaf: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`; current guards are `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, and `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, or architecture_blocker.
-- trace_or_evidence_expectation: local stdout only; no `.runtime` evidence unless a future canary is separately authorized; docs/recovery writeback must stay sanitized.
-- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
-- forbidden_files: `services/*`, upstream one-person-lab, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, package/dependency files, secret-like paths, real cloud runners.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`
-- B_absorb_criteria: B reruns the new eval shell, OPL productionization refresh gate, real OPL no-fake-success/runtime-agent gates, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check; no service/upstream/deploy/cloud/secret operation may be present.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 8
-
-- step_id: leaf-opl-connection-productionization-local-implementation
-- problem: OPL productionization has a local eval shell, but repo-local Portal/Adapter/Runtime Bridge production boundaries must be implemented without promoting canary facts into live/cloud/deploy truth.
-- input_state: `leaf-opl-connection-productionization-eval-shell` is absorbed on trunk at `6a939de05efa8967fa2b0bf8da3c53768471fc89`; local Runtime Agent HTTP API relay and WebUI bridge no-fake-success gates are available as local proof only.
-- expected_output: implement the smallest local OPL productionization slice that preserves Gateway/preflight/Runtime Agent projection, fail-closes unverified file/run/artifact paths, and exposes only allowed OPL-lane projection fields.
-- light_contract_card:
-  - problem: productionization must make local OPL work boundaries stricter without claiming real cloud/runtime/deploy production.
-  - subscribed_contracts: `docs/contracts/v22-portal-opl-connection-boundary.md`, `docs/contracts/v22-upstream-opl-boundary.md`, `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`, `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `docs/contracts/v22-portal-files-billing-trace-boundary.md`, `docs/recovery/status-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`
-  - in_scope: local Portal OPL route/work API projection, Runtime Bridge HTTP route/relay/run/message boundaries, productionization eval updates, and sanitized recovery truth writeback.
-  - out_of_scope: true provider call, raw provider key handling beyond existing backend secret boundary, true cloud runtime, COS billing reconciliation, Langfuse deployment, Package D deploy ownership, build/push/kubectl, deploy, live-test, upstream one-person-lab modification, package/dependency changes.
-  - data_or_field_truth: OPL lane may expose only `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef` as production projection facts; `providerKeyRef` may remain a backend-bound reference. OPL lane must not emit Package D owner fields, raw secret/token fields, object/storage paths, local paths, signed URLs, or canary-only production claims.
-  - auth_boundary: local repo implementation only; no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test. If any of these becomes necessary, this leaf must stop at `deferred_authorized` with a step-local auth record requirement.
-  - pollution_risks: canary promoted to production truth, fake 200, upstream internal import, Package D owner-field leakage, raw key/token/storage/path leakage, old user-owned/resource-order/managed-runtime primary path language.
-  - verification_commands: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`, `npm --prefix services/portal run check`
-  - B_absorb_criteria: B confirms allowed OPL projection fields only, no fake success, no upstream/deploy/cloud/secret operation, Portal check passes, and full local OPL productionization gate suite passes.
-- eval_command: `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
-- trace_or_evidence_expectation: local stdout and repo-tracked sanitized truth only; no `.runtime` evidence unless a future canary is separately authorized.
-- allowed_files: `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/portal/src/domain/opl-work-flow.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs`, `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-messages.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs`, `services/opl-runtime-bridge/src/run-contract.mjs`, `scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `docs/recovery/v22-goal-state.md`
-- forbidden_files: upstream one-person-lab, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, package/dependency files, secret-like paths, real cloud runners, unrelated Portal/frontend/backend surfaces.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`
-- B_absorb_criteria: B reruns the OPL eval shell, OPL refresh gate, real OPL no-fake-success/runtime-agent gates, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, Portal check, and diff whitespace check; no service changes outside allowed files and no risky operation may be present.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 9
-
-- step_id: leaf-frontend-product-evalset-gap
-- problem: Portal frontend product completion has executable evalset/composable gates, but the current product-goal cursor has not yet entered a dedicated frontend evalset characterization leaf after OPL local hardening.
-- input_state: `leaf-opl-connection-productionization-local-implementation` is absorbed on trunk at `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`; OPL true cloud/runtime/COS/Langfuse/deploy continuation is deferred until a step-local auth record exists.
-- expected_output: characterize and, if necessary, tighten the Portal frontend evalset gap so future UI/product work has API contract, component state, responsive/mobile/table usability, loading/empty/error, and typecheck gates before implementation.
-- light_contract_card:
-  - problem: frontend product changes must not ship on visual intuition alone; they need executable Portal UI evalset coverage.
-  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`, `docs/contracts/v22-portal-user-surface-boundary.md`, `docs/contracts/v22-portal-admin-ops-surface-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/recovery/status-matrix.md`
-  - in_scope: frontend evalset characterization, Portal UI composition contract alignment, local smoke metadata, and sanitized recovery truth writeback.
-  - out_of_scope: deploy, live-test, true cloud, secret reading, upstream one-person-lab, package/dependency upgrade, unrelated backend refactor, or user-facing cloud-console language.
-  - data_or_field_truth: Portal UI remains Vue 3 + Vite + TypeScript + Pinia; ordinary users see managed workbench/product language, not CVM/COS/K8s/cloud-console control-plane language.
-  - auth_boundary: local repo eval only; no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test.
-  - pollution_risks: visual-only acceptance, missing component states, hidden API drift, mobile/table overflow, admin/ops leakage into ordinary user surface, cloud-console narrative leakage.
-  - verification_commands: `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`, `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`, `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`, `npm --prefix services/portal run check`
-  - B_absorb_criteria: B confirms frontend evalset coverage, Portal UI composition contract parity, typecheck, product-goal gates, diff-scoped sensitive hygiene, and no forbidden/risky operation.
-- eval_command: `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`, `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
-- trace_or_evidence_expectation: local stdout and `.runtime/portal-surface-eval/report.json` only when generated by the local eval runner; `.runtime` evidence is not committed and must not contain secrets.
-- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `services/portal/frontend/src/harness/**`, `scripts/smoke-test-v22-portal-frontend-surface-*.mjs`, `scripts/smoke-test-v22-portal-runtime-suite.mjs`, and exact branch-scoped harness allowlist updates.
-- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, real cloud runners, unrelated backend/OPL/cloud surfaces.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
-- B_absorb_criteria: B reruns frontend surface composables/evalset gates, Portal runtime surface suite, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 10
-
-- step_id: leaf-backend-contract-eval-template
-- problem: backend product changes need a reusable contract/eval template so future route/app/domain/state work cannot bypass layering or hide missing fields behind fallback/shim.
-- input_state: `leaf-frontend-product-evalset-gap` is the active frontend characterization leaf; Portal structure characterization already exists, and frontend evalset coverage is ready to be absorbed before backend work.
-- expected_output: create or tighten a backend contract/eval template that anchors Node 22 ESM route/app/domain/state/persistence expectations before any backend implementation leaf.
-- light_contract_card:
-  - problem: backend route logic can drift around app/domain/state boundaries without a dedicated implementation template.
-  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/contracts/v22-portal-user-surface-boundary.md`, `docs/contracts/v22-portal-admin-ops-surface-boundary.md`, `docs/recovery/status-matrix.md`
-  - in_scope: backend eval template, Portal structure/failure isolation gate alignment, local smoke metadata, and sanitized recovery truth writeback.
-  - out_of_scope: broad backend refactor, frontend UI changes, deploy, true cloud, live-test, secret reading, upstream one-person-lab, package/dependency upgrade.
-  - data_or_field_truth: backend baseline is Node 22 ESM and route -> app payload -> domain -> state/persistence; no `user_owned` primary path, resource-order primary path, OpenCost/Langfuse main path, or implicit fallback/shim.
-  - auth_boundary: local repo eval only; no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test.
-  - pollution_risks: hidden fallback, route-to-state bypass, old primary-path revival, product language drift, smoke that passes with default/missing fields.
-  - verification_commands: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, `npm --prefix services/portal run check`, `node scripts/smoke-test-v22-product-goal-harness.mjs`
-  - B_absorb_criteria: B confirms backend eval template and structure gate alignment, Portal check, product-goal gates, diff-scoped sensitive hygiene, and no forbidden/risky operation.
-- eval_command: `node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
-- trace_or_evidence_expectation: local stdout only; no `.runtime` evidence unless a future canary is separately authorized.
-- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`, and exact branch-scoped harness allowlist updates.
-- forbidden_files: `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, real cloud runners, unrelated frontend/OPL/cloud surfaces.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, backend contracts
-- B_absorb_criteria: B reruns Portal structure gate, Portal check, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 11
-
-- step_id: leaf-billing-audit-characterization
-- problem: release stop billing/audit exists at contract level, but the local gate must pin preauth/freeze, ledger attribution, release audit record, and trace/billing separation before deeper billing production work.
-- input_state: `leaf-backend-contract-eval-template` is absorbed; billing-audit-preauth-ledger-release-t1 has a local release stop billing audit smoke; cloud/live billing reconciliation remains not authorized for this leaf.
-- expected_output: tighten the release stop billing audit characterization gate and recovery truth without changing services or running true cloud/DB/live operations.
-- light_contract_card:
-  - problem: billing truth can drift into trace metadata, Langfuse, cloud raw facts, or old resource-order attribution unless the local characterization gate fails closed.
-  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-release-stop-billing-audit-boundary.md`, `docs/contracts/v22-billing-freeze-boundary.md`, `docs/contracts/v22-portal-files-billing-trace-boundary.md`, `docs/contracts/v22-tenant-resource-binding-boundary.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-  - in_scope: release stop billing audit smoke tightening, exact branch-scoped harness allowlist updates, gap matrix truth, and sanitized goal-state truth.
-  - out_of_scope: service implementation unless the characterization gate exposes a real defect, frontend changes, real DB/Postgres connection, true cloud billing reconciliation, OpenCost/Langfuse billing truth, deploy, build/push/kubectl, live-test, upstream one-person-lab, package/dependency changes, or secret reads.
-  - data_or_field_truth: billing/audit attribution uses `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; `resourceOrderId` must not be active billing truth, and any retained old id can only be `legacyResourceOrderId` optional/migration-only in future dedicated work.
-  - auth_boundary: local repo eval only; no secret, no live provider call, no true cloud, no real DB connection, no build/push/kubectl, no deploy, no live-test. `git push` requires a step-local auth record in ignored `.runtime`.
-  - pollution_risks: OpenCost primary narrative, Langfuse or trace metadata as billing truth, cloud raw facts as user-facing truth, active `resourceOrderId`, fallback/shim compatibility, hidden success from missing billing fields.
-  - verification_commands: `node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`, `node scripts/smoke-test-v22-mvp-contract-suite.mjs`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, `git diff --check -- docs/recovery scripts`
-  - B_absorb_criteria: B confirms release stops charging, preauth/freeze is zeroed after release, one audit record exists and matches public projections, active billing attribution uses v22 fields, no active `resourceOrderId` returns, observability remains non-billing truth, and no forbidden/risky operation ran.
-- eval_command: `node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
-- trace_or_evidence_expectation: local stdout only; no `.runtime` evidence except the step-local git push auth record; docs/recovery writeback stays sanitized.
-- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, and exact branch-scoped harness allowlist updates.
-- forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, real cloud runners, real DB/Postgres operation, unrelated frontend/OPL/cloud surfaces.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-- B_absorb_criteria: B reruns release stop billing audit flow, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-### Leaf Step 12
-
-- step_id: leaf-release-readiness-auth-boundary
-- problem: Release readiness is the next cursor. Generic chat approval has already been gated, and the current session now provides a concrete operation-type authorization, but there is no concrete local Package D release plan, region, accepted preflight/build-push/dry-run evidence, rollback baseline, or cleanup evidence to execute safely.
-- input_state: `leaf-billing-audit-characterization` and the generic auth-boundary leaf are absorbed on trunk, and the cursor is at `leaf-release-readiness-auth-boundary` with `highest-priority executable leaf step: deferred_authorized`.
-- expected_output: add a local characterization gate and sanitized truth writeback proving release readiness remains blocked when authorization exists but the concrete release plan/evidence package is absent; do not execute any risky release operation.
-- light_contract_card:
-  - problem: deploy readiness must not be inferred from a generic "我允许" message, from operation-type authorization alone, or from local smoke success.
-  - subscribed_contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md`, `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md`, `docs/recovery/v22-codex-goal-loop.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/status-matrix.md`
-  - in_scope: local release-readiness auth-boundary smoke, branch-scoped harness allowlist updates, ignored `.runtime` step-local auth record, sanitized goal-state and gap-matrix truth.
-  - out_of_scope: reading secret, reading kubeconfig, build/push/kubectl, live-test, deploy, true cloud calls, TCR/TKE/COS mutation, release plan execution, runtime smoke against production, services implementation, deploy/adapters/.sentrux changes, upstream one-person-lab changes, package/dependency changes.
-  - data_or_field_truth: risky release requires a step-local auth record with `step_id`, `authorized_operation_type`, `secret_scope`, `cloud_scope`, concrete `region`, `resource_scope`, `budget_limit`, `baseline_requirement`, `rollback_plan`, `cleanup_plan`, `evidence_path`, and `stop_conditions`; Package D release plan requires `runId`, `versionTag`, `namespace`, `targets[]`, `runtimeSmokeTargets[]`, `ownerRef`, `operationId`, and target coverage. This leaf records `user_authorized_release_readiness_deploy_runtime_smoke_2026_05_14`, but `missing_local_release_plan_file`, `missing_concrete_region`, and `missing_local_package_d_evidence` mean the authorized risky operation is still non-executable.
-  - auth_boundary: local repo eval and ignored auth-record write only; no secret, no live provider call, no true cloud, no build/push/kubectl, no deploy, no live-test. `git push` requires a step-local auth record in ignored `.runtime`.
-  - pollution_risks: operation-type authorization promoted to deploy readiness, local smoke promoted to release readiness, raw secret or kubeconfig leakage, Package C/D scope mixing, owner guard bypass, release plan hidden in docs, live/cloud/deploy side effects without baseline/rollback/cleanup.
-  - verification_commands: `node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`, `node scripts/smoke-test-v22-product-goal-harness.mjs`, `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`, `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`, `node scripts/smoke-test-v22-mvp-contract-suite.mjs`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, `git diff --check -- docs/recovery scripts`
-  - B_absorb_criteria: B confirms the gate proves deferred authorization, no risky release operation ran, no deploy/adapters/.sentrux/services/package/upstream file changed, no secret-like value entered the diff, and the cursor does not advance.
-- eval_command: `node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`
-- failure_analysis_rule: classify as contract_wrong, eval_wrong, implementation_wrong, environment_missing, authorization_required, upstream_or_cloud_fact_unknown, problem_too_large, architecture_blocker, baseline_not_restored, cleanup_incomplete, or budget_or_stop_condition_hit.
-- trace_or_evidence_expectation: local stdout only; `.runtime` evidence limited to the ignored step-local auth record and sanitized blocker summary under `.runtime/v22-release-readiness/release-readiness-authorized-blocker-20260514T000000Z/`; docs/recovery writeback stays sanitized and contains no raw secret, kubeconfig, token, SecretId/SecretKey, raw cloud response, registry credential, or release plan.
-- allowed_files: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `scripts/smoke-test-v22-release-readiness-auth-boundary.mjs`, `scripts/smoke-test-v22-product-goal-harness.mjs`, `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`, `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
-- forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, package/dependency files, secret-like paths, real cloud runners, build/push/kubectl/live-test/deploy execution, raw release plan evidence.
-- truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-- B_absorb_criteria: B reruns release-readiness auth-boundary gate, product-goal harness, default-entry gate, resource-order retirement gate, diff-scoped sensitive hygiene, MVP suite, workflow review, and diff whitespace check before ff-only absorb/push; B must keep the cursor on `leaf-release-readiness-auth-boundary` / `deferred_authorized`.
-- attempt_budget: max_attempts_per_leaf_step = 10; max_attempts_per_root_cause = 10; max_consecutive_same_gate_failure = 2; same gate may fail 2 times before failure analysis; tenth leaf step or root-cause failure becomes blocked truth writeback.
-
-## 禁止并行写入的区域
-
-- `services/portal/src/state/portal-resource-order-store.mjs` with `services/portal/src/state/portal-store-schema.mjs`
-- Portal route/app/domain/state refactor overlapping the same route or payload module
-- OPL Gateway/Runtime Bridge connection files
-- Cloud lane authorized create/release and deploy lanes
-- `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`
-
-## 允许只读审计的区域
+### 允许只读审计的区域
 
 - `docs/contracts/README.md`
 - `docs/contracts/v22-*`
@@ -550,4 +127,4 @@ Deferred authorization split:
 
 ## Cursor Advancement Rule
 
-B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。 The next cursor update must name the absorbed commit and update this file in a follow-up branch or B-reviewed absorb commit.
+B 吸收后 cursor 才能前进。B ff-only 吸收并 push 后，更新 `docs/recovery/v22-goal-current.json` 的 `currentCursor`、`highestPriorityExecutableLeafStep`、`git.originTrunkHead`、`git.branchBaseHead` 和相关 gap 状态；本 Markdown 只同步人类摘要与历史。

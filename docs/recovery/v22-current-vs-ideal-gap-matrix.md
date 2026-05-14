@@ -2,6 +2,10 @@
 
 Every gap below is part of the product-goal harness, not a free-form roadmap. Each gap must have an eval. 每个 gap 必须有 eval；没有 eval 的 gap 不得实现，状态只能是 needs_eval，下一步只能是 write_eval_shell。
 
+Machine-readable current state now lives in `docs/recovery/v22-goal-current.json`.
+Product Completion Scoreboard now lives in `docs/recovery/v22-product-completion-scoreboard.json`.
+This Markdown remains a human-readable gap explanation and history surface; the consistency gate checks JSON/Markdown/gap/scoreboard alignment.
+
 Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
 
 ## Dependency Stage Order
