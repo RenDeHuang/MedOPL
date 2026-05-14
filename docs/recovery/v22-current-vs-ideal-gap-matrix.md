@@ -5,6 +5,7 @@ Every gap below is part of the product-goal harness, not a free-form roadmap. Ea
 Machine-readable current state now lives in `docs/recovery/v22-goal-current.json`.
 Product Completion Scoreboard now lives in `docs/recovery/v22-product-completion-scoreboard.json`.
 This Markdown remains a human-readable gap explanation and history surface; the consistency gate checks JSON/Markdown/gap/scoreboard alignment.
+scoreboard 只表达产品能力完成度，不决定 leaf execution order. Execution order is decided by `docs/recovery/v22-goal-current.json` plus this gap matrix's `depends_on` / `executable_when` / `cursor_eligible` fields.
 
 Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
 

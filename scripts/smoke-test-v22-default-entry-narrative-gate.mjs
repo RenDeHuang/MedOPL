@@ -31,6 +31,19 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["cleanup/v22-goal-control-plane-current-truth", new Set([
+    "docs/recovery/v22-codex-goal-loop.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-product-completion-scoreboard.json",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-execution-order.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["cleanup/v22-product-goal-dependency-ordering", new Set([
     "docs/recovery/v22-codex-goal-loop.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

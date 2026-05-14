@@ -38,6 +38,19 @@ const allowedDiffPaths = new Set([
 ]);
 
 const branchScopedAllowedDiffPaths = new Map([
+  ["cleanup/v22-goal-control-plane-current-truth", new Set([
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-product-completion-scoreboard.json",
+    "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-codex-goal-loop.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-product-goal-execution-order.mjs",
+    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  ])],
   ["cleanup/v22-goal-harness-consolidation", new Set([
     "docs/recovery/v22-goal-current.json",
     "docs/recovery/v22-product-completion-scoreboard.json",
@@ -79,6 +92,12 @@ const goalLoopSteps = [
   "Step 8：回写真相",
 ];
 
+const expectedAbsorbedHeadResolution = {
+  mode: "runtime_git_head_after_ff_only_absorb",
+  target_branch: "recovery/platform-v22-trunk",
+  reason: "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha",
+};
+
 const hardRulePhrases = [
   "Codex goal 不是自然语言愿望，而是 repo 内的 goal-state state machine。",
   "每个 gap 必须有 eval；没有 eval 的 gap 不得实现，状态只能是 needs_eval，下一步只能是 write_eval_shell。",
@@ -91,17 +110,47 @@ const hardRulePhrases = [
   "禁止用 fallback/shim/adapter 兼容层掩盖旧主路径。",
 ];
 
+const controlPlaneConsolidationPhrases = [
+  "goal-state.md 太长，容易在长跑和上下文压缩后漂移",
+  "v22-goal-current.json 成为唯一 current truth",
+  "v22-goal-state.md 降级为 human summary / history",
+  "allowlist 分散在多个 gate，导致每个新 leaf 都要改多个脚本",
+  "后续引入 leaf manifest，把 `allowed_files` / `forbidden_files` / `forbidden_ops` / `verification` 集中化",
+  "本分支不完成 leaf manifest 迁移",
+  "low-risk 和 high-risk 还没有完全分流",
+  "`risk_class` 固定为 `local_doc_eval` / `local_service_code` / `sensitive_boundary` / `live_external`",
+  "当前分支只确保字段和说明存在，不改变现有授权边界",
+  "缺真正的产品完成度计分板",
+  "等级为 `0_not_started` / `1_contract_defined` / `2_local_api` / `3_local_ui` / `4_fake_live` / `5_authorized_canary` / `6_productionized` / `7_monitored`",
+  "scoreboard 只表达 product completion，不决定 execution order",
+  "`v22-goal-current.json` 是 trunk current truth",
+  "`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch",
+];
+
 const requiredCurrentFields = [
-  "schemaVersion",
+  "schema_version",
   "canonical",
-  "machineReadableCurrentTruth",
-  "markdownRole",
-  "currentCursor",
-  "highestPriorityExecutableLeafStep",
-  "stageOrder",
+  "current_truth_role",
+  "markdown_role",
+  "base_trunk_head",
+  "expected_absorbed_head",
+  "trunk_head",
+  "current_branch",
+  "authoring_branch",
+  "target_branch",
+  "current_cursor",
+  "next_leaf",
+  "current_stage",
+  "current_risk_class",
+  "current_blockers",
+  "release_readiness_state",
+  "dependency_ordering_repair",
+  "last_absorbed_commit",
+  "last_updated_at",
+  "truth_source_files",
+  "stage_order",
   "gaps",
-  "currentLeaf",
-  "releaseReadiness",
+  "current_leaf",
 ];
 
 const requiredValidationCommands = [
@@ -262,25 +311,54 @@ const allDocs = Object.values(sources).join("\n");
 for (const phrase of productLoopItems) assertIncludes(sources.productE2eContract, phrase, "product_loop_13_items");
 for (const phrase of goalLoopSteps) assertIncludes(sources.goalLoop, phrase, "goal_loop_8_steps");
 for (const phrase of hardRulePhrases) assertIncludes(allDocs, phrase, "hard_rule");
+for (const phrase of controlPlaneConsolidationPhrases) {
+  assertIncludes(allDocs, phrase, "control_plane_consolidation_motivation");
+}
 for (const command of requiredValidationCommands) assertIncludes(allDocs, command, "validation_command");
 for (const field of requiredCurrentFields) assert(Object.hasOwn(currentState, field), `current_state_field_missing:${field}`);
 
 assert.equal(currentState.canonical, true, "current_state_must_be_canonical");
-assert.equal(currentState.markdownRole, "summary_history_pointer_only", "markdown_role_mismatch");
-assert.equal(currentState.currentCursor, currentState.highestPriorityExecutableLeafStep, "current_cursor_highest_priority_mismatch");
-assert.equal(currentState.currentLeaf.stepId, currentState.currentCursor, "current_leaf_step_mismatch");
-assert.equal(currentState.releaseReadiness.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
-assert.equal(currentState.releaseReadiness.cursorEligible, false, "release_readiness_cursor_eligible_mismatch");
+assert.equal(currentState.current_branch, currentState.authoring_branch, "current_branch_must_record_authoring_branch");
+assert.equal(currentState.target_branch, "recovery/platform-v22-trunk", "target_branch_mismatch");
+assert.match(currentState.base_trunk_head, /^[0-9a-f]{40}$/u, "base_trunk_head_must_be_sha");
+assert.deepEqual(
+  currentState.expected_absorbed_head,
+  expectedAbsorbedHeadResolution,
+  "expected_absorbed_head_must_be_runtime_resolution_not_self_referential_sha",
+);
+assert.equal(currentState.trunk_head, "compatibility_alias_for_expected_absorbed_head_not_static_base", "trunk_head_compatibility_alias_mismatch");
+assert.equal(currentState.last_absorbed_commit, currentState.base_trunk_head, "last_absorbed_commit_must_record_previous_absorbed_fact");
+assert.equal(currentState.current_truth_role, "single_write_entry", "current_truth_role_mismatch");
+assert.equal(currentState.markdown_role, "human_summary_history_rules_only", "markdown_role_mismatch");
+assert.equal(currentState.current_cursor, currentState.next_leaf, "current_cursor_next_leaf_mismatch");
+assert.equal(currentState.current_leaf.step_id, currentState.current_cursor, "current_leaf_step_mismatch");
+assert.equal(currentState.release_readiness_state.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
+assert.equal(currentState.release_readiness_state.cursor_eligible, false, "release_readiness_cursor_eligible_mismatch");
 
 assertIncludes(sources.goalState, "JSON 是机器可读 current truth", "goal_state_json_truth_language");
 assertIncludes(sources.goalState, "Markdown 是人类说明/历史", "goal_state_markdown_role_language");
+assertIncludes(sources.goalState, "Single write entry rule", "single_write_entry_rule");
+assertIncludes(sources.goalState, "Scoreboard boundary rule", "scoreboard_boundary_rule");
 assertIncludes(sources.gapMatrix, "Product Completion Scoreboard", "gap_matrix_scoreboard_pointer");
 assertIncludes(sources.gapMatrix, docs.scoreboard, "gap_matrix_scoreboard_path");
+assertIncludes(sources.gapMatrix, "scoreboard 只表达产品能力完成度，不决定 leaf execution order", "gap_matrix_scoreboard_boundary");
 assertIncludes(sources.productGoal, "goal tree -> execution line", "goal_tree_execution_line_rule");
 assertIncludes(sources.productGoal, "contract-driven", "contract_driven");
 assertIncludes(sources.productGoal, "eval-driven", "eval_driven");
 
 assert(Array.isArray(scoreboard.capabilities), "scoreboard_capabilities_missing");
+assert.equal(scoreboard.boundary, "product_completion_only_not_execution_order", "scoreboard_boundary_mismatch");
+assert.equal(scoreboard.execution_order_authority, false, "scoreboard_execution_order_authority_must_be_false");
+assert.deepEqual(scoreboard.score_levels, [
+  "0_not_started",
+  "1_contract_defined",
+  "2_local_api",
+  "3_local_ui",
+  "4_fake_live",
+  "5_authorized_canary",
+  "6_productionized",
+  "7_monitored",
+], "scoreboard_score_levels_mismatch");
 assert(scoreboard.capabilities.length >= 23, "scoreboard_capability_coverage_incomplete");
 assert(scoreboard.capabilities.some((capability) => capability.id === "release-readiness-deploy-runtime-smoke"), "scoreboard_release_readiness_missing");
 
@@ -295,8 +373,8 @@ console.log(JSON.stringify({
   checked: {
     productLoopItems: productLoopItems.length,
     goalLoopSteps: goalLoopSteps.length,
-    currentCursor: currentState.currentCursor,
-    releaseReadinessStatus: currentState.releaseReadiness.status,
+    currentCursor: currentState.current_cursor,
+    releaseReadinessStatus: currentState.release_readiness_state.status,
     diffScopedSecretScan: "changed_files_added_lines",
     capabilities: scoreboard.capabilities.length,
     validationCommands: requiredValidationCommands,

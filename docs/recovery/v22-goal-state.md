@@ -13,11 +13,35 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 
 下面的中文摘要只帮助人读状态；任何 runner、gate、B review 选择 current leaf 时必须读取 `docs/recovery/v22-goal-current.json`，再用 consistency gate 对齐 Markdown/gap/scoreboard。
 
+## Consolidation Motivation
+
+- Problem: goal-state.md 太长，容易在长跑和上下文压缩后漂移。Solution: v22-goal-current.json 成为唯一 current truth；v22-goal-state.md 降级为 human summary / history。
+- Problem: allowlist 分散在多个 gate，导致每个新 leaf 都要改多个脚本。Solution: 当前分支只记录问题和方向；后续引入 leaf manifest，把 `allowed_files` / `forbidden_files` / `forbidden_ops` / `verification` 集中化。本分支不完成 leaf manifest 迁移。
+- Problem: low-risk 和 high-risk 还没有完全分流。Solution: `risk_class` 固定为 `local_doc_eval` / `local_service_code` / `sensitive_boundary` / `live_external`；当前分支只确保字段和说明存在，不改变现有授权边界。
+- Problem: 缺真正的产品完成度计分板。Solution: docs/recovery/v22-product-completion-scoreboard.json 记录产品能力完成度，等级为 `0_not_started` / `1_contract_defined` / `2_local_api` / `3_local_ui` / `4_fake_live` / `5_authorized_canary` / `6_productionized` / `7_monitored`。scoreboard 只表达 product completion，不决定 execution order。
+
+## Control Plane Consolidation Rules
+
+### Migration order rule
+
+迁移顺序必须固定为：先建立或更新 `docs/recovery/v22-goal-current.json`，再降级本 Markdown 的 current truth 职责，最后让 `node scripts/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。不得先删除 Markdown current context 再补 JSON。
+
+### Single write entry rule
+
+所有 `current_cursor`、`next_leaf`、`current_stage`、`current_blockers`、`release_readiness_state`、`dependency_ordering_repair` 更新必须先写 `docs/recovery/v22-goal-current.json`。本 Markdown 只能同步摘要、历史和规则说明，不得作为唯一 current truth。
+
+### Scoreboard boundary rule
+
+`docs/recovery/v22-product-completion-scoreboard.json` 只表达产品能力完成度，不决定 leaf execution order。执行顺序由 `docs/recovery/v22-goal-current.json` 加 gap matrix 的 `depends_on` / `executable_when` / `cursor_eligible` 决定；scoreboard 不得承载 cursor、dependency、priority 或 executable leaf 选择。
+
 ## Human Summary
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- current branch: `cleanup/v22-goal-harness-consolidation`.
+- authoring/source branch: `cleanup/v22-goal-control-plane-current-truth`.
+- target branch: `recovery/platform-v22-trunk`.
+- branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
+- head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
 - 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`.
 - highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`.
@@ -127,4 +151,4 @@ This subsection is historical evidence only. It is intentionally not the current
 
 ## Cursor Advancement Rule
 
-B 吸收后 cursor 才能前进。B ff-only 吸收并 push 后，更新 `docs/recovery/v22-goal-current.json` 的 `currentCursor`、`highestPriorityExecutableLeafStep`、`git.originTrunkHead`、`git.branchBaseHead` 和相关 gap 状态；本 Markdown 只同步人类摘要与历史。
+B 吸收后 cursor 才能前进。B ff-only 吸收并 push 后，先更新 `docs/recovery/v22-goal-current.json` 的 `current_cursor`、`next_leaf`、`current_stage`、`current_blockers`、`release_readiness_state`、`dependency_ordering_repair`、`base_trunk_head`、`expected_absorbed_head` 解析规则、`last_absorbed_commit` 和相关 gap 状态；本 Markdown 只同步人类摘要与历史。

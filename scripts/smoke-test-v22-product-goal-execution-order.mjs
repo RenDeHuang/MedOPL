@@ -93,7 +93,7 @@ function assertAcyclicDependencies(current) {
     const gap = gaps.get(gapId);
     assert(gap, `dependency_gap_missing:${gapId}`);
     visiting.add(gapId);
-    for (const dependencyId of gap.dependsOn) {
+    for (const dependencyId of gap.depends_on) {
       assert(gaps.has(dependencyId), `dependency_reference_missing:${gapId}:${dependencyId}`);
       const dependency = gaps.get(dependencyId);
       assert(
@@ -112,9 +112,9 @@ function assertAcyclicDependencies(current) {
 function computeExecutableLeaf(current) {
   const gaps = gapMap(current);
   const candidates = current.gaps
-    .filter((gap) => gap.cursorEligible)
-    .filter((gap) => gap.nextLeafStep && !["monitor_only_after_B_absorb", "write_eval_shell"].includes(gap.nextLeafStep))
-    .filter((gap) => gap.dependsOn.every((dependencyId) => satisfiedStatuses.has(gaps.get(dependencyId)?.status)))
+    .filter((gap) => gap.cursor_eligible)
+    .filter((gap) => gap.next_leaf_step && !["monitor_only_after_B_absorb", "write_eval_shell"].includes(gap.next_leaf_step))
+    .filter((gap) => gap.depends_on.every((dependencyId) => satisfiedStatuses.has(gaps.get(dependencyId)?.status)))
     .sort((left, right) => left.priority - right.priority);
 
   assert(candidates.length > 0, "no_executable_leaf_candidates");
@@ -126,11 +126,11 @@ function assertReleaseReadinessOrdering(current) {
   const releaseGap = gaps.get("release-readiness-authorized-deploy-only");
   assert(releaseGap, "release_readiness_gap_missing");
   assert.equal(releaseGap.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
-  assert.equal(releaseGap.cursorEligible, false, "release_readiness_must_not_be_cursor_eligible");
-  assert.equal(current.releaseReadiness.status, "deferred_authorized_future_stage", "release_readiness_current_state_status_mismatch");
-  assert.equal(current.releaseReadiness.cursorEligible, false, "release_readiness_current_state_cursor_eligible_mismatch");
+  assert.equal(releaseGap.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
+  assert.equal(current.release_readiness_state.status, "deferred_authorized_future_stage", "release_readiness_current_state_status_mismatch");
+  assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_current_state_cursor_eligible_mismatch");
   for (const prerequisite of releasePrerequisites) {
-    assert(releaseGap.dependsOn.includes(prerequisite), `release_readiness_prerequisite_missing:${prerequisite}`);
+    assert(releaseGap.depends_on.includes(prerequisite), `release_readiness_prerequisite_missing:${prerequisite}`);
   }
 }
 
@@ -142,14 +142,14 @@ const [current, gapMatrix, goalState] = await Promise.all([
   readRepoFile(files.goalState),
 ]);
 
-assert.deepEqual(current.stageOrder, stageOrder, "stage_order_mismatch");
+assert.deepEqual(current.stage_order, stageOrder, "stage_order_mismatch");
 assertAcyclicDependencies(current);
 
 const executable = computeExecutableLeaf(current);
-assert.equal(executable.nextLeafStep, current.highestPriorityExecutableLeafStep, "highest_priority_executable_leaf_mismatch");
-assert.equal(current.currentCursor, current.highestPriorityExecutableLeafStep, "current_cursor_must_match_highest_priority_leaf");
-assert.equal(executable.id, current.currentLeaf.gapId, "current_leaf_gap_mismatch");
-assert.equal(executable.stage, current.currentLeaf.stage, "current_leaf_stage_mismatch");
+assert.equal(executable.next_leaf_step, current.next_leaf, "highest_priority_executable_leaf_mismatch");
+assert.equal(current.current_cursor, current.next_leaf, "current_cursor_must_match_highest_priority_leaf");
+assert.equal(executable.id, current.current_leaf.gap_id, "current_leaf_gap_mismatch");
+assert.equal(executable.stage, current.current_leaf.stage, "current_leaf_stage_mismatch");
 
 assertReleaseReadinessOrdering(current);
 
@@ -162,9 +162,9 @@ assertNotIncludes(goalState, "- highest-priority executable leaf step: `deferred
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_product_goal_execution_order",
-  currentCursor: current.currentCursor,
-  computedExecutableLeaf: executable.nextLeafStep,
-  releaseReadinessState: current.releaseReadiness.status,
+  currentCursor: current.current_cursor,
+  computedExecutableLeaf: executable.next_leaf_step,
+  releaseReadinessState: current.release_readiness_state.status,
   checked: {
     canonicalCurrentState: files.current,
     stageOrder,

@@ -21,6 +21,11 @@ This document keeps the repeatable runner rules only. Current state, dependency 
 
 - Codex goal 不是自然语言愿望，而是 repo 内的 goal-state state machine。
 - Codex 每轮必须读取 `docs/recovery/v22-goal-current.json`，并用 `node scripts/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。
+- `docs/recovery/v22-goal-current.json` is the single write entry for current state. All `current_cursor`, `next_leaf`, `current_stage`, `current_blockers`, `release_readiness_state`, and `dependency_ordering_repair` changes must land there before Markdown summaries are synchronized. Markdown may explain history and rules, but must not be the only current truth.
+- `docs/recovery/v22-product-completion-scoreboard.json` is product-completion evidence only. It must not decide execution order, cursor eligibility, dependencies, priority, or the next executable leaf.
+- `docs/recovery/v22-goal-current.json` is trunk current truth. `authoring_branch` records the source branch that last wrote that truth, and `target_branch` records the trunk target; branch metadata must not be treated as the runtime git branch for cursor selection.
+- `base_trunk_head` records the trunk baseline when the leaf wrote truth. `expected_absorbed_head` records the intended B ff-only absorbed trunk head as a runtime resolution rule, not as a literal SHA embedded in the same commit, because embedding that SHA changes the commit SHA. `last_absorbed_commit` records the previous absorbed fact until the branch is actually on trunk. `trunk_head` must not be used as both pre-absorb base and post-absorb target.
+- `risk_class` values are limited to `local_doc_eval`, `local_service_code`, `sensitive_boundary`, and `live_external`; this branch records the field and boundary language without changing authorization policy.
 - 每个 gap 必须有 eval；没有 eval 的 gap 不得实现，状态只能是 needs_eval，下一步只能是 write_eval_shell。
 - 每个 leaf step 必须有 eval_command 或 characterization gate。
 - B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。

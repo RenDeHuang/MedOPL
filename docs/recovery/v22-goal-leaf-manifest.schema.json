@@ -4,67 +4,141 @@
   "title": "MedOPL v22 Goal Current State",
   "type": "object",
   "required": [
-    "schemaVersion",
+    "schema_version",
     "canonical",
-    "machineReadableCurrentTruth",
-    "markdownRole",
+    "current_truth_role",
+    "markdown_role",
+    "last_updated_at",
     "model",
-    "branchBaseline",
-    "git",
-    "currentCursor",
-    "highestPriorityExecutableLeafStep",
-    "stageOrder",
+    "branch_baseline",
+    "base_trunk_head",
+    "expected_absorbed_head",
+    "trunk_head",
+    "current_branch",
+    "current_branch_role",
+    "authoring_branch",
+    "target_branch",
+    "git_observation",
+    "last_absorbed_commit",
+    "current_cursor",
+    "next_leaf",
+    "current_stage",
+    "current_risk_class",
+    "current_blockers",
+    "current_problem",
+    "scoreboard_boundary",
+    "execution_order_source",
+    "stage_order",
+    "ordering",
+    "dependency_ordering_repair",
     "gaps",
-    "currentLeaf",
-    "releaseReadiness",
-    "verificationCommands"
+    "current_leaf",
+    "release_readiness_state",
+    "verification_commands",
+    "truth_source_files"
   ],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 1 },
+    "schema_version": { "type": "integer", "const": 1 },
     "canonical": { "type": "boolean", "const": true },
-    "machineReadableCurrentTruth": { "type": "boolean", "const": true },
-    "markdownRole": { "type": "string", "const": "summary_history_pointer_only" },
-    "model": { "type": "string" },
-    "branchBaseline": { "type": "string" },
-    "git": {
+    "current_truth_role": { "type": "string", "const": "single_write_entry" },
+    "markdown_role": { "type": "string", "const": "human_summary_history_rules_only" },
+    "last_updated_at": { "type": "string" },
+    "model": { "type": "string", "const": "gpt-5.4" },
+    "branch_baseline": { "type": "string", "const": "origin/recovery/platform-v22-trunk" },
+    "base_trunk_head": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "expected_absorbed_head": { "$ref": "#/$defs/expected_absorbed_head" },
+    "trunk_head": { "type": "string", "const": "compatibility_alias_for_expected_absorbed_head_not_static_base" },
+    "current_branch": { "type": "string" },
+    "current_branch_role": { "type": "string", "const": "authoring_source_branch_not_runtime_git_branch" },
+    "authoring_branch": { "type": "string", "const": "cleanup/v22-goal-control-plane-current-truth" },
+    "target_branch": { "type": "string", "const": "recovery/platform-v22-trunk" },
+    "git_observation": {
       "type": "object",
-      "required": ["originTrunkHead", "branchBaseHead", "headCheck"],
+      "required": ["expected_trunk_head", "observed_git_head", "branch_ahead_explanation"],
       "properties": {
-        "originTrunkHead": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-        "branchBaseHead": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-        "headCheck": { "type": "string" }
+        "expected_trunk_head": { "$ref": "#/$defs/expected_absorbed_head" },
+        "observed_git_head": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "branch_ahead_explanation": { "type": "string" }
       },
       "additionalProperties": false
     },
-    "currentCursor": { "type": "string" },
-    "highestPriorityExecutableLeafStep": { "type": "string" },
-    "stageOrder": {
+    "last_absorbed_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "current_cursor": { "type": "string" },
+    "next_leaf": { "type": "string" },
+    "current_stage": { "type": "string" },
+    "current_risk_class": { "type": "string" },
+    "current_blockers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "current_problem": { "type": "string" },
+    "scoreboard_boundary": { "type": "string", "const": "product_completion_only_not_execution_order" },
+    "execution_order_source": { "type": "string" },
+    "stage_order": {
       "type": "array",
       "items": { "type": "string" },
       "minItems": 6
+    },
+    "ordering": {
+      "type": "object",
+      "required": ["selection_rule", "future_stage_blocker_policy", "cleanup_blocking_statuses"],
+      "properties": {
+        "selection_rule": { "type": "string" },
+        "future_stage_blocker_policy": { "type": "string" },
+        "cleanup_blocking_statuses": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependency_ordering_repair": {
+      "type": "object",
+      "required": ["status", "repaired_current_cursor", "rule"],
+      "properties": {
+        "status": { "type": "string", "const": "active" },
+        "repaired_current_cursor": { "type": "string" },
+        "rule": { "type": "string" }
+      },
+      "additionalProperties": false
     },
     "gaps": {
       "type": "array",
       "items": { "$ref": "#/$defs/gap" },
       "minItems": 1
     },
-    "currentLeaf": { "$ref": "#/$defs/currentLeaf" },
-    "releaseReadiness": { "$ref": "#/$defs/releaseReadiness" },
-    "verificationCommands": {
+    "current_leaf": { "$ref": "#/$defs/current_leaf" },
+    "release_readiness_state": { "$ref": "#/$defs/release_readiness_state" },
+    "verification_commands": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "truth_source_files": {
       "type": "array",
       "items": { "type": "string" },
       "minItems": 1
     }
   },
   "$defs": {
+    "expected_absorbed_head": {
+      "type": "object",
+      "required": ["mode", "target_branch", "reason"],
+      "properties": {
+        "mode": { "type": "string", "const": "runtime_git_head_after_ff_only_absorb" },
+        "target_branch": { "type": "string", "const": "recovery/platform-v22-trunk" },
+        "reason": { "type": "string", "const": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha" }
+      },
+      "additionalProperties": false
+    },
     "gap": {
       "type": "object",
-      "required": ["id", "stage", "priority", "cursorEligible", "status", "nextLeafStep", "dependsOn"],
+      "required": ["id", "stage", "priority", "cursor_eligible", "status", "next_leaf_step", "depends_on"],
       "properties": {
         "id": { "type": "string" },
         "stage": { "type": "string" },
         "priority": { "type": "integer" },
-        "cursorEligible": { "type": "boolean" },
+        "cursor_eligible": { "type": "boolean" },
         "status": {
           "type": "string",
           "enum": [
@@ -81,61 +155,81 @@
             "deferred_authorized_future_stage"
           ]
         },
-        "nextLeafStep": { "type": "string" },
-        "dependsOn": {
+        "next_leaf_step": { "type": "string" },
+        "depends_on": {
           "type": "array",
           "items": { "type": "string" }
         }
       },
       "additionalProperties": false
     },
-    "currentLeaf": {
+    "current_leaf": {
       "type": "object",
-      "required": ["stepId", "gapId", "stage", "cursorEligible", "dependsOn", "verificationCommands", "allowedFiles", "forbiddenFiles", "truthWritebackTarget"],
+      "required": [
+        "step_id",
+        "gap_id",
+        "stage",
+        "cursor_eligible",
+        "depends_on",
+        "problem",
+        "executable_when",
+        "failure_state",
+        "verification_commands",
+        "allowed_files",
+        "forbidden_files",
+        "truth_writeback_target"
+      ],
       "properties": {
-        "stepId": { "type": "string" },
-        "gapId": { "type": "string" },
+        "step_id": { "type": "string" },
+        "gap_id": { "type": "string" },
         "stage": { "type": "string" },
-        "cursorEligible": { "type": "boolean" },
-        "dependsOn": {
+        "cursor_eligible": { "type": "boolean" },
+        "depends_on": {
           "type": "array",
           "items": { "type": "string" }
         },
         "problem": { "type": "string" },
-        "executableWhen": { "type": "string" },
-        "failureState": { "type": "string" },
-        "verificationCommands": {
+        "executable_when": { "type": "string" },
+        "failure_state": { "type": "string" },
+        "verification_commands": {
           "type": "array",
           "items": { "type": "string" }
         },
-        "allowedFiles": {
+        "allowed_files": {
           "type": "array",
           "items": { "type": "string" }
         },
-        "forbiddenFiles": {
+        "forbidden_files": {
           "type": "array",
           "items": { "type": "string" }
         },
-        "truthWritebackTarget": {
+        "truth_writeback_target": {
           "type": "array",
           "items": { "type": "string" }
         }
       },
       "additionalProperties": false
     },
-    "releaseReadiness": {
+    "release_readiness_state": {
       "type": "object",
-      "required": ["status", "cursorEligible", "authorizedIntentRecorded", "blockedBeforeRiskyExecution", "missingEvidence", "forbiddenUntilExecutable"],
+      "required": [
+        "status",
+        "cursor_eligible",
+        "authorized_intent_recorded",
+        "blocked_before_risky_execution",
+        "missing_evidence",
+        "forbidden_until_executable"
+      ],
       "properties": {
         "status": { "type": "string", "const": "deferred_authorized_future_stage" },
-        "cursorEligible": { "type": "boolean", "const": false },
-        "authorizedIntentRecorded": { "type": "boolean" },
-        "blockedBeforeRiskyExecution": { "type": "boolean" },
-        "missingEvidence": {
+        "cursor_eligible": { "type": "boolean", "const": false },
+        "authorized_intent_recorded": { "type": "boolean" },
+        "blocked_before_risky_execution": { "type": "boolean" },
+        "missing_evidence": {
           "type": "array",
           "items": { "type": "string" }
         },
-        "forbiddenUntilExecutable": {
+        "forbidden_until_executable": {
           "type": "array",
           "items": { "type": "string" }
         }
@@ -143,5 +237,5 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

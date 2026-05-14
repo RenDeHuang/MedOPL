@@ -1,20 +1,43 @@
 {
-  "schemaVersion": 1,
+  "schema_version": 1,
   "canonical": true,
-  "machineReadableCurrentTruth": true,
-  "markdownRole": "summary_history_pointer_only",
-  "updatedAt": "2026-05-14",
+  "current_truth_role": "single_write_entry",
+  "markdown_role": "human_summary_history_rules_only",
+  "last_updated_at": "2026-05-14",
   "model": "gpt-5.4",
-  "branchBaseline": "origin/recovery/platform-v22-trunk",
-  "git": {
-    "originTrunkHead": "e7e1c7c50eb4cde1b300ea3b5922667ba0b23bad",
-    "branchBaseHead": "e7e1c7c50eb4cde1b300ea3b5922667ba0b23bad",
-    "headCheck": "branch_base_head_must_equal_origin_trunk_head"
+  "branch_baseline": "origin/recovery/platform-v22-trunk",
+  "base_trunk_head": "8725ba5437c3bc12afbdef3e497ebc200d639e2b",
+  "expected_absorbed_head": {
+    "mode": "runtime_git_head_after_ff_only_absorb",
+    "target_branch": "recovery/platform-v22-trunk",
+    "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
-  "currentCursor": "leaf-cloud-lane-readonly-status-audit",
-  "highestPriorityExecutableLeafStep": "leaf-cloud-lane-readonly-status-audit",
-  "currentProblem": "Cloud lane readonly status audit; release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.",
-  "stageOrder": [
+  "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
+  "current_branch": "cleanup/v22-goal-control-plane-current-truth",
+  "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
+  "authoring_branch": "cleanup/v22-goal-control-plane-current-truth",
+  "target_branch": "recovery/platform-v22-trunk",
+  "git_observation": {
+    "expected_trunk_head": {
+      "mode": "runtime_git_head_after_ff_only_absorb",
+      "target_branch": "recovery/platform-v22-trunk",
+      "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
+    },
+    "observed_git_head": "8725ba5437c3bc12afbdef3e497ebc200d639e2b",
+    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
+  },
+  "last_absorbed_commit": "8725ba5437c3bc12afbdef3e497ebc200d639e2b",
+  "current_cursor": "leaf-cloud-lane-readonly-status-audit",
+  "next_leaf": "leaf-cloud-lane-readonly-status-audit",
+  "current_stage": "S4 Cloud lane productionization",
+  "current_risk_class": "local_doc_eval",
+  "current_blockers": [
+    "none_for_local_doc_eval"
+  ],
+  "current_problem": "Cloud lane readonly status audit; release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.",
+  "scoreboard_boundary": "product_completion_only_not_execution_order",
+  "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
+  "stage_order": [
     "S1 legacy cleanup",
     "S2 architecture refactor",
     "S3 OPL connection productionization",
@@ -23,33 +46,38 @@
     "S6 release readiness"
   ],
   "ordering": {
-    "selectionRule": "choose the lowest-priority-number gap whose cursorEligible is true, whose dependencies are satisfied, and whose nextLeafStep is executable",
-    "futureStageBlockerPolicy": "deferred_authorized_future_stage does not block earlier executable cleanup/refactor/dev leaves",
-    "cleanupBlockingStatuses": [
+    "selection_rule": "choose the lowest-priority-number gap whose cursor_eligible is true, whose dependencies are satisfied, and whose next_leaf_step is executable",
+    "future_stage_blocker_policy": "deferred_authorized_future_stage does not block earlier executable cleanup/refactor/dev leaves",
+    "cleanup_blocking_statuses": [
       "open",
       "in_progress",
       "needs_eval",
       "deferred_authorized_current_path"
     ]
   },
+  "dependency_ordering_repair": {
+    "status": "active",
+    "repaired_current_cursor": "leaf-cloud-lane-readonly-status-audit",
+    "rule": "release readiness cannot become cursor eligible until prerequisite gaps are satisfied; current executable order comes from this JSON plus the gap matrix only"
+  },
   "gaps": [
     {
       "id": "legacy-cleanup-user-owned",
       "stage": "S1 legacy cleanup",
       "priority": 10,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "cleaned",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": []
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": []
     },
     {
       "id": "legacy-cleanup-resource-order",
       "stage": "S1 legacy cleanup",
       "priority": 20,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "cleaned",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "legacy-cleanup-user-owned"
       ]
     },
@@ -57,10 +85,10 @@
       "id": "legacy-cleanup-secret-hygiene",
       "stage": "S1 legacy cleanup",
       "priority": 30,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "legacy-cleanup-resource-order"
       ]
     },
@@ -68,10 +96,10 @@
       "id": "legacy-cleanup-legacy-scripts",
       "stage": "S1 legacy cleanup",
       "priority": 40,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "legacy-cleanup-secret-hygiene"
       ]
     },
@@ -79,10 +107,10 @@
       "id": "architecture-refactor-portal-layering",
       "stage": "S2 architecture refactor",
       "priority": 50,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "legacy-cleanup-resource-order",
         "legacy-cleanup-secret-hygiene",
         "legacy-cleanup-legacy-scripts"
@@ -92,10 +120,10 @@
       "id": "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
       "stage": "S3 OPL connection productionization",
       "priority": 60,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "deferred_authorized_without_step_local_auth_record",
-      "dependsOn": [
+      "next_leaf_step": "deferred_authorized_without_step_local_auth_record",
+      "depends_on": [
         "architecture-refactor-portal-layering"
       ]
     },
@@ -103,10 +131,10 @@
       "id": "cloud-lane-mock-readonly-dry-run-authorized",
       "stage": "S4 Cloud lane productionization",
       "priority": 70,
-      "cursorEligible": true,
+      "cursor_eligible": true,
       "status": "in_progress",
-      "nextLeafStep": "leaf-cloud-lane-readonly-status-audit",
-      "dependsOn": [
+      "next_leaf_step": "leaf-cloud-lane-readonly-status-audit",
+      "depends_on": [
         "legacy-cleanup-user-owned",
         "legacy-cleanup-resource-order",
         "legacy-cleanup-secret-hygiene",
@@ -119,10 +147,10 @@
       "id": "frontend-product-vue-vite-ts-pinia",
       "stage": "S5 frontend/backend product completion",
       "priority": 80,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "cloud-lane-mock-readonly-dry-run-authorized"
       ]
     },
@@ -130,10 +158,10 @@
       "id": "backend-product-node22-esm-layering",
       "stage": "S5 frontend/backend product completion",
       "priority": 90,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "frontend-product-vue-vite-ts-pinia"
       ]
     },
@@ -141,10 +169,10 @@
       "id": "billing-audit-preauth-ledger-release-t1",
       "stage": "S5 frontend/backend product completion",
       "priority": 100,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "gated",
-      "nextLeafStep": "monitor_only_after_B_absorb",
-      "dependsOn": [
+      "next_leaf_step": "monitor_only_after_B_absorb",
+      "depends_on": [
         "backend-product-node22-esm-layering",
         "cloud-lane-mock-readonly-dry-run-authorized"
       ]
@@ -153,10 +181,10 @@
       "id": "release-readiness-authorized-deploy-only",
       "stage": "S6 release readiness",
       "priority": 999,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "deferred_authorized_future_stage",
-      "nextLeafStep": "leaf-release-readiness-auth-boundary",
-      "dependsOn": [
+      "next_leaf_step": "leaf-release-readiness-auth-boundary",
+      "depends_on": [
         "legacy-cleanup-resource-order",
         "legacy-cleanup-secret-hygiene",
         "legacy-cleanup-legacy-scripts",
@@ -172,20 +200,20 @@
       "id": "dependency-modernization-node24-vite-vitest-readiness",
       "stage": "S6 release readiness",
       "priority": 1000,
-      "cursorEligible": false,
+      "cursor_eligible": false,
       "status": "needs_eval",
-      "nextLeafStep": "write_eval_shell",
-      "dependsOn": [
+      "next_leaf_step": "write_eval_shell",
+      "depends_on": [
         "release-readiness-authorized-deploy-only"
       ]
     }
   ],
-  "currentLeaf": {
-    "stepId": "leaf-cloud-lane-readonly-status-audit",
-    "gapId": "cloud-lane-mock-readonly-dry-run-authorized",
+  "current_leaf": {
+    "step_id": "leaf-cloud-lane-readonly-status-audit",
+    "gap_id": "cloud-lane-mock-readonly-dry-run-authorized",
     "stage": "S4 Cloud lane productionization",
-    "cursorEligible": true,
-    "dependsOn": [
+    "cursor_eligible": true,
+    "depends_on": [
       "legacy-cleanup-user-owned",
       "legacy-cleanup-resource-order",
       "legacy-cleanup-secret-hygiene",
@@ -194,19 +222,19 @@
       "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
     ],
     "problem": "Cloud lane productionization needs a readonly/local status audit before any dry-run or authorized create/release work.",
-    "executableWhen": "readonly/local audit only; no secret, true cloud, build/push/kubectl, deploy, live-test, deploy/adapters/.sentrux, services, upstream, or dependency files",
-    "failureState": "deferred_authorized_current_path if readonly audit needs secret/live cloud or forbidden paths",
-    "verificationCommands": [
+    "executable_when": "readonly/local audit only; no secret, no true cloud, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no services, no upstream, and no dependency files",
+    "failure_state": "deferred_authorized_current_path if readonly audit needs secret/live cloud or forbidden paths",
+    "verification_commands": [
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
       "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs"
     ],
-    "allowedFiles": [
+    "allowed_files": [
       "docs/recovery/*",
       "scripts/smoke-test-v22-*"
     ],
-    "forbiddenFiles": [
+    "forbidden_files": [
       "services/*",
       "deploy/*",
       "adapters/*",
@@ -217,25 +245,25 @@
       "secret-like paths",
       "true cloud runners"
     ],
-    "truthWritebackTarget": [
+    "truth_writeback_target": [
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
     ]
   },
-  "releaseReadiness": {
+  "release_readiness_state": {
     "status": "deferred_authorized_future_stage",
-    "cursorEligible": false,
-    "authorizedIntentRecorded": true,
-    "blockedBeforeRiskyExecution": true,
-    "missingEvidence": [
+    "cursor_eligible": false,
+    "authorized_intent_recorded": true,
+    "blocked_before_risky_execution": true,
+    "missing_evidence": [
       "concrete Package D release plan",
       "concrete region",
       "accepted preflight/build-push/dry-run evidence",
       "rollback evidence",
       "baseline/cleanup evidence"
     ],
-    "forbiddenUntilExecutable": [
+    "forbidden_until_executable": [
       "secret read",
       "true cloud call",
       "build/push/kubectl",
@@ -243,12 +271,20 @@
       "live-test"
     ]
   },
-  "verificationCommands": [
+  "verification_commands": [
     "node scripts/smoke-test-v22-goal-state-consistency.mjs",
     "node scripts/smoke-test-v22-product-goal-harness.mjs",
     "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
     "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs/recovery scripts"
+  ],
+  "truth_source_files": [
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-product-completion-scoreboard.json",
+    "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-codex-goal-loop.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
   ]
 }
