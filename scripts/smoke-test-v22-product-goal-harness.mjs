@@ -33,6 +33,7 @@ const allowedDiffPaths = new Set([
   "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
   "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
   "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+  "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
   "docs/recovery/legacy-cleanup-backlog.md",
   "docs/recovery/repo-zoning.md",
 ]);
@@ -61,6 +62,16 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-goal-state-consistency.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-product-goal-execution-order.mjs",
+  ])],
+  ["cleanup/v22-cleanup-completion-truth", new Set([
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/legacy-cleanup-backlog.md",
+    "docs/recovery/repo-zoning.md",
+    "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
   ])],
   ["recovery/platform-v22-trunk", allowedDiffPaths],
 ]);

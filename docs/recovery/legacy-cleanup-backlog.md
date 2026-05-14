@@ -27,7 +27,7 @@
 | 2 | user_owned Primary Path Retirement | `cleanup/v22-retire-user-owned-primary-path` | Zone 2 | tombstone/delete | 需先确认 Portal 当前 user-owned alias 是否仍被 smoke 引用。 |
 | 3 | resource-order Primary Path Retirement | `cleanup/v22-retire-resource-order-primary-path` | Zone 2 | tombstone/delete | 需先确认 managed environment/resource binding 替代路径完整。 |
 | 4 | Legacy Script Archive Boundary | `cleanup/v22-legacy-script-archive-boundary` | Zone 2/3 | archive/rewrite | gate absorbed via `cleanup/v22-legacy-scripts-archive-eval-shell`; legacy scripts remain archive/reference and are not default validation. |
-| 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-observability-billing-primary-narrative` | Zone 2/3 | rewrite/archive | 需保持 sanitized trace metadata boundary。 |
+| 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-observability-billing-primary-narrative` | Zone 2/3 | rewrite/archive | completed by cleanup/v22-cleanup-completion-truth; sanitized trace metadata boundary remains enforced by the observability/billing narrative gate. |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
 
@@ -129,6 +129,7 @@
 - `trace.medopl.cn` 只能作为后续 ops/observability surface。
 - OpenCost 只作历史或后续授权运维参考，不是当前主账单事实源。
 - 普通用户页面不把 OpenCost/Langfuse 展示成核心产品能力。
+- completed by cleanup/v22-cleanup-completion-truth：`scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 只保留 archive/reference 或后续授权 ops 参考；二者不得恢复为主产品事实源。
 
 ## Gate Pattern
 

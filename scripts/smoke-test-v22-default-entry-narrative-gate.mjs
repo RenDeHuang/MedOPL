@@ -177,6 +177,18 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
   ])],
+  ["cleanup/v22-cleanup-completion-truth", new Set([
+    "docs/recovery/legacy-cleanup-backlog.md",
+    "docs/recovery/repo-zoning.md",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-goal-state.md",
+    "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+  ])],
   ["refactor/v22-portal-layering-characterization-gate", new Set([
     "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

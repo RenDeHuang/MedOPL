@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-14",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "8725ba5437c3bc12afbdef3e497ebc200d639e2b",
+  "base_trunk_head": "60e587a79c47d1a70538757e20d78c7b528d404f",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "cleanup/v22-goal-control-plane-current-truth",
+  "current_branch": "cleanup/v22-cleanup-completion-truth",
   "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
-  "authoring_branch": "cleanup/v22-goal-control-plane-current-truth",
+  "authoring_branch": "cleanup/v22-cleanup-completion-truth",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "8725ba5437c3bc12afbdef3e497ebc200d639e2b",
+    "observed_git_head": "60e587a79c47d1a70538757e20d78c7b528d404f",
     "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "8725ba5437c3bc12afbdef3e497ebc200d639e2b",
-  "current_cursor": "leaf-cloud-lane-readonly-status-audit",
-  "next_leaf": "leaf-cloud-lane-readonly-status-audit",
-  "current_stage": "S4 Cloud lane productionization",
+  "last_absorbed_commit": "60e587a79c47d1a70538757e20d78c7b528d404f",
+  "current_cursor": "leaf-cleanup-completion-truth-writeback",
+  "next_leaf": "leaf-cleanup-completion-truth-writeback",
+  "current_stage": "S1 legacy cleanup",
   "current_risk_class": "local_doc_eval",
   "current_blockers": [
-    "none_for_local_doc_eval"
+    "none_for_cleanup_completion_truth_writeback"
   ],
-  "current_problem": "Cloud lane readonly status audit; release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.",
+  "current_problem": "cleanup_completion truth writeback: all cleanup gaps are cleaned, tombstone-only, archive-only, or intentionally retained. Remaining non-cleanup next stage is leaf-cloud-lane-readonly-status-audit, but this cleanup-only goal must stop before Cloud lane.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -46,7 +46,7 @@
     "S6 release readiness"
   ],
   "ordering": {
-    "selection_rule": "choose the lowest-priority-number gap whose cursor_eligible is true, whose dependencies are satisfied, and whose next_leaf_step is executable",
+    "selection_rule": "cleanup-only goal selects cleanup cursor correction/completion before any non-cleanup executable leaf; normal product-goal runs choose the lowest-priority-number gap whose cursor_eligible is true, whose dependencies are satisfied, and whose next_leaf_step is executable",
     "future_stage_blocker_policy": "deferred_authorized_future_stage does not block earlier executable cleanup/refactor/dev leaves",
     "cleanup_blocking_statuses": [
       "open",
@@ -57,8 +57,8 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-cloud-lane-readonly-status-audit",
-    "rule": "release readiness cannot become cursor eligible until prerequisite gaps are satisfied; current executable order comes from this JSON plus the gap matrix only"
+    "repaired_current_cursor": "leaf-cleanup-completion-truth-writeback",
+    "rule": "cleanup-only goal stops at cleanup_completion truth when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path; Cloud lane remains the next non-cleanup stage for a separate goal."
   },
   "gaps": [
     {
@@ -86,7 +86,7 @@
       "stage": "S1 legacy cleanup",
       "priority": 30,
       "cursor_eligible": false,
-      "status": "gated",
+      "status": "cleaned",
       "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "legacy-cleanup-resource-order"
@@ -97,7 +97,7 @@
       "stage": "S1 legacy cleanup",
       "priority": 40,
       "cursor_eligible": false,
-      "status": "gated",
+      "status": "cleaned",
       "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "legacy-cleanup-secret-hygiene"
@@ -131,7 +131,7 @@
       "id": "cloud-lane-mock-readonly-dry-run-authorized",
       "stage": "S4 Cloud lane productionization",
       "priority": 70,
-      "cursor_eligible": true,
+      "cursor_eligible": false,
       "status": "in_progress",
       "next_leaf_step": "leaf-cloud-lane-readonly-status-audit",
       "depends_on": [
@@ -206,29 +206,46 @@
       "depends_on": [
         "release-readiness-authorized-deploy-only"
       ]
+    },
+    {
+      "id": "cleanup-completion-truth",
+      "stage": "S1 legacy cleanup",
+      "priority": 45,
+      "cursor_eligible": true,
+      "status": "cleaned",
+      "next_leaf_step": "leaf-cleanup-completion-truth-writeback",
+      "depends_on": [
+        "legacy-cleanup-user-owned",
+        "legacy-cleanup-resource-order",
+        "legacy-cleanup-secret-hygiene",
+        "legacy-cleanup-legacy-scripts"
+      ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-cloud-lane-readonly-status-audit",
-    "gap_id": "cloud-lane-mock-readonly-dry-run-authorized",
-    "stage": "S4 Cloud lane productionization",
+    "step_id": "leaf-cleanup-completion-truth-writeback",
+    "gap_id": "cleanup-completion-truth",
+    "stage": "S1 legacy cleanup",
     "cursor_eligible": true,
     "depends_on": [
       "legacy-cleanup-user-owned",
       "legacy-cleanup-resource-order",
       "legacy-cleanup-secret-hygiene",
-      "legacy-cleanup-legacy-scripts",
-      "architecture-refactor-portal-layering",
-      "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+      "legacy-cleanup-legacy-scripts"
     ],
-    "problem": "Cloud lane productionization needs a readonly/local status audit before any dry-run or authorized create/release work.",
-    "executable_when": "readonly/local audit only; no secret, no true cloud, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no services, no upstream, and no dependency files",
-    "failure_state": "deferred_authorized_current_path if readonly audit needs secret/live cloud or forbidden paths",
+    "problem": "cleanup-only cursor correction writes cleanup_completion truth and stops before Cloud lane.",
+    "executable_when": "cleanup-only truth writeback only; all cleanup gaps are cleaned/tombstone-only/archive-only/intentionally retained; no secret, no true cloud, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no services, no upstream, and no dependency files",
+    "failure_state": "blocked_cleanup_completion_truth if any cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path",
     "verification_commands": [
+      "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
-      "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs"
+      "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+      "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+      "git diff --check -- docs/recovery scripts services"
     ],
     "allowed_files": [
       "docs/recovery/*",

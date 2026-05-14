@@ -7,7 +7,7 @@ Product Completion Scoreboard now lives in `docs/recovery/v22-product-completion
 This Markdown remains a human-readable gap explanation and history surface; the consistency gate checks JSON/Markdown/gap/scoreboard alignment.
 scoreboard 只表达产品能力完成度，不决定 leaf execution order. Execution order is decided by `docs/recovery/v22-goal-current.json` plus this gap matrix's `depends_on` / `executable_when` / `cursor_eligible` fields.
 
-Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
+Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `tombstone_only`, `archive_only`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
 
 ## Dependency Stage Order
 
@@ -29,6 +29,7 @@ Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Before 
 - `legacy-cleanup-secret-hygiene` status must be cleaned or gated by the diff-scoped scan eval.
 - `legacy-cleanup-legacy-scripts` status must be cleaned or gated by the archive boundary eval.
 - open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
+- cleanup-only goal stop condition is stricter than Cloud lane dependency eligibility: all cleanup gaps must be `cleaned`, `tombstone_only`, `archive_only`, or `intentionally_retained`, then Codex writes `cleanup_completion` truth and stops before any Cloud/development/release leaf.
 
 ## Release Readiness Dependency Gate
 
@@ -114,7 +115,7 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-secret-hygiene
 
 - id: legacy-cleanup-secret-hygiene
-- current_fact: workflow gate has path-level secret-like checks; reusable local diff-scoped sensitive hygiene eval now proves changed-files / added-lines scanning without reading real secret-like paths.
+- current_fact: workflow gate has path-level secret-like checks; reusable local diff-scoped sensitive hygiene eval is absorbed and proves changed-files / added-lines scanning without reading real secret-like paths.
 - ideal_state: B always runs changed-files / added-lines diff-scoped secret scan before absorb; full-repo secret scan is read-only audit only.
 - problem: secret hygiene can degrade if B relies only on broad scans or path names.
 - dependency: product-goal harness absorbed.
@@ -124,18 +125,18 @@ Every gap entry must contain:
 - stage: S1 legacy cleanup
 - priority: 30
 - cursor_eligible: false
-- status: gated
+- status: cleaned
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs`
 - allowed_files: `scripts/smoke-test-v22-*`, `docs/recovery/*`
 - forbidden_files: `.env*`, secret files, kubeconfig, `deploy/*`, `adapters/*`, `.sentrux/*`
 - truth_writeback_target: `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`
-- B_absorb_criteria: B confirms changed-files / added-lines diff-scoped sensitive hygiene scan is mandatory, path-level fail-closed checks still block secret-like paths, and no secret content is read.
+- B_absorb_criteria: B confirms changed-files / added-lines diff-scoped sensitive hygiene scan is mandatory, path-level fail-closed checks still block secret-like paths, no secret content is read, and cleanup_completion may treat this gate as cleaned truth.
 
 ### Gap: legacy-cleanup-legacy-scripts
 
 - id: legacy-cleanup-legacy-scripts
-- current_fact: v19/v20/v21/live-test scripts remain archive/reference, not default validation; `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` now gates default docs and MVP suite against legacy script re-entry.
+- current_fact: v19/v20/v21/live-test scripts remain archive/reference, not default validation; `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` is absorbed and gates default docs and MVP suite against legacy script re-entry.
 - ideal_state: default execution line uses only v22 local smoke unless a canary is explicitly authorized.
 - problem: old scripts can re-enter AI context as default truth.
 - dependency: secret hygiene eval shell absorbed; archive boundary gate exists and is runnable locally.
@@ -145,13 +146,34 @@ Every gap entry must contain:
 - stage: S1 legacy cleanup
 - priority: 40
 - cursor_eligible: false
-- status: gated
+- status: cleaned
 - next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
 - allowed_files: `docs/recovery/*`, `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`, branch-scoped harness allowlist updates
 - forbidden_files: `scripts/live-test-*`, `scripts/smoke-test-v19-*`, `scripts/smoke-test-v20*`, `scripts/smoke-test-v21-*` unless archiving is explicitly scoped
 - truth_writeback_target: `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B verifies MVP suite does not include old scripts and no live-test is run.
+- B_absorb_criteria: B verifies MVP suite does not include old scripts, no live-test is run, and cleanup_completion may treat this archive boundary as cleaned truth.
+
+### Gap: cleanup-completion-truth
+
+- id: cleanup-completion-truth
+- current_fact: cleanup-only cursor correction records that user_owned, resource-order, secret hygiene, legacy scripts, default narrative, and OpenCost/Langfuse primary narrative cleanup are no longer active primary paths.
+- ideal_state: all cleanup gaps are cleaned, tombstone_only, archive_only, or intentionally_retained, and the goal stops before Cloud lane or product development.
+- problem: the canonical cursor pointed at a Cloud lane leaf while this run is cleanup-only; cleanup_completion truth must be written before stopping.
+- dependency: cleanup gates for user_owned, resource-order, secret hygiene, legacy scripts, default entry, and OpenCost/Langfuse narrative are absorbed or represented as tombstone/archive facts.
+- depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts]
+- blocked_by: []
+- executable_when: cleanup-only goal observes no cleanup gap with open, in_progress, needs_eval, or deferred_authorized_current_path status.
+- stage: S1 legacy cleanup
+- priority: 45
+- cursor_eligible: true
+- status: cleaned
+- next_leaf_step: leaf-cleanup-completion-truth-writeback
+- eval: `node scripts/smoke-test-v22-cleanup-completion-truth.mjs`
+- allowed_files: `docs/recovery/*`, `scripts/smoke-test-v22-*`
+- forbidden_files: `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, upstream one-person-lab, secret-like paths, true cloud runners, package/dependency files
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/legacy-cleanup-backlog.md`, `docs/recovery/repo-zoning.md`
+- B_absorb_criteria: B reruns cleanup completion and required v22 gates, confirms no cleanup gap remains unfinished, confirms OpenCost/Langfuse remain non-primary, and stops without entering Cloud lane.
 
 ### Gap: architecture-refactor-portal-layering
 
@@ -207,7 +229,7 @@ Every gap entry must contain:
 - executable_when: readonly/local status audit can run without secret/live/cloud/build/push/kubectl/deploy and without touching deploy/adapters/.sentrux.
 - stage: S4 Cloud lane productionization
 - priority: 70
-- cursor_eligible: true
+- cursor_eligible: false
 - status: in_progress
 - next_leaf_step: leaf-cloud-lane-readonly-status-audit
 - eval: `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`

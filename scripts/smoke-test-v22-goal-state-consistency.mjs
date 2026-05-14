@@ -22,6 +22,8 @@ const allowedStatuses = new Set([
   "needs_eval",
   "gated",
   "cleaned",
+  "tombstone_only",
+  "archive_only",
   "characterized",
   "completed",
   "intentionally_retained",
@@ -289,7 +291,7 @@ function assertCurrentShape(current) {
   assert.equal(current.model, "gpt-5.4", "current_model_mismatch");
   assert.equal(current.branch_baseline, "origin/recovery/platform-v22-trunk", "branch_baseline_mismatch");
   assert.equal(current.target_branch, "recovery/platform-v22-trunk", "target_branch_mismatch");
-  assert.equal(current.authoring_branch, "cleanup/v22-goal-control-plane-current-truth", "authoring_branch_mismatch");
+  assert.equal(current.authoring_branch, "cleanup/v22-cleanup-completion-truth", "authoring_branch_mismatch");
   assert.equal(current.current_branch, current.authoring_branch, "current_branch_must_be_authoring_source_branch");
   assert.equal(
     current.current_branch_role,
@@ -302,9 +304,9 @@ function assertCurrentShape(current) {
     `runtime_branch_must_be_authoring_or_target:${runtimeBranch}`,
   );
   assert.deepEqual(current.stage_order, expectedStageOrder, "stage_order_mismatch");
-  assert.equal(current.current_cursor, "leaf-cloud-lane-readonly-status-audit", "current_cursor_must_preserve_existing_fact");
+  assert.equal(current.current_cursor, "leaf-cleanup-completion-truth-writeback", "current_cursor_must_preserve_cleanup_completion_fact");
   assert.equal(current.next_leaf, current.current_cursor, "next_leaf_must_match_current_cursor_for_active_leaf");
-  assert.equal(current.current_stage, "S4 Cloud lane productionization", "current_stage_mismatch");
+  assert.equal(current.current_stage, "S1 legacy cleanup", "current_stage_mismatch");
   assert.equal(current.current_risk_class, "local_doc_eval", "current_risk_class_mismatch");
   assert.equal(current.release_readiness_state?.status, "deferred_authorized_future_stage", "release_readiness_status_mismatch");
   assert.equal(current.release_readiness_state?.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
@@ -320,7 +322,10 @@ function assertCurrentShape(current) {
     assert(current.release_readiness_state.missing_evidence.includes(missing), `release_readiness_missing_evidence_not_recorded:${missing}`);
   }
   assert(Array.isArray(current.current_blockers), "current_blockers_must_be_array");
-  assert(current.current_blockers.includes("none_for_local_doc_eval"), "current_blockers_must_record_no_local_blocker");
+  assert(
+    current.current_blockers.includes("none_for_cleanup_completion_truth_writeback"),
+    "current_blockers_must_record_no_cleanup_completion_blocker",
+  );
   assertPlainObject(current.dependency_ordering_repair, "dependency_ordering_repair");
   assert.equal(current.dependency_ordering_repair.status, "active", "dependency_ordering_repair_status_mismatch");
   assert.equal(current.dependency_ordering_repair.repaired_current_cursor, current.current_cursor, "dependency_ordering_repair_cursor_mismatch");
@@ -350,8 +355,12 @@ function assertCurrentShape(current) {
   assert.equal(current.last_absorbed_commit, current.base_trunk_head, "last_absorbed_commit_must_record_previous_absorbed_fact");
   if (runtimeBranch === current.authoring_branch) {
     assert.equal(originTrunkHead, current.base_trunk_head, "authoring_branch_origin_trunk_must_equal_base_trunk_head");
-    assert.notEqual(localHead, current.base_trunk_head, "authoring_branch_head_must_be_ahead_of_base_trunk_head");
-    assert.equal(localHeadParent, current.base_trunk_head, "authoring_branch_head_parent_must_equal_base_trunk_head");
+    if (localHead === current.base_trunk_head) {
+      const pendingDiff = runGit(["status", "--porcelain"]);
+      assert(pendingDiff.length > 0, "authoring_branch_at_base_requires_pending_cleanup_completion_diff");
+    } else {
+      assert.equal(localHeadParent, current.base_trunk_head, "authoring_branch_head_parent_must_equal_base_trunk_head");
+    }
     assert(
       typeof current.git_observation.branch_ahead_explanation === "string" &&
       current.git_observation.branch_ahead_explanation.length > 0,
@@ -426,7 +435,16 @@ function assertGapConsistency(current, gapMatrix) {
 
 function computeExecutableLeaf(current) {
   const gapMap = asGapMap(current.gaps);
-  const satisfiedStatuses = new Set(["cleaned", "intentionally_retained", "gated", "characterized", "completed", "deferred_authorized_future_stage"]);
+  const satisfiedStatuses = new Set([
+    "cleaned",
+    "tombstone_only",
+    "archive_only",
+    "intentionally_retained",
+    "gated",
+    "characterized",
+    "completed",
+    "deferred_authorized_future_stage",
+  ]);
   const candidates = current.gaps
     .filter((gap) => gap.cursor_eligible)
     .filter((gap) => gap.next_leaf_step && !["monitor_only_after_B_absorb", "write_eval_shell"].includes(gap.next_leaf_step))

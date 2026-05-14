@@ -7,8 +7,8 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 - canonical current state: `docs/recovery/v22-goal-current.json`
 - product completion scoreboard: `docs/recovery/v22-product-completion-scoreboard.json`
 - leaf manifest schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
-- current cursor summary: `leaf-cloud-lane-readonly-status-audit`
-- highest-priority executable leaf summary: `leaf-cloud-lane-readonly-status-audit`
+- current cursor summary: `leaf-cleanup-completion-truth-writeback`
+- highest-priority executable leaf summary: `leaf-cleanup-completion-truth-writeback`
 - release readiness summary: `deferred_authorized_future_stage`
 
 下面的中文摘要只帮助人读状态；任何 runner、gate、B review 选择 current leaf 时必须读取 `docs/recovery/v22-goal-current.json`，再用 consistency gate 对齐 Markdown/gap/scoreboard。
@@ -38,31 +38,31 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `cleanup/v22-goal-control-plane-current-truth`.
+- authoring/source branch: `cleanup/v22-cleanup-completion-truth`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
-- 当前 goal cursor: `leaf-cloud-lane-readonly-status-audit`.
-- highest-priority executable leaf step: `leaf-cloud-lane-readonly-status-audit`.
-- 当前下一问题：Cloud lane readonly status audit; release readiness stays future-stage until cleanup/refactor/OPL/Cloud/frontend/backend prerequisites are satisfied.
+- 当前 goal cursor: `leaf-cleanup-completion-truth-writeback`.
+- highest-priority executable leaf step: `leaf-cleanup-completion-truth-writeback`.
+- 当前下一问题：cleanup_completion truth writeback; remaining non-cleanup next stage is `leaf-cloud-lane-readonly-status-audit`, but this cleanup-only goal stops before Cloud lane.
 - release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
 ## Current Leaf Summary
 
-- step_id: `leaf-cloud-lane-readonly-status-audit`.
-- gap_id: `cloud-lane-mock-readonly-dry-run-authorized`.
-- stage: `S4 Cloud lane productionization`.
+- step_id: `leaf-cleanup-completion-truth-writeback`.
+- gap_id: `cleanup-completion-truth`.
+- stage: `S1 legacy cleanup`.
 - cursor_eligible: true.
-- eval_command: `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-product-goal-execution-order.mjs`.
-- auth_boundary: local readonly/docs/scripts only; no secret, no live-test, no true cloud, no build/push/kubectl, no deploy, no services implementation.
+- eval_command: `node scripts/smoke-test-v22-cleanup-completion-truth.mjs`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-product-goal-execution-order.mjs`.
+- auth_boundary: cleanup-only local docs/scripts truth writeback; no secret, no live-test, no true cloud, no build/push/kubectl, no deploy, no services implementation, no upstream modification.
 - truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`.
 
 ## Completed Facts
 
-- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap、Backend contract eval template、Billing audit characterization、release readiness auth boundary、release readiness authorized blocker truth writeback.
+- 已完成事实：default entry、user_owned、resource-order 前四刀、secret hygiene diff scan、legacy scripts archive boundary、OpenCost/Langfuse primary narrative retirement truth、cleanup_completion truth、Portal layering characterization、OPL productionization contract refresh、OPL productionization eval shell、OPL productionization local implementation、Portal frontend product evalset gap、Backend contract eval template、Billing audit characterization、release readiness auth boundary、release readiness authorized blocker truth writeback.
 - default entry legacy narrative is cleaned.
 - user_owned primary path is retired to legacy alias/tombstone.
 - resource-order first four slices are complete: route tombstones, billing/payload rewrite, store/admin/frontend surface cleanup, and active store/Postgres/runtime persistence retirement.
@@ -70,6 +70,8 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-resource-order-store-postgres-schema-implementation completed: active runtime no longer instantiates or wires resource-order store/Postgres persistence; legacy tables/collections remain migration-only/tombstone facts.
 - leaf-secret-hygiene-diff-scan-eval-shell completed: diff-scoped sensitive hygiene eval proves changed-files / added-lines scanning without reading real secret-like paths.
 - leaf-legacy-scripts-archive-eval-shell completed: legacy script archive boundary eval keeps v19/v20/v21/live-test scripts out of default validation.
+- OpenCost/Langfuse primary narrative retirement is cleanup-complete: `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment and OpenCost is archive/reference, not Portal, billing, artifact, run, or product truth.
+- cleanup_completion truth is written by `leaf-cleanup-completion-truth-writeback`: all cleanup gaps are cleaned, tombstone-only, archive-only, or intentionally retained. Remaining non-cleanup next stage is `leaf-cloud-lane-readonly-status-audit`; this cleanup-only goal stops here and does not enter Cloud lane.
 - leaf-portal-layering-characterization-gate completed: Portal structure/failure isolation characterization is recorded.
 - leaf-opl-connection-productionization-contract-refresh completed: OPL productionization handoff status is `contract_refresh_only`.
 - leaf-opl-connection-productionization-eval-shell completed: local eval shell blocks canary-only production claims, fake success, raw secret/token/storage leakage, upstream modification, cloud/deploy owner-field leakage, and unauthorized cloud/deploy operations.
@@ -116,8 +118,6 @@ This subsection is historical evidence only. It is intentionally not the current
 
 ## Later Problems
 
-- secret hygiene
-- legacy scripts archive
 - Portal architecture refactor
 - OPL connection
 - Cloud lane
