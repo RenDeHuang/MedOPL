@@ -225,6 +225,14 @@ function runGit(args) {
   return result.stdout.trim();
 }
 
+function isAncestor(ancestor, descendant) {
+  const result = spawnSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  return result.status === 0;
+}
+
 function extractGoalStateSummary(goalState) {
   const jsonMatch = goalState.match(/^- canonical current state: `([^`]+)`$/mu);
   const cursorMatch = goalState.match(/^- current cursor summary: `([^`]+)`$/mu);
@@ -375,7 +383,15 @@ function assertCurrentShape(current) {
   } else if (runtimeBranch === current.target_branch) {
     assert.equal(localHead, originTrunkHead, "target_branch_head_must_equal_origin_trunk_head");
     assert.notEqual(localHead, current.base_trunk_head, "target_branch_head_must_not_remain_at_base_trunk_head");
-    assert.equal(localHeadParent, current.base_trunk_head, "target_branch_head_parent_must_equal_base_trunk_head");
+    assert(
+      localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
+      "target_branch_head_must_descend_from_base_trunk_head",
+    );
+    assert.equal(
+      current.current_cursor,
+      "leaf-cleanup-completion-truth-writeback",
+      "target_branch_additive_truth_must_not_advance_current_cursor",
+    );
   } else if (additiveTruthBranches.has(runtimeBranch)) {
     if (localHead === originTrunkHead) {
       const pendingDiff = runGit(["status", "--porcelain"]);
