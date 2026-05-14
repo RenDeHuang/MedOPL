@@ -17,6 +17,7 @@ const docs = {
   currentState: "docs/recovery/v22-goal-current.json",
   scoreboard: "docs/recovery/v22-product-completion-scoreboard.json",
   schema: "docs/recovery/v22-goal-leaf-manifest.schema.json",
+  verifyManifest: "docs/recovery/v22-agent-verify-manifest.json",
 };
 
 const gatePath = "scripts/smoke-test-v22-product-goal-harness.mjs";
@@ -150,8 +151,9 @@ const controlPlaneConsolidationPhrases = [
   "v22-goal-current.json 成为唯一 current truth",
   "v22-goal-state.md 降级为 human summary / history",
   "allowlist 分散在多个 gate，导致每个新 leaf 都要改多个脚本",
-  "后续引入 leaf manifest，把 `allowed_files` / `forbidden_files` / `forbidden_ops` / `verification` 集中化",
-  "本分支不完成 leaf manifest 迁移",
+  "`docs/recovery/v22-agent-verify-manifest.json` 是 agent-facing verify manifest",
+  "`scripts/v22-verify.mjs current` 是默认统一验证入口",
+  "smoke 只做 atomic gate",
   "low-risk 和 high-risk 还没有完全分流",
   "`risk_class` 固定为 `local_doc_eval` / `local_service_code` / `sensitive_boundary` / `live_external`",
   "当前分支只确保字段和说明存在，不改变现有授权边界",
@@ -193,6 +195,7 @@ const requiredValidationCommands = [
   "node scripts/smoke-test-v22-product-goal-harness.mjs",
   "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
   "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
   "git diff --check -- docs/recovery scripts",
 ];
@@ -269,11 +272,36 @@ function currentBranchName() {
   return result.stdout.trim();
 }
 
-function assertOnlyAllowedFilesChanged() {
+function globToRegExp(pattern) {
+  const escaped = String(pattern)
+    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+    .replaceAll("\\*", ".*");
+  return new RegExp(`^${escaped}$`, "u");
+}
+
+function manifestAllowedDiffPaths(verifyManifest = {}) {
+  return new Set([
+    ...(verifyManifest.control_plane_files || []),
+    ...((verifyManifest.leaves || []).flatMap((leaf) => leaf.allowed_files || []).filter((item) => !String(item).includes("*"))),
+  ]);
+}
+
+function manifestAllowedDiffPatterns(verifyManifest = {}) {
+  return [
+    ...((verifyManifest.leaves || []).flatMap((leaf) => leaf.allowed_files || []).filter((item) => String(item).includes("*"))),
+  ].map(globToRegExp);
+}
+
+function assertOnlyAllowedFilesChanged(verifyManifest = {}) {
   const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(currentBranchName()) ?? new Set();
+  const manifestAllowedPaths = manifestAllowedDiffPaths(verifyManifest);
+  const manifestAllowedPatterns = manifestAllowedDiffPatterns(verifyManifest);
   for (const filePath of changedFilesFromBase()) {
     assert(
-      allowedDiffPaths.has(filePath) || branchAllowedDiffPaths.has(filePath),
+      allowedDiffPaths.has(filePath)
+        || branchAllowedDiffPaths.has(filePath)
+        || manifestAllowedPaths.has(filePath)
+        || manifestAllowedPatterns.some((pattern) => pattern.test(filePath)),
       `product_goal_harness_modified_unsubscribed_file:${filePath}`,
     );
   }
@@ -292,7 +320,7 @@ function diffAddedLinesFromBase() {
     .map((line) => line.slice(1));
 }
 
-async function untrackedFileLines() {
+async function untrackedFileLines(verifyManifest = {}) {
   const result = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], {
     cwd: repoRoot,
     encoding: "utf8",
@@ -300,18 +328,24 @@ async function untrackedFileLines() {
   });
   assert.equal(result.status, 0, `git_ls_files_others_failed:${result.stderr || result.stdout}`);
   const lines = [];
+  const manifestAllowedPaths = manifestAllowedDiffPaths(verifyManifest);
+  const manifestAllowedPatterns = manifestAllowedDiffPatterns(verifyManifest);
   for (const filePath of result.stdout.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)) {
-    if (!allowedDiffPaths.has(filePath)) continue;
+    if (
+      !allowedDiffPaths.has(filePath) &&
+      !manifestAllowedPaths.has(filePath) &&
+      !manifestAllowedPatterns.some((pattern) => pattern.test(filePath))
+    ) continue;
     lines.push(...(await readRepoFile(filePath)).split(/\r?\n/u));
   }
   return lines;
 }
 
-async function assertNoSecretLikeValuesInAddedLines() {
+async function assertNoSecretLikeValuesInAddedLines(verifyManifest = {}) {
   const findings = [];
   const addedLines = [
     ...diffAddedLinesFromBase(),
-    ...await untrackedFileLines(),
+    ...await untrackedFileLines(verifyManifest),
   ];
   for (const [index, source] of addedLines.entries()) {
     for (const pattern of secretLikeValuePatterns) {
@@ -332,16 +366,17 @@ for (const filePath of [...Object.values(docs), gatePath, executionOrderGatePath
   await assertFileExists(filePath);
 }
 
-assertOnlyAllowedFilesChanged();
-await assertNoSecretLikeValuesInAddedLines();
-runGate(consistencyGatePath);
-
 const sources = Object.fromEntries(await Promise.all(
   Object.entries(docs).map(async ([key, filePath]) => [key, await readRepoFile(filePath)]),
 ));
 const currentState = await readJson(docs.currentState);
 const scoreboard = await readJson(docs.scoreboard);
+const verifyManifest = await readJson(docs.verifyManifest);
 const allDocs = Object.values(sources).join("\n");
+
+assertOnlyAllowedFilesChanged(verifyManifest);
+await assertNoSecretLikeValuesInAddedLines(verifyManifest);
+runGate(consistencyGatePath);
 
 for (const phrase of productLoopItems) assertIncludes(sources.productE2eContract, phrase, "product_loop_13_items");
 for (const phrase of goalLoopSteps) assertIncludes(sources.goalLoop, phrase, "goal_loop_8_steps");
@@ -351,6 +386,11 @@ for (const phrase of controlPlaneConsolidationPhrases) {
 }
 for (const command of requiredValidationCommands) assertIncludes(allDocs, command, "validation_command");
 for (const field of requiredCurrentFields) assert(Object.hasOwn(currentState, field), `current_state_field_missing:${field}`);
+
+assert.equal(verifyManifest.allowlist_authority, "manifest_not_smoke", "verify_manifest_allowlist_authority_mismatch");
+assert.equal(verifyManifest.smoke_role, "atomic_gate_only", "verify_manifest_smoke_role_mismatch");
+assert.equal(verifyManifest.default_agent_entrypoint, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "verify_manifest_default_entrypoint_mismatch");
+assert(Array.isArray(verifyManifest.control_plane_files), "verify_manifest_control_plane_files_missing");
 
 assert.equal(currentState.canonical, true, "current_state_must_be_canonical");
 assert.equal(currentState.current_branch, currentState.authoring_branch, "current_branch_must_record_authoring_branch");

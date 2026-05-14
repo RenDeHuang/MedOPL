@@ -5,6 +5,17 @@ This document keeps the repeatable runner rules only. Current state, dependency 
 - current state: `docs/recovery/v22-goal-current.json`
 - scoreboard: `docs/recovery/v22-product-completion-scoreboard.json`
 - schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
+- agent verify manifest: `docs/recovery/v22-agent-verify-manifest.json`
+
+## Unified verify entrypoint
+
+默认 agent 验证入口是：
+
+```bash
+node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
+```
+
+该入口读取 `docs/recovery/v22-goal-current.json` 和 `docs/recovery/v22-agent-verify-manifest.json`，再执行当前 leaf 的 verification bundle。普通 smoke 只做 atomic gate；新增 leaf 的 `allowed_files`、`forbidden_files`、`forbidden_ops` 和 `verification_commands` 必须进入 verify manifest，不再分散写进多个 smoke 脚本。
 
 ## 8-step goal loop
 

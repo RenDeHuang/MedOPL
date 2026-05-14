@@ -361,7 +361,7 @@ export function evaluateReview({ base = "recovery/platform-v22-trunk", changedFi
   }
 
   const recommendedCommands = [
-    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   ];
   if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) {
     recommendedCommands.push("npm --prefix services/portal run check");

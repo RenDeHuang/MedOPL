@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "canonical": true,
+  "last_updated_at": "2026-05-15",
+  "model": "gpt-5.4",
+  "runner": "scripts/v22-verify.mjs",
+  "default_agent_entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+  "allowlist_authority": "manifest_not_smoke",
+  "smoke_role": "atomic_gate_only",
+  "purpose": "Centralize agent-facing verification entrypoints, current leaf allowlists, forbidden surfaces, risk classes, and command bundles so agents do not choose among scattered smoke scripts.",
+  "risk_classes": [
+    "local_doc_eval",
+    "local_service_code",
+    "sensitive_boundary",
+    "live_external"
+  ],
+  "global_forbidden_files": [
+    "deploy/*",
+    ".sentrux/*",
+    "adapters/*",
+    "one-person-lab/*",
+    "upstream/*",
+    "secret-like paths"
+  ],
+  "global_forbidden_ops": [
+    "secret",
+    "live-cloud",
+    "true-cloud-mutation",
+    "build-push-kubectl",
+    "deploy",
+    "live-test",
+    "upstream-write",
+    "dependency-upgrade"
+  ],
+  "control_plane_files": [
+    "docs/recovery/v22-agent-verify-manifest.json",
+    "docs/recovery/v22-goal-state.md",
+    "docs/recovery/v22-codex-goal-loop.md",
+    "scripts/v22-verify.mjs",
+    "scripts/v22-workflow-gate.mjs",
+    "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+    "scripts/smoke-test-v22-workflow-gate.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs"
+  ],
+  "control_plane_branches": [
+    "cleanup/v22-agent-verify-manifest-entrypoint"
+  ],
+  "leaves": [
+    {
+      "leaf_id": "leaf-cloud-lane-readonly-status-audit",
+      "gap_id": "cloud-lane-mock-readonly-dry-run-authorized",
+      "stage": "S4 Cloud lane productionization",
+      "risk_class": "local_doc_eval",
+      "live_external_allowed": false,
+      "requires_step_local_auth_record": false,
+      "contracts": [
+        "AGENTS.md",
+        "docs/contracts/README.md",
+        "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-codex-goal-loop.md",
+        "docs/recovery/mvp-contract-acceptance.md"
+      ],
+      "allowed_files": [
+        "docs/recovery/*",
+        "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+        "scripts/smoke-test-v22-*"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        ".env.demo.template",
+        "upstream one-person-lab",
+        "package/dependency files",
+        "secret-like paths",
+        "true cloud runners"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade"
+      ],
+      "verification_commands": [
+        "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts"
+      ],
+      "truth_writeback_target": [
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+      ]
+    }
+  ],
+  "suites": [
+    {
+      "id": "current",
+      "description": "Default agent verification bundle for the current executable leaf.",
+      "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts"
+      ]
+    },
+    {
+      "id": "mvp",
+      "description": "Default local, no-secret, no-live-cloud MVP regression suite.",
+      "entrypoint": "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ]
+    },
+    {
+      "id": "review",
+      "description": "B review local gate. This does not merge, push, read secrets, or execute live/cloud/deploy operations.",
+      "entrypoint": "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
+      ]
+    }
+  ],
+  "package_suites": [
+    {
+      "id": "portal-ui",
+      "entrypoint": "node scripts/v22-verify.mjs package portal-ui --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all"
+      ]
+    },
+    {
+      "id": "gateway",
+      "entrypoint": "node scripts/v22-verify.mjs package gateway --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs",
+        "node scripts/smoke-test-v22-opl-dual-entry-contract.mjs",
+        "node scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"
+      ]
+    },
+    {
+      "id": "runtime",
+      "entrypoint": "node scripts/v22-verify.mjs package runtime --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+        "node scripts/smoke-test-v22-opl-runtime-e2e-local-flow.mjs"
+      ]
+    }
+  ]
+}

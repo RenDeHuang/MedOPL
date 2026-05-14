@@ -11,6 +11,7 @@ const files = {
   current: "docs/recovery/v22-goal-current.json",
   scoreboard: "docs/recovery/v22-product-completion-scoreboard.json",
   schema: "docs/recovery/v22-goal-leaf-manifest.schema.json",
+  verifyManifest: "docs/recovery/v22-agent-verify-manifest.json",
   goalState: "docs/recovery/v22-goal-state.md",
   goalLoop: "docs/recovery/v22-codex-goal-loop.md",
   gapMatrix: "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
@@ -289,7 +290,7 @@ function asGapMap(gaps) {
   }));
 }
 
-function assertCurrentShape(current) {
+function assertCurrentShape(current, verifyManifest = {}) {
   for (const field of requiredCurrentFields) {
     assert(Object.hasOwn(current, field), `current_required_field_missing:${field}`);
   }
@@ -310,10 +311,12 @@ function assertCurrentShape(current) {
     "current_branch_role_mismatch",
   );
   const runtimeBranch = runGit(["branch", "--show-current"]);
+  const manifestControlPlaneBranches = new Set(verifyManifest.control_plane_branches || []);
   assert(
     runtimeBranch === current.authoring_branch ||
       runtimeBranch === current.target_branch ||
-      additiveTruthBranches.has(runtimeBranch),
+      additiveTruthBranches.has(runtimeBranch) ||
+      manifestControlPlaneBranches.has(runtimeBranch),
     `runtime_branch_must_be_authoring_or_target_or_additive_truth:${runtimeBranch}`,
   );
   assert.deepEqual(current.stage_order, expectedStageOrder, "stage_order_mismatch");
@@ -386,7 +389,7 @@ function assertCurrentShape(current) {
       localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
       "target_branch_head_must_descend_from_base_trunk_head",
     );
-  } else if (additiveTruthBranches.has(runtimeBranch)) {
+  } else if (additiveTruthBranches.has(runtimeBranch) || manifestControlPlaneBranches.has(runtimeBranch)) {
     if (localHead === originTrunkHead) {
       const pendingDiff = runGit(["status", "--porcelain"]);
       assert(pendingDiff.length > 0, "additive_truth_branch_at_origin_requires_pending_diff");
@@ -513,16 +516,17 @@ function assertCurrentLeafConsistency(current) {
   );
 }
 
-const [current, scoreboard, schema, goalState, goalLoop, gapMatrix] = await Promise.all([
+const [current, scoreboard, schema, verifyManifest, goalState, goalLoop, gapMatrix] = await Promise.all([
   readJson(files.current),
   readJson(files.scoreboard),
   readJson(files.schema),
+  readJson(files.verifyManifest),
   readRepoFile(files.goalState),
   readRepoFile(files.goalLoop),
   readRepoFile(files.gapMatrix),
 ]);
 
-assertCurrentShape(current);
+assertCurrentShape(current, verifyManifest);
 assertScoreboardShape(scoreboard);
 assertSchemaShape(schema);
 

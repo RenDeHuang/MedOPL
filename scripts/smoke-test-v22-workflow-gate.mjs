@@ -105,7 +105,7 @@ assert.deepEqual(reviewWithBlockers.secretLikePaths, [
 assert(reviewWithBlockers.findings.some((finding) => finding.code === "services_changed_without_v22_smoke_update"), "review_must_require_service_smoke_update");
 assert(reviewWithBlockers.findings.some((finding) => finding.code === "contracts_changed_without_v22_smoke_update"), "review_must_require_contract_smoke_update");
 assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
-  "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "npm --prefix services/portal run check",
 ], "review_recommended_commands");
 

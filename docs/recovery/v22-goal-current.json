@@ -252,6 +252,7 @@
     "verification_commands": [
       "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
       "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
@@ -302,6 +303,7 @@
   },
   "verification_commands": [
     "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "node scripts/smoke-test-v22-product-goal-harness.mjs",
     "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
     "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
@@ -312,6 +314,7 @@
     "docs/recovery/v22-goal-current.json",
     "docs/recovery/v22-product-completion-scoreboard.json",
     "docs/recovery/v22-goal-leaf-manifest.schema.json",
+    "docs/recovery/v22-agent-verify-manifest.json",
     "docs/recovery/v22-goal-state.md",
     "docs/recovery/v22-codex-goal-loop.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
