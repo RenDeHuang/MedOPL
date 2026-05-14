@@ -5,16 +5,15 @@
   "agent_run_mode": "physical_delete_goal_batch_driven",
   "base_branch": "origin/recovery/platform-v22-trunk",
   "target_branch": "recovery/platform-v22-trunk",
-  "current_status": "batch_manifest_ready",
-  "current_slice": "slice-final-completion-truth-and-temporary-goal-removal",
+  "current_status": "batch_complete_waiting_b_review",
+  "current_slice": "batch_complete_waiting_b_review",
   "completed_slices": [
     "slice-1-user-owned-retired-domain-store-physical-delete",
     "slice-2-legacy-script-archive-delete-boundary",
-    "slice-3-observability-runner-physical-retirement-boundary"
-  ],
-  "next_slices": [
+    "slice-3-observability-runner-physical-retirement-boundary",
     "slice-final-completion-truth-and-temporary-goal-removal"
   ],
+  "next_slices": [],
   "batch_policy": {
     "enabled": true,
     "max_slices_per_branch": 3,
@@ -144,8 +143,19 @@
     },
     {
       "id": "slice-final-completion-truth-and-temporary-goal-removal",
-      "status": "ready_after_slice_2_and_slice_3",
+      "status": "completed",
       "decision_scope": "truth_writeback_only_no_more_deletion",
+      "completion_truth": {
+        "status": "completed_waiting_b_review",
+        "no_more_deletion_in_final_slice": true,
+        "remaining_blockers": [
+          "public_410_tombstone_removal_requires_explicit_confirmation",
+          "resource_order_schema_drop_transferred_to_schema_leaf",
+          "deploy_adapters_infra_upstream_require_separate_authorization",
+          "live_test_execution_or_deletion_requires_explicit_authorization",
+          "langfuse_runtime_modules_require_future_trace_metadata_migration_before_physical_removal"
+        ]
+      },
       "target_paths": [
         "docs/recovery/physical-legacy-file-retirement-goal.md",
         "docs/recovery/physical-legacy-file-retirement-inventory.md",

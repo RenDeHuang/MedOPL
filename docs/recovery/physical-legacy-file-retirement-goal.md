@@ -10,6 +10,9 @@
 - current truth: 主路径清退已经完成，不等于物理文件清退完成。
 - cursor policy: 本 goal 不写入常驻 product cursor；它是 cleanup 后的临时物理清退工作包。
 - removal policy: 完成后可由用户删除本 goal 文件或对应分支，避免长期污染常规 v22 目标推进。
+- physical_delete_batch_status: completed_waiting_b_review
+- latest_batch_branch: `cleanup/v22-physical-legacy-batch-run`
+- latest_batch_truth: run manifest queue 已跑完；final slice 只写 completion truth / remaining blockers truth，不新增删除。
 
 ## Contract Subscription
 
@@ -188,6 +191,13 @@ next_slice queue 固定为：
 3. `slice-final-completion-truth-and-temporary-goal-removal`
 
 任何 agent 进入本物理删除 goal 时，必须按以下 8 步运行，不得跳过导台直接删除。
+
+Latest batch run truth:
+
+- `slice-2-legacy-script-archive-delete-boundary`: completed. v19/v20/v21 smoke families remain `archive_reference`; `scripts/live-test-*` remains blocked for execution/deletion without explicit authorization.
+- `slice-3-observability-runner-physical-retirement-boundary`: completed. `compose.langfuse.yaml` remains `archive_reference`; `langfuse-trace-client.mjs` and `langfuse-publisher.mjs` remain active trace metadata boundary implementation points; `adapters/*` and `infra/opencost/**` remain `forbidden_without_auth`.
+- `slice-final-completion-truth-and-temporary-goal-removal`: completed_waiting_b_review. No additional deletion is performed in the final slice.
+- Remaining blockers: public 410 tombstone removal requires explicit confirmation; resource-order schema/drop stays in schema leaf; deploy/adapters/infra/upstream need separate authorization; live-test execution/deletion needs explicit authorization; Langfuse runtime implementation requires a future migration branch before any physical removal.
 
 ### A1: sync-baseline
 

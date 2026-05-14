@@ -43,7 +43,8 @@ const [inventory, scriptNames] = await Promise.all([
 
 for (const phrase of [
   "# MedOPL v22 Physical Legacy File Retirement Inventory",
-  "inventory_status: first_delete_slice_applied",
+  "inventory_status: batch_completed_waiting_b_review",
+  "physical_delete_batch_status: completed_waiting_b_review",
   "agent_run_mode: physical_delete_goal_driven",
   "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
   "next_slice queue",
@@ -56,6 +57,9 @@ for (const phrase of [
   "decision values: `delete`, `keep_tombstone`, `archive_reference`, `migrate`, `forbidden_without_auth`, `needs_schema_drop_leaf`",
   "physical_delete_status values: `not_started`, `deleted`, `kept_tombstone`, `archive_reference`, `migrated`, `blocked_without_auth`, `transferred_to_schema_drop_leaf`",
   "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | physical_delete_status | required_gate | deletion_branch | stop_condition |",
+  "slice-2 truth writeback: completed",
+  "slice-3 truth writeback: completed",
+  "final slice truth writeback: completed_waiting_b_review",
 ]) {
   assertIncludes(inventory, phrase, "inventory_required_text");
 }
@@ -126,5 +130,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_physical_legacy_file_retirement_inventory",
   inventoryPath,
-  inventoryStatus: "first_delete_slice_applied",
+  inventoryStatus: "batch_completed_waiting_b_review",
 }, null, 2));

@@ -142,7 +142,8 @@ for (const phrase of [
 
 for (const phrase of [
   "# MedOPL v22 Physical Legacy File Retirement Inventory",
-  "inventory_status: first_delete_slice_applied",
+  "inventory_status: batch_completed_waiting_b_review",
+  "physical_delete_batch_status: completed_waiting_b_review",
   "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
   "next_slice queue",
   "slice-2-legacy-script-archive-delete-boundary",
@@ -161,6 +162,7 @@ for (const phrase of [
   "`adapters/resource-provisioner/**`",
   "`adapters/med-autoscience-runner/**`",
   "`deploy/**`",
+  "final slice truth writeback: completed_waiting_b_review",
 ]) {
   assertIncludes(inventory, phrase, "inventory_bootstrap");
 }

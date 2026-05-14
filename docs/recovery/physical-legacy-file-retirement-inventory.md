@@ -4,7 +4,8 @@
 
 - branch: `cleanup/v22-physical-legacy-goal`
 - model: `gpt-5.4`
-- inventory_status: first_delete_slice_applied
+- inventory_status: batch_completed_waiting_b_review
+- physical_delete_batch_status: completed_waiting_b_review
 - agent_run_mode: physical_delete_goal_driven
 - run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`
 - goal: 物理删除 goal
@@ -61,6 +62,7 @@ batch mode 由 run manifest 固定。agent 可以在同一个 cleanup 分支连�
 - First delete slice completed: retired user-owned domain/store are physically deleted; the public route tombstone remains.
 - slice-2 truth writeback: completed. Static scans found no active/default/workflow refs to v19/v20/v21/live-test script families; v19/v20/v21 smoke families remain archive_reference, and live-test execution and deletion remain blocked without explicit authorization.
 - slice-3 truth writeback: completed. `compose.langfuse.yaml` remains archive_reference; `langfuse-trace-client.mjs` and `langfuse-publisher.mjs` remain active trace metadata boundary implementation points and are not physical delete candidates in this batch; adapters/resource-provisioner, adapters/med-autoscience-runner and infra/opencost remain blocked_without_auth.
+- final slice truth writeback: completed_waiting_b_review. This batch did not add more deletion in the final slice; remaining blockers are public tombstone auth, schema/drop leaf, forbidden deploy/adapters/infra auth, live-test/delete auth, and Langfuse trace metadata migration boundary.
 - Public 410 tombstones remain `keep_tombstone` until the user explicitly confirms the old route no longer needs fail-closed behavior.
 - Schema and migration facts remain `needs_schema_drop_leaf`; they are not part of ordinary physical deletion.
 - Zone 4 paths are recorded so agents see them, but they remain blocked without separate authorization.

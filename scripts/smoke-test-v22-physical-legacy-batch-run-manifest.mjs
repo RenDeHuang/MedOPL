@@ -16,6 +16,7 @@ const expectedSlices = [
   "slice-final-completion-truth-and-temporary-goal-removal",
 ];
 const slice3Id = "slice-3-observability-runner-physical-retirement-boundary";
+const finalSliceId = "slice-final-completion-truth-and-temporary-goal-removal";
 
 const forbiddenTargets = [
   "deploy/**",
@@ -100,7 +101,10 @@ assert.equal(manifest.model, "gpt-5.4", "manifest_model_mismatch");
 assert.equal(manifest.agent_run_mode, "physical_delete_goal_batch_driven", "manifest_agent_run_mode_mismatch");
 assert.equal(manifest.base_branch, "origin/recovery/platform-v22-trunk", "manifest_base_branch_mismatch");
 assert.equal(manifest.target_branch, "recovery/platform-v22-trunk", "manifest_target_branch_mismatch");
-assert.equal(manifest.current_status, "batch_manifest_ready", "manifest_current_status_mismatch");
+assert(
+  ["batch_manifest_ready", "batch_complete_waiting_b_review"].includes(manifest.current_status),
+  "manifest_current_status_mismatch",
+);
 assert.equal(manifest.batch_policy?.enabled, true, "manifest_batch_policy_enabled_mismatch");
 assert.equal(manifest.batch_policy?.max_slices_per_branch, 3, "manifest_batch_policy_max_slices_mismatch");
 assert.equal(manifest.batch_policy?.commit_policy, "one_commit_per_slice_plus_optional_final_truth", "manifest_commit_policy_mismatch");
@@ -194,8 +198,18 @@ assertArrayIncludesAll(slice3.observe_only_forbidden_paths, [
 assertNoForbiddenWriteSet(slice3);
 
 const finalSlice = sliceById.get("slice-final-completion-truth-and-temporary-goal-removal");
-assert.equal(finalSlice.status, "ready_after_slice_2_and_slice_3", "final_slice_status_mismatch");
+assert(
+  ["ready_after_slice_2_and_slice_3", "completed"].includes(finalSlice.status),
+  "final_slice_status_mismatch",
+);
 assert.equal(finalSlice.decision_scope, "truth_writeback_only_no_more_deletion", "final_slice_decision_scope_mismatch");
+assert.notEqual(finalSlice.status, "ready_after_slice_2_and_slice_3", "final_slice_truth_writeback_missing");
+assert.equal(manifest.current_status, "batch_complete_waiting_b_review", "manifest_final_current_status_mismatch");
+assert.equal(manifest.current_slice, "batch_complete_waiting_b_review", "manifest_final_current_slice_mismatch");
+assert.deepEqual(manifest.next_slices, [], "manifest_final_next_slices_must_be_empty");
+assert(manifest.completed_slices.includes(finalSliceId), "final_slice_completion_truth_missing");
+assertIncludes(inventory, "physical_delete_batch_status: completed_waiting_b_review", "inventory_final_batch_status");
+assertIncludes(goal, "physical_delete_batch_status: completed_waiting_b_review", "goal_final_batch_status");
 assertArrayIncludesAll(finalSlice.required_gates, manifest.required_global_gates, "final_slice_required_gate");
 assertNoForbiddenWriteSet(finalSlice);
 
