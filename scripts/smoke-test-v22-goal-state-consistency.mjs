@@ -41,6 +41,10 @@ const expectedStageOrder = [
   "S6 release readiness",
 ];
 
+const additiveTruthBranches = new Set([
+  "contract/v22-saas-control-plane-ux-truth",
+]);
+
 const releasePrerequisites = [
   "legacy-cleanup-resource-order",
   "legacy-cleanup-secret-hygiene",
@@ -300,8 +304,10 @@ function assertCurrentShape(current) {
   );
   const runtimeBranch = runGit(["branch", "--show-current"]);
   assert(
-    runtimeBranch === current.authoring_branch || runtimeBranch === current.target_branch,
-    `runtime_branch_must_be_authoring_or_target:${runtimeBranch}`,
+    runtimeBranch === current.authoring_branch ||
+      runtimeBranch === current.target_branch ||
+      additiveTruthBranches.has(runtimeBranch),
+    `runtime_branch_must_be_authoring_or_target_or_additive_truth:${runtimeBranch}`,
   );
   assert.deepEqual(current.stage_order, expectedStageOrder, "stage_order_mismatch");
   assert.equal(current.current_cursor, "leaf-cleanup-completion-truth-writeback", "current_cursor_must_preserve_cleanup_completion_fact");
@@ -370,8 +376,20 @@ function assertCurrentShape(current) {
     assert.equal(localHead, originTrunkHead, "target_branch_head_must_equal_origin_trunk_head");
     assert.notEqual(localHead, current.base_trunk_head, "target_branch_head_must_not_remain_at_base_trunk_head");
     assert.equal(localHeadParent, current.base_trunk_head, "target_branch_head_parent_must_equal_base_trunk_head");
+  } else if (additiveTruthBranches.has(runtimeBranch)) {
+    if (localHead === originTrunkHead) {
+      const pendingDiff = runGit(["status", "--porcelain"]);
+      assert(pendingDiff.length > 0, "additive_truth_branch_at_origin_requires_pending_diff");
+    } else {
+      assert.equal(localHeadParent, originTrunkHead, "additive_truth_branch_head_parent_must_equal_origin_trunk");
+    }
+    assert.equal(
+      current.current_cursor,
+      "leaf-cleanup-completion-truth-writeback",
+      "additive_truth_branch_must_not_advance_current_cursor",
+    );
   } else {
-    assert.fail(`runtime_branch_must_be_authoring_or_target:${runtimeBranch}`);
+    assert.fail(`runtime_branch_must_be_authoring_or_target_or_additive_truth:${runtimeBranch}`);
   }
   assert(Array.isArray(current.gaps), "current_gaps_missing");
   assert(current.gaps.length >= 12, "current_gaps_incomplete");

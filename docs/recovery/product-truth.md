@@ -6,6 +6,8 @@ platform-v22 是 MedOPL 的 canonical trunk。本文件只记录当前 v22 产�
 
 MedOPL 是面向小白科研用户的 `platform-provisioned / customer-dedicated` 托管 OPL 工作台，不是云资源控制台。用户通过 Portal 购买和使用科研工作台能力，不需要懂 CVM、COS、K8s，也不直接配置云资源。
 
+MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台。它不重做 OPL chatbot，不成为独立科研聊天产品；它把 clean upstream OPL 变成开箱即用、可购买、可管理、可计费、可审计、可释放的托管服务。用户购买的是托管 OPL 科研工作台服务，Portal 负责让用户知道自己买的是什么服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里，以及费用状态是否正常。
+
 平台管理自己的 TKE 和存储资源池。账号可以在工作空间下选择套餐、计算资源和文件空间；平台负责资源开通、隔离、计费、审计、释放和清理。
 
 普通用户主语言优先使用：账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额。租户 / runtime / 运行环境 / environmentId 只能作为内部标签、对账标签或审计字段。

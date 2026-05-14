@@ -27,6 +27,8 @@ Portal 是 SaaS 控制面，负责账号、充值、gflabtoken 绑定状态展�
 
 Portal 展示的是托管科研工作台资源状态，不展示云资源控制台式 CVM/COS/K8s 配置界面。
 
+Portal 不重做 OPL chatbot，不回答科研问题，不承接 OPL 工作台内的 agent 交互。Portal 负责准备、管理、进入、回流、计费、审计和释放：让用户知道自己买的是什么托管 OPL 工作台服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里，以及余额、预扣费、冻结金额和停止计费状态是否正常。
+
 ### OPL Web Gateway
 
 OPL Web Gateway 是 `opl.medopl.cn` 的正式入口。它把平台身份、workspace 上下文、计算资源可用状态、resource binding 和 adapter 接入传给 upstream OPL Web，不把 Portal 逻辑写进 upstream。
@@ -42,6 +44,8 @@ https://github.com/gaofeng21cn/one-person-lab
 ```
 
 v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Adapter 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
+
+OPL 负责科研执行：chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验。Portal 只能通过公开边界把上下文带入 OPL，并把 session、run、artifact、trace、账单和审计状态回流。
 
 ### Portal OPL Adapter / Runtime Agent
 

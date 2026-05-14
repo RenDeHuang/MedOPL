@@ -73,6 +73,17 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-goal-state-consistency.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
   ])],
+  ["contract/v22-saas-control-plane-ux-truth", new Set([
+    "docs/contracts/README.md",
+    "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+    "docs/recovery/product-truth.md",
+    "docs/recovery/architecture-truth.md",
+    "docs/recovery/v22-goal-current.json",
+    "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+    "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+    "scripts/smoke-test-v22-goal-state-consistency.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+  ])],
   ["recovery/platform-v22-trunk", allowedDiffPaths],
 ]);
 

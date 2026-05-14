@@ -28,6 +28,7 @@
 ## v22 主合同
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md): MVP 托管 OPL 用户闭环主合同，定义从平台创建用户、充值、登录 Portal、在 OPL entry/preflight 输入或确认 gflabtoken 模型调用密钥、开通托管运行环境、进入 OPL 科研工作台、产出文件到释放环境和审计的 contract-level 主路径。portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md): SaaS 控制面用户体验真相合同，固定 MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台。Portal 帮用户理解自己买的是什么托管 OPL 工作台服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里、费用状态是否正常；OPL 继续负责 chatbot、agent、科研任务执行、文件理解、结果生成和工作台内交互体验。
 - [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md): Portal 工作台、OPL Web 和管理台共享界面合同，固定普通用户中文产品语言、OPL 双入口、管理台可见边界、多租户后台边界和腾讯云分账标签边界。路径 1：从 Portal 工作台进入；路径 2：直接访问 OPL 工作台；两条路径最终进入同一套 Gateway、preflight 和 launch 逻辑。
 
 ## 用户闭环段合同
@@ -95,6 +96,7 @@
 订阅：
 
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
+- [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md)
 - [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md)
 - [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md)

@@ -117,6 +117,17 @@
       ]
     },
     {
+      "id": "saas-control-plane-user-experience-truth",
+      "stage": "S2 architecture refactor",
+      "priority": 55,
+      "cursor_eligible": false,
+      "status": "gated",
+      "next_leaf_step": "leaf-saas-control-plane-user-experience-truth",
+      "depends_on": [
+        "architecture-refactor-portal-layering"
+      ]
+    },
+    {
       "id": "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
       "stage": "S3 OPL connection productionization",
       "priority": 60,
