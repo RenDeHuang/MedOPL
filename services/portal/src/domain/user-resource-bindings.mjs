@@ -35,10 +35,6 @@ function serverPlanId(binding = {}) {
   return stringValue(binding.serverPlanId || binding.server_plan_id || binding.planId || binding.plan_id || binding.packageId || binding.package_id);
 }
 
-function legacyResourceOrderAlias(binding = {}) {
-  return stringValue(binding.legacyResourceOrderId || binding.legacy_resource_order_id);
-}
-
 function ownerMatches(binding = {}, storageOrder = {}) {
   if (stringValue(storageOrder.workspaceId) !== stringValue(binding.workspaceId)) return false;
   return (
@@ -160,7 +156,6 @@ function buildBindingItem(db = {}, binding = {}) {
     billingAttributionId: billingAttributionId(binding),
     accountId: accountId(binding),
     serverPlanId: serverPlanId(binding),
-    legacyResourceOrderId: legacyResourceOrderAlias(binding),
     nodePoolId,
     cvmInstanceIds,
     storageOrderId: stringValue(storageOrder?.id),

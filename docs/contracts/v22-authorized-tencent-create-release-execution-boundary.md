@@ -123,10 +123,10 @@ create 时必须生成并写入以下标签：
 - `resourceBindingId`
 - `cloudOperationId`
 - `billingAttributionId`
-- `legacyResourceOrderId`（optional、migration-only，不得作为 fixed required tag）
 - `serverPlanId`
 - `resourceType`
 - `region`
+- 旧 resource-order 标识不得作为 tag 或兼容归属 alias
 
 如存在任务级成本归因，`runId` 可以作为附加标签；无 runId 成本仍必须能通过账号、工作空间、资源绑定、套餐和区域归属。
 
@@ -310,10 +310,10 @@ release 分阶段执行：
       "resourceBindingId",
       "cloudOperationId",
       "billingAttributionId",
-      "legacyResourceOrderId",
       "serverPlanId",
       "resourceType",
-      "region"
+      "region",
+      "retiredResourceOrderIdentifiersForbidden"
     ],
     "portalLedgerAndCloudTagsRequiredForRelease": true,
     "failClosedOnMissingOrConflictingOwnership": true,

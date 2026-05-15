@@ -26,13 +26,12 @@ export async function writeWallets({ client, pgTableName, db }) {
 
 export async function writeLedgerEntries({ client, pgTableName, db, normalizeLedgerEntries }) {
   for (const row of normalizeLedgerEntries(db.ledger || [])) {
-    await client.query(`INSERT INTO ${pgTableName("ledger_entries")} (id,tenant_id,user_id,run_id,workspace_id,order_id,resource_binding_id,type,amount,currency,source_type,source_id,idempotency_key,reason,operator_id,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+    await client.query(`INSERT INTO ${pgTableName("ledger_entries")} (id,tenant_id,user_id,run_id,workspace_id,resource_binding_id,type,amount,currency,source_type,source_id,idempotency_key,reason,operator_id,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       ON CONFLICT (id) DO UPDATE SET
         tenant_id=EXCLUDED.tenant_id,
         user_id=EXCLUDED.user_id,
         run_id=EXCLUDED.run_id,
         workspace_id=EXCLUDED.workspace_id,
-        order_id=EXCLUDED.order_id,
         resource_binding_id=EXCLUDED.resource_binding_id,
         type=EXCLUDED.type,
         amount=EXCLUDED.amount,
@@ -48,7 +47,6 @@ export async function writeLedgerEntries({ client, pgTableName, db, normalizeLed
       row.userId || "",
       row.runId || "",
       row.workspaceId || "",
-      row.orderId || "",
       row.resourceBindingId || "",
       row.type || "",
       Number(row.amount || 0),
@@ -94,112 +92,6 @@ export async function writeTaskSpaces({ client, pgTableName, db, normalizeServer
       row.updatedAt || row.createdAt || new Date().toISOString(),
       row.archivedAt || null,
       row.deletedAt || null,
-    ]);
-  }
-}
-
-export async function writeResourceOrders({ client, pgTableName, db }) {
-  for (const row of db.resourceOrders || []) {
-    await client.query(`INSERT INTO ${pgTableName("resource_orders")} (id,tenant_id,user_id,portal_user_id,workspace_id,workspace_session_id,run_id,status,server_plan_id,region,zone,cpu,memory_gb,gpu_type,gpu_count,storage_plan_id,storage_size_gb,retention_policy,estimated_hours,auto_stop_at,quote_id,freeze_id,provision_request_id,cloud_resource_ids_json,currency,unit_price,min_billable_hours,risk_factor,quote_amount,freeze_amount,exact_cost,pricing_source,price_updated_at,idempotency_key,failed_reason,created_at,updated_at,settled_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38)
-      ON CONFLICT (id) DO UPDATE SET
-        tenant_id=EXCLUDED.tenant_id,
-        user_id=EXCLUDED.user_id,
-        portal_user_id=EXCLUDED.portal_user_id,
-        workspace_id=EXCLUDED.workspace_id,
-        workspace_session_id=EXCLUDED.workspace_session_id,
-        run_id=EXCLUDED.run_id,
-        status=EXCLUDED.status,
-        server_plan_id=EXCLUDED.server_plan_id,
-        region=EXCLUDED.region,
-        zone=EXCLUDED.zone,
-        cpu=EXCLUDED.cpu,
-        memory_gb=EXCLUDED.memory_gb,
-        gpu_type=EXCLUDED.gpu_type,
-        gpu_count=EXCLUDED.gpu_count,
-        storage_plan_id=EXCLUDED.storage_plan_id,
-        storage_size_gb=EXCLUDED.storage_size_gb,
-        retention_policy=EXCLUDED.retention_policy,
-        estimated_hours=EXCLUDED.estimated_hours,
-        auto_stop_at=EXCLUDED.auto_stop_at,
-        quote_id=EXCLUDED.quote_id,
-        freeze_id=EXCLUDED.freeze_id,
-        provision_request_id=EXCLUDED.provision_request_id,
-        cloud_resource_ids_json=EXCLUDED.cloud_resource_ids_json,
-        currency=EXCLUDED.currency,
-        unit_price=EXCLUDED.unit_price,
-        min_billable_hours=EXCLUDED.min_billable_hours,
-        risk_factor=EXCLUDED.risk_factor,
-        quote_amount=EXCLUDED.quote_amount,
-        freeze_amount=EXCLUDED.freeze_amount,
-        exact_cost=EXCLUDED.exact_cost,
-        pricing_source=EXCLUDED.pricing_source,
-        price_updated_at=EXCLUDED.price_updated_at,
-        idempotency_key=EXCLUDED.idempotency_key,
-        failed_reason=EXCLUDED.failed_reason,
-        updated_at=EXCLUDED.updated_at,
-        settled_at=EXCLUDED.settled_at
-      WHERE ${pgTableName("resource_orders")}.updated_at <= EXCLUDED.updated_at`, [
-      row.id,
-      row.tenantId || row.userId || "",
-      row.userId || "",
-      row.portalUserId || row.userId || "",
-      row.workspaceId || "",
-      row.workspaceSessionId || "",
-      row.runId || "",
-      row.status || "quoted",
-      row.serverPlanId || "",
-      row.region || "",
-      row.zone || "",
-      Number(row.cpu || 0),
-      Number(row.memoryGb || 0),
-      row.gpuType || "",
-      Number(row.gpuCount || 0),
-      row.storagePlanId || "",
-      Number(row.storageSizeGb || 0),
-      row.retentionPolicy || "",
-      Number(row.estimatedHours || 1),
-      row.autoStopAt || "",
-      row.quoteId || "",
-      row.freezeId || "",
-      row.provisionRequestId || "",
-      JSON.stringify(row.cloudResourceIds || []),
-      row.currency || "CNY",
-      Number(row.unitPrice || 0),
-      Number(row.minBillableHours || 1),
-      Number(row.riskFactor || 1),
-      Number(row.quoteAmount || 0),
-      Number(row.freezeAmount || 0),
-      row.exactCost === null || row.exactCost === undefined ? null : Number(row.exactCost || 0),
-      row.pricingSource || "",
-      row.priceUpdatedAt || "",
-      row.idempotencyKey || "",
-      row.failedReason || "",
-      row.createdAt || new Date().toISOString(),
-      row.updatedAt || row.createdAt || new Date().toISOString(),
-      row.settledAt || null,
-    ]);
-  }
-}
-
-export async function writeResourceOrderEvents({ client, pgTableName, db }) {
-  for (const row of db.resourceOrderEvents || []) {
-    await client.query(`INSERT INTO ${pgTableName("resource_order_events")} (id,order_id,event_type,event_payload_json,actor_type,actor_id,idempotency_key,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-      ON CONFLICT (id) DO UPDATE SET
-        order_id=EXCLUDED.order_id,
-        event_type=EXCLUDED.event_type,
-        event_payload_json=EXCLUDED.event_payload_json,
-        actor_type=EXCLUDED.actor_type,
-        actor_id=EXCLUDED.actor_id,
-        idempotency_key=EXCLUDED.idempotency_key,
-        created_at=EXCLUDED.created_at`, [
-      row.id,
-      row.orderId || "",
-      row.eventType || "",
-      JSON.stringify(row.eventPayload || {}),
-      row.actorType || "system",
-      row.actorId || "",
-      row.idempotencyKey || "",
-      row.createdAt || new Date().toISOString(),
     ]);
   }
 }

@@ -100,10 +100,10 @@ assertIncludesAll(contract, [
   "resourceBindingId",
   "cloudOperationId",
   "billingAttributionId",
-  "legacyResourceOrderId",
   "serverPlanId",
   "resourceType",
   "region",
+  "retiredResourceOrderIdentifiersForbidden",
   "release 时必须同时匹配 Portal ledger 和云资源标签",
   "标签、Portal `resourceBindingId`、compute allocation 和后台 `nodePoolRef` 缺失、冲突、归属不一致时 fail-closed",
   "admin 审计队列",
@@ -200,6 +200,9 @@ assertNotIncludesAny(contract, [
   "RUN_TENCENT_READONLY_CREATE_RELEASE",
   "TENCENT_READONLY_MUTATION_SECRET_ID",
   "source .env",
+  "legacyResourceOrderId",
+  "legacyresourceorderid",
+  "migration-only alias",
 ], "execution_contract_forbidden_mixed_gate_language");
 
 assert(readme.includes("v22-authorized-tencent-create-release-execution-boundary.md"), "readme_must_index_execution_contract");

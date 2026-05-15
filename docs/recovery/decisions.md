@@ -116,13 +116,13 @@ platform-v22 不是空仓。现有文件必须先按域裁定为 `keep`、`migra
 - Admin / Ops：admin routes、admin payloads 和 admin frontend views。
 - Scripts / Contracts：`docs/contracts/v22-*.md` 和直接验证 v22 billing/resource/tenant/freeze 边界的 smoke contracts。
 
-## D021: user_owned 只能是 legacy alias
+## D021: user_owned 不保留兼容别名
 
-`PRODUCT_RUNTIME_MODE=user_owned`、`user-owned` 路由、`user-owned` domain/store 和所有带 user-owned 的脚本只能作为 legacy alias 或历史合同参考。新代码、新文档、新测试和默认产品叙事不得把它解释成用户自带 CVM、COS、K8s 或用户配置云资源。
+`PRODUCT_RUNTIME_MODE=user_owned`、`user-owned` 路由、`user-owned` domain/store 和所有带 user-owned 的脚本已被 strict monolith cleanup 裁定为删除目标。新代码、新文档、新测试和默认产品叙事不得把它解释成用户自带 CVM、COS、K8s、用户配置云资源或兼容入口。
 
 ## D022: 旧 resource-order/provisioner 路线必须迁移或归档
 
-`resource-order*`、`resource-provisioner-client` 和旧 provisioning service 有迁移价值，但不能继续作为 v22 正式产品入口。它们必须收敛到 tenant resource binding、billing account、quota、audit tag / cost allocation tag 语义。
+旧 `resource-order*`、`resource-provisioner-client` 和旧 provisioning service 不能继续作为 v22 正式产品入口。strict monolith cleanup 已物理删除旧 route/domain/store/schema/client wiring；后续如需资源开通能力，必须以 tenant resource binding、billing account、quota、audit tag / cost allocation tag 和 v22 cloud operation contract 重新建边界。
 
 ## D023: 旧 runner/provisioner/K8s/OpenCost/Langfuse 不进入 v22 主线
 

@@ -85,21 +85,23 @@ for (const [filePath, source] of docEntries) {
     "resourceOrderId/resourceorderid must not be a fixed required v22 attribution tag.",
   );
 
-  for (const match of source.matchAll(bareResourceOrderId)) {
-    const start = Math.max(0, (match.index ?? 0) - 180);
-    const end = Math.min(source.length, (match.index ?? 0) + 220);
-    const context = source.slice(start, end);
-    if (!legacyResourceOrderId.test(context)) {
-      findings.push({
-        type: "resource_order_id_not_legacy_alias",
-        file: filePath,
-        line: lineOf(source, match.index ?? 0),
-        match: match[0],
-        detail: "Use legacyResourceOrderId only when the legacy alias is optional and migration-only.",
-      });
-    }
-    legacyResourceOrderId.lastIndex = 0;
-  }
+  addRegexFindings(
+    findings,
+    filePath,
+    source,
+    bareResourceOrderId,
+    "resource_order_id_retired_from_contract_surface",
+    "Use resourceBindingId, cloudOperationId, billingAttributionId, workspaceId, accountId, serverPlanId, environmentId, or runId; retired resource-order identifiers must not remain as v22 attribution fields.",
+  );
+
+  addRegexFindings(
+    findings,
+    filePath,
+    source,
+    legacyResourceOrderId,
+    "legacy_resource_order_id_retired_from_contract_surface",
+    "Do not retain legacyResourceOrderId as an optional or migration alias in v22 contracts.",
+  );
 
   addRegexFindings(
     findings,

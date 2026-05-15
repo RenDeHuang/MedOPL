@@ -475,8 +475,7 @@ Portal 必须按低耦合目标治理：
         "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
         "services/portal/src/state/portal-workspace-store.mjs",
         "services/portal/src/state/portal-accounting-store.mjs",
-        "services/portal/src/state/portal-lab-billing-store.mjs",
-        "services/portal/src/state/portal-resource-order-store.mjs"
+        "services/portal/src/state/portal-lab-billing-store.mjs"
       ]
     },
     "frontendViewsComposables": {
@@ -563,7 +562,7 @@ Portal 必须按低耦合目标治理：
       "frontend_api_barrel_exists_but_not_page_default",
       "harness_renderer_is_large_cross_domain_registry",
       "some_admin_views_directly_call_admin_api_module",
-      "retired_resource_order_schema_store_still_pending_physical_delete",
+      "retired_resource_order_schema_store_physically_deleted",
       "retired_user_owned_public_route_deleted",
       "duplicate_announcement_dialog_names"
     ]

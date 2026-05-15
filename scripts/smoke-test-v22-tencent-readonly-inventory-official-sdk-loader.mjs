@@ -125,7 +125,7 @@ function ownershipTags(overrides = {}) {
   return {
     accountId: "acct-001",
     workspaceId: "workspace-001",
-    resourceOrderId: "order-001",
+    cloudOperationId: "operation-001",
     resourceBindingId: "binding-001",
     serverPlanId: "pro_8c16g_100gb",
     runId: "",
@@ -162,7 +162,7 @@ function createFakeSdkPackage({ cvmError = null } = {}) {
           {
             InstanceId: "ins-loader-002",
             InstanceState: "RUNNING",
-            Tags: Object.entries(ownershipTags({ resourceOrderId: "order-002", resourceBindingId: "binding-002" })).map(([Key, Value]) => ({ Key, Value })),
+            Tags: Object.entries(ownershipTags({ cloudOperationId: "operation-002", resourceBindingId: "binding-002" })).map(([Key, Value]) => ({ Key, Value })),
           },
         ],
         TotalCount: 101,
@@ -318,7 +318,7 @@ function createFakeCosSdkPackage({ calls = [] } = {}) {
             Status: "available",
             PrefixRef: "prefix-loader-001",
             Tags: ownershipTags({
-              resourceOrderId: "order-storage-001",
+              cloudOperationId: "operation-storage-001",
               resourceBindingId: "binding-storage-001",
               serverPlanId: "storage_100gb",
               runId: "run-001",

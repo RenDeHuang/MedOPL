@@ -24,7 +24,6 @@ const requiredPhrases = [
   "cloudOperationId",
   "billingAttributionId",
   "accountId",
-  "legacyResourceOrderId",
   "runId",
   "serverPlanId",
   "tenantId",
@@ -77,7 +76,6 @@ const requiredJsonFields = [
   '"cloudOperationId"',
   '"billingAttributionId"',
   '"accountId"',
-  '"legacyResourceOrderId"',
   '"serverPlanId"',
   '"tenantId"',
   '"workspaceId"',
@@ -92,6 +90,14 @@ const requiredJsonFields = [
 
 for (const phrase of requiredJsonFields) {
   assert(contract.includes(phrase), `authorized_tencent_contract_json_missing:${phrase}`);
+}
+
+for (const forbidden of [
+  "legacyResourceOrderId",
+  "legacyresourceorderid",
+  "migration-only alias",
+]) {
+  assert.equal(contract.includes(forbidden), false, `authorized_tencent_contract_retired_alias_must_not_be_required:${forbidden}`);
 }
 
 assert(readme.includes("v22-authorized-tencent-create-release-boundary.md"), "contracts_readme_missing_authorized_tencent_contract");

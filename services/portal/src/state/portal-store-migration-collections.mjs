@@ -4,8 +4,6 @@ const CORE_COLLECTION_KEYS = [
   "wallets",
   "ledger",
   "workspaceSessions",
-  "resourceOrders",
-  "resourceOrderEvents",
   "storageOrders",
   "userComputeInstances",
   "userStorageBuckets",
@@ -39,7 +37,6 @@ function runSnapshotMigration(db, keys, migrate) {
 export function runPortalStoreCollectionMigrations({
   db,
   ensureLabSubscriptionCollections,
-  ensureResourceOrderCollections,
   ensureWorkspaceStorageCollections,
 }) {
   let changed = false;
@@ -48,9 +45,6 @@ export function runPortalStoreCollectionMigrations({
       db[key] = [];
       changed = true;
     }
-  }
-  if (runSnapshotMigration(db, ["ledger", "resourceOrders", "resourceOrderEvents"], ensureResourceOrderCollections)) {
-    changed = true;
   }
   if (runSnapshotMigration(db, ["storageOrders", "workspaceFiles"], ensureWorkspaceStorageCollections)) {
     changed = true;

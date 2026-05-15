@@ -51,8 +51,6 @@ export function createPortalStoreStorageBootstrap({
       ledger: [],
       taskSpaces: [],
       workspaceSessions: [],
-      resourceOrders: [],
-      resourceOrderEvents: [],
       storageOrders: [],
       userComputeInstances: [],
       userStorageBuckets: [],

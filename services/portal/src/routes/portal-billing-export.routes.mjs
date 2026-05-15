@@ -258,7 +258,7 @@ export function createPortalBillingExportRoutes({
       reason,
       runId: String(form.runId || "").trim(),
       workspaceId: String(form.workspaceId || "").trim(),
-      orderId: String(form.orderId || "").trim(),
+      resourceBindingId: String(form.resourceBindingId || "").trim(),
       sourceId: String(form.sourceId || "").trim(),
       sourceType: "admin_adjustment",
       auditType: "ledger_adjusted",

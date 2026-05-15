@@ -32,7 +32,7 @@ const portalLedger = {
     {
       accountId: "acct-001",
       workspaceId: "workspace-001",
-      resourceOrderId: "order-001",
+      cloudOperationId: "operation-001",
       resourceBindingId: "binding-001",
       serverPlanId: "pro_8c16g_100gb",
       runId: "",
@@ -42,7 +42,7 @@ const portalLedger = {
     {
       accountId: "acct-001",
       workspaceId: "workspace-001",
-      resourceOrderId: "order-002",
+      cloudOperationId: "operation-002",
       resourceBindingId: "binding-002",
       serverPlanId: "storage_100gb",
       runId: "run-002",
@@ -52,7 +52,7 @@ const portalLedger = {
     {
       accountId: "acct-001",
       workspaceId: "workspace-001",
-      resourceOrderId: "order-003",
+      cloudOperationId: "operation-003",
       resourceBindingId: "binding-003",
       serverPlanId: "tag_snapshot",
       runId: "",
@@ -62,7 +62,7 @@ const portalLedger = {
     {
       accountId: "acct-001",
       workspaceId: "workspace-001",
-      resourceOrderId: "order-004",
+      cloudOperationId: "operation-004",
       resourceBindingId: "binding-004",
       serverPlanId: "billing_snapshot",
       runId: "",
@@ -76,7 +76,7 @@ function ownershipTags(overrides = {}) {
   return {
     accountId: "acct-001",
     workspaceId: "workspace-001",
-    resourceOrderId: "order-001",
+    cloudOperationId: "operation-001",
     resourceBindingId: "binding-001",
     serverPlanId: "pro_8c16g_100gb",
     runId: "",
@@ -175,7 +175,7 @@ function createFakeTencentClient() {
           {
             id: "cvm-page-2-conflict",
             status: "running",
-            tags: ownershipTags({ resourceOrderId: "order-conflict" }),
+            tags: ownershipTags({ cloudOperationId: "operation-conflict" }),
           },
           {
             id: "cvm-page-2-orphan",
@@ -183,7 +183,7 @@ function createFakeTencentClient() {
             tags: ownershipTags({
               accountId: "acct-999",
               workspaceId: "workspace-999",
-              resourceOrderId: "order-999",
+              cloudOperationId: "operation-999",
               resourceBindingId: "binding-999",
             }),
           },
@@ -224,7 +224,7 @@ function createFakeTencentClient() {
             prefixRef: "prefix-redacted-002",
             status: "available",
             tags: ownershipTags({
-              resourceOrderId: "order-002",
+              cloudOperationId: "operation-002",
               resourceBindingId: "binding-002",
               serverPlanId: "storage_100gb",
               runId: "run-002",
@@ -248,7 +248,7 @@ function createFakeTencentClient() {
             id: "billing-summary-004",
             status: "ready",
             tags: ownershipTags({
-              resourceOrderId: "order-004",
+              cloudOperationId: "operation-004",
               resourceBindingId: "binding-004",
               serverPlanId: "billing_snapshot",
               resourceType: "billing_summary",
@@ -267,7 +267,7 @@ function createFakeTencentClient() {
             id: "tag-resource-003",
             status: "tagged",
             tags: ownershipTags({
-              resourceOrderId: "order-003",
+              cloudOperationId: "operation-003",
               resourceBindingId: "binding-003",
               serverPlanId: "tag_snapshot",
               resourceType: "tagged_resource",

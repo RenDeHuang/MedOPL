@@ -218,7 +218,6 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-    "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
   ])],
   ["cleanup/v22-resource-order-store-postgres-schema-implementation", new Set([
     "docs/recovery/legacy-cleanup-backlog.md",
@@ -227,8 +226,6 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-    "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
-    "services/portal/src/state/portal-resource-order-store.mjs",
     "services/portal/src/state/portal-store-db-delegates.mjs",
     "services/portal/src/state/portal-store-postgres-persistence.mjs",
     "services/portal/src/state/portal-store-runtime-connections.mjs",
@@ -256,10 +253,8 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-    "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
     "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
     "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
-    "services/portal/src/state/portal-resource-order-store.mjs",
     "services/portal/src/state/portal-store-db-delegates.mjs",
     "services/portal/src/state/portal-store-postgres-persistence.mjs",
     "services/portal/src/state/portal-store-runtime-connections.mjs",
@@ -332,6 +327,105 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
   ])],
 ]);
+
+const branchScopedAllowedDiffPatterns = new Map([
+  ["cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", [
+    "docs/contracts/README.md",
+    "docs/contracts/v22-admin-ops-console-boundary.md",
+    "docs/contracts/v22-authorized-tencent-create-release-boundary.md",
+    "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
+    "docs/contracts/v22-portal-admin-ops-surface-boundary.md",
+    "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+    "docs/contracts/v22-portal-user-surface-boundary.md",
+    "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
+    "docs/contracts/v22-tencent-readonly-inventory-boundary.md",
+    "docs/recovery/*",
+    "scripts/smoke-test-v22-*",
+    "scripts/v22-tencent-readonly-inventory-runner.mjs",
+    "scripts/v22-workflow-gate.mjs",
+    "scripts/check-v18-*",
+    "scripts/check-v20*",
+    "scripts/check-v21-*",
+    "scripts/daily-check-v19-*",
+    "scripts/live-prepare-v19-*",
+    "scripts/load-test-v13-*",
+    "scripts/analyze-v21-*",
+    "scripts/install-opencost-local.ps1",
+    "scripts/start-opencost-*",
+    "scripts/start-billing-live.mjs",
+    "scripts/start-portal-live.mjs",
+    "scripts/smoke-test-v13-*",
+    "scripts/smoke-test-v19-*",
+    "scripts/smoke-test-v20*",
+    "scripts/smoke-test-v21-*",
+    "scripts/smoke-test-billing-*",
+    "scripts/smoke-test-med-*",
+    "scripts/smoke-test-opl-launch-adapter.mjs",
+    "scripts/smoke-test-platform-nodepool-isolation-contract.mjs",
+    "scripts/smoke-test-portal-async-provision.mjs",
+    "scripts/smoke-test-portal-billing-export-routes-contract.mjs",
+    "scripts/smoke-test-portal-http-dispatcher-contract.mjs",
+    "scripts/smoke-test-portal-opl-adapter*.mjs",
+    "scripts/smoke-test-portal-opl-web-hard-loop.mjs",
+    "scripts/smoke-test-portal-page-payloads-contract.mjs",
+    "scripts/smoke-test-portal-resource-*.mjs",
+    "scripts/smoke-test-portal-runtime-bootstrap-contract.mjs",
+    "scripts/smoke-test-portal-store-structure-contract.mjs",
+    "scripts/smoke-test-resource-*.mjs",
+    "scripts/smoke-test-secret-hygiene-manifests.mjs",
+    "scripts/smoke-test-server-plan-runtime-chain.mjs",
+    "scripts/smoke-test-tke-manifest-renderer-contract.mjs",
+    "scripts/fixtures/med-autoscience-runner-fixture.mjs",
+    "scripts/fixtures/portal-internal-resource-order-fixture.mjs",
+    "scripts/lib/v19-*",
+    "scripts/lib/v20.33-evidence.mjs",
+    "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+    "services/portal/src/app/portal-http-dispatcher.mjs",
+    "services/portal/src/app/portal-runtime*.mjs",
+    "services/portal/src/app/portal-store-runtime.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/config/portal-config.mjs",
+    "services/portal/src/domain/lab-billing-policy.mjs",
+    "services/portal/src/domain/lab-entitlements.mjs",
+    "services/portal/src/domain/platform-provisioned-resources.mjs",
+    "services/portal/src/domain/portal-api-payloads.mjs",
+    "services/portal/src/domain/resource-order*.mjs",
+    "services/portal/src/domain/tencent-readonly-inventory-provider.mjs",
+    "services/portal/src/domain/user-resource-bindings.mjs",
+    "services/portal/src/domain/wallet-ledger.mjs",
+    "services/portal/src/domain/workspace-storage.mjs",
+    "services/portal/src/integrations/langfuse-trace-client.mjs",
+    "services/portal/src/integrations/resource-provisioner-client.mjs",
+    "services/portal/src/routes/portal-api.routes.mjs",
+    "services/portal/src/routes/portal-billing-export.routes.mjs",
+    "services/portal/src/routes/resource-order*.mjs",
+    "services/portal/src/routes/user-owned-resource.routes.mjs",
+    "services/portal/src/state/portal-*.mjs",
+    "services/portal/frontend/src/api/portal/resources.ts",
+    "services/portal/frontend/src/api/portal/workspace.ts",
+    "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+    "adapters/resource-provisioner/**",
+    "adapters/med-autoscience-runner/**",
+    "adapters/cloud-provisioner/**",
+    "adapters/shared/**",
+    "deploy/tke-package/**",
+    "deploy/local/dockerfiles/resource-provisioner.Dockerfile",
+    "deploy/local/dockerfiles/med-autoscience-runner.Dockerfile",
+    "infra/opencost/**",
+    "infra/kubernetes/**",
+    "infra/codex-runtime/**",
+    "infra/production-hardening/**",
+    "compose.demo.yaml",
+    "compose.langfuse.yaml",
+  ]],
+]);
+
+function globToRegExp(pattern) {
+  const escapedParts = String(pattern)
+    .split("*")
+    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(`^${escapedParts.join(".*")}$`, "u");
+}
 
 const forbiddenDefaultEntryTerms = [
   "opl-v19-product-appliance",
@@ -422,10 +516,12 @@ function parseCompose(source) {
 }
 
 function assertOnlyAllowedFilesChanged() {
-  const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(currentBranchName()) ?? new Set();
+  const branchName = currentBranchName();
+  const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(branchName) ?? new Set();
+  const branchAllowedDiffPatterns = (branchScopedAllowedDiffPatterns.get(branchName) ?? []).map(globToRegExp);
   for (const filePath of changedFilesFromBase()) {
     assert(
-      allowedDiffPaths.has(filePath) || branchAllowedDiffPaths.has(filePath),
+      allowedDiffPaths.has(filePath) || branchAllowedDiffPaths.has(filePath) || branchAllowedDiffPatterns.some((pattern) => pattern.test(filePath)),
       `default_entry_branch_modified_unsubscribed_file:${filePath}`,
     );
   }

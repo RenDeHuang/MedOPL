@@ -265,7 +265,6 @@ function billingSummaryPayload(balance = {}, freeze = null) {
     workspaceId: text(item.workspaceId),
     accountId: text(item.accountId),
     serverPlanId: text(item.serverPlanId),
-    legacyResourceOrderId: text(item.legacyResourceOrderId),
     amountCents: cents(item.amountCents),
     status: text(item.status || "waiting_exact_bill"),
     createdAt: text(item.createdAt),

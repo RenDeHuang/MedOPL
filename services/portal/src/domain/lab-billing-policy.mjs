@@ -88,7 +88,6 @@ function subscriptionContext(user, subscription = {}) {
     runId: "",
     resourceBindingId,
     billingAttributionId,
-    legacyResourceOrderId: text(subscription.legacyResourceOrderId || subscription.legacy_resource_order_id),
     serverPlanId,
     billingAccountId: tenantId,
     currency: "CNY",

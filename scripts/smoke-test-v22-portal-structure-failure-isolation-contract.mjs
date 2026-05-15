@@ -281,7 +281,7 @@ await assertFilesExist(currentCodeShape.portalSmokeLayers.currentSmokeFiles, "po
 assertIncludesAll(currentCodeShape.knownFutureRefactorRisks, [
   "route_to_state_direct_import_exists",
   "frontend_api_barrel_exists_but_not_page_default",
-  "retired_resource_order_schema_store_still_pending_physical_delete",
+  "retired_resource_order_schema_store_physically_deleted",
   "some_admin_views_directly_call_admin_api_module",
 ], "portal_structure_known_future_refactor_risk");
 

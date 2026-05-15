@@ -140,7 +140,8 @@ function traceIdentityFields(item, metadata) {
 function traceRuntimeFields(item, metadata) {
   return {
     runId: String(firstValue(metadata.runId, metadata.run_id, item.runId, item.run_id)),
-    resourceOrderId: String(firstValue(metadata.resourceOrderId, metadata.resource_order_id)),
+    resourceBindingId: String(firstValue(metadata.resourceBindingId, metadata.resource_binding_id, item.resourceBindingId, item.resource_binding_id)),
+    billingAttributionId: String(firstValue(metadata.billingAttributionId, metadata.billing_attribution_id, item.billingAttributionId, item.billing_attribution_id)),
     serverPlanId: String(firstValue(metadata.serverPlanId, metadata.server_plan_id)),
     model: String(firstValue(metadata.model, item.model)),
     status: String(firstValue(metadata.status, item.status, "recorded")),

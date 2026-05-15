@@ -12,7 +12,6 @@ export function createPortalStoreMigrations({
   normalizeAnnouncementRecord,
   normalizeLedgerEntries,
   normalizeServerPlanSelection,
-  ensureResourceOrderCollections,
   ensureLabSubscriptionCollections,
   ensureUserCommercialState,
   ensureWorkspaceStorageCollections,
@@ -41,8 +40,6 @@ export function createPortalStoreMigrations({
       ledger: [],
       taskSpaces: [],
       workspaceSessions: [],
-      resourceOrders: [],
-      resourceOrderEvents: [],
       storageOrders: [],
       userComputeInstances: [],
       userStorageBuckets: [],
@@ -74,7 +71,6 @@ export function createPortalStoreMigrations({
     if (runPortalStoreCollectionMigrations({
       db,
       ensureLabSubscriptionCollections,
-      ensureResourceOrderCollections,
       ensureWorkspaceStorageCollections,
     })) {
       changed = true;

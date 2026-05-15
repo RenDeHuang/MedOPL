@@ -116,6 +116,6 @@ Langfuse 可以作为后续 session trace metadata 来源，但不是当前主�
 
 ## 非主线内容
 
-- `user_owned` 只能作为 legacy alias，不能在新代码、新文档、新测试和默认产品叙事中解释成用户自带云资源。
+- `user_owned` 不保留为兼容入口；不能在新代码、新文档、新测试和默认产品叙事中解释成用户自带云资源。
 - 旧 `med-autoscience-runner`、`resource-provisioner`、K8s Job、OpenCost、Langfuse 不是 platform-v22 主产品叙事。
 - 这些旧资产不进入 v22 主产品叙事，只能在单独授权下作为旧栈审查对象或迁移参考。

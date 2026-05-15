@@ -8,7 +8,7 @@
 - intent: 先写清 v22 理想形态与差距，再清故事线，最后分 slice 物理删除旧模块、旧接口、旧测试、旧脚本、旧部署资产和旧兼容面。
 - base: latest `origin/recovery/platform-v22-trunk`
 - target: hand off to B review only; do not push, do not merge trunk.
-- physical_delete_batch_status: strict_monolith_retirement_in_progress
+- physical_delete_batch_status: strict_monolith_retirement_completed
 
 ## Contract Subscription
 
@@ -84,7 +84,7 @@
 
 ### Slice C: Legacy Script Deletion
 
-- 删除 v19/v20/v21 legacy smoke、check、daily、live-prepare、resource-provisioner、OpenCost legacy scripts。
+- 删除 v19/v20/v21 legacy smoke、check、daily、live-prepare、resource-provisioner、OpenCost legacy scripts，以及 strict scan 发现且无 active v22 default suite 引用的旧 billing/portal non-v22 smoke。
 - 更新默认 suite 和 gates，只跑 v22 当前验证。
 - RED/GREEN: `node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --scripts`
 - commit: `cleanup: delete archived legacy smoke scripts`
@@ -99,7 +99,9 @@
 ### Slice E: Legacy Schema And Store Remnant Retirement
 
 - 扫描并清退 resource-order schema/store/migration/Postgres snapshot helper。
+- 删除未被 active feature handler 消费的旧 `resource-provisioner-client` Portal runtime wiring；后续资源开通只能通过 v22 resource binding / cloud operation contracts 重新建边界。
 - 如果涉及真实 DB migration execution，停止并写 blocker；不得执行真实 DB。
+- completed: resource-order store/domain family、schema fragments、snapshot helper writers、JSON migration collection keys、old characterization gate、old non-v22 billing/portal smoke, `start-billing-live.mjs`, and old Portal `resource-provisioner-client` wiring are retired without executing real DB migration, live-test, kubectl, deploy, build/push, or true cloud operations.
 - RED/GREEN: `node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --schema`
 - commit: `cleanup: retire legacy schema and store remnants`
 

@@ -26,9 +26,9 @@ function normalizeResourceLifecycleMode(payload = {}) {
   const raw = text(payload.provisioningMode || payload.provisioning_mode || payload.resourceLifecycleMode || payload.resource_lifecycle_mode || payload.lifecycleMode || payload.lifecycle_mode || "platform_provisioned")
     .toLowerCase()
     .replace(/-/g, "_");
-  if (raw === "user_owned") {
-    const error = new Error("legacy_user_owned_lifecycle_mode_retired");
-    error.code = "legacy_user_owned_lifecycle_mode_retired";
+  if (!["platform_provisioned", "customer_dedicated", "cloud", "cloud_provisioned", "registered", "registered_only"].includes(raw)) {
+    const error = new Error("unsupported_resource_lifecycle_mode");
+    error.code = "unsupported_resource_lifecycle_mode";
     throw error;
   }
   const aliases = {

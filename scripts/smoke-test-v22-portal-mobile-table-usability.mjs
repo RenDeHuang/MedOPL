@@ -33,7 +33,6 @@ function assertResponsiveTableSection(section, label) {
 const attributionTagFields = [
   "tenantId",
   "environmentId",
-  "resourceOrderId",
   "serverPlanId",
 ];
 

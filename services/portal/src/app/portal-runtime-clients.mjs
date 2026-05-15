@@ -3,7 +3,6 @@ import { createHarborRegistryClient } from "../integrations/harbor-registry-clie
 import { createLangfuseTraceClient } from "../integrations/langfuse-trace-client.mjs";
 import { createMinioStorageClient } from "../integrations/minio-storage-client.mjs";
 import { createOplAdapterClient } from "../integrations/opl-adapter-client.mjs";
-import { createResourceProvisionerClient } from "../integrations/resource-provisioner-client.mjs";
 
 export function createPortalRuntimeClients({
   billingServiceUrl,
@@ -23,8 +22,6 @@ export function createPortalRuntimeClients({
   portalOplRuntimeAgentConfig,
   portalOplAdapterUrl,
   portalWorkdir,
-  provisionerTimeoutMs,
-  provisionerUrl,
   repoRoot,
   syncWorkspaceToMinioScriptRelative,
 }) {
@@ -32,10 +29,6 @@ export function createPortalRuntimeClients({
     billingClient: createBillingClient({
       billingServiceUrl,
       timeoutMs: billingTimeoutMs,
-    }),
-    resourceProvisionerClient: createResourceProvisionerClient({
-      provisionerUrl,
-      timeoutMs: provisionerTimeoutMs,
     }),
     minioStorageClient: createMinioStorageClient({
       repoRoot,

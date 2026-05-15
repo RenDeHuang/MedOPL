@@ -148,7 +148,7 @@ const portalLedger = {
     {
       accountId: "acct-001",
       workspaceId: "workspace-001",
-      resourceOrderId: "order-001",
+      cloudOperationId: "operation-001",
       resourceBindingId: "binding-001",
       serverPlanId: "pro_8c16g_100gb",
       runId: null,
@@ -158,7 +158,7 @@ const portalLedger = {
     {
       accountId: "acct-001",
       workspaceId: "workspace-001",
-      resourceOrderId: "order-002",
+      cloudOperationId: "operation-002",
       resourceBindingId: "binding-002",
       serverPlanId: "storage_100gb",
       runId: "run-002",
@@ -171,7 +171,7 @@ const portalLedger = {
 const baseTag = {
   accountId: "acct-001",
   workspaceId: "workspace-001",
-  resourceOrderId: "order-001",
+  cloudOperationId: "operation-001",
   resourceBindingId: "binding-001",
   serverPlanId: "pro_8c16g_100gb",
   runId: "",
@@ -213,7 +213,7 @@ const provider = createMockTencentReadonlyInventoryProvider({
       tags: {
         accountId: "acct-001",
         workspaceId: "workspace-001",
-        resourceOrderId: "order-002",
+        cloudOperationId: "operation-002",
         resourceBindingId: "binding-002",
         serverPlanId: "storage_100gb",
         runId: "run-002",
@@ -229,7 +229,7 @@ const provider = createMockTencentReadonlyInventoryProvider({
       tags: {
         accountId: "acct-001",
         workspaceId: "workspace-001",
-        resourceOrderId: "order-001",
+        cloudOperationId: "operation-001",
         resourceBindingId: "binding-001",
         serverPlanId: "",
         resourceType: "compute",
@@ -254,7 +254,7 @@ const provider = createMockTencentReadonlyInventoryProvider({
       tags: {
         accountId: "acct-orphan",
         workspaceId: "workspace-orphan",
-        resourceOrderId: "order-orphan",
+        cloudOperationId: "operation-orphan",
         resourceBindingId: "binding-orphan",
         serverPlanId: "pro_8c16g_100gb",
         resourceType: "compute",

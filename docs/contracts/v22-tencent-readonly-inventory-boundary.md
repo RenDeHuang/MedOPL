@@ -20,7 +20,7 @@ readonly inventory 要验证：
 
 - 云上有哪些 MedOPL 资源。
 - 资源标签是否完整。
-- 资源是否能映射到账号、工作空间、resourceBindingId、cloudOperationId / billingAttributionId；`legacyResourceOrderId` 仅作为 optional、migration-only alias。
+- 资源是否能映射到账号、工作空间、resourceBindingId、cloudOperationId / billingAttributionId。
 - 是否存在孤儿资源、标签缺失、标签冲突、区域不一致。
 - 是否支持后续 T+1 对账和 create/release 安全执行。
 
@@ -134,11 +134,11 @@ readonly inventory 必须用 Portal 账本 + 云标签双重校验：
 - cloudOperationId
 - billingAttributionId
 - accountId
-- legacyResourceOrderId（optional、migration-only，不得作为 fixed required tag）
 - serverPlanId
 - runId 可为空
 - resource type
 - region
+- 旧 resource-order 标识不得作为 required tag、optional tag 或归属 alias
 
 不能只靠资源名称、创建时间、IP、规格推断归属。
 
@@ -374,10 +374,10 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
     "resourceBindingId",
     "cloudOperationId",
     "billingAttributionId",
-    "legacyResourceOrderId",
     "serverPlanId",
     "resourceType",
-    "region"
+    "region",
+    "retiredResourceOrderIdentifiersForbidden"
   ],
   "runIdMayBeNull": true,
   "forbidsOwnershipInferenceByNameTimeIpOrSpec": true,

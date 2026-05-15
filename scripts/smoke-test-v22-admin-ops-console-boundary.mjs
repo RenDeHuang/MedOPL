@@ -99,12 +99,12 @@ assertArrayIncludesAll(contract.costAllocationTags, [
   "cloudOperationId",
   "billingAttributionId",
   "accountId",
-  "legacyResourceOrderId",
   "runId",
   "serverPlanId",
   "tenantId",
   "workspaceId",
   "environmentId",
+  "retiredResourceOrderIdentifiersForbidden",
 ], "admin_ops_cost_allocation_tags");
 
 assertArrayIncludesAll(contract.beginnerUserInvisibleCapabilities, [
@@ -144,7 +144,7 @@ assertArrayIncludesAll(contract.beginnerSurface.mustShowOnlyProductLanguage, [
 assertArrayIncludesAll(contract.beginnerSurface.mustNotShow, [
   "tenantId",
   "resourceBindingId",
-  "legacyResourceOrderId",
+  "retired resource-order identifiers",
   "serverPlanId",
   "runId",
   "CVM",
@@ -154,6 +154,7 @@ assertArrayIncludesAll(contract.beginnerSurface.mustNotShow, [
   "节点池",
   "真实云资源 ID",
 ], "beginner_surface_must_not_show");
+assert.equal(contract.costAllocationTags.includes("legacyResourceOrderId"), false, "admin_ops_cost_allocation_tags_must_not_retain_legacy_resource_order_id");
 assert.equal(contract.accountAndTokenBoundary.rawApiKeyBackendOnly, true, "raw_api_key_must_be_backend_only");
 assert.equal(contract.accountAndTokenBoundary.apiKeyPortalLoginField, false, "api_key_must_not_be_portal_login_field");
 assert.equal(contract.accountAndTokenBoundary.launchTokenInUrlOrStorage, false, "launch_token_must_not_be_url_or_storage");

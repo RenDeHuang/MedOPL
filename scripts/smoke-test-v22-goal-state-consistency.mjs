@@ -42,6 +42,7 @@ const expectedStageOrder = [
 
 const additiveTruthBranches = new Set([
   "contract/v22-saas-control-plane-ux-truth",
+  "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
 ]);
 
 const releasePrerequisites = [

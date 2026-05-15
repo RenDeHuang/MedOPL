@@ -20,7 +20,6 @@ export function createPortalStoreDbFacade(deps) {
   core.writeDb.refundWallet = delegates.refundWallet;
   core.writeDb.makeupChargeWallet = delegates.makeupChargeWallet;
   core.writeDb.persistPortalSessions = auth.persistPortalSessions;
-  core.writeDb.persistResourceOrderState = delegates.persistResourceOrderState;
   if (deps.storageMode() === "postgres_redis") {
     core.writeDb.upsertStorageOrder = delegates.upsertStorageOrder;
     core.writeDb.upsertTaskSpace = delegates.upsertTaskSpace;

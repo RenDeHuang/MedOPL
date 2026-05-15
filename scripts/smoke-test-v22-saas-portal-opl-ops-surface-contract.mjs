@@ -90,7 +90,7 @@ function assertNoForbiddenBeginnerText(text, label) {
     "tenant",
     "tenantId",
     "workspaceId",
-    "legacyResourceOrderId",
+    "retired resource-order identifiers",
     "resourceBinding",
     "serverPlan",
     "runId",
@@ -330,10 +330,10 @@ assert.deepEqual(contract.backendMultiTenantBoundary.fields, [
   "cloudOperationId",
   "billingAttributionId",
   "accountId",
-  "legacyResourceOrderId",
   "billingAccountId",
   "runId",
   "serverPlanId",
+  "retiredResourceOrderIdentifiersForbidden",
 ], "backend_multi_tenant_fields_mismatch");
 assertIncludesAll(contract.backendMultiTenantBoundary.usedFor, ["隔离", "计费", "审计", "运维"], "backend_multi_tenant_used_for");
 assert.equal(contract.backendMultiTenantBoundary.beginnerUserPrimaryLanguage, false, "backend_fields_must_not_be_beginner_user_language");
@@ -347,7 +347,6 @@ assert.deepEqual(contract.tencentCostAllocationTags.fixedKeys, [
   "serverplanid",
   "workspaceid",
   "tenantid",
-  "legacyresourceorderid_optional_migration_only",
 ], "tencent_cost_allocation_tags_mismatch");
 assertIncludesAll(contract.tencentCostAllocationTags.usedFor, [
   "腾讯云账单核对",
@@ -382,7 +381,7 @@ assertIncludesAll(contract.forbiddenBeginnerUserNarrative, [
   "COS bucket",
   "K8s",
   "TKE",
-  "legacyResourceOrderId",
+  "retired resource-order identifiers",
   "raw billing tags",
   "raw provider API key",
   "launchToken",
@@ -390,6 +389,8 @@ assertIncludesAll(contract.forbiddenBeginnerUserNarrative, [
   "内部存储密钥",
   "one-person-lab upstream 内部模块",
 ], "forbidden_beginner_user_narrative");
+assertExcludesAll(contract.backendMultiTenantBoundary.fields, ["legacyResourceOrderId"], "backend_multi_tenant_fields_retired_alias");
+assertExcludesAll(contract.tencentCostAllocationTags.fixedKeys, ["legacyresourceorderid_optional_migration_only"], "tencent_cost_allocation_tags_retired_alias");
 
 assertQuestions(contract.productEffectQuestions.beginnerUserCanAnswer, [
   "我还有多少钱？",

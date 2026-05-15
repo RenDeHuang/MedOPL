@@ -127,9 +127,9 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 
 以下现有路径有价值，但不能按旧命名或旧边界继续扩散：
 
-- `services/portal/src/config/portal-config.mjs` 中 `PRODUCT_RUNTIME_MODE=user_owned` 只能迁为 legacy alias，默认语义必须是 `platform_provisioned` / `customer_dedicated`。
+- `services/portal/src/config/portal-config.mjs` 不得恢复 `PRODUCT_RUNTIME_MODE=user_owned`；默认语义必须是 `platform_provisioned` / `customer_dedicated`。
 - `services/portal/src/routes/user-owned-resource.routes.mjs`、`services/portal/src/domain/user-owned-resources.mjs` 和 `services/portal/src/state/portal-user-owned-resource-store.mjs` 均已从 active repo 删除；不得恢复 user-owned public route、alias、fixture、copy 或测试锚点。
-- `services/portal/src/domain/resource-orders.mjs`、`services/portal/src/routes/resource-order*.mjs` 和 `services/portal/src/integrations/resource-provisioner-client.mjs` 要迁到 resource binding / billing / audit 语义；旧 resource-order 不再是 v22 正式产品入口。
+- `services/portal/src/domain/resource-orders.mjs`、`services/portal/src/routes/resource-order*.mjs` 和 `services/portal/src/integrations/resource-provisioner-client.mjs` 已从 active repo 删除；后续如需平台资源开通 client，必须以 v22 resource binding / cloud operation contract 重新命名、重新建边界。
 - `services/portal/src/routes/task-space.routes.mjs` 要迁到 workspace 语义。
 - `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组只作为 retired compatibility fence。
 - `services/opl-runtime-bridge` 路径暂保留，但产品语义是 Portal OPL Adapter / Runtime Agent；新文档和新入口不得继续扩大 bridge 命名。
@@ -143,7 +143,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - 旧 v13 Langfuse / commercial / COS 脚本、旧 portal resource-order/provisioner 脚本、旧 med-autoscience runner fixture、旧 v19/v20 helper lib 已在 Slice D 删除；未来真实外部 canary 必须使用新的 v22 授权合同和 gate。
 - 旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*` 仍只可作为迁移输入，不作为 active repo 默认实现入口。
 
-后续 cleanup/delete 目标是继续清掉 active services 中残留的旧 `resource-provisioner` client wiring、OpenCost 主产品字段和 resource-order schema/store 片段；不得把已删除的旧 deploy/adapters/infra 资产作为参考重新引入。
+后续 cleanup/delete 目标是继续清掉 active services 中残留的 OpenCost 主产品字段、resource-order/user-owned 兼容 alias 和任何新发现的旧测试锚点；不得把已删除的旧 deploy/adapters/infra 资产或旧 Portal provisioner client 作为参考重新引入。
 
 ## 操作边界
 

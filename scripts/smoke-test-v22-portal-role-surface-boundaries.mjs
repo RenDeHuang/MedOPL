@@ -130,7 +130,7 @@ assertArrayIncludesAll(userContract.invisibleContent, [
   "cloudOperationId",
   "billingAttributionId",
   "accountId",
-  "legacyResourceOrderId",
+  "retired resource-order identifiers",
   "serverPlanId",
   "runId",
   "SecretId",
@@ -207,13 +207,14 @@ assertArrayIncludesAll(adminContract.costAllocationTags, [
   "cloudOperationId",
   "billingAttributionId",
   "accountId",
-  "legacyResourceOrderId",
   "runId",
   "serverPlanId",
   "tenantId",
   "workspaceId",
   "environmentId",
+  "retiredResourceOrderIdentifiersForbidden",
 ], "admin_surface_cost_allocation_tags");
+assert.equal(adminContract.costAllocationTags.includes("legacyResourceOrderId"), false, "admin_surface_cost_allocation_tags_must_not_retain_legacy_resource_order_id");
 
 assertArrayIncludesAll(adminContract.forbiddenVisibilityAndActions, [
   "SecretId",

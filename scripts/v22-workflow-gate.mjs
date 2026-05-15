@@ -285,6 +285,9 @@ function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = 
   const normalized = normalizePath(filePath);
   return [
     /^adapters\/(?:resource-provisioner|med-autoscience-runner|cloud-provisioner|shared)(?:\/|$)/u,
+    /^scripts\/(?:smoke-test-secret-hygiene-manifests|smoke-test-v20-tencent-secret-isolation-contract|smoke-test-v21-gflabtoken-login-contract)\.mjs$/u,
+    /^scripts\/(?:smoke-test-billing-cos-zip-reader|smoke-test-billing-http-routes-contract|smoke-test-billing-resource-attribution|smoke-test-billing-summary-runtime-contract|smoke-test-billing-tencent-bill-summary|smoke-test-billing-tencent-runtime-contract|smoke-test-billing-v12-cos-attribution|smoke-test-portal-billing-export-routes-contract|smoke-test-portal-http-dispatcher-contract|smoke-test-portal-page-payloads-contract|smoke-test-portal-runtime-bootstrap-contract|smoke-test-portal-store-structure-contract|start-billing-live)\.(?:mjs)$/u,
+    /^services\/portal\/src\/integrations\/resource-provisioner-client\.mjs$/u,
     /^deploy\/tke-package(?:\/|$)/u,
     /^deploy\/local\/dockerfiles\/(?:resource-provisioner|med-autoscience-runner)\.Dockerfile$/u,
     /^infra\/(?:opencost|kubernetes|codex-runtime|production-hardening)(?:\/|$)/u,

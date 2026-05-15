@@ -359,7 +359,6 @@ function resolveStorageOrderEntitlement(db, { user, workspaceId, tenantId, cosPr
     resourceBindingId: bindingId(binding),
     billingAttributionId: bindingBillingAttributionId(binding),
     accountId: bindingAccountId(binding, user),
-    legacyResourceOrderId: String(binding?.legacyResourceOrderId || binding?.legacy_resource_order_id || "").trim(),
     storagePlanId: order?.storagePlanId || "",
     serverPlanId: bindingServerPlanId(binding, order?.storagePlanId || ""),
     storageSizeGb: order?.storageSizeGb || 0,

@@ -22,7 +22,7 @@ Admin / Ops Console 面向平台运维人员，用于查看租户、账号、工
 - 文件空间用量、7 天保护期占用
 - 资源状态：计划中、准备中、可用、释放中、已释放、异常
 - 费用估算、冻结金额、T+1 对账状态
-- 分账标签：resourceBindingId、cloudOperationId、billingAttributionId、workspaceId、accountId、serverPlanId、tenantId、environmentId、runId；`legacyResourceOrderId` 仅可作为 optional、migration-only alias，不得作为 v22 fixed required tag
+- 分账标签：resourceBindingId、cloudOperationId、billingAttributionId、workspaceId、accountId、serverPlanId、tenantId、environmentId、runId；旧 resource-order 标识不得作为 tag 或兼容归属 alias
 - 审计事件、异常、释放失败、账单异常
 - 公告管理入口
 
@@ -40,7 +40,7 @@ Admin / Ops Console 面向平台运维人员，用于查看租户、账号、工
 - 直接删除节点池、直接释放云资源、直接改真实资源
 
 普通用户界面必须继续使用产品语言：工作台资源、套餐、文件空间、费用估算、释放策略、审计状态。
-普通用户界面不得展示 tenantId、resourceBindingId、legacyResourceOrderId、serverPlanId、runId、CVM、COS、K8s、TKE、节点池或真实云资源 ID。
+普通用户界面不得展示 tenantId、resourceBindingId、retired resource-order identifiers、serverPlanId、runId、CVM、COS、K8s、TKE、节点池或真实云资源 ID。
 
 ## 分账标签边界
 
@@ -50,12 +50,12 @@ Admin / Ops Console 可以查看分账标签归因和异常：
 - cloudOperationId
 - billingAttributionId
 - accountId
-- legacyResourceOrderId（optional、migration-only，不得作为 fixed required tag）
 - runId
 - serverPlanId
 - tenantId
 - workspaceId
 - environmentId
+- retired resource-order identifiers forbidden
 
 这些标签只属于后台、运维、计费和审计边界。普通用户不能被要求理解或配置这些标签。
 
@@ -127,12 +127,12 @@ Admin / Ops Console 可以查看分账标签归因和异常：
     "cloudOperationId",
     "billingAttributionId",
     "accountId",
-    "legacyResourceOrderId",
     "runId",
     "serverPlanId",
     "tenantId",
     "workspaceId",
-    "environmentId"
+    "environmentId",
+    "retiredResourceOrderIdentifiersForbidden"
   ],
   "beginnerUserInvisibleCapabilities": [
     "CVM",
@@ -168,7 +168,7 @@ Admin / Ops Console 可以查看分账标签归因和异常：
     "mustNotShow": [
       "tenantId",
       "resourceBindingId",
-      "legacyResourceOrderId",
+      "retired resource-order identifiers",
       "serverPlanId",
       "runId",
       "CVM",

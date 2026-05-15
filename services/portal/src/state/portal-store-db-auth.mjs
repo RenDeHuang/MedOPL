@@ -47,8 +47,6 @@ export function createPortalStoreDbAuth({
       wallets: [],
       taskSpaces: [],
       workspaceSessions: [],
-      resourceOrders: [],
-      resourceOrderEvents: [],
       storageOrders: [],
       workspaceFiles: [],
       cloudOperations: [],

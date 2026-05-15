@@ -6,17 +6,16 @@
   "base_branch": "origin/recovery/platform-v22-trunk",
   "target_branch": "recovery/platform-v22-trunk",
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
-  "current_status": "strict_monolith_retirement_in_progress",
-  "current_slice": "slice-d-retired-adapter-deploy-infra-delete",
+  "current_status": "strict_monolith_retirement_completed",
+  "current_slice": "slice-e-legacy-schema-store-retirement",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
     "slice-c-legacy-script-delete",
-    "slice-d-retired-adapter-deploy-infra-delete"
-  ],
-  "next_slices": [
+    "slice-d-retired-adapter-deploy-infra-delete",
     "slice-e-legacy-schema-store-retirement"
   ],
+  "next_slices": [],
   "batch_policy": {
     "enabled": true,
     "commit_policy": "one_commit_per_slice",
@@ -34,7 +33,10 @@
       "old deploy/tke-package assets that are not active v22 deploy evidence",
       "old cloud-provisioner/shared adapter helpers with no active v22 importer",
       "old infra/kubernetes codex-runtime production-hardening assets with no active v22 reason",
-      "old compose.demo.yaml retired runner wiring"
+      "old compose.demo.yaml retired runner wiring",
+      "old non-v22 billing/portal smoke scripts with retired resource-order/provisioner semantics",
+      "old Portal resource-provisioner client wiring",
+      "old live/kubectl helper remnants"
     ],
     "forbidden_operations": [
       "read secret",
@@ -208,13 +210,29 @@
     },
     {
       "id": "slice-e-legacy-schema-store-retirement",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "retire_legacy_resource_order_schema_store_remnants_without_real_db_execution",
       "target_paths": [
         "services/portal/src/state/portal-resource-order-store.mjs",
+        "services/portal/src/integrations/resource-provisioner-client.mjs",
         "services/portal/src/domain/resource-orders.mjs",
         "services/portal/src/domain/resource-order-*.mjs",
+        "scripts/smoke-test-billing-cos-zip-reader.mjs",
+        "scripts/smoke-test-billing-http-routes-contract.mjs",
+        "scripts/smoke-test-billing-resource-attribution.mjs",
+        "scripts/smoke-test-billing-summary-runtime-contract.mjs",
+        "scripts/smoke-test-billing-tencent-bill-summary.mjs",
+        "scripts/smoke-test-billing-tencent-runtime-contract.mjs",
+        "scripts/smoke-test-billing-v12-cos-attribution.mjs",
+        "scripts/smoke-test-portal-billing-export-routes-contract.mjs",
+        "scripts/smoke-test-portal-http-dispatcher-contract.mjs",
+        "scripts/smoke-test-portal-page-payloads-contract.mjs",
+        "scripts/smoke-test-portal-runtime-bootstrap-contract.mjs",
+        "scripts/smoke-test-portal-store-structure-contract.mjs",
+        "scripts/start-billing-live.mjs",
+        "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
         "services/portal/src/state/portal-store-schema.mjs",
+        "services/portal/src/state/portal-store-postgres-persistence.mjs",
         "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
         "services/portal/src/state/portal-store-migrations.mjs",
         "services/portal/src/state/portal-store-migration-collections.mjs",
@@ -222,11 +240,15 @@
         "services/portal/src/state/portal-store-db-auth.mjs",
         "services/portal/src/state/portal-store-db-delegates.mjs",
         "services/portal/src/state/portal-store-db-facade.mjs",
-        "services/portal/src/app/portal-store-runtime.mjs"
+        "services/portal/src/app/portal-store-runtime.mjs",
+        "services/portal/src/state/portal-store.mjs",
+        "services/portal/src/state/portal-accounting-store.mjs",
+        "services/portal/src/routes/portal-billing-export.routes.mjs"
       ],
       "red_gate": "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --schema",
       "green_gates": [
-        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --schema"
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --schema",
+        "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs"
       ],
       "commit": "cleanup: retire legacy schema and store remnants"
     }

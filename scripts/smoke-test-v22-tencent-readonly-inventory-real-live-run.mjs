@@ -76,7 +76,7 @@ function ownershipTags(overrides = {}) {
   return {
     accountId: "acct-001",
     workspaceId: "workspace-001",
-    resourceOrderId: "order-001",
+    cloudOperationId: "operation-001",
     resourceBindingId: "binding-001",
     serverPlanId: "pro_8c16g_100gb",
     runId: "",
@@ -111,7 +111,7 @@ function createFakeSdkModules({ cvmError = null } = {}) {
           {
             InstanceId: "ins-live-002",
             InstanceState: "running",
-            Tags: ownershipTags({ resourceOrderId: "order-002", resourceBindingId: "binding-002" }),
+            Tags: ownershipTags({ cloudOperationId: "operation-002", resourceBindingId: "binding-002" }),
           },
         ],
         NextToken: "",
@@ -139,7 +139,7 @@ function createFakeSdkModules({ cvmError = null } = {}) {
             PrefixRef: "prefix-live-001",
             Status: "available",
             Tags: ownershipTags({
-              resourceOrderId: "order-storage-001",
+              cloudOperationId: "operation-storage-001",
               resourceBindingId: "binding-storage-001",
               serverPlanId: "storage_100gb",
               runId: "run-001",

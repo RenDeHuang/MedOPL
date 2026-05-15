@@ -31,7 +31,6 @@ export function createPortalStoreSchema({
         user_id text NOT NULL,
         run_id text NOT NULL,
         workspace_id text NOT NULL,
-        order_id text NOT NULL DEFAULT '',
         resource_binding_id text NOT NULL DEFAULT '',
         type text NOT NULL,
         amount numeric NOT NULL,
@@ -41,56 +40,6 @@ export function createPortalStoreSchema({
         idempotency_key text NOT NULL DEFAULT '',
         reason text NOT NULL,
         operator_id text NOT NULL,
-        created_at timestamptz NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS ${pgTableName("resource_orders")} (
-        id text PRIMARY KEY,
-        tenant_id text NOT NULL,
-        user_id text NOT NULL,
-        portal_user_id text NOT NULL,
-        workspace_id text NOT NULL,
-        workspace_session_id text NOT NULL,
-        run_id text NOT NULL,
-        status text NOT NULL,
-        server_plan_id text NOT NULL,
-        region text NOT NULL,
-        zone text NOT NULL,
-        cpu numeric NOT NULL,
-        memory_gb numeric NOT NULL,
-        gpu_type text NOT NULL,
-        gpu_count numeric NOT NULL,
-        storage_plan_id text NOT NULL,
-        storage_size_gb numeric NOT NULL,
-        retention_policy text NOT NULL,
-        estimated_hours numeric NOT NULL,
-        auto_stop_at text NOT NULL,
-        quote_id text NOT NULL,
-        freeze_id text NOT NULL,
-        provision_request_id text NOT NULL,
-        cloud_resource_ids_json jsonb NOT NULL,
-        currency text NOT NULL,
-        unit_price numeric NOT NULL,
-        min_billable_hours numeric NOT NULL,
-        risk_factor numeric NOT NULL,
-        quote_amount numeric NOT NULL,
-        freeze_amount numeric NOT NULL,
-        exact_cost numeric NULL,
-        pricing_source text NOT NULL,
-        price_updated_at text NOT NULL,
-        idempotency_key text NOT NULL,
-        failed_reason text NOT NULL,
-        created_at timestamptz NOT NULL,
-        updated_at timestamptz NOT NULL,
-        settled_at timestamptz NULL
-      );
-      CREATE TABLE IF NOT EXISTS ${pgTableName("resource_order_events")} (
-        id text PRIMARY KEY,
-        order_id text NOT NULL,
-        event_type text NOT NULL,
-        event_payload_json jsonb NOT NULL,
-        actor_type text NOT NULL,
-        actor_id text NOT NULL,
-        idempotency_key text NOT NULL,
         created_at timestamptz NOT NULL
       );
       CREATE TABLE IF NOT EXISTS ${pgTableName("storage_orders")} (
@@ -470,7 +419,6 @@ export function createPortalStoreSchema({
       ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS storage_root_prefix text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("workspace_files")} ADD COLUMN IF NOT EXISTS retention_cleanup_after_at text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS tenant_id text NOT NULL DEFAULT '';
-      ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS order_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS resource_binding_id text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'CNY';
       ALTER TABLE ${pgTableName("ledger_entries")} ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT '';

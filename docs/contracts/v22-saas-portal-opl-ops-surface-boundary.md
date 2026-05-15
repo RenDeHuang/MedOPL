@@ -83,7 +83,7 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 
 - tenant 状态
 - workspace 状态
-- resourceOrder、resourceBinding 状态
+- resourceBinding、cloudOperation、billingAttribution 状态
 - serverPlan 状态
 - run 状态
 - COS bucket、prefix、object 状态
@@ -107,10 +107,10 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 - `cloudOperationId`
 - `billingAttributionId`
 - `accountId`
-- `legacyResourceOrderId`（optional、migration-only，不得作为 v22 fixed required tag）
 - `billingAccountId`
 - `runId`
 - `serverPlanId`
+- 旧 resource-order 标识不得作为后台归因字段或兼容 alias
 
 这些字段用于隔离、计费、审计、运维，不作为 AI 小白用户主语言。
 
@@ -127,7 +127,7 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 - `workspaceid`
 - `tenantid`
 
-`legacyresourceorderid` 仅可作为 optional、migration-only alias，不得作为 fixed required tag。上述标签用于腾讯云账单核对、COS 存储桶列表、成本归因和审计。普通用户不直接操作这些标签；管理人员可以在管理台查看标签映射和异常。
+旧 resource-order 标识不得作为 fixed key、optional key 或兼容归属 alias。上述标签用于腾讯云账单核对、COS 存储桶列表、成本归因和审计。普通用户不直接操作这些标签；管理人员可以在管理台查看标签映射和异常。
 
 ## 腾讯云资源边界
 
@@ -168,7 +168,7 @@ one-person-lab 是 clean upstream：
 - COS bucket
 - K8s
 - TKE
-- legacyResourceOrderId
+- retired resource-order identifiers
 - raw billing tags
 - raw provider API key
 - `launchToken`
@@ -280,7 +280,7 @@ AI 小白用户进入 Portal 后能回答：
     "mustShow": [
       "tenant 状态",
       "workspace 状态",
-      "resourceOrder、resourceBinding 状态",
+      "resourceBinding、cloudOperation、billingAttribution 状态",
       "serverPlan 状态",
       "run 状态",
       "COS bucket、prefix、object 状态",
@@ -301,10 +301,10 @@ AI 小白用户进入 Portal 后能回答：
       "cloudOperationId",
       "billingAttributionId",
       "accountId",
-      "legacyResourceOrderId",
       "billingAccountId",
       "runId",
-      "serverPlanId"
+      "serverPlanId",
+      "retiredResourceOrderIdentifiersForbidden"
     ],
     "usedFor": [
       "隔离",
@@ -323,8 +323,7 @@ AI 小白用户进入 Portal 后能回答：
       "runid",
       "serverplanid",
       "workspaceid",
-      "tenantid",
-      "legacyresourceorderid_optional_migration_only"
+      "tenantid"
     ],
     "usedFor": [
       "腾讯云账单核对",
@@ -377,7 +376,7 @@ AI 小白用户进入 Portal 后能回答：
     "COS bucket",
     "K8s",
     "TKE",
-    "legacyResourceOrderId",
+    "retired resource-order identifiers",
     "raw billing tags",
     "raw provider API key",
     "launchToken",

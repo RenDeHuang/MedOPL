@@ -191,7 +191,7 @@ function assertPlatformProvisionedDoesNotServeLegacyUserOwned(source, label) {
 }
 
 function assertPlatformProvisionedLifecycleFailClosed(source, label) {
-  assertIncludes(source, "legacy_user_owned_lifecycle_mode_retired", `${label}_must_fail_closed_user_owned_lifecycle_mode`);
+  assertIncludes(source, "unsupported_resource_lifecycle_mode", `${label}_must_fail_closed_unknown_lifecycle_mode`);
 }
 
 function assertNoDefaultUserOwnedCopy(source, label) {
@@ -199,6 +199,7 @@ function assertNoDefaultUserOwnedCopy(source, label) {
     /默认\s+user-owned\s+模式/u,
     /默认\s+`?user_owned`?\s+模式/u,
     /user_owned_storage/u,
+    /legacy_user_owned_lifecycle_mode_retired/u,
   ];
   for (const pattern of forbidden) {
     const match = pattern.exec(source);

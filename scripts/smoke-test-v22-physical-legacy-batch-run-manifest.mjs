@@ -50,11 +50,15 @@ assert.equal(manifest.agent_run_mode, "strict_monolith_legacy_retirement", "mani
 assert.equal(manifest.base_branch, "origin/recovery/platform-v22-trunk", "manifest_base_branch_mismatch");
 assert.equal(manifest.target_branch, "recovery/platform-v22-trunk", "manifest_target_branch_mismatch");
 assert.equal(manifest.working_branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "manifest_working_branch_mismatch");
-assert.equal(manifest.current_status, "strict_monolith_retirement_in_progress", "manifest_current_status_mismatch");
+assert.equal(manifest.current_status, "strict_monolith_retirement_completed", "manifest_current_status_mismatch");
 
 const completedSlices = manifest.completed_slices ?? [];
 const remainingSlices = manifest.next_slices ?? [];
 assertArrayIncludesAll([...completedSlices, ...remainingSlices], expectedSlices, "manifest_slice_queue_or_completed");
+if (manifest.current_status === "strict_monolith_retirement_completed") {
+  assert.deepEqual(remainingSlices, [], "manifest_completed_batch_must_not_have_next_slices");
+  assertArrayIncludesAll(completedSlices, expectedSlices, "manifest_completed_batch_completed_slices");
+}
 for (const sliceId of completedSlices) {
   assert(expectedSlices.includes(sliceId), `manifest_completed_slice_unknown:${sliceId}`);
 }

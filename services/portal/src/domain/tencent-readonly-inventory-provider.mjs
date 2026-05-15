@@ -47,8 +47,8 @@ const FORBIDDEN_API_NAMES = new Set([
 const REQUIRED_OWNERSHIP_FIELDS = [
   "accountId",
   "workspaceId",
-  "resourceOrderId",
   "resourceBindingId",
+  "billingAttributionId",
   "serverPlanId",
   "resourceType",
   "region",
@@ -176,8 +176,8 @@ function ownershipKey(record = {}) {
   return [
     text(record.accountId),
     text(record.workspaceId),
-    text(record.resourceOrderId),
     text(record.resourceBindingId),
+    text(record.billingAttributionId),
     text(record.serverPlanId),
     text(record.runId || ""),
     text(record.resourceType),

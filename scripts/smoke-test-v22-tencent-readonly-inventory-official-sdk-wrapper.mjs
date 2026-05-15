@@ -94,7 +94,7 @@ function ownershipTags(overrides = {}) {
   return {
     accountId: "acct-001",
     workspaceId: "workspace-001",
-    resourceOrderId: "order-001",
+    cloudOperationId: "operation-001",
     resourceBindingId: "binding-001",
     serverPlanId: "pro_8c16g_100gb",
     runId: "",
@@ -130,7 +130,7 @@ function createFakeOfficialSdkModules({ cvmError = null, expectedAllowedApis = a
           {
             InstanceId: "ins-official-002",
             InstanceState: "RUNNING",
-            Tags: ownershipTags({ resourceOrderId: "order-002", resourceBindingId: "binding-002" }),
+            Tags: ownershipTags({ cloudOperationId: "operation-002", resourceBindingId: "binding-002" }),
           },
         ],
         NextToken: "",
@@ -150,7 +150,7 @@ function createFakeOfficialSdkModules({ cvmError = null, expectedAllowedApis = a
             PrefixRef: "prefix-official-001",
             Status: "available",
             Tags: ownershipTags({
-              resourceOrderId: "order-storage-001",
+              cloudOperationId: "operation-storage-001",
               resourceBindingId: "binding-storage-001",
               serverPlanId: "storage_100gb",
               runId: "run-001",
@@ -458,7 +458,7 @@ const inventory = await collectTencentReadonlyInventory({
       {
         accountId: "acct-001",
         workspaceId: "workspace-001",
-        resourceOrderId: "order-001",
+        cloudOperationId: "operation-001",
         resourceBindingId: "binding-001",
         serverPlanId: "pro_8c16g_100gb",
         runId: "",
@@ -468,7 +468,7 @@ const inventory = await collectTencentReadonlyInventory({
       {
         accountId: "acct-001",
         workspaceId: "workspace-001",
-        resourceOrderId: "order-storage-001",
+        cloudOperationId: "operation-storage-001",
         resourceBindingId: "binding-storage-001",
         serverPlanId: "storage_100gb",
         runId: "run-001",

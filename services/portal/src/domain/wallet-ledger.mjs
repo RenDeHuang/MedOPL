@@ -33,18 +33,6 @@ function resourceBindingIdFrom(record = {}) {
   return text(record.resourceBindingId || record.resource_binding_id || record.bindingId || record.binding_id);
 }
 
-function legacyResourceOrderIdFrom(record = {}) {
-  const legacyResourceOrderId = text(
-    record.legacyResourceOrderId
-    || record.legacy_resource_order_id
-    || record.resourceOrderId
-    || record.resource_order_id
-    || record.orderId
-    || record.order_id
-  );
-  return legacyResourceOrderId;
-}
-
 function billingAttributionIdFrom(record = {}, resourceBindingId = "") {
   return text(record.billingAttributionId || record.billing_attribution_id || resourceBindingId);
 }
@@ -71,7 +59,6 @@ function orderLedgerContext(user, order = {}) {
     runId: text(order.runId || order.run_id),
     resourceBindingId,
     billingAttributionId,
-    legacyResourceOrderId: legacyResourceOrderIdFrom(order),
     billingAccountId: text(order.billingAccountId || order.billing_account_id || accountId || tenantId || userId),
     serverPlanId: serverPlanIdFrom(order),
     currency: order.currency || "CNY",
@@ -232,7 +219,6 @@ function pendingUsageSummary(entry = {}) {
     workspaceId: entry.workspaceId,
     accountId: entry.accountId,
     serverPlanId: entry.serverPlanId,
-    legacyResourceOrderId: entry.legacyResourceOrderId,
     runId: entry.runId,
     plainType: "运行中预扣",
     copy: "这次任务正在按运行中费用预扣，最终金额会在 T+1 账单回来后校准。",
@@ -290,7 +276,6 @@ export function normalizeLedgerEntry(entry = {}) {
   const type = LEDGER_TYPE_ALIASES.get(rawType) || rawType;
   const resourceBindingId = resourceBindingIdFrom(entry);
   const billingAttributionId = billingAttributionIdFrom(entry, resourceBindingId);
-  const legacyResourceOrderId = legacyResourceOrderIdFrom(entry);
   const accountId = accountIdFrom(entry);
   const serverPlanId = serverPlanIdFrom(entry);
   const billingAccountId = String(
@@ -312,7 +297,6 @@ export function normalizeLedgerEntry(entry = {}) {
     runId: String(entry.runId || entry.run_id || "").trim(),
     resourceBindingId,
     billingAttributionId,
-    legacyResourceOrderId,
     accountId,
     serverPlanId,
     billingAccountId,
@@ -382,7 +366,6 @@ function normalizeBillQueueRecord(bill = {}) {
     workspaceId: String(bill.workspaceId || bill.workspace_id || "").trim(),
     resourceBindingId,
     billingAttributionId,
-    legacyResourceOrderId: legacyResourceOrderIdFrom(bill),
     accountId,
     runId: String(bill.runId || bill.run_id || "").trim(),
     serverPlanId: serverPlanIdFrom(bill),

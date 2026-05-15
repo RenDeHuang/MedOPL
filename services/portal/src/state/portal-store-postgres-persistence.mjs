@@ -92,7 +92,6 @@ export async function readPortalPostgresSnapshot({
       userId: row.user_id,
       runId: row.run_id,
       workspaceId: row.workspace_id,
-      orderId: row.order_id || "",
       resourceBindingId: row.resource_binding_id || "",
       type: row.type,
       amount: Number(row.amount || 0),

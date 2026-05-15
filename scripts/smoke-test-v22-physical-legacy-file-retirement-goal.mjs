@@ -35,7 +35,7 @@ for (const phrase of [
   "model: `gpt-5.4`",
   "strict monolith cleanup goal",
   "先写清 v22 理想形态与差距，再清故事线，最后分 slice 物理删除旧模块、旧接口、旧测试、旧脚本、旧部署资产和旧兼容面",
-  "physical_delete_batch_status: strict_monolith_retirement_in_progress",
+  "physical_delete_batch_status: strict_monolith_retirement_completed",
 ]) {
   assertIncludes(goal, phrase, "goal_identity");
 }
@@ -117,7 +117,7 @@ for (const command of [
 }
 
 for (const phrase of [
-  "inventory_status: strict_monolith_cleanup_in_progress",
+  "inventory_status: strict_monolith_cleanup_completed",
   "decision values: `delete`, `migrate`, `retain_active_v22`, `blocker`",
   "slice-e-legacy-schema-store-retirement",
 ]) {
@@ -126,7 +126,7 @@ for (const phrase of [
 
 assert.equal(manifest.manifest_role, "strict_monolith_legacy_retirement_run_manifest", "manifest_role_mismatch");
 assert.equal(manifest.working_branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "manifest_branch_mismatch");
-assert.equal(manifest.current_status, "strict_monolith_retirement_in_progress", "manifest_status_mismatch");
+assert.equal(manifest.current_status, "strict_monolith_retirement_completed", "manifest_status_mismatch");
 
 for (const forbidden of [
   "keep_tombstone",

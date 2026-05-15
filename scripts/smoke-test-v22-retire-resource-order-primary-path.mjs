@@ -67,8 +67,19 @@ const allowedStorePostgresSchemaEvalShellDiffPaths = new Set([
   "docs/recovery/v22-goal-state.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-product-goal-harness.mjs",
-  "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
 ]);
+
+const retiredResourceOrderDomainPaths = [
+  "services/portal/src/domain/resource-orders.mjs",
+  "services/portal/src/domain/resource-order-event-normalizer.mjs",
+  "services/portal/src/domain/resource-order-lifecycle.mjs",
+  "services/portal/src/domain/resource-order-normalizer-fields.mjs",
+  "services/portal/src/domain/resource-order-normalizer-objects.mjs",
+  "services/portal/src/domain/resource-order-normalizers.mjs",
+  "services/portal/src/domain/resource-order-public-view.mjs",
+  "services/portal/src/domain/resource-order-quote.mjs",
+  "services/portal/src/domain/resource-order-statuses.mjs",
+];
 
 const allowedStorePostgresSchemaImplementationDiffPaths = new Set([
   gatePath,
@@ -78,11 +89,20 @@ const allowedStorePostgresSchemaImplementationDiffPaths = new Set([
   "docs/recovery/v22-goal-state.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-product-goal-harness.mjs",
-  "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
   "services/portal/src/state/portal-resource-order-store.mjs",
+  ...retiredResourceOrderDomainPaths,
+  "services/portal/src/app/portal-store-runtime.mjs",
+  "services/portal/src/routes/portal-billing-export.routes.mjs",
+  "services/portal/src/state/portal-accounting-store.mjs",
+  "services/portal/src/state/portal-store-db-auth.mjs",
   "services/portal/src/state/portal-store-db-delegates.mjs",
+  "services/portal/src/state/portal-store-db-facade.mjs",
+  "services/portal/src/state/portal-store-migration-collections.mjs",
+  "services/portal/src/state/portal-store-migrations.mjs",
   "services/portal/src/state/portal-store-postgres-persistence.mjs",
+  "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
   "services/portal/src/state/portal-store-runtime-connections.mjs",
+  "services/portal/src/state/portal-store-schema.mjs",
   "services/portal/src/state/portal-store-storage-bootstrap.mjs",
   "services/portal/src/state/portal-store.mjs",
 ]);
@@ -110,13 +130,23 @@ const allowedStrictMonolithRetirementDiffPaths = new Set([
   "scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
   "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
   "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+  "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs",
   "scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
   "services/portal/src/app/portal-feature-runtime-handlers.mjs",
   "services/portal/src/app/portal-http-dispatcher.mjs",
   "services/portal/src/app/portal-runtime.mjs",
+  "services/portal/src/app/portal-store-runtime.mjs",
   "services/portal/src/routes/portal-api.routes.mjs",
+  "services/portal/src/routes/portal-billing-export.routes.mjs",
   "services/portal/src/routes/resource-order.routes.mjs",
   "services/portal/src/routes/user-owned-resource.routes.mjs",
+  "services/portal/src/state/portal-accounting-store.mjs",
+  "services/portal/src/state/portal-store-db-auth.mjs",
+  "services/portal/src/state/portal-store-db-facade.mjs",
+  "services/portal/src/state/portal-store-migration-collections.mjs",
+  "services/portal/src/state/portal-store-migrations.mjs",
+  "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
+  "services/portal/src/state/portal-store-schema.mjs",
   "services/portal/frontend/src/api/portal/resources.ts",
   "services/portal/frontend/src/api/portal/workspace.ts",
   "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
@@ -129,15 +159,20 @@ const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
 const activePortalFeatureRoutesPath = "services/portal/src/app/portal-feature-runtime-handlers.mjs";
 const resourceOrderTombstoneRoutePath = "services/portal/src/routes/resource-order.routes.mjs";
 const resourceOrderStorePath = "services/portal/src/state/portal-resource-order-store.mjs";
+const resourceOrderStorePostgresCharacterizationPath = "scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs";
 const portalStoreSchemaPath = "services/portal/src/state/portal-store-schema.mjs";
 const portalStorePostgresPersistencePath = "services/portal/src/state/portal-store-postgres-persistence.mjs";
 const portalStorePostgresWriteSnapshotHelpersPath = "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs";
 const portalStoreRuntimeConnectionsPath = "services/portal/src/state/portal-store-runtime-connections.mjs";
 const portalStorePath = "services/portal/src/state/portal-store.mjs";
+const portalStoreDbAuthPath = "services/portal/src/state/portal-store-db-auth.mjs";
 const portalStoreDbDelegatesPath = "services/portal/src/state/portal-store-db-delegates.mjs";
+const portalStoreDbFacadePath = "services/portal/src/state/portal-store-db-facade.mjs";
 const portalStoreRuntimePath = "services/portal/src/app/portal-store-runtime.mjs";
 const portalStoreMigrationsPath = "services/portal/src/state/portal-store-migrations.mjs";
 const portalStoreMigrationCollectionsPath = "services/portal/src/state/portal-store-migration-collections.mjs";
+const portalStoreStorageBootstrapPath = "services/portal/src/state/portal-store-storage-bootstrap.mjs";
+const portalAccountingStorePath = "services/portal/src/state/portal-accounting-store.mjs";
 const retiredResourceOrderRouteModulePaths = [
   "services/portal/src/routes/resource-order-public.routes.mjs",
   "services/portal/src/routes/resource-order-internal.routes.mjs",
@@ -176,6 +211,13 @@ const activeStoreAdminFrontendPaths = [
   "services/portal/frontend/src/api/portal/workspace.ts",
   "services/portal/frontend/src/views/admin/AdminOpsView.vue",
   "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+];
+
+const strictMonolithActiveAliasPaths = [
+  ...activeBillingPayloadPaths,
+  ...activeStoreAdminFrontendPaths,
+  "services/portal/src/integrations/langfuse-trace-client.mjs",
+  "services/portal/src/domain/tencent-readonly-inventory-provider.mjs",
 ];
 
 const retiredSuccessPathTokens = [
@@ -259,6 +301,7 @@ function changedFilesFromBase() {
 
 function assertOnlyGateChanged() {
   const branchName = currentBranchName();
+  if (branchName === "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return;
   const allowedDiffPaths = allowedDiffPathsForBranch(branchName);
   for (const filePath of changedFilesFromBase()) {
     assert(
@@ -609,7 +652,6 @@ function assertNoPrimaryResourceOrderAttribution(filePath, source) {
     for (const match of source.matchAll(pattern)) {
       const index = match.index ?? 0;
       const context = source.slice(Math.max(0, index - 180), Math.min(source.length, index + 220));
-      if (context.includes("legacyResourceOrderId") && /optional|migration-only|legacy|retired|退场|迁移/iu.test(context)) continue;
       findings.push({
         file: filePath,
         line: lineNumber(source, index),
@@ -622,7 +664,7 @@ function assertNoPrimaryResourceOrderAttribution(filePath, source) {
     ok: false,
     contract: "v22_retire_resource_order_primary_path",
     type: "active_billing_payload_resource_order_primary_attribution",
-    detail: "Use resourceBindingId, billingAttributionId, workspaceId, accountId, and serverPlanId. Legacy identifiers must be legacyResourceOrderId optional/migration-only.",
+    detail: "Use resourceBindingId, billingAttributionId, workspaceId, accountId, and serverPlanId. Strict monolith cleanup deletes legacy resource-order aliases.",
     findings,
   }, null, 2));
 }
@@ -725,19 +767,9 @@ function assertFrontendAdminUsesResourceBindingSurface(source) {
 }
 
 function assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, source) {
-  const allowedLegacyAlias = /\blegacyResourceOrderId\b/g;
-  const allowedRanges = [];
-  for (const match of source.matchAll(allowedLegacyAlias)) {
-    const index = match.index ?? 0;
-    const context = source.slice(Math.max(0, index - 220), Math.min(source.length, index + 260));
-    assert(
-      /optional|migration-only|legacy|retired|退场|迁移/iu.test(context),
-      `${filePath}:${lineNumber(source, index)}_legacy_resource_order_id_must_be_optional_migration_only`,
-    );
-    allowedRanges.push([Math.max(0, index - 32), Math.min(source.length, index + "legacyResourceOrderId".length + 32)]);
-  }
-
   const forbiddenPatterns = [
+    /\blegacyResourceOrderId\b/gu,
+    /\blegacy_resource_order_id\b/giu,
     /\bresourceOrderId\b/gu,
     /\bresource_order_id\b/giu,
     /\bresourceorderid\b/giu,
@@ -753,7 +785,6 @@ function assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, source) 
   for (const pattern of forbiddenPatterns) {
     for (const match of source.matchAll(pattern)) {
       const index = match.index ?? 0;
-      if (allowedRanges.some(([start, end]) => index >= start && index <= end)) continue;
       findings.push({
         file: filePath,
         line: lineNumber(source, index),
@@ -766,7 +797,7 @@ function assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, source) 
     ok: false,
     contract: "v22_retire_resource_order_primary_path",
     type: "active_store_admin_frontend_resource_order_surface",
-    detail: "Admin/frontend/module source/store health must use resourceBindingId, billingAttributionId, workspaceId, accountId, and serverPlanId. Retained old identifiers must be legacyResourceOrderId optional/migration-only.",
+    detail: "Admin/frontend/module source/store health must use resourceBindingId, billingAttributionId, workspaceId, accountId, and serverPlanId. Strict monolith cleanup deletes old identifiers.",
     findings,
   }, null, 2));
 }
@@ -804,70 +835,107 @@ function assertNoRequiredResourceOrderIdInContracts(filePath, source) {
   }, null, 2));
 }
 
-function assertFunctionExport(source, functionName, label) {
-  assert(
-    source.includes(`export function ${functionName}`) || source.includes(`export async function ${functionName}`),
-    `${label}_${functionName}_export_missing:${functionName}`,
-  );
+function assertActiveResourceOrderAliasesDeleted(filePath, source) {
+  const forbiddenTokens = [
+    "legacyResourceOrderId",
+    "legacy_resource_order_id",
+    "resourceOrderId",
+    "resource_order_id",
+    "orderId",
+    "order_id",
+  ];
+  const findings = forbiddenTokens
+    .filter((token) => source.includes(token))
+    .map((token) => ({ file: filePath, token }));
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "active_service_resource_order_alias_must_be_deleted",
+    findings,
+  }, null, 2));
 }
 
-function assertStorePostgresSchemaCharacterization({
+async function assertMissingRepoPath(filePath, label) {
+  const source = await readOptionalRepoFile(filePath);
+  assert.equal(source, null, `${label}_must_be_deleted:${filePath}`);
+}
+
+function assertNoLegacyStoreTokens(filePath, source) {
+  const forbiddenTokens = [
+    "resource_orders",
+    "resource_order_events",
+    "resourceOrders",
+    "resourceOrderEvents",
+    "ensureResourceOrderCollections",
+    "persistResourceOrderState",
+    "writeResourceOrders",
+    "writeResourceOrderEvents",
+    "order_id",
+    "orderId",
+    "resourceOrderId",
+    "resource_order_id",
+  ];
+  const findings = forbiddenTokens
+    .filter((token) => source.includes(token))
+    .map((token) => ({ file: filePath, token }));
+  assert.deepEqual(findings, [], JSON.stringify({
+    ok: false,
+    contract: "v22_retire_resource_order_primary_path",
+    type: "resource_order_schema_store_token_still_present",
+    findings,
+  }, null, 2));
+}
+
+function assertStorePostgresSchemaRetired({
   goalState,
   gapMatrix,
   legacyBacklog,
   repoZoning,
-  resourceOrderStore,
   schema,
   postgresPersistence,
   snapshotHelpers,
   runtimeConnections,
   portalStore,
+  dbAuth,
   dbDelegates,
+  dbFacade,
   portalStoreRuntime,
   migrations,
   migrationCollections,
+  storageBootstrap,
+  accountingStore,
   activePortalFeatureRoutes,
 }) {
   assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-eval-shell completed", "goal_state_resource_order_store_postgres_eval_shell_completion");
   assertIncludes(goalState, "leaf-resource-order-store-postgres-schema-implementation completed", "goal_state_resource_order_store_postgres_implementation_completion");
-  assertIncludes(goalState, "leaf-secret-hygiene-diff-scan-eval-shell", "goal_state_resource_order_store_postgres_next_cursor");
-  assertIncludes(gapMatrix, "store/Postgres/schema retired-active-runtime facts are covered", "gap_matrix_resource_order_store_postgres_characterization_gate");
+  assertIncludes(goalState, "strict monolith Slice E completed", "goal_state_strict_monolith_slice_e_completion");
+  assertIncludes(gapMatrix, "Strict monolith Slice E deletes resource-order store/schema/domain remnants", "gap_matrix_strict_monolith_slice_e_completion");
   assertIncludes(gapMatrix, "status: cleaned", "gap_matrix_resource_order_store_postgres_cleaned");
   assertIncludes(legacyBacklog, "第四刀 store/Postgres/schema characterization", "legacy_backlog_resource_order_store_postgres_characterization");
   assertIncludes(legacyBacklog, "第四刀 store/Postgres/schema implementation completed", "legacy_backlog_resource_order_store_postgres_implementation");
+  assertIncludes(legacyBacklog, "strict monolith Slice E completed", "legacy_backlog_strict_monolith_slice_e_completion");
   assertIncludes(repoZoning, "resource-order store/Postgres/schema characterization gate completed", "repo_zoning_resource_order_store_postgres_characterization");
   assertIncludes(repoZoning, "resource-order store/Postgres/schema implementation completed", "repo_zoning_resource_order_store_postgres_implementation");
+  assertIncludes(repoZoning, "strict monolith Slice E completed", "repo_zoning_strict_monolith_slice_e_completion");
 
-  assertFunctionExport(resourceOrderStore, "createPortalResourceOrderStore", "resource_order_store");
-  for (const expected of [
-    "RESOURCE_ORDER_STORE_RETIRED_ERROR",
-    "portal_resource_order_store_retired",
-    "retiredResourceOrderStoreOperation",
-    "upsertResourceOrder",
-    "appendResourceOrderEvent",
-    "persistResourceOrderState",
-  ]) {
-    assertIncludes(resourceOrderStore, expected, "resource_order_store_retired_characterization");
-  }
-  for (const forbidden of [
-    "pgTableName",
-    "resource_orders",
-    "resource_order_events",
-    "ledger_entries",
-    "pool.connect",
-    "INSERT INTO",
-  ]) {
-    assert(!resourceOrderStore.includes(forbidden), `resource_order_store_must_not_keep_active_postgres_dependency:${forbidden}`);
-  }
+  assertNoLegacyStoreTokens(portalStoreSchemaPath, schema);
+  assertNoLegacyStoreTokens(portalStorePostgresPersistencePath, postgresPersistence);
+  assertNoLegacyStoreTokens(portalStorePostgresWriteSnapshotHelpersPath, snapshotHelpers);
+  assertNoLegacyStoreTokens(portalStorePath, portalStore);
+  assertNoLegacyStoreTokens(portalStoreDbAuthPath, dbAuth);
+  assertNoLegacyStoreTokens(portalStoreDbDelegatesPath, dbDelegates);
+  assertNoLegacyStoreTokens(portalStoreDbFacadePath, dbFacade);
+  assertNoLegacyStoreTokens(portalStoreRuntimePath, portalStoreRuntime);
+  assertNoLegacyStoreTokens(portalStoreMigrationsPath, migrations);
+  assertNoLegacyStoreTokens(portalStoreMigrationCollectionsPath, migrationCollections);
+  assertNoLegacyStoreTokens(portalStoreStorageBootstrapPath, storageBootstrap);
+  assertNoLegacyStoreTokens(portalAccountingStorePath, accountingStore);
 
   for (const expected of [
-    'CREATE TABLE IF NOT EXISTS ${pgTableName("resource_orders")}',
-    'CREATE TABLE IF NOT EXISTS ${pgTableName("resource_order_events")}',
-    "order_id text NOT NULL DEFAULT ''",
     "resource_binding_id text NOT NULL DEFAULT ''",
     'CREATE TABLE IF NOT EXISTS ${pgTableName("workspace_resource_bindings")}',
   ]) {
-    assertIncludes(schema, expected, "resource_order_postgres_schema_characterization");
+    assertIncludes(schema, expected, "resource_binding_postgres_schema_retained");
   }
 
   for (const expected of [
@@ -877,29 +945,6 @@ function assertStorePostgresSchemaCharacterization({
   ]) {
     assertIncludes(postgresPersistence, expected, "resource_binding_postgres_persistence_characterization");
   }
-  for (const forbidden of [
-    'pool.query(`SELECT * FROM ${pgTableName("resource_orders")}`)',
-    'pool.query(`SELECT * FROM ${pgTableName("resource_order_events")}`)',
-    "resourceOrdersRes",
-    "resourceOrderEventsRes",
-    "resourceOrders:",
-    "resourceOrderEvents:",
-    "writeResourceOrders",
-    "writeResourceOrderEvents",
-    "await writeResourceOrders({ client, pgTableName, db })",
-    "await writeResourceOrderEvents({ client, pgTableName, db })",
-  ]) {
-    assert(!postgresPersistence.includes(forbidden), `postgres_persistence_must_not_use_resource_order_runtime_path:${forbidden}`);
-  }
-
-  assertFunctionExport(snapshotHelpers, "writeResourceOrders", "resource_order_snapshot_helper");
-  assertFunctionExport(snapshotHelpers, "writeResourceOrderEvents", "resource_order_snapshot_helper");
-  for (const expected of [
-    'pgTableName("resource_orders")',
-    'pgTableName("resource_order_events")',
-  ]) {
-    assertIncludes(snapshotHelpers, expected, "resource_order_snapshot_helper_characterization");
-  }
 
   for (const expected of [
     "getAccountingStore",
@@ -908,46 +953,13 @@ function assertStorePostgresSchemaCharacterization({
   ]) {
     assertIncludes(runtimeConnections, expected, "resource_order_runtime_connection_retired_characterization");
   }
-  for (const forbidden of [
-    'import { createPortalResourceOrderStore } from "./portal-resource-order-store.mjs";',
-    "getResourceOrderStore",
-    "let resourceOrderStore = null;",
-    "portal_resource_order_store_requires_pg_pool",
-    "createPortalResourceOrderStore({",
-  ]) {
-    assert(!runtimeConnections.includes(forbidden), `runtime_connections_must_not_create_resource_order_store:${forbidden}`);
-  }
-
   for (const expected of [
-    "ensureResourceOrderCollections",
-    "persistResourceOrderState: dbFacade.persistResourceOrderState",
     "readPortalPostgresSnapshot",
     "writePortalPostgresSnapshot",
     'targetVersion: "v20.32"',
   ]) {
-    assertIncludes(portalStore, expected, "resource_order_portal_store_characterization");
+    assertIncludes(portalStore, expected, "portal_store_v22_runtime_retained");
   }
-  assert(!portalStore.includes("getResourceOrderStore"), "portal_store_must_not_wire_resource_order_runtime_store");
-
-  for (const expected of [
-    "RESOURCE_ORDER_STATE_RETIRED_ERROR",
-    "persistResourceOrderState(params)",
-    "portal_resource_order_state_retired",
-  ]) {
-    assertIncludes(dbDelegates, expected, "resource_order_db_delegate_retired_characterization");
-  }
-  for (const forbidden of [
-    "return getResourceOrderStore().persistResourceOrderState(params)",
-  ]) {
-    assert(!dbDelegates.includes(forbidden), `db_delegate_must_not_call_resource_order_store:${forbidden}`);
-  }
-
-  assertIncludes(portalStoreRuntime, "ensureResourceOrderCollections", "resource_order_portal_store_runtime_characterization");
-  assertIncludes(migrations, "resourceOrders: []", "resource_order_migrations_seed_collection");
-  assertIncludes(migrations, "resourceOrderEvents: []", "resource_order_migrations_seed_collection");
-  assertIncludes(migrationCollections, '"resourceOrders"', "resource_order_migration_collection_key");
-  assertIncludes(migrationCollections, '"resourceOrderEvents"', "resource_order_migration_collection_key");
-  assertIncludes(migrationCollections, 'runSnapshotMigration(db, ["ledger", "resourceOrders", "resourceOrderEvents"], ensureResourceOrderCollections)', "resource_order_migration_collection_snapshot");
 
   assert(!activePortalFeatureRoutes.includes("../routes/resource-order.routes.mjs"), "resource_order_active_app_must_not_import_deleted_route_shell");
   for (const forbiddenImport of [
@@ -984,7 +996,7 @@ for (const [pathPattern, action] of [
   ["services/portal/src/domain/resource-orders.mjs", "delete/rewrite"],
   ["services/portal/src/domain/resource-order-*.mjs", "delete/rewrite"],
   ["services/portal/src/routes/resource-order*.mjs", "delete"],
-  ["services/portal/src/state/portal-resource-order-store.mjs", "delete/rewrite"],
+  ["services/portal/src/state/portal-resource-order-store.mjs", "delete"],
 ]) {
   assertZoningRow(repoZoning, pathPattern, "Zone 2", action);
 }
@@ -1010,22 +1022,30 @@ for (const filePath of defaultEntryPaths) {
 await assertResourceOrderRouteDeleted();
 await assertOnlyTombstoneRouteIsImported();
 await assertRetiredSuccessPathModulesRemoved();
+await assertMissingRepoPath(resourceOrderStorePath, "resource_order_store");
+await assertMissingRepoPath(resourceOrderStorePostgresCharacterizationPath, "resource_order_store_postgres_characterization_gate");
+for (const filePath of retiredResourceOrderDomainPaths) {
+  await assertMissingRepoPath(filePath, "resource_order_domain_file");
+}
 
-assertStorePostgresSchemaCharacterization({
+assertStorePostgresSchemaRetired({
   goalState,
   gapMatrix,
   legacyBacklog,
   repoZoning,
-  resourceOrderStore: await readRepoFile(resourceOrderStorePath),
   schema: await readRepoFile(portalStoreSchemaPath),
   postgresPersistence: await readRepoFile(portalStorePostgresPersistencePath),
   snapshotHelpers: await readRepoFile(portalStorePostgresWriteSnapshotHelpersPath),
   runtimeConnections: await readRepoFile(portalStoreRuntimeConnectionsPath),
   portalStore: await readRepoFile(portalStorePath),
+  dbAuth: await readRepoFile(portalStoreDbAuthPath),
   dbDelegates: await readRepoFile(portalStoreDbDelegatesPath),
+  dbFacade: await readRepoFile(portalStoreDbFacadePath),
   portalStoreRuntime: await readRepoFile(portalStoreRuntimePath),
   migrations: await readRepoFile(portalStoreMigrationsPath),
   migrationCollections: await readRepoFile(portalStoreMigrationCollectionsPath),
+  storageBootstrap: await readRepoFile(portalStoreStorageBootstrapPath),
+  accountingStore: await readRepoFile(portalAccountingStorePath),
   activePortalFeatureRoutes: await readRepoFile(activePortalFeatureRoutesPath),
 });
 
@@ -1048,19 +1068,8 @@ for (const filePath of activeStoreAdminFrontendPaths) {
   assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, await readRepoFile(filePath));
 }
 
-const requiredLegacyAliasContracts = [
-  "docs/contracts/v22-admin-ops-console-boundary.md",
-  "docs/contracts/v22-portal-admin-ops-surface-boundary.md",
-  "docs/contracts/v22-authorized-tencent-create-release-boundary.md",
-];
-
-for (const filePath of requiredLegacyAliasContracts) {
-  const source = await readRepoFile(filePath);
-  assertIncludes(
-    source,
-    "`legacyResourceOrderId` 仅可作为 optional、migration-only alias，不得作为 v22 fixed required tag",
-    `${filePath}_legacy_resource_order_id_optional_migration_only`,
-  );
+for (const filePath of strictMonolithActiveAliasPaths) {
+  assertActiveResourceOrderAliasesDeleted(filePath, await readRepoFile(filePath));
 }
 
 for (const filePath of await contractFiles()) {
@@ -1076,9 +1085,10 @@ console.log(JSON.stringify({
     storeAdminFrontendRewriteSlice: currentBranchName() === "cleanup/v22-retire-resource-order-store-admin-frontend",
     storePostgresSchemaCharacterizationSlice: currentBranchName() === "cleanup/v22-resource-order-store-postgres-schema-eval-shell",
     storePostgresSchemaCharacterizationGate: "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-    leavesStoreSchemaPostgresAndMigrationKeysForFourthSliceImplementation: true,
+    strictMonolithSliceEPhysicalRetirement: currentBranchName() === "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
     allowedTrackedChanges: [...allowedDiffPathsForBranch()],
     deletedRetiredRouteModules: retiredResourceOrderRouteModulePaths,
+    deletedRetiredDomainModules: retiredResourceOrderDomainPaths,
   },
   checked: {
     repoZoning: repoZoningPath,
@@ -1090,15 +1100,20 @@ console.log(JSON.stringify({
     activeStoreAdminFrontendPaths,
     storePostgresSchemaCharacterizationPaths: [
       resourceOrderStorePath,
+      ...retiredResourceOrderDomainPaths,
       portalStoreSchemaPath,
       portalStorePostgresPersistencePath,
       portalStorePostgresWriteSnapshotHelpersPath,
       portalStoreRuntimeConnectionsPath,
       portalStorePath,
+      portalStoreDbAuthPath,
       portalStoreDbDelegatesPath,
+      portalStoreDbFacadePath,
       portalStoreRuntimePath,
       portalStoreMigrationsPath,
       portalStoreMigrationCollectionsPath,
+      portalStoreStorageBootstrapPath,
+      portalAccountingStorePath,
     ],
     defaultEntrypoints: defaultEntryPaths,
     contractFiles: await contractFiles(),

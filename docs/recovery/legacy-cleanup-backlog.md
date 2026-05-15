@@ -94,10 +94,11 @@
 - 旧 prepare-run 或 resource-order public flow 不保留为 active route。
 - 新 smoke 不依赖 resource-order 作为默认成功路径。
 - 第一刀 route success path 清退已处理旧 public/internal/provision/release/freeze/quote/delete-node-pool route 链路；strict monolith cleanup 继续删除剩余 retired shell 和 registration。
-- 第二刀 billing/payload 字段 rewrite 只处理 active ledger、binding 和 Portal payload 主归因迁到 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`；旧标识只能作为 `legacyResourceOrderId` optional、migration-only alias 留在迁移输入，不作为 fixed required tag，也不恢复任何 route success path。
+- 第二刀 billing/payload 字段 rewrite 只处理 active ledger、binding 和 Portal payload 主归因迁到 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`；strict monolith cleanup supersedes当时的迁移别名姿态，旧标识不得作为 active compatibility field、fixed required tag 或 route success path 保留。
 - 第三刀 store health / admin / frontend surface 清退只处理 active admin、module source、store health 和 frontend surface 不再把 resource-order 作为默认展示字段或主归因字段；Admin 对账、health 和 frontend API 类型使用 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`。本刀不修改 `services/portal/src/state/portal-resource-order-store.mjs`、store schema、Postgres persistence、migrations、seed/migration collection keys，也不恢复任何 route success path。
-- 第四刀 store/Postgres/schema characterization 已在 `cleanup/v22-resource-order-store-postgres-schema-eval-shell` 建立静态 gate：`scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` 钉住 `portal-resource-order-store`、Postgres schema、Postgres snapshot read/write、runtime connection、db delegate、runtime store 和 JSON migration collection 的当前遗留事实；不修改 `services/*`、不连接真实 DB、不运行 migration、不读 secret、不执行 live/cloud/build/kubectl。
-- 第四刀 store/Postgres/schema implementation completed on `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer wires `portal-resource-order-store` or active Postgres snapshot read/write for `resource_orders` / `resource_order_events`. Strict monolith cleanup now removes retired store, domain family, schema fragments, snapshot helper writers, and JSON migration collections without executing real DB migration.
+- 第四刀 store/Postgres/schema characterization 曾在 `cleanup/v22-resource-order-store-postgres-schema-eval-shell` 固定 remaining persistence facts；strict monolith cleanup 不再保留该 characterization shell 作为完成态。
+- 第四刀 store/Postgres/schema implementation completed on `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer wires resource-order store or active Postgres snapshot read/write for retired tables.
+- strict monolith Slice E completed: retired store, domain family, schema fragments, snapshot helper writers, JSON migration collections, old characterization gate, unused Portal `resource-provisioner-client` runtime wiring, and old non-v22 billing/portal smoke anchors are physically deleted or rewritten to v22 resource binding/workspace/billing/audit surfaces; no real DB migration execution, live-test, kubectl, deploy, build/push, or true cloud operation was run.
 
 ## Slice 4: Legacy Script Archive Boundary
 
@@ -112,9 +113,10 @@
 - MVP suite 只串 v22 默认 smoke。
 - `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite，也不留在 active scripts 目录。
 - `scripts/live-test-*` 不进入默认 suite；当前物理删除事实由 `slice-authorized-live-test-physical-delete` 单独记录，不属于 Slice 4 archive boundary 本体。
-- 无 v22 前缀但仍有价值的 smoke 必须迁名或在台账中标明 archive/rewrite。
+- 无 v22 前缀但仍有价值的 smoke 必须迁名进入 v22 active surface；不能因为历史证据保留旧脚本本体。
 - completed on `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` verifies default README / vibe-coding commands, v22 MVP suite script references, and repo-zoning archive/review-rewrite rows without running live-test, deleting legacy scripts, touching services, or reading secrets.
 - follow-up physical delete on `cleanup/v22-physical-legacy-batch-run`: `slice-authorized-live-test-physical-delete` physically deletes `scripts/live-test-*` after explicit user authorization; future real external canary must use a new v22 authorization contract and must not restore the old default entry.
+- strict monolith follow-up on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old non-v22 billing/portal smoke anchors and `scripts/start-billing-live.mjs` were physically deleted after import/default-suite scan proved they were not v22 active validation. The deleted scripts were historical billing/resource-order/OpenCost/Portal structure anchors, not current v22 smoke.
 
 ## Slice 5: OpenCost and Langfuse Primary Narrative Retirement
 

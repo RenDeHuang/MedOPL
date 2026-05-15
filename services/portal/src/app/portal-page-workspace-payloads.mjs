@@ -133,7 +133,6 @@ function publicStorageEntitlementView(storageEntitlement = {}) {
     resourceBindingId: text(storageEntitlement.resourceBindingId),
     billingAttributionId: text(storageEntitlement.billingAttributionId),
     accountId: text(storageEntitlement.accountId),
-    legacyResourceOrderId: text(storageEntitlement.legacyResourceOrderId),
     storagePlanId: text(storageEntitlement.storagePlanId),
     serverPlanId: text(storageEntitlement.serverPlanId || storageEntitlement.storagePlanId),
     storageSizeGb: Number(storageEntitlement.storageSizeGb || storageEntitlement.capacityGb || 0),

@@ -154,7 +154,6 @@ export function resolveWorkspaceLabStorageEntitlement(db, { user, workspaceId, t
     resourceBindingId,
     billingAttributionId: billingAttributionId(binding),
     accountId: accountId(binding, user),
-    legacyResourceOrderId: text(binding?.legacyResourceOrderId || binding?.legacy_resource_order_id),
     storagePlanId: labEntitlement.packageId,
     serverPlanId: serverPlanId(binding, labEntitlement.packageId),
     storageSizeGb: labEntitlement.storage.totalGb,

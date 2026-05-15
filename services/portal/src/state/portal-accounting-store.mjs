@@ -21,8 +21,8 @@ function normalizeLedgerContext(input = {}) {
     tenantId: nonEmptyString(input.tenantId, input.tenant_id, userId),
     runId: nonEmptyString(input.runId, input.run_id),
     workspaceId: nonEmptyString(input.workspaceId, input.workspace_id),
-    orderId: nonEmptyString(input.orderId, input.order_id, input.resourceOrderId, input.resource_order_id),
-    sourceId: nonEmptyString(input.sourceId, input.source_id, input.orderId, input.resourceOrderId, input.runId),
+    resourceBindingId: nonEmptyString(input.resourceBindingId, input.resource_binding_id),
+    sourceId: nonEmptyString(input.sourceId, input.source_id, input.resourceBindingId, input.runId),
     currency: nonEmptyString(input.currency, "CNY") || "CNY",
   };
 }
@@ -37,7 +37,7 @@ export function createPortalAccountingStore({
     tenantId,
     workspaceId = "",
     runId = "",
-    orderId = "",
+    resourceBindingId = "",
     amount,
     operatorId,
     idempotencyKey,
@@ -92,7 +92,7 @@ export function createPortalAccountingStore({
       const ledgerId = randomUUID();
       await client.query(
         `INSERT INTO ${pgTableName("ledger_entries")} (
-          id, tenant_id, user_id, run_id, workspace_id, order_id, type, amount, currency, source_type, source_id, idempotency_key, reason, operator_id, created_at
+          id, tenant_id, user_id, run_id, workspace_id, resource_binding_id, type, amount, currency, source_type, source_id, idempotency_key, reason, operator_id, created_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())`,
         [
           ledgerId,
@@ -100,7 +100,7 @@ export function createPortalAccountingStore({
           userId,
           runId,
           workspaceId,
-          orderId,
+          resourceBindingId,
           ledgerType,
           normalizedAmount,
           currency,
@@ -131,7 +131,7 @@ export function createPortalAccountingStore({
             reason,
             sourceType,
             sourceId,
-            orderId,
+            resourceBindingId,
             ...auditDetails,
           }),
         ],

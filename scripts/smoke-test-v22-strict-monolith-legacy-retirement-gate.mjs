@@ -77,6 +77,35 @@ async function assertPolicyTruth() {
     }
   }
 
+  const policyDirs = ["docs/contracts", "docs/recovery"];
+  const positiveAliasPatterns = [
+    /\blegacyResourceOrderId\b[^\n]{0,160}(?:optional|migration-only|alias|tag|field|required|固定|必填|可作为|可以为空|仅可|只可)/iu,
+    /(?:optional|migration-only|alias|tag|field|required|固定|必填|可作为|可以为空|仅可|只可)[^\n]{0,160}\blegacyResourceOrderId\b/iu,
+    /\blegacyresourceorderid\b[^\n]{0,160}(?:optional|migration-only|alias|fixed|required|tag|key)/iu,
+    /\bresourceOrderId\b[^\n]{0,160}(?:optional|migration-only|alias|tag|field|required|固定|必填|可作为|可以为空|仅可|只可)/iu,
+    /(?:optional|migration-only|alias|tag|field|required|固定|必填|可作为|可以为空|仅可|只可)[^\n]{0,160}\bresourceOrderId\b/iu,
+    /\b(?:legacy|compatibility?)\s+alias\b/iu,
+    /\bmigration-only alias\b/iu,
+    /\boptional migration alias\b/iu,
+    /"legacyResourceOrderId"\s*:/u,
+    /"resourceOrderId"\s*:/u,
+    /legacyresourceorderid_optional_migration_only/iu,
+  ];
+  const positiveAliasFindings = [];
+  for (const policyDir of policyDirs) {
+    const entries = await readdir(path.join(repoRoot, policyDir), { recursive: true });
+    for (const entry of entries) {
+      if (!String(entry).endsWith(".md") && !String(entry).endsWith(".json")) continue;
+      const repoPath = path.join(policyDir, entry).replaceAll("\\", "/");
+      const source = await readRepoFile(repoPath);
+      for (const pattern of positiveAliasPatterns) {
+        const match = pattern.exec(source);
+        if (match) positiveAliasFindings.push(`${repoPath}:${pattern}:line_${source.slice(0, match.index).split("\n").length}`);
+      }
+    }
+  }
+  assert.deepEqual(positiveAliasFindings, [], `strict_policy_must_not_retain_positive_compat_aliases:${positiveAliasFindings.join(",")}`);
+
   const gapMatrix = await readRepoFile("docs/recovery/v22-current-vs-ideal-gap-matrix.md");
   for (const phrase of [
     "MedOPL 是 platform-provisioned / customer-dedicated 的 OPL SaaS 托管科研工作台",
@@ -149,6 +178,19 @@ async function assertLegacyScriptsDeleted() {
     || /^smoke-test-billing-opencost/u.test(name)
     || /^install-opencost/u.test(name)
     || /^start-opencost/u.test(name)
+    || /^start-billing-live/u.test(name)
+    || /^smoke-test-billing-cos-zip-reader/u.test(name)
+    || /^smoke-test-billing-http-routes-contract/u.test(name)
+    || /^smoke-test-billing-resource-attribution/u.test(name)
+    || /^smoke-test-billing-summary-runtime-contract/u.test(name)
+    || /^smoke-test-billing-tencent-bill-summary/u.test(name)
+    || /^smoke-test-billing-tencent-runtime-contract/u.test(name)
+    || /^smoke-test-billing-v12-cos-attribution/u.test(name)
+    || /^smoke-test-portal-billing-export-routes-contract/u.test(name)
+    || /^smoke-test-portal-http-dispatcher-contract/u.test(name)
+    || /^smoke-test-portal-page-payloads-contract/u.test(name)
+    || /^smoke-test-portal-runtime-bootstrap-contract/u.test(name)
+    || /^smoke-test-portal-store-structure-contract/u.test(name)
   );
   assert.deepEqual(legacyNames, [], `legacy_scripts_must_be_deleted:${legacyNames.join(",")}`);
 
@@ -201,15 +243,39 @@ async function assertRetiredAssetsDeleted() {
 }
 
 async function assertSchemaStoreRetired() {
+  for (const repoPath of [
+    "services/portal/src/state/portal-resource-order-store.mjs",
+    "services/portal/src/integrations/resource-provisioner-client.mjs",
+    "services/portal/src/domain/resource-orders.mjs",
+    "services/portal/src/domain/resource-order-event-normalizer.mjs",
+    "services/portal/src/domain/resource-order-lifecycle.mjs",
+    "services/portal/src/domain/resource-order-normalizer-fields.mjs",
+    "services/portal/src/domain/resource-order-normalizer-objects.mjs",
+    "services/portal/src/domain/resource-order-normalizers.mjs",
+    "services/portal/src/domain/resource-order-public-view.mjs",
+    "services/portal/src/domain/resource-order-quote.mjs",
+    "services/portal/src/domain/resource-order-statuses.mjs",
+  ]) {
+    await assertMissing(repoPath, "resource_order_schema_store_file");
+  }
+
   const files = [
     "services/portal/src/state/portal-store-schema.mjs",
+    "services/portal/src/state/portal-store-postgres-persistence.mjs",
     "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
     "services/portal/src/state/portal-store-migrations.mjs",
     "services/portal/src/state/portal-store-migration-collections.mjs",
     "services/portal/src/state/portal-store-storage-bootstrap.mjs",
     "services/portal/src/state/portal-store-db-auth.mjs",
+    "services/portal/src/state/portal-store-db-delegates.mjs",
+    "services/portal/src/state/portal-store-db-facade.mjs",
     "services/portal/src/state/portal-accounting-store.mjs",
+    "services/portal/src/state/portal-store.mjs",
     "services/portal/src/app/portal-store-runtime.mjs",
+    "services/portal/src/app/portal-runtime-clients.mjs",
+    "services/portal/src/app/portal-runtime.mjs",
+    "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+    "services/portal/src/config/portal-config.mjs",
   ];
   for (const file of files) {
     const source = await readRepoFile(file);
@@ -222,17 +288,60 @@ async function assertSchemaStoreRetired() {
       "persistResourceOrderState",
       "resourceOrderId",
       "resource_order_id",
+      "orderId",
+      "order_id",
+      "resourceProvisionerClient",
+      "createResourceProvisionerClient",
+      "RESOURCE_PROVISIONER_URL",
+      "RESOURCE_PROVISIONER_TIMEOUT_MS",
+      "/resource-orders/",
     ]) {
       assertNotIncludes(source, forbidden, `resource_order_schema_store:${file}`);
     }
   }
 }
 
-if (runAll || modes.has("policy")) await assertPolicyTruth();
+async function assertStrictBranchGatesStayScoped() {
+  for (const file of [
+    "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+  ]) {
+    const source = await readRepoFile(file);
+    assertNotIncludes(source, 'if (currentBranchName() === "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return;', `strict_monolith_gate_scope:${file}`);
+  }
+}
+
+async function assertActivePortalLegacyAliasesRetired() {
+  const files = await readdir(path.join(repoRoot, "services/portal/src"), { recursive: true });
+  const findings = [];
+  for (const file of files) {
+    if (!String(file).endsWith(".mjs")) continue;
+    const repoPath = path.join("services/portal/src", file).replaceAll("\\", "/");
+    const source = await readRepoFile(repoPath);
+    for (const forbidden of [
+      "legacyResourceOrderId",
+      "resourceOrderId",
+      "resource_order_id",
+      "user_owned",
+      "user-owned",
+    ]) {
+      if (source.includes(forbidden)) findings.push(`${repoPath}:${forbidden}`);
+    }
+  }
+  assert.deepEqual(findings, [], `active_portal_legacy_aliases_must_be_deleted:${findings.join(",")}`);
+}
+
+if (runAll || modes.has("policy")) {
+  await assertPolicyTruth();
+  await assertStrictBranchGatesStayScoped();
+}
 if (runAll || modes.has("portal")) await assertPortalCompatibilityDeleted();
 if (runAll || modes.has("scripts")) await assertLegacyScriptsDeleted();
 if (runAll || modes.has("assets")) await assertRetiredAssetsDeleted();
-if (runAll || modes.has("schema")) await assertSchemaStoreRetired();
+if (runAll || modes.has("schema")) {
+  await assertSchemaStoreRetired();
+  await assertActivePortalLegacyAliasesRetired();
+}
 
 console.log(JSON.stringify({
   ok: true,

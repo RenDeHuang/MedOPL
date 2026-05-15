@@ -1,7 +1,6 @@
 import { ensureUserCommercialState } from "../domain/commercial-state.mjs";
 import { hashPassword } from "../domain/portal-auth.mjs";
 import { normalizeAnnouncementRecord } from "../domain/portal-presenters.mjs";
-import { ensureResourceOrderCollections } from "../domain/resource-orders.mjs";
 import { ensureLabSubscriptionCollections } from "../domain/lab-subscriptions.mjs";
 import { normalizeServerPlanSelection } from "../domain/server-plans.mjs";
 import { normalizeLedgerEntries } from "../domain/wallet-ledger.mjs";
@@ -21,7 +20,6 @@ export function createPortalRuntimeStore({
     normalizeAnnouncementRecord,
     normalizeLedgerEntries,
     normalizeServerPlanSelection,
-    ensureResourceOrderCollections,
     ensureLabSubscriptionCollections,
     ensureUserCommercialState,
     ensureWorkspaceStorageCollections,

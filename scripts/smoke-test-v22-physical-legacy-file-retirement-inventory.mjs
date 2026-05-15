@@ -36,8 +36,8 @@ const inventory = await readRepoFile(inventoryPath);
 
 for (const phrase of [
   "# MedOPL v22 Physical Legacy File Retirement Inventory",
-  "inventory_status: strict_monolith_cleanup_in_progress",
-  "physical_delete_batch_status: strict_monolith_retirement_in_progress",
+  "inventory_status: strict_monolith_cleanup_completed",
+  "physical_delete_batch_status: strict_monolith_retirement_completed",
   "agent_run_mode: strict_monolith_legacy_retirement",
   "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
   "strict monolith cleanup",
@@ -45,7 +45,7 @@ for (const phrase of [
   "active repo 不再保留旧兼容面、旧测试、旧 deploy/adapters/infra 资产或旧 public 退役壳",
   "decision values: `delete`, `migrate`, `retain_active_v22`, `blocker`",
   "physical_delete_status values: `not_started`, `deleted`, `migrated_to_active_v22`, `retained_active_v22`, `blocked`",
-  "next_slice queue",
+  "completed_slice queue",
   "slice-a-strict-monolith-policy",
   "slice-b-user-owned-resource-order-compat-delete",
   "slice-c-legacy-script-delete",
@@ -72,10 +72,13 @@ assertDecisionRow(inventory, "`services/portal/src/domain/user-owned-resources.m
 assertDecisionRow(inventory, "`services/portal/src/state/portal-user-owned-resource-store.mjs`", "`delete`");
 assertDecisionRow(inventory, "`services/portal/src/state/portal-resource-order-store.mjs`", "`delete`");
 assertDecisionRow(inventory, "`services/portal/src/state/portal-store-schema.mjs` resource-order schema fragments", "`delete`");
+assertDecisionRow(inventory, "`services/portal/src/integrations/resource-provisioner-client.mjs`", "`delete`");
 assertDecisionRow(inventory, "`scripts/smoke-test-v19-*`", "`delete`");
 assertDecisionRow(inventory, "`scripts/smoke-test-v20*`", "`delete`");
 assertDecisionRow(inventory, "`scripts/smoke-test-v21-*`", "`delete`");
 assertDecisionRow(inventory, "`scripts/live-test-*`", "`delete`");
+assertDecisionRow(inventory, "`old non-v22 billing/portal smoke scripts with resource-order or retired provisioner semantics`", "`delete`");
+assertDecisionRow(inventory, "`scripts/start-billing-live.mjs`", "`delete`");
 assertDecisionRow(inventory, "`infra/opencost/**`", "`delete`");
 assertDecisionRow(inventory, "`compose.langfuse.yaml`", "`delete`");
 assertDecisionRow(inventory, "`compose.demo.yaml`", "`delete`");
@@ -110,5 +113,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_strict_monolith_physical_legacy_file_retirement_inventory",
   inventoryPath,
-  inventoryStatus: "strict_monolith_cleanup_in_progress",
+  inventoryStatus: "strict_monolith_cleanup_completed",
 }, null, 2));
