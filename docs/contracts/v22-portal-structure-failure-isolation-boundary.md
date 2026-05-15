@@ -303,7 +303,7 @@ Portal 必须按低耦合目标治理：
       "allowedResponsibilities": [
         "state_read",
         "state_write",
-        "migration_only_legacy_tombstone"
+        "migration_only_legacy_record"
       ],
       "forbiddenResponsibilities": [
         "route_response_building",
@@ -418,8 +418,8 @@ Portal 必须按低耦合目标治理：
         "createPortalApiV22UserCreditProviderKeyRoutes",
         "createPortalApiV22OplWorkRoutes",
         "createPortalApiV22CloudOperationsRoutes",
-        "createPlatformProvisionedResourceRoutes",
-        "createUserOwnedResourceRoutes"
+        "createPortalApiV22ManagedEnvironmentReleaseRoutes",
+        "createPlatformProvisionedResourceRoutes"
       ],
       "currentRouteFiles": [
         "services/portal/src/routes/portal-api.routes.mjs",
@@ -429,8 +429,8 @@ Portal 必须按低耦合目标治理：
         "services/portal/src/routes/portal-api-runs.routes.mjs",
         "services/portal/src/routes/portal-api-sessions.routes.mjs",
         "services/portal/src/routes/portal-api-traces.routes.mjs",
-        "services/portal/src/routes/resource-order.routes.mjs",
-        "services/portal/src/routes/user-owned-resource.routes.mjs"
+        "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
+        "services/portal/src/routes/workspace-storage.routes.mjs"
       ]
     },
     "backendAppPayloadBuilders": {
@@ -563,8 +563,8 @@ Portal 必须按低耦合目标治理：
       "frontend_api_barrel_exists_but_not_page_default",
       "harness_renderer_is_large_cross_domain_registry",
       "some_admin_views_directly_call_admin_api_module",
-      "retired_resource_order_route_tombstone_still_present",
-      "retired_user_owned_route_tombstone_still_present",
+      "retired_resource_order_schema_store_still_pending_physical_delete",
+      "retired_user_owned_public_route_deleted",
       "duplicate_announcement_dialog_names"
     ]
   }

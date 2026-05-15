@@ -92,8 +92,6 @@ export interface StorageEntitlementPayload {
   resourceBindingId: string;
   billingAttributionId: string;
   accountId: string;
-  // Optional migration-only alias for old imported snapshots.
-  legacyResourceOrderId: string;
   storagePlanId: string;
   serverPlanId: string;
   storageSizeGb: number;
@@ -165,7 +163,6 @@ export function disabledStorageEntitlement(): StorageEntitlementPayload {
     resourceBindingId: "",
     billingAttributionId: "",
     accountId: "",
-    legacyResourceOrderId: "",
     storagePlanId: "",
     serverPlanId: "",
     storageSizeGb: 0,

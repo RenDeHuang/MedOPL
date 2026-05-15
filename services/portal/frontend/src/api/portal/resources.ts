@@ -86,8 +86,6 @@ export interface WorkspaceResourceBinding {
   billingAttributionId?: string;
   accountId?: string;
   serverPlanId?: string;
-  // Optional migration-only alias for old imported snapshots.
-  legacyResourceOrderId?: string;
   computeInstanceId: string;
   storageBucketId: string;
   rootPrefix?: string;

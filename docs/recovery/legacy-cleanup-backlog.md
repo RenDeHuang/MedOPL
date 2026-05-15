@@ -7,6 +7,7 @@
 - cleanup 分支 1：建立裁定台账。
 - cleanup 分支 2-N：按专题清退。
 - 每个专题先定义 smoke/gate，再执行 rewrite、migrate 或 delete；strict monolith cleanup 不再把旧壳或旧脚本作为完成态保留。
+- strict monolith policy: old public tombstone => delete; archive legacy tests => delete; compat alias => delete; old deploy/adapters/infra assets => delete unless proven active v22 surface.
 - 每个专题必须经过 B review 后才能吸收到 `recovery/platform-v22-trunk`。
 - smoke = prove the intended v22 path still works。
 - gate = prevent the retired legacy meaning from returning。

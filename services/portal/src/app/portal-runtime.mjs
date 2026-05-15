@@ -345,7 +345,6 @@ const oplLaunchService = createOplLaunchService({
 const {
   handleLabPackageRoutes,
   handleOplRoutes,
-  handleResourceOrderRoutes,
   handleWorkspaceStorageRoutes,
 } = createFeatureRuntimeHandlers({
   appendCookie,
@@ -712,7 +711,6 @@ const dispatchPortalHttpRequest = createPortalHttpDispatcher({
   handlePortalBillingExportRoutes,
   handlePortalLegacyRedirectRoutes,
   handlePortalTaskSpaceRoutes,
-  handleResourceOrderRoutes,
   handleServerPlanRoutes,
   handleWorkspaceStorageRoutes,
   layoutV2,

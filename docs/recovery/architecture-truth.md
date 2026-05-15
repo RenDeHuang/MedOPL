@@ -128,7 +128,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 以下现有路径有价值，但不能按旧命名或旧边界继续扩散：
 
 - `services/portal/src/config/portal-config.mjs` 中 `PRODUCT_RUNTIME_MODE=user_owned` 只能迁为 legacy alias，默认语义必须是 `platform_provisioned` / `customer_dedicated`。
-- `services/portal/src/routes/user-owned-resource.routes.mjs` 只能作为 legacy alias fail-closed route tombstone；`services/portal/src/domain/user-owned-resources.mjs` 和 `services/portal/src/state/portal-user-owned-resource-store.mjs` 已进入物理删除 slice，不再作为可扩写参考。
+- `services/portal/src/routes/user-owned-resource.routes.mjs`、`services/portal/src/domain/user-owned-resources.mjs` 和 `services/portal/src/state/portal-user-owned-resource-store.mjs` 均已从 active repo 删除；不得恢复 user-owned public route、alias、fixture、copy 或测试锚点。
 - `services/portal/src/domain/resource-orders.mjs`、`services/portal/src/routes/resource-order*.mjs` 和 `services/portal/src/integrations/resource-provisioner-client.mjs` 要迁到 resource binding / billing / audit 语义；旧 resource-order 不再是 v22 正式产品入口。
 - `services/portal/src/routes/task-space.routes.mjs` 要迁到 workspace 语义。
 - `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组只作为 retired compatibility fence。

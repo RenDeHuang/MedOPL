@@ -18,7 +18,6 @@ export function createPortalHttpDispatcher({
   handlePortalBillingExportRoutes,
   handlePortalLegacyRedirectRoutes,
   handlePortalTaskSpaceRoutes,
-  handleResourceOrderRoutes,
   handleServerPlanRoutes,
   handleWorkspaceStorageRoutes,
   layoutV2,
@@ -110,7 +109,6 @@ export function createPortalHttpDispatcher({
     const currentUserMode = isPostAuthEntry && !hasPortalSessionCookie ? "auth_light" : "full";
     const { db, user } = await currentUser(req, { mode: currentUserMode });
     if (!isGetAuthPage && (await handleAuthRoutes({ req, res, url, db }))) return;
-    if (await handleResourceOrderRoutes({ req, res, url, db, user: null })) return;
     if (!user) {
       if (isPortalApiRequest(url)) {
         sendJson(res, { ok: false, error: "unauthenticated", loginUrl: "/login" }, 401);
@@ -155,7 +153,6 @@ export function createPortalHttpDispatcher({
       sendJson(res, await buildBillingDetailsPayload(db, user, readBillingRequestOptions(url)));
       return;
     }
-    if (await handleResourceOrderRoutes({ req, res, url, db, user })) return;
     if (await handleServerPlanRoutes({ req, res, url, db, user })) return;
     if (req.method === "GET" && url.pathname === "/portal/api/workspace") {
       const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");

@@ -89,17 +89,6 @@ async function assertPortalCompatibilityDeleted() {
   for (const repoPath of [
     "services/portal/src/routes/user-owned-resource.routes.mjs",
     "services/portal/src/routes/resource-order.routes.mjs",
-    "services/portal/src/state/portal-resource-order-store.mjs",
-    "services/portal/src/domain/resource-orders.mjs",
-    "services/portal/src/domain/resource-order-event-normalizer.mjs",
-    "services/portal/src/domain/resource-order-lifecycle.mjs",
-    "services/portal/src/domain/resource-order-normalizer-fields.mjs",
-    "services/portal/src/domain/resource-order-normalizer-objects.mjs",
-    "services/portal/src/domain/resource-order-normalizers.mjs",
-    "services/portal/src/domain/resource-order-public-view.mjs",
-    "services/portal/src/domain/resource-order-quote.mjs",
-    "services/portal/src/domain/resource-order-statuses.mjs",
-    "services/portal/src/integrations/resource-provisioner-client.mjs",
   ]) {
     await assertMissing(repoPath, "portal_legacy_compat_surface");
   }

@@ -9,7 +9,6 @@ import { createPortalApiV22ManagedEnvironmentReleaseRoutes } from "./portal-api-
 import { createPortalApiV22OplWorkRoutes } from "./portal-api-v22-opl-work.routes.mjs";
 import { createPortalApiV22UserCreditProviderKeyRoutes } from "./portal-api-v22-user-credit-provider-key.routes.mjs";
 import { createPlatformProvisionedResourceRoutes } from "./platform-provisioned-resource.routes.mjs";
-import { createUserOwnedResourceRoutes } from "./user-owned-resource.routes.mjs";
 import { buildUserBillingSummary as buildDefaultUserBillingSummary } from "../domain/wallet-ledger.mjs";
 
 export function createPortalApiRoutes({
@@ -100,12 +99,6 @@ export function createPortalApiRoutes({
     writeDb,
   });
   const handlePlatformProvisionedResources = createPlatformProvisionedResourceRoutes({
-    readBody,
-    sendJson,
-    writeDb,
-    cloudProvisioner,
-  });
-  const handleRetiredUserOwnedResources = createUserOwnedResourceRoutes({
     readBody,
     sendJson,
     writeDb,
@@ -259,7 +252,6 @@ export function createPortalApiRoutes({
     if (await handleV22ManagedEnvironmentRelease(context)) return true;
     if (await handleV22OplWork(context)) return true;
     if (await handlePlatformProvisionedResources(context)) return true;
-    if (await handleRetiredUserOwnedResources(context)) return true;
     if (await handleState(context)) return true;
     if (await handleAnnouncements(context)) return true;
     if (await handleMe(context)) return true;

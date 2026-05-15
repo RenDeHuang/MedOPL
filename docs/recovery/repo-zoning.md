@@ -140,7 +140,7 @@ user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-prim
 
 user-owned physical-delete completed on `cleanup/v22-physical-legacy-goal`: physical-delete completed: `services/portal/src/domain/user-owned-resources.mjs`; physical-delete completed: `services/portal/src/state/portal-user-owned-resource-store.mjs`; remaining route shell is now a strict delete target.
 
-resource-order route success path first-slice cleanup completed on `cleanup/v22-retire-resource-order-route-tombstones`: old `resource-order` public/internal paths no longer carry success handlers; remaining retired shell and registration are now strict delete targets.
+resource-order route success path first-slice cleanup completed on `cleanup/v22-retire-resource-order-route-tombstones`: old `resource-order` public/internal paths no longer carry success handlers. Strict monolith slice-b deletes the remaining public route shell and runtime registration.
 
 resource-order billing/payload second-slice cleanup completed on `cleanup/v22-retire-resource-order-billing-payloads`: active ledger, user resource binding projection, and Portal page/API payloads now use `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId` as v22 attribution fields. Any retained old identifier is limited to `legacyResourceOrderId` optional migration alias; store/schema/admin/frontend cleanup remains in later resource-order retirement slices.
 

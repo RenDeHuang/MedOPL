@@ -1,6 +1,5 @@
 import { createOplRoutes } from "../routes/opl.routes.mjs";
 import { createLabPackageRoutes } from "../routes/lab-package.routes.mjs";
-import { createResourceOrderRoutes } from "../routes/resource-order.routes.mjs";
 import { createWorkspaceFilesInternalRoutes } from "../routes/workspace-files-internal.routes.mjs";
 import { createWorkspaceStorageRoutes } from "../routes/workspace-storage.routes.mjs";
 
@@ -113,26 +112,10 @@ export function createPortalFeatureRuntimeHandlers({
     sendJson,
     writeDb,
   });
-  const handleResourceOrderRoutes = createResourceOrderRoutes({
-    defaultTaskTitle,
-    ensureTaskSpace,
-    fetchServerPlans,
-    logPortalEvent,
-    markWorkspaceStorageDeleting,
-    normalizeAuthEmail,
-    portalInternalAuthAllowed,
-    productRuntimeMode,
-    readJsonBody,
-    sendJson,
-    slugify,
-    writeDb,
-  });
-
   return {
     handleLabPackageRoutes,
     handleOplRoutes,
     handleWorkspaceFilesInternalRoutes,
-    handleResourceOrderRoutes,
     handleWorkspaceStorageRoutes,
   };
 }

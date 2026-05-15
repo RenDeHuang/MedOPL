@@ -87,6 +87,41 @@ const allowedStorePostgresSchemaImplementationDiffPaths = new Set([
   "services/portal/src/state/portal-store.mjs",
 ]);
 
+const allowedStrictMonolithRetirementDiffPaths = new Set([
+  ...allowedStorePostgresSchemaImplementationDiffPaths,
+  gatePath,
+  "docs/contracts/README.md",
+  "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+  "docs/recovery/architecture-truth.md",
+  "docs/recovery/legacy-cleanup-backlog.md",
+  "docs/recovery/physical-legacy-file-retirement-goal.md",
+  "docs/recovery/physical-legacy-file-retirement-inventory.md",
+  "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+  "docs/recovery/repo-zoning.md",
+  "docs/recovery/status-matrix.md",
+  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+  "docs/recovery/v22-goal-leaf-manifest.schema.json",
+  "docs/recovery/v22-goal-state.md",
+  "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "scripts/smoke-test-v22-goal-state-consistency.mjs",
+  "scripts/smoke-test-v22-physical-delete-user-owned-retired-domain-store.mjs",
+  "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+  "scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+  "scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+  "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+  "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+  "scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
+  "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+  "services/portal/src/app/portal-http-dispatcher.mjs",
+  "services/portal/src/app/portal-runtime.mjs",
+  "services/portal/src/routes/portal-api.routes.mjs",
+  "services/portal/src/routes/resource-order.routes.mjs",
+  "services/portal/src/routes/user-owned-resource.routes.mjs",
+  "services/portal/frontend/src/api/portal/resources.ts",
+  "services/portal/frontend/src/api/portal/workspace.ts",
+  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const goalStatePath = "docs/recovery/v22-goal-state.md";
@@ -427,6 +462,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
     ])],
     ["cleanup/v22-resource-order-store-postgres-schema-eval-shell", allowedStorePostgresSchemaEvalShellDiffPaths],
     ["cleanup/v22-resource-order-store-postgres-schema-implementation", allowedStorePostgresSchemaImplementationDiffPaths],
+    ["cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", allowedStrictMonolithRetirementDiffPaths],
     ["recovery/platform-v22-trunk", new Set([
       ...allowedStorePostgresSchemaImplementationDiffPaths,
       gatePath,
@@ -503,13 +539,11 @@ async function listPortalSourceFiles(relativeDir = "services/portal/src") {
 
 async function assertOnlyTombstoneRouteIsImported() {
   const portalFeatureRoutes = await readRepoFile(activePortalFeatureRoutesPath);
-  assertIncludes(
-    portalFeatureRoutes,
-    "../routes/resource-order.routes.mjs",
-    "portal_feature_runtime_resource_order_tombstone_route_import",
-  );
+  assert(!portalFeatureRoutes.includes("../routes/resource-order.routes.mjs"), "portal_feature_runtime_must_not_import_deleted_resource_order_route");
+  assert(!portalFeatureRoutes.includes("createResourceOrderRoutes"), "portal_feature_runtime_must_not_register_deleted_resource_order_route");
+  assert(!portalFeatureRoutes.includes("handleResourceOrderRoutes"), "portal_feature_runtime_must_not_return_deleted_resource_order_handler");
 
-  const forbiddenRouteImports = retiredResourceOrderRouteModulePaths.map((filePath) =>
+  const forbiddenRouteImports = [resourceOrderTombstoneRoutePath, ...retiredResourceOrderRouteModulePaths].map((filePath) =>
     `../routes/${path.basename(filePath)}`);
   const importFindings = [];
   for (const filePath of await listPortalSourceFiles()) {
@@ -555,21 +589,9 @@ async function assertRetiredSuccessPathModulesRemoved() {
   }, null, 2));
 }
 
-function assertResourceOrderTombstoneRoute(source) {
-  assertIncludes(source, "function isRetiredResourceOrderPath", "resource_order_tombstone_path_matcher");
-  assertIncludes(source, "/portal/api/resource-orders", "resource_order_tombstone_public_prefix");
-  assertIncludes(source, "/portal/internal/resource-orders", "resource_order_tombstone_internal_prefix");
-  assertIncludes(source, "/portal/api/my/resources", "resource_order_tombstone_my_resources_route");
-  assertIncludes(source, "resource_order_primary_path_retired", "resource_order_tombstone_error");
-  assertIncludes(source, "managed environment", "resource_order_tombstone_managed_environment_replacement");
-  assertIncludes(source, "resource binding", "resource_order_tombstone_resource_binding_replacement");
-  assertIncludes(source, "410", "resource_order_tombstone_status_code");
-  for (const forbidden of ["legacyUse", "user-owned", "user_owned", "/portal/api/user-owned-resources"]) {
-    assert(
-      !source.includes(forbidden),
-      `resource_order_tombstone_must_not_point_to_user_owned:${forbidden}`,
-    );
-  }
+async function assertResourceOrderRouteDeleted() {
+  const source = await readOptionalRepoFile(resourceOrderTombstoneRoutePath);
+  assert.equal(source, null, `resource_order_route_shell_must_be_deleted:${resourceOrderTombstoneRoutePath}`);
 }
 
 function assertNoPrimaryResourceOrderAttribution(filePath, source) {
@@ -927,7 +949,7 @@ function assertStorePostgresSchemaCharacterization({
   assertIncludes(migrationCollections, '"resourceOrderEvents"', "resource_order_migration_collection_key");
   assertIncludes(migrationCollections, 'runSnapshotMigration(db, ["ledger", "resourceOrders", "resourceOrderEvents"], ensureResourceOrderCollections)', "resource_order_migration_collection_snapshot");
 
-  assertIncludes(activePortalFeatureRoutes, "../routes/resource-order.routes.mjs", "resource_order_active_app_tombstone_route_only");
+  assert(!activePortalFeatureRoutes.includes("../routes/resource-order.routes.mjs"), "resource_order_active_app_must_not_import_deleted_route_shell");
   for (const forbiddenImport of [
     "../routes/resource-order-public.routes.mjs",
     "../routes/resource-order-internal.routes.mjs",
@@ -959,10 +981,10 @@ const goalState = await readRepoFile(goalStatePath);
 const gapMatrix = await readRepoFile(gapMatrixPath);
 
 for (const [pathPattern, action] of [
-  ["services/portal/src/domain/resource-orders.mjs", "tombstone/rewrite"],
-  ["services/portal/src/domain/resource-order-*.mjs", "tombstone/rewrite"],
-  ["services/portal/src/routes/resource-order*.mjs", "tombstone/delete"],
-  ["services/portal/src/state/portal-resource-order-store.mjs", "tombstone/rewrite"],
+  ["services/portal/src/domain/resource-orders.mjs", "delete/rewrite"],
+  ["services/portal/src/domain/resource-order-*.mjs", "delete/rewrite"],
+  ["services/portal/src/routes/resource-order*.mjs", "delete"],
+  ["services/portal/src/state/portal-resource-order-store.mjs", "delete/rewrite"],
 ]) {
   assertZoningRow(repoZoning, pathPattern, "Zone 2", action);
 }
@@ -977,7 +999,7 @@ assertIncludes(legacyBacklog, "`cleanup/v22-retire-resource-order-primary-path`"
 assertIncludes(legacyBacklog, "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs", "legacy_backlog_resource_order_gate_name");
 assertIncludes(legacyBacklog, "Portal 导航不链接 `resource-order` 主路径", "legacy_backlog_resource_order_navigation_gate");
 assertIncludes(legacyBacklog, "新开通路径走 managed environment / resource binding", "legacy_backlog_resource_binding_replacement");
-assertIncludes(legacyBacklog, "旧 prepare-run 或 resource-order public flow 只能 tombstone 或 legacy internal fence", "legacy_backlog_resource_order_tombstone_scope");
+assertIncludes(legacyBacklog, "旧 prepare-run 或 resource-order public flow 不保留为 active route", "legacy_backlog_resource_order_delete_scope");
 assertIncludes(legacyBacklog, "第一刀 route success path 清退", "legacy_backlog_resource_order_route_tombstone_first_slice");
 assertRequiredRetirementDocs({ repoZoning, legacyBacklog });
 
@@ -985,7 +1007,7 @@ for (const filePath of defaultEntryPaths) {
   assertNoDefaultResourceOrderPath(filePath, await readRepoFile(filePath));
 }
 
-assertResourceOrderTombstoneRoute(await readRepoFile(resourceOrderTombstoneRoutePath));
+await assertResourceOrderRouteDeleted();
 await assertOnlyTombstoneRouteIsImported();
 await assertRetiredSuccessPathModulesRemoved();
 

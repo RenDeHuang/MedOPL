@@ -862,7 +862,6 @@ function storageEntitlement(context: SurfaceContext): StorageEntitlementPayload 
     resourceBindingId: "binding-1",
     billingAttributionId: "binding-1",
     accountId: "fixture-user",
-    legacyResourceOrderId: "",
     retentionPolicy: "seven_day_protection",
     status: context.restricted ? "disabled" : "active",
     serverPlanId: "starter_2c4g_10gb",
