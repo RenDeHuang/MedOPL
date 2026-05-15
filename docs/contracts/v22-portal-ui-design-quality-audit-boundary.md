@@ -62,6 +62,14 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 
 视觉回归只能证明“和 baseline 一致”，不能证明 baseline 本身足够好。截图 baseline 可以因有意 redesign 更新，但必须先有 `.runtime/portal-ui-design-quality/report.json` 审计证据说明哪些硬约束仍通过、哪些软评分改善，以及为什么这是有意改版而不是偶然漂移。
 
+## 审计证据和后续 handoff
+
+本 leaf 产出的审计证据只证明合同、rubric、报告 schema 和后续 implementation handoff 已被定义并可被 gate 检查；它不声明当前 UI 已完成 redesign，也不声明 surface/visual 验证已在本 leaf 执行。运行时报告路径固定为 `.runtime/portal-ui-design-quality/report.json`，报告不进 git。
+
+审计报告必须覆盖七个主线问题、全部硬约束、全部软评分轴、surface/visual 证据来源、表达质量发现、产品语义边界检查和后续 UI implementation leaf handoff。任何 screenshot baseline 更新都必须先有该报告作为 evidence；没有报告时不得把视觉漂移解释为有意 redesign。
+
+后续 UI implementation leaf handoff 必须作为独立 leaf 处理。它可以在单独授权和 manifest allowlist 下修改 `services/portal/frontend/**`，但不得默认开放 Portal 后端、package/dependency files、deploy、adapters、`.sentrux`、upstream、secret 或真实云路径。它必须继续订阅本合同、UI composition 合同和 SaaS control-plane UX 合同，并把实现验证与 truth writeback 明确写入下一 leaf。
+
 ## 验收方式
 
 本合同的合同级验收入口是：
@@ -85,7 +93,7 @@ npm --prefix services/portal/frontend run test:visual
 ```json
 {
   "contract": "v22_portal_ui_design_quality_audit_boundary",
-  "version": 1,
+  "version": 2,
   "model": "gpt-5.4",
   "contractRole": "boundary_and_rubric_only",
   "scope": {
@@ -139,6 +147,121 @@ npm --prefix services/portal/frontend run test:visual
   "baselinePolicy": {
     "intentionalRedesignCanUpdateScreenshots": true,
     "requiresAuditEvidenceBeforeBaselineUpdate": true
+  },
+  "auditEvidenceSchema": {
+    "reportPath": ".runtime/portal-ui-design-quality/report.json",
+    "reportType": "portal_ui_design_quality_audit_evidence",
+    "reportCommittedToGit": false,
+    "requiredSections": [
+      "mainlineQuestionAnswerability",
+      "hardRubricVerdicts",
+      "softRubricScores",
+      "surfaceAndVisualEvidenceSources",
+      "expressionQualityFindings",
+      "productSemanticBoundaryCheck",
+      "futureImplementationLeafHandoff"
+    ],
+    "requiredMainlineQuestionVerdicts": [
+      "我买的是什么服务？",
+      "我的 OPL 工作台现在能不能用？",
+      "如果不能用，还缺哪一步？",
+      "下一步应该点哪里？",
+      "我的文件、任务、结果在哪里？",
+      "我的余额、预扣费、冻结金额、停止计费状态是否正常？",
+      "我什么时候应该释放计算资源但保留文件空间？"
+    ],
+    "requiredHardRubricVerdicts": [
+      "mainline_questions_answered",
+      "portal_opl_responsibility_boundary",
+      "no_cloud_console_language_for_normal_users",
+      "no_opl_chatbot_reimplementation",
+      "role_surface_boundary",
+      "secret_browser_hygiene",
+      "responsive_no_overflow",
+      "state_coverage",
+      "audit_report_runtime_only"
+    ],
+    "requiredSoftRubricScores": [
+      "modern_saas_information_hierarchy",
+      "workbench_scanability",
+      "service_clarity",
+      "next_action_clarity",
+      "research_workspace_feel",
+      "visual_density_balance",
+      "copy_tone_quality"
+    ],
+    "evidenceSources": [
+      "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+      "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+      "npm --prefix services/portal/frontend run test:visual"
+    ],
+    "findingScope": "expression_quality_only_not_product_semantics",
+    "baselineUpdateGate": {
+      "requiresReportBeforeScreenshotBaselineUpdate": true,
+      "reportPath": ".runtime/portal-ui-design-quality/report.json"
+    }
+  },
+  "futureImplementationLeafHandoff": {
+    "leafIntent": "portal_ui_design_quality_implementation",
+    "allowedFiles": [
+      "services/portal/frontend/**",
+      "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+      "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+      "docs/contracts/README.md",
+      "docs/recovery/v22-goal-current.json",
+      "docs/recovery/v22-goal-state.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-agent-verify-manifest.json",
+      "docs/recovery/mvp-contract-acceptance.md",
+      "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+      "scripts/smoke-test-v22-portal-runtime-suite.mjs"
+    ],
+    "verificationCommands": [
+      "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+      "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+      "npm --prefix services/portal/frontend run test:visual",
+      "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+      "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "node scripts/smoke-test-v22-product-goal-harness.mjs",
+      "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
+    ],
+    "truthWritebackTarget": [
+      "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+      "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+      "docs/contracts/README.md",
+      "docs/recovery/v22-goal-current.json",
+      "docs/recovery/v22-goal-state.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/mvp-contract-acceptance.md"
+    ],
+    "stopConditions": [
+      "requires_backend_services_change",
+      "requires_package_or_dependency_change",
+      "requires_secret_or_live_cloud",
+      "requires_deploy_build_push_kubectl_or_live_test",
+      "changes_product_semantics_instead_of_expression_quality",
+      "updates_screenshot_baseline_without_runtime_audit_report"
+    ],
+    "forbiddenAllowedFilePatterns": [
+      "services/portal/**/backend_or_api_except_frontend",
+      "package_or_dependency_files",
+      "deploy/*",
+      "adapters/*",
+      ".sentrux/*",
+      "upstream/*",
+      "secret-like paths",
+      "true cloud runners"
+    ],
+    "forbiddenVerificationCommandPatterns": [
+      "build/push/kubectl",
+      "deploy",
+      "live-test",
+      "live-cloud",
+      "secret-read",
+      "dependency-upgrade"
+    ]
   },
   "validationCommands": [
     "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",

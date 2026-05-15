@@ -122,7 +122,7 @@
 - [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md)
 - [v22-portal-structure-failure-isolation-boundary.md](./v22-portal-structure-failure-isolation-boundary.md)
 - [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md): Portal UI composition 合同只管产品边界、UI 分层、禁词、evalset 路径和统一验证入口；具体 route、surface、layout、API shape、DOM 锚点和 partial 缺口由 `services/portal/frontend/src/harness/portal-ui-evalset.json` 承接。
-- [v22-portal-ui-design-quality-audit-boundary.md](./v22-portal-ui-design-quality-audit-boundary.md): UI design quality audit 合同只管边界和评价标准，不替代 UI composition 合同，不冻结具体布局、配色、字体、圆角或组件库；它审计 Portal 是否回答用户买了什么、能不能用、缺什么、下一步点哪里、结果在哪里和费用是否正常。
+- [v22-portal-ui-design-quality-audit-boundary.md](./v22-portal-ui-design-quality-audit-boundary.md): UI design quality audit 合同只管边界、评价标准、audit evidence schema 和后续 UI implementation leaf handoff，不替代 UI composition 合同，不冻结具体布局、配色、字体、圆角或组件库；它审计 Portal 是否回答用户买了什么、能不能用、缺什么、下一步点哪里、结果在哪里和费用是否正常。审计证据路径固定为 `.runtime/portal-ui-design-quality/report.json` 且不进 git；后续 UI implementation leaf 才能在单独 allowlist 下修改 `services/portal/frontend/**` 并运行 surface/visual 验证。
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
 

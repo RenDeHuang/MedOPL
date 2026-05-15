@@ -43,7 +43,7 @@
 - 用户、充值、gflabtoken provider key 绑定、canonical state readiness 已具备合同级闭环；provider key 已从 Portal 普通登录/普通入口退场，进入 OPL entry/preflight 和后端密钥边界。
 - 托管运行环境开通要求显式 `workspaceId`、`planId`、`fileSpaceGb`，不做隐式兜底。
 - Portal UI MVP 已覆盖普通用户可见的余额、消费、托管运行环境、工作空间、文件空间、会话、任务、输入文件、输出文件、运行轨迹、账单、预扣费、冻结金额、停止计费和审计状态等基础表面。
-- Portal UI design quality audit boundary 已定义为边界和评价标准合同：它不实现 UI，不冻结具体审美解法，不替代 UI composition 合同；它把主线问题、Portal/OPL 职责、普通用户非云控制台语言、非 OPL chatbot、角色边界、secret/browser hygiene、响应式不溢出、状态覆盖和 runtime-only 审计报告作为硬约束，把现代 SaaS 工作台信息层级、可扫描性、服务清晰度、下一步动作清晰度、科研工作台感、信息密度平衡和文案质量作为软评分。
+- Portal UI design quality audit boundary 已定义为边界和评价标准合同：它不实现 UI，不冻结具体审美解法，不替代 UI composition 合同；它把主线问题、Portal/OPL 职责、普通用户非云控制台语言、非 OPL chatbot、角色边界、secret/browser hygiene、响应式不溢出、状态覆盖和 runtime-only 审计报告作为硬约束，把现代 SaaS 工作台信息层级、可扫描性、服务清晰度、下一步动作清晰度、科研工作台感、信息密度平衡和文案质量作为软评分。当前 audit leaf 还固定了 audit evidence schema：`.runtime/portal-ui-design-quality/report.json` 必须覆盖七个主线问题、全部 hard/soft rubric、surface/visual 证据来源、表达质量发现、产品语义边界检查和后续 UI implementation leaf handoff；该 report 不进 git，后续 screenshot baseline 更新前必须先有该 evidence。
 - Portal 结构治理 / failure isolation 三级合同已定义后端 route/dispatcher、payload/DTO builder、frontend view/composable、frontend API module 和 Portal smoke 分层边界；该合同不代表真实云、真实 OPL 或真实部署已接入。
 - OPL entry/preflight 合同已定义：`portal.medopl.cn` 登录不需要 gflabtoken API Key；`opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
 - OPL 工作流合同覆盖发送信息、上传文件、用文件跑任务、生成输出文件引用和下载引用。
