@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,13 +27,17 @@ const forbiddenDiffPrefixes = [
   ".sentrux/",
 ];
 
-const authorizedExternalScriptNames = [
-  "scripts/load-test-v13-langfuse-ingestion.mjs",
-  "scripts/smoke-test-v13-langfuse-trace.mjs",
+const deletedExternalScriptNames = [
   "scripts/smoke-test-billing-opencost.mjs",
   "scripts/install-opencost-local.ps1",
   "scripts/start-opencost-port-forward.ps1",
   "scripts/start-opencost-ui-live.mjs",
+];
+
+const legacyObservabilityScriptReferences = [
+  "scripts/load-test-v13-langfuse-ingestion.mjs",
+  "scripts/smoke-test-v13-langfuse-trace.mjs",
+  ...deletedExternalScriptNames,
 ];
 
 const forbiddenProjectionKeys = [
@@ -71,6 +75,16 @@ const forbiddenPayloadValues = [
 
 async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
+}
+
+async function fileExists(filePath) {
+  try {
+    await access(path.join(repoRoot, filePath));
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw error;
+  }
 }
 
 async function readContractJson(filePath, startMarker, endMarker) {
@@ -310,11 +324,11 @@ async function assertOpenCostArchiveBoundary() {
   const repoZoning = await readRepoFile(filePaths.repoZoning);
   const legacyBacklog = await readRepoFile(filePaths.legacyBacklog);
 
-  assertIncludes(statusMatrix, "| OpenCost 主叙事 | 无正式入口 | archive/reference，非 v22 主线 |", "status_matrix_opencost_archive");
-  assertIncludes(statusMatrix, "OpenCost 作为默认账单事实源", "status_matrix_opencost_cleanup_target");
+  assertIncludes(statusMatrix, "| OpenCost 主叙事 | 无正式入口 | delete，非当前账单事实源 |", "status_matrix_opencost_delete");
+  assertIncludes(statusMatrix, "OpenCost 旧资产、旧脚本和旧默认叙事不得作为默认账单事实源", "status_matrix_opencost_cleanup_target");
   assertIncludes(repoZoning, "| `infra/**` | Zone 4 | forbidden_without_authorization |", "repo_zoning_infra_zone4");
-  assertIncludes(repoZoning, "| `compose.langfuse.yaml` | Zone 3 | archive |", "repo_zoning_langfuse_compose_archive");
-  assertIncludes(legacyBacklog, "OpenCost 只作历史或后续授权运维参考，不是当前主账单事实源。", "legacy_backlog_opencost_authorized_ops_reference");
+  assertIncludes(repoZoning, "| `compose.langfuse.yaml` | Zone 3 | delete |", "repo_zoning_langfuse_compose_delete");
+  assertIncludes(legacyBacklog, "OpenCost 旧脚本、旧 compose、旧 infra 不在 active repo 保留。", "legacy_backlog_opencost_strict_delete");
 }
 
 async function assertDefaultEntrypointsDoNotRunLegacyObservabilityScripts() {
@@ -324,7 +338,11 @@ async function assertDefaultEntrypointsDoNotRunLegacyObservabilityScripts() {
   const defaultSuiteDoc = mvpAcceptance.match(/## 默认本地 MVP suite([\s\S]*?)(?:\n## |\n$)/u)?.[1] ?? "";
   assert(defaultSuiteDoc, "mvp_acceptance_default_suite_section_missing");
 
-  for (const scriptPath of authorizedExternalScriptNames) {
+  for (const scriptPath of deletedExternalScriptNames) {
+    assert.equal(await fileExists(scriptPath), false, `authorized_observability_script_must_be_deleted:${scriptPath}`);
+  }
+
+  for (const scriptPath of legacyObservabilityScriptReferences) {
     assert(
       !suiteScripts.includes(scriptPath),
       `default_mvp_suite_must_not_include_authorized_observability_script:${scriptPath}`,

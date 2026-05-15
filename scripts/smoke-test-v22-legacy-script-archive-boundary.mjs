@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
 
 const readmePath = "README.md";
 const vibeCodingPath = "docs/vibe-coding.md";
@@ -7,8 +12,24 @@ const mvpSuitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const inventoryPath = "docs/recovery/physical-legacy-file-retirement-inventory.md";
 const manifestPath = "docs/recovery/physical-legacy-file-retirement-run-manifest.json";
+const activeSurfacePath = "docs/recovery/active-surface.md";
+const archivePolicyPath = "docs/recovery/archive-policy.md";
 
-const slice2Id = "slice-2-legacy-script-archive-delete-boundary";
+const sliceId = "slice-c-legacy-script-delete";
+const deletedFamilies = [
+  /^smoke-test-v19-/u,
+  /^smoke-test-v20/u,
+  /^smoke-test-v21-/u,
+  /^check-v18-/u,
+  /^check-v20/u,
+  /^check-v21-/u,
+  /^daily-check-v19-/u,
+  /^live-prepare-v19-/u,
+  /^smoke-test-resource-provisioner/u,
+  /^smoke-test-billing-opencost/u,
+  /^install-opencost/u,
+  /^start-opencost/u,
+];
 
 const legacyCommandPatterns = [
   /\bnode\s+scripts\/smoke-test-v19-/,
@@ -18,14 +39,22 @@ const legacyCommandPatterns = [
   /\bnode\s+scripts\/check-v18-/,
   /\bnode\s+scripts\/check-v20/,
   /\bnode\s+scripts\/check-v21-/,
-  /\bnode\s+scripts\/smoke-test-portal-/,
-  /\bnode\s+scripts\/smoke-test-opl-/,
-  /\bnode\s+scripts\/smoke-test-billing-/,
-  /\bnode\s+scripts\/smoke-test-resource-/,
+  /\bnode\s+scripts\/smoke-test-resource-provisioner/,
+  /\bnode\s+scripts\/smoke-test-billing-opencost/,
+  /\bscripts\/install-opencost-local\.ps1\b/,
+  /\bscripts\/start-opencost-/,
 ];
+
+async function readRepoFile(filePath) {
+  return readFile(path.join(repoRoot, filePath), "utf8");
+}
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
+}
+
+function assertNotIncludes(source, forbidden, label) {
+  assert(!source.includes(forbidden), `${label}_forbidden:${forbidden}`);
 }
 
 function extractFencedCodeBlocks(source) {
@@ -60,13 +89,17 @@ function assertOnlyV22SmokeScriptsInMvpSuite(source) {
     "check-v18",
     "check-v20",
     "check-v21",
-    "smoke-test-portal",
-    "smoke-test-opl",
-    "smoke-test-billing",
-    "smoke-test-resource",
+    "resource-provisioner",
+    "opencost",
   ]) {
     assert.equal(source.includes(forbidden), false, `mvp_suite_must_not_include:${forbidden}`);
   }
+}
+
+async function assertLegacyScriptsDeleted() {
+  const scriptNames = await readdir(path.join(repoRoot, "scripts"));
+  const legacyNames = scriptNames.filter((name) => deletedFamilies.some((pattern) => pattern.test(name))).sort();
+  assert.deepEqual(legacyNames, [], `legacy_scripts_must_be_deleted:${legacyNames.join(",")}`);
 }
 
 function assertZoningRow(source, pathPattern, zone, action) {
@@ -97,114 +130,88 @@ function assertInventoryDecisionStatus(markdown, pathOrGroup, decision, physical
   );
 }
 
-function sliceById(manifest, sliceId) {
-  const slice = (manifest.slices ?? []).find((candidate) => candidate.id === sliceId);
-  assert(slice, `manifest_slice_missing:${sliceId}`);
+function sliceById(manifest, candidateId) {
+  const slice = (manifest.slices ?? []).find((candidate) => candidate.id === candidateId);
+  assert(slice, `manifest_slice_missing:${candidateId}`);
   return slice;
 }
 
-const readme = await readFile(readmePath, "utf8");
-const vibeCoding = await readFile(vibeCodingPath, "utf8");
-const mvpSuite = await readFile(mvpSuitePath, "utf8");
-const repoZoning = await readFile(repoZoningPath, "utf8");
-const inventory = await readFile(inventoryPath, "utf8");
-const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+const readme = await readRepoFile(readmePath);
+const vibeCoding = await readRepoFile(vibeCodingPath);
+const mvpSuite = await readRepoFile(mvpSuitePath);
+const repoZoning = await readRepoFile(repoZoningPath);
+const inventory = await readRepoFile(inventoryPath);
+const activeSurface = await readRepoFile(activeSurfacePath);
+const archivePolicy = await readRepoFile(archivePolicyPath);
+const manifest = JSON.parse(await readRepoFile(manifestPath));
+
+await assertLegacyScriptsDeleted();
 
 assertIncludes(readme, "scripts/smoke-test-v22-*", "readme_active_surface");
 assertIncludes(readme, "node scripts/smoke-test-v22-mvp-contract-suite.mjs", "readme_default_v22_mvp_suite");
 assertNoLegacyCommandsInCodeBlocks(readme, "readme");
 
 assertIncludes(vibeCoding, "node scripts/smoke-test-v22-mvp-contract-suite.mjs", "vibe_default_v22_mvp_suite");
-assertIncludes(vibeCoding, "node scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs", "vibe_gateway_v22_smoke");
-assertIncludes(
-  vibeCoding,
-  "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-  "vibe_runtime_v22_smoke",
-);
 assertNoLegacyCommandsInCodeBlocks(vibeCoding, "vibe_coding");
-
 assertOnlyV22SmokeScriptsInMvpSuite(mvpSuite);
 
-for (const archivedPattern of [
+for (const deletedPattern of [
   "scripts/smoke-test-v19-*",
   "scripts/smoke-test-v20*",
   "scripts/smoke-test-v21-*",
   "scripts/check-v18-*",
   "scripts/check-v20*",
   "scripts/check-v21-*",
+  "scripts/daily-check-v19-*",
+  "scripts/live-prepare-v19-*",
 ]) {
-  assertZoningRow(repoZoning, archivedPattern, "Zone 3", "archive");
+  assertZoningRow(repoZoning, deletedPattern, "Zone 3", "delete");
 }
 assertZoningRow(repoZoning, "scripts/live-test-*", "Zone 3", "delete");
 
-for (const rewritePattern of [
-  "scripts/smoke-test-portal-*",
-  "scripts/smoke-test-opl-*",
-  "scripts/smoke-test-billing-*",
-  "scripts/smoke-test-resource-*",
-]) {
-  assertZoningRow(repoZoning, rewritePattern, "Zone 2", "review/rewrite");
-}
-
 for (const [pathOrGroup, status] of [
-  ["`scripts/smoke-test-v19-*`", "`archive_reference`"],
-  ["`scripts/smoke-test-v20*`", "`archive_reference`"],
-  ["`scripts/smoke-test-v21-*`", "`archive_reference`"],
+  ["`scripts/smoke-test-v19-*`", "`deleted`"],
+  ["`scripts/smoke-test-v20*`", "`deleted`"],
+  ["`scripts/smoke-test-v21-*`", "`deleted`"],
 ]) {
-  assertInventoryDecisionStatus(inventory, pathOrGroup, "`archive_reference`", status);
+  assertInventoryDecisionStatus(inventory, pathOrGroup, "`delete`", status);
 }
 
-for (const phrase of [
-  "slice-2 truth writeback: completed",
-  "no active/default/workflow refs to v19/v20/v21/live-test script families",
-  "v19/v20/v21 smoke families remain archive_reference",
-]) {
-  assertIncludes(inventory, phrase, "inventory_slice2_truth");
+for (const source of [inventory, activeSurface, archivePolicy]) {
+  for (const forbidden of ["archive_reference"]) {
+    assertNotIncludes(source, forbidden, "strict_legacy_scripts_delete_truth");
+  }
 }
 
-const slice2 = sliceById(manifest, slice2Id);
-assert(manifest.completed_slices.includes(slice2Id), "slice2_completion_truth_missing");
-assert(!manifest.next_slices.includes(slice2Id), "slice2_must_not_remain_in_next_slices");
-assert.notEqual(manifest.current_slice, slice2Id, "slice2_must_not_remain_current_slice_after_writeback");
-assert.equal(slice2.status, "completed", "slice2_status_mismatch");
-assert.equal(
-  slice2.decision_scope,
-  "archive_reference_or_blocked_without_auth_or_explicit_delete_candidates_only",
-  "slice2_decision_scope_mismatch",
-);
-assertIncludes(
-  slice2.red_gate_policy,
-  "target_paths_still_need_truth_writeback",
-  "slice2_red_gate_policy",
-);
+const slice = sliceById(manifest, sliceId);
+assert.equal(slice.status, "completed", "slice_c_status_mismatch");
+assert(manifest.completed_slices.includes(sliceId), "slice_c_completion_truth_missing");
+assert(!manifest.next_slices.includes(sliceId), "slice_c_must_not_remain_in_next_slices");
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_legacy_script_archive_boundary",
+  contract: "v22_legacy_script_delete_boundary",
   protectedEntrypoints: [
     readmePath,
     vibeCodingPath,
     mvpSuitePath,
   ],
-  zoningAssertions: {
-    archive: [
-      "scripts/smoke-test-v19-*",
-      "scripts/smoke-test-v20*",
-      "scripts/smoke-test-v21-*",
-      "scripts/live-test-* delete-adjudicated outside default entry",
-      "scripts/check-v18-*",
-      "scripts/check-v20*",
-      "scripts/check-v21-*",
-    ],
-    reviewRewrite: [
-      "scripts/smoke-test-portal-*",
-      "scripts/smoke-test-opl-*",
-      "scripts/smoke-test-billing-*",
-      "scripts/smoke-test-resource-*",
-    ],
-  },
-  slice2: {
-    status: slice2.status,
-    currentSlice: manifest.current_slice,
+  deletedFamilies: [
+    "scripts/smoke-test-v19-*",
+    "scripts/smoke-test-v20*",
+    "scripts/smoke-test-v21-*",
+    "scripts/check-v18-*",
+    "scripts/check-v20*",
+    "scripts/check-v21-*",
+    "scripts/daily-check-v19-*",
+    "scripts/live-prepare-v19-*",
+    "scripts/smoke-test-resource-provisioner*",
+    "scripts/install-opencost-local.ps1",
+    "scripts/start-opencost-*",
+    "scripts/smoke-test-billing-opencost.mjs",
+  ],
+  slice: {
+    id: slice.id,
+    status: slice.status,
   },
 }, null, 2));

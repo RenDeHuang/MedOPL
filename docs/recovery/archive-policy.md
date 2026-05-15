@@ -1,6 +1,6 @@
 # platform-v22 Archive Policy
 
-本文件定义 platform-v22 对旧文档、旧脚本和旧栈资产的 archive/reference/cleanup 规则。目标是保留历史证据，同时避免旧路径重新成为 v22 主线。
+本文件定义 platform-v22 对旧文档、旧脚本和旧栈资产的 archive/reference/cleanup 规则。strict monolith cleanup 下，历史证据由 git history 保存；旧脚本和旧兼容资产不再因为历史证据留在 active repo。
 
 ## Canonical And Legacy
 
@@ -16,11 +16,9 @@
 - `docs/reports/*`
 - `docs/releases/*`
 - `docs/logs/*`
-- `scripts/smoke-test-v19-*`
-- `scripts/smoke-test-v20*`
 - `OPL-v20-商业化产品套餐开发方案.md`
 
-旧 `scripts/live-test-*` 文件已由用户授权的物理删除 slice 删除；未来真实外部 canary 只能通过新的授权合同和新的 v22 gate 重新引入。
+旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 check/daily/live-prepare、resource-provisioner 和 OpenCost 脚本已由 strict monolith cleanup 物理删除；未来真实外部 canary 只能通过新的授权合同和新的 v22 gate 重新引入。
 
 Archive/reference 资产可以被阅读、摘取事实或转写为新的 v22 contract，但不能被当成 v22 active 入口、默认验证入口或当前产品叙事。
 

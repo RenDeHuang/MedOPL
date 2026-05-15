@@ -129,6 +129,7 @@
 - Langfuse 不是 Portal、billing、artifact 或 run 的 canonical source。
 - `trace.medopl.cn` 只能作为后续 ops/observability surface。
 - OpenCost 只作历史或后续授权运维参考，不是当前主账单事实源。
+- OpenCost 旧脚本、旧 compose、旧 infra 不在 active repo 保留。
 - 普通用户页面不把 OpenCost/Langfuse 展示成核心产品能力。
 - completed by cleanup/v22-cleanup-completion-truth：`scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 不得恢复为主产品事实源；strict monolith cleanup 删除旧 OpenCost/Langfuse compose/deploy/infra 资产。
 

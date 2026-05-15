@@ -52,9 +52,15 @@ assert.equal(manifest.target_branch, "recovery/platform-v22-trunk", "manifest_ta
 assert.equal(manifest.working_branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "manifest_working_branch_mismatch");
 assert.equal(manifest.current_status, "strict_monolith_retirement_in_progress", "manifest_current_status_mismatch");
 
-assertArrayIncludesAll(manifest.next_slices, expectedSlices, "manifest_next_slice");
-for (const sliceId of manifest.completed_slices ?? []) {
+const completedSlices = manifest.completed_slices ?? [];
+const remainingSlices = manifest.next_slices ?? [];
+assertArrayIncludesAll([...completedSlices, ...remainingSlices], expectedSlices, "manifest_slice_queue_or_completed");
+for (const sliceId of completedSlices) {
   assert(expectedSlices.includes(sliceId), `manifest_completed_slice_unknown:${sliceId}`);
+}
+for (const sliceId of remainingSlices) {
+  assert(expectedSlices.includes(sliceId), `manifest_next_slice_unknown:${sliceId}`);
+  assert(!completedSlices.includes(sliceId), `manifest_slice_must_not_be_both_completed_and_next:${sliceId}`);
 }
 
 assert.equal(manifest.batch_policy?.enabled, true, "manifest_batch_policy_enabled_mismatch");

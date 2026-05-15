@@ -134,16 +134,17 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组只作为 retired compatibility fence。
 - `services/opl-runtime-bridge` 路径暂保留，但产品语义是 Portal OPL Adapter / Runtime Agent；新文档和新入口不得继续扩大 bridge 命名。
 
-以下路径只作为 archive/reference，不进入 v22 主产品叙事：
+以下路径只作为 strict cleanup 删除目标或历史文档迁移输入；git history 已足够作为历史证据，不进入 v22 主产品叙事：
 
 - `adapters/med-autoscience-runner/`
 - `adapters/resource-provisioner/`
 - `adapters/cloud-provisioner/`，除非后续单独迁为平台内部资源池开通组件。
-- `infra/opencost/`、`deploy/tke-package/optional/opencost-values.yaml`、`scripts/start-opencost-*`、`scripts/install-opencost-local.ps1`。
+- `infra/opencost/`、`deploy/tke-package/optional/opencost-values.yaml`。
+- 旧 OpenCost 脚本 `scripts/start-opencost-*`、`scripts/install-opencost-local.ps1`、`scripts/smoke-test-billing-opencost.mjs` 已在 Slice C 删除。
 - `compose.langfuse.yaml`、`deploy/tke-package/manifests/08-langfuse-stack.yaml`、`scripts/load-test-v13-langfuse-ingestion.mjs`。
 - `deploy/tke-package/rendered-v20.32-*`、旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*`。
 
-后续 cleanup/delete 目标是删除旧 `med-autoscience-runner`、`resource-provisioner`、K8s Job、OpenCost、Langfuse 主叙事和默认入口；本次只记录裁定，不执行删除。
+后续 cleanup/delete 目标是继续删除旧 `med-autoscience-runner`、`resource-provisioner`、K8s Job、OpenCost、Langfuse 主叙事和默认入口。
 
 ## 操作边界
 

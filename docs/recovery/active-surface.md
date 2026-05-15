@@ -38,17 +38,15 @@ active surface 不允许修改 one-person-lab upstream。one-person-lab upstream
 
 ## Archive / Reference
 
-以下路径只作为 archive/reference，允许阅读和引用证据，不作为新实现入口：
+以下路径只作为 archive/reference，允许阅读和引用证据，不作为新实现入口。strict monolith cleanup 下旧脚本本体不再因为历史证据保留；git history 已足够保存 v19/v20/v21 脚本事实。
 
 - `docs/plan/*`
 - `docs/reports/*`
 - `docs/releases/*`
 - `docs/logs/*`
-- `scripts/smoke-test-v19-*`
-- `scripts/smoke-test-v20*`
 - `OPL-v20-商业化产品套餐开发方案.md`
 
-旧 `scripts/live-test-*` 文件已在用户授权的物理删除 slice 中删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 默认入口。
+旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 check/daily/live-prepare、resource-provisioner 和 OpenCost 脚本已在 strict monolith cleanup 中删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 或旧版本 smoke 默认入口。
 
 ## Delete / Cleanup Target
 

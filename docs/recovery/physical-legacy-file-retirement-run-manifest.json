@@ -7,12 +7,13 @@
   "target_branch": "recovery/platform-v22-trunk",
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "current_status": "strict_monolith_retirement_in_progress",
-  "current_slice": "slice-b-user-owned-resource-order-compat-delete",
-  "completed_slices": [],
-  "next_slices": [
+  "current_slice": "slice-c-legacy-script-delete",
+  "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
-    "slice-c-legacy-script-delete",
+    "slice-c-legacy-script-delete"
+  ],
+  "next_slices": [
     "slice-d-retired-adapter-deploy-infra-delete",
     "slice-e-legacy-schema-store-retirement"
   ],
@@ -97,7 +98,7 @@
     },
     {
       "id": "slice-b-user-owned-resource-order-compat-delete",
-      "status": "in_progress",
+      "status": "completed",
       "decision_scope": "delete_retired_user_owned_and_resource_order_compatibility_surfaces",
       "target_paths": [
         "services/portal/src/routes/user-owned-resource.routes.mjs",
@@ -119,7 +120,7 @@
     },
     {
       "id": "slice-c-legacy-script-delete",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "delete_legacy_script_families_and_current_validation_references",
       "target_paths": [
         "scripts/smoke-test-v19-*",
