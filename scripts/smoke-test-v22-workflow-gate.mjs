@@ -80,7 +80,7 @@ assert.deepEqual(contractPackageTypes, [
 const reviewWithBlockers = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [
-    "deploy/tke-package/values.yaml",
+    "deploy/manual/values.yaml",
     ".sentrux/rules.toml",
     "adapters/tencent/provider.mjs",
     "one-person-lab/upstream/internal.js",
@@ -93,7 +93,7 @@ const reviewWithBlockers = evaluateReview({
 
 assert.equal(reviewWithBlockers.ok, false, "review_with_blockers_must_not_be_ok");
 assert.deepEqual(reviewWithBlockers.forbiddenPaths, [
-  "deploy/tke-package/values.yaml",
+  "deploy/manual/values.yaml",
   ".sentrux/rules.toml",
   "adapters/tencent/provider.mjs",
   "one-person-lab/upstream/internal.js",
@@ -152,7 +152,12 @@ assert.equal(checkpointBlocked.checks.remoteSsh.ok, false, "checkpoint_must_bloc
 assert.equal(checkpointBlocked.checks.remoteNoToken.ok, false, "checkpoint_must_block_token_remote");
 
 const gateSource = await readFile(path.join(repoRoot, "scripts/v22-workflow-gate.mjs"), "utf8");
+const workflowSmokeSource = await readFile(fileURLToPath(import.meta.url), "utf8");
+assertNotIncludesAny(workflowSmokeSource, [
+  ["deploy/tke-package", "/values.yaml"].join(""),
+], "workflow_gate_smoke_source");
 assertNotIncludesAny(gateSource, [
+  ["deploy/tke-package", "/values.yaml"].join(""),
   "spawnSync(\"git\", [\"push\"",
   "spawnSync(\"kubectl\"",
   "spawnSync(\"docker\", [\"build\"",

@@ -91,7 +91,7 @@
 
 ### Slice D: Retired Adapter Deploy And Infra Asset Deletion
 
-- 删除 `adapters/resource-provisioner/**`、`adapters/med-autoscience-runner/**`、`infra/opencost/**`、`compose.langfuse.yaml`、旧 runner/provisioner Dockerfile 和 `deploy/tke-package/**`。
+- 删除 `adapters/resource-provisioner/**`、`adapters/med-autoscience-runner/**`、`adapters/cloud-provisioner/**`、`adapters/shared/**`、`infra/opencost/**`、`infra/kubernetes/**`、`infra/codex-runtime/**`、`infra/production-hardening/**`、`compose.demo.yaml`、`compose.langfuse.yaml`、旧 runner/provisioner Dockerfile、`deploy/tke-package/**`，以及 strict scan 发现的旧 v13、portal resource-order/provisioner、runner fixture、v19/v20 helper lib 脚本资产。
 - 保留 active v22 Dockerfile surface 和已证明 active 的 `adapters/billing-aggregator/**`。
 - RED/GREEN: `node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --assets`
 - commit: `cleanup: delete retired adapter deploy and infra assets`

@@ -7,14 +7,14 @@
   "target_branch": "recovery/platform-v22-trunk",
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "current_status": "strict_monolith_retirement_in_progress",
-  "current_slice": "slice-c-legacy-script-delete",
+  "current_slice": "slice-d-retired-adapter-deploy-infra-delete",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
-    "slice-c-legacy-script-delete"
+    "slice-c-legacy-script-delete",
+    "slice-d-retired-adapter-deploy-infra-delete"
   ],
   "next_slices": [
-    "slice-d-retired-adapter-deploy-infra-delete",
     "slice-e-legacy-schema-store-retirement"
   ],
   "batch_policy": {
@@ -25,13 +25,16 @@
     "stop_after_batch": true
   },
   "authorization_boundary": {
-    "authorized_deletions": [
+      "authorized_deletions": [
       "old public retired route shells",
       "v19/v20/v21 legacy smoke/check/daily/live-prepare scripts",
       "old user-owned/resource-order compatibility surfaces",
       "retired resource-provisioner and med-autoscience-runner adapters",
       "old OpenCost/Langfuse deploy/infra/compose assets",
-      "old deploy/tke-package assets that are not active v22 deploy evidence"
+      "old deploy/tke-package assets that are not active v22 deploy evidence",
+      "old cloud-provisioner/shared adapter helpers with no active v22 importer",
+      "old infra/kubernetes codex-runtime production-hardening assets with no active v22 reason",
+      "old compose.demo.yaml retired runner wiring"
     ],
     "forbidden_operations": [
       "read secret",
@@ -144,16 +147,52 @@
     },
     {
       "id": "slice-d-retired-adapter-deploy-infra-delete",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "delete_retired_adapter_deploy_infra_assets_only",
       "target_paths": [
         "adapters/resource-provisioner/**",
         "adapters/med-autoscience-runner/**",
+        "adapters/cloud-provisioner/**",
+        "adapters/shared/**",
         "infra/opencost/**",
+        "infra/kubernetes/**",
+        "infra/codex-runtime/**",
+        "infra/production-hardening/**",
+        "compose.demo.yaml",
         "compose.langfuse.yaml",
         "deploy/local/dockerfiles/med-autoscience-runner.Dockerfile",
         "deploy/local/dockerfiles/resource-provisioner.Dockerfile",
-        "deploy/tke-package/**"
+        "deploy/tke-package/**",
+        "scripts/smoke-test-tke-manifest-renderer-contract.mjs",
+        "scripts/smoke-test-secret-hygiene-manifests.mjs",
+        "scripts/smoke-test-platform-nodepool-isolation-contract.mjs",
+        "scripts/smoke-test-billing-aggregator-postgres-env-contract.mjs",
+        "scripts/smoke-test-portal-opl-adapter-real-runner-k8s.mjs",
+        "scripts/smoke-test-med-autoscience-runner-api.mjs",
+        "scripts/smoke-test-med-runner-server-plan-render.mjs",
+        "scripts/smoke-test-server-plan-runtime-chain.mjs",
+        "scripts/smoke-test-resource-order-freeze-run.mjs",
+        "scripts/start-portal-live.mjs",
+        "scripts/analyze-v21-structure-hotspots.mjs",
+        "scripts/load-test-v13-langfuse-ingestion.mjs",
+        "scripts/smoke-test-opl-launch-adapter.mjs",
+        "scripts/smoke-test-portal-async-provision.mjs",
+        "scripts/smoke-test-portal-opl-adapter.mjs",
+        "scripts/smoke-test-portal-opl-web-hard-loop.mjs",
+        "scripts/smoke-test-portal-resource-order-attribution-contract.mjs",
+        "scripts/smoke-test-portal-resource-orders.mjs",
+        "scripts/smoke-test-portal-resource-provisioner-timeout-config.mjs",
+        "scripts/smoke-test-v13-commercial-e2e.mjs",
+        "scripts/smoke-test-v13-cos-bill-reader.mjs",
+        "scripts/smoke-test-v13-langfuse-trace.mjs",
+        "scripts/fixtures/med-autoscience-runner-fixture.mjs",
+        "scripts/fixtures/portal-internal-resource-order-fixture.mjs",
+        "scripts/lib/v19-commercial-ops-journey-contract.mjs",
+        "scripts/lib/v19-live-cleanup-guard.mjs",
+        "scripts/lib/v19-live-e2e-contract.mjs",
+        "scripts/lib/v19-live-labels.mjs",
+        "scripts/lib/v19-live-tke-context.mjs",
+        "scripts/lib/v20.33-evidence.mjs"
       ],
       "retain_paths": [
         "deploy/local/dockerfiles/portal.Dockerfile",

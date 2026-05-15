@@ -46,7 +46,7 @@ active surface 不允许修改 one-person-lab upstream。one-person-lab upstream
 - `docs/logs/*`
 - `OPL-v20-商业化产品套餐开发方案.md`
 
-旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 check/daily/live-prepare、resource-provisioner 和 OpenCost 脚本已在 strict monolith cleanup 中删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 或旧版本 smoke 默认入口。
+旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 v13 脚本、旧 check/daily/live-prepare、resource-provisioner/OpenCost 脚本、旧 portal resource-order/provisioner 脚本、旧 runner fixture 和旧 v19/v20 helper lib 已在 strict monolith cleanup 中删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 或旧版本 smoke 默认入口。
 
 ## Delete / Cleanup Target
 

@@ -1,8 +1,0 @@
-# Build this image from the opl-aion-shell source tree, not from this package root.
-# Example:
-#   cd <opl-aion-shell-source>
-#   docker build -f Dockerfile -t <tcr>/opl-web:opl-v1 .
-#
-# The current local reference Dockerfile is copied into reference/opl-aion-shell-Dockerfile
-# when available.
-

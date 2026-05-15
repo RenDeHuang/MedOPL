@@ -78,11 +78,16 @@ assertDecisionRow(inventory, "`scripts/smoke-test-v21-*`", "`delete`");
 assertDecisionRow(inventory, "`scripts/live-test-*`", "`delete`");
 assertDecisionRow(inventory, "`infra/opencost/**`", "`delete`");
 assertDecisionRow(inventory, "`compose.langfuse.yaml`", "`delete`");
+assertDecisionRow(inventory, "`compose.demo.yaml`", "`delete`");
 assertDecisionRow(inventory, "`services/portal/src/integrations/langfuse-trace-client.mjs`", "`retain_active_v22`");
 assertDecisionRow(inventory, "`services/opl-runtime-bridge/src/langfuse-publisher.mjs`", "`retain_active_v22`");
 assertDecisionRow(inventory, "`adapters/resource-provisioner/**`", "`delete`");
 assertDecisionRow(inventory, "`adapters/med-autoscience-runner/**`", "`delete`");
+assertDecisionRow(inventory, "`adapters/cloud-provisioner/**`", "`delete`");
+assertDecisionRow(inventory, "`adapters/shared/**`", "`delete`");
 assertDecisionRow(inventory, "`deploy/tke-package/**` and old runner/provisioner deploy assets", "`delete`");
+assertDecisionRow(inventory, "`infra/kubernetes/**`, `infra/codex-runtime/**`, `infra/production-hardening/**`", "`delete`");
+assertDecisionRow(inventory, "`old portal resource-order/provisioner scripts, v13 scripts, runner fixtures, v19/v20 helper libs`", "`delete`");
 
 for (const forbidden of [
   "keep_tombstone",

@@ -136,15 +136,14 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 
 以下路径只作为 strict cleanup 删除目标或历史文档迁移输入；git history 已足够作为历史证据，不进入 v22 主产品叙事：
 
-- `adapters/med-autoscience-runner/`
-- `adapters/resource-provisioner/`
-- `adapters/cloud-provisioner/`，除非后续单独迁为平台内部资源池开通组件。
-- `infra/opencost/`、`deploy/tke-package/optional/opencost-values.yaml`。
+- `adapters/med-autoscience-runner/`、`adapters/resource-provisioner/`、`adapters/cloud-provisioner/` 和 `adapters/shared/` 已在 Slice D 删除；后续若需要平台内部资源池开通组件，必须以 v22 active contract 重新命名、重新建边界。
+- `infra/opencost/`、`infra/kubernetes/`、`infra/codex-runtime/`、`infra/production-hardening/` 和 `deploy/tke-package/` 已在 Slice D 删除。
+- `compose.demo.yaml` 和 `compose.langfuse.yaml` 已在 Slice D 删除。
 - 旧 OpenCost 脚本 `scripts/start-opencost-*`、`scripts/install-opencost-local.ps1`、`scripts/smoke-test-billing-opencost.mjs` 已在 Slice C 删除。
-- `compose.langfuse.yaml`、`deploy/tke-package/manifests/08-langfuse-stack.yaml`、`scripts/load-test-v13-langfuse-ingestion.mjs`。
-- `deploy/tke-package/rendered-v20.32-*`、旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*`。
+- 旧 v13 Langfuse / commercial / COS 脚本、旧 portal resource-order/provisioner 脚本、旧 med-autoscience runner fixture、旧 v19/v20 helper lib 已在 Slice D 删除；未来真实外部 canary 必须使用新的 v22 授权合同和 gate。
+- 旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*` 仍只可作为迁移输入，不作为 active repo 默认实现入口。
 
-后续 cleanup/delete 目标是继续删除旧 `med-autoscience-runner`、`resource-provisioner`、K8s Job、OpenCost、Langfuse 主叙事和默认入口。
+后续 cleanup/delete 目标是继续清掉 active services 中残留的旧 `resource-provisioner` client wiring、OpenCost 主产品字段和 resource-order schema/store 片段；不得把已删除的旧 deploy/adapters/infra 资产作为参考重新引入。
 
 ## 操作边界
 

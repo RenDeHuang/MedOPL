@@ -1,8 +1,0 @@
-# v21 user-owned default: runner RBAC is not part of the product hot path.
-# Apply deploy/tke-package/optional/managed-runtime-runner-rbac.yaml only when
-# PRODUCT_RUNTIME_MODE=managed_runtime.
-apiVersion: v1
-kind: List
-metadata:
-  name: v21-user-owned-default-runner-rbac-disabled
-items: []

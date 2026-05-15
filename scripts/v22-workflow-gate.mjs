@@ -218,6 +218,26 @@ function changedFilesSince(base) {
   return unique(outputs.flatMap((output) => output.split("\n").map((line) => line.trim()).filter(Boolean)));
 }
 
+function changedFileStatusesSince(base) {
+  const outputs = [
+    runGit(["diff", "--name-status", `${base}...HEAD`], { fallback: "" }),
+    runGit(["diff", "--name-status", "--cached"], { fallback: "" }),
+    runGit(["diff", "--name-status"], { fallback: "" }),
+  ];
+  const statuses = new Map();
+  for (const output of outputs) {
+    for (const line of output.split("\n").map((item) => item.trim()).filter(Boolean)) {
+      const [status, ...paths] = line.split(/\s+/u);
+      const filePath = normalizePath(paths.at(-1));
+      if (filePath && !statuses.has(filePath)) statuses.set(filePath, status);
+    }
+  }
+  for (const filePath of changedFilesSince(base)) {
+    if (!statuses.has(filePath)) statuses.set(filePath, "A");
+  }
+  return statuses;
+}
+
 function currentBranchName() {
   return runGit(["branch", "--show-current"], { fallback: "" });
 }
@@ -257,6 +277,19 @@ function isServicesPath(filePath) {
 
 function isContractPath(filePath) {
   return normalizePath(filePath).startsWith("docs/contracts/");
+}
+
+function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
+  if (branchName !== "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return false;
+  if (!String(status || "").startsWith("D")) return false;
+  const normalized = normalizePath(filePath);
+  return [
+    /^adapters\/(?:resource-provisioner|med-autoscience-runner|cloud-provisioner|shared)(?:\/|$)/u,
+    /^deploy\/tke-package(?:\/|$)/u,
+    /^deploy\/local\/dockerfiles\/(?:resource-provisioner|med-autoscience-runner)\.Dockerfile$/u,
+    /^infra\/(?:opencost|kubernetes|codex-runtime|production-hardening)(?:\/|$)/u,
+    /^compose\.(?:demo|langfuse)\.yaml$/u,
+  ].some((pattern) => pattern.test(normalized));
 }
 
 function remoteLooksSsh(remoteUrl) {
@@ -322,10 +355,19 @@ export function renderStartTemplate({ type = "portal-ui" } = {}) {
   return `${lines.join("\n")}\n`;
 }
 
-export function evaluateReview({ base = "recovery/platform-v22-trunk", changedFiles = changedFilesSince(base) } = {}) {
+export function evaluateReview({
+  base = "recovery/platform-v22-trunk",
+  changedFiles = changedFilesSince(base),
+  branchName = currentBranchName(),
+  changedStatuses = changedFileStatusesSince(base),
+} = {}) {
   const normalizedFiles = changedFiles.map(normalizePath).filter(Boolean);
-  const forbiddenPaths = normalizedFiles.filter(isForbiddenPath);
-  const secretLikePaths = normalizedFiles.filter(isSecretLikePath);
+  const authorizedCleanupDeletions = normalizedFiles.filter((file) =>
+    isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
+  const forbiddenPaths = normalizedFiles.filter((file) =>
+    isForbiddenPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
+  const secretLikePaths = normalizedFiles.filter((file) =>
+    isSecretLikePath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const servicesChanged = normalizedFiles.some(isServicesPath);
   const contractsChanged = normalizedFiles.some(isContractPath);
   const smokeChanged = normalizedFiles.some(isV22SmokePath);
@@ -384,6 +426,7 @@ export function evaluateReview({ base = "recovery/platform-v22-trunk", changedFi
     ok: findings.every((finding) => finding.severity !== "blocker"),
     base,
     changedFiles: normalizedFiles,
+    authorizedCleanupDeletions,
     forbiddenPaths,
     secretLikePaths,
     findings,
@@ -440,6 +483,7 @@ function renderReviewReport(review) {
     mode: "review",
     base: review.base,
     changedFiles: review.changedFiles,
+    authorizedCleanupDeletions: review.authorizedCleanupDeletions,
     forbiddenPaths: review.forbiddenPaths,
     secretLikePaths: review.secretLikePaths,
     findings: review.findings,

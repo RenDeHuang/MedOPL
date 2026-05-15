@@ -128,9 +128,9 @@ platform-v22 不是空仓。现有文件必须先按域裁定为 `keep`、`migra
 
 `adapters/med-autoscience-runner/`、`adapters/resource-provisioner/`、旧 K8s Job/RBAC/manifests、OpenCost、Langfuse 全栈部署和相关 live scripts 只能作为 legacy/reference 或单独授权的旧栈审查对象。它们不进入 v22 主产品叙事。
 
-## D024: Deploy 和 live scripts 只能作为授权边界内资产
+## D024: 旧 deploy 栈不得作为 active v22 交付参考
 
-`deploy/tke-package` 的核心 manifests 和 render scripts 可以作为 v22 交付参考，但 build/push、kubectl、live-test 和真实云资源操作必须单独授权。历史 rendered 包、compose 旧栈、runner/provisioner Dockerfile 和 live-test 脚本不作为普通本地验证入口。
+`deploy/tke-package`、旧 runner/provisioner manifests、旧 rendered 包、旧 compose 栈和旧 live-test 脚本已被 strict monolith cleanup 裁定为删除目标；git history 已足够保存历史。后续如果需要 v22 交付资产，必须在 active v22 Package D / deploy contract 下重新命名、重新建边界，并继续遵守 build/push、kubectl、live-test、真实云资源操作的单独授权要求。
 
 ## D025: delete 是后续 cleanup 目标
 

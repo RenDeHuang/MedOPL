@@ -152,6 +152,8 @@ resource-order store/Postgres/schema implementation completed on `cleanup/v22-re
 
 observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is not the current billing truth. Strict monolith cleanup now deletes old OpenCost/Langfuse compose/deploy/infra assets while retaining active sanitized trace metadata implementation code.
 
+strict monolith Slice D completed on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old adapters, old deploy/tke-package, old infra, old compose assets, old runner/provisioner Dockerfiles, old v13 scripts, old portal resource-order/provisioner scripts, old runner fixtures, and old v19/v20 helper libs are physically deleted from active repo. Future real external canary or deploy implementation must use new v22 contracts and active v22 surfaces rather than restoring these paths.
+
 Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `scripts/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
 
 ## Adjudication Rules

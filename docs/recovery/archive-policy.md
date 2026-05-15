@@ -52,8 +52,8 @@ Cleanup target 的处理规则：
 
 - 普通 `feat/*` 分支不得继续扩写这些路径的主叙事。
 - 删除、拆路由、移除默认入口或移除旧验证入口必须使用专门 `cleanup/*` 分支。
-- `user_owned` 只能保留为 legacy alias，不得解释成用户自带 CVM/COS/K8s 或用户配置云资源。
-- `resource-order` 只能作为退场参考；v22 主线应表达 resource binding、billing、quota 和 audit 边界。
+- `user_owned` 不得保留为 public route、alias、fixture、copy 或测试锚点；git history 已足够作为历史证据。
+- `resource-order` 不得保留为 public route、schema、store、migration key、fixture、copy 或测试锚点；v22 主线只表达 resource binding、billing、quota 和 audit 边界。
 
 ## Forbidden Surface
 

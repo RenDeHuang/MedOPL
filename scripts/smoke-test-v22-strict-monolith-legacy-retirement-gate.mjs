@@ -48,8 +48,11 @@ async function assertPolicyTruth() {
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
     "docs/recovery/status-matrix.md",
+    "docs/recovery/active-surface.md",
+    "docs/recovery/archive-policy.md",
     "docs/recovery/repo-zoning.md",
     "docs/recovery/legacy-cleanup-backlog.md",
+    "docs/recovery/decisions.md",
     "docs/recovery/physical-legacy-file-retirement-goal.md",
     "docs/recovery/physical-legacy-file-retirement-inventory.md",
     "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
@@ -67,6 +70,8 @@ async function assertPolicyTruth() {
       /\bforbidden_without_auth\b/u,
       /\bpublic_tombstone_delete_requires_user_confirmation\b/u,
       /\bschema_or_migration_delete_without_schema_drop_leaf\b/u,
+      /deploy\/tke-package.*可以作为 v22 交付参考/u,
+      /只能保留为 legacy alias/u,
     ]) {
       assertNotMatches(source, forbidden, `strict_policy:${file}`);
     }
@@ -129,6 +134,16 @@ async function assertLegacyScriptsDeleted() {
     || /^check-v(?:18|19|20|21)/u.test(name)
     || /^daily-check-v(?:19|20|21)/u.test(name)
     || /^live-prepare-v(?:19|20|21)/u.test(name)
+    || /^smoke-test-v13/u.test(name)
+    || /^load-test-v13/u.test(name)
+    || /^analyze-v21/u.test(name)
+    || /^smoke-test-portal-resource-orders/u.test(name)
+    || /^smoke-test-portal-resource-order-attribution-contract/u.test(name)
+    || /^smoke-test-portal-resource-provisioner-timeout-config/u.test(name)
+    || /^smoke-test-portal-async-provision/u.test(name)
+    || /^smoke-test-portal-opl-adapter/u.test(name)
+    || /^smoke-test-portal-opl-web-hard-loop/u.test(name)
+    || /^smoke-test-opl-launch-adapter/u.test(name)
     || /^live-test-/u.test(name)
     || /^smoke-test-resource-provisioner/u.test(name)
     || /^smoke-test-billing-opencost/u.test(name)
@@ -136,6 +151,20 @@ async function assertLegacyScriptsDeleted() {
     || /^start-opencost/u.test(name)
   );
   assert.deepEqual(legacyNames, [], `legacy_scripts_must_be_deleted:${legacyNames.join(",")}`);
+
+  const legacyScriptAssets = [
+    "scripts/fixtures/med-autoscience-runner-fixture.mjs",
+    "scripts/fixtures/portal-internal-resource-order-fixture.mjs",
+    "scripts/lib/v19-commercial-ops-journey-contract.mjs",
+    "scripts/lib/v19-live-cleanup-guard.mjs",
+    "scripts/lib/v19-live-e2e-contract.mjs",
+    "scripts/lib/v19-live-labels.mjs",
+    "scripts/lib/v19-live-tke-context.mjs",
+    "scripts/lib/v20.33-evidence.mjs",
+  ];
+  for (const repoPath of legacyScriptAssets) {
+    await assertMissing(repoPath, "legacy_script_asset");
+  }
 
   const suite = await readRepoFile("scripts/smoke-test-v22-mvp-contract-suite.mjs");
   for (const forbidden of ["smoke-test-v19", "smoke-test-v20", "smoke-test-v21", "live-test-", "resource-provisioner", "opencost"]) {
@@ -147,7 +176,13 @@ async function assertRetiredAssetsDeleted() {
   for (const repoPath of [
     "adapters/resource-provisioner",
     "adapters/med-autoscience-runner",
+    "adapters/cloud-provisioner",
+    "adapters/shared",
     "infra/opencost",
+    "infra/kubernetes",
+    "infra/codex-runtime",
+    "infra/production-hardening",
+    "compose.demo.yaml",
     "compose.langfuse.yaml",
     "deploy/local/dockerfiles/med-autoscience-runner.Dockerfile",
     "deploy/local/dockerfiles/resource-provisioner.Dockerfile",
