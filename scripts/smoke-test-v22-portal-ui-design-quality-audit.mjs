@@ -182,8 +182,14 @@ function assertCurrentGitTruth(currentGoal) {
       "audit_leaf_target_head_must_descend_from_base",
     );
   }
-  assert.equal(currentGoal.current_cursor, "leaf-portal-ui-design-quality-audit", "audit_leaf_cursor_must_not_advance");
-  assert.equal(currentGoal.next_leaf, "leaf-portal-ui-design-quality-audit", "audit_leaf_next_leaf_must_not_advance");
+  assert(
+    [
+      "leaf-portal-ui-design-quality-audit",
+      "leaf-portal-ui-design-quality-implementation",
+    ].includes(currentGoal.current_cursor),
+    `audit_or_implementation_leaf_cursor_unexpected:${currentGoal.current_cursor}`,
+  );
+  assert.equal(currentGoal.next_leaf, currentGoal.current_cursor, "audit_or_implementation_leaf_next_leaf_must_match_cursor");
 }
 
 function extractContract(markdown) {
@@ -341,6 +347,7 @@ assertIncludes(contractIndex, "不冻结具体布局、配色、字体、圆角�
 assertIncludes(contractIndex, "`.runtime/portal-ui-design-quality/report.json`", "contract_index_must_reference_audit_report_path");
 
 assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-audit", "gap_matrix_must_record_audit_leaf");
+assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-implementation", "gap_matrix_must_record_implementation_leaf");
 assertIncludes(gapMatrix, "v22-portal-ui-design-quality-audit-boundary.md", "gap_matrix_must_reference_audit_contract");
 assertIncludes(gapMatrix, "status: in_progress", "gap_matrix_must_mark_frontend_gap_in_progress");
 assertIncludes(gapMatrix, "cursor_eligible: true", "gap_matrix_must_make_frontend_gap_cursor_eligible");
@@ -349,10 +356,16 @@ assertIncludes(gapMatrix, "git diff --check -- docs/contracts docs/recovery scri
 
 const frontendGap = currentGoal.gaps.find((gap) => gap.id === "frontend-product-vue-vite-ts-pinia");
 assert(frontendGap, "frontend_gap_missing_from_current_goal");
-assert.equal(frontendGap.next_leaf_step, "leaf-portal-ui-design-quality-audit", "frontend_gap_next_leaf_must_be_ui_design_quality_audit");
+assert(
+  [
+    "leaf-portal-ui-design-quality-audit",
+    "leaf-portal-ui-design-quality-implementation",
+  ].includes(frontendGap.next_leaf_step),
+  `frontend_gap_next_leaf_must_be_ui_design_quality_audit_or_implementation:${frontendGap.next_leaf_step}`,
+);
 assert.equal(frontendGap.status, "in_progress", "frontend_gap_must_be_current_in_progress");
 assert.equal(frontendGap.cursor_eligible, true, "frontend_gap_must_be_current_cursor");
-assert.equal(currentGoal.current_cursor, "leaf-portal-ui-design-quality-audit", "current_goal_must_advance_to_ui_design_quality_audit");
+assert.equal(currentGoal.current_cursor, frontendGap.next_leaf_step, "current_goal_must_match_frontend_gap_next_leaf");
 assert.equal(currentGoal.current_stage, "S5 frontend/backend product completion", "current_goal_stage_must_be_s5");
 assertCurrentGitTruth(currentGoal);
 
@@ -363,6 +376,21 @@ assert.equal(manifestLeaf.live_external_allowed, false, "ui_design_quality_leaf_
 assert(manifestLeaf.contracts.includes(contractPath), "ui_design_quality_leaf_must_subscribe_contract");
 assert(manifestLeaf.verification_commands.includes("node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs"), "ui_design_quality_leaf_must_run_audit_smoke");
 assert(manifestLeaf.forbidden_files.includes("services/*"), "ui_design_quality_contract_leaf_must_forbid_services_implementation");
+
+const implementationLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-ui-design-quality-implementation");
+assert(implementationLeaf, "verify_manifest_must_define_ui_design_quality_implementation_leaf");
+assert.equal(implementationLeaf.risk_class, "local_service_code", "ui_design_quality_implementation_leaf_risk_mismatch");
+assert.equal(implementationLeaf.live_external_allowed, false, "ui_design_quality_implementation_leaf_must_not_allow_live_external");
+assert(implementationLeaf.contracts.includes(contractPath), "ui_design_quality_implementation_leaf_must_subscribe_audit_contract");
+assert(implementationLeaf.contracts.includes("docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md"), "ui_design_quality_implementation_leaf_must_subscribe_composition_contract");
+assert(implementationLeaf.contracts.includes("docs/contracts/v22-saas-control-plane-user-experience-boundary.md"), "ui_design_quality_implementation_leaf_must_subscribe_saas_ux_contract");
+assert(implementationLeaf.allowed_files.includes("services/portal/frontend/**"), "ui_design_quality_implementation_leaf_must_allow_frontend_only");
+assert(!implementationLeaf.allowed_files.some((item) => String(item).startsWith("services/portal/src/")), "ui_design_quality_implementation_leaf_must_not_allow_portal_backend");
+assert(implementationLeaf.forbidden_files.includes("package/dependency files"), "ui_design_quality_implementation_leaf_must_forbid_package_files");
+assert(implementationLeaf.forbidden_ops.includes("live-cloud"), "ui_design_quality_implementation_leaf_must_forbid_live_cloud");
+assert(implementationLeaf.forbidden_ops.includes("build-push-kubectl"), "ui_design_quality_implementation_leaf_must_forbid_build_push_kubectl");
+assertIncludesAll(implementationLeaf.verification_commands, contract.futureImplementationLeafHandoff.verificationCommands, "ui_design_quality_implementation_leaf_verification_command");
+assertIncludesAll(implementationLeaf.truth_writeback_target, contract.futureImplementationLeafHandoff.truthWritebackTarget, "ui_design_quality_implementation_leaf_truth_writeback_target");
 
 const designPackage = verifyManifest.package_suites.find((suite) => suite.id === "portal-ui-design-quality");
 assert(designPackage, "verify_manifest_must_define_design_quality_package_suite");
