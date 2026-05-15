@@ -242,18 +242,18 @@ Every gap entry must contain:
 ### Gap: cloud-lane-mock-readonly-dry-run-authorized
 
 - id: cloud-lane-mock-readonly-dry-run-authorized
-- current_fact: Cloud lane contracts define mock -> readonly -> dry-run -> authorized create/release, with real operations separately authorized.
+- current_fact: Cloud lane readonly status audit has been absorbed into trunk. Cloud lane contracts define mock -> readonly -> dry-run -> authorized create/release, with real operations separately authorized; starter minimal live evidence remains historical/tracked, full matrix live is not claimed, and risky cloud/deploy/live steps still require step-local authorization.
 - ideal_state: production cloud lifecycle follows authorized gates, secret allowlists, billing checks, rollback, and audit without exposing cloud console language to users.
 - problem: cloud facts and Portal product facts can be mixed if authorization boundaries are not explicit.
 - dependency: cloud onboarding workflow boundary.
 - depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace]
 - blocked_by: [authorized create/release, true cloud mutation, secret-backed live inventory]
-- executable_when: readonly/local status audit can run without secret/live/cloud/build/push/kubectl/deploy and without touching deploy/adapters/.sentrux.
+- executable_when: monitoring detects Cloud lane readonly status or authorization boundary regression; otherwise monitor-only after B absorb.
 - stage: S4 Cloud lane productionization
 - priority: 70
-- cursor_eligible: true
-- status: in_progress
-- next_leaf_step: leaf-cloud-lane-readonly-status-audit
+- cursor_eligible: false
+- status: completed
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs`
 - allowed_files: cloud-lane contract/docs/smoke in a dedicated authorized branch
 - forbidden_files: `deploy/*`, `.env*`, kubeconfig, true cloud runners unless explicitly authorized
@@ -282,17 +282,17 @@ truth writeback section:
 ### Gap: frontend-product-vue-vite-ts-pinia
 
 - id: frontend-product-vue-vite-ts-pinia
-- current_fact: Portal UI MVP exists; future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` is now characterized as the executable Portal UI truth source: it covers 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation. UI design quality audit boundary now exists as a future leaf to judge whether those surfaces answer the SaaS control-plane mainline questions without freezing a specific aesthetic solution.
+- current_fact: Portal UI MVP exists; current cursor is the UI design quality audit leaf. Future frontend completion must preserve Vue 3 + Vite + TypeScript + Pinia contracts. `services/portal/frontend/src/harness/portal-ui-evalset.json` is now characterized as the executable Portal UI truth source: it covers 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation. UI design quality audit may reference external UI/UX best practices for expression quality, but content semantics, product responsibility boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language remain fixed by v22 contracts.
 - ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, API contracts, and design quality audit are eval-covered.
 - problem: visual or API changes can ship without responsive or component-state verification; screenshot regression can also preserve a weak UI baseline unless design quality audit checks service clarity, next action clarity, workbench scanability, and mainline-question coverage.
 - dependency: current Portal UI contracts.
 - depends_on: [cloud-lane-mock-readonly-dry-run-authorized]
 - blocked_by: []
-- executable_when: Cloud lane readonly/dry-run/product language boundaries are characterized or B accepts any cloud live gap as a future-stage blocker.
+- executable_when: Cloud lane readonly status audit is absorbed and this leaf remains local doc/eval only.
 - stage: S5 frontend/backend product completion
 - priority: 80
-- cursor_eligible: false
-- status: gated
+- cursor_eligible: true
+- status: in_progress
 - next_leaf_step: leaf-portal-ui-design-quality-audit
 - eval: `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`
 - allowed_files: `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/README.md`, `docs/recovery/*`, `scripts/smoke-test-v22-*`; future UI implementation branch under `services/portal/frontend/**` must be a separate leaf after audit evidence
@@ -302,7 +302,9 @@ truth writeback section:
 
 - leaf-frontend-product-evalset-gap: frontend evalset characterization passed locally with `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`, `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`, and `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`. The runtime suite ran 8 Playwright visual tests successfully and generated only uncommitted `.runtime` evidence. This leaf did not change UI implementation, package/dependency files, deploy, adapters, `.sentrux`, `.env.demo.template`, upstream, secrets, live/cloud/build/push/kubectl/deploy, or live-test. The next local executable leaf is `leaf-backend-contract-eval-template`.
 
-- leaf-portal-ui-design-quality-audit: future S5 audit leaf. It must add or run only contract/rubric/eval checks for design quality, with hard constraints for mainline question coverage, Portal/OPL responsibility boundary, no cloud-console language, no OPL chatbot reimplementation, role boundary, secret/browser hygiene, responsive no-overflow, state coverage, and runtime-only audit report. Soft scoring may evaluate modern SaaS information hierarchy, workbench scanability, service clarity, next action clarity, research workspace feel, visual density balance, and copy tone. It must not implement UI, freeze layout/color/font/radius/component-library choices, or update screenshot baselines without `.runtime/portal-ui-design-quality/report.json` audit evidence.
+- leaf-cloud-lane-readonly-status-audit B absorbed on `377641b47ed2de5f6f9f2528fc06e7f3d5c16adc`: Cloud lane readonly status, authorization boundary, full-matrix non-claim, and S5 handoff are recorded. No secret, true cloud, services implementation, deploy, build/push/kubectl, live-test, adapters, `.sentrux`, upstream, package/dependency, merge, or push operation was authorized by that leaf.
+
+- leaf-portal-ui-design-quality-audit: current S5 audit leaf. It must add or run only contract/rubric/eval checks for design quality, with hard constraints for mainline question coverage, Portal/OPL responsibility boundary, no cloud-console language, no OPL chatbot reimplementation, role boundary, secret/browser hygiene, responsive no-overflow, state coverage, and runtime-only audit report. Soft scoring may evaluate modern SaaS information hierarchy, workbench scanability, service clarity, next action clarity, research workspace feel, visual density balance, and copy tone. External UI/UX best practices may be referenced only for expression quality; content semantics remain fixed by v22 contracts, and this leaf must not migrate Vue 3 + Vite + TypeScript + Pinia to React/Vercel. It must not implement UI, freeze layout/color/font/radius/component-library choices, or update screenshot baselines without `.runtime/portal-ui-design-quality/report.json` audit evidence.
 
 ### Gap: backend-product-node22-esm-layering
 

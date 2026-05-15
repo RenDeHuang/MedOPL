@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "18c7bf5da57e0ec8e670f02b605136081b329ea3",
+  "base_trunk_head": "377641b47ed2de5f6f9f2528fc06e7f3d5c16adc",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "feat/v22-cloud-lane-readonly-status-audit",
+  "current_branch": "contract/v22-post-absorb-s5-ui-audit-cursor",
   "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-cloud-lane-readonly-status-audit",
+  "authoring_branch": "contract/v22-post-absorb-s5-ui-audit-cursor",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "18c7bf5da57e0ec8e670f02b605136081b329ea3",
+    "observed_git_head": "377641b47ed2de5f6f9f2528fc06e7f3d5c16adc",
     "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "18c7bf5da57e0ec8e670f02b605136081b329ea3",
-  "current_cursor": "leaf-cloud-lane-readonly-status-audit",
-  "next_leaf": "leaf-cloud-lane-readonly-status-audit",
-  "current_stage": "S4 Cloud lane productionization",
+  "last_absorbed_commit": "377641b47ed2de5f6f9f2528fc06e7f3d5c16adc",
+  "current_cursor": "leaf-portal-ui-design-quality-audit",
+  "next_leaf": "leaf-portal-ui-design-quality-audit",
+  "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_doc_eval",
   "current_blockers": [
-    "none_for_cloud_lane_readonly_status_audit_local_doc_eval"
+    "none_for_portal_ui_design_quality_audit_local_doc_eval"
   ],
-  "current_problem": "cleanup_completion is historical: all cleanup gaps are cleaned, tombstone-only, archive-only, or intentionally retained. The cleanup-only execution lock is retired, and the current normal product-goal cursor resumes at leaf-cloud-lane-readonly-status-audit without secret, live cloud, build/push/kubectl, deploy, live-test, deploy/adapters/.sentrux, services implementation, or upstream changes.",
+  "current_problem": "Cloud lane readonly status audit has been absorbed into trunk. The next normal product-goal cursor is leaf-portal-ui-design-quality-audit: a local doc/eval audit that may use UI/UX best-practice references for expression quality while keeping all content semantics, product responsibilities, role boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language fixed by v22 contracts.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -57,7 +57,7 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-cloud-lane-readonly-status-audit",
+    "repaired_current_cursor": "leaf-portal-ui-design-quality-audit",
     "rule": "cleanup_completion truth is historical after B absorption; when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path, normal product-goal selection resumes at the lowest-priority eligible non-cleanup leaf."
   },
   "gaps": [
@@ -142,9 +142,9 @@
       "id": "cloud-lane-mock-readonly-dry-run-authorized",
       "stage": "S4 Cloud lane productionization",
       "priority": 70,
-      "cursor_eligible": true,
-      "status": "in_progress",
-      "next_leaf_step": "leaf-cloud-lane-readonly-status-audit",
+      "cursor_eligible": false,
+      "status": "completed",
+      "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "legacy-cleanup-user-owned",
         "legacy-cleanup-resource-order",
@@ -158,8 +158,8 @@
       "id": "frontend-product-vue-vite-ts-pinia",
       "stage": "S5 frontend/backend product completion",
       "priority": 80,
-      "cursor_eligible": false,
-      "status": "gated",
+      "cursor_eligible": true,
+      "status": "in_progress",
       "next_leaf_step": "leaf-portal-ui-design-quality-audit",
       "depends_on": [
         "cloud-lane-mock-readonly-dry-run-authorized"
@@ -234,35 +234,34 @@
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-cloud-lane-readonly-status-audit",
-    "gap_id": "cloud-lane-mock-readonly-dry-run-authorized",
-    "stage": "S4 Cloud lane productionization",
+    "step_id": "leaf-portal-ui-design-quality-audit",
+    "gap_id": "frontend-product-vue-vite-ts-pinia",
+    "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
     "depends_on": [
-      "legacy-cleanup-user-owned",
-      "legacy-cleanup-resource-order",
-      "legacy-cleanup-secret-hygiene",
-      "legacy-cleanup-legacy-scripts",
-      "architecture-refactor-portal-layering",
-      "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+      "cloud-lane-mock-readonly-dry-run-authorized"
     ],
-    "problem": "Cloud lane readonly status audit is the next normal product-goal leaf after cleanup_completion becomes historical; it must only audit repo-tracked/local status and authorization boundaries.",
-    "executable_when": "readonly/local status audit only; cleanup_completion is historical; dependencies are satisfied or gated; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no services implementation, no upstream, and no dependency files",
-    "failure_state": "blocked_cloud_lane_readonly_status_audit if any required dependency becomes open, needs_eval, or deferred_authorized_current_path, or if the leaf requires secret, live cloud, build/push/kubectl, deploy, live-test, services implementation, or upstream changes",
+    "problem": "Portal UI design quality audit is the first S5 frontend/backend product completion leaf. It audits whether Portal answers the SaaS control-plane mainline questions with modern, usable workbench expression while preserving fixed v22 product semantics.",
+    "executable_when": "local doc/eval audit only; Cloud lane readonly status audit is absorbed; no UI implementation, no services implementation, no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no upstream, and no dependency files",
+    "failure_state": "blocked_portal_ui_design_quality_audit if the audit requires service/UI implementation, secret, live cloud, build/push/kubectl, deploy, live-test, services changes, upstream changes, dependency changes, or changes v22 product semantics instead of evaluating expression quality",
     "verification_commands": [
-      "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
+      "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+      "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
-      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- docs/recovery scripts"
+      "git diff --check -- docs/contracts docs/recovery scripts"
     ],
     "allowed_files": [
-      "docs/recovery/*",
-      "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-      "scripts/smoke-test-v22-*"
+      "docs/contracts/README.md",
+      "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+      "docs/recovery/v22-goal-current.json",
+      "docs/recovery/v22-goal-state.md",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-agent-verify-manifest.json",
+      "docs/recovery/mvp-contract-acceptance.md",
+      "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+      "scripts/smoke-test-v22-mvp-contract-suite.mjs"
     ],
     "forbidden_files": [
       "services/*",
@@ -276,6 +275,8 @@
       "true cloud runners"
     ],
     "truth_writeback_target": [
+      "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+      "docs/contracts/README.md",
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md"

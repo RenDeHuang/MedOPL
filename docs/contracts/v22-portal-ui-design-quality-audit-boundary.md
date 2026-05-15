@@ -46,6 +46,12 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 
 软评分只能指导后续 UI 实现 leaf，不得写死布局、颜色、字体、动效、组件库或组件形态。合同审计只回答边界和质量标准，具体审美解法留给 UI 实现阶段。
 
+## 外部 UI/UX 参考边界
+
+允许在审计报告和后续 UI implementation leaf 中参考外部 UI/UX best practices、web design guidelines、frontend development guidelines 或 UI UX Pro 类设计经验，但只能作为表达质量参考：信息层级、可扫描性、留白密度、状态表达、操作区清晰度、响应式无溢出、文案可信度和现代 SaaS 工作台质感。
+
+内容语义必须由 v22 合同固定。外部设计参考不得改变用户购买的服务、Portal/OPL 职责、账单/冻结/释放/文件/任务/结果状态、角色可见边界、secret/browser hygiene、no-cloud-console language、OPL chatbot 边界或 Cloud lane 授权边界。`vercel-react-best-practices` 一类资料可以贡献通用前端质量原则，但不得把 Vue 3 + Vite + TypeScript + Pinia 迁成 React/Vercel，不得引入依赖升级，不得把本 audit leaf 变成 UI implementation leaf。
+
 ## 与现有 UI 合同关系
 
 本合同不替代 UI composition 合同。分工如下：
@@ -88,8 +94,15 @@ npm --prefix services/portal/frontend run test:visual
     "callsRealCloud": false,
     "readsSecrets": false,
     "modifiesUpstream": false,
-    "modifiesServices": false
+    "modifiesServices": false,
+    "migratesFrontendStack": false
   },
+  "referenceBoundaries": [
+    "external_ui_ux_best_practices_reference_only",
+    "content_semantics_fixed_by_v22_contracts",
+    "vue_vite_ts_pinia_stack_preserved",
+    "no_react_or_vercel_migration_in_this_leaf"
+  ],
   "mainlineQuestions": [
     "我买的是什么服务？",
     "我的 OPL 工作台现在能不能用？",

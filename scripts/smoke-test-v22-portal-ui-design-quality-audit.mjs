@@ -44,6 +44,13 @@ const requiredSoftRubric = [
   "copy_tone_quality",
 ];
 
+const requiredReferenceBoundaries = [
+  "external_ui_ux_best_practices_reference_only",
+  "content_semantics_fixed_by_v22_contracts",
+  "vue_vite_ts_pinia_stack_preserved",
+  "no_react_or_vercel_migration_in_this_leaf",
+];
+
 const forbiddenDesignLocks = [
   "必须使用蓝色",
   "必须使用紫色",
@@ -122,6 +129,7 @@ assert.equal(contract.scope.callsRealCloud, false, "audit_contract_must_not_call
 assert.equal(contract.scope.readsSecrets, false, "audit_contract_must_not_read_secrets");
 assert.equal(contract.scope.modifiesUpstream, false, "audit_contract_must_not_modify_upstream");
 assert.equal(contract.scope.modifiesServices, false, "audit_contract_must_not_modify_services_in_this_leaf");
+assert.equal(contract.scope.migratesFrontendStack, false, "audit_contract_must_not_migrate_frontend_stack");
 assert.equal(contract.auditOutput.reportPath, ".runtime/portal-ui-design-quality/report.json", "audit_report_path_mismatch");
 assert.equal(contract.auditOutput.committedToGit, false, "audit_report_must_not_be_committed");
 assert.equal(contract.baselinePolicy.intentionalRedesignCanUpdateScreenshots, true, "intentional_redesign_baseline_policy_missing");
@@ -130,6 +138,7 @@ assert.equal(contract.baselinePolicy.requiresAuditEvidenceBeforeBaselineUpdate, 
 assertIncludesAll(contract.mainlineQuestions, requiredUserQuestions, "mainline_question");
 assertIncludesAll(contract.hardRubric, requiredHardRubric, "hard_rubric");
 assertIncludesAll(contract.softRubric, requiredSoftRubric, "soft_rubric");
+assertIncludesAll(contract.referenceBoundaries, requiredReferenceBoundaries, "reference_boundary");
 assertIncludesAll(contract.validationCommands, [
   "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
   "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
@@ -145,6 +154,10 @@ assertIncludes(contractMarkdown, "不得重做 OPL chatbot", "contract_must_keep
 assertIncludes(contractMarkdown, "不得把 Portal 做成云资源控制台", "contract_must_keep_no_cloud_console_boundary");
 assertIncludes(contractMarkdown, ".runtime/portal-ui-design-quality/report.json", "contract_must_define_runtime_report");
 assertIncludes(contractMarkdown, "截图 baseline 可以因有意 redesign 更新", "contract_must_define_baseline_policy");
+assertIncludes(contractMarkdown, "外部 UI/UX best practices", "contract_must_allow_best_practices_reference");
+assertIncludes(contractMarkdown, "只能作为表达质量参考", "contract_must_limit_best_practices_to_expression");
+assertIncludes(contractMarkdown, "内容语义必须由 v22 合同固定", "contract_must_fix_content_semantics_by_contracts");
+assertIncludes(contractMarkdown, "不得把 Vue 3 + Vite + TypeScript + Pinia 迁成 React/Vercel", "contract_must_preserve_frontend_stack");
 
 for (const forbidden of forbiddenDesignLocks) {
   assertExcludes(contractMarkdown, forbidden, "contract_must_not_lock_specific_visual_solution");
@@ -157,12 +170,16 @@ assertIncludes(contractIndex, "不冻结具体布局、配色、字体、圆角�
 
 assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-audit", "gap_matrix_must_record_audit_leaf");
 assertIncludes(gapMatrix, "v22-portal-ui-design-quality-audit-boundary.md", "gap_matrix_must_reference_audit_contract");
-assertIncludes(gapMatrix, "status: gated", "gap_matrix_must_keep_frontend_gap_gated");
+assertIncludes(gapMatrix, "status: in_progress", "gap_matrix_must_mark_frontend_gap_in_progress");
+assertIncludes(gapMatrix, "cursor_eligible: true", "gap_matrix_must_make_frontend_gap_cursor_eligible");
 
 const frontendGap = currentGoal.gaps.find((gap) => gap.id === "frontend-product-vue-vite-ts-pinia");
 assert(frontendGap, "frontend_gap_missing_from_current_goal");
 assert.equal(frontendGap.next_leaf_step, "leaf-portal-ui-design-quality-audit", "frontend_gap_next_leaf_must_be_ui_design_quality_audit");
-assert.equal(frontendGap.cursor_eligible, false, "frontend_gap_must_not_be_current_cursor_yet");
+assert.equal(frontendGap.status, "in_progress", "frontend_gap_must_be_current_in_progress");
+assert.equal(frontendGap.cursor_eligible, true, "frontend_gap_must_be_current_cursor");
+assert.equal(currentGoal.current_cursor, "leaf-portal-ui-design-quality-audit", "current_goal_must_advance_to_ui_design_quality_audit");
+assert.equal(currentGoal.current_stage, "S5 frontend/backend product completion", "current_goal_stage_must_be_s5");
 
 const manifestLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-ui-design-quality-audit");
 assert(manifestLeaf, "verify_manifest_must_define_ui_design_quality_leaf");

@@ -185,14 +185,12 @@
       "description": "Default agent verification bundle for the current executable leaf.",
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
+        "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-goal-state-consistency.mjs",
         "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
         "node scripts/smoke-test-v22-product-goal-harness.mjs",
-        "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs/recovery scripts"
+        "git diff --check -- docs/contracts docs/recovery scripts"
       ]
     },
     {
