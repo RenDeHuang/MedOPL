@@ -3,13 +3,14 @@
     <div class="mb-3 flex items-center justify-between gap-3">
       <div>
         <h2 class="panel-title">托管运行环境</h2>
-        <p class="panel-subtitle">查看托管运行环境、文件空间和冻结金额</p>
+        <p class="panel-subtitle">平台负责托管运行环境、文件空间、冻结金额、审计和释放</p>
       </div>
       <RouterLink class="btn btn-secondary" to="/resources">查看计算资源</RouterLink>
     </div>
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div data-design-quality="environment-summary" class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <MetricCard label="托管运行环境状态" :value="managedEnvironmentStatus" hint="托管运行环境是否可用" />
       <MetricCard label="文件空间状态" :value="fileSpaceStatus" hint="输入文件和输出文件空间" />
+      <MetricCard label="释放状态" :value="releaseStatus" hint="释放计算资源后停止计费和审计" />
     </div>
     <div class="mt-4 space-y-2.5">
       <div v-if="loading" class="empty-state">正在加载资源绑定...</div>
@@ -53,6 +54,7 @@ defineProps<{
   loading: boolean;
   managedEnvironmentStatus: string;
   money: (value: number | undefined) => string;
+  releaseStatus: string;
   statusBadge: (status?: string) => string;
 }>();
 </script>

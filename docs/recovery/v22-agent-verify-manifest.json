@@ -177,6 +177,84 @@
         "docs/recovery/v22-goal-state.md",
         "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
       ]
+    },
+    {
+      "leaf_id": "leaf-portal-ui-design-quality-implementation",
+      "gap_id": "frontend-product-vue-vite-ts-pinia",
+      "stage": "S5 frontend/backend product completion",
+      "risk_class": "local_service_code",
+      "live_external_allowed": false,
+      "requires_step_local_auth_record": false,
+      "contracts": [
+        "AGENTS.md",
+        "docs/contracts/README.md",
+        "docs/contracts/v22-mvp-managed-opl-loop.md",
+        "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+        "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
+        "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+        "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/mvp-contract-acceptance.md",
+        "services/portal/frontend/src/harness/portal-ui-evalset.json"
+      ],
+      "allowed_files": [
+        "services/portal/frontend/**",
+        "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+        "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+        "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+        "docs/contracts/README.md",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/mvp-contract-acceptance.md",
+        "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "scripts/smoke-test-v22-portal-runtime-suite.mjs"
+      ],
+      "forbidden_files": [
+        "Portal backend services changes unless separately authorized",
+        "package/dependency files",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        ".env.demo.template",
+        "upstream one-person-lab",
+        "secret-like paths",
+        "true cloud runners"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "portal-backend-services-change",
+        "upstream-write",
+        "dependency-upgrade"
+      ],
+      "verification_commands": [
+        "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "npm --prefix services/portal/frontend run test:visual",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
+      ],
+      "truth_writeback_target": [
+        "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+        "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+        "docs/contracts/README.md",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/mvp-contract-acceptance.md"
+      ]
     }
   ],
   "suites": [
@@ -186,11 +264,14 @@
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "npm --prefix services/portal/frontend run test:visual",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-goal-state-consistency.mjs",
         "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/smoke-test-v22-product-goal-harness.mjs",
-        "git diff --check -- docs/contracts docs/recovery scripts"
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
       ]
     },
     {

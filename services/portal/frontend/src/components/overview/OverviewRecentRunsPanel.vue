@@ -8,6 +8,21 @@
       <span class="badge badge-primary">{{ total }} 条</span>
     </div>
 
+    <div data-design-quality="task-result-flow" class="mb-3 grid grid-cols-3 gap-2 text-xs">
+      <div class="rounded-lg border border-gray-100 px-3 py-2 dark:border-slate-700">
+        <div class="font-medium text-gray-950 dark:text-white">输入文件</div>
+        <div class="mt-1 text-gray-500 dark:text-slate-400">先进工作空间</div>
+      </div>
+      <div class="rounded-lg border border-gray-100 px-3 py-2 dark:border-slate-700">
+        <div class="font-medium text-gray-950 dark:text-white">任务运行</div>
+        <div class="mt-1 text-gray-500 dark:text-slate-400">在 OPL runtime 执行</div>
+      </div>
+      <div class="rounded-lg border border-gray-100 px-3 py-2 dark:border-slate-700">
+        <div class="font-medium text-gray-950 dark:text-white">输出结果</div>
+        <div class="mt-1 text-gray-500 dark:text-slate-400">回到工作空间</div>
+      </div>
+    </div>
+
     <div class="space-y-2.5">
       <div
         v-for="(item, index) in items"

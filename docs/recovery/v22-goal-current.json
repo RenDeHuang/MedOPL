@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "5e307752d916cff5a16e5ffe073f9b93368874fa",
+  "base_trunk_head": "90b3ecd7271a94ff63266aef3bd5f0d5b1f13739",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "goal/v22-portal-ui-design-quality-audit-run",
+  "current_branch": "feat/v22-portal-ui-design-quality-implementation",
   "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
-  "authoring_branch": "goal/v22-portal-ui-design-quality-audit-run",
+  "authoring_branch": "feat/v22-portal-ui-design-quality-implementation",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "5e307752d916cff5a16e5ffe073f9b93368874fa",
+    "observed_git_head": "90b3ecd7271a94ff63266aef3bd5f0d5b1f13739",
     "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "5e307752d916cff5a16e5ffe073f9b93368874fa",
-  "current_cursor": "leaf-portal-ui-design-quality-audit",
-  "next_leaf": "leaf-portal-ui-design-quality-audit",
+  "last_absorbed_commit": "90b3ecd7271a94ff63266aef3bd5f0d5b1f13739",
+  "current_cursor": "leaf-portal-ui-design-quality-implementation",
+  "next_leaf": "leaf-portal-ui-design-quality-implementation",
   "current_stage": "S5 frontend/backend product completion",
-  "current_risk_class": "local_doc_eval",
+  "current_risk_class": "local_service_code",
   "current_blockers": [
-    "none_for_portal_ui_design_quality_audit_local_doc_eval"
+    "none_for_portal_ui_design_quality_implementation_local_service_code"
   ],
-  "current_problem": "Current product-goal cursor is leaf-portal-ui-design-quality-audit: a local doc/eval audit that defines Portal UI design quality evidence, rubric, and future implementation handoff while keeping all content semantics, product responsibilities, role boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language fixed by v22 contracts.",
+  "current_problem": "Current product-goal cursor is leaf-portal-ui-design-quality-implementation: a local Portal frontend implementation leaf that turns the absorbed UI design quality audit handoff into a usable SaaS control-plane workbench while keeping content semantics, product responsibilities, role boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language fixed by v22 contracts.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -57,7 +57,7 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-portal-ui-design-quality-audit",
+    "repaired_current_cursor": "leaf-portal-ui-design-quality-implementation",
     "rule": "cleanup_completion truth is historical after B absorption; when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path, normal product-goal selection resumes at the lowest-priority eligible non-cleanup leaf."
   },
   "gaps": [
@@ -160,7 +160,7 @@
       "priority": 80,
       "cursor_eligible": true,
       "status": "in_progress",
-      "next_leaf_step": "leaf-portal-ui-design-quality-audit",
+      "next_leaf_step": "leaf-portal-ui-design-quality-implementation",
       "depends_on": [
         "cloud-lane-mock-readonly-dry-run-authorized"
       ]
@@ -234,52 +234,60 @@
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-portal-ui-design-quality-audit",
+    "step_id": "leaf-portal-ui-design-quality-implementation",
     "gap_id": "frontend-product-vue-vite-ts-pinia",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
     "depends_on": [
       "cloud-lane-mock-readonly-dry-run-authorized"
     ],
-    "problem": "Portal UI design quality audit is the first S5 frontend/backend product completion leaf. It records audit evidence schema and future UI implementation handoff so Portal can later improve modern workbench expression while preserving fixed v22 product semantics.",
-    "executable_when": "local doc/eval audit only; Cloud lane readonly status audit is absorbed; no UI implementation, no services implementation, no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no upstream, and no dependency files",
-    "failure_state": "blocked_portal_ui_design_quality_audit if the audit requires service/UI implementation in this leaf, secret, live cloud, build/push/kubectl, deploy, live-test, services changes, upstream changes, dependency changes, or changes v22 product semantics instead of evaluating expression quality",
+    "problem": "Portal UI design quality implementation is the S5 frontend product leaf after the absorbed audit evidence. It implements the minimum complete Portal frontend redesign needed for users to understand the purchased托管 OPL 科研工作台 service, current environment/package/compute/storage/release state, OPL entry, file/task/result flow, Portal/OPL responsibility boundary, and next action.",
+    "executable_when": "Cloud lane readonly status audit and Portal UI design quality audit evidence are absorbed; local Portal frontend implementation only under services/portal/frontend/** plus subscribed docs/scripts gates; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no upstream, no Portal backend services changes, and no dependency files",
+    "failure_state": "blocked_portal_ui_design_quality_implementation if it requires Portal backend services changes, package/dependency changes, secret, live cloud, build/push/kubectl, deploy, live-test, upstream changes, product semantics reverting to user-owned cloud console, or UI changes that cannot be verified by frontend harness/surface/visual gates",
     "verification_commands": [
       "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+      "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+      "npm --prefix services/portal/frontend run test:visual",
       "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
-      "git diff --check -- docs/contracts docs/recovery scripts"
+      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+      "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
     ],
     "allowed_files": [
-      "docs/contracts/README.md",
+      "services/portal/frontend/**",
       "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+      "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+      "docs/contracts/README.md",
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/mvp-contract-acceptance.md",
       "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-      "scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      "scripts/smoke-test-v22-portal-runtime-suite.mjs"
     ],
     "forbidden_files": [
-      "services/*",
+      "Portal backend services changes unless separately authorized",
+      "package/dependency files",
       "deploy/*",
       "adapters/*",
       ".sentrux/*",
       ".env.demo.template",
       "upstream one-person-lab",
-      "package/dependency files",
       "secret-like paths",
       "true cloud runners"
     ],
     "truth_writeback_target": [
       "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
+      "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
       "docs/contracts/README.md",
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",
-      "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/mvp-contract-acceptance.md"
     ]
   },
   "release_readiness_state": {
@@ -306,10 +314,11 @@
     "node scripts/smoke-test-v22-goal-state-consistency.mjs",
     "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "node scripts/smoke-test-v22-product-goal-harness.mjs",
-    "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
-    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+    "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+    "npm --prefix services/portal/frontend run test:visual",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-    "git diff --check -- docs/recovery scripts"
+    "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
   ],
   "truth_source_files": [
     "docs/recovery/v22-goal-current.json",

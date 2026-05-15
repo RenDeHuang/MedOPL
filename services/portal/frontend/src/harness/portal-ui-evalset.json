@@ -753,7 +753,7 @@
   "pageTasks": [
     {
       "routeId": "overview",
-      "task": "回答用户能不能工作、余额是否足够、任务和托管环境是否正常、从哪里进入 OPL 工作台",
+      "task": "回答用户我买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里",
       "status": "done"
     },
     {
@@ -909,6 +909,21 @@
       "routeId": "overview",
       "key": "overview.title",
       "text": "总览"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.service_summary",
+      "text": "我买了什么托管科研工作台服务"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.next_action",
+      "text": "下一步"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.responsibility_boundary",
+      "text": "Portal 负责托管服务状态，OPL runtime 负责科研执行"
     },
     {
       "routeId": "overview",
@@ -1274,7 +1289,7 @@
   "pageComposition": [
     {
       "routeId": "overview",
-      "task": "回答用户能不能工作、余额是否足够、任务和托管环境是否正常、从哪里进入 OPL 工作台",
+      "task": "回答用户我买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里",
       "layoutId": "layout.dashboard_page",
       "sections": [
         {
@@ -1283,7 +1298,7 @@
           "componentIds": [
             "overview.hero"
           ],
-          "display": "hero_cta"
+          "display": "service_summary_next_action"
         },
         {
           "sectionId": "overview.metrics",
@@ -1741,7 +1756,7 @@
     {
       "routeId": "overview",
       "componentId": "overview.hero",
-      "question": "用户能否进入 OPL 工作台，以及当前平台定位是什么",
+      "question": "用户买了什么托管科研工作台服务、当前是否可进入 OPL、如果受限下一步点哪里",
       "states": [
         "loading",
         "ready",
@@ -1749,8 +1764,10 @@
       ],
       "selector": "[data-component-id=\"overview.hero\"]",
       "invariants": [
-        "主入口必须可见",
-        "工作台状态必须在首屏出现"
+        "首屏必须说明用户购买的是托管 OPL 科研工作台服务",
+        "首屏必须展示环境、套餐、算力、存储和释放状态",
+        "首屏必须给出唯一主下一步动作",
+        "Portal 与 OPL runtime 职责边界必须在首屏可见"
       ]
     },
     {
@@ -1771,7 +1788,7 @@
     {
       "routeId": "overview",
       "componentId": "overview.managed_environment",
-      "question": "用户的托管运行环境和文件空间是否可用",
+      "question": "用户的托管运行环境、文件空间、冻结金额、释放和审计状态是否可用",
       "states": [
         "loading",
         "ready",
@@ -1780,13 +1797,15 @@
       "selector": "[data-component-id=\"overview.managed_environment\"]",
       "invariants": [
         "托管运行环境状态必须可见",
-        "文件空间状态必须可见"
+        "文件空间状态必须可见",
+        "释放状态必须可见",
+        "平台托管职责必须可见"
       ]
     },
     {
       "routeId": "overview",
       "componentId": "overview.recent_runs",
-      "question": "最近任务执行进度是什么",
+      "question": "输入文件如何进入任务，任务如何运行，输出结果如何回到工作空间",
       "states": [
         "ready",
         "empty"
@@ -1794,13 +1813,14 @@
       "selector": "[data-component-id=\"overview.recent_runs\"]",
       "invariants": [
         "任务状态必须使用用户可理解文案",
-        "分页动作必须稳定"
+        "分页动作必须稳定",
+        "输入文件、任务运行和输出结果链路必须可见"
       ]
     },
     {
       "routeId": "overview",
       "componentId": "overview.plans",
-      "question": "用户当前可选套餐和入门预计消费是什么",
+      "question": "用户当前套餐、算力、存储和入门预计消费是什么",
       "states": [
         "ready",
         "empty"
@@ -1808,13 +1828,14 @@
       "selector": "[data-component-id=\"overview.plans\"]",
       "invariants": [
         "套餐摘要必须独立于余额指标",
+        "算力和存储摘要必须可见",
         "入门预计消费必须清晰标明估算"
       ]
     },
     {
       "routeId": "overview",
       "componentId": "overview.workspace",
-      "question": "用户工作空间和最近任务空间是什么",
+      "question": "用户的文件、任务和结果在哪里管理",
       "states": [
         "ready",
         "empty"
@@ -1822,7 +1843,8 @@
       "selector": "[data-component-id=\"overview.workspace\"]",
       "invariants": [
         "工作空间入口必须可见",
-        "内部资源标识不得展示"
+        "内部资源标识不得展示",
+        "文件进入工作空间和结果回到工作空间必须可见"
       ]
     },
     {

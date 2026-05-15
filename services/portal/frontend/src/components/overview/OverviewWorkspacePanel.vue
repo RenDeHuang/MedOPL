@@ -7,6 +7,9 @@
       </div>
       <RouterLink class="btn btn-secondary" to="/workspace">查看工作空间</RouterLink>
     </div>
+    <div data-design-quality="workspace-file-flow" class="mb-3 rounded-lg border border-gray-100 px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
+      文件进入工作空间后由 OPL runtime 读取，结果回到工作空间；Portal 负责展示、下载、账单关联和释放后的保留状态。
+    </div>
     <div class="space-y-2.5">
       <div
         v-for="item in items.slice(0, 3)"
