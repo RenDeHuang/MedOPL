@@ -6,6 +6,7 @@ This document keeps the repeatable runner rules only. Current state, dependency 
 - scoreboard: `docs/recovery/v22-product-completion-scoreboard.json`
 - schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
 - agent verify manifest: `docs/recovery/v22-agent-verify-manifest.json`
+- autonomous runner policy: `docs/recovery/v22-autonomous-goal-runner-policy.json`
 
 ## Unified verify entrypoint
 
@@ -16,6 +17,14 @@ node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 ```
 
 该入口读取 `docs/recovery/v22-goal-current.json` 和 `docs/recovery/v22-agent-verify-manifest.json`，再执行当前 leaf 的 verification bundle。普通 smoke 只做 atomic gate；新增 leaf 的 `allowed_files`、`forbidden_files`、`forbidden_ops` 和 `verification_commands` 必须进入 verify manifest，不再分散写进多个 smoke 脚本。
+
+Autonomous Goal Runner governance is documented in `docs/recovery/v22-autonomous-goal-runner.md` and gated by:
+
+```bash
+node scripts/v22-verify.mjs suite autonomous --base origin/recovery/platform-v22-trunk
+```
+
+This suite only proves policy/manifest/runner wiring. It does not change the current cursor, does not merge/push, and does not authorize secret, live cloud, build/push/kubectl, deploy, live-test, upstream write, or dependency upgrade operations.
 
 ## 8-step goal loop
 

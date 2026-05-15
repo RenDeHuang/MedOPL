@@ -6,6 +6,7 @@ Machine-readable current state now lives in `docs/recovery/v22-goal-current.json
 Product Completion Scoreboard now lives in `docs/recovery/v22-product-completion-scoreboard.json`.
 This Markdown remains a human-readable gap explanation and history surface; the consistency gate checks JSON/Markdown/gap/scoreboard alignment.
 scoreboard 只表达产品能力完成度，不决定 leaf execution order. Execution order is decided by `docs/recovery/v22-goal-current.json` plus this gap matrix's `depends_on` / `executable_when` / `cursor_eligible` fields.
+Autonomous Goal Runner is runner governance，不改变 current cursor; it only verifies that contract, manifest, policy, and runner entrypoints stay wired so code follows the subscribed contracts.
 
 Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `tombstone_only`, `archive_only`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
 

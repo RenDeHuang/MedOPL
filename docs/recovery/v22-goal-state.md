@@ -8,6 +8,7 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 - product completion scoreboard: `docs/recovery/v22-product-completion-scoreboard.json`
 - leaf manifest schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
 - agent verify manifest: `docs/recovery/v22-agent-verify-manifest.json`
+- autonomous runner policy: `docs/recovery/v22-autonomous-goal-runner-policy.json`
 - current cursor summary: `leaf-cloud-lane-readonly-status-audit`
 - highest-priority executable leaf summary: `leaf-cloud-lane-readonly-status-audit`
 - release readiness summary: `deferred_authorized_future_stage`
@@ -20,6 +21,7 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 - Problem: allowlist 分散在多个 gate，导致每个新 leaf 都要改多个脚本。Solution: `docs/recovery/v22-agent-verify-manifest.json` 是 agent-facing verify manifest；`scripts/v22-verify.mjs current` 是默认统一验证入口。smoke 只做 atomic gate，不再作为新增 leaf 的 allowlist 权威。
 - Problem: low-risk 和 high-risk 还没有完全分流。Solution: `risk_class` 固定为 `local_doc_eval` / `local_service_code` / `sensitive_boundary` / `live_external`；当前分支只确保字段和说明存在，不改变现有授权边界。
 - Problem: 缺真正的产品完成度计分板。Solution: docs/recovery/v22-product-completion-scoreboard.json 记录产品能力完成度，等级为 `0_not_started` / `1_contract_defined` / `2_local_api` / `3_local_ui` / `4_fake_live` / `5_authorized_canary` / `6_productionized` / `7_monitored`。scoreboard 只表达 product completion，不决定 execution order。
+- Problem: 合同很多但执行入口不足，长时间 agent 容易重新选择 scattered smoke 或跳过 B 吸收。Solution: Autonomous Goal Runner uses `docs/recovery/v22-autonomous-goal-runner.md`, `docs/recovery/v22-autonomous-goal-runner-policy.json`, and `node scripts/v22-verify.mjs suite autonomous --base origin/recovery/platform-v22-trunk` to prove runner governance without changing the current cursor.
 
 ## Control Plane Consolidation Rules
 
@@ -34,6 +36,10 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 ### Scoreboard boundary rule
 
 `docs/recovery/v22-product-completion-scoreboard.json` 只表达产品能力完成度，不决定 leaf execution order。执行顺序由 `docs/recovery/v22-goal-current.json` 加 gap matrix 的 `depends_on` / `executable_when` / `cursor_eligible` 决定；scoreboard 不得承载 cursor、dependency、priority 或 executable leaf 选择。
+
+### Autonomous Goal Runner rule
+
+Autonomous Goal Runner is runner governance only. It lets agents keep using the contract + manifest + runner path for eligible low-risk leaves, while preserving independent branch, verification, receipt, commit, B review, ff-only absorption, and post-absorb cursor movement. It does not authorize secret, live cloud, build/push/kubectl, deploy, live-test, upstream write, dependency upgrade, or automatic risky merge.
 
 ## Human Summary
 

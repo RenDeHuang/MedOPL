@@ -34,16 +34,20 @@
   ],
   "control_plane_files": [
     "docs/recovery/v22-agent-verify-manifest.json",
+    "docs/recovery/v22-autonomous-goal-runner.md",
+    "docs/recovery/v22-autonomous-goal-runner-policy.json",
     "docs/recovery/v22-goal-state.md",
     "docs/recovery/v22-codex-goal-loop.md",
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
+    "scripts/smoke-test-v22-autonomous-goal-runner.mjs",
     "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "scripts/smoke-test-v22-workflow-gate.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs"
   ],
   "control_plane_branches": [
-    "cleanup/v22-agent-verify-manifest-entrypoint"
+    "cleanup/v22-agent-verify-manifest-entrypoint",
+    "contract/v22-autonomous-goal-runner"
   ],
   "leaves": [
     {
@@ -205,6 +209,16 @@
       "entrypoint": "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
+      ]
+    },
+    {
+      "id": "autonomous",
+      "description": "Autonomous runner governance suite. This proves policy/manifest/runner wiring only; it does not advance the current cursor, merge, push, read secrets, run live cloud, or deploy.",
+      "entrypoint": "node scripts/v22-verify.mjs suite autonomous --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-autonomous-goal-runner.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs"
       ]
     }
   ],
