@@ -169,6 +169,22 @@ assert.deepEqual(boardData.activeHarnessLevels.map((item) => item.status), [
 ], "board_active_harness_level_statuses");
 assert.equal(boardData.starterMinimalLiveLoopDone, true, "board_starter_minimal_live_loop_must_be_done");
 assert.equal(boardData.productionFullMatrixLiveAcceptanceClaimed, false, "board_must_not_claim_full_matrix_live");
+assert.deepEqual(boardData.readonlyStatusAudit, {
+  leafId: "leaf-cloud-lane-readonly-status-audit",
+  branch: "feat/v22-cloud-lane-readonly-status-audit",
+  model: "gpt-5.4",
+  riskClass: "local_doc_eval",
+  scope: "repo_tracked_local_doc_eval_only",
+  currentLeafStatus: "ready_for_B_absorb_after_current_verify",
+  cloudStatus: "starter_minimal_live_recorded_full_matrix_not_claimed",
+  nextAllowedLeafAfterBAbsorb: "leaf-portal-ui-design-quality-audit",
+  s5UiAuditBlockedUntilBAbsorb: true,
+  readsSecret: false,
+  callsRealCloud: false,
+  modifiesServices: false,
+  modifiesDeploy: false,
+  runsBuildPushKubectl: false,
+}, "board_readonly_status_audit_mismatch");
 assert.equal(boardData.starterLiveEvidence?.runId, "live-l2b-8c8cff2-20260513T031510Z", "board_starter_live_run_id");
 assert.deepEqual(boardData.starterLiveEvidence?.operationStatuses, [
   "create_storage:succeeded",
@@ -221,6 +237,22 @@ assert.deepEqual(statusData.harnessLevels.map((item) => item.status), [
 ], "status_harness_level_statuses");
 assert.equal(statusData.cloudLane?.productionStarterMinimalLiveAcceptanceClaimed, true, "status_starter_minimal_live_claimed");
 assert.equal(statusData.cloudLane?.productionFullMatrixLiveAcceptanceClaimed, false, "status_full_matrix_live_not_claimed");
+assert.deepEqual(statusData.cloudLane?.readonlyStatusAudit, {
+  leafId: "leaf-cloud-lane-readonly-status-audit",
+  branch: "feat/v22-cloud-lane-readonly-status-audit",
+  model: "gpt-5.4",
+  riskClass: "local_doc_eval",
+  scope: "repo_tracked_local_doc_eval_only",
+  currentLeafStatus: "ready_for_B_absorb_after_current_verify",
+  cloudStatus: "starter_minimal_live_recorded_full_matrix_not_claimed",
+  nextAllowedLeafAfterBAbsorb: "leaf-portal-ui-design-quality-audit",
+  s5UiAuditBlockedUntilBAbsorb: true,
+  readsSecret: false,
+  callsRealCloud: false,
+  modifiesServices: false,
+  modifiesDeploy: false,
+  runsBuildPushKubectl: false,
+}, "status_readonly_status_audit_mismatch");
 assert.equal(statusData.cloudLane?.starterLiveEvidence?.runId, "live-l2b-8c8cff2-20260513T031510Z", "status_starter_live_run_id");
 assert.deepEqual(statusData.cloudLane?.starterLiveEvidence?.nodePoolFinal, { desired: 2, current: 2, joining: 0 }, "status_starter_node_pool_final_baseline");
 assert.equal(statusData.phases.length, 14, "status_phase_count_mismatch");

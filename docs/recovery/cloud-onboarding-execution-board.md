@@ -18,6 +18,8 @@ Package D / OPL Deployment Discovery 记录在 `docs/v22-package-d-opl-deploy-di
 
 Cloud-lane is intentionally long-lived. The active implementation branch is `cloud-lane/feat/v22-cloud-operation-harness-refactor`, model: `gpt-5.4`. It records the production cloud operation harness refactor:旧合同清退、L1-L4 manifest、diff selector、cleanup gate、Portal queued API、independent worker drain、nodePoolRef attribution hard gate。B should not absorb this branch until it is rebased on the current trunk anchor, local harness gates are green, and starter minimal live evidence has cleanup proof.
 
+Current goal leaf `leaf-cloud-lane-readonly-status-audit` is a repo-tracked local doc/eval audit only. It records that starter minimal live evidence exists, full matrix live acceptance is not claimed, S5 UI audit stays blocked until B absorbs this leaf, and no secret, true cloud, services implementation, deploy, build/push/kubectl, live-test, adapters, `.sentrux`, upstream, package/dependency, or merge/push operation is authorized by this branch.
+
 关联状态表：`docs/recovery/cloud-onboarding-status-table.md`。
 
 ## Program Snapshot
@@ -27,6 +29,11 @@ Cloud-lane is intentionally long-lived. The active implementation branch is `clo
 - current phase: starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only
 - current lane: starter minimal live evidence reconciliation + rebase verification
 - next lane: B review / ff-only absorption decision; future pro, upgrade, add-storage and full matrix live reruns require separate authorization
+- current goal leaf: `leaf-cloud-lane-readonly-status-audit`
+- current goal leaf risk: `local_doc_eval`
+- current goal leaf branch: `feat/v22-cloud-lane-readonly-status-audit`, model: `gpt-5.4`
+- current goal leaf status: ready for B absorption after `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` is green
+- next allowed leaf after B absorb: `leaf-portal-ui-design-quality-audit`; do not start S5 UI audit before B ff-only absorb
 - cloud-lane branch: `cloud-lane/feat/v22-cloud-operation-harness-refactor`
 - cloud-lane model: `gpt-5.4`
 - cloud-lane stack base: `origin/recovery/platform-v22-trunk` at `9b68c44`
@@ -260,6 +267,22 @@ Discovery status:
   ],
   "currentLane": "starter minimal live evidence reconciliation + rebase verification",
   "nextLane": "B review / ff-only absorption decision; future pro, upgrade, add-storage and full matrix live reruns require separate authorization",
+  "readonlyStatusAudit": {
+    "leafId": "leaf-cloud-lane-readonly-status-audit",
+    "branch": "feat/v22-cloud-lane-readonly-status-audit",
+    "model": "gpt-5.4",
+    "riskClass": "local_doc_eval",
+    "scope": "repo_tracked_local_doc_eval_only",
+    "currentLeafStatus": "ready_for_B_absorb_after_current_verify",
+    "cloudStatus": "starter_minimal_live_recorded_full_matrix_not_claimed",
+    "nextAllowedLeafAfterBAbsorb": "leaf-portal-ui-design-quality-audit",
+    "s5UiAuditBlockedUntilBAbsorb": true,
+    "readsSecret": false,
+    "callsRealCloud": false,
+    "modifiesServices": false,
+    "modifiesDeploy": false,
+    "runsBuildPushKubectl": false
+  },
   "cloudLane": {
     "branch": "cloud-lane/feat/v22-cloud-operation-harness-refactor",
     "model": "gpt-5.4",

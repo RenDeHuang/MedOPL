@@ -273,10 +273,10 @@ function currentBranchName() {
 }
 
 function globToRegExp(pattern) {
-  const escaped = String(pattern)
-    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-    .replaceAll("\\*", ".*");
-  return new RegExp(`^${escaped}$`, "u");
+  const escapedParts = String(pattern)
+    .split("*")
+    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(`^${escapedParts.join(".*")}$`, "u");
 }
 
 function manifestAllowedDiffPaths(verifyManifest = {}) {

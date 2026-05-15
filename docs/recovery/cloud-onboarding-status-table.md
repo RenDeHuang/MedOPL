@@ -14,6 +14,8 @@ Package D / OPL Deployment Discovery 已作为独立 docs/status 分支记录：
 
 Cloud-lane must be preserved as a long-lived branch family, but the current active branch is `cloud-lane/feat/v22-cloud-operation-harness-refactor`, model: `gpt-5.4`, base `9b68c44`. Older D1/D2/D3 Package D stack evidence remains historical deploy evidence only; it does not authorize Package C resource lifecycle and does not prove the Portal user click product loop.
 
+Current goal leaf `leaf-cloud-lane-readonly-status-audit` is recorded by branch `feat/v22-cloud-lane-readonly-status-audit`, model `gpt-5.4`. This is a local doc/eval audit: it writes the Cloud lane readonly status, authorization boundary, blocker state, and next leaf handoff only. It does not read secret, call real cloud, rerun live evidence, modify services/deploy/adapters/.sentrux/upstream/package files, run build/push/kubectl/live-test, merge, or push. S5 `leaf-portal-ui-design-quality-audit` remains blocked until B ff-only absorbs this leaf.
+
 ## Harness L1-L4 Status
 
 | level | status | evidence / blocker | owner | next action | required smoke | cleanup gate |
@@ -40,6 +42,7 @@ Cloud-lane must be preserved as a long-lived branch family, but the current acti
 - Package D deploy dry-run gate: authorized real R-16 server-side dry-run passed after owner guard labels were added; Portal schema migration was run through a separate gate; rollout and pushed-version runtime smoke passed
 - Portal production integration: current branch changes the production API shape from inline execution to queued operation + independent worker; backend compute allocation records `nodePoolRef` for admin attribution; missing nodePoolRef fails closed and must mark the operation/job failed instead of leaving queued work behind
 - starter minimal production loop: done with cleanup proof; pro/upgrade/add-storage/full matrix live acceptance: not claimed
+- readonly status audit: current leaf is local_doc_eval only; starter minimal live evidence remains historical/tracked, full matrix live is not claimed, and S5 UI audit waits for B absorb
 - canary/QA/release status: pending for full product matrix
 
 ## Status Table
@@ -192,6 +195,22 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "independent worker drain",
       "nodePoolRef attribution hard gate"
     ],
+    "readonlyStatusAudit": {
+      "leafId": "leaf-cloud-lane-readonly-status-audit",
+      "branch": "feat/v22-cloud-lane-readonly-status-audit",
+      "model": "gpt-5.4",
+      "riskClass": "local_doc_eval",
+      "scope": "repo_tracked_local_doc_eval_only",
+      "currentLeafStatus": "ready_for_B_absorb_after_current_verify",
+      "cloudStatus": "starter_minimal_live_recorded_full_matrix_not_claimed",
+      "nextAllowedLeafAfterBAbsorb": "leaf-portal-ui-design-quality-audit",
+      "s5UiAuditBlockedUntilBAbsorb": true,
+      "readsSecret": false,
+      "callsRealCloud": false,
+      "modifiesServices": false,
+      "modifiesDeploy": false,
+      "runsBuildPushKubectl": false
+    },
     "productionStarterMinimalLiveAcceptanceClaimed": true,
     "productionFullMatrixLiveAcceptanceClaimed": false,
     "starterLiveEvidence": {

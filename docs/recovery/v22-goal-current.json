@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "4c7e21295a08a7336805f7bbd99f65b04e46739a",
+  "base_trunk_head": "18c7bf5da57e0ec8e670f02b605136081b329ea3",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "contract/v22-portal-ui-design-quality-audit",
+  "current_branch": "feat/v22-cloud-lane-readonly-status-audit",
   "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
-  "authoring_branch": "contract/v22-portal-ui-design-quality-audit",
+  "authoring_branch": "feat/v22-cloud-lane-readonly-status-audit",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,10 +23,10 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "4c7e21295a08a7336805f7bbd99f65b04e46739a",
+    "observed_git_head": "18c7bf5da57e0ec8e670f02b605136081b329ea3",
     "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "4c7e21295a08a7336805f7bbd99f65b04e46739a",
+  "last_absorbed_commit": "18c7bf5da57e0ec8e670f02b605136081b329ea3",
   "current_cursor": "leaf-cloud-lane-readonly-status-audit",
   "next_leaf": "leaf-cloud-lane-readonly-status-audit",
   "current_stage": "S4 Cloud lane productionization",

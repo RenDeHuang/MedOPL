@@ -45,7 +45,7 @@ Autonomous Goal Runner is runner governance only. It lets agents keep using the 
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `contract/v22-portal-ui-design-quality-audit`.
+- authoring/source branch: `feat/v22-cloud-lane-readonly-status-audit`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
@@ -67,6 +67,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
 - auth_boundary: readonly/local status audit only; no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no services implementation, no upstream modification.
 - truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`.
+- readonly_status_audit: this leaf only records repo-tracked Cloud lane status and authorization boundaries; it does not rerun live evidence, does not read secret, does not call true cloud, does not modify services/deploy/adapters/.sentrux/upstream/package files, and does not unlock S5 until B ff-only absorption.
 
 ## Completed Facts
 
