@@ -3,7 +3,7 @@
     <div class="mb-3 flex items-center justify-between gap-3">
       <div>
         <h2 class="panel-title">套餐、算力和存储摘要</h2>
-        <p class="panel-subtitle">确认你购买的托管工作台规格，不进入云资源控制台</p>
+        <p class="panel-subtitle">确认你购买的托管工作台规格，平台负责环境托管和释放审计</p>
       </div>
       <RouterLink class="btn btn-secondary" to="/packages">查看套餐</RouterLink>
     </div>
