@@ -3,27 +3,78 @@
     "loading": {
       "state": "loading",
       "label": "正在加载",
-      "items": []
+      "items": [],
+      "serviceSummary": "正在加载托管科研工作台服务",
+      "statusSummary": {
+        "environment": "读取中",
+        "plan": "读取中",
+        "compute": "读取中",
+        "storage": "读取中",
+        "release": "读取中"
+      },
+      "nextAction": {
+        "label": "加载工作台状态",
+        "href": "/overview",
+        "detail": "正在读取套餐、余额、环境和工作空间状态。"
+      },
+      "responsibilityBoundary": {
+        "portal": "开通、隔离、套餐、账单、文件空间、审计和释放",
+        "oplRuntime": "聊天、agent、文件理解、任务运行和结果生成"
+      }
     },
     "ready": {
       "state": "ready",
-      "label": "示例数据",
+      "label": "工作台可用",
       "items": [
         {
-          "id": "overview.hero.sample",
-          "name": "示例项"
+          "id": "overview.hero.service",
+          "name": "基础套餐托管科研工作台服务"
         }
-      ]
+      ],
+      "serviceSummary": "基础套餐托管科研工作台服务",
+      "statusSummary": {
+        "environment": "可用",
+        "plan": "基础套餐",
+        "compute": "2 核 / 4GB",
+        "storage": "10 GB 文件空间",
+        "release": "停止计费待确认 / T+1 可审计"
+      },
+      "nextAction": {
+        "label": "进入 OPL 工作台",
+        "href": "/opl-launch",
+        "detail": "环境、套餐、余额和文件空间均可用，可以进入 OPL 运行任务。"
+      },
+      "responsibilityBoundary": {
+        "portal": "开通、隔离、套餐、账单、文件空间、审计和释放",
+        "oplRuntime": "聊天、agent、文件理解、任务运行和结果生成"
+      }
     },
     "restricted": {
       "state": "restricted",
       "label": "当前受限",
       "items": [
         {
-          "id": "overview.hero.sample",
-          "name": "示例项"
+          "id": "overview.hero.restricted",
+          "name": "等待套餐或余额处理"
         }
-      ]
+      ],
+      "serviceSummary": "未选择套餐托管科研工作台服务",
+      "statusSummary": {
+        "environment": "待开通",
+        "plan": "未选择",
+        "compute": "待选择套餐",
+        "storage": "待开通文件空间",
+        "release": "未开通"
+      },
+      "nextAction": {
+        "label": "查看受限原因",
+        "href": "/resources",
+        "detail": "先确认套餐、余额和托管运行环境状态。"
+      },
+      "responsibilityBoundary": {
+        "portal": "开通、隔离、套餐、账单、文件空间、审计和释放",
+        "oplRuntime": "聊天、agent、文件理解、任务运行和结果生成"
+      }
     }
   },
   "overview.financial_metrics": {
@@ -34,11 +85,11 @@
     },
     "ready": {
       "state": "ready",
-      "label": "示例数据",
+      "label": "余额可用",
       "items": [
         {
-          "id": "overview.financial_metrics.sample",
-          "name": "示例项"
+          "id": "overview.financial_metrics.balance",
+          "name": "可用余额和冻结金额"
         }
       ]
     },
@@ -56,11 +107,11 @@
     },
     "ready": {
       "state": "ready",
-      "label": "示例数据",
+      "label": "环境可用",
       "items": [
         {
-          "id": "overview.managed_environment.sample",
-          "name": "示例项"
+          "id": "overview.managed_environment.current",
+          "name": "托管运行环境、文件空间和释放审计"
         }
       ]
     },
@@ -73,11 +124,11 @@
   "overview.recent_runs": {
     "ready": {
       "state": "ready",
-      "label": "示例数据",
+      "label": "任务结果链路",
       "items": [
         {
-          "id": "overview.recent_runs.sample",
-          "name": "示例项"
+          "id": "overview.recent_runs.flow",
+          "name": "输入文件、任务运行、输出结果"
         }
       ]
     },
@@ -90,11 +141,11 @@
   "overview.plans": {
     "ready": {
       "state": "ready",
-      "label": "示例数据",
+      "label": "套餐算力存储摘要",
       "items": [
         {
-          "id": "overview.plans.sample",
-          "name": "示例项"
+          "id": "overview.plans.current",
+          "name": "当前套餐、算力和存储"
         }
       ]
     },
@@ -107,11 +158,11 @@
   "overview.workspace": {
     "ready": {
       "state": "ready",
-      "label": "示例数据",
+      "label": "工作空间文件结果",
       "items": [
         {
-          "id": "overview.workspace.sample",
-          "name": "示例项"
+          "id": "overview.workspace.flow",
+          "name": "文件进入工作空间，结果回到工作空间"
         }
       ]
     },

@@ -70,6 +70,19 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 
 后续 UI implementation leaf handoff 必须作为独立 leaf 处理。它可以在单独授权和 manifest allowlist 下修改 `services/portal/frontend/**`，但不得默认开放 Portal 后端、package/dependency files、deploy、adapters、`.sentrux`、upstream、secret 或真实云路径。它必须继续订阅本合同、UI composition 合同和 SaaS control-plane UX 合同，并把实现验证与 truth writeback 明确写入下一 leaf。
 
+## Implementation Truth Writeback
+
+`leaf-portal-ui-design-quality-implementation` 在 `feat/v22-portal-ui-design-quality-implementation` 中执行本 handoff，范围保持在 Portal frontend、当前 design-quality gate 和订阅 truth writeback 文档内。已完成的 UI surface：
+
+- `overview.hero`: 首屏改为托管科研工作台服务摘要、环境/套餐/算力/存储/释放状态、状态驱动下一步动作，以及 Portal / OPL runtime 职责边界。
+- `overview.managed_environment`: 补平台负责托管运行环境、文件空间、冻结金额、审计和释放的表达，并把释放状态作为一等指标。
+- `overview.plans`: 从“套餐与文件空间”收敛为套餐、算力、存储和入门预估摘要。
+- `overview.recent_runs`: 明确输入文件 -> OPL runtime 任务运行 -> 输出结果回工作空间的链路。
+- `overview.workspace`: 明确文件进入工作空间、结果回到工作空间、Portal 负责展示/下载/账单关联和释放后保留状态。
+- `services/portal/frontend/src/harness/portal-ui-evalset.json`, `portal-ui-surfaces.ts`, overview fixture 和 visual workbench 已同步新的 page task、copy registry、surface invariants 和 screenshot baseline。
+
+仍不属于本 leaf 的后续事项：Portal backend services、Node 22 ESM layering、billing preauth/ledger/release T+1 后端闭环、真实云、release readiness、deploy、build/push/kubectl、live-test、secret-backed canary 和 upstream OPL 修改。B 吸收本分支后，cursor 是否推进到 `backend-product-node22-esm-layering` 必须继续由 `docs/recovery/v22-goal-current.json`、gap matrix 和 B review 规则决定；本实现分支不提前声明全局 cursor 完成。
+
 ## 验收方式
 
 本合同的合同级验收入口是：

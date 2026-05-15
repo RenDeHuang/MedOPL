@@ -12,10 +12,16 @@
               :billing-status="commercialText(payload.kpis.billingStatus)"
               :can-enter-workbench="payload.commercial.canEnterWorkbench"
               :can-start-chargeable-run="payload.commercial.canStartChargeableRun"
+              :compute-summary="computeSummary"
               :entitlement-status="commercialText(payload.kpis.entitlementStatus)"
-              :selected-plan-name="payload.selectedServerPlan?.name"
+              :next-action-detail="nextAction.detail"
+              :next-action-href="nextAction.href"
+              :next-action-label="nextAction.label"
+              :release-status="releaseStatus"
+              :selected-plan-name="selectedPlanDisplayName"
               :server-plans-ready="payload.serverPlansSummary.quotedCount > 0"
-              :workbench-href="workbenchHref"
+              :service-summary="serviceSummary"
+              :storage-summary="storageSummary"
             />
           </template>
 
@@ -44,6 +50,7 @@
                 :loading="resourcePanelLoading"
                 :managed-environment-status="managedEnvironmentStatus"
                 :money="money"
+                :release-status="releaseStatus"
                 :status-badge="statusBadge"
               />
               <OverviewRecentRunsPanel
@@ -62,10 +69,12 @@
           <template #secondary>
             <section class="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
               <OverviewPlansPanel
+                :compute-summary="computeSummary"
                 :lowest-hourly-price="money(payload.serverPlansSummary.lowestHourlyPrice)"
                 :purchasable-count="payload.serverPlansSummary.purchasableCount"
                 :quoted-count="payload.serverPlansSummary.quotedCount"
-                :selected-plan-name="payload.selectedServerPlan?.name"
+                :selected-plan-name="selectedPlanDisplayName"
+                :storage-summary="storageSummary"
               />
               <OverviewWorkspacePanel
                 :humanize-status="humanizeStatus"
@@ -97,6 +106,7 @@ const {
   auditStatusText,
   availableBalance,
   commercialText,
+  computeSummary,
   displayFileSpace,
   displayPlan,
   error,
@@ -106,6 +116,7 @@ const {
   humanizeStatus,
   managedEnvironmentStatus,
   money,
+  nextAction,
   nextPage,
   overviewLoading,
   overviewQuery,
@@ -114,8 +125,12 @@ const {
   previousPage,
   recentBindings,
   resourcePanelLoading,
+  releaseStatus,
+  selectedPlanDisplayName,
+  serviceSummary,
   sessionCount,
   statusBadge,
+  storageSummary,
   taskCount,
   taskProgressText,
   todaySpend,

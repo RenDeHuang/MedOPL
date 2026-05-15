@@ -130,7 +130,7 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
     return Math.min(Number(totalPages || 1), Number(page || 1) + 1);
   }
 
-  const workbenchHref = "/portal/opl";
+  const workbenchHref = "/opl-launch";
   const recentBindings = computed<WorkspaceResourceBinding[]>(() => (platformProvisionedResources.value?.bindings || []).slice(0, 4));
   const frozenAmount = computed(() => Number(payload.value?.kpis.frozenAmount ?? recentBindings.value.reduce((sum, item) => sum + Number(item.protection?.frozenAmount || 0), 0)));
   const availableBalance = computed(() => Number(payload.value?.kpis.availableBalance ?? (payload.value?.kpis.balance || 0) - frozenAmount.value));
@@ -153,6 +153,65 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
     const storageCount = Number(platformProvisionedResources.value?.summary?.storageBucketCount ?? 0);
     if (storageCount > 0) return `${storageCount} 个文件空间`;
     return recentBindings.value.length > 0 ? "随托管运行环境绑定" : "未开通";
+  });
+  const computeSummary = computed(() => {
+    const plan = payload.value?.selectedServerPlan;
+    if (plan?.cpu || plan?.memoryGb) return `${Number(plan.cpu || 0)} 核 / ${Number(plan.memoryGb || 0)}GB`;
+    const instance = recentBindings.value[0]?.computeInstance || recentBindings.value[0]?.computeInstances[0];
+    if (instance?.serverPlanId) return planLabel(instance.serverPlanId) || instance.serverPlanId;
+    return recentBindings.value.length > 0 ? "随当前套餐分配" : "待选择套餐";
+  });
+  const storageSummary = computed(() => {
+    const storage = recentBindings.value[0]?.storageBucket || recentBindings.value[0]?.storageBuckets[0];
+    const capacity = Number(storage?.storageCapacityGb || 0);
+    if (capacity > 0) return `${capacity} GB 文件空间`;
+    const selectedStorage = payload.value?.selectedServerPlan?.storageRequest || payload.value?.selectedServerPlan?.storageLimit;
+    return selectedStorage || fileSpaceStatus.value;
+  });
+  const releaseStatus = computed(() => {
+    const protection = recentBindings.value[0]?.protection;
+    if (!protection) return recentBindings.value.length > 0 ? "未释放" : "未开通";
+    const stopBilling = auditStatusText(protection.reconcile120MinStatus);
+    const audit = auditStatusText(protection.tPlus1AuditStatus);
+    return `停止计费 ${stopBilling} / T+1 ${audit}`;
+  });
+  const selectedPlanDisplayName = computed(() => payload.value?.selectedServerPlan?.name || "未选择套餐");
+  const serviceSummary = computed(() => `${selectedPlanDisplayName.value} 托管科研工作台服务`);
+  const nextAction = computed(() => {
+    const currentPayload = payload.value;
+    if (!currentPayload) {
+      return {
+        label: "加载工作台状态",
+        href: "/overview",
+        detail: "正在读取套餐、余额、环境和工作空间状态。",
+      };
+    }
+    if (!currentPayload.serverPlansSummary.quotedCount || !currentPayload.selectedServerPlan) {
+      return {
+        label: "选择托管套餐",
+        href: "/packages",
+        detail: "先确认套餐、算力和文件空间，再进入 OPL 工作台。",
+      };
+    }
+    if (!currentPayload.commercial.canStartChargeableRun) {
+      return {
+        label: "处理余额或权限",
+        href: "/billing",
+        detail: "余额、冻结金额或权益状态未满足新任务运行条件。",
+      };
+    }
+    if (!currentPayload.commercial.canEnterWorkbench) {
+      return {
+        label: "查看受限原因",
+        href: "/resources",
+        detail: "检查托管运行环境、文件空间和释放审计状态。",
+      };
+    }
+    return {
+      label: "进入 OPL 工作台",
+      href: workbenchHref,
+      detail: "环境、套餐、余额和文件空间均可用，可以进入 OPL 运行任务。",
+    };
   });
   let requestId = 0;
 
@@ -198,6 +257,7 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
     auditStatusText,
     availableBalance,
     commercialText,
+    computeSummary,
     displayFileSpace,
     displayPlan,
     error,
@@ -216,7 +276,12 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
     recentBindings,
     resourcePanelLoading,
     sessionCount,
+    nextAction,
+    releaseStatus,
+    selectedPlanDisplayName,
+    serviceSummary,
     statusBadge,
+    storageSummary,
     taskCount,
     taskProgressText,
     todaySpend,

@@ -10,6 +10,18 @@ const verifyManifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const mvpAcceptancePath = "docs/recovery/mvp-contract-acceptance.md";
 const mvpSuitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const auditReportPath = ".runtime/portal-ui-design-quality/report.json";
+const frontendPaths = {
+  overviewHero: "services/portal/frontend/src/components/overview/OverviewHero.vue",
+  overviewManagedEnvironment: "services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue",
+  overviewPlans: "services/portal/frontend/src/components/overview/OverviewPlansPanel.vue",
+  overviewRecentRuns: "services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue",
+  overviewWorkspace: "services/portal/frontend/src/components/overview/OverviewWorkspacePanel.vue",
+  overviewComposable: "services/portal/frontend/src/composables/useOverviewSurface.ts",
+  portalUiSurfaces: "services/portal/frontend/src/harness/portal-ui-surfaces.ts",
+  portalEvalset: "services/portal/frontend/src/harness/portal-ui-evalset.json",
+  portalOverviewFixture: "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
+  portalFixtureRenderer: "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+};
 
 const startMarker = "<!-- v22-portal-ui-design-quality-audit-contract:start -->";
 const endMarker = "<!-- v22-portal-ui-design-quality-audit-contract:end -->";
@@ -86,6 +98,62 @@ const requiredFutureForbiddenVerificationCommandPatterns = [
   "dependency-upgrade",
 ];
 
+const implementationRequiredFrontendSnippets = {
+  [frontendPaths.overviewHero]: [
+    "data-design-quality=\"service-summary\"",
+    "data-design-quality=\"next-action\"",
+    "data-design-quality=\"readiness-checks\"",
+    "data-design-quality=\"responsibility-boundary\"",
+    "托管科研工作台服务",
+    "下一步",
+    "Portal 负责",
+    "OPL runtime 负责",
+    "computeSummary",
+    "storageSummary",
+    "releaseStatus",
+    "nextActionLabel",
+    "nextActionHref",
+  ],
+  [frontendPaths.overviewManagedEnvironment]: [
+    "data-design-quality=\"environment-summary\"",
+    "平台负责托管运行环境、文件空间、冻结金额、审计和释放",
+    "释放状态",
+    "releaseStatus",
+  ],
+  [frontendPaths.overviewPlans]: [
+    "data-design-quality=\"plan-summary\"",
+    "套餐、算力和存储摘要",
+    "computeSummary",
+    "storageSummary",
+  ],
+  [frontendPaths.overviewRecentRuns]: [
+    "data-design-quality=\"task-result-flow\"",
+    "输入文件",
+    "任务运行",
+    "输出结果",
+  ],
+  [frontendPaths.overviewWorkspace]: [
+    "data-design-quality=\"workspace-file-flow\"",
+    "文件进入工作空间",
+    "结果回到工作空间",
+  ],
+  [frontendPaths.overviewComposable]: [
+    "const workbenchHref = \"/opl-launch\"",
+    "nextAction",
+    "computeSummary",
+    "storageSummary",
+    "releaseStatus",
+  ],
+  [frontendPaths.portalFixtureRenderer]: [
+    "nextActionHref:",
+    "\"/opl-launch\"",
+    "nextActionLabel:",
+    "computeSummary:",
+    "storageSummary:",
+    "releaseStatus:",
+  ],
+};
+
 async function source(path) {
   return readFile(path, "utf8");
 }
@@ -157,6 +225,61 @@ function assertNoFutureCommandExpansion(commands, label) {
   }
 }
 
+function findById(items, id, key = "componentId") {
+  return Array.isArray(items) ? items.find((item) => item?.[key] === id) : undefined;
+}
+
+function assertImplementationFrontendEvidence({ sources, evalset, overviewFixture }) {
+  for (const [filePath, snippets] of Object.entries(implementationRequiredFrontendSnippets)) {
+    for (const snippet of snippets) {
+      assertIncludes(sources[filePath], snippet, `implementation_frontend_source:${filePath}`);
+    }
+  }
+
+  const overviewHeroSurface = findById(evalset.surfaceStates, "overview.hero");
+  assert(overviewHeroSurface, "implementation_evalset_overview_hero_surface_state_missing");
+  assert.equal(
+    overviewHeroSurface.question,
+    "用户买了什么托管科研工作台服务、当前是否可进入 OPL、如果受限下一步点哪里",
+    "implementation_evalset_overview_hero_question_mismatch",
+  );
+  assertIncludesAll(overviewHeroSurface.invariants || [], [
+    "首屏必须说明用户购买的是托管 OPL 科研工作台服务",
+    "首屏必须展示环境、套餐、算力、存储和释放状态",
+    "首屏必须给出唯一主下一步动作",
+    "Portal 与 OPL runtime 职责边界必须在首屏可见",
+  ], "implementation_evalset_overview_hero_invariant");
+
+  const overviewComposition = (evalset.pageComposition || []).find((item) => item.routeId === "overview");
+  assert(overviewComposition, "implementation_evalset_overview_composition_missing");
+  assertIncludes(overviewComposition.task, "我买了什么托管科研工作台服务", "implementation_evalset_overview_task");
+  assertIncludes(overviewComposition.task, "下一步", "implementation_evalset_overview_task");
+  const statusSection = (overviewComposition.sections || []).find((section) => section.sectionId === "overview.status");
+  assert(statusSection, "implementation_evalset_overview_status_section_missing");
+  assert.equal(statusSection.display, "service_summary_next_action", "implementation_evalset_overview_status_display_mismatch");
+
+  for (const item of [
+    ["overview.service_summary", "我买了什么托管科研工作台服务"],
+    ["overview.next_action", "下一步"],
+    ["overview.responsibility_boundary", "Portal 负责"],
+  ]) {
+    assert(
+      (evalset.copyRegistry || []).some((entry) => entry.routeId === "overview" && entry.key === item[0] && String(entry.text).includes(item[1])),
+      `implementation_evalset_copy_registry_missing:${item[0]}`,
+    );
+  }
+
+  const readyFixture = overviewFixture["overview.hero"]?.ready;
+  const restrictedFixture = overviewFixture["overview.hero"]?.restricted;
+  for (const [name, fixture] of [["ready", readyFixture], ["restricted", restrictedFixture]]) {
+    assert(fixture, `implementation_overview_hero_fixture_missing:${name}`);
+    assert(fixture.serviceSummary, `implementation_overview_hero_fixture_service_summary_missing:${name}`);
+    assert(fixture.nextAction, `implementation_overview_hero_fixture_next_action_missing:${name}`);
+    assert(fixture.responsibilityBoundary, `implementation_overview_hero_fixture_responsibility_boundary_missing:${name}`);
+    assert(fixture.statusSummary, `implementation_overview_hero_fixture_status_summary_missing:${name}`);
+  }
+}
+
 function assertCurrentGitTruth(currentGoal) {
   const branch = git(["branch", "--show-current"]);
   const originHead = git(["rev-parse", "origin/recovery/platform-v22-trunk"]);
@@ -182,8 +305,14 @@ function assertCurrentGitTruth(currentGoal) {
       "audit_leaf_target_head_must_descend_from_base",
     );
   }
-  assert.equal(currentGoal.current_cursor, "leaf-portal-ui-design-quality-audit", "audit_leaf_cursor_must_not_advance");
-  assert.equal(currentGoal.next_leaf, "leaf-portal-ui-design-quality-audit", "audit_leaf_next_leaf_must_not_advance");
+  assert(
+    [
+      "leaf-portal-ui-design-quality-audit",
+      "leaf-portal-ui-design-quality-implementation",
+    ].includes(currentGoal.current_cursor),
+    `audit_or_implementation_leaf_cursor_unexpected:${currentGoal.current_cursor}`,
+  );
+  assert.equal(currentGoal.next_leaf, currentGoal.current_cursor, "audit_or_implementation_leaf_next_leaf_must_match_cursor");
 }
 
 function extractContract(markdown) {
@@ -208,6 +337,7 @@ const [
   verifyManifest,
   mvpAcceptance,
   mvpSuite,
+  ...frontendSourcesList
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
@@ -216,7 +346,14 @@ const [
   json(verifyManifestPath),
   source(mvpAcceptancePath),
   source(mvpSuitePath),
+  ...Object.values(frontendPaths).map((filePath) => source(filePath)),
 ]);
+
+const frontendSources = Object.fromEntries(
+  Object.values(frontendPaths).map((filePath, index) => [filePath, frontendSourcesList[index]]),
+);
+const portalEvalset = JSON.parse(frontendSources[frontendPaths.portalEvalset]);
+const overviewFixture = JSON.parse(frontendSources[frontendPaths.portalOverviewFixture]);
 
 const contract = extractContract(contractMarkdown);
 
@@ -341,6 +478,7 @@ assertIncludes(contractIndex, "不冻结具体布局、配色、字体、圆角�
 assertIncludes(contractIndex, "`.runtime/portal-ui-design-quality/report.json`", "contract_index_must_reference_audit_report_path");
 
 assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-audit", "gap_matrix_must_record_audit_leaf");
+assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-implementation", "gap_matrix_must_record_implementation_leaf");
 assertIncludes(gapMatrix, "v22-portal-ui-design-quality-audit-boundary.md", "gap_matrix_must_reference_audit_contract");
 assertIncludes(gapMatrix, "status: in_progress", "gap_matrix_must_mark_frontend_gap_in_progress");
 assertIncludes(gapMatrix, "cursor_eligible: true", "gap_matrix_must_make_frontend_gap_cursor_eligible");
@@ -349,10 +487,16 @@ assertIncludes(gapMatrix, "git diff --check -- docs/contracts docs/recovery scri
 
 const frontendGap = currentGoal.gaps.find((gap) => gap.id === "frontend-product-vue-vite-ts-pinia");
 assert(frontendGap, "frontend_gap_missing_from_current_goal");
-assert.equal(frontendGap.next_leaf_step, "leaf-portal-ui-design-quality-audit", "frontend_gap_next_leaf_must_be_ui_design_quality_audit");
+assert(
+  [
+    "leaf-portal-ui-design-quality-audit",
+    "leaf-portal-ui-design-quality-implementation",
+  ].includes(frontendGap.next_leaf_step),
+  `frontend_gap_next_leaf_must_be_ui_design_quality_audit_or_implementation:${frontendGap.next_leaf_step}`,
+);
 assert.equal(frontendGap.status, "in_progress", "frontend_gap_must_be_current_in_progress");
 assert.equal(frontendGap.cursor_eligible, true, "frontend_gap_must_be_current_cursor");
-assert.equal(currentGoal.current_cursor, "leaf-portal-ui-design-quality-audit", "current_goal_must_advance_to_ui_design_quality_audit");
+assert.equal(currentGoal.current_cursor, frontendGap.next_leaf_step, "current_goal_must_match_frontend_gap_next_leaf");
 assert.equal(currentGoal.current_stage, "S5 frontend/backend product completion", "current_goal_stage_must_be_s5");
 assertCurrentGitTruth(currentGoal);
 
@@ -363,6 +507,29 @@ assert.equal(manifestLeaf.live_external_allowed, false, "ui_design_quality_leaf_
 assert(manifestLeaf.contracts.includes(contractPath), "ui_design_quality_leaf_must_subscribe_contract");
 assert(manifestLeaf.verification_commands.includes("node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs"), "ui_design_quality_leaf_must_run_audit_smoke");
 assert(manifestLeaf.forbidden_files.includes("services/*"), "ui_design_quality_contract_leaf_must_forbid_services_implementation");
+
+const implementationLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-ui-design-quality-implementation");
+assert(implementationLeaf, "verify_manifest_must_define_ui_design_quality_implementation_leaf");
+assert.equal(implementationLeaf.risk_class, "local_service_code", "ui_design_quality_implementation_leaf_risk_mismatch");
+assert.equal(implementationLeaf.live_external_allowed, false, "ui_design_quality_implementation_leaf_must_not_allow_live_external");
+assert(implementationLeaf.contracts.includes(contractPath), "ui_design_quality_implementation_leaf_must_subscribe_audit_contract");
+assert(implementationLeaf.contracts.includes("docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md"), "ui_design_quality_implementation_leaf_must_subscribe_composition_contract");
+assert(implementationLeaf.contracts.includes("docs/contracts/v22-saas-control-plane-user-experience-boundary.md"), "ui_design_quality_implementation_leaf_must_subscribe_saas_ux_contract");
+assert(implementationLeaf.allowed_files.includes("services/portal/frontend/**"), "ui_design_quality_implementation_leaf_must_allow_frontend_only");
+assert(!implementationLeaf.allowed_files.some((item) => String(item).startsWith("services/portal/src/")), "ui_design_quality_implementation_leaf_must_not_allow_portal_backend");
+assert(implementationLeaf.forbidden_files.includes("package/dependency files"), "ui_design_quality_implementation_leaf_must_forbid_package_files");
+assert(implementationLeaf.forbidden_ops.includes("live-cloud"), "ui_design_quality_implementation_leaf_must_forbid_live_cloud");
+assert(implementationLeaf.forbidden_ops.includes("build-push-kubectl"), "ui_design_quality_implementation_leaf_must_forbid_build_push_kubectl");
+assertIncludesAll(implementationLeaf.verification_commands, contract.futureImplementationLeafHandoff.verificationCommands, "ui_design_quality_implementation_leaf_verification_command");
+assertIncludesAll(implementationLeaf.truth_writeback_target, contract.futureImplementationLeafHandoff.truthWritebackTarget, "ui_design_quality_implementation_leaf_truth_writeback_target");
+
+if (currentGoal.current_cursor === "leaf-portal-ui-design-quality-implementation") {
+  assertImplementationFrontendEvidence({
+    sources: frontendSources,
+    evalset: portalEvalset,
+    overviewFixture,
+  });
+}
 
 const designPackage = verifyManifest.package_suites.find((suite) => suite.id === "portal-ui-design-quality");
 assert(designPackage, "verify_manifest_must_define_design_quality_package_suite");
@@ -375,20 +542,22 @@ assertIncludes(mvpAcceptance, "Portal UI design quality audit boundary", "mvp_ac
 assertIncludes(mvpAcceptance, "audit evidence schema", "mvp_acceptance_must_record_audit_evidence_schema");
 assertIncludes(mvpSuite, "smoke-test-v22-portal-ui-design-quality-audit", "mvp_suite_must_include_audit_smoke");
 
+const implementationMode = currentGoal.current_cursor === "leaf-portal-ui-design-quality-implementation";
 const auditReport = {
   reportType: contract.auditEvidenceSchema.reportType,
-  leafId: "leaf-portal-ui-design-quality-audit",
+  leafId: currentGoal.current_cursor,
   model: contract.model,
-  riskClass: manifestLeaf.risk_class,
+  riskClass: implementationMode ? implementationLeaf.risk_class : manifestLeaf.risk_class,
   reportPath: auditReportPath,
   reportCommittedToGit: false,
   currentLeafScope: {
-    uiImplementationExecuted: false,
-    servicesModified: false,
+    uiImplementationExecuted: implementationMode,
+    portalFrontendModified: implementationMode,
+    portalBackendServicesModified: false,
     liveCloudExecuted: false,
     buildPushKubectlDeployLiveTestExecuted: false,
     productSemanticsChanged: false,
-    evidenceKind: "contract_rubric_eval_and_truth_writeback",
+    evidenceKind: implementationMode ? "frontend_redesign_gate_and_truth_writeback" : "contract_rubric_eval_and_truth_writeback",
   },
   mainlineQuestionAnswerability: requiredUserQuestions.map((question) => ({
     question,
@@ -416,8 +585,12 @@ const auditReport = {
     requiredForFutureImplementationLeaf: true,
   })),
   expressionQualityFindings: [
-    "audit_requires_service_clarity_next_action_clarity_workbench_scanability_and_mainline_question_coverage",
-    "audit_may_reference_external_ui_ux_best_practices_only_for_expression_quality",
+    implementationMode
+      ? "overview_first_screen_now_requires_service_summary_next_action_readiness_checks_responsibility_boundary_and_file_task_result_flow"
+      : "audit_requires_service_clarity_next_action_clarity_workbench_scanability_and_mainline_question_coverage",
+    implementationMode
+      ? "visual_baseline_drift_is_intentional_redesign_for_overview_hero_and_component_index_after_runtime_report"
+      : "audit_may_reference_external_ui_ux_best_practices_only_for_expression_quality",
   ],
   productSemanticBoundaryCheck: {
     contentSemanticsFixedByV22Contracts: true,
@@ -426,6 +599,30 @@ const auditReport = {
     vueViteTsPiniaPreserved: true,
   },
   futureImplementationLeafHandoff: contract.futureImplementationLeafHandoff,
+  implementationEvidence: implementationMode ? {
+    completedSurfaces: [
+      "overview.hero service summary, readiness checks, next action, and Portal/OPL runtime responsibility boundary",
+      "overview.managed_environment environment/file/freeze/release audit summary",
+      "overview.plans package, compute, storage, and estimated cost summary",
+      "overview.recent_runs input file -> task run -> output result flow",
+      "overview.workspace file ingress, result return, billing link, and release retention explanation",
+      "Portal component workbench fixtures and evalset surface invariants for the redesigned overview surfaces",
+    ],
+    remainingFutureLeaves: [
+      "backend product Node 22 ESM layering remains separate",
+      "billing audit preauth ledger release T1 remains separate",
+      "live cloud, release readiness, deploy, build/push/kubectl, and canary leaves remain unauthorized here",
+    ],
+    baselineUpdateDecision: {
+      intentionalRedesign: true,
+      expectedChangedBaselines: [
+        "portal-harness-components-index-chromium-linux.png",
+        "overview-overview-hero-fixture-chromium-linux.png",
+      ],
+      reason: "overview hero was deliberately redesigned to answer the audit handoff mainline questions instead of preserving the weaker status-list baseline",
+    },
+    cursorNextRecommendationAfterBAbsorb: "frontend-product-vue-vite-ts-pinia may be marked completed only after B review absorbs this implementation branch; next eligible cursor remains governed by v22-goal-current.json and dependencies, with backend-product-node22-esm-layering still separate.",
+  } : null,
   baselineUpdateGate: contract.auditEvidenceSchema.baselineUpdateGate,
 };
 

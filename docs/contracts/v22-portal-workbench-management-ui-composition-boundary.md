@@ -4,6 +4,8 @@
 
 本合同 v8 的核心变化是继续瘦身：页面任务、组件锚点、组件状态、组件 fixture、组件可视化工作台、截图回归、route、API shape、禁词、设计 token 和展示规则进入可执行 evalset，由 smoke 读取 evalset 执行检查。合同只作为边界和入口索引。
 
+`leaf-portal-ui-design-quality-implementation` 已把 overview 首屏的可执行 UI truth 写回 evalset：`overview.hero` 的 page task 现在要求回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”。对应 fixture、surface invariants、copy registry 和 screenshot baseline 均由 `services/portal/frontend/src/harness/portal-ui-evalset.json` 与 visual workbench 承接。
+
 ## 合同职责
 
 本合同只负责：
