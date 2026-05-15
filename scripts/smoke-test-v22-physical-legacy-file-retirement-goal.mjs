@@ -8,8 +8,7 @@ const repoRoot = path.resolve(__dirname, "..");
 
 const goalPath = "docs/recovery/physical-legacy-file-retirement-goal.md";
 const inventoryPath = "docs/recovery/physical-legacy-file-retirement-inventory.md";
-const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
-const repoZoningPath = "docs/recovery/repo-zoning.md";
+const manifestPath = "docs/recovery/physical-legacy-file-retirement-run-manifest.json";
 
 async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
@@ -23,199 +22,133 @@ function assertNotIncludes(source, forbidden, label) {
   assert(!source.includes(forbidden), `${label}_forbidden:${forbidden}`);
 }
 
-const [goal, inventory, legacyBacklog, repoZoning] = await Promise.all([
+const [goal, inventory, manifestSource] = await Promise.all([
   readRepoFile(goalPath),
   readRepoFile(inventoryPath),
-  readRepoFile(legacyBacklogPath),
-  readRepoFile(repoZoningPath),
+  readRepoFile(manifestPath),
 ]);
+const manifest = JSON.parse(manifestSource);
 
 for (const phrase of [
-  "branch: `cleanup/v22-physical-legacy-goal`",
+  "# MedOPL v22 Strict Monolith Legacy Retirement Goal",
+  "branch: `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`",
   "model: `gpt-5.4`",
-  "temporary physical-deletion goal",
-  "物理删除 goal",
-  "主路径清退已经完成，不等于物理文件清退完成",
-  "本 goal 不写入常驻 product cursor",
-  "完成后可由用户删除本 goal 文件或对应分支",
-  "用户随后授权的 live-test physical delete follow-up slice 已物理删除 `scripts/live-test-*`",
+  "strict monolith cleanup goal",
+  "先写清 v22 理想形态与差距，再清故事线，最后分 slice 物理删除旧模块、旧接口、旧测试、旧脚本、旧部署资产和旧兼容面",
+  "physical_delete_batch_status: strict_monolith_retirement_in_progress",
 ]) {
   assertIncludes(goal, phrase, "goal_identity");
 }
 
 for (const phrase of [
-  "Step 0: Baseline and Contract Subscription",
-  "Step 1: 导台 Physical Inventory",
-  "Step 2: Inventory Gate",
-  "Step 3: Low-Risk Delete Slice",
-  "Step 4: Legacy Script Archive/Delete Slice",
-  "Step 5: Portal Tombstone Minimization Slice",
-  "Step 6: OpenCost/Langfuse/Runner Physical Retirement Slice",
-  "Step 7: Schema/Migration Future Leaf",
-  "Step 8: Completion Truth and Temporary Goal Removal",
+  "MedOPL 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台",
+  "Portal 是托管科研工作台 control plane",
+  "用户购买套餐、算力、存储和运行环境",
+  "平台负责开通、隔离、计费、审计和释放",
+  "OPL runtime 负责科研工作区执行、文件、任务和结果",
 ]) {
-  assertIncludes(goal, phrase, "goal_steps");
+  assertIncludes(goal, phrase, "goal_ideal_state");
 }
 
 for (const phrase of [
-  "`delete`",
-  "`keep_tombstone`",
-  "`archive_reference`",
-  "`migrate`",
-  "`forbidden_without_auth`",
-  "`needs_schema_drop_leaf`",
+  "`user-owned` 不是主线",
+  "`resource-order` 不是主线",
+  "v19/v20/v21 legacy smoke 不是当前验证体系",
+  "old runner/provisioner 不是 v22 Runtime Bridge / Gateway 主线",
+  "OpenCost/Langfuse 旧默认叙事不是当前产品事实源",
+  "后续 feature leaf 碰到过时模块、接口、测试或兼容面时，必须同 leaf 清理退役，或拆出 cleanup leaf 后再继续",
+]) {
+  assertIncludes(goal, phrase, "goal_gap_policy");
+}
+
+for (const phrase of [
+  "`delete`: 无 active v22 reason，必须物理删除",
+  "`migrate`: 仍有业务价值，但必须先改名、改边界、改合同并进入 v22 active surface",
+  "`retain_active_v22`: 只有明确属于 active v22 Portal/Gateway/Runtime Bridge、billing aggregator 或 sanitized trace metadata implementation boundary 的文件可保留",
+  "`blocker`: 只有触发硬停止条件时使用",
 ]) {
   assertIncludes(goal, phrase, "decision_taxonomy");
 }
 
 for (const phrase of [
-  "不得读取 secret、`.env`、kubeconfig、token、SecretId、SecretKey、SSH private key",
-  "不得调用真实云、COS、Langfuse、one-person-lab 或外部生产 API",
-  "不得执行 build/push、kubectl、live-test 或真实 runtime smoke",
-  "不得修改 `deploy/*`、`.sentrux/*`、`adapters/*`、`infra/*` 或 upstream",
-  "不得删除 public 410 tombstone",
-  "不得 drop schema、删除 migration collection 或改写历史账本",
+  "不读取 secret、`.env`、kubeconfig、token、SecretId、SecretKey、SSH private key",
+  "不调用真实云、COS、Langfuse、one-person-lab 或外部生产 API",
+  "不执行 build/push、kubectl、live-test 或真实 runtime smoke",
+  "不连接真实 DB，不执行真实 DB migration",
+  "不修改 `.sentrux/*` 或 upstream",
+  "本次允许删除旧 public retired route shell、v19/v20/v21 legacy smoke、旧 user-owned/resource-order 兼容面，以及不属于 v22 active surface 的旧 deploy/adapters/infra 资产",
 ]) {
   assertIncludes(goal, phrase, "authorization_boundary");
 }
 
-for (const phrase of [
-  "可自治",
-  "必须停下来让用户确认",
-  "每个 deletion slice 必须 deletion-only",
-  "先 RED gate，再删除，再 GREEN gate",
-  "B ff-only 吸收并 push 后才允许更新物理清退完成事实",
+for (const slice of [
+  "Slice A: Story And Inventory Policy Retirement",
+  "Slice B: User-Owned And Resource-Order Compatibility Surface Deletion",
+  "Slice C: Legacy Script Deletion",
+  "Slice D: Retired Adapter Deploy And Infra Asset Deletion",
+  "Slice E: Legacy Schema And Store Remnant Retirement",
 ]) {
-  assertIncludes(goal, phrase, "autonomy_rules");
+  assertIncludes(goal, slice, "goal_slices");
 }
 
 for (const phrase of [
+  "先 RED gate",
+  "删除前用 `rg` / import scan 证明无 active v22 reference",
+  "删除后更新 inventory、gap matrix、status truth",
+  "单独 commit",
+  "不把失败 gate 改弱成兼容通过",
+]) {
+  assertIncludes(goal, phrase, "per_slice_rules");
+}
+
+for (const command of [
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
   "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
   "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+  "node scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+  "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-  "git diff --check -- docs/recovery scripts",
+  "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra",
 ]) {
-  assertIncludes(goal, phrase, "verification_commands");
+  assertIncludes(goal, command, "verification_commands");
 }
 
 for (const phrase of [
-  "本临时 goal 不要求在分支内运行 `node scripts/smoke-test-v22-goal-state-consistency.mjs`",
-  "因为该 gate 要求 runtime branch 是 `cleanup/v22-cleanup-completion-truth` 或 `recovery/platform-v22-trunk`",
-  "本分支不得为了通过该 gate 改写 `docs/recovery/v22-goal-current.json`",
+  "inventory_status: strict_monolith_cleanup_in_progress",
+  "decision values: `delete`, `migrate`, `retain_active_v22`, `blocker`",
+  "slice-e-legacy-schema-store-retirement",
 ]) {
-  assertIncludes(goal, phrase, "temporary_goal_state_boundary");
+  assertIncludes(inventory, phrase, "inventory_alignment");
 }
 
-for (const phrase of [
-  "physical-legacy-file-retirement-inventory",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-  "physical_legacy_file_retirement_inventory_missing",
-  "unadjudicated_legacy_file",
-  "active_reference_to_delete_candidate",
-  "forbidden_path_without_auth",
-  "public_tombstone_delete_requires_user_confirmation",
-]) {
-  assertIncludes(goal, phrase, "future_gate_requirements");
-}
+assert.equal(manifest.manifest_role, "strict_monolith_legacy_retirement_run_manifest", "manifest_role_mismatch");
+assert.equal(manifest.working_branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "manifest_branch_mismatch");
+assert.equal(manifest.current_status, "strict_monolith_retirement_in_progress", "manifest_status_mismatch");
 
-for (const phrase of [
-  "## Agent Run Workflow",
-  "agent_run_mode: physical_delete_goal_driven",
-  "agent_run_batch_mode: physical_delete_goal_batch_driven",
-  "Run manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
-  "batch manifest",
-  "next_slice queue",
-  "one commit per slice",
-  "B may absorb the whole batch",
-  "A1: sync-baseline",
-  "A2: read-goal-and-inventory",
-  "A3: select-one-slice",
-  "A4: red-gate",
-  "A5: apply-deletion-only-change",
-  "A6: green-gates",
-  "A7: writeback",
-  "A8: B-review-handoff",
-  "不得跳过导台直接删除",
-]) {
-  assertIncludes(goal, phrase, "agent_workflow");
-}
-
-for (const phrase of [
-  "# MedOPL v22 Physical Legacy File Retirement Inventory",
-  "inventory_status: batch_completed_waiting_b_review",
-  "physical_delete_batch_status: completed_waiting_b_review",
-  "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
-  "next_slice queue",
-  "slice-2-legacy-script-archive-delete-boundary",
-  "slice-3-observability-runner-physical-retirement-boundary",
-  "decision values: `delete`, `keep_tombstone`, `archive_reference`, `migrate`, `forbidden_without_auth`, `needs_schema_drop_leaf`",
-  "physical_delete_status values: `not_started`, `deleted`, `kept_tombstone`, `archive_reference`, `migrated`, `blocked_without_auth`, `transferred_to_schema_drop_leaf`",
-  "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | physical_delete_status | required_gate | deletion_branch | stop_condition |",
-  "`services/portal/src/routes/resource-order.routes.mjs`",
-  "`services/portal/src/routes/user-owned-resource.routes.mjs`",
-  "`scripts/smoke-test-v19-*`",
-  "`scripts/smoke-test-v20*`",
-  "`scripts/smoke-test-v21-*`",
-  "`scripts/live-test-*`",
-  "`infra/opencost/**`",
-  "`compose.langfuse.yaml`",
-  "`adapters/resource-provisioner/**`",
-  "`adapters/med-autoscience-runner/**`",
-  "`deploy/**`",
-  "final slice truth writeback: completed_waiting_b_review",
-]) {
-  assertIncludes(inventory, phrase, "inventory_bootstrap");
-}
-
-for (const phrase of [
-  "物理删除 goal",
-  "导台",
-  "inventory gate",
-  "delete candidate",
+for (const forbidden of [
   "keep_tombstone",
+  "archive_reference",
+  "tombstone_only",
+  "archive_only",
+  "blocked_without_auth",
   "forbidden_without_auth",
-  "needs_schema_drop_leaf",
+  "public_tombstone_delete_requires_user_confirmation",
+  "schema_or_migration_delete_without_schema_drop_leaf",
+  "临时补丁",
+  "兜底",
 ]) {
-  assertIncludes(inventory, phrase, "inventory_policy_terms");
+  assertNotIncludes(goal, forbidden, "goal_forbidden_wording");
 }
-
-for (const phrase of [
-  "cleanup 分支 1：建立裁定台账。",
-  "本 backlog 从 `docs/recovery/repo-zoning.md` 的 Zone 2/Zone 3 候选中拆出后续专题清退队列。",
-  "每个专题先定义 smoke/gate，再执行 rewrite、tombstone、archive 或 delete。",
-]) {
-  assertIncludes(legacyBacklog, phrase, "legacy_backlog_sample_contract");
-}
-
-for (const phrase of [
-  "不在 goal bootstrap 分支删除文件",
-  "后续授权 deletion slice 必须先 RED gate、证明无 active reference，再按导台删除。",
-]) {
-  assertIncludes(goal, phrase, "goal_bootstrap_delete_boundary");
-}
-
-for (const phrase of [
-  "本台账把仓库上下文裁定为四个区",
-  "Zone 2: Migration Observation Surface",
-  "Zone 3: Historical Archive Surface",
-  "Zone 4: Authorization Forbidden Surface",
-  "| `scripts/live-test-*` | Zone 3 | delete |",
-  "2026-05-14 用户已授权物理删除仓库内旧 live-test 文件，不授权执行 live-test",
-]) {
-  assertIncludes(repoZoning, phrase, "repo_zoning_sample_contract");
-}
-
-assertNotIncludes(goal, "TODO", "goal_no_todo");
-assertNotIncludes(goal, "TBD", "goal_no_tbd");
-assertNotIncludes(goal, "临时补丁", "goal_no_temporary_patch");
-assertNotIncludes(goal, "兜底", "goal_no_fallback_wording");
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_physical_legacy_file_deletion_goal",
+  contract: "v22_strict_monolith_legacy_retirement_goal",
   goalPath,
   inventoryPath,
-  branch: "cleanup/v22-physical-legacy-goal",
+  manifestPath,
+  branch: "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   model: "gpt-5.4",
 }, null, 2));

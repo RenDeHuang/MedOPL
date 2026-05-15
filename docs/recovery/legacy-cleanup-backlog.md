@@ -6,7 +6,7 @@
 
 - cleanup 分支 1：建立裁定台账。
 - cleanup 分支 2-N：按专题清退。
-- 每个专题先定义 smoke/gate，再执行 rewrite、tombstone、archive 或 delete。
+- 每个专题先定义 smoke/gate，再执行 rewrite、migrate 或 delete；strict monolith cleanup 不再把旧壳或旧脚本作为完成态保留。
 - 每个专题必须经过 B review 后才能吸收到 `recovery/platform-v22-trunk`。
 - smoke = prove the intended v22 path still works。
 - gate = prevent the retired legacy meaning from returning。
@@ -24,10 +24,10 @@
 | order | slice | suggested_branch | primary_zone | action | hold_point |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Default Entry Legacy Narrative | `cleanup/v22-default-entry-legacy-narrative` | Zone 1/2 | rewrite | completed on cleanup/v22-default-entry-legacy-narrative after contract-conflict, legacy-script, and observability/billing gates were absorbed. |
-| 2 | user_owned Primary Path Retirement | `cleanup/v22-retire-user-owned-primary-path` | Zone 2 | tombstone/delete | 需先确认 Portal 当前 user-owned alias 是否仍被 smoke 引用。 |
-| 3 | resource-order Primary Path Retirement | `cleanup/v22-retire-resource-order-primary-path` | Zone 2 | tombstone/delete | 需先确认 managed environment/resource binding 替代路径完整。 |
-| 4 | Legacy Script Archive Boundary | `cleanup/v22-legacy-script-archive-boundary` | Zone 2/3 | archive/rewrite | gate absorbed via `cleanup/v22-legacy-scripts-archive-eval-shell`; legacy scripts remain archive/reference and are not default validation. |
-| 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-observability-billing-primary-narrative` | Zone 2/3 | rewrite/archive | completed by cleanup/v22-cleanup-completion-truth; sanitized trace metadata boundary remains enforced by the observability/billing narrative gate. |
+| 2 | user_owned Primary Path Retirement | `cleanup/v22-retire-user-owned-primary-path` | Zone 2 | delete | Portal 当前 user-owned alias、route shell、fixture、copy、test anchor 必须清退。 |
+| 3 | resource-order Primary Path Retirement | `cleanup/v22-retire-resource-order-primary-path` | Zone 2 | delete/migrate | managed environment/resource binding 替代路径完整后，旧 route/domain/store/schema/test anchor 必须清退。 |
+| 4 | Legacy Script Delete Boundary | `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement` | Zone 2/3 | delete | legacy scripts 不再作为 active repo 历史证据保留。 |
+| 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement` | Zone 2/3 | rewrite/delete | sanitized trace metadata boundary remains active; old OpenCost/Langfuse compose/deploy/infra assets are delete targets. |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
 
@@ -65,7 +65,7 @@
 
 ## Slice 2: user_owned Primary Path Retirement
 
-目标：把 `user_owned` / `user-owned` 收敛为 legacy alias 或 tombstone，禁止作为主产品路径继续扩写。
+目标：把 `user_owned` / `user-owned` 从 active repo 清退，禁止作为主产品路径、alias、route shell、copy、fixture 或测试锚点继续扩写。
 
 建议 smoke/gate：
 
@@ -76,8 +76,7 @@
 - Portal 默认配置不再是 `user_owned`。
 - 普通用户页面不展示用户自配云资源。
 - 新代码不得新增 `user-owned` route/domain/store 作为正式入口。
-- 若旧 route 暂保留，只能返回 tombstone、removed 或 legacy alias，不做兼容翻译。
-- completed on cleanup/v22-retire-user-owned-primary-path：Portal 默认 runtime 收敛到 `platform_provisioned`；旧 `user-owned` route/domain/store 改为 fail-closed tombstone；`user_owned` lifecycle mode 不再静默兼容到平台托管路径。`resource-order` 引用保留给 Slice 3 单独清退。
+- completed on cleanup/v22-retire-user-owned-primary-path：Portal 默认 runtime 收敛到 `platform_provisioned`；strict monolith cleanup 继续删除剩余 route shell、registration、copy、fixture 和测试锚点。
 
 ## Slice 3: resource-order Primary Path Retirement
 
@@ -91,17 +90,17 @@
 
 - Portal 导航不链接 `resource-order` 主路径。
 - 新开通路径走 managed environment / resource binding。
-- 旧 prepare-run 或 resource-order public flow 只能 tombstone 或 legacy internal fence。
+- 旧 prepare-run 或 resource-order public flow 不保留为 active route。
 - 新 smoke 不依赖 resource-order 作为默认成功路径。
-- 第一刀 route success path 清退只处理旧 public/internal/provision/release/freeze/quote/delete-node-pool route 链路：保留 `services/portal/src/routes/resource-order.routes.mjs` 作为唯一 410 tombstone 壳，指向 managed environment / resource binding；domain/store/billing/admin payload/frontend 后续单独 rewrite 或 tombstone。
+- 第一刀 route success path 清退已处理旧 public/internal/provision/release/freeze/quote/delete-node-pool route 链路；strict monolith cleanup 继续删除剩余 retired shell 和 registration。
 - 第二刀 billing/payload 字段 rewrite 只处理 active ledger、binding 和 Portal payload 主归因迁到 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`；旧标识只能作为 `legacyResourceOrderId` optional、migration-only alias 留在迁移输入，不作为 fixed required tag，也不恢复任何 route success path。
 - 第三刀 store health / admin / frontend surface 清退只处理 active admin、module source、store health 和 frontend surface 不再把 resource-order 作为默认展示字段或主归因字段；Admin 对账、health 和 frontend API 类型使用 `resourceBindingId`、`billingAttributionId`、`workspaceId`、`accountId` / `serverPlanId`。本刀不修改 `services/portal/src/state/portal-resource-order-store.mjs`、store schema、Postgres persistence、migrations、seed/migration collection keys，也不恢复任何 route success path。
 - 第四刀 store/Postgres/schema characterization 已在 `cleanup/v22-resource-order-store-postgres-schema-eval-shell` 建立静态 gate：`scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` 钉住 `portal-resource-order-store`、Postgres schema、Postgres snapshot read/write、runtime connection、db delegate、runtime store 和 JSON migration collection 的当前遗留事实；不修改 `services/*`、不连接真实 DB、不运行 migration、不读 secret、不执行 live/cloud/build/kubectl。
-- 第四刀 store/Postgres/schema implementation completed on `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer wires `portal-resource-order-store` or active Postgres snapshot read/write for `resource_orders` / `resource_order_events`. `portal-resource-order-store.mjs` is fail-closed retired API surface; runtime connections, storage bootstrap, db delegates, and Postgres persistence no longer instantiate or call it. Legacy tables, snapshot helper writers, and JSON migration collections remain migration-only/tombstone facts; schema drop/archive remains a future smaller leaf if needed.
+- 第四刀 store/Postgres/schema implementation completed on `cleanup/v22-resource-order-store-postgres-schema-implementation`: active runtime no longer wires `portal-resource-order-store` or active Postgres snapshot read/write for `resource_orders` / `resource_order_events`. Strict monolith cleanup now removes retired store, domain family, schema fragments, snapshot helper writers, and JSON migration collections without executing real DB migration.
 
 ## Slice 4: Legacy Script Archive Boundary
 
-目标：让 v19/v20/v21/live-test 脚本从默认 AI 上下文退场。v19/v20/v21 smoke 只作为历史证据；live-test 只记录为高风险授权外部操作，后续物理删除必须走单独授权 slice。
+目标：让 v19/v20/v21/live-test 脚本从 active repo 退场。v19/v20/v21 smoke 不再作为历史证据保留；live-test 只能通过新的 v22 授权 canary 合同重建，不能恢复旧脚本。
 
 建议 smoke/gate：
 
@@ -110,7 +109,7 @@
 检查要点：
 
 - MVP suite 只串 v22 默认 smoke。
-- `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite。
+- `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite，也不留在 active scripts 目录。
 - `scripts/live-test-*` 不进入默认 suite；当前物理删除事实由 `slice-authorized-live-test-physical-delete` 单独记录，不属于 Slice 4 archive boundary 本体。
 - 无 v22 前缀但仍有价值的 smoke 必须迁名或在台账中标明 archive/rewrite。
 - completed on `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` verifies default README / vibe-coding commands, v22 MVP suite script references, and repo-zoning archive/review-rewrite rows without running live-test, deleting legacy scripts, touching services, or reading secrets.
@@ -130,7 +129,7 @@
 - `trace.medopl.cn` 只能作为后续 ops/observability surface。
 - OpenCost 只作历史或后续授权运维参考，不是当前主账单事实源。
 - 普通用户页面不把 OpenCost/Langfuse 展示成核心产品能力。
-- completed by cleanup/v22-cleanup-completion-truth：`scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 只保留 archive/reference 或后续授权 ops 参考；二者不得恢复为主产品事实源。
+- completed by cleanup/v22-cleanup-completion-truth：`scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 不得恢复为主产品事实源；strict monolith cleanup 删除旧 OpenCost/Langfuse compose/deploy/infra 资产。
 
 ## Gate Pattern
 
@@ -146,4 +145,4 @@
 - cloud-lane 仍在开发，清退线暂不修改 `docs/recovery/cloud-onboarding-*`、cloud-lane v22 smoke suite 或 Portal cloud operation handler。
 - portal 分支仍在开发，清退线暂不修改 Portal UI/workbench/frontend implementation。
 - 本 backlog 可以先合入 trunk；portal 和 cloud-lane 后续 rebase 只需要吸收 recovery 文档和独立 gate。
-- 真正 delete/tombstone 分支必须等 B review 判定相关 feature/cloud/portal 分支已吸收或放弃。
+- 真正 delete 分支必须等 B review 判定相关 feature/cloud/portal 分支已吸收或放弃。

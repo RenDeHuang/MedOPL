@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -11,24 +11,11 @@ const goalPath = "docs/recovery/physical-legacy-file-retirement-goal.md";
 const inventoryPath = "docs/recovery/physical-legacy-file-retirement-inventory.md";
 
 const expectedSlices = [
-  "slice-2-legacy-script-archive-delete-boundary",
-  "slice-3-observability-runner-physical-retirement-boundary",
-  "slice-final-completion-truth-and-temporary-goal-removal",
-];
-const slice3Id = "slice-3-observability-runner-physical-retirement-boundary";
-const finalSliceId = "slice-final-completion-truth-and-temporary-goal-removal";
-const authorizedLiveTestDeleteSliceId = "slice-authorized-live-test-physical-delete";
-
-const forbiddenTargets = [
-  "deploy/**",
-  "adapters/**",
-  "infra/**",
-  ".sentrux/**",
-  "one-person-lab upstream",
-  "public 410 tombstone",
-  "schema/drop/migration collection",
-  "secret-like paths",
-  "live-test/build/push/kubectl/true cloud",
+  "slice-a-strict-monolith-policy",
+  "slice-b-user-owned-resource-order-compat-delete",
+  "slice-c-legacy-script-delete",
+  "slice-d-retired-adapter-deploy-infra-delete",
+  "slice-e-legacy-schema-store-retirement",
 ];
 
 async function readRepoFile(filePath) {
@@ -50,220 +37,89 @@ function assertArrayIncludesAll(actual, expected, label) {
   }
 }
 
-function assertNoForbiddenWriteSet(slice) {
-  const writeSet = [
-    ...(slice.allowed_write_set ?? []),
-    ...(slice.target_paths ?? []),
-  ];
-  for (const target of writeSet) {
-    for (const forbidden of ["deploy/", "adapters/", "infra/", ".sentrux/", "one-person-lab"]) {
-      assert(!String(target).startsWith(forbidden), `slice_write_set_forbidden:${slice.id}:${target}`);
-    }
-  }
-}
-
-function assertSliceQueueState(manifest) {
-  const completed = manifest.completed_slices ?? [];
-  const next = manifest.next_slices ?? [];
-
-  assert(completed.includes("slice-1-user-owned-retired-domain-store-physical-delete"), "slice1_completion_missing");
-  for (const sliceId of expectedSlices) {
-    assert(
-      completed.includes(sliceId) || next.includes(sliceId),
-      `slice_must_be_completed_or_queued:${sliceId}`,
-    );
-    assert(
-      !(completed.includes(sliceId) && next.includes(sliceId)),
-      `slice_must_not_be_completed_and_queued:${sliceId}`,
-    );
-  }
-
-  const firstNext = next[0];
-  if (firstNext) {
-    assert.equal(manifest.current_slice, firstNext, "manifest_current_slice_must_match_next_queue_head");
-  } else {
-    assert.equal(
-      manifest.current_slice,
-      "batch_complete_waiting_b_review",
-      "manifest_current_slice_mismatch_after_batch_completion",
-    );
-  }
-}
-
-const [manifest, goal, inventory, scriptNames] = await Promise.all([
+const [manifest, goal, inventory] = await Promise.all([
   readJson(manifestPath),
   readRepoFile(goalPath),
   readRepoFile(inventoryPath),
-  readdir(path.join(repoRoot, "scripts")),
 ]);
 
-assert.equal(manifest.schema_version, 1, "manifest_schema_version_mismatch");
-assert.equal(manifest.manifest_role, "temporary_physical_delete_goal_run_manifest", "manifest_role_mismatch");
+assert.equal(manifest.schema_version, 2, "manifest_schema_version_mismatch");
+assert.equal(manifest.manifest_role, "strict_monolith_legacy_retirement_run_manifest", "manifest_role_mismatch");
 assert.equal(manifest.model, "gpt-5.4", "manifest_model_mismatch");
-assert.equal(manifest.agent_run_mode, "physical_delete_goal_batch_driven", "manifest_agent_run_mode_mismatch");
+assert.equal(manifest.agent_run_mode, "strict_monolith_legacy_retirement", "manifest_agent_run_mode_mismatch");
 assert.equal(manifest.base_branch, "origin/recovery/platform-v22-trunk", "manifest_base_branch_mismatch");
 assert.equal(manifest.target_branch, "recovery/platform-v22-trunk", "manifest_target_branch_mismatch");
-assert(
-  ["batch_manifest_ready", "batch_complete_waiting_b_review"].includes(manifest.current_status),
-  "manifest_current_status_mismatch",
-);
+assert.equal(manifest.working_branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "manifest_working_branch_mismatch");
+assert.equal(manifest.current_status, "strict_monolith_retirement_in_progress", "manifest_current_status_mismatch");
+
+assertArrayIncludesAll(manifest.next_slices, expectedSlices, "manifest_next_slice");
+for (const sliceId of manifest.completed_slices ?? []) {
+  assert(expectedSlices.includes(sliceId), `manifest_completed_slice_unknown:${sliceId}`);
+}
+
 assert.equal(manifest.batch_policy?.enabled, true, "manifest_batch_policy_enabled_mismatch");
-assert.equal(manifest.batch_policy?.max_slices_per_branch, 3, "manifest_batch_policy_max_slices_mismatch");
-assert.equal(manifest.batch_policy?.commit_policy, "one_commit_per_slice_plus_optional_final_truth", "manifest_commit_policy_mismatch");
+assert.equal(manifest.batch_policy?.commit_policy, "one_commit_per_slice", "manifest_commit_policy_mismatch");
 assert.equal(manifest.batch_policy?.b_absorb_policy, "B_may_absorb_whole_batch_after_all_slice_gates_pass", "manifest_b_absorb_policy_mismatch");
 
-assertArrayIncludesAll(manifest.global_forbidden_targets, forbiddenTargets, "manifest_global_forbidden_target");
+assertArrayIncludesAll(manifest.authorization_boundary?.authorized_deletions, [
+  "old public retired route shells",
+  "v19/v20/v21 legacy smoke/check/daily/live-prepare scripts",
+  "old user-owned/resource-order compatibility surfaces",
+  "retired resource-provisioner and med-autoscience-runner adapters",
+  "old OpenCost/Langfuse deploy/infra/compose assets",
+], "manifest_authorized_deletions");
+
+assertArrayIncludesAll(manifest.authorization_boundary?.forbidden_operations, [
+  "read secret",
+  "read .env",
+  "read kubeconfig",
+  "read token",
+  "live cloud",
+  "live-test execution",
+  "build/push/kubectl",
+  "deploy",
+  "real DB migration execution",
+  ".sentrux modification",
+  "upstream write",
+], "manifest_forbidden_operation");
+
+assertArrayIncludesAll(manifest.authorization_boundary?.must_retain_active_v22_paths, [
+  "deploy/local/dockerfiles/portal.Dockerfile",
+  "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
+  "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
+  "adapters/billing-aggregator/**",
+], "manifest_retain_active_v22_path");
+
 assertArrayIncludesAll(manifest.required_global_gates, [
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
   "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
   "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+  "node scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+  "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-  "git diff --check -- docs/recovery docs/contracts scripts services",
+  "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra",
 ], "manifest_required_global_gate");
 
-assertSliceQueueState(manifest);
-
-const sliceById = new Map((manifest.slices ?? []).map((slice) => [slice.id, slice]));
-for (const expectedSlice of [
-  "slice-1-user-owned-retired-domain-store-physical-delete",
-  ...expectedSlices,
-]) {
-  assert(sliceById.has(expectedSlice), `manifest_slice_missing:${expectedSlice}`);
+const slices = new Map((manifest.slices ?? []).map((slice) => [slice.id, slice]));
+for (const sliceId of expectedSlices) {
+  assert(slices.has(sliceId), `manifest_slice_missing:${sliceId}`);
+  const slice = slices.get(sliceId);
+  assert(slice.red_gate, `slice_red_gate_missing:${sliceId}`);
+  assert(Array.isArray(slice.green_gates) && slice.green_gates.length > 0, `slice_green_gates_missing:${sliceId}`);
+  assert(slice.commit?.startsWith("cleanup: "), `slice_commit_mismatch:${sliceId}`);
 }
 
-const slice2 = sliceById.get("slice-2-legacy-script-archive-delete-boundary");
-assert(
-  ["ready", "completed"].includes(slice2.status),
-  "slice2_status_mismatch",
-);
-assert(
-  [
-    "archive_reference_to_default-exclusion_or_explicit_delete_candidates_only",
-    "archive_reference_or_blocked_without_auth_or_explicit_delete_candidates_only",
-  ].includes(slice2.decision_scope),
-  "slice2_decision_scope_mismatch",
-);
-assert(
-  slice2.red_gate_policy.includes("default_suite_or_default_docs_reference_legacy_scripts"),
-  "slice2_red_gate_policy_mismatch",
-);
-if (slice2.status === "completed") {
-  assert(manifest.completed_slices.includes(slice2.id), "slice2_completed_status_requires_completed_slices");
-  assert(!manifest.next_slices.includes(slice2.id), "slice2_completed_status_must_leave_next_slices");
-  assert(
-    slice2.red_gate_policy.includes("target_paths_still_need_truth_writeback"),
-    "slice2_completed_policy_must_record_truth_writeback_red_gate",
-  );
-  assertIncludes(
-    inventory,
-    "slice-2 truth writeback: completed",
-    "inventory_slice2_completion_truth",
-  );
-}
-assertArrayIncludesAll(slice2.required_gates, [
-  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-  "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-], "slice2_required_gate");
-assertArrayIncludesAll(slice2.allowed_write_set, [
-  "docs/recovery/physical-legacy-file-retirement-inventory.md",
-  "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
-  "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-], "slice2_allowed_write_set");
-assertNoForbiddenWriteSet(slice2);
-
-const slice3 = sliceById.get("slice-3-observability-runner-physical-retirement-boundary");
-assert(
-  ["ready_after_slice_2", "completed"].includes(slice3.status),
-  "slice3_status_mismatch",
-);
-assert.equal(slice3.decision_scope, "archive_reference_or_migrate_only_for_langfuse_and_blocked_without_auth_for_runner_provider", "slice3_decision_scope_mismatch");
-assert(
-  slice3.red_gate_policy.includes("langfuse"),
-  "slice3_red_gate_policy_must_reference_langfuse_boundary",
-);
-assert.notEqual(slice3.status, "ready_after_slice_2", "slice3_truth_writeback_missing");
-assert(manifest.completed_slices.includes(slice3Id), "slice3_completion_truth_missing");
-assert(!manifest.next_slices.includes(slice3Id), "slice3_must_not_remain_in_next_slices");
-assertIncludes(inventory, "slice-3 truth writeback: completed", "inventory_slice3_completion_truth");
-assertArrayIncludesAll(slice3.required_gates, [
-  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-  "node scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-], "slice3_required_gate");
-assertArrayIncludesAll(slice3.observe_only_forbidden_paths, [
-  "adapters/resource-provisioner/**",
-  "adapters/med-autoscience-runner/**",
-  "infra/opencost/**",
-], "slice3_observe_only_forbidden_path");
-assertNoForbiddenWriteSet(slice3);
-
-const finalSlice = sliceById.get("slice-final-completion-truth-and-temporary-goal-removal");
-assert(
-  ["ready_after_slice_2_and_slice_3", "completed"].includes(finalSlice.status),
-  "final_slice_status_mismatch",
-);
-assert.equal(finalSlice.decision_scope, "truth_writeback_only_no_more_deletion", "final_slice_decision_scope_mismatch");
-assert.notEqual(finalSlice.status, "ready_after_slice_2_and_slice_3", "final_slice_truth_writeback_missing");
-assert.equal(manifest.current_status, "batch_complete_waiting_b_review", "manifest_final_current_status_mismatch");
-assert.equal(manifest.current_slice, "batch_complete_waiting_b_review", "manifest_final_current_slice_mismatch");
-assert.deepEqual(manifest.next_slices, [], "manifest_final_next_slices_must_be_empty");
-assert(manifest.completed_slices.includes(finalSliceId), "final_slice_completion_truth_missing");
-assertIncludes(inventory, "physical_delete_batch_status: completed_waiting_b_review", "inventory_final_batch_status");
-assertIncludes(goal, "physical_delete_batch_status: completed_waiting_b_review", "goal_final_batch_status");
-assertArrayIncludesAll(finalSlice.required_gates, manifest.required_global_gates, "final_slice_required_gate");
-assertNoForbiddenWriteSet(finalSlice);
-
-const authorizedLiveTestDeleteSlice = sliceById.get(authorizedLiveTestDeleteSliceId);
-assert.equal(authorizedLiveTestDeleteSlice.status, "completed", "authorized_live_test_delete_slice_status_mismatch");
-assert.equal(authorizedLiveTestDeleteSlice.slice_role, "authorized_follow_up", "authorized_live_test_delete_slice_role_mismatch");
-assert.equal(authorizedLiveTestDeleteSlice.batch_queue_member, false, "authorized_live_test_delete_batch_queue_member_mismatch");
-assertArrayIncludesAll(
-  manifest.authorized_follow_up_slices,
-  [authorizedLiveTestDeleteSliceId],
-  "manifest_authorized_follow_up_slice",
-);
-assert(!expectedSlices.includes(authorizedLiveTestDeleteSliceId), "authorized_live_test_delete_must_not_be_batch_queue_slice");
-assert.equal(authorizedLiveTestDeleteSlice.authorization?.authorized_by_user, true, "authorized_live_test_delete_auth_missing");
-assert.equal(authorizedLiveTestDeleteSlice.authorization?.authorized_at, "2026-05-14", "authorized_live_test_delete_auth_date_mismatch");
-assert(manifest.completed_slices.includes(authorizedLiveTestDeleteSliceId), "authorized_live_test_delete_slice_completion_missing");
-assertArrayIncludesAll(authorizedLiveTestDeleteSlice.target_paths, ["scripts/live-test-*"], "authorized_live_test_delete_target");
-assertArrayIncludesAll(authorizedLiveTestDeleteSlice.required_gates, [
-  "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
-], "authorized_live_test_delete_required_gate");
-assertIncludes(inventory, "live-test physical delete authorized and completed", "inventory_authorized_live_test_delete_truth");
-assertIncludes(goal, "`slice-authorized-live-test-physical-delete`", "goal_authorized_live_test_delete_truth");
-
-const liveTestScripts = scriptNames.filter((name) => name.startsWith("live-test-")).sort();
-assert.deepEqual(liveTestScripts, [], `live_test_scripts_must_be_physically_deleted:${liveTestScripts.join(",")}`);
-
-for (const phrase of [
-  "agent_run_batch_mode: physical_delete_goal_batch_driven",
-  "batch manifest",
-  "next_slice queue",
-  "one commit per slice",
-  "B may absorb the whole batch",
-]) {
-  assertIncludes(goal, phrase, "goal_batch_mode");
-}
-
-for (const phrase of [
-  "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
-  "next_slice queue",
-  "slice-2-legacy-script-archive-delete-boundary",
-  "slice-3-observability-runner-physical-retirement-boundary",
-]) {
-  assertIncludes(inventory, phrase, "inventory_batch_mode");
-}
+assertIncludes(goal, "Slice A: Story And Inventory Policy Retirement", "goal_slice_a");
+assertIncludes(goal, "Slice E: Legacy Schema And Store Remnant Retirement", "goal_slice_e");
+assertIncludes(inventory, "slice-a-strict-monolith-policy", "inventory_slice_queue");
+assertIncludes(inventory, "slice-e-legacy-schema-store-retirement", "inventory_slice_queue");
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_physical_legacy_batch_run_manifest",
+  contract: "v22_strict_monolith_legacy_retirement_run_manifest",
   manifestPath,
-  currentSlice: manifest.current_slice,
-  nextSlices: manifest.next_slices,
+  slices: expectedSlices,
 }, null, 2));

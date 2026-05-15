@@ -8,7 +8,7 @@ This Markdown remains a human-readable gap explanation and history surface; the 
 scoreboard 只表达产品能力完成度，不决定 leaf execution order. Execution order is decided by `docs/recovery/v22-goal-current.json` plus this gap matrix's `depends_on` / `executable_when` / `cursor_eligible` fields.
 Autonomous Goal Runner is runner governance，不改变 current cursor; it only verifies that contract, manifest, policy, and runner entrypoints stay wired so code follows the subscribed contracts.
 
-Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `tombstone_only`, `archive_only`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
+Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, `characterized`, `completed`, `intentionally_retained`, `pending`, `deferred_authorized_current_path`, `deferred_authorized_future_stage`.
 
 ## Dependency Stage Order
 
@@ -21,6 +21,21 @@ Allowed status values: `open`, `in_progress`, `needs_eval`, `gated`, `cleaned`, 
 
 Codex must execute the product-goal dependency graph in stage order: cleanup -> refactor -> OPL connection -> Cloud lane -> frontend/backend product completion -> release readiness. A future-stage blocker must not be treated as the current blocker when an earlier cleanup/refactor/dev leaf is still executable.
 
+## Strict Monolith Ideal Gap Truth
+
+- v22 ideal state: MedOPL 是 platform-provisioned / customer-dedicated 的 OPL SaaS 托管科研工作台。
+- v22 ideal state: Portal 是托管科研工作台 control plane。
+- v22 ideal state: 用户购买套餐、算力、存储和运行环境。
+- v22 ideal state: 平台负责开通、隔离、计费、审计和释放。
+- v22 ideal state: OPL runtime 负责科研工作区执行、文件、任务和结果。
+- gap to ideal: `user-owned` 不是主线；任何 public route、route registration、compat alias、fixture、copy 或测试锚点都必须从 active repo 删除。
+- gap to ideal: `resource-order` 不是主线；旧 route、store、schema、migration、fixture、evalset、copy 或测试锚点都必须删除，或先改名改边界进入 v22 active surface。
+- gap to ideal: v19/v20/v21 legacy smoke 不是当前验证体系；active repo 不再保留旧脚本作为历史证据，当前验证只使用 v22 local smoke 和明确授权的 future canary 合同。
+- gap to ideal: old runner/provisioner 不是 v22 runtime bridge / gateway 主线；旧 adapters、旧 deploy、旧 infra 资产必须物理退役，除非能证明属于 active v22 Portal/Gateway/Runtime Bridge 交付面。
+- gap to ideal: OpenCost/Langfuse 旧默认叙事不是当前产品事实源；Langfuse 只可作为 sanitized trace metadata implementation boundary，旧 compose/deploy/infra 资产不得作为完成态保留。
+- strict cleanup rule: 后续 feature leaf 碰到过时模块、接口、测试或兼容面时，必须同 leaf 清理退役，或拆出 cleanup leaf 后再继续。
+- strict cleanup rule: 保留项必须写出 active v22 reason；不能因为 git history、历史证据、旧兼容或旧失败壳而留在 active repo。
+
 ## Cleanup Stage Completion Gate
 
 Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Before any Cloud lane leaf may set `cursor_eligible: true`, legacy cleanup prerequisites satisfied before Cloud lane cursor_eligible=true:
@@ -30,7 +45,7 @@ Cleanup stage completion gate: Cloud lane 不得跳过未完成 cleanup. Before 
 - `legacy-cleanup-secret-hygiene` status must be cleaned or gated by the diff-scoped scan eval.
 - `legacy-cleanup-legacy-scripts` status must be cleaned or gated by the archive boundary eval.
 - open / in_progress / needs_eval / deferred_authorized_current_path cleanup gaps block Cloud lane cursor eligibility.
-- cleanup-only goal stop condition is stricter than Cloud lane dependency eligibility: all cleanup gaps must be `cleaned`, `tombstone_only`, `archive_only`, or `intentionally_retained`, then Codex writes `cleanup_completion` truth and stops before any Cloud/development/release leaf. After B absorbs a dedicated cleanup-stop retirement, `cleanup_completion` becomes historical and normal product-goal selection may resume at the lowest-priority eligible non-cleanup leaf.
+- cleanup-only goal stop condition is stricter than Cloud lane dependency eligibility: all cleanup gaps must be `cleaned` or `intentionally_retained` with an explicit active v22 reason, then Codex writes `cleanup_completion` truth and stops before any Cloud/development/release leaf. After B absorbs a dedicated cleanup-stop retirement, `cleanup_completion` becomes historical and normal product-goal selection may resume at the lowest-priority eligible non-cleanup leaf.
 
 ## Release Readiness Dependency Gate
 
@@ -74,9 +89,9 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-user-owned
 
 - id: legacy-cleanup-user-owned
-- current_fact: default entry and primary path have been retired into platform-provisioned semantics; retained `user_owned` is legacy alias only.
-- ideal_state: no new implementation, doc, eval, or product language treats `user_owned` as user-owned cloud resource configuration.
-- problem: prevent user-owned meaning from returning through active docs or tests.
+- current_fact: default entry and primary path have been retired into platform-provisioned semantics; remaining public retired route, route registration, copy, fixture or alias hits are strict delete targets in this cleanup branch.
+- ideal_state: no implementation, route, doc, eval, fixture, copy, test, or product language retains `user_owned` / `user-owned` as a usable path or alias.
+- problem: prevent user-owned meaning from returning through active code, docs, tests, or compatibility entrypoints.
 - dependency: default-entry cleanup and user_owned primary path retirement absorbed.
 - depends_on: []
 - blocked_by: []
@@ -95,9 +110,9 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-resource-order
 
 - id: legacy-cleanup-resource-order
-- current_fact: resource-order route tombstones, billing/payload rewrite, store/admin/frontend third slice, store/Postgres/schema characterization, and fourth-slice active runtime persistence retirement are complete. Resource-order remains only retired/tombstone/migration-only in store/Postgres/schema surfaces.
-- ideal_state: managed environment/resource binding/billing/audit is the only active resource attribution path.
-- problem: prevent resource-order persistence from returning as active runtime truth while retaining migration-only legacy tables/collections until a later schema-drop/archive leaf proves it is safe.
+- current_fact: resource-order route success paths, billing/payload rewrite, store/admin/frontend surface cleanup, and active runtime persistence retirement are complete; remaining retired route registration, domain/store/schema/migration/snapshot helpers, copy, fixture, evalset or tests are strict delete targets unless first migrated into v22 resource binding boundaries.
+- ideal_state: managed environment/resource binding/billing/audit is the only resource attribution path; no `resource-order` file, route, schema, migration key, public copy, fixture or test anchor remains in active repo.
+- problem: prevent resource-order persistence and compatibility surfaces from returning as active runtime truth.
 - dependency: route, billing/payload, store/admin/frontend cleanup absorbed.
 - depends_on: [legacy-cleanup-user-owned]
 - blocked_by: []
@@ -137,13 +152,13 @@ Every gap entry must contain:
 ### Gap: legacy-cleanup-legacy-scripts
 
 - id: legacy-cleanup-legacy-scripts
-- current_fact: v19/v20/v21/live-test scripts remain archive/reference, not default validation; `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` is absorbed and gates default docs and MVP suite against legacy script re-entry.
+- current_fact: v19/v20/v21/live-test scripts are not default validation; strict monolith cleanup now treats remaining v19/v20/v21 smoke/check/daily/live-prepare scripts as physical delete targets.
 - ideal_state: default execution line uses only v22 local smoke unless a canary is explicitly authorized.
 - problem: old scripts can re-enter AI context as default truth.
 - dependency: secret hygiene eval shell absorbed; archive boundary gate exists and is runnable locally.
 - depends_on: [legacy-cleanup-secret-hygiene]
 - blocked_by: []
-- executable_when: default validation docs or MVP suite mention archive/reference legacy scripts.
+- executable_when: default validation docs, MVP suite, workflow, README, product, architecture, or script directory retains v19/v20/v21 legacy scripts as current validation or retained repo assets.
 - stage: S1 legacy cleanup
 - priority: 40
 - cursor_eligible: false
@@ -158,10 +173,10 @@ Every gap entry must contain:
 ### Gap: cleanup-completion-truth
 
 - id: cleanup-completion-truth
-- current_fact: cleanup_completion truth is historical after cleanup-stop current-lock retirement; user_owned, resource-order, secret hygiene, legacy scripts, default narrative, and OpenCost/Langfuse primary narrative cleanup are no longer active primary paths.
-- ideal_state: all cleanup gaps are cleaned, tombstone_only, archive_only, or intentionally_retained, and cleanup_completion remains a historical completion fact rather than the active current cursor.
+- current_fact: cleanup_completion truth is historical after cleanup-stop current-lock retirement; strict monolith cleanup reopens the physical retirement dimension so old modules, interfaces, tests, deploy assets, and compatibility surfaces are removed rather than retained as inactive evidence.
+- ideal_state: all cleanup gaps are cleaned or intentionally retained only with explicit active v22 reason, and cleanup_completion remains a historical completion fact rather than the active current cursor.
 - problem: cleanup_completion correctly stopped a cleanup-only run, but its execution lock must not remain the normal product-goal current cursor after B absorption.
-- dependency: cleanup gates for user_owned, resource-order, secret hygiene, legacy scripts, default entry, and OpenCost/Langfuse narrative are absorbed or represented as tombstone/archive facts.
+- dependency: cleanup gates for user_owned, resource-order, secret hygiene, legacy scripts, default entry, and OpenCost/Langfuse narrative are absorbed, and strict physical cleanup removes legacy files instead of treating old shells or historical scripts as completion evidence.
 - depends_on: [legacy-cleanup-user-owned, legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts]
 - blocked_by: []
 - executable_when: monitor-only after B absorb; it becomes executable again only if cleanup regression reopens a cleanup gap.

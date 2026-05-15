@@ -27,8 +27,6 @@ const cleanupGapIds = [
 
 const finalCleanupStatuses = new Set([
   "cleaned",
-  "tombstone_only",
-  "archive_only",
   "intentionally_retained",
 ]);
 

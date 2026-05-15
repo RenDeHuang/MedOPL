@@ -327,7 +327,7 @@ Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-t
 
 ### Cleanup 合同包
 
-适用于退役 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事、旧 v19/v20/v21 路线。
+适用于退役 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事、旧 v19/v20/v21 路线。strict monolith cleanup 下，active repo 不保留旧 public shell、compat alias、旧测试、旧 deploy/adapters/infra 资产或旧脚本作为完成态；git history 已足够保存历史。
 
 订阅：
 
@@ -335,7 +335,9 @@ Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-t
 - [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
-- [../recovery/archive-policy.md](../recovery/archive-policy.md)
+- [../recovery/physical-legacy-file-retirement-goal.md](../recovery/physical-legacy-file-retirement-goal.md)
+- [../recovery/physical-legacy-file-retirement-inventory.md](../recovery/physical-legacy-file-retirement-inventory.md)
 - 与被退役路径相关的分支合同
 
 cleanup 分支必须证明：退役后每个核心域只剩一个正式入口。
+后续 feature leaf 碰到过时模块、接口、测试或兼容面时，必须同 leaf 清理退役，或拆出 cleanup leaf 后再继续。

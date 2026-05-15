@@ -1,6 +1,6 @@
 # MedOPL v22 Repo Zoning Ledger
 
-本台账把仓库上下文裁定为四个区：主线真相区、迁移观察区、历史归档区和授权禁区。它先记录裁定，不移动、不删除、不改实现。
+本台账把仓库上下文裁定为四个区：主线真相区、迁移观察区、退役删除区和授权禁区。strict monolith cleanup 下，旧兼容面、旧测试、旧 public 退役壳、旧 deploy/adapters/infra 资产不再因为历史证据留在 active repo。
 
 ## Branch Declaration
 
@@ -20,8 +20,8 @@
 ## Zone Definitions
 
 - Zone 1: Mainline Truth Surface. AI 和新人可以默认学习、扩写和验证的 v22 主线表面。
-- Zone 2: Migration Observation Surface. 位于 active surface 或默认上下文附近，但带旧语义、旧入口、旧命名或污染风险；需要逐项裁定为 `rewrite`、`tombstone`、`delete` 或受限 `keep`。
-- Zone 3: Historical Archive Surface. 只保留历史证据和迁移参考，不作为新实现入口，不进入默认验证入口。
+- Zone 2: Migration Observation Surface. 位于 active surface 或默认上下文附近，但带旧语义、旧入口、旧命名或污染风险；需要逐项裁定为 `rewrite`、`delete` 或受限 `keep`。
+- Zone 3: Retired Delete Surface. 已被 v22 替代且无 active v22 reason 的旧文件、旧脚本、旧 public shell、旧 deploy/adapters/infra 资产；进入 strict cleanup 删除队列。
 - Zone 4: Authorization Forbidden Surface. 没有单独授权不得修改、执行或扩大接入的路径和操作。
 
 ## Zone 1: Mainline Truth Surface
@@ -50,7 +50,7 @@
 
 ## Zone 2: Migration Observation Surface
 
-动作默认值：`rewrite` 或 `tombstone`。该区不是删除清单；它是人工复核和专题 cleanup 的候选池。
+动作默认值：`rewrite` 或 `delete`。该区不是保留清单；它是人工复核和专题 cleanup 的候选池。
 
 | path_or_group | zone | action | reason | replacement | cleanup_slice |
 | --- | --- | --- | --- | --- | --- |
@@ -62,12 +62,12 @@
 | `scripts/smoke-test-billing-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 billing 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-resource-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否恢复旧 resource-order 或 provisioner 叙事 | managed environment/resource binding smoke | legacy-scripts |
 | `services/portal/src/config/portal-config.mjs` | Zone 2 | rewrite | active config 中存在 legacy runtime mode 风险 | `platform_provisioned` / `customer_dedicated` | default-entry |
-| `services/portal/src/routes/user-owned-resource.routes.mjs` | Zone 2 | tombstone/delete | 旧用户自带资源 route 风险 | managed environment / resource binding routes | user-owned-retirement |
-| `services/portal/src/domain/resource-orders.mjs` | Zone 2 | tombstone/rewrite | `resource-order` 不得作为 v22 主产品叙事 | managed environment/resource binding lifecycle | resource-order-retirement |
-| `services/portal/src/domain/resource-order-*.mjs` | Zone 2 | tombstone/rewrite | 旧 resource-order domain 家族 | managed environment/resource binding lifecycle | resource-order-retirement |
-| `services/portal/src/routes/resource-order*.mjs` | Zone 2 | tombstone/delete | 旧 resource-order public/internal routes | managed environment/resource binding routes | resource-order-retirement |
-| `services/portal/src/state/portal-resource-order-store.mjs` | Zone 2 | tombstone/rewrite | 旧 resource-order persistence | managed environment/resource binding persistence | resource-order-retirement |
-| `services/portal/src/integrations/resource-provisioner-client.mjs` | Zone 2 | tombstone/delete | 旧 resource-provisioner 不得成为主入口 | cloud-lane authorized provider boundary | resource-order-retirement |
+| `services/portal/src/routes/user-owned-resource.routes.mjs` | Zone 2 | delete | 旧用户自带资源 route 风险 | managed environment / resource binding routes | user-owned-retirement |
+| `services/portal/src/domain/resource-orders.mjs` | Zone 2 | delete/rewrite | `resource-order` 不得作为 v22 主产品叙事 | managed environment/resource binding lifecycle | resource-order-retirement |
+| `services/portal/src/domain/resource-order-*.mjs` | Zone 2 | delete/rewrite | 旧 resource-order domain 家族 | managed environment/resource binding lifecycle | resource-order-retirement |
+| `services/portal/src/routes/resource-order*.mjs` | Zone 2 | delete | 旧 resource-order public/internal routes | managed environment/resource binding routes | resource-order-retirement |
+| `services/portal/src/state/portal-resource-order-store.mjs` | Zone 2 | delete/rewrite | 旧 resource-order persistence | managed environment/resource binding persistence | resource-order-retirement |
+| `services/portal/src/integrations/resource-provisioner-client.mjs` | Zone 2 | delete | 旧 resource-provisioner 不得成为主入口 | cloud-lane authorized provider boundary | resource-order-retirement |
 | `services/portal/src/domain/*tencent*` | Zone 2 | review/keep | 云 provider 可作为后端边界，但不得成为普通用户主叙事 | readonly/dry-run/authorized cloud contracts | cloud-lane |
 | `services/portal/src/domain/*inventory*` | Zone 2 | review/keep | inventory 可作为后台只读盘点，不得变用户云控制台 | readonly inventory contract | cloud-lane |
 | `services/portal/src/domain/*quote*` | Zone 2 | review/keep | quote 可作为 pricing/resource plan 边界，不得变真实开通默认动作 | quote/dry-run contract | cloud-lane |
@@ -76,31 +76,31 @@
 | `services/portal/frontend/**` legacy term hits | Zone 2 | review/rewrite | 前端 active surface 可保留后台技术词，但普通用户主语言不得云控制台化 | Portal Chinese product language | default-entry |
 | `services/opl-runtime-bridge/**` legacy term hits | Zone 2 | review/rewrite | Runtime Bridge 可携带兼容字段，但不得伪成功或扩散旧主叙事 | Runtime Bridge contracts | runtime-bridge |
 
-## Zone 3: Historical Archive Surface
+## Zone 3: Retired Delete Surface
 
-动作默认值：`archive`。该区只作历史证据或迁移输入，不作为新实现入口。
+动作默认值：`delete`。git history 已足够保存历史；旧文件不作为新实现入口，也不作为默认验证入口。
 
 | path_or_group | zone | action | reason | replacement | cleanup_slice |
 | --- | --- | --- | --- | --- | --- |
-| `docs/plan/*` | Zone 3 | archive | 历史计划和路线证据 | v22 contracts/recovery | legacy-docs |
-| `docs/reports/*` | Zone 3 | archive | 历史报告证据 | v22 status/recovery | legacy-docs |
-| `docs/releases/*` | Zone 3 | archive | 历史 release 证据 | v22 status/recovery | legacy-docs |
-| `docs/logs/*` | Zone 3 | archive | 历史日志证据 | v22 recovery docs | legacy-docs |
-| `docs/deployment/*` | Zone 3 | archive | 旧部署说明不能成为默认 deploy truth | authorized deploy contracts | legacy-docs |
-| `docs/operations/*` | Zone 3 | archive | 旧运维说明不能成为默认 product truth | authorized ops contracts | legacy-docs |
-| `docs/superpowers/*` | Zone 3 | archive | 本地计划/技能输出，不是 v22 产品主线合同 | recovery/contracts | legacy-docs |
-| `scripts/smoke-test-v19-*` | Zone 3 | archive | v19 smoke 只作历史证据 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-v20*` | Zone 3 | archive | v20 smoke 只作历史证据 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-v21-*` | Zone 3 | archive | v21 smoke 只作历史证据 | `scripts/smoke-test-v22-*` | legacy-scripts |
+| `docs/plan/*` | Zone 3 | delete-or-migrate | 历史计划和路线证据不进入 active default context | v22 contracts/recovery | legacy-docs |
+| `docs/reports/*` | Zone 3 | delete-or-migrate | 历史报告证据不进入 active default context | v22 status/recovery | legacy-docs |
+| `docs/releases/*` | Zone 3 | delete-or-migrate | 历史 release 证据不进入 active default context | v22 status/recovery | legacy-docs |
+| `docs/logs/*` | Zone 3 | delete-or-migrate | 历史日志证据不进入 active default context | v22 recovery docs | legacy-docs |
+| `docs/deployment/*` | Zone 3 | delete-or-migrate | 旧部署说明不能成为默认 deploy truth | authorized deploy contracts | legacy-docs |
+| `docs/operations/*` | Zone 3 | delete-or-migrate | 旧运维说明不能成为默认 product truth | authorized ops contracts | legacy-docs |
+| `docs/superpowers/*` | Zone 3 | delete-or-migrate | 本地计划/技能输出，不是 v22 产品主线合同 | recovery/contracts | legacy-docs |
+| `scripts/smoke-test-v19-*` | Zone 3 | delete | v19 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
+| `scripts/smoke-test-v20*` | Zone 3 | delete | v20 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
+| `scripts/smoke-test-v21-*` | Zone 3 | delete | v21 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/live-test-*` | Zone 3 | delete | live-test 是高风险历史/授权操作，不是默认验证入口；2026-05-14 用户已授权物理删除仓库内旧 live-test 文件，不授权执行 live-test | v22 local smoke / authorized future canary contract | legacy-scripts |
-| `scripts/daily-check-v19-*` | Zone 3 | archive | v19 daily check 只作历史证据 | v22 smoke/canary | legacy-scripts |
-| `scripts/check-v18-*` | Zone 3 | archive | v18 check 只作历史证据 | v22 smoke | legacy-scripts |
-| `scripts/check-v20*` | Zone 3 | archive | v20 check 只作历史证据 | v22 smoke | legacy-scripts |
-| `scripts/check-v21-*` | Zone 3 | archive | v21 check 只作历史证据 | v22 smoke | legacy-scripts |
-| `scripts/live-prepare-v19-*` | Zone 3 | archive | v19 live prepare 只作历史证据 | authorized canary only | legacy-scripts |
-| `OPL-v20-商业化产品套餐开发方案.md` | Zone 3 | archive | v20 商业化历史参考，不作为 v22 默认合同 | v22 product/contracts | legacy-docs |
-| `compose.demo.yaml` | Zone 3 | archive | demo compose 不作为 v22 产品默认入口 | explicit v22 local smoke setup | default-entry |
-| `compose.langfuse.yaml` | Zone 3 | archive | Langfuse 旧默认叙事不能成为主产品入口 | sanitized observability attachment | observability-narrative |
+| `scripts/daily-check-v19-*` | Zone 3 | delete | v19 daily check 不是当前验证体系 | v22 smoke/canary | legacy-scripts |
+| `scripts/check-v18-*` | Zone 3 | delete | v18 check 不是当前验证体系 | v22 smoke | legacy-scripts |
+| `scripts/check-v20*` | Zone 3 | delete | v20 check 不是当前验证体系 | v22 smoke | legacy-scripts |
+| `scripts/check-v21-*` | Zone 3 | delete | v21 check 不是当前验证体系 | v22 smoke | legacy-scripts |
+| `scripts/live-prepare-v19-*` | Zone 3 | delete | v19 live prepare 不是当前验证体系 | authorized canary only | legacy-scripts |
+| `OPL-v20-商业化产品套餐开发方案.md` | Zone 3 | delete-or-migrate | v20 商业化历史参考不作为 v22 默认合同 | v22 product/contracts | legacy-docs |
+| `compose.demo.yaml` | Zone 3 | delete-or-migrate | demo compose 不作为 v22 产品默认入口 | explicit v22 local smoke setup | default-entry |
+| `compose.langfuse.yaml` | Zone 3 | delete | Langfuse 旧默认叙事不能成为主产品入口 | sanitized observability attachment | observability-narrative |
 
 ## Zone 4: Authorization Forbidden Surface
 
@@ -128,19 +128,19 @@
 | v22 smoke | Zone 1 | keep/rewrite | 只允许本地合同/smoke 成为默认验证入口。 |
 | legacy naming inside active surface | Zone 2 | review/rewrite/tombstone | 重点复核 `user-owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事。 |
 | cloud provider terms inside active surface | Zone 2 | review/keep/rewrite | 后端合同可出现 CVM/COS/TKE/K8s，但普通用户主语言不得云控制台化。 |
-| non-v22 smoke families | Zone 2 | review/rewrite/archive | 无 v22 前缀但仍有用的 smoke 需要迁名或明确 archive。 |
-| v19/v20/v21 and live scripts | Zone 3 | archive | 只保留历史证据，不作为默认入口。 |
+| non-v22 smoke families | Zone 2 | review/rewrite/delete | 无 v22 前缀但仍有用的 smoke 需要迁名，否则删除。 |
+| v19/v20/v21 and live scripts | Zone 3 | delete | 不保留为 active repo 历史证据，不作为默认入口。 |
 | deploy/adapters/infra/sentrux | Zone 4 | forbidden_without_authorization | 普通 cleanup 分支不得触碰。 |
 
 default-entry cleanup completed on `cleanup/v22-default-entry-legacy-narrative`: `compose.product.yaml` is a v22 product runtime entry without v19 appliance naming, `user_owned` default mode, legacy runner/provisioner services, or deploy/adapters default wiring.
 
 env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.env.demo.template` is now a tracked v22 local template for Portal, OPL Web Gateway, Runtime Bridge / Adapter, and clean One Person Lab upstream entry wiring. It no longer carries legacy runner, K8s namespace, resource-provisioner, OpenCost billing truth, Langfuse stack image, `user_owned`, or `resource-order` defaults.
 
-user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; legacy `user-owned` route/domain/store became fail-closed tombstones; `user_owned` lifecycle mode is no longer silently normalized into the platform-provisioned resource path. `resource-order` pointers are intentionally left for the resource-order retirement slice.
+user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; strict monolith cleanup now deletes remaining legacy `user-owned` route shell, route registration, copy, fixture and test anchors.
 
-user-owned physical-delete completed on `cleanup/v22-physical-legacy-goal`: physical-delete completed: `services/portal/src/domain/user-owned-resources.mjs`; physical-delete completed: `services/portal/src/state/portal-user-owned-resource-store.mjs`; `services/portal/src/routes/user-owned-resource.routes.mjs` remains the only public fail-closed route tombstone until explicit tombstone removal authorization.
+user-owned physical-delete completed on `cleanup/v22-physical-legacy-goal`: physical-delete completed: `services/portal/src/domain/user-owned-resources.mjs`; physical-delete completed: `services/portal/src/state/portal-user-owned-resource-store.mjs`; remaining route shell is now a strict delete target.
 
-resource-order route success path first-slice cleanup completed on `cleanup/v22-retire-resource-order-route-tombstones`: `services/portal/src/routes/resource-order.routes.mjs` is the only active 410 tombstone shell for old `resource-order` public/internal paths, and the retired public/internal/provision/delete/support route modules no longer carry success handlers. Domain/store/billing/admin payload/frontend cleanup remains in later resource-order retirement slices.
+resource-order route success path first-slice cleanup completed on `cleanup/v22-retire-resource-order-route-tombstones`: old `resource-order` public/internal paths no longer carry success handlers; remaining retired shell and registration are now strict delete targets.
 
 resource-order billing/payload second-slice cleanup completed on `cleanup/v22-retire-resource-order-billing-payloads`: active ledger, user resource binding projection, and Portal page/API payloads now use `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId` as v22 attribution fields. Any retained old identifier is limited to `legacyResourceOrderId` optional migration alias; store/schema/admin/frontend cleanup remains in later resource-order retirement slices.
 
@@ -148,9 +148,9 @@ resource-order store/admin/frontend third-slice cleanup completed on `cleanup/v2
 
 resource-order store/Postgres/schema characterization gate completed on `cleanup/v22-resource-order-store-postgres-schema-eval-shell`: the static gate `scripts/smoke-test-v22-resource-order-store-postgres-characterization.mjs` characterizes the remaining Zone 2 persistence facts in `services/portal/src/state/portal-resource-order-store.mjs`, `portal-store-schema.mjs`, `portal-store-postgres-persistence.mjs`, `portal-store-postgres-write-snapshot-helpers.mjs`, `portal-store-runtime-connections.mjs`, `portal-store-db-delegates.mjs`, `services/portal/src/app/portal-store-runtime.mjs`, and JSON migration collections. This gate is read-only, does not connect to Postgres, does not run migrations, does not touch `services/*`, and prepares the next fourth-slice implementation branch to retire active resource-order store/Postgres/schema dependencies.
 
-resource-order store/Postgres/schema implementation completed on `cleanup/v22-resource-order-store-postgres-schema-implementation`: active Portal runtime no longer instantiates or wires resource-order store/Postgres persistence. `portal-resource-order-store.mjs` is now fail-closed retired API surface; `portal-store-runtime-connections.mjs`, `portal-store-storage-bootstrap.mjs`, `portal-store-db-delegates.mjs`, and `portal-store-postgres-persistence.mjs` no longer create or call resource-order store or active `resource_orders` / `resource_order_events` snapshot read/write paths. `portal-store-schema.mjs`, `portal-store-postgres-write-snapshot-helpers.mjs`, and JSON migration collection keys remain migration-only/tombstone Zone 2 facts until a future schema-drop/archive leaf proves deletion is safe.
+resource-order store/Postgres/schema implementation completed on `cleanup/v22-resource-order-store-postgres-schema-implementation`: active Portal runtime no longer instantiates or wires resource-order store/Postgres persistence. Strict monolith cleanup now removes `portal-resource-order-store.mjs`, resource-order domain family, schema fragments, snapshot helpers and JSON migration collection keys without executing real DB migration.
 
-observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is archive/reference or future authorized ops reference, not the current billing truth. `infra/*`, `deploy/*`, `adapters/*`, live-test, build/push/kubectl, true cloud, and secret-like paths remain untouched by this cleanup completion leaf.
+observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is not the current billing truth. Strict monolith cleanup now deletes old OpenCost/Langfuse compose/deploy/infra assets while retaining active sanitized trace metadata implementation code.
 
 Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `scripts/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
 
@@ -168,9 +168,7 @@ Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gat
 
 - `keep`: 主线正确，继续保留。
 - `rewrite`: 仍需要，但要改名、改文案、改默认值或改边界。
-- `archive`: 只保留历史证据，不参与默认上下文。
 - `delete`: 无保留价值且无主链依赖。
-- `tombstone`: 暂时不能删，只保留 fail-closed 退役壳，不做兼容翻译。
 - `forbidden_without_authorization`: 无单独授权不得触碰。
 
 ## Non Goals

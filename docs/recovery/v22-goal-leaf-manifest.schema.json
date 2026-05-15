@@ -147,8 +147,6 @@
             "needs_eval",
             "gated",
             "cleaned",
-            "tombstone_only",
-            "archive_only",
             "characterized",
             "completed",
             "intentionally_retained",

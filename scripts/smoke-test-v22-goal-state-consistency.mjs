@@ -23,8 +23,6 @@ const allowedStatuses = new Set([
   "needs_eval",
   "gated",
   "cleaned",
-  "tombstone_only",
-  "archive_only",
   "characterized",
   "completed",
   "intentionally_retained",
@@ -470,8 +468,6 @@ function computeExecutableLeaf(current) {
   const gapMap = asGapMap(current.gaps);
   const satisfiedStatuses = new Set([
     "cleaned",
-    "tombstone_only",
-    "archive_only",
     "intentionally_retained",
     "gated",
     "characterized",
