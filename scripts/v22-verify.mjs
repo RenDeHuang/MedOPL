@@ -10,6 +10,8 @@ const repoRoot = path.resolve(__dirname, "..");
 
 const manifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const currentStatePath = "docs/recovery/v22-goal-current.json";
+const strictMonolithCleanupBranch = "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement";
+const strictMonolithCleanupSuiteId = "strict-monolith-cleanup";
 
 function parseArgs(argv) {
   const [mode, maybeTarget, ...tail] = argv;
@@ -45,18 +47,47 @@ function replaceBase(command, base) {
   return command.replaceAll("origin/recovery/platform-v22-trunk", base);
 }
 
-function commandBundle({ mode, target, manifest, current, base }) {
+function currentBranchName() {
+  const result = spawnSync("git", ["branch", "--show-current"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  return result.status === 0 ? result.stdout.trim() : "";
+}
+
+function strictCleanupOverrideForBranch({ branchName, manifest, base }) {
+  if (branchName !== strictMonolithCleanupBranch) return null;
+  const suite = manifest.branch_override_suites?.find((item) => item.id === strictMonolithCleanupSuiteId);
+  if (!suite) throw new Error(`branch_override_suite_missing:${strictMonolithCleanupSuiteId}`);
+  return {
+    branchOverride: {
+      branch: branchName,
+      suiteId: suite.id,
+      reason: suite.reason,
+    },
+    commands: suite.commands.map((command) => replaceBase(command, base)),
+    allowedFiles: suite.allowed_files || [],
+    forbiddenFiles: suite.forbidden_files || manifest.global_forbidden_files,
+    forbiddenOps: suite.forbidden_ops || manifest.global_forbidden_ops,
+    riskClass: suite.risk_class || "local_service_code",
+  };
+}
+
+function commandBundle({ mode, target, manifest, current, base, branchName = currentBranchName() }) {
   if (mode === "current") {
     const leaf = manifest.leaves.find((item) => item.leaf_id === current.current_cursor);
     if (!leaf) throw new Error(`current_leaf_missing_from_manifest:${current.current_cursor}`);
+    const branchOverride = strictCleanupOverrideForBranch({ branchName, manifest, base });
     return {
       mode: "current",
       leafId: leaf.leaf_id,
-      commands: leaf.verification_commands.map((command) => replaceBase(command, base)),
-      allowedFiles: leaf.allowed_files,
-      forbiddenFiles: leaf.forbidden_files,
-      forbiddenOps: leaf.forbidden_ops,
-      riskClass: leaf.risk_class,
+      commands: branchOverride?.commands ?? leaf.verification_commands.map((command) => replaceBase(command, base)),
+      allowedFiles: branchOverride?.allowedFiles ?? leaf.allowed_files,
+      forbiddenFiles: branchOverride?.forbiddenFiles ?? leaf.forbidden_files,
+      forbiddenOps: branchOverride?.forbiddenOps ?? leaf.forbidden_ops,
+      riskClass: branchOverride?.riskClass ?? leaf.risk_class,
+      ...(branchOverride?.branchOverride ? { branchOverride: branchOverride.branchOverride } : {}),
     };
   }
 
@@ -180,6 +211,7 @@ async function main() {
     manifest,
     current,
     base: options.base || "origin/recovery/platform-v22-trunk",
+    branchName: options.branch || currentBranchName(),
   });
   const payload = {
     ok: true,

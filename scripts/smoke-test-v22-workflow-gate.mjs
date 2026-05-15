@@ -120,6 +120,44 @@ const reviewWithSmoke = evaluateReview({
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "services_changed_without_v22_smoke_update"), false, "review_must_accept_service_smoke_update");
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "contracts_changed_without_v22_smoke_update"), false, "review_must_accept_contract_smoke_update");
 
+const strictCleanupAuthorizedDeletes = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  branchName: "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  changedFiles: [
+    "adapters/resource-provisioner/package.json",
+    "deploy/tke-package/README.md",
+  ],
+  changedStatuses: new Map([
+    ["adapters/resource-provisioner/package.json", "D"],
+    ["deploy/tke-package/README.md", "D"],
+  ]),
+});
+assert.equal(strictCleanupAuthorizedDeletes.ok, true, "strict_cleanup_authorized_deletes_must_be_ok");
+assert.deepEqual(strictCleanupAuthorizedDeletes.forbiddenPaths, [], "strict_cleanup_delete_forbidden_paths_must_be_empty");
+assert.deepEqual(strictCleanupAuthorizedDeletes.authorizedCleanupDeletions, [
+  "adapters/resource-provisioner/package.json",
+  "deploy/tke-package/README.md",
+], "strict_cleanup_delete_authorization_mismatch");
+
+const strictCleanupModifiedZone4 = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  branchName: "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  changedFiles: [
+    "adapters/resource-provisioner/package.json",
+    "deploy/tke-package/README.md",
+  ],
+  changedStatuses: new Map([
+    ["adapters/resource-provisioner/package.json", "M"],
+    ["deploy/tke-package/README.md", "A"],
+  ]),
+});
+assert.equal(strictCleanupModifiedZone4.ok, false, "strict_cleanup_modified_zone4_must_block");
+assert.deepEqual(strictCleanupModifiedZone4.authorizedCleanupDeletions, [], "strict_cleanup_modified_zone4_must_not_be_authorized");
+assert.deepEqual(strictCleanupModifiedZone4.forbiddenPaths, [
+  "adapters/resource-provisioner/package.json",
+  "deploy/tke-package/README.md",
+], "strict_cleanup_modified_zone4_forbidden_paths_mismatch");
+
 const checkpointReady = evaluateCheckpoint({
   branchName: "recovery/platform-v22-trunk",
   statusPorcelain: "",

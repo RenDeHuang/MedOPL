@@ -27,6 +27,14 @@ const forbiddenDiffPrefixes = [
   ".sentrux/",
 ];
 
+const strictMonolithCleanupBranch = "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement";
+const strictMonolithCleanupAuthorizedDeletePatterns = [
+  /^adapters\/(?:resource-provisioner|med-autoscience-runner|cloud-provisioner|shared)(?:\/|$)/u,
+  /^deploy\/tke-package(?:\/|$)/u,
+  /^deploy\/local\/dockerfiles\/(?:resource-provisioner|med-autoscience-runner)\.Dockerfile$/u,
+  /^infra\/(?:opencost|kubernetes|codex-runtime|production-hardening)(?:\/|$)/u,
+];
+
 const deletedExternalScriptNames = [
   "scripts/smoke-test-billing-opencost.mjs",
   "scripts/install-opencost-local.ps1",
@@ -128,11 +136,54 @@ function changedFilesFromBase() {
     .flatMap((output) => output.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)))];
 }
 
+function gitOutput(args) {
+  const result = spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_${args.join("_")}_failed:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
+}
+
+function currentBranchName() {
+  return gitOutput(["branch", "--show-current"]);
+}
+
+function changedFileStatusesFromBase() {
+  const outputs = [
+    ["diff", "--name-status", "origin/recovery/platform-v22-trunk"],
+    ["diff", "--name-status", "--cached"],
+    ["diff", "--name-status"],
+  ].map(gitOutput);
+  const statuses = new Map();
+  for (const output of outputs) {
+    for (const line of output.split(/\r?\n/u).map((item) => item.trim()).filter(Boolean)) {
+      const [status, ...paths] = line.split(/\s+/u);
+      const filePath = paths.at(-1);
+      if (filePath && !statuses.has(filePath)) statuses.set(filePath, status);
+    }
+  }
+  for (const filePath of changedFilesFromBase()) {
+    if (!statuses.has(filePath)) statuses.set(filePath, "A");
+  }
+  return statuses;
+}
+
+function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
+  if (branchName !== strictMonolithCleanupBranch) return false;
+  if (!String(status || "").startsWith("D")) return false;
+  return strictMonolithCleanupAuthorizedDeletePatterns.some((pattern) => pattern.test(filePath));
+}
+
 async function assertNoZone4Diffs() {
   const changedFiles = changedFilesFromBase();
+  const changedStatuses = changedFileStatusesFromBase();
+  const branchName = currentBranchName();
   for (const filePath of changedFiles) {
     assert(
-      !forbiddenDiffPrefixes.some((prefix) => filePath.startsWith(prefix)),
+      !forbiddenDiffPrefixes.some((prefix) => filePath.startsWith(prefix))
+        || isStrictMonolithCleanupAuthorizedDelete(filePath, changedStatuses.get(filePath), branchName),
       `zone4_path_must_not_be_modified:${filePath}`,
     );
   }

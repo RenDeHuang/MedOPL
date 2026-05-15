@@ -342,6 +342,7 @@ const branchScopedAllowedDiffPatterns = new Map([
     "docs/recovery/*",
     "scripts/smoke-test-v22-*",
     "scripts/v22-tencent-readonly-inventory-runner.mjs",
+    "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
     "scripts/check-v18-*",
     "scripts/check-v20*",

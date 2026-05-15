@@ -94,6 +94,18 @@ assert(currentSuite, "current_suite_missing");
 assert.deepEqual(currentSuite.commands, currentLeaf.verification_commands, "current_suite_must_use_current_leaf_commands");
 assert.equal(currentSuite.entrypoint, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "current_suite_entrypoint_mismatch");
 
+assert(Array.isArray(manifest.branch_override_suites), "manifest_branch_override_suites_must_be_array");
+const strictCleanupOverride = manifest.branch_override_suites.find((suite) => suite.id === "strict-monolith-cleanup");
+assert(strictCleanupOverride, "strict_monolith_cleanup_branch_override_missing");
+assert.equal(strictCleanupOverride.branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "strict_monolith_cleanup_override_branch_mismatch");
+assertIncludes(strictCleanupOverride.reason, "current product cursor remains leaf-portal-ui-design-quality-implementation", "strict_monolith_cleanup_override_reason_current_truth");
+assertIncludes(strictCleanupOverride.reason, "without weakening the UI authoring gate", "strict_monolith_cleanup_override_reason_no_ui_gate_weakening");
+assertNotIncludes(strictCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs", "strict_monolith_cleanup_override_must_not_run_ui_authoring_gate");
+assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs"), "strict_monolith_cleanup_override_must_include_observability_boundary");
+assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs"), "strict_monolith_cleanup_override_must_include_strict_gate");
+assert(strictCleanupOverride.forbidden_files.some((item) => item.includes("only deletion of explicit retired assets is authorized")), "strict_monolith_cleanup_override_must_forbid_zone4_add_modify");
+assert(strictCleanupOverride.forbidden_ops.includes("real-db-migration-execution"), "strict_monolith_cleanup_override_must_forbid_real_db_migration");
+
 assertIncludes(runnerSource, "docs/recovery/v22-agent-verify-manifest.json", "runner_must_read_manifest");
 assertIncludes(runnerSource, "docs/recovery/v22-goal-current.json", "runner_must_read_current_state");
 assertIncludes(runnerSource, "spawnSync", "runner_must_execute_manifest_commands");
@@ -115,7 +127,15 @@ assert.equal(listPayload.ok, true, "verify_list_ok_mismatch");
 assert.equal(listPayload.defaultAgentEntrypoint, manifest.default_agent_entrypoint, "verify_list_default_entrypoint_mismatch");
 assert(listPayload.leaves.includes(current.current_cursor), "verify_list_must_include_current_cursor");
 
-const planResult = runVerify(["current", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
+const planResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  current.authoring_branch,
+  "--dry-run",
+  "--json",
+]);
 assert.equal(planResult.status, 0, `verify_current_dry_run_must_exit_zero:${planResult.stderr || planResult.stdout}`);
 const planPayload = JSON.parse(planResult.stdout);
 assert.equal(planPayload.ok, true, "verify_current_dry_run_ok_mismatch");
@@ -125,6 +145,43 @@ assert.deepEqual(planPayload.commands, currentLeaf.verification_commands, "verif
 assert.deepEqual(planPayload.allowedFiles, currentLeaf.allowed_files, "verify_current_allowed_files_mismatch");
 assert.deepEqual(planPayload.forbiddenFiles, currentLeaf.forbidden_files, "verify_current_forbidden_files_mismatch");
 assert.equal(planPayload.dryRun, true, "verify_current_dry_run_flag_mismatch");
+
+const strictCleanupPlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(strictCleanupPlanResult.status, 0, `verify_current_strict_cleanup_dry_run_must_exit_zero:${strictCleanupPlanResult.stderr || strictCleanupPlanResult.stdout}`);
+const strictCleanupPlanPayload = JSON.parse(strictCleanupPlanResult.stdout);
+assert.equal(strictCleanupPlanPayload.ok, true, "verify_current_strict_cleanup_dry_run_ok_mismatch");
+assert.equal(strictCleanupPlanPayload.mode, "current", "verify_current_strict_cleanup_mode_mismatch");
+assert.equal(strictCleanupPlanPayload.leafId, current.current_cursor, "verify_current_strict_cleanup_must_not_change_current_leaf");
+assert.equal(strictCleanupPlanPayload.branchOverride?.branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "verify_current_strict_cleanup_branch_override_mismatch");
+assert.equal(strictCleanupPlanPayload.branchOverride?.suiteId, "strict-monolith-cleanup", "verify_current_strict_cleanup_suite_id_mismatch");
+assert.deepEqual(strictCleanupPlanPayload.commands, [
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
+  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
+  "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
+  "node scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
+  "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
+  "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
+  "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+  "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+  "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra",
+], "verify_current_strict_cleanup_commands_mismatch");
+assertNotIncludes(
+  strictCleanupPlanPayload.commands.join("\n"),
+  "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+  "verify_current_strict_cleanup_must_not_run_ui_authoring_gate",
+);
+assert.equal(strictCleanupPlanPayload.dryRun, true, "verify_current_strict_cleanup_dry_run_flag_mismatch");
 
 const mvpPlanResult = runVerify(["suite", "mvp", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
 assert.equal(mvpPlanResult.status, 0, `verify_mvp_dry_run_must_exit_zero:${mvpPlanResult.stderr || mvpPlanResult.stdout}`);
