@@ -79,7 +79,7 @@ Zero-compat 下，文件名是 `v22-*` 不自动等于 active。`live`、`canary
 - residual `adapters/billing-aggregator/**`
 - residual `deploy/local/dockerfiles/**`
 - residual live/canary/authorized runner executable scripts
-- Runtime Bridge active code 中的 `resourceOrderId`、`resource_order_id`、`user_owned`、`user-owned` 和 `USER_OWNED_*` alias
+- Runtime Bridge active code 中已清退的 `resourceOrderId`、`resource_order_id`、`user_owned`、`user-owned` 和 `USER_OWNED_*` alias；后续不得恢复为兼容字段、trace metadata 或 runtime mode
 
 ## Forbidden Without Explicit Authorization
 

@@ -4,8 +4,6 @@ import { providerKeyRefFrom } from "./runtime-bridge-launch-scope.mjs";
 export const RUN_API_RUNTIME_MODES = Object.freeze({
   PLATFORM_PROVISIONED: "platform_provisioned",
   CUSTOMER_DEDICATED: "customer_dedicated",
-  CLOUD_PROVISIONED: "platform_provisioned",
-  USER_OWNED: "platform_provisioned",
   MANAGED_RUNTIME: "managed_runtime",
 });
 
@@ -18,7 +16,7 @@ function normalizeRuntimeMode(value = "") {
   ].includes(mode)) {
     return RUN_API_RUNTIME_MODES.PLATFORM_PROVISIONED;
   }
-  if (["cloud_provisioned", "cloud-provisioned", "user_owned", "user-owned", "user_owned_runtime", "user-owned-runtime"].includes(mode)) {
+  if (["cloud_provisioned", "cloud-provisioned"].includes(mode)) {
     return RUN_API_RUNTIME_MODES.PLATFORM_PROVISIONED;
   }
   return mode;

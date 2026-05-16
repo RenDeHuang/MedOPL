@@ -36,7 +36,6 @@ export function buildCostRecord(input = {}) {
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    resourceOrderId: input.resourceOrderId || input.resource_order_id || "",
     cpuCost: input.cpuCost ?? null,
     gpuCost: input.gpuCost ?? null,
     storageCost: input.storageCost ?? null,

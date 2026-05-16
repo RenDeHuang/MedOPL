@@ -9,7 +9,6 @@ export const RUN_STAGES = Object.freeze({
   RUNNER_STATUS_SYNC: "runner_status_sync",
   PLATFORM_PROVISIONED_RUNTIME_DISPATCH,
   PLATFORM_RUNTIME_DISPATCH: PLATFORM_PROVISIONED_RUNTIME_DISPATCH,
-  USER_OWNED_RUNTIME_DISPATCH: PLATFORM_PROVISIONED_RUNTIME_DISPATCH,
 });
 
 export const RUN_ERROR_CODES = Object.freeze({
@@ -25,7 +24,6 @@ export const RUN_ERROR_CODES = Object.freeze({
   LAUNCH_TOKEN_INVALID: "LAUNCH_TOKEN_INVALID",
   PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED,
   PLATFORM_RUNTIME_AGENT_REQUIRED: PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED,
-  USER_OWNED_RUNTIME_AGENT_REQUIRED: PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED,
   RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED: "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED",
 });
 
@@ -34,7 +32,7 @@ const ALLOWED_ERROR_CODES = new Set(Object.values(RUN_ERROR_CODES));
 
 function normalizeRunStage(value = "") {
   const stage = String(value || "");
-  if (stage === "platform_runtime_dispatch" || stage === "user_owned_runtime_dispatch") {
+  if (stage === "platform_runtime_dispatch") {
     return PLATFORM_PROVISIONED_RUNTIME_DISPATCH;
   }
   return stage;
@@ -42,7 +40,7 @@ function normalizeRunStage(value = "") {
 
 function normalizeRunErrorCode(value = "") {
   const code = String(value || "");
-  if (code === "PLATFORM_RUNTIME_AGENT_REQUIRED" || code === "USER_OWNED_RUNTIME_AGENT_REQUIRED") {
+  if (code === "PLATFORM_RUNTIME_AGENT_REQUIRED") {
     return PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED;
   }
   return code;

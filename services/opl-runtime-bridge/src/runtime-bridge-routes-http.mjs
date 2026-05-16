@@ -20,9 +20,6 @@ function urlEnv(name, fallback = "") {
 function normalizeProductRuntimeMode(value = "", fallback = "platform_provisioned") {
   const normalized = String(value || fallback).trim().toLowerCase();
   if (!normalized) return fallback;
-  if (["user_owned", "user-owned", "user_owned_runtime", "user-owned-runtime"].includes(normalized)) {
-    return "platform_provisioned";
-  }
   if (normalized === "cloud_provisioned" || normalized === "customer_dedicated") return "platform_provisioned";
   return normalized;
 }

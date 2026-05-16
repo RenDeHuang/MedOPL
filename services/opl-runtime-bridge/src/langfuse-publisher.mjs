@@ -28,7 +28,6 @@ function metadataForEvent(event = {}) {
     workspaceSessionId: firstValue(event.workspaceSessionId, event.workspace_session_id),
     runtimeSessionId: firstValue(event.runtimeSessionId, event.runtime_session_id),
     runId: firstValue(event.runId, event.run_id),
-    resourceOrderId: firstValue(event.resourceOrderId, event.resource_order_id),
     serverPlanId: firstValue(event.serverPlanId, event.server_plan_id),
     status: firstValue(event.status, "recorded"),
     model: firstValue(event.model, "opl-runtime"),

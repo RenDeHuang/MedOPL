@@ -54,7 +54,6 @@ function managedRunAccountingFields(input = {}) {
     billingScope: input.billingScope || input.billing_scope || "run",
     costCenter: input.costCenter || input.cost_center || "research-foundry",
     estimatedHours: Number(input.estimatedHours ?? input.estimated_hours ?? 1),
-    resourceOrderId: String(input.resourceOrderId || input.resource_order_id || "").trim(),
   };
 }
 

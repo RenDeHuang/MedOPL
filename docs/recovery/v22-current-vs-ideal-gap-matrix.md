@@ -37,7 +37,7 @@ Codex must execute the product-goal dependency graph in stage order: cleanup -> 
 - strict cleanup rule: 保留项必须写出 active v22 reason；不能因为 git history、历史证据、旧兼容或旧失败壳而留在 active repo。
 - zero-compat active surface rule: 任何让旧路线、旧字段、旧模块、旧部署形态、旧测试体系、旧叙事还能被调用、注册、接受、映射、解释、验证、部署或作为默认上下文存在的 active repo 资产，都是兼容层。
 - zero-compat active surface rule: `adapters/*`、`deploy/*`、`infra/*`、live/canary/authorized runner executable surface 不属于 strict monolith 默认 active surface；需要能力时必须迁入 Portal / Gateway / Runtime Bridge / repo-local v22 gate 后删除旧路径。
-- current zero-compat gap: Runtime Bridge active code 仍残留 `resourceOrderId` / `resource_order_id` 持久化或发布，以及 `user_owned` / `USER_OWNED_*` runtime alias；这些不改变 current cursor，但必须在 cleanup branch 清退。
+- current zero-compat fact: Runtime Bridge active code 中的 `resourceOrderId` / `resource_order_id` 持久化或发布，以及 `user_owned` / `USER_OWNED_*` runtime alias 已在 cleanup branch 清退；这不改变 current cursor，剩余 zero-compat gap 是 `adapters/billing-aggregator/**`、`deploy/local/dockerfiles/**` 和 live/canary/authorized runner executable scripts。
 - current zero-compat gap: `adapters/billing-aggregator/**`、`deploy/local/dockerfiles/**` 和 live/canary/authorized runner executable scripts 仍作为 repo 资产存在；不能再作为 strict cleanup 完成态保留。
 
 ## Cleanup Stage Completion Gate
