@@ -98,6 +98,10 @@ assert(Array.isArray(manifest.branch_override_suites), "manifest_branch_override
 const strictCleanupOverride = manifest.branch_override_suites.find((suite) => suite.id === "strict-monolith-cleanup");
 assert(strictCleanupOverride, "strict_monolith_cleanup_branch_override_missing");
 assert.equal(strictCleanupOverride.branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "strict_monolith_cleanup_override_branch_mismatch");
+assert.deepEqual(strictCleanupOverride.branches, [
+  "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
+], "strict_monolith_cleanup_override_branches_mismatch");
 assertIncludes(strictCleanupOverride.reason, "current product cursor remains leaf-portal-ui-design-quality-implementation", "strict_monolith_cleanup_override_reason_current_truth");
 assertIncludes(strictCleanupOverride.reason, "without weakening the UI authoring gate", "strict_monolith_cleanup_override_reason_no_ui_gate_weakening");
 assertNotIncludes(strictCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs", "strict_monolith_cleanup_override_must_not_run_ui_authoring_gate");
@@ -188,6 +192,28 @@ assertNotIncludes(
   "verify_current_strict_cleanup_must_not_run_ui_authoring_gate",
 );
 assert.equal(strictCleanupPlanPayload.dryRun, true, "verify_current_strict_cleanup_dry_run_flag_mismatch");
+
+const residualCleanupPlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(residualCleanupPlanResult.status, 0, `verify_current_residual_cleanup_dry_run_must_exit_zero:${residualCleanupPlanResult.stderr || residualCleanupPlanResult.stdout}`);
+const residualCleanupPlanPayload = JSON.parse(residualCleanupPlanResult.stdout);
+assert.equal(residualCleanupPlanPayload.ok, true, "verify_current_residual_cleanup_dry_run_ok_mismatch");
+assert.equal(residualCleanupPlanPayload.leafId, current.current_cursor, "verify_current_residual_cleanup_must_not_change_current_leaf");
+assert.equal(residualCleanupPlanPayload.branchOverride?.branch, "cleanup/v22-strict-monolith-residual-test-anchor-retirement", "verify_current_residual_cleanup_branch_override_mismatch");
+assert.equal(residualCleanupPlanPayload.branchOverride?.suiteId, "strict-monolith-cleanup", "verify_current_residual_cleanup_suite_id_mismatch");
+assertNotIncludes(
+  residualCleanupPlanPayload.commands.join("\n"),
+  "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+  "verify_current_residual_cleanup_must_not_run_ui_authoring_gate",
+);
+assert.equal(residualCleanupPlanPayload.dryRun, true, "verify_current_residual_cleanup_dry_run_flag_mismatch");
 
 const mvpPlanResult = runVerify(["suite", "mvp", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
 assert.equal(mvpPlanResult.status, 0, `verify_mvp_dry_run_must_exit_zero:${mvpPlanResult.stderr || mvpPlanResult.stdout}`);

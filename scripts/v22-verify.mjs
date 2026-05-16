@@ -10,7 +10,6 @@ const repoRoot = path.resolve(__dirname, "..");
 
 const manifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const currentStatePath = "docs/recovery/v22-goal-current.json";
-const strictMonolithCleanupBranch = "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement";
 const strictMonolithCleanupSuiteId = "strict-monolith-cleanup";
 
 function parseArgs(argv) {
@@ -57,9 +56,10 @@ function currentBranchName() {
 }
 
 function strictCleanupOverrideForBranch({ branchName, manifest, base }) {
-  if (branchName !== strictMonolithCleanupBranch) return null;
   const suite = manifest.branch_override_suites?.find((item) => item.id === strictMonolithCleanupSuiteId);
   if (!suite) throw new Error(`branch_override_suite_missing:${strictMonolithCleanupSuiteId}`);
+  const suiteBranches = new Set([suite.branch, ...(suite.branches ?? [])].filter(Boolean));
+  if (!suiteBranches.has(branchName)) return null;
   return {
     branchOverride: {
       branch: branchName,

@@ -7,7 +7,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const reportPath = "docs/recovery/mvp-contract-acceptance.md";
-const strictMonolithCleanupBranch = "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement";
+const strictMonolithCleanupBranches = new Set([
+  "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
+]);
 
 const requiredReportPhrases = [
   "pricing snapshot contract",
@@ -224,7 +227,7 @@ function runStrictMonolithCleanupVerify() {
 
 await assertReportAcceptanceBoundary();
 
-if (currentBranchName() === strictMonolithCleanupBranch) {
+if (strictMonolithCleanupBranches.has(currentBranchName())) {
   const passed = runStrictMonolithCleanupVerify();
   console.log(JSON.stringify({
     ok: true,

@@ -74,12 +74,16 @@ function assertOnlyV22SmokeScriptsInMvpSuite(source) {
   const scriptReferences = [...source.matchAll(/scripts\/[A-Za-z0-9_.-]+\.mjs/g)].map((match) => match[0]);
   assert(scriptReferences.length > 0, "mvp_suite_script_reference_missing");
 
+  let unifiedVerifierReferenceCount = 0;
   for (const scriptReference of scriptReferences) {
-    assert(
-      scriptReference.startsWith("scripts/smoke-test-v22-"),
-      `mvp_suite_must_only_reference_v22_smoke:${scriptReference}`,
-    );
+    if (scriptReference === "scripts/v22-verify.mjs") {
+      unifiedVerifierReferenceCount += 1;
+      continue;
+    }
+    assert(scriptReference.startsWith("scripts/smoke-test-v22-"), `mvp_suite_must_only_reference_v22_smoke:${scriptReference}`);
   }
+  assert(unifiedVerifierReferenceCount > 0, "mvp_suite_must_reference_unified_v22_verifier");
+  assert(source.includes("strict-monolith-cleanup"), "mvp_suite_unified_verifier_must_be_branch_appropriate");
 
   for (const forbidden of [
     "smoke-test-v19",
@@ -94,6 +98,11 @@ function assertOnlyV22SmokeScriptsInMvpSuite(source) {
   ]) {
     assert.equal(source.includes(forbidden), false, `mvp_suite_must_not_include:${forbidden}`);
   }
+  assert.equal(
+    /v22-verify\.mjs[\s\S]{0,500}(smoke-test-v19|smoke-test-v20|smoke-test-v21|live-test|check-v18|check-v20|check-v21|resource-provisioner|opencost)/u.test(source),
+    false,
+    "mvp_suite_unified_verifier_must_not_reintroduce_legacy_commands",
+  );
 }
 
 async function assertLegacyScriptsDeleted() {
