@@ -399,6 +399,55 @@
         "dependency-upgrade",
         "real-db-migration-execution"
       ]
+    },
+    {
+      "id": "contract-index-runtime-bridge-alignment",
+      "branch": "cleanup/v22-zero-compat-contract-index-runtime-bridge-alignment",
+      "branches": [
+        "cleanup/v22-zero-compat-contract-index-runtime-bridge-alignment"
+      ],
+      "description": "Verification bundle for the zero-compat contract index naming alignment cleanup branch. This does not change v22-goal-current.json or advance the current product leaf; it verifies Runtime Bridge contract package naming, zero-compat narrative boundaries, and B-review workflow gates without running the UI authoring branch gate.",
+      "reason": "The current product cursor remains leaf-portal-ui-design-quality-implementation, while this contract-index cleanup branch only aligns Runtime Bridge contract package naming and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/contracts docs/recovery scripts"
+      ],
+      "allowed_files": [
+        "docs/contracts/README.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs"
+      ],
+      "forbidden_files": [
+        ".sentrux/*",
+        ".env.demo.template",
+        "upstream one-person-lab",
+        "secret-like paths",
+        "true cloud runners",
+        "deploy/*",
+        "adapters/*",
+        "infra/*"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade",
+        "real-db-migration-execution"
+      ]
     }
   ],
   "package_suites": [

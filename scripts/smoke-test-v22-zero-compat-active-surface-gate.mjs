@@ -91,7 +91,7 @@ const compatibilityCompletionPatterns = [
   /\bkeep_tombstone\b/iu,
   /\barchive_reference\b/iu,
   /\bGateway alias\b/iu,
-  /Runtime Bridge 合同包/iu,
+  /Portal OPL Adapter \/ Runtime Agent 合同包/iu,
   /portal-legacy-redirect\.routes\.mjs[^.\n]*(?:路径迁移壳|兼容|compat)/iu,
   /旧 workspace redirects[^.\n]*(?:兼容|compat)/iu,
   /旧入口兼容参考/iu,
@@ -294,6 +294,20 @@ async function assertCurrentNarrativeDoesNotRetainCompatibility(findings) {
   }
 }
 
+async function assertRuntimeBridgeContractPackageNaming() {
+  const contractIndex = await readRepoFile("docs/contracts/README.md");
+  assert(contractIndex.includes("### Runtime Bridge 合同包"), "contract_index_must_use_runtime_bridge_contract_package_title");
+  assert.equal(
+    contractIndex.includes("### Portal OPL Adapter / Runtime Agent 合同包"),
+    false,
+    "contract_index_must_not_use_adapter_contract_package_title",
+  );
+  assert(
+    contractIndex.includes("这是 v22 active Runtime Bridge 主线服务，不是旧 adapters/* 兼容层"),
+    "contract_index_must_explain_runtime_bridge_is_not_adapter_compat_layer",
+  );
+}
+
 async function main() {
   const findings = [];
 
@@ -303,6 +317,7 @@ async function main() {
   await assertNoResidualLiveCanaryRunnerScripts(findings);
   await assertDefaultSuitesAndWorkflowDoNotReferenceResiduals(findings);
   await assertCurrentNarrativeDoesNotRetainCompatibility(findings);
+  await assertRuntimeBridgeContractPackageNaming();
 
   findings.sort((left, right) =>
     `${left.type}:${left.file}:${left.line}`.localeCompare(`${right.type}:${right.file}:${right.line}`),

@@ -7,10 +7,10 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const reportPath = "docs/recovery/mvp-contract-acceptance.md";
-const strictMonolithCleanupBranches = new Set([
-  "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
-  "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
-  "cleanup/v22-strict-monolith-zero-compat-active-surface",
+const verifyManifestPath = "docs/recovery/v22-agent-verify-manifest.json";
+const branchOverrideSuiteIds = new Set([
+  "strict-monolith-cleanup",
+  "contract-index-runtime-bridge-alignment",
 ]);
 
 const requiredReportPhrases = [
@@ -186,7 +186,16 @@ function currentBranchName() {
   return result.stdout.trim();
 }
 
-function runStrictMonolithCleanupVerify() {
+async function branchOverrideSuiteForCurrentBranch() {
+  const manifest = JSON.parse(await readFile(path.join(repoRoot, verifyManifestPath), "utf8"));
+  const branchName = currentBranchName();
+  return (manifest.branch_override_suites ?? []).find((suite) => {
+    const branches = new Set([suite.branch, ...(suite.branches ?? [])].filter(Boolean));
+    return branches.has(branchName);
+  });
+}
+
+function runBranchOverrideVerify(expectedSuiteId) {
   const result = spawnSync(process.execPath, [
     "scripts/v22-verify.mjs",
     "current",
@@ -207,29 +216,31 @@ function runStrictMonolithCleanupVerify() {
     if (result.stderr) {
       process.stderr.write(result.stderr);
     }
-    throw new Error("strict_monolith_cleanup_verify_failed");
+    throw new Error("branch_override_verify_failed");
   }
 
   const payload = JSON.parse(result.stdout);
-  assert.equal(payload.ok, true, "strict_monolith_cleanup_verify_must_be_ok");
-  assert.equal(payload.leafId, "leaf-portal-ui-design-quality-implementation", "strict_monolith_cleanup_verify_must_not_change_current_leaf");
-  assert.equal(payload.branchOverride?.suiteId, "strict-monolith-cleanup", "strict_monolith_cleanup_verify_suite_mismatch");
+  assert.equal(payload.ok, true, "branch_override_verify_must_be_ok");
+  assert.equal(payload.leafId, "leaf-portal-ui-design-quality-implementation", "branch_override_verify_must_not_change_current_leaf");
+  assert(branchOverrideSuiteIds.has(payload.branchOverride?.suiteId), `branch_override_verify_suite_unknown:${payload.branchOverride?.suiteId || "(missing)"}`);
+  assert.equal(payload.branchOverride?.suiteId, expectedSuiteId, "branch_override_verify_suite_mismatch");
   assert.equal(
     payload.commands.includes("node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs"),
     false,
-    "strict_monolith_cleanup_mvp_suite_must_not_run_ui_authoring_gate",
+    "branch_override_mvp_suite_must_not_run_ui_authoring_gate",
   );
   return payload.results?.map((item) => item.command) || payload.commands;
 }
 
 await assertReportAcceptanceBoundary();
 
-if (strictMonolithCleanupBranches.has(currentBranchName())) {
-  const passed = runStrictMonolithCleanupVerify();
+const branchOverrideSuite = await branchOverrideSuiteForCurrentBranch();
+if (branchOverrideSuite) {
+  const passed = runBranchOverrideVerify(branchOverrideSuite.id);
   console.log(JSON.stringify({
     ok: true,
     contract: "v22_mvp_contract_acceptance_suite",
-    branchOverride: "strict-monolith-cleanup",
+    branchOverride: branchOverrideSuite.id,
     currentLeaf: "leaf-portal-ui-design-quality-implementation",
     passed,
   }, null, 2));

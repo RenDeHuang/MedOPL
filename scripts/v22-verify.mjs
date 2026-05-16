@@ -10,7 +10,6 @@ const repoRoot = path.resolve(__dirname, "..");
 
 const manifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const currentStatePath = "docs/recovery/v22-goal-current.json";
-const strictMonolithCleanupSuiteId = "strict-monolith-cleanup";
 
 function parseArgs(argv) {
   const [mode, maybeTarget, ...tail] = argv;
@@ -55,11 +54,16 @@ function currentBranchName() {
   return result.status === 0 ? result.stdout.trim() : "";
 }
 
-function strictCleanupOverrideForBranch({ branchName, manifest, base }) {
-  const suite = manifest.branch_override_suites?.find((item) => item.id === strictMonolithCleanupSuiteId);
-  if (!suite) throw new Error(`branch_override_suite_missing:${strictMonolithCleanupSuiteId}`);
-  const suiteBranches = new Set([suite.branch, ...(suite.branches ?? [])].filter(Boolean));
-  if (!suiteBranches.has(branchName)) return null;
+function branchOverrideForBranch({ branchName, manifest, base }) {
+  const matchedSuites = (manifest.branch_override_suites ?? []).filter((suite) => {
+    const suiteBranches = new Set([suite.branch, ...(suite.branches ?? [])].filter(Boolean));
+    return suiteBranches.has(branchName);
+  });
+  if (matchedSuites.length > 1) {
+    throw new Error(`branch_override_suite_ambiguous:${branchName}:${matchedSuites.map((suite) => suite.id).join(",")}`);
+  }
+  const suite = matchedSuites[0];
+  if (!suite) return null;
   return {
     branchOverride: {
       branch: branchName,
@@ -78,7 +82,7 @@ function commandBundle({ mode, target, manifest, current, base, branchName = cur
   if (mode === "current") {
     const leaf = manifest.leaves.find((item) => item.leaf_id === current.current_cursor);
     if (!leaf) throw new Error(`current_leaf_missing_from_manifest:${current.current_cursor}`);
-    const branchOverride = strictCleanupOverrideForBranch({ branchName, manifest, base });
+    const branchOverride = branchOverrideForBranch({ branchName, manifest, base });
     return {
       mode: "current",
       leafId: leaf.leaf_id,

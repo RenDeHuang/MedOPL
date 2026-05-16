@@ -153,11 +153,9 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 - [v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 
-### Portal OPL Adapter / Runtime Agent 合同包
+### Runtime Bridge 合同包
 
-适用于 OPL session bind、run、message、file reference、artifact reference、providerKeyRef 透传和 Runtime Agent relay。
-
-当前实现目录仍位于 `services/opl-runtime-bridge`，这是实现路径，不是产品主叙事或保留旧层的理由。
+适用于 OPL session bind、run、message、file reference、artifact reference、providerKeyRef 透传和 Runtime Agent relay。当前实现目录是 services/opl-runtime-bridge；这是 v22 active Runtime Bridge 主线服务，不是旧 adapters/* 兼容层。
 
 订阅：
 
