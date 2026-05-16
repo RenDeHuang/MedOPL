@@ -32,7 +32,7 @@
 | 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement` | Zone 2/3 | rewrite/delete | sanitized trace metadata boundary remains active; old OpenCost/Langfuse compose/deploy/infra assets are delete targets. |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
-| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | 定义 zero-compat gate；Runtime Bridge 旧字段已清退，billing adapter、local Dockerfile、live/canary/authorized runner executable surface 和 residual compatibility narrative 已按 Slice K/L/M/N 清退。 |
+| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | completed through Slice O：Runtime Bridge 旧字段已清退，billing adapter、local Dockerfile、live/canary/authorized runner executable surface 和 residual compatibility narrative 已按 Slice K/L/M/N 清退，Slice O 已记录 zero-compat active surface completed。 |
 
 ## Slice 1: Default Entry Legacy Narrative
 
@@ -162,6 +162,7 @@
 - `deploy/local/dockerfiles/**` 已在 Slice L 删除；当前 strict monolith local verification 不需要 build/deploy，Package D 本地 gate 只保留 `imageTargetRef` + active service `sourceRoot` 元数据，未来真实 deploy 需要单独授权和新的 v22 build recipe boundary。
 - residual compatibility narrative 已在 Slice N 清退；已删除 live/canary/authorized/proof-loop runner 只能作为历史 `.runtime` evidence 或 future-authorized boundary 提及，不能作为现行命令、默认 suite 或完成态。
 - MVP suite 和 docs 不得引用 live/canary/authorized runner 作为当前验证或可执行上下文；Slice M 后只允许非 live 的本地 v22 gate 或 future-authorized contract boundary。
+- Slice O 已记录 zero-compat active surface completed；后续只允许通过 gate 监控回归，不能把已清退路径重新作为默认上下文或兼容层。
 
 ## Gate Pattern
 

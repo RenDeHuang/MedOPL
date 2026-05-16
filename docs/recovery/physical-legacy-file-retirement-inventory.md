@@ -7,7 +7,7 @@
 - inventory_status: strict_monolith_cleanup_completed
 - physical_delete_batch_status: strict_monolith_retirement_completed
 - residual_cleanup_status: f_g_h_completed
-- zero_compat_active_surface_status: in_progress
+- zero_compat_active_surface_status: completed
 - agent_run_mode: strict_monolith_legacy_retirement
 - run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`
 - goal: 物理删除 goal
@@ -31,6 +31,13 @@ completed_slice queue:
 6. `slice-f-unified-verifier-archive-gate-alignment`
 7. `slice-g-residual-legacy-test-anchor-retirement`
 8. `slice-h-readonly-inventory-fixture-attribution`
+9. `slice-i-readonly-inventory-local-attribution`
+10. `slice-j-zero-compat-active-surface-gate`
+11. `slice-k-delete-residual-adapter-compatibility-surface`
+12. `slice-l-delete-residual-deploy-compatibility-assets`
+13. `slice-m-delete-residual-live-canary-runner-surfaces`
+14. `slice-n-remove-residual-compatibility-narrative`
+15. `slice-o-record-zero-compat-active-surface-completion`
 
 batch mode 由 run manifest 固定。agent 可以在同一个 cleanup 分支连续执行 queue 中的 slice，但必须 one commit per slice。B may absorb the whole batch after all slice gates pass。
 
@@ -85,4 +92,5 @@ batch mode 由 run manifest 固定。agent 可以在同一个 cleanup 分支连�
 - residual strict cleanup on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: Phase F aligns the archive gate with the unified `scripts/v22-verify.mjs` runner without changing current truth; Phase G deletes residual non-v22 Portal/Billing smoke anchors and local helper remnants, removes old `resourceOrders` / `resourceOrderEvents` v22 fixture shape, and keeps old resource-order/user-owned tokens only in explicit retire/strict forbidden-token gates. Phase H repairs readonly inventory fixture attribution with `billingAttributionId` without weakening provider requirements.
 - zero-compat correction: prior A-H cleanup retained `deploy/local/dockerfiles/**` and `adapters/billing-aggregator/**`; this is no longer a strict monolith completion state. Slice K deleted the residual billing adapter surface after moving billing projection into Portal. Slice L deleted residual local Dockerfile assets and moved Package D local checks to `imageTargetRef` + active service `sourceRoot` metadata. Slice M deleted residual live/canary/authorized runner executable surfaces and migrated local-only checks to non-live v22 gates. `services/portal/src/integrations/langfuse-trace-client.mjs` and `services/opl-runtime-bridge/src/langfuse-publisher.mjs` may remain only as sanitized trace metadata implementation code; Runtime Bridge active code no longer publishes retired `resourceOrderId`.
 - Slice N removes residual compatibility narrative and stale command references to deleted live/canary/authorized/proof-loop runners from current contracts, recovery truth, default MVP suite anchors, and related gates. Historical live/proof evidence remains only as `.runtime` truth or future-authorized boundary, not active repo executable surface.
+- Slice O records zero-compat active surface completion after Slice I-N gates. Active repo default context no longer retains adapter/deploy/infra executable surfaces, live/canary/authorized runner executable surfaces, user-owned/resource-order compatibility fields, or residual compatibility narrative as completion state. Current product cursor remains `leaf-portal-ui-design-quality-implementation`.
 - hard blockers remain: secret, live cloud, live-test execution, build/push/kubectl, real DB migration execution, `.sentrux/*`, upstream writes, or any deletion that breaks active Portal/Gateway/Runtime Bridge主线.

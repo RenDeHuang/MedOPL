@@ -32,8 +32,8 @@ const fixtures = [
     name: "package-c-mutation.env",
     text: [
       "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
-      "TENCENT_MUTATION_SECRET_ID=mutation-secret-id-proof",
-      "TENCENT_MUTATION_SECRET_KEY=mutation-secret-key-proof",
+      "TENCENT_MUTATION_SECRET_ID=$TENCENT_MUTATION_SECRET_ID",
+      "TENCENT_MUTATION_SECRET_KEY=$TENCENT_MUTATION_SECRET_KEY",
       "TENCENT_MUTATION_ALLOWED_APIS=putObject,deleteObject,DescribeNodePools,ScaleNodePool",
       "TENCENT_MUTATION_REGIONS=na-siliconvalley",
       "TENCENT_MUTATION_ACCOUNT_ID=account-proof-123456",
@@ -50,14 +50,14 @@ const fixtures = [
     name: "readonly.env",
     text: [
       "RUN_TENCENT_READONLY_INVENTORY=1",
-      "TENCENT_READONLY_SECRET_ID=readonly-secret-proof",
+      "TENCENT_READONLY_SECRET_ID=$TENCENT_READONLY_SECRET_ID",
     ].join("\n"),
   },
   {
     name: "deploy.env",
     text: [
       "RUN_TENCENT_DEPLOY_EXECUTION=1",
-      "TCR_SECRET=deploy-secret-proof",
+      "TCR_SECRET=$TCR_SECRET",
     ].join("\n"),
   },
 ];

@@ -8,8 +8,8 @@
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "current_status": "strict_monolith_retirement_completed",
   "residual_cleanup_status": "f_g_h_completed",
-  "zero_compat_active_surface_status": "in_progress",
-  "current_slice": "slice-n-remove-residual-compatibility-narrative",
+  "zero_compat_active_surface_status": "completed",
+  "current_slice": "slice-o-record-zero-compat-active-surface-completion",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -24,11 +24,10 @@
     "slice-k-delete-residual-adapter-compatibility-surface",
     "slice-l-delete-residual-deploy-compatibility-assets",
     "slice-m-delete-residual-live-canary-runner-surfaces",
-    "slice-n-remove-residual-compatibility-narrative"
-  ],
-  "next_slices": [
+    "slice-n-remove-residual-compatibility-narrative",
     "slice-o-record-zero-compat-active-surface-completion"
   ],
+  "next_slices": [],
   "batch_policy": {
     "enabled": true,
     "commit_policy": "one_commit_per_slice",
@@ -461,7 +460,7 @@
     },
     {
       "id": "slice-o-record-zero-compat-active-surface-completion",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "record_zero_compat_active_surface_completion_after_all_gates_pass",
       "target_paths": [
         "docs/recovery/physical-legacy-file-retirement-inventory.md",
@@ -475,6 +474,7 @@
         "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
       ],
+      "notes": "Slice O records zero-compat active surface completion after Slice I-N retirement and narrative gates passed. Current cursor remains leaf-portal-ui-design-quality-implementation; this manifest does not authorize deploy, live cloud, live-test, build/push/kubectl, secret reads, real DB migration, .sentrux changes, or upstream writes.",
       "commit": "cleanup: record zero compat active surface completion"
     }
   ]

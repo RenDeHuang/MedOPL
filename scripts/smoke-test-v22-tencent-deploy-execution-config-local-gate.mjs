@@ -77,7 +77,7 @@ const checked = [
     result: checkConfig([
       "RUN_TENCENT_DEPLOY_EXECUTION=1",
       "TCR_ID=deploy-id-proof",
-      "TCR_SECRET=registry-password-proof",
+      "TCR_SECRET=$TCR_SECRET",
       "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
       "TENCENT_TCR_NAMESPACE=namespace-proof",
       "TENCENT_TCR_REGION=na-siliconvalley",
@@ -89,14 +89,14 @@ const checked = [
     file: "package-c-mutation.env",
     result: checkConfig([
       "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
-      "TENCENT_MUTATION_SECRET_ID=mutation-secret-proof",
+      "TENCENT_MUTATION_SECRET_ID=$TENCENT_MUTATION_SECRET_ID",
     ].join("\n")),
   },
   {
     file: "readonly.env",
     result: checkConfig([
       "RUN_TENCENT_READONLY_INVENTORY=1",
-      "TENCENT_READONLY_SECRET_ID=readonly-secret-proof",
+      "TENCENT_READONLY_SECRET_ID=$TENCENT_READONLY_SECRET_ID",
     ].join("\n")),
   },
 ];
@@ -108,7 +108,7 @@ assert.equal(accepted.result.summary.callsKubectlNow, false, "config_gate_must_n
 assert.equal(accepted.result.summary.readsKubeconfigNow, false, "config_gate_must_not_read_kubeconfig");
 assert.equal(checked.find((item) => item.file === "package-c-mutation.env").result.blockedReason.startsWith("tencent_deploy_forbidden_secret_key:"), true, "package_c_secret_must_be_rejected");
 assert.equal(checked.find((item) => item.file === "readonly.env").result.blockedReason.startsWith("tencent_deploy_forbidden_secret_key:"), true, "readonly_secret_must_be_rejected");
-assert.equal(JSON.stringify(checked).includes("registry-password-proof"), false, "config_gate_output_must_be_redacted");
+assert.equal(JSON.stringify(checked).includes("$TCR_SECRET"), false, "config_gate_output_must_be_redacted");
 assert.equal(JSON.stringify(checked).includes("kubeconfig-ref-proof"), false, "config_gate_output_must_not_expose_kubeconfig_ref");
 
 console.log(JSON.stringify({

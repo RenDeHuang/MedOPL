@@ -9,7 +9,7 @@
 - base: latest `origin/recovery/platform-v22-trunk`
 - target: hand off to B review only; do not push, do not merge trunk.
 - physical_delete_batch_status: strict_monolith_retirement_completed
-- zero_compat_active_surface_status: in_progress
+- zero_compat_active_surface_status: completed
 
 ## Contract Subscription
 

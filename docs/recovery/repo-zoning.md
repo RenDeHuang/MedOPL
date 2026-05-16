@@ -6,6 +6,8 @@ zero-compat active surface cleanup 进一步收紧：`adapters/*`、`deploy/*`�
 
 Slice N 补充收紧：已删除 live/canary/authorized/proof-loop runner 不再作为 contracts/recovery/default suite 的现行命令、授权入口或完成态；历史事实只能写成 `.runtime` 脱敏 evidence 或 future-authorized boundary。
 
+Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰到过时模块、接口、测试或兼容面时，必须同 leaf 清理退役，或拆 cleanup leaf 后再继续；不得把 adapters/deploy/infra/live/canary/authorized runner 恢复为默认 active repo 上下文。
+
 ## Branch Declaration
 
 - branch: `cleanup/v22-repo-zoning-ledger`

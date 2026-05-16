@@ -246,7 +246,7 @@ assert.equal(buildPush.ok, true, "build_push_ok");
 assert.equal(buildPush.reportPath.endsWith(".runtime/v22-registry/pkg-d-image-push-proof-build-push.json"), true, "build_push_report_path");
 assert.equal(buildPush.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.registry?.digest || "")), true, "build_push_digest_shape");
 assert.equal(buildPush.targets.every((target) => String(target.registry?.acceptedPreflightId || "").includes("****")), true, "build_push_preflight_id_masked");
-assert.equal(JSON.stringify(buildPush).includes("registry-password-proof"), false, "build_push_must_not_contain_secret_material");
+assert.equal(JSON.stringify(buildPush).includes("$TCR_SECRET"), false, "build_push_must_not_contain_secret_material");
 
 console.log(JSON.stringify({
   ok: true,

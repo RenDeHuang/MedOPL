@@ -13,6 +13,7 @@
 | migrate | 有复用价值但仍带 v19/v20/v21 旧命名、旧路径或旧主叙事的资产 | 必须重落到 active surface，改成 v22 `platform-provisioned / customer-dedicated` 语义后才能进入主线 |
 | retired/delete target | `user_owned` primary path、`resource-order` primary path、`scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 `med-autoscience-runner`、旧 `resource-provisioner`、OpenCost 旧资产、Langfuse 旧默认资产 | 不在普通 `feat/*` 继续扩写；本 strict monolith cleanup 物理删除旧兼容面、旧测试、旧脚本和旧 deploy/adapters/infra 资产 |
 | strict monolith delete policy | old public tombstone / archive legacy tests / compat alias / old deploy-adapters-infra assets | public tombstone routes 必须删除；保留项必须有 active v22 reason，不能因为历史证据保留 |
+| zero-compat active surface | active repo 默认上下文 | completed through Slice O；任何让旧路线、旧字段、旧模块、旧部署形态、旧测试体系、旧叙事还能被调用、注册、接受、映射、解释、验证、部署或作为默认上下文存在的 active repo 资产都视为兼容层并必须清退 |
 | forbidden without explicit authorization | `deploy/*`、`.sentrux/*`、`adapters/*`、one-person-lab upstream、build/push/kubectl/live-test/真实云资源操作 | 没有单独授权时禁止修改或运行 |
 
 ## Trunk 状态
