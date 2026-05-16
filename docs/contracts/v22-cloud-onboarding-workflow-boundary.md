@@ -139,7 +139,7 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 - 是否允许读 secret: 是，但仅限用户授权的 readonly secret allowlist。
 - 是否允许真实云: 是，但仅限用户授权的 readonly live。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-production-cloud-topology-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`, `smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`, check-config output
+- required smoke: `smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`, check-config output；真实 readonly inventory live runner 已退出 active repo executable surface，后续真实云 readonly 必须重新开 future-authorized boundary。
 - success status: redacted readonly inventory report generated outside git
 - blocker 回流到谁: user decides retry/stop; A fixes config-only blockers; B reviews safety blockers
 - 什么时候必须停下来问用户: before reading secret, before real cloud call, before changing region/API allowlist, on permission/limit/account mismatch, before sharing report contents
@@ -679,7 +679,6 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-production-cloud-topology-boundary.md"
       ],
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs",
         "scripts/smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
         "check-config output"
       ],

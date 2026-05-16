@@ -22,6 +22,7 @@ const currentNarrativeFiles = [
   "README.md",
   "docs/product.md",
   "docs/architecture.md",
+  "scripts/v22-workflow-gate.mjs",
 ];
 
 const allowedTokenGuardianScripts = new Set([
@@ -89,6 +90,18 @@ const forbiddenDefaultReferencePatterns = [
 const compatibilityCompletionPatterns = [
   /\bkeep_tombstone\b/iu,
   /\barchive_reference\b/iu,
+  /\bGateway alias\b/iu,
+  /Runtime Bridge 合同包/iu,
+  /portal-legacy-redirect\.routes\.mjs[^.\n]*(?:路径迁移壳|兼容|compat)/iu,
+  /旧 workspace redirects[^.\n]*(?:兼容|compat)/iu,
+  /旧入口兼容参考/iu,
+  /runtime-bridge-managed-runs\.mjs[^.\n]*(?:compatibility fence|兼容)/iu,
+  /\bmanaged_runtime\b[^.\n]*(?:兼容|compat)/iu,
+  /## 默认本地 MVP suite[\s\S]{0,5200}\bfake-live\b/iu,
+  /## 默认本地 MVP suite[\s\S]{0,5200}\bfake Product API\b/iu,
+  /## 默认本地 MVP suite[\s\S]{0,5200}\bfake Runtime Agent relay\b/iu,
+  /## 默认本地 MVP suite[\s\S]{0,5200}scripts\/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop\.mjs/iu,
+  /## 默认本地 MVP suite[\s\S]{0,5200}scripts\/smoke-test-v22-portal-opl-api-runtime-loop\.mjs/iu,
   /adapters\/billing-aggregator\/\*\*[^.\n]*(?:active|retain|retention|可保留|保留|active reason)/iu,
   /deploy\/local\/dockerfiles\/[^.\n]*(?:active|retain|retention|evidence surface|可保留|保留|active reason)/iu,
   /active v22 retention truth:[^\n]*(?:adapters\/billing-aggregator|deploy\/local\/dockerfiles)/iu,

@@ -53,8 +53,7 @@ OPL session/message trace metadata
 验证：
 
 ```text
-node scripts/smoke-test-v22-real-opl-canary.mjs
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-canary.mjs
+future-authorized upstream/WebUI capability runner only
 ```
 
 验收：
@@ -96,7 +95,7 @@ node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
 验证：
 
 ```text
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
 node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 ```
 
@@ -237,7 +236,7 @@ Adapter session/message metadata
 2. `node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
 3. `node scripts/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
 4. `node scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs` 通过。
-5. `OPL_REAL_WEBUI_DIR=... node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs` 通过。
+5. 如本分支明确授权真实 WebUI 来源，`OPL_REAL_WEBUI_DIR=... node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs` 通过；否则只保留合同 gate，不得把真实 WebUI 运行当默认入口。
 6. message backflow 未完成真实 canary 时必须明确写入状态矩阵和合同，不得宣称完整真实上线。
 7. downstream runtime 未授权时必须 gate，不得伪造 run/artifact。
 8. downstream Langfuse 未授权时不得部署、不得读 secret、不得把 `trace.medopl.cn` 当已上线。

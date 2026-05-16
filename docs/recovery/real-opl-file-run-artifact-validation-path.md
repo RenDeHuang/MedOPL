@@ -219,10 +219,10 @@ Runtime Agent output
 - Runtime Agent canary server 通过公开 HTTP API 返回 workspace-scoped `fileRef`、`runId/status/traceId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 和 `usageMetadataRef`。
 - Portal 通过 `/portal/api/opl/*` 和 `/portal/api/session-traces` 查询同一组 workspace/session/run projection。
 
-验证命令：
+历史 proof：
 
 ```text
-node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs
+Runtime Agent HTTP API proof is not production deploy evidence
 ```
 
 成功验收：

@@ -446,7 +446,7 @@ canary 发现的事实必须回写合同、status 和 validation path。后续 p
 
 1. 明确声明订阅本合同包和模型记录。当前开发分支为 `feat/v22-real-opl-file-run-artifact-canary`，模型记录为 `gpt-5.3-codex`。
 2. `node scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs` 通过。
-3. `node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs` 通过，证明 Portal -> Gateway -> Adapter -> Runtime Agent HTTP API -> workspace-scoped `fileRef` -> `runId/status/traceId` -> `artifactRef` / `outputFileRef` -> Portal workspace/session/run trace projection 的完整本地 canary 闭环。
+3. Runtime Agent HTTP API proof 已证明 Portal -> Gateway -> Adapter -> Runtime Agent HTTP API -> workspace-scoped `fileRef` -> `runId/status/traceId` -> `artifactRef` / `outputFileRef` -> Portal workspace/session/run trace projection 的本地 proof 闭环；该 proof 不进入默认 MVP suite，也不是 production deploy evidence。
 4. `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs` 通过，证明 `OPL_RUNTIME_MODE=webui` 且未配置 Runtime Agent API 时 file/run/artifact 不会伪成功：file 返回 `file_upload_capability_not_supported`，run 返回 queryable `requires_runtime_agent` gated run，artifact 返回 `artifact_not_observed` / `output_file_ref_not_observed`。该 smoke 只是负向保护，不满足完整闭环吸收标准。
 5. Runtime Agent API relay full-loop smoke 必须证明 Runtime Agent canary server 实际收到 file upload/intake 和 run dispatch HTTP 请求；Adapter/Portal public response、Portal trace、canary evidence 和 git 不包含 raw API key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl` 或 `presignedUrl`。
 6. `node scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs` 通过。

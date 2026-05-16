@@ -135,8 +135,9 @@ assertAllIncluded(contract, [
 ], "boundary_terms");
 
 assertAllIncluded(contract, [
-  "smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs",
-  "Portal -> Gateway -> Adapter -> Runtime Agent HTTP API -> workspace-scoped `fileRef`",
+  "Runtime Agent HTTP API proof",
+  "Portal -> Gateway -> Adapter -> Runtime Agent HTTP API",
+  "Portal workspace/session/run trace projection",
   "该 smoke 只是负向保护，不满足完整闭环吸收标准",
   "Runtime Agent canary server 实际收到 file upload/intake 和 run dispatch HTTP 请求",
 ], "absorption_gate_full_loop");
@@ -164,7 +165,7 @@ assertAllIncluded(flow, [
   "Portal launch -> Gateway -> clean OPL WebUI -> Adapter -> file intent -> workspace-scoped fileRef -> run intent -> Runtime Agent gate -> runId/status/traceId -> artifactRef or outputFileRef -> Portal projection",
   "Runtime Agent HTTP API relay full-loop",
   "Production Runtime Agent binding",
-  "node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs",
+  "Runtime Agent HTTP API proof is not production deploy evidence",
   "不使用 `local-fake-runtime-agent-relay`",
   "OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels",
   "file_ref_not_observed",
@@ -185,23 +186,25 @@ assertAllIncluded(flow, [
 
 assertIncludes(index, "v22-real-opl-file-run-artifact-canary-boundary.md", "contracts_index");
 assertIncludes(index, "Real OPL File Run Artifact Canary 合同包", "contracts_index");
-assertIncludes(index, "smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs", "contracts_index");
-assertIncludes(index, "本地 Runtime Agent HTTP API relay full-loop canary", "contracts_index");
+assertIncludes(index, "Runtime Agent HTTP API proof", "contracts_index");
 assertIncludes(capabilityContract, "v22-real-opl-file-run-artifact-canary-boundary.md", "capability_contract");
 assertIncludes(capabilityFlow, "real-opl-file-run-artifact-validation-path.md", "capability_flow");
 assertIncludes(providerMessageContract, "不证明 file、run、artifact", "provider_message_contract");
 assertIncludes(acceptance, "Real OPL file/run/artifact canary", "mvp_acceptance");
-assertIncludes(acceptance, "workspace-scoped fileRef、Runtime Agent run、artifact/output backflow", "mvp_acceptance");
-assertIncludes(acceptance, "smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs", "mvp_acceptance");
-assertIncludes(acceptance, "本地 Runtime Agent HTTP API relay full-loop", "mvp_acceptance");
-assertIncludes(acceptance, "不代表真实云 runtime、COS 账单或 Langfuse 部署已上线", "mvp_acceptance");
+assertIncludes(acceptance, "Real OPL file/run/artifact canary 当前完成合同、完整验证链路定义和本地 Adapter gate 实现验证", "mvp_acceptance");
+assertIncludes(acceptance, "local Runtime Agent HTTP API proof is not production deploy evidence", "mvp_acceptance");
+assertIncludes(acceptance, "真实云 runtime、COS 账单或 Langfuse 部署仍未上线", "mvp_acceptance");
 assertIncludes(statusMatrix, "Real OPL file/run/artifact canary", "status_matrix");
 assertIncludes(statusMatrix, "每个 step 必须 gate", "status_matrix");
 assertIncludes(statusMatrix, "runtime-agent-http-relay.mjs", "status_matrix");
-assertIncludes(statusMatrix, "Runtime Agent HTTP API canary", "status_matrix");
+assertIncludes(statusMatrix, "Runtime Agent HTTP API proof", "status_matrix");
 assertIncludes(statusMatrix, "billingMetadataRef", "status_matrix");
 assertIncludes(suite, "smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs", "mvp_suite");
-assertIncludes(suite, "smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs", "mvp_suite");
+assert.equal(
+  suite.includes("smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"),
+  false,
+  "runtime_agent_api_loop_must_not_run_in_default_mvp_suite",
+);
 
 console.log(JSON.stringify({
   ok: true,

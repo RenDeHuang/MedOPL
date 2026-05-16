@@ -77,8 +77,8 @@ const packageDefinitions = {
     ],
   },
   runtime: {
-    title: "Runtime Bridge 合同包",
-    intent: "Runtime Bridge session/run/file/providerKeyRef、artifact reference 和 Runtime Agent relay。",
+    title: "Portal OPL Adapter / Runtime Agent 合同包",
+    intent: "Portal OPL Adapter / Runtime Agent session/run/file/providerKeyRef、artifact reference 和 runtime relay。",
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
       "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",

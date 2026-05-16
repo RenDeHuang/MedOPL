@@ -19,8 +19,6 @@ const files = {
   suite: "scripts/smoke-test-v22-mvp-contract-suite.mjs",
   stateStoreSmoke: "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs",
   adapterApiSmoke: "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs",
-  realOplCanarySmoke: "scripts/smoke-test-v22-real-opl-canary.mjs",
-  realOplWebuiCanarySmoke: "scripts/smoke-test-v22-real-opl-webui-canary.mjs",
   realOplWebuiAdapterSmoke: "scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs",
   webuiBridgeClient: "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
 };
@@ -217,38 +215,14 @@ assertIncludesAll(contents.adapterApiSmoke, [
   "stable_run_artifacts_must_read_persisted_run_artifact",
 ], "adapter_api_local_flow_smoke");
 
-assertIncludesAll(contents.realOplCanarySmoke, [
-  "opl web",
-  "session runtime",
-  "--acp",
-  "/api/opl/system",
-  "/api/opl/messages",
-  "/api/opl/sessions",
-  "capability_not_supported_until_mapping_exists",
-  "adapter_acp_bootstrap_must_succeed",
-  "adapter_acp_session_bind_must_succeed",
-  ".runtime",
-], "real_opl_canary_smoke");
-
-assertIncludesAll(contents.realOplWebuiCanarySmoke, [
-  "v22_real_opl_webui_canary",
-  "OPL_WEBUI_AUTH_MODE",
-  "real_webui_root_must_load",
-  "/api/auth/status",
-  "/api/auth/user",
-  "/api/opl/system",
-  "/api/opl/sessions",
-  "/api/opl/messages",
-  "catch_all_placeholder_not_product_api",
-  "create-conversation",
-  "database.get-user-conversations",
-  "database.get-conversation-messages",
-  "chat.send.message",
-  "capability_not_supported",
-  "launchScriptInjected",
-  "forbiddenSecretQueryStatus",
-  ".runtime",
-], "real_opl_webui_canary_smoke");
+assertIncludesAll(contents.connection, [
+  "真实 upstream capability classification 的历史 evidence",
+  ".runtime/real-opl-canary/evidence.json",
+  "真实 WebUI canary 的历史 evidence",
+  ".runtime/real-opl-webui-canary/evidence.json",
+  "对应真实 upstream runner 不属于 active repo executable surface",
+  "对应真实 WebUI runner 不属于 active repo executable surface",
+], "retired_real_opl_canary_evidence_boundary");
 
 assertIncludesAll(contents.realOplWebuiAdapterSmoke, [
   "v22_real_opl_webui_adapter_flow",

@@ -130,8 +130,8 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - `services/portal/src/config/portal-config.mjs` 不得恢复 `PRODUCT_RUNTIME_MODE=user_owned`；默认语义必须是 `platform_provisioned` / `customer_dedicated`。
 - `services/portal/src/routes/user-owned-resource.routes.mjs`、`services/portal/src/domain/user-owned-resources.mjs` 和 `services/portal/src/state/portal-user-owned-resource-store.mjs` 均已从 active repo 删除；不得恢复 user-owned public route、alias、fixture、copy 或测试锚点。
 - `services/portal/src/domain/resource-orders.mjs`、`services/portal/src/routes/resource-order*.mjs` 和 `services/portal/src/integrations/resource-provisioner-client.mjs` 已从 active repo 删除；后续如需平台资源开通 client，必须以 v22 resource binding / cloud operation contract 重新命名、重新建边界。
-- `services/portal/src/routes/task-space.routes.mjs` 要迁到 workspace 语义。
-- `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组只作为 retired compatibility fence。
+- `services/portal/src/routes/task-space.routes.mjs` 只允许向 workspace 语义收敛，不得作为旧 workspace redirect 兼容入口扩写。
+- `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组不得作为保留依据；后续只能删除或重命名到 Portal OPL Adapter / Runtime Agent 边界。
 - `services/opl-runtime-bridge` 路径暂保留，但产品语义是 Portal OPL Adapter / Runtime Agent；新文档和新入口不得继续扩大 bridge 命名。
 
 以下路径只作为 strict cleanup 删除目标或历史文档迁移输入；git history 已足够作为历史证据，不进入 v22 主产品叙事：

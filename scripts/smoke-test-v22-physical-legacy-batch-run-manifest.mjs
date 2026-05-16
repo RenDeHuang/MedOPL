@@ -103,9 +103,9 @@ if (manifest.zero_compat_active_surface_status === "in_progress") {
     "slice-k-delete-residual-adapter-compatibility-surface",
     "slice-l-delete-residual-deploy-compatibility-assets",
     "slice-m-delete-residual-live-canary-runner-surfaces",
+    "slice-n-remove-residual-compatibility-narrative",
   ], "manifest_zero_compat_completed_slices");
   assertArrayIncludesAll(remainingSlices, [
-    "slice-n-remove-residual-compatibility-narrative",
     "slice-o-record-zero-compat-active-surface-completion",
   ], "manifest_zero_compat_remaining_slices");
 }
@@ -131,6 +131,7 @@ assertArrayIncludesAll(manifest.authorization_boundary?.authorized_deletions, [
   "residual adapter compatibility surface",
   "residual deploy compatibility assets",
   "residual live/canary/authorized runner executable surfaces",
+  "residual compatibility narrative and deleted runner command references",
   "Runtime Bridge retired resource-order and user-owned compatibility aliases",
 ], "manifest_authorized_deletions");
 

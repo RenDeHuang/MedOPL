@@ -98,7 +98,7 @@ assertIncludesAll(sequence, [
   "node scripts/smoke-test-v22-portal-cloud-operation-test-api-local-gate.mjs",
   "node scripts/smoke-test-v22-cloud-connection-runnable-path.mjs",
   "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
-  "node scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
+  "future-authorized Package C resource lifecycle runner",
   "node scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs",
   "node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs",
   "node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",

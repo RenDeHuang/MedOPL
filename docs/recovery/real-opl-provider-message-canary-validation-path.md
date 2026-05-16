@@ -30,10 +30,10 @@ Portal user enters OPL
 
 ## Current Live Canary Result
 
-在用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，真实 provider message live canary 已通过：
+在用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，真实 provider message live canary 历史 evidence 已通过：
 
 ```text
-node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
+historical future-authorized provider message runner
 ```
 
 脱敏结果：
@@ -81,11 +81,11 @@ node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
 node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
 ```
 
-后续真实 canary 命令必须由用户单独授权，并显式提供 canary 来源：
+后续真实 canary 必须由用户单独授权，并显式提供 canary 来源；active repo 不保留默认 WebUI/live runner：
 
 ```text
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-canary.mjs
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
+future-authorized WebUI capability runner
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
 ```
 
 验收：
@@ -127,7 +127,7 @@ node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 验证命令：
 
 ```text
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
 node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 ```
 
@@ -387,23 +387,7 @@ git diff --check -- docs/contracts docs/recovery scripts
 - evidence 写入哪个 `.runtime` 路径。
 - 是否允许连接 Langfuse 或 `trace.medopl.cn`。
 
-授权 live canary 命令：
-
-```text
-REAL_OPL_PROVIDER_MESSAGE_CANARY=1 \
-OPL_PROVIDER_SECRET_FILE=<git-outside-provider-secret-file> \
-OPL_REAL_WEBUI_DIR=/home/dev/projects/platform-v19/.runtime/opl-aion-shell-full \
-node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
-```
-
-也可以用已启动 WebUI：
-
-```text
-REAL_OPL_PROVIDER_MESSAGE_CANARY=1 \
-OPL_PROVIDER_SECRET_FILE=<git-outside-provider-secret-file> \
-OPL_REAL_WEBUI_URL=http://127.0.0.1:PORT \
-node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
-```
+授权 live canary runner 已退出 active repo executable surface。后续如果需要重新触发真实 provider message 调用，必须先开 future-authorized boundary，重新确认 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE`、真实 WebUI 来源、evidence 写入路径和脱敏规则；不得从默认 suite、合同 gate 或文档示例直接运行历史 runner。
 
 ### Stage 12: Authorized live provider canary
 

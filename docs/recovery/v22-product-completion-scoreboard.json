@@ -118,7 +118,7 @@
       "stage": "S3 OPL connection productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md", "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"]
+      "evidence": ["Runtime Agent HTTP API proof; not default MVP suite or production deploy evidence"]
     },
     {
       "id": "opl-output-download",
@@ -126,7 +126,7 @@
       "stage": "S3 OPL connection productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-opl-work-message-file-run-boundary.md", "docs/contracts/v22-portal-files-billing-trace-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"]
+      "evidence": ["Runtime Agent HTTP API proof; not default MVP suite or production deploy evidence"]
     },
     {
       "id": "portal-workspace-files",

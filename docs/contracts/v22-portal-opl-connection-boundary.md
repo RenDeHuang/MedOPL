@@ -291,15 +291,12 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
 node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 node scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs
-node scripts/smoke-test-v22-real-opl-canary.mjs
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-canary.mjs
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
 ```
 
-前三条 smoke 只检查 repo-tracked 合同、索引、本地 fake clean OPL Product API、本地 fake Runtime Agent relay 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
+这些 smoke 只检查 repo-tracked 合同、索引、本地 Portal/Gateway/Adapter contract shape 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
 
-`scripts/smoke-test-v22-real-opl-canary.mjs` 是单独真实 upstream canary：它读取并执行 `/home/dev/projects/one-person-lab` 的公开 CLI/ACP 边界，证据只写入 `.runtime/real-opl-canary/evidence.json`，不修改 upstream，不读取 secret，不调用真实云，不把 fake Product API 当真实接口结论。
+真实 upstream capability classification 的历史 evidence 只保留为 `.runtime/real-opl-canary/evidence.json` 脱敏记录和合同状态；对应真实 upstream runner 不属于 active repo executable surface。后续如果要重新验证 `/home/dev/projects/one-person-lab` 的公开 CLI/ACP 边界，必须单独开 future-authorized boundary，不修改 upstream，不读取 secret，不调用真实云，不把 fixture Product API 当真实接口结论。
 
-`scripts/smoke-test-v22-real-opl-webui-canary.mjs` 是单独真实 WebUI canary：它启动或连接独立 OPL/AionUI WebUI，验证页面、auth context、Gateway proxy、WebSocket session bridge 和 `/api/opl/*` catch-all 分类，证据只写入 `.runtime/real-opl-webui-canary/evidence.json`，不修改 WebUI/upstream，不读取 secret，不调用真实云，不把 HTTP 200 placeholder 当真实 Product API。该 canary 需要显式 WebUI 来源：默认读取 `.runtime/opl-aion-shell` 的已构建 `dist-server`/`out/renderer`，或通过 `OPL_REAL_WEBUI_DIR` 指向已构建 WebUI 目录，或通过 `OPL_REAL_WEBUI_URL` 指向已启动的真实 WebUI。
+真实 WebUI canary 的历史 evidence 只保留为 `.runtime/real-opl-webui-canary/evidence.json` 脱敏记录和合同状态；对应真实 WebUI runner 不属于 active repo executable surface。后续如果要重新启动或连接独立 OPL/AionUI WebUI，必须单独授权 WebUI 来源，不修改 WebUI/upstream，不读取 secret，不调用真实云，不把 HTTP 200 placeholder 当真实 Product API。
 
-`scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs` 是单独真实 WebUI Adapter flow：它通过 Gateway 和 Adapter 连接真实 WebUI WebSocket bridge，验证 launch、session 创建、database 回读、state backflow、HTTP Product API 不支持分类，以及 message/run 不伪成功。该 smoke 同样需要显式 WebUI 来源，证据只保存在 `.runtime/real-opl-webui-adapter-flow`，不进 git。
+`scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs` 暂保留为显式 WebUI 来源下的 Adapter boundary proof；它不进入默认 MVP suite，不能作为默认产品入口、live-test 或 production deploy evidence。运行它必须有明确 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL`，证据只保存在 `.runtime/real-opl-webui-adapter-flow`，不进 git。

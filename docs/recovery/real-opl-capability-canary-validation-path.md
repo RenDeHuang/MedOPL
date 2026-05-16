@@ -58,8 +58,7 @@ Portal launch
 验证命令：
 
 ```text
-node scripts/smoke-test-v22-real-opl-canary.mjs
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-canary.mjs
+future-authorized upstream/WebUI capability runner only
 ```
 
 验收：
@@ -101,7 +100,7 @@ node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 验证命令：
 
 ```text
-OPL_REAL_WEBUI_DIR=.runtime/opl-aion-shell node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
 node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 ```
 

@@ -4,6 +4,8 @@
 
 zero-compat active surface cleanup 进一步收紧：`adapters/*`、`deploy/*`、`infra/*`、live/canary/authorized runner executable surface 不再因为曾被合同或 suite 引用而保留。仍有业务价值的能力必须迁入 `services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge` 或 repo-local v22 gate 后，删除旧路径。
 
+Slice N 补充收紧：已删除 live/canary/authorized/proof-loop runner 不再作为 contracts/recovery/default suite 的现行命令、授权入口或完成态；历史事实只能写成 `.runtime` 脱敏 evidence 或 future-authorized boundary。
+
 ## Branch Declaration
 
 - branch: `cleanup/v22-repo-zoning-ledger`
@@ -81,6 +83,7 @@ zero-compat active surface cleanup 进一步收紧：`adapters/*`、`deploy/*`�
 | `adapters/billing-aggregator/**` | Zone 4 | deleted | residual adapter 形态不能作为 strict monolith active repo 默认上下文；Slice K 已删除并把账单投影收回 Portal monolith ledger | Portal billing ledger projection | zero-compat-adapters |
 | `deploy/local/dockerfiles/**` | Zone 3 | deleted | strict monolith local verification 不需要 build/deploy；future deploy 只保留合同边界并需重新授权 | future authorized v22 deploy boundary | zero-compat-deploy |
 | `scripts/smoke-test-v22-*live*`, `*canary*`, `*authorized-deploy*`, `*authorized-resource-lifecycle*` | Zone 2 | rewrite/delete | live/canary/authorized runner 不属于默认 active executable surface | contract-only boundary or non-live local v22 gate | zero-compat-live-runner |
+| deleted live/canary/authorized/proof-loop runner references in contracts/recovery/default suite | Zone 2 | rewritten | Slice N 清退现行命令、授权入口和完成态引用；只保留 `.runtime` historical evidence / future-authorized boundary | current v22 local gates and branch-appropriate verifier | zero-compat-narrative |
 
 ## Zone 3: Retired Delete Surface
 

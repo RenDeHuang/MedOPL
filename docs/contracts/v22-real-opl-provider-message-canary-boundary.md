@@ -345,16 +345,9 @@ Langfuse is an optional sanitized observability attachment。
 
 禁止发送 raw prompt、raw completion、raw API key、bearer token、launchToken、runtimeToken、objectKey、storageKey、localPath、signedUrl、presignedUrl、secret path 或 `.env` 内容。
 
-## Authorized Live Provider Canary
+## Authorized Provider Message Boundary
 
-默认合同 smoke 只验证合同、gate 和本地 projection，不读取 secret、不调用真实 provider。真实 provider message reply canary 必须显式授权后运行：
-
-```text
-REAL_OPL_PROVIDER_MESSAGE_CANARY=1 \
-OPL_PROVIDER_SECRET_FILE=<git-outside-provider-secret-file> \
-OPL_REAL_WEBUI_DIR=/home/dev/projects/platform-v19/.runtime/opl-aion-shell-full \
-node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
-```
+默认合同 smoke 只验证合同、gate 和本地 projection，不读取 secret、不调用真实 provider。历史授权 provider message live evidence 只作为 `.runtime/real-opl-provider-message-live-canary/evidence.json` 脱敏记录存在；对应 live runner 已退出 active repo executable surface。后续真实 provider message reply canary 必须重新开 future-authorized boundary，不能从默认 suite、合同 gate 或 README 直接运行历史 runner。
 
 授权变量含义：
 

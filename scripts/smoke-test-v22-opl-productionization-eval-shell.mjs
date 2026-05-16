@@ -15,7 +15,6 @@ const files = {
   goalState: "docs/recovery/v22-goal-state.md",
   refreshGate: "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
   noFakeSuccessGate: "scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs",
-  runtimeAgentLoopGate: "scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs",
   runtimeAgentHttpRelay: "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
 };
 
@@ -49,7 +48,7 @@ const forbiddenProductionFields = [
 ];
 
 const canaryOnlyEvidenceTerms = [
-  "local Runtime Agent HTTP API relay full-loop canary",
+  "Runtime Agent HTTP API proof",
   "WebUI bridge negative no-fake-success gate",
   "provider message reply canary proves message reply only",
   "not production deploy evidence",
@@ -194,7 +193,7 @@ assertIncludesAll(contents.upstreamOpl, [
 
 assertIncludesAll(contents.mvpAcceptance, [
   "Leaf 6 OPL productionization contract refresh is contract_refresh_only",
-  "local Runtime Agent HTTP API relay full-loop canary is not production deploy evidence",
+  "local Runtime Agent HTTP API proof is not production deploy evidence",
   "WebUI bridge negative no-fake-success gate is not production deploy evidence",
   "provider message reply canary remains message/reply only",
 ], "mvp_acceptance_productionization_eval");
@@ -239,21 +238,14 @@ assertIncludesAll(contents.noFakeSuccessGate, [
   "no_secret_or_storage_leak",
 ], "no_fake_success_gate_productionization_eval");
 
-assertIncludesAll(contents.runtimeAgentLoopGate, [
-  "FORBIDDEN_PACKAGE_D_PATTERN",
-  "FORBIDDEN_PUBLIC_PATTERN",
-  "billingMetadataRef",
-  "usageMetadataRef",
-  "resourceBindingId",
-  "fileRef",
-  "artifactRef",
-], "runtime_agent_loop_gate_productionization_eval");
-
 assertIncludesAll(contents.runtimeAgentHttpRelay, [
   "ownerRef",
   "operationId",
   "k8sLabels",
   "deployOwnerLabels",
+  "resourceBindingId",
+  "fileRef",
+  "artifactRef",
 ], "runtime_agent_http_relay_package_d_owner_guard");
 
 await assertRuntimeAgentRelayRejectsPackageDOwnerResponse();

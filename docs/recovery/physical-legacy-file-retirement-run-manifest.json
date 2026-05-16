@@ -9,7 +9,7 @@
   "current_status": "strict_monolith_retirement_completed",
   "residual_cleanup_status": "f_g_h_completed",
   "zero_compat_active_surface_status": "in_progress",
-  "current_slice": "slice-m-delete-residual-live-canary-runner-surfaces",
+  "current_slice": "slice-n-remove-residual-compatibility-narrative",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -23,10 +23,10 @@
     "slice-j-zero-compat-active-surface-gate",
     "slice-k-delete-residual-adapter-compatibility-surface",
     "slice-l-delete-residual-deploy-compatibility-assets",
-    "slice-m-delete-residual-live-canary-runner-surfaces"
+    "slice-m-delete-residual-live-canary-runner-surfaces",
+    "slice-n-remove-residual-compatibility-narrative"
   ],
   "next_slices": [
-    "slice-n-remove-residual-compatibility-narrative",
     "slice-o-record-zero-compat-active-surface-completion"
   ],
   "batch_policy": {
@@ -54,6 +54,7 @@
       "residual adapter compatibility surface",
       "residual deploy compatibility assets",
       "residual live/canary/authorized runner executable surfaces",
+      "residual compatibility narrative and deleted runner command references",
       "Runtime Bridge retired resource-order and user-owned compatibility aliases"
     ],
     "forbidden_operations": [
@@ -437,7 +438,7 @@
     },
     {
       "id": "slice-n-remove-residual-compatibility-narrative",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "remove_residual_adapter_deploy_live_canary_compatibility_narrative_from_current_truth",
       "target_paths": [
         "README.md",
@@ -452,8 +453,10 @@
         "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
         "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
         "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs"
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
       ],
+      "notes": "Slice N removes residual compatibility narrative and stale command references to deleted live/canary/authorized/proof-loop runners from contracts, recovery truth, default MVP suite anchors, and related gates. Historical evidence remains as .runtime truth or future-authorized boundary only.",
       "commit": "cleanup: remove residual compatibility narrative"
     },
     {

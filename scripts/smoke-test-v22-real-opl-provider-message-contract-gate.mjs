@@ -9,7 +9,6 @@ const CAPABILITY_FLOW_PATH = "docs/recovery/real-opl-capability-canary-validatio
 const ACCEPTANCE_PATH = "docs/recovery/mvp-contract-acceptance.md";
 const STATUS_MATRIX_PATH = "docs/recovery/status-matrix.md";
 const MVP_SUITE_PATH = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
-const LIVE_CANARY_PATH = "scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs";
 const WEBUI_BRIDGE_CLIENT_PATH = "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs";
 
 async function read(path) {
@@ -32,7 +31,6 @@ const capabilityFlow = await read(CAPABILITY_FLOW_PATH);
 const acceptance = await read(ACCEPTANCE_PATH);
 const statusMatrix = await read(STATUS_MATRIX_PATH);
 const suite = await read(MVP_SUITE_PATH);
-const liveCanary = await read(LIVE_CANARY_PATH);
 const webuiBridgeClient = await read(WEBUI_BRIDGE_CLIENT_PATH);
 
 assertAllIncluded(contract, [
@@ -110,6 +108,7 @@ assertAllIncluded(contract, [
   "OPL_REAL_WEBUI_URL",
   "message reply capability 状态为 `mapped_to_webui_bridge`",
   ".runtime/real-opl-provider-message-live-canary/evidence.json",
+  "live runner 已退出 active repo executable surface",
   "不代表真实 file upload",
   "不证明 file、run、artifact",
 ], "error_gates");
@@ -152,7 +151,7 @@ assertAllIncluded(flow, [
   "messageId/status/replyMessageId",
   "providerInvocationRef",
   "messageTraceId",
-  "scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs",
+  "historical future-authorized provider message runner",
   "REAL_OPL_PROVIDER_MESSAGE_CANARY=1",
   "OPL_PROVIDER_SECRET_FILE",
   "Current Live Canary Result",
@@ -184,22 +183,6 @@ assert.equal(
   "live_provider_canary_must_not_run_in_default_mvp_suite",
 );
 
-assertAllIncluded(liveCanary, [
-  "REAL_OPL_PROVIDER_MESSAGE_CANARY",
-  "OPL_PROVIDER_SECRET_FILE",
-  "OPL_REAL_WEBUI_DIR",
-  "OPL_REAL_WEBUI_URL",
-  "writeCodexProviderConfig",
-  "model_provider = \"gflab\"",
-  "wire_api = \"responses\"",
-  "experimental_bearer_token",
-  "providerInvocationRef",
-  "replyMessageId",
-  "messageTraceId",
-  "evidencePublicPath",
-  "assertNoSecretLeak",
-], "live_canary_script");
-
 assert.equal(
   webuiBridgeClient.includes("isHealthCheck: true"),
   false,
@@ -218,7 +201,6 @@ console.log(JSON.stringify({
     ACCEPTANCE_PATH,
     STATUS_MATRIX_PATH,
     MVP_SUITE_PATH,
-    LIVE_CANARY_PATH,
     WEBUI_BRIDGE_CLIENT_PATH,
   ],
 }, null, 2));
