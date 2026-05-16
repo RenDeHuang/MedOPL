@@ -78,7 +78,7 @@ node scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs
 验证命令：
 
 ```text
-node scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs
+node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
 ```
 
 后续真实 canary 命令必须由用户单独授权，并显式提供 canary 来源：
@@ -372,8 +372,8 @@ canary evidence 只进 `.runtime`，不得进入 git。
 默认本地验证只验证合同和 gate，不触发真实 provider 调用：
 
 ```text
-node scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs
-node scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs
+node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
+node scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs
 node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 node scripts/smoke-test-v22-mvp-contract-suite.mjs
 git diff --check -- docs/contracts docs/recovery scripts

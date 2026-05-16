@@ -75,7 +75,7 @@ Portal HTTP API
 验证命令：
 
 ```text
-node scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs
+node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
 node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 ```
 

@@ -27,11 +27,16 @@ const forbiddenDiffPrefixes = [
   ".sentrux/",
 ];
 
-const strictMonolithCleanupBranch = "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement";
+const strictMonolithCleanupDeleteBranches = new Set([
+  "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  "cleanup/v22-strict-monolith-zero-compat-active-surface",
+]);
 const strictMonolithCleanupAuthorizedDeletePatterns = [
   /^adapters\/(?:resource-provisioner|med-autoscience-runner|cloud-provisioner|shared)(?:\/|$)/u,
+  /^adapters\/billing-aggregator(?:\/|$)/u,
   /^deploy\/tke-package(?:\/|$)/u,
   /^deploy\/local\/dockerfiles\/(?:resource-provisioner|med-autoscience-runner)\.Dockerfile$/u,
+  /^deploy\/local\/dockerfiles\/(?:portal|opl-web-gateway|opl-runtime-bridge)\.Dockerfile$/u,
   /^infra\/(?:opencost|kubernetes|codex-runtime|production-hardening)(?:\/|$)/u,
 ];
 
@@ -171,7 +176,7 @@ function changedFileStatusesFromBase() {
 }
 
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
-  if (branchName !== strictMonolithCleanupBranch) return false;
+  if (!strictMonolithCleanupDeleteBranches.has(branchName)) return false;
   if (!String(status || "").startsWith("D")) return false;
   return strictMonolithCleanupAuthorizedDeletePatterns.some((pattern) => pattern.test(filePath));
 }

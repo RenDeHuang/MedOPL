@@ -133,7 +133,7 @@ try {
 
   const disabledPost = await request({
     method: "POST",
-    urlPath: "/portal/api/v22/cloud-operations/test/fake-live",
+    urlPath: "/portal/api/v22/cloud-operations/test/local",
     routeHandler: disabledRoute,
     user,
     body: {
@@ -146,7 +146,7 @@ try {
 
   const productionPost = await request({
     method: "POST",
-    urlPath: "/portal/api/v22/cloud-operations/test/fake-live",
+    urlPath: "/portal/api/v22/cloud-operations/test/local",
     routeHandler: productionRoute,
     user,
     body: {
@@ -200,7 +200,7 @@ try {
   async function execute(operationType, body = {}) {
     const response = await request({
       method: "POST",
-      urlPath: "/portal/api/v22/cloud-operations/test/fake-live",
+      urlPath: "/portal/api/v22/cloud-operations/test/local",
       user,
       body: {
         workspaceId: "workspace-v22-cloud-test",
@@ -213,10 +213,10 @@ try {
     assert.equal(response.res.payload.ok, true, `${operationType}_must_return_ok`);
     assert.equal(response.res.payload.testOnly, true, `${operationType}_must_be_test_only`);
     assert.equal(response.res.payload.productionPortalConnected, false, `${operationType}_must_not_claim_production_portal_connected`);
-    assert.equal(response.res.payload.runnerMode, "fake-live", `${operationType}_runner_mode_mismatch`);
+    assert.equal(response.res.payload.runnerMode, "local-executor", `${operationType}_runner_mode_mismatch`);
     assert.equal(response.res.payload.realCloudCalls, false, `${operationType}_must_not_call_real_cloud`);
     assert.equal(response.res.payload.operation.status, "succeeded", `${operationType}_operation_status_mismatch`);
-    assert.match(response.res.payload.operation.evidenceRef, /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-fake-live\.json$/, `${operationType}_evidence_ref_must_be_sanitized`);
+    assert.match(response.res.payload.operation.evidenceRef, /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-local-executor\.json$/, `${operationType}_evidence_ref_must_be_sanitized`);
     assertNoSecretLeak(response.res.payload, `${operationType}_response`);
     assertNoCloudConsoleLanguage(response.res.payload.publicProjection, `${operationType}_public_projection`);
     return response.res.payload;
@@ -234,7 +234,7 @@ try {
 
   const foreignDelete = await request({
     method: "POST",
-    urlPath: "/portal/api/v22/cloud-operations/test/fake-live",
+    urlPath: "/portal/api/v22/cloud-operations/test/local",
     user,
     body: {
       workspaceId: "workspace-v22-cloud-test",
@@ -251,7 +251,7 @@ try {
   assertNoSecretLeak(foreignDelete.res.payload, "foreign_delete_response");
 
   assert.equal(db.cloudOperations.length, 6, "six_successful_cloud_operations_must_be_written");
-  assert.equal(db.cloudOperations.every((item) => item.status === "succeeded" && item.runnerMode === "fake-live" && item.realCloudCalls === false), true, "cloud_operations_must_be_fake_live_succeeded");
+  assert.equal(db.cloudOperations.every((item) => item.status === "succeeded" && item.runnerMode === "local-executor" && item.realCloudCalls === false), true, "cloud_operations_must_be_local_executor_succeeded");
   assert.equal(db.computeAllocations.length, 1, "compute_allocation_must_be_canonical");
   assert.equal(db.computeAllocations[0].status, "released", "compute_release_must_release_compute_only");
   assert.equal(db.fileSpaceEntitlements.filter((item) => item.workspaceId === "workspace-v22-cloud-test").length, 1, "file_space_entitlement_must_be_canonical");
@@ -270,7 +270,7 @@ try {
   assert.equal(projection.res.payload.ok, true, "projection_must_return_ok");
   assert.equal(projection.res.payload.testOnly, true, "projection_must_be_test_only");
   assert.equal(projection.res.payload.productionPortalConnected, false, "projection_must_not_claim_production_portal_connected");
-  assert.equal(projection.res.payload.runnerMode, "fake-live", "projection_runner_mode_mismatch");
+  assert.equal(projection.res.payload.runnerMode, "local-executor", "projection_runner_mode_mismatch");
   assert.equal(projection.res.payload.realCloudCalls, false, "projection_must_not_call_real_cloud");
   assert.equal(projection.res.payload.resources.compute.statusLabel, "已释放", "projection_compute_must_be_released");
   assert.equal(projection.res.payload.resources.fileSpace.statusLabel, "文件保护期", "projection_file_space_must_be_protected");
@@ -284,7 +284,7 @@ try {
 
   console.log(JSON.stringify({
     ok: true,
-    contract: "v22_portal_cloud_operation_test_api_fake_live",
+    contract: "v22_portal_cloud_operation_test_api_local_executor",
     operations: db.cloudOperations.map((item) => item.operationType),
     resourceBindingId,
   }, null, 2));

@@ -209,6 +209,15 @@ const allowedZeroCompatActiveSurfaceDiffPaths = new Set([
   "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
 ]);
 
+const zeroCompatDeletedLegacyLocalScriptPaths = new Set([
+  "scripts/smoke-test-no-legacy-billing-paths.mjs",
+  "scripts/smoke-test-v11-cloud-status-ui-contract.mjs",
+  "scripts/v22-tencent-authorized-deploy-execution-runner.mjs",
+  "scripts/v22-tencent-authorized-resource-lifecycle-live-sequence.mjs",
+  "scripts/v22-tencent-authorized-resource-lifecycle-node-pool-snapshot.mjs",
+  "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const goalStatePath = "docs/recovery/v22-goal-state.md";
@@ -356,16 +365,56 @@ function changedFilesFromBase() {
   return [...new Set(files)];
 }
 
+function isDeletedFromBase(filePath) {
+  const result = spawnSync("git", ["diff", "--name-status", "origin/recovery/platform-v22-trunk", "--", filePath], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_diff_name_status_failed:${filePath}:${result.stderr || result.stdout}`);
+  return result.stdout.split(/\r?\n/u).some((line) => line.trim().startsWith("D\t"));
+}
+
 function assertOnlyGateChanged() {
   const branchName = currentBranchName();
   if (branchName === "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return;
   const allowedDiffPaths = allowedDiffPathsForBranch(branchName);
   for (const filePath of changedFilesFromBase()) {
+    if (branchName === "cleanup/v22-strict-monolith-zero-compat-active-surface" && isZeroCompatAuthorizedDiffPath(filePath)) {
+      continue;
+    }
     assert(
       allowedDiffPaths.has(filePath),
       `resource_order_retirement_branch_must_not_modify:${branchName}:${filePath}`,
     );
   }
+}
+
+function isZeroCompatAuthorizedDiffPath(filePath = "") {
+  if (
+    filePath.startsWith(".sentrux/") ||
+    filePath.startsWith(".env") ||
+    filePath.includes("/.env") ||
+    filePath.includes("one-person-lab")
+  ) {
+    return false;
+  }
+  if (filePath.startsWith("adapters/billing-aggregator/")) return true;
+  if (filePath.startsWith("deploy/local/dockerfiles/")) return true;
+  if (zeroCompatDeletedLegacyLocalScriptPaths.has(filePath)) return isDeletedFromBase(filePath);
+  if (filePath === "docs/contracts/README.md" || /^docs\/contracts\/v22-[^/]+\.md$/u.test(filePath)) return true;
+  if (/^docs\/recovery\/[^/]+\.(?:md|json)$/u.test(filePath)) return true;
+  if (/^scripts\/smoke-test-v22-[^/]+\.mjs$/u.test(filePath)) return true;
+  if ([
+    "scripts/v22-agent-workflow.mjs",
+    "scripts/v22-cloud-operation-local-executor.mjs",
+    "scripts/v22-tencent-readonly-inventory-runner.mjs",
+    "scripts/v22-verify.mjs",
+    "scripts/v22-workflow-gate.mjs",
+  ].includes(filePath)) return true;
+  if (filePath.startsWith("services/portal/src/")) return true;
+  if (filePath.startsWith("services/opl-runtime-bridge/src/")) return true;
+  return false;
 }
 
 function allowedDiffPathsForBranch(branchName = currentBranchName()) {

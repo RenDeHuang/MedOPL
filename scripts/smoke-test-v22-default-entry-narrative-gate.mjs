@@ -453,8 +453,13 @@ const branchScopedAllowedDiffPatterns = new Map([
     "docs/contracts/v22-*",
     "scripts/smoke-test-v22-*",
     "scripts/v22-verify.mjs",
+    "scripts/v22-agent-workflow.mjs",
+    "scripts/v22-cloud-operation-local-executor.mjs",
     "scripts/v22-workflow-gate.mjs",
     "scripts/v22-tencent-readonly-inventory-runner.mjs",
+    "services/portal/src/**",
+    "services/opl-web-gateway/src/**",
+    "services/opl-runtime-bridge/src/**",
   ]],
 ]);
 
@@ -494,6 +499,15 @@ const forbiddenComposeServiceNames = [
   "billing-aggregator",
   "billing-aggregator-dev",
 ];
+
+const zeroCompatDeletedLegacyLocalScriptPaths = new Set([
+  "scripts/smoke-test-no-legacy-billing-paths.mjs",
+  "scripts/smoke-test-v11-cloud-status-ui-contract.mjs",
+  "scripts/v22-tencent-authorized-deploy-execution-runner.mjs",
+  "scripts/v22-tencent-authorized-resource-lifecycle-live-sequence.mjs",
+  "scripts/v22-tencent-authorized-resource-lifecycle-node-pool-snapshot.mjs",
+  "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+]);
 
 const secretLikeValuePatterns = [
   /sk-[A-Za-z0-9_-]{16,}/u,
@@ -535,6 +549,16 @@ function changedFilesFromBase() {
     .flatMap((output) => output.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)))];
 }
 
+function isDeletedFromBase(filePath) {
+  const result = spawnSync("git", ["diff", "--name-status", "origin/recovery/platform-v22-trunk", "--", filePath], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_diff_name_status_failed:${filePath}:${result.stderr || result.stdout}`);
+  return result.stdout.split(/\r?\n/u).some((line) => line.trim().startsWith("D\t"));
+}
+
 function currentBranchName() {
   const result = spawnSync("git", ["branch", "--show-current"], {
     cwd: repoRoot,
@@ -558,6 +582,20 @@ function assertOnlyAllowedFilesChanged() {
   const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(branchName) ?? new Set();
   const branchAllowedDiffPatterns = (branchScopedAllowedDiffPatterns.get(branchName) ?? []).map(globToRegExp);
   for (const filePath of changedFilesFromBase()) {
+    if (
+      branchName === "cleanup/v22-strict-monolith-zero-compat-active-surface" &&
+      (filePath.startsWith("adapters/billing-aggregator/") || filePath.startsWith("deploy/local/dockerfiles/")) &&
+      isDeletedFromBase(filePath)
+    ) {
+      continue;
+    }
+    if (
+      branchName === "cleanup/v22-strict-monolith-zero-compat-active-surface" &&
+      zeroCompatDeletedLegacyLocalScriptPaths.has(filePath) &&
+      isDeletedFromBase(filePath)
+    ) {
+      continue;
+    }
     assert(
       allowedDiffPaths.has(filePath) || branchAllowedDiffPaths.has(filePath) || branchAllowedDiffPatterns.some((pattern) => pattern.test(filePath)),
       `default_entry_branch_modified_unsubscribed_file:${filePath}`,

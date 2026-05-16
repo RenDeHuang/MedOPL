@@ -161,12 +161,12 @@ release plan 顶层：
 D1 验证路径：
 
 1. 合同 smoke 确认本合同是 Package D Level 4 子合同，且订阅 OPL Runtime Agent 合同。
-2. runner `--check-config` 验证 `platform_service_target` 不强制 `workspaceId/resourceBindingId`。
-3. runner `--check-config` 验证 `workspace_runtime_target` 必须提供 `workspaceId/resourceBindingId`。
-4. runner 验证 `ownerRef/operationId` 缺失时 fail-closed。
-5. runner 验证只有 `k8s-app/qcloud-app` 时 fail-closed。
-6. runner 验证 runtime smoke coverage 必须覆盖每个 pushed component。
-7. fake-live Package D runner 验证 sanitized report 中展示 target class 和 owner guard，不泄露 secret/kubeconfig/raw registry credential。
+2. 本地合同 gate 验证 `platform_service_target` 不强制 `workspaceId/resourceBindingId`。
+3. 本地合同 gate 验证 `workspace_runtime_target` 必须提供 `workspaceId/resourceBindingId`。
+4. 本地合同 gate 验证 `ownerRef/operationId` 缺失时 fail-closed。
+5. 本地合同 gate 验证只有 `k8s-app/qcloud-app` 时 fail-closed。
+6. 本地合同 gate 验证 runtime smoke coverage 必须覆盖每个 pushed component。
+7. zero-compat cleanup 已删除 Package D runner executable surface；未来真实 deploy runner 必须重新授权并建立新的 v22 boundary。
 
 通过 D1 只能说明 release plan ownership gate 可用；不代表 TCR push、kubectl rollout、runtime smoke 或真实云 deploy 已完成。
 
@@ -227,11 +227,12 @@ D1 验证路径：
     "manual memory"
   ],
   "runnerGate": {
-    "entrypoint": "scripts/v22-tencent-authorized-deploy-execution-runner.mjs",
+    "executableSurfaceDeleted": true,
+    "futureRunnerRequiresNewV22Boundary": true,
     "smoke": "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
     "modesCovered": [
-      "check-config",
-      "fake-live"
+      "local-contract",
+      "local-owner-guard"
     ]
   }
 }

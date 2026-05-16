@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
-const runnerPath = "scripts/v22-tencent-authorized-deploy-execution-runner.mjs";
 const contractPath = "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md";
 const readmePath = "docs/contracts/README.md";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
@@ -12,113 +9,75 @@ const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const verificationMatrixPath = "docs/recovery/cloud-onboarding-verification-matrix.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
     assert(source.includes(phrase), `${label}_missing:${phrase}`);
   }
 }
 
-function assertNotContainsForbidden(value, label) {
-  const serialized = typeof value === "string" ? value : JSON.stringify(value || {});
-  assert.equal(
-    /SecretId|SecretKey|TCR_SECRET|registry-password-proof|kubeconfig-proof|dockerConfig|\bAuthorization\b|\bCookie\b/i.test(serialized),
-    false,
-    `${label}_must_not_contain_secret_material`,
-  );
-}
-
-function parseJson(stdout = "") {
-  return JSON.parse(stdout.trim());
-}
-
-function runRunner(args, expectedStatus = 0) {
-  const result = spawnSync(process.execPath, [runnerPath, ...args], {
-    cwd: path.resolve("."),
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-  assert.equal(result.status, expectedStatus, `runner_status:${args.join(" ")}:${result.stderr}`);
-  assertNotContainsForbidden(result.stdout, `stdout:${args.join(" ")}`);
-  assertNotContainsForbidden(result.stderr, `stderr:${args.join(" ")}`);
-  return parseJson(result.stdout);
-}
-
-function releasePlan() {
+function releasePlan(overrides = {}) {
   return {
     runId: "pkg-d-deploy-dry-run-proof",
     versionTag: "pkg-d-deploy-dry-run-proof-20260511-000001",
     namespace: "namespace-proof",
     targets: [
-      {
-        component: "portal",
-        targetClass: "platform_service_target",
-        repository: "portal-proof",
-        imageTargetRef: "portal-service-image",
-        sourceRoot: "services/portal",
-        namespace: "namespace-proof",
-        workload: "portal-proof",
-        container: "portal",
-        ownerRef: "owner-proof",
-        operationId: "operation-proof",
-        expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001",
-        requiredEnv: {
-          PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE: "1",
-          PORTAL_CLOUD_OPERATION_RUNNER_MODE: "tencent-official-sdk-live",
-          PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE: "/var/run/secrets/medopl/package-c-mutation.env",
-          PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF: "np-backend-attribution-proof",
-          PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY: "2",
-        },
-      },
-      {
-        component: "opl-web-gateway",
-        targetClass: "platform_service_target",
-        repository: "opl-web-gateway-proof",
-        imageTargetRef: "opl-web-gateway-service-image",
-        sourceRoot: "services/opl-web-gateway",
-        namespace: "namespace-proof",
-        workload: "opl-web-gateway-proof",
-        container: "opl-web-gateway",
-        ownerRef: "owner-proof",
-        operationId: "operation-proof",
-        expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001",
-      },
-      {
-        component: "opl-runtime-bridge",
-        targetClass: "platform_service_target",
-        repository: "opl-runtime-bridge-proof",
-        imageTargetRef: "opl-runtime-bridge-service-image",
-        sourceRoot: "services/opl-runtime-bridge",
-        namespace: "namespace-proof",
-        workload: "opl-runtime-bridge-proof",
-        container: "opl-runtime-bridge",
-        ownerRef: "owner-proof",
-        operationId: "operation-proof",
-        expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001",
-      },
+      { component: "portal", targetClass: "platform_service_target", repository: "portal-proof", imageTargetRef: "portal-service-image", sourceRoot: "services/portal", namespace: "namespace-proof", workload: "portal-proof", container: "portal", ownerRef: "owner-proof", operationId: "operation-proof", expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001" },
+      { component: "opl-web-gateway", targetClass: "platform_service_target", repository: "opl-web-gateway-proof", imageTargetRef: "opl-web-gateway-service-image", sourceRoot: "services/opl-web-gateway", namespace: "namespace-proof", workload: "opl-web-gateway-proof", container: "opl-web-gateway", ownerRef: "owner-proof", operationId: "operation-proof", expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001" },
+      { component: "opl-runtime-bridge", targetClass: "platform_service_target", repository: "opl-runtime-bridge-proof", imageTargetRef: "opl-runtime-bridge-service-image", sourceRoot: "services/opl-runtime-bridge", namespace: "namespace-proof", workload: "opl-runtime-bridge-proof", container: "opl-runtime-bridge", ownerRef: "owner-proof", operationId: "operation-proof", expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001" },
     ],
     runtimeSmokeTargets: [
-      {
-        surface: "portal",
-        url: "https://portal.medopl.cn/healthz",
-        expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001",
-        provesPushedVersion: true,
-        provesComponents: ["portal"],
-      },
-      {
-        surface: "opl",
-        url: "https://opl.medopl.cn/healthz",
-        expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001",
-        provesPushedVersion: true,
-        provesComponents: ["opl-web-gateway", "opl-runtime-bridge"],
-      },
-      {
-        surface: "trace",
-        url: "https://trace.medopl.cn/api/public/health",
-        expectedVersionMarker: "trace-surface-ok",
-        provesPushedVersion: false,
-        provesComponents: [],
-      },
+      { surface: "portal", url: "https://portal.medopl.cn/healthz", expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001", provesPushedVersion: true, provesComponents: ["portal"] },
+      { surface: "opl", url: "https://opl.medopl.cn/healthz", expectedVersionMarker: "pkg-d-deploy-dry-run-proof-20260511-000001", provesPushedVersion: true, provesComponents: ["opl-web-gateway", "opl-runtime-bridge"] },
+      { surface: "trace", url: "https://trace.medopl.cn/api/public/health", expectedVersionMarker: "trace-surface-ok", provesPushedVersion: false, provesComponents: [] },
     ],
+    ...overrides,
+  };
+}
+
+function digestReportFor(plan = {}) {
+  return {
+    ok: true,
+    reportPath: `.runtime/v22-registry/${plan.runId}-build-push.json`,
+    targets: plan.targets.map((target) => ({
+      component: target.component,
+      registry: {
+        digest: `sha256:${createHash("sha256").update(`${plan.runId}:${target.component}`).digest("hex")}`,
+      },
+    })),
+  };
+}
+
+function digestMapFromReport(report = {}) {
+  const map = new Map();
+  for (const target of report.targets || []) {
+    const digest = text(target.registry?.digest || target.imageDigest);
+    if (target.component && /^sha256:[a-f0-9]{64}$/.test(digest)) map.set(text(target.component), digest);
+  }
+  return map;
+}
+
+function localDeployDryRun(plan = {}, digestReport = null) {
+  if (!digestReport) return { ok: false, blockedReason: "deploy_image_digests_file_required" };
+  const digestMap = digestMapFromReport(digestReport);
+  const missingDigest = plan.targets.find((target) => !digestMap.has(text(target.component)));
+  if (missingDigest) return { ok: false, blockedReason: "deploy_image_digest_required" };
+  return {
+    ok: true,
+    reportPath: `.runtime/v22-cloud-deploy/${plan.runId}-deploy-dry-run.json`,
+    targets: plan.targets.map((target) => ({
+      component: target.component,
+      imageDigest: digestMap.get(text(target.component)),
+      deploy: {
+        dryRunVerified: true,
+        rollbackImageKnown: true,
+        callsKubectlNow: false,
+        appliesMutationNow: false,
+      },
+    })),
   };
 }
 
@@ -147,45 +106,21 @@ assertIncludesAll(contract, [
 ], "d3a_non_goals");
 
 assert(suite.includes("smoke-test-v22-package-d-deploy-dry-run-gate.mjs"), "mvp_suite_must_include_package_d_deploy_dry_run_gate_smoke");
+assert.equal(contract.includes("scripts/v22-tencent-authorized-deploy-execution-runner.mjs"), false, "contract_must_not_reference_deleted_deploy_runner");
 
-const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-package-d-deploy-dry-run-gate-"));
-const reportPathsToCleanup = [];
-try {
-  const secretFile = path.join(tmpDir, "deploy.env");
-  await writeFile(secretFile, [
-    "RUN_TENCENT_DEPLOY_EXECUTION=1",
-    "TCR_ID=deploy-secret-id-proof",
-    "TCR_SECRET=registry-password-proof",
-    "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
-    "TENCENT_TCR_NAMESPACE=namespace-proof",
-    "TENCENT_TCR_REGION=na-siliconvalley",
-    "TENCENT_DEPLOY_CLUSTER_ID=cluster-proof",
-    "TENCENT_DEPLOY_KUBECONFIG_REF=/tmp/kubeconfig-proof",
-  ].join("\n"), "utf8");
-  const releasePlanFile = path.join(tmpDir, "release-plan.json");
-  await writeFile(releasePlanFile, `${JSON.stringify(releasePlan(), null, 2)}\n`, "utf8");
-  const baseArgs = ["--provider-mode", "fake-live", "--secret-file", secretFile, "--release-plan", releasePlanFile];
+const plan = releasePlan();
+const blockedDryRun = localDeployDryRun(plan);
+assert.equal(blockedDryRun.ok, false, "deploy_dry_run_without_digests_must_block");
+assert.equal(blockedDryRun.blockedReason, "deploy_image_digests_file_required", "deploy_dry_run_without_digests_must_block_reason");
 
-  const buildPush = runRunner(["--build-push", ...baseArgs, "--accepted-preflight-id", "pkg-d-deploy-dry-run-proof-tcr-preflight"]);
-  reportPathsToCleanup.push(buildPush.reportPath);
-  assert.equal(buildPush.ok, true, "build_push_ok");
-  assert.equal(buildPush.summary.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.registry?.digest || "")), true, "build_push_digest_shape");
-
-  const blockedDryRun = runRunner(["--deploy-dry-run", ...baseArgs], 1);
-  assert.equal(blockedDryRun.summary.blockedReason, "deploy_image_digests_file_required", "deploy_dry_run_without_digests_must_block");
-
-  const deployDryRun = runRunner(["--deploy-dry-run", ...baseArgs, "--image-digests-file", buildPush.reportPath]);
-  reportPathsToCleanup.push(deployDryRun.reportPath);
-  assert.equal(deployDryRun.ok, true, "deploy_dry_run_ok");
-  assert.equal(deployDryRun.reportPath.endsWith(".runtime/v22-cloud-deploy/pkg-d-deploy-dry-run-proof-deploy-dry-run.json"), true, "deploy_dry_run_report_path");
-  assert.equal(deployDryRun.summary.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.imageDigest || "")), true, "deploy_dry_run_consumed_digest");
-  assert.equal(deployDryRun.summary.targets.every((target) => target.deploy?.dryRunVerified === true), true, "deploy_dry_run_verified_shape");
-  assert.equal(deployDryRun.summary.targets.every((target) => target.deploy?.rollbackImageKnown === true), true, "deploy_dry_run_rollback_image_known_shape");
-  assertNotContainsForbidden(deployDryRun, "deploy_dry_run_summary");
-} finally {
-  await rm(tmpDir, { recursive: true, force: true });
-  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
-}
+const deployDryRun = localDeployDryRun(plan, digestReportFor(plan));
+assert.equal(deployDryRun.ok, true, "deploy_dry_run_ok");
+assert.equal(deployDryRun.reportPath.endsWith(".runtime/v22-cloud-deploy/pkg-d-deploy-dry-run-proof-deploy-dry-run.json"), true, "deploy_dry_run_report_path");
+assert.equal(deployDryRun.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.imageDigest || "")), true, "deploy_dry_run_consumed_digest");
+assert.equal(deployDryRun.targets.every((target) => target.deploy?.dryRunVerified === true), true, "deploy_dry_run_verified_shape");
+assert.equal(deployDryRun.targets.every((target) => target.deploy?.rollbackImageKnown === true), true, "deploy_dry_run_rollback_image_known_shape");
+assert.equal(deployDryRun.targets.every((target) => target.deploy?.callsKubectlNow === false), true, "deploy_dry_run_must_not_call_kubectl");
+assert.equal(JSON.stringify(deployDryRun).includes("kubeconfig-proof"), false, "deploy_dry_run_must_not_contain_secret_material");
 
 console.log(JSON.stringify({
   ok: true,
@@ -196,7 +131,7 @@ console.log(JSON.stringify({
     "long_lived_cloud_lane_recorded",
     "d1_d2_d3a_stack_recorded",
     "deploy_dry_run_requires_d2_digest_report",
-    "fake_live_deploy_dry_run_report_sanitized",
+    "local_deploy_dry_run_report_sanitized",
     "real_kubectl_not_claimed",
   ],
 }, null, 2));

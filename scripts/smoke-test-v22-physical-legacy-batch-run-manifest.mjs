@@ -102,9 +102,9 @@ if (manifest.zero_compat_active_surface_status === "in_progress") {
     "slice-j-zero-compat-active-surface-gate",
     "slice-k-delete-residual-adapter-compatibility-surface",
     "slice-l-delete-residual-deploy-compatibility-assets",
+    "slice-m-delete-residual-live-canary-runner-surfaces",
   ], "manifest_zero_compat_completed_slices");
   assertArrayIncludesAll(remainingSlices, [
-    "slice-m-delete-residual-live-canary-runner-surfaces",
     "slice-n-remove-residual-compatibility-narrative",
     "slice-o-record-zero-compat-active-surface-completion",
   ], "manifest_zero_compat_remaining_slices");

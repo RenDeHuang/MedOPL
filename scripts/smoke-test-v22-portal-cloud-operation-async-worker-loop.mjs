@@ -66,7 +66,7 @@ try {
     planId: "starter_2c4g_10gb",
   }, {
     operationType: "create_storage",
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     repoRoot: ".",
   });
@@ -282,7 +282,7 @@ try {
   assert.equal(cleanupProjection.resources.fileSpace.statusLabel, "文件保护期", "cleanup_reconcile_projection_must_show_file_protected");
 
   const drain = processQueuedPortalProductionCloudOperations(db, {
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     computeNodePoolRef: "np-backend-attribution-proof",
     maxOperations: 1,
@@ -303,7 +303,7 @@ try {
     planId: "starter_2c4g_10gb",
   }, {
     operationType: "create_compute",
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     repoRoot: ".",
   });
@@ -313,7 +313,7 @@ try {
   assert.equal(db.cloudOperations[1].requestedSpec.providerTargetDesiredCapacity, "2", "provider_target_must_not_go_below_shared_pool_baseline");
 
   const blockedDrain = processQueuedPortalProductionCloudOperations(db, {
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     maxOperations: 1,
     workerId: "worker-v22-async-smoke",
@@ -336,7 +336,7 @@ try {
     planId: "starter_2c4g_10gb",
   }, {
     operationType: "create_compute",
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     repoRoot: ".",
     computePoolBaselineCapacity: 2,
@@ -345,7 +345,7 @@ try {
   assert.equal(db.cloudOperations.at(-1).requestedSpec.providerTargetDesiredCapacity, "2", "attributed_compute_provider_target_must_use_baseline");
 
   const computeDrain = processQueuedPortalProductionCloudOperations(db, {
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     computeNodePoolRef: "np-backend-attribution-proof",
     maxOperations: 1,
@@ -378,7 +378,7 @@ try {
     planId: "starter_2c4g_10gb",
   }, {
     operationType: "release_compute",
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     repoRoot: ".",
     computePoolBaselineCapacity: 2,

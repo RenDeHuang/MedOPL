@@ -68,10 +68,10 @@ assertIncludesAll(sequence, [
 ], "sequence_commits");
 
 assertIncludesAll(sequence, [
-  "Portal test-only fake-live cloud operation API bridge with explicit non-production env gate",
+  "Portal test-only local-executor cloud operation API bridge with explicit non-production env gate",
   "R-00..R-21 runnable path, CC gates, workflow task packet shape, and CO-06 phase truth alignment",
   "Tencent official SDK / COS SDK dependency diff and readonly connection loader/client with redacted smoke fixtures",
-  "Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof with explicit Package C secret path",
+  "Package C TKE/COS lifecycle runner gates, dry-run and local-executor local proof with explicit Package C secret path",
   "Package D TCR/build-push/kubectl deploy/runtime smoke gates",
   "This absorption sequence, branch scope map, and B verification checklist",
 ], "sequence_branch_scopes");
@@ -79,7 +79,7 @@ assertIncludesAll(sequence, [
 assertIncludesAll(sequence, [
   "testOnly=true",
   "productionPortalConnected=false",
-  "runnerMode=fake-live",
+  "runnerMode=local-executor",
   "realCloudCalls=false",
   "PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1",
   "CO-06 remains `needs-user-authorization`",
@@ -95,7 +95,7 @@ assertIncludesAll(sequence, [
   "git rev-list --left-right --count <previous-branch>...<next-branch>",
   "git diff --name-only <previous-branch>...<next-branch>",
   "git diff --check <previous-branch>...<next-branch>",
-  "node scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs",
+  "node scripts/smoke-test-v22-portal-cloud-operation-test-api-local-gate.mjs",
   "node scripts/smoke-test-v22-cloud-connection-runnable-path.mjs",
   "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
   "node scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
@@ -103,7 +103,7 @@ assertIncludesAll(sequence, [
   "node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs",
   "node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
   "node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
-  "node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+  "node scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
 ], "sequence_verification_commands");
 
 assertIncludesAll(sequence, [

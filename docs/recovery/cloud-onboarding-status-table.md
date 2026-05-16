@@ -21,9 +21,9 @@ Current goal leaf `leaf-cloud-lane-readonly-status-audit` is recorded by branch 
 | level | status | evidence / blocker | owner | next action | required smoke | cleanup gate |
 | --- | --- | --- | --- | --- | --- | --- |
 | L1 | starter-live-done | production env/secret/schema gate passed for the live Portal deployment that ran the starter minimal loop | A/B | rebase verification and B review before absorption | `smoke-test-v22-cloud-harness-manifest-selector.mjs`; `smoke-test-v22-portal-runtime-startup-config.mjs` | not required |
-| L2a | starter-live-done | direct Package C storage/compute create evidence supports the starter live loop; final node pool baseline is `2/2/0` | A/user | preserve evidence boundary; no new live mutation before B decision | `smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs`; `smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs`; `smoke-test-v22-cloud-live-cleanup-gate.mjs` | required |
+| L2a | starter-live-done | direct Package C storage/compute create evidence supports the starter live loop; final node pool baseline is `2/2/0` | A/user | preserve evidence boundary; no new live mutation before B decision | `smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs`; `smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs`; `smoke-test-v22-cloud-cleanup-local-gate.mjs` | required |
 | L2b | starter-live-done | Portal starter click queued operation; independent worker drained Package C; PostgreSQL/projection updated without HTTP 504 | A | re-run local smoke after rebase; do not rerun live unless separately authorized | `smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs`; `smoke-test-v22-portal-production-cloud-operation-loop.mjs`; `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs` | required |
-| L3 | starter-cleanup-done-reconciling | release compute and delete storage succeeded; canonical activeOperations is `0`; billing label is `对账中` | A/B/user | keep exact 120min settlement as an audit checkpoint; do not claim fully settled billing | `smoke-test-v22-cloud-live-cleanup-gate.mjs`; `smoke-test-v22-release-stop-billing-audit-flow.mjs`; `smoke-test-v22-portal-files-billing-trace-flow.mjs` | required |
+| L3 | starter-cleanup-done-reconciling | release compute and delete storage succeeded; canonical activeOperations is `0`; billing label is `对账中` | A/B/user | keep exact 120min settlement as an audit checkpoint; do not claim fully settled billing | `smoke-test-v22-cloud-cleanup-local-gate.mjs`; `smoke-test-v22-release-stop-billing-audit-flow.mjs`; `smoke-test-v22-portal-files-billing-trace-flow.mjs` | required |
 | L4 | starter-product-accepted | ordinary user starter projection is sanitized and shows compute released, file protection, workbench available, billing reconciling | C/B/user | pro/upgrade/add-storage/full matrix remains local smoke unless a new live run is authorized | `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | required |
 
 ## Plain Status Summary
@@ -54,7 +54,7 @@ Current goal leaf `leaf-cloud-lane-readonly-status-audit` is recorded by branch 
 | CO-03 | official SDK dependency loader | done | existing trunk evidence before 148f5a0 | A | none | `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs` | none |
 | CO-04 | check-config | done | local gate pass on branch docs/v22-cloud-onboarding-co04-check-config-evidence: workflow status/next, readonly local guard, official SDK loader, agent workflow cloud onboarding, long-term governance surfaces, MVP suite; 未读 secret; 未读取真实 secret 目录; 未 source env; 未传 --live-readonly; 未调用真实 Tencent API; 未加载真实 SDK live path; official SDK loader 默认 fail-closed; CO-06 仍需用户显式授权 | A | none; CO-04 evidence remains local/static only and does not advance CO-06 without user authorization | `smoke-test-v22-tencent-readonly-inventory-local-guard.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs` | stop if real secret, real cloud, deploy, or dependency install is needed |
 | CO-05 | default gate | done | B default gate pass after 83dfc45/ce58a94: 无 blocker; 默认路径不读 secret; 不调用真实云; 不加载真实 SDK live path; TC3 仍是 diagnostic/reference; 未新增 create/release/mutation 路径; 不自动 merge/push/build/push/kubectl | B | handoff to CO-06 user-authorized readonly live; no further default gate action | `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`; `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`; `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs` | stop before merge/push or any live path |
-| CO-06 | user-authorized readonly live | needs-user-authorization | no live report yet | user | decide whether to authorize official SDK readonly secret allowlist and readonly API call | `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`; `smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs`; check-config output | must explicitly authorize secret allowlist, region/API scope, real cloud call, report location |
+| CO-06 | user-authorized readonly live | needs-user-authorization | no live report yet | user | decide whether to authorize official SDK readonly secret allowlist and readonly API call | `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`; `smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`; check-config output | must explicitly authorize secret allowlist, region/API scope, real cloud call, report location |
 | CO-07 | readonly report review | pending | pending readonly report | B | review redacted report after CO-06 | `smoke-test-v22-tencent-readonly-inventory-boundary.mjs`; report redaction checks | stop if another real cloud read or report sharing is needed |
 | CO-08 | TC3 cleanup gate | blocked | pending official SDK live report | B | wait for official SDK live report and B acceptance | `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs` | stop if cleanup would delete TC3 before report review |
 | CO-09 | create/release dry-run plan | pending | pending | A | design no-mutation dry-run plan after readonly report review | `smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs`; `smoke-test-v22-authorized-tencent-create-release-contract.mjs` | stop if dry-run wants real cloud, mutation secret, charge, or ledger mutation |
@@ -134,8 +134,8 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "purpose": "direct Package C resource lifecycle canary from baseline 2 back to baseline 2",
       "requiredSmoke": [
         "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",
-        "scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs",
-        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
+        "scripts/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
+        "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "cleanupRequired": true
     },
@@ -148,7 +148,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
         "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
         "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
         "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"
+        "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "cleanupRequired": true
     },
@@ -158,7 +158,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A/B/user",
       "purpose": "120min billing reconciliation, release stop billing, and cleanup proof",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+        "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
         "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
         "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"
       ],
@@ -386,7 +386,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "nextAction": "decide whether to authorize official SDK readonly secret allowlist and readonly API call",
       "requiredSmoke": [
         "scripts/smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs",
-        "scripts/smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs",
+        "scripts/smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
         "check-config output"
       ],
       "userGate": "must explicitly authorize secret allowlist, region/API scope, real cloud call, report location"

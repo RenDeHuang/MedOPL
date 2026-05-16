@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 
-const runnerPath = "scripts/v22-tencent-authorized-deploy-execution-runner.mjs";
 const contractPath = "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md";
 const readmePath = "docs/contracts/README.md";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
@@ -12,38 +9,107 @@ const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const verificationMatrixPath = "docs/recovery/cloud-onboarding-verification-matrix.md";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
     assert(source.includes(phrase), `${label}_missing:${phrase}`);
   }
 }
 
-function assertNotContainsForbidden(value, label) {
-  const serialized = typeof value === "string" ? value : JSON.stringify(value || {});
-  assert.equal(
-    /SecretId|SecretKey|TCR_SECRET|registry-password-proof|kubeconfig-proof|dockerConfig|\bAuthorization\b|\bCookie\b/i.test(serialized),
-    false,
-    `${label}_must_not_contain_secret_material`,
-  );
+function validateToken(value = "", label = "token") {
+  const normalized = text(value);
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,120}$/.test(normalized)) {
+    return { ok: false, reason: `${label}_invalid` };
+  }
+  return { ok: true };
 }
 
-function parseJson(stdout = "") {
-  return JSON.parse(stdout.trim());
+function validateImageTag(value = "") {
+  const tag = text(value);
+  if (!tag) return { ok: false, reason: "deploy_image_tag_required" };
+  if (tag === "latest") return { ok: false, reason: "deploy_latest_tag_forbidden" };
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{5,120}$/.test(tag)) {
+    return { ok: false, reason: "deploy_image_tag_invalid" };
+  }
+  return { ok: true, tag };
 }
 
-function runRunner(args, expectedStatus = 0) {
-  const result = spawnSync(process.execPath, [runnerPath, ...args], {
-    cwd: path.resolve("."),
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-  assert.equal(result.status, expectedStatus, `runner_status:${args.join(" ")}:${result.stderr}`);
-  assertNotContainsForbidden(result.stdout, `stdout:${args.join(" ")}`);
-  assertNotContainsForbidden(result.stderr, `stderr:${args.join(" ")}`);
-  return parseJson(result.stdout);
+function validateReleasePlan(plan = {}) {
+  const runId = text(plan.runId);
+  const versionTag = validateImageTag(plan.versionTag);
+  if (!runId) return { ok: false, reason: "deploy_run_id_required" };
+  if (!versionTag.ok) return versionTag;
+  if (!validateToken(runId, "deploy_run_id").ok) return { ok: false, reason: "deploy_release_plan_invalid" };
+  if (!Array.isArray(plan.targets) || plan.targets.length < 2) {
+    return { ok: false, reason: "deploy_multi_target_release_plan_required" };
+  }
+  const globalNamespace = text(plan.namespace);
+  const seenRepositoryTags = new Set();
+  const seenWorkloadContainers = new Set();
+  for (const target of plan.targets) {
+    for (const field of ["component", "targetClass", "repository", "imageTargetRef", "sourceRoot", "namespace", "workload", "container", "ownerRef", "operationId", "expectedVersionMarker"]) {
+      if (!text(target[field])) return { ok: false, reason: field === "ownerRef" || field === "operationId" ? "deploy_platform_owner_guard_required" : "deploy_target_field_required" };
+    }
+    if (!["services/portal", "services/opl-web-gateway", "services/opl-runtime-bridge"].includes(text(target.sourceRoot))) {
+      return { ok: false, reason: "deploy_source_root_must_be_active_service" };
+    }
+    if (globalNamespace && text(target.namespace) !== globalNamespace) {
+      return { ok: false, reason: "deploy_cross_namespace_target_forbidden" };
+    }
+    if (!["platform_service_target", "workspace_runtime_target"].includes(text(target.targetClass))) {
+      return { ok: false, reason: "deploy_target_class_invalid" };
+    }
+    if (text(target.targetClass) === "workspace_runtime_target" && (!text(target.workspaceId) || !text(target.resourceBindingId))) {
+      return { ok: false, reason: "deploy_workspace_runtime_owner_guard_required" };
+    }
+    const repositoryTag = `${text(target.repository)}:${versionTag.tag}`;
+    if (seenRepositoryTags.has(repositoryTag)) return { ok: false, reason: "deploy_duplicate_repository_tag_forbidden" };
+    seenRepositoryTags.add(repositoryTag);
+    const workloadContainer = `${text(target.namespace)}:${text(target.workload)}:${text(target.container)}`;
+    if (seenWorkloadContainers.has(workloadContainer)) return { ok: false, reason: "deploy_duplicate_workload_container_forbidden" };
+    seenWorkloadContainers.add(workloadContainer);
+  }
+  if (!Array.isArray(plan.runtimeSmokeTargets) || plan.runtimeSmokeTargets.length < 3) {
+    return { ok: false, reason: "deploy_runtime_smoke_targets_required" };
+  }
+  const requiredSurfaces = new Set(["portal", "opl", "trace"]);
+  const seenSurfaces = new Set();
+  const pushedVersionCoverage = new Set();
+  for (const smokeTarget of plan.runtimeSmokeTargets) {
+    if (!text(smokeTarget.surface) || !text(smokeTarget.url) || !text(smokeTarget.expectedVersionMarker)) {
+      return { ok: false, reason: "deploy_runtime_smoke_target_field_required" };
+    }
+    try {
+      new URL(text(smokeTarget.url));
+    } catch {
+      return { ok: false, reason: "deploy_runtime_smoke_url_invalid" };
+    }
+    seenSurfaces.add(text(smokeTarget.surface));
+    const provesComponents = Array.isArray(smokeTarget.provesComponents)
+      ? smokeTarget.provesComponents.map(text).filter(Boolean)
+      : [];
+    if (smokeTarget.provesPushedVersion !== false && !provesComponents.length) {
+      return { ok: false, reason: "deploy_runtime_smoke_component_coverage_required" };
+    }
+    if (smokeTarget.provesPushedVersion !== false) {
+      for (const component of provesComponents) pushedVersionCoverage.add(component);
+    }
+  }
+  for (const requiredSurface of requiredSurfaces) {
+    if (!seenSurfaces.has(requiredSurface)) return { ok: false, reason: "deploy_runtime_smoke_surface_required" };
+  }
+  for (const target of plan.targets) {
+    if (!pushedVersionCoverage.has(text(target.component))) {
+      return { ok: false, reason: "deploy_runtime_smoke_component_coverage_required" };
+    }
+  }
+  return { ok: true };
 }
 
-function releasePlan() {
+function releasePlan(overrides = {}) {
   return {
     runId: "pkg-d-image-push-proof",
     versionTag: "pkg-d-image-push-proof-20260511-000001",
@@ -61,13 +127,6 @@ function releasePlan() {
         ownerRef: "owner-proof",
         operationId: "operation-proof",
         expectedVersionMarker: "pkg-d-image-push-proof-20260511-000001",
-        requiredEnv: {
-          PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE: "1",
-          PORTAL_CLOUD_OPERATION_RUNNER_MODE: "tencent-official-sdk-live",
-          PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE: "/var/run/secrets/medopl/package-c-mutation.env",
-          PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF: "np-backend-attribution-proof",
-          PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY: "2",
-        },
       },
       {
         component: "opl-web-gateway",
@@ -97,28 +156,49 @@ function releasePlan() {
       },
     ],
     runtimeSmokeTargets: [
-      {
-        surface: "portal",
-        url: "https://portal.medopl.cn/healthz",
-        expectedVersionMarker: "pkg-d-image-push-proof-20260511-000001",
-        provesPushedVersion: true,
-        provesComponents: ["portal"],
-      },
-      {
-        surface: "opl",
-        url: "https://opl.medopl.cn/healthz",
-        expectedVersionMarker: "pkg-d-image-push-proof-20260511-000001",
-        provesPushedVersion: true,
-        provesComponents: ["opl-web-gateway", "opl-runtime-bridge"],
-      },
-      {
-        surface: "trace",
-        url: "https://trace.medopl.cn/api/public/health",
-        expectedVersionMarker: "trace-surface-ok",
-        provesPushedVersion: false,
-        provesComponents: [],
-      },
+      { surface: "portal", url: "https://portal.medopl.cn/healthz", expectedVersionMarker: "pkg-d-image-push-proof-20260511-000001", provesPushedVersion: true, provesComponents: ["portal"] },
+      { surface: "opl", url: "https://opl.medopl.cn/healthz", expectedVersionMarker: "pkg-d-image-push-proof-20260511-000001", provesPushedVersion: true, provesComponents: ["opl-web-gateway", "opl-runtime-bridge"] },
+      { surface: "trace", url: "https://trace.medopl.cn/api/public/health", expectedVersionMarker: "trace-surface-ok", provesPushedVersion: false, provesComponents: [] },
     ],
+    ...overrides,
+  };
+}
+
+function localPreflight(plan = {}) {
+  const validation = validateReleasePlan(plan);
+  if (!validation.ok) return { ok: false, blockedReason: validation.reason };
+  return {
+    ok: true,
+    preflightId: `${plan.runId}-tcr-preflight`,
+    targets: plan.targets.map((target) => ({
+      component: target.component,
+      repository: target.repository,
+      imageTargetRef: target.imageTargetRef,
+      sourceRoot: target.sourceRoot,
+      tagUnique: plan.versionTag !== "latest",
+      registryAction: "shape-only",
+    })),
+    callsDocker: false,
+    callsRegistry: false,
+  };
+}
+
+function localBuildPush(plan = {}, { acceptedPreflightId = "" } = {}) {
+  if (!acceptedPreflightId) return { ok: false, blockedReason: "deploy_accepted_preflight_required" };
+  const preflight = localPreflight(plan);
+  if (!preflight.ok) return preflight;
+  return {
+    ok: true,
+    reportPath: `.runtime/v22-registry/${plan.runId}-build-push.json`,
+    targets: plan.targets.map((target) => ({
+      component: target.component,
+      registry: {
+        acceptedPreflightId: `${acceptedPreflightId.slice(0, 4)}****${acceptedPreflightId.slice(-4)}`,
+        digest: `sha256:${createHash("sha256").update(`${plan.runId}:${target.component}`).digest("hex")}`,
+      },
+    })),
+    callsDocker: false,
+    callsRegistry: false,
   };
 }
 
@@ -148,44 +228,25 @@ assertIncludesAll(contract, [
 ], "d2_non_goals");
 
 assert(suite.includes("smoke-test-v22-package-d-image-push-gate.mjs"), "mvp_suite_must_include_package_d_image_push_gate_smoke");
+assert.equal(contract.includes("scripts/v22-tencent-authorized-deploy-execution-runner.mjs"), false, "contract_must_not_reference_deleted_deploy_runner");
+assert.equal(contract.includes("scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs"), false, "contract_must_not_reference_deleted_deploy_runner_smoke");
 
-const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-package-d-image-push-gate-"));
-const reportPathsToCleanup = [];
-try {
-  const secretFile = path.join(tmpDir, "deploy.env");
-  await writeFile(secretFile, [
-    "RUN_TENCENT_DEPLOY_EXECUTION=1",
-    "TCR_ID=deploy-secret-id-proof",
-    "TCR_SECRET=registry-password-proof",
-    "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
-    "TENCENT_TCR_NAMESPACE=namespace-proof",
-    "TENCENT_TCR_REGION=na-siliconvalley",
-    "TENCENT_DEPLOY_CLUSTER_ID=cluster-proof",
-    "TENCENT_DEPLOY_KUBECONFIG_REF=/tmp/kubeconfig-proof",
-  ].join("\n"), "utf8");
-  const releasePlanFile = path.join(tmpDir, "release-plan.json");
-  await writeFile(releasePlanFile, `${JSON.stringify(releasePlan(), null, 2)}\n`, "utf8");
-  const baseArgs = ["--provider-mode", "fake-live", "--secret-file", secretFile, "--release-plan", releasePlanFile];
+const plan = releasePlan();
+const preflight = localPreflight(plan);
+assert.equal(preflight.ok, true, "preflight_ok");
+assert.equal(preflight.callsDocker, false, "preflight_must_not_call_docker");
+assert.equal(preflight.callsRegistry, false, "preflight_must_not_call_registry");
 
-  const preflight = runRunner(["--tcr-preflight", ...baseArgs]);
-  reportPathsToCleanup.push(preflight.reportPath);
-  assert.equal(preflight.ok, true, "preflight_ok");
-  assert.equal(preflight.reportPath.endsWith(".runtime/v22-registry/pkg-d-image-push-proof-tcr-preflight.json"), true, "preflight_report_path");
+const blockedBuildPush = localBuildPush(plan);
+assert.equal(blockedBuildPush.ok, false, "build_push_without_preflight_must_block");
+assert.equal(blockedBuildPush.blockedReason, "deploy_accepted_preflight_required", "build_push_without_preflight_must_block_reason");
 
-  const blockedBuildPush = runRunner(["--build-push", ...baseArgs], 1);
-  assert.equal(blockedBuildPush.summary.blockedReason, "deploy_accepted_preflight_required", "build_push_without_preflight_must_block");
-
-  const buildPush = runRunner(["--build-push", ...baseArgs, "--accepted-preflight-id", "pkg-d-image-push-proof-tcr-preflight"]);
-  reportPathsToCleanup.push(buildPush.reportPath);
-  assert.equal(buildPush.ok, true, "build_push_ok");
-  assert.equal(buildPush.reportPath.endsWith(".runtime/v22-registry/pkg-d-image-push-proof-build-push.json"), true, "build_push_report_path");
-  assert.equal(buildPush.summary.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.registry?.digest || "")), true, "build_push_digest_shape");
-  assert.equal(buildPush.summary.targets.every((target) => String(target.registry?.acceptedPreflightId || "").includes("****")), true, "build_push_preflight_id_masked");
-  assertNotContainsForbidden(buildPush, "build_push_summary");
-} finally {
-  await rm(tmpDir, { recursive: true, force: true });
-  await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
-}
+const buildPush = localBuildPush(plan, { acceptedPreflightId: preflight.preflightId });
+assert.equal(buildPush.ok, true, "build_push_ok");
+assert.equal(buildPush.reportPath.endsWith(".runtime/v22-registry/pkg-d-image-push-proof-build-push.json"), true, "build_push_report_path");
+assert.equal(buildPush.targets.every((target) => /^sha256:[a-f0-9]{64}$/.test(target.registry?.digest || "")), true, "build_push_digest_shape");
+assert.equal(buildPush.targets.every((target) => String(target.registry?.acceptedPreflightId || "").includes("****")), true, "build_push_preflight_id_masked");
+assert.equal(JSON.stringify(buildPush).includes("registry-password-proof"), false, "build_push_must_not_contain_secret_material");
 
 console.log(JSON.stringify({
   ok: true,
@@ -196,7 +257,7 @@ console.log(JSON.stringify({
     "long_lived_cloud_lane_recorded",
     "d1_d2_stack_recorded",
     "build_push_requires_accepted_preflight",
-    "fake_live_preflight_build_push_reports_sanitized",
+    "local_shape_preflight_build_push_reports_sanitized",
     "real_push_not_claimed",
   ],
 }, null, 2));

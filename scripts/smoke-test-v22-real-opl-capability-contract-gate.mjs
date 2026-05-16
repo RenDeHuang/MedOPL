@@ -159,7 +159,7 @@ assertIncludes(index, "Real OPL Capability Canary 合同包", "contracts_index")
 assertIncludes(acceptance, "Real OPL capability canary", "mvp_acceptance");
 assertIncludes(statusMatrix, "Real OPL capability canary", "status_matrix");
 assertIncludes(statusMatrix, "feat/v22-real-opl-capability-canary", "status_matrix");
-assertIncludes(suite, "smoke-test-v22-real-opl-capability-canary-contract.mjs", "mvp_suite");
+assertIncludes(suite, "smoke-test-v22-real-opl-capability-contract-gate.mjs", "mvp_suite");
 
 console.log(JSON.stringify({
   ok: true,

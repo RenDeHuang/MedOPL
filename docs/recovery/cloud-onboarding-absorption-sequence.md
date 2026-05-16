@@ -28,10 +28,10 @@ The former mixed branch `feat/v22-cloud-onboarding-connect-cloud` must not be ab
 
 | order | branch | anchor commit | B absorption role | scope |
 | --- | --- | --- | --- | --- |
-| 1 | `feat/v22-portal-cloud-operation-test-bridge-v2` | `b995d1c` | first | Portal test-only fake-live cloud operation API bridge with explicit non-production env gate |
+| 1 | `feat/v22-portal-cloud-operation-test-bridge-v2` | `b995d1c` | first | Portal test-only local-executor cloud operation API bridge with explicit non-production env gate |
 | 2 | `contract/v22-cloud-onboarding-runnable-path-v2` | `093a065` | after 1 | R-00..R-21 runnable path, CC gates, workflow task packet shape, and CO-06 phase truth alignment |
 | 3 | `feat/v22-tencent-sdk-readonly-connection-v2` | `148da1a` | after 2 | Tencent official SDK / COS SDK dependency diff and readonly connection loader/client with redacted smoke fixtures |
-| 4 | `feat/v22-tencent-resource-lifecycle-gates-v2` | `039b088` | after 3 | Package C TKE/COS lifecycle runner gates, dry-run and fake-live local proof with explicit Package C secret path |
+| 4 | `feat/v22-tencent-resource-lifecycle-gates-v2` | `039b088` | after 3 | Package C TKE/COS lifecycle runner gates, dry-run and local-executor local proof with explicit Package C secret path |
 | 5 | `feat/v22-tencent-deploy-execution-gates-v2` | `5308ded` | after 4 | Package D TCR/build-push/kubectl deploy/runtime smoke gates |
 | 6 | `docs/v22-cloud-onboarding-absorption-sequence-v2` | B verifies current branch head | after 5 | This absorption sequence, branch scope map, and B verification checklist |
 
@@ -48,13 +48,13 @@ B must stop if any pair is not `0 1` by `git rev-list --left-right --count <prev
 
 ## Branch Scope Boundaries
 
-Branch 1 can be absorbed only as a test-only Portal bridge. It must keep `testOnly=true`, `productionPortalConnected=false`, `runnerMode=fake-live`, and `realCloudCalls=false`. The route must stay disabled unless `PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1` and `NODE_ENV !== production`; production must force the bridge off. It does not prove production Portal, production queue, production PostgreSQL, or real cloud connectivity.
+Branch 1 can be absorbed only as a test-only Portal bridge. It must keep `testOnly=true`, `productionPortalConnected=false`, `runnerMode=local-executor`, and `realCloudCalls=false`. The route must stay disabled unless `PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1` and `NODE_ENV !== production`; production must force the bridge off. It does not prove production Portal, production queue, production PostgreSQL, or real cloud connectivity.
 
 Branch 2 can be absorbed only as workflow and runnable path contract material. It defines R-00..R-21 and CC gate mapping, and it fixes phase truth so CO-04/CO-05 are done while CO-06 remains `needs-user-authorization`. It does not run live cloud, install dependencies, create resources, deploy, or push images.
 
 Branch 3 can be absorbed only as readonly SDK connection material. It may include reviewed package diff and readonly loader/client shape; fixtures must not use real cloud key shape or real local secret paths. It does not authorize mutation APIs, real secret reads, real cloud mutation, or production Portal integration.
 
-Branch 4 can be absorbed only as Package C lifecycle gates. Package C covers TKE/COS resource lifecycle gate shape, dry-run, and fake-live local proof. It must not scan a default local secret directory; the Package C secret file or directory must be explicit. It must not delete, close, or scale someone else's nodes or storage. Real resource mutation remains user-authorized, scoped, tagged, audited, and fail-closed.
+Branch 4 can be absorbed only as Package C lifecycle gates. Package C covers TKE/COS resource lifecycle gate shape, dry-run, and local-executor local proof. It must not scan a default local secret directory; the Package C secret file or directory must be explicit. It must not delete, close, or scale someone else's nodes or storage. Real resource mutation remains user-authorized, scoped, tagged, audited, and fail-closed.
 
 Branch 5 can be absorbed only as Package D deploy gates. Package D covers TCR repository/tag preflight, unique test tag, digest verification, deploy dry-run, authorized rollout shape, runtime smoke, and rollback evidence. Package D does not authorize Package C lifecycle actions, does not create/delete/scale TKE node pools, does not create/delete/empty/expand COS bucket/prefix/object, and forbids `kubectl delete`.
 
@@ -75,18 +75,16 @@ git diff <previous-branch>...<next-branch> | rg -n -f <secret-hygiene-patterns-f
 B should run these smoke commands at the end of the stacked absorption, or on the branch that first introduces each smoke:
 
 ```bash
-node scripts/smoke-test-v22-portal-cloud-operation-test-api-fake-live.mjs
+node scripts/smoke-test-v22-portal-cloud-operation-test-api-local-gate.mjs
 node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs
 node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs
-node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs
+node scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs
 node scripts/smoke-test-v22-cloud-connection-runnable-path.mjs
 node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs
 node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs
-node scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs
-node scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-live-gate.mjs
+node scripts/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs
 node scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs
-node scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs
-node scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs
+node scripts/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs
 node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs
 ```
 
@@ -124,7 +122,7 @@ After all six branches are absorbed, the cloud onboarding module is better struc
       "order": 1,
       "branch": "feat/v22-portal-cloud-operation-test-bridge-v2",
       "anchorCommit": "b995d1c",
-      "scope": "portal_test_only_fake_live_bridge",
+      "scope": "portal_test_only_local_executor_bridge",
       "requiresExplicitNonProductionEnvGate": true,
       "productionPortalConnected": false,
       "realCloudCalls": false

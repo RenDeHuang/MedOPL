@@ -70,7 +70,7 @@ assert.equal(statusPayload.handoffTarget, "B", "handoff_target");
 assert.deepEqual(statusPayload.requiredSmoke, [
   "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
   "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
-  "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+  "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
   "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
   "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
   "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
@@ -123,7 +123,7 @@ assert.equal(harnessPacket.status, "starter-live-done", "harness_packet_status")
 assert.equal(harnessPacket.requiresManualMergeDecision, true, "harness_packet_manual");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs"), "harness_packet_must_include_manifest_selector_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-runtime-startup-config.mjs"), "harness_packet_must_include_l1_runtime_config_smoke");
-assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"), "harness_packet_must_include_cleanup_gate_smoke");
+assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs"), "harness_packet_must_include_cleanup_gate_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs"), "harness_packet_must_include_worker_entrypoint_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"), "harness_packet_must_include_async_worker_smoke");
 assert(harnessPacket.suggestedCommands.includes("node scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs"), "harness_packet_must_include_package_click_smoke");

@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 
 const repoRoot = path.resolve(".");
-const runnerPath = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
+const runnerPath = "scripts/v22-cloud-operation-local-executor.mjs";
 
 const forbiddenOutputPattern = /SecretId|SecretKey|token|kubeconfig|objectKey|storageKey|signedUrl|rawResponse|providerRawResponse|cosObjectBody|bucketPolicy/i;
 
@@ -94,7 +94,7 @@ try {
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_tencent_authorized_resource_lifecycle_live_gate",
+  contract: "v22_tencent_resource_lifecycle_config_local_gate",
   checked,
   liveReady: Boolean(acceptedSecretFile),
   acceptedSecretFile,

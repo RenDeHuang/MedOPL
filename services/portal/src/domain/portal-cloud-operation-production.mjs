@@ -481,6 +481,9 @@ function runNodeJson({ repoRoot, script, args, label }) {
 }
 
 function runPackageCOperation({ repoRoot, runnerScript, secretFile, operationId, workspaceId, runnerMode, spec, input = {} }) {
+  if (!text(runnerScript)) {
+    return { ok: false, status: 503, error: "cloud_operation_runner_script_required" };
+  }
   if (!secretFile) {
     return { ok: false, status: 503, error: "cloud_operation_secret_file_required" };
   }
@@ -643,13 +646,16 @@ export function executePortalProductionCloudOperation(db = {}, user = {}, input 
   const validation = validateProductionOperationInput(input, spec);
   if (!validation.ok) return validation;
 
-  const runnerMode = text(options.runnerMode || "fake-live");
-  if (!["fake-live", "tencent-official-sdk-live"].includes(runnerMode)) {
+  const runnerMode = text(options.runnerMode || "local-executor");
+  if (!["local-executor", "tencent-official-sdk-live"].includes(runnerMode)) {
     return { ok: false, status: 503, error: "cloud_operation_runner_mode_invalid" };
   }
 
   const repoRoot = path.resolve(options.repoRoot || path.resolve(process.cwd(), "../.."));
-  const runnerScript = text(options.runnerScript || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs");
+  const runnerScript = text(options.runnerScript);
+  if (!runnerScript) {
+    return { ok: false, status: 503, error: "cloud_operation_runner_script_required" };
+  }
   const secretFile = text(options.secretFile);
   const workspaceId = workspaceIdFrom(input);
   const planId = planIdFrom(input);
@@ -929,16 +935,25 @@ function processOneQueuedJob(db = {}, job = {}, options = {}) {
   if (spec.resourceKind === "compute" && !text(options.computeNodePoolRef)) {
     markOperationFailed(operation, job, {
       error: "compute_node_pool_ref_required",
-      runnerMode: text(options.runnerMode || operation.runnerMode || job.runnerMode || "fake-live"),
+      runnerMode: text(options.runnerMode || operation.runnerMode || job.runnerMode || "local-executor"),
       realCloudCalls: text(options.runnerMode || "") === "tencent-official-sdk-live",
     });
     return { ok: false, error: "compute_node_pool_ref_required", operationId: text(operation.operationId || operation.id) };
   }
-  const runnerMode = text(options.runnerMode || "fake-live");
+  const runnerMode = text(options.runnerMode || "local-executor");
+  const runnerScript = text(options.runnerScript);
+  if (!runnerScript) {
+    markOperationFailed(operation, job, {
+      error: "cloud_operation_runner_script_required",
+      runnerMode,
+      realCloudCalls: runnerMode === "tencent-official-sdk-live",
+    });
+    return { ok: false, error: "cloud_operation_runner_script_required", operationId: text(operation.operationId || operation.id) };
+  }
   markOperationRunning(operation, job, runnerMode, options.workerId || "portal-cloud-worker");
   const runner = runPackageCOperation({
     repoRoot: path.resolve(options.repoRoot || path.resolve(process.cwd())),
-    runnerScript: text(options.runnerScript || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs"),
+    runnerScript,
     secretFile: text(options.secretFile),
     operationId: text(operation.operationId || operation.id),
     workspaceId: text(operation.workspaceId),

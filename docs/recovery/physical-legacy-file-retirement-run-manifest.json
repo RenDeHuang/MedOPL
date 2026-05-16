@@ -9,7 +9,7 @@
   "current_status": "strict_monolith_retirement_completed",
   "residual_cleanup_status": "f_g_h_completed",
   "zero_compat_active_surface_status": "in_progress",
-  "current_slice": "slice-l-delete-residual-deploy-compatibility-assets",
+  "current_slice": "slice-m-delete-residual-live-canary-runner-surfaces",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -22,10 +22,10 @@
     "slice-i-readonly-inventory-local-attribution",
     "slice-j-zero-compat-active-surface-gate",
     "slice-k-delete-residual-adapter-compatibility-surface",
-    "slice-l-delete-residual-deploy-compatibility-assets"
+    "slice-l-delete-residual-deploy-compatibility-assets",
+    "slice-m-delete-residual-live-canary-runner-surfaces"
   ],
   "next_slices": [
-    "slice-m-delete-residual-live-canary-runner-surfaces",
     "slice-n-remove-residual-compatibility-narrative",
     "slice-o-record-zero-compat-active-surface-completion"
   ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "slice-m-delete-residual-live-canary-runner-surfaces",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "delete_residual_live_canary_authorized_runner_executable_surfaces_or_migrate_pure_local_checks_to_non_live_v22_gates",
       "target_paths": [
         "scripts/*live*",
@@ -432,6 +432,7 @@
         "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
         "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
       ],
+      "notes": "Slice M deletes residual live/canary/authorized runner executable files, renames local-only checks to non-live v22 gates, routes Portal cloud operation test bridge through the local executor, and keeps future real external operations contract-only until separate authorization and a new v22 execution boundary.",
       "commit": "cleanup: delete residual live canary runner surfaces"
     },
     {

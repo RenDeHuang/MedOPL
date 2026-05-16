@@ -969,7 +969,7 @@ function buildBoardCurrentTaskPacket(board = {}) {
     requiredSmoke: [
       "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
       "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
-      "scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+      "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
       "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
       "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
       "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
@@ -986,7 +986,7 @@ function buildBoardCurrentTaskPacket(board = {}) {
     suggestedCommands: [
       "node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
       "node scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
-      "node scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs",
+      "node scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
       "node scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
       "node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
       "node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",

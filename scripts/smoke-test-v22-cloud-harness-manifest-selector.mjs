@@ -26,14 +26,16 @@ assert.equal(l2b.cleanupRequired, true, "l2b_cleanup_required");
 assert.equal(l2b.requiredEvidence.includes("baselineSnapshot"), true, "l2b_baseline_snapshot_required");
 assert.equal(l2b.requiredEvidence.includes("postCleanupSnapshot"), true, "l2b_post_cleanup_snapshot_required");
 assert.equal(l2b.requiredSmoke.includes("scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"), true, "l2b_async_worker_smoke_required");
-assert.equal(l2b.requiredSmoke.includes("scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs"), true, "l2b_baseline_snapshot_smoke_required");
+assert.equal(l2b.requiredSmoke.includes("scripts/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs"), true, "l2b_baseline_snapshot_smoke_required");
 
 const l2a = manifest.gates.find((gate) => gate.id === "L2a");
-assert.equal(l2a.ownedPaths.includes("scripts/v22-tencent-authorized-resource-lifecycle-node-pool-snapshot.mjs"), true, "l2a_must_own_node_pool_snapshot_runner");
-assert.equal(l2a.requiredSmoke.includes("scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs"), true, "l2a_baseline_snapshot_smoke_required");
+assert.equal(l2a.ownedPaths.includes("scripts/v22-cloud-operation-local-executor.mjs"), true, "l2a_must_own_local_executor");
+assert.equal(l2a.ownedPaths.includes("scripts/v22-tencent-authorized-resource-lifecycle-node-pool-snapshot.mjs"), false, "l2a_must_not_own_deleted_node_pool_snapshot_runner");
+assert.equal(l2a.ownedPaths.includes("scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs"), false, "l2a_must_not_own_deleted_resource_lifecycle_runner");
+assert.equal(l2a.requiredSmoke.includes("scripts/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs"), true, "l2a_baseline_snapshot_smoke_required");
 
 const l3 = manifest.gates.find((gate) => gate.id === "L3");
-assert.equal(l3.requiredSmoke.includes("scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs"), true, "l3_baseline_snapshot_smoke_required");
+assert.equal(l3.requiredSmoke.includes("scripts/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs"), true, "l3_baseline_snapshot_smoke_required");
 
 const selection = selector.selectCloudHarnessChecks({
   manifest,
@@ -49,8 +51,8 @@ assert.equal(selection.requiredGates.includes("L2b"), true, "portal_worker_chang
 assert.equal(selection.requiredGates.includes("L3"), true, "portal_worker_changes_require_l3_cleanup_billing_gate");
 assert.equal(selection.requiredSmoke.includes("scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs"), true, "selector_must_require_worker_entrypoint_smoke");
 assert.equal(selection.requiredSmoke.includes("scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"), true, "selector_must_require_async_worker_smoke");
-assert.equal(selection.requiredSmoke.includes("scripts/smoke-test-v22-cloud-live-cleanup-gate.mjs"), true, "selector_must_require_cleanup_gate");
-assert.equal(selection.requiredSmoke.includes("scripts/smoke-test-v22-tencent-authorized-resource-lifecycle-baseline-snapshot.mjs"), true, "selector_must_require_baseline_snapshot_smoke");
+assert.equal(selection.requiredSmoke.includes("scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs"), true, "selector_must_require_cleanup_gate");
+assert.equal(selection.requiredSmoke.includes("scripts/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs"), true, "selector_must_require_baseline_snapshot_smoke");
 assert.equal(selection.forbiddenPaths.includes("deploy/*"), true, "deploy_must_remain_forbidden");
 
 console.log(JSON.stringify({

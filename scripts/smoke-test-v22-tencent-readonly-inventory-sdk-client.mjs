@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { createTencentReadonlyInventoryLiveAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
+import { createTencentReadonlyInventoryAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-adapter.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
 
 const modulePath = "services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
@@ -394,8 +394,8 @@ const limitedClient = createTencentReadonlyInventorySdkClient({
 });
 await assertRejectsCode(limitedClient.describeRegions(), "readonly_inventory_sdk_api_not_allowed:DescribeRegions");
 
-const liveAdapter = createTencentReadonlyInventoryLiveAdapter({ client });
-assert.equal(typeof liveAdapter.listReadonlyInventoryResources, "function", "live_adapter_should_accept_sdk_wrapper");
+const liveAdapter = createTencentReadonlyInventoryAdapter({ client });
+assert.equal(typeof liveAdapter.listReadonlyInventoryResources, "function", "inventory_adapter_should_accept_sdk_wrapper");
 
 for (const mutation of ["Create", "Delete", "Modify", "Run", "Terminate", "Put", "Update", "Attach", "Detach"]) {
   assert.equal(fakeSdk.calls.some((call) => call.startsWith(mutation)), false, `mutation_sdk_call_must_not_happen:${mutation}`);
@@ -437,7 +437,7 @@ console.log(JSON.stringify({
     "safe_response_normalization",
     "safe_error_normalization",
     "cos_metadata_without_object_body",
-    "live_adapter_shape_compatibility",
+    "inventory_adapter_shape_compatibility",
     "implementation_note",
   ],
 }, null, 2));

@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdapter, safeLiveDiagnostic } from "../services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
+import { collectTencentReadonlyInventory, createTencentReadonlyInventoryAdapter, safeLiveDiagnostic } from "../services/portal/src/domain/tencent-readonly-inventory-adapter.mjs";
 import { validateReadonlyInventorySecretEnv } from "../services/portal/src/domain/tencent-readonly-inventory-provider.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventorySdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
@@ -348,7 +348,7 @@ async function runFakeLive({ env, runId }) {
     allowedApis: envSummary.allowedApis,
     regions: envSummary.regions,
   });
-  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+  const adapter = createTencentReadonlyInventoryAdapter({ client });
   const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
   const summary = safeSummary({ envSummary, mode: "fake-live", ok: true, inventory });
   const reportPath = await writeReport(summary, runId);
@@ -381,7 +381,7 @@ async function runLiveReadonly({ env, runId, sdkMode }) {
       allowedApis: envSummary.allowedApis,
       regions: envSummary.regions,
     });
-    const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+    const adapter = createTencentReadonlyInventoryAdapter({ client });
     const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
     const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
     const reportPath = await writeReport(summary, runId);
@@ -470,7 +470,7 @@ async function runTencentRealReadonly({ env, runId, tencentSdkModules }) {
     allowedApis: envSummary.allowedApis,
     regions: envSummary.regions,
   });
-  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+  const adapter = createTencentReadonlyInventoryAdapter({ client });
   try {
     const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
     const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
@@ -559,7 +559,7 @@ async function runTencentOfficialSdkReadonly({
       allowedApis: envSummary.allowedApis,
       regions: envSummary.regions,
     });
-    const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+    const adapter = createTencentReadonlyInventoryAdapter({ client });
     const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
     const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });
     const reportPath = await writeReport(summary, runId);
@@ -638,7 +638,7 @@ async function runTencentTc3Readonly({ env, runId, tc3Fetch, tc3Now, enableRealF
     allowedApis: envSummary.allowedApis,
     regions: envSummary.regions,
   });
-  const adapter = createTencentReadonlyInventoryLiveAdapter({ client });
+  const adapter = createTencentReadonlyInventoryAdapter({ client });
   try {
     const inventory = await collectTencentReadonlyInventory({ adapter, env, portalLedger });
     const summary = safeSummary({ envSummary, mode: "live-readonly", ok: true, inventory });

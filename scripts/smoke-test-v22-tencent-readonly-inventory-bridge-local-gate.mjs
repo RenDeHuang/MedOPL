@@ -129,7 +129,7 @@ function responseForAction(action, body = {}) {
         Response: {
           InstanceSet: [
             {
-              InstanceId: "ins-live-bridge-002",
+              InstanceId: "ins-local-bridge-002",
               InstanceState: "RUNNING",
               Tags: ownershipTags({ cloudOperationId: "operation-002", resourceBindingId: "binding-002" }),
             },
@@ -143,7 +143,7 @@ function responseForAction(action, body = {}) {
       Response: {
         InstanceSet: [
           {
-            InstanceId: "ins-live-bridge-001",
+            InstanceId: "ins-local-bridge-001",
             InstanceState: "RUNNING",
             Tags: ownershipTags(),
             SecretId: "secret-id-proof",
@@ -163,8 +163,8 @@ function responseForAction(action, body = {}) {
       Response: {
         BucketSet: [
           {
-            BucketRef: "bucket-live-bridge-001",
-            PrefixRef: "prefix-live-bridge-001",
+            BucketRef: "bucket-local-bridge-001",
+            PrefixRef: "prefix-local-bridge-001",
             Status: "available",
             Tags: ownershipTags({
               cloudOperationId: "operation-storage-001",
@@ -215,15 +215,15 @@ function createFakeGlobalFetch() {
     const expected = expectedApiMap[action];
     const body = JSON.parse(options.body || "{}");
     calls.push({ url, method: options.method, headers, body });
-    assert(expected, `live_bridge_action_must_be_readonly_whitelisted:${action}`);
-    assert.equal(options.method, "POST", `live_bridge_method:${action}`);
-    assert.equal(url, `https://${expected.endpoint}`, `live_bridge_endpoint:${action}`);
-    assert.equal(headers.host, expected.endpoint, `live_bridge_host:${action}`);
-    assert.equal(headers["x-tc-version"], expected.version, `live_bridge_version:${action}`);
-    assert(headers.authorization?.startsWith(`TC3-HMAC-SHA256 Credential=${fixtureSecretId}/`), `live_bridge_authorization_shape:${action}`);
-    assert.equal(headers.authorization.includes("secret-key-proof"), false, `live_bridge_authorization_no_secret_key:${action}`);
-    assert.equal(headers.authorization.includes("token-proof"), false, `live_bridge_authorization_no_token:${action}`);
-    assert.equal("SemanticApi" in body, false, `live_bridge_body_no_internal_semantic_api:${action}`);
+    assert(expected, `local_bridge_action_must_be_readonly_whitelisted:${action}`);
+    assert.equal(options.method, "POST", `local_bridge_method:${action}`);
+    assert.equal(url, `https://${expected.endpoint}`, `local_bridge_endpoint:${action}`);
+    assert.equal(headers.host, expected.endpoint, `local_bridge_host:${action}`);
+    assert.equal(headers["x-tc-version"], expected.version, `local_bridge_version:${action}`);
+    assert(headers.authorization?.startsWith(`TC3-HMAC-SHA256 Credential=${fixtureSecretId}/`), `local_bridge_authorization_shape:${action}`);
+    assert.equal(headers.authorization.includes("secret-key-proof"), false, `local_bridge_authorization_no_secret_key:${action}`);
+    assert.equal(headers.authorization.includes("token-proof"), false, `local_bridge_authorization_no_token:${action}`);
+    assert.equal("SemanticApi" in body, false, `local_bridge_body_no_internal_semantic_api:${action}`);
     return {
       ok: true,
       status: 200,
@@ -251,7 +251,7 @@ const goodSecretText = [
   "TENCENT_READONLY_ACCOUNT_ID=tencent-account-1234567890",
 ].join("\n");
 
-const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-inventory-live-bridge-"));
+const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-inventory-local-bridge-"));
 const originalFetch = globalThis.fetch;
 const reportPathsToCleanup = [];
 try {
@@ -281,11 +281,11 @@ try {
     "--secret-file",
     goodSecretFile,
   ]);
-  assert.equal(defaultBlocked.status, 1, "live_bridge_default_status");
-  assert.equal(defaultBlocked.payload.reportPath, null, "live_bridge_default_no_report");
-  assert.equal(defaultBlocked.payload.summary.blockedReason, "tencent_readonly_tc3_fetch_required", "live_bridge_default_reason");
-  assert.equal(defaultFetch.calls.length, 0, "live_bridge_default_must_not_call_global_fetch");
-  assertReportWhitelist(defaultBlocked.payload.summary, "live_bridge_default_summary");
+  assert.equal(defaultBlocked.status, 1, "local_bridge_default_status");
+  assert.equal(defaultBlocked.payload.reportPath, null, "local_bridge_default_no_report");
+  assert.equal(defaultBlocked.payload.summary.blockedReason, "tencent_readonly_tc3_fetch_required", "local_bridge_default_reason");
+  assert.equal(defaultFetch.calls.length, 0, "local_bridge_default_must_not_call_global_fetch");
+  assertReportWhitelist(defaultBlocked.payload.summary, "local_bridge_default_summary");
 
   const disabledFetch = createFakeGlobalFetch();
   globalThis.fetch = disabledFetch;
@@ -297,9 +297,9 @@ try {
     "--secret-file",
     disabledRunFile,
   ]);
-  assert.equal(disabledRun.status, 1, "live_bridge_disabled_run_status");
-  assert.equal(disabledRun.payload.summary.blockedReason, "live_readonly_requires_run_gate", "live_bridge_disabled_run_reason");
-  assert.equal(disabledFetch.calls.length, 0, "live_bridge_disabled_run_no_fetch");
+  assert.equal(disabledRun.status, 1, "local_bridge_disabled_run_status");
+  assert.equal(disabledRun.payload.summary.blockedReason, "live_readonly_requires_run_gate", "local_bridge_disabled_run_reason");
+  assert.equal(disabledFetch.calls.length, 0, "local_bridge_disabled_run_no_fetch");
 
   const missingRegionsFetch = createFakeGlobalFetch();
   globalThis.fetch = missingRegionsFetch;
@@ -311,9 +311,9 @@ try {
     "--secret-file",
     missingRegionsFile,
   ]);
-  assert.equal(missingRegions.status, 1, "live_bridge_missing_regions_status");
-  assert.equal(missingRegions.payload.summary.blockedReason, "readonly_inventory_regions_required", "live_bridge_missing_regions_reason");
-  assert.equal(missingRegionsFetch.calls.length, 0, "live_bridge_missing_regions_no_fetch");
+  assert.equal(missingRegions.status, 1, "local_bridge_missing_regions_status");
+  assert.equal(missingRegions.payload.summary.blockedReason, "readonly_inventory_regions_required", "local_bridge_missing_regions_reason");
+  assert.equal(missingRegionsFetch.calls.length, 0, "local_bridge_missing_regions_no_fetch");
 
   const mutationFetch = createFakeGlobalFetch();
   globalThis.fetch = mutationFetch;
@@ -330,9 +330,9 @@ try {
   } catch (error) {
     mutationError = error;
   }
-  assert(mutationError, "live_bridge_mutation_api_must_throw");
-  assert.match(String(mutationError.message), /readonly_inventory_forbidden_api:DeleteObject/, "live_bridge_mutation_api_reason");
-  assert.equal(mutationFetch.calls.length, 0, "live_bridge_mutation_api_no_fetch");
+  assert(mutationError, "local_bridge_mutation_api_must_throw");
+  assert.match(String(mutationError.message), /readonly_inventory_forbidden_api:DeleteObject/, "local_bridge_mutation_api_reason");
+  assert.equal(mutationFetch.calls.length, 0, "local_bridge_mutation_api_no_fetch");
 
   const liveFetch = createFakeGlobalFetch();
   globalThis.fetch = liveFetch;
@@ -344,23 +344,23 @@ try {
     "--secret-file",
     goodSecretFile,
     "--run-id",
-    "live-bridge-proof",
+    "local-bridge-proof",
   ]);
-  assert.equal(liveResult.status, 0, "live_bridge_enabled_status");
+  assert.equal(liveResult.status, 0, "local_bridge_enabled_status");
   reportPathsToCleanup.push(liveResult.payload.reportPath);
-  assert(liveResult.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/live-bridge-proof.json"), "live_bridge_report_path");
-  assertReportWhitelist(liveResult.payload.summary, "live_bridge_stdout_summary");
-  assert.equal(liveResult.payload.summary.ok, true, "live_bridge_summary_ok");
-  assert.equal(liveResult.payload.summary.mode, "live-readonly", "live_bridge_summary_mode");
-  assert.equal(liveResult.payload.summary.resourceCounts.mapped > 0, true, "live_bridge_mapped_resources");
-  assert(liveFetch.calls.length > 0, "live_bridge_enabled_calls_fetch");
+  assert(liveResult.payload.reportPath.endsWith(".runtime/v22-tencent-readonly-inventory/local-bridge-proof.json"), "local_bridge_report_path");
+  assertReportWhitelist(liveResult.payload.summary, "local_bridge_stdout_summary");
+  assert.equal(liveResult.payload.summary.ok, true, "local_bridge_summary_ok");
+  assert.equal(liveResult.payload.summary.mode, "live-readonly", "local_bridge_summary_mode");
+  assert.equal(liveResult.payload.summary.resourceCounts.mapped > 0, true, "local_bridge_mapped_resources");
+  assert(liveFetch.calls.length > 0, "local_bridge_enabled_calls_fetch");
   for (const call of liveFetch.calls) {
-    assert.equal(/Create|Delete|Modify|Run|Terminate|Put|Update|Attach|Detach/i.test(call.headers["x-tc-action"]), false, `live_bridge_mutation_unreachable:${call.headers["x-tc-action"]}`);
+    assert.equal(/Create|Delete|Modify|Run|Terminate|Put|Update|Attach|Detach/i.test(call.headers["x-tc-action"]), false, `local_bridge_mutation_unreachable:${call.headers["x-tc-action"]}`);
   }
 
   const report = JSON.parse(await readFile(liveResult.payload.reportPath, "utf8"));
-  assertReportWhitelist(report, "live_bridge_report");
-  assert.deepEqual(report, liveResult.payload.summary, "live_bridge_report_matches_summary");
+  assertReportWhitelist(report, "local_bridge_report");
+  assert.deepEqual(report, liveResult.payload.summary, "local_bridge_report_matches_summary");
 
   const runnerSource = await readFile(runnerPath, "utf8");
   assert(runnerSource.includes("--enable-real-fetch"), "runner_must_define_enable_real_fetch");
@@ -376,19 +376,19 @@ try {
     assert.equal(
       runnerSource.includes("import(\"tencentcloud-sdk-nodejs\")"),
       false,
-      "tc3_live_bridge_must_not_load_official_sdk_dependency",
+      "tc3_local_bridge_must_not_load_official_sdk_dependency",
     );
   }
   assert.equal(portalPackage.includes("@tencentcloud"), false, "portal_package_must_not_add_tencent_sdk_namespace");
 
   const contract = await readFile(contractPath, "utf8");
-  assert(contract.includes("Live Bridge"), "contract_must_document_live_bridge");
+  assert(contract.includes("Live Bridge"), "contract_must_document_local_bridge");
   assert(contract.includes("`--enable-real-fetch`"), "contract_must_document_enable_real_fetch");
   assert(contract.includes("默认关闭"), "contract_must_document_fail_closed_default");
   assert(contract.includes("不扩大 create/release"), "contract_must_not_expand_create_release");
 
   const suite = await readFile(suitePath, "utf8");
-  assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs"), "mvp_suite_must_include_live_bridge_smoke");
+  assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs"), "mvp_suite_must_include_local_bridge_smoke");
 } finally {
   globalThis.fetch = originalFetch;
   await rm(tmpDir, { recursive: true, force: true });
@@ -397,7 +397,7 @@ try {
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_tencent_readonly_inventory_live_bridge",
+  contract: "v22_tencent_readonly_inventory_bridge_local_gate",
   checked: [
     "default_without_enable_real_fetch_fail_closed",
     "run_gate_regions_and_api_allowlist_before_fetch",

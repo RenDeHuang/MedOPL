@@ -3,10 +3,10 @@ import { readFile } from "node:fs/promises";
 
 import {
   collectTencentReadonlyInventory,
-  createTencentReadonlyInventoryLiveAdapter,
-} from "../services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
+  createTencentReadonlyInventoryAdapter,
+} from "../services/portal/src/domain/tencent-readonly-inventory-adapter.mjs";
 
-const liveAdapterPath = "services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
+const inventoryAdapterPath = "services/portal/src/domain/tencent-readonly-inventory-adapter.mjs";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
 const readonlyEnv = {
@@ -339,7 +339,7 @@ function createFakeTencentClient() {
 }
 
 const fakeClient = createFakeTencentClient();
-const adapter = createTencentReadonlyInventoryLiveAdapter({ client: fakeClient });
+const adapter = createTencentReadonlyInventoryAdapter({ client: fakeClient });
 const inventory = await collectTencentReadonlyInventory({ adapter, env: readonlyEnv, portalLedger });
 
 assertTopLevelOutputWhitelist(inventory);
@@ -360,7 +360,7 @@ assert(inventory.auditQueueItems.some((item) => item.reason === "readonly_permis
 assert(inventory.auditQueueItems.some((item) => item.reason === "readonly_rate_limited"), "rate_limited_audit_required");
 assertNotContainsForbidden(inventory, "live_inventory_output");
 
-assertThrowsCode(() => createTencentReadonlyInventoryLiveAdapter({ client: {} }), "readonly_inventory_live_client_missing_method:describeAccount");
+assertThrowsCode(() => createTencentReadonlyInventoryAdapter({ client: {} }), "readonly_inventory_live_client_missing_method:describeAccount");
 await assert.rejects(
   collectTencentReadonlyInventory({
     adapter,
@@ -398,20 +398,20 @@ await assert.rejects(
   "mutation_api_should_fail_closed",
 );
 
-const source = await readFile(liveAdapterPath, "utf8");
-assert.equal(source.includes("tencentcloud-sdk-nodejs"), false, "live_adapter_must_not_import_tencentcloud_sdk_nodejs");
-assert.equal(source.includes("@tencentcloud"), false, "live_adapter_must_not_import_at_tencentcloud");
-assert.equal(source.includes("/home/dev/.secrets/medopl/secrets.env.txt"), false, "live_adapter_must_not_read_secret_file");
-assert.equal(source.includes("fs.readFile"), false, "live_adapter_must_not_read_files");
-assert.equal(source.includes("process.env"), false, "live_adapter_must_not_read_process_env");
-assert.equal(/Create|Delete|Modify|Run|Terminate|PutObject|DeleteObject/.test(source), false, "live_adapter_source_must_not_call_mutation_api");
+const source = await readFile(inventoryAdapterPath, "utf8");
+assert.equal(source.includes("tencentcloud-sdk-nodejs"), false, "inventory_adapter_must_not_import_tencentcloud_sdk_nodejs");
+assert.equal(source.includes("@tencentcloud"), false, "inventory_adapter_must_not_import_at_tencentcloud");
+assert.equal(source.includes("/home/dev/.secrets/medopl/secrets.env.txt"), false, "inventory_adapter_must_not_read_secret_file");
+assert.equal(source.includes("fs.readFile"), false, "inventory_adapter_must_not_read_files");
+assert.equal(source.includes("process.env"), false, "inventory_adapter_must_not_read_process_env");
+assert.equal(/Create|Delete|Modify|Run|Terminate|PutObject|DeleteObject/.test(source), false, "inventory_adapter_source_must_not_call_mutation_api");
 
 const suite = await readFile(suitePath, "utf8");
-assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-live-adapter-shell.mjs"), "mvp_suite_must_include_live_adapter_smoke");
+assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-adapter-local-gate.mjs"), "mvp_suite_must_include_inventory_adapter_smoke");
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_tencent_readonly_inventory_live_adapter_shell",
+  contract: "v22_tencent_readonly_inventory_inventory_adapter_shell",
   checked: [
     "live_shaped_client_interface",
     "fake_client_pagination_and_multi_region",

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 const RAW_PROVIDER_KEY = "gflabtoken_raw_key_portal_production_cloud_backend_only";
-const FORBIDDEN_PUBLIC_TERMS = /\/test\/fake-live|testOnly|TKE|COS|TCR|Kubernetes|node pool|nodePool|bucket|object key|objectKey|SecretId|SecretKey|kubeconfig|raw response|signedUrl|signed URL|mutation-secret|bucket-proof|workspace-prefix-proof|node-pool-proof/i;
+const FORBIDDEN_PUBLIC_TERMS = /\/test\/local-executor|testOnly|TKE|COS|TCR|Kubernetes|node pool|nodePool|bucket|object key|objectKey|SecretId|SecretKey|kubeconfig|raw response|signedUrl|signed URL|mutation-secret|bucket-proof|workspace-prefix-proof|node-pool-proof/i;
 
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
 const { createProviderSecretStore } = await import("../services/portal/src/domain/provider-secret-store.mjs");
@@ -69,9 +69,9 @@ function routeFactory({ db, providerSecretStore, writes, secretFile, enableProdu
       writes.push(JSON.parse(JSON.stringify(targetDb)));
     },
     enableCloudOperationProductionBridge: enableProductionBridge,
-    cloudOperationRunnerMode: "fake-live",
+    cloudOperationRunnerMode: "local-executor",
     cloudOperationSecretFile: secretFile,
-    cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+    cloudOperationRunnerScript: "scripts/v22-cloud-operation-local-executor.mjs",
     nodeEnv: "test",
   });
 }
@@ -208,7 +208,7 @@ try {
   assert.equal(createStorage.res.payload.publicProjection.resources.fileSpace.statusLabel, "未开通", "queued_projection_must_not_claim_file_space_available");
 
   const drain = processQueuedPortalProductionCloudOperations(db, {
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     maxOperations: 1,
     workerId: "worker-v22-production-storage-smoke",
@@ -253,7 +253,7 @@ try {
   const dryRunReport = JSON.parse(await readFile(path.resolve(db.cloudOperations[0].dryRunReportRef), "utf8"));
   const executionReport = JSON.parse(await readFile(path.resolve(db.cloudOperations[0].executionReportRef), "utf8"));
   assert.equal(dryRunReport.gateId, "R-06", "dry_run_gate_mismatch");
-  assert.equal(executionReport.execution.providerMode, "fake-live", "execution_report_provider_mode");
+  assert.equal(executionReport.execution.providerMode, "local-executor", "execution_report_provider_mode");
   assert.equal(executionReport.execution.acceptedDryRunVerified, true, "execution_report_must_accept_dry_run");
 
   console.log(JSON.stringify({
@@ -263,7 +263,7 @@ try {
       "production_route_not_test_route",
       "canonical_cloud_operation_written",
       "independent_worker_queue_job_written",
-      "package_c_runner_dry_run_and_fake_live_execute",
+      "package_c_runner_dry_run_and_local_executor_execute",
       "file_space_entitlement_written",
       "billing_reconciliation_written",
       "audit_event_written",

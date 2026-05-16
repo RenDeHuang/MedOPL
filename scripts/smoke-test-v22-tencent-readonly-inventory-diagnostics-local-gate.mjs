@@ -160,7 +160,7 @@ async function runTc3(secretFile, runId, fetchImpl) {
   ], { tc3Fetch: fetchImpl, tc3Now: () => 1700000000 });
 }
 
-const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-live-diagnostics-"));
+const tmpDir = await mkdtemp(path.join(os.tmpdir(), "v22-readonly-local-diagnostics-"));
 const reportPathsToCleanup = [];
 try {
   const secretFile = await writeSecretFixture(tmpDir, "readonly.env", goodSecretText);
@@ -224,12 +224,12 @@ try {
     providerCode: "ECONNRESET",
   }, "network_error_summary");
 
-  const source = await readFile("services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs", "utf8");
-  assert(source.includes("describeAccount"), "live_adapter_must_wrap_describe_account");
-  assert(source.includes("describeRegions"), "live_adapter_must_wrap_describe_regions");
+  const source = await readFile("services/portal/src/domain/tencent-readonly-inventory-adapter.mjs", "utf8");
+  assert(source.includes("describeAccount"), "inventory_adapter_must_wrap_describe_account");
+  assert(source.includes("describeRegions"), "inventory_adapter_must_wrap_describe_regions");
 
   const suite = await readFile(suitePath, "utf8");
-  assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-live-diagnostics.mjs"), "mvp_suite_must_include_live_diagnostics_smoke");
+  assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-diagnostics-local-gate.mjs"), "mvp_suite_must_include_live_diagnostics_smoke");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
   await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
@@ -237,7 +237,7 @@ try {
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_tencent_readonly_inventory_live_diagnostics",
+  contract: "v22_tencent_readonly_inventory_diagnostics_local_gate",
   checked: [
     "tencent_response_error_sanitized_diagnostic",
     "network_error_sanitized_diagnostic",

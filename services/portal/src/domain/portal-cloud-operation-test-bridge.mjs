@@ -84,7 +84,7 @@ function testBridgeEnvelope(extra = {}) {
     ok: true,
     testOnly: true,
     productionPortalConnected: false,
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     realCloudCalls: false,
     ...extra,
   };
@@ -265,7 +265,7 @@ function appendBillingReconciliation(db = {}, user = {}, binding = {}, operation
     operationId: operation.id,
     status: "reconciling",
     statusLabel: "对账中",
-    source: "portal_test_fake_live",
+    source: "portal_test_local_executor",
     createdAt: nowIso(),
   });
 }
@@ -317,10 +317,10 @@ function createOperationRecord(db = {}, user = {}, binding = {}, input = {}) {
     operationType,
     status: "succeeded",
     testOnly: true,
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     realCloudCalls: false,
     acceptedDryRunId: acceptedDryRunIdFrom(input),
-    evidenceRef: `.runtime/v22-cloud-lifecycle/${id}-fake-live.json`,
+    evidenceRef: `.runtime/v22-cloud-lifecycle/${id}-local-executor.json`,
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
@@ -392,7 +392,7 @@ function validateOperationInput(input = {}) {
   return { ok: true, operationType };
 }
 
-export function executePortalCloudOperationTestFakeLive(db = {}, user = {}, input = {}) {
+export function executePortalCloudOperationTestLocal(db = {}, user = {}, input = {}) {
   const validation = validateOperationInput(input);
   if (!validation.ok) return validation;
 

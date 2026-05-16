@@ -43,6 +43,9 @@ const allowedTokenGuardianScripts = new Set([
   "scripts/smoke-test-v22-admin-ops-console-boundary.mjs",
   "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs",
   "scripts/smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs",
+  "scripts/smoke-test-v22-env-template-default-entry.mjs",
+  "scripts/smoke-test-v22-product-goal-execution-order.mjs",
+  "scripts/smoke-test-v22-repo-zoning-boundary.mjs",
 ]);
 
 const oldRouteFieldPatterns = [

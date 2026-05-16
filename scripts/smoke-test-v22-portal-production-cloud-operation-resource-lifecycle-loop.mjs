@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 const RAW_PROVIDER_KEY = "gflabtoken_raw_key_portal_production_cloud_lifecycle_backend_only";
-const FORBIDDEN_PUBLIC_TERMS = /\/test\/fake-live|testOnly|TKE|COS|TCR|Kubernetes|node pool|nodePool|bucket|object key|objectKey|SecretId|SecretKey|kubeconfig|raw response|signedUrl|signed URL|mutation-secret|bucket-proof|workspace-prefix-proof|node-pool-proof/i;
+const FORBIDDEN_PUBLIC_TERMS = /\/test\/local-executor|testOnly|TKE|COS|TCR|Kubernetes|node pool|nodePool|bucket|object key|objectKey|SecretId|SecretKey|kubeconfig|raw response|signedUrl|signed URL|mutation-secret|bucket-proof|workspace-prefix-proof|node-pool-proof/i;
 
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
 const { createProviderSecretStore } = await import("../services/portal/src/domain/provider-secret-store.mjs");
@@ -69,9 +69,9 @@ function routeFactory({ providerSecretStore, writes, secretFile } = {}) {
       writes.push(JSON.parse(JSON.stringify(targetDb)));
     },
     enableCloudOperationProductionBridge: true,
-    cloudOperationRunnerMode: "fake-live",
+    cloudOperationRunnerMode: "local-executor",
     cloudOperationSecretFile: secretFile,
-    cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+    cloudOperationRunnerScript: "scripts/v22-cloud-operation-local-executor.mjs",
     cloudOperationComputeNodePoolRef: "np-backend-attribution-proof",
     nodeEnv: "test",
   });
@@ -116,7 +116,7 @@ async function execute(route, db, user, operationType, urlPath, body = {}, { sec
   assert.equal(response.res.statusCode, 202, `${operationType}_must_return_202`);
   assertProductionOperationPayload(response.res.payload, operationType);
   const drain = processQueuedPortalProductionCloudOperations(db, {
-    runnerMode: "fake-live",
+    runnerMode: "local-executor",
     secretFile,
     computeNodePoolRef: "np-backend-attribution-proof",
     maxOperations: 1,
@@ -330,7 +330,7 @@ try {
   const dryRunReport = JSON.parse(await readFile(path.resolve(lastOperation.dryRunReportRef), "utf8"));
   const executionReport = JSON.parse(await readFile(path.resolve(lastOperation.executionReportRef), "utf8"));
   assert.equal(dryRunReport.operationType, "delete_storage", "last_dry_run_operation_type_mismatch");
-  assert.equal(executionReport.execution.providerMode, "fake-live", "last_execution_provider_mode");
+  assert.equal(executionReport.execution.providerMode, "local-executor", "last_execution_provider_mode");
   assert.equal(executionReport.execution.acceptedDryRunVerified, true, "last_execution_must_accept_dry_run");
 
   console.log(JSON.stringify({

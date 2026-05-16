@@ -118,9 +118,9 @@
 - `scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs`
 - `scripts/smoke-test-v22-portal-opl-connection-contract.mjs`
 - `scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs`
-- `scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs`
-- `scripts/smoke-test-v22-real-opl-provider-message-canary-contract.mjs`
-- `scripts/smoke-test-v22-real-opl-file-run-artifact-canary-contract.mjs`
+- `scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs`
+- `scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs`
+- `scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs`
 - `scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs`
 - `scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`
 - `scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs`

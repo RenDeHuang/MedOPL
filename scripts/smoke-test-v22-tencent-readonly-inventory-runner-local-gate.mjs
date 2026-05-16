@@ -7,7 +7,7 @@ import path from "node:path";
 import { parseReadonlyInventorySecretFile } from "./v22-tencent-readonly-inventory-runner.mjs";
 
 const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
-const smokePath = "scripts/smoke-test-v22-tencent-readonly-inventory-live-runner.mjs";
+const smokePath = "scripts/smoke-test-v22-tencent-readonly-inventory-runner-local-gate.mjs";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const repoRoot = path.resolve(".");
 const realSecretPathProof = ["/home/dev", ".secrets", "medopl", "secrets.env.txt"].join("/");
@@ -179,7 +179,7 @@ try {
   assert.equal(smoke.includes(realSecretPathProof), false, "smoke_must_not_use_real_secret_path");
 
   const suite = await readFile(suitePath, "utf8");
-  assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-live-runner.mjs"), "mvp_suite_must_include_live_runner_smoke");
+  assert(suite.includes("smoke-test-v22-tencent-readonly-inventory-runner-local-gate.mjs"), "mvp_suite_must_include_live_runner_smoke");
 } finally {
   await rm(tmpDir, { recursive: true, force: true });
   await Promise.all(reportPathsToCleanup.map((reportPath) => rm(reportPath, { force: true })));
@@ -187,7 +187,7 @@ try {
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_tencent_readonly_inventory_live_runner",
+  contract: "v22_tencent_readonly_inventory_runner_local_gate",
   checked: [
     "secret_file_parser_allowlist_only",
     "check_config_no_client_call",

@@ -200,7 +200,7 @@ assertIncludes(statusMatrix, "每个 step 必须 gate", "status_matrix");
 assertIncludes(statusMatrix, "runtime-agent-http-relay.mjs", "status_matrix");
 assertIncludes(statusMatrix, "Runtime Agent HTTP API canary", "status_matrix");
 assertIncludes(statusMatrix, "billingMetadataRef", "status_matrix");
-assertIncludes(suite, "smoke-test-v22-real-opl-file-run-artifact-canary-contract.mjs", "mvp_suite");
+assertIncludes(suite, "smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs", "mvp_suite");
 assertIncludes(suite, "smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs", "mvp_suite");
 
 console.log(JSON.stringify({

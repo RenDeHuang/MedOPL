@@ -65,10 +65,9 @@ export const BUILD_TIME = String(process.env.BUILD_TIME || "unknown").trim() || 
 export const PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE = String(process.env.PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE || "").trim() === "1"
   && String(process.env.NODE_ENV || "").trim().toLowerCase() !== "production";
 export const PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE = String(process.env.PORTAL_ENABLE_CLOUD_OPERATION_PRODUCTION_BRIDGE || "").trim() === "1";
-export const PORTAL_CLOUD_OPERATION_RUNNER_MODE = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_MODE || "fake-live").trim() || "fake-live";
+export const PORTAL_CLOUD_OPERATION_RUNNER_MODE = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_MODE || "local-executor").trim() || "local-executor";
 export const PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE = String(process.env.PORTAL_CLOUD_OPERATION_PACKAGE_C_SECRET_FILE || "").trim();
-export const PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs").trim()
-  || "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
+export const PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT = String(process.env.PORTAL_CLOUD_OPERATION_RUNNER_SCRIPT || "").trim();
 export const PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF = String(process.env.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF || "").trim();
 export const PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY = Number(process.env.PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY || 2);
 

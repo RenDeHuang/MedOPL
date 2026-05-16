@@ -88,7 +88,7 @@ for (const program of boardData.programs) {
   assert.equal(program.discoveryCanaryPolicy.bAbsorptionRequiresProductionizedBranch, true, `program_${program.programId}_b_absorption_must_require_productionized`);
 }
 
-assert(suite.includes("smoke-test-v22-discovery-canary-governance.mjs"), "mvp_suite_must_include_discovery_canary_governance_smoke");
+assert(suite.includes("smoke-test-v22-discovery-governance-local-gate.mjs"), "mvp_suite_must_include_discovery_canary_governance_smoke");
 
 assertNotIncludesAny(agents + invariants + board + statusTable, [
   "canary 输出可进 git",

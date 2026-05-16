@@ -139,7 +139,7 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 - 是否允许读 secret: 是，但仅限用户授权的 readonly secret allowlist。
 - 是否允许真实云: 是，但仅限用户授权的 readonly live。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-production-cloud-topology-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`, `smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs`, check-config output
+- required smoke: `smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs`, `smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`, check-config output
 - success status: redacted readonly inventory report generated outside git
 - blocker 回流到谁: user decides retry/stop; A fixes config-only blockers; B reviews safety blockers
 - 什么时候必须停下来问用户: before reading secret, before real cloud call, before changing region/API allowlist, on permission/limit/account mismatch, before sharing report contents
@@ -253,18 +253,18 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
 - blocker 回流到谁: A fixes Portal/API; B reviews role boundary; C runs UI QA
 - 什么时候必须停下来问用户: Portal would expose secret/internal storage/cloud console language, alter billing truth, or require real cloud read
 
-#### Portal API test-only fake-live bridge
+#### Portal API test-only local-executor bridge
 
-在 Portal production integration 之前，允许存在一个本地 smoke 专用的 test-only fake-live bridge，用来验证 Portal API、PostgreSQL canonical shape、Package C fake-live operation 状态回写和普通用户 projection 的闭环。
+在 Portal production integration 之前，允许存在一个本地 smoke 专用的 test-only local-executor bridge，用来验证 Portal API、PostgreSQL canonical shape、Package C local-executor operation 状态回写和普通用户 projection 的闭环。
 
 测试路径：
 
-- `POST /portal/api/v22/cloud-operations/test/fake-live`
+- `POST /portal/api/v22/cloud-operations/test/local`
 - `GET /portal/api/v22/cloud-operations/test/projection?workspaceId=<workspace-id>`
 
 边界：
 
-- 该 API 只能用于本地 smoke 和合同验证，必须返回 `testOnly=true`、`productionPortalConnected=false`、`runnerMode=fake-live`、`realCloudCalls=false`。
+- 该 API 只能用于本地 smoke 和合同验证，必须返回 `testOnly=true`、`productionPortalConnected=false`、`runnerMode=local-executor`、`realCloudCalls=false`。
 - 该 API 默认不注册到 Portal route。只有 `PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1` 且 `NODE_ENV` 不是 `production` 时才允许注册；production 环境必须强制关闭，即使设置该 env 也不能启用。
 - 该 API 不读 secret、不调用真实云、不执行真实 TKE/COS/TCR/deploy、不写真实 `.runtime` evidence。
 - 该 API 只写与未来真实 Portal 一致的 canonical record shape：`cloudOperations`、`computeAllocations`、`fileSpaceEntitlements`、`cloudResourceProjections`、`workspaceResourceBindings`、`weeklyProtectionFreezes` / wallet ledger、`billingReconciliations`、`auditEvents`。
@@ -436,7 +436,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
   "portalApiTestBridge": {
     "testOnly": true,
     "productionPortalConnected": false,
-    "runnerMode": "fake-live",
+    "runnerMode": "local-executor",
     "realCloudCalls": false,
     "readsSecretNow": false,
     "defaultRouteEnabled": false,
@@ -444,7 +444,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     "requiresEnableEnvValue": "1",
     "forbidsProductionRouteRegistration": true,
     "apiPaths": [
-      "POST /portal/api/v22/cloud-operations/test/fake-live",
+      "POST /portal/api/v22/cloud-operations/test/local",
       "GET /portal/api/v22/cloud-operations/test/projection"
     ],
     "operations": [
@@ -680,7 +680,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       ],
       "requiredSmoke": [
         "scripts/smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs",
-        "scripts/smoke-test-v22-tencent-readonly-inventory-live-bridge.mjs",
+        "scripts/smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
         "check-config output"
       ],
       "successStatus": "redacted readonly inventory report generated outside git",

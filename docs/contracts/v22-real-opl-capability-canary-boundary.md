@@ -396,7 +396,7 @@ HTTP status 必须表达业务失败类别。若网关或 adapter 使用 202 表
 本合同对应分支进入 B 窗口前必须满足：
 
 1. 明确声明订阅本合同包和模型记录。当前 lane 分支名为 `feat/v22-real-opl-capability-canary`，模型记录为 `gpt-5.4`。
-2. `node scripts/smoke-test-v22-real-opl-capability-canary-contract.mjs` 通过。
+2. `node scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs` 通过。
 3. `node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
 4. `node scripts/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
 5. `node scripts/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。

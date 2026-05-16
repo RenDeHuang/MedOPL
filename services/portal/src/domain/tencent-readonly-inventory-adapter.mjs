@@ -247,7 +247,7 @@ function publicInventoryOutput(output = {}, additionalAuditItems = []) {
   return Object.fromEntries(PUBLIC_OUTPUT_KEYS.map((key) => [key, next[key]]));
 }
 
-export function createTencentReadonlyInventoryLiveAdapter({ client } = {}) {
+export function createTencentReadonlyInventoryAdapter({ client } = {}) {
   assertClient(client);
   return Object.freeze({
     name: "live-shaped/tencent-readonly-inventory-adapter",
@@ -265,7 +265,7 @@ export function createTencentReadonlyInventoryLiveAdapter({ client } = {}) {
 
 export async function collectTencentReadonlyInventory({ adapter, env = {}, portalLedger = {} } = {}) {
   if (!adapter || typeof adapter.listReadonlyInventoryResources !== "function") {
-    throw new Error("readonly_inventory_live_adapter_required");
+    throw new Error("readonly_inventory_inventory_adapter_required");
   }
   const envSummary = validateReadonlyInventorySecretEnv(env);
   assertReadonlyInventoryApiAllowlist(envSummary.allowedApis);

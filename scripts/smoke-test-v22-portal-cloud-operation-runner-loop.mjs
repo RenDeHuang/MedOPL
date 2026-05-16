@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 
 const repoRoot = path.resolve(".");
-const runnerPath = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
+const runnerPath = "scripts/v22-cloud-operation-local-executor.mjs";
 const forbiddenOutputPattern = /SecretId|SecretKey|token|kubeconfig|objectKey|storageKey|cosPrefix|signedUrl|raw response|rawResponse|providerRawResponse|authorization|header|bucket-proof|workspace-prefix-proof|node-pool-proof|mutation-secret/i;
 
 function assertNoForbidden(value, label) {
@@ -74,11 +74,11 @@ function assertPortalBridgePayload(payload, operationType) {
   assert.equal(payload.ok, true, `${operationType}_portal_payload_ok`);
   assert.equal(payload.testOnly, true, `${operationType}_portal_payload_test_only`);
   assert.equal(payload.productionPortalConnected, false, `${operationType}_must_not_claim_production`);
-  assert.equal(payload.runnerMode, "fake-live", `${operationType}_runner_mode`);
+  assert.equal(payload.runnerMode, "local-executor", `${operationType}_runner_mode`);
   assert.equal(payload.realCloudCalls, false, `${operationType}_must_not_call_cloud`);
   assert.equal(payload.operation?.operationType, operationType, `${operationType}_operation_type`);
   assert.equal(payload.operation?.status, "succeeded", `${operationType}_operation_status`);
-  assert.match(payload.operation?.evidenceRef || "", /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-fake-live\.json$/, `${operationType}_evidence_ref_sanitized`);
+  assert.match(payload.operation?.evidenceRef || "", /^\.runtime\/v22-cloud-lifecycle\/op-[a-z0-9-]+-local-executor\.json$/, `${operationType}_evidence_ref_sanitized`);
   assertNoForbidden(payload, `${operationType}_portal_payload`);
 }
 
@@ -121,7 +121,7 @@ try {
   const fakeLive = runRunner([
     "--execute",
     "--sdk-mode",
-    "fake-live",
+    "local-executor",
     "--secret-file",
     secretFile,
     "--operation",
@@ -133,11 +133,11 @@ try {
     "--workspace-id",
     workspaceId,
   ]);
-  assert.equal(fakeLive.ok, true, "runner_fake_live_ok");
-  assert.equal(fakeLive.summary?.execution?.providerMode, "fake-live", "runner_fake_live_mode");
-  assert.equal(fakeLive.summary?.execution?.acceptedDryRunVerified, true, "runner_fake_live_accepted_dry_run");
-  assert.equal(fakeLive.summary?.risk?.callsRealCloudNow, false, "runner_fake_live_no_cloud");
-  assert.equal(fakeLive.summary?.risk?.executesMutationNow, true, "runner_fake_live_executes_fake_path");
+  assert.equal(fakeLive.ok, true, "runner_local_executor_ok");
+  assert.equal(fakeLive.summary?.execution?.providerMode, "local-executor", "runner_local_executor_mode");
+  assert.equal(fakeLive.summary?.execution?.acceptedDryRunVerified, true, "runner_local_executor_accepted_dry_run");
+  assert.equal(fakeLive.summary?.risk?.callsRealCloudNow, false, "runner_local_executor_no_cloud");
+  assert.equal(fakeLive.summary?.risk?.executesMutationNow, true, "runner_local_executor_executes_fake_path");
 
   const port = await freePort();
   portal = spawn(process.execPath, ["src/server.mjs"], {
@@ -175,7 +175,7 @@ try {
   const cookie = cookieFrom(register);
   assert.match(cookie, /^portal_session=/, "portal_session_cookie");
 
-  const portalExecution = await requestJson(`${base}/portal/api/v22/cloud-operations/test/fake-live`, {
+  const portalExecution = await requestJson(`${base}/portal/api/v22/cloud-operations/test/local`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -189,7 +189,7 @@ try {
       planId: "starter_2c4g_10gb",
     }),
   });
-  assert.equal(portalExecution.response.status, 200, "portal_fake_live_status");
+  assert.equal(portalExecution.response.status, 200, "portal_local_executor_status");
   assertPortalBridgePayload(portalExecution.payload, "create_storage");
 
   const projection = await requestJson(`${base}/portal/api/v22/cloud-operations/test/projection?workspaceId=${encodeURIComponent(workspaceId)}`, {
@@ -210,7 +210,7 @@ try {
     contract: "v22_portal_cloud_operation_runner_loop",
     checked: [
       "package_c_runner_dry_run_gate",
-      "package_c_runner_fake_live_gate",
+      "package_c_runner_local_executor_gate",
       "portal_local_login",
       "portal_test_bridge_uses_runner_accepted_dry_run_id",
       "portal_projection_public_language",

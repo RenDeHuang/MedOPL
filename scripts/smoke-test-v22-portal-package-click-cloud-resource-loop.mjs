@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 const RAW_PROVIDER_KEY = "gflabtoken_raw_key_package_click_cloud_backend_only";
-const FORBIDDEN_PUBLIC_TERMS = /\/test\/fake-live|testOnly|TKE|COS|TCR|Kubernetes|node pool|nodePool|bucket|object key|objectKey|SecretId|SecretKey|kubeconfig|raw response|signedUrl|mutation-secret|bucket-proof|workspace-prefix-proof|node-pool-proof/i;
+const FORBIDDEN_PUBLIC_TERMS = /\/test\/local-executor|testOnly|TKE|COS|TCR|Kubernetes|node pool|nodePool|bucket|object key|objectKey|SecretId|SecretKey|kubeconfig|raw response|signedUrl|mutation-secret|bucket-proof|workspace-prefix-proof|node-pool-proof/i;
 
 const { createPortalApiRoutes } = await import("../services/portal/src/routes/portal-api.routes.mjs");
 const { createLabPackageRoutes } = await import("../services/portal/src/routes/lab-package.routes.mjs");
@@ -115,9 +115,9 @@ function routeFactories({ db, providerSecretStore, writes, secretFile } = {}) {
     apiRoute: createPortalApiRoutes({
       ...common,
       enableCloudOperationProductionBridge: true,
-      cloudOperationRunnerMode: "fake-live",
+      cloudOperationRunnerMode: "local-executor",
       cloudOperationSecretFile: secretFile,
-      cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+      cloudOperationRunnerScript: "scripts/v22-cloud-operation-local-executor.mjs",
       cloudOperationComputeNodePoolRef: "np-backend-attribution-proof",
       nodeEnv: "test",
     }),
@@ -126,9 +126,9 @@ function routeFactories({ db, providerSecretStore, writes, secretFile } = {}) {
       sendJson,
       writeDb: common.writeDb,
       enableCloudOperationProductionBridge: true,
-      cloudOperationRunnerMode: "fake-live",
+      cloudOperationRunnerMode: "local-executor",
       cloudOperationSecretFile: secretFile,
-      cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+      cloudOperationRunnerScript: "scripts/v22-cloud-operation-local-executor.mjs",
       cloudOperationComputeNodePoolRef: "np-backend-attribution-proof",
       repoRoot: ".",
     }),
@@ -157,7 +157,7 @@ function assertPackageCloudResult(payload = {}, { packageId, planId, fileSpaceGb
 function drainQueued(db, secretFile, expectedCount, label) {
   for (let index = 0; index < expectedCount; index += 1) {
     const result = processQueuedPortalProductionCloudOperations(db, {
-      runnerMode: "fake-live",
+      runnerMode: "local-executor",
       secretFile,
       computeNodePoolRef: "np-backend-attribution-proof",
       maxOperations: 1,
@@ -273,9 +273,9 @@ try {
         },
       }),
       enableCloudOperationProductionBridge: true,
-      cloudOperationRunnerMode: "fake-live",
+      cloudOperationRunnerMode: "local-executor",
       cloudOperationSecretFile: secretFile,
-      cloudOperationRunnerScript: "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs",
+      cloudOperationRunnerScript: "scripts/v22-cloud-operation-local-executor.mjs",
       cloudOperationComputeNodePoolRef: "np-backend-attribution-proof",
       repoRoot: ".",
     });

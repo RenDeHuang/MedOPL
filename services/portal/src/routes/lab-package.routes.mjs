@@ -25,8 +25,6 @@ const PACKAGE_CLOUD_PLANS = Object.freeze({
   }),
 });
 
-const DEFAULT_RUNNER_SCRIPT = "scripts/v22-tencent-authorized-resource-lifecycle-runner.mjs";
-
 function subscriptionPackageName(subscription) {
   if (!subscription) return null;
   return listLabPackages().find((item) => item.id === subscription.packageId)?.name || subscription.packageId;
@@ -47,8 +45,8 @@ export function createLabPackageRoutes({
   sendJson,
   writeDb,
   enableCloudOperationProductionBridge = false,
-  cloudOperationRunnerMode = "fake-live",
-  cloudOperationRunnerScript = DEFAULT_RUNNER_SCRIPT,
+  cloudOperationRunnerMode = "local-executor",
+  cloudOperationRunnerScript = "",
   cloudOperationSecretFile = "",
   cloudOperationComputeNodePoolRef = "",
   cloudOperationComputePoolBaselineCapacity = 2,
@@ -102,7 +100,7 @@ export function createLabPackageRoutes({
       repoRoot,
       operationType,
       runnerMode: cloudOperationRunnerMode,
-      runnerScript: cloudOperationRunnerScript || DEFAULT_RUNNER_SCRIPT,
+      runnerScript: cloudOperationRunnerScript,
       secretFile: cloudOperationSecretFile,
       computeNodePoolRef: cloudOperationComputeNodePoolRef,
       computePoolBaselineCapacity: cloudOperationComputePoolBaselineCapacity,

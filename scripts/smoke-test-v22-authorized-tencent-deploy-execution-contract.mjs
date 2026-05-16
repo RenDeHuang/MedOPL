@@ -174,9 +174,8 @@ assertIncludesAll(contract, [
   "portal.medopl.cn",
   "opl.medopl.cn",
   "trace.medopl.cn",
-  "scripts/v22-tencent-authorized-deploy-execution-runner.mjs",
-  "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs",
-  "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs",
+  "zero-compat cleanup 已删除 deploy runner executable surface",
+  "scripts/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs",
   ".runtime/v22-registry/",
   ".runtime/v22-cloud-deploy/",
   ".runtime/v22-runtime-smoke/",
@@ -249,9 +248,9 @@ assert.deepEqual(
   "deploy_workspace_runtime_owner_guard",
 );
 assert.equal("requiredLabels" in deployData.ownershipGuard, false, "deploy_global_required_labels_must_be_removed");
-assert.equal(deployData.runner?.entrypoint, "scripts/v22-tencent-authorized-deploy-execution-runner.mjs", "deploy_runner_entrypoint");
-assert.equal(deployData.runner?.smoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs", "deploy_runner_smoke");
-assert.equal(deployData.runner?.liveGateSmoke, "scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs", "deploy_live_gate_smoke");
+assert.equal(deployData.runner?.executableSurfaceDeleted, true, "deploy_runner_surface_deleted");
+assert.equal(deployData.runner?.futureRunnerRequiresNewV22Boundary, true, "deploy_future_runner_requires_new_boundary");
+assert.equal(deployData.runner?.localGateSmoke, "scripts/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs", "deploy_local_gate_smoke");
 assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("releasePlan"), "deploy_runner_release_plan_param");
 assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("acceptedPreflightId"), "deploy_runner_preflight_param");
 assert(deployData.runner?.requiresExplicitNonSecretExecutionParameters.includes("imageDigestsFile"), "deploy_runner_image_digests_file_param");
@@ -318,7 +317,7 @@ assertIncludesAll(board + status + verificationMatrix, [
 
 assert(suite.includes("smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs"), "suite_must_include_deploy_contract_smoke");
 assert.equal(suite.includes("smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs"), false, "suite_must_not_include_authorized_deploy_runner_smoke");
-assert(suite.includes("smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs"), "suite_must_include_deploy_live_gate_smoke");
+assert(suite.includes("smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs"), "suite_must_include_deploy_live_gate_smoke");
 
 assertNotIncludesAny(contract + workflow + board + status + verificationMatrix, [
   "\"runsBuildPushKubectlNow\": true",

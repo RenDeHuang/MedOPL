@@ -78,12 +78,12 @@ const requiredStageNames = [
 assertIncludesAll(contract, requiredStageNames, "cloud_onboarding_required_stage_names");
 
 assertIncludesAll(contract, [
-  "Portal API test-only fake-live bridge",
-  "POST /portal/api/v22/cloud-operations/test/fake-live",
+  "Portal API test-only local-executor bridge",
+  "POST /portal/api/v22/cloud-operations/test/local",
   "GET /portal/api/v22/cloud-operations/test/projection",
   "testOnly=true",
   "productionPortalConnected=false",
-  "runnerMode=fake-live",
+  "runnerMode=local-executor",
   "realCloudCalls=false",
   "PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE=1",
   "`NODE_ENV` 不是 `production`",
@@ -230,7 +230,7 @@ for (const step of workflow.futureAuthorizedPath) {
 
 assert.equal(workflow.portalApiTestBridge?.testOnly, true, "portal_api_test_bridge_must_be_test_only");
 assert.equal(workflow.portalApiTestBridge?.productionPortalConnected, false, "portal_api_test_bridge_must_not_claim_production_connected");
-assert.equal(workflow.portalApiTestBridge?.runnerMode, "fake-live", "portal_api_test_bridge_runner_mode");
+assert.equal(workflow.portalApiTestBridge?.runnerMode, "local-executor", "portal_api_test_bridge_runner_mode");
 assert.equal(workflow.portalApiTestBridge?.realCloudCalls, false, "portal_api_test_bridge_must_not_call_real_cloud");
 assert.equal(workflow.portalApiTestBridge?.readsSecretNow, false, "portal_api_test_bridge_must_not_read_secret");
 assert.equal(workflow.portalApiTestBridge?.defaultRouteEnabled, false, "portal_api_test_bridge_must_be_disabled_by_default");
@@ -238,7 +238,7 @@ assert.equal(workflow.portalApiTestBridge?.enableEnv, "PORTAL_ENABLE_CLOUD_OPERA
 assert.equal(workflow.portalApiTestBridge?.requiresEnableEnvValue, "1", "portal_api_test_bridge_enable_env_value");
 assert.equal(workflow.portalApiTestBridge?.forbidsProductionRouteRegistration, true, "portal_api_test_bridge_must_be_disabled_in_production");
 assert.deepEqual(workflow.portalApiTestBridge?.apiPaths, [
-  "POST /portal/api/v22/cloud-operations/test/fake-live",
+  "POST /portal/api/v22/cloud-operations/test/local",
   "GET /portal/api/v22/cloud-operations/test/projection",
 ], "portal_api_test_bridge_paths");
 assert.deepEqual(workflow.portalApiTestBridge?.operations, [

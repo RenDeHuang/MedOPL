@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { collectTencentReadonlyInventory, createTencentReadonlyInventoryLiveAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
+import { collectTencentReadonlyInventory, createTencentReadonlyInventoryAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-adapter.mjs";
 import { createTencentReadonlyInventoryOfficialSdkModules } from "../services/portal/src/domain/tencent-readonly-inventory-official-sdk-modules.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 import { createTencentReadonlyInventoryTencentSdkFactory } from "../services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs";
@@ -448,7 +448,7 @@ const tagPage = await client.describeTagResources({ region: "ap-shanghai" });
 assertPage(tagPage, "official_tag_page");
 assert.equal(officialSdkModules.calls.includes("GetResources"), true, "official_tag_semantic_must_use_get_resources");
 
-const liveAdapter = createTencentReadonlyInventoryLiveAdapter({ client });
+const liveAdapter = createTencentReadonlyInventoryAdapter({ client });
 const inventory = await collectTencentReadonlyInventory({
   adapter: liveAdapter,
   env: {

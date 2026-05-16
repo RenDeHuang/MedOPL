@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-export function evaluateCloudLiveCleanupGate({
+export function evaluateCloudCleanupLocalGate({
   baseline = {},
   after = {},
   operations = [],
@@ -29,7 +29,7 @@ export function evaluateCloudLiveCleanupGate({
   return { ok: true };
 }
 
-const pass = evaluateCloudLiveCleanupGate({
+const pass = evaluateCloudCleanupLocalGate({
   baseline: { nodePoolDesiredCapacity: 2, nodePoolCurrentCapacity: 2 },
   after: { nodePoolDesiredCapacity: 2, nodePoolCurrentCapacity: 2 },
   cleanupPlan: {
@@ -45,7 +45,7 @@ const pass = evaluateCloudLiveCleanupGate({
 });
 assert.equal(pass.ok, true, "cleanup_gate_pass");
 
-const fail = evaluateCloudLiveCleanupGate({
+const fail = evaluateCloudCleanupLocalGate({
   baseline: { nodePoolDesiredCapacity: 2, nodePoolCurrentCapacity: 2 },
   after: { nodePoolDesiredCapacity: 3, nodePoolCurrentCapacity: 2 },
   cleanupPlan: {
@@ -59,7 +59,7 @@ const fail = evaluateCloudLiveCleanupGate({
 assert.equal(fail.ok, false, "cleanup_gate_must_fail_when_capacity_not_back_to_baseline");
 assert.equal(fail.error, "post_cleanup_capacity_not_baseline", "cleanup_gate_error");
 
-const missingRef = evaluateCloudLiveCleanupGate({
+const missingRef = evaluateCloudCleanupLocalGate({
   baseline: { nodePoolDesiredCapacity: 2, nodePoolCurrentCapacity: 2 },
   after: { nodePoolDesiredCapacity: 2, nodePoolCurrentCapacity: 2 },
   cleanupPlan: { cleanupRequired: true, cleanupOperationId: "cleanup-v22-smoke" },
@@ -70,7 +70,7 @@ assert.equal(missingRef.error, "cleanup_baseline_snapshot_ref_required", "cleanu
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_cloud_live_cleanup_gate",
+  contract: "v22_cloud_cleanup_local_gate",
   baselineDesiredCapacity: 2,
   baselineCurrentCapacity: 2,
 }, null, 2));

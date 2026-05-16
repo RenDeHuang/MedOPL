@@ -1,6 +1,6 @@
 import {
   buildPortalCloudOperationTestProjection,
-  executePortalCloudOperationTestFakeLive,
+  executePortalCloudOperationTestLocal,
 } from "../domain/portal-cloud-operation-test-bridge.mjs";
 
 function parseJsonBodyOrEmpty(raw = Buffer.from("")) {
@@ -24,10 +24,10 @@ export function createPortalApiV22CloudOperationsTestRoutes({
   sendJson,
   writeDb = async () => {},
 }) {
-  async function handleFakeLive({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/api/v22/cloud-operations/test/fake-live") return false;
+  async function handleLocalGate({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/api/v22/cloud-operations/test/local") return false;
     const payload = parseJsonBodyOrEmpty(await readBody(req));
-    const result = executePortalCloudOperationTestFakeLive(db, user, payload);
+    const result = executePortalCloudOperationTestLocal(db, user, payload);
     if (result.ok) await writeDb(db);
     sendResult(sendJson, res, result);
     return true;
@@ -43,7 +43,7 @@ export function createPortalApiV22CloudOperationsTestRoutes({
   }
 
   return async function handlePortalApiV22CloudOperationsTestRoutes(context) {
-    if (await handleFakeLive(context)) return true;
+    if (await handleLocalGate(context)) return true;
     if (await handleProjection(context)) return true;
     return false;
   };

@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { createTencentReadonlyInventoryLiveAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-live-adapter.mjs";
+import { createTencentReadonlyInventoryAdapter } from "../services/portal/src/domain/tencent-readonly-inventory-adapter.mjs";
 import { createTencentReadonlyInventoryRealSdkClient } from "../services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 
 const repoRoot = path.resolve(".");
@@ -390,8 +390,8 @@ assert.throws(
   "mutation_api_rejected",
 );
 
-const liveAdapter = createTencentReadonlyInventoryLiveAdapter({ client });
-assert.equal(typeof liveAdapter.listReadonlyInventoryResources, "function", "live_adapter_accepts_real_sdk_client");
+const liveAdapter = createTencentReadonlyInventoryAdapter({ client });
+assert.equal(typeof liveAdapter.listReadonlyInventoryResources, "function", "inventory_adapter_accepts_real_sdk_client");
 for (const mutation of ["Create", "Delete", "Modify", "Run", "Terminate", "Put", "Update", "Attach", "Detach"]) {
   assert.equal(sdkFactory.calls.some((call) => call.startsWith(mutation)), false, `mutation_sdk_call_must_not_happen:${mutation}`);
 }
@@ -506,7 +506,7 @@ console.log(JSON.stringify({
     "fake_sdk_factory_pagination_and_multi_region",
     "mutation_api_rejected_and_not_called",
     "safe_response_and_error_normalization",
-    "live_adapter_compatibility",
+    "inventory_adapter_compatibility",
     "live_readonly_runner_gate_with_fake_real_sdk",
     "default_smoke_no_real_secret_or_cloud",
     "live_authorization_note",
