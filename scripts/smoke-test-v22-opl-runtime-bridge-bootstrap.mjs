@@ -61,8 +61,8 @@ try {
       PORT: String(port),
       NODE_ENV: "development",
       OPL_WEB_URL: "https://opl.example.test",
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: baseUrl,
-      PORTAL_OPL_ADAPTER_STATE_ROOT: stateRoot,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: baseUrl,
+      PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -108,7 +108,7 @@ try {
     source: "smoke-test",
   });
 
-  process.env.PORTAL_OPL_ADAPTER_STATE_ROOT = stateRoot;
+  process.env.PORTAL_RUNTIME_BRIDGE_STATE_ROOT = stateRoot;
   const stateStore = await import("../services/opl-runtime-bridge/src/state-store.mjs");
   const state = await stateStore.readState();
   stateStore.addTraceRecord(state, {
@@ -211,6 +211,6 @@ try {
   }, null, 2));
 } finally {
   if (server) server.kill();
-  delete process.env.PORTAL_OPL_ADAPTER_STATE_ROOT;
+  delete process.env.PORTAL_RUNTIME_BRIDGE_STATE_ROOT;
   await rm(stateRoot, { recursive: true, force: true });
 }

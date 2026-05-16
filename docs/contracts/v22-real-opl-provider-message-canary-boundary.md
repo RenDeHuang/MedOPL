@@ -15,7 +15,7 @@ Portal 已能进入 clean OPL WebUI 并绑定 session 后，如何验证一条�
 - Level 1: [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)。一级主合同，定义 MedOPL 托管 OPL SaaS 用户主闭环。
 - Level 2: [v22-portal-opl-connection-boundary.md](./v22-portal-opl-connection-boundary.md)、[v22-upstream-opl-boundary.md](./v22-upstream-opl-boundary.md) 和 [v22-opl-work-message-file-run-boundary.md](./v22-opl-work-message-file-run-boundary.md)。二级段合同，定义 Portal-OPL 连接、clean upstream 和 OPL 工作流业务边界。
 - Level 3: [v22-portal-opl-context-backflow-boundary.md](./v22-portal-opl-context-backflow-boundary.md) 和 [v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)。三级执行合同，定义 Portal-OPL context/backflow 骨架和真实 OPL capability canary 总链路。
-- Level 4: 本合同。Real OPL provider message canary execution contract，细化 provider key gate、真实 message send、reply observation、Adapter normalization、Portal projection、session trace、Langfuse attachment boundary、错误 gate 和吸收标准。
+- Level 4: 本合同。Real OPL provider message canary execution contract，细化 provider key gate、真实 message send、reply observation、Runtime Bridge normalization、Portal projection、session trace、Langfuse attachment boundary、错误 gate 和吸收标准。
 
 本合同是四级细分执行合同。它只能向上服从一级、二级、三级合同，不能扩大授权或把未验证能力标记为已上线。
 
@@ -55,7 +55,7 @@ Portal 已能进入 clean OPL WebUI 并绑定 session 后，如何验证一条�
 ```text
 Portal is the SaaS control plane.
 Gateway is the clean OPL WebUI entry/proxy.
-Adapter is the anti-corruption layer for message intent, provider/reply evidence, normalized status, and Portal projection.
+Runtime Bridge is the anti-corruption layer for message intent, provider/reply evidence, normalized status, and Portal projection.
 Runtime Bridge / Runtime Agent remains the downstream canonical source for run, artifact, ledger, trace, and billing metadata.
 Langfuse is an optional sanitized observability attachment.
 one-person-lab upstream remains clean.
@@ -65,7 +65,7 @@ one-person-lab upstream remains clean.
 
 当前授权 live canary 事实：
 
-- 用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，Portal -> Gateway -> Adapter -> clean OPL WebUI bridge -> gflab provider message 链路已观测到真实 assistant reply。
+- 用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> gflab provider message 链路已观测到真实 assistant reply。
 - 当前 message reply capability 状态为 `mapped_to_webui_bridge`。
 - Portal message status 和 Portal session trace 已能回流同一组 `messageId`、`replyMessageId`、`messageTraceId`、`providerInvocationRef` 和 `capabilitySource=mapped_to_webui_bridge`。
 - 脱敏 evidence 只写 `.runtime/real-opl-provider-message-live-canary/evidence.json`，不得进入 git。
@@ -77,7 +77,7 @@ one-person-lab upstream remains clean.
 - message intent 进入真实 OPL WebUI bridge、ACP runtime 或公开 provider/agent 边界。
 - canary 观测到 provider invocation evidence 或明确 gate。
 - canary 观测到同一 conversation/message 的 assistant reply，或明确 timeout/not-supported gate。
-- Adapter 生成稳定 `messageId/status/replyMessageId/messageTraceId`。
+- Runtime Bridge 生成稳定 `messageId/status/replyMessageId/messageTraceId`。
 - Portal 可以通过 `/portal/api/opl/messages/{messageId}/status` 和 `/portal/api/session-traces` 查询。
 
 任何无法证明真实 provider/reply 的情况，必须返回明确 gate，不得使用 fake Product API、fixture reply、placeholder 200 或本地假 message 当成真实 provider 成功。
@@ -89,13 +89,13 @@ one-person-lab upstream remains clean.
 ```text
 Portal launch
   -> Gateway clean OPL WebUI
-  -> Adapter bootstrap/session bind
+  -> Runtime Bridge bootstrap/session bind
   -> real OPL session/conversation
   -> provider key gate
   -> message intent
   -> real OPL/agent/provider boundary
   -> assistant reply observation
-  -> Adapter normalized message state
+  -> Runtime Bridge normalized message state
   -> Portal message status
   -> Portal session trace
 ```
@@ -107,7 +107,7 @@ Portal launch
 - message request identity map。
 - OPL WebUI bridge / ACP runtime / provider boundary 观测点。
 - assistant reply 与 `clientMessageId`、`oplConversationId`、`messageId` 的关联。
-- Adapter message state normalization。
+- Runtime Bridge message state normalization。
 - Portal message status projection。
 - Portal canonical session trace projection。
 - Langfuse sanitized attachment 的边界。
@@ -119,7 +119,7 @@ Portal launch
 
 - 不修改 one-person-lab upstream。
 - 不 import upstream 内部模块。
-- 不在 upstream 目录写 Portal、Gateway、Adapter、Runtime 或 Langfuse 代码。
+- 不在 upstream 目录写 Portal、Gateway、Runtime Bridge、Runtime 或 Langfuse 代码。
 - 不读取 raw API key、`.env`、kubeconfig、SecretId、SecretKey、SSH private key 或外部生产 token。
 - 不把 raw provider key 写入 sessionStorage、localStorage、全局 JS state、日志、evidence 或 git。
 - 不调用真实腾讯云、COS、TKE、K8s 或真实云 runtime。
@@ -188,24 +188,24 @@ provider key 的 canonical 形态是 `providerKeyRef`。它是后端密钥边界
 | `portalUserId` | Portal | 用户边界 |
 | `workspaceId` | Portal | workspace 边界 |
 | `launchId` | Portal / Gateway | 一次进入 OPL 的 launch 关联，不进入 URL query |
-| `workspaceSessionId` | Portal / Adapter | Portal workspace session projection |
-| `runtimeSessionId` | Adapter / Runtime Bridge | runtime session 归一化 ID |
+| `workspaceSessionId` | Portal / Runtime Bridge | Portal workspace session projection |
+| `runtimeSessionId` | Runtime Bridge | runtime session 归一化 ID |
 | `resourceBindingId` | Portal / Runtime Bridge | 托管运行环境绑定 ID，可为空但必须显式表达 |
 | `providerKeyRef` | Portal / Runtime Bridge secret boundary | provider 绑定引用 |
-| `oplSessionId` | OPL WebUI / ACP / Adapter | OPL session 归一化 ID |
+| `oplSessionId` | OPL WebUI / ACP / Runtime Bridge | OPL session 归一化 ID |
 | `oplConversationId` | OPL WebUI bridge | WebUI conversation ID |
 | `clientMessageId` | Portal / OPL client | 幂等 message intent ID |
-| `messageId` | Adapter | Adapter message projection ID |
-| `replyMessageId` | OPL / Adapter | assistant reply projection ID |
-| `traceId` | Adapter / Runtime Bridge | sanitized trace metadata ID |
-| `messageTraceId` | Adapter / Portal trace | message 级 trace projection ID |
-| `providerInvocationRef` | Adapter / provider boundary | 脱敏 provider invocation evidence reference |
+| `messageId` | Runtime Bridge | Runtime Bridge message projection ID |
+| `replyMessageId` | OPL / Runtime Bridge | assistant reply projection ID |
+| `traceId` | Runtime Bridge | sanitized trace metadata ID |
+| `messageTraceId` | Runtime Bridge / Portal trace | message 级 trace projection ID |
+| `providerInvocationRef` | Runtime Bridge / provider boundary | 脱敏 provider invocation evidence reference |
 
-`messageId`、`replyMessageId`、`messageTraceId` 和 `providerInvocationRef` 必须绑定同一组 `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId + oplConversationId + clientMessageId`。无法绑定时返回 `adapter_mapping_failed`。
+`messageId`、`replyMessageId`、`messageTraceId` 和 `providerInvocationRef` 必须绑定同一组 `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId + oplConversationId + clientMessageId`。无法绑定时返回 `runtime_bridge_mapping_failed`。
 
 ## Message Send Contract
 
-message send canary 的入口必须是稳定 Adapter/Portal projection，而不是 Portal 直接依赖 upstream 内部 route、DOM、frontend store 或 database schema。
+message send canary 的入口必须是稳定 Runtime Bridge/Portal projection，而不是 Portal 直接依赖 upstream 内部 route、DOM、frontend store 或 database schema。
 
 请求必须携带或可从 launch/session 绑定中解析：
 
@@ -254,9 +254,9 @@ reply observation 必须证明以下至少一种真实来源：
 
 reply metadata 禁止包含 raw completion。若只能看到 provider invocation 但没有 reply，必须返回 `provider_invocation_not_observed` 或 `upstream_reply_timeout`，不能标记为 `succeeded`。
 
-## Adapter Normalization Contract
+## Runtime Bridge Normalization Contract
 
-Adapter 必须把 upstream/WebUI/ACP/provider 的 shape 归一化成稳定 message state。Portal 不得依赖真实 upstream shape。
+Runtime Bridge 必须把 upstream/WebUI/ACP/provider 的 shape 归一化成稳定 message state。Portal 不得依赖真实 upstream shape。
 
 稳定 message state 至少包含：
 
@@ -283,7 +283,7 @@ Adapter 必须把 upstream/WebUI/ACP/provider 的 shape 归一化成稳定 messa
 - `mapped_to_acp_runtime`
 - `supported_provider_boundary`
 
-如果 upstream shape 变化导致无法稳定映射，必须返回 `adapter_mapping_failed`，并只记录脱敏 shape summary，不记录 raw payload。
+如果 upstream shape 变化导致无法稳定映射，必须返回 `runtime_bridge_mapping_failed`，并只记录脱敏 shape summary，不记录 raw payload。
 
 ## Portal Projection And Session Trace
 
@@ -356,16 +356,16 @@ Langfuse is an optional sanitized observability attachment。
 - `OPL_REAL_WEBUI_DIR`: 启动本地真实 OPL WebUI dist-server 来源。
 - `OPL_REAL_WEBUI_URL`: 使用已启动的真实 OPL WebUI URL；与 `OPL_REAL_WEBUI_DIR` 二选一。
 
-live canary 必须走真实 Portal -> Gateway -> Adapter -> WebUI bridge 路径：
+live canary 必须走真实 Portal -> Gateway -> Runtime Bridge -> WebUI bridge 路径：
 
 ```text
 Portal /portal/api/opl/launch
   -> Portal backend secret store writes raw key and exposes providerKeyRef only
   -> Gateway opens clean WebUI
-  -> Adapter creates/binds OPL conversation
+  -> Runtime Bridge creates/binds OPL conversation
   -> POST /portal/api/opl/messages
-  -> Adapter maps to WebUI bridge chat.send.message
-  -> Adapter observes assistant reply by same conversation readback/event
+  -> Runtime Bridge maps to WebUI bridge chat.send.message
+  -> Runtime Bridge observes assistant reply by same conversation readback/event
   -> GET /portal/api/opl/messages/{messageId}/status
   -> GET /portal/api/session-traces?workspaceId=...&messageId=...
 ```
@@ -394,7 +394,7 @@ live canary 不进入默认 `scripts/smoke-test-v22-mvp-contract-suite.mjs`，�
 - `provider_invocation_not_observed`: message intent 已进入 OPL 侧候选路径，但没有可证明的 provider invocation。
 - `upstream_unavailable`: 真实 OPL WebUI/ACP/provider 边界不可达。
 - `upstream_reply_timeout`: message 已进入上游边界，但未在预算时间内观测到 assistant reply。
-- `adapter_mapping_failed`: upstream shape 变化或 ID 绑定不完整，无法生成稳定 projection。
+- `runtime_bridge_mapping_failed`: upstream shape 变化或 ID 绑定不完整，无法生成稳定 projection。
 - `capability_not_supported`: 当前真实 upstream 不支持或未验证 message reply。
 - `trace_sink_not_configured`: Langfuse 或外部 trace sink 未配置。
 - `deferred_authorization`: 需要用户或运维单独授权。
@@ -441,12 +441,12 @@ canary evidence 只允许写入 `.runtime`，不得进入 git。
 
 ## Productionization Handoff
 
-canary 成功不自动等于 productionized adapter。进入正式实现前必须：
+canary 成功不自动等于 productionized Runtime Bridge。进入正式实现前必须：
 
 1. 把真实 provider message reply 发现回写本合同、[v22-real-opl-capability-canary-boundary.md](./v22-real-opl-capability-canary-boundary.md)、[status-matrix.md](../recovery/status-matrix.md) 和 [mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)。
 2. 明确 message reply capability 状态：`supported`、`mapped_to_webui_bridge`、`mapped_to_acp_runtime`、`supported_provider_boundary`、`provider_key_required`、`provider_authorization_required`、`deferred_authorization` 或 `capability_not_supported`。
 3. 把 canary-only evidence、临时脚本输出和 `.runtime` 数据留在本地，不进入 git。
-4. 如需 productionized Adapter 映射，另开实现分支，补正式 smoke，不依赖 `.runtime` 临时 evidence。
+4. 如需 productionized Runtime Bridge 映射，另开实现分支，补正式 smoke，不依赖 `.runtime` 临时 evidence。
 5. 如需真实 provider key、真实 Runtime Agent、真实云 runtime 或 Langfuse 部署，另行取得用户授权。
 
 ## Absorption Gate

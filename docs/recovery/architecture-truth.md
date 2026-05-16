@@ -1,6 +1,6 @@
 # platform-v22 Architecture Truth
 
-platform-v22 的架构真相是：Portal 提供托管科研工作台控制面，OPL Web Gateway 接入 clean upstream OPL Web，Portal OPL Adapter / Runtime Agent 连接平台管理的 TKE/存储资源池，并把所有计算资源、存储资源和文件空间纳入 tenant binding、billing、quota、audit 和 admin 边界。
+platform-v22 的架构真相是：Portal 提供托管科研工作台控制面，OPL Web Gateway 接入 clean upstream OPL Web，Runtime Bridge / Runtime Agent 连接平台管理的 TKE/存储资源池，并把所有计算资源、存储资源和文件空间纳入 tenant binding、billing、quota、audit 和 admin 边界。
 
 ## 架构定位
 
@@ -14,7 +14,7 @@ MedOPL 是 `platform-provisioned / customer-dedicated` 托管科研工作台，�
 Portal
   -> OPL Web Gateway
   -> clean upstream OPL Web
-  -> Portal OPL Adapter / Runtime Agent
+  -> Runtime Bridge / Runtime Agent
   -> platform-managed TKE/storage resource pools
   -> Billing/Quota/Audit/Admin
 ```
@@ -31,7 +31,7 @@ Portal 不重做 OPL chatbot，不回答科研问题，不承接 OPL 工作台�
 
 ### OPL Web Gateway
 
-OPL Web Gateway 是 `opl.medopl.cn` 的正式入口。它把平台身份、workspace 上下文、计算资源可用状态、resource binding 和 adapter 接入传给 upstream OPL Web，不把 Portal 逻辑写进 upstream。
+OPL Web Gateway 是 `opl.medopl.cn` 的正式入口。它把平台身份、workspace 上下文、计算资源可用状态、resource binding 和 Runtime Bridge context 传给 upstream OPL Web，不把 Portal 逻辑写进 upstream。
 
 `opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。API Key 输入框放在 OPL 登录页密码下面；已绑定时显示“已绑定”，不要求重复输入。
 
@@ -43,13 +43,13 @@ one-person-lab upstream OPL Web 必须保持 clean：
 https://github.com/gaofeng21cn/one-person-lab
 ```
 
-v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Adapter 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
+v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway 或 Runtime Bridge 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的内部 anti-corruption mapping 适配。
 
 OPL 负责科研执行：chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验。Portal 只能通过公开边界把上下文带入 OPL，并把 session、run、artifact、trace、账单和审计状态回流。
 
-### Portal OPL Adapter / Runtime Agent
+### Runtime Bridge / Runtime Agent
 
-Portal OPL Adapter / Runtime Agent 是运行集成边界。它只能在账号工作空间已开通计算资源、文件空间可用且资源绑定有效时调度托管计算任务。
+Runtime Bridge / Runtime Agent 是运行集成边界。它只能在账号工作空间已开通计算资源、文件空间可用且资源绑定有效时调度托管计算任务。
 
 它负责：
 
@@ -102,7 +102,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - 用户和租户控制面：Portal。
 - OPL Web 工作入口：OPL Web Gateway。
 - Upstream OPL：clean upstream OPL Web 公开边界。
-- 运行集成：Portal OPL Adapter / Runtime Agent。
+- 运行集成：Runtime Bridge / Runtime Agent。
 - 资源能力：platform-managed TKE/storage resource pools。
 - 治理能力：Billing/Quota/Audit/Admin。
 
@@ -115,7 +115,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - Identity / Auth / Tenant：`services/portal/src/app/portal-auth-runtime-handler.mjs`、`services/portal/src/domain/portal-auth.mjs`、`provider-config.mjs`、`provider-secret-store.mjs`、`tenant-scope.mjs`、`portal-store-db-auth.mjs`、`portal-store-schema.mjs`。
 - Portal Web：`services/portal/frontend/src/router/index.ts`、`AppSidebar.vue`、`OverviewView.vue`、`PackagesView.vue`、`ResourcesView.vue`、`WorkspaceView.vue`、`OplLaunchView.vue`、`BillingView.vue`、`TraceView.vue`，以及 `services/portal/src/routes/portal-api.routes.mjs`、`opl.routes.mjs`、`lab-package.routes.mjs`、`workspace-storage.routes.mjs`。
 - OPL Web Gateway：`services/opl-web-gateway/src/server.mjs`、`proxy.mjs`、`portal-auth-bridge.mjs`、`html-injection.mjs`、`launch-client-script.mjs`、`config.mjs`。
-- OPL Adapter / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、`runtime-bridge-launch.mjs`、`runtime-bridge-runs.mjs`、`runtime-bridge-messages.mjs`、`runtime-bridge-routes-http.mjs`、`provider-secret-store.mjs`、`opl-acp-runtime-client.mjs`、`run-contract.mjs`、`state-store*.mjs`。
+- Runtime Bridge / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、`runtime-bridge-launch.mjs`、`runtime-bridge-runs.mjs`、`runtime-bridge-messages.mjs`、`runtime-bridge-routes-http.mjs`、`provider-secret-store.mjs`、`opl-acp-runtime-client.mjs`、`run-contract.mjs`、`state-store*.mjs`。
 - Workspace / Artifact：`services/portal/src/domain/workspace-storage.mjs`、`portal-api-workspace-storage.mjs`、`workspace-storage-route-handlers.mjs`、`workspace-storage-upload-support.mjs`、`workspace-files-internal.routes.mjs`。
 - Session / Run：`services/portal/src/domain/session-traces.mjs`、`services/portal/src/app/portal-session-trace-payloads.mjs`、`services/portal/src/services/opl-launch.service.mjs`、`services/opl-runtime-bridge/src/state-store-run-records.mjs`、`state-store-message-records.mjs`、`state-store-artifact-trace-records.mjs`。
 - Billing / Usage / Freeze：`services/portal/src/domain/wallet-ledger.mjs`、`lab-billing-policy.mjs`、`portal-page-billing-payloads.mjs`、`portal-runtime-observability.mjs` 的 Portal monolith 账本投影、`services/portal/frontend/src/api/portal/billing.ts`、`services/portal/frontend/src/views/billing/BillingView.vue`。
@@ -130,9 +130,9 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - `services/portal/src/config/portal-config.mjs` 不得恢复 `PRODUCT_RUNTIME_MODE=user_owned`；默认语义必须是 `platform_provisioned` / `customer_dedicated`。
 - `services/portal/src/routes/user-owned-resource.routes.mjs`、`services/portal/src/domain/user-owned-resources.mjs` 和 `services/portal/src/state/portal-user-owned-resource-store.mjs` 均已从 active repo 删除；不得恢复 user-owned public route、alias、fixture、copy 或测试锚点。
 - `services/portal/src/domain/resource-orders.mjs`、`services/portal/src/routes/resource-order*.mjs` 和 `services/portal/src/integrations/resource-provisioner-client.mjs` 已从 active repo 删除；后续如需平台资源开通 client，必须以 v22 resource binding / cloud operation contract 重新命名、重新建边界。
-- `services/portal/src/routes/task-space.routes.mjs` 只允许向 workspace 语义收敛，不得作为旧 workspace redirect 兼容入口扩写。
-- `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 和 `managed_runtime` 词组不得作为保留依据；后续只能删除或重命名到 Portal OPL Adapter / Runtime Agent 边界。
-- `services/opl-runtime-bridge` 路径暂保留，但产品语义是 Portal OPL Adapter / Runtime Agent；新文档和新入口不得继续扩大 bridge 命名。
+- `services/portal/src/routes/workspace.routes.mjs` 是 workspace lifecycle route；旧 `task-space.routes.mjs` 文件名和 `/portal/tasks/*` 入口已清退，不得恢复为产品域或兼容入口。
+- `services/opl-runtime-bridge/src/runtime-bridge-managed-runs.mjs` 已删除；旧 runtime mode 不得作为 active Runtime Bridge mode、产品能力入口或保留依据。
+- `services/opl-runtime-bridge` 路径暂保留，但产品语义是 Runtime Bridge / Runtime Agent；新文档和新入口不得继续扩大 bridge 命名。
 
 以下路径只作为 strict cleanup 删除目标或历史文档迁移输入；git history 已足够作为历史证据，不进入 v22 主产品叙事：
 

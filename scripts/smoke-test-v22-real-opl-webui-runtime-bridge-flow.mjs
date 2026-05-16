@@ -6,18 +6,18 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const repoRoot = process.cwd();
-const runtimeRoot = path.join(repoRoot, ".runtime", "real-opl-webui-adapter-flow");
+const runtimeRoot = path.join(repoRoot, ".runtime", "real-opl-webui-runtime-bridge-flow");
 const providedWebuiUrl = String(process.env.OPL_REAL_WEBUI_URL || "").replace(/\/$/, "");
 const configuredWebuiDir = String(process.env.OPL_REAL_WEBUI_DIR || "").trim();
 const repoRuntimeWebuiDir = path.join(repoRoot, ".runtime", "opl-aion-shell");
-const USERNAME = "portal-adapter-canary";
-const USER_ID = "portal-real-webui-adapter-user";
-const TENANT_ID = "tenant-real-webui-adapter";
-const WORKSPACE_ID = "workspace-real-webui-adapter";
-const WORKSPACE_SESSION_ID = "workspace-session-real-webui-adapter";
-const RESOURCE_BINDING_ID = "resource-binding-real-webui-adapter";
-const PROVIDER_KEY_REF = "provider-key-ref-real-webui-adapter";
-const RUNTIME_AGENT_ID = "runtime-agent-real-webui-adapter";
+const USERNAME = "portal-runtime-bridge-canary";
+const USER_ID = "portal-real-webui-runtime-bridge-user";
+const TENANT_ID = "tenant-real-webui-runtime-bridge";
+const WORKSPACE_ID = "workspace-real-webui-runtime-bridge";
+const WORKSPACE_SESSION_ID = "workspace-session-real-webui-runtime-bridge";
+const RESOURCE_BINDING_ID = "resource-binding-real-webui-runtime-bridge";
+const PROVIDER_KEY_REF = "provider-key-ref-real-webui-runtime-bridge";
+const RUNTIME_AGENT_ID = "runtime-agent-real-webui-runtime-bridge";
 
 function assertNoSecretLeak(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value || {});
@@ -61,7 +61,7 @@ function spawnNode(script, { port, env = {}, stateRoot = runtimeRoot, cwd = repo
     env: {
       ...process.env,
       PORT: String(port),
-      PORTAL_OPL_ADAPTER_STATE_ROOT: stateRoot,
+      PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot,
       NODE_ENV: "test",
       ...env,
     },
@@ -180,7 +180,7 @@ async function startOrUseWebui() {
   return { webuiUrl, child, source: "local_dist_server" };
 }
 
-async function readAdapterState(stateRoot) {
+async function readRuntimeBridgeState(stateRoot) {
   return JSON.parse(await readFile(path.join(stateRoot, "state.json"), "utf8"));
 }
 
@@ -188,27 +188,27 @@ await rm(runtimeRoot, { recursive: true, force: true });
 await mkdir(runtimeRoot, { recursive: true });
 
 const webui = await startOrUseWebui();
-const adapterPort = await freePort();
+const runtimeBridgePort = await freePort();
 const gatewayPort = await freePort();
-const adapterUrl = `http://127.0.0.1:${adapterPort}`;
+const runtimeBridgeUrl = `http://127.0.0.1:${runtimeBridgePort}`;
 const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
-const stateRoot = path.join(runtimeRoot, "adapter-state");
-let adapter;
+const stateRoot = path.join(runtimeRoot, "runtime-bridge-state");
+let runtimeBridge;
 let gateway;
 
 try {
-  adapter = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
-    port: adapterPort,
+  runtimeBridge = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
+    port: runtimeBridgePort,
     stateRoot,
     env: {
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
       OPL_WEB_URL: webui.webuiUrl,
       OPL_RUNTIME_MODE: "webui",
       OPL_WEBUI_BRIDGE_URL: webui.webuiUrl,
       PRODUCT_RUNTIME_MODE: "platform_provisioned",
     },
   });
-  await waitFor(`${adapterUrl}/healthz`);
+  await waitFor(`${runtimeBridgeUrl}/healthz`);
 
   gateway = spawnNode("services/opl-web-gateway/src/server.mjs", {
     port: gatewayPort,
@@ -216,17 +216,17 @@ try {
     env: {
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       OPL_UPSTREAM_URL: webui.webuiUrl,
-      PORTAL_OPL_ADAPTER_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_URL: runtimeBridgeUrl,
       PORTAL_PUBLIC_URL: "http://portal.local",
       OPL_WEBUI_AUTH_MODE: "none",
     },
   });
   await waitFor(`${gatewayUrl}/healthz`);
 
-  const launch = await postJson(`${adapterUrl}/api/opl-launch/tokens`, {
+  const launch = await postJson(`${runtimeBridgeUrl}/api/opl-launch/tokens`, {
     portalUserId: USER_ID,
-    portalUserEmail: "real-webui-adapter@example.test",
-    portalUserName: "Real WebUI Adapter Canary",
+    portalUserEmail: "real-webui-runtime-bridge@example.test",
+    portalUserName: "Real WebUI Runtime Bridge Canary",
     tenantId: TENANT_ID,
     ownerId: USER_ID,
     sessionOwnerId: USER_ID,
@@ -234,14 +234,14 @@ try {
     artifactOwnerId: USER_ID,
     storageOwnerId: USER_ID,
     workspaceId: WORKSPACE_ID,
-    workspaceTitle: "Real WebUI Adapter Workspace",
+    workspaceTitle: "Real WebUI Runtime Bridge Workspace",
     workspacePath: path.join(runtimeRoot, "workspace"),
     workspaceSessionId: WORKSPACE_SESSION_ID,
     sourceSurface: "portal-control-plane",
     mode: "full_runtime",
     resourceBindingId: RESOURCE_BINDING_ID,
-    computeInstanceId: "compute-real-webui-adapter",
-    storageBucketId: "storage-real-webui-adapter",
+    computeInstanceId: "compute-real-webui-runtime-bridge",
+    storageBucketId: "storage-real-webui-runtime-bridge",
     runtimeAgentId: RUNTIME_AGENT_ID,
     providerConfig: {
       providerConfigured: true,
@@ -252,67 +252,67 @@ try {
     },
     providerConfigSecretRef: PROVIDER_KEY_REF,
   });
-  assert.equal(launch.response.status, 200, "webui_adapter_launch_must_return_200");
-  assert.equal(launch.json.ok, true, "webui_adapter_launch_must_succeed");
-  assert.equal(canonicalUrl(launch.json.oplWebUrl), canonicalUrl(webui.webuiUrl), "webui_adapter_launch_must_target_real_webui");
+  assert.equal(launch.response.status, 200, "webui_runtime_bridge_launch_must_return_200");
+  assert.equal(launch.json.ok, true, "webui_runtime_bridge_launch_must_succeed");
+  assert.equal(canonicalUrl(launch.json.oplWebUrl), canonicalUrl(webui.webuiUrl), "webui_runtime_bridge_launch_must_target_real_webui");
   assertNoSecretLeak({
     openUrl: launch.json.openUrl,
     oplWebUrl: launch.json.oplWebUrl,
     bootstrapUrl: launch.json.bootstrapUrl,
-  }, "webui_adapter_launch_public_urls");
+  }, "webui_runtime_bridge_launch_public_urls");
 
   const cookie = cookieHeaderFrom(launch.response);
-  const bootstrap = await getJson(`${gatewayUrl}/portal-adapter/api/opl/bootstrap`, { cookie });
-  assert.equal(bootstrap.response.status, 200, "webui_adapter_bootstrap_must_return_200");
-  assert.equal(bootstrap.json.identity.workspaceId, WORKSPACE_ID, "webui_adapter_bootstrap_workspace_mismatch");
-  assert.equal(bootstrap.json.opl.health.source, "opl_webui_bridge", "webui_adapter_bootstrap_must_use_bridge_health");
-  assert.equal(bootstrap.json.system.id, "opl-webui-bridge", "webui_adapter_bootstrap_system_mismatch");
-  assert.equal(bootstrap.json.capabilities?.messageBackflow?.status, "capability_not_supported", "webui_adapter_message_backflow_capability_must_not_claim_supported");
-  assert.equal(bootstrap.json.capabilities?.messageBackflow?.reason, "reply_not_verified", "webui_adapter_message_backflow_reason_mismatch");
-  assert.equal(bootstrap.json.capabilityClassification.httpProductApi, "capability_not_supported", "webui_adapter_http_product_api_must_be_not_supported");
-  assert.equal(bootstrap.json.capabilityClassification.websocketBridgeSession, "real_webui_bridge_roundtrip", "webui_adapter_bridge_session_classification_mismatch");
-  assert(bootstrap.json.resources.sessions.some((session) => session.oplSessionId === bootstrap.json.identity.oplSessionId), "webui_adapter_bootstrap_must_read_created_session_from_webui_database");
-  assertNoSecretLeak(bootstrap.json, "webui_adapter_bootstrap");
+  const bootstrap = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/bootstrap`, { cookie });
+  assert.equal(bootstrap.response.status, 200, "webui_runtime_bridge_bootstrap_must_return_200");
+  assert.equal(bootstrap.json.identity.workspaceId, WORKSPACE_ID, "webui_runtime_bridge_bootstrap_workspace_mismatch");
+  assert.equal(bootstrap.json.opl.health.source, "opl_webui_bridge", "webui_runtime_bridge_bootstrap_must_use_bridge_health");
+  assert.equal(bootstrap.json.system.id, "opl-webui-bridge", "webui_runtime_bridge_bootstrap_system_mismatch");
+  assert.equal(bootstrap.json.capabilities?.messageBackflow?.status, "capability_not_supported", "webui_runtime_bridge_message_backflow_capability_must_not_claim_supported");
+  assert.equal(bootstrap.json.capabilities?.messageBackflow?.reason, "reply_not_verified", "webui_runtime_bridge_message_backflow_reason_mismatch");
+  assert.equal(bootstrap.json.capabilityClassification.httpProductApi, "capability_not_supported", "webui_runtime_bridge_http_product_api_must_be_not_supported");
+  assert.equal(bootstrap.json.capabilityClassification.websocketBridgeSession, "real_webui_bridge_roundtrip", "webui_runtime_bridge_bridge_session_classification_mismatch");
+  assert(bootstrap.json.resources.sessions.some((session) => session.oplSessionId === bootstrap.json.identity.oplSessionId), "webui_runtime_bridge_bootstrap_must_read_created_session_from_webui_database");
+  assertNoSecretLeak(bootstrap.json, "webui_runtime_bridge_bootstrap");
 
-  const bind = await postJson(`${gatewayUrl}/portal-adapter/api/opl/sessions/bind`, {
-    clientSessionState: { source: "real-webui-adapter-smoke" },
+  const bind = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/sessions/bind`, {
+    clientSessionState: { source: "real-webui-runtime-bridge-smoke" },
   }, { cookie });
-  assert.equal(bind.response.status, 200, "webui_adapter_session_bind_must_return_200");
-  assert.equal(bind.json.runtimeSession.oplSessionId, bootstrap.json.identity.oplSessionId, "webui_adapter_session_bind_must_keep_real_webui_session");
-  assertNoSecretLeak(bind.json, "webui_adapter_session_bind");
+  assert.equal(bind.response.status, 200, "webui_runtime_bridge_session_bind_must_return_200");
+  assert.equal(bind.json.runtimeSession.oplSessionId, bootstrap.json.identity.oplSessionId, "webui_runtime_bridge_session_bind_must_keep_real_webui_session");
+  assertNoSecretLeak(bind.json, "webui_runtime_bridge_session_bind");
 
-  const unboundRun = await postJson(`${gatewayUrl}/portal-adapter/api/opl/runs`, {
+  const unboundRun = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/runs`, {
     message: "run should be gated before managed resource binding",
-    toolName: "real-webui-adapter",
+    toolName: "real-webui-runtime-bridge",
   }, { cookie });
-  assert.equal(unboundRun.response.status, 502, "webui_adapter_run_without_runtime_agent_must_fail");
-  assert.equal(unboundRun.json.error.code, "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED", "webui_adapter_run_gate_code_mismatch");
-  assertNoSecretLeak(unboundRun.json, "webui_adapter_unbound_run_gate");
+  assert.equal(unboundRun.response.status, 502, "webui_runtime_bridge_run_without_runtime_agent_must_fail");
+  assert.equal(unboundRun.json.error.code, "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED", "webui_runtime_bridge_run_gate_code_mismatch");
+  assertNoSecretLeak(unboundRun.json, "webui_runtime_bridge_unbound_run_gate");
 
-  const message = await postJson(`${gatewayUrl}/portal-adapter/api/opl/messages`, {
-    message: "Portal real WebUI adapter canary: respond OK only.",
+  const message = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/messages`, {
+    message: "Portal real WebUI Runtime Bridge canary: respond OK only.",
     waitForCompletion: true,
   }, { cookie });
-  assert.equal(message.response.status, 409, "webui_adapter_message_must_not_fake_success_without_reply");
-  assert.equal(message.json.error, "provider_authorization_required", "webui_adapter_message_error_mismatch");
-  assert.equal(message.json.status, "gated", "webui_adapter_message_gate_status_mismatch");
-  assert.equal(message.json.capability, "webui_provider_message", "webui_adapter_message_capability_mismatch");
-  assertNoSecretLeak(message.json, "webui_adapter_message_not_supported");
+  assert.equal(message.response.status, 409, "webui_runtime_bridge_message_must_not_fake_success_without_reply");
+  assert.equal(message.json.error, "provider_authorization_required", "webui_runtime_bridge_message_error_mismatch");
+  assert.equal(message.json.status, "gated", "webui_runtime_bridge_message_gate_status_mismatch");
+  assert.equal(message.json.capability, "webui_provider_message", "webui_runtime_bridge_message_capability_mismatch");
+  assertNoSecretLeak(message.json, "webui_runtime_bridge_message_not_supported");
 
-  const state = await readAdapterState(stateRoot);
-  assert(state.events.some((event) => event.type === "opl_webui_bridge_session_created"), "webui_adapter_state_must_record_bridge_session_created");
-  assert(state.events.some((event) => event.type === "opl_session_bound" && event.oplSessionId === bootstrap.json.identity.oplSessionId), "webui_adapter_state_must_record_session_bound");
-  assert.equal(state.messageReplies?.length || 0, 0, "webui_adapter_must_not_persist_fake_message_reply");
+  const state = await readRuntimeBridgeState(stateRoot);
+  assert(state.events.some((event) => event.type === "opl_webui_bridge_session_created"), "webui_runtime_bridge_state_must_record_bridge_session_created");
+  assert(state.events.some((event) => event.type === "opl_session_bound" && event.oplSessionId === bootstrap.json.identity.oplSessionId), "webui_runtime_bridge_state_must_record_session_bound");
+  assert.equal(state.messageReplies?.length || 0, 0, "webui_runtime_bridge_must_not_persist_fake_message_reply");
 
   console.log(JSON.stringify({
     ok: true,
-    contract: "v22_real_opl_webui_adapter_flow",
+    contract: "v22_real_opl_webui_runtime_bridge_flow",
     webui: {
       source: webui.source,
       url: webui.webuiUrl,
     },
     covered: [
-      "real_webui_adapter_launch",
+      "real_webui_runtime_bridge_launch",
       "real_webui_websocket_session_create",
       "real_webui_database_session_roundtrip",
       "http_product_api_classified_not_supported",
@@ -322,6 +322,6 @@ try {
   }, null, 2));
 } finally {
   await stopChild(gateway);
-  await stopChild(adapter);
+  await stopChild(runtimeBridge);
   await stopChild(webui.child);
 }

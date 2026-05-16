@@ -3,7 +3,7 @@ function redirect(res, location) {
   res.end();
 }
 
-export function createPortalTaskSpaceRoutes({
+export function createPortalWorkspaceRoutes({
   archiveTaskSpace,
   createZipFromDir,
   defaultTaskTitle,
@@ -46,8 +46,8 @@ export function createPortalTaskSpaceRoutes({
     return true;
   }
 
-  async function handleTaskSwitch({ req, res, url, db, user }) {
-    if (req.method !== "GET" || url.pathname !== "/portal/tasks/switch") return false;
+  async function handleWorkspaceSwitch({ req, res, url, db, user }) {
+    if (req.method !== "GET" || url.pathname !== "/portal/workspaces/switch") return false;
     const taskSlug = slugify(url.searchParams.get("task") || "default");
     const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     if (taskSpace.status === "active") user.currentTaskSlug = taskSpace.slug;
@@ -56,18 +56,18 @@ export function createPortalTaskSpaceRoutes({
     return true;
   }
 
-  async function handleTaskCreate({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/tasks/create") return false;
+  async function handleWorkspaceCreate({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/workspaces/create") return false;
     const form = await readForm(req);
     const policy = await evaluateUserPolicy(db, user);
     if (!policy.allowWorkspaceCreate) {
-      await logPortalEvent({ type: "policy_blocked_workspace_create", userId: user.id, groupId: policy.group?.id || "", reasons: ["当前分组不允许创建任务空间"] });
-      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前分组不允许创建新任务空间</h2><p class="hint">请联系管理员调整分组策略。</p></div>`, user), 403);
+      await logPortalEvent({ type: "policy_blocked_workspace_create", userId: user.id, groupId: policy.group?.id || "", reasons: ["当前分组不允许创建工作空间"] });
+      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前分组不允许创建新工作空间</h2><p class="hint">请联系管理员调整分组策略。</p></div>`, user), 403);
       return true;
     }
     if (policy.blocked) {
       await logPortalEvent({ type: "policy_blocked_workspace_create", userId: user.id, groupId: policy.group?.id || "", reasons: policy.blocks });
-      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前账号暂时不能创建任务空间</h2><ul class="list">${policy.blocks.map((item) => `<li>${item}</li>`).join("")}</ul></div>`, user), 403);
+      sendHtml(res, layoutV2("策略限制", `<div class="card"><h2>当前账号暂时不能创建工作空间</h2><ul class="list">${policy.blocks.map((item) => `<li>${item}</li>`).join("")}</ul></div>`, user), 403);
       return true;
     }
     const title = String(form.title || "").trim() || "New Task";
@@ -78,17 +78,17 @@ export function createPortalTaskSpaceRoutes({
     return true;
   }
 
-  async function handleTaskArchive({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/tasks/archive") return false;
+  async function handleWorkspaceArchive({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/workspaces/archive") return false;
     const form = await readForm(req);
     const taskSlug = slugify(form.task || user.currentTaskSlug || "default");
     const taskSpace = findTaskSpace(db, user.id, taskSlug);
     if (!taskSpace) {
-      sendHtml(res, layoutV2("任务空间不存在", `<div class="card">未找到目标任务空间。</div>`, user), 404);
+      sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
       return true;
     }
     if (taskSpace.status !== "active") {
-      sendHtml(res, layoutV2("无法归档", `<div class="card">只有 active 状态的任务空间可以归档。</div>`, user), 409);
+      sendHtml(res, layoutV2("无法归档", `<div class="card">只有 active 状态的工作空间可以归档。</div>`, user), 409);
       return true;
     }
     await archiveTaskSpace(db, user, taskSpace);
@@ -97,17 +97,17 @@ export function createPortalTaskSpaceRoutes({
     return true;
   }
 
-  async function handleTaskRestore({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/tasks/restore") return false;
+  async function handleWorkspaceRestore({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/workspaces/restore") return false;
     const form = await readForm(req);
     const taskSlug = slugify(form.task || "default");
     const taskSpace = findTaskSpace(db, user.id, taskSlug);
     if (!taskSpace) {
-      sendHtml(res, layoutV2("任务空间不存在", `<div class="card">未找到目标任务空间。</div>`, user), 404);
+      sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
       return true;
     }
     if (taskSpace.status !== "archived") {
-      sendHtml(res, layoutV2("无法恢复", `<div class="card">只有 archived 状态的任务空间可以恢复。</div>`, user), 409);
+      sendHtml(res, layoutV2("无法恢复", `<div class="card">只有 archived 状态的工作空间可以恢复。</div>`, user), 409);
       return true;
     }
     await restoreTaskSpace(db, user, taskSpace);
@@ -116,21 +116,21 @@ export function createPortalTaskSpaceRoutes({
     return true;
   }
 
-  async function handleTaskDelete({ req, res, url, db, user }) {
-    if (req.method !== "POST" || url.pathname !== "/portal/tasks/delete") return false;
+  async function handleWorkspaceDelete({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/workspaces/delete") return false;
     const form = await readForm(req);
     const taskSlug = slugify(form.task || "default");
     const taskSpace = findTaskSpace(db, user.id, taskSlug);
     if (!taskSpace) {
-      sendHtml(res, layoutV2("任务空间不存在", `<div class="card">未找到目标任务空间。</div>`, user), 404);
+      sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
       return true;
     }
     if (await hasActiveRuns(user.id, taskSpace.slug)) {
-      sendHtml(res, layoutV2("无法删除", `<div class="card">当前任务空间仍有运行中的任务，暂时不能删除。</div>`, user), 409);
+      sendHtml(res, layoutV2("无法删除", `<div class="card">当前工作空间仍有运行中的任务，暂时不能删除。</div>`, user), 409);
       return true;
     }
     if (hasActiveWorkspaceSession(db, user.id, taskSpace.slug)) {
-      sendHtml(res, layoutV2("无法删除", `<div class="card">当前任务空间仍绑定活跃 MAS 会话，请等待会话过期后再删除。</div>`, user), 409);
+      sendHtml(res, layoutV2("无法删除", `<div class="card">当前工作空间仍绑定活跃 MAS 会话，请等待会话过期后再删除。</div>`, user), 409);
       return true;
     }
     await markTaskSpaceDeleted(db, user, taskSpace);
@@ -173,13 +173,13 @@ export function createPortalTaskSpaceRoutes({
     return true;
   }
 
-  return async function handlePortalTaskSpaceRoutes(context) {
+  return async function handlePortalWorkspaceRoutes(context) {
     if (await handleCurrentWorkspaceSession(context)) return true;
-    if (await handleTaskSwitch(context)) return true;
-    if (await handleTaskCreate(context)) return true;
-    if (await handleTaskArchive(context)) return true;
-    if (await handleTaskRestore(context)) return true;
-    if (await handleTaskDelete(context)) return true;
+    if (await handleWorkspaceSwitch(context)) return true;
+    if (await handleWorkspaceCreate(context)) return true;
+    if (await handleWorkspaceArchive(context)) return true;
+    if (await handleWorkspaceRestore(context)) return true;
+    if (await handleWorkspaceDelete(context)) return true;
     if (await handleDownloadFile(context)) return true;
     if (await handleDownloadAll(context)) return true;
     if (await handleWorkspaceUpload(context)) return true;

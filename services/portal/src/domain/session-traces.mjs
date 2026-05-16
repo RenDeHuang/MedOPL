@@ -85,9 +85,10 @@ function billingSummary(billing, relatedCosts = []) {
 }
 
 function traceListSummary(merged) {
+  const runtimeBridgeSource = merged.sources.runtimeBridge;
   return {
-    available: merged.sources.adapter.type === "live",
-    mode: merged.sources.adapter.type === "live" ? "live" : "status_only",
+    available: runtimeBridgeSource.type === "live",
+    mode: runtimeBridgeSource.type === "live" ? "live" : "status_only",
     traceCount: merged.rows.length,
     latestTraceAt: merged.rows[0]?.startedAt || "",
     dataSource: "runtime_bridge_canonical_metadata",
@@ -353,14 +354,14 @@ function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {
 
 async function fetchMergedTraceRowsForPortalUser(deps, user, options = {}) {
   const requestOptions = traceRequestOptions(user, options, deps.parsePositiveInt);
-  const [langfuseRows, adapterRows] = await Promise.all([
+  const [langfuseRows, runtimeBridgeRows] = await Promise.all([
     deps.fetchTraceRows({
       userId: requestOptions.userId,
       workspaceId: requestOptions.workspaceId,
       runId: requestOptions.runId,
       limit: requestOptions.limit,
     }),
-    deps.fetchOplAdapterTraceRows({
+    deps.fetchRuntimeBridgeTraceRows({
       userId: requestOptions.userId,
       workspaceId: requestOptions.workspaceId,
       runId: requestOptions.runId,
@@ -371,13 +372,13 @@ async function fetchMergedTraceRowsForPortalUser(deps, user, options = {}) {
     .map((row) => observabilityProjection(row, langfuseRows.source || "langfuse_sanitized_projection"))
     .filter(Boolean);
   const projectionMap = observabilityByTraceKey(observabilityRows);
-  const canonicalRows = (adapterRows.rows || []).map((row) => canonicalRuntimeTraceRow(row, projectionMap));
+  const canonicalRows = (runtimeBridgeRows.rows || []).map((row) => canonicalRuntimeTraceRow(row, projectionMap));
   return {
     rows: filterMergedTraceRows(canonicalRows, requestOptions),
     filters: requestOptions,
     observabilityRows,
     sources: {
-      adapter: adapterRows,
+      runtimeBridge: runtimeBridgeRows,
       langfuse: langfuseRows,
     },
   };

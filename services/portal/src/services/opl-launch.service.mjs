@@ -341,7 +341,7 @@ export function createOplLaunchService({
           ok: false,
           error: "workspace_not_active",
           status: 409,
-          reasons: ["只有 active 状态的任务空间才能启动 OPL。"],
+          reasons: ["只有 active 状态的工作空间才能启动 OPL。"],
           taskSpace,
           policy,
           wallet,

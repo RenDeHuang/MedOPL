@@ -354,12 +354,12 @@ function launchOplWorkspace(state, input) {
     boundaryHops: [
       "portal",
       "opl_web_gateway",
-      "portal_opl_adapter",
+      "runtime_bridge",
       "runtime_agent",
     ],
     upstreamBoundary: {
       project: "one-person-lab",
-      access: "public_gateway_adapter_contract",
+      access: "public_gateway_runtime_bridge_contract",
       sourceModified: false,
       importsInternalModules: false,
     },
@@ -379,8 +379,8 @@ function launchOplWorkspace(state, input) {
     resourceBindingId: binding.id,
     billingAccountId: binding.billingAccountId,
     auditTag: binding.auditTag,
-    action: "opl_launch_prepared_through_gateway_adapter_runtime_agent",
-    boundary: "gateway_adapter_runtime_agent",
+    action: "opl_launch_prepared_through_gateway_runtime_bridge_runtime_agent",
+    boundary: "gateway_runtime_bridge_runtime_agent",
   });
   return publicClone(trace);
 }
@@ -711,7 +711,7 @@ const trace = launchOplWorkspace(state, {
   resourceBindingId: starterBinding.id,
   providerKeyRef: providerSurface.providerKeyRef,
 });
-assert.deepEqual(trace.boundaryHops, ["portal", "opl_web_gateway", "portal_opl_adapter", "runtime_agent"], "opl_launch_must_cross_gateway_adapter_runtime_agent");
+assert.deepEqual(trace.boundaryHops, ["portal", "opl_web_gateway", "runtime_bridge", "runtime_agent"], "opl_launch_must_cross_gateway_runtime_bridge_runtime_agent");
 assert.equal(trace.upstreamBoundary.project, "one-person-lab", "launch_must_reference_upstream_boundary");
 assert.equal(trace.upstreamBoundary.sourceModified, false, "upstream_source_must_remain_clean");
 assert.equal(trace.upstreamBoundary.importsInternalModules, false, "adapter_must_not_import_upstream_internal_modules");

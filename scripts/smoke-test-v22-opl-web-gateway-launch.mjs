@@ -78,9 +78,9 @@ function startOplWebFixture(calls) {
   return server;
 }
 
-function startAdapterFixture(calls) {
+function startRuntimeBridgeFixture(calls) {
   const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url || "/", "http://adapter.local");
+    const url = new URL(req.url || "/", "http://runtime-bridge.local");
     const authorization = String(req.headers.authorization || "");
     const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || "";
     if (url.pathname.startsWith("/api/opl-launch/") && bearer !== "launch-token-smoke") {
@@ -332,13 +332,13 @@ function createBrowserVm({ gatewayUrl }) {
 
 const calls = { bootstrap: [], bind: [], runs: [], status: [], artifacts: [], upstreamAuthUser: 0 };
 const oplServer = startOplWebFixture(calls);
-const adapterServer = startAdapterFixture(calls);
+const runtimeBridgeServer = startRuntimeBridgeFixture(calls);
 let gateway = null;
 
 try {
-  const [oplPort, adapterPort, gatewayPort] = [
+  const [oplPort, runtimeBridgePort, gatewayPort] = [
     await listen(oplServer),
-    await listen(adapterServer),
+    await listen(runtimeBridgeServer),
     await freePort(),
   ];
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
@@ -348,7 +348,7 @@ try {
       ...process.env,
       PORT: String(gatewayPort),
       OPL_WEB_UPSTREAM_URL: `http://127.0.0.1:${oplPort}`,
-      PORTAL_OPL_ADAPTER_URL: `http://127.0.0.1:${adapterPort}`,
+      PORTAL_RUNTIME_BRIDGE_URL: `http://127.0.0.1:${runtimeBridgePort}`,
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       PORTAL_PUBLIC_URL: "https://portal.example.test",
     },
@@ -390,7 +390,7 @@ try {
 
   const scriptResponse = await fetch(`${gatewayUrl}/portal-launch.js`);
   const script = await scriptResponse.text();
-  assert(script.includes("/portal-adapter"), "portal launch script must use same-origin adapter proxy");
+  assert(script.includes("/runtime-bridge"), "portal launch script must use same-origin runtime bridge proxy");
   assert(script.includes("window.__OPL_PORTAL__"), "portal launch script must expose stable browser API");
 
   const browser = createBrowserVm({ gatewayUrl });
@@ -403,18 +403,18 @@ try {
   ]);
 
   assert(detail.state.authenticated === true, "launch ready event must expose public authenticated state");
-  assert(detail.state.adapterUrl === "/portal-adapter", "launch ready event must expose same-origin adapter");
+  assert(detail.state.runtimeBridgeUrl === "/runtime-bridge", "launch ready event must expose same-origin runtime bridge");
   assert(detail.state.launchToken === undefined, "launch ready event must not expose launch token");
   assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.launch.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
   assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.identity === undefined, "bootstrap identity must not be exposed in global launch state");
   assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.ownership === undefined, "bootstrap ownership must not be exposed in global launch state");
   assert(browser.window.__OPL_PORTAL_DIRECT_ENTRY__.active === false, "launch flow should clear direct entry state");
   assert(browser.window.__OPL_PORTAL__.bootstrap.portal.portalUserId === "portal-user-smoke", "stable browser API did not expose bootstrap");
-  assert(calls.bootstrap.length >= bootstrapCallsBeforeScript + 2, "adapter bootstrap was not called through cookie-only gateway flow");
+  assert(calls.bootstrap.length >= bootstrapCallsBeforeScript + 2, "runtime bridge bootstrap was not called through cookie-only gateway flow");
   assert(calls.bootstrap.at(-1).authorization === "Bearer launch-token-smoke", "gateway must inject launch token as Authorization");
   assert(calls.bootstrap.at(-1).launchTokenQuery === "", "gateway must not inject launch token query");
   assert(!calls.bootstrap.at(-1).cookie.includes("opl_portal_launch"), "gateway must not forward launch cookie to adapter");
-  assert(calls.bind.length === 1, "adapter session bind was not called through gateway");
+  assert(calls.bind.length === 1, "runtime bridge session bind was not called through gateway");
   assert(calls.bind[0].authorization === "Bearer launch-token-smoke", "gateway must inject Authorization for bind");
   assert(calls.bind[0].launchTokenQuery === "", "bind callback must not include launch token query");
   assert(!calls.bind[0].cookie.includes("opl_portal_launch"), "bind callback must not forward launch cookie");
@@ -461,7 +461,7 @@ try {
 
   const run = await browser.window.__OPL_PORTAL__.startRun({ runId: "run-smoke", agentId: "mas" });
   assert(run.runId === "run-smoke", "stable browser API did not start run");
-  assert(calls.runs.length >= 2, "adapter run callback was not called");
+  assert(calls.runs.length >= 2, "runtime bridge run callback was not called");
   assert(calls.runs.at(-1).authorization === "Bearer launch-token-smoke", "stable browser run must use gateway Authorization injection");
   assert(calls.runs.at(-1).body.launchToken === undefined, "stable browser run body must not include launch token");
   const status = await browser.window.__OPL_PORTAL__.getRunStatus("run-smoke");
@@ -478,7 +478,7 @@ try {
     gatewayUrl,
     verified: [
       "html_script_injection",
-      "same_origin_adapter_proxy",
+      "same_origin_runtime_bridge_proxy",
       "bootstrap_fetch",
       "bootstrap_identity_scope",
       "direct_entry_portal_continue",
@@ -493,5 +493,5 @@ try {
 } finally {
   if (gateway) gateway.kill();
   await close(oplServer);
-  await close(adapterServer);
+  await close(runtimeBridgeServer);
 }

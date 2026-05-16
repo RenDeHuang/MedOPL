@@ -25,7 +25,7 @@
           <div><span class="block text-gray-400 dark:text-slate-500">文件空间</span>{{ microMoney(item.storageCost) }}</div>
         </div>
       </div>
-      <div v-if="!items.length" class="empty-state">当前窗口暂无任务空间成本</div>
+      <div v-if="!items.length" class="empty-state">当前窗口暂无工作空间成本</div>
     </div>
     <div class="desktop-table-shell">
       <table class="min-w-[760px] text-sm">
@@ -52,7 +52,7 @@
             <td class="px-4 py-3 font-medium text-gray-950 dark:text-white">{{ microMoney(item.totalCost) }}</td>
           </tr>
           <tr v-if="!items.length">
-            <td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">当前窗口暂无任务空间成本</td>
+            <td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-slate-400">当前窗口暂无工作空间成本</td>
           </tr>
         </tbody>
       </table>

@@ -32,20 +32,20 @@
             </div>
             <span class="badge badge-warning">操作</span>
           </div>
-          <form class="mt-4 space-y-3" method="post" action="/portal/tasks/create">
+          <form class="mt-4 space-y-3" method="post" action="/portal/workspaces/create">
             <input class="input" name="title" type="text" placeholder="新工作空间名称" required />
             <button class="btn btn-primary w-full justify-center" type="submit">创建工作空间</button>
           </form>
           <div class="mt-4 space-y-2">
-            <form v-if="isActiveWorkspace" method="post" action="/portal/tasks/archive">
+            <form v-if="isActiveWorkspace" method="post" action="/portal/workspaces/archive">
               <input type="hidden" name="task" :value="payload.workspace.slug" />
               <button class="btn btn-secondary w-full justify-center" type="submit">归档当前空间</button>
             </form>
-            <form v-if="isArchivedWorkspace" method="post" action="/portal/tasks/restore">
+            <form v-if="isArchivedWorkspace" method="post" action="/portal/workspaces/restore">
               <input type="hidden" name="task" :value="payload.workspace.slug" />
               <button class="btn btn-secondary w-full justify-center" type="submit">恢复当前空间</button>
             </form>
-            <form method="post" action="/portal/tasks/delete">
+            <form method="post" action="/portal/workspaces/delete">
               <input type="hidden" name="task" :value="payload.workspace.slug" />
               <button class="btn btn-secondary w-full justify-center" type="submit">删除当前空间</button>
             </form>

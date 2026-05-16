@@ -3,7 +3,7 @@
 本合同定义 Package D 下的 OPL deployment ownership / release plan 子边界。它只回答一件事：
 
 ```text
-Package D 在 build/push/kubectl 之前，如何证明 release plan 中每个 Portal / Gateway / Adapter / Runtime Agent target 属于本次发布，且允许被本次发布更新。
+Package D 在 build/push/kubectl 之前，如何证明 release plan 中每个 Portal / Gateway / Runtime Bridge / Runtime Agent target 属于本次发布，且允许被本次发布更新。
 ```
 
 本合同不授权 build/push/kubectl；does not authorize build/push/kubectl。不读取 secret，不调用真实云，不修改 deploy，不修改 upstream，不创建/删除/扩缩容 TKE node pool，不创建/删除 COS storage。
@@ -49,8 +49,8 @@ Package D release plan 必须给每个 target 显式声明 `targetClass`。
 
 - Portal API / Portal frontend delivery image。
 - OPL Web Gateway。
-- Portal OPL Adapter / shared Runtime Bridge。
-- Portal/Gateway/Adapter/trace 这组运行面中，trace surface 只能作为 smoke surface；除非有本仓库 image target metadata、source root / build recipe boundary、workload 和 owner guard，不得默认作为 image target。
+- Runtime Bridge / shared Runtime Bridge。
+- Portal/Gateway/Runtime Bridge/trace 这组运行面中，trace surface 只能作为 smoke surface；除非有本仓库 image target metadata、source root / build recipe boundary、workload 和 owner guard，不得默认作为 image target。
 
 必填 owner guard：
 
@@ -152,7 +152,7 @@ release plan 顶层：
 | --- | --- | --- | --- |
 | `portal` | `platform_service_target` | `services/portal` | Portal API + frontend delivery |
 | `opl-web-gateway` | `platform_service_target` | `services/opl-web-gateway` | clean OPL WebUI gateway/proxy |
-| `opl-runtime-bridge` | `platform_service_target` | `services/opl-runtime-bridge` | shared Portal OPL Adapter / Runtime Agent relay |
+| `opl-runtime-bridge` | `platform_service_target` | `services/opl-runtime-bridge` | shared Runtime Bridge / Runtime Agent relay |
 
 `opl-runtime-bridge` 只有在 release plan 显式声明 `workspace_runtime_target`，并提供 `workspaceId/resourceBindingId` 时，才能作为 workspace runtime target。
 

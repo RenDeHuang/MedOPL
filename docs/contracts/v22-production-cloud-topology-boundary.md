@@ -38,7 +38,7 @@ production cloud topology contract 只回答：
 
 TKE 内部节点池必须区分资源角色：
 
-- platform service node pool：承载 Portal、OPL Gateway、shared Adapter、trace、billing、system 等平台服务。
+- platform service node pool：承载 Portal、OPL Gateway、Runtime Bridge、trace、billing、system 等平台服务。
 - shared user compute pool：承载标准套餐 workspace workload，通过 namespace quota、limit 和 admission policy 隔离。
 - dedicated user compute pool：承载高级隔离套餐绑定的 workspace runtime 或账号组 runtime。
 
@@ -143,7 +143,7 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
     "NAT": "TKE 私网出公网、拉镜像、访问模型/API/云 API",
     "Redis": "session/queue/lock/cache",
     "PostgreSQL": "Portal canonical store、账本、资源绑定、审计、文件索引",
-    "platform service node pool": "Portal/OPL Gateway/shared Adapter/trace/billing/system 平台服务池",
+    "platform service node pool": "Portal/OPL Gateway/Runtime Bridge/trace/billing/system 平台服务池",
     "shared user compute pool": "标准套餐 workspace workload 共享池，必须由 quota/limit/admission 隔离",
     "dedicated user compute pool": "高级隔离套餐专属池，只能由绑定 resourceBindingId 或账号组调度"
   },

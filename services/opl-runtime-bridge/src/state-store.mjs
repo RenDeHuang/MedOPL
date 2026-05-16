@@ -25,9 +25,9 @@ export { nowIso } from "./state-store-records.mjs";
 export { slugify } from "./state-store-identity.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../");
-const runtimeRoot = process.env.PORTAL_OPL_ADAPTER_STATE_ROOT
-  ? path.resolve(process.env.PORTAL_OPL_ADAPTER_STATE_ROOT)
-  : path.join(repoRoot, ".runtime", "portal-opl-adapter");
+const runtimeRoot = process.env.PORTAL_RUNTIME_BRIDGE_STATE_ROOT
+  ? path.resolve(process.env.PORTAL_RUNTIME_BRIDGE_STATE_ROOT)
+  : path.join(repoRoot, ".runtime", "runtime-bridge");
 const stateFile = path.join(runtimeRoot, "state.json");
 const artifactsRoot = path.join(runtimeRoot, "artifacts");
 let stateWriteQueue = Promise.resolve();

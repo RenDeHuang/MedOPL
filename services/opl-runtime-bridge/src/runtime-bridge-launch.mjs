@@ -429,7 +429,7 @@ export function createLaunchApi({
   function buildStatusPayload() {
     return {
       ok: true,
-      service: "portal-opl-adapter",
+      service: "opl-runtime-bridge",
       build: {
         sha: buildSha,
         time: buildTime,
@@ -443,7 +443,7 @@ export function createLaunchApi({
         artifactsRoot,
       },
       runtime: {
-        adapterPublicUrl: baseUrl,
+        runtimeBridgePublicUrl: baseUrl,
         oplWebUrl: oplWebUrl || null,
         runnerUrl: runnerUrl || null,
         portalInternalBaseUrl: portalInternalBaseUrl || null,
@@ -487,20 +487,20 @@ export function createLaunchApi({
     if (nodeEnv === "production") {
       throw new Error("OPL_WEB_URL is required in production");
     }
-    throw new Error("OPL_WEB_URL is required; adapter /workbench projection has been retired");
+    throw new Error("OPL_WEB_URL is required; retired /workbench projection is not a Runtime Bridge fallback");
   }
 
   function buildCallbacks() {
     return {
-      bootstrap: "/portal-adapter/api/opl/bootstrap",
-      status: "/portal-adapter/api/opl/status",
-      sessionBind: "/portal-adapter/api/opl/sessions/bind",
-      message: "/portal-adapter/api/opl/messages",
-      file: "/portal-adapter/api/opl/files",
-      startRun: "/portal-adapter/api/opl/runs",
-      runStatus: "/portal-adapter/api/opl/runs/{runId}/status",
-      runArtifacts: "/portal-adapter/api/opl/runs/{runId}/artifacts",
-      artifact: "/portal-adapter/api/opl/artifacts/{artifactRef}",
+      bootstrap: "/runtime-bridge/api/opl/bootstrap",
+      status: "/runtime-bridge/api/opl/status",
+      sessionBind: "/runtime-bridge/api/opl/sessions/bind",
+      message: "/runtime-bridge/api/opl/messages",
+      file: "/runtime-bridge/api/opl/files",
+      startRun: "/runtime-bridge/api/opl/runs",
+      runStatus: "/runtime-bridge/api/opl/runs/{runId}/status",
+      runArtifacts: "/runtime-bridge/api/opl/runs/{runId}/artifacts",
+      artifact: "/runtime-bridge/api/opl/artifacts/{artifactRef}",
     };
   }
 
@@ -518,13 +518,13 @@ export function createLaunchApi({
       addEvent(state, "opl_bootstrap_load_failed", { ...context, error: String(error.message || error) });
     }
 
-    const adapterRuns = scopedCollection(state.runs, scope);
-    const adapterArtifacts = scopedCollection(state.artifacts, scope);
-    const adapterMessages = scopedCollection(state.messageRequests, scope);
-    const adapterProgress = scopedCollection(state.events.slice(-200), scope, {
+    const runtimeBridgeRuns = scopedCollection(state.runs, scope);
+    const runtimeBridgeArtifacts = scopedCollection(state.artifacts, scope);
+    const runtimeBridgeMessages = scopedCollection(state.messageRequests, scope);
+    const runtimeBridgeProgress = scopedCollection(state.events.slice(-200), scope, {
       sessionId: scope.runtimeSessionId || scope.workspaceSessionId,
     }).slice(-50);
-    const runs = adapterRuns;
+    const runs = runtimeBridgeRuns;
     const runActions = scopedCollection(state.runActions, scope);
     const traces = scopedCollection(
       state.traceLinks.filter((item) => String(item?.runId || "").trim()),
@@ -541,10 +541,10 @@ export function createLaunchApi({
       scope,
       { oplSessionId: scope.oplSessionId || undefined }
     );
-    const progress = scopedCollection([...(oplResources.progress || []), ...adapterProgress], scope, {
+    const progress = scopedCollection([...(oplResources.progress || []), ...runtimeBridgeProgress], scope, {
       sessionId: scope.runtimeSessionId || scope.workspaceSessionId,
     });
-    const artifacts = scopedCollection([...(oplResources.artifacts || []), ...adapterArtifacts], scope, {
+    const artifacts = scopedCollection([...(oplResources.artifacts || []), ...runtimeBridgeArtifacts], scope, {
       workspacePath: scope.workspacePath || undefined,
     });
     const runtimeSessionView = runtimeSession ? publicRuntimeSessionView(withScope(runtimeSession, scope), scope) : null;
@@ -641,7 +641,7 @@ export function createLaunchApi({
         agents: oplResources.agents || [],
         workspaces: workspaces.map(publicWorkspaceView),
         sessions: sessions.map(publicSessionView),
-        messages: adapterMessages.map(publicMessageView),
+        messages: runtimeBridgeMessages.map(publicMessageView),
         progress: progress.map(publicProgressView),
         artifacts: artifacts.map(publicArtifactView),
       },

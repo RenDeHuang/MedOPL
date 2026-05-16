@@ -56,7 +56,7 @@ function spawnNode(script, { port, env = {}, stateRoot = "", cwd = process.cwd()
     env: {
       ...process.env,
       PORT: String(port),
-      PORTAL_OPL_ADAPTER_STATE_ROOT: stateRoot,
+      PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot,
       NODE_ENV: "test",
       ...env,
     },
@@ -121,31 +121,31 @@ async function getJson(url, { token = "" } = {}) {
   return { response, json };
 }
 
-async function readAdapterState(stateRoot) {
+async function readRuntimeBridgeState(stateRoot) {
   return JSON.parse(await readFile(path.join(stateRoot, "state.json"), "utf8"));
 }
 
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-real-opl-file-run-artifact-gates-"));
-const stateRoot = path.join(tempRoot, "adapter-state");
-const adapterPort = await freePort();
-const adapterUrl = `http://127.0.0.1:${adapterPort}`;
-let adapter;
+const stateRoot = path.join(tempRoot, "runtime-bridge-state");
+const runtimeBridgePort = await freePort();
+const runtimeBridgeUrl = `http://127.0.0.1:${runtimeBridgePort}`;
+let runtimeBridge;
 
 try {
-  adapter = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
-    port: adapterPort,
+  runtimeBridge = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
+    port: runtimeBridgePort,
     stateRoot,
     env: {
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
       OPL_WEB_URL: "http://127.0.0.1:1",
       OPL_RUNTIME_MODE: "webui",
       OPL_WEBUI_BRIDGE_URL: "http://127.0.0.1:1",
       PRODUCT_RUNTIME_MODE: "platform_provisioned",
     },
   });
-  await waitFor(`${adapterUrl}/healthz`);
+  await waitFor(`${runtimeBridgeUrl}/healthz`);
 
-  const launch = await postJson(`${adapterUrl}/api/opl-launch/tokens`, {
+  const launch = await postJson(`${runtimeBridgeUrl}/api/opl-launch/tokens`, {
     portalUserId: USER_ID,
     portalUserEmail: "real-file-run-artifact@example.test",
     portalUserName: "Real File Run Artifact Canary",
@@ -183,12 +183,12 @@ try {
     bootstrapUrl: launch.json.bootstrapUrl,
   }, "launch_public_urls");
 
-  const status = await getJson(`${adapterUrl}/api/opl/status`, { token: launch.json.launchToken });
-  assert.equal(status.response.status, 200, "adapter_status_must_return_200");
+  const status = await getJson(`${runtimeBridgeUrl}/api/opl/status`, { token: launch.json.launchToken });
+  assert.equal(status.response.status, 200, "runtime_bridge_status_must_return_200");
   assert.equal(status.json.capabilities?.fileIntent?.status, "capability_not_supported", "webui_file_intent_must_not_claim_supported");
   assert.equal(status.json.capabilities?.runIntent?.status, "requires_runtime_agent", "webui_run_intent_must_require_runtime_agent");
 
-  const file = await postJson(`${adapterUrl}/api/opl/files`, {
+  const file = await postJson(`${runtimeBridgeUrl}/api/opl/files`, {
     fileName: "inputs/not-really-uploaded.csv",
     contentType: "text/csv",
     sizeBytes: 42,
@@ -200,7 +200,7 @@ try {
   assert.equal(Boolean(file.json.fileRef), false, "webui_file_gate_must_not_return_file_ref");
   assertNoSecretLeak(file.json, "webui_file_gate");
 
-  const run = await postJson(`${adapterUrl}/api/opl/runs`, {
+  const run = await postJson(`${runtimeBridgeUrl}/api/opl/runs`, {
     message: "run must be gated without a real Runtime Agent",
     fileRefs: ["file-ref-not-observed"],
     toolName: "real-opl-file-run-artifact-canary",
@@ -213,26 +213,26 @@ try {
   assert(run.json.statusUrl, "webui_run_gate_must_return_status_url");
   assertNoSecretLeak(run.json, "webui_run_gate");
 
-  const runStatus = await getJson(`${adapterUrl}${run.json.statusUrl}`, { token: launch.json.launchToken });
+  const runStatus = await getJson(`${runtimeBridgeUrl}${run.json.statusUrl}`, { token: launch.json.launchToken });
   assert.equal(runStatus.response.status, 200, "webui_gated_run_status_must_be_queryable");
   assert.equal(runStatus.json.run.runId, run.json.run.runId, "webui_gated_run_status_id_mismatch");
   assert.equal(runStatus.json.run.status, "gated", "webui_gated_run_status_must_remain_gated");
   assert.equal(runStatus.json.run.error, "requires_runtime_agent", "webui_gated_run_status_error_mismatch");
   assertNoSecretLeak(runStatus.json, "webui_gated_run_status");
 
-  const runArtifacts = await getJson(`${adapterUrl}/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts`, { token: launch.json.launchToken });
+  const runArtifacts = await getJson(`${runtimeBridgeUrl}/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts`, { token: launch.json.launchToken });
   assert.equal(runArtifacts.response.status, 409, "webui_run_artifacts_without_output_must_gate");
   assert.equal(runArtifacts.json.error, "artifact_not_observed", "webui_run_artifacts_gate_error_mismatch");
   assert.equal(runArtifacts.json.gate, "output_file_ref_not_observed", "webui_run_artifacts_gate_mismatch");
   assertNoSecretLeak(runArtifacts.json, "webui_run_artifacts_gate");
 
-  const missingArtifact = await getJson(`${adapterUrl}/api/opl/artifacts/${encodeURIComponent(`output-${run.json.run.runId}`)}`, { token: launch.json.launchToken });
+  const missingArtifact = await getJson(`${runtimeBridgeUrl}/api/opl/artifacts/${encodeURIComponent(`output-${run.json.run.runId}`)}`, { token: launch.json.launchToken });
   assert.equal(missingArtifact.response.status, 404, "webui_missing_artifact_must_return_404");
   assert.equal(missingArtifact.json.error, "artifact_not_observed", "webui_missing_artifact_error_mismatch");
   assert.equal(missingArtifact.json.gate, "output_file_ref_not_observed", "webui_missing_artifact_gate_mismatch");
   assertNoSecretLeak(missingArtifact.json, "webui_missing_artifact_gate");
 
-  const state = await readAdapterState(stateRoot);
+  const state = await readRuntimeBridgeState(stateRoot);
   assert.equal(state.artifacts?.length || 0, 0, "webui_gates_must_not_persist_fake_file_or_artifact");
   assert(state.runs.some((item) => item.runId === run.json.run.runId && item.status === "gated"), "webui_gated_run_must_be_persisted");
   assert(state.events.some((event) => event.type === "opl_file_gate_evaluated" && event.error === "file_upload_capability_not_supported"), "webui_file_gate_event_required");
@@ -252,6 +252,6 @@ try {
     runId: run.json.run.runId,
   }, null, 2));
 } finally {
-  await stopChild(adapter);
+  await stopChild(runtimeBridge);
   await rm(tempRoot, { recursive: true, force: true });
 }

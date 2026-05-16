@@ -2,9 +2,9 @@ import { execSync, spawn } from "node:child_process";
 import { rmSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 
-const adapterPort = Number(process.env.OPL_TEST_PORT || 18795);
-const adapterUrl = `http://127.0.0.1:${adapterPort}`;
-const adapterStateRoot = `.runtime/test-opl-legacy-paths-retired-${adapterPort}-${Date.now()}`;
+const runtimeBridgePort = Number(process.env.OPL_TEST_PORT || 18795);
+const runtimeBridgeUrl = `http://127.0.0.1:${runtimeBridgePort}`;
+const runtimeBridgeStateRoot = `.runtime/test-opl-legacy-paths-retired-${runtimeBridgePort}-${Date.now()}`;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -44,30 +44,30 @@ async function waitFor(url, label) {
 }
 
 async function expectRetired(path, options = {}) {
-  const response = await fetch(`${adapterUrl}${path}`, options);
+  const response = await fetch(`${runtimeBridgeUrl}${path}`, options);
   const payload = await response.json().catch(() => ({}));
   assert(response.status === 410, `${path} expected 410, got ${response.status}: ${JSON.stringify(payload)}`);
   assert(payload.error === "legacy_endpoint_retired", `${path} did not return legacy_endpoint_retired`);
   return payload;
 }
 
-taskkillPort(adapterPort);
+taskkillPort(runtimeBridgePort);
 await sleep(250);
-rmSync(adapterStateRoot, { recursive: true, force: true });
+rmSync(runtimeBridgeStateRoot, { recursive: true, force: true });
 
-const adapter = spawnService("opl-adapter", "node", ["src/server.mjs"], {
+const runtimeBridge = spawnService("runtime-bridge", "node", ["src/server.mjs"], {
   cwd: "services/opl-runtime-bridge",
   env: {
     ...process.env,
-    PORT: String(adapterPort),
-    PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
-    PORTAL_OPL_ADAPTER_STATE_ROOT: adapterStateRoot,
+    PORT: String(runtimeBridgePort),
+    PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
+    PORTAL_RUNTIME_BRIDGE_STATE_ROOT: runtimeBridgeStateRoot,
     OPL_WEB_URL: "http://127.0.0.1:19999/opl-web",
   },
 });
 
 try {
-  await waitFor(`${adapterUrl}/healthz`, "Portal OPL adapter");
+  await waitFor(`${runtimeBridgeUrl}/healthz`, "Runtime Bridge");
   const checks = [];
   checks.push(await expectRetired("/workbench?launch_token=dev"));
   checks.push(await expectRetired("/api/launch-tokens", {
@@ -93,5 +93,5 @@ try {
     replacements: checks.map((item) => item.replacement),
   }, null, 2));
 } finally {
-  adapter.kill();
+  runtimeBridge.kill();
 }

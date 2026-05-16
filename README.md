@@ -4,7 +4,7 @@ MedOPL 是 One Person Lab 的开箱即用 SaaS 托管科研工作台，面向 AI
 
 普通用户看到的是科研托管平台，不是云资源控制台，不是用户自配云资源。产品主语言是科研工作台、托管运行环境、工作空间、文件空间、会话、任务、输入文件、输出文件、运行轨迹、余额、消费、账单、预扣费、冻结金额、停止计费和审计状态。
 
-One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstream 内部模块。MedOPL 只通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界接入。
+One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstream 内部模块。MedOPL 只通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的内部 anti-corruption mapping 接入。
 
 当前完成层级是 contract-level + Portal API/domain + Portal UI MVP。它不代表真实云资源、Gateway、Runtime Bridge、one-person-lab upstream、真实价格审批、真实账单核对或真实部署已全部上线。
 

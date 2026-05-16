@@ -243,7 +243,7 @@ async function connectBridge() {
   });
 
   const invoke = (key, data, timeoutMs = WEBUI_BRIDGE_TIMEOUT_MS) => {
-    const id = `portal_adapter_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
+    const id = `runtime_bridge_${Date.now()}_${Math.random().toString(16).slice(2, 10)}`;
     const callbackEventName = `subscribe.callback-${key}${id}`;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -360,7 +360,7 @@ export async function createWebuiSession(context = {}) {
         workspace: bridgeWorkspacePath(context) || path.join(process.cwd(), ".runtime", "opl-webui-workspace"),
         backend: "codex",
         customWorkspace: true,
-        presetContext: "Portal OPL adapter context. Do not read secrets.",
+        presetContext: "Runtime Bridge context. Do not read secrets.",
       },
     }, WEBUI_BRIDGE_TIMEOUT_MS * 2);
     const sessions = await bridge.invoke("database.get-user-conversations", { page: 0, pageSize: 50 }, WEBUI_BRIDGE_TIMEOUT_MS);

@@ -1,6 +1,6 @@
 export function createPortalApiCostsRoutes({
   fetchBillingSummary,
-  fetchOplAdapterCosts,
+  fetchRuntimeBridgeCosts,
   sendJson,
 }) {
   return async function handlePortalApiCostsRoutes({ req, res, url, user }) {
@@ -32,20 +32,20 @@ export function createPortalApiCostsRoutes({
     if (url.pathname === "/portal/api/costs/run") {
       const runId = String(url.searchParams.get("runId") || "").trim();
       const summary = await fetchBillingSummary(user.id, "", String(url.searchParams.get("window") || "168h"));
-      const adapterCost = (await fetchOplAdapterCosts({ userId: user.id, runId }))[0] || null;
-      if (adapterCost) {
+      const runtimeBridgeCost = (await fetchRuntimeBridgeCosts({ userId: user.id, runId }))[0] || null;
+      if (runtimeBridgeCost) {
         sendJson(res, {
-          source: "portal_opl_adapter",
+          source: "runtime_bridge",
           type: "live",
-          note: adapterCost.status === "pending" ? "run 成本已记录为 pending，等待平台账本投影校准" : "run 成本来自 Portal OPL adapter",
+          note: runtimeBridgeCost.status === "pending" ? "run 成本已记录为 pending，等待平台账本投影校准" : "run 成本来自 Runtime Bridge",
           runId,
           cost: {
-            cpuCost: adapterCost.cpuCost,
-            gpuCost: adapterCost.gpuCost,
-            storageCost: adapterCost.storageCost,
-            totalCost: adapterCost.totalCost,
-            pricingSource: adapterCost.pricingSource,
-            status: adapterCost.status,
+            cpuCost: runtimeBridgeCost.cpuCost,
+            gpuCost: runtimeBridgeCost.gpuCost,
+            storageCost: runtimeBridgeCost.storageCost,
+            totalCost: runtimeBridgeCost.totalCost,
+            pricingSource: runtimeBridgeCost.pricingSource,
+            status: runtimeBridgeCost.status,
           },
         });
         return true;

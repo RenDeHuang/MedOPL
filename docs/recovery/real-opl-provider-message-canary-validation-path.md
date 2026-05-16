@@ -7,7 +7,7 @@
 真实 provider message canary 的目标链路是：
 
 ```text
-Portal launch -> Gateway -> clean OPL WebUI -> session bind -> send message -> observe reply -> Adapter normalize -> Portal message status -> Portal session trace
+Portal launch -> Gateway -> clean OPL WebUI -> session bind -> send message -> observe reply -> Runtime Bridge normalize -> Portal message status -> Portal session trace
 ```
 
 完整业务闭环必须证明：
@@ -21,7 +21,7 @@ Portal user enters OPL
   -> message enters real OPL/agent/provider boundary or returns explicit gate
   -> providerInvocationRef is observed or explicit gate is returned
   -> assistant reply is observed with replyMessageId or timeout/not-supported gate is returned
-  -> Adapter creates normalized message state
+  -> Runtime Bridge creates normalized message state
   -> Portal queries message status
   -> Portal queries session trace by workspace/session/message
 ```
@@ -85,7 +85,7 @@ node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
 
 ```text
 future-authorized WebUI capability runner
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
 ```
 
 验收：
@@ -101,7 +101,7 @@ OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-w
 目标：
 
 - Portal 通过 Gateway 打开 clean OPL WebUI。
-- OPL 通过 Adapter bootstrap 获取 MedOPL public context。
+- OPL 通过 Runtime Bridge bootstrap 获取 MedOPL public context。
 - public context 中只包含 `providerKeyRef` 和 provider bound status，不包含 raw key。
 
 验证命令：
@@ -122,20 +122,20 @@ node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 目标：
 
 - OPL WebUI 创建或恢复真实 session/conversation。
-- Adapter 把 `oplSessionId` 或 `oplConversationId` 绑定到 MedOPL workspace/runtime session。
+- Runtime Bridge 把 `oplSessionId` 或 `oplConversationId` 绑定到 MedOPL workspace/runtime session。
 
 验证命令：
 
 ```text
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
-node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
+node scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
 ```
 
 验收：
 
 - `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId + oplSessionId + oplConversationId` 能稳定绑定。
 - session backflow 的 capability source 明确是 `mapped_to_webui_bridge` 或 `mapped_to_acp_runtime`。
-- Adapter state 写入不覆盖 context/session/message 归属。
+- Runtime Bridge state 写入不覆盖 context/session/message 归属。
 
 ### Stage 4: Provider key gate and authorization gate
 
@@ -178,13 +178,13 @@ node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 目标：
 
 - 在用户授权真实 provider canary 后，发送一条真实 message intent。
-- 只通过 Adapter/Portal 稳定入口发送，不依赖 upstream 内部 route、DOM 或 database schema。
+- 只通过 Runtime Bridge/Portal 稳定入口发送，不依赖 upstream 内部 route、DOM 或 database schema。
 
 预期链路：
 
 ```text
 POST /portal/api/opl/messages
-  -> /portal-adapter/api/opl/messages
+  -> /runtime-bridge/api/opl/messages
   -> WebUI bridge chat.send.message or ACP prompt
   -> OPL/agent/provider boundary
 ```
@@ -228,11 +228,11 @@ POST /portal/api/opl/messages
 - provider invocation 可证明但未观测到 reply 时，返回 `provider_invocation_not_observed` 或 `upstream_reply_timeout`。
 - 无 reply event 或超时时返回 `upstream_reply_timeout` 或 `capability_not_supported`。
 
-### Stage 7: Adapter normalization
+### Stage 7: Runtime Bridge normalization
 
 目标：
 
-- 把真实 OPL/WebUI/ACP/provider 的 message/reply shape 映射成稳定 Adapter message state。
+- 把真实 OPL/WebUI/ACP/provider 的 message/reply shape 映射成稳定 Runtime Bridge message state。
 
 稳定 state 必须包含：
 
@@ -254,7 +254,7 @@ POST /portal/api/opl/messages
 验收：
 
 - Portal 不依赖 upstream route、WebSocket payload、DOM、frontend store 或 database schema。
-- ID 绑定缺失返回 `adapter_mapping_failed`。
+- ID 绑定缺失返回 `runtime_bridge_mapping_failed`。
 - upstream shape 变化只记录脱敏 summary，不记录 raw payload。
 
 ### Stage 8: Portal message status projection
@@ -312,7 +312,7 @@ GET /portal/api/session-traces/{traceId}
 - `provider_invocation_not_observed`
 - `upstream_unavailable`
 - `upstream_reply_timeout`
-- `adapter_mapping_failed`
+- `runtime_bridge_mapping_failed`
 - `capability_not_supported`
 - `trace_sink_not_configured`
 - `deferred_authorization`
@@ -327,14 +327,14 @@ GET /portal/api/session-traces/{traceId}
 
 目标：
 
-- 把 canary 事实变成后续 productionized Adapter 开发输入，而不是把 canary 临时路径合入主干。
+- 把 canary 事实变成后续 productionized Runtime Bridge 开发输入，而不是把 canary 临时路径合入主干。
 
 验收：
 
 - 真实发现已回写 [v22-real-opl-provider-message-canary-boundary.md](../contracts/v22-real-opl-provider-message-canary-boundary.md)。
 - 上层 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 已引用本细分合同。
 - [status-matrix.md](./status-matrix.md) 和 [mvp-contract-acceptance.md](./mvp-contract-acceptance.md) 已说明当前状态。
-- productionized Adapter 映射另开分支，并补正式 smoke。
+- productionized Runtime Bridge 映射另开分支，并补正式 smoke。
 - B 窗口只吸收清理后的正式分支，不吸收 `.runtime` canary 临时代码。
 
 ## Canary Evidence Rules
@@ -394,9 +394,9 @@ git diff --check -- docs/contracts docs/recovery scripts
 目标：
 
 - 在用户显式授权后读取 `OPL_PROVIDER_SECRET_FILE`。
-- 通过 Portal `/portal/api/opl/launch` 把 raw provider key 写入后端密钥边界，并只向 Adapter/Portal projection 暴露 `providerKeyRef`。
+- 通过 Portal `/portal/api/opl/launch` 把 raw provider key 写入后端密钥边界，并只向 Runtime Bridge/Portal projection 暴露 `providerKeyRef`。
 - 启动或连接真实 OPL WebUI。
-- 走真实 Portal -> Gateway -> Adapter -> WebUI bridge message 路径。
+- 走真实 Portal -> Gateway -> Runtime Bridge -> WebUI bridge message 路径。
 - 观测真实 assistant reply，并把 `messageId/status/replyMessageId/providerInvocationRef/messageTraceId` 回流 Portal。
 - 通过 `/portal/api/opl/messages/{messageId}/status` 和 `/portal/api/session-traces?workspaceId=...&messageId=...` 查询回流结果。
 

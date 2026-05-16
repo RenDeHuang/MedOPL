@@ -46,7 +46,7 @@
 Portal
   -> Gateway
   -> clean OPL WebUI
-  -> Adapter bootstrap/session/message backflow
+  -> Runtime Bridge bootstrap/session/message backflow
   -> Portal projection
 ```
 
@@ -55,13 +55,13 @@ Portal
 ```text
 Portal 是 SaaS control plane。
 Gateway 是 clean OPL WebUI entry/proxy。
-Adapter 是 OPL context/backflow anti-corruption layer。
-Runtime Bridge / Runtime Agent is a downstream canonical source for run, artifact, ledger, trace, and billing metadata.
+Runtime Bridge 是 OPL context/backflow anti-corruption layer。
+Runtime Bridge / Runtime Agent is the downstream canonical source for run, artifact, ledger, trace, and billing metadata.
 Langfuse is not the canonical source; it is an optional sanitized session trace attachment.
 one-person-lab upstream remains clean.
 ```
 
-Portal 不理解 OPL 内部协议。Gateway 不成为业务真相源。Adapter 只负责上下文、能力注册、事件归一和 Portal projection，不伪造业务成功。Runtime Bridge / Runtime Agent 是下游 runtime 事实源；This contract does not implement cloud runtime。Langfuse 只接收清洗后的 session/trace metadata；This contract does not deploy Langfuse。
+Portal 不理解 OPL 内部协议。Gateway 不成为业务真相源。Runtime Bridge 只负责上下文、能力注册、事件归一和 Portal projection，不伪造业务成功。Runtime Bridge / Runtime Agent 是下游 runtime 事实源；This contract does not implement cloud runtime。Langfuse 只接收清洗后的 session/trace metadata；This contract does not deploy Langfuse。
 
 ## Complete Portal-OPL Link Validation Path
 
@@ -71,28 +71,28 @@ Portal 不理解 OPL 内部协议。Gateway 不成为业务真相源。Adapter �
 
 ## Stable API Surface
 
-Portal 与 Adapter 的核心稳定接口固定为：
+Portal 与 Runtime Bridge 的核心稳定接口固定为：
 
 ```text
 POST /portal/api/opl/launch
-GET /portal-adapter/api/opl/bootstrap
-GET /portal-adapter/api/opl/status
-POST /portal-adapter/api/opl/sessions/bind
-POST /portal-adapter/api/opl/messages
-GET /portal-adapter/api/opl/messages/{messageId}/status
+GET /runtime-bridge/api/opl/bootstrap
+GET /runtime-bridge/api/opl/status
+POST /runtime-bridge/api/opl/sessions/bind
+POST /runtime-bridge/api/opl/messages
+GET /runtime-bridge/api/opl/messages/{messageId}/status
 ```
 
 以下接口属于下游 intent / projection 边界，可以在本合同中声明 gate，但不要求当前分支实现真实 runtime：
 
 ```text
-POST /portal-adapter/api/opl/files
-POST /portal-adapter/api/opl/runs
-GET /portal-adapter/api/opl/runs/{runId}/status
-GET /portal-adapter/api/opl/runs/{runId}/artifacts
-GET /portal-adapter/api/opl/artifacts/{artifactRef}
+POST /runtime-bridge/api/opl/files
+POST /runtime-bridge/api/opl/runs
+GET /runtime-bridge/api/opl/runs/{runId}/status
+GET /runtime-bridge/api/opl/runs/{runId}/artifacts
+GET /runtime-bridge/api/opl/artifacts/{artifactRef}
 ```
 
-Portal 代理接口必须只映射到 Adapter 稳定边界。Portal 不能直接依赖 one-person-lab route、WebSocket event shape、DOM、frontend store、database schema 或 internal session model。
+Portal 代理接口必须只映射到 Runtime Bridge 稳定边界。Portal 不能直接依赖 one-person-lab route、WebSocket event shape、DOM、frontend store、database schema 或 internal session model。
 
 ## Module Boundaries
 
@@ -117,13 +117,13 @@ Portal 输出：
 - `launchId`。
 - `openUrl`。
 - public launch status。
-- 通过 `/portal/api/opl/*` 代理返回的 Adapter projection。
+- 通过 `/portal/api/opl/*` 代理返回的 Runtime Bridge projection。
 
 Portal 禁止：
 
 - 保存或透出 raw API key、bearer token、`launchToken`、`runtimeToken`。
 - 依赖 OPL WebUI 内部 state 或 DB schema。
-- 用本地 fake state 代替 Adapter 回流。
+- 用本地 fake state 代替 Runtime Bridge 回流。
 
 ### Gateway Entry And Secret Boundary
 
@@ -165,7 +165,7 @@ OPL Context Bootstrap 负责让 clean OPL WebUI 获取 MedOPL public context。
 - `canStartRun`
 - `launchStatus`
 - Portal return URL
-- `adapterContractVersion`
+- `runtimeBridgeContractVersion`
 - capability registry
 
 禁止：
@@ -176,16 +176,16 @@ OPL Context Bootstrap 负责让 clean OPL WebUI 获取 MedOPL public context。
 - 不返回 `objectKey`、`storageKey`、`localPath`、`signedUrl` 或 `presignedUrl`。
 - 不把 OPL private state 透传给 Portal。
 
-### Adapter Capability Registry
+### Runtime Bridge Capability Registry
 
-Adapter 必须暴露 capability registry，并在 bootstrap/status 中返回：
+Runtime Bridge 必须暴露 capability registry，并在 bootstrap/status 中返回：
 
 ```json
 {
-  "adapterContractVersion": "v22.portal-opl-context-backflow.v1",
+  "runtimeBridgeContractVersion": "v22.portal-opl-context-backflow.v1",
   "upstreamProfile": "webui_bridge",
   "capabilities": {
-    "contextBootstrap": { "status": "supported", "source": "gateway_adapter" },
+    "contextBootstrap": { "status": "supported", "source": "gateway_runtime_bridge" },
     "session": { "status": "supported", "source": "webui_bridge" },
     "messageBackflow": { "status": "capability_not_supported", "source": "webui_bridge", "reason": "reply_not_verified" },
     "fileIntent": { "status": "requires_downstream_runtime_boundary", "source": "portal_workspace_file_store" },
@@ -216,9 +216,9 @@ capability 状态允许：
 - `managed_environment_required`
 - `platform_isolated_runtime_agent_required`
 
-Adapter 必须按能力独立失败。message 不支持不能影响 session bind；run intent 缺 Runtime Agent 不能让 bootstrap 失败；Langfuse 未部署不能让 Portal-OPL context/backflow 失败；upstream route 变化只能影响对应 capability mapping。
+Runtime Bridge 必须按能力独立失败。message 不支持不能影响 session bind；run intent 缺 Runtime Agent 不能让 bootstrap 失败；Langfuse 未部署不能让 Portal-OPL context/backflow 失败；upstream route 变化只能影响对应 capability mapping。
 
-### Adapter Session Binding
+### Runtime Bridge Session Binding
 
 Session binding 把 upstream OPL session 归一化到 MedOPL runtime session：
 
@@ -249,12 +249,12 @@ Session binding 把 upstream OPL session 归一化到 MedOPL runtime session：
 验收：
 
 - conversation/session 必须来自真实 upstream 或公开 runtime 边界。
-- Adapter state 必须写入 `portalUserId + tenantId + workspaceId + workspaceSessionId + runtimeSessionId + resourceBindingId + oplSessionId`。
+- Runtime Bridge state 必须写入 `portalUserId + tenantId + workspaceId + workspaceSessionId + runtimeSessionId + resourceBindingId + oplSessionId`。
 - 没有 workspace 或 runtime session 时返回稳定 gate error。
 
-### Adapter Message Relay
+### Runtime Bridge Message Relay
 
-Message Relay 在本合同里只负责 Portal-OPL message backflow：把 OPL message intent 送入真实 OPL/agent/provider 边界，并把明确 message 状态回流写入 Adapter state。
+Message Relay 在本合同里只负责 Portal-OPL message backflow：把 OPL message intent 送入真实 OPL/agent/provider 边界，并把明确 message 状态回流写入 Runtime Bridge state。
 
 输入：
 
@@ -288,14 +288,14 @@ Message Relay 在本合同里只负责 Portal-OPL message backflow：把 OPL mes
 
 验收：
 
-- `POST /portal-adapter/api/opl/messages` 后，真实 OPL/agent/provider 边界被访问，或明确返回 gate error。
-- `GET /portal-adapter/api/opl/messages/{messageId}/status` 读取同一 message 的 state。
+- `POST /runtime-bridge/api/opl/messages` 后，真实 OPL/agent/provider 边界被访问，或明确返回 gate error。
+- `GET /runtime-bridge/api/opl/messages/{messageId}/status` 读取同一 message 的 state。
 - `completed` 必须有明确 reply event、reply payload 或同 conversation 的可验证 assistant reply 回流。
 - 无 provider、无 reply event 或超时时返回 `provider_key_required`、`capability_not_supported` 或 `upstream_reply_timeout`。
 
-### Adapter Backflow Projection
+### Runtime Bridge Backflow Projection
 
-Adapter Backflow Projection 负责把 OPL 事件归一成 Portal 可读状态：
+Runtime Bridge Backflow Projection 负责把 OPL 事件归一成 Portal 可读状态：
 
 - `context_bootstrapped`
 - `opl_session_created`
@@ -335,12 +335,12 @@ Projection 禁止包含：
 
 Runtime 源是需要管理的下游边界，但不是本合同的当前实现主体。
 
-OPL 产生 run/file intent 时，Adapter 可以归一化 intent，但真实 run、artifact、ledger、trace 和 billing metadata 必须进入 Runtime Bridge / Runtime Agent。Runtime Bridge / Runtime Agent is a downstream canonical source。
+OPL 产生 run/file intent 时，Runtime Bridge 可以归一化 intent，但真实 run、artifact、ledger、trace 和 billing metadata 必须进入 Runtime Bridge / Runtime Agent。Runtime Bridge / Runtime Agent is the downstream canonical source。
 
 本合同要求：
 
-- Adapter 不能直接生成伪 run 成功。
-- Adapter 不能直接生成伪 artifact 成功。
+- Runtime Bridge 不能直接生成伪 run 成功。
+- Runtime Bridge 不能直接生成伪 artifact 成功。
 - 没有 Runtime Agent identity/endpoint 时返回 `platform_isolated_runtime_agent_required`。
 - 未绑定 provider key 时返回 `provider_key_required`。
 - 未开通 runtime/resource binding 时返回 `managed_environment_required`。
@@ -390,7 +390,7 @@ This contract does not deploy Langfuse。`trace.medopl.cn` 的真实部署、Ing
 - `capability_not_supported`
 - `upstream_reply_timeout`
 - `upstream_capability_incompatible`
-- `adapter_state_conflict`
+- `runtime_bridge_state_conflict`
 
 禁止用以下方式掩盖未闭环能力：
 
@@ -406,15 +406,15 @@ This contract does not deploy Langfuse。`trace.medopl.cn` 的真实部署、Ing
 性能验收必须比较三类链路：
 
 - direct OPL WebUI baseline。
-- Gateway + Adapter。
-- Gateway + Adapter + downstream runtime gate。
+- Gateway + Runtime Bridge。
+- Gateway + Runtime Bridge + downstream runtime gate。
 
 必须记录：
 
 - Portal launch -> OPL bootstrap p50/p95。
 - session create 到 DB readback p50/p95。
-- OPL event -> Adapter projection -> Portal query p50/p95。
-- Adapter state write p50/p95。
+- OPL event -> Runtime Bridge projection -> Portal query p50/p95。
+- Runtime Bridge state write p50/p95。
 - Gateway proxy overhead p50/p95。
 - WebSocket bridge reconnect/error overhead。
 
@@ -422,7 +422,7 @@ This contract does not deploy Langfuse。`trace.medopl.cn` 的真实部署、Ing
 
 - session class extra p95 target <= 300ms。
 - Portal-OPL context/backflow extra overhead target <= 5% for non-runtime operations。
-- Gateway/Adapter 错误率不得高于 direct OPL WebUI baseline。
+- Gateway/Runtime Bridge 错误率不得高于 direct OPL WebUI baseline。
 
 这些目标是后续 canary 验收预算，不代表当前已实测完成。
 
@@ -432,7 +432,7 @@ B 窗口吸收实现分支前必须确认：
 
 1. 合同订阅包完整，且本合同被识别为 Level 3 执行合同。
 2. one-person-lab upstream remains clean。
-3. Portal、Gateway、Adapter、downstream Runtime boundary 和 downstream Langfuse boundary 的职责没有互相污染。
+3. Portal、Gateway、Runtime Bridge、downstream Runtime boundary 和 downstream Langfuse boundary 的职责没有互相污染。
 4. capability registry 能表达每个 API 的真实支持状态。
 5. Portal launch、OPL context bootstrap、session bind、message backflow 和 Portal projection 有真实访问和真实回流证据，或明确 gate error。
 6. Runtime 只作为下游 canonical boundary；没有授权时不实现云 runtime，不伪造 run/artifact。
@@ -444,7 +444,7 @@ B 窗口吸收实现分支前必须确认：
 
 - 不修改 one-person-lab upstream。
 - 不 import upstream 内部模块。
-- 不往 upstream 目录写 Portal、Gateway、Adapter 或 Runtime Agent 代码。
+- 不往 upstream 目录写 Portal、Gateway、Runtime Bridge 或 Runtime Agent 代码。
 - 不实现真实云 runtime。
 - 不部署 Langfuse 或 `trace.medopl.cn`。
 - 不接真实云资源开通。

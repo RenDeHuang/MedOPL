@@ -7,7 +7,7 @@
 真实 OPL capability canary 的目标链路是：
 
 ```text
-Portal -> Gateway -> clean OPL WebUI -> Adapter -> Runtime Bridge / Runtime Agent -> Portal projection
+Portal -> Gateway -> clean OPL WebUI -> Runtime Bridge / Runtime Agent -> Portal projection
 ```
 
 完整业务闭环必须证明：
@@ -16,7 +16,7 @@ Portal -> Gateway -> clean OPL WebUI -> Adapter -> Runtime Bridge / Runtime Agen
 Portal launch
   -> OPL receives public context
   -> OPL creates or resumes session
-  -> Adapter binds workspace/session/runtime identity
+  -> Runtime Bridge binds workspace/session/runtime identity
   -> message enters real OPL/agent/provider or returns explicit gate
   -> file intent produces workspace-scoped fileRef or returns explicit gate
   -> run enters real Runtime Bridge / Runtime Agent or returns explicit gate
@@ -74,7 +74,7 @@ future-authorized upstream/WebUI capability runner only
 目标：
 
 - Portal 通过 Gateway 打开 clean OPL WebUI。
-- OPL 通过 Adapter bootstrap 获取 MedOPL public context。
+- OPL 通过 Runtime Bridge bootstrap 获取 MedOPL public context。
 
 验证命令：
 
@@ -94,14 +94,14 @@ node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 目标：
 
 - OPL WebUI 创建或恢复真实 session/conversation。
-- Adapter 把 `oplSessionId` 或 `oplConversationId` 绑定到 MedOPL workspace/runtime session。
+- Runtime Bridge 把 `oplSessionId` 或 `oplConversationId` 绑定到 MedOPL workspace/runtime session。
 - Portal 能查询 session projection。
 
 验证命令：
 
 ```text
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs
-node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node scripts/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
+node scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
 ```
 
 验收：
@@ -121,12 +121,12 @@ node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
 预期链路：
 
 ```text
-POST /portal-adapter/api/opl/messages
+POST /runtime-bridge/api/opl/messages
   -> WebUI bridge chat.send.message or ACP prompt
   -> OPL/agent/provider boundary
   -> reply event or same-conversation assistant reply evidence
-  -> Adapter message state
-  -> GET /portal-adapter/api/opl/messages/{messageId}/status
+  -> Runtime Bridge message state
+  -> GET /runtime-bridge/api/opl/messages/{messageId}/status
   -> Portal /portal/api/opl/messages/{messageId}/status projection
 ```
 
@@ -143,13 +143,13 @@ POST /portal-adapter/api/opl/messages
 
 目标：
 
-- 验证真实 OPL 或 Adapter/Runtime 边界是否能形成 workspace-scoped fileRef。
+- 验证真实 OPL 或 Runtime Bridge/Runtime Agent 边界是否能形成 workspace-scoped fileRef。
 
 预期链路：
 
 ```text
 OPL file upload or file intent
-  -> Adapter normalized file intent
+  -> Runtime Bridge normalized file intent
   -> workspace file boundary or Runtime Agent boundary
   -> workspace-scoped fileRef
   -> Portal file projection
@@ -174,7 +174,7 @@ OPL file upload or file intent
 
 ```text
 OPL run intent
-  -> Adapter normalized run intent
+  -> Runtime Bridge normalized run intent
   -> Runtime Bridge / Runtime Agent boundary
   -> runId/status/traceId/billingMetadataRef or explicit gate
 ```
@@ -187,7 +187,7 @@ OPL run intent
 - 未开通托管运行环境时返回 `managed_environment_required`。
 - 未配置 Runtime Agent 时返回 `requires_runtime_agent`。
 - 需要真实云 runtime 时返回 `runtime_authorization_required`。
-- Adapter 不生成伪 `runId` 或伪 billing metadata。
+- Runtime Bridge 不生成伪 `runId` 或伪 billing metadata。
 
 ### Stage 7: Artifact/output backflow canary
 
@@ -221,7 +221,7 @@ Runtime Agent output
 预期链路：
 
 ```text
-Adapter / Runtime Bridge sanitized metadata
+Runtime Bridge sanitized metadata
   -> Portal trace projection
   -> optional Langfuse attachment
   -> trace.medopl.cn when separately authorized
@@ -245,27 +245,27 @@ Adapter / Runtime Bridge sanitized metadata
 
 - Portal 能按 workspace/session/run 查询 context、session、message、file、run、artifact、trace 和 billing metadata。
 - 跨用户、跨 workspace、跨 launch 不能串读。
-- `capability_not_supported`、`provider_key_required`、`managed_environment_required`、`requires_runtime_agent`、`runtime_authorization_required`、`upstream_unavailable`、`upstream_reply_timeout`、`adapter_mapping_failed` 和 `trace_sink_not_configured` 都有明确 response。
+- `capability_not_supported`、`provider_key_required`、`managed_environment_required`、`requires_runtime_agent`、`runtime_authorization_required`、`upstream_unavailable`、`upstream_reply_timeout`、`runtime_bridge_mapping_failed` 和 `trace_sink_not_configured` 都有明确 response。
 - no fake 200。
 
 ### Stage 10: Performance canary
 
 目标：
 
-- 量化 Gateway/Adapter/capability registry 对真实 WebUI 的额外开销。
+- 量化 Gateway/Runtime Bridge/capability registry 对真实 WebUI 的额外开销。
 - 不用未测数字宣称性能可接受。
 
 比较对象：
 
 - direct OPL WebUI baseline。
-- Gateway + Adapter。
-- Gateway + Adapter + Runtime gate。
+- Gateway + Runtime Bridge。
+- Gateway + Runtime Bridge + Runtime gate。
 
 必须记录：
 
 - Portal launch -> OPL bootstrap p50/p95。
 - session create -> DB readback p50/p95。
-- OPL event -> Adapter projection -> Portal query p50/p95。
+- OPL event -> Runtime Bridge projection -> Portal query p50/p95。
 - message send -> reply observed p50/p95，若 message supported。
 - file intent -> fileRef p50/p95，若 file supported。
 - run intent -> run accepted p50/p95，若 runtime supported。
@@ -274,7 +274,7 @@ Adapter / Runtime Bridge sanitized metadata
 
 - session class extra p95 target <= 300ms。
 - Portal-OPL context/backflow extra overhead target <= 5% for non-runtime operations。
-- Gateway/Adapter 错误率不得高于 direct OPL WebUI baseline。
+- Gateway/Runtime Bridge 错误率不得高于 direct OPL WebUI baseline。
 
 这些是性能预算，不代表当前已完成 benchmark。
 
@@ -309,11 +309,11 @@ canary evidence 只进 `.runtime`，不得进入 git。
 
 ## Productionization Handoff
 
-canary 成功不自动等于 productionized adapter。进入正式实现前必须：
+canary 成功不自动等于 productionized Runtime Bridge。进入正式实现前必须：
 
 1. 把真实能力发现回写 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md)。
 2. 更新 [status-matrix.md](./status-matrix.md) 和 [mvp-contract-acceptance.md](./mvp-contract-acceptance.md)。
 3. 明确每个 capability 的状态：`supported`、`mapped_to_webui_bridge`、`mapped_to_acp_runtime`、`requires_runtime_agent`、`deferred_authorization` 或 `capability_not_supported`。
-4. 新开 productionized Adapter/Runtime Bridge 映射分支。
+4. 新开 productionized Runtime Bridge 映射分支。
 5. productionized 分支补正式 smoke，不依赖 `.runtime` 临时 evidence。
 6. B 窗口只吸收清理后的正式分支，不吸收未清理 canary 临时代码。

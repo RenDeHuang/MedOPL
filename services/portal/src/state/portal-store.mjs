@@ -32,7 +32,7 @@ import {
   PORTAL_DB_NAMESPACE,
   PORTAL_IDENTITY_SYNC_MODE,
   PORTAL_OIDC_ENABLED,
-  PORTAL_OPL_ADAPTER_URL,
+  PORTAL_RUNTIME_BRIDGE_URL,
   PORTAL_POSTGRES_URL,
   PORTAL_PUBLIC_URL,
   PORTAL_REDIS_URL,
@@ -89,7 +89,7 @@ export function createPortalStore({
     runtime: {
       portalPublicUrl: PORTAL_PUBLIC_URL || null,
       oplWebUrl: OPL_WEB_URL || null,
-      portalAdapterUrl: PORTAL_OPL_ADAPTER_URL || null,
+      portalRuntimeBridgeUrl: PORTAL_RUNTIME_BRIDGE_URL || null,
       oplRuntimeMode: OPL_RUNTIME_MODE,
       timeoutMs: OPL_RUNTIME_TIMEOUT_MS,
     },

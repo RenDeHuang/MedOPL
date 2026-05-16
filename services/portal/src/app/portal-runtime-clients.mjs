@@ -1,7 +1,7 @@
 import { createHarborRegistryClient } from "../integrations/harbor-registry-client.mjs";
 import { createLangfuseTraceClient } from "../integrations/langfuse-trace-client.mjs";
 import { createMinioStorageClient } from "../integrations/minio-storage-client.mjs";
-import { createOplAdapterClient } from "../integrations/opl-adapter-client.mjs";
+import { createRuntimeBridgeClient } from "../integrations/runtime-bridge-client.mjs";
 
 export function createPortalRuntimeClients({
   formatDateTime,
@@ -17,7 +17,7 @@ export function createPortalRuntimeClients({
   oplRuntimeTimeoutMs,
   oplWebUrl,
   portalOplRuntimeAgentConfig,
-  portalOplAdapterUrl,
+  portalRuntimeBridgeUrl,
   portalWorkdir,
   repoRoot,
   syncWorkspaceToMinioScriptRelative,
@@ -45,8 +45,8 @@ export function createPortalRuntimeClients({
       projectId: langfuseProjectId,
       formatDateTime,
     }),
-    oplAdapterClient: createOplAdapterClient({
-      adapterUrl: portalOplAdapterUrl,
+    runtimeBridgeClient: createRuntimeBridgeClient({
+      runtimeBridgeUrl: portalRuntimeBridgeUrl,
       oplWebUrl,
       runtimeAgentConfig: portalOplRuntimeAgentConfig,
       timeoutMs: oplRuntimeTimeoutMs,

@@ -16,8 +16,7 @@ export function createPortalHttpDispatcher({
   handlePortalAdminUserRoutes,
   handlePortalApiRoutes,
   handlePortalBillingExportRoutes,
-  handlePortalLegacyRedirectRoutes,
-  handlePortalTaskSpaceRoutes,
+  handlePortalWorkspaceRoutes,
   handleServerPlanRoutes,
   handleWorkspaceStorageRoutes,
   layoutV2,
@@ -87,13 +86,6 @@ export function createPortalHttpDispatcher({
       sendHtml(res, renderPortalPublicHome(db));
       return;
     }
-    if (await handlePortalLegacyRedirectRoutes({ req, res, url, user: null, allowAdminRedirect: true })) return;
-    if (req.method === "GET" && url.pathname.startsWith("/portal/app/assets/")) {
-      const relative = url.pathname.replace("/portal/app/assets/", "");
-      const filePath = path.join(frontendDistRoot, "assets", relative);
-      await sendStaticAsset(res, filePath, guessContentType(filePath));
-      return;
-    }
     if (req.method === "GET" && url.pathname.startsWith("/assets/")) {
       const relative = url.pathname.replace("/assets/", "");
       const filePath = path.join(frontendDistRoot, "assets", relative);
@@ -160,9 +152,8 @@ export function createPortalHttpDispatcher({
       return;
     }
     if (await handlePortalAdminApiRoutes({ req, res, url, db, user })) return;
-    if (await handlePortalLegacyRedirectRoutes({ req, res, url, user })) return;
     if (await handlePortalBillingExportRoutes({ req, res, url, db, user })) return;
-    if (await handlePortalTaskSpaceRoutes({ req, res, url, db, user })) return;
+    if (await handlePortalWorkspaceRoutes({ req, res, url, db, user })) return;
     if (await handlePortalAdminOpsRoutes({ req, res, url, db, user })) return;
     sendHtml(res, layoutV2("未找到", `<div class="card">未找到对应页面。</div>`, user), 404);
   };

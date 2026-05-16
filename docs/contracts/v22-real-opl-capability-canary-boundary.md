@@ -57,7 +57,7 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 ```text
 Portal is the SaaS control plane.
 Gateway is the clean OPL WebUI entry/proxy.
-Adapter is the anti-corruption layer for OPL context, capability discovery, event mapping, and Portal projection.
+Runtime Bridge is the anti-corruption layer for OPL context, capability discovery, event mapping, and Portal projection.
 Runtime Bridge / Runtime Agent is the downstream canonical source for run, artifact, ledger, trace, and billing metadata.
 Langfuse is an optional sanitized observability attachment.
 one-person-lab upstream remains clean.
@@ -83,9 +83,9 @@ one-person-lab upstream remains clean.
 Portal
   -> Gateway
   -> clean OPL WebUI
-  -> Adapter capability discovery
+  -> Runtime Bridge capability discovery
   -> real OPL WebUI bridge / ACP runtime / Runtime Agent boundary
-  -> Adapter normalized state
+  -> Runtime Bridge normalized state
   -> Portal projection
 ```
 
@@ -107,7 +107,7 @@ Portal
 
 - 不修改 one-person-lab upstream。
 - 不 import upstream 内部模块。
-- 不在 upstream 目录写 Portal、Gateway、Adapter、Runtime 或 Langfuse 代码。
+- 不在 upstream 目录写 Portal、Gateway、Runtime Bridge、Runtime 或 Langfuse 代码。
 - 不读取 raw secret、kubeconfig、SecretId、SecretKey、SSH private key 或 `.env`。
 - 不调用真实腾讯云、COS、TKE、K8s 或其他真实云 mutation API。
 - 不 build/push/kubectl/live-test。
@@ -126,7 +126,7 @@ Portal
 - 使用 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 指向用户授权的真实 WebUI canary 来源。
 - 使用本地 canary evidence 写入 `.runtime`。
 - 读取公开 WebUI/ACP/API/CLI 边界返回的非 secret 元数据。
-- 更新合同、recovery 状态、smoke 和 active surface 中的 Adapter/Gateway/Portal productionized 映射代码。
+- 更新合同、recovery 状态、smoke 和 active surface 中的 Runtime Bridge/Gateway/Portal productionized 映射代码。
 
 需要用户单独授权后才能做：
 
@@ -147,27 +147,27 @@ Portal
 | `portalUserId` | Portal | 用户边界，Portal canonical |
 | `workspaceId` | Portal | workspace 边界，Portal canonical |
 | `launchId` | Portal / Gateway | 进入 OPL 的一次性 launch 关联，不进入 URL query |
-| `workspaceSessionId` | Portal / Adapter | Portal workspace session projection |
-| `runtimeSessionId` | Adapter / Runtime Bridge | runtime session 归一化 ID |
+| `workspaceSessionId` | Portal / Runtime Bridge | Portal workspace session projection |
+| `runtimeSessionId` | Runtime Bridge | runtime session 归一化 ID |
 | `resourceBindingId` | Portal / Runtime Bridge | 托管运行环境资源绑定 ID |
 | `providerKeyRef` | Portal / Runtime Bridge secret boundary | provider 绑定引用，不是 raw API key |
-| `oplSessionId` | OPL WebUI / ACP / Adapter | OPL session 归一化 ID |
+| `oplSessionId` | OPL WebUI / ACP / Runtime Bridge | OPL session 归一化 ID |
 | `oplConversationId` | OPL WebUI bridge | WebUI conversation ID |
 | `clientMessageId` | OPL WebUI / Portal client | 幂等 message intent ID |
-| `messageId` | Adapter | Adapter message projection ID |
-| `replyMessageId` | OPL / Adapter | assistant reply projection ID |
+| `messageId` | Runtime Bridge | Runtime Bridge message projection ID |
+| `replyMessageId` | OPL / Runtime Bridge | assistant reply projection ID |
 | `fileRef` | Portal / Runtime Bridge | workspace-scoped file reference |
 | `runId` | Runtime Bridge / Runtime Agent | run canonical ID |
 | `artifactRef` | Runtime Bridge / Runtime Agent | 输出 artifact public reference |
 | `outputFileRef` | Portal / Runtime Bridge | 输出文件 public reference |
-| `traceId` | Adapter / Runtime Bridge | sanitized trace metadata ID |
+| `traceId` | Runtime Bridge | sanitized trace metadata ID |
 | `billingMetadataRef` | Runtime Bridge / Portal billing projection | 账单元数据引用，不是账单真相外泄 |
 
 所有 projection 必须绑定 `tenantId + portalUserId + workspaceId`。message、file、run、artifact 和 trace 还必须绑定 session 或 run 维度，避免跨 workspace、跨 session 或跨用户串读。
 
 ## Capability Registry
 
-Adapter 必须以 capability registry 暴露真实能力裁定。允许状态如下：
+Runtime Bridge 必须以 capability registry 暴露真实能力裁定。允许状态如下：
 
 - `supported`: 真实能力已验证并可通过稳定 projection 回流。
 - `mapped_to_webui_bridge`: 真实能力通过 WebUI bridge 映射。
@@ -180,7 +180,7 @@ Adapter 必须以 capability registry 暴露真实能力裁定。允许状态如
 - `runtime_authorization_required`: 需要真实 Runtime Agent / 真实云 runtime 授权。
 - `upstream_unavailable`: 真实 upstream 不可访问。
 - `upstream_reply_timeout`: message 已进入 upstream，但未观测到 reply。
-- `adapter_mapping_failed`: upstream shape 变化或映射失败。
+- `runtime_bridge_mapping_failed`: upstream shape 变化或映射失败。
 - `trace_sink_not_configured`: trace sink 未配置或未授权。
 
 capability registry 至少覆盖：
@@ -258,7 +258,7 @@ message reply 的 provider 级细分验收以 [v22-real-opl-provider-message-can
 - 未开通托管环境时返回 `managed_environment_required`。
 - upstream 不可达时返回 `upstream_unavailable`。
 - reply 未观测到时返回 `upstream_reply_timeout` 或 `capability_not_supported`。
-- upstream shape 变化时返回 `adapter_mapping_failed`。
+- upstream shape 变化时返回 `runtime_bridge_mapping_failed`。
 
 不得返回 raw prompt、raw completion、raw API key、bearer token、`launchToken` 或 `runtimeToken`。
 
@@ -352,7 +352,7 @@ Langfuse 未配置时必须返回 `trace_sink_not_configured` 或 `deferred_auth
 
 Portal projection canary 的目标是证明 Portal 能按 workspace/session/run 查询状态、文件、trace 和 billing metadata。
 
-Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Adapter/Runtime projection。Portal 禁止直接依赖：
+Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Runtime Bridge projection。Portal 禁止直接依赖：
 
 - one-person-lab route。
 - WebSocket event shape。
@@ -384,12 +384,12 @@ Portal projection 必须覆盖：
 - `requires_runtime_agent`
 - `upstream_unavailable`
 - `upstream_reply_timeout`
-- `adapter_mapping_failed`
+- `runtime_bridge_mapping_failed`
 - `capability_not_supported`
 - `trace_sink_not_configured`
 - `deferred_authorization`
 
-HTTP status 必须表达业务失败类别。若网关或 adapter 使用 202 表达异步 accepted，response 必须包含 `status=queued|running` 和后续查询 URL/ID；不得把 `queued` 伪装成 `succeeded`。
+HTTP status 必须表达业务失败类别。若网关或 Runtime Bridge 使用 202 表达异步 accepted，response 必须包含 `status=queued|running` 和后续查询 URL/ID；不得把 `queued` 伪装成 `succeeded`。
 
 ## Absorption Gate
 

@@ -78,8 +78,8 @@ assertIncludesAll(contents.upstream, [
   "不写 MedOPL 代码进 upstream",
   "不 import upstream 内部模块",
   "不把 Portal 账号、计费、资源、gflabtoken、trace、Langfuse、腾讯云逻辑写进 upstream",
-  "只能通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入",
-  "Portal / Gateway / Runtime / Langfuse / 腾讯云逻辑不得写进 upstream",
+  "只能通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 或反向代理边界接入",
+  "Portal / Gateway / Runtime Bridge / Runtime Agent / Langfuse / 腾讯云逻辑不得写进 upstream",
   "不硬编码 v19/v20/v21 upstream 路径，不使用旧 direct upstream path 作为默认值",
   "注入/暴露给 upstream 的公开上下文只包含 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL",
 ], "upstream_pollution_boundary");

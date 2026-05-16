@@ -448,6 +448,60 @@
         "dependency-upgrade",
         "real-db-migration-execution"
       ]
+    },
+    {
+      "id": "system-domain-truth-layer-zero-old-context",
+      "branch": "cleanup/v22-system-domain-truth-layer-zero-old-context",
+      "branches": [
+        "cleanup/v22-system-domain-truth-layer-zero-old-context"
+      ],
+      "description": "Verification bundle for the system-domain x truth-layer zero-old-context cleanup branch. This does not change v22-goal-current.json or advance the current product leaf; it verifies old naming, old entry, old explanation, and truth-layer gap cleanup without running the UI authoring branch gate.",
+      "reason": "The current product cursor remains leaf-portal-ui-design-quality-implementation, while this cleanup branch only removes old context across system domains and truth layers and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
+      "risk_class": "local_service_code",
+      "commands": [
+        "node scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+        "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/contracts docs/recovery scripts services"
+      ],
+      "allowed_files": [
+        "README.md",
+        "docs/product.md",
+        "docs/architecture.md",
+        "docs/contracts/README.md",
+        "docs/contracts/v22-*",
+        "docs/recovery/*",
+        "scripts/smoke-test-v22-*",
+        "services/portal/**",
+        "services/opl-web-gateway/**",
+        "services/opl-runtime-bridge/**"
+      ],
+      "forbidden_files": [
+        ".sentrux/*",
+        ".env.demo.template",
+        "upstream one-person-lab",
+        "secret-like paths",
+        "true cloud runners",
+        "deploy/*",
+        "adapters/*",
+        "infra/*"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade",
+        "real-db-migration-execution"
+      ]
     }
   ],
   "package_suites": [

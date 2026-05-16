@@ -38,10 +38,10 @@ assertAllIncluded(contract, [
   "Portal SaaS Control Plane",
   "Gateway Entry And Secret Boundary",
   "OPL Context Bootstrap",
-  "Adapter Capability Registry",
-  "Adapter Session Binding",
-  "Adapter Message Relay",
-  "Adapter Backflow Projection",
+  "Runtime Bridge Capability Registry",
+  "Runtime Bridge Session Binding",
+  "Runtime Bridge Message Relay",
+  "Runtime Bridge Backflow Projection",
   "Downstream Runtime Boundary",
   "Downstream Langfuse Session Trace Boundary",
   "Error Gates And No-Fake-Success",
@@ -52,11 +52,11 @@ assertAllIncluded(contract, [
   "provider_key_required",
   "platform_isolated_runtime_agent_required",
   "upstream_reply_timeout",
-  "adapterContractVersion",
+  "runtimeBridgeContractVersion",
   "v22.portal-opl-context-backflow.v1",
   "one-person-lab upstream remains clean",
   "Langfuse is not the canonical source",
-  "Runtime Bridge / Runtime Agent is a downstream canonical source",
+  "Runtime Bridge / Runtime Agent is the downstream canonical source",
   "This contract does not implement cloud runtime",
   "This contract does not deploy Langfuse",
 ], "contract");
@@ -76,11 +76,11 @@ assertAllIncluded(contract, [
 
 assertAllIncluded(contract, [
   "POST /portal/api/opl/launch",
-  "GET /portal-adapter/api/opl/bootstrap",
-  "POST /portal-adapter/api/opl/sessions/bind",
-  "POST /portal-adapter/api/opl/messages",
-  "GET /portal-adapter/api/opl/messages/{messageId}/status",
-  "GET /portal-adapter/api/opl/status",
+  "GET /runtime-bridge/api/opl/bootstrap",
+  "POST /runtime-bridge/api/opl/sessions/bind",
+  "POST /runtime-bridge/api/opl/messages",
+  "GET /runtime-bridge/api/opl/messages/{messageId}/status",
+  "GET /runtime-bridge/api/opl/status",
 ], "stable_api_surface");
 
 assertAllIncluded(contract, [
@@ -115,9 +115,9 @@ assertAllIncluded(flow, [
 
 assertAllIncluded(flow, [
   "direct OPL WebUI baseline",
-  "Gateway + Adapter",
+  "Gateway + Runtime Bridge",
   "Portal launch -> OPL bootstrap",
-  "OPL event -> Adapter projection -> Portal query",
+  "OPL event -> Runtime Bridge projection -> Portal query",
   "session class extra p95 target <= 300ms",
   "Portal-OPL context/backflow extra overhead target",
 ], "performance_path");

@@ -12,7 +12,7 @@
         <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 class="panel-title">服务状态</h2>
-            <p class="panel-subtitle">聚焦 Portal、OPL、Trace、Adapter 等主链路。</p>
+            <p class="panel-subtitle">聚焦 Portal、OPL、Trace、Gateway、Runtime Bridge 等主链路。</p>
           </div>
           <RouterLink v-if="opsSurfaceEnabled" class="btn btn-secondary" to="/admin/ops">查看服务状态</RouterLink>
         </div>

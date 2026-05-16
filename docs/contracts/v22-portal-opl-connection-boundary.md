@@ -1,6 +1,6 @@
 # v22 Portal-OPL Connection Boundary Contract
 
-本合同定义 MedOPL v22 中 Portal 与 clean upstream OPL Web 的连接闭环。它只定义 Portal、OPL Web Gateway、Portal OPL Adapter / Runtime Agent 之间的边界，不修改 one-person-lab upstream，不 import upstream 内部模块，不读取 secret，不调用真实云 API，不运行 build/push/kubectl/live-test。
+本合同定义 MedOPL v22 中 Portal 与 clean upstream OPL Web 的连接闭环。它只定义 Portal、OPL Web Gateway、Runtime Bridge / Runtime Agent 之间的边界，不修改 one-person-lab upstream，不 import upstream 内部模块，不读取 secret，不调用真实云 API，不运行 build/push/kubectl/live-test。
 
 ## Product Truth
 
@@ -18,22 +18,22 @@ one-person-lab upstream 只能作为 clean upstream 工作台。Portal 账号、
 
 ## Required Interfaces
 
-Portal-OPL 连接闭环至少需要以下接口。路径名称表达合同角色；实现可以保留内部旧路径，但用户入口、合同入口和后续新实现必须收敛到这些边界。
+Portal-OPL 连接闭环至少需要以下接口。路径名称表达合同角色；实现必须按 Runtime Bridge / Runtime Agent 边界收敛。已退役路径不得作为兼容解释、内部保留理由、用户入口、合同入口或后续新实现入口。
 
 ```text
 POST /portal/api/opl/launch
-GET /portal-adapter/api/opl/bootstrap
-POST /portal-adapter/api/opl/sessions/bind
-POST /portal-adapter/api/opl/messages
-GET /portal-adapter/api/opl/messages/{messageId}/status
-POST /portal-adapter/api/opl/files
-POST /portal-adapter/api/opl/runs
-GET /portal-adapter/api/opl/runs/{runId}/status
-GET /portal-adapter/api/opl/runs/{runId}/artifacts
-GET /portal-adapter/api/opl/artifacts/{artifactRef}
+GET /runtime-bridge/api/opl/bootstrap
+POST /runtime-bridge/api/opl/sessions/bind
+POST /runtime-bridge/api/opl/messages
+GET /runtime-bridge/api/opl/messages/{messageId}/status
+POST /runtime-bridge/api/opl/files
+POST /runtime-bridge/api/opl/runs
+GET /runtime-bridge/api/opl/runs/{runId}/status
+GET /runtime-bridge/api/opl/runs/{runId}/artifacts
+GET /runtime-bridge/api/opl/artifacts/{artifactRef}
 ```
 
-Portal 对 OPL Adapter 的代理面必须与 Adapter 稳定接口对齐，至少包含：
+Portal 对 Runtime Bridge 的代理面必须与 Runtime Bridge 稳定接口对齐，至少包含：
 
 ```text
 GET /portal/api/opl/bootstrap
@@ -47,7 +47,7 @@ GET /portal/api/opl/runs/{runId}/artifacts
 GET /portal/api/opl/artifacts/{artifactRef}
 ```
 
-现有 Runtime Bridge `/api/opl-launch/*` 可以作为当前实现路径，但它必须语义映射到 Portal OPL Adapter / Runtime Agent 边界。旧 `/api/runtime-sessions` 和 `/api/runtime-sessions/{id}/runs` 不得成为 v22 新主路径。
+现有 Runtime Bridge `/api/opl-launch/*` 可以作为当前实现路径，但它必须语义映射到 Runtime Bridge / Runtime Agent 边界。旧 `/api/runtime-sessions` 和 `/api/runtime-sessions/{id}/runs` 不得成为 v22 新主路径。
 
 ## Identity And Ownership Fields
 
@@ -96,7 +96,7 @@ Portal launch response 可以返回：
 
 Portal launch response 不得返回 raw API key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 或 provider secret。
 
-`GET /portal-adapter/api/opl/bootstrap` 由 Gateway / OPL 通过 httpOnly cookie 或服务端 launch session 获取公开上下文。bootstrap 只允许包含公开上下文：
+`GET /runtime-bridge/api/opl/bootstrap` 由 Gateway / OPL 通过 httpOnly cookie 或服务端 launch session 获取公开上下文。bootstrap 只允许包含公开上下文：
 
 - `portalUserId`
 - `tenantId`
@@ -127,7 +127,7 @@ launchToken/runtimeToken 只能保存在 httpOnly cookie 或服务端 launch ses
 
 ## Session Binding
 
-`POST /portal-adapter/api/opl/sessions/bind` 用于把 upstream OPL 的 session 与 MedOPL launch context 绑定。
+`POST /runtime-bridge/api/opl/sessions/bind` 用于把 upstream OPL 的 session 与 MedOPL launch context 绑定。
 
 请求可以包含：
 
@@ -143,11 +143,11 @@ session bind 成功后，平台必须能得到以下关系：
 portalUserId + tenantId + workspaceId + workspaceSessionId + runtimeSessionId + resourceBindingId + oplSessionId
 ```
 
-## Adapter Decoupling And Anti-Corruption Boundary
+## Runtime Bridge Decoupling And Anti-Corruption Boundary
 
 Portal 只依赖 MedOPL 稳定接口，不得依赖 one-person-lab upstream 内部 API、DOM、store、数据库 schema 或内部 session model。
 
-Gateway / Portal OPL Adapter 是 anti-corruption layer。它负责把 upstream OPL 的页面、路由、事件或接口变化翻译成 MedOPL 稳定合同。upstream OPL 更新只允许改 Gateway/Adapter 映射层，不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同。
+Gateway / Runtime Bridge 是 anti-corruption layer。它负责把 upstream OPL 的页面、路由、事件或接口变化翻译成 MedOPL 稳定合同。upstream OPL 更新只允许改 Gateway/Runtime Bridge 映射层，不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同。
 
 不同 API 必须低耦合演进：
 
@@ -157,42 +157,42 @@ Gateway / Portal OPL Adapter 是 anti-corruption layer。它负责把 upstream O
 - OPL message/file/run 事件必须先归一化为 MedOPL canonical event，再进入 Runtime Agent、文件空间、trace 或 billing 边界。
 - artifact projection API 只返回 MedOPL artifact/output file reference，不透传 upstream 或存储后端路径。
 
-bootstrap 和 Adapter status 必须能表达：
+bootstrap 和 Runtime Bridge status 必须能表达：
 
-- `adapterContractVersion`
+- `runtimeBridgeContractVersion`
 - `capabilities`
 - `supportedEvents`
 
 `capabilities` 至少区分 message、file upload、run start、run status、artifact list、artifact download。`supportedEvents` 至少区分 session bound、message created、file referenced、run started、run updated、artifact created。
 
-如果 upstream OPL 缺少某个能力、能力版本不兼容或映射层尚未实现，Adapter 必须显式返回 `capability_not_supported`，不能隐式兜底、伪装成功或把未知 upstream shape 直接写入 Portal 状态。
+如果 upstream OPL 缺少某个能力、能力版本不兼容或映射层尚未实现，Runtime Bridge 必须显式返回 `capability_not_supported`，不能隐式兜底、伪装成功或把未知 upstream shape 直接写入 Portal 状态。
 
 真实 upstream 能力必须先由 canary 分类，不能从 fake Product API fixture 推断：
 
-- `real_http_product_api`: 真实 upstream HTTP Product API endpoint 存在，可直接由 Gateway/Adapter 访问。
-- `mapped_to_acp_runtime`: 真实 upstream 没有对应 HTTP endpoint，但存在公开 ACP/CLI runtime 边界，可由 Adapter 映射。
-- `capability_not_supported`: 真实 upstream 不存在、返回不兼容，或映射层尚未完成；Adapter 必须显式返回该状态。
+- `real_http_product_api`: 真实 upstream HTTP Product API endpoint 存在，可直接由 Gateway/Runtime Bridge 访问。
+- `mapped_to_acp_runtime`: 真实 upstream 没有对应 HTTP endpoint，但存在公开 ACP/CLI runtime 边界，可由 Runtime Bridge 映射。
+- `capability_not_supported`: 真实 upstream 不存在、返回不兼容，或映射层尚未完成；Runtime Bridge 必须显式返回该状态。
 
 2026-05-10 的 `/home/dev/projects/one-person-lab` 主仓 canary 结论是：`opl web` 已 retired，主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API；`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面；`workspace_list`、无 secret 的真实 message prompt 和 WebUI 文件上传暂不支持或未验证。
 
 2026-05-10 的真实 WebUI canary 结论是：独立 OPL/AionUI WebUI 可作为真实浏览器工作台进程启动，`GET /`、`GET /api/auth/status`、`GET /api/auth/user` 可真实访问；Gateway 指向该 WebUI 后可代理页面、注入 launch script、拒绝 secret query，并代理 WebSocket bridge。该 WebUI 的真实 session 协议是 WebSocket bridge，`create-conversation`、`database.get-user-conversations`、`database.get-conversation-messages` 已完成真实 session 创建和数据库回读。`/api/opl/system`、`/api/opl/sessions`、`/api/opl/messages` 在该 WebUI 上只是通用 `/api` catch-all 的 200 placeholder，不是 Product API；discovery 当时只能证明 `chat.send.message` 进入 WebUI/ACP 启动路径，不能证明 AI reply，因此必须标为 `capability_not_supported`。
 
-后续授权 provider message live canary 结论是：在用户显式授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和真实 WebUI 来源后，Portal -> Gateway -> Adapter -> clean OPL WebUI bridge -> provider message 可观测到真实 assistant reply，并以 `capabilitySource=mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该事实只证明真实 provider message/reply，不证明 `/api/opl/*` HTTP Product API、真实 WebUI file upload、run/artifact、真实云 runtime 或 Langfuse 已上线。
+后续授权 provider message live canary 结论是：在用户显式授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和真实 WebUI 来源后，Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> provider message 可观测到真实 assistant reply，并以 `capabilitySource=mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该事实只证明真实 provider message/reply，不证明 `/api/opl/*` HTTP Product API、真实 WebUI file upload、run/artifact、真实云 runtime 或 Langfuse 已上线。
 
-2026-05-10 的真实 WebUI Adapter flow 结论是：Portal OPL Adapter 可以在 `OPL_RUNTIME_MODE=webui` 下通过 `OPL_WEBUI_BRIDGE_URL`/`OPL_WEB_URL` 连接真实 OPL/AionUI WebUI WebSocket bridge；launch 阶段创建真实 WebUI conversation，bootstrap 从 WebUI database 回读 session，并在 Adapter state 写入 `opl_webui_bridge_session_created` 和 `opl_session_bound`。该模式仍必须把 `/api/opl/*` HTTP Product API 分类为 `capability_not_supported`；message reply 在未授权真实 provider canary 时返回 `provider_authorization_required`、`deferred_authorization` 或 `capability_not_supported`，run 在没有真实 Runtime Agent relay 时返回明确失败，不能生成伪 run/artifact 成功。
+2026-05-10 的真实 WebUI Runtime Bridge flow 结论是：Runtime Bridge 可以在 `OPL_RUNTIME_MODE=webui` 下通过 `OPL_WEBUI_BRIDGE_URL`/`OPL_WEB_URL` 连接真实 OPL/AionUI WebUI WebSocket bridge；launch 阶段创建真实 WebUI conversation，bootstrap 从 WebUI database 回读 session，并在 Runtime Bridge state 写入 `opl_webui_bridge_session_created` 和 `opl_session_bound`。该模式仍必须把 `/api/opl/*` HTTP Product API 分类为 `capability_not_supported`；message reply 在未授权真实 provider canary 时返回 `provider_authorization_required`、`deferred_authorization` 或 `capability_not_supported`，run 在没有真实 Runtime Agent relay 时返回明确失败，不能生成伪 run/artifact 成功。
 
 每个 API 的验收不得只检查 HTTP 200/201/202。必须同时证明真实访问和真实回流：
 
-- `GET /portal-adapter/api/opl/bootstrap` 必须访问 upstream/Product API 的 health、system、engines、modules、agents、workspaces、sessions、progress 和 artifacts 边界；返回值必须来自这些访问结果和 Adapter state projection，不能只本地构造。
+- `GET /runtime-bridge/api/opl/bootstrap` 必须访问 upstream/Product API 的 health、system、engines、modules、agents、workspaces、sessions、progress 和 artifacts 边界；返回值必须来自这些访问结果和 Runtime Bridge state projection，不能只本地构造。
 - 当真实 upstream 没有 HTTP Product API 而只有 ACP/CLI 边界时，bootstrap 必须证明 `initialize`、`session_list`、`session_ledger` 等公开 ACP 命令被真实访问，并对缺失或不兼容能力返回 `capability_not_supported`。
-- `POST /portal-adapter/api/opl/sessions/bind` 必须更新 runtime session 的 `oplSessionId`、workspace、tenant、resourceBinding 和 provider binding 关系，并写入 `opl_session_bound` 事件。
-- `POST /portal-adapter/api/opl/messages` 必须把 normalized message 发到 OPL Product API 或公开 ACP/runtime 边界，并把 message request、reply、message artifact 和 trace 写回 Adapter state。
-- `GET /portal-adapter/api/opl/messages/{messageId}/status` 必须读取前序 message 写入的 request/reply/trace 状态，不能返回静态成功。
-- `POST /portal-adapter/api/opl/files` 必须新增 workspace-scoped input artifact record，并返回该 record 的 public `fileRef`。
-- `POST /portal-adapter/api/opl/runs` 必须调用 Runtime Agent relay/API 边界，并把 run record、runtime artifact、session ledger entry 和 trace 写回 Adapter state。
-- `GET /portal-adapter/api/opl/runs/{runId}/status`、`GET /portal-adapter/api/opl/runs/{runId}/artifacts` 和 `GET /portal-adapter/api/opl/artifacts/{artifactRef}` 必须读取前序 run/file 产生的 state record，且按 launch/session/workspace 鉴权。
-- Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token，跨用户 `launchId` 必须拒绝，成功响应必须来自 Adapter 回流而不是 Portal 本地伪造。
-- Adapter state 写入必须能保留并发 message/file/run 回流，不得因为异步写入互相覆盖、读到半写 JSON 或用最后写入覆盖前序状态。
+- `POST /runtime-bridge/api/opl/sessions/bind` 必须更新 runtime session 的 `oplSessionId`、workspace、tenant、resourceBinding 和 provider binding 关系，并写入 `opl_session_bound` 事件。
+- `POST /runtime-bridge/api/opl/messages` 必须把 normalized message 发到 OPL Product API 或公开 ACP/runtime 边界，并把 message request、reply、message artifact 和 trace 写回 Runtime Bridge state。
+- `GET /runtime-bridge/api/opl/messages/{messageId}/status` 必须读取前序 message 写入的 request/reply/trace 状态，不能返回静态成功。
+- `POST /runtime-bridge/api/opl/files` 必须新增 workspace-scoped input artifact record，并返回该 record 的 public `fileRef`。
+- `POST /runtime-bridge/api/opl/runs` 必须调用 Runtime Agent relay/API 边界，并把 run record、runtime artifact、session ledger entry 和 trace 写回 Runtime Bridge state。
+- `GET /runtime-bridge/api/opl/runs/{runId}/status`、`GET /runtime-bridge/api/opl/runs/{runId}/artifacts` 和 `GET /runtime-bridge/api/opl/artifacts/{artifactRef}` 必须读取前序 run/file 产生的 state record，且按 launch/session/workspace 鉴权。
+- Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token，跨用户 `launchId` 必须拒绝，成功响应必须来自 Runtime Bridge 回流而不是 Portal 本地伪造。
+- Runtime Bridge state 写入必须能保留并发 message/file/run 回流，不得因为异步写入互相覆盖、读到半写 JSON 或用最后写入覆盖前序状态。
 
 禁止事项：
 
@@ -203,14 +203,14 @@ bootstrap 和 Adapter status 必须能表达：
 
 ## Messages, Files, Runs
 
-OPL 工作流通过 Portal OPL Adapter / Runtime Agent 边界接入：
+OPL 工作流通过 Runtime Bridge / Runtime Agent 边界接入：
 
-- `POST /portal-adapter/api/opl/messages` 记录 OPL message metadata，不保存 raw prompt 到公开 trace。
-- `GET /portal-adapter/api/opl/messages/{messageId}/status` 返回 message 的 sanitized 进度，不暴露 launch token、raw prompt 或 provider secret。
-- `POST /portal-adapter/api/opl/files` 生成 workspace file reference，不返回 objectKey、localPath、signedUrl。
-- `POST /portal-adapter/api/opl/runs` 使用 workspace file reference 发起 run。
-- `GET /portal-adapter/api/opl/runs/{runId}/status` 和 `GET /portal-adapter/api/opl/runs/{runId}/artifacts` 必须按 launch/session/workspace 鉴权后返回。
-- `GET /portal-adapter/api/opl/artifacts/{artifactRef}` 只返回当前 launch/session/workspace 可见的 artifact projection。
+- `POST /runtime-bridge/api/opl/messages` 记录 OPL message metadata，不保存 raw prompt 到公开 trace。
+- `GET /runtime-bridge/api/opl/messages/{messageId}/status` 返回 message 的 sanitized 进度，不暴露 launch token、raw prompt 或 provider secret。
+- `POST /runtime-bridge/api/opl/files` 生成 workspace file reference，不返回 objectKey、localPath、signedUrl。
+- `POST /runtime-bridge/api/opl/runs` 使用 workspace file reference 发起 run。
+- `GET /runtime-bridge/api/opl/runs/{runId}/status` 和 `GET /runtime-bridge/api/opl/runs/{runId}/artifacts` 必须按 launch/session/workspace 鉴权后返回。
+- `GET /runtime-bridge/api/opl/artifacts/{artifactRef}` 只返回当前 launch/session/workspace 可见的 artifact projection。
 
 run 必须执行以下 gate：
 
@@ -233,7 +233,7 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 - not_production_truth: one-person-lab upstream HTTP Product API is not available
 - production implementation must not treat local canary evidence as deployment evidence
 
-当前可吸收事实只说明 Portal / Gateway / Adapter / Runtime Agent HTTP API 本地 relay 的接口形状、workspace-scoped fileRef、run/artifact projection、no-fake-success gate 和 message reply canary 边界已被本地或授权 canary 证明。它不说明真实云 runtime、真实 COS 账单、生产部署、Langfuse 或 `trace.medopl.cn` 已上线。后续 production implementation 必须继续把这些事实作为输入边界，而不是把 canary evidence 当作生产部署证据。
+当前可吸收事实只说明 Portal / Gateway / Runtime Bridge / Runtime Agent HTTP API 本地 relay 的接口形状、workspace-scoped fileRef、run/artifact projection、no-fake-success gate 和 message reply canary 边界已被本地或授权 canary 证明。它不说明真实云 runtime、真实 COS 账单、生产部署、Langfuse 或 `trace.medopl.cn` 已上线。后续 production implementation 必须继续把这些事实作为输入边界，而不是把 canary evidence 当作生产部署证据。
 
 ## Artifact And Portal Projection
 
@@ -289,14 +289,14 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 
 ```text
 node scripts/smoke-test-v22-portal-opl-connection-contract.mjs
-node scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs
-node scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs
+node scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
+node scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs
 ```
 
-这些 smoke 只检查 repo-tracked 合同、索引、本地 Portal/Gateway/Adapter contract shape 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
+这些 smoke 只检查 repo-tracked 合同、索引、本地 Portal/Gateway/Runtime Bridge contract shape 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
 
 真实 upstream capability classification 的历史 evidence 只保留为 `.runtime/real-opl-canary/evidence.json` 脱敏记录和合同状态；对应真实 upstream runner 不属于 active repo executable surface。后续如果要重新验证 `/home/dev/projects/one-person-lab` 的公开 CLI/ACP 边界，必须单独开 future-authorized boundary，不修改 upstream，不读取 secret，不调用真实云，不把 fixture Product API 当真实接口结论。
 
 真实 WebUI canary 的历史 evidence 只保留为 `.runtime/real-opl-webui-canary/evidence.json` 脱敏记录和合同状态；对应真实 WebUI runner 不属于 active repo executable surface。后续如果要重新启动或连接独立 OPL/AionUI WebUI，必须单独授权 WebUI 来源，不修改 WebUI/upstream，不读取 secret，不调用真实云，不把 HTTP 200 placeholder 当真实 Product API。
 
-`scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs` 暂保留为显式 WebUI 来源下的 Adapter boundary proof；它不进入默认 MVP suite，不能作为默认产品入口、live-test 或 production deploy evidence。运行它必须有明确 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL`，证据只保存在 `.runtime/real-opl-webui-adapter-flow`，不进 git。
+`scripts/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs` 暂保留为显式 WebUI 来源下的 Runtime Bridge boundary proof；它不进入默认 MVP suite，不能作为默认产品入口、live-test 或 production deploy evidence。运行它必须有明确 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL`，证据只保存在 `.runtime/real-opl-webui-runtime-bridge-flow`，不进 git。

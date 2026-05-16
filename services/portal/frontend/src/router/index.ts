@@ -6,7 +6,6 @@ const routes: RouteRecordRaw[] = [
   { path: "/home", redirect: "/overview" },
   { path: "/login", redirect: "/overview" },
   { path: "/register", redirect: "/overview" },
-  { path: "/portal", redirect: "/overview" },
   { path: "/overview", component: () => import("@/views/overview/OverviewView.vue") },
   { path: "/packages", component: () => import("@/views/packages/PackagesView.vue") },
   { path: "/resources", component: () => import("@/views/resources/ResourcesView.vue") },

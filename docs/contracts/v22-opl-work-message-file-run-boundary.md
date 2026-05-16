@@ -27,8 +27,8 @@ https://github.com/gaofeng21cn/one-person-lab
 - `sourceModified=false`。
 - 不修改 upstream 源码。
 - 不 import upstream 内部模块。
-- 不在 upstream 目录写 Portal、Gateway、Adapter 或 Runtime Agent 代码。
-- 通过 OPL Web Gateway / Portal OPL Adapter / Runtime Agent 合同边界接入。
+- 不在 upstream 目录写 Portal、Gateway、Runtime Bridge 或 Runtime Agent 代码。
+- 通过 OPL Web Gateway / Runtime Bridge / Runtime Agent 合同边界接入。
 
 ## Preconditions
 

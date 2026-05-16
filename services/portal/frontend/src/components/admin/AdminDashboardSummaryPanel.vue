@@ -2,7 +2,7 @@
   <section data-route-id="admin.dashboard" data-component-id="admin.dashboard.summary" class="space-y-4">
     <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <MetricCard label="今日新增用户" :value="kpis.todayNewUsers ?? 0" :hint="`总用户 ${kpis.totalUsers ?? 0}`" />
-      <MetricCard label="今日新增空间" :value="kpis.todayNewWorkspaces ?? 0" :hint="`总任务空间 ${kpis.workspaceTotal ?? 0}`" />
+      <MetricCard label="今日新增空间" :value="kpis.todayNewWorkspaces ?? 0" :hint="`总工作空间 ${kpis.workspaceTotal ?? 0}`" />
       <MetricCard label="今日运行任务" :value="kpis.todayRuns ?? 0" :hint="`总运行 ${kpis.totalRuns ?? 0}`" />
       <MetricCard label="平均响应" :value="responseLabel" hint="当前性能摘要" />
       <MetricCard label="今日消费" :value="money(kpis.todayTotalCost)" hint="今日资源消费" />

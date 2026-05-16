@@ -38,7 +38,7 @@ function readConfig() {
   const webuiMode = isWebuiRuntimeMode(cleanEnv("OPL_RUNTIME_MODE", "unknown"));
   return {
     port,
-    baseUrl: urlEnv("PORTAL_OPL_ADAPTER_PUBLIC_URL", `http://127.0.0.1:${port}`),
+    baseUrl: urlEnv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL", `http://127.0.0.1:${port}`),
     launchSecret: cleanEnv("OPL_LAUNCH_SECRET", "dev-opl-launch-secret-change-me"),
     runnerImage: cleanEnv("MED_AUTOSCIENCE_RUNNER_IMAGE"),
     k8sNamespace: cleanEnv("K8S_NAMESPACE", "med-agent-demo"),
@@ -316,14 +316,14 @@ function launchTokenFrom(input = {}, url, req = null) {
   return authorizationBearerFrom(req);
 }
 
-function adapterContractMetadata() {
+function runtimeBridgeContractMetadata() {
   const webuiMode = isWebuiRuntimeMode();
   const webuiProviderMessageEnabled = webuiMode && process.env.OPL_WEBUI_PROVIDER_MESSAGE_ENABLED === "1";
   return {
-    adapterContractVersion: "v22.portal-opl-context-backflow.v1",
+    runtimeBridgeContractVersion: "v22.portal-opl-context-backflow.v1",
     upstreamProfile: webuiMode ? "webui_bridge" : "opl_product_api",
     capabilities: {
-      contextBootstrap: { status: "supported", source: "gateway_adapter" },
+      contextBootstrap: { status: "supported", source: "gateway_runtime_bridge" },
       session: { status: "supported", source: webuiMode ? "webui_bridge" : "opl_product_api" },
       messageBackflow: webuiMode
         ? {
@@ -372,9 +372,9 @@ function publicRuntimeSession(runtimeSession = {}) {
   };
 }
 
-function adapterBootstrapPayload(bootstrap = {}) {
+function runtimeBridgeBootstrapPayload(bootstrap = {}) {
   return {
-    ...adapterContractMetadata(),
+    ...runtimeBridgeContractMetadata(),
     ...bootstrap,
   };
 }
@@ -406,7 +406,7 @@ function messageStatusPayload(record = {}, state = {}) {
 }
 
 function statusUrlForMessage({ messageId }) {
-  return `/portal-adapter/api/opl/messages/${encodeURIComponent(messageId)}/status`;
+  return `/runtime-bridge/api/opl/messages/${encodeURIComponent(messageId)}/status`;
 }
 
 function mergeUniqueBy(target = [], source = [], keyFn) {
@@ -781,20 +781,20 @@ export function createRuntimeBridgeRuntime() {
   async function handleHealth(_req, res) {
     sendJson(res, 200, {
       ...launchApi.buildStatusPayload(),
-      ...adapterContractMetadata(),
+      ...runtimeBridgeContractMetadata(),
     });
   }
 
-  async function handleAdapterStatus(_req, res) {
+  async function handleRuntimeBridgeStatus(_req, res) {
     sendJson(res, 200, {
       ok: true,
-      service: "portal-opl-adapter",
-      ...adapterContractMetadata(),
+      service: "opl-runtime-bridge",
+      ...runtimeBridgeContractMetadata(),
     });
   }
 
   async function handleWorkbenchRetired(_req, res) {
-    sendRetired(res, "adapter /workbench dev projection 已退场；请打开 OPL_WEB_URL，并由 OPL Web 使用 launch token 拉 bootstrap。", "OPL_WEB_URL");
+    sendRetired(res, "旧 /workbench dev projection 已退场；请打开 OPL_WEB_URL，并由 OPL Web 使用 launch token 拉 bootstrap。", "OPL_WEB_URL");
   }
 
   async function handleLegacyLaunchTokensRetired(_req, res) {
@@ -823,7 +823,7 @@ export function createRuntimeBridgeRuntime() {
     await updateState(async (state) => {
       bootstrap = await launchApi.buildBootstrap(state, launch);
     });
-    sendJson(res, 200, adapterBootstrapPayload(bootstrap));
+    sendJson(res, 200, runtimeBridgeBootstrapPayload(bootstrap));
   }
 
   async function handleRuntimeRunInput(input, req, res, url, { successStatus = 200 } = {}) {
@@ -897,7 +897,7 @@ export function createRuntimeBridgeRuntime() {
     await handleRuntimeRunInput(await readBody(req), req, res, url);
   }
 
-  async function handleAdapterFile(req, res, url) {
+  async function handleRuntimeBridgeFile(req, res, url) {
     const input = await readBody(req);
     const resolved = await readLaunchRuntimeSession(input, url, req, res);
     if (!resolved) return;
@@ -1007,7 +1007,7 @@ export function createRuntimeBridgeRuntime() {
     });
   }
 
-  async function handleAdapterRun(req, res, url) {
+  async function handleRuntimeBridgeRun(req, res, url) {
     const input = await readBody(req);
     Object.assign(input, {
       mode: input.mode || "full_runtime",
@@ -1137,7 +1137,7 @@ export function createRuntimeBridgeRuntime() {
     sendJson(res, status, payload);
   }
 
-  async function handleAdapterArtifact(req, res, url, match) {
+  async function handleRuntimeBridgeArtifact(req, res, url, match) {
     const resolved = await readLaunchForRequest(req, url, res);
     if (!resolved) return;
     const { launch, state } = resolved;
@@ -1207,7 +1207,7 @@ export function createRuntimeBridgeRuntime() {
   const exactHandlers = new Map([
     ["GET /healthz", handleHealth],
     ["GET /status", handleHealth],
-    ["GET /api/opl/status", handleAdapterStatus],
+    ["GET /api/opl/status", handleRuntimeBridgeStatus],
     ["GET /workbench", handleWorkbenchRetired],
     ["POST /api/launch-tokens", handleLegacyLaunchTokensRetired],
     ["POST /api/opl-launch/tokens", handleIssueLaunchToken],
@@ -1215,10 +1215,10 @@ export function createRuntimeBridgeRuntime() {
     ["GET /api/opl-launch/bootstrap", handleBootstrap],
     ["GET /api/opl/bootstrap", handleBootstrap],
     ["POST /api/opl-launch/runs", handleRuntimeRun],
-    ["POST /api/opl/runs", handleAdapterRun],
+    ["POST /api/opl/runs", handleRuntimeBridgeRun],
     ["POST /api/opl-launch/messages", handleMessage],
     ["POST /api/opl/messages", handleMessage],
-    ["POST /api/opl/files", handleAdapterFile],
+    ["POST /api/opl/files", handleRuntimeBridgeFile],
     ["POST /api/opl-launch/sessions/bind", handleBindSession],
     ["POST /api/opl/sessions/bind", handleBindSession],
     ["POST /api/runtime-sessions", handleRuntimeSessionsRetired],
@@ -1236,10 +1236,10 @@ export function createRuntimeBridgeRuntime() {
     { method: "GET", pattern: /^\/api\/opl\/runs\/([^/]+)\/status$/, handler: handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/artifacts$/, handler: handleRunArtifacts },
     { method: "GET", pattern: /^\/api\/opl\/runs\/([^/]+)\/artifacts$/, handler: handleRunArtifacts },
-    { method: "GET", pattern: /^\/api\/opl\/artifacts\/([^/]+)$/, handler: handleAdapterArtifact },
+    { method: "GET", pattern: /^\/api\/opl\/artifacts\/([^/]+)$/, handler: handleRuntimeBridgeArtifact },
     { method: "GET", pattern: /^\/api\/opl-launch\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
     { method: "GET", pattern: /^\/api\/opl\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
-    { method: "GET", pattern: /^\/portal-adapter\/api\/opl\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
+    { method: "GET", pattern: /^\/runtime-bridge\/api\/opl\/messages\/([^/]+)\/status$/, handler: handleMessageStatus },
   ];
 
   function routeKey(req, url) {

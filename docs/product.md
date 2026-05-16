@@ -104,4 +104,4 @@ One Person Lab 是 clean upstream：
 https://github.com/gaofeng21cn/one-person-lab
 ```
 
-v22 不修改 upstream 源码。upstream 更新后，平台拉取更新，并通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
+v22 不修改 upstream 源码。upstream 更新后，平台拉取更新，并通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的内部 anti-corruption mapping 适配。

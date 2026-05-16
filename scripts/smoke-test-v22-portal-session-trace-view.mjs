@@ -50,8 +50,8 @@ function paginateRows(rows = [], page = 1, pageSize = 10) {
 }
 
 const deps = {
-  fetchOplAdapterTraceRows: async () => ({
-    source: "portal_opl_adapter",
+  fetchRuntimeBridgeTraceRows: async () => ({
+    source: "runtime_bridge",
     type: "live",
     rows: [{
       traceId: "trace-runtime-v22-session-view",
@@ -64,7 +64,7 @@ const deps = {
       runId: "run-v22-session-view",
       status: "succeeded",
       startedAt: "2026-05-08T08:00:00.000Z",
-      source: "portal_opl_adapter",
+      source: "runtime_bridge",
       artifactRefs: ["artifact-v22-session-view-output"],
       rawPrompt: RAW_PROMPT,
       rawCompletion: RAW_COMPLETION,

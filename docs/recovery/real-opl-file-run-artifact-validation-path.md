@@ -7,7 +7,7 @@
 真实 file/run/artifact canary 的目标链路是：
 
 ```text
-Portal launch -> Gateway -> clean OPL WebUI -> Adapter -> file intent -> workspace-scoped fileRef -> run intent -> Runtime Agent gate -> runId/status/traceId -> artifactRef or outputFileRef -> Portal projection
+Portal launch -> Gateway -> clean OPL WebUI -> Runtime Bridge -> file intent -> workspace-scoped fileRef -> run intent -> Runtime Agent gate -> runId/status/traceId -> artifactRef or outputFileRef -> Portal projection
 ```
 
 完整业务闭环必须证明：
@@ -32,7 +32,7 @@ Portal user enters OPL
 ```text
 Portal HTTP API
   -> Gateway clean OPL Web entry
-  -> Adapter launch/bootstrap/session bind
+  -> Runtime Bridge launch/bootstrap/session bind
   -> Runtime Agent HTTP file intake
   -> workspace-scoped fileRef
   -> Runtime Agent HTTP run dispatch
@@ -69,7 +69,7 @@ Portal HTTP API
 
 目标：
 
-- 复用已吸收的 Portal launch、Gateway、clean OPL WebUI、Adapter session bind 和授权 provider message reply canary 事实。
+- 复用已吸收的 Portal launch、Gateway、clean OPL WebUI、Runtime Bridge session bind 和授权 provider message reply canary 事实。
 - 不在 file/run/artifact 分支重新定义 provider message 成功标准。
 
 验证命令：
@@ -90,14 +90,14 @@ node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 
 目标：
 
-- 验证真实 OPL WebUI、ACP 或 Adapter/Runtime boundary 是否存在可接入的 file upload 或 file intent。
+- 验证真实 OPL WebUI、ACP 或 Runtime Bridge/Runtime Agent boundary 是否存在可接入的 file upload 或 file intent。
 - 如果没有真实文件能力，返回明确 gate。
 
 预期链路：
 
 ```text
 OPL file upload or file intent
-  -> Adapter normalized file intent
+  -> Runtime Bridge normalized file intent
   -> workspace file boundary or Runtime Agent boundary
 ```
 
@@ -119,7 +119,7 @@ OPL file upload or file intent
 
 - 证明 file upload 或 file intent 形成 workspace-scoped `fileRef`。
 - 证明 Portal 能查询 file projection。
-- 在 Runtime Agent API relay full-loop 中，fileRef 必须来自 Runtime Agent HTTP file intake response，Adapter 只做归一化和 Portal projection，不得本地伪造。
+- 在 Runtime Agent API relay full-loop 中，fileRef 必须来自 Runtime Agent HTTP file intake response，Runtime Bridge 只做归一化和 Portal projection，不得本地伪造。
 
 成功验收：
 
@@ -131,7 +131,7 @@ OPL file upload or file intent
 
 - 已提交 file intent 但未观测到 `fileRef` 时返回 `file_ref_not_observed`。
 - `fileRef` 未绑定 workspace/session 时返回 `workspace_file_scope_missing`。
-- Adapter 映射失败时返回 `adapter_mapping_failed`。
+- Runtime Bridge 映射失败时返回 `runtime_bridge_mapping_failed`。
 - Portal 无法查询时返回 `portal_projection_missing`。
 
 ### Stage 4: Run intent and Runtime Agent gate
@@ -146,7 +146,7 @@ OPL file upload or file intent
 
 ```text
 OPL run intent
-  -> Adapter normalized run intent
+  -> Runtime Bridge normalized run intent
   -> Runtime Bridge / Runtime Agent boundary
 ```
 
@@ -167,7 +167,7 @@ OPL run intent
 
 目标：
 
-- 验证 run 状态能形成 stable Adapter state 和 Portal projection。
+- 验证 run 状态能形成 stable Runtime Bridge state 和 Portal projection。
 
 成功验收：
 
@@ -177,7 +177,7 @@ OPL run intent
 
 失败验收：
 
-- run state ID 绑定缺失时返回 `adapter_mapping_failed`。
+- run state ID 绑定缺失时返回 `runtime_bridge_mapping_failed`。
 - Portal 无法查询时返回 `portal_projection_missing`。
 - pending 状态必须保留 `queued` 或 `running`，不得伪装成 `succeeded`。
 
@@ -207,7 +207,7 @@ Runtime Agent output
 
 - run 已完成但没有 artifact 时返回 `artifact_not_observed`。
 - output file reference 未观测到时返回 `output_file_ref_not_observed`。
-- output 未绑定 workspace/session/run 时返回 `adapter_mapping_failed`。
+- output 未绑定 workspace/session/run 时返回 `runtime_bridge_mapping_failed`。
 - Portal 无法查询时返回 `portal_projection_missing`。
 
 ### Stage 7: Runtime Agent API relay full-loop
@@ -239,7 +239,7 @@ Runtime Agent HTTP API proof is not production deploy evidence
 失败验收：
 
 - 未配置 Runtime Agent API endpoint 时，必须保留 Stage 10 的 negative gate。
-- Runtime Agent API 返回缺少 file/run/artifact 必要 ID 时，Adapter 必须返回 `adapter_mapping_failed` 或对应业务 gate，不能返回 200 假成功。
+- Runtime Agent API 返回缺少 file/run/artifact 必要 ID 时，Runtime Bridge 必须返回 `runtime_bridge_mapping_failed` 或对应业务 gate，不能返回 200 假成功。
 - Runtime Agent API 不可达时返回 `upstream_unavailable` 或 runtime dispatch error，不得生成伪 `runId`、伪 `fileRef` 或伪 artifact。
 
 ### Stage 8: Portal workspace/session/run query
@@ -265,7 +265,7 @@ Runtime Agent HTTP API proof is not production deploy evidence
 预期链路：
 
 ```text
-Adapter / Runtime Bridge sanitized metadata
+Runtime Bridge sanitized metadata
   -> Portal trace projection
   -> optional Langfuse attachment
   -> trace.medopl.cn when separately authorized
@@ -299,7 +299,7 @@ Adapter / Runtime Bridge sanitized metadata
 
 - 验证所有失败都明确 gate。
 - 验证 evidence 只写 `.runtime` 且脱敏。
-- 验证 `OPL_RUNTIME_MODE=webui` 下 Adapter 不把未验证 file/run/artifact 能力伪造成成功。
+- 验证 `OPL_RUNTIME_MODE=webui` 下 Runtime Bridge 不把未验证 file/run/artifact 能力伪造成成功。
 
 验证命令：
 
@@ -322,7 +322,7 @@ node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs
 - `portal_projection_missing`
 - `trace_sink_not_configured`
 - `capability_not_supported`
-- `adapter_mapping_failed`
+- `runtime_bridge_mapping_failed`
 - `upstream_unavailable`
 - `deferred_authorization`
 

@@ -47,6 +47,7 @@ const allowedTokenGuardianScripts = new Set([
   "scripts/smoke-test-v22-env-template-default-entry.mjs",
   "scripts/smoke-test-v22-product-goal-execution-order.mjs",
   "scripts/smoke-test-v22-repo-zoning-boundary.mjs",
+  "scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
 ]);
 
 const oldRouteFieldPatterns = [
@@ -91,7 +92,7 @@ const compatibilityCompletionPatterns = [
   /\bkeep_tombstone\b/iu,
   /\barchive_reference\b/iu,
   /\bGateway alias\b/iu,
-  /Portal OPL Adapter \/ Runtime Agent 合同包/iu,
+  /Runtime Bridge \/ Runtime Agent 合同包/iu,
   /portal-legacy-redirect\.routes\.mjs[^.\n]*(?:路径迁移壳|兼容|compat)/iu,
   /旧 workspace redirects[^.\n]*(?:兼容|compat)/iu,
   /旧入口兼容参考/iu,
@@ -298,7 +299,7 @@ async function assertRuntimeBridgeContractPackageNaming() {
   const contractIndex = await readRepoFile("docs/contracts/README.md");
   assert(contractIndex.includes("### Runtime Bridge 合同包"), "contract_index_must_use_runtime_bridge_contract_package_title");
   assert.equal(
-    contractIndex.includes("### Portal OPL Adapter / Runtime Agent 合同包"),
+    contractIndex.includes("### Runtime Bridge / Runtime Agent 合同包"),
     false,
     "contract_index_must_not_use_adapter_contract_package_title",
   );

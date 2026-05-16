@@ -1,11 +1,11 @@
 <template>
-  <AppLayout title="任务空间详情" subtitle="归属、状态、会话、存储、成本与 Trace">
+  <AppLayout title="工作空间详情" subtitle="归属、状态、会话、存储、成本与 Trace">
     <div v-if="payload" class="space-y-6">
       <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="任务空间" :value="payload.workspace.title" hint="任务空间标题" />
+        <MetricCard label="工作空间" :value="payload.workspace.title" hint="工作空间标题" />
         <MetricCard label="所属用户" :value="payload.user.name" hint="归属账号" />
         <MetricCard label="状态" :value="payload.workspace.statusLabel" hint="当前空间状态" />
-        <MetricCard label="活跃会话" :value="payload.activeSession?.id || '未绑定'" hint="任务空间当前会话" />
+        <MetricCard label="活跃会话" :value="payload.activeSession?.id || '未绑定'" hint="工作空间当前会话" />
       </section>
 
       <section class="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1fr]">
@@ -35,7 +35,7 @@
 
         <div class="space-y-6">
           <div class="card p-6">
-            <h2 class="panel-title">任务空间状态</h2>
+            <h2 class="panel-title">工作空间状态</h2>
             <div class="mt-4 space-y-3 text-sm">
               <div class="muted-kv"><span class="muted-kv-label">Slug</span><span class="muted-kv-value">{{ payload.workspace.slug }}</span></div>
               <div class="muted-kv"><span class="muted-kv-label">状态</span><span class="muted-kv-value">{{ payload.workspace.statusLabel }}</span></div>

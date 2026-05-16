@@ -14,7 +14,7 @@ export default defineConfig({
     proxy: {
       "/portal/api": "http://127.0.0.1:17080",
       "/portal/workspace-session": "http://127.0.0.1:17080",
-      "/portal/tasks": "http://127.0.0.1:17080",
+      "/portal/workspaces": "http://127.0.0.1:17080",
       "/portal/admin": "http://127.0.0.1:17080",
       "/login": "http://127.0.0.1:17080",
       "/register": "http://127.0.0.1:17080",

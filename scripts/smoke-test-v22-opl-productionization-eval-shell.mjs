@@ -65,7 +65,7 @@ const requiredGateTerms = [
   "artifact_not_observed",
   "output_file_ref_not_observed",
   "portal_projection_missing",
-  "adapter_mapping_failed",
+  "runtime_bridge_mapping_failed",
   "upstream_unavailable",
   "deferred_authorization",
   "no fake 200",
@@ -159,7 +159,7 @@ assertIncludesAll(contents.realOplFileRunArtifact, [
   "productionization_status: contract_refresh_only",
   "OPL production branch may consume only `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`",
   "OPL production branch must not emit `ownerRef`, `operationId`, K8s labels, deploy owner labels, raw provider key, launchToken, runtimeToken, objectKey, storageKey, localPath, signedUrl, or presignedUrl",
-  "Adapter 不得伪造 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 或 `usageMetadataRef`",
+  "Runtime Bridge 不得伪造 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 或 `usageMetadataRef`",
 ], "file_run_artifact_productionization_eval");
 
 assertIncludesAll(contents.portalOplConnection, [

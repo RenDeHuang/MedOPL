@@ -15,7 +15,7 @@ MedOPL 的价值是把 One Person Lab SaaS 化：
 - 平台创建账号、管理余额和套餐。
 - 平台提供计算资源、文件空间和工作空间生命周期。
 - 平台负责开通、隔离、计费、审计、释放和停止计费。
-- 平台通过 Gateway、Adapter 和 Runtime Agent 把 Portal 上下文安全带入 OPL。
+- 平台通过 Gateway、Runtime Bridge 和 Runtime Agent 把 Portal 上下文安全带入 OPL。
 - 平台把 OPL session、run、artifact、trace、账单和审计状态回流到 Portal。
 
 用户购买的是托管 OPL 科研工作台服务，不是 CVM、COS、K8s、TKE、节点池或云资源控制台权限。
@@ -61,7 +61,7 @@ OPL 负责科研执行，包括：
 - 结果生成。
 - 工作台内交互体验。
 
-### Gateway / Adapter / Runtime Agent 负责
+### Gateway / Runtime Bridge / Runtime Agent 负责
 
 - 统一入口、preflight、launch 和上下文注入。
 - providerKeyRef、workspace、resource binding、file/run/artifact/trace 的安全投影。

@@ -64,7 +64,7 @@ function runtimeFilePayload(runtimeSession = {}, input = {}) {
     relativePath: firstText(input.relativePath, input.relative_path, input.fileName, input.file_name, input.name).replace(/^\/+/, ""),
     sizeBytes: Number(input.sizeBytes ?? input.size_bytes ?? 0),
     contentType: firstText(input.contentType, input.content_type) || "application/octet-stream",
-    source: "portal_opl_adapter",
+    source: "runtime_bridge",
   };
 }
 

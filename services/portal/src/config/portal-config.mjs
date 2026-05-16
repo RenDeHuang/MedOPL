@@ -13,7 +13,7 @@ export const dataFile = path.join(runtimeRoot, "portal-db.json");
 export const eventsFile = path.join(runtimeRoot, "events.jsonl");
 export const PORTAL_OPL_PROVIDER_SECRET_ROOT = String(
   process.env.PORTAL_OPL_PROVIDER_SECRET_ROOT ||
-  path.join(repoRoot, ".runtime", "portal-opl-adapter", "provider-secrets"),
+  path.join(repoRoot, ".runtime", "runtime-bridge", "provider-secrets"),
 ).trim();
 export const medWorkspaceRoot = path.join(repoRoot, ".runtime", "med-autoscience", "workspaces");
 export const medRunsRoot = path.join(repoRoot, ".runtime", "med-autoscience", "runs");
@@ -28,7 +28,7 @@ export const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "js
 export const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "postgres://postgres:postgres@127.0.0.1:5432/med_meta").trim();
 export const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "redis://127.0.0.1:6379").trim();
 export const PORTAL_DB_NAMESPACE = String(process.env.PORTAL_DB_NAMESPACE || "portal").trim() || "portal";
-export const PORTAL_OPL_ADAPTER_URL = String(process.env.PORTAL_OPL_ADAPTER_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
+export const PORTAL_RUNTIME_BRIDGE_URL = String(process.env.PORTAL_RUNTIME_BRIDGE_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
 export const PORTAL_OPL_RESOURCE_BINDING_ID = String(process.env.PORTAL_OPL_RESOURCE_BINDING_ID || "").trim();
 export const PORTAL_OPL_COMPUTE_INSTANCE_ID = String(process.env.PORTAL_OPL_COMPUTE_INSTANCE_ID || "").trim();
 export const PORTAL_OPL_STORAGE_BUCKET_ID = String(process.env.PORTAL_OPL_STORAGE_BUCKET_ID || "").trim();

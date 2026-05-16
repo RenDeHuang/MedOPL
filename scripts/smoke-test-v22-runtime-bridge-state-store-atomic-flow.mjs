@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-opl-adapter-state-store-"));
-process.env.PORTAL_OPL_ADAPTER_STATE_ROOT = tempRoot;
+const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-opl-runtime-bridge-state-store-"));
+process.env.PORTAL_RUNTIME_BRIDGE_STATE_ROOT = tempRoot;
 
 const stateStoreUrl = pathToFileURL(path.resolve("services/opl-runtime-bridge/src/state-store.mjs"));
 stateStoreUrl.search = `smoke=${Date.now()}`;

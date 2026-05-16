@@ -28,15 +28,15 @@
         <div v-if="currentPage === 0" class="grid gap-4 md:grid-cols-2">
           <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
             <div class="text-sm font-semibold text-gray-950 dark:text-white">MAS 普通对话</div>
-            <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">适合直接提问，不绑定任务空间，不生成 workspace 文件结果。</p>
+            <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">适合直接提问，不绑定工作空间，不生成 workspace 文件结果。</p>
           </div>
           <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-            <div class="text-sm font-semibold text-gray-950 dark:text-white">MAS 任务空间</div>
+            <div class="text-sm font-semibold text-gray-950 dark:text-white">MAS 工作空间</div>
             <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">适合上传文件、持续处理同一主题，并生成可下载的结果文件。</p>
           </div>
           <div class="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300 md:col-span-2">
             <div class="font-semibold text-gray-950 dark:text-white">MAS 是什么</div>
-            <p class="mt-2">MAS 是统一入口，用于启动普通对话与任务空间工作流。产品名必须保留为 MAS，不替换为其他主名称。</p>
+            <p class="mt-2">MAS 是统一入口，用于启动普通对话与工作空间工作流。产品名必须保留为 MAS，不替换为其他主名称。</p>
           </div>
         </div>
 
@@ -80,19 +80,19 @@
             </div>
             <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
               <div class="text-sm font-semibold text-gray-950 dark:text-white">文件结果</div>
-              <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">任务空间或 OPL Web 的输出结果区显示可下载文件。</p>
+              <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-slate-400">工作空间或 OPL Web 的输出结果区显示可下载文件。</p>
             </div>
           </div>
           <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
             <div class="text-sm font-semibold text-gray-950 dark:text-white">计费口径</div>
             <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-gray-500 dark:text-slate-400">
               <li>普通对话不计资源费。</li>
-              <li>MAS 任务空间按运行资源收费。</li>
+              <li>MAS 工作空间按运行资源收费。</li>
               <li>自带模型 API 不单独计 token 费用。</li>
             </ul>
           </div>
           <div class="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-            开始前请先确认：结果分为会话结论与文件结果两类；文件结果可在任务空间或 OPL Web 的输出结果入口查看和下载。
+            开始前请先确认：结果分为会话结论与文件结果两类；文件结果可在工作空间或 OPL Web 的输出结果入口查看和下载。
           </div>
         </div>
       </section>
@@ -132,7 +132,7 @@ const pages = [
   {
     nav: "入口说明",
     title: "MAS 入口与使用边界",
-    description: "先区分普通对话与任务空间，再选择合适入口开始工作。",
+    description: "先区分普通对话与工作空间，再选择合适入口开始工作。",
   },
   {
     nav: "上传与提问",

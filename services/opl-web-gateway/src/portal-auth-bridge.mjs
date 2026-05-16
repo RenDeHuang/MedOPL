@@ -3,7 +3,7 @@ import {
   NATIVE_LOGIN_PATHS,
   PORTAL_INTERNAL_AUTH_TOKEN,
   PORTAL_INTERNAL_URL,
-  PORTAL_OPL_ADAPTER_URL,
+  PORTAL_RUNTIME_BRIDGE_URL,
   buildDirectEntryState,
 } from "./config.mjs";
 import { parseCookies, readRequestBody, sendJson } from "./http-utils.mjs";
@@ -27,7 +27,7 @@ export function clearLaunchCookie() {
 }
 
 export async function fetchPortalBootstrap(launchToken) {
-  const url = new URL("/api/opl-launch/bootstrap", `${PORTAL_OPL_ADAPTER_URL}/`);
+  const url = new URL("/api/opl-launch/bootstrap", `${PORTAL_RUNTIME_BRIDGE_URL}/`);
   const response = await fetch(url, {
     headers: {
       accept: "application/json",

@@ -7,7 +7,7 @@
     const navItems = user ? [
       { href: "/portal", label: "首页", active: page === "overview" },
       { href: "/portal/opl", label: "OPL 工作台", active: page === "default" || page === "workspace" },
-      { href: "/portal/workspace", label: "任务空间", active: page === "workspace" },
+      { href: "/portal/workspace", label: "工作空间", active: page === "workspace" },
       { href: "/portal/billing", label: "账单", active: page === "billing" },
       ...(user.role === "admin" ? [{ href: "/portal/admin", label: "管理后台", active: isAdminPage }] : []),
     ] : [];

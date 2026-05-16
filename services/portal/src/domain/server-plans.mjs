@@ -179,10 +179,10 @@ export function buildOverviewOnboarding({ commercial, workspaceCount, sessionCou
       },
       {
         id: "workspace",
-        title: "创建任务空间",
+        title: "创建工作空间",
         state: workspaceCount > 0 ? "done" : "ready",
         href: "/workspace",
-        description: workspaceCount > 0 ? "已存在可用任务空间。" : "先创建任务空间，再进入实验室承载 session、trace 和文件存储。",
+        description: workspaceCount > 0 ? "已存在可用工作空间。" : "先创建工作空间，再进入实验室承载 session、trace 和文件存储。",
       },
       {
         id: "launch",

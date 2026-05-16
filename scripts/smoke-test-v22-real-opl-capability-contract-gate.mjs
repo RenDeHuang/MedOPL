@@ -101,7 +101,7 @@ assertAllIncluded(contract, [
   "runtime_authorization_required",
   "upstream_unavailable",
   "upstream_reply_timeout",
-  "adapter_mapping_failed",
+  "runtime_bridge_mapping_failed",
   "trace_sink_not_configured",
 ], "capability_and_error_states");
 
@@ -144,7 +144,7 @@ assertAllIncluded(flow, [
 ], "flow_doc");
 
 assertAllIncluded(flow, [
-  "Portal -> Gateway -> clean OPL WebUI -> Adapter -> Runtime Bridge / Runtime Agent -> Portal projection",
+  "Portal -> Gateway -> clean OPL WebUI -> Runtime Bridge / Runtime Agent -> Portal projection",
   "messageId/status/replyMessageId",
   "workspace-scoped fileRef",
   "runId/status/traceId/billingMetadataRef",

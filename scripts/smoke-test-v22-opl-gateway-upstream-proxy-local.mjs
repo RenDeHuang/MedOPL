@@ -55,7 +55,7 @@ function spawnGateway({ port, env = {} }) {
       PORT: String(port),
       OPL_WEB_GATEWAY_PUBLIC_URL: `http://127.0.0.1:${port}`,
       PORTAL_PUBLIC_URL: "https://portal.medopl.cn",
-      PORTAL_OPL_ADAPTER_URL: "http://127.0.0.1:59998",
+      PORTAL_RUNTIME_BRIDGE_URL: "http://127.0.0.1:59998",
       ...env,
     },
     stdio: ["ignore", "pipe", "pipe"],

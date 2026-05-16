@@ -460,7 +460,7 @@ export function createPortalWorkspaceRuntime({
     const db = existingDb || await readDb();
     const taskSpace = await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     if (taskSpace.status !== "active") {
-      sendHtml(res, layoutV2("任务空间不可上传", `<div class="card"><h2>当前任务空间不可上传</h2><p class="hint">只有 active 状态的任务空间才能继续上传文件与发起新运行。</p></div>`, user), 409);
+      sendHtml(res, layoutV2("工作空间不可上传", `<div class="card"><h2>当前工作空间不可上传</h2><p class="hint">只有 active 状态的工作空间才能继续上传文件与发起新运行。</p></div>`, user), 409);
       return;
     }
     const entitlement = workspaceStorageEntitlement(db, user, taskSpace.slug);

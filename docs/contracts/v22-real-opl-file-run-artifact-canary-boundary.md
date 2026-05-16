@@ -56,7 +56,7 @@ Portal 已能进入 clean OPL WebUI、绑定 session，并已通过授权 provid
 ```text
 Portal is the SaaS control plane.
 Gateway is the clean OPL WebUI entry/proxy.
-Adapter is the anti-corruption layer for file intent, run intent, artifact backflow, gate errors, and Portal projection.
+Runtime Bridge is the anti-corruption layer for file intent, run intent, artifact backflow, gate errors, and Portal projection.
 Runtime Bridge / Runtime Agent is the downstream canonical source for run, artifact, ledger, trace, and billing metadata.
 云服务/COS 是真实账单与存储事实源。
 Langfuse is an optional sanitized observability attachment.
@@ -80,7 +80,7 @@ one-person-lab upstream remains clean.
 ```text
 Portal launch
   -> Gateway clean OPL WebUI
-  -> Adapter bootstrap/session bind
+  -> Runtime Bridge bootstrap/session bind
   -> real OPL file upload or file intent
   -> workspace-scoped fileRef
   -> run intent
@@ -94,7 +94,7 @@ Portal launch
 
 - 复用已证明的 Portal launch、Gateway、clean OPL WebUI、session bind 和 provider message baseline。
 - file upload 或 file intent 是否能形成 workspace-scoped `fileRef`。
-- Adapter 是否能把真实 OPL/WebUI/ACP file shape 映射成稳定 file projection。
+- Runtime Bridge 是否能把真实 OPL/WebUI/ACP file shape 映射成稳定 file projection。
 - run intent 是否进入 Runtime Bridge / Runtime Agent boundary。
 - run 是否返回 `runId/status/traceId/billingMetadataRef/usageMetadataRef` 或明确 gate。
 - artifact/output 是否形成 `artifactRef` 或 `outputFileRef`。
@@ -107,7 +107,7 @@ Portal launch
 
 - 不修改 one-person-lab upstream。
 - 不 import upstream 内部模块。
-- 不在 upstream 目录写 Portal、Gateway、Adapter、Runtime 或 Langfuse 代码。
+- 不在 upstream 目录写 Portal、Gateway、Runtime Bridge、Runtime 或 Langfuse 代码。
 - 不读取 raw API key、`.env`、kubeconfig、SecretId、SecretKey、SSH private key 或外部生产 token。
 - 不调用真实云 mutation，不创建、删除、释放、扩缩容或改标签真实云资源。
 - 不调用 COS mutation，不清空 bucket，不读取对象正文，不暴露 object key。
@@ -152,15 +152,15 @@ Portal launch
 | `portalUserId` | Portal | 用户边界 |
 | `workspaceId` | Portal | workspace 边界 |
 | `launchId` | Portal / Gateway | 一次进入 OPL 的 launch 关联，不进入 URL query |
-| `workspaceSessionId` | Portal / Adapter | Portal workspace session projection |
-| `runtimeSessionId` | Adapter / Runtime Bridge | runtime session 归一化 ID |
+| `workspaceSessionId` | Portal / Runtime Bridge | Portal workspace session projection |
+| `runtimeSessionId` | Runtime Bridge | runtime session 归一化 ID |
 | `resourceBindingId` | Portal / Runtime Bridge | 托管运行环境绑定 ID |
 | `providerKeyRef` | Portal / Runtime Bridge secret boundary | provider 绑定引用，不是 raw API key |
-| `oplSessionId` | OPL WebUI / ACP / Adapter | OPL session 归一化 ID |
+| `oplSessionId` | OPL WebUI / ACP / Runtime Bridge | OPL session 归一化 ID |
 | `oplConversationId` | OPL WebUI bridge | WebUI conversation ID |
 | `fileRef` | Portal / Runtime Bridge | workspace-scoped file reference |
 | `runId` | Runtime Bridge / Runtime Agent | run canonical ID |
-| `traceId` | Adapter / Runtime Bridge / Portal | sanitized trace metadata ID |
+| `traceId` | Runtime Bridge / Portal | sanitized trace metadata ID |
 | `artifactRef` | Runtime Bridge / Runtime Agent | 输出 artifact public reference |
 | `outputFileRef` | Portal / Runtime Bridge | 输出文件 public reference |
 | `billingMetadataRef` | Runtime Bridge / Portal billing projection | 账单元数据引用，不是账单事实本身 |
@@ -169,7 +169,7 @@ Portal launch
 | `operationId` | Package D / cloud operation lane | 部署或云操作执行 ID，不由 OPL lane 生成或解释 |
 | K8s labels | Package D / deploy lane | deploy owner labels，不由 OPL lane 生成或解释 |
 
-`fileRef`、`runId`、`artifactRef`、`outputFileRef`、`traceId`、`billingMetadataRef` 和 `usageMetadataRef` 必须绑定同一组 `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId`。run 与 artifact 还必须绑定 `resourceBindingId`。无法绑定时返回 `adapter_mapping_failed`。
+`fileRef`、`runId`、`artifactRef`、`outputFileRef`、`traceId`、`billingMetadataRef` 和 `usageMetadataRef` 必须绑定同一组 `tenantId + portalUserId + workspaceId + workspaceSessionId + runtimeSessionId`。run 与 artifact 还必须绑定 `resourceBindingId`。无法绑定时返回 `runtime_bridge_mapping_failed`。
 
 ## Step Gates
 
@@ -178,7 +178,7 @@ Portal launch
 通用 gate：
 
 - `capability_not_supported`: 真实 upstream、WebUI bridge、ACP runtime 或 Runtime Agent 未提供该能力。
-- `adapter_mapping_failed`: 真实返回 shape 变化、ID 绑定缺失或 projection 无法归一化。
+- `runtime_bridge_mapping_failed`: 真实返回 shape 变化、ID 绑定缺失或 projection 无法归一化。
 - `upstream_unavailable`: 真实 OPL WebUI/ACP/API/CLI 来源不可达。
 - `deferred_authorization`: 能力需要用户、运维或真实外部系统单独授权。
 - `managed_environment_required`: 需要已开通托管运行环境。
@@ -202,7 +202,7 @@ no fake 200 规则：
 - 同步失败必须返回失败 HTTP status 和明确 `error`。
 - 异步 accepted 可以返回 202，但 response 必须包含 `status=queued|running`、`runId` 或后续查询 ID/URL。
 - `queued`、`running`、`gated` 或 `unsupported` 不得伪装成 `succeeded`。
-- Adapter 不得生成伪 `fileRef`、伪 `runId`、伪 `artifactRef`、伪 `outputFileRef`、伪 `billingMetadataRef` 或伪 `usageMetadataRef`。
+- Runtime Bridge 不得生成伪 `fileRef`、伪 `runId`、伪 `artifactRef`、伪 `outputFileRef`、伪 `billingMetadataRef` 或伪 `usageMetadataRef`。
 
 ## File Upload Gate
 
@@ -253,7 +253,7 @@ run gate 的目标是证明 run intent 是否进入真实 Runtime Bridge / Runti
 - 需要真实 runtime 授权时返回 `runtime_authorization_required`。
 - intent 未进入 Runtime Agent boundary 时返回 `run_not_observed`。
 - upstream 不可达时返回 `upstream_unavailable`。
-- 映射失败时返回 `adapter_mapping_failed`。
+- 映射失败时返回 `runtime_bridge_mapping_failed`。
 
 本合同默认不调用真实云 runtime。真实云 runtime、真实 Runtime Agent endpoint、真实计算/存储资源和真实部署必须单独授权。
 
@@ -276,7 +276,7 @@ artifact output gate 的目标是证明 run 输出能形成 Portal 可查询的 
 
 - run 已完成但未观测到 artifact 时返回 `artifact_not_observed`。
 - output file reference 未观测到时返回 `output_file_ref_not_observed`。
-- output 未绑定 workspace/session/run 时返回 `adapter_mapping_failed`。
+- output 未绑定 workspace/session/run 时返回 `runtime_bridge_mapping_failed`。
 - 需要 Runtime Agent 时返回 `requires_runtime_agent`。
 - 需要真实 runtime 授权时返回 `runtime_authorization_required`。
 
@@ -303,7 +303,7 @@ Langfuse 未配置时必须返回 `trace_sink_not_configured` 或 `deferred_auth
 
 Portal projection gate 的目标是证明 Portal 能按 workspace/session/run 查询状态、文件、trace 和 billing metadata。
 
-Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Adapter/Runtime projection。Portal 禁止直接依赖：
+Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Runtime Bridge projection。Portal 禁止直接依赖：
 
 - one-person-lab route。
 - WebSocket event shape。
@@ -321,7 +321,7 @@ Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Ada
 - billing metadata reference。
 - workspace/session/run 归属。
 
-若 Adapter 已观测到 file/run/artifact 但 Portal 不能按 `workspaceId + workspaceSessionId + runId` 查询，必须返回 `portal_projection_missing`，不得只把 Adapter 内部状态当成用户闭环。
+若 Runtime Bridge 已观测到 file/run/artifact 但 Portal 不能按 `workspaceId + workspaceSessionId + runId` 查询，必须返回 `portal_projection_missing`，不得只把 Runtime Bridge 内部状态当成用户闭环。
 
 ## Billing Metadata Boundary
 
@@ -357,7 +357,7 @@ Production Runtime Agent binding 是 OPL lane 对 Package D 和云服务 lane �
 
 `resourceBindingId/workspace runtime identity` 是 OPL lane 交给下游 lane 的唯一资源绑定上下文。OPL lane 不提供 `ownerRef`、`operationId` 或 K8s labels，不决定 namespace、workload、container、rollout、digest verify、owner labels 或 rollback evidence。这些属于 Package D / deploy lane 和云服务 lane 的合同。
 
-Production Runtime Agent binding 允许 config-only / fake Runtime Agent endpoint binding 来验证公开 HTTP API relay；默认不读取 secret、不调用真实云、不 build/push/deploy、不 kubectl、不修改 one-person-lab upstream。未配置 Runtime Agent endpoint 时必须返回 `requires_runtime_agent`。Runtime Agent 未返回 artifact 时必须返回 `artifact_not_observed` 或 `output_file_ref_not_observed`。Adapter 不得伪造 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 或 `usageMetadataRef`。
+Production Runtime Agent binding 允许 config-only / fake Runtime Agent endpoint binding 来验证公开 HTTP API relay；默认不读取 secret、不调用真实云、不 build/push/deploy、不 kubectl、不修改 one-person-lab upstream。未配置 Runtime Agent endpoint 时必须返回 `requires_runtime_agent`。Runtime Agent 未返回 artifact 时必须返回 `artifact_not_observed` 或 `output_file_ref_not_observed`。Runtime Bridge 不得伪造 `fileRef`、`runId`、`artifactRef`、`outputFileRef`、`billingMetadataRef` 或 `usageMetadataRef`。
 
 ## Current Productionization Boundary Status
 
@@ -446,9 +446,9 @@ canary 发现的事实必须回写合同、status 和 validation path。后续 p
 
 1. 明确声明订阅本合同包和模型记录。当前开发分支为 `feat/v22-real-opl-file-run-artifact-canary`，模型记录为 `gpt-5.3-codex`。
 2. `node scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs` 通过。
-3. Runtime Agent HTTP API proof 已证明 Portal -> Gateway -> Adapter -> Runtime Agent HTTP API -> workspace-scoped `fileRef` -> `runId/status/traceId` -> `artifactRef` / `outputFileRef` -> Portal workspace/session/run trace projection 的本地 proof 闭环；该 proof 不进入默认 MVP suite，也不是 production deploy evidence。
+3. Runtime Agent HTTP API proof 已证明 Portal -> Gateway -> Runtime Bridge -> Runtime Agent HTTP API -> workspace-scoped `fileRef` -> `runId/status/traceId` -> `artifactRef` / `outputFileRef` -> Portal workspace/session/run trace projection 的本地 proof 闭环；该 proof 不进入默认 MVP suite，也不是 production deploy evidence。
 4. `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs` 通过，证明 `OPL_RUNTIME_MODE=webui` 且未配置 Runtime Agent API 时 file/run/artifact 不会伪成功：file 返回 `file_upload_capability_not_supported`，run 返回 queryable `requires_runtime_agent` gated run，artifact 返回 `artifact_not_observed` / `output_file_ref_not_observed`。该 smoke 只是负向保护，不满足完整闭环吸收标准。
-5. Runtime Agent API relay full-loop smoke 必须证明 Runtime Agent canary server 实际收到 file upload/intake 和 run dispatch HTTP 请求；Adapter/Portal public response、Portal trace、canary evidence 和 git 不包含 raw API key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl` 或 `presignedUrl`。
+5. Runtime Agent API relay full-loop smoke 必须证明 Runtime Agent canary server 实际收到 file upload/intake 和 run dispatch HTTP 请求；Runtime Bridge/Portal public response、Portal trace、canary evidence 和 git 不包含 raw API key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl` 或 `presignedUrl`。
 6. `node scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs` 通过。
 7. `node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs` 通过。
 8. `node scripts/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。

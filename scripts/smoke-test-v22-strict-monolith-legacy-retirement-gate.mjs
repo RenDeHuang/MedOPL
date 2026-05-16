@@ -412,6 +412,7 @@ async function assertResidualTestAnchorsRetired() {
     "scripts/smoke-test-v22-long-term-governance-surfaces.mjs",
     "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
     "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+    "scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
   ]);
   const forbiddenTokens = [
     "resourceOrderCount",

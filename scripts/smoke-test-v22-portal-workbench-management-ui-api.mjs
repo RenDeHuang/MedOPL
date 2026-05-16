@@ -166,13 +166,6 @@ try {
     assertPageHas(loginHtml, "注册新账号", "login_page_register_link");
     assert.equal(loginHtml.includes("使用统一账号登录"), false, "login_page_must_not_show_oidc_primary_copy");
 
-    const legacyOverview = await fetch(`${baseUrl}/portal/app/overview`, { redirect: "manual" });
-    assert.equal(legacyOverview.status, 302, "legacy_overview_must_redirect");
-    assert.equal(legacyOverview.headers.get("location"), "/overview", "legacy_overview_location_mismatch");
-    const legacyAdminSystem = await fetch(`${baseUrl}/portal/app/admin/system`, { redirect: "manual" });
-    assert.equal(legacyAdminSystem.status, 302, "legacy_admin_system_must_redirect");
-    assert.equal(legacyAdminSystem.headers.get("location"), "/admin/system", "legacy_admin_system_location_mismatch");
-
     const protectedOverview = await fetch(`${baseUrl}/overview`, { redirect: "manual" });
     assert.equal(protectedOverview.status, 302, "protected_overview_must_redirect_when_logged_out");
     assert.equal(protectedOverview.headers.get("location"), "/login", "protected_overview_login_location_mismatch");

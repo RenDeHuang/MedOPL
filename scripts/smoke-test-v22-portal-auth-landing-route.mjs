@@ -20,14 +20,13 @@ assert(
 );
 
 assert(
-  routerSource.includes('{ path: "/portal", redirect: "/overview" }'),
-  "portal_frontend_must_alias_legacy_inner_portal_route_to_overview",
+  !routerSource.includes('{ path: "/portal", redirect: "/overview" }'),
+  "portal_frontend_must_not_alias_legacy_inner_portal_route_to_overview",
 );
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_portal_auth_landing_route",
   loginSuccessLocation: "/overview",
-  legacyInnerRoute: "/portal",
-  aliasTarget: "/overview",
+  canonicalRouteRoot: "/",
 }, null, 2));

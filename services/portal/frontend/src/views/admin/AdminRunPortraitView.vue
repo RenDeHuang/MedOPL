@@ -4,7 +4,7 @@
       <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="运行编号" :value="payload.run.runId" hint="运行唯一标识" />
         <MetricCard label="用户" :value="payload.run.userName" hint="触发用户" />
-        <MetricCard label="任务空间" :value="payload.run.workspaceTitle" hint="归属 workspace" />
+        <MetricCard label="工作空间" :value="payload.run.workspaceTitle" hint="归属 workspace" />
         <MetricCard label="状态" :value="payload.run.status" hint="当前运行状态" />
       </section>
 
@@ -21,7 +21,7 @@
           <div class="space-y-3 text-sm">
             <div class="muted-kv"><span class="muted-kv-label">用户 ID</span><span class="muted-kv-value">{{ payload.run.userId || '-' }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">用户邮箱</span><span class="muted-kv-value">{{ payload.run.userEmail || '-' }}</span></div>
-            <div class="muted-kv"><span class="muted-kv-label">任务空间 ID</span><span class="muted-kv-value">{{ payload.run.workspaceId || '-' }}</span></div>
+            <div class="muted-kv"><span class="muted-kv-label">工作空间 ID</span><span class="muted-kv-value">{{ payload.run.workspaceId || '-' }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">Workspace Session</span><span class="muted-kv-value">{{ payload.workspaceSession?.id || payload.run.workspaceSessionId || '-' }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">Session 状态</span><span class="muted-kv-value">{{ payload.workspaceSession?.status || '-' }}</span></div>
             <div class="muted-kv"><span class="muted-kv-label">最后活跃</span><span class="muted-kv-value">{{ payload.workspaceSession?.lastUsedAt || '-' }}</span></div>

@@ -213,8 +213,8 @@ Observed facts supplied by the authorized discovery lane:
 
 - kube API endpoint shape is reachable through `kube.medopl.cn`.
 - runtime smoke surfaces are reachable at `portal.medopl.cn`, `opl.medopl.cn`, and `trace.medopl.cn`.
-- candidate deployments discovered by prior read-only inspection: `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`.
-- candidate deployments discovered by prior read-only inspection: `portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter`.
+- candidate deployments discovered by prior read-only inspection: `default: portal-opl, opl-web-gateway-opl, opl-runtime-bridge-opl`.
+- candidate deployments discovered by prior read-only inspection: `portal-v21-gray: portal, opl-web-gateway, opl-runtime-bridge`.
 - candidate deployments have only `k8s-app/qcloud-app` style labels for this purpose; they do not provide Package D owner guard labels.
 
 Blocker:
@@ -226,7 +226,7 @@ Blocker:
 
 Contract problem to solve next:
 
-- Portal/Gateway/Adapter/trace may be platform service targets, so they may need a platform-level ownerRef and operation audit identity rather than forced workspace ownership.
+- Portal/Gateway/Runtime Bridge/trace may be platform service targets, so they may need a platform-level ownerRef and operation audit identity rather than forced workspace ownership.
 - workspace runtime targets still require workspaceId/resourceBindingId because they represent tenant-scoped runtime capacity.
 - The next branch must define an OPL deployment ownership / release plan sub-contract with explicit target class values: platform service target and workspace runtime target.
 - That sub-contract must decide which labels or Portal canonical records prove each target class without weakening the current Package D owner guard.
@@ -234,7 +234,7 @@ Contract problem to solve next:
 Contract update:
 
 - `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` is the repo-tracked OPL deployment ownership / release plan sub-contract.
-- `platform_service_target` covers Portal/Gateway/Adapter/shared Runtime Bridge target classes and requires `ownerRef/operationId`.
+- `platform_service_target` covers Portal/Gateway/Runtime Bridge/shared Runtime Bridge target classes and requires `ownerRef/operationId`.
 - `workspace_runtime_target` covers workspace Runtime Agent/runtime workload target classes and requires `ownerRef/operationId/workspaceId/resourceBindingId`.
 - This contract only enables config/fake-live ownership validation; real TCR push, kubectl dry-run, rollout, runtime smoke and rollback evidence remain separate Package D steps requiring explicit authorization.
 
@@ -395,12 +395,12 @@ Discovery status:
       "default": [
         "portal-opl",
         "opl-web-gateway-opl",
-        "portal-opl-adapter-opl"
+        "opl-runtime-bridge-opl"
       ],
       "portal-v21-gray": [
         "portal",
         "opl-web-gateway",
-        "portal-opl-adapter"
+        "opl-runtime-bridge"
       ]
     },
     "candidateLabelEvidence": "k8s-app/qcloud-app only for this purpose",

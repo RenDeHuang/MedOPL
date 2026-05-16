@@ -1,8 +1,7 @@
 import { createPortalAdminOpsRoutes } from "../routes/admin-ops.routes.mjs";
 import { createPortalAdminUserRoutes } from "../routes/admin-user.routes.mjs";
 import { createPortalBillingExportRoutes } from "../routes/portal-billing-export.routes.mjs";
-import { createPortalLegacyRedirectRoutes } from "../routes/portal-legacy-redirect.routes.mjs";
-import { createPortalTaskSpaceRoutes } from "../routes/task-space.routes.mjs";
+import { createPortalWorkspaceRoutes } from "../routes/workspace.routes.mjs";
 import { createZipFromDir } from "../lib/zip-archive.mjs";
 
 export function createPortalRuntimeRouteWiring({
@@ -70,7 +69,7 @@ export function createPortalRuntimeRouteWiring({
       sendHtml,
       writeDb,
     }),
-    handlePortalTaskSpaceRoutes: createPortalTaskSpaceRoutes({
+    handlePortalWorkspaceRoutes: createPortalWorkspaceRoutes({
       archiveTaskSpace,
       createZipFromDir,
       defaultTaskTitle,
@@ -109,10 +108,6 @@ export function createPortalRuntimeRouteWiring({
       runZitadelAdminUser,
       sendHtml,
       writeDb,
-    }),
-    handlePortalLegacyRedirectRoutes: createPortalLegacyRedirectRoutes({
-      layoutV2,
-      sendHtml,
     }),
   };
 }

@@ -1,13 +1,13 @@
 import http from "node:http";
 import { URL } from "node:url";
 import {
-  ADAPTER_PREFIX,
+  RUNTIME_BRIDGE_PREFIX,
   BASE_URL,
   LAUNCH_SCRIPT_PATH,
   NATIVE_AUTH_USER_PATHS,
   OPL_UPSTREAM_URL,
   PORT,
-  PORTAL_OPL_ADAPTER_URL,
+  PORTAL_RUNTIME_BRIDGE_URL,
   buildStatusPayload,
 } from "./config.mjs";
 import { handleAuthUser, handleNativeLogin, isOpenWebUiAuthPath } from "./portal-auth-bridge.mjs";
@@ -44,8 +44,8 @@ export function createOplWebGatewayServer() {
         if (await handleAuthUser(req, res, { openWebUi: isOpenWebUiAuthPath(url.pathname) })) return;
       }
       if (await handleNativeLogin(req, res, url)) return;
-      if (url.pathname === ADAPTER_PREFIX || url.pathname.startsWith(`${ADAPTER_PREFIX}/`)) {
-        await proxy(req, res, PORTAL_OPL_ADAPTER_URL, ADAPTER_PREFIX);
+      if (url.pathname === RUNTIME_BRIDGE_PREFIX || url.pathname.startsWith(`${RUNTIME_BRIDGE_PREFIX}/`)) {
+        await proxy(req, res, PORTAL_RUNTIME_BRIDGE_URL, RUNTIME_BRIDGE_PREFIX);
         return;
       }
       if (!OPL_UPSTREAM_URL) {
@@ -65,8 +65,8 @@ export function createOplWebGatewayServer() {
   server.on("upgrade", (req, socket, head) => {
     try {
       const url = new URL(req.url || "/", BASE_URL);
-      if (url.pathname === ADAPTER_PREFIX || url.pathname.startsWith(`${ADAPTER_PREFIX}/`)) {
-        proxyUpgrade(req, socket, head, PORTAL_OPL_ADAPTER_URL, ADAPTER_PREFIX);
+      if (url.pathname === RUNTIME_BRIDGE_PREFIX || url.pathname.startsWith(`${RUNTIME_BRIDGE_PREFIX}/`)) {
+        proxyUpgrade(req, socket, head, PORTAL_RUNTIME_BRIDGE_URL, RUNTIME_BRIDGE_PREFIX);
         return;
       }
       if (!OPL_UPSTREAM_URL) {

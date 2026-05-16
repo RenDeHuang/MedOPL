@@ -24,9 +24,9 @@ export function createPortalApiRoutes({
   evaluateUserPolicy,
   fetchBillingSummary,
   fetchHarborSummary,
-  fetchOplAdapterCosts,
-  fetchOplAdapterRuns,
-  fetchOplAdapterTraceRows,
+  fetchRuntimeBridgeCosts,
+  fetchRuntimeBridgeRuns,
+  fetchRuntimeBridgeTraceRows,
   fetchOpsRegistryImageRows,
   fetchTraceRows,
   formatDateTime,
@@ -105,7 +105,7 @@ export function createPortalApiRoutes({
     cloudProvisioner,
   });
   const handleSessions = createPortalApiSessionsRoutes({
-    fetchOplAdapterRuns,
+    fetchRuntimeBridgeRuns,
     normalizePageSize,
     paginateRows,
     readSessionsRequestOptions,
@@ -117,7 +117,7 @@ export function createPortalApiRoutes({
     collectRunsForUser,
     currentServerPlanSelection,
     currentTaskSpaceForUser,
-    fetchOplAdapterRuns,
+    fetchRuntimeBridgeRuns,
     formatDateTime,
     isRunTerminal,
     readBody,
@@ -132,14 +132,14 @@ export function createPortalApiRoutes({
   });
   const handleCosts = createPortalApiCostsRoutes({
     fetchBillingSummary,
-    fetchOplAdapterCosts,
+    fetchRuntimeBridgeCosts,
     sendJson,
   });
   const handleTraces = createPortalApiTracesRoutes({
     adminScopeResult,
     buildSessionTraceDetailPayload,
     buildSessionTracesApiPayload,
-    fetchOplAdapterTraceRows,
+    fetchRuntimeBridgeTraceRows,
     fetchTraceRows,
     normalizePageSize,
     paginateRows,

@@ -52,7 +52,7 @@ const masReplyLabel = computed(() => {
   return value ? `${value} ms` : "-";
 });
 
-const productSystemNames = new Set(["Portal", "OPL", "Trace", "Adapter", "Runtime Bridge", "Gateway", "Portal OPL Adapter"]);
+const productSystemNames = new Set(["Portal", "OPL", "Trace", "Gateway", "Runtime Bridge"]);
 const serviceCards = computed(() => (payload.value?.serviceStatuses || [])
   .filter((item: any) => productSystemNames.has(String(item.name || "")))
   .map((item: any) => ({

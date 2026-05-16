@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 
 const routerSource = await readFile("services/portal/frontend/src/router/index.ts", "utf8");
 const sidebarSource = await readFile("services/portal/frontend/src/layouts/AppSidebar.vue", "utf8");
-const legacyRedirectSource = await readFile("services/portal/src/routes/portal-legacy-redirect.routes.mjs", "utf8");
+const dispatcherSource = await readFile("services/portal/src/app/portal-http-dispatcher.mjs", "utf8");
 const viteSource = await readFile("services/portal/frontend/vite.config.ts", "utf8");
 const authSource = await readFile("services/portal/src/app/portal-auth-runtime-handler.mjs", "utf8");
 
@@ -40,22 +40,13 @@ for (const label of ["总览", "计算资源", "任务执行", "文件空间", "
   assert(sidebarSource.includes(`label: "${label}"`), `portal_sidebar_label_missing:${label}`);
 }
 
-for (const redirect of [
-  '["/portal", "/overview"]',
-  '["/portal/billing", "/billing"]',
-  '["/portal/servers", "/resources"]',
-  '["/portal/workspace", "/workspace"]',
-  '["/portal/admin", "/admin/dashboard"]',
-  '["/portal/app/overview", "/overview"]',
-  '["/portal/app/admin/system", "/admin/system"]',
-]) {
-  assert(legacyRedirectSource.includes(redirect), `portal_legacy_redirect_missing:${redirect}`);
-}
+assert.equal(dispatcherSource.includes("handlePortalLegacyRedirectRoutes"), false, "portal_legacy_redirect_handler_must_be_deleted");
+assert.equal(dispatcherSource.includes("/portal/app/assets/"), false, "portal_app_assets_legacy_prefix_must_be_deleted");
 
 for (const proxyPrefix of [
   '"/portal/api"',
   '"/portal/workspace-session"',
-  '"/portal/tasks"',
+  '"/portal/workspaces"',
   '"/portal/admin"',
   '"/login"',
   '"/register"',
@@ -67,7 +58,7 @@ for (const proxyPrefix of [
 }
 
 assert(routerSource.includes("createWebHistory()"), "portal_router_base_must_be_top_level");
-assert(routerSource.includes('{ path: "/portal", redirect: "/overview" }'), "portal_router_must_absorb_legacy_inner_portal_path");
+assert.equal(routerSource.includes('{ path: "/portal", redirect: "/overview" }'), false, "portal_router_must_not_absorb_legacy_inner_portal_path");
 assert(authSource.includes('const PORTAL_AUTH_SUCCESS_LOCATION = "/overview"'), "portal_auth_success_location_must_be_overview");
 assert.equal(authSource.includes('const PORTAL_AUTH_SUCCESS_LOCATION = "/portal/app/overview"'), false, "portal_auth_must_not_redirect_success_to_internal_portal_app");
 

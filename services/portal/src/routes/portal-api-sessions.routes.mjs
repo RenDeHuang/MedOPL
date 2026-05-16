@@ -1,5 +1,5 @@
 export function createPortalApiSessionsRoutes({
-  fetchOplAdapterRuns,
+  fetchRuntimeBridgeRuns,
   normalizePageSize,
   paginateRows,
   readSessionsRequestOptions,
@@ -13,9 +13,9 @@ export function createPortalApiSessionsRoutes({
     const targetUser = requestedUserId && user.role === "admin"
       ? (db.users.find((item) => item.id === requestedUserId) || user)
       : user;
-    const adapterRuns = await fetchOplAdapterRuns();
+    const runtimeBridgeRuns = await fetchRuntimeBridgeRuns();
     const runsByWorkspaceSession = new Map();
-    for (const run of adapterRuns.filter((item) => item.portalUserId === targetUser.id)) {
+    for (const run of runtimeBridgeRuns.filter((item) => item.portalUserId === targetUser.id)) {
       const key = run.workspaceSessionId || "";
       if (!key) continue;
       const current = runsByWorkspaceSession.get(key);
@@ -34,7 +34,7 @@ export function createPortalApiSessionsRoutes({
           latencyMs: Number(latestRun.latencyMs || 0),
           tokenCount: Number(latestRun.tokenCount || 0),
           userAgent: latestRun.userAgent || "",
-          source: "portal_workspace_sessions + portal_opl_adapter",
+          source: "portal_workspace_sessions + runtime_bridge",
         } : session;
       });
     const rows = [...oplSessions]
@@ -54,7 +54,7 @@ export function createPortalApiSessionsRoutes({
         totalPages: pagination.totalPages,
       },
       sources: {
-        opl: { source: "portal_workspace_sessions + portal_opl_adapter", type: "live" },
+        opl: { source: "portal_workspace_sessions + runtime_bridge", type: "live" },
       },
     });
     return true;

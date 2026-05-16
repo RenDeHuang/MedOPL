@@ -17,9 +17,9 @@ const files = {
   portalFiles: "docs/contracts/v22-portal-files-billing-trace-boundary.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   suite: "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-  stateStoreSmoke: "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs",
-  adapterApiSmoke: "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs",
-  realOplWebuiAdapterSmoke: "scripts/smoke-test-v22-real-opl-webui-adapter-flow.mjs",
+  stateStoreSmoke: "scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+  adapterApiSmoke: "scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+  realOplWebuiAdapterSmoke: "scripts/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs",
   webuiBridgeClient: "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
 };
 
@@ -57,15 +57,15 @@ assertIncludesAll(contents.connection, [
 
 assertIncludesAll(contents.connection, [
   "POST /portal/api/opl/launch",
-  "GET /portal-adapter/api/opl/bootstrap",
-  "POST /portal-adapter/api/opl/sessions/bind",
-  "POST /portal-adapter/api/opl/messages",
-  "GET /portal-adapter/api/opl/messages/{messageId}/status",
-  "POST /portal-adapter/api/opl/files",
-  "POST /portal-adapter/api/opl/runs",
-  "GET /portal-adapter/api/opl/runs/{runId}/status",
-  "GET /portal-adapter/api/opl/runs/{runId}/artifacts",
-  "GET /portal-adapter/api/opl/artifacts/{artifactRef}",
+  "GET /runtime-bridge/api/opl/bootstrap",
+  "POST /runtime-bridge/api/opl/sessions/bind",
+  "POST /runtime-bridge/api/opl/messages",
+  "GET /runtime-bridge/api/opl/messages/{messageId}/status",
+  "POST /runtime-bridge/api/opl/files",
+  "POST /runtime-bridge/api/opl/runs",
+  "GET /runtime-bridge/api/opl/runs/{runId}/status",
+  "GET /runtime-bridge/api/opl/runs/{runId}/artifacts",
+  "GET /runtime-bridge/api/opl/artifacts/{artifactRef}",
   "GET /portal/api/opl/bootstrap",
   "POST /portal/api/opl/sessions/bind",
   "POST /portal/api/opl/messages",
@@ -118,15 +118,15 @@ assertIncludesAll(contents.connection, [
 ], "connection_run_gates");
 
 assertIncludesAll(contents.connection, [
-  "Adapter Decoupling And Anti-Corruption Boundary",
+  "Runtime Bridge Decoupling And Anti-Corruption Boundary",
   "Portal 只依赖 MedOPL 稳定接口",
   "不得依赖 one-person-lab upstream 内部 API、DOM、store、数据库 schema 或内部 session model",
-  "Gateway / Portal OPL Adapter 是 anti-corruption layer",
-  "`adapterContractVersion`",
+  "Gateway / Runtime Bridge 是 anti-corruption layer",
+  "`runtimeBridgeContractVersion`",
   "`capabilities`",
   "`supportedEvents`",
   "OPL message/file/run 事件必须先归一化为 MedOPL canonical event",
-  "upstream OPL 更新只允许改 Gateway/Adapter 映射层",
+  "upstream OPL 更新只允许改 Gateway/Runtime Bridge 映射层",
   "不能改 Portal billing、workspace、resourceBinding、provider secret 或 audit 的核心合同",
   "`capability_not_supported`",
   "真实 upstream 能力必须先由 canary 分类，不能从 fake Product API fixture 推断",
@@ -142,11 +142,11 @@ assertIncludesAll(contents.connection, [
   "只是通用 `/api` catch-all 的 200 placeholder，不是 Product API",
   "discovery 当时只能证明 `chat.send.message` 进入 WebUI/ACP 启动路径，不能证明 AI reply",
   "后续授权 provider message live canary 结论",
-  "Portal -> Gateway -> Adapter -> clean OPL WebUI bridge -> provider message 可观测到真实 assistant reply",
+  "Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> provider message 可观测到真实 assistant reply",
   "`capabilitySource=mapped_to_webui_bridge`",
   "该事实只证明真实 provider message/reply",
-  "真实 WebUI Adapter flow 结论",
-  "Portal OPL Adapter 可以在 `OPL_RUNTIME_MODE=webui`",
+  "真实 WebUI Runtime Bridge flow 结论",
+  "Runtime Bridge 可以在 `OPL_RUNTIME_MODE=webui`",
   "launch 阶段创建真实 WebUI conversation",
   "bootstrap 从 WebUI database 回读 session",
   "`opl_webui_bridge_session_created`",
@@ -158,11 +158,11 @@ assertIncludesAll(contents.connection, [
   "每个 API 的验收不得只检查 HTTP 200/201/202",
   "真实访问和真实回流",
   "必须访问 upstream/Product API 的 health、system、engines、modules、agents、workspaces、sessions、progress 和 artifacts 边界",
-  "message request、reply、message artifact 和 trace 写回 Adapter state",
+  "message request、reply、message artifact 和 trace 写回 Runtime Bridge state",
   "调用 Runtime Agent relay/API 边界",
-  "run record、runtime artifact、session ledger entry 和 trace 写回 Adapter state",
+  "run record、runtime artifact、session ledger entry 和 trace 写回 Runtime Bridge state",
   "Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token",
-  "Adapter state 写入必须能保留并发 message/file/run 回流",
+  "Runtime Bridge state 写入必须能保留并发 message/file/run 回流",
 ], "connection_adapter_decoupling_boundary");
 
 assertIncludesAll(contents.connection, [
@@ -183,7 +183,7 @@ assertIncludesAll(contents.upstream, [
   "主仓当前没有暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions`",
   "`opl session runtime --acp` 是当前可验证的公开 CLI/ACP 边界",
   "`workspace_list` 虽出现在 ACP command list 中，但隔离 canary 返回 `invalid_payload`",
-  "Portal OPL Adapter 可在 `OPL_RUNTIME_MODE=acp`",
+  "Runtime Bridge 可在 `OPL_RUNTIME_MODE=acp`",
 ], "upstream_real_canary_findings");
 
 assertIncludesAll(contents.readme, [
@@ -193,27 +193,27 @@ assertIncludesAll(contents.readme, [
 
 assertIncludesAll(contents.suite, [
   "smoke-test-v22-portal-opl-connection-contract",
-  "smoke-test-v22-opl-adapter-state-store-atomic-flow",
-  "smoke-test-v22-portal-opl-adapter-api-local-flow",
+  "smoke-test-v22-runtime-bridge-state-store-atomic-flow",
+  "smoke-test-v22-portal-runtime-bridge-api-local-flow",
 ], "mvp_suite_includes_connection_contract");
 
 assertIncludesAll(contents.adapterApiSmoke, [
-  "/portal-adapter/api/opl/status",
-  "/portal-adapter/api/opl/bootstrap",
-  "/portal-adapter/api/opl/sessions/bind",
-  "/portal-adapter/api/opl/messages",
-  "/portal-adapter/api/opl/messages/",
-  "/portal-adapter/api/opl/files",
-  "/portal-adapter/api/opl/runs",
-  "/portal-adapter/api/opl/runs/",
-  "/portal-adapter/api/opl/artifacts/",
+  "/runtime-bridge/api/opl/status",
+  "/runtime-bridge/api/opl/bootstrap",
+  "/runtime-bridge/api/opl/sessions/bind",
+  "/runtime-bridge/api/opl/messages",
+  "/runtime-bridge/api/opl/messages/",
+  "/runtime-bridge/api/opl/files",
+  "/runtime-bridge/api/opl/runs",
+  "/runtime-bridge/api/opl/runs/",
+  "/runtime-bridge/api/opl/artifacts/",
   "opl_web_url_must_not_include_launch_token_query",
   "launch_cookie_must_be_http_only",
   "bootstrap_product_api_access_observed",
   "session_message_file_run_state_backflow",
   "portal_proxy_backflow",
   "stable_run_artifacts_must_read_persisted_run_artifact",
-], "adapter_api_local_flow_smoke");
+], "runtime_bridge_api_local_flow_smoke");
 
 assertIncludesAll(contents.connection, [
   "真实 upstream capability classification 的历史 evidence",
@@ -225,14 +225,14 @@ assertIncludesAll(contents.connection, [
 ], "retired_real_opl_canary_evidence_boundary");
 
 assertIncludesAll(contents.realOplWebuiAdapterSmoke, [
-  "v22_real_opl_webui_adapter_flow",
+  "v22_real_opl_webui_runtime_bridge_flow",
   "OPL_RUNTIME_MODE",
   "OPL_WEBUI_BRIDGE_URL",
-  "/portal-adapter/api/opl/bootstrap",
-  "/portal-adapter/api/opl/sessions/bind",
-  "/portal-adapter/api/opl/messages",
-  "/portal-adapter/api/opl/runs",
-  "real_webui_adapter_launch",
+  "/runtime-bridge/api/opl/bootstrap",
+  "/runtime-bridge/api/opl/sessions/bind",
+  "/runtime-bridge/api/opl/messages",
+  "/runtime-bridge/api/opl/runs",
+  "real_webui_runtime_bridge_launch",
   "real_webui_websocket_session_create",
   "real_webui_database_session_roundtrip",
   "http_product_api_classified_not_supported",
@@ -241,7 +241,7 @@ assertIncludesAll(contents.realOplWebuiAdapterSmoke, [
   "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED",
   "opl_webui_bridge_session_created",
   ".runtime",
-], "real_opl_webui_adapter_smoke");
+], "real_opl_webui_runtime_bridge_smoke");
 
 assertIncludesAll(contents.webuiBridgeClient, [
   "OplWebuiCapabilityError",
@@ -289,7 +289,7 @@ assertIncludesAll([
 assertIncludesAll(contents.statusMatrix, [
   "2026-05-10 主仓 canary 确认 `opl web` retired",
   "主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
-  "独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Adapter session bridge 可接通",
+  "独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Runtime Bridge session bridge 可接通",
   "当前可验证公开边界是 `opl session runtime --acp`",
   "独立 WebUI WebSocket bridge session 创建/DB 回读",
   "授权 live canary 下的 WebUI bridge provider message reply 回流",

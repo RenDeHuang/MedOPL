@@ -120,9 +120,9 @@ function startPortalFixture(calls) {
   });
 }
 
-function startAdapterFixture(calls) {
+function startRuntimeBridgeFixture(calls) {
   return http.createServer((req, res) => {
-    const url = new URL(req.url || "/", "http://adapter.local");
+    const url = new URL(req.url || "/", "http://runtime-bridge.local");
     if (req.method === "GET" && url.pathname === "/api/opl-launch/bootstrap") {
       const launchToken = url.searchParams.get("launch_token") || "";
       calls.bootstrap.push(launchToken);
@@ -163,17 +163,17 @@ async function main() {
   };
   const upstreamServer = startUpstreamFixture(calls);
   const portalServer = startPortalFixture(calls);
-  const adapterServer = startAdapterFixture(calls);
+  const runtimeBridgeServer = startRuntimeBridgeFixture(calls);
   const upstreamPort = await listen(upstreamServer);
   const portalPort = await listen(portalServer);
-  const adapterPort = await listen(adapterServer);
+  const runtimeBridgePort = await listen(runtimeBridgeServer);
   const gatewayPort = await freePort();
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
   const env = {
     ...process.env,
     PORT: String(gatewayPort),
     OPL_WEB_UPSTREAM_URL: `http://127.0.0.1:${upstreamPort}`,
-    PORTAL_OPL_ADAPTER_URL: `http://127.0.0.1:${adapterPort}`,
+    PORTAL_RUNTIME_BRIDGE_URL: `http://127.0.0.1:${runtimeBridgePort}`,
     PORTAL_INTERNAL_URL: `http://127.0.0.1:${portalPort}`,
     PORTAL_PUBLIC_URL: "http://127.0.0.1:17080",
   };
@@ -286,7 +286,7 @@ async function main() {
     await Promise.all([
       close(upstreamServer),
       close(portalServer),
-      close(adapterServer),
+      close(runtimeBridgeServer),
     ]);
   }
 
@@ -294,7 +294,7 @@ async function main() {
     throw new Error(`gateway stderr was not empty: ${stderr}`);
   }
 
-  console.log("smoke-test-opl-web-gateway-native-login: ok");
+  console.log("smoke-test-v22-opl-web-gateway-native-login: ok");
 }
 
 main().catch((error) => {

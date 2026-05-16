@@ -49,7 +49,7 @@ assertAllIncluded(contract, [
   "Canonical Message Identity Map",
   "Message Send Contract",
   "Reply Observation Contract",
-  "Adapter Normalization Contract",
+  "Runtime Bridge Normalization Contract",
   "Portal Projection And Session Trace",
   "Langfuse Attachment Boundary",
   "Error Gates And No-Fake-Success",
@@ -98,7 +98,7 @@ assertAllIncluded(contract, [
   "provider_invocation_not_observed",
   "upstream_unavailable",
   "upstream_reply_timeout",
-  "adapter_mapping_failed",
+  "runtime_bridge_mapping_failed",
   "capability_not_supported",
   "trace_sink_not_configured",
   "deferred_authorization",
@@ -139,7 +139,7 @@ assertAllIncluded(flow, [
   "Stage 4: Provider key gate and authorization gate",
   "Stage 5: Send real message intent",
   "Stage 6: Observe provider boundary and assistant reply",
-  "Stage 7: Adapter normalization",
+  "Stage 7: Runtime Bridge normalization",
   "Stage 8: Portal message status projection",
   "Stage 9: Portal session trace projection",
   "Stage 10: Negative gates and evidence hygiene",
@@ -147,7 +147,7 @@ assertAllIncluded(flow, [
 ], "flow_sections");
 
 assertAllIncluded(flow, [
-  "Portal launch -> Gateway -> clean OPL WebUI -> session bind -> send message -> observe reply -> Adapter normalize -> Portal message status -> Portal session trace",
+  "Portal launch -> Gateway -> clean OPL WebUI -> session bind -> send message -> observe reply -> Runtime Bridge normalize -> Portal message status -> Portal session trace",
   "messageId/status/replyMessageId",
   "providerInvocationRef",
   "messageTraceId",

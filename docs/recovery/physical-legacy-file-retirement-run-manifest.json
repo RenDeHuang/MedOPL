@@ -36,7 +36,7 @@
     "stop_after_batch": true
   },
   "authorization_boundary": {
-      "authorized_deletions": [
+    "authorized_deletions": [
       "old public retired route shells",
       "v19/v20/v21 legacy smoke/check/daily/live-prepare scripts",
       "old user-owned/resource-order compatibility surfaces",
@@ -476,6 +476,28 @@
       ],
       "notes": "Slice O records zero-compat active surface completion after Slice I-N retirement and narrative gates passed. Current cursor remains leaf-portal-ui-design-quality-implementation; this manifest does not authorize deploy, live cloud, live-test, build/push/kubectl, secret reads, real DB migration, .sentrux changes, or upstream writes.",
       "commit": "cleanup: record zero compat active surface completion"
+    }
+  ],
+  "post_zero_compat_followups": [
+    {
+      "id": "system-domain-truth-layer-zero-old-context",
+      "branch": "cleanup/v22-system-domain-truth-layer-zero-old-context",
+      "status": "completed_in_current_branch_pending_b_review",
+      "scope": "remove old naming, old entries, old explanations, and truth-layer gaps after zero-compat active surface completion",
+      "target_paths": [
+        "docs/recovery/system-domain-truth-layer-matrix.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "docs/contracts/v22-portal-opl-connection-boundary.md",
+        "scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
+        "services/portal/**",
+        "services/opl-web-gateway/**",
+        "services/opl-runtime-bridge/**",
+        "compose.product.yaml"
+      ],
+      "gate": "node scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
+      "notes": "Records the follow-up cleanup after Slice O without changing current cursor or A-O retirement status. It deletes legacy redirect/product appliance context, migrates task-space and Adapter/managed runtime naming to workspace and Runtime Bridge, and forbids positive old-path retention wording."
     }
   ]
 }

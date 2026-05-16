@@ -4,7 +4,6 @@ import { providerKeyRefFrom } from "./runtime-bridge-launch-scope.mjs";
 export const RUN_API_RUNTIME_MODES = Object.freeze({
   PLATFORM_PROVISIONED: "platform_provisioned",
   CUSTOMER_DEDICATED: "customer_dedicated",
-  MANAGED_RUNTIME: "managed_runtime",
 });
 
 function normalizeRuntimeMode(value = "") {
@@ -167,14 +166,6 @@ function runtimeLedgerEntryInput(ledgerEntry = {}, { runtimeSession = {}, run = 
   };
 }
 
-function retiredManagedRuntimeError(runtimeMode) {
-  return runDispatchError({
-    message: "managed_runtime_retired",
-    code: "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED",
-    details: { runtimeMode, retired: true },
-  });
-}
-
 function fullRuntimeScope(runtimeSession = {}, input = {}) {
   return {
     mode: String(input.mode || runtimeSession.mode || "api_only").trim().toLowerCase() === "full_runtime" ? "full_runtime" : "api_only",
@@ -261,9 +252,6 @@ export function createRunApi({
   }
 
   async function syncRunnerRun(state, run, runStatus = null) {
-    if (runtimeMode === RUN_API_RUNTIME_MODES.MANAGED_RUNTIME) {
-      throw retiredManagedRuntimeError(runtimeMode);
-    }
     if (!runStatus) return run;
     return updateRunStatus(state, run.runId, runStatus) || run;
   }

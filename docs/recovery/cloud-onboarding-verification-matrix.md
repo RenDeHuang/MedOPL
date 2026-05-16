@@ -90,8 +90,8 @@ Discovery facts:
 
 - kube API endpoint shape: `kube.medopl.cn`.
 - runtime surfaces: `portal.medopl.cn`, `opl.medopl.cn`, `trace.medopl.cn`.
-- candidate deployments: `default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl`.
-- candidate deployments: `portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter`.
+- candidate deployments: `default: portal-opl, opl-web-gateway-opl, opl-runtime-bridge-opl`.
+- candidate deployments: `portal-v21-gray: portal, opl-web-gateway, opl-runtime-bridge`.
 - candidate label evidence for this purpose: `k8s-app/qcloud-app`.
 
 Verification verdict:
@@ -106,7 +106,7 @@ Verification verdict:
 
 Contract issue for next branch:
 
-- Portal/Gateway/Adapter/trace may be platform service targets.
+- Portal/Gateway/Runtime Bridge/trace may be platform service targets.
 - workspace runtime targets still require workspaceId/resourceBindingId.
 - The next branch must define an OPL deployment ownership / release plan sub-contract with target class, platform service target guard, workspace runtime target guard, release plan fields, dry-run evidence, rollback evidence, and runtime smoke coverage.
 - This discovery does not loosen the current Package D owner guard. Real rollout is no longer blocked for the authorized `default` platform-service targets, but future targets still fail closed without owner guard evidence.

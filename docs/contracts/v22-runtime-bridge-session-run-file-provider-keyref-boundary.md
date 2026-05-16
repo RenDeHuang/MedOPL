@@ -104,7 +104,7 @@ one-person-lab upstream 必须保持 clean：
 
 - 不修改 upstream 源码。
 - 不 import upstream 内部模块。
-- 不在 upstream 目录写 Portal、Gateway、Adapter 或 Runtime Agent 代码。
+- 不在 upstream 目录写 Portal、Gateway、Runtime Bridge 或 Runtime Agent 代码。
 - 通过 Gateway、Runtime Bridge、Runtime Agent、API/CLI 等公开边界适配。
 
 ## Non-goals

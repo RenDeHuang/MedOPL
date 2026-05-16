@@ -144,7 +144,7 @@ function launchTokenForRequest(url, deps, user) {
   return { ok: true, launchToken: status.launch.launchToken, status };
 }
 
-async function proxyAdapterApi(context, deps, {
+async function proxyRuntimeBridgeApi(context, deps, {
   sourcePath,
   targetPath,
   method,
@@ -157,7 +157,7 @@ async function proxyAdapterApi(context, deps, {
     return true;
   }
   try {
-    const payload = await deps.oplAdapterClient.requestAdapterApi({
+    const payload = await deps.runtimeBridgeClient.requestRuntimeBridgeApi({
       path: targetPath,
       method,
       launchToken: resolved.launchToken,
@@ -173,7 +173,7 @@ async function proxyAdapterApi(context, deps, {
 async function handlePortalOplBootstrapApi(context, deps) {
   const { req, url } = context;
   if (req.method !== "GET" || url.pathname !== "/portal/api/opl/bootstrap") return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: "/api/opl/bootstrap",
     method: "GET",
@@ -183,7 +183,7 @@ async function handlePortalOplBootstrapApi(context, deps) {
 async function handlePortalOplSessionBindApi(context, deps) {
   const { req, url } = context;
   if (req.method !== "POST" || url.pathname !== "/portal/api/opl/sessions/bind") return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: "/api/opl/sessions/bind",
     method: "POST",
@@ -194,7 +194,7 @@ async function handlePortalOplSessionBindApi(context, deps) {
 async function handlePortalOplMessagesApi(context, deps) {
   const { req, url } = context;
   if (req.method !== "POST" || url.pathname !== "/portal/api/opl/messages") return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: "/api/opl/messages",
     method: "POST",
@@ -206,7 +206,7 @@ async function handlePortalOplMessageStatusApi(context, deps) {
   const { req, url } = context;
   const match = url.pathname.match(/^\/portal\/api\/opl\/messages\/(?<messageId>[^/]+)\/status$/);
   if (req.method !== "GET" || !match?.groups?.messageId) return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: `/api/opl/messages/${encodeURIComponent(decodeURIComponent(match.groups.messageId))}/status`,
     method: "GET",
@@ -216,7 +216,7 @@ async function handlePortalOplMessageStatusApi(context, deps) {
 async function handlePortalOplFilesApi(context, deps) {
   const { req, url } = context;
   if (req.method !== "POST" || url.pathname !== "/portal/api/opl/files") return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: "/api/opl/files",
     method: "POST",
@@ -228,7 +228,7 @@ async function handlePortalOplFilesApi(context, deps) {
 async function handlePortalOplRunsApi(context, deps) {
   const { req, url } = context;
   if (req.method !== "POST" || url.pathname !== "/portal/api/opl/runs") return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: "/api/opl/runs",
     method: "POST",
@@ -241,7 +241,7 @@ async function handlePortalOplRunStatusApi(context, deps) {
   const { req, url } = context;
   const match = url.pathname.match(/^\/portal\/api\/opl\/runs\/(?<runId>[^/]+)\/status$/);
   if (req.method !== "GET" || !match?.groups?.runId) return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: `/api/opl/runs/${encodeURIComponent(decodeURIComponent(match.groups.runId))}/status`,
     method: "GET",
@@ -252,7 +252,7 @@ async function handlePortalOplRunArtifactsApi(context, deps) {
   const { req, url } = context;
   const match = url.pathname.match(/^\/portal\/api\/opl\/runs\/(?<runId>[^/]+)\/artifacts$/);
   if (req.method !== "GET" || !match?.groups?.runId) return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: `/api/opl/runs/${encodeURIComponent(decodeURIComponent(match.groups.runId))}/artifacts`,
     method: "GET",
@@ -263,7 +263,7 @@ async function handlePortalOplArtifactApi(context, deps) {
   const { req, url } = context;
   const match = url.pathname.match(/^\/portal\/api\/opl\/artifacts\/(?<artifactRef>[^/]+)$/);
   if (req.method !== "GET" || !match?.groups?.artifactRef) return false;
-  return proxyAdapterApi(context, deps, {
+  return proxyRuntimeBridgeApi(context, deps, {
     sourcePath: url.pathname,
     targetPath: `/api/opl/artifacts/${encodeURIComponent(decodeURIComponent(match.groups.artifactRef))}`,
     method: "GET",
@@ -276,7 +276,7 @@ function workspaceBlockedHtml(result) {
 }
 
 function workspaceInactiveHtml(result) {
-  return `<div class="card"><h2>当前任务空间不可启动 OPL</h2><p class="hint">只有 active 状态的任务空间才能启动 OPL。</p><p><a href="/portal/workspace?task=${result.taskSpace.slug}">返回任务空间</a></p></div>`;
+  return `<div class="card"><h2>当前工作空间不可启动 OPL</h2><p class="hint">只有 active 状态的工作空间才能启动 OPL。</p><p><a href="/portal/workspace?task=${result.taskSpace.slug}">返回工作空间</a></p></div>`;
 }
 
 function oplUnavailableHtml(result) {
@@ -289,7 +289,7 @@ function sendOplLaunchErrorPage(res, result, user, deps) {
     return;
   }
   if (result.error === "workspace_not_active") {
-    deps.sendHtml(res, deps.layoutV2("任务空间不可启动", workspaceInactiveHtml(result), user), 409);
+    deps.sendHtml(res, deps.layoutV2("工作空间不可启动", workspaceInactiveHtml(result), user), 409);
     return;
   }
   deps.sendHtml(res, deps.layoutV2("OPL Web 不可用", oplUnavailableHtml(result), user), result.status || 502);
@@ -335,19 +335,11 @@ async function handleOplPage(context, deps) {
   return true;
 }
 
-function redirectWorkspaceOpl(req, res, url) {
-  const appWorkspaceOplMatch = url.pathname.match(/^\/portal\/app\/workspaces\/([^/]+)\/opl$/);
-  if (req.method !== "GET" || !appWorkspaceOplMatch) return false;
-  res.writeHead(302, { Location: `/portal/opl?task=${encodeURIComponent(appWorkspaceOplMatch[1])}` });
-  res.end();
-  return true;
-}
-
 export function createOplRoutes({
   appendCookie,
   layoutV2,
   logPortalEvent,
-  oplAdapterClient,
+  runtimeBridgeClient,
   oplLaunchService,
   readBody,
   sendHtml,
@@ -359,7 +351,7 @@ export function createOplRoutes({
     appendCookie,
     layoutV2,
     logPortalEvent,
-    oplAdapterClient,
+    runtimeBridgeClient,
     oplLaunchService,
     readBody,
     sendHtml,
@@ -369,8 +361,6 @@ export function createOplRoutes({
   };
 
   return async function handleOplRoutes(context) {
-    const { req, res, url } = context;
-    if (redirectWorkspaceOpl(req, res, url)) return true;
     if (await handleOplLaunchStatusApi(context, deps)) return true;
     if (await handleOplLaunchApi(context, deps)) return true;
     if (await handlePortalOplBootstrapApi(context, deps)) return true;

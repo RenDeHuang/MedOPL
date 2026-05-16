@@ -67,7 +67,7 @@ function shortDetail(value = "") {
 function sourceLabel(value = "") {
   const normalized = String(value || "").toLowerCase();
   if (normalized.includes("theme") || normalized.includes("settings")) return "Portal 配置";
-  if (normalized.includes("workspace")) return "任务空间";
+  if (normalized.includes("workspace")) return "工作空间";
   if (normalized.includes("run")) return "运行时";
   if (normalized.includes("user")) return "账户";
   return "Portal";
@@ -77,10 +77,10 @@ function humanizeAuditType(value = "") {
   const normalized = String(value || "").toLowerCase();
   if (normalized.includes("theme")) return "主题变更";
   if (normalized.includes("settings")) return "配置变更";
-  if (normalized.includes("workspace_created")) return "任务空间创建";
-  if (normalized.includes("workspace_archived")) return "任务空间归档";
-  if (normalized.includes("workspace_deleted")) return "任务空间删除";
-  if (normalized.includes("workspace")) return "任务空间事件";
+  if (normalized.includes("workspace_created")) return "工作空间创建";
+  if (normalized.includes("workspace_archived")) return "工作空间归档";
+  if (normalized.includes("workspace_deleted")) return "工作空间删除";
+  if (normalized.includes("workspace")) return "工作空间事件";
   if (normalized.includes("run")) return "运行事件";
   return value || "事件";
 }

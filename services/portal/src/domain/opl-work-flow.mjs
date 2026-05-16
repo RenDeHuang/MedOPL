@@ -39,7 +39,7 @@ function publicUpstreamBoundary() {
     sourceModified: false,
     internalModuleImports: false,
     gatewayBoundary: "opl-web-gateway",
-    adapterBoundary: "portal-opl-adapter",
+    runtimeBridgeBoundary: "opl-runtime-bridge",
     runtimeBoundary: "runtime-agent-contract",
   };
 }

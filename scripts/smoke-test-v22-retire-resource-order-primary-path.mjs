@@ -383,11 +383,47 @@ function assertOnlyGateChanged() {
     if (branchName === "cleanup/v22-strict-monolith-zero-compat-active-surface" && isZeroCompatAuthorizedDiffPath(filePath)) {
       continue;
     }
+    if (branchName === "cleanup/v22-system-domain-truth-layer-zero-old-context" && isSystemDomainTruthLayerAuthorizedDiffPath(filePath)) {
+      continue;
+    }
     assert(
       allowedDiffPaths.has(filePath),
       `resource_order_retirement_branch_must_not_modify:${branchName}:${filePath}`,
     );
   }
+}
+
+function isSystemDomainTruthLayerAuthorizedDiffPath(filePath = "") {
+  if (
+    filePath.startsWith(".sentrux/") ||
+    filePath.startsWith(".env") ||
+    filePath.includes("/.env") ||
+    filePath.includes("one-person-lab") ||
+    filePath.startsWith("adapters/") ||
+    filePath.startsWith("deploy/") ||
+    filePath.startsWith("infra/")
+  ) {
+    return false;
+  }
+  if (filePath === "README.md" || filePath === "compose.product.yaml") return true;
+  if (filePath === "docs/product.md" || filePath === "docs/architecture.md") return true;
+  if (filePath === "docs/contracts/README.md" || /^docs\/contracts\/v22-[^/]+\.md$/u.test(filePath)) return true;
+  if (/^docs\/recovery\/[^/]+\.(?:md|json)$/u.test(filePath)) return true;
+  if (filePath === "docs/deployment/docker-product-appliance.md") return isDeletedFromBase(filePath);
+  if (/^scripts\/smoke-test-v22-[^/]+\.mjs$/u.test(filePath)) return true;
+  if (/^scripts\/smoke-test-opl-[^/]+\.mjs$/u.test(filePath)) return isDeletedFromBase(filePath);
+  if ([
+    "scripts/acceptance-portal-console.mjs",
+    "scripts/check-commercial-blockers.mjs",
+    "scripts/smoke-test-workspace-lifecycle.mjs",
+  ].includes(filePath)) return isDeletedFromBase(filePath);
+  if (filePath === "services/portal/package.json" || filePath === "services/opl-runtime-bridge/package.json") return true;
+  if (filePath === "services/portal/frontend/vite.config.ts") return true;
+  if (filePath.startsWith("services/portal/src/")) return true;
+  if (filePath.startsWith("services/portal/frontend/src/")) return true;
+  if (filePath.startsWith("services/opl-web-gateway/src/")) return true;
+  if (filePath.startsWith("services/opl-runtime-bridge/src/")) return true;
+  return false;
 }
 
 function isZeroCompatAuthorizedDiffPath(filePath = "") {

@@ -185,7 +185,7 @@ function spawnNode(script, { port, env = {}, stateRoot = "", cwd = process.cwd()
       ...process.env,
       PORT: String(port),
       NODE_ENV: "test",
-      ...(stateRoot ? { PORTAL_OPL_ADAPTER_STATE_ROOT: stateRoot } : {}),
+      ...(stateRoot ? { PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot } : {}),
       ...env,
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -280,45 +280,45 @@ async function getJson(url, { cookie = "" } = {}) {
 
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-real-opl-file-run-artifact-api-loop-"));
 const runtimeRoot = path.join(tempRoot, "portal-runtime");
-const adapterStateRoot = path.join(tempRoot, "adapter-state");
+const runtimeBridgeStateRoot = path.join(tempRoot, "runtime-bridge-state");
 await mkdir(runtimeRoot, { recursive: true });
 
 const runtimeAgentCalls = [];
 const runtimeAgent = startRuntimeAgentCanary(runtimeAgentCalls);
 const upstreamWeb = startFakeUpstreamWeb();
-let adapter;
+let runtimeBridge;
 let gateway;
 let portal;
 
 try {
   const runtimeAgentPort = await listen(runtimeAgent);
   const upstreamPort = await listen(upstreamWeb);
-  const adapterPort = await freePort();
+  const runtimeBridgePort = await freePort();
   const gatewayPort = await freePort();
   const portalPort = await freePort();
   const runtimeAgentUrl = `http://127.0.0.1:${runtimeAgentPort}`;
-  const adapterUrl = `http://127.0.0.1:${adapterPort}`;
+  const runtimeBridgeUrl = `http://127.0.0.1:${runtimeBridgePort}`;
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
   const portalUrl = `http://127.0.0.1:${portalPort}`;
 
-  adapter = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
-    port: adapterPort,
-    stateRoot: adapterStateRoot,
+  runtimeBridge = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
+    port: runtimeBridgePort,
+    stateRoot: runtimeBridgeStateRoot,
     env: {
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
       OPL_WEB_URL: gatewayUrl,
       PRODUCT_RUNTIME_MODE: "platform_provisioned",
       OPL_RUNTIME_AGENT_RELAY_MODE: "http",
     },
   });
-  await waitForChildUrl(adapter, `${adapterUrl}/healthz`, "adapter");
+  await waitForChildUrl(runtimeBridge, `${runtimeBridgeUrl}/healthz`, "runtime_bridge");
 
   gateway = spawnNode("services/opl-web-gateway/src/server.mjs", {
     port: gatewayPort,
     env: {
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       OPL_UPSTREAM_URL: `http://127.0.0.1:${upstreamPort}`,
-      PORTAL_OPL_ADAPTER_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_URL: runtimeBridgeUrl,
       PORTAL_PUBLIC_URL: portalUrl,
     },
   });
@@ -332,7 +332,7 @@ try {
       PORTAL_ADMIN_EMAIL: USER_EMAIL,
       PORTAL_ADMIN_PASSWORD: USER_PASSWORD,
       PORTAL_PUBLIC_URL: portalUrl,
-      PORTAL_OPL_ADAPTER_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_URL: runtimeBridgeUrl,
       OPL_WEB_URL: gatewayUrl,
       PORTAL_STORAGE_MODE: "json",
       PRODUCT_RUNTIME_MODE: "platform_provisioned",
@@ -482,7 +482,7 @@ try {
 } finally {
   await stopChild(portal);
   await stopChild(gateway);
-  await stopChild(adapter);
+  await stopChild(runtimeBridge);
   await close(runtimeAgent);
   await close(upstreamWeb);
   await rm(tempRoot, { recursive: true, force: true });

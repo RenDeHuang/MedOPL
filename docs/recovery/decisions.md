@@ -55,14 +55,14 @@ one-person-lab upstream 地址是：
 https://github.com/gaofeng21cn/one-person-lab
 ```
 
-v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Adapter 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
+v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway、Runtime Bridge 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 Gateway、Runtime Bridge、Runtime Agent、API/CLI 等公开边界适配。
 
 ## D010: 主链路固定
 
 v22 主链路是：
 
 ```text
-Portal -> OPL Web Gateway -> clean upstream OPL Web -> Portal OPL Adapter / Runtime Agent -> platform-managed TKE/storage resource pools -> Billing/Quota/Audit/Admin
+Portal -> OPL Web Gateway -> clean upstream OPL Web -> Runtime Bridge / Runtime Agent -> platform-managed TKE/storage resource pools -> Billing/Quota/Audit/Admin
 ```
 
 ## D011: 核心用户 loop 固定
@@ -91,7 +91,7 @@ Langfuse 可以作为后续 trace metadata 来源，但当前 v22 主线只定�
 
 ## D017: 一个核心域只能有一个正式入口
 
-Portal、OPL Web Gateway、clean upstream OPL Web、Portal OPL Adapter / Runtime Agent、platform-managed TKE/storage resource pools、Billing/Quota/Audit/Admin 各自承担唯一正式入口。并行入口只能用于探索，不能进入 v22 trunk。
+Portal、OPL Web Gateway、clean upstream OPL Web、Runtime Bridge / Runtime Agent、platform-managed TKE/storage resource pools、Billing/Quota/Audit/Admin 各自承担唯一正式入口。并行入口只能用于探索，不能进入 v22 trunk。
 
 ## D018: 未授权不执行真实资源操作
 
@@ -108,7 +108,7 @@ platform-v22 不是空仓。现有文件必须先按域裁定为 `keep`、`migra
 - Identity / Auth / Tenant：Portal auth、provider secret、tenant scope、store schema 和 OPL Gateway auth bridge。
 - Portal Web：Portal frontend router/layout/views，以及 Portal API、OPL launch、lab package、workspace storage routes。
 - OPL Web Gateway：`services/opl-web-gateway/src/*`。
-- OPL Adapter / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、launch/run/message/state-store/provider-secret/ACP runtime 相关模块。
+- Runtime Bridge / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、launch/run/message/state-store/provider-secret/ACP runtime 相关模块。
 - Workspace / Artifact：workspace storage domain、routes、upload/download handlers 和 internal file index。
 - Session / Run：OPL launch service、session trace payload/domain、runtime run/message/artifact trace stores。
 - Billing / Usage / Freeze：wallet ledger、lab billing policy、billing payload/client/frontend、billing aggregator。

@@ -13,7 +13,7 @@ import {
 
 function overviewServiceTargets(urls, opsSurfaceEnabled) {
   return [
-    { name: "Portal OPL Adapter", url: new URL("/healthz", `${urls.portalOplAdapterUrl}/`).toString() },
+    { name: "Runtime Bridge", url: new URL("/healthz", `${urls.portalRuntimeBridgeUrl}/`).toString() },
     { name: "Langfuse", url: urls.langfuseUrl },
     ...(opsSurfaceEnabled ? [
       { name: "Rancher", url: urls.rancherUrl },
@@ -262,10 +262,10 @@ export function createPortalAdminOverviewPayloadBuilder({
         oplRuntime: {
           available: true,
           mode: "status_only",
-          adapterUrl: urls.portalOplAdapterUrl,
+          runtimeBridgeUrl: urls.portalRuntimeBridgeUrl,
           oplWebUrl: urls.oplWebUrl || "",
           note: urls.oplWebUrl
-            ? "Portal 生成 launch context，并把用户带到真实 OPL Web；adapter 只负责内部合同转换"
+            ? "Portal 生成 launch context，并把用户带到真实 OPL Web；Runtime Bridge 负责内部合同转换"
             : "未配置 OPL_WEB_URL，Portal 不会回退到旧工作台路径",
         },
         rancher: {

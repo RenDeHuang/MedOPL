@@ -2,7 +2,7 @@ export function createPortalApiTracesRoutes({
   adminScopeResult,
   buildSessionTraceDetailPayload,
   buildSessionTracesApiPayload,
-  fetchOplAdapterTraceRows,
+  fetchRuntimeBridgeTraceRows,
   fetchTraceRows,
   normalizePageSize,
   paginateRows,
@@ -55,13 +55,13 @@ export function createPortalApiTracesRoutes({
       runId,
       limit: parsePositiveInt(requestOptions.limit, 200),
     });
-    const adapterTraces = await fetchOplAdapterTraceRows({
+    const runtimeBridgeTraces = await fetchRuntimeBridgeTraceRows({
       userId: requestedUserId,
       workspaceId,
       runId,
       limit: parsePositiveInt(requestOptions.limit, 200),
     });
-    const mergedRows = [...(adapterTraces.rows || []), ...(traces.rows || [])]
+    const mergedRows = [...(runtimeBridgeTraces.rows || []), ...(traces.rows || [])]
       .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
     const filteredRows = mergedRows
       .filter((item) => !sessionId || String(item.sessionId || item.workspaceSessionId || "").includes(sessionId))
@@ -76,12 +76,12 @@ export function createPortalApiTracesRoutes({
         status: statusFilter,
       },
       summary: {
-        available: traces.type === "live" || adapterTraces.type === "live",
-        mode: adapterTraces.type === "live" ? "live" : traces.type,
-        note: adapterTraces.type === "live" ? adapterTraces.note : (traces.note || ""),
+        available: traces.type === "live" || runtimeBridgeTraces.type === "live",
+        mode: runtimeBridgeTraces.type === "live" ? "live" : traces.type,
+        note: runtimeBridgeTraces.type === "live" ? runtimeBridgeTraces.note : (traces.note || ""),
         traceCount: filteredRows.length,
         latestTraceAt: filteredRows[0]?.startedAt || "",
-        dataSource: adapterTraces.type === "live" ? `${adapterTraces.source} + ${traces.source}` : traces.source,
+        dataSource: runtimeBridgeTraces.type === "live" ? `${runtimeBridgeTraces.source} + ${traces.source}` : traces.source,
       },
       items: pagination.rows,
       pagination: {

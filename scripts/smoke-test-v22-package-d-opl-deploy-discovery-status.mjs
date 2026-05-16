@@ -57,8 +57,8 @@ assertIncludesAll(combinedRecovery, [
 ], "discovery_scope");
 
 assertIncludesAll(combinedRecovery, [
-  "default: portal-opl, opl-web-gateway-opl, portal-opl-adapter-opl",
-  "portal-v21-gray: portal, opl-web-gateway, portal-opl-adapter",
+  "default: portal-opl, opl-web-gateway-opl, opl-runtime-bridge-opl",
+  "portal-v21-gray: portal, opl-web-gateway, opl-runtime-bridge",
   "k8s-app/qcloud-app",
   "ownerRef",
   "workspaceId",
@@ -81,7 +81,7 @@ assertIncludesAll(combinedRecovery, [
 ], "discovery_must_not_claim_rollout");
 
 assertIncludesAll(combinedRecovery, [
-  "Portal/Gateway/Adapter/trace may be platform service targets",
+  "Portal/Gateway/Runtime Bridge/trace may be platform service targets",
   "workspace runtime targets still require workspaceId/resourceBindingId",
   "OPL deployment ownership / release plan sub-contract",
   "target class",

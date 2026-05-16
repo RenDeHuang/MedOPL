@@ -49,7 +49,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `docs/recovery/*` | Zone 1 | keep/rewrite | 阶段、状态、program board 和恢复裁定 | recovery truth | per-recovery-doc |
 | `services/portal/**` | Zone 1 | keep/rewrite | v22 Portal active service | Portal product surface | portal-layering |
 | `services/opl-web-gateway/**` | Zone 1 | keep/rewrite | v22 OPL Web Gateway active service | Gateway boundary | gateway |
-| `services/opl-runtime-bridge/**` | Zone 1 | keep/rewrite | v22 Runtime Bridge / Adapter active service | Runtime Bridge boundary | runtime-bridge |
+| `services/opl-runtime-bridge/**` | Zone 1 | keep/rewrite | v22 Runtime Bridge active service | Runtime Bridge boundary | runtime-bridge |
 | `scripts/smoke-test-v22-*` | Zone 1 | keep/rewrite | v22 本地合同和 smoke 验证入口 | v22 smoke | smoke-governance |
 | `.dockerignore` | Zone 1 | keep | 仓库 hygiene | none | none |
 | `.gitignore` | Zone 1 | keep | 仓库 hygiene | none | none |
@@ -64,7 +64,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `compose.product.yaml` | Zone 2 | review/rewrite | 默认 product compose 可能携带旧运行叙事 | v22 product runtime entry | default-entry |
 | `configs/**` | Zone 2 | review/rewrite | 配置面可能携带旧默认值或真实外部系统暗示 | explicit v22 config | default-entry |
 | `scripts/smoke-test-portal-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 Portal 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-opl-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 OPL 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
+| `scripts/smoke-test-opl-*` | Zone 2 | delete | 无 v22 前缀的 OPL smoke 不再作为 active 验证入口；仍有 v22 价值的本地 Gateway / Runtime Bridge smoke 已迁到 `scripts/smoke-test-v22-*` | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-billing-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 billing 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-resource-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否恢复旧 resource-order 或 provisioner 叙事 | managed environment/resource binding smoke | legacy-scripts |
 | `services/portal/src/config/portal-config.mjs` | Zone 2 | rewrite | active config 中存在 legacy runtime mode 风险 | `platform_provisioned` / `customer_dedicated` | default-entry |
@@ -97,7 +97,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `docs/reports/*` | Zone 3 | delete-or-migrate | 历史报告证据不进入 active default context | v22 status/recovery | legacy-docs |
 | `docs/releases/*` | Zone 3 | delete-or-migrate | 历史 release 证据不进入 active default context | v22 status/recovery | legacy-docs |
 | `docs/logs/*` | Zone 3 | delete-or-migrate | 历史日志证据不进入 active default context | v22 recovery docs | legacy-docs |
-| `docs/deployment/*` | Zone 3 | delete-or-migrate | 旧部署说明不能成为默认 deploy truth | authorized deploy contracts | legacy-docs |
+| `docs/deployment/*` | Zone 3 | deleted | 旧部署说明不能成为默认 deploy truth；`docker-product-appliance.md` 已删除，不再把 v19 appliance、旧 adapter/provisioner/runner 或 local Dockerfiles 解释成当前上下文 | authorized deploy contracts | legacy-docs |
 | `docs/operations/*` | Zone 3 | delete-or-migrate | 旧运维说明不能成为默认 product truth | authorized ops contracts | legacy-docs |
 | `docs/superpowers/*` | Zone 3 | delete-or-migrate | 本地计划/技能输出，不是 v22 产品主线合同 | recovery/contracts | legacy-docs |
 | `scripts/smoke-test-v19-*` | Zone 3 | delete | v19 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
@@ -123,7 +123,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `.sentrux/**` | Zone 4 | forbidden_without_authorization | 结构规则修改必须单独授权 | explicit Sentrux task | none |
 | `adapters/**` | Zone 4 | forbidden_without_authorization | 旧 adapters 是禁区，不在普通 cleanup 触碰 | authorized adapter task | none |
 | `infra/**` | Zone 4 | forbidden_without_authorization | 基础设施修改可能影响真实部署叙事 | authorized infra task | none |
-| one-person-lab upstream | Zone 4 | forbidden_without_authorization | upstream 必须保持 clean | Gateway/Adapter/Runtime public boundary | none |
+| one-person-lab upstream | Zone 4 | forbidden_without_authorization | upstream 必须保持 clean | Gateway/Runtime Bridge/Runtime public boundary | none |
 | build/push/kubectl/live-test | Zone 4 | forbidden_without_authorization | 真实外部系统和发布操作必须单独授权 | authorized lane only | none |
 | secret files, `.env`, kubeconfig, tokens, SSH private keys | Zone 4 | forbidden_without_authorization | secret hygiene 红线 | backend secret boundary only | none |
 
@@ -145,7 +145,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 
 default-entry cleanup completed on `cleanup/v22-default-entry-legacy-narrative`: `compose.product.yaml` is a v22 product runtime entry without v19 appliance naming, `user_owned` default mode, legacy runner/provisioner services, or deploy/adapters default wiring.
 
-env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.env.demo.template` is now a tracked v22 local template for Portal, OPL Web Gateway, Runtime Bridge / Adapter, and clean One Person Lab upstream entry wiring. It no longer carries legacy runner, K8s namespace, resource-provisioner, OpenCost billing truth, Langfuse stack image, `user_owned`, or `resource-order` defaults.
+env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.env.demo.template` is now a tracked v22 local template for Portal, OPL Web Gateway, Runtime Bridge, and clean One Person Lab upstream entry wiring. It no longer carries legacy runner, K8s namespace, resource-provisioner, OpenCost billing truth, Langfuse stack image, `user_owned`, or `resource-order` defaults.
 
 user-owned primary path cleanup completed on `cleanup/v22-retire-user-owned-primary-path`: Portal default runtime is `platform_provisioned`; strict monolith cleanup now deletes remaining legacy `user-owned` route shell, route registration, copy, fixture and test anchors.
 

@@ -26,7 +26,7 @@ function defaultUrls(urls = {}) {
     langfuseUrl: urls.langfuseUrl || "",
     minioConsoleUrl: urls.minioConsoleUrl || "",
     oplWebUrl: urls.oplWebUrl || "",
-    portalOplAdapterUrl: urls.portalOplAdapterUrl || "",
+    portalRuntimeBridgeUrl: urls.portalRuntimeBridgeUrl || "",
     rancherUrl: urls.rancherUrl || "",
   };
 }
@@ -458,7 +458,7 @@ export function createPortalAdminApiPayloads(deps) {
   const urls = defaultUrls(configuredUrls);
   const runtimeMode = String(productProfile.runtimeMode || "platform_provisioned").trim().toLowerCase() || "platform_provisioned";
   const opsProfileEnabled = Boolean(productProfile.opsProfileEnabled);
-  const opsSurfaceEnabled = opsProfileEnabled || runtimeMode === "managed_runtime";
+  const opsSurfaceEnabled = opsProfileEnabled;
 
   const buildAdminOverviewPayload = createPortalAdminOverviewPayloadBuilder({
     activeUserStatus,

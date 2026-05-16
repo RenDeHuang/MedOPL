@@ -142,7 +142,7 @@ assertIncludesAll(contract, [
   "resourceBindingId",
   "qcloud-app",
   "fail-closed",
-  "Portal/Gateway/Adapter/trace",
+  "Portal/Gateway/Runtime Bridge/trace",
   "OPL lane only provides `resourceBindingId/workspace runtime identity`",
   "does not authorize build/push/kubectl",
 ], "contract_scope");

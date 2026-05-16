@@ -26,7 +26,7 @@ Active surface 的产品叙事必须保持 `platform-provisioned / customer-dedi
 
 OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。/internal/opl/auth/login 只能作为 internal implementation path。旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口。后续真实 proxy / upstream 运行接入单独 feat；旧入口删除如需要另开 cleanup/*。
 
-active surface 不允许修改 one-person-lab upstream。one-person-lab upstream 不属于 active surface；它只作为 clean upstream reference，通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入。
+active surface 不允许修改 one-person-lab upstream。one-person-lab upstream 不属于 active surface；它只作为 clean upstream reference，通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI、反向代理边界和必要的内部 anti-corruption mapping 接入。
 
 ## Zero-Compat Active Surface Rule
 
@@ -42,6 +42,8 @@ active surface 不允许修改 one-person-lab upstream。one-person-lab upstream
 Zero-compat 下，文件名是 `v22-*` 不自动等于 active。`live`、`canary`、`authorized-deploy`、`authorized-resource-lifecycle`、`real-live`、`live-runner`、`live-bridge` 和 `live-diagnostics` 可执行脚本不属于默认 active executable surface；未来真实外部操作只保留合同边界，重新授权时另建 v22 边界和执行入口。
 
 `adapters/*`、`deploy/*` 和 `infra/*` 不属于 strict monolith 默认 active surface。仍有业务价值的能力必须迁入 `services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge` 或 repo-local v22 gate 后，再删除旧路径；不得以 adapter/deploy/infra 形态作为 active repo 默认上下文保留。
+
+`docs/deployment/*` 不属于当前 default deploy truth；旧 v19 appliance 文档已删除。未来真实部署只能通过新的 v22 授权合同和 build recipe boundary 重新建立，不恢复旧 adapter/provisioner/runner/Dockerfile 叙事。
 
 ## Migrate
 

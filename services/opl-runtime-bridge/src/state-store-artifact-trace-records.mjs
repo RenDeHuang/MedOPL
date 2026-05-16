@@ -45,7 +45,7 @@ export function buildTraceRecord(input = {}) {
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    traceProvider: input.traceProvider || input.trace_provider || "portal-opl-adapter",
+    traceProvider: input.traceProvider || input.trace_provider || "runtime-bridge",
     traceName: input.traceName || input.trace_name || "med-autoscience-run",
     status: input.status || "submitted",
     replyMessageId: input.replyMessageId || input.reply_message_id || "",

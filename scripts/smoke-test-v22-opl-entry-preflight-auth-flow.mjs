@@ -140,7 +140,7 @@ function createFixture({ providerSecretStore, events, writes, launchCalls }) {
     sessions: [],
     wallets: [{ userId: "user-v22-opl-entry", balance: 12000 }],
     taskSpaces: [{
-      id: "taskspace-v22-opl-entry",
+      id: "workspace-v22-opl-entry",
       userId: "user-v22-opl-entry",
       slug: "workspace-v22-opl-entry",
       title: "OPL Entry Workspace",
@@ -157,7 +157,7 @@ function createFixture({ providerSecretStore, events, writes, launchCalls }) {
     ensureTaskSpace: async (targetDb, user, taskSlug, title) => {
       const existing = targetDb.taskSpaces.find((item) => item.userId === user.id && item.slug === taskSlug);
       if (existing) return existing;
-      const created = { id: `taskspace-${taskSlug}`, userId: user.id, slug: taskSlug, title, status: "active" };
+      const created = { id: `workspace-${taskSlug}`, userId: user.id, slug: taskSlug, title, status: "active" };
       targetDb.taskSpaces.push(created);
       return created;
     },

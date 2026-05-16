@@ -28,7 +28,7 @@ export function readConfig() {
   const port = Number(cleanEnv("PORT", "8788"));
   return {
     port,
-    baseUrl: urlEnv("PORTAL_OPL_ADAPTER_PUBLIC_URL", `http://127.0.0.1:${port}`),
+    baseUrl: urlEnv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL", `http://127.0.0.1:${port}`),
     launchSecret: cleanEnv("OPL_LAUNCH_SECRET", "dev-opl-launch-secret-change-me"),
     nodeEnv: cleanEnv("NODE_ENV", "development").toLowerCase(),
     buildSha: cleanEnv("BUILD_SHA", "dev"),

@@ -173,8 +173,8 @@ assert.equal(workspaceRun.costEstimate.amount, 0.03456, "workspace_run_cost_esti
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 
 const tracePayload = await buildSessionTracesApiPayload({
-  fetchOplAdapterTraceRows: async () => ({
-    source: "portal_opl_adapter",
+  fetchRuntimeBridgeTraceRows: async () => ({
+    source: "runtime_bridge",
     type: "live",
     rows: [{
       traceId: "trace-v22-cost-balance",
@@ -189,7 +189,7 @@ const tracePayload = await buildSessionTracesApiPayload({
       tokenCount: 88,
       latencyMs: 640,
       startedAt: "2026-05-08T08:01:00.000Z",
-      source: "portal_opl_adapter",
+      source: "runtime_bridge",
       artifactRefs: [artifactRef],
       rawPrompt: RAW_PROMPT,
       rawCompletion: RAW_COMPLETION,

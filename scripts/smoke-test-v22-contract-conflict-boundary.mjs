@@ -125,7 +125,7 @@ for (const [filePath, source] of docEntries) {
 const liveCanaryScripts = [
   "smoke-test-v22-real-opl-canary.mjs",
   "smoke-test-v22-real-opl-webui-canary.mjs",
-  "smoke-test-v22-real-opl-webui-adapter-flow.mjs",
+  "smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs",
   "smoke-test-v22-real-opl-provider-message-live-canary.mjs",
   "smoke-test-v22-tencent-readonly-inventory-real-live-run.mjs",
   "smoke-test-v22-tencent-authorized-resource-lifecycle-runner.mjs",

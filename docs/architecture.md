@@ -6,14 +6,14 @@ MedOPL v22 架构围绕 One Person Lab 的开箱即用 SaaS 托管科研工作�
 
 ```text
 Portal -> OPL Web Gateway -> clean One Person Lab upstream
-  -> Portal OPL Adapter / Runtime Agent
+  -> Runtime Bridge / Runtime Agent
   -> platform-managed TKE/storage resource pools
   -> Billing/Quota/Audit/Admin
 ```
 
 ## Runtime Gate
 
-runtime 是租户可选开通能力。Portal OPL Adapter / Runtime Agent 在调度托管 runtime 任务前必须确认：
+runtime 是租户可选开通能力。Runtime Bridge / Runtime Agent 在调度托管 runtime 任务前必须确认：
 
 - tenant 已开通 runtime。
 - user 属于该 tenant。
@@ -70,7 +70,7 @@ One Person Lab 是 clean upstream：
 https://github.com/gaofeng21cn/one-person-lab
 ```
 
-v22 不修改 upstream 源码，不 import upstream 内部模块，不在 upstream 目录写 Portal、Gateway、Adapter 代码。upstream 更新后，平台拉取并通过 Gateway、Adapter、Runtime Agent、API/CLI 适配。
+v22 不修改 upstream 源码，不 import upstream 内部模块，不在 upstream 目录写 Portal、Gateway 或 Runtime Bridge 代码。upstream 更新后，平台拉取并通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的内部 anti-corruption mapping 适配。
 
 ## Trace Metadata Boundary
 

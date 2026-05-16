@@ -78,9 +78,9 @@ const route = createPortalApiRoutes({
   evaluateUserPolicy: async () => ({ ok: true }),
   fetchBillingSummary: async () => ({ totals: { totalCost: 0 }, items: [] }),
   fetchHarborSummary: async () => ({ available: false }),
-  fetchOplAdapterCosts: async () => [],
-  fetchOplAdapterRuns: async () => [],
-  fetchOplAdapterTraceRows: async () => ({ rows: [] }),
+  fetchRuntimeBridgeCosts: async () => [],
+  fetchRuntimeBridgeRuns: async () => [],
+  fetchRuntimeBridgeTraceRows: async () => ({ rows: [] }),
   fetchOpsRegistryImageRows: async () => ({ items: [] }),
   fetchTraceRows: async () => ({ rows: [] }),
   formatDateTime: (value) => String(value || ""),
@@ -129,15 +129,15 @@ const runResult = await request({
   path: "/portal/api/runs",
   body: {
     workspaceId: "workspace-v22-state",
-    mode: "managed_runtime",
+    mode: "full_runtime",
     prompt: "this must not start without runtime",
   },
 });
-assert.equal(runResult.handled, true, "managed_run_route_must_be_handled");
-assert.equal(runResult.res.statusCode, 409, "managed_run_without_runtime_must_return_409");
-assert.equal(runResult.res.payload.ok, false, "managed_run_without_runtime_must_return_not_ok");
-assert.equal(runResult.res.payload.error, "runtime_not_enabled", "managed_run_without_runtime_error_mismatch");
-assertNoSecrets(runResult.res.payload, "managed_run_rejection");
+assert.equal(runResult.handled, true, "runtime_run_route_must_be_handled");
+assert.equal(runResult.res.statusCode, 409, "runtime_run_without_binding_must_return_409");
+assert.equal(runResult.res.payload.ok, false, "runtime_run_without_binding_must_return_not_ok");
+assert.equal(runResult.res.payload.error, "runtime_not_enabled", "runtime_run_without_binding_error_mismatch");
+assertNoSecrets(runResult.res.payload, "runtime_run_rejection");
 
 console.log(JSON.stringify({
   ok: true,

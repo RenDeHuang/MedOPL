@@ -27,14 +27,14 @@ export function sanitizeTaskTitle(slug, title) {
     return "MAS";
   }
   if (!raw || raw === "????" || raw.includes("Workspace") || looksLikeCorruptedTitle(raw)) {
-    return normalizedSlug === "default" ? "默认任务空间" : normalizedSlug;
+    return normalizedSlug === "default" ? "默认工作空间" : normalizedSlug;
   }
   return raw;
 }
 
 export function defaultTaskTitle(slug = "default") {
   const normalizedSlug = slugify(slug || "default");
-  return normalizedSlug === "default" ? "默认任务空间" : normalizedSlug;
+  return normalizedSlug === "default" ? "默认工作空间" : normalizedSlug;
 }
 
 export function taskStatusLabel(status = "active") {

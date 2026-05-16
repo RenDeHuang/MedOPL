@@ -11,6 +11,7 @@ const verifyManifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const branchOverrideSuiteIds = new Set([
   "strict-monolith-cleanup",
   "contract-index-runtime-bridge-alignment",
+  "system-domain-truth-layer-zero-old-context",
 ]);
 
 const requiredReportPhrases = [
@@ -27,9 +28,9 @@ const requiredReportPhrases = [
   "十层 truth",
   "不是完整真实上线",
   "Portal frontend MVP UI",
-  "Gateway / Portal OPL Adapter / Runtime Agent 生产联通",
-  "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs",
-  "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs",
+  "Gateway / Runtime Bridge / Runtime Agent 生产联通",
+  "scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+  "scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
   "scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs",
   "scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs",
   "scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs",
@@ -38,7 +39,7 @@ const requiredReportPhrases = [
   "/home/dev/projects/one-person-lab` 主仓真实 canary 已确认",
   "真实 OPL/AionUI WebUI canary 已确认",
   "`/api/opl/*` 只是通用 `/api` catch-all 200 placeholder",
-  "真实 WebUI Adapter session bridge 边界",
+  "真实 WebUI Runtime Bridge session bridge 边界",
   "run 在没有真实 Runtime Agent relay 时不能伪成功",
   "one-person-lab 实际拉取/部署/运行接入：已完成主仓能力分类",
   "真实云资源开通",
@@ -63,8 +64,8 @@ const smokeScripts = [
   ["smoke-test-v22-real-opl-file-run-artifact-contract-gate", "scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs"],
   ["smoke-test-v22-opl-productionization-contract-refresh", "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs"],
   ["smoke-test-v22-real-opl-file-run-artifact-gates", "scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs"],
-  ["smoke-test-v22-opl-adapter-state-store-atomic-flow", "scripts/smoke-test-v22-opl-adapter-state-store-atomic-flow.mjs"],
-  ["smoke-test-v22-portal-opl-adapter-api-local-flow", "scripts/smoke-test-v22-portal-opl-adapter-api-local-flow.mjs"],
+  ["smoke-test-v22-runtime-bridge-state-store-atomic-flow", "scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs"],
+  ["smoke-test-v22-portal-runtime-bridge-api-local-flow", "scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs"],
   ["smoke-test-v22-opl-runtime-e2e-local-flow", "scripts/smoke-test-v22-opl-runtime-e2e-local-flow.mjs"],
   ["smoke-test-v22-mvp-managed-opl-loop-contract", "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs"],
   ["smoke-test-v22-user-credit-provider-key-flow", "scripts/smoke-test-v22-user-credit-provider-key-flow.mjs"],

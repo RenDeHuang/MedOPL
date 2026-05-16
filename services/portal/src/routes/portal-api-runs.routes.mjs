@@ -25,7 +25,7 @@ export function createPortalApiRunsRoutes({
   collectRunsForUser,
   currentServerPlanSelection,
   currentTaskSpaceForUser,
-  fetchOplAdapterRuns,
+  fetchRuntimeBridgeRuns,
   formatDateTime,
   isRunTerminal,
   readBody = async () => Buffer.from(""),
@@ -77,7 +77,7 @@ export function createPortalApiRunsRoutes({
         type: "live",
       })));
     }
-    const adapterRuns = (await fetchOplAdapterRuns())
+    const runtimeBridgeRuns = (await fetchRuntimeBridgeRuns())
       .filter((item) => {
         if (requestedUserId && user.role === "admin") return item.portalUserId === requestedUserId;
         return item.portalUserId === user.id;
@@ -92,7 +92,7 @@ export function createPortalApiRunsRoutes({
         status: item.status || "",
         startedAt: formatDateTime(item.createdAt || ""),
         endedAt: item.finishedAt ? formatDateTime(item.finishedAt) : "",
-        source: "portal_opl_adapter",
+        source: "runtime_bridge",
         type: "live",
         latencyMs: Number(item.latencyMs || 0),
         tokenCount: Number(item.tokenCount || 0),
@@ -100,16 +100,16 @@ export function createPortalApiRunsRoutes({
         jobName: item.jobName || "",
         namespace: item.namespace || "",
       }));
-    runs.push(...adapterRuns);
+    runs.push(...runtimeBridgeRuns);
     const filtered = runs
       .filter((item) => !workspaceId || item.workspaceId === workspaceId)
       .filter((item) => !runId || item.runId === runId)
       .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
     sendJson(res, {
       runs: filtered,
-      source: "runtime_events + portal_opl_adapter",
+      source: "runtime_events + runtime_bridge",
       type: "live",
-      note: "数据来自 runtime 事件、Portal 运行记录与 Portal OPL adapter",
+      note: "数据来自 runtime 事件、Portal 运行记录与 Runtime Bridge",
     });
     return true;
   }

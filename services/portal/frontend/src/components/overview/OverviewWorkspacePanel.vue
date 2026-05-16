@@ -19,7 +19,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-medium text-gray-950 dark:text-white">{{ item.title || item.slug }}</div>
-            <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">任务空间</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">工作空间</div>
           </div>
           <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
         </div>
@@ -28,7 +28,7 @@
           <span>{{ item.updatedAt || "-" }}</span>
         </div>
       </div>
-      <div v-if="!items.length" class="empty-state">还没有任务空间</div>
+      <div v-if="!items.length" class="empty-state">还没有工作空间</div>
     </div>
   </section>
 </template>

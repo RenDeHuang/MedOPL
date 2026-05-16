@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-import { createOplAdapterClient } from "../services/portal/src/integrations/opl-adapter-client.mjs";
+import { createRuntimeBridgeClient } from "../services/portal/src/integrations/runtime-bridge-client.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
 
 const RAW_PROVIDER_KEY = "gflabtoken_raw_key_v22_local_e2e_backend_only";
@@ -269,7 +269,7 @@ function startFakePortalInternal(runtimeBridgeUrl, calls) {
         providerKeyRef: PROVIDER_KEY_REF,
       },
       workspace: {
-        id: "taskspace-v22-local-e2e",
+        id: "workspace-v22-local-e2e",
         slug: WORKSPACE_ID,
         title: "Local E2E Workspace",
       },
@@ -399,8 +399,8 @@ try {
     env: {
       PORT: String(runtimePort),
       NODE_ENV: "development",
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: runtimeBridgeUrl,
-      PORTAL_OPL_ADAPTER_STATE_ROOT: runtimeStateRoot,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
+      PORTAL_RUNTIME_BRIDGE_STATE_ROOT: runtimeStateRoot,
       PORTAL_OPL_PROVIDER_SECRET_ROOT: providerSecretRoot,
       OPL_PRODUCT_API_URL: `http://127.0.0.1:${productApiPort}`,
       OPL_WEB_URL: gatewayUrl,
@@ -419,7 +419,7 @@ try {
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       OPL_UPSTREAM_URL: `http://127.0.0.1:${upstreamPort}`,
       PORTAL_INTERNAL_URL: `http://127.0.0.1:${fakePortalPort}`,
-      PORTAL_OPL_ADAPTER_URL: runtimeBridgeUrl,
+      PORTAL_RUNTIME_BRIDGE_URL: runtimeBridgeUrl,
       PORTAL_PUBLIC_URL: "https://portal.medopl.cn",
     },
   });
@@ -454,15 +454,15 @@ try {
   assert.equal(proxiedHtmlResponse.status, 200, "gateway_cookie_html_proxy_must_succeed");
   assert((await proxiedHtmlResponse.text()).includes("clean fake upstream OPL Web"), "gateway_cookie_proxy_must_still_reach_fake_upstream");
 
-  const bootstrap = await fetchJson(`${gatewayUrl}/portal-adapter/api/opl-launch/bootstrap`, {
+  const bootstrap = await fetchJson(`${gatewayUrl}/runtime-bridge/api/opl-launch/bootstrap`, {
     headers: { cookie: launchCookie },
   });
-  assert.equal(bootstrap.response.status, 200, "gateway_adapter_bootstrap_must_succeed");
+  assert.equal(bootstrap.response.status, 200, "gateway_runtime_bridge_bootstrap_must_succeed");
   assert.equal(bootstrap.payload.identity.workspaceId, WORKSPACE_ID, "bootstrap_workspace_mismatch");
   assert.equal(bootstrap.payload.identity.portalUserId, USER_ID, "bootstrap_user_mismatch");
-  assertNoForbiddenPublicLeak(bootstrap.payload, "gateway_adapter_bootstrap_response");
+  assertNoForbiddenPublicLeak(bootstrap.payload, "gateway_runtime_bridge_bootstrap_response");
 
-  const bound = await fetchJson(`${gatewayUrl}/portal-adapter/api/opl-launch/sessions/bind`, {
+  const bound = await fetchJson(`${gatewayUrl}/runtime-bridge/api/opl-launch/sessions/bind`, {
     method: "POST",
     headers: { cookie: launchCookie },
     body: JSON.stringify({
@@ -478,7 +478,7 @@ try {
   assert.equal(bound.payload.runtimeSession.providerConfigured, true, "runtime_session_provider_must_be_configured");
   assertNoForbiddenPublicLeak(bound.payload, "runtime_session_bind_response");
 
-  const message = await fetchJson(`${gatewayUrl}/portal-adapter/api/opl-launch/messages`, {
+  const message = await fetchJson(`${gatewayUrl}/runtime-bridge/api/opl-launch/messages`, {
     method: "POST",
     headers: { cookie: launchCookie },
     body: JSON.stringify({
@@ -494,7 +494,7 @@ try {
   assert.equal(message.payload.artifact.kind, "message_reply", "runtime_message_artifact_kind_mismatch");
   assertNoForbiddenPublicLeak(message.payload, "runtime_message_response");
 
-  const run = await fetchJson(`${gatewayUrl}/portal-adapter/api/opl-launch/runs`, {
+  const run = await fetchJson(`${gatewayUrl}/runtime-bridge/api/opl-launch/runs`, {
     method: "POST",
     headers: { cookie: launchCookie },
     body: JSON.stringify({
@@ -521,22 +521,22 @@ try {
   assert.equal(run.payload.run.artifacts[0].artifactRef, run.payload.run.artifacts[0].artifactId, "runtime_run_artifact_ref_mismatch");
   assertNoForbiddenPublicLeak(run.payload, "runtime_run_response");
 
-  const adapterClient = createOplAdapterClient({
-    adapterUrl: runtimeBridgeUrl,
+  const runtimeBridgeClient = createRuntimeBridgeClient({
+    runtimeBridgeUrl: runtimeBridgeUrl,
     oplWebUrl: gatewayUrl,
     timeoutMs: 5000,
     formatDateTime: (value) => String(value || ""),
   });
-  const adapterTraceRows = await adapterClient.fetchTraceRows({ userId: USER_ID, workspaceId: WORKSPACE_ID, limit: 20 });
-  assert.equal(adapterTraceRows.source, "portal_opl_adapter", "adapter_trace_source_mismatch");
-  assert(adapterTraceRows.rows.length >= 2, "adapter_trace_rows_must_include_message_and_run_traces");
-  assert(adapterTraceRows.rows.some((item) => item.runId === "message-v22-local-e2e"), "adapter_trace_must_include_message_trace");
-  assert(adapterTraceRows.rows.some((item) => item.runId === "run-v22-local-e2e"), "adapter_trace_must_include_run_trace");
-  assertNoForbiddenPublicLeak(adapterTraceRows, "adapter_trace_rows");
+  const runtimeBridgeTraceRows = await runtimeBridgeClient.fetchTraceRows({ userId: USER_ID, workspaceId: WORKSPACE_ID, limit: 20 });
+  assert.equal(runtimeBridgeTraceRows.source, "runtime_bridge", "runtime_bridge_trace_source_mismatch");
+  assert(runtimeBridgeTraceRows.rows.length >= 2, "runtime_bridge_trace_rows_must_include_message_and_run_traces");
+  assert(runtimeBridgeTraceRows.rows.some((item) => item.runId === "message-v22-local-e2e"), "runtime_bridge_trace_must_include_message_trace");
+  assert(runtimeBridgeTraceRows.rows.some((item) => item.runId === "run-v22-local-e2e"), "runtime_bridge_trace_must_include_run_trace");
+  assertNoForbiddenPublicLeak(runtimeBridgeTraceRows, "runtime_bridge_trace_rows");
 
   const portalTracePayload = await buildSessionTracesApiPayload({
     fetchTraceRows: async () => ({ source: "langfuse_sanitized_projection", type: "status_only", rows: [] }),
-    fetchOplAdapterTraceRows: adapterClient.fetchTraceRows,
+    fetchRuntimeBridgeTraceRows: runtimeBridgeClient.fetchTraceRows,
     parsePositiveInt: (value, fallback) => Number(value || fallback),
     paginateRows,
     normalizePageSize: (value) => Number(value || 10),
@@ -578,7 +578,7 @@ try {
     covered: [
       "portal_opl_entry_preflight",
       "opl_gateway_proxy_clean_fake_upstream",
-      "gateway_adapter_bootstrap",
+      "gateway_runtime_bridge_bootstrap",
       "message_file_run_runtime_bridge",
       "portal_session_trace_metadata",
       "secret_token_upstream_pollution_guard",

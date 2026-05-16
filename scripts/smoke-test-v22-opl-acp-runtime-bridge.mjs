@@ -2,20 +2,20 @@ import { spawn } from "node:child_process";
 
 const repoRoot = process.cwd();
 const port = Number(process.env.PORT || 18796);
-const adapterUrl = `http://127.0.0.1:${port}`;
+const runtimeBridgeUrl = `http://127.0.0.1:${port}`;
 const oplWebUrl = process.env.OPL_WEB_URL || "http://127.0.0.1:19999/opl-web";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function startAdapter() {
+function startRuntimeBridge() {
   const child = spawn(process.execPath, ["services/opl-runtime-bridge/src/server.mjs"], {
     cwd: repoRoot,
     env: {
       ...process.env,
       PORT: String(port),
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
       OPL_WEB_URL: oplWebUrl,
       OPL_PRODUCT_API_URL: "",
       OPL_RUNTIME_MODE: "acp",
@@ -23,24 +23,24 @@ function startAdapter() {
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
-  child.stdout.on("data", (chunk) => process.stdout.write(`[opl-adapter] ${chunk}`));
-  child.stderr.on("data", (chunk) => process.stderr.write(`[opl-adapter] ${chunk}`));
+  child.stdout.on("data", (chunk) => process.stdout.write(`[runtime-bridge] ${chunk}`));
+  child.stderr.on("data", (chunk) => process.stderr.write(`[runtime-bridge] ${chunk}`));
   return child;
 }
 
 async function waitForHealth() {
   for (let index = 0; index < 80; index += 1) {
     try {
-      const response = await fetch(`${adapterUrl}/healthz`);
+      const response = await fetch(`${runtimeBridgeUrl}/healthz`);
       if (response.ok) return;
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw new Error("adapter did not become healthy");
+  throw new Error("runtime bridge did not become healthy");
 }
 
 async function fetchJson(pathname, options = {}) {
-  const response = await fetch(`${adapterUrl}${pathname}`, {
+  const response = await fetch(`${runtimeBridgeUrl}${pathname}`, {
     ...options,
     headers: {
       "content-type": "application/json",
@@ -52,7 +52,7 @@ async function fetchJson(pathname, options = {}) {
   return payload;
 }
 
-const adapter = startAdapter();
+const runtimeBridge = startRuntimeBridge();
 try {
   await waitForHealth();
   const launch = await fetchJson("/api/opl-launch/tokens", {
@@ -86,5 +86,5 @@ try {
     oplWebUrl: launch.oplWebUrl,
   }, null, 2));
 } finally {
-  adapter.kill();
+  runtimeBridge.kill();
 }

@@ -37,7 +37,7 @@ Sub2API 只作为工程化验证模式参考：顶层 route、账号密码登录
 
 Portal UI 必须按以下层级落到代码和 eval：
 
-- route entry：公开首页、登录页、注册页由后端渲染；登录后工作台和管理台由 SPA route 承接；旧 `/portal/app/*` 只能兼容重定向。
+- route entry：公开首页、登录页、注册页由后端渲染；登录后工作台和管理台由 SPA route 承接；旧 `/portal/app/*` 已删除且不得恢复为兼容入口。
 - page shell：`AppLayout`、`AppHeader`、`AppSidebar` 只负责应用壳、导航、顶部栏、移动端展开和滚动边界。
 - page layout：`DashboardPageLayout`、`TablePageLayout`、`DetailPageLayout` 固定页面骨架和 slot 顺序。
 - common component：跨页面复用原语放在 `src/components/common/*`。

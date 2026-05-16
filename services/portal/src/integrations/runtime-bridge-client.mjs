@@ -1,11 +1,11 @@
-export function createOplAdapterClient({
-  adapterUrl,
+export function createRuntimeBridgeClient({
+  runtimeBridgeUrl,
   oplWebUrl,
   runtimeAgentConfig = null,
   timeoutMs,
   formatDateTime,
 }) {
-  const normalizedAdapterUrl = String(adapterUrl || "").replace(/\/$/, "");
+  const normalizedRuntimeBridgeUrl = String(runtimeBridgeUrl || "").replace(/\/$/, "");
   const normalizedOplWebUrl = String(oplWebUrl || "").replace(/\/$/, "");
   const runtimeUrl = "https://github.com/gaofeng21cn/one-person-lab";
 
@@ -44,13 +44,13 @@ export function createOplAdapterClient({
     return {
       ...payload,
       oplWebUrl: oplWebLaunchUrl,
-      portalAdapterUrl: normalizedAdapterUrl,
+      portalRuntimeBridgeUrl: normalizedRuntimeBridgeUrl,
       runtimeUrl: payload.runtimeUrl || runtimeUrl,
     };
   }
 
-  function assertStableOplAdapterPath(path = "") {
-    const pathname = new URL(path, `${normalizedAdapterUrl}/`).pathname;
+  function assertStableRuntimeBridgePath(path = "") {
+    const pathname = new URL(path, `${normalizedRuntimeBridgeUrl}/`).pathname;
     const allowed = pathname === "/api/opl/status" ||
       pathname === "/api/opl/bootstrap" ||
       pathname === "/api/opl/sessions/bind" ||
@@ -62,12 +62,12 @@ export function createOplAdapterClient({
       /^\/api\/opl\/runs\/[^/]+\/artifacts$/.test(pathname) ||
       /^\/api\/opl\/artifacts\/[^/]+$/.test(pathname);
     if (allowed) return pathname;
-    throw new Error(`opl_adapter_api_path_not_allowed:${pathname}`);
+    throw new Error(`runtime_bridge_api_path_not_allowed:${pathname}`);
   }
 
   async function fetchJson(pathname) {
     try {
-      const response = await fetch(new URL(pathname, `${normalizedAdapterUrl}/`), {
+      const response = await fetch(new URL(pathname, `${normalizedRuntimeBridgeUrl}/`), {
         headers: { accept: "application/json" },
         signal: AbortSignal.timeout(timeoutMs),
       });
@@ -79,7 +79,7 @@ export function createOplAdapterClient({
   }
 
   return {
-    adapterUrl: normalizedAdapterUrl,
+    runtimeBridgeUrl: normalizedRuntimeBridgeUrl,
     oplWebUrl: normalizedOplWebUrl,
     buildConfiguredOplWebUrl,
     normalizeLaunchPayload,
@@ -97,7 +97,7 @@ export function createOplAdapterClient({
       storageEntitlement = null,
     }) {
       const selectedServerPlan = taskSpace.selectedServerPlan || taskSpace.selectedServerPlanSnapshot || taskSpace.serverPlanSnapshot || null;
-      const response = await fetch(new URL("/api/opl-launch/tokens", `${normalizedAdapterUrl}/`), {
+      const response = await fetch(new URL("/api/opl-launch/tokens", `${normalizedRuntimeBridgeUrl}/`), {
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: AbortSignal.timeout(timeoutMs),
@@ -161,9 +161,9 @@ export function createOplAdapterClient({
       return normalizeLaunchPayload(payload, { requireRealOplWeb });
     },
 
-    async requestAdapterApi({ path, method = "GET", launchToken = "", body = null }) {
-      const pathname = assertStableOplAdapterPath(path);
-      const response = await fetch(new URL(pathname, `${normalizedAdapterUrl}/`), {
+    async requestRuntimeBridgeApi({ path, method = "GET", launchToken = "", body = null }) {
+      const pathname = assertStableRuntimeBridgePath(path);
+      const response = await fetch(new URL(pathname, `${normalizedRuntimeBridgeUrl}/`), {
         method,
         headers: {
           accept: "application/json",
@@ -175,7 +175,7 @@ export function createOplAdapterClient({
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const error = new Error(payload?.error || `opl_adapter_api_failed:${response.status}`);
+        const error = new Error(payload?.error || `runtime_bridge_api_failed:${response.status}`);
         error.status = response.status;
         error.payload = payload;
         throw error;
@@ -222,14 +222,14 @@ export function createOplAdapterClient({
           billingMetadataRef: item.billingMetadataRef || "",
           usageMetadataRef: item.usageMetadataRef || "",
           url: "",
-          source: "portal_opl_adapter",
+          source: "runtime_bridge",
           runActions: actions.filter((action) => action.runId === item.runId),
         }));
       return {
-        source: "portal_opl_adapter",
+        source: "runtime_bridge",
         type: rows.length ? "live" : "status_only",
         rows,
-        note: rows.length ? "数据来自 Portal OPL adapter trace records" : "Portal OPL adapter 未返回匹配 trace",
+        note: rows.length ? "数据来自 Runtime Bridge trace records" : "Runtime Bridge 未返回匹配 trace",
       };
     },
 

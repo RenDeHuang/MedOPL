@@ -180,7 +180,7 @@ export function createPortalRuntimeObservability({
   harborRegistryClient,
   langfuseTraceClient,
   minioStorageClient,
-  oplAdapterClient,
+  runtimeBridgeClient,
   path,
   readDb,
   readFile,
@@ -342,16 +342,16 @@ export function createPortalRuntimeObservability({
     return langfuseTraceClient.fetchTraceRows({ userId, workspaceId, runId, limit });
   }
 
-  async function fetchOplAdapterRuns() {
-    return oplAdapterClient.fetchRuns();
+  async function fetchRuntimeBridgeRuns() {
+    return runtimeBridgeClient.fetchRuns();
   }
 
-  async function fetchOplAdapterTraceRows({ userId = "", workspaceId = "", runId = "", limit = 200 } = {}) {
-    return oplAdapterClient.fetchTraceRows({ userId, workspaceId, runId, limit });
+  async function fetchRuntimeBridgeTraceRows({ userId = "", workspaceId = "", runId = "", limit = 200 } = {}) {
+    return runtimeBridgeClient.fetchTraceRows({ userId, workspaceId, runId, limit });
   }
 
-  async function fetchOplAdapterCosts({ userId = "", workspaceId = "", runId = "" } = {}) {
-    return oplAdapterClient.fetchCosts({ userId, workspaceId, runId });
+  async function fetchRuntimeBridgeCosts({ userId = "", workspaceId = "", runId = "" } = {}) {
+    return runtimeBridgeClient.fetchCosts({ userId, workspaceId, runId });
   }
 
   function workspaceChatSessionsForUser(db, user, limit = 20) {
@@ -442,9 +442,9 @@ export function createPortalRuntimeObservability({
     fetchHarborSummary,
     fetchLangfuseSummary,
     fetchMinioSummary,
-    fetchOplAdapterCosts,
-    fetchOplAdapterRuns,
-    fetchOplAdapterTraceRows,
+    fetchRuntimeBridgeCosts,
+    fetchRuntimeBridgeRuns,
+    fetchRuntimeBridgeTraceRows,
     fetchPendingSummary,
     fetchServerPlans,
     fetchTraceRows,

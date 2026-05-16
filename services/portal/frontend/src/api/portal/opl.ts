@@ -17,7 +17,7 @@ export interface OplLaunchPayload {
 }
 
 export interface OplBootstrapPayload {
-  adapterContractVersion: string;
+  runtimeBridgeContractVersion: string;
   capabilities: string[];
   supportedEvents: string[];
   identity: {

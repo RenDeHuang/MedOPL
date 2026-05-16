@@ -336,11 +336,11 @@ const payloads = createPortalAdminApiPayloads({
   sanitizeTaskTitle: (_slug, title) => title,
   storageMode: () => "json",
   productProfile: {
-    runtimeMode: "managed_runtime",
+    runtimeMode: "platform_provisioned",
     opsProfileEnabled: true,
   },
   urls: {
-    portalOplAdapterUrl: "http://portal-adapter.local",
+    portalRuntimeBridgeUrl: "http://runtime-bridge.local",
   },
   withinDateRange: () => true,
   workspaceChatSessionsForUser: () => db.workspaceSessions,

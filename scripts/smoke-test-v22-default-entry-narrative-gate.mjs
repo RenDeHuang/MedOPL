@@ -461,6 +461,23 @@ const branchScopedAllowedDiffPatterns = new Map([
     "services/opl-web-gateway/src/**",
     "services/opl-runtime-bridge/src/**",
   ]],
+  ["cleanup/v22-system-domain-truth-layer-zero-old-context", [
+    "README.md",
+    "docs/product.md",
+    "docs/architecture.md",
+    "docs/contracts/README.md",
+    "docs/contracts/v22-*",
+    "docs/deployment/docker-product-appliance.md",
+    "docs/recovery/*",
+    "scripts/acceptance-portal-console.mjs",
+    "scripts/check-commercial-blockers.mjs",
+    "scripts/smoke-test-opl-*.mjs",
+    "scripts/smoke-test-v22-*",
+    "scripts/smoke-test-workspace-lifecycle.mjs",
+    "services/portal/**",
+    "services/opl-web-gateway/**",
+    "services/opl-runtime-bridge/**",
+  ]],
 ]);
 
 function globToRegExp(pattern) {
@@ -492,6 +509,8 @@ const forbiddenDefaultEntryTerms = [
 ];
 
 const forbiddenComposeServiceNames = [
+  "portal-opl-adapter",
+  "portal-opl-adapter-dev",
   "resource-provisioner",
   "resource-provisioner-dev",
   "med-autoscience-runner",
@@ -647,11 +666,11 @@ function assertComposeBoundary(source) {
 
   const allowedServiceNames = [
     "portal",
-    "portal-opl-adapter",
+    "runtime-bridge",
     "opl-web-gateway",
     "opl-web",
     "portal-dev",
-    "portal-opl-adapter-dev",
+    "runtime-bridge-dev",
     "opl-web-gateway-dev",
     "postgres",
     "redis",

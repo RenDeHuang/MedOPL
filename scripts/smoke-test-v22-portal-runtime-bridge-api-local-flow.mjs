@@ -7,19 +7,19 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-import { createOplAdapterClient } from "../services/portal/src/integrations/opl-adapter-client.mjs";
+import { createRuntimeBridgeClient } from "../services/portal/src/integrations/runtime-bridge-client.mjs";
 import { createOplRoutes } from "../services/portal/src/routes/opl.routes.mjs";
 
-const RAW_PROVIDER_KEY = "gflabtoken_raw_key_backend_only_v22_adapter_api";
-const USER_ID = "user-v22-adapter-api";
-const TENANT_ID = "tenant-v22-adapter-api";
-const WORKSPACE_ID = "workspace-v22-adapter-api";
-const WORKSPACE_SESSION_ID = "workspace-session-v22-adapter-api";
-const RESOURCE_BINDING_ID = "binding-v22-adapter-api";
-const PROVIDER_KEY_REF = "provider-key-ref-v22-adapter-api";
-const RUNTIME_AGENT_ID = "runtime-agent-v22-adapter-api";
-const STABLE_MESSAGE_STATUS_PATH_PREFIX = "/portal-adapter/api/opl/messages/";
-const PORTAL_LAUNCH_ID = "portal-proxy-launch-v22-adapter-api";
+const RAW_PROVIDER_KEY = "gflabtoken_raw_key_backend_only_v22_runtime_bridge_api";
+const USER_ID = "user-v22-runtime-bridge-api";
+const TENANT_ID = "tenant-v22-runtime-bridge-api";
+const WORKSPACE_ID = "workspace-v22-runtime-bridge-api";
+const WORKSPACE_SESSION_ID = "workspace-session-v22-runtime-bridge-api";
+const RESOURCE_BINDING_ID = "binding-v22-runtime-bridge-api";
+const PROVIDER_KEY_REF = "provider-key-ref-v22-runtime-bridge-api";
+const RUNTIME_AGENT_ID = "runtime-agent-v22-runtime-bridge-api";
+const STABLE_MESSAGE_STATUS_PATH_PREFIX = "/runtime-bridge/api/opl/messages/";
+const PORTAL_LAUNCH_ID = "portal-proxy-launch-v22-runtime-bridge-api";
 const REQUIRED_BOOTSTRAP_PRODUCT_API_CALLS = [
   "GET /api/health",
   "GET /api/opl/system",
@@ -160,10 +160,10 @@ function startFakeOplProductApi(calls) {
       assertNoSecretLeak(payload, "upstream_message");
       sendJson(res, 200, {
         message: {
-          messageId: payload.messageId || "message-v22-adapter-api",
+          messageId: payload.messageId || "message-v22-runtime-bridge-api",
           sessionId: payload.oplSessionId || payload.runtimeSessionId || "",
           runtimeSessionId: payload.runtimeSessionId || "",
-          reply: "fake OPL reply for stable adapter API",
+          reply: "fake OPL reply for stable Runtime Bridge API",
           source: "fake_opl_product_api",
         },
       });
@@ -187,7 +187,7 @@ function spawnNode(script, { port, env, stateRoot }) {
     env: {
       ...process.env,
       PORT: String(port),
-      PORTAL_OPL_ADAPTER_STATE_ROOT: stateRoot,
+      PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot,
       NODE_ENV: "test",
       ...env,
     },
@@ -274,7 +274,7 @@ function assertStatus(result, expectedStatus, label, diagnostics = {}) {
   assert.fail(`${label}: expected ${expectedStatus}, got ${result.response.status}; payload=${JSON.stringify(result.json || {})}; diagnostics=${JSON.stringify(diagnostics)}`);
 }
 
-async function readAdapterState(stateRoot) {
+async function readRuntimeBridgeState(stateRoot) {
   return JSON.parse(await readFile(path.join(stateRoot, "state.json"), "utf8"));
 }
 
@@ -332,7 +332,7 @@ function assertInputFileBackflow(state, fileRef, label) {
   assert.equal(artifact.workspaceId, WORKSPACE_ID, `${label}_input_file_workspace_mismatch`);
   assert.equal(artifact.resourceBindingId, RESOURCE_BINDING_ID, `${label}_input_file_resource_binding_mismatch`);
   assert.equal(artifact.providerKeyRef, PROVIDER_KEY_REF, `${label}_input_file_provider_key_ref_mismatch`);
-  assert.equal(artifact.relativePath, "inputs/adapter-api-input.csv", `${label}_input_file_relative_path_mismatch`);
+  assert.equal(artifact.relativePath, "inputs/runtime-bridge-api-input.csv", `${label}_input_file_relative_path_mismatch`);
   return artifact;
 }
 
@@ -361,8 +361,8 @@ async function assertPortalProxyRejectsCrossUserLaunch() {
     appendCookie: () => {},
     layoutV2: (_title, body) => body,
     logPortalEvent: async () => {},
-    oplAdapterClient: {
-      async requestAdapterApi(input) {
+    runtimeBridgeClient: {
+      async requestRuntimeBridgeApi(input) {
         calls.push(input);
         return { ok: true, leaked: true };
       },
@@ -397,7 +397,7 @@ async function assertPortalProxyRejectsCrossUserLaunch() {
   assert.equal(handled, true, "portal_opl_proxy_must_handle_bootstrap_request");
   assert.equal(res.statusCode, 404, "portal_opl_proxy_must_reject_cross_user_launch_id");
   assert.equal(res.payload?.error, "opl_launch_status_not_found", "portal_opl_proxy_cross_user_error_mismatch");
-  assert.equal(calls.length, 0, "portal_opl_proxy_must_not_call_adapter_for_cross_user_launch_id");
+  assert.equal(calls.length, 0, "portal_opl_proxy_must_not_call_runtime_bridge_for_cross_user_launch_id");
 }
 
 await assertPortalProxyRejectsCrossUserLaunch();
@@ -407,16 +407,16 @@ async function assertPortalLaunchResponseIsPublicOnly() {
     appendCookie: () => {},
     layoutV2: (_title, body) => body,
     logPortalEvent: async () => {},
-    oplAdapterClient: {},
+    runtimeBridgeClient: {},
     oplLaunchService: {
       async prepareLaunchForIntent() {
         return {
           ok: true,
           launchId: "portal-public-launch-id",
-          taskSpace: { slug: WORKSPACE_ID, title: "Adapter API Workspace" },
+          taskSpace: { slug: WORKSPACE_ID, title: "Runtime Bridge API Workspace" },
           workspaceSession: { id: WORKSPACE_SESSION_ID, workspaceId: WORKSPACE_ID },
           launch: {
-            launchId: "adapter-launch-id-must-not-be-public-primary",
+            launchId: "runtime-bridge-launch-id-must-not-be-public-primary",
             launchToken: "portal-launch-token-must-stay-cookie-only",
             oplWebUrl: "http://opl.local/workspace",
             runtimeUrl: "https://github.com/gaofeng21cn/one-person-lab",
@@ -455,36 +455,36 @@ async function assertPortalLaunchResponseIsPublicOnly() {
   assert.equal(res.payload?.launch?.launchId, "portal-public-launch-id", "portal_launch_nested_response_must_use_portal_launch_id");
   assertNoSecretLeak(res.payload, "portal_launch_public_response");
   const serialized = JSON.stringify(res.payload || {});
-  assert.equal(serialized.includes("adapter-launch-id-must-not-be-public-primary"), false, "portal_launch_response_must_not_use_adapter_launch_id_as_primary");
+  assert.equal(serialized.includes("runtime-bridge-launch-id-must-not-be-public-primary"), false, "portal_launch_response_must_not_use_runtime_bridge_launch_id_as_primary");
   assert.equal(serialized.includes("providerConfigSecretRef"), false, "portal_launch_response_must_not_expose_secret_ref_field");
   assert.equal(serialized.includes("nodePoolId"), false, "portal_launch_response_must_not_expose_internal_node_pool");
   assert.equal(serialized.includes("tkeClusterId"), false, "portal_launch_response_must_not_expose_internal_cluster");
 }
 
-async function assertAdapterClientRestrictsStableOplApiPaths() {
-  const adapter = createOplAdapterClient({
-    adapterUrl: "http://127.0.0.1:1",
+async function assertRuntimeBridgeClientRestrictsStableOplApiPaths() {
+  const runtimeBridgeClient = createRuntimeBridgeClient({
+    runtimeBridgeUrl: "http://127.0.0.1:1",
     oplWebUrl: "http://opl.local",
     timeoutMs: 50,
     formatDateTime: (value) => value,
   });
   await assert.rejects(
-    () => adapter.requestAdapterApi({ path: "/api/runs", launchToken: "internal-launch-token" }),
-    /opl_adapter_api_path_not_allowed/,
-    "adapter_client_must_reject_non_stable_opl_api_path",
+    () => runtimeBridgeClient.requestRuntimeBridgeApi({ path: "/api/runs", launchToken: "internal-launch-token" }),
+    /runtime_bridge_api_path_not_allowed/,
+    "runtime_bridge_client_must_reject_non_stable_opl_api_path",
   );
 }
 
 await assertPortalLaunchResponseIsPublicOnly();
-await assertAdapterClientRestrictsStableOplApiPaths();
+await assertRuntimeBridgeClientRestrictsStableOplApiPaths();
 
-function createPortalProxyHandler({ adapterUrl, launchToken }) {
+function createPortalProxyHandler({ runtimeBridgeUrl, launchToken }) {
   return createOplRoutes({
     appendCookie: () => {},
     layoutV2: (_title, body) => body,
     logPortalEvent: async () => {},
-    oplAdapterClient: createOplAdapterClient({
-      adapterUrl,
+    runtimeBridgeClient: createRuntimeBridgeClient({
+      runtimeBridgeUrl,
       oplWebUrl: "http://gateway.local",
       timeoutMs: 3000,
       formatDateTime: (value) => value,
@@ -528,7 +528,7 @@ async function callPortalProxy(handler, { method, path: requestPath, body = null
   return { status: res.statusCode, payload: res.payload };
 }
 
-const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-opl-adapter-api-"));
+const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-runtime-bridge-api-"));
 const productCalls = [];
 const productApi = startFakeOplProductApi(productCalls);
 const upstreamWeb = startFakeUpstreamWeb();
@@ -538,17 +538,17 @@ let gateway;
 try {
   const productApiPort = await listen(productApi);
   const upstreamWebPort = await listen(upstreamWeb);
-  const adapterPort = await freePort();
+  const runtimeBridgePort = await freePort();
   const gatewayPort = await freePort();
-  const stateRoot = path.join(tempRoot, "adapter-state");
-  const adapterUrl = `http://127.0.0.1:${adapterPort}`;
+  const stateRoot = path.join(tempRoot, "runtime-bridge-state");
+  const runtimeBridgeUrl = `http://127.0.0.1:${runtimeBridgePort}`;
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
 
   runtimeBridge = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
-    port: adapterPort,
+    port: runtimeBridgePort,
     stateRoot,
     env: {
-      PORTAL_OPL_ADAPTER_PUBLIC_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_PUBLIC_URL: runtimeBridgeUrl,
       OPL_WEB_URL: gatewayUrl,
       OPL_PRODUCT_API_URL: `http://127.0.0.1:${productApiPort}`,
       OPL_RUNTIME_BRIDGE_LOCAL_FAKE_RUNTIME: "1",
@@ -562,18 +562,18 @@ try {
     env: {
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       OPL_UPSTREAM_URL: `http://127.0.0.1:${upstreamWebPort}`,
-      PORTAL_OPL_ADAPTER_URL: adapterUrl,
+      PORTAL_RUNTIME_BRIDGE_URL: runtimeBridgeUrl,
       PORTAL_PUBLIC_URL: "http://portal.local",
     },
   });
 
-  await waitFor(`${adapterUrl}/healthz`);
+  await waitFor(`${runtimeBridgeUrl}/healthz`);
   await waitFor(`${gatewayUrl}/healthz`);
 
-  const { response: launchResponse, json: launch } = await postJson(`${adapterUrl}/api/opl-launch/tokens`, {
+  const { response: launchResponse, json: launch } = await postJson(`${runtimeBridgeUrl}/api/opl-launch/tokens`, {
     portalUserId: USER_ID,
     portalUserEmail: "researcher@example.test",
-    portalUserName: "Adapter API User",
+    portalUserName: "Runtime Bridge API User",
     tenantId: TENANT_ID,
     ownerId: USER_ID,
     sessionOwnerId: USER_ID,
@@ -581,14 +581,14 @@ try {
     artifactOwnerId: USER_ID,
     storageOwnerId: USER_ID,
     workspaceId: WORKSPACE_ID,
-    workspaceTitle: "Adapter API Workspace",
-    workspacePath: "/workspace/adapter-api",
+    workspaceTitle: "Runtime Bridge API Workspace",
+    workspacePath: "/workspace/runtime-bridge-api",
     workspaceSessionId: WORKSPACE_SESSION_ID,
     sourceSurface: "portal-control-plane",
     mode: "full_runtime",
     resourceBindingId: RESOURCE_BINDING_ID,
-    computeInstanceId: "compute-v22-adapter-api",
-    storageBucketId: "storage-v22-adapter-api",
+    computeInstanceId: "compute-v22-runtime-bridge-api",
+    storageBucketId: "storage-v22-runtime-bridge-api",
     runtimeAgentId: RUNTIME_AGENT_ID,
     providerConfig: {
       providerConfigured: true,
@@ -606,7 +606,7 @@ try {
   });
   assert.equal(launchResponse.status, 200, "launch_must_return_200");
   assert.equal(launch.ok, true, "launch_must_succeed");
-  assert(launch.launchToken, "internal_adapter_launch_token_required");
+  assert(launch.launchToken, "internal_runtime_bridge_launch_token_required");
   assertNoSecretLeak({
     openUrl: launch.openUrl,
     oplWebUrl: launch.oplWebUrl,
@@ -616,35 +616,35 @@ try {
   assert.equal(String(launch.bootstrapUrl || "").includes("launch_token"), false, "bootstrap_url_must_not_include_launch_token_query");
 
   const cookie = cookieHeaderFrom(launchResponse);
-  const portalProxy = createPortalProxyHandler({ adapterUrl, launchToken: launch.launchToken });
+  const portalProxy = createPortalProxyHandler({ runtimeBridgeUrl, launchToken: launch.launchToken });
 
-  const unauthorizedBootstrap = await getJson(`${gatewayUrl}/portal-adapter/api/opl/bootstrap`);
+  const unauthorizedBootstrap = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/bootstrap`);
   assert.equal(unauthorizedBootstrap.response.status, 401, "stable_bootstrap_without_cookie_must_return_401");
-  const queryTokenBootstrap = await getJson(`${adapterUrl}/api/opl/bootstrap?launch_token=${encodeURIComponent(launch.launchToken)}`);
-  assert.equal(queryTokenBootstrap.response.status, 401, "adapter_must_reject_launch_token_query");
-  const bodyTokenBind = await postJson(`${adapterUrl}/api/opl/sessions/bind`, {
+  const queryTokenBootstrap = await getJson(`${runtimeBridgeUrl}/api/opl/bootstrap?launch_token=${encodeURIComponent(launch.launchToken)}`);
+  assert.equal(queryTokenBootstrap.response.status, 401, "runtime_bridge_must_reject_launch_token_query");
+  const bodyTokenBind = await postJson(`${runtimeBridgeUrl}/api/opl/sessions/bind`, {
     launchToken: launch.launchToken,
     oplSessionId: "body-token-must-not-bind",
   });
-  assert.equal(bodyTokenBind.response.status, 401, "adapter_must_reject_launch_token_body");
+  assert.equal(bodyTokenBind.response.status, 401, "runtime_bridge_must_reject_launch_token_body");
 
-  const status = await getJson(`${gatewayUrl}/portal-adapter/api/opl/status`, { cookie });
-  assert.equal(status.response.status, 200, "stable_adapter_status_must_return_200");
-  assert.equal(status.json.adapterContractVersion, "v22.portal-opl-context-backflow.v1", "adapter_contract_version_mismatch");
-  assert.equal(status.json.capabilities?.contextBootstrap?.status, "supported", "adapter_status_must_include_context_bootstrap_capability");
-  assert.equal(status.json.capabilities?.runIntent?.status, "requires_runtime_agent", "adapter_status_must_gate_run_intent_to_downstream_runtime");
-  assert.equal(status.json.capabilities?.langfuseSessionTrace?.source, "trace.medopl.cn", "adapter_status_must_expose_downstream_langfuse_boundary");
-  assert(status.json.supportedEvents.includes("context_bootstrapped"), "adapter_status_must_include_context_bootstrapped_event");
-  assert(status.json.supportedEvents.includes("downstream_runtime_gate_evaluated"), "adapter_status_must_include_runtime_gate_event");
+  const status = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/status`, { cookie });
+  assert.equal(status.response.status, 200, "stable_runtime_bridge_status_must_return_200");
+  assert.equal(status.json.runtimeBridgeContractVersion, "v22.portal-opl-context-backflow.v1", "runtime_bridge_contract_version_mismatch");
+  assert.equal(status.json.capabilities?.contextBootstrap?.status, "supported", "runtime_bridge_status_must_include_context_bootstrap_capability");
+  assert.equal(status.json.capabilities?.runIntent?.status, "requires_runtime_agent", "runtime_bridge_status_must_gate_run_intent_to_downstream_runtime");
+  assert.equal(status.json.capabilities?.langfuseSessionTrace?.source, "trace.medopl.cn", "runtime_bridge_status_must_expose_downstream_langfuse_boundary");
+  assert(status.json.supportedEvents.includes("context_bootstrapped"), "runtime_bridge_status_must_include_context_bootstrapped_event");
+  assert(status.json.supportedEvents.includes("downstream_runtime_gate_evaluated"), "runtime_bridge_status_must_include_runtime_gate_event");
 
-  const bootstrap = await getJson(`${gatewayUrl}/portal-adapter/api/opl/bootstrap`, { cookie });
+  const bootstrap = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/bootstrap`, { cookie });
   assert.equal(bootstrap.response.status, 200, "stable_bootstrap_must_return_200");
   assert.equal(bootstrap.json.identity.workspaceId, WORKSPACE_ID, "bootstrap_workspace_mismatch");
-  assert.equal(bootstrap.json.adapterContractVersion, "v22.portal-opl-context-backflow.v1", "bootstrap_contract_version_mismatch");
+  assert.equal(bootstrap.json.runtimeBridgeContractVersion, "v22.portal-opl-context-backflow.v1", "bootstrap_contract_version_mismatch");
   assert.equal(bootstrap.json.capabilities?.messageBackflow?.source, "opl_product_api", "bootstrap_must_classify_message_backflow_source");
   assert.equal(bootstrap.json.capabilities?.runIntent?.status, "requires_runtime_agent", "bootstrap_must_classify_run_as_downstream_runtime");
   assert.equal(bootstrap.json.capabilities?.langfuseSessionTrace?.status, "deferred_authorization", "bootstrap_must_gate_langfuse_deployment");
-  assert.equal(bootstrap.json.callbacks.runArtifacts, "/portal-adapter/api/opl/runs/{runId}/artifacts", "bootstrap_must_expose_run_artifacts_callback");
+  assert.equal(bootstrap.json.callbacks.runArtifacts, "/runtime-bridge/api/opl/runs/{runId}/artifacts", "bootstrap_must_expose_run_artifacts_callback");
   assert.equal(bootstrap.json.opl.health?.service, "fake-clean-opl-product-api", "bootstrap_health_must_come_from_product_api");
   assert.equal(bootstrap.json.system?.id, "fake-clean-opl", "bootstrap_system_must_come_from_product_api");
   assert.equal(bootstrap.json.engines?.[0]?.id, "engine-local", "bootstrap_engines_must_come_from_product_api");
@@ -657,20 +657,20 @@ try {
     ...REQUIRED_BOOTSTRAP_PRODUCT_API_CALLS,
   ], "bootstrap_and_launch");
 
-  const bind = await postJson(`${gatewayUrl}/portal-adapter/api/opl/sessions/bind`, {
+  const bind = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/sessions/bind`, {
     oplSessionId: "stable-opl-session-v22",
     clientSessionState: { source: "fake-clean-upstream-web" },
   }, { cookie });
   assert.equal(bind.response.status, 200, "stable_session_bind_must_return_200");
   assert.equal(bind.json.runtimeSession.workspaceId, WORKSPACE_ID, "bind_workspace_mismatch");
   assertNoSecretLeak(bind.json, "stable_session_bind");
-  let state = await readAdapterState(stateRoot);
+  let state = await readRuntimeBridgeState(stateRoot);
   const boundRuntimeSession = assertRuntimeSessionBackflow(state, "session_bind_backflow");
   assert.equal(boundRuntimeSession.oplSessionId, "stable-opl-session-v22", "session_bind_must_update_opl_session_id");
   assertEvent(state, "opl_session_bound", (event) => event.oplSessionId === "stable-opl-session-v22" && event.workspaceId === WORKSPACE_ID, "session_bind_backflow");
 
-  const message = await postJson(`${gatewayUrl}/portal-adapter/api/opl/messages`, {
-    message: "summarize the current local adapter API state",
+  const message = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/messages`, {
+    message: "summarize the current local Runtime Bridge API state",
     waitForCompletion: true,
   }, { cookie });
   assert.equal(message.response.status, 200, "stable_message_must_complete");
@@ -679,17 +679,17 @@ try {
   assertNoSecretLeak(message.json, "stable_message");
   const productMessageCalls = productCallsFor(productCalls, "POST", "/api/opl/messages");
   assert.equal(productMessageCalls.length >= 1, true, "stable_message_must_call_product_api");
-  assert.equal(parsedCallBody(productMessageCalls.at(-1)).message, "summarize the current local adapter API state", "stable_message_product_api_body_mismatch");
-  state = await readAdapterState(stateRoot);
+  assert.equal(parsedCallBody(productMessageCalls.at(-1)).message, "summarize the current local Runtime Bridge API state", "stable_message_product_api_body_mismatch");
+  state = await readRuntimeBridgeState(stateRoot);
   assertMessageBackflow(state, message.json.message.messageId, "message_backflow");
 
-  const acceptedMessage = await postJson(`${gatewayUrl}/portal-adapter/api/opl/messages`, {
-    message: "summarize the current local adapter API state asynchronously",
+  const acceptedMessage = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/messages`, {
+    message: "summarize the current local Runtime Bridge API state asynchronously",
     waitForCompletion: false,
   }, { cookie });
   assert.equal(acceptedMessage.response.status, 202, "stable_async_message_must_return_202");
-  assert(String(acceptedMessage.json.statusUrl || "").startsWith(STABLE_MESSAGE_STATUS_PATH_PREFIX), "stable_async_message_status_url_must_use_adapter_api");
-  assert.match(acceptedMessage.json.statusUrl || "", /^\/portal-adapter\/api\/opl\/messages\/[^/]+\/status$/, "stable_async_message_status_url_must_include_message_id");
+  assert(String(acceptedMessage.json.statusUrl || "").startsWith(STABLE_MESSAGE_STATUS_PATH_PREFIX), "stable_async_message_status_url_must_use_runtime_bridge_api");
+  assert.match(acceptedMessage.json.statusUrl || "", /^\/runtime-bridge\/api\/opl\/messages\/[^/]+\/status$/, "stable_async_message_status_url_must_include_message_id");
   assert.equal(String(acceptedMessage.json.statusUrl || "").includes("/api/opl-launch/"), false, "stable_async_message_status_url_must_not_use_legacy_api");
   assertNoSecretLeak(acceptedMessage.json, "stable_async_message");
   const acceptedStatus = await waitForJson(`${gatewayUrl}${acceptedMessage.json.statusUrl}`, {
@@ -698,11 +698,11 @@ try {
     label: "stable_async_message_status",
   });
   assertNoSecretLeak(acceptedStatus.json, "stable_async_message_status");
-  state = await readAdapterState(stateRoot);
+  state = await readRuntimeBridgeState(stateRoot);
   assertMessageBackflow(state, acceptedMessage.json.message.messageId, "async_message_backflow");
 
-  const file = await postJson(`${gatewayUrl}/portal-adapter/api/opl/files`, {
-    fileName: "inputs/adapter-api-input.csv",
+  const file = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/files`, {
+    fileName: "inputs/runtime-bridge-api-input.csv",
     contentType: "text/csv",
     sizeBytes: 42,
   }, { cookie });
@@ -714,14 +714,14 @@ try {
   });
   assert(file.json.fileRef, "stable_file_ref_required");
   assertNoSecretLeak(file.json, "stable_file");
-  state = await readAdapterState(stateRoot);
+  state = await readRuntimeBridgeState(stateRoot);
   const inputArtifact = assertInputFileBackflow(state, file.json.fileRef, "file_backflow");
   assertEvent(state, "opl_file_referenced", (event) => event.artifactId === file.json.fileRef && event.workspaceId === WORKSPACE_ID, "file_backflow");
 
-  const run = await postJson(`${gatewayUrl}/portal-adapter/api/opl/runs`, {
-    message: "run local adapter API analysis",
+  const run = await postJson(`${gatewayUrl}/runtime-bridge/api/opl/runs`, {
+    message: "run local Runtime Bridge API analysis",
     fileRefs: [file.json.fileRef],
-    toolName: "opl-adapter-api-local",
+    toolName: "opl-runtime-bridge-api-local",
   }, { cookie });
   assert.equal(run.response.status, 201, "stable_run_must_return_201");
   assert.equal(run.json.run.status, "succeeded", "stable_run_status_mismatch");
@@ -732,30 +732,30 @@ try {
   assert.equal(run.json.run.runtimeClaims?.providerKeyRef, PROVIDER_KEY_REF, "stable_run_runtime_claims_provider_key_ref_mismatch");
   assert.equal(run.json.run.ledgerEntryCount >= 1, true, "stable_run_must_return_ledger_count");
   assertNoSecretLeak(run.json, "stable_run");
-  state = await readAdapterState(stateRoot);
+  state = await readRuntimeBridgeState(stateRoot);
   const runBackflow = assertRunBackflow(state, run.json, "run_backflow");
   assert.equal(inputArtifact.artifactId, file.json.fileRef, "run_backflow_must_preserve_prior_input_file_state");
 
-  const unauthorizedRunStatus = await getJson(`${gatewayUrl}/portal-adapter/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/status`);
+  const unauthorizedRunStatus = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/status`);
   assert.equal(unauthorizedRunStatus.response.status, 401, "stable_run_status_without_cookie_must_return_401");
-  const unauthorizedRunArtifacts = await getJson(`${gatewayUrl}/portal-adapter/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts`);
+  const unauthorizedRunArtifacts = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts`);
   assert.equal(unauthorizedRunArtifacts.response.status, 401, "stable_run_artifacts_without_cookie_must_return_401");
-  const unauthorizedArtifact = await getJson(`${gatewayUrl}/portal-adapter/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}`);
+  const unauthorizedArtifact = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}`);
   assert.equal(unauthorizedArtifact.response.status, 401, "stable_artifact_without_cookie_must_return_401");
 
-  const runStatus = await getJson(`${gatewayUrl}/portal-adapter/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/status`, { cookie });
+  const runStatus = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/status`, { cookie });
   assert.equal(runStatus.response.status, 200, "stable_run_status_must_return_200");
   assert.equal(runStatus.json.run.runId, run.json.run.runId, "stable_run_status_id_mismatch");
   assert.equal(runStatus.json.run.status, runBackflow.run.status, "stable_run_status_must_read_persisted_run_state");
   assertNoSecretLeak(runStatus.json, "stable_run_status");
 
-  const runArtifacts = await getJson(`${gatewayUrl}/portal-adapter/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts`, { cookie });
+  const runArtifacts = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts`, { cookie });
   assert.equal(runArtifacts.response.status, 200, "stable_run_artifacts_must_return_200");
   assert.equal(runArtifacts.json.items.length >= 1, true, "stable_run_artifacts_must_include_items");
   assert.equal(runArtifacts.json.items.some((item) => item.artifactRef === runBackflow.artifact.artifactId), true, "stable_run_artifacts_must_read_persisted_run_artifact");
   assertNoSecretLeak(runArtifacts.json, "stable_run_artifacts");
 
-  const artifact = await getJson(`${gatewayUrl}/portal-adapter/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}`, { cookie });
+  const artifact = await getJson(`${gatewayUrl}/runtime-bridge/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}`, { cookie });
   assert.equal(artifact.response.status, 200, "stable_artifact_must_return_200");
   assert.equal(artifact.json.artifact.artifactRef, run.json.artifacts[0].artifactRef, "stable_artifact_ref_mismatch");
   assert.equal(artifact.json.artifact.relativePath, runBackflow.artifact.relativePath, "stable_artifact_must_read_persisted_artifact_state");
@@ -767,7 +767,7 @@ try {
   });
   assert.equal(portalBootstrap.status, 200, "portal_bootstrap_proxy_must_return_200");
   assert.equal(portalBootstrap.payload.identity.workspaceId, WORKSPACE_ID, "portal_bootstrap_proxy_workspace_mismatch");
-  assert.equal(portalBootstrap.payload.adapterContractVersion, "v22.portal-opl-context-backflow.v1", "portal_bootstrap_proxy_contract_version_mismatch");
+  assert.equal(portalBootstrap.payload.runtimeBridgeContractVersion, "v22.portal-opl-context-backflow.v1", "portal_bootstrap_proxy_contract_version_mismatch");
   assert.equal(portalBootstrap.payload.capabilities?.contextBootstrap?.status, "supported", "portal_bootstrap_proxy_context_capability_mismatch");
   assert.equal(portalBootstrap.payload.capabilities?.runIntent?.status, "requires_runtime_agent", "portal_bootstrap_proxy_runtime_gate_mismatch");
   assertNoSecretLeak(portalBootstrap.payload, "portal_bootstrap_proxy");
@@ -777,7 +777,7 @@ try {
     path: `/portal/api/opl/runs/${encodeURIComponent(run.json.run.runId)}/artifacts?launchId=${encodeURIComponent(PORTAL_LAUNCH_ID)}`,
   });
   assert.equal(portalRunArtifacts.status, 200, "portal_run_artifacts_proxy_must_return_200");
-  assert.equal(portalRunArtifacts.payload.items?.some((item) => item.artifactRef === run.json.artifacts[0].artifactRef), true, "portal_run_artifacts_proxy_must_return_adapter_backflow");
+  assert.equal(portalRunArtifacts.payload.items?.some((item) => item.artifactRef === run.json.artifacts[0].artifactRef), true, "portal_run_artifacts_proxy_must_return_runtime_bridge_backflow");
   assertNoSecretLeak(portalRunArtifacts.payload, "portal_run_artifacts_proxy");
 
   const portalArtifact = await callPortalProxy(portalProxy, {
@@ -785,7 +785,7 @@ try {
     path: `/portal/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}?launchId=${encodeURIComponent(PORTAL_LAUNCH_ID)}`,
   });
   assert.equal(portalArtifact.status, 200, "portal_artifact_proxy_must_return_200");
-  assert.equal(portalArtifact.payload.artifact?.artifactRef, run.json.artifacts[0].artifactRef, "portal_artifact_proxy_must_return_adapter_artifact");
+  assert.equal(portalArtifact.payload.artifact?.artifactRef, run.json.artifacts[0].artifactRef, "portal_artifact_proxy_must_return_runtime_bridge_artifact");
   assertNoSecretLeak(portalArtifact.payload, "portal_artifact_proxy");
 
   assert.equal(productCalls.some((call) => /launch_token|apiKey|providerApiKey|runtimeToken/i.test(call.search)), false, "upstream_must_not_receive_secret_query");
@@ -793,10 +793,10 @@ try {
 
   console.log(JSON.stringify({
     ok: true,
-    contract: "v22_portal_opl_adapter_api_local_flow",
+    contract: "v22_runtime_bridge_api_local_flow",
     covered: [
-      "stable_portal_adapter_api",
-      "gateway_cookie_to_adapter_authorization",
+      "stable_portal_runtime_bridge_api",
+      "gateway_cookie_to_runtime_bridge_authorization",
       "token_not_in_public_url",
       "bootstrap_product_api_access_observed",
       "session_message_file_run_state_backflow",

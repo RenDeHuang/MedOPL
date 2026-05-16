@@ -25,8 +25,8 @@ The production-ready target is a single product loop:
 - the user logs in to `portal.medopl.cn` and `opl.medopl.cn`.
 - `portal.medopl.cn 登录不需要 gflabtoken API Key`.
 - `opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key`; `API Key 输入框放在 OPL 登录页密码下面`; the grey release explanation comes from gflabtoken.
-- the user opens a managed runtime environment from Portal, selecting compute plan and file space.
-- the user sees managed runtime, workspace, file space, balance, preauth, and frozen amount without CVM/COS/K8s/cloud-console user language.
+- the user opens a 托管 OPL 科研工作台 from Portal, selecting compute plan and file space.
+- the user sees 托管工作台、workspace, file space, balance, preauth, and frozen amount without CVM/COS/K8s/cloud-console user language.
 - backend/admin/ops may use CVM/COS/runtime/resourceBinding/billingAccount/auditTag as implementation facts only.
 - billing is reconciled within the billing day; release stop-billing confirmation completes within 120 minutes; audit is T+1.
 - OPL Web remains clean upstream at `https://github.com/gaofeng21cn/one-person-lab`; no upstream source modification and no import of upstream internals.

@@ -100,7 +100,7 @@
         "PORTAL_REDIS_URL": "redis://redis:6379",
         "PORTAL_DB_NAMESPACE": "portal",
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
-        "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter:8788",
+        "PORTAL_RUNTIME_BRIDGE_URL": "http://runtime-bridge:8788",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
         "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "PRODUCT_OPS_PROFILE": "${PRODUCT_OPS_PROFILE:-0}",
@@ -125,7 +125,7 @@
         "redis": {
           "condition": "service_healthy"
         },
-        "portal-opl-adapter": {
+        "runtime-bridge": {
           "condition": "service_healthy"
         }
       },
@@ -146,7 +146,7 @@
         "start_period": "20s"
       }
     },
-    "portal-opl-adapter": {
+    "runtime-bridge": {
       "profiles": [
         "product"
       ],
@@ -160,8 +160,8 @@
       "environment": {
         "NODE_ENV": "production",
         "PORT": "8788",
-        "PORTAL_OPL_ADAPTER_PUBLIC_URL": "http://127.0.0.1:13031/portal-adapter",
-        "PORTAL_OPL_ADAPTER_STATE_ROOT": "/workspace/.runtime/portal-opl-adapter",
+        "PORTAL_RUNTIME_BRIDGE_PUBLIC_URL": "http://127.0.0.1:13031/runtime-bridge",
+        "PORTAL_RUNTIME_BRIDGE_STATE_ROOT": "/workspace/.runtime/runtime-bridge",
         "PORTAL_INTERNAL_BASE_URL": "http://portal:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
@@ -177,7 +177,7 @@
       ],
       "volumes": [
         ".:/workspace",
-        "adapter-runtime:/workspace/.runtime/portal-opl-adapter",
+        "runtime-bridge-runtime:/workspace/.runtime/runtime-bridge",
         "portal-runtime:/workspace/.runtime/portal"
       ],
       "healthcheck": {
@@ -208,7 +208,7 @@
         "NODE_ENV": "production",
         "PORT": "13031",
         "OPL_WEB_UPSTREAM_URL": "http://opl-web:3000",
-        "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter:8788",
+        "PORTAL_RUNTIME_BRIDGE_URL": "http://runtime-bridge:8788",
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
         "PORTAL_INTERNAL_URL": "http://portal:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
@@ -220,7 +220,7 @@
         "13031:13031"
       ],
       "depends_on": {
-        "portal-opl-adapter": {
+        "runtime-bridge": {
           "condition": "service_healthy"
         },
         "opl-web": {
@@ -262,7 +262,7 @@
         "PORTAL_REDIS_URL": "redis://redis:6379",
         "PORTAL_DB_NAMESPACE": "portal",
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
-        "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter-dev:8788",
+        "PORTAL_RUNTIME_BRIDGE_URL": "http://runtime-bridge-dev:8788",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
         "PRODUCT_RUNTIME_MODE": "platform_provisioned",
         "OPL_RUNTIME_MODE": "acp",
@@ -286,7 +286,7 @@
         "redis": {
           "condition": "service_healthy"
         },
-        "portal-opl-adapter-dev": {
+        "runtime-bridge-dev": {
           "condition": "service_healthy"
         }
       },
@@ -307,7 +307,7 @@
         "start_period": "20s"
       }
     },
-    "portal-opl-adapter-dev": {
+    "runtime-bridge-dev": {
       "profiles": [
         "dev"
       ],
@@ -321,8 +321,8 @@
       "environment": {
         "NODE_ENV": "development",
         "PORT": "8788",
-        "PORTAL_OPL_ADAPTER_PUBLIC_URL": "http://127.0.0.1:13031/portal-adapter",
-        "PORTAL_OPL_ADAPTER_STATE_ROOT": "/workspace/.runtime/portal-opl-adapter",
+        "PORTAL_RUNTIME_BRIDGE_PUBLIC_URL": "http://127.0.0.1:13031/runtime-bridge",
+        "PORTAL_RUNTIME_BRIDGE_STATE_ROOT": "/workspace/.runtime/runtime-bridge",
         "PORTAL_INTERNAL_BASE_URL": "http://portal-dev:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
         "OPL_WEB_URL": "http://127.0.0.1:13031",
@@ -338,7 +338,7 @@
       ],
       "volumes": [
         ".:/workspace",
-        "adapter-runtime:/workspace/.runtime/portal-opl-adapter",
+        "runtime-bridge-runtime:/workspace/.runtime/runtime-bridge",
         "portal-runtime:/workspace/.runtime/portal"
       ],
       "healthcheck": {
@@ -369,7 +369,7 @@
         "NODE_ENV": "development",
         "PORT": "13031",
         "OPL_WEB_UPSTREAM_URL": "http://opl-web:3000",
-        "PORTAL_OPL_ADAPTER_URL": "http://portal-opl-adapter-dev:8788",
+        "PORTAL_RUNTIME_BRIDGE_URL": "http://runtime-bridge-dev:8788",
         "PORTAL_PUBLIC_URL": "http://127.0.0.1:17080",
         "PORTAL_INTERNAL_URL": "http://portal-dev:17080",
         "PORTAL_INTERNAL_AUTH_TOKEN": "${PORTAL_INTERNAL_AUTH_TOKEN:-LocalPortalInternalToken-2026}",
@@ -381,7 +381,7 @@
         "13031:13031"
       ],
       "depends_on": {
-        "portal-opl-adapter-dev": {
+        "runtime-bridge-dev": {
           "condition": "service_healthy"
         },
         "opl-web": {
@@ -410,6 +410,6 @@
     "redis-data": {},
     "opl-web-data": {},
     "portal-runtime": {},
-    "adapter-runtime": {}
+    "runtime-bridge-runtime": {}
   }
 }

@@ -112,7 +112,7 @@ assertAllIncluded(contract, [
   "portal_projection_missing",
   "trace_sink_not_configured",
   "capability_not_supported",
-  "adapter_mapping_failed",
+  "runtime_bridge_mapping_failed",
   "upstream_unavailable",
   "deferred_authorization",
   "no fake 200",
@@ -136,7 +136,7 @@ assertAllIncluded(contract, [
 
 assertAllIncluded(contract, [
   "Runtime Agent HTTP API proof",
-  "Portal -> Gateway -> Adapter -> Runtime Agent HTTP API",
+  "Portal -> Gateway -> Runtime Bridge -> Runtime Agent HTTP API",
   "Portal workspace/session/run trace projection",
   "该 smoke 只是负向保护，不满足完整闭环吸收标准",
   "Runtime Agent canary server 实际收到 file upload/intake 和 run dispatch HTTP 请求",
@@ -162,7 +162,7 @@ assertAllIncluded(flow, [
 ], "flow_sections");
 
 assertAllIncluded(flow, [
-  "Portal launch -> Gateway -> clean OPL WebUI -> Adapter -> file intent -> workspace-scoped fileRef -> run intent -> Runtime Agent gate -> runId/status/traceId -> artifactRef or outputFileRef -> Portal projection",
+  "Portal launch -> Gateway -> clean OPL WebUI -> Runtime Bridge -> file intent -> workspace-scoped fileRef -> run intent -> Runtime Agent gate -> runId/status/traceId -> artifactRef or outputFileRef -> Portal projection",
   "Runtime Agent HTTP API relay full-loop",
   "Production Runtime Agent binding",
   "Runtime Agent HTTP API proof is not production deploy evidence",
@@ -191,7 +191,7 @@ assertIncludes(capabilityContract, "v22-real-opl-file-run-artifact-canary-bounda
 assertIncludes(capabilityFlow, "real-opl-file-run-artifact-validation-path.md", "capability_flow");
 assertIncludes(providerMessageContract, "不证明 file、run、artifact", "provider_message_contract");
 assertIncludes(acceptance, "Real OPL file/run/artifact canary", "mvp_acceptance");
-assertIncludes(acceptance, "Real OPL file/run/artifact canary 当前完成合同、完整验证链路定义和本地 Adapter gate 实现验证", "mvp_acceptance");
+assertIncludes(acceptance, "Real OPL file/run/artifact canary 当前完成合同、完整验证链路定义和本地 Runtime Bridge gate 实现验证", "mvp_acceptance");
 assertIncludes(acceptance, "local Runtime Agent HTTP API proof is not production deploy evidence", "mvp_acceptance");
 assertIncludes(acceptance, "真实云 runtime、COS 账单或 Langfuse 部署仍未上线", "mvp_acceptance");
 assertIncludes(statusMatrix, "Real OPL file/run/artifact canary", "status_matrix");
