@@ -425,6 +425,7 @@ async function assertResidualTestAnchorsRetired() {
     "resource_order_events",
     "resourceOrders",
     "resourceOrderEvents",
+    "handleResourceOrderRoutes",
     "user_owned",
     "user-owned",
   ];

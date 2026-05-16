@@ -6,7 +6,7 @@
 - model: `gpt-5.4`
 - inventory_status: strict_monolith_cleanup_completed
 - physical_delete_batch_status: strict_monolith_retirement_completed
-- residual_cleanup_status: f_g_completed_h_pending
+- residual_cleanup_status: f_g_h_completed
 - agent_run_mode: strict_monolith_legacy_retirement
 - run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`
 - goal: 物理删除 goal
@@ -29,10 +29,7 @@ completed_slice queue:
 5. `slice-e-legacy-schema-store-retirement`
 6. `slice-f-unified-verifier-archive-gate-alignment`
 7. `slice-g-residual-legacy-test-anchor-retirement`
-
-pending_slice queue:
-
-1. `slice-h-readonly-inventory-fixture-attribution`
+8. `slice-h-readonly-inventory-fixture-attribution`
 
 batch mode 由 run manifest 固定。agent 可以在同一个 cleanup 分支连续执行 queue 中的 slice，但必须 one commit per slice。B may absorb the whole batch after all slice gates pass。
 
@@ -80,6 +77,6 @@ batch mode 由 run manifest 固定。agent 可以在同一个 cleanup 分支连�
 
 - First delete slice completed: retired user-owned domain/store are physically deleted; strict monolith slice-b deletes the old public route shell as well.
 - strict monolith truth writeback completed on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`. v19/v20/v21 smoke families, public retired route shells, compat aliases, old deploy/adapters/infra assets, resource-order schema/store remnants, old characterization shells, old non-v22 billing/portal smoke anchors, live/kubectl helper remnants, and old Portal resource-provisioner client wiring are deleted rather than retained completion states.
-- residual strict cleanup on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: Phase F aligns the archive gate with the unified `scripts/v22-verify.mjs` runner without changing current truth; Phase G deletes residual non-v22 Portal/Billing smoke anchors and local helper remnants, removes old `resourceOrders` / `resourceOrderEvents` v22 fixture shape, and keeps old resource-order/user-owned tokens only in explicit retire/strict forbidden-token gates. Phase H remains pending until readonly inventory fixture attribution is repaired with `billingAttributionId` instead of weakening provider requirements.
+- residual strict cleanup on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: Phase F aligns the archive gate with the unified `scripts/v22-verify.mjs` runner without changing current truth; Phase G deletes residual non-v22 Portal/Billing smoke anchors and local helper remnants, removes old `resourceOrders` / `resourceOrderEvents` v22 fixture shape, and keeps old resource-order/user-owned tokens only in explicit retire/strict forbidden-token gates. Phase H repairs readonly inventory fixture attribution with `billingAttributionId` without weakening provider requirements.
 - active v22 retention truth: `deploy/local/dockerfiles/portal.Dockerfile`, `deploy/local/dockerfiles/opl-web-gateway.Dockerfile`, `deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile`, `adapters/billing-aggregator/**`, `services/portal/src/integrations/langfuse-trace-client.mjs`, and `services/opl-runtime-bridge/src/langfuse-publisher.mjs` have active v22 reasons and are not legacy delete targets in this slice.
 - hard blockers remain: secret, live cloud, live-test execution, build/push/kubectl, real DB migration execution, `.sentrux/*`, upstream writes, or any deletion that breaks active Portal/Gateway/Runtime Bridge主线.

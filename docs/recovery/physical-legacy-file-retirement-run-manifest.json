@@ -7,8 +7,8 @@
   "target_branch": "recovery/platform-v22-trunk",
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "current_status": "strict_monolith_retirement_completed",
-  "residual_cleanup_status": "f_g_completed_h_pending",
-  "current_slice": "slice-g-residual-legacy-test-anchor-retirement",
+  "residual_cleanup_status": "f_g_h_completed",
+  "current_slice": "slice-h-readonly-inventory-fixture-attribution",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -16,11 +16,10 @@
     "slice-d-retired-adapter-deploy-infra-delete",
     "slice-e-legacy-schema-store-retirement",
     "slice-f-unified-verifier-archive-gate-alignment",
-    "slice-g-residual-legacy-test-anchor-retirement"
-  ],
-  "next_slices": [
+    "slice-g-residual-legacy-test-anchor-retirement",
     "slice-h-readonly-inventory-fixture-attribution"
   ],
+  "next_slices": [],
   "batch_policy": {
     "enabled": true,
     "commit_policy": "one_commit_per_slice",
@@ -305,7 +304,7 @@
     },
     {
       "id": "slice-h-readonly-inventory-fixture-attribution",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "fix_readonly_inventory_fixture_billing_attribution_without_weakening_provider_required_fields",
       "target_paths": [
         "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"

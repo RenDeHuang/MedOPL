@@ -60,7 +60,6 @@ const dispatcher = createPortalHttpDispatcher({
   handlePortalBillingExportRoutes: async () => false,
   handlePortalLegacyRedirectRoutes: async () => false,
   handlePortalTaskSpaceRoutes: async () => false,
-  handleResourceOrderRoutes: async () => false,
   handleServerPlanRoutes: async () => false,
   handleWorkspaceStorageRoutes: async () => false,
   layoutV2: (_title, body) => body,
