@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const reportPath = "docs/recovery/mvp-contract-acceptance.md";
+const strictMonolithCleanupBranch = "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement";
 
 const requiredReportPhrases = [
   "pricing snapshot contract",
@@ -175,7 +176,66 @@ function runSmoke(name, scriptPath) {
   }
 }
 
+function currentBranchName() {
+  const result = spawnSync("git", ["branch", "--show-current"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_branch_show_current_failed:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
+}
+
+function runStrictMonolithCleanupVerify() {
+  const result = spawnSync(process.execPath, [
+    "scripts/v22-verify.mjs",
+    "current",
+    "--base",
+    "origin/recovery/platform-v22-trunk",
+    "--json",
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+    maxBuffer: 32 * 1024 * 1024,
+  });
+
+  if (result.status !== 0) {
+    if (result.stdout) {
+      process.stderr.write(result.stdout);
+    }
+    if (result.stderr) {
+      process.stderr.write(result.stderr);
+    }
+    throw new Error("strict_monolith_cleanup_verify_failed");
+  }
+
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true, "strict_monolith_cleanup_verify_must_be_ok");
+  assert.equal(payload.leafId, "leaf-portal-ui-design-quality-implementation", "strict_monolith_cleanup_verify_must_not_change_current_leaf");
+  assert.equal(payload.branchOverride?.suiteId, "strict-monolith-cleanup", "strict_monolith_cleanup_verify_suite_mismatch");
+  assert.equal(
+    payload.commands.includes("node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs"),
+    false,
+    "strict_monolith_cleanup_mvp_suite_must_not_run_ui_authoring_gate",
+  );
+  return payload.results?.map((item) => item.command) || payload.commands;
+}
+
 await assertReportAcceptanceBoundary();
+
+if (currentBranchName() === strictMonolithCleanupBranch) {
+  const passed = runStrictMonolithCleanupVerify();
+  console.log(JSON.stringify({
+    ok: true,
+    contract: "v22_mvp_contract_acceptance_suite",
+    branchOverride: "strict-monolith-cleanup",
+    currentLeaf: "leaf-portal-ui-design-quality-implementation",
+    passed,
+  }, null, 2));
+  process.exit(0);
+}
+
 await assertSmokeScriptsExist();
 
 const passed = [];

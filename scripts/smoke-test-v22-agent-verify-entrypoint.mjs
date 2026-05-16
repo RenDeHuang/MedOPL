@@ -106,6 +106,12 @@ assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-stri
 assert(strictCleanupOverride.forbidden_files.some((item) => item.includes("only deletion of explicit retired assets is authorized")), "strict_monolith_cleanup_override_must_forbid_zone4_add_modify");
 assert(strictCleanupOverride.forbidden_ops.includes("real-db-migration-execution"), "strict_monolith_cleanup_override_must_forbid_real_db_migration");
 
+assertIncludes(
+  await readRepoFile("scripts/smoke-test-v22-mvp-contract-suite.mjs"),
+  'branchOverride: "strict-monolith-cleanup"',
+  "mvp_suite_must_route_strict_cleanup_branch_through_branch_override",
+);
+
 assertIncludes(runnerSource, "docs/recovery/v22-agent-verify-manifest.json", "runner_must_read_manifest");
 assertIncludes(runnerSource, "docs/recovery/v22-goal-current.json", "runner_must_read_current_state");
 assertIncludes(runnerSource, "spawnSync", "runner_must_execute_manifest_commands");
