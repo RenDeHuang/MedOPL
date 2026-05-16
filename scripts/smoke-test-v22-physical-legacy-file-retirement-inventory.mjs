@@ -39,6 +39,7 @@ for (const phrase of [
   "inventory_status: strict_monolith_cleanup_completed",
   "physical_delete_batch_status: strict_monolith_retirement_completed",
   "residual_cleanup_status:",
+  "zero_compat_active_surface_status:",
   "agent_run_mode: strict_monolith_legacy_retirement",
   "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
   "strict monolith cleanup",
@@ -94,6 +95,10 @@ assertDecisionRow(inventory, "`deploy/tke-package/**` and old runner/provisioner
 assertDecisionRow(inventory, "`infra/kubernetes/**`, `infra/codex-runtime/**`, `infra/production-hardening/**`", "`delete`");
 assertDecisionRow(inventory, "`old portal resource-order/provisioner scripts, v13 scripts, runner fixtures, v19/v20 helper libs`", "`delete`");
 assertDecisionRow(inventory, "`residual non-v22 Portal/Billing smoke anchors and local start/install helper remnants`", "`delete`");
+assertDecisionRow(inventory, "`adapters/billing-aggregator/**`", "`delete`");
+assertDecisionRow(inventory, "`deploy/local/dockerfiles/portal.Dockerfile`, `deploy/local/dockerfiles/opl-web-gateway.Dockerfile`, `deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile`", "`delete`");
+assertDecisionRow(inventory, "`scripts/*live*`, `scripts/*canary*`, `scripts/*authorized-deploy*`, `scripts/*authorized-resource-lifecycle*` v22 executable surfaces", "`delete`");
+assertDecisionRow(inventory, "`services/opl-runtime-bridge/src/*` `resourceOrderId` / `resource_order_id` / `user_owned` / `USER_OWNED_*` hits", "`delete`");
 
 for (const forbidden of [
   "keep_tombstone",

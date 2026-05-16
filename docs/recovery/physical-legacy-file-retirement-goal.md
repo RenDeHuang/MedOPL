@@ -9,6 +9,7 @@
 - base: latest `origin/recovery/platform-v22-trunk`
 - target: hand off to B review only; do not push, do not merge trunk.
 - physical_delete_batch_status: strict_monolith_retirement_completed
+- zero_compat_active_surface_status: in_progress
 
 ## Contract Subscription
 
@@ -49,7 +50,7 @@
 
 - `delete`: 无 active v22 reason，必须物理删除。
 - `migrate`: 仍有业务价值，但必须先改名、改边界、改合同并进入 v22 active surface；旧文件随后删除。
-- `retain_active_v22`: 只有明确属于 active v22 Portal/Gateway/Runtime Bridge、billing aggregator 或 sanitized trace metadata implementation boundary 的文件可保留。
+- `retain_active_v22`: 只有明确属于 active v22 Portal/Gateway/Runtime Bridge 或 sanitized trace metadata implementation boundary 的文件可保留；adapter/deploy/live/canary/authorized runner 形态本身不再是保留理由。
 - `blocker`: 只有触发硬停止条件时使用。
 
 后续 feature leaf 碰到过时模块、接口、测试或兼容面时，必须同 leaf 清理退役，或拆出 cleanup leaf 后再继续。保留项必须有明确 active v22 reason，不能因为 git history、历史证据、旧兼容或旧失败壳而留在 active repo。
@@ -62,7 +63,7 @@
 - 不连接真实 DB，不执行真实 DB migration。
 - 不修改 `.sentrux/*` 或 upstream。
 - 本次允许删除旧 public retired route shell、v19/v20/v21 legacy smoke、旧 user-owned/resource-order 兼容面，以及不属于 v22 active surface 的旧 deploy/adapters/infra 资产。
-- active v22 deploy evidence surface 必须保留：`deploy/local/dockerfiles/portal.Dockerfile`、`deploy/local/dockerfiles/opl-web-gateway.Dockerfile`、`deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile`。
+- zero-compat cleanup 继续允许删除 residual `adapters/billing-aggregator/**`、`deploy/local/dockerfiles/**` 和 live/canary/authorized runner executable surface；未来真实外部操作只保留合同边界，不在 active repo 保留默认可执行入口。
 
 ## Execution Slices
 
@@ -92,7 +93,7 @@
 ### Slice D: Retired Adapter Deploy And Infra Asset Deletion
 
 - 删除 `adapters/resource-provisioner/**`、`adapters/med-autoscience-runner/**`、`adapters/cloud-provisioner/**`、`adapters/shared/**`、`infra/opencost/**`、`infra/kubernetes/**`、`infra/codex-runtime/**`、`infra/production-hardening/**`、`compose.demo.yaml`、`compose.langfuse.yaml`、旧 runner/provisioner Dockerfile、`deploy/tke-package/**`，以及 strict scan 发现的旧 v13、portal resource-order/provisioner、runner fixture、v19/v20 helper lib 脚本资产。
-- 保留 active v22 Dockerfile surface 和已证明 active 的 `adapters/billing-aggregator/**`。
+- prior Slice D 曾临时保留 local Dockerfile surface 和 `adapters/billing-aggregator/**`；zero-compat cleanup supersedes 该完成态，后续 Slice K/L 必须迁入 v22 active boundary 或删除旧路径。
 - RED/GREEN: `node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --assets`
 - commit: `cleanup: delete retired adapter deploy and infra assets`
 

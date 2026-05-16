@@ -2,6 +2,8 @@
 
 本台账把仓库上下文裁定为四个区：主线真相区、迁移观察区、退役删除区和授权禁区。strict monolith cleanup 下，旧兼容面、旧测试、旧 public 退役壳、旧 deploy/adapters/infra 资产不再因为历史证据留在 active repo。
 
+zero-compat active surface cleanup 进一步收紧：`adapters/*`、`deploy/*`、`infra/*`、live/canary/authorized runner executable surface 不再因为曾被合同或 suite 引用而保留。仍有业务价值的能力必须迁入 `services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge` 或 repo-local v22 gate 后，删除旧路径。
+
 ## Branch Declaration
 
 - branch: `cleanup/v22-repo-zoning-ledger`
@@ -75,6 +77,10 @@
 | `services/opl-runtime-bridge/src/langfuse-publisher.mjs` | Zone 2 | review/rewrite | Langfuse 不得成为 canonical run/billing source | trace metadata boundary | observability-narrative |
 | `services/portal/frontend/**` legacy term hits | Zone 2 | review/rewrite | 前端 active surface 可保留后台技术词，但普通用户主语言不得云控制台化 | Portal Chinese product language | default-entry |
 | `services/opl-runtime-bridge/**` legacy term hits | Zone 2 | review/rewrite | Runtime Bridge 可携带兼容字段，但不得伪成功或扩散旧主叙事 | Runtime Bridge contracts | runtime-bridge |
+| `services/opl-runtime-bridge/**` `resourceOrderId` / `resource_order_id` / `user_owned` / `USER_OWNED_*` hits | Zone 2 | rewrite/delete | zero-compat 下 Runtime Bridge active code 不得接受、映射、持久化或发布 retired resource-order / user-owned alias | `resourceBindingId` / `platform_provisioned` / v22 run stage and error code | zero-compat-runtime-bridge |
+| `adapters/billing-aggregator/**` | Zone 2 | migrate/delete | residual adapter 形态不能作为 strict monolith active repo 默认上下文 | Portal billing domain or v22 service boundary | zero-compat-adapters |
+| `deploy/local/dockerfiles/**` | Zone 2 | delete | strict monolith local verification 不需要 build/deploy；future deploy 只保留合同边界并需重新授权 | future authorized v22 deploy boundary | zero-compat-deploy |
+| `scripts/smoke-test-v22-*live*`, `*canary*`, `*authorized-deploy*`, `*authorized-resource-lifecycle*` | Zone 2 | rewrite/delete | live/canary/authorized runner 不属于默认 active executable surface | contract-only boundary or non-live local v22 gate | zero-compat-live-runner |
 
 ## Zone 3: Retired Delete Surface
 

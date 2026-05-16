@@ -36,6 +36,7 @@ for (const phrase of [
   "strict monolith cleanup goal",
   "先写清 v22 理想形态与差距，再清故事线，最后分 slice 物理删除旧模块、旧接口、旧测试、旧脚本、旧部署资产和旧兼容面",
   "physical_delete_batch_status: strict_monolith_retirement_completed",
+  "zero_compat_active_surface_status:",
 ]) {
   assertIncludes(goal, phrase, "goal_identity");
 }
@@ -64,7 +65,7 @@ for (const phrase of [
 for (const phrase of [
   "`delete`: 无 active v22 reason，必须物理删除",
   "`migrate`: 仍有业务价值，但必须先改名、改边界、改合同并进入 v22 active surface",
-  "`retain_active_v22`: 只有明确属于 active v22 Portal/Gateway/Runtime Bridge、billing aggregator 或 sanitized trace metadata implementation boundary 的文件可保留",
+  "`retain_active_v22`: 只有明确属于 active v22 Portal/Gateway/Runtime Bridge 或 sanitized trace metadata implementation boundary 的文件可保留",
   "`blocker`: 只有触发硬停止条件时使用",
 ]) {
   assertIncludes(goal, phrase, "decision_taxonomy");
@@ -77,6 +78,7 @@ for (const phrase of [
   "不连接真实 DB，不执行真实 DB migration",
   "不修改 `.sentrux/*` 或 upstream",
   "本次允许删除旧 public retired route shell、v19/v20/v21 legacy smoke、旧 user-owned/resource-order 兼容面，以及不属于 v22 active surface 的旧 deploy/adapters/infra 资产",
+  "zero-compat cleanup 继续允许删除 residual `adapters/billing-aggregator/**`、`deploy/local/dockerfiles/**` 和 live/canary/authorized runner executable surface",
 ]) {
   assertIncludes(goal, phrase, "authorization_boundary");
 }

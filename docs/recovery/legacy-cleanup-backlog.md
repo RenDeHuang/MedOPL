@@ -8,6 +8,7 @@
 - cleanup 分支 2-N：按专题清退。
 - 每个专题先定义 smoke/gate，再执行 rewrite、migrate 或 delete；strict monolith cleanup 不再把旧壳或旧脚本作为完成态保留。
 - strict monolith policy: old public tombstone => delete; archive legacy tests => delete; compat alias => delete; old deploy/adapters/infra assets => delete unless proven active v22 surface.
+- zero-compat policy: active repo 默认不保留 adapter/deploy/infra/live/canary/authorized runner executable surface；需要保留能力时必须先迁入 Portal / Gateway / Runtime Bridge / repo-local v22 gate，并删除旧路径。
 - 每个专题必须经过 B review 后才能吸收到 `recovery/platform-v22-trunk`。
 - smoke = prove the intended v22 path still works。
 - gate = prevent the retired legacy meaning from returning。
@@ -31,6 +32,7 @@
 | 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement` | Zone 2/3 | rewrite/delete | sanitized trace metadata boundary remains active; old OpenCost/Langfuse compose/deploy/infra assets are delete targets. |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
+| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | 定义 zero-compat gate；Runtime Bridge 旧字段、billing adapter、local Dockerfile、live/canary/authorized runner 必须继续按 slice 清退。 |
 
 ## Slice 1: Default Entry Legacy Narrative
 
@@ -135,6 +137,30 @@
 - OpenCost 旧脚本、旧 compose、旧 infra 不在 active repo 保留。
 - 普通用户页面不把 OpenCost/Langfuse 展示成核心产品能力。
 - completed by cleanup/v22-cleanup-completion-truth：`scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 不得恢复为主产品事实源；strict monolith cleanup 删除旧 OpenCost/Langfuse compose/deploy/infra 资产。
+
+## Slice 8: Zero-Compat Active Surface
+
+目标：把 strict monolith cleanup 从“清掉已知旧路线”推进到“不能证明属于当前 monolith 主线的一律删除或迁入主线”。本 slice 不改 current cursor；它定义 gate 和 residual truth，并驱动后续 K/L/M/N/O 清退。
+
+建议 smoke/gate：
+
+- `scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs`
+
+检查要点：
+
+- active services/frontend/Gateway/Runtime Bridge 不得接受、映射、持久化或发布 retired `user-owned` / `resource-order` 字段或 alias。
+- scripts 中旧路线 token 只可出现在 strict/retire/zero-compat forbidden-token gate 清单。
+- README、product、architecture、contracts、recovery 不得把 `keep_tombstone`、`archive_reference`、compat alias、old adapter/deploy/live/canary 当成完成态或默认上下文。
+- default suite、MVP suite、workflow 和 agent verify 不得引用 v19/v20/v21/live-test/check/old runner/provisioner/OpenCost/旧 live runner 作为当前验证。
+- `adapters/*`、`deploy/*`、`infra/*` 如仍存在，必须被 gate 标红，随后迁入 v22 active boundary 或物理删除。
+- `v22-*` live/canary/authorized runner 不再作为 active executable surface；未来真实外部操作只保留合同边界，重新授权时另建执行入口。
+
+当前 RED gap：
+
+- Runtime Bridge 仍有 `resourceOrderId` / `resource_order_id` 持久化、trace 发布和 `user_owned` / `USER_OWNED_*` runtime alias。
+- `adapters/billing-aggregator/**` 仍以 adapter 形态留在仓库；若账单能力仍需要，必须迁入 Portal billing domain 或 v22 service boundary。
+- `deploy/local/dockerfiles/**` 仍以 deploy asset 形态留在仓库；当前 strict monolith local verification 不需要 build/deploy。
+- MVP suite 和 docs 仍引用 live/canary/authorized runner 作为当前验证或可执行上下文。
 
 ## Gate Pattern
 

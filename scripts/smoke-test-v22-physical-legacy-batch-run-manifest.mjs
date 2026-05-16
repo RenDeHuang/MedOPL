@@ -19,6 +19,13 @@ const expectedSlices = [
   "slice-f-unified-verifier-archive-gate-alignment",
   "slice-g-residual-legacy-test-anchor-retirement",
   "slice-h-readonly-inventory-fixture-attribution",
+  "slice-i-readonly-inventory-local-attribution",
+  "slice-j-zero-compat-active-surface-gate",
+  "slice-k-delete-residual-adapter-compatibility-surface",
+  "slice-l-delete-residual-deploy-compatibility-assets",
+  "slice-m-delete-residual-live-canary-runner-surfaces",
+  "slice-n-remove-residual-compatibility-narrative",
+  "slice-o-record-zero-compat-active-surface-completion",
 ];
 
 const strictMonolithCompletedSlices = [
@@ -82,8 +89,12 @@ if (manifest.residual_cleanup_status === "f_g_completed_h_pending") {
   assertArrayIncludesAll(remainingSlices, ["slice-h-readonly-inventory-fixture-attribution"], "manifest_residual_h_pending_next_slices");
 }
 if (manifest.residual_cleanup_status === "f_g_h_completed") {
-  assertArrayIncludesAll(completedSlices, expectedSlices, "manifest_residual_completed_slices");
-  assert.deepEqual(remainingSlices, [], "manifest_residual_completed_must_not_have_next_slices");
+  assertArrayIncludesAll(completedSlices, [
+    ...strictMonolithCompletedSlices,
+    "slice-f-unified-verifier-archive-gate-alignment",
+    "slice-g-residual-legacy-test-anchor-retirement",
+    "slice-h-readonly-inventory-fixture-attribution",
+  ], "manifest_residual_completed_slices");
 }
 for (const sliceId of completedSlices) {
   assert(expectedSlices.includes(sliceId), `manifest_completed_slice_unknown:${sliceId}`);
@@ -104,6 +115,10 @@ assertArrayIncludesAll(manifest.authorization_boundary?.authorized_deletions, [
   "retired resource-provisioner and med-autoscience-runner adapters",
   "old OpenCost/Langfuse deploy/infra/compose assets",
   "residual non-v22 Portal/Billing smoke anchors and local start/install helper remnants",
+  "residual adapter compatibility surface",
+  "residual deploy compatibility assets",
+  "residual live/canary/authorized runner executable surfaces",
+  "Runtime Bridge retired resource-order and user-owned compatibility aliases",
 ], "manifest_authorized_deletions");
 
 assertArrayIncludesAll(manifest.authorization_boundary?.forbidden_operations, [
@@ -120,11 +135,18 @@ assertArrayIncludesAll(manifest.authorization_boundary?.forbidden_operations, [
   "upstream write",
 ], "manifest_forbidden_operation");
 
-assertArrayIncludesAll(manifest.authorization_boundary?.must_retain_active_v22_paths, [
+assertArrayIncludesAll(manifest.authorization_boundary?.zero_compat_migration_delete_targets, [
+  "adapters/billing-aggregator/**",
   "deploy/local/dockerfiles/portal.Dockerfile",
   "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
   "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
-  "adapters/billing-aggregator/**",
+  "scripts/*live*",
+  "scripts/*canary*",
+], "manifest_zero_compat_delete_target");
+
+assertArrayIncludesAll(manifest.authorization_boundary?.must_retain_active_v22_paths, [
+  "services/portal/src/integrations/langfuse-trace-client.mjs",
+  "services/opl-runtime-bridge/src/langfuse-publisher.mjs",
 ], "manifest_retain_active_v22_path");
 
 assertArrayIncludesAll(manifest.required_global_gates, [
@@ -135,6 +157,7 @@ assertArrayIncludesAll(manifest.required_global_gates, [
   "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
   "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
   "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
   "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
   "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra",

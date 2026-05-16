@@ -8,7 +8,8 @@
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "current_status": "strict_monolith_retirement_completed",
   "residual_cleanup_status": "f_g_h_completed",
-  "current_slice": "slice-h-readonly-inventory-fixture-attribution",
+  "zero_compat_active_surface_status": "in_progress",
+  "current_slice": "slice-j-zero-compat-active-surface-gate",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -17,9 +18,17 @@
     "slice-e-legacy-schema-store-retirement",
     "slice-f-unified-verifier-archive-gate-alignment",
     "slice-g-residual-legacy-test-anchor-retirement",
-    "slice-h-readonly-inventory-fixture-attribution"
+    "slice-h-readonly-inventory-fixture-attribution",
+    "slice-i-readonly-inventory-local-attribution",
+    "slice-j-zero-compat-active-surface-gate"
   ],
-  "next_slices": [],
+  "next_slices": [
+    "slice-k-delete-residual-adapter-compatibility-surface",
+    "slice-l-delete-residual-deploy-compatibility-assets",
+    "slice-m-delete-residual-live-canary-runner-surfaces",
+    "slice-n-remove-residual-compatibility-narrative",
+    "slice-o-record-zero-compat-active-surface-completion"
+  ],
   "batch_policy": {
     "enabled": true,
     "commit_policy": "one_commit_per_slice",
@@ -41,7 +50,11 @@
       "old non-v22 billing/portal smoke scripts with retired resource-order/provisioner semantics",
       "residual non-v22 Portal/Billing smoke anchors and local start/install helper remnants",
       "old Portal resource-provisioner client wiring",
-      "old live/kubectl helper remnants"
+      "old live/kubectl helper remnants",
+      "residual adapter compatibility surface",
+      "residual deploy compatibility assets",
+      "residual live/canary/authorized runner executable surfaces",
+      "Runtime Bridge retired resource-order and user-owned compatibility aliases"
     ],
     "forbidden_operations": [
       "read secret",
@@ -56,11 +69,17 @@
       ".sentrux modification",
       "upstream write"
     ],
-    "must_retain_active_v22_paths": [
+    "zero_compat_migration_delete_targets": [
+      "adapters/billing-aggregator/**",
       "deploy/local/dockerfiles/portal.Dockerfile",
       "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
       "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
-      "adapters/billing-aggregator/**",
+      "scripts/*live*",
+      "scripts/*canary*",
+      "scripts/*authorized-deploy*",
+      "scripts/*authorized-resource-lifecycle*"
+    ],
+    "must_retain_active_v22_paths": [
       "services/portal/src/integrations/langfuse-trace-client.mjs",
       "services/opl-runtime-bridge/src/langfuse-publisher.mjs"
     ]
@@ -75,6 +94,7 @@
     "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
     "node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
     "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+    "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
     "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -315,6 +335,141 @@
         "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
       ],
       "commit": "cleanup: fix readonly inventory fixture attribution after strict cleanup"
+    },
+    {
+      "id": "slice-i-readonly-inventory-local-attribution",
+      "status": "completed",
+      "decision_scope": "fix_readonly_inventory_local_guard_billing_attribution_without_weakening_provider_required_fields",
+      "target_paths": [
+        "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
+        "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ],
+      "commit": "cleanup: fix readonly inventory local attribution fixture"
+    },
+    {
+      "id": "slice-j-zero-compat-active-surface-gate",
+      "status": "completed",
+      "decision_scope": "define_zero_compat_active_surface_gate_and_residual_retirement_truth",
+      "target_paths": [
+        "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "docs/recovery/active-surface.md",
+        "docs/recovery/repo-zoning.md",
+        "docs/recovery/legacy-cleanup-backlog.md",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/physical-legacy-file-retirement-goal.md",
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+      "green_gates": [
+        "node --check scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"
+      ],
+      "commit": "cleanup: define zero compat active surface gate"
+    },
+    {
+      "id": "slice-k-delete-residual-adapter-compatibility-surface",
+      "status": "pending",
+      "decision_scope": "delete_residual_adapter_compatibility_surface_or_migrate_needed_billing_capability_into_v22_active_boundary",
+      "target_paths": [
+        "adapters/billing-aggregator/**",
+        "services/portal/src/domain/*billing*",
+        "services/portal/src/integrations/billing-client.mjs",
+        "docs/recovery/*",
+        "scripts/smoke-test-v22-*"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs"
+      ],
+      "commit": "cleanup: delete residual adapter compatibility surface"
+    },
+    {
+      "id": "slice-l-delete-residual-deploy-compatibility-assets",
+      "status": "pending",
+      "decision_scope": "delete_residual_deploy_compatibility_assets_and_keep_future_deploy_contract_only",
+      "target_paths": [
+        "deploy/local/dockerfiles/**",
+        "docs/contracts/v22-*deploy*",
+        "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+        "scripts/smoke-test-v22-*deploy*",
+        "docs/recovery/*"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
+        "node scripts/smoke-test-v22-workflow-gate.mjs"
+      ],
+      "commit": "cleanup: delete residual deploy compatibility assets"
+    },
+    {
+      "id": "slice-m-delete-residual-live-canary-runner-surfaces",
+      "status": "pending",
+      "decision_scope": "delete_residual_live_canary_authorized_runner_executable_surfaces_or_migrate_pure_local_checks_to_non_live_v22_gates",
+      "target_paths": [
+        "scripts/*live*",
+        "scripts/*canary*",
+        "scripts/*authorized-deploy*",
+        "scripts/*authorized-resource-lifecycle*",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/v22-verify.mjs",
+        "docs/recovery/*",
+        "docs/contracts/v22-*"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ],
+      "commit": "cleanup: delete residual live canary runner surfaces"
+    },
+    {
+      "id": "slice-n-remove-residual-compatibility-narrative",
+      "status": "pending",
+      "decision_scope": "remove_residual_adapter_deploy_live_canary_compatibility_narrative_from_current_truth",
+      "target_paths": [
+        "README.md",
+        "docs/product.md",
+        "docs/architecture.md",
+        "docs/contracts/v22-*",
+        "docs/recovery/*",
+        "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs"
+      ],
+      "commit": "cleanup: remove residual compatibility narrative"
+    },
+    {
+      "id": "slice-o-record-zero-compat-active-surface-completion",
+      "status": "pending",
+      "decision_scope": "record_zero_compat_active_surface_completion_after_all_gates_pass",
+      "target_paths": [
+        "docs/recovery/physical-legacy-file-retirement-inventory.md",
+        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
+      ],
+      "commit": "cleanup: record zero compat active surface completion"
     }
   ]
 }

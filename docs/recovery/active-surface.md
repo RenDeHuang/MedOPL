@@ -20,12 +20,28 @@
 - `docs/contracts/v22-*`
 - `docs/recovery/*`
 - `scripts/smoke-test-v22-*`
+- `scripts/v22-verify.mjs`
 
 Active surface 的产品叙事必须保持 `platform-provisioned / customer-dedicated`：用户购买套餐、计算能力、存储容量和运行环境，平台负责开通、隔离、计费、审计和释放。
 
 OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。/internal/opl/auth/login 只能作为 internal implementation path。旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口。后续真实 proxy / upstream 运行接入单独 feat；旧入口删除如需要另开 cleanup/*。
 
 active surface 不允许修改 one-person-lab upstream。one-person-lab upstream 不属于 active surface；它只作为 clean upstream reference，通过 Gateway、Adapter、Runtime Agent、公开 API/CLI 或反向代理边界接入。
+
+## Zero-Compat Active Surface Rule
+
+在 strict monolith zero-compat cleanup 下，“兼容层”是任何让旧路线、旧字段、旧模块、旧部署形态、旧测试体系、旧叙事还能被调用、注册、接受、映射、解释、验证、部署或作为默认上下文存在的 active repo 资产。
+
+不算兼容层的只有：
+
+- git history。
+- strict/retire/zero-compat gate 里的 forbidden-token 检查清单。
+- 文档中明确写“已删除 / 不得恢复 / delete”的事实记录。
+- 有明确 v22 active reason 且位于 Portal / Gateway / Runtime Bridge / v22 local gate 边界内的 monolith 主线代码。
+
+Zero-compat 下，文件名是 `v22-*` 不自动等于 active。`live`、`canary`、`authorized-deploy`、`authorized-resource-lifecycle`、`real-live`、`live-runner`、`live-bridge` 和 `live-diagnostics` 可执行脚本不属于默认 active executable surface；未来真实外部操作只保留合同边界，重新授权时另建 v22 边界和执行入口。
+
+`adapters/*`、`deploy/*` 和 `infra/*` 不属于 strict monolith 默认 active surface。仍有业务价值的能力必须迁入 `services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge` 或 repo-local v22 gate 后，再删除旧路径；不得以 adapter/deploy/infra 形态作为 active repo 默认上下文保留。
 
 ## Migrate
 
@@ -34,6 +50,8 @@ active surface 不允许修改 one-person-lab upstream。one-person-lab upstream
 - 重新落到 active surface 中的 v22 文件或 v22 contract。
 - 去掉 `user_owned` primary path、`resource-order` primary path、旧 runner/provisioner、OpenCost 主叙事和 Langfuse 旧默认叙事。
 - 不把 v19/v20/v21 的 smoke、live-test、部署脚本或报告当成 v22 默认验证入口。
+- 不把 live/canary/authorized runner 当成默认 executable surface。
+- 不把 `adapters/*`、`deploy/*`、`infra/*` 当成 active repo 默认上下文。
 - 不移动目录，不删除文件；清理动作另走 `cleanup/*`。
 
 ## Archive / Reference
@@ -58,6 +76,10 @@ active surface 不允许修改 one-person-lab upstream。one-person-lab upstream
 - `resource-provisioner`
 - OpenCost 主叙事
 - Langfuse 旧默认叙事
+- residual `adapters/billing-aggregator/**`
+- residual `deploy/local/dockerfiles/**`
+- residual live/canary/authorized runner executable scripts
+- Runtime Bridge active code 中的 `resourceOrderId`、`resource_order_id`、`user_owned`、`user-owned` 和 `USER_OWNED_*` alias
 
 ## Forbidden Without Explicit Authorization
 
