@@ -38,6 +38,7 @@ for (const phrase of [
   "# MedOPL v22 Physical Legacy File Retirement Inventory",
   "inventory_status: strict_monolith_cleanup_completed",
   "physical_delete_batch_status: strict_monolith_retirement_completed",
+  "residual_cleanup_status:",
   "agent_run_mode: strict_monolith_legacy_retirement",
   "run_manifest: `docs/recovery/physical-legacy-file-retirement-run-manifest.json`",
   "strict monolith cleanup",
@@ -51,6 +52,7 @@ for (const phrase of [
   "slice-c-legacy-script-delete",
   "slice-d-retired-adapter-deploy-infra-delete",
   "slice-e-legacy-schema-store-retirement",
+  "slice-g-residual-legacy-test-anchor-retirement",
   "后续 feature leaf 碰到过时模块、接口、测试或兼容面时，必须同 leaf 清理退役，或拆出 cleanup leaf 后再继续",
   "| path_or_group | legacy_family | current_zone | current_role | inbound_refs | default_suite_ref | public_surface | schema_or_migration_risk | deploy_or_external_risk | decision | physical_delete_status | required_gate | deletion_branch | stop_condition |",
 ]) {
@@ -91,6 +93,7 @@ assertDecisionRow(inventory, "`adapters/shared/**`", "`delete`");
 assertDecisionRow(inventory, "`deploy/tke-package/**` and old runner/provisioner deploy assets", "`delete`");
 assertDecisionRow(inventory, "`infra/kubernetes/**`, `infra/codex-runtime/**`, `infra/production-hardening/**`", "`delete`");
 assertDecisionRow(inventory, "`old portal resource-order/provisioner scripts, v13 scripts, runner fixtures, v19/v20 helper libs`", "`delete`");
+assertDecisionRow(inventory, "`residual non-v22 Portal/Billing smoke anchors and local start/install helper remnants`", "`delete`");
 
 for (const forbidden of [
   "keep_tombstone",

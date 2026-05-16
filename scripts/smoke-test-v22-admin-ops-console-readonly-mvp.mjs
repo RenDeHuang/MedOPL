@@ -394,7 +394,7 @@ assertNotIncludesAny(JSON.stringify(adminOpsPayload.workspaceOperations), [
   "tenantId",
   "resourceBindingId",
   "environmentId",
-  "resourceOrderId",
+  "retiredResourceOrderIdentifier",
   "serverPlanId",
 ], "workspace_operations_must_not_expose_attribution_tags");
 
@@ -415,7 +415,7 @@ assertNotIncludesAny(JSON.stringify(adminOpsPayload.currentRuns), [
   "tenantId",
   "resourceBindingId",
   "environmentId",
-  "resourceOrderId",
+  "retiredResourceOrderIdentifier",
   "serverPlanId",
 ], "current_runs_must_not_expose_attribution_tags");
 
@@ -438,7 +438,7 @@ assertIncludesAll(JSON.stringify(adminOpsPayload.costReconciliation.costAllocati
   "environmentId",
 ], "cost_allocation_tags");
 assertNotIncludesAny(JSON.stringify(adminOpsPayload.costReconciliation.costAllocationTags), [
-  "resourceOrderId",
+  "retiredResourceOrderIdentifier",
 ], "cost_allocation_tags_must_not_expose_retired_resource_order_id");
 
 assert.equal(adminOpsPayload.auditAndAnnouncements.auditEvents.length >= 1, true, "admin_ops_must_include_audit_events");
@@ -493,7 +493,7 @@ assertNotIncludesAny(currentRunsViewSection, [
   "tenantId",
   "resourceBindingId",
   "environmentId",
-  "resourceOrderId",
+  "retiredResourceOrderIdentifier",
   "serverPlanId",
 ], "current_runs_view_must_not_render_attribution_tags");
 

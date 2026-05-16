@@ -117,6 +117,7 @@
 - completed on `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` verifies default README / vibe-coding commands, v22 MVP suite script references, and repo-zoning archive/review-rewrite rows without running live-test, deleting legacy scripts, touching services, or reading secrets.
 - follow-up physical delete on `cleanup/v22-physical-legacy-batch-run`: `slice-authorized-live-test-physical-delete` physically deletes `scripts/live-test-*` after explicit user authorization; future real external canary must use a new v22 authorization contract and must not restore the old default entry.
 - strict monolith follow-up on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old non-v22 billing/portal smoke anchors and `scripts/start-billing-live.mjs` were physically deleted after import/default-suite scan proved they were not v22 active validation. The deleted scripts were historical billing/resource-order/OpenCost/Portal structure anchors, not current v22 smoke.
+- residual strict monolith follow-up on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, and local MinIO/Harbor install or port-forward helper remnants are deleted after import/default-suite scan proved no active v22 reference. Active validation must use `scripts/smoke-test-v22-*` or `scripts/v22-verify.mjs`.
 
 ## Slice 5: OpenCost and Langfuse Primary Narrative Retirement
 

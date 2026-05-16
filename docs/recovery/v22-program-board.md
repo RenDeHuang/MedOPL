@@ -71,7 +71,7 @@ Each program record must keep these fields:
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, real cloud, secret files |
 | owner self-test boundary | local dev/preview QA evidence, role-surface smoke, mobile usability smoke, payload smoke when UI/API changes are in scope |
 | B revalidation boundary | rerun affected smoke, inspect screenshots/payloads, confirm ordinary users do not see admin/cloud/internal language |
-| required smoke / verification | `smoke-test-v22-portal-role-surface-boundaries.mjs`, `smoke-test-v22-portal-mobile-usability.mjs`, `smoke-test-v22-portal-mobile-table-usability.mjs`, `smoke-test-portal-api-payloads-contract.mjs` when relevant |
+| required smoke / verification | `smoke-test-v22-portal-role-surface-boundaries.mjs`, `smoke-test-v22-portal-mobile-usability.mjs`, `smoke-test-v22-portal-mobile-table-usability.mjs`, `smoke-test-v22-portal-runtime-suite.mjs --group api` when relevant |
 | parallelizable | yes |
 | requires user authorization | no for local mock/dev QA; yes for any production/live endpoint |
 | serial side effects | none by default; deploy/build/push/kubectl remains forbidden without explicit authorization |

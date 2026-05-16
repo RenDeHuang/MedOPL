@@ -118,6 +118,7 @@ for (const command of [
 
 for (const phrase of [
   "inventory_status: strict_monolith_cleanup_completed",
+  "residual_cleanup_status:",
   "decision values: `delete`, `migrate`, `retain_active_v22`, `blocker`",
   "slice-e-legacy-schema-store-retirement",
 ]) {

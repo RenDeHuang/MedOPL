@@ -191,8 +191,6 @@ await writePortalPostgresSnapshot({
     wallets: [],
     ledger: [],
     taskSpaces: [],
-    resourceOrders: [],
-    resourceOrderEvents: [],
     storageOrders: [],
     userComputeInstances: [],
     userStorageBuckets: [],

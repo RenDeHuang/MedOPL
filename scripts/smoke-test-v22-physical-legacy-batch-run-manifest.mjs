@@ -16,6 +16,17 @@ const expectedSlices = [
   "slice-c-legacy-script-delete",
   "slice-d-retired-adapter-deploy-infra-delete",
   "slice-e-legacy-schema-store-retirement",
+  "slice-f-unified-verifier-archive-gate-alignment",
+  "slice-g-residual-legacy-test-anchor-retirement",
+  "slice-h-readonly-inventory-fixture-attribution",
+];
+
+const strictMonolithCompletedSlices = [
+  "slice-a-strict-monolith-policy",
+  "slice-b-user-owned-resource-order-compat-delete",
+  "slice-c-legacy-script-delete",
+  "slice-d-retired-adapter-deploy-infra-delete",
+  "slice-e-legacy-schema-store-retirement",
 ];
 
 async function readRepoFile(filePath) {
@@ -51,13 +62,28 @@ assert.equal(manifest.base_branch, "origin/recovery/platform-v22-trunk", "manife
 assert.equal(manifest.target_branch, "recovery/platform-v22-trunk", "manifest_target_branch_mismatch");
 assert.equal(manifest.working_branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "manifest_working_branch_mismatch");
 assert.equal(manifest.current_status, "strict_monolith_retirement_completed", "manifest_current_status_mismatch");
+assert(
+  ["f_g_completed_h_pending", "f_g_h_completed"].includes(manifest.residual_cleanup_status),
+  `manifest_residual_cleanup_status_mismatch:${manifest.residual_cleanup_status}`,
+);
 
 const completedSlices = manifest.completed_slices ?? [];
 const remainingSlices = manifest.next_slices ?? [];
 assertArrayIncludesAll([...completedSlices, ...remainingSlices], expectedSlices, "manifest_slice_queue_or_completed");
 if (manifest.current_status === "strict_monolith_retirement_completed") {
-  assert.deepEqual(remainingSlices, [], "manifest_completed_batch_must_not_have_next_slices");
-  assertArrayIncludesAll(completedSlices, expectedSlices, "manifest_completed_batch_completed_slices");
+  assertArrayIncludesAll(completedSlices, strictMonolithCompletedSlices, "manifest_completed_batch_completed_slices");
+}
+if (manifest.residual_cleanup_status === "f_g_completed_h_pending") {
+  assertArrayIncludesAll(completedSlices, [
+    ...strictMonolithCompletedSlices,
+    "slice-f-unified-verifier-archive-gate-alignment",
+    "slice-g-residual-legacy-test-anchor-retirement",
+  ], "manifest_residual_f_g_completed_slices");
+  assertArrayIncludesAll(remainingSlices, ["slice-h-readonly-inventory-fixture-attribution"], "manifest_residual_h_pending_next_slices");
+}
+if (manifest.residual_cleanup_status === "f_g_h_completed") {
+  assertArrayIncludesAll(completedSlices, expectedSlices, "manifest_residual_completed_slices");
+  assert.deepEqual(remainingSlices, [], "manifest_residual_completed_must_not_have_next_slices");
 }
 for (const sliceId of completedSlices) {
   assert(expectedSlices.includes(sliceId), `manifest_completed_slice_unknown:${sliceId}`);
@@ -77,6 +103,7 @@ assertArrayIncludesAll(manifest.authorization_boundary?.authorized_deletions, [
   "old user-owned/resource-order compatibility surfaces",
   "retired resource-provisioner and med-autoscience-runner adapters",
   "old OpenCost/Langfuse deploy/infra/compose assets",
+  "residual non-v22 Portal/Billing smoke anchors and local start/install helper remnants",
 ], "manifest_authorized_deletions");
 
 assertArrayIncludesAll(manifest.authorization_boundary?.forbidden_operations, [
@@ -117,6 +144,13 @@ const slices = new Map((manifest.slices ?? []).map((slice) => [slice.id, slice])
 for (const sliceId of expectedSlices) {
   assert(slices.has(sliceId), `manifest_slice_missing:${sliceId}`);
   const slice = slices.get(sliceId);
+  const expectedStatus = completedSlices.includes(sliceId)
+    ? "completed"
+    : remainingSlices.includes(sliceId)
+      ? "pending"
+      : null;
+  assert(expectedStatus, `manifest_slice_status_untracked:${sliceId}`);
+  assert.equal(slice.status, expectedStatus, `manifest_slice_status_mismatch:${sliceId}`);
   assert(slice.red_gate, `slice_red_gate_missing:${sliceId}`);
   assert(Array.isArray(slice.green_gates) && slice.green_gates.length > 0, `slice_green_gates_missing:${sliceId}`);
   assert(slice.commit?.startsWith("cleanup: "), `slice_commit_mismatch:${sliceId}`);

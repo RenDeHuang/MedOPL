@@ -7,15 +7,20 @@
   "target_branch": "recovery/platform-v22-trunk",
   "working_branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "current_status": "strict_monolith_retirement_completed",
-  "current_slice": "slice-e-legacy-schema-store-retirement",
+  "residual_cleanup_status": "f_g_completed_h_pending",
+  "current_slice": "slice-g-residual-legacy-test-anchor-retirement",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
     "slice-c-legacy-script-delete",
     "slice-d-retired-adapter-deploy-infra-delete",
-    "slice-e-legacy-schema-store-retirement"
+    "slice-e-legacy-schema-store-retirement",
+    "slice-f-unified-verifier-archive-gate-alignment",
+    "slice-g-residual-legacy-test-anchor-retirement"
   ],
-  "next_slices": [],
+  "next_slices": [
+    "slice-h-readonly-inventory-fixture-attribution"
+  ],
   "batch_policy": {
     "enabled": true,
     "commit_policy": "one_commit_per_slice",
@@ -35,6 +40,7 @@
       "old infra/kubernetes codex-runtime production-hardening assets with no active v22 reason",
       "old compose.demo.yaml retired runner wiring",
       "old non-v22 billing/portal smoke scripts with retired resource-order/provisioner semantics",
+      "residual non-v22 Portal/Billing smoke anchors and local start/install helper remnants",
       "old Portal resource-provisioner client wiring",
       "old live/kubectl helper remnants"
     ],
@@ -68,6 +74,9 @@
     "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
     "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
     "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+    "node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
+    "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra"
@@ -251,6 +260,62 @@
         "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs"
       ],
       "commit": "cleanup: retire legacy schema and store remnants"
+    },
+    {
+      "id": "slice-f-unified-verifier-archive-gate-alignment",
+      "status": "completed",
+      "decision_scope": "allow_canonical_unified_verifier_without_reintroducing_legacy_smoke",
+      "target_paths": [
+        "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/v22-verify.mjs",
+        "docs/recovery/v22-agent-verify-manifest.json"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs"
+      ],
+      "commit": "cleanup: align legacy archive gate with unified verifier"
+    },
+    {
+      "id": "slice-g-residual-legacy-test-anchor-retirement",
+      "status": "completed",
+      "decision_scope": "delete_residual_non_v22_portal_billing_smoke_and_retire_old_fixture_tokens",
+      "target_paths": [
+        "scripts/smoke-test-portal-*.mjs",
+        "scripts/smoke-test-billing-*.mjs",
+        "scripts/start-opl-web-runtime.mjs",
+        "scripts/start-minio-port-forward.ps1",
+        "scripts/install-harbor-local.ps1",
+        "scripts/install-minio-local.ps1",
+        "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+        "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
+        "docs/recovery/v22-program-board.md"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --scripts && node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --residual",
+      "green_gates": [
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --scripts",
+        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --residual",
+        "node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+        "node scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs"
+      ],
+      "commit": "cleanup: retire residual legacy test anchors"
+    },
+    {
+      "id": "slice-h-readonly-inventory-fixture-attribution",
+      "status": "pending",
+      "decision_scope": "fix_readonly_inventory_fixture_billing_attribution_without_weakening_provider_required_fields",
+      "target_paths": [
+        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"
+      ],
+      "red_gate": "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+      "green_gates": [
+        "node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ],
+      "commit": "cleanup: fix readonly inventory fixture attribution after strict cleanup"
     }
   ]
 }
