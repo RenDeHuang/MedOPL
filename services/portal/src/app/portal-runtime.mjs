@@ -8,8 +8,6 @@ import { promisify } from "node:util";
 import * as portalConfig from "./portal-runtime-config.mjs";
 import {
   adminSeed,
-  BILLING_SERVICE_TIMEOUT_MS,
-  BILLING_SERVICE_URL,
   BUILD_SHA,
   BUILD_TIME,
   codexRuntimeEventsFile,
@@ -30,7 +28,6 @@ import {
   medWorkspaceRoot,
   MINIO_API_URL,
   MINIO_CONSOLE_URL,
-  OPENCOST_UI_URL,
   OPL_RUNTIME_MODE,
   OPL_RUNTIME_TIMEOUT_MS,
   OPL_WEB_URL,
@@ -145,7 +142,6 @@ const {
   layout,
   portalStore,
   clients: {
-    billingClient,
     minioStorageClient,
     harborRegistryClient,
     langfuseTraceClient,
@@ -166,8 +162,6 @@ const {
     getTaskPath,
   },
   clients: {
-    billingServiceUrl: BILLING_SERVICE_URL,
-    billingTimeoutMs: BILLING_SERVICE_TIMEOUT_MS,
     formatDateTime,
     harborApiUrl: HARBOR_API_URL,
     harborPassword: HARBOR_PASSWORD,
@@ -255,7 +249,6 @@ const {
   runtimePerformanceSummary,
   workspaceChatSessionsForUser,
 } = createPortalRuntimeObservability({
-  billingClient,
   codexRuntimeEventsFile,
   codexRuntimeRoot,
   harborRegistryClient,
@@ -263,6 +256,7 @@ const {
   minioStorageClient,
   oplAdapterClient,
   path,
+  readDb,
   readFile,
   readdir,
 });
@@ -609,7 +603,6 @@ const {
     harborUrl: HARBOR_URL,
     langfuseUrl: LANGFUSE_URL,
     minioConsoleUrl: MINIO_CONSOLE_URL,
-    opencostUiUrl: OPENCOST_UI_URL,
     oplWebUrl: OPL_WEB_URL,
     portalOplAdapterUrl: PORTAL_OPL_ADAPTER_URL,
     rancherUrl: RANCHER_URL,
@@ -648,7 +641,6 @@ const {
 } = createPortalRuntimeRouteWiring({
   activeUserStatus,
   appendLedgerEntry,
-  billingServiceUrl: BILLING_SERVICE_URL,
   buildBillingPayload,
   archiveTaskSpace,
   defaultTaskTitle,

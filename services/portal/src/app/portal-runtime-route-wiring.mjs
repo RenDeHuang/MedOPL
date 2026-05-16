@@ -9,7 +9,6 @@ export function createPortalRuntimeRouteWiring({
   activeUserStatus,
   appendLedgerEntry,
   archiveTaskSpace,
-  billingServiceUrl,
   buildBillingPayload,
   defaultTaskTitle,
   ensureTaskSpace,
@@ -60,8 +59,6 @@ export function createPortalRuntimeRouteWiring({
       writeDb,
     }),
     handlePortalBillingExportRoutes: createPortalBillingExportRoutes({
-      appendLedgerEntry,
-      billingServiceUrl,
       buildBillingPayload,
       fetchBillingSummary,
       fetchPendingSummary,

@@ -25,7 +25,6 @@ function defaultUrls(urls = {}) {
     harborUrl: urls.harborUrl || "",
     langfuseUrl: urls.langfuseUrl || "",
     minioConsoleUrl: urls.minioConsoleUrl || "",
-    opencostUiUrl: urls.opencostUiUrl || "",
     oplWebUrl: urls.oplWebUrl || "",
     portalOplAdapterUrl: urls.portalOplAdapterUrl || "",
     rancherUrl: urls.rancherUrl || "",

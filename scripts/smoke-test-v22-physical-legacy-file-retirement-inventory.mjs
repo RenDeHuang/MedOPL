@@ -98,7 +98,7 @@ assertDecisionRow(inventory, "`residual non-v22 Portal/Billing smoke anchors and
 assertDecisionRow(inventory, "`adapters/billing-aggregator/**`", "`delete`");
 assertDecisionRow(inventory, "`deploy/local/dockerfiles/portal.Dockerfile`, `deploy/local/dockerfiles/opl-web-gateway.Dockerfile`, `deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile`", "`delete`");
 assertDecisionRow(inventory, "`scripts/*live*`, `scripts/*canary*`, `scripts/*authorized-deploy*`, `scripts/*authorized-resource-lifecycle*` v22 executable surfaces", "`delete`");
-assertDecisionRow(inventory, "`services/opl-runtime-bridge/src/*` `resourceOrderId` / `resource_order_id` / `user_owned` / `USER_OWNED_*` hits", "`delete`");
+assertDecisionRow(inventory, "`services/opl-runtime-bridge/src/*` retired resource-order and user-owned runtime identifier hits", "`delete`");
 
 for (const forbidden of [
   "keep_tombstone",

@@ -32,7 +32,7 @@
 | 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement` | Zone 2/3 | rewrite/delete | sanitized trace metadata boundary remains active; old OpenCost/Langfuse compose/deploy/infra assets are delete targets. |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
-| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | 定义 zero-compat gate；Runtime Bridge 旧字段已清退，billing adapter、local Dockerfile、live/canary/authorized runner 必须继续按 slice 清退。 |
+| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | 定义 zero-compat gate；Runtime Bridge 旧字段已清退，billing adapter 已删除，local Dockerfile、live/canary/authorized runner 必须继续按 slice 清退。 |
 
 ## Slice 1: Default Entry Legacy Narrative
 
@@ -150,15 +150,15 @@
 
 - active services/frontend/Gateway/Runtime Bridge 不得接受、映射、持久化或发布 retired `user-owned` / `resource-order` 字段或 alias。
 - scripts 中旧路线 token 只可出现在 strict/retire/zero-compat forbidden-token gate 清单。
-- README、product、architecture、contracts、recovery 不得把 `keep_tombstone`、`archive_reference`、compat alias、old adapter/deploy/live/canary 当成完成态或默认上下文。
+- README、product、architecture、contracts、recovery 不得把旧 tombstone/archive 完成态、compat alias、old adapter/deploy/live/canary 当成完成态或默认上下文。
 - default suite、MVP suite、workflow 和 agent verify 不得引用 v19/v20/v21/live-test/check/old runner/provisioner/OpenCost/旧 live runner 作为当前验证。
 - `adapters/*`、`deploy/*`、`infra/*` 如仍存在，必须被 gate 标红，随后迁入 v22 active boundary 或物理删除。
 - `v22-*` live/canary/authorized runner 不再作为 active executable surface；未来真实外部操作只保留合同边界，重新授权时另建执行入口。
 
 当前 RED gap：
 
-- Runtime Bridge active code 中的 `resourceOrderId` / `resource_order_id` 持久化、trace 发布和 `user_owned` / `USER_OWNED_*` runtime alias 已清退；后续不得恢复为 alias、fixture、trace metadata 或 runtime mode。
-- `adapters/billing-aggregator/**` 仍以 adapter 形态留在仓库；若账单能力仍需要，必须迁入 Portal billing domain 或 v22 service boundary。
+- Runtime Bridge active code 中的旧 resource-order 与 user-owned runtime 标识已清退；后续不得恢复为 alias、fixture、trace metadata 或 runtime mode。
+- `adapters/billing-aggregator/**` 已删除；账单 summary/status/server plans 由 Portal monolith ledger projection 提供，不再通过旧 adapter 外呼。
 - `deploy/local/dockerfiles/**` 仍以 deploy asset 形态留在仓库；当前 strict monolith local verification 不需要 build/deploy。
 - MVP suite 和 docs 仍引用 live/canary/authorized runner 作为当前验证或可执行上下文。
 

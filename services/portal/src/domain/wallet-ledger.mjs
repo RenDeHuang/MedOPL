@@ -493,7 +493,7 @@ export function applyExactChargeForOrder(db, { user, order, exactCost, sourceId,
     sourceId,
     idempotencyKey: chargeIdempotencyKey,
     reason: "resource_binding_exact_bill_settlement",
-    operatorId: "billing-aggregator",
+    operatorId: "portal-billing-ledger",
   });
   return { ok: true, chargedAmount: chargeAmount, entry: result.entry, wallet, created: result.created };
 }
@@ -522,7 +522,7 @@ export function appendPendingUsageForOrder(db, {
     sourceId: sourceId || order.runId || order.id,
     idempotencyKey: idempotencyKey || `pending_usage:${order.id}:${sourceId || order.runId || "pending"}:${amount.toFixed(2)}`,
     reason,
-    operatorId: "billing-aggregator",
+    operatorId: "portal-billing-ledger",
   });
   return { ok: true, amount, entry: result.entry, created: result.created };
 }
@@ -560,7 +560,7 @@ export function applySettlementAdjustmentForOrder(db, {
     sourceId: sourceId || order.runId || order.id,
     idempotencyKey: adjustmentIdempotencyKey,
     reason,
-    operatorId: "billing-aggregator",
+    operatorId: "portal-billing-ledger",
   });
   return { ok: true, amount: adjustmentAmount, entry: result.entry, wallet, created: result.created };
 }

@@ -4,7 +4,6 @@ const config = await import("../services/portal/src/config/portal-config.mjs");
 const store = await import("../services/portal/src/state/portal-store.mjs");
 
 for (const name of [
-  "RETIRED_COST_UI_URL",
   "RETIRED_REGISTRY_URL",
   "RETIRED_STORAGE_API_URL",
   "RETIRED_STORAGE_CONSOLE_URL",
@@ -18,7 +17,6 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_portal_runtime_startup_config",
   retiredLinks: {
-    cost: config.RETIRED_COST_UI_URL,
     registry: config.RETIRED_REGISTRY_URL,
     storageApi: config.RETIRED_STORAGE_API_URL,
     storageConsole: config.RETIRED_STORAGE_CONSOLE_URL,

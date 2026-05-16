@@ -118,7 +118,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - OPL Adapter / Runtime Agent：`services/opl-runtime-bridge/src/server.mjs`、`runtime-bridge-launch.mjs`、`runtime-bridge-runs.mjs`、`runtime-bridge-messages.mjs`、`runtime-bridge-routes-http.mjs`、`provider-secret-store.mjs`、`opl-acp-runtime-client.mjs`、`run-contract.mjs`、`state-store*.mjs`。
 - Workspace / Artifact：`services/portal/src/domain/workspace-storage.mjs`、`portal-api-workspace-storage.mjs`、`workspace-storage-route-handlers.mjs`、`workspace-storage-upload-support.mjs`、`workspace-files-internal.routes.mjs`。
 - Session / Run：`services/portal/src/domain/session-traces.mjs`、`services/portal/src/app/portal-session-trace-payloads.mjs`、`services/portal/src/services/opl-launch.service.mjs`、`services/opl-runtime-bridge/src/state-store-run-records.mjs`、`state-store-message-records.mjs`、`state-store-artifact-trace-records.mjs`。
-- Billing / Usage / Freeze：`services/portal/src/domain/wallet-ledger.mjs`、`lab-billing-policy.mjs`、`portal-page-billing-payloads.mjs`、`services/portal/src/integrations/billing-client.mjs`、`services/portal/frontend/src/api/portal/billing.ts`、`services/portal/frontend/src/views/billing/BillingView.vue`、`adapters/billing-aggregator/src/*`。
+- Billing / Usage / Freeze：`services/portal/src/domain/wallet-ledger.mjs`、`lab-billing-policy.mjs`、`portal-page-billing-payloads.mjs`、`portal-runtime-observability.mjs` 的 Portal monolith 账本投影、`services/portal/frontend/src/api/portal/billing.ts`、`services/portal/frontend/src/views/billing/BillingView.vue`。
 - Resource Plan / Tenant Binding：`docs/contracts/v22-resource-plan-boundary.md`、`docs/contracts/v22-tenant-resource-binding-boundary.md`、`services/portal/src/domain/server-plans.mjs`、`platform-provisioned-resources.mjs`、`user-resource-bindings.mjs`、`services/portal/frontend/src/api/portal/resources.ts`。
 - Admin / Ops：`services/portal/src/routes/admin-api.routes.mjs`、`admin-user.routes.mjs`、`admin-ops.routes.mjs`、`services/portal/src/app/portal-admin-*.mjs`、`services/portal/frontend/src/views/admin/*.vue`。
 - Scripts / Contracts：`docs/contracts/v22-*.md` 和与 billing freeze、platform-provisioned resource lifecycle、tenant/resource binding 直接相关的 smoke contract。
@@ -143,7 +143,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - 旧 v13 Langfuse / commercial / COS 脚本、旧 portal resource-order/provisioner 脚本、旧 med-autoscience runner fixture、旧 v19/v20 helper lib 已在 Slice D 删除；未来真实外部 canary 必须使用新的 v22 授权合同和 gate。
 - 旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*` 仍只可作为迁移输入，不作为 active repo 默认实现入口。
 
-后续 cleanup/delete 目标是继续清掉 active services 中残留的 OpenCost 主产品字段、resource-order/user-owned 兼容 alias 和任何新发现的旧测试锚点；不得把已删除的旧 deploy/adapters/infra 资产或旧 Portal provisioner client 作为参考重新引入。
+后续 cleanup/delete 目标是继续清掉 active services 中残留的旧 deploy/live/canary runner 叙事和任何新发现的旧测试锚点；不得把已删除的旧 deploy/adapters/infra 资产、旧 billing adapter 或旧 Portal provisioner client 作为参考重新引入。
 
 ## 操作边界
 

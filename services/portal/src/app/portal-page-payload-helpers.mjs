@@ -105,7 +105,7 @@ export function buildBillingTaskCosts({ tasks = [], filteredRuns = [], filteredI
 export function buildBillingRunCosts({ filteredRuns = [], filteredItems = [], isRunTerminal }) {
   return filteredRuns.map((run) => {
     const related = filteredItems.find((item) => item?.properties?.["label:run_id"] === run.runId || item?.properties?.run_id === run.runId || item?.name?.includes(run.runId));
-    const pricingSource = related?.properties?.["label:pricing_source"] || related?.properties?.pricing_source || (related ? "OpenCost aggregated" : "metering pending");
+    const pricingSource = related?.properties?.["label:pricing_source"] || related?.properties?.pricing_source || (related ? "portal_billing_ledger" : "platform_metering_projection");
     return {
       runId: run.runId,
       workspaceId: run.workspaceId,

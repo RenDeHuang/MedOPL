@@ -45,7 +45,6 @@ export const LANGFUSE_URL = process.env.LANGFUSE_URL || "http://127.0.0.1:13000"
 export const LANGFUSE_PUBLIC_KEY = String(process.env.LANGFUSE_PUBLIC_KEY || "").trim();
 export const LANGFUSE_SECRET_KEY = String(process.env.LANGFUSE_SECRET_KEY || "").trim();
 export const LANGFUSE_PROJECT_ID = String(process.env.LANGFUSE_PROJECT_ID || "").trim();
-export const OPENCOST_UI_URL = String(process.env.OPENCOST_UI_URL || "").trim();
 export const KUBESPHERE_URL = process.env.KUBESPHERE_URL || "";
 export const RANCHER_URL = String(process.env.RANCHER_URL || "").trim();
 export const HARBOR_URL = String(process.env.HARBOR_URL || "").trim();
@@ -58,10 +57,7 @@ export const SHOW_LEGACY_KUBESPHERE = String(process.env.SHOW_LEGACY_KUBESPHERE 
 export const MINIO_API_URL = String(process.env.MINIO_API_URL || "").trim();
 export const RETIRED_STORAGE_API_URL = MINIO_API_URL;
 export const RETIRED_STORAGE_CONSOLE_URL = MINIO_CONSOLE_URL;
-export const RETIRED_COST_UI_URL = OPENCOST_UI_URL;
 export const RETIRED_REGISTRY_URL = HARBOR_URL;
-export const BILLING_SERVICE_URL = process.env.BILLING_SERVICE_URL || "http://127.0.0.1:3311";
-export const BILLING_SERVICE_TIMEOUT_MS = Number(process.env.BILLING_SERVICE_TIMEOUT_MS || 20000);
 export const TENCENT_BILLING_ENABLED = String(process.env.TENCENT_BILLING_ENABLED || "").trim() === "1";
 export const TENCENT_BILLING_REQUIRED = String(process.env.TENCENT_BILLING_REQUIRED || "").trim() === "1";
 export const BUILD_SHA = String(process.env.BUILD_SHA || "dev").trim() || "dev";

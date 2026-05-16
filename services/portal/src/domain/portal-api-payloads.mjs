@@ -627,8 +627,8 @@ export function createPortalApiPayloads(deps) {
       gpuCost: Number(totals.gpuCost || 0),
       storageCost: Number(totals.pvCost || 0),
       totalCost: Number(totals.totalCost || 0),
-      pricingSource: billing ? "opencost_aggregated" : "unavailable",
-      dataSource: "billing-aggregator / OpenCost",
+      pricingSource: billing?.source || "unavailable",
+      dataSource: billing ? "portal_billing_ledger" : "unavailable",
     };
   }
 
@@ -641,8 +641,8 @@ export function createPortalApiPayloads(deps) {
       gpuCost: Number(totals.gpuCost || 0),
       storageCost: Number(totals.pvCost || 0),
       totalCost: Number(totals.totalCost || 0),
-      pricingSource: billing ? "opencost_aggregated" : "unavailable",
-      dataSource: "billing-aggregator / OpenCost",
+      pricingSource: billing?.source || "unavailable",
+      dataSource: billing ? "portal_billing_ledger" : "unavailable",
     };
   }
 
@@ -661,7 +661,7 @@ export function createPortalApiPayloads(deps) {
       storageCost: Number(match?.pvCost || 0),
       totalCost: Number(match?.totalCost || 0),
       pricingSource: String(match?.properties?.pricing_source || match?.properties?.["label:pricing_source"] || "unavailable"),
-      dataSource: match ? "billing-aggregator / OpenCost" : "unavailable",
+      dataSource: match ? "portal_billing_ledger" : "unavailable",
     };
   }
 

@@ -174,7 +174,7 @@ export function createPortalAccountingStore({
     return applyWalletLedgerAuditTransaction({
       ...context,
       amount: input.amount,
-      operatorId: input.operatorId || "billing-aggregator",
+      operatorId: input.operatorId || "portal-billing-ledger",
       idempotencyKey: input.idempotencyKey,
       reason: input.reason || "wallet_charge",
       ledgerType: input.ledgerType || "exact_resource_charge",
@@ -191,7 +191,7 @@ export function createPortalAccountingStore({
     return applyWalletLedgerAuditTransaction({
       ...context,
       amount: input.amount,
-      operatorId: input.operatorId || "billing-aggregator",
+      operatorId: input.operatorId || "portal-billing-ledger",
       idempotencyKey: input.idempotencyKey,
       reason: input.reason || "wallet_refund",
       ledgerType: "refund",
@@ -208,7 +208,7 @@ export function createPortalAccountingStore({
     return applyWalletLedgerAuditTransaction({
       ...context,
       amount: input.amount,
-      operatorId: input.operatorId || "billing-aggregator",
+      operatorId: input.operatorId || "portal-billing-ledger",
       idempotencyKey: input.idempotencyKey,
       reason: input.reason || "wallet_makeup_charge",
       ledgerType: "makeup_charge",

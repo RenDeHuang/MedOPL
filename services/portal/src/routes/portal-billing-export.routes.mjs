@@ -80,11 +80,8 @@ function adminForbidden({ res, user, sendHtml, layoutV2 }) {
 }
 
 export function createPortalBillingExportRoutes({
-  appendLedgerEntry,
-  billingServiceUrl,
   buildBillingPayload,
   fetchBillingSummary,
-  fetchFn = fetch,
   fetchPendingSummary,
   layoutV2,
   logPortalEvent,
@@ -150,7 +147,7 @@ export function createPortalBillingExportRoutes({
       ...db.ledger.filter((entry) => withinHourWindow(entry.createdAt, windowHours)).map((entry) => {
         const targetUser = db.users.find((item) => item.id === entry.userId) || {};
         const related = items.find((item) => billingItemMatchesRun(item, entry.runId));
-        const pricingSource = related ? "OpenCost aggregated" : (entry.type === "resource_charge" ? "metering pending" : "manual ledger");
+        const pricingSource = related?.pricingSource || related?.properties?.pricing_source || (entry.type === "pending_usage" ? "platform_metering_projection" : "portal_billing_ledger");
         return [
           csvEscape(entry.id),
           csvEscape(entry.type),
@@ -179,13 +176,13 @@ export function createPortalBillingExportRoutes({
     const windowHours = parseHourWindow(url.searchParams.get("window"));
     const users = db.users.filter((item) => item.role !== "admin");
     const lines = [
-      ["userId", "name", "email", "status", "taskCount", "balance", "ledgerTopup", "ledgerResourceCharge", "opencostTotalCost"].join(","),
+      ["userId", "name", "email", "status", "taskCount", "balance", "ledgerTopup", "ledgerResourceCharge", "projectedUsageTotalCost"].join(","),
       ...users.map((entry) => {
         const taskCount = db.taskSpaces.filter((item) => item.userId === entry.id && item.status !== "deleted").length;
         const balance = Number((db.wallets.find((wallet) => wallet.userId === entry.id)?.balance) || 0);
         const topup = db.ledger.filter((item) => item.userId === entry.id && item.type === "topup" && withinHourWindow(item.createdAt, windowHours)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
         const resourceCharge = db.ledger.filter((item) => item.userId === entry.id && item.type === "resource_charge" && withinHourWindow(item.createdAt, windowHours)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        const opencostTotal = items.filter((item) => {
+        const projectedUsageTotal = items.filter((item) => {
           return billingItemMatchesUser(item, entry.id);
         }).filter((item) => withinHourWindow(item?.end || item?.start, windowHours)).reduce((sum, item) => sum + Number(item?.totalCost || 0), 0);
         return [
@@ -197,7 +194,7 @@ export function createPortalBillingExportRoutes({
           csvEscape(money(balance)),
           csvEscape(money(topup)),
           csvEscape(money(resourceCharge)),
-          csvEscape(microMoney(opencostTotal)),
+          csvEscape(microMoney(projectedUsageTotal)),
         ].join(",");
       }),
     ];
@@ -293,29 +290,20 @@ export function createPortalBillingExportRoutes({
     const redirectTo = String(form.redirectTo || "/portal/admin/billing-ops").trim();
     const targetUser = db.users.find((item) => item.id === form.userId && item.role !== "admin");
     const workspace = db.taskSpaces.find((item) => item.slug === form.workspaceId);
-    const requestBody = { window: windowValue };
+    const requestScope = { window: windowValue };
     if (scopeType === "user" && targetUser) {
-      requestBody.customer_id = targetUser.id;
+      requestScope.customerId = targetUser.id;
     }
     if (scopeType === "workspace" && workspace) {
-      requestBody.customer_id = workspace.userId;
-      requestBody.workspace_id = workspace.slug;
+      requestScope.customerId = workspace.userId;
+      requestScope.workspaceId = workspace.slug;
     }
-    let result = null;
-    try {
-      const response = await fetchFn(new URL("/reconcile", billingServiceUrl), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      result = await response.json().catch(() => ({ error: `status=${response.status}` }));
-      if (!response.ok) {
-        throw new Error(result?.error || `billing_reconcile_failed:${response.status}`);
-      }
-    } catch (error) {
-      sendHtml(res, layoutV2("补齐失败", `<div class="card"><h2>账单补齐失败</h2><p class="hint">${String(error)}</p></div>`, user), 500);
-      return true;
-    }
+    const [summary, pending] = await Promise.all([
+      fetchBillingSummary(requestScope.customerId || "", requestScope.workspaceId || "", windowValue),
+      fetchPendingSummary(requestScope.customerId || "", requestScope.workspaceId || "", windowValue),
+    ]);
+    const reconciledCount = Number((summary?.items || []).length);
+    const pendingCount = Number((pending?.runs || []).length || pending?.pendingCount || 0);
     await logPortalEvent({
       type: "billing_reconcile_triggered",
       userId: user.id,
@@ -323,7 +311,9 @@ export function createPortalBillingExportRoutes({
       targetUserId: targetUser?.id || "",
       workspaceId: workspace?.slug || "",
       window: windowValue,
-      reconciledCount: Number(result?.reconciledCount || 0),
+      reconciledCount,
+      pendingCount,
+      source: "portal_billing_ledger",
     });
     redirect(res, redirectTo);
     return true;

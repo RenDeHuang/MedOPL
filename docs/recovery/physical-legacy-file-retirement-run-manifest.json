@@ -9,7 +9,7 @@
   "current_status": "strict_monolith_retirement_completed",
   "residual_cleanup_status": "f_g_h_completed",
   "zero_compat_active_surface_status": "in_progress",
-  "current_slice": "slice-j-zero-compat-active-surface-gate",
+  "current_slice": "slice-k-delete-residual-adapter-compatibility-surface",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -20,10 +20,10 @@
     "slice-g-residual-legacy-test-anchor-retirement",
     "slice-h-readonly-inventory-fixture-attribution",
     "slice-i-readonly-inventory-local-attribution",
-    "slice-j-zero-compat-active-surface-gate"
+    "slice-j-zero-compat-active-surface-gate",
+    "slice-k-delete-residual-adapter-compatibility-surface"
   ],
   "next_slices": [
-    "slice-k-delete-residual-adapter-compatibility-surface",
     "slice-l-delete-residual-deploy-compatibility-assets",
     "slice-m-delete-residual-live-canary-runner-surfaces",
     "slice-n-remove-residual-compatibility-narrative",
@@ -374,7 +374,7 @@
     },
     {
       "id": "slice-k-delete-residual-adapter-compatibility-surface",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "delete_residual_adapter_compatibility_surface_or_migrate_needed_billing_capability_into_v22_active_boundary",
       "target_paths": [
         "adapters/billing-aggregator/**",
@@ -389,6 +389,7 @@
         "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
         "node scripts/smoke-test-v22-product-goal-harness.mjs"
       ],
+      "notes": "Slice K deletes adapters/billing-aggregator/** and services/portal/src/integrations/billing-client.mjs after moving billing summary/status/server plans into Portal monolith ledger projection. Full zero-compat gate remains red until Slice L/M delete residual deploy and live/canary runner surfaces.",
       "commit": "cleanup: delete residual adapter compatibility surface"
     },
     {

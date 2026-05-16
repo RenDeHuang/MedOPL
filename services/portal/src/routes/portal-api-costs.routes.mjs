@@ -8,9 +8,9 @@ export function createPortalApiCostsRoutes({
     if (url.pathname === "/portal/api/costs/summary") {
       const summary = await fetchBillingSummary(user.id, "", String(url.searchParams.get("window") || "168h"));
       sendJson(res, {
-        source: "billing_aggregator",
-        type: summary ? "live" : "status_only",
-        note: summary ? "数据来自账单聚合接口" : "账单聚合接口不可用",
+        source: "portal_billing_ledger",
+        type: "local_projection",
+        note: "数据来自 Portal monolith 账本投影",
         totals: summary?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 },
         items: summary?.items || [],
       });
@@ -20,9 +20,9 @@ export function createPortalApiCostsRoutes({
       const workspaceId = String(url.searchParams.get("workspaceId") || url.searchParams.get("task") || "").trim();
       const summary = await fetchBillingSummary(user.id, workspaceId, String(url.searchParams.get("window") || "168h"));
       sendJson(res, {
-        source: "billing_aggregator",
-        type: summary ? "live" : "status_only",
-        note: summary ? "数据来自 workspace 维度账单聚合接口" : "workspace 账单聚合接口不可用",
+        source: "portal_billing_ledger",
+        type: "local_projection",
+        note: "数据来自 workspace 维度 Portal 账本投影",
         workspaceId,
         totals: summary?.totals || { cpuCost: 0, gpuCost: 0, pvCost: 0, totalCost: 0 },
         items: summary?.items || [],
@@ -37,7 +37,7 @@ export function createPortalApiCostsRoutes({
         sendJson(res, {
           source: "portal_opl_adapter",
           type: "live",
-          note: adapterCost.status === "pending" ? "run 成本已记录为 pending，等待 OpenCost/云账单对账" : "run 成本来自 Portal OPL adapter",
+          note: adapterCost.status === "pending" ? "run 成本已记录为 pending，等待平台账本投影校准" : "run 成本来自 Portal OPL adapter",
           runId,
           cost: {
             cpuCost: adapterCost.cpuCost,
@@ -56,7 +56,7 @@ export function createPortalApiCostsRoutes({
       }) || null;
       if (!runCost) {
         sendJson(res, {
-          source: "billing_aggregator",
+          source: "portal_billing_ledger",
           type: "status_only",
           note: "未找到对应 run 成本记录",
           runId,
@@ -65,9 +65,9 @@ export function createPortalApiCostsRoutes({
         return true;
       }
       sendJson(res, {
-        source: "billing_aggregator",
-        type: "live",
-        note: "数据来自 run 维度账单聚合结果",
+        source: "portal_billing_ledger",
+        type: "local_projection",
+        note: "数据来自 run 维度 Portal 账本投影",
         runId,
         cost: {
           cpuCost: Number(runCost.cpuCost || 0),

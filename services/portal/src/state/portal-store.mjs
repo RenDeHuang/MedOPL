@@ -16,7 +16,6 @@ import { createPortalStoreStorageBootstrap } from "./portal-store-storage-bootst
 import { createPortalStoreDbFacade } from "./portal-store-db-facade.mjs";
 import {
   adminSeed,
-  BILLING_SERVICE_URL,
   BUILD_SHA,
   BUILD_TIME,
   codexRuntimeEventsFile,
@@ -38,7 +37,6 @@ import {
   PORTAL_PUBLIC_URL,
   PORTAL_REDIS_URL,
   PORTAL_STORAGE_MODE,
-  RETIRED_COST_UI_URL,
   RETIRED_REGISTRY_URL,
   RETIRED_STORAGE_API_URL,
   RETIRED_STORAGE_CONSOLE_URL,
@@ -84,9 +82,9 @@ export function createPortalStore({
       oplWebAuthMode: OPL_WEBUI_AUTH_MODE,
     },
     billing: {
-      mode: TENCENT_BILLING_ENABLED ? "tencent-cloud-billing" : "disabled",
+      mode: TENCENT_BILLING_ENABLED ? "tencent-cloud-billing" : "portal-billing-ledger",
       required: TENCENT_BILLING_REQUIRED,
-      serviceUrl: BILLING_SERVICE_URL || null,
+      source: "portal_billing_ledger",
     },
     runtime: {
       portalPublicUrl: PORTAL_PUBLIC_URL || null,
@@ -107,7 +105,6 @@ export function createPortalStore({
     links: {
       minioApiUrl: RETIRED_STORAGE_API_URL || null,
       minioConsoleUrl: RETIRED_STORAGE_CONSOLE_URL || null,
-      opencostUiUrl: RETIRED_COST_UI_URL || null,
       harborUrl: RETIRED_REGISTRY_URL || null,
       langfuseUrl: null,
     },

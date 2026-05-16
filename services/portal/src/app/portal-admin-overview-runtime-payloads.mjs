@@ -17,7 +17,6 @@ function overviewServiceTargets(urls, opsSurfaceEnabled) {
     { name: "Langfuse", url: urls.langfuseUrl },
     ...(opsSurfaceEnabled ? [
       { name: "Rancher", url: urls.rancherUrl },
-      { name: "OpenCost", url: urls.opencostUiUrl },
       { name: "Harbor", url: urls.harborUrl },
       { name: "MinIO", url: urls.minioConsoleUrl },
     ] : []),
@@ -51,9 +50,9 @@ function upstreamStatusRows({ billingStatus, runtimeAgents = [] }) {
       detail: "OPL Web / Gateway 由系统探测项体现。",
     },
     {
-      name: "Billing Upstream",
-      status: billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured ? "connected" : "degraded",
-      detail: billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured ? "腾讯云账单已接入。" : "腾讯云账单未完成接入。",
+      name: "Billing Ledger",
+      status: "status_only",
+      detail: "账单状态来自 Portal monolith 账本投影。",
     },
     {
       name: "Session Ledger",
@@ -187,7 +186,7 @@ export function createPortalAdminOverviewPayloadBuilder({
       activeWorkspaceSessions: db.workspaceSessions.filter((item) => item.status === "active" && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now())).length,
       dbMode: storageMode() === "postgres_redis" ? "Postgres / Redis" : "portal-db.json",
       redisStatus: redisConfigured ? "已配置" : "未接入",
-      opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
+      billingLedgerLinked: Boolean(billingStatus?.source === "portal_billing_ledger"),
       tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
     };
 
@@ -235,10 +234,10 @@ export function createPortalAdminOverviewPayloadBuilder({
         lastEstimatedCount: Number(billingStatus?.reconcileState?.lastEstimatedCount || 0),
         lastAdjustmentCount: Number(billingStatus?.reconcileState?.lastAdjustmentCount || 0),
         lastError: billingStatus?.reconcileState?.lastError || "",
-        opencostLinked: Boolean(billingStatus?.opencostBaseUrl),
+        billingLedgerLinked: Boolean(billingStatus?.source === "portal_billing_ledger"),
         tencentBillingLinked: Boolean(billingStatus?.tencentBillingEnabled && billingStatus?.tencentCloudConfigured),
         exactSources: billingStatus?.exactSources || ["tencent_cloud_bill"],
-        pendingSources: billingStatus?.pendingSources || ["opencost_pending", "metering_pending"],
+        pendingSources: billingStatus?.pendingSources || ["platform_metering_projection"],
       },
       warningEvents,
       alerts,
@@ -252,7 +251,7 @@ export function createPortalAdminOverviewPayloadBuilder({
           gpuCost: Number(totals.gpuCost || 0),
           storageCost: Number(totals.pvCost || 0),
           totalCost: Number(totals.totalCost || 0),
-          note: opsSurfaceEnabled ? "数据来自账单聚合" : "未启用运维成本入口",
+          note: "数据来自 Portal monolith 账本投影",
         },
         minio: minioSummary,
         harbor: {

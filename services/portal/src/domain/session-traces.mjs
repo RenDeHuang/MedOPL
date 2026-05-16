@@ -80,7 +80,7 @@ function billingSummary(billing, relatedCosts = []) {
   return {
     pendingCost: Number(pendingCost.toFixed(5)),
     exactCost: Number(exactCost.toFixed(5)),
-    source: billing?.source || "billing_aggregator",
+    source: billing?.source || "portal_billing_ledger",
   };
 }
 
