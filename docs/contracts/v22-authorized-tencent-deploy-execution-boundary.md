@@ -64,7 +64,7 @@ release plan 顶层字段：
 - `component`：例如 `portal`、`opl-web-gateway`、`opl-runtime-bridge`、`opl-web-upstream`。
 - `targetClass`：`platform_service_target` 或 `workspace_runtime_target`。
 - `repository`：该 component 对应的 TCR repository。
-- `dockerfile`、`buildContext`：repo-relative path，必须存在。
+- `imageTargetRef`、`sourceRoot`：非 secret image target metadata 与 repo-relative active service source root；`sourceRoot` 必须指向当前 active service 目录。strict monolith zero-compat 下 active repo 不保留默认 Dockerfile / deploy asset；未来真实 build recipe 必须在重新授权的 v22 deploy boundary 中定义。
 - `namespace`、`workload`、`container`：指定 Kubernetes Deployment/container。
 - `ownerRef`、`operationId`，以及按 target class 需要的 `workspaceId`、`resourceBindingId`：owner guard 字段。
 - `expectedVersionMarker`：该 target 被 runtime smoke 证明时应匹配的版本 marker 或 build id。
@@ -77,7 +77,7 @@ release plan 顶层字段：
 - `provesPushedVersion`：是否证明本次 pushed component 正在运行。
 - `provesComponents[]`：该 endpoint 证明的 target component 列表。
 
-`trace.medopl.cn` 是 Langfuse/admin trace surface；除非 release plan 明确包含已审查的 Langfuse image target、Dockerfile、workload 和 owner guard，否则它只能作为 runtime smoke surface，不得被默认建模成“本仓库 Langfuse 镜像 target”。换言之，trace surface 可验证观测入口可达，但不能替代 Portal/Gateway/Runtime Bridge pushed version marker。
+`trace.medopl.cn` 是 Langfuse/admin trace surface；除非 release plan 明确包含已审查的 Langfuse image target metadata、source root / build recipe boundary、workload 和 owner guard，否则它只能作为 runtime smoke surface，不得被默认建模成“本仓库 Langfuse 镜像 target”。换言之，trace surface 可验证观测入口可达，但不能替代 Portal/Gateway/Runtime Bridge pushed version marker。
 
 ## Cloud-Lane D2 Image Push Gate
 
@@ -269,7 +269,7 @@ Package D 的闭环链路：
 - `scripts/smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs`
 - `scripts/smoke-test-v22-tencent-authorized-deploy-execution-live-gate.mjs`
 
-runner 必须显式传入 non-secret execution parameter：`--release-plan <json>`。release plan 缺 `runId`、`versionTag`、`targets[]`、`runtimeSmokeTargets[]`、任一 owner guard 字段、任一 target repository/build/deploy 字段或任一 smoke surface 覆盖关系都必须 fail-closed。`--provider-mode real` 才允许真实 `docker` / `kubectl`；默认和 smoke 只能走 `config-only` 或 `fake-live`。
+runner 必须显式传入 non-secret execution parameter：`--release-plan <json>`。release plan 缺 `runId`、`versionTag`、`targets[]`、`runtimeSmokeTargets[]`、任一 owner guard 字段、任一 target repository/source/deploy 字段或任一 smoke surface 覆盖关系都必须 fail-closed。`--provider-mode real` 才允许真实 `kubectl`；真实 build/push 在 zero-compat 后必须先有新的 v22 build recipe boundary，否则 runner 返回 `deploy_build_recipe_required`。默认和 smoke 只能走 `config-only` 或 `fake-live`。
 
 R-15 `build-push` 必须显式传入 `--accepted-preflight-id <id>`，并且该 id 必须来自已审查的 R-14 preflight report。缺失时 fail-closed。这样可以防止绕过 repository/tag/readback preflight 直接 build/push。`acceptedPreflightId` 只能作为脱敏 evidence 出现在 `.runtime` report；不能包含 raw registry credential、docker config、kubeconfig 或 secret path。
 
@@ -330,8 +330,8 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     "targetRequiredFields": [
       "component",
       "repository",
-      "dockerfile",
-      "buildContext",
+      "imageTargetRef",
+      "sourceRoot",
       "namespace",
       "workload",
       "container",

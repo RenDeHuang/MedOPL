@@ -32,7 +32,7 @@
 | 5 | OpenCost and Langfuse Primary Narrative Retirement | `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement` | Zone 2/3 | rewrite/delete | sanitized trace metadata boundary remains active; old OpenCost/Langfuse compose/deploy/infra assets are delete targets. |
 | 6 | Env Template Default Entry | `cleanup/v22-env-template-default-entry` | Zone 2 | rewrite | completed on cleanup/v22-env-template-default-entry; B must acknowledge workflow gate path-level secret_like_path_changed. |
 | 7 | Portal Code Map and Layering | `refactor/v22-portal-code-map-and-layering` | Zone 1/2 | rewrite | 只在旧语义收口后做 app/state/routes/integrations 分层重构。 |
-| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | 定义 zero-compat gate；Runtime Bridge 旧字段已清退，billing adapter 已删除，local Dockerfile、live/canary/authorized runner 必须继续按 slice 清退。 |
+| 8 | Zero-Compat Active Surface Gate | `cleanup/v22-strict-monolith-zero-compat-active-surface` | Zone 1/2/4 | gate/rewrite/delete | 定义 zero-compat gate；Runtime Bridge 旧字段已清退，billing adapter 和 local Dockerfile 已删除，live/canary/authorized runner 必须继续按 slice 清退。 |
 
 ## Slice 1: Default Entry Legacy Narrative
 
@@ -159,7 +159,7 @@
 
 - Runtime Bridge active code 中的旧 resource-order 与 user-owned runtime 标识已清退；后续不得恢复为 alias、fixture、trace metadata 或 runtime mode。
 - `adapters/billing-aggregator/**` 已删除；账单 summary/status/server plans 由 Portal monolith ledger projection 提供，不再通过旧 adapter 外呼。
-- `deploy/local/dockerfiles/**` 仍以 deploy asset 形态留在仓库；当前 strict monolith local verification 不需要 build/deploy。
+- `deploy/local/dockerfiles/**` 已在 Slice L 删除；当前 strict monolith local verification 不需要 build/deploy，Package D 本地 gate 只保留 `imageTargetRef` + active service `sourceRoot` 元数据，未来真实 deploy 需要单独授权和新的 v22 build recipe boundary。
 - MVP suite 和 docs 仍引用 live/canary/authorized runner 作为当前验证或可执行上下文。
 
 ## Gate Pattern

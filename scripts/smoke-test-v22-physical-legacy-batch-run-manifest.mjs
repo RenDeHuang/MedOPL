@@ -96,6 +96,19 @@ if (manifest.residual_cleanup_status === "f_g_h_completed") {
     "slice-h-readonly-inventory-fixture-attribution",
   ], "manifest_residual_completed_slices");
 }
+if (manifest.zero_compat_active_surface_status === "in_progress") {
+  assertArrayIncludesAll(completedSlices, [
+    "slice-i-readonly-inventory-local-attribution",
+    "slice-j-zero-compat-active-surface-gate",
+    "slice-k-delete-residual-adapter-compatibility-surface",
+    "slice-l-delete-residual-deploy-compatibility-assets",
+  ], "manifest_zero_compat_completed_slices");
+  assertArrayIncludesAll(remainingSlices, [
+    "slice-m-delete-residual-live-canary-runner-surfaces",
+    "slice-n-remove-residual-compatibility-narrative",
+    "slice-o-record-zero-compat-active-surface-completion",
+  ], "manifest_zero_compat_remaining_slices");
+}
 for (const sliceId of completedSlices) {
   assert(expectedSlices.includes(sliceId), `manifest_completed_slice_unknown:${sliceId}`);
 }

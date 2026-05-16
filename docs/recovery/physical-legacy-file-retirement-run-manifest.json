@@ -9,7 +9,7 @@
   "current_status": "strict_monolith_retirement_completed",
   "residual_cleanup_status": "f_g_h_completed",
   "zero_compat_active_surface_status": "in_progress",
-  "current_slice": "slice-k-delete-residual-adapter-compatibility-surface",
+  "current_slice": "slice-l-delete-residual-deploy-compatibility-assets",
   "completed_slices": [
     "slice-a-strict-monolith-policy",
     "slice-b-user-owned-resource-order-compat-delete",
@@ -21,10 +21,10 @@
     "slice-h-readonly-inventory-fixture-attribution",
     "slice-i-readonly-inventory-local-attribution",
     "slice-j-zero-compat-active-surface-gate",
-    "slice-k-delete-residual-adapter-compatibility-surface"
+    "slice-k-delete-residual-adapter-compatibility-surface",
+    "slice-l-delete-residual-deploy-compatibility-assets"
   ],
   "next_slices": [
-    "slice-l-delete-residual-deploy-compatibility-assets",
     "slice-m-delete-residual-live-canary-runner-surfaces",
     "slice-n-remove-residual-compatibility-narrative",
     "slice-o-record-zero-compat-active-surface-completion"
@@ -224,7 +224,7 @@
         "scripts/lib/v19-live-tke-context.mjs",
         "scripts/lib/v20.33-evidence.mjs"
       ],
-      "retain_paths": [
+      "historical_retain_paths_superseded_by_zero_compat": [
         "deploy/local/dockerfiles/portal.Dockerfile",
         "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
         "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
@@ -394,7 +394,7 @@
     },
     {
       "id": "slice-l-delete-residual-deploy-compatibility-assets",
-      "status": "pending",
+      "status": "completed",
       "decision_scope": "delete_residual_deploy_compatibility_assets_and_keep_future_deploy_contract_only",
       "target_paths": [
         "deploy/local/dockerfiles/**",
@@ -409,6 +409,7 @@
         "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
         "node scripts/smoke-test-v22-workflow-gate.mjs"
       ],
+      "notes": "Slice L deletes deploy/local/dockerfiles/** and changes Package D local contract gates from repo Dockerfile existence to imageTargetRef plus active service sourceRoot metadata. Future deploy remains contract-only until separate authorization and a new v22 build recipe boundary. Full zero-compat gate remains red until Slice M/N retire live/canary runner and narrative surfaces.",
       "commit": "cleanup: delete residual deploy compatibility assets"
     },
     {

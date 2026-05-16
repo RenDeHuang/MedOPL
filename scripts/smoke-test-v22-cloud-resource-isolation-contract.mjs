@@ -114,6 +114,10 @@ assertIncludesAll(sources.workflow, [
 assertNotIncludesAny(sources.workflow, [
   "逐 target 绑定 repository、dockerfile、buildContext、namespace、workload、container、ownerRef、workspaceId、resourceBindingId、operationId 和 expectedVersionMarker",
 ], "workflow_old_global_workspace_binding");
+assertIncludesAll(sources.workflow, [
+  "逐 target 绑定 repository、imageTargetRef、sourceRoot、namespace、workload、container、targetClass、ownerRef、operationId 和 expectedVersionMarker",
+  "zero-compat active repo 不保留默认 Dockerfile / deploy asset",
+], "workflow_package_d_zero_compat_image_target_metadata");
 
 const deployData = extractJsonBlock(sources.deploy, "v22-authorized-tencent-deploy-execution-contract");
 assert.deepEqual(

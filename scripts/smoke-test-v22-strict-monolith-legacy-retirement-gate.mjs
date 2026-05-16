@@ -287,17 +287,12 @@ async function assertRetiredAssetsDeleted() {
     "compose.langfuse.yaml",
     "deploy/local/dockerfiles/med-autoscience-runner.Dockerfile",
     "deploy/local/dockerfiles/resource-provisioner.Dockerfile",
-    "deploy/tke-package",
-  ]) {
-    await assertMissing(repoPath, "retired_adapter_deploy_infra_asset");
-  }
-
-  for (const activeDeployPath of [
     "deploy/local/dockerfiles/portal.Dockerfile",
     "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
     "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
+    "deploy/tke-package",
   ]) {
-    await assertPresent(activeDeployPath, "active_v22_package_d_deploy_surface");
+    await assertMissing(repoPath, "retired_adapter_deploy_infra_asset");
   }
 }
 

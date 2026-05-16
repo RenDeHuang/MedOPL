@@ -150,8 +150,8 @@ try {
         component: "portal",
         targetClass: "platform_service_target",
         repository: "portal-proof",
-        dockerfile: "deploy/local/dockerfiles/portal.Dockerfile",
-        buildContext: "services/portal",
+        imageTargetRef: "portal-service-image",
+        sourceRoot: "services/portal",
         namespace: "namespace-proof",
         workload: "portal-deployment-proof",
         container: "portal-container-proof",
@@ -170,8 +170,8 @@ try {
         component: "opl-web-gateway",
         targetClass: "platform_service_target",
         repository: "opl-web-gateway-proof",
-        dockerfile: "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
-        buildContext: "services/opl-web-gateway",
+        imageTargetRef: "opl-web-gateway-service-image",
+        sourceRoot: "services/opl-web-gateway",
         namespace: "namespace-proof",
         workload: "opl-web-gateway-deployment-proof",
         container: "opl-web-gateway-container-proof",
@@ -183,8 +183,8 @@ try {
         component: "opl-runtime-bridge",
         targetClass: "platform_service_target",
         repository: "opl-runtime-bridge-proof",
-        dockerfile: "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
-        buildContext: "services/opl-runtime-bridge",
+        imageTargetRef: "opl-runtime-bridge-service-image",
+        sourceRoot: "services/opl-runtime-bridge",
         namespace: "namespace-proof",
         workload: "opl-runtime-bridge-deployment-proof",
         container: "opl-runtime-bridge-container-proof",
@@ -224,12 +224,12 @@ try {
   assert.equal(checkConfigOut.reportPath, null, "check_config_must_not_write_report");
   assertSummaryShape(checkConfigOut.summary, "check_config");
 
-  const repoRootContextPlanFile = path.join(tmpDir, "repo-root-context-release-plan.json");
-  const repoRootContextPlan = JSON.parse(JSON.stringify(releasePlan));
-  for (const target of repoRootContextPlan.targets) target.buildContext = ".";
-  await writeFile(repoRootContextPlanFile, `${JSON.stringify(repoRootContextPlan, null, 2)}\n`, "utf8");
-  const repoRootContext = runRunner(["--check-config", ...baseArgs(goodSecretFile), "--release-plan", repoRootContextPlanFile]);
-  assert.equal(parseStdout(repoRootContext.stdout).summary.ok, true, "repo_root_build_context_must_be_allowed_for_multi_service_dockerfiles");
+  const sourceRootPlanFile = path.join(tmpDir, "source-root-release-plan.json");
+  const sourceRootPlan = JSON.parse(JSON.stringify(releasePlan));
+  for (const target of sourceRootPlan.targets) target.sourceRoot = ".";
+  await writeFile(sourceRootPlanFile, `${JSON.stringify(sourceRootPlan, null, 2)}\n`, "utf8");
+  const sourceRootMismatch = runRunner(["--check-config", ...baseArgs(goodSecretFile), "--release-plan", sourceRootPlanFile], 1);
+  assert.equal(parseStdout(sourceRootMismatch.stdout).summary.blockedReason, "deploy_release_plan_invalid", "service_source_root_must_match_component");
 
   const disabled = runRunner(["--check-config", ...baseArgs(disabledSecretFile), "--release-plan", releasePlanFile], 1);
   assert.equal(parseStdout(disabled.stdout).summary.blockedReason, "deploy_run_gate_disabled", "disabled_reason");

@@ -79,7 +79,7 @@ zero-compat active surface cleanup 进一步收紧：`adapters/*`、`deploy/*`�
 | `services/opl-runtime-bridge/**` legacy term hits | Zone 2 | review/rewrite | Runtime Bridge 可携带兼容字段，但不得伪成功或扩散旧主叙事 | Runtime Bridge contracts | runtime-bridge |
 | `services/opl-runtime-bridge/**` `resourceOrderId` / `resource_order_id` / `user_owned` / `USER_OWNED_*` hits | Zone 2 | deleted | zero-compat 下 Runtime Bridge active code 不得接受、映射、持久化或发布 retired resource-order / user-owned alias；本 cleanup branch 已清退这些 active code hits | `resourceBindingId` / `platform_provisioned` / v22 run stage and error code | zero-compat-runtime-bridge |
 | `adapters/billing-aggregator/**` | Zone 4 | deleted | residual adapter 形态不能作为 strict monolith active repo 默认上下文；Slice K 已删除并把账单投影收回 Portal monolith ledger | Portal billing ledger projection | zero-compat-adapters |
-| `deploy/local/dockerfiles/**` | Zone 2 | delete | strict monolith local verification 不需要 build/deploy；future deploy 只保留合同边界并需重新授权 | future authorized v22 deploy boundary | zero-compat-deploy |
+| `deploy/local/dockerfiles/**` | Zone 3 | deleted | strict monolith local verification 不需要 build/deploy；future deploy 只保留合同边界并需重新授权 | future authorized v22 deploy boundary | zero-compat-deploy |
 | `scripts/smoke-test-v22-*live*`, `*canary*`, `*authorized-deploy*`, `*authorized-resource-lifecycle*` | Zone 2 | rewrite/delete | live/canary/authorized runner 不属于默认 active executable surface | contract-only boundary or non-live local v22 gate | zero-compat-live-runner |
 
 ## Zone 3: Retired Delete Surface

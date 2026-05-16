@@ -280,9 +280,17 @@ function isContractPath(filePath) {
 }
 
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
-  if (branchName !== "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return false;
   if (!String(status || "").startsWith("D")) return false;
   const normalized = normalizePath(filePath);
+  if (branchName === "cleanup/v22-strict-monolith-zero-compat-active-surface") {
+    return [
+      /^deploy\/local\/dockerfiles\/(?:portal|opl-web-gateway|opl-runtime-bridge)\.Dockerfile$/u,
+      /^adapters\/billing-aggregator(?:\/|$)/u,
+      /^services\/portal\/src\/integrations\/billing-client\.mjs$/u,
+      /^scripts\/(?:smoke-test-no-legacy-billing-paths|smoke-test-v11-cloud-status-ui-contract)\.mjs$/u,
+    ].some((pattern) => pattern.test(normalized));
+  }
+  if (branchName !== "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return false;
   return [
     /^adapters\/(?:resource-provisioner|med-autoscience-runner|cloud-provisioner|shared)(?:\/|$)/u,
     /^scripts\/(?:smoke-test-secret-hygiene-manifests|smoke-test-v20-tencent-secret-isolation-contract|smoke-test-v21-gflabtoken-login-contract)\.mjs$/u,

@@ -50,7 +50,7 @@ Package D release plan 必须给每个 target 显式声明 `targetClass`。
 - Portal API / Portal frontend delivery image。
 - OPL Web Gateway。
 - Portal OPL Adapter / shared Runtime Bridge。
-- Portal/Gateway/Adapter/trace 这组运行面中，trace surface 只能作为 smoke surface；除非有本仓库 image target、Dockerfile、workload 和 owner guard，不得默认作为 image target。
+- Portal/Gateway/Adapter/trace 这组运行面中，trace surface 只能作为 smoke surface；除非有本仓库 image target metadata、source root / build recipe boundary、workload 和 owner guard，不得默认作为 image target。
 
 必填 owner guard：
 
@@ -59,8 +59,8 @@ Package D release plan 必须给每个 target 显式声明 `targetClass`。
 - `operationId`
 - `component`
 - `repository`
-- `dockerfile`
-- `buildContext`
+- `imageTargetRef`
+- `sourceRoot`
 - `namespace`
 - `workload`
 - `container`
@@ -85,8 +85,8 @@ Package D release plan 必须给每个 target 显式声明 `targetClass`。
 - `resourceBindingId`
 - `component`
 - `repository`
-- `dockerfile`
-- `buildContext`
+- `imageTargetRef`
+- `sourceRoot`
 - `namespace`
 - `workload`
 - `container`
@@ -113,8 +113,8 @@ release plan 顶层：
   "component": "opl-web-gateway",
   "targetClass": "platform_service_target",
   "repository": "opl-web-gateway",
-  "dockerfile": "deploy/local/dockerfiles/opl-web-gateway.Dockerfile",
-  "buildContext": "services/opl-web-gateway",
+  "imageTargetRef": "opl-web-gateway-service-image",
+  "sourceRoot": "services/opl-web-gateway",
   "namespace": "platform-namespace",
   "workload": "opl-web-gateway",
   "container": "opl-web-gateway",
@@ -131,8 +131,8 @@ release plan 顶层：
   "component": "opl-runtime-agent",
   "targetClass": "workspace_runtime_target",
   "repository": "opl-runtime-agent",
-  "dockerfile": "deploy/local/dockerfiles/opl-runtime-bridge.Dockerfile",
-  "buildContext": "services/opl-runtime-bridge",
+  "imageTargetRef": "opl-runtime-bridge-service-image",
+  "sourceRoot": "services/opl-runtime-bridge",
   "namespace": "workspace-namespace",
   "workload": "workspace-runtime-agent",
   "container": "runtime-agent",

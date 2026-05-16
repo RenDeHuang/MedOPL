@@ -230,6 +230,20 @@ function validateRelativeExistingPath(value = "", label = "path") {
   return normalized;
 }
 
+function validateTargetSourceRoot(target = {}) {
+  const expectedSourceRoots = new Map([
+    ["portal", "services/portal"],
+    ["opl-web-gateway", "services/opl-web-gateway"],
+    ["opl-runtime-bridge", "services/opl-runtime-bridge"],
+  ]);
+  const component = text(target.component);
+  const sourceRoot = validateRelativeExistingPath(target.sourceRoot, "deploy_source_root");
+  if (expectedSourceRoots.has(component) && sourceRoot !== expectedSourceRoots.get(component)) {
+    throw new Error("deploy_source_root_component_mismatch");
+  }
+  return sourceRoot;
+}
+
 function buildImageRef(env = {}, target = {}, versionTag = "") {
   return [
     text(env.TENCENT_TCR_REGISTRY).replace(/\/+$/g, ""),
@@ -304,8 +318,8 @@ function validateReleasePlan(plan = {}) {
       "component",
       "targetClass",
       "repository",
-      "dockerfile",
-      "buildContext",
+      "imageTargetRef",
+      "sourceRoot",
       "namespace",
       "workload",
       "container",
@@ -343,8 +357,8 @@ function validateReleasePlan(plan = {}) {
         validateToken(target.workspaceId, "deploy_workspace_id");
         validateToken(target.resourceBindingId, "deploy_resource_binding_id");
       }
-      validateRelativeExistingPath(target.buildContext, "deploy_build_context");
-      validateRelativeExistingPath(target.dockerfile, "deploy_dockerfile");
+      validateToken(target.imageTargetRef, "deploy_image_target_ref");
+      validateTargetSourceRoot(target);
     } catch {
       return { ok: false, reason: "deploy_release_plan_invalid" };
     }
@@ -821,34 +835,19 @@ async function executeMode(options = {}, env = {}, plan = {}) {
     if (!text(options.acceptedPreflightId)) {
       return { status: 1, reportPath: null, summary: blockedSummary({ options, env, plan, blockedReason: "deploy_accepted_preflight_required" }) };
     }
-    if (providerMode === "real") dockerLogin(env);
+    if (providerMode === "real") {
+      return { status: 1, reportPath: null, summary: blockedSummary({ options, env, plan, blockedReason: "deploy_build_recipe_required" }) };
+    }
     for (const target of summary.targets) {
       const planTarget = plan.targets.find((item) => text(item.component) === target.component);
       const imageRef = buildImageRef(env, planTarget, plan.versionTag);
       let digest = "";
-      if (providerMode === "real") {
-        if (dockerRemoteTagExists(imageRef)) {
-          return { status: 1, reportPath: null, summary: blockedSummary({ options, env, plan, blockedReason: "deploy_image_tag_already_exists" }) };
-        }
-        try {
-          runCommand("docker", ["build", "-f", planTarget.dockerfile, "-t", imageRef, planTarget.buildContext], { timeoutMs: 900_000 });
-        } catch {
-          throw new Error("deploy_docker_build_failed");
-        }
-        try {
-          runCommand("docker", ["push", imageRef], { timeoutMs: 900_000 });
-        } catch {
-          throw new Error("deploy_docker_push_failed");
-        }
-        digest = dockerRemoteDigest(imageRef);
-      } else {
-        digest = fakeDigest(`${plan.runId}:${plan.versionTag}:${planTarget.component}:${planTarget.repository}:${planTarget.buildContext}:${planTarget.dockerfile}`);
-      }
+      digest = fakeDigest(`${plan.runId}:${plan.versionTag}:${planTarget.component}:${planTarget.repository}:${planTarget.sourceRoot}:${planTarget.imageTargetRef}`);
       target.imageDigest = digest;
       target.registry = {
         ...target.registry,
-        buildContext: planTarget.buildContext,
-        dockerfile: planTarget.dockerfile,
+        sourceRoot: planTarget.sourceRoot,
+        imageTargetRef: planTarget.imageTargetRef,
         pushed: true,
         digest,
         digestReadbackOk: Boolean(digest),
