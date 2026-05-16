@@ -307,7 +307,8 @@
       "branch": "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
       "branches": [
         "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
-        "cleanup/v22-strict-monolith-residual-test-anchor-retirement"
+        "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
+        "cleanup/v22-strict-monolith-zero-compat-active-surface"
       ],
       "description": "Verification bundle for the strict monolith cleanup branch. This does not change v22-goal-current.json or advance the current product leaf; it verifies the active cleanup branch truth and deletion-only authorized retired surfaces.",
       "reason": "The current product cursor remains leaf-portal-ui-design-quality-implementation, while this cleanup branch has an explicit B-review requirement to run a branch-appropriate verification bundle without weakening the UI authoring gate.",

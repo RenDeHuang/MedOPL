@@ -10,6 +10,7 @@ const reportPath = "docs/recovery/mvp-contract-acceptance.md";
 const strictMonolithCleanupBranches = new Set([
   "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
+  "cleanup/v22-strict-monolith-zero-compat-active-surface",
 ]);
 
 const requiredReportPhrases = [

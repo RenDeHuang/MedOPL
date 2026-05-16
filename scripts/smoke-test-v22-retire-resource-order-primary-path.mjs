@@ -204,6 +204,11 @@ const allowedStrictMonolithResidualRetirementDiffPaths = new Set([
   "scripts/v22-verify.mjs",
 ]);
 
+const allowedZeroCompatActiveSurfaceDiffPaths = new Set([
+  ...allowedStrictMonolithResidualRetirementDiffPaths,
+  "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
+]);
+
 const repoZoningPath = "docs/recovery/repo-zoning.md";
 const legacyBacklogPath = "docs/recovery/legacy-cleanup-backlog.md";
 const goalStatePath = "docs/recovery/v22-goal-state.md";
@@ -559,6 +564,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
     ["cleanup/v22-resource-order-store-postgres-schema-implementation", allowedStorePostgresSchemaImplementationDiffPaths],
     ["cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", allowedStrictMonolithRetirementDiffPaths],
     ["cleanup/v22-strict-monolith-residual-test-anchor-retirement", allowedStrictMonolithResidualRetirementDiffPaths],
+    ["cleanup/v22-strict-monolith-zero-compat-active-surface", allowedZeroCompatActiveSurfaceDiffPaths],
     ["recovery/platform-v22-trunk", new Set([
       ...allowedStorePostgresSchemaImplementationDiffPaths,
       gatePath,

@@ -447,6 +447,15 @@ const branchScopedAllowedDiffPatterns = new Map([
     "scripts/v22-tencent-readonly-inventory-runner.mjs",
     "scripts/v22-verify.mjs",
   ]],
+  ["cleanup/v22-strict-monolith-zero-compat-active-surface", [
+    "docs/recovery/*",
+    "docs/contracts/README.md",
+    "docs/contracts/v22-*",
+    "scripts/smoke-test-v22-*",
+    "scripts/v22-verify.mjs",
+    "scripts/v22-workflow-gate.mjs",
+    "scripts/v22-tencent-readonly-inventory-runner.mjs",
+  ]],
 ]);
 
 function globToRegExp(pattern) {
