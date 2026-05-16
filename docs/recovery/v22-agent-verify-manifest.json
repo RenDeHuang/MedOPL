@@ -59,6 +59,7 @@
       "requires_step_local_auth_record": false,
       "contracts": [
         "AGENTS.md",
+        "DESIGN.md",
         "docs/contracts/README.md",
         "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
         "docs/recovery/v22-goal-current.json",
@@ -201,6 +202,7 @@
       ],
       "allowed_files": [
         "services/portal/frontend/**",
+        "DESIGN.md",
         "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
         "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
         "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
@@ -249,6 +251,7 @@
       "truth_writeback_target": [
         "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
         "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+        "DESIGN.md",
         "docs/contracts/README.md",
         "docs/recovery/v22-goal-current.json",
         "docs/recovery/v22-goal-state.md",

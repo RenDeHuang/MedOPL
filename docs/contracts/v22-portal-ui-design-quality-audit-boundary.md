@@ -59,6 +59,7 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 - `v22-saas-control-plane-user-experience-boundary.md` 定义用户体验主线问题。
 - `v22-portal-workbench-management-ui-composition-boundary.md` 定义 UI 分层、evalset、DOM anchor、fixture、截图回归和统一验证入口。
 - 本合同定义 design quality audit 的评价标准、报告形态和 baseline 更新边界。
+- `DESIGN.md` 是 Portal UI 重构的设计执行源，用于把合同和 evalset 转成产品气质、信息架构、组件、文案、视觉和 Figma 往返规则；它不替代本合同、UI composition 合同、evalset 或 smoke，也不授权修改后端、依赖、真实云、deploy、upstream 或 secret 边界。
 
 视觉回归只能证明“和 baseline 一致”，不能证明 baseline 本身足够好。截图 baseline 可以因有意 redesign 更新，但必须先有 `.runtime/portal-ui-design-quality/report.json` 审计证据说明哪些硬约束仍通过、哪些软评分改善，以及为什么这是有意改版而不是偶然漂移。
 
@@ -218,6 +219,7 @@ npm --prefix services/portal/frontend run test:visual
     "leafIntent": "portal_ui_design_quality_implementation",
     "allowedFiles": [
       "services/portal/frontend/**",
+      "DESIGN.md",
       "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
       "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
       "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
@@ -243,6 +245,7 @@ npm --prefix services/portal/frontend run test:visual
     "truthWritebackTarget": [
       "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
       "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+      "DESIGN.md",
       "docs/contracts/README.md",
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",

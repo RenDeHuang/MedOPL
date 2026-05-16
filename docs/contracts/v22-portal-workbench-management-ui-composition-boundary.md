@@ -29,6 +29,8 @@
 
 Portal UI 的工程框架以本仓库 Vue、Tailwind、composition API、Portal API module、composable、component 和 smoke harness 为准。
 
+`DESIGN.md` 是后续 Portal UI 重构的设计执行源，用于把本合同、role surface 合同、SaaS control-plane UX 合同和 evalset 转成产品气质、信息架构、组件系统、文案规则、视觉规则、Figma 往返流程和重构 slice。`DESIGN.md` 不替代本合同，不替代 `services/portal/frontend/src/harness/portal-ui-evalset.json`，不替代 smoke，也不授权修改 Portal 后端、Gateway、Runtime Bridge、deploy、`.sentrux`、adapters、upstream、secret、真实云、build/push/kubectl/live-test 或 package/dependency files。
+
 Sub2API 只作为工程化验证模式参考：顶层 route、账号密码登录、role-based surface、token/primitive、layout、common、业务组件、view 组装、store/composable 和 build/test/browser 校验。不得复制 Sub2API 代码、路由、鉴权、存储结构或产品名词。
 
 `nextlevelbuilder/ui-ux-pro-max-skill` 只作为设计 pattern 参考，用于信息层级、card/list/table 选择、配色字体气质和 anti-pattern 检查。它不引入外部框架，不替代本合同的 Portal 架构，不改变工作台/管理台主叙事。
