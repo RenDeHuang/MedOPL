@@ -190,6 +190,13 @@
       "status": "done"
     },
     {
+      "id": "opl_launch",
+      "path": "/opl-launch",
+      "owner": "services/portal/frontend/src/views/opl/OplLaunchView.vue",
+      "renderedBy": "spa",
+      "status": "done"
+    },
+    {
       "id": "billing",
       "path": "/billing",
       "owner": "services/portal/frontend/src/views/billing/BillingView.vue",
@@ -247,6 +254,12 @@
     }
   ],
   "layouts": [
+    {
+      "layoutId": "layout.app_shell",
+      "owner": "services/portal/frontend/src/layouts/AppLayout.vue",
+      "selector": "[data-layout-id=\"layout.app_shell\"]",
+      "status": "done"
+    },
     {
       "layoutId": "layout.dashboard_page",
       "owner": "services/portal/frontend/src/layouts/DashboardPageLayout.vue",
@@ -922,8 +935,78 @@
     },
     {
       "routeId": "overview",
+      "key": "overview.service_status_strip",
+      "text": "服务状态摘要"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.next_action_area",
+      "text": "下一步行动区"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.resource_capability_card",
+      "text": "资源能力卡"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.file_link_card",
+      "text": "文件链路卡"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.task_run_card",
+      "text": "任务运行卡"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.billing_risk_card",
+      "text": "账单风险卡"
+    },
+    {
+      "routeId": "overview",
+      "key": "overview.release_audit_card",
+      "text": "释放审计卡"
+    },
+    {
+      "routeId": "overview",
       "key": "overview.responsibility_boundary",
       "text": "Portal 负责托管服务状态，OPL runtime 负责科研执行"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.overview",
+      "text": "总览"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.runtime",
+      "text": "运行环境"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.workspace",
+      "text": "工作空间"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.tasks_results",
+      "text": "任务与结果"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.billing_audit",
+      "text": "账单与审计"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.enter_opl",
+      "text": "进入 OPL"
+    },
+    {
+      "routeId": "overview",
+      "key": "shell.nav.admin",
+      "text": "管理台"
     },
     {
       "routeId": "overview",
@@ -1166,8 +1249,19 @@
         "height": 920
       },
       "requiredSelectors": [
+        "[data-layout-id=\"layout.app_shell\"]",
+        "[data-component-id=\"app-shell.sidebar\"]",
+        "[data-component-id=\"app-shell.header\"]",
+        "[data-component-id=\"app-shell.main\"]",
         "[data-component-id=\"overview.hero\"]",
-        "[data-component-id=\"overview.financial_metrics\"]"
+        "[data-component-id=\"overview.financial_metrics\"]",
+        "[data-design-quality=\"service-status-strip\"]",
+        "[data-design-quality=\"next-action\"]",
+        "[data-design-quality=\"resource-capability-card\"]",
+        "[data-design-quality=\"file-link-card\"]",
+        "[data-design-quality=\"task-run-card\"]",
+        "[data-design-quality=\"billing-risk-card\"]",
+        "[data-design-quality=\"release-audit-card\"]"
       ]
     },
     {

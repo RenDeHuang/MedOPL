@@ -156,7 +156,7 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
   });
   const computeSummary = computed(() => {
     const plan = payload.value?.selectedServerPlan;
-    if (plan?.cpu || plan?.memoryGb) return `${Number(plan.cpu || 0)} 核 / ${Number(plan.memoryGb || 0)}GB`;
+    if (plan?.cpu || plan?.memoryGb) return `${Number(plan.cpu || 0)} 核，${Number(plan.memoryGb || 0)}GB`;
     const instance = recentBindings.value[0]?.computeInstance || recentBindings.value[0]?.computeInstances[0];
     if (instance?.serverPlanId) return planLabel(instance.serverPlanId) || instance.serverPlanId;
     return recentBindings.value.length > 0 ? "随当前套餐分配" : "待选择套餐";
@@ -173,7 +173,7 @@ export function useOverviewSurface(route: RouteLocationNormalizedLoaded) {
     if (!protection) return recentBindings.value.length > 0 ? "未释放" : "未开通";
     const stopBilling = auditStatusText(protection.reconcile120MinStatus);
     const audit = auditStatusText(protection.tPlus1AuditStatus);
-    return `停止计费 ${stopBilling} / T+1 ${audit}`;
+    return `停止计费 ${stopBilling}，T+1 ${audit}`;
   });
   const selectedPlanDisplayName = computed(() => payload.value?.selectedServerPlan?.name || "未选择套餐");
   const serviceSummary = computed(() => `${selectedPlanDisplayName.value} 托管科研工作台服务`);

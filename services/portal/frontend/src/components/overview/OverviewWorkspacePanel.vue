@@ -1,20 +1,34 @@
 <template>
   <section data-route-id="overview" data-component-id="overview.workspace" class="card p-5">
-    <div class="mb-3 flex items-center justify-between gap-3">
+    <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 class="panel-title">工作空间</h2>
+        <h2 class="panel-title">文件链路卡</h2>
         <p class="panel-subtitle">工作空间文件夹、输入文件、输出文件和输出结果都归属工作空间</p>
       </div>
       <RouterLink class="btn btn-secondary" to="/workspace">查看工作空间</RouterLink>
     </div>
-    <div data-design-quality="workspace-file-flow" class="mb-3 rounded-lg border border-gray-100 px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
+    <div data-design-quality="file-link-card" class="mb-3 rounded-lg border border-gray-200 px-4 py-3 text-sm text-gray-600 dark:border-slate-700 dark:text-slate-300">
       文件进入工作空间后由 OPL runtime 读取，结果回到工作空间；Portal 负责展示、下载、账单关联和释放后的保留状态。
+    </div>
+    <div data-design-quality="workspace-file-flow" class="mb-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+      <div class="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-950/60">
+        <div class="font-medium text-gray-950 dark:text-white">输入文件</div>
+        <div class="mt-1 text-gray-500 dark:text-slate-400">上传到工作空间</div>
+      </div>
+      <div class="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-950/60">
+        <div class="font-medium text-gray-950 dark:text-white">任务记录</div>
+        <div class="mt-1 text-gray-500 dark:text-slate-400">关联会话和费用</div>
+      </div>
+      <div class="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-950/60">
+        <div class="font-medium text-gray-950 dark:text-white">输出结果</div>
+        <div class="mt-1 text-gray-500 dark:text-slate-400">可查看和下载</div>
+      </div>
     </div>
     <div class="space-y-2.5">
       <div
         v-for="item in items.slice(0, 3)"
         :key="item.slug"
-        class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700"
+        class="rounded-lg border border-gray-200 px-4 py-3 dark:border-slate-700"
       >
         <div class="flex items-start justify-between gap-3">
           <div>

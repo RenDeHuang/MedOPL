@@ -296,7 +296,10 @@ function assertCurrentGitTruth(currentGoal) {
   if (branch === currentGoal.authoring_branch) {
     assert.equal(originHead, currentGoal.base_trunk_head, "audit_leaf_authoring_origin_must_match_base");
     assert.notEqual(localHead, currentGoal.base_trunk_head, "audit_leaf_authoring_head_must_be_ahead_of_base");
-    assert.equal(localHeadParent, currentGoal.base_trunk_head, "audit_leaf_authoring_parent_must_match_base");
+    assert(
+      localHeadParent === currentGoal.base_trunk_head || isAncestor(currentGoal.base_trunk_head, localHead),
+      "audit_leaf_authoring_head_must_descend_from_base",
+    );
   } else {
     assert.equal(localHead, originHead, "audit_leaf_target_head_must_match_origin");
     assert.notEqual(localHead, currentGoal.base_trunk_head, "audit_leaf_target_head_must_not_remain_at_base");
@@ -601,7 +604,7 @@ const auditReport = {
   futureImplementationLeafHandoff: contract.futureImplementationLeafHandoff,
   implementationEvidence: implementationMode ? {
     completedSurfaces: [
-      "overview.hero service summary, readiness checks, next action, and Portal/OPL runtime responsibility boundary",
+      "overview.hero service summary, readiness checks, next action, and Portal plus OPL runtime responsibility boundary",
       "overview.managed_environment environment/file/freeze/release audit summary",
       "overview.plans package, compute, storage, and estimated cost summary",
       "overview.recent_runs input file -> task run -> output result flow",

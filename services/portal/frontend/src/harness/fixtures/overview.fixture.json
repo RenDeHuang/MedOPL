@@ -35,9 +35,9 @@
       "statusSummary": {
         "environment": "可用",
         "plan": "基础套餐",
-        "compute": "2 核 / 4GB",
+        "compute": "2 核，4GB",
         "storage": "10 GB 文件空间",
-        "release": "停止计费待确认 / T+1 可审计"
+        "release": "停止计费待确认，T+1 可审计"
       },
       "nextAction": {
         "label": "进入 OPL 工作台",

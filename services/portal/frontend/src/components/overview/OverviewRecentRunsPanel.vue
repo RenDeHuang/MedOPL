@@ -1,23 +1,23 @@
 <template>
   <section data-route-id="overview" data-component-id="overview.recent_runs" class="card p-5">
-    <div class="mb-3 flex items-center justify-between gap-3">
+    <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 class="panel-title">任务执行</h2>
+        <h2 class="panel-title">任务运行卡</h2>
         <p class="panel-subtitle">最近任务和会话状态，输出文件回到工作空间</p>
       </div>
       <span class="badge badge-primary">{{ total }} 条</span>
     </div>
 
-    <div data-design-quality="task-result-flow" class="mb-3 grid grid-cols-3 gap-2 text-xs">
-      <div class="rounded-lg border border-gray-100 px-3 py-2 dark:border-slate-700">
+    <div data-design-quality="task-result-flow" class="mb-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+      <div class="rounded-lg border border-gray-200 px-3 py-2 dark:border-slate-700">
         <div class="font-medium text-gray-950 dark:text-white">输入文件</div>
         <div class="mt-1 text-gray-500 dark:text-slate-400">先进工作空间</div>
       </div>
-      <div class="rounded-lg border border-gray-100 px-3 py-2 dark:border-slate-700">
+      <div data-design-quality="task-run-card" class="rounded-lg border border-gray-200 px-3 py-2 dark:border-slate-700">
         <div class="font-medium text-gray-950 dark:text-white">任务运行</div>
         <div class="mt-1 text-gray-500 dark:text-slate-400">在 OPL runtime 执行</div>
       </div>
-      <div class="rounded-lg border border-gray-100 px-3 py-2 dark:border-slate-700">
+      <div class="rounded-lg border border-gray-200 px-3 py-2 dark:border-slate-700">
         <div class="font-medium text-gray-950 dark:text-white">输出结果</div>
         <div class="mt-1 text-gray-500 dark:text-slate-400">回到工作空间</div>
       </div>
@@ -27,7 +27,7 @@
       <div
         v-for="(item, index) in items"
         :key="item.displayTime || `latest-run-${index}`"
-        class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700"
+        class="rounded-lg border border-gray-200 px-4 py-3 dark:border-slate-700"
       >
         <div class="flex items-start justify-between gap-3">
           <div>

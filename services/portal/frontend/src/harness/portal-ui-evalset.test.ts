@@ -186,6 +186,73 @@ describe("portal ui evalset", () => {
     }
   });
 
+  it("keeps the app shell as an executable product navigation surface", () => {
+    const layoutIds = new Set(evalset.layouts.map((layout) => layout.layoutId));
+    expect(layoutIds.has("layout.app_shell")).toBe(true);
+
+    const appLayout = source("services/portal/frontend/src/layouts/AppLayout.vue");
+    const appHeader = source("services/portal/frontend/src/layouts/AppHeader.vue");
+    const appSidebar = source("services/portal/frontend/src/layouts/AppSidebar.vue");
+    expect(appLayout).toContain('data-layout-id="layout.app_shell"');
+    expect(appHeader).toContain('data-component-id="app-shell.header"');
+    expect(appSidebar).toContain('data-component-id="app-shell.sidebar"');
+    expect(appLayout).toContain('data-component-id="app-shell.main"');
+
+    for (const label of ["总览", "运行环境", "工作空间", "任务与结果", "账单与审计", "进入 OPL", "管理台"]) {
+      expect(appSidebar).toContain(label);
+    }
+    for (const staleLabel of ["计算资源", "任务执行", "文件空间"]) {
+      expect(appSidebar).not.toContain(`label: "${staleLabel}"`);
+    }
+
+    const overviewRoute = evalset.visualRoutes.find((route) => route.routeId === "overview");
+    expect(overviewRoute?.requiredSelectors).toEqual(expect.arrayContaining([
+      '[data-layout-id="layout.app_shell"]',
+      '[data-component-id="app-shell.sidebar"]',
+      '[data-component-id="app-shell.header"]',
+      '[data-component-id="app-shell.main"]',
+    ]));
+  });
+
+  it("requires overview to expose the seven first-screen workbench expressions", () => {
+    const overviewHero = source("services/portal/frontend/src/components/overview/OverviewHero.vue");
+    const overviewManagedEnvironment = source("services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue");
+    const overviewRecentRuns = source("services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue");
+    const overviewPlans = source("services/portal/frontend/src/components/overview/OverviewPlansPanel.vue");
+    const overviewWorkspace = source("services/portal/frontend/src/components/overview/OverviewWorkspacePanel.vue");
+
+    for (const [label, quality] of [
+      ["服务状态摘要", "service-status-strip"],
+      ["下一步行动区", "next-action"],
+      ["资源能力卡", "resource-capability-card"],
+      ["文件链路卡", "file-link-card"],
+      ["任务运行卡", "task-run-card"],
+      ["账单风险卡", "billing-risk-card"],
+      ["释放审计卡", "release-audit-card"],
+    ]) {
+      const allOverviewSources = [
+        overviewHero,
+        overviewManagedEnvironment,
+        overviewRecentRuns,
+        overviewPlans,
+        overviewWorkspace,
+      ].join("\n");
+      expect(allOverviewSources).toContain(label);
+      expect(allOverviewSources).toContain(`data-design-quality="${quality}"`);
+    }
+
+    const overviewRoute = evalset.visualRoutes.find((route) => route.routeId === "overview");
+    expect(overviewRoute?.requiredSelectors).toEqual(expect.arrayContaining([
+      '[data-design-quality="service-status-strip"]',
+      '[data-design-quality="next-action"]',
+      '[data-design-quality="resource-capability-card"]',
+      '[data-design-quality="file-link-card"]',
+      '[data-design-quality="task-run-card"]',
+      '[data-design-quality="billing-risk-card"]',
+      '[data-design-quality="release-audit-card"]',
+    ]));
+  });
+
   it("defines component fixtures for every done surface and stores concrete state examples", () => {
     const fixtureIds = new Set(evalset.componentFixtures.map((fixture) => fixture.componentId));
     const statesByComponent = new Map(evalset.surfaceStates.map((state) => [state.componentId, state.states]));

@@ -1,18 +1,18 @@
 <template>
-  <header class="glass sticky top-0 z-30 border-b border-gray-200/70 dark:border-slate-700/70">
-    <div class="flex min-h-[60px] items-center justify-between gap-3 px-4 md:px-5">
+  <header data-component-id="app-shell.header" class="sticky top-0 z-30 border-b border-gray-200 bg-white/95 dark:border-slate-800 dark:bg-slate-950/95">
+    <div class="mx-auto flex min-h-[58px] w-full max-w-[1500px] items-center justify-between gap-3 px-3 sm:px-4 lg:px-5">
       <div class="flex min-w-0 flex-1 items-center gap-3">
         <button type="button" class="btn btn-secondary shrink-0 lg:hidden" aria-label="打开导航" @click="emit('toggleMobileNav')">
-          菜单
+          <span aria-hidden="true">☰</span>
         </button>
         <div class="min-w-0">
-          <h1 class="truncate whitespace-nowrap text-base font-semibold tracking-tight text-gray-950 dark:text-white sm:text-lg">{{ title }}</h1>
-          <p v-if="subtitle" class="mt-0.5 max-w-[520px] truncate text-xs leading-5 text-gray-500 dark:text-slate-400">{{ subtitle }}</p>
+          <h1 class="truncate whitespace-nowrap text-base font-semibold text-gray-950 dark:text-white sm:text-lg">{{ title }}</h1>
+          <p v-if="subtitle" class="mt-0.5 max-w-[560px] truncate text-xs leading-5 text-gray-500 dark:text-slate-400">{{ subtitle }}</p>
         </div>
       </div>
 
       <div class="flex shrink-0 items-center gap-2">
-        <span class="badge badge-success hidden sm:inline-flex">MedOPL</span>
+        <span class="badge badge-success hidden sm:inline-flex">服务可用</span>
 
         <button type="button" class="btn btn-secondary hidden min-w-[72px] sm:inline-flex" @click="helpOpen = true">
           帮助
@@ -28,17 +28,17 @@
           </span>
         </button>
 
-        <button id="theme-toggle" type="button" class="btn btn-secondary hidden min-w-[92px] sm:inline-flex" @click="toggleTheme">
+        <button id="theme-toggle" type="button" class="btn btn-secondary hidden min-w-[72px] sm:inline-flex" @click="toggleTheme">
           {{ themeLabel }}
         </button>
 
         <div ref="userMenuRef" class="relative">
           <button
             type="button"
-            class="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-1.5 text-left shadow-sm transition hover:border-primary-200 dark:border-slate-700 dark:bg-slate-800"
+            class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-left transition hover:border-primary-200 dark:border-slate-700 dark:bg-slate-900"
             @click="menuOpen = !menuOpen"
           >
-            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-[11px] font-semibold text-white">
+            <span class="flex h-8 w-8 items-center justify-center rounded-md bg-primary-600 text-[11px] font-semibold text-white">
               {{ currentUser.initials }}
             </span>
             <span class="hidden min-w-0 sm:block">
@@ -49,9 +49,9 @@
 
           <div
             v-if="menuOpen"
-            class="absolute right-0 top-[calc(100%+10px)] w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+            class="absolute right-0 top-[calc(100%+10px)] w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-card dark:border-slate-700 dark:bg-slate-900"
           >
-            <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
+            <div class="rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-950/70">
               <div class="text-sm font-medium text-gray-950 dark:text-white">{{ currentUser.name }}</div>
               <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">{{ currentUser.email }}</div>
               <div class="mt-2 text-xs text-gray-400 dark:text-slate-500">
@@ -59,7 +59,7 @@
               </div>
             </div>
             <a
-              class="mt-3 flex min-h-[38px] items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-primary-200 hover:text-primary-700 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200 dark:hover:border-primary-500/40 dark:hover:text-primary-300"
+              class="mt-3 flex min-h-[38px] items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-primary-200 hover:text-primary-700 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200 dark:hover:border-primary-500/40 dark:hover:text-primary-300"
               href="/logout?force_login=1"
             >
               退出登录
@@ -87,7 +87,7 @@
       <div
         v-for="item in announcements"
         :key="item.id"
-        class="rounded-2xl border border-gray-100 px-4 py-4 dark:border-slate-700"
+        class="rounded-lg border border-gray-100 px-4 py-4 dark:border-slate-700"
       >
         <div class="flex items-start justify-between gap-3">
           <div>

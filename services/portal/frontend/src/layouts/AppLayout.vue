@@ -1,10 +1,9 @@
 <template>
-  <div class="min-h-screen bg-slate-50 dark:bg-slate-950">
-    <div class="pointer-events-none fixed inset-0 bg-mesh-gradient opacity-70"></div>
+  <div data-layout-id="layout.app_shell" class="min-h-screen bg-slate-50 text-gray-950 dark:bg-slate-950 dark:text-white">
     <AppSidebar :mobile-open="mobileNavOpen" @close-mobile="mobileNavOpen = false" />
-    <div class="relative min-h-screen lg:ml-60">
+    <div class="min-h-screen lg:ml-64">
       <AppHeader :title="title" :subtitle="subtitle" @toggle-mobile-nav="mobileNavOpen = !mobileNavOpen" />
-      <main class="p-4 md:p-4 lg:p-5 xl:p-5">
+      <main data-component-id="app-shell.main" class="mx-auto w-full max-w-[1500px] p-3 sm:p-4 lg:p-5">
         <slot />
       </main>
     </div>

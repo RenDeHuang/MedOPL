@@ -17,6 +17,13 @@ export interface PortalUiLayout {
 
 export const portalUiLayouts: PortalUiLayout[] = [
   {
+    layoutId: "layout.app_shell",
+    purpose: "承载 Portal 产品导航、普通用户和管理台视觉分区、页面标题和主内容区",
+    slots: ["sidebar", "header", "main"],
+    selector: '[data-layout-id="layout.app_shell"]',
+    invariants: ["普通用户导航必须先于管理入口", "主内容区必须有稳定锚点", "shell 不得使用云控制台主语言"],
+  },
+  {
     layoutId: "layout.dashboard_page",
     purpose: "承载页面结论、指标和主要分区，让总览类页面先回答当前状态",
     slots: ["hero", "metrics", "primary", "secondary"],

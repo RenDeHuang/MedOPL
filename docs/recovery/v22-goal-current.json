@@ -13,9 +13,9 @@
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "feat/v22-portal-design-system-source",
-  "current_branch_role": "authoring_source_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-portal-design-system-source",
+  "current_branch": "feat/v22-portal-ui-reference-mapped-shell",
+  "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
+  "authoring_branch": "feat/v22-portal-ui-reference-mapped-shell",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -24,7 +24,7 @@
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
     "observed_git_head": "18dbc0fe3f5e459b034e48ec2515a99572d57270",
-    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of that base. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
+    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base. This reference-mapped shell branch is stacked on the design source commit and still descends from base_trunk_head. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
   "last_absorbed_commit": "18dbc0fe3f5e459b034e48ec2515a99572d57270",
   "current_cursor": "leaf-portal-ui-design-quality-implementation",
@@ -34,7 +34,7 @@
   "current_blockers": [
     "none_for_portal_ui_design_quality_implementation_local_service_code"
   ],
-  "current_problem": "Current product-goal cursor remains leaf-portal-ui-design-quality-implementation. This authoring branch first records DESIGN.md as the Portal UI design execution source so later Portal frontend slices can turn the absorbed UI design quality audit handoff into a usable SaaS control-plane workbench while keeping content semantics, product responsibilities, role boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language fixed by v22 contracts.",
+  "current_problem": "Current product-goal cursor remains leaf-portal-ui-design-quality-implementation. This authoring branch uses DESIGN.md as the Portal UI design execution source and rebuilds the Portal app shell plus Overview first screen against reference-mapped SaaS dashboard patterns while keeping content semantics, product responsibilities, role boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language fixed by v22 contracts.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [

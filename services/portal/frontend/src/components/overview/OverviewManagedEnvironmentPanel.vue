@@ -1,23 +1,28 @@
 <template>
   <section data-route-id="overview" data-component-id="overview.managed_environment" class="card p-5">
-    <div class="mb-3 flex items-center justify-between gap-3">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 class="panel-title">托管运行环境</h2>
+        <h2 class="panel-title">资源能力卡</h2>
         <p class="panel-subtitle">平台负责托管运行环境、文件空间、冻结金额、审计和释放</p>
       </div>
-      <RouterLink class="btn btn-secondary" to="/resources">查看计算资源</RouterLink>
+      <RouterLink class="btn btn-secondary" to="/resources">查看运行环境</RouterLink>
     </div>
     <div data-design-quality="environment-summary" class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <MetricCard label="托管运行环境状态" :value="managedEnvironmentStatus" hint="托管运行环境是否可用" />
       <MetricCard label="文件空间状态" :value="fileSpaceStatus" hint="输入文件和输出文件空间" />
-      <MetricCard label="释放状态" :value="releaseStatus" hint="释放计算资源后停止计费和审计" />
+      <MetricCard label="释放状态" :value="releaseStatus" hint="释放运行能力后停止计费和审计" />
     </div>
-    <div class="mt-4 space-y-2.5">
+    <div data-design-quality="release-audit-card" class="mt-3 rounded-lg border border-gray-200 px-4 py-3 text-sm dark:border-slate-700">
+      <div class="text-xs text-gray-500 dark:text-slate-400">释放审计卡</div>
+      <div class="mt-1 font-semibold text-gray-950 dark:text-white">{{ releaseStatus }}</div>
+      <div class="mt-1 text-xs text-gray-500 dark:text-slate-400">停止计费看释放状态，文件继续保留在工作空间。</div>
+    </div>
+    <div class="mt-4 space-y-2.5" data-design-quality="resource-capability-card">
       <div v-if="loading" class="empty-state">正在加载资源绑定...</div>
       <div
         v-for="(item, index) in bindings"
         :key="item.id"
-        class="rounded-2xl border border-gray-100 px-4 py-3 dark:border-slate-700"
+        class="rounded-lg border border-gray-200 px-4 py-3 dark:border-slate-700"
       >
         <div class="flex items-start justify-between gap-3">
           <div>
@@ -28,7 +33,7 @@
           </div>
           <span class="badge" :class="statusBadge(item.status)">{{ humanizeStatus(item.status) }}</span>
         </div>
-        <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500 dark:text-slate-400">
+        <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-500 dark:text-slate-400 sm:grid-cols-2">
           <div>冻结金额 {{ money(item.protection?.frozenAmount) }}</div>
           <div>消费 {{ money(item.protection?.consumedAmount) }}</div>
           <div>审计状态 {{ auditStatusText(item.protection?.tPlus1AuditStatus) }}</div>

@@ -56,18 +56,14 @@ export default {
         xl: ["24px", { lineHeight: "32px" }],
       },
       borderRadius: {
-        xl: "14px",
-        "2xl": "18px",
-        "3xl": "24px",
+        xl: "8px",
+        "2xl": "8px",
+        "3xl": "8px",
       },
       boxShadow: {
-        glass: "0 8px 32px rgba(0, 0, 0, 0.08)",
-        glow: "0 0 20px rgba(20, 184, 166, 0.25)",
-        card: "0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)"
-      },
-      backgroundImage: {
-        "mesh-gradient":
-          "radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 50%)"
+        glass: "0 1px 2px rgba(15, 23, 42, 0.04)",
+        glow: "0 1px 2px rgba(15, 23, 42, 0.05)",
+        card: "0 1px 2px rgba(15, 23, 42, 0.05)"
       }
     }
   },
