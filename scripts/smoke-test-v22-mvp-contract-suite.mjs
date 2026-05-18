@@ -9,6 +9,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const reportPath = "docs/recovery/mvp-contract-acceptance.md";
 const verifyManifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const branchOverrideSuiteIds = new Set([
+  "portal-ui-contract-truth-convergence",
   "strict-monolith-cleanup",
   "contract-index-runtime-bridge-alignment",
   "system-domain-truth-layer-zero-old-context",
@@ -196,7 +197,7 @@ async function branchOverrideSuiteForCurrentBranch() {
   });
 }
 
-function runBranchOverrideVerify(expectedSuiteId) {
+async function runBranchOverrideVerify(expectedSuiteId) {
   const result = spawnSync(process.execPath, [
     "scripts/v22-verify.mjs",
     "current",
@@ -222,7 +223,8 @@ function runBranchOverrideVerify(expectedSuiteId) {
 
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true, "branch_override_verify_must_be_ok");
-  assert.equal(payload.leafId, "leaf-portal-figma-make-react-ui-implementation", "branch_override_verify_must_not_change_current_leaf");
+  const manifest = JSON.parse(await readFile(path.join(repoRoot, "docs/recovery/v22-goal-current.json"), "utf8"));
+  assert.equal(payload.leafId, manifest.current_cursor, "branch_override_verify_must_not_change_current_leaf");
   assert(branchOverrideSuiteIds.has(payload.branchOverride?.suiteId), `branch_override_verify_suite_unknown:${payload.branchOverride?.suiteId || "(missing)"}`);
   assert.equal(payload.branchOverride?.suiteId, expectedSuiteId, "branch_override_verify_suite_mismatch");
   assert.equal(
@@ -237,12 +239,12 @@ await assertReportAcceptanceBoundary();
 
 const branchOverrideSuite = await branchOverrideSuiteForCurrentBranch();
 if (branchOverrideSuite) {
-  const passed = runBranchOverrideVerify(branchOverrideSuite.id);
+  const passed = await runBranchOverrideVerify(branchOverrideSuite.id);
   console.log(JSON.stringify({
     ok: true,
     contract: "v22_mvp_contract_acceptance_suite",
     branchOverride: branchOverrideSuite.id,
-    currentLeaf: "leaf-portal-figma-make-react-ui-implementation",
+    currentLeaf: JSON.parse(await readFile(path.join(repoRoot, "docs/recovery/v22-goal-current.json"), "utf8")).current_cursor,
     passed,
   }, null, 2));
   process.exit(0);

@@ -69,7 +69,7 @@ surface smoke 必须检查：
 - `portalAdapters.ts` 调用现有 `/portal/api/*` adapter。
 - `/admin/ops` 对 `ops_surface_disabled` 有明确产品态映射。
 - 旧 Vue SPA、旧 harness、旧 screenshot baseline 和上一轮根级 React shell 物理不存在。
-- 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；旧 `/__portal-harness/components` visual workbench 与 Playwright screenshot baseline 已从本轮必过面降级为后续可选 leaf。
+- 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；旧 `/__portal-harness/components` visual workbench 不得作为 active Playwright webServer URL 或当前必过入口，Playwright 默认预览入口必须指向当前 React route；旧 screenshot baseline 已从本轮必过面降级为后续可选 leaf。
 
 ## 文案边界
 

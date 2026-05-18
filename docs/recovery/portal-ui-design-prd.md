@@ -844,8 +844,8 @@ trunk 污染：
 
 管理台页面：
 
-- 当前普通用户 Figma Make UI 不包含可吸收管理台页面。
-- Admin / Ops UI 后续必须使用同一 React 技术栈单独设计、单独合同 leaf、单独验收。
+- 当前 Figma Make ZIP 已覆盖普通用户和管理员 Portal UI。
+- Admin / Ops UI 位于同一 React 技术栈和同一 Portal shell 下，页面源位于 `services/portal/frontend/src/app/pages/admin/*`；普通用户导航不得显示 admin 入口，真实权限仍由后端 `/portal/api/admin/*` 校验。
 
 组件与状态：
 

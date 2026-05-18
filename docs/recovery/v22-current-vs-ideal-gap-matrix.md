@@ -298,6 +298,27 @@ truth writeback section:
 - Owner guard: 任何无法证明 ownerRef/resourceBindingId/workspaceId/operationId 的资源，不得删除，只能记录 blocker。
 - Failure truth writeback must record failed_step_id, failed_gate, attempt_count, failure_category, evidence_path, suspected_root_cause, whether_contract_wrong, whether_eval_wrong, whether_problem_should_split, whether_authorization_required, and next_recommended_action.
 
+### Gap: portal-ui-contract-truth-convergence
+
+- id: portal-ui-contract-truth-convergence
+- current_fact: The Figma Make user/admin React UI baseline has been absorbed, but some active truth surfaces still described old evalset, visual workbench, screenshot baseline, Vue harness or missing admin UI as current facts, and Playwright still started from `/__portal-harness/components`.
+- ideal_state: Figma Make ZIP plus `services/portal/frontend/src/app/**` and `src/app/data/portalAdapters.ts` are the current Portal UI implementation truth; old evalset, visual workbench, screenshot baseline and Vue harness are not active completion evidence; Playwright starts from a real React route; Figma UI visuals remain unchanged until a new Figma-approved design change exists.
+- problem: old UI truth residue can make agents rebuild or verify against the wrong Portal surface before Portal-OPL, admin, announcement and data-layer loops are locally closed.
+- dependency: Figma Make user/admin Portal UI implementation baseline is absorbed and cleanup_completion truth is historical.
+- depends_on: [cleanup-completion-truth]
+- blocked_by: []
+- executable_when: cleanup_completion is historical and the absorbed Figma Make user/admin Portal UI baseline exists; this leaf only updates subscribed UI contracts/recovery/smoke files, `DESIGN.md`, and `services/portal/frontend/playwright.config.ts`.
+- stage: S1 legacy cleanup
+- priority: 46
+- cursor_eligible: true
+- status: in_progress
+- next_leaf_step: leaf-portal-ui-contract-truth-convergence
+- eval: `node scripts/smoke-test-v22-portal-ui-truth-convergence.mjs`; `node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs`; `node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`
+- allowed_files: `DESIGN.md`, `services/portal/frontend/playwright.config.ts`, `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`, `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/README.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/mvp-contract-acceptance.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/status-matrix.md`, `docs/recovery/portal-figma-make-ui-convergence-plan.md`, `docs/recovery/portal-ui-design-generation-brief.md`, `docs/recovery/portal-ui-design-prd.md`, `scripts/smoke-test-v22-portal-ui-truth-convergence.mjs`, `scripts/smoke-test-v22-agent-verify-entrypoint.mjs`, `scripts/smoke-test-v22-cleanup-completion-truth.mjs`, `scripts/smoke-test-v22-goal-state-consistency.mjs`, `scripts/smoke-test-v22-mvp-contract-suite.mjs`, `scripts/smoke-test-v22-product-goal-execution-order.mjs`, `scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`, `scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs`
+- forbidden_files: Portal page visual changes; Portal backend services changes unless separately authorized; `deploy/*`; `adapters/*`; `.sentrux/*`; `.env.demo.template`; upstream / one-person-lab; secret-like paths; true cloud runners
+- truth_writeback_target: `DESIGN.md`, `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`, `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/README.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/mvp-contract-acceptance.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/status-matrix.md`, `docs/recovery/portal-ui-design-prd.md`, `services/portal/frontend/playwright.config.ts`
+- B_absorb_criteria: B reruns current verify, confirms old UI truth no longer appears as active completion evidence, confirms Playwright no longer uses `/__portal-harness/components`, confirms no Portal visual/page/backend/cloud/deploy/upstream/secret boundary is crossed, then ff-only absorbs before any product-system rebuild or business-loop leaf starts.
+
 ### Gap: frontend-product-react-vite-figma-make
 
 - id: frontend-product-react-vite-figma-make
@@ -305,14 +326,14 @@ truth writeback section:
 - ideal_state: user loop, admin, mobile/table usability, empty/loading/error states, API contracts, and design quality audit are eval-covered.
 - problem: visual or API changes can ship without responsive, component-state, route-anchor, typecheck and build verification unless design quality audit and Figma Make ZIP surface gate keep service clarity, next action clarity, workbench scanability, secret hygiene and mainline-question coverage executable.
 - dependency: current Portal UI contracts.
-- depends_on: [cloud-lane-mock-readonly-dry-run-authorized]
+- depends_on: [portal-ui-contract-truth-convergence, cloud-lane-mock-readonly-dry-run-authorized]
 - blocked_by: []
 - executable_when: Cloud lane readonly status audit and Portal UI design quality audit evidence are absorbed; this leaf remains local Portal frontend implementation only.
 - stage: S5 frontend/backend product completion
 - priority: 80
-- cursor_eligible: true
-- status: in_progress
-- next_leaf_step: leaf-portal-figma-make-react-ui-implementation
+- cursor_eligible: false
+- status: completed
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`; `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`; `npm --prefix services/portal/frontend run typecheck`; `npm --prefix services/portal/frontend run build`
 - allowed_files: `services/portal/frontend/**`, `DESIGN.md`, `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`, `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`, `docs/contracts/README.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/mvp-contract-acceptance.md`, `scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`, `scripts/smoke-test-v22-portal-runtime-suite.mjs`
 - forbidden_files: Portal backend services changes unless separately authorized; `deploy/*`; `adapters/*`; `.sentrux/*`; `.env.demo.template`; upstream / one-person-lab; secret-like paths; true cloud runners
@@ -327,9 +348,9 @@ truth writeback section:
 
 - leaf-portal-design-system-source: historical authoring branch recorded `DESIGN.md` as a design execution source before continuing implementation slices. The current implementation leaf may change Portal frontend React/CSS/TS and Portal frontend package/lockfile only inside its subscribed boundary; it still forbids Portal backend, Gateway, Runtime Bridge, deploy, `.sentrux`, adapters, upstream, non-Portal-frontend dependency changes, secret, true cloud, build/push/kubectl, and live-test.
 
-- current UI implementation leaf handoff: `leaf-portal-figma-make-react-ui-implementation` may edit `services/portal/frontend/**`, Portal frontend package/lockfile, subscribed docs, and subscribed smoke only. Verification is Figma Make contract smoke, design-quality smoke, surface runtime suite, route alignment, typecheck, build, and diff-check. Stop if it requires Portal backend services changes, non-Portal-frontend dependency changes, secret/live cloud, deploy/build/push/kubectl/live-test, upstream writes, or product-semantic changes.
+- current UI implementation leaf handoff: `leaf-portal-figma-make-react-ui-implementation` is absorbed as the current user/admin React/Figma Make baseline. It may be used as implementation truth, but it is no longer the active current cursor while `portal-ui-contract-truth-convergence` cleans old truth residue.
 
-- leaf-portal-figma-make-react-ui-implementation: current S5 implementation leaf. It implements the audit handoff in the real Portal frontend so the first screen answers what managed workbench service was purchased, whether the OPL workspace is usable, what environment/package/compute/storage/release state exists, how users enter OPL and move files/tasks/results, which responsibility belongs to Portal versus OPL runtime, and what the next action is. It may change only `services/portal/frontend/**` plus the subscribed contracts/recovery/smoke files above. It must not change Portal backend services, non-Portal-frontend dependency files, deploy/adapters/.sentrux/upstream, secret-like paths, live cloud, build/push/kubectl, deploy, or live-test.
+- leaf-portal-figma-make-react-ui-implementation: absorbed S5 implementation baseline. It implemented the audit handoff in the real Portal frontend so the first screen answers what managed workbench service was purchased, whether the OPL workspace is usable, what environment/package/compute/storage/release state exists, how users enter OPL and move files/tasks/results, which responsibility belongs to Portal versus OPL runtime, and what the next action is. Follow-up product-system rebuild must keep Figma UI visuals, layout, information architecture and main paths unchanged unless Figma is changed first.
 
 - leaf-portal-figma-make-react-ui-implementation truth writeback: current implementation replaces the Vue SPA with React user and admin Portal routes, excludes old Figma `AdminConsole.tsx`, connects existing `/portal/api/*` and `/portal/api/admin/*` adapters, records RoleContext as display-only navigation gating, and removes old visual workbench/screenshot baseline from current completion evidence. Remaining non-UI work stays out of scope: Portal backend services, backend-product Node 22 ESM layering, billing audit preauth ledger release T1, true cloud, release readiness, deploy/build/push/kubectl/live-test, secrets, and upstream OPL changes.
 
@@ -386,7 +407,7 @@ truth writeback section:
 - ideal_state: release readiness is evaluated only after contracts, local suite, secret scan, and authorized deploy plan pass.
 - problem: deploy readiness can be falsely inferred from local smoke or from operation-type authorization without a concrete release plan/evidence package.
 - dependency: product e2e, cloud lane, OPL connection, billing/audit.
-- depends_on: [legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace, cloud-lane-mock-readonly-dry-run-authorized, frontend-product-react-vite-figma-make, backend-product-node22-esm-layering, billing-audit-preauth-ledger-release-t1]
+- depends_on: [legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace, cloud-lane-mock-readonly-dry-run-authorized, portal-ui-contract-truth-convergence, frontend-product-react-vite-figma-make, backend-product-node22-esm-layering, billing-audit-preauth-ledger-release-t1]
 - blocked_by: [missing concrete Package D release plan, missing region, missing accepted preflight/build-push/dry-run evidence, missing rollback evidence, missing baseline/cleanup evidence]
 - executable_when: all release readiness dependency gate prerequisites are satisfied and a step-local release auth record includes concrete plan, scope, budget, baseline, rollback, cleanup, evidence path, and stop conditions.
 - stage: S6 release readiness

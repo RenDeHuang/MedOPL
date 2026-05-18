@@ -27,7 +27,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run build && npm run preview -- --host 127.0.0.1 --port 17180",
-    url: "http://127.0.0.1:17180/__portal-harness/components",
+    url: "http://127.0.0.1:17180/overview",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

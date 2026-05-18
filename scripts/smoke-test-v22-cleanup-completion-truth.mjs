@@ -81,7 +81,12 @@ assert.notEqual(current.current_cursor, cleanupCompletionStepId, "cleanup_comple
 assert.notEqual(current.next_leaf, cleanupCompletionStepId, "cleanup_completion_must_not_remain_next_leaf");
 assertIncludes(current.ordering?.selection_rule || "", "cleanup_completion remains a historical completed fact", "cleanup_completion_historical_selection_rule");
 assertIncludes(current.dependency_ordering_repair?.rule || "", "cleanup_completion truth is historical", "cleanup_completion_historical_dependency_rule");
-assert.equal(current.current_cursor, "leaf-portal-figma-make-react-ui-implementation", "cleanup_completion_current_cursor_must_remain_product_leaf");
+assert.notEqual(current.current_cursor, "leaf-cleanup-completion-truth-writeback", "cleanup_completion_current_cursor_must_not_be_cleanup_completion_leaf");
+assert(
+  current.current_cursor === "leaf-portal-figma-make-react-ui-implementation" ||
+    current.current_cursor === "leaf-portal-ui-contract-truth-convergence",
+  `cleanup_completion_current_cursor_must_remain_after_cleanup_leaf:${current.current_cursor}`,
+);
 
 const completionGap = gapById(current, cleanupCompletionGapId);
 assert.equal(completionGap.stage, "S1 legacy cleanup", "cleanup_completion_gap_stage_mismatch");

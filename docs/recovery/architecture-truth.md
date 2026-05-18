@@ -120,7 +120,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - Session / Run：`services/portal/src/domain/session-traces.mjs`、`services/portal/src/app/portal-session-trace-payloads.mjs`、`services/portal/src/services/opl-launch.service.mjs`、`services/opl-runtime-bridge/src/state-store-run-records.mjs`、`state-store-message-records.mjs`、`state-store-artifact-trace-records.mjs`。
 - Billing / Usage / Freeze：`services/portal/src/domain/wallet-ledger.mjs`、`lab-billing-policy.mjs`、`portal-page-billing-payloads.mjs`、`portal-runtime-observability.mjs` 的 Portal monolith 账本投影、`services/portal/frontend/src/api/portal/billing.ts`、`services/portal/frontend/src/app/pages/BillingAudit.tsx`。
 - Resource Plan / Tenant Binding：`docs/contracts/v22-resource-plan-boundary.md`、`docs/contracts/v22-tenant-resource-binding-boundary.md`、`services/portal/src/domain/server-plans.mjs`、`platform-provisioned-resources.mjs`、`user-resource-bindings.mjs`、`services/portal/frontend/src/api/portal/resources.ts`。
-- Admin / Ops：`services/portal/src/routes/admin-api.routes.mjs`、`admin-user.routes.mjs`、`admin-ops.routes.mjs`、`services/portal/src/app/portal-admin-*.mjs`。当前普通用户 Figma Make UI 不包含可吸收 Admin/Ops 前端；后续 Admin/Ops UI 必须走同 React 技术栈单独 leaf。
+- Admin / Ops：`services/portal/src/routes/admin-api.routes.mjs`、`admin-user.routes.mjs`、`admin-ops.routes.mjs`、`services/portal/src/app/portal-admin-*.mjs`。当前普通用户和管理员 Portal UI 已在同一个 React/Figma Make app 中存在，管理员页面位于 `services/portal/frontend/src/app/pages/admin/*.tsx`；管理员导航显示由 `/portal/api/me` 角色投影控制，真实权限仍由 `/portal/api/admin/*` 后端校验。
 - Scripts / Contracts：`docs/contracts/v22-*.md` 和与 billing freeze、platform-provisioned resource lifecycle、tenant/resource binding 直接相关的 smoke contract。
 
 ## 迁移和退场边界

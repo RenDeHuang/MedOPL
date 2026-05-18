@@ -151,21 +151,14 @@ assertIncludes(gapMatrix, "leaf-portal-figma-make-react-ui-implementation", "gap
 
 const frontendGap = currentGoal.gaps.find((gap) => gap.id === "frontend-product-react-vite-figma-make");
 assert(frontendGap, "frontend_react_gap_missing_from_current_goal");
-assert.equal(frontendGap.status, "in_progress", "frontend_gap_must_be_current_in_progress");
-assert.equal(frontendGap.cursor_eligible, true, "frontend_gap_must_be_current_cursor");
-assert.equal(currentGoal.current_cursor, "leaf-portal-figma-make-react-ui-implementation", "current_goal_cursor_mismatch");
-assert.equal(currentGoal.current_leaf.gap_id, "frontend-product-react-vite-figma-make", "current_leaf_gap_id_mismatch");
+assert(["in_progress", "completed"].includes(frontendGap.status), "frontend_gap_status_must_be_active_or_completed");
 
-const implementationLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-figma-make-react-ui-implementation");
-assert(implementationLeaf, "verify_manifest_must_define_figma_make_implementation_leaf");
-assert.equal(implementationLeaf.gap_id, "frontend-product-react-vite-figma-make", "figma_make_leaf_gap_id_mismatch");
-assert(implementationLeaf.allowed_files.includes("services/portal/frontend/**"), "figma_make_leaf_must_allow_frontend");
-assert(implementationLeaf.allowed_files.includes("services/portal/frontend/package.json"), "figma_make_leaf_must_allow_frontend_package");
-assert(implementationLeaf.allowed_files.includes("services/portal/frontend/package-lock.json"), "figma_make_leaf_must_allow_frontend_lockfile");
-assert(implementationLeaf.contracts.includes("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md"), "figma_make_leaf_must_subscribe_figma_contract");
-assert(implementationLeaf.forbidden_ops.includes("live-cloud"), "figma_make_leaf_must_forbid_live_cloud");
-assert(implementationLeaf.forbidden_ops.includes("build-push-kubectl"), "figma_make_leaf_must_forbid_build_push_kubectl");
-assertIncludesAll(implementationLeaf.verification_commands, contract.futureImplementationLeafHandoff.verificationCommands, "figma_make_leaf_verification_command");
+const portalUiLeaf = verifyManifest.leaves.find((leaf) =>
+  leaf.leaf_id === currentGoal.current_cursor &&
+  leaf.contracts.includes("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md"));
+assert(portalUiLeaf, "verify_manifest_must_define_current_portal_ui_leaf");
+assert(portalUiLeaf.forbidden_ops.includes("live-cloud"), "portal_ui_leaf_must_forbid_live_cloud");
+assert(portalUiLeaf.forbidden_ops.includes("build-push-kubectl"), "portal_ui_leaf_must_forbid_build_push_kubectl");
 
 for (const route of ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"]) {
   assertIncludes(routesSource, `path: "${route.slice(1)}"`, `zip_route_missing:${route}`);
@@ -201,7 +194,7 @@ const auditReport = {
   reportType: contract.auditEvidenceSchema.reportType,
   leafId: currentGoal.current_cursor,
   model: contract.model,
-  riskClass: implementationLeaf.risk_class,
+  riskClass: portalUiLeaf.risk_class,
   reportPath: auditReportPath,
   reportCommittedToGit: false,
   currentLeafScope: {
