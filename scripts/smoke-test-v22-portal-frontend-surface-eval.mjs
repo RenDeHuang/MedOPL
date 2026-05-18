@@ -276,6 +276,8 @@ assertIncludes(adapterSource, 'return `billing:${source}:${type}:${event}:${prim
 for (const sourceCollection of ['source: "pendingRuns"', 'source: "warningEvents"', 'source: "adjustments"']) {
   assertIncludes(billingLoaderSource, sourceCollection, `admin_billing_row_key_source_collection_missing:${sourceCollection}`);
 }
+assertIncludes(billingLoaderSource, "id: stringValue(row.id)", "admin_billing_action_id_must_use_backend_operational_id");
+assertExcludes(billingLoaderSource, "id: stringValue(row.runId || row.userId || row.createdAt", "admin_billing_action_id_must_not_use_frontend_fallback_id");
 assertIncludes(auditLoaderSource, "rowKey:", "admin_audit_rows_must_expose_ui_row_key");
 assertIncludes(auditLoaderSource, "auditRowKey(", "admin_audit_rows_must_use_stable_event_aware_row_key");
 assertIncludes(adapterSource, 'return `audit:items:${type}:${detail}:${primary}:${index}`;', "admin_audit_row_key_must_include_source_type_detail_primary_index");

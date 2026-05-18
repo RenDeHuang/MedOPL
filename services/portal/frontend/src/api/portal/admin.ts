@@ -207,23 +207,6 @@ export async function refundAdminUser(input: {
   });
 }
 
-export async function makeupChargeAdminUser(input: {
-  userId: string;
-  amount: number;
-  reason: string;
-  idempotencyKey?: string;
-  redirectTo?: string;
-}) {
-  await postPortalAdminAction("/portal/admin/ledger-adjust", {
-    userId: input.userId,
-    amount: input.amount,
-    reason: input.reason,
-    actionType: "makeup_charge",
-    idempotencyKey: input.idempotencyKey || "",
-    redirectTo: input.redirectTo || "/admin/billing-ops",
-  });
-}
-
 export async function markAdminBillingOp(input: {
   itemId: string;
   status: "approved" | "rejected" | "pending";

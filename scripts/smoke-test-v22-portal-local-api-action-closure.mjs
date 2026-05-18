@@ -5,7 +5,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const repoRoot = process.cwd();
@@ -146,6 +146,26 @@ function requireAuditEvent(events, predicate, label) {
   return found;
 }
 
+function requireBillingOpItem(collection, predicate, label) {
+  const found = (collection || []).find(predicate);
+  assert(found?.id, `${label}_must_have_stable_operational_id`);
+  assert.equal(typeof found.id, "string", `${label}_id_must_be_string`);
+  return found;
+}
+
+async function markBillingOp(baseUrl, adminCookie, item, status, anomaly, note, idempotencyKey) {
+  const response = await postForm(`${baseUrl}/portal/admin/billing-ops/mark`, {
+    itemId: item.id,
+    status,
+    anomaly: anomaly ? "1" : "0",
+    note,
+    reason: `${note} reason`,
+    idempotencyKey,
+    redirectTo: "/admin/billing-ops",
+  }, { cookie: adminCookie });
+  assert.equal(response.status, 302, `${idempotencyKey}_must_redirect`);
+}
+
 async function readAuditEvents(runtimeRoot) {
   const raw = await readFile(path.join(runtimeRoot, eventsFileName), "utf8");
   return raw
@@ -153,6 +173,32 @@ async function readAuditEvents(runtimeRoot) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => JSON.parse(line));
+}
+
+async function seedPendingUsage(runtimeRoot, userId) {
+  const dbPath = path.join(runtimeRoot, "portal-db.json");
+  const raw = await readFile(dbPath, "utf8");
+  const db = JSON.parse(raw);
+  db.ledger = Array.isArray(db.ledger) ? db.ledger : [];
+  db.ledger.push({
+    id: "ledger-pending-run-local",
+    tenantId: userId,
+    userId,
+    workspaceId: "default",
+    runId: "run-billing-pending-local",
+    resourceBindingId: "rb-billing-pending-local",
+    billingAttributionId: "billing-op-pending-local",
+    type: "pending_usage",
+    amount: 5,
+    currency: "CNY",
+    sourceType: "pending_metering",
+    sourceId: "run-billing-pending-local",
+    idempotencyKey: "billing-op-pending-source-row",
+    reason: "billing op pending source row",
+    operatorId: "portal-billing-ledger",
+    createdAt: new Date().toISOString(),
+  });
+  await writeFile(dbPath, JSON.stringify(db, null, 2), "utf8");
 }
 
 const port = await freePort();
@@ -393,11 +439,25 @@ try {
     assert.equal(systemPayload.json.publicSettings?.siteName, "MedOPL Portal Admin Closure", "admin_settings_must_persist_site_name");
     assert.equal(systemPayload.json.publicSettings?.siteSubtitle, "本地设置保存闭环", "admin_settings_must_persist_site_subtitle");
 
+    const reconcileBilling = await postForm(`${baseUrl}/portal/admin/reconcile-billing`, {
+      scopeType: "all",
+      window: "24h",
+      redirectTo: "/admin/billing-ops",
+    }, { cookie: adminCookie });
+    assert.equal(reconcileBilling.status, 302, "billing_reconcile_must_redirect");
+
     const billingOpsBefore = await getJson(`${baseUrl}/portal/api/admin/billing-ops`, { cookie: adminCookie });
     assert.equal(billingOpsBefore.response.status, 200, "admin_billing_ops_before_must_return_200");
     const billingOpsPayloadBefore = billingOpsBefore.json;
     const billingOpsUser = (billingOpsPayloadBefore.users || []).find((item) => item.id === targetUser.id);
     assert(billingOpsUser, "billing_ops_user_must_exist");
+    const billingOpWarning = requireBillingOpItem(
+      billingOpsPayloadBefore.warningEvents,
+      (item) => item.type === "billing_reconcile_triggered",
+      "billing_ops_warning_event",
+    );
+
+    await seedPendingUsage(runtimeRoot, targetUser.id);
 
     const billingOpIdempotencyKey = "billing-op-refund-once";
     const billingOpRefund = await postForm(`${baseUrl}/portal/admin/ledger-adjust`, {
@@ -411,13 +471,25 @@ try {
     }, { cookie: adminCookie });
     assert.equal(billingOpRefund.status, 302, "billing_op_refund_must_redirect");
     const billingOpsAfter = await getJson(`${baseUrl}/portal/api/admin/billing-ops`, { cookie: adminCookie });
-    const billingOpAdjustment = (billingOpsAfter.json.adjustments || []).find((item) => item.reason === "billing op local closure refund");
+    const billingOpPendingRun = requireBillingOpItem(
+      billingOpsAfter.json.pendingRuns,
+      (item) => item.reason === "billing op pending source row" || item.runId === "run-billing-pending-local",
+      "billing_ops_pending_run",
+    );
+    const billingOpAdjustment = requireBillingOpItem(
+      billingOpsAfter.json.adjustments,
+      (item) => item.reason === "billing op local closure refund",
+      "billing_ops_adjustment",
+    );
     assert(billingOpAdjustment?.id, "billing_op_refund_must_have_operational_id");
     assert.equal(
       Boolean(billingOpAdjustment),
       true,
       "billing_op_refund_must_be_visible_in_billing_ops",
     );
+
+    await markBillingOp(baseUrl, adminCookie, billingOpPendingRun, "approved", false, "本地 pending run 处理备注", "billing-op-mark-pending-once");
+    await markBillingOp(baseUrl, adminCookie, billingOpWarning, "rejected", true, "本地 warning event 处理备注", "billing-op-mark-warning-once");
 
     const billingOpMark = await postForm(`${baseUrl}/portal/admin/billing-ops/mark`, {
       itemId: billingOpAdjustment.id,
@@ -434,6 +506,14 @@ try {
     assert.equal(markedBillingOp?.status, "approved", "billing_op_mark_must_update_status");
     assert.equal(Boolean(markedBillingOp?.anomaly), true, "billing_op_mark_must_flag_anomaly");
     assert.equal(markedBillingOp?.note, "本地账单运营处理备注", "billing_op_mark_must_persist_note");
+    const markedPendingRun = (billingOpsAfterMark.json.pendingRuns || []).find((item) => item.id === billingOpPendingRun.id);
+    assert.equal(markedPendingRun?.status, "approved", "billing_op_pending_run_mark_must_update_status");
+    assert.equal(markedPendingRun?.note, "本地 pending run 处理备注", "billing_op_pending_run_mark_must_persist_note");
+    assert.equal(Boolean(markedPendingRun?.anomaly), false, "billing_op_pending_run_mark_must_persist_anomaly");
+    const markedWarningEvent = (billingOpsAfterMark.json.warningEvents || []).find((item) => item.id === billingOpWarning.id);
+    assert.equal(markedWarningEvent?.status, "rejected", "billing_op_warning_event_mark_must_update_status");
+    assert.equal(markedWarningEvent?.note, "本地 warning event 处理备注", "billing_op_warning_event_mark_must_persist_note");
+    assert.equal(Boolean(markedWarningEvent?.anomaly), true, "billing_op_warning_event_mark_must_persist_anomaly");
 
     const auditPayload = await getJson(`${baseUrl}/portal/api/admin/audit`, { cookie: adminCookie });
     assert.equal(auditPayload.response.status, 200, "admin_audit_payload_must_return_200");
@@ -483,6 +563,8 @@ try {
       "admin_system_settings_saved",
       "admin_billing_ops_adjustment",
       "admin_billing_ops_mark_status_note_anomaly",
+      "admin_billing_ops_pending_run_status_note_anomaly",
+      "admin_billing_ops_warning_event_status_note_anomaly",
       "audit_event_shape",
       "user_lab_package_activation",
       "logout_route",

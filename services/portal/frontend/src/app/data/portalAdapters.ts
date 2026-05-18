@@ -510,7 +510,7 @@ export async function loadAdminBillingOpsModel() {
     const row = objectValue(item);
     return {
       rowKey: billingRowKey(source, row, index),
-      id: stringValue(row.runId || row.userId || row.createdAt, String(index)),
+      id: stringValue(row.id),
       source,
       userId: stringValue(row.userId, ""),
       type: adminBillingType(row),

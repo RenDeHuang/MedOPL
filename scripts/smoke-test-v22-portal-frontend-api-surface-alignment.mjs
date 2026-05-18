@@ -37,14 +37,6 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Admin trace endpoint exists, but current React admin route set uses alerts/audit/system/ops instead of a dedicated agent trace page.",
   },
-  "admin.ts:createAdminUser": {
-    status: "active-missing-ui",
-    reason: "Admin user management has local backend action support, but the current React page has no create-user dialog wired to this client.",
-  },
-  "admin.ts:updateAdminUser": {
-    status: "active-missing-ui",
-    reason: "Admin user management shows user details and local actions, but edit profile/password is not exposed in the current React UI.",
-  },
   "admin.ts:fetchAdminGroups": {
     status: "future-reserved",
     reason: "Backend and shell remnants expose groups, but current React admin navigation does not include a groups page.",

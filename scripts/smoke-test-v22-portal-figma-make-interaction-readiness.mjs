@@ -238,6 +238,8 @@ for (const fieldName of ["siteName", "homeTitle", "registration"]) {
 assertIncludes(adminBillingSource, "markAdminBillingOp", "admin_billing_ops_must_wire_local_mark_action");
 assertIncludes(adminBillingSource, "runBillingOpAction", "admin_billing_ops_must_handle_status_action");
 assertIncludes(adminBillingSource, "处理状态、异常标记和备注会写入审计", "admin_billing_ops_must_show_local_action_boundary");
+assertIncludes(adapterSource, "id: stringValue(row.id)", "admin_billing_ops_action_id_must_use_backend_operational_id");
+assertExcludes(adapterSource, "id: stringValue(row.runId || row.userId || row.createdAt", "admin_billing_ops_action_id_must_not_use_frontend_fallback_id");
 
 for (const forbidden of [
   "<Button variant=\"outline\">\n                <Upload",

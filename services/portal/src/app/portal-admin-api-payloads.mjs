@@ -20,6 +20,10 @@ function groupNameById(db, groupId = "") {
   return group?.name || "";
 }
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
 function defaultUrls(urls = {}) {
   return {
     harborUrl: urls.harborUrl || "",
@@ -54,6 +58,27 @@ function activeResourceBindingsForUser(db, user = {}) {
 function moneyAmount(value = 0) {
   const parsed = Number(value || 0);
   return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : 0;
+}
+
+function billingOpIdFor(source = "", row = {}) {
+  const parts = [
+    source,
+    row.id || row.itemId || row.ledgerId,
+    row.runId || row.sourceId || row.eventId || row.auditEventId,
+    row.userId || row.customerId || row.tenantId,
+    row.workspaceId,
+    row.createdAt || row.occurredAt || row.completedAt,
+    row.type || row.category || row.severity || row.reason || row.title || row.detail,
+  ].map((part) => text(part).replace(/\s+/g, "-"));
+  return `billing-op:${parts.map((part) => part || "none").join(":")}`;
+}
+
+function billingOperationFor(source = "", row = {}, operationsById = new Map()) {
+  const id = billingOpIdFor(source, row);
+  return {
+    id,
+    operation: operationsById.get(id) || {},
+  };
 }
 
 function gbFromBytes(bytes = 0) {
@@ -574,11 +599,44 @@ export function createPortalAdminApiPayloads(deps) {
     const billingOpsById = new Map((Array.isArray(db.settings?.billingOps) ? db.settings.billingOps : [])
       .map((item) => [String(item.id || item.itemId || "").trim(), item])
       .filter(([id]) => id));
+    const pendingRuns = (payload.pendingRuns || []).map((item) => {
+      const targetUser = db.users.find((entry) => entry.id === (item.userId || item.customerId)) || {};
+      const { id, operation } = billingOperationFor("pendingRuns", item, billingOpsById);
+      return {
+        ...item,
+        id,
+        userId: item.userId || item.customerId || "",
+        userName: item.userName || targetUser.name || item.customerId || item.userId || "",
+        amount: Number(item.amount || item.totalCost || 0),
+        reason: item.reason || "platform_metering_projection",
+        status: operation.status || "pending",
+        anomaly: Boolean(operation.anomaly),
+        note: operation.note || "",
+        handledAt: operation.updatedAt || "",
+        handledBy: operation.operatorId || "",
+      };
+    });
+    const warningEvents = (payload.warningEvents || []).map((item) => {
+      const targetUser = db.users.find((entry) => entry.id === item.userId) || {};
+      const { id, operation } = billingOperationFor("warningEvents", item, billingOpsById);
+      const hasOperation = Boolean(text(operation.id || operation.itemId));
+      return {
+        ...item,
+        id,
+        userName: item.userName || targetUser.name || item.userId || "",
+        amount: Number(item.amount || item.totalCost || item.estimatedCost || 0),
+        status: operation.status || "pending",
+        anomaly: hasOperation ? Boolean(operation.anomaly) : Boolean(item.anomaly || item.severity),
+        note: operation.note || "",
+        handledAt: operation.updatedAt || "",
+        handledBy: operation.operatorId || "",
+      };
+    });
     return {
       billingSync: payload.billingSync,
       pending: payload.pending,
-      pendingRuns: payload.pendingRuns || [],
-      warningEvents: payload.warningEvents || [],
+      pendingRuns,
+      warningEvents,
       summaries: payload.summaries,
       productProfile: payload.productProfile || {},
       users: db.users.filter((item) => item.role !== "admin").map((item) => ({ id: item.id, name: item.name, email: item.email })),
@@ -589,10 +647,10 @@ export function createPortalAdminApiPayloads(deps) {
         .reverse()
         .map((item) => {
           const targetUser = db.users.find((entry) => entry.id === item.userId) || {};
-          const id = String(item.id || "");
-          const operation = billingOpsById.get(id) || {};
+          const { id, operation } = billingOperationFor("adjustments", item, billingOpsById);
           return {
             id,
+            ledgerId: item.id,
             type: item.type,
             userId: item.userId,
             userName: targetUser.name || item.userId,
