@@ -71,13 +71,14 @@ function buildPortalAdminFormPayload(fields: Record<string, PortalAdminActionVal
   return body;
 }
 
-function readPortalActionError(html: string, fallback: string) {
-  if (!html) return fallback;
-  if (typeof DOMParser === "undefined") return fallback;
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const cardText = doc.querySelector(".card")?.textContent?.trim();
-  const titleText = doc.querySelector("title")?.textContent?.trim();
-  return cardText || titleText || fallback;
+const PORTAL_ADMIN_ACTION_FAILED_MESSAGE = "Portal 管理动作未完成，请稍后重试；如持续失败，请联系管理员。";
+const PORTAL_ADMIN_AUTH_EXPIRED_MESSAGE = "登录状态已失效，请重新登录后再操作。";
+
+function portalAdminActionError(message: string, status?: number) {
+  const error = new Error(message) as Error & PortalActionErrorShape;
+  error.businessMessage = message;
+  if (status) (error as Error & PortalActionErrorShape & { status: number }).status = status;
+  return error;
 }
 
 async function postPortalAdminAction(path: string, fields: Record<string, PortalAdminActionValue>) {
@@ -90,15 +91,16 @@ async function postPortalAdminAction(path: string, fields: Record<string, Portal
     body: buildPortalAdminFormPayload(fields),
   });
 
+  const responseUrl = new URL(response.url || path, window.location.origin);
+  if (response.redirected && responseUrl.pathname === "/login") {
+    throw portalAdminActionError(PORTAL_ADMIN_AUTH_EXPIRED_MESSAGE, 401);
+  }
+
   if (response.ok) {
     return;
   }
 
-  const html = await response.text().catch(() => "");
-  const fallback = `请求失败（${response.status}）`;
-  const error = new Error(readPortalActionError(html, fallback)) as Error & PortalActionErrorShape;
-  error.message = readPortalActionError(html, fallback);
-  throw error;
+  throw portalAdminActionError(PORTAL_ADMIN_ACTION_FAILED_MESSAGE, response.status);
 }
 
 export async function createAdminUser(input: {
@@ -199,6 +201,47 @@ export async function deleteAdminUser(input: {
   await postPortalAdminAction("/portal/admin/delete-user", {
     userId: input.userId,
     redirectTo: input.redirectTo || "/admin/users",
+  });
+}
+
+export async function saveAdminAnnouncement(input: {
+  id?: string;
+  title: string;
+  content: string;
+  status: "active" | "inactive";
+  pinned: boolean;
+  redirectTo?: string;
+}) {
+  await postPortalAdminAction("/portal/admin/announcements/save", {
+    id: input.id || "",
+    title: input.title,
+    content: input.content,
+    scope: "all",
+    status: input.status,
+    pinned: input.pinned,
+    redirectTo: input.redirectTo || "/admin/alerts",
+  });
+}
+
+export async function toggleAdminAnnouncement(input: {
+  id: string;
+  actionType: "pin" | "activate" | "deactivate";
+  redirectTo?: string;
+}) {
+  await postPortalAdminAction("/portal/admin/announcements/toggle", {
+    id: input.id,
+    actionType: input.actionType,
+    redirectTo: input.redirectTo || "/admin/alerts",
+  });
+}
+
+export async function deleteAdminAnnouncement(input: {
+  id: string;
+  redirectTo?: string;
+}) {
+  await postPortalAdminAction("/portal/admin/announcements/delete", {
+    id: input.id,
+    redirectTo: input.redirectTo || "/admin/alerts",
   });
 }
 

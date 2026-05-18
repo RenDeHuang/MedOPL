@@ -134,7 +134,8 @@ for (const emptyActionPattern of [
 }
 
 assertIncludes(adapterSource, "adminReadOnlyMessage", "admin_adapter_must_define_readonly_boundary_message");
-assertIncludes(adapterSource, "管理员操作需要后端授权接口", "admin_actions_without_api_must_be_readonly_product_state");
+assertIncludes(adapterSource, "adminLocalActionMessage", "admin_adapter_must_define_local_action_boundary_message");
+assertIncludes(adapterSource, "真实云资源、真实扣费或高风险设置仍需单独授权接口", "admin_actions_without_api_must_be_readonly_product_state");
 assertIncludes(adapterSource, "ops_surface_disabled", "admin_ops_loader_must_recognize_disabled_product_state");
 assertIncludes(adapterSource, "opsSurfaceEnabled", "admin_ops_loader_must_expose_ops_surface_state");
 assertIncludes(adapterSource, "平台托管运维入口未启用", "admin_ops_disabled_state_must_be_product_copy");
@@ -155,6 +156,8 @@ const auditLoaderSource = sliceBetween(
 );
 const adminBillingSource = await source(`${appRoot}/pages/admin/AdminBillingOps.tsx`);
 const adminAuditSource = await source(`${appRoot}/pages/admin/AdminAudit.tsx`);
+const adminAlertsSource = await source(`${appRoot}/pages/admin/AdminAlerts.tsx`);
+const adminDashboardSource = await source(`${appRoot}/pages/admin/AdminDashboard.tsx`);
 
 assertIncludes(billingLoaderSource, "rowKey:", "admin_billing_rows_must_expose_ui_row_key");
 assertIncludes(billingLoaderSource, "billingRowKey(", "admin_billing_rows_must_use_stable_source_aware_row_key");
@@ -169,6 +172,14 @@ assertIncludes(adminBillingSource, "key={item.rowKey}", "admin_billing_table_mus
 assertIncludes(adminAuditSource, "key={event.rowKey}", "admin_audit_table_must_use_ui_row_key");
 assertExcludes(adminBillingSource, "key={item.id}", "admin_billing_table_must_not_key_by_business_id");
 assertExcludes(adminAuditSource, "key={event.id}", "admin_audit_table_must_not_key_by_business_id");
+assertIncludes(adapterSource, "alertRowKey(", "admin_alerts_pending_rows_must_use_stable_event_key");
+assertIncludes(adapterSource, 'return `alert:items:${type}:${detail}:${primary}:${action}`;', "admin_alerts_pending_row_key_must_include_type_detail_primary_action");
+assertExcludes(adapterSource, "alert:items:${type}:${detail}:${primary}:${index}", "admin_alerts_pending_row_key_must_not_use_list_index");
+assertIncludes(adapterSource, "rowKey: alertRowKey(row)", "admin_alerts_dashboard_pending_rows_must_expose_ui_row_key");
+assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_table_must_use_ui_row_key");
+assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
+assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
+assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
 
 const adminOpsSource = await source(`${appRoot}/pages/admin/AdminOps.tsx`);
 assertIncludes(adminOpsSource, "opsSurfaceEnabled", "admin_ops_page_must_branch_on_disabled_product_state");

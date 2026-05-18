@@ -24,6 +24,14 @@ function assertRefForwarded(sourceText, componentName) {
   assertIncludes(sourceText, `${componentName}.displayName`, `radix_primitive_display_name:${componentName}`);
 }
 
+function sliceBetween(text, start, end, label) {
+  const startIndex = text.indexOf(start);
+  assert.notEqual(startIndex, -1, `${label}_start_missing:${start}`);
+  const endIndex = text.indexOf(end, startIndex + start.length);
+  assert.notEqual(endIndex, -1, `${label}_end_missing:${end}`);
+  return text.slice(startIndex, endIndex);
+}
+
 const [
   buttonSource,
   sheetSource,
@@ -35,8 +43,12 @@ const [
   billingSource,
   layoutSource,
   userMenuSource,
+  adminUsersSource,
+  adminAlertsSource,
+  adminDashboardSource,
   adminAuditSource,
   dialogSource,
+  adminApiSource,
   adapterSource,
 ] = await Promise.all([
   source(`${appRoot}/components/ui/button.tsx`),
@@ -49,8 +61,12 @@ const [
   source(`${appRoot}/pages/BillingAudit.tsx`),
   source(`${appRoot}/components/Layout.tsx`),
   source(`${appRoot}/components/UserMenu.tsx`),
+  source(`${appRoot}/pages/admin/AdminUsers.tsx`),
+  source(`${appRoot}/pages/admin/AdminAlerts.tsx`),
+  source(`${appRoot}/pages/admin/AdminDashboard.tsx`),
   source(`${appRoot}/pages/admin/AdminAudit.tsx`),
   source(`${appRoot}/components/ui/dialog.tsx`),
+  source("services/portal/frontend/src/api/portal/admin.ts"),
   source(`${appRoot}/data/portalAdapters.ts`),
 ]);
 
@@ -107,7 +123,65 @@ assertIncludes(layoutSource, "flex-col md:flex-row", "layout_shell_must_reflow_m
 assertIncludes(layoutSource, "w-full md:w-64", "layout_sidebar_must_not_force_mobile_width");
 assertIncludes(layoutSource, "overflow-x-auto", "layout_navigation_must_scroll_on_mobile");
 assertIncludes(layoutSource, "帮助中心暂未接入", "layout_help_button_must_not_be_empty_action");
+assertIncludes(layoutSource, 'name: "用户管理"', "layout_admin_users_nav_must_use_user_management_copy");
+assertIncludes(layoutSource, '"/admin/users": "用户管理"', "layout_admin_users_title_must_use_user_management_copy");
+assertExcludes(layoutSource, "客户账户", "layout_must_not_use_old_customer_account_copy");
 assertIncludes(adminAuditSource, "overflow-x-auto", "admin_audit_table_must_be_scrollable_instead_of_layout_overflow");
+
+assertIncludes(adminApiSource, "toggleAdminUser", "admin_user_toggle_api_helper_missing");
+assertIncludes(adminApiSource, "rechargeAdminUser", "admin_user_recharge_api_helper_missing");
+assertIncludes(adminApiSource, "deleteAdminUser", "admin_user_delete_api_helper_missing");
+assertIncludes(adminApiSource, "saveAdminAnnouncement", "admin_announcement_save_api_helper_missing");
+assertIncludes(adminApiSource, "toggleAdminAnnouncement", "admin_announcement_toggle_api_helper_missing");
+assertIncludes(adminApiSource, "deleteAdminAnnouncement", "admin_announcement_delete_api_helper_missing");
+assertIncludes(adminApiSource, "PORTAL_ADMIN_ACTION_FAILED_MESSAGE", "admin_action_errors_must_use_product_copy");
+assertIncludes(adminApiSource, "businessMessage", "admin_action_errors_must_expose_product_message");
+assertExcludes(adminApiSource, "DOMParser", "admin_action_errors_must_not_parse_backend_html");
+assertExcludes(adminApiSource, "response.text()", "admin_action_errors_must_not_read_backend_html_body");
+
+assertIncludes(adminUsersSource, "用户管理", "admin_users_page_must_use_user_management_copy");
+assertIncludes(adminUsersSource, "toggleAdminUser", "admin_users_page_must_wire_toggle_action");
+assertIncludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_wire_recharge_action");
+assertIncludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_wire_refund_action");
+assertIncludes(adminUsersSource, "deleteAdminUser", "admin_users_page_must_wire_delete_action");
+assertIncludes(adminUsersSource, "setRefreshVersion", "admin_users_page_must_refresh_after_mutation");
+assertIncludes(adminUsersSource, "Dialog", "admin_users_actions_must_open_dialogs_for_confirmed_actions");
+assertIncludes(adminUsersSource, "openDetailDialog(user)", "admin_users_detail_menu_must_open_dialog");
+assertIncludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_open_dialog");
+assertIncludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_open_dialog");
+assertIncludes(adminUsersSource, "openToggleDialog(user)", "admin_users_toggle_menu_must_open_confirm_dialog");
+assertIncludes(adminUsersSource, "openDeleteDialog(user)", "admin_users_delete_menu_must_open_confirm_dialog");
+assertExcludes(adminUsersSource, "客户账户", "admin_users_page_must_not_use_old_customer_account_copy");
+for (const forbidden of [
+  "<DropdownMenuItem disabled>\n                            <CheckCircle",
+  "<DropdownMenuItem disabled className=\"text-red-600\">\n                            <Trash2",
+]) {
+  assertExcludes(adminUsersSource, forbidden, "admin_users_menu_must_not_leave_primary_actions_disabled");
+}
+
+assertIncludes(adminAlertsSource, "saveAdminAnnouncement", "admin_alerts_page_must_wire_save_announcement");
+assertIncludes(adminAlertsSource, "toggleAdminAnnouncement", "admin_alerts_page_must_wire_toggle_announcement");
+assertIncludes(adminAlertsSource, "deleteAdminAnnouncement", "admin_alerts_page_must_wire_delete_announcement");
+assertIncludes(adminAlertsSource, "setRefreshVersion", "admin_alerts_page_must_refresh_after_mutation");
+assertIncludes(adminAlertsSource, "Dialog", "admin_alerts_actions_must_open_dialogs_for_confirmed_actions");
+assertIncludes(adapterSource, "alertRowKey(", "admin_alerts_pending_rows_must_use_stable_event_key");
+assertIncludes(adapterSource, 'return `alert:items:${type}:${detail}:${primary}:${action}`;', "admin_alerts_pending_row_key_must_include_type_detail_primary_action");
+assertExcludes(adapterSource, "alert:items:${type}:${detail}:${primary}:${index}", "admin_alerts_pending_row_key_must_not_use_list_index");
+assertIncludes(adapterSource, "rowKey: alertRowKey(row)", "admin_alerts_dashboard_pending_rows_must_expose_ui_row_key");
+assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_table_must_use_ui_row_key");
+assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
+assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
+assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
+const announcementListSource = sliceBetween(
+  adminAlertsSource,
+  '<TabsContent value="announcements"',
+  '<TabsContent value="pending"',
+  "admin_alerts_announcements_tab",
+);
+assertExcludes(announcementListSource, '<Button size="sm" className="gap-2" disabled title={adminReadOnlyMessage}>', "admin_alerts_create_must_not_be_disabled");
+assertExcludes(announcementListSource, '<Button variant="ghost" size="sm" disabled title={adminReadOnlyMessage}>', "admin_alerts_edit_must_not_be_disabled");
+assertExcludes(announcementListSource, '<Button variant="ghost" size="sm" className="text-red-600" disabled title={adminReadOnlyMessage}>', "admin_alerts_delete_must_not_be_disabled");
+assertIncludes(adminAlertsSource, "待处理事项", "admin_alerts_pending_tab_must_remain_visible");
 
 for (const [label, sourceText, forbidden] of [
   ["overview_runtime_detail", overviewSource, "<Button variant=\"ghost\" size=\"sm\" className=\"gap-1 text-neutral-600 hover:text-neutral-900\">\n                查看详情"],
@@ -156,6 +230,7 @@ console.log(JSON.stringify({
     "radix_forward_ref",
     "opl_launch_product_error",
     "header_account_billing_interactions",
+    "admin_local_portal_actions",
     "technical_error_redaction",
   ],
 }, null, 2));

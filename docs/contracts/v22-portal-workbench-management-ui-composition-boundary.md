@@ -4,7 +4,7 @@
 
 本合同 v11 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户和管理员 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。旧 visual workbench、截图 baseline、Vue harness/evalset 和旧 `AdminConsole.tsx` residue 不再是当前完成证据。
 
-`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户和管理员 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”；7 个管理员路由必须展示管理总览、客户账户、公告与待处理事项、账单处理、审计记录、站点设置和服务状态。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。`/admin/ops` 是已挂载服务状态页面，但后端默认可返回 `404 ops_surface_disabled`；前端必须展示明确 disabled 产品态，不能渲染 generic error 或伪成功。
+`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户和管理员 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”；7 个管理员路由必须展示管理总览、用户管理、公告与待处理事项、账单处理、审计记录、站点设置和服务状态。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。`/admin/users` 和 `/admin/alerts` 允许接入现有本地 Portal 管理动作；`/admin/ops` 是已挂载服务状态页面，但后端默认可返回 `404 ops_surface_disabled`；前端必须展示明确 disabled 产品态，不能渲染 generic error 或伪成功。
 
 ## 合同职责
 
@@ -92,7 +92,7 @@ surface smoke 必须检查：
 
 - 管理台
 - 平台总览
-- 客户账户
+- 用户管理
 - 资源管理
 - 任务记录
 - 账单管理

@@ -42,7 +42,7 @@ const userNavigation = [
 // 管理台导航
 const adminNavigation = [
   { name: "管理总览", path: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "客户账户", path: "/admin/users", icon: Users },
+  { name: "用户管理", path: "/admin/users", icon: Users },
   { name: "公告与待处理事项", path: "/admin/alerts", icon: BellIcon },
   { name: "账单处理", path: "/admin/billing-ops", icon: DollarSign },
   { name: "审计记录", path: "/admin/audit", icon: FileText },
@@ -180,7 +180,7 @@ function getPageTitle(pathname: string): string {
     "/billing": "账单与审计",
     "/opl-launch": "进入 OPL",
     "/admin/dashboard": "管理总览",
-    "/admin/users": "客户账户",
+    "/admin/users": "用户管理",
     "/admin/alerts": "公告与待处理事项",
     "/admin/billing-ops": "账单处理",
     "/admin/audit": "审计记录",

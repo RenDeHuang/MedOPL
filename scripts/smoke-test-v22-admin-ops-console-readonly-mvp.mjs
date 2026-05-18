@@ -383,7 +383,7 @@ assertTopLevelKeys(adminOpsPayload, [
 ], "admin_ops_payload");
 
 assert.equal(adminOpsPayload.roleSurface, "admin_ops", "admin_ops_payload_role_surface");
-assert.equal(adminOpsPayload.boundaries.readonlyMvp, true, "admin_ops_must_be_readonly_mvp");
+assert.equal(adminOpsPayload.boundaries.readonlyMvp, true, "admin_ops_payload_must_keep_ops_projection_readonly_mvp");
 assert.equal(adminOpsPayload.boundaries.createsRealResources, false, "admin_ops_must_not_create_real_resources");
 assert.equal(adminOpsPayload.boundaries.realBillingMutation, false, "admin_ops_must_not_mutate_real_billing");
 assert.equal(adminOpsPayload.boundaries.callsRealCloud, false, "admin_ops_must_not_call_real_cloud");
@@ -465,7 +465,7 @@ assert.equal(adminOpsPayload.auditAndAnnouncements.auditEvents.length >= 1, true
 assert.equal(adminOpsPayload.auditAndAnnouncements.exceptions.length >= 1, true, "admin_ops_must_include_exceptions");
 assert.equal(adminOpsPayload.auditAndAnnouncements.releaseFailures.length >= 1, true, "admin_ops_must_include_release_failures");
 assert.equal(adminOpsPayload.auditAndAnnouncements.billingExceptions.length >= 1, true, "admin_ops_must_include_billing_exceptions");
-assert.equal(adminOpsPayload.auditAndAnnouncements.announcements.length, 1, "admin_ops_must_include_readonly_announcements");
+assert.equal(adminOpsPayload.auditAndAnnouncements.announcements.length, 1, "admin_ops_must_include_announcements");
 
 const payloadJson = JSON.stringify(adminOpsPayload);
 assertNotIncludesAny(payloadJson, forbiddenSecretsAndStorage, "admin_ops_payload_secret_storage_leak");

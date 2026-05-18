@@ -26,7 +26,8 @@ export type QueryState<T> =
 
 const PORTAL_DATA_UNAVAILABLE_MESSAGE = "Portal 数据暂时不可用，请稍后重试。";
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
-export const adminReadOnlyMessage = "管理员操作需要后端授权接口；当前页面只展示已接入的只读数据。";
+export const adminLocalActionMessage = "已接入本地 Portal 管理动作；真实云资源和真实扣费仍需单独授权。";
+export const adminReadOnlyMessage = "该管理面当前只展示已接入的只读数据；真实云资源、真实扣费或高风险设置仍需单独授权接口。";
 
 class PortalDisplayError extends Error {
   readonly userMessage: string;
@@ -404,6 +405,14 @@ function auditRowKey(row: Record<string, any>, index: number) {
   return `audit:items:${type}:${detail}:${primary}:${index}`;
 }
 
+function alertRowKey(row: Record<string, any>) {
+  const type = stringValue(row.category || row.severity, "alert");
+  const detail = keyPart(row.title || row.detail || row.message || row.category, type);
+  const primary = keyPart(row.id || row.runId || row.userId || row.workspaceId || row.occurredAt || row.createdAt, "no-primary");
+  const action = keyPart(row.action, "no-action");
+  return `alert:items:${type}:${detail}:${primary}:${action}`;
+}
+
 export async function loadAdminDashboardModel() {
   const overview = await fetchAdminOverview();
   const payload = objectValue(overview);
@@ -412,6 +421,7 @@ export async function loadAdminDashboardModel() {
   const alerts = arrayValue(payload.alerts).slice(0, 5).map((item) => {
     const row = objectValue(item);
     return {
+      rowKey: alertRowKey(row),
       id: stringValue(row.runId || row.userId || row.title || row.detail),
       type: stringValue(row.category || row.severity),
       user: stringValue(row.userName || row.userId, ""),
@@ -454,6 +464,7 @@ export async function loadAdminAlertsModel() {
   const pendingItems = arrayValue(objectValue(alertsPayload).alerts).map((item) => {
     const row = objectValue(item);
     return {
+      rowKey: alertRowKey(row),
       id: stringValue(row.runId || row.userId || row.title || row.detail),
       type: stringValue(row.category || row.severity),
       severity: adminAlertSeverity(row.severity),

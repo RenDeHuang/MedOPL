@@ -2,7 +2,7 @@
 
 这是 admin/ops console 合同，不实现 UI。
 
-本合同定义 MedOPL v22 管理员/运维界面与普通用户工作台的边界。普通用户资源页不得恢复云控制台或运维语义。管理员/运维视角可以查看后台归因和异常，但不能执行真实云控制台式操作。
+本合同定义 MedOPL v22 管理员/运维界面与普通用户工作台的边界。普通用户资源页不得恢复云控制台或运维语义。管理员/运维视角可以查看后台归因和异常，也可以执行已接入的本地 Portal 管理动作，但不能执行真实云控制台式操作。
 
 ## 定位
 
@@ -26,7 +26,7 @@ Admin / Ops Console 面向平台运维人员，用于查看租户、账号、工
 - 审计事件、异常、释放失败、账单异常
 - 公告管理入口
 
-这些能力用于隔离、归因、排障、对账、审计和运营，不代表当前分支实现 UI。
+这些能力用于隔离、归因、排障、对账、审计和运营。当前已接入的本地 Portal 管理动作只覆盖用户查看、用户充值、用户退款、用户启用/禁用、用户软删除和公告管理；它们不是真实云资源变更，也不是真实支付或真实扣费通道。
 
 ## 普通用户不可见能力
 
@@ -86,7 +86,8 @@ Admin / Ops Console 可以查看分账标签归因和异常：
     "callsRealCloud": false,
     "readsSecret": false,
     "realBillingMutation": false,
-    "realResourceMutation": false
+    "realResourceMutation": false,
+    "localPortalAdminActionsEnabled": true
   },
   "adminOpsVisibleCapabilities": [
     "租户列表",
@@ -192,6 +193,28 @@ Admin / Ops Console 可以查看分账标签归因和异常：
     "importInternalModules": false
   },
   "adminOpsCanInspectAttribution": true,
+  "localPortalAdminActions": [
+    "查看用户详情",
+    "Portal 本地账户充值",
+    "Portal 本地账本退款",
+    "启用用户",
+    "禁用用户",
+    "软删除用户",
+    "新建公告",
+    "编辑公告",
+    "发布公告",
+    "下线公告",
+    "置顶公告",
+    "删除公告"
+  ],
+  "readonlyOrDisabledProductStates": [
+    "/admin/ops",
+    "账单审批",
+    "高风险站点设置",
+    "待处理事项处理",
+    "真实云资源操作",
+    "真实扣费"
+  ],
   "adminOpsCanExecuteRealCloudConsoleOperation": false,
   "forbiddenPaths": [
     "deploy",

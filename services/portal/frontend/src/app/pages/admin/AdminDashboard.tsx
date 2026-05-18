@@ -124,7 +124,7 @@ export function AdminDashboard() {
               </div>
             )}
             {pendingItems.map((item) => (
-              <div key={item.id} className="flex items-start justify-between p-3 rounded-md border border-neutral-200 bg-neutral-50">
+              <div key={item.rowKey} className="flex items-start justify-between p-3 rounded-md border border-neutral-200 bg-neutral-50">
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
                     {getSeverityBadge(item.severity)}
@@ -155,7 +155,7 @@ export function AdminDashboard() {
             <Button asChild variant="outline" className="w-full justify-start gap-2">
               <Link to="/admin/users">
                 <Users className="w-4 h-4" />
-                客户账户
+                用户管理
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full justify-start gap-2">

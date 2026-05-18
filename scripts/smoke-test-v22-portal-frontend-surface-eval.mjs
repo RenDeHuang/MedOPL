@@ -183,9 +183,10 @@ for (const route of expectedRoutes) {
 for (const label of ["总览", "运行环境", "工作空间", "任务与结果", "账单与审计", "进入 OPL"]) {
   assertIncludes(layoutSource, `name: "${label}"`, `layout_nav_label_missing:${label}`);
 }
-for (const label of ["管理总览", "客户账户", "公告与待处理事项", "账单处理", "审计记录", "站点设置", "服务状态"]) {
+for (const label of ["管理总览", "用户管理", "公告与待处理事项", "账单处理", "审计记录", "站点设置", "服务状态"]) {
   assertIncludes(layoutSource, `name: "${label}"`, `layout_admin_nav_label_missing:${label}`);
 }
+assertExcludes(layoutSource, "客户账户", "layout_admin_nav_must_not_use_old_customer_account_copy");
 for (const retired of retiredRouteFragments) {
   assertExcludes(routesSource, retired, "react_routes_retired_path");
   assertExcludes(layoutSource, retired, "layout_retired_path");
@@ -238,6 +239,8 @@ const auditLoaderSource = sliceBetween(
 );
 const adminBillingSource = await source(`${appRoot}/pages/admin/AdminBillingOps.tsx`);
 const adminAuditSource = await source(`${appRoot}/pages/admin/AdminAudit.tsx`);
+const adminAlertsSource = await source(`${appRoot}/pages/admin/AdminAlerts.tsx`);
+const adminDashboardSource = await source(`${appRoot}/pages/admin/AdminDashboard.tsx`);
 
 assertIncludes(billingLoaderSource, "rowKey:", "admin_billing_rows_must_expose_ui_row_key");
 assertIncludes(billingLoaderSource, "billingRowKey(", "admin_billing_rows_must_use_stable_source_aware_row_key");
@@ -252,6 +255,14 @@ assertIncludes(adminBillingSource, "key={item.rowKey}", "admin_billing_table_mus
 assertIncludes(adminAuditSource, "key={event.rowKey}", "admin_audit_table_must_use_ui_row_key");
 assertExcludes(adminBillingSource, "key={item.id}", "admin_billing_table_must_not_key_by_business_id");
 assertExcludes(adminAuditSource, "key={event.id}", "admin_audit_table_must_not_key_by_business_id");
+assertIncludes(adapterSource, "alertRowKey(", "admin_alerts_pending_rows_must_use_stable_event_key");
+assertIncludes(adapterSource, 'return `alert:items:${type}:${detail}:${primary}:${action}`;', "admin_alerts_pending_row_key_must_include_type_detail_primary_action");
+assertExcludes(adapterSource, "alert:items:${type}:${detail}:${primary}:${index}", "admin_alerts_pending_row_key_must_not_use_list_index");
+assertIncludes(adapterSource, "rowKey: alertRowKey(row)", "admin_alerts_dashboard_pending_rows_must_expose_ui_row_key");
+assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_table_must_use_ui_row_key");
+assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
+assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
+assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
 
 const frontendSources = [];
 for (const filePath of await listFiles("services/portal/frontend/src", [".ts", ".tsx", ".css"])) {

@@ -190,6 +190,17 @@ for (const route of adminRoutes) {
     `admin_api_route_coverage_missing:${route}`,
   );
 }
+assert.deepEqual(contract.apiIntegration.adminRouteActionCoverage["/admin/users"], [
+  "/portal/admin/recharge",
+  "/portal/admin/ledger-adjust",
+  "/portal/admin/toggle-user",
+  "/portal/admin/delete-user",
+], "admin_users_action_coverage_mismatch");
+assert.deepEqual(contract.apiIntegration.adminRouteActionCoverage["/admin/alerts"], [
+  "/portal/admin/announcements/save",
+  "/portal/admin/announcements/toggle",
+  "/portal/admin/announcements/delete",
+], "admin_alerts_action_coverage_mismatch");
 assert.equal(
   contract.apiIntegration.adminRouteProductStates["/admin/ops"].defaultDisabledStatus,
   404,
@@ -221,6 +232,7 @@ assert.equal(contract.adminOpsUi.roleBoundaryStillApplies, true, "admin_role_bou
 assert.equal(contract.adminOpsUi.roleContextSecurityBoundary, false, "role_context_must_not_be_security_boundary");
 assert.equal(contract.adminOpsUi.backendRoleProjectionRequired, true, "backend_role_projection_required");
 assert.equal(contract.adminOpsUi.mockOnlyActionsAllowed, false, "admin_mock_only_actions_forbidden");
+assert.equal(contract.adminOpsUi.localPortalAdminActionsEnabled, true, "admin_local_portal_actions_must_be_enabled");
 assert.equal(contract.adminOpsUi.opsSurfaceMayBeDisabledByBackend, true, "admin_ops_surface_disabled_backend_truth_missing");
 assert.equal(contract.adminOpsUi.disabledProductStateRequired, true, "admin_ops_disabled_product_state_required");
 assert.equal(contract.lifecycle.storageDeletionProtectionDays, 7, "storage_deletion_protection_days_mismatch");

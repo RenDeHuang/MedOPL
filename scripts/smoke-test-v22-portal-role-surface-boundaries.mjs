@@ -177,7 +177,10 @@ assert.equal(adminContract.roleSurface, "admin_ops", "admin_surface_role");
 assert.equal(adminContract.adminRoutePrefix, "/admin/*", "admin_surface_route_prefix");
 assert.equal(adminContract.adminRoleOnly, true, "admin_surface_admin_only");
 assert.equal(adminContract.userNavigationShowsAdminEntry, false, "admin_entry_must_not_show_in_user_nav");
-assert.equal(adminContract.readonlyMvp, true, "admin_surface_readonly_mvp");
+assert.equal(adminContract.localPortalAdminActionsEnabled, true, "admin_surface_local_portal_actions_enabled");
+assert.equal(adminContract.readonlyOpsAndCloudMvp, true, "admin_surface_ops_and_cloud_must_remain_readonly");
+assert.equal(adminContract.realCloudMutation, false, "admin_surface_real_cloud_mutation_forbidden");
+assert.equal(adminContract.localPortalAccountingActionsEnabled, true, "admin_surface_local_accounting_actions_enabled");
 
 assertArrayIncludesAll(adminContract.visibleContent, [
   "账号列表和状态",
@@ -230,6 +233,30 @@ assertArrayIncludesAll(adminContract.forbiddenVisibilityAndActions, [
   "未授权真实云创建/释放/修改",
   "未授权真实扣费",
 ], "admin_surface_forbidden_visibility_actions");
+
+assertArrayIncludesAll(adminContract.localPortalAdminActions, [
+  "查看用户详情",
+  "Portal 本地账户充值",
+  "Portal 本地账本退款",
+  "启用用户",
+  "禁用用户",
+  "软删除用户",
+  "新建公告",
+  "编辑公告",
+  "发布公告",
+  "下线公告",
+  "置顶公告",
+  "删除公告",
+], "admin_surface_local_portal_actions");
+
+assertArrayIncludesAll(adminContract.readonlyOrDisabledProductStates, [
+  "/admin/ops",
+  "账单审批",
+  "高风险站点设置",
+  "待处理事项处理",
+  "真实云资源操作",
+  "真实扣费",
+], "admin_surface_readonly_or_disabled_product_states");
 
 assert.equal(adminContract.currentMvp.callsRealTencentCloud, false, "admin_surface_no_real_tencent_cloud");
 assert.equal(adminContract.currentMvp.callsRealCos, false, "admin_surface_no_real_cos");

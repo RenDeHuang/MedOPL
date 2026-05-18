@@ -28,7 +28,7 @@
 - 审计事件、异常、释放失败、账单异常
 - 公告管理入口
 
-这些能力用于只读查看、归因、排障、审计和运营。当前 admin/ops surface 当前是 readonly MVP 边界。
+这些能力用于查看、归因、排障、审计和运营。当前 admin surface 允许已接入的本地 Portal 管理动作：用户查看、用户充值、用户退款、用户启用/禁用、用户软删除、公告新建/编辑/发布/下线/置顶/删除。`/admin/ops`、账单审批、高风险站点设置和真实资源/真实扣费仍保持只读或 disabled 产品态。
 
 ## 管理员/运维也不能看到/不能操作
 
@@ -39,12 +39,13 @@
 - 未授权真实云创建/释放/修改
 - 未授权真实扣费
 
-真实腾讯云控制台式操作、真实资源创建/释放/修改、真实扣费路径不属于当前合同授权。
+真实腾讯云控制台式操作、真实资源创建/释放/修改、真实扣费路径不属于当前合同授权。Portal 本地余额充值、退款和公告管理只属于 Portal 本地管理动作，不代表真实支付通道或真实云资源变更。
 
 ## 当前 MVP 与后续真实资源边界
 
 当前 MVP 阶段：
 
+- 允许已接入的本地 Portal 管理动作，不伪造未接入动作。
 - 不创建真实资源。
 - 不真实扣费。
 - 不调用真实腾讯云/COS/Langfuse/one-person-lab。
@@ -82,7 +83,10 @@ Cleanup 要清掉旧入口、旧文案、旧 API 暴露和权限绕过。清理�
   "adminRoutePrefix": "/admin/*",
   "adminRoleOnly": true,
   "userNavigationShowsAdminEntry": false,
-  "readonlyMvp": true,
+  "localPortalAdminActionsEnabled": true,
+  "readonlyOpsAndCloudMvp": true,
+  "realCloudMutation": false,
+  "localPortalAccountingActionsEnabled": true,
   "visibleContent": [
     "账号列表和状态",
     "工作空间列表和归属账号",
@@ -130,6 +134,28 @@ Cleanup 要清掉旧入口、旧文案、旧 API 暴露和权限绕过。清理�
     "signedUrl",
     "未授权真实云创建/释放/修改",
     "未授权真实扣费"
+  ],
+  "localPortalAdminActions": [
+    "查看用户详情",
+    "Portal 本地账户充值",
+    "Portal 本地账本退款",
+    "启用用户",
+    "禁用用户",
+    "软删除用户",
+    "新建公告",
+    "编辑公告",
+    "发布公告",
+    "下线公告",
+    "置顶公告",
+    "删除公告"
+  ],
+  "readonlyOrDisabledProductStates": [
+    "/admin/ops",
+    "账单审批",
+    "高风险站点设置",
+    "待处理事项处理",
+    "真实云资源操作",
+    "真实扣费"
   ],
   "currentMvp": {
     "callsRealTencentCloud": false,

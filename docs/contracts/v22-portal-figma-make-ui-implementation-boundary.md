@@ -70,14 +70,14 @@ Figma Make UI 不能停留在静态 mock。普通用户 6 个页面必须接现�
 管理员页面必须接现有 `/portal/api/admin/*` adapter：
 
 - `/admin/dashboard`: `fetchAdminOverview()`，对应 `/portal/api/admin/overview`。
-- `/admin/users`: `fetchAdminUsers()`，对应 `/portal/api/admin/users`。
-- `/admin/alerts`: `fetchAdminAlerts()` 与 `fetchAnnouncements()`，对应 `/portal/api/admin/alerts` 和 `/portal/api/announcements`。
+- `/admin/users`: `fetchAdminUsers()`，对应 `/portal/api/admin/users`；用户查看、Portal 本地账户充值、Portal 本地账本退款、启用/禁用和软删除必须接现有本地 Portal admin action。
+- `/admin/alerts`: `fetchAdminAlerts()` 与 `fetchAnnouncements()`，对应 `/portal/api/admin/alerts` 和 `/portal/api/announcements`；公告新建、编辑、发布/下线、置顶和删除必须接现有本地 Portal admin action。
 - `/admin/billing-ops`: `fetchAdminBillingOps()`，对应 `/portal/api/admin/billing-ops`。
 - `/admin/audit`: `fetchAdminAudit()`，对应 `/portal/api/admin/audit`。
 - `/admin/system`: `fetchAdminSystem()`，对应 `/portal/api/admin/system`。
 - `/admin/ops`: `fetchAdminOps()`，对应 `/portal/api/admin/ops`；该后端 API 在默认未启用运维 surface 时允许返回 `404 ops_surface_disabled`，前端必须把它映射成“平台托管运维入口未启用”的产品态，而不是 generic error 或伪成功。
 
-API 接入只允许走 `services/portal/frontend/src/api/portal/*.ts` 和 `apiClient` 的 `/portal/api` baseURL；本轮不改 Portal 后端服务语义，不伪造成功态，不把 raw key、runtime token、objectKey、localPath 或 signedUrl 渲染到页面。
+API 接入只允许走 `services/portal/frontend/src/api/portal/*.ts` 和 `apiClient` 的 `/portal/api` baseURL，或走已有 `/portal/admin/*` HTML form action 的本地 Portal 管理端点；本轮不改 Portal 后端服务语义，不伪造成功态，不把 raw key、runtime token、objectKey、localPath 或 signedUrl 渲染到页面。
 
 ## 生命周期与文案边界
 
@@ -283,6 +283,19 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
         "/portal/api/admin/ops"
       ]
     },
+    "adminRouteActionCoverage": {
+      "/admin/users": [
+        "/portal/admin/recharge",
+        "/portal/admin/ledger-adjust",
+        "/portal/admin/toggle-user",
+        "/portal/admin/delete-user"
+      ],
+      "/admin/alerts": [
+        "/portal/admin/announcements/save",
+        "/portal/admin/announcements/toggle",
+        "/portal/admin/announcements/delete"
+      ]
+    },
     "adminRouteProductStates": {
       "/admin/ops": {
         "defaultDisabledStatus": 404,
@@ -300,6 +313,7 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     "roleContextSecurityBoundary": false,
     "backendRoleProjectionRequired": true,
     "mockOnlyActionsAllowed": false,
+    "localPortalAdminActionsEnabled": true,
     "opsSurfaceMayBeDisabledByBackend": true,
     "disabledProductStateRequired": true
   },

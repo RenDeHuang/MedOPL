@@ -121,6 +121,15 @@ function extractStringArrayConst(source, constName) {
   return match?.[1] || "";
 }
 
+function extractArrayConst(source, constName) {
+  const start = source.indexOf(`const ${constName} = [`);
+  assert.notEqual(start, -1, `array_const_missing:${constName}`);
+  const bodyStart = source.indexOf("[", start);
+  const bodyEnd = source.indexOf("];", bodyStart);
+  assert.notEqual(bodyEnd, -1, `array_const_end_missing:${constName}`);
+  return source.slice(bodyStart, bodyEnd + 1);
+}
+
 function extractVisibleTemplateCopy(template) {
   const visibleAttributes = [
     "title",
@@ -163,10 +172,11 @@ function extractUserFacingScriptAssignments(source) {
 async function assertFrontendBeginnerSurfaceCopy() {
   const visibleSurface = (await Promise.all(frontendUserSurfacePaths.map(async (filePath) => {
     const source = await readFile(filePath, "utf8");
+    const visibleSource = filePath.endsWith("Layout.tsx") ? extractArrayConst(source, "userNavigation") : source;
     return [
-      extractTsxVisibleCopy(source),
-      extractUserFacingScriptAssignments(source),
-      filePath.endsWith("Layout.tsx") ? extractStringArrayConst(source, "navigation") : "",
+      extractTsxVisibleCopy(visibleSource),
+      extractUserFacingScriptAssignments(visibleSource),
+      filePath.endsWith("Layout.tsx") ? extractArrayConst(source, "userNavigation") : "",
     ].join("\n");
   }))).join("\n");
   assertIncludesAll(visibleSurface, [
@@ -294,7 +304,7 @@ assertIncludesAll(contract.managementSurface.mustShow, [
   "异常账单、异常资源",
 ], "operations_surface");
 assertIncludesAll(contract.managementSurface.primaryPageLanguage, [
-  "客户账户",
+  "用户管理",
   "工作空间",
   "资源管理",
   "任务记录",

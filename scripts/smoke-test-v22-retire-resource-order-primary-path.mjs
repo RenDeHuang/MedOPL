@@ -953,7 +953,7 @@ function assertModuleSourceUsesResourceBindingSurface(source) {
 
 function assertFrontendAdminUsesResourceBindingSurface(source) {
   assertIncludes(source, "管理总览", "admin_dashboard_copy");
-  assertIncludes(source, "客户账户", "admin_users_copy");
+  assertIncludes(source, "用户管理", "admin_users_copy");
   assertIncludes(source, "工作空间", "admin_workspace_copy");
   assert(!source.includes("item.resourceOrderId"), "admin_ops_view_must_not_display_resource_order_id");
 }

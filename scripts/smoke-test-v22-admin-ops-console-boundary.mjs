@@ -39,7 +39,7 @@ const suite = await readFile(suitePath, "utf8");
 for (const phrase of [
   "这是 admin/ops console 合同，不实现 UI。",
   "普通用户资源页不得恢复云控制台或运维语义。",
-  "管理员/运维视角可以查看后台归因和异常，但不能执行真实云控制台式操作。",
+  "管理员/运维视角可以查看后台归因和异常，也可以执行已接入的本地 Portal 管理动作，但不能执行真实云控制台式操作。",
   "不读取 secret",
   "不调用真实云",
   "不做真实扣费",
@@ -57,6 +57,7 @@ assert.equal(contract.scope.callsRealCloud, false, "admin_ops_contract_must_not_
 assert.equal(contract.scope.readsSecret, false, "admin_ops_contract_must_not_read_secret");
 assert.equal(contract.scope.realBillingMutation, false, "admin_ops_contract_must_not_mutate_real_billing");
 assert.equal(contract.scope.realResourceMutation, false, "admin_ops_contract_must_not_mutate_real_resources");
+assert.equal(contract.scope.localPortalAdminActionsEnabled, true, "admin_ops_contract_must_allow_local_portal_admin_actions");
 
 assertArrayIncludesAll(contract.adminOpsVisibleCapabilities, [
   "租户列表",
@@ -133,6 +134,28 @@ assertArrayIncludesAll(contract.beginnerUserInvisibleCapabilities, [
 assert.equal(contract.beginnerSurfaceMustRemainProductLanguage, true, "beginner_surface_must_remain_product_language");
 assert.equal(contract.adminOpsCanInspectAttribution, true, "admin_ops_must_inspect_attribution");
 assert.equal(contract.adminOpsCanExecuteRealCloudConsoleOperation, false, "admin_ops_must_not_execute_real_cloud_console_operation");
+assertArrayIncludesAll(contract.localPortalAdminActions, [
+  "查看用户详情",
+  "Portal 本地账户充值",
+  "Portal 本地账本退款",
+  "启用用户",
+  "禁用用户",
+  "软删除用户",
+  "新建公告",
+  "编辑公告",
+  "发布公告",
+  "下线公告",
+  "置顶公告",
+  "删除公告",
+], "admin_ops_local_portal_admin_actions");
+assertArrayIncludesAll(contract.readonlyOrDisabledProductStates, [
+  "/admin/ops",
+  "账单审批",
+  "高风险站点设置",
+  "待处理事项处理",
+  "真实云资源操作",
+  "真实扣费",
+], "admin_ops_readonly_or_disabled_product_states");
 assertArrayIncludesAll(contract.beginnerSurface.mustShowOnlyProductLanguage, [
   "工作台资源",
   "套餐",
