@@ -75,6 +75,12 @@ function sliceBetween(text, start, end, label) {
   return text.slice(startIndex, endIndex);
 }
 
+function sliceFrom(text, start, label) {
+  const startIndex = text.indexOf(start);
+  assert.notEqual(startIndex, -1, `${label}_start_missing:${start}`);
+  return text.slice(startIndex);
+}
+
 const [
   routesSource,
   layoutSource,
@@ -83,6 +89,7 @@ const [
   adapterSource,
   adminApiSource,
   currentUserApiSource,
+  announcementButtonSource,
 ] = await Promise.all([
   source(`${appRoot}/routes.tsx`),
   source(`${appRoot}/components/Layout.tsx`),
@@ -91,6 +98,7 @@ const [
   source(`${appRoot}/data/portalAdapters.ts`),
   source("services/portal/frontend/src/api/portal/admin.ts"),
   source("services/portal/frontend/src/api/portal/commercial.ts"),
+  source(`${appRoot}/components/AnnouncementButton.tsx`),
 ]);
 
 assert.equal(await exists(`${figmaRoot}/pages/admin/AdminDashboard.tsx`), true, "figma_admin_source_missing");
@@ -101,6 +109,9 @@ assertIncludes(roleContextSource, "fetchCurrentUser", "role_context_must_fetch_c
 assertIncludes(currentUserApiSource, 'apiClient.get<CurrentUserPayload>("/me")', "current_user_api_must_use_portal_me");
 assertExcludes(roleContextSource, "setRole", "role_context_must_not_expose_frontend_role_mutation");
 assertExcludes(roleContextSource, "useState<UserRole>(\"user\")", "role_context_must_not_use_static_user_default");
+assertIncludes(announcementButtonSource, "announcements = []", "announcement_button_must_default_to_empty_api_state");
+assertExcludes(announcementButtonSource, "系统维护通知", "announcement_button_must_not_embed_sample_notice");
+assertExcludes(announcementButtonSource, "新功能上线", "announcement_button_must_not_embed_sample_notice");
 
 for (const [route, component] of Object.entries(adminRoutes)) {
   assertIncludes(routesSource, `path: "${route.slice(1)}"`, `admin_route_missing:${route}`);
@@ -154,10 +165,23 @@ const auditLoaderSource = sliceBetween(
   "export async function loadAdminSystemModel()",
   "admin_audit_loader_source",
 );
+const adminSystemLoaderSource = sliceBetween(
+  adapterSource,
+  "export async function loadAdminSystemModel()",
+  "export async function loadAdminOpsModel()",
+  "admin_system_loader_source",
+);
+const adminOpsLoaderSource = sliceFrom(
+  adapterSource,
+  "export async function loadAdminOpsModel()",
+  "admin_ops_loader_source",
+);
 const adminBillingSource = await source(`${appRoot}/pages/admin/AdminBillingOps.tsx`);
 const adminAuditSource = await source(`${appRoot}/pages/admin/AdminAudit.tsx`);
+const adminSystemSource = await source(`${appRoot}/pages/admin/AdminSystem.tsx`);
 const adminAlertsSource = await source(`${appRoot}/pages/admin/AdminAlerts.tsx`);
 const adminDashboardSource = await source(`${appRoot}/pages/admin/AdminDashboard.tsx`);
+const adminOpsSource = await source(`${appRoot}/pages/admin/AdminOps.tsx`);
 
 assertIncludes(billingLoaderSource, "rowKey:", "admin_billing_rows_must_expose_ui_row_key");
 assertIncludes(billingLoaderSource, "billingRowKey(", "admin_billing_rows_must_use_stable_source_aware_row_key");
@@ -180,8 +204,16 @@ assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_tab
 assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
 assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
 assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
+assertIncludes(adminSystemLoaderSource, "rowKey:", "admin_system_key_routes_must_expose_ui_row_key");
+assertIncludes(adminSystemLoaderSource, "adminServiceRowKey(", "admin_system_key_routes_must_use_stable_service_row_key");
+assertIncludes(adminOpsLoaderSource, "rowKey:", "admin_ops_services_must_expose_ui_row_key");
+assertIncludes(adminOpsLoaderSource, "adminServiceRowKey(", "admin_ops_services_must_use_stable_service_row_key");
+assertIncludes(adapterSource, 'return `admin-service:${source}:${identity}:${status}:${index}`;', "admin_service_row_key_must_include_source_identity_status_index");
+assertIncludes(adminSystemSource, "key={route.rowKey}", "admin_system_key_routes_must_use_ui_row_key");
+assertIncludes(adminOpsSource, "key={service.rowKey}", "admin_ops_services_must_use_ui_row_key");
+assertExcludes(adminSystemSource, "key={route.name}", "admin_system_key_routes_must_not_key_by_display_name");
+assertExcludes(adminOpsSource, "key={service.name}", "admin_ops_services_must_not_key_by_display_name");
 
-const adminOpsSource = await source(`${appRoot}/pages/admin/AdminOps.tsx`);
 assertIncludes(adminOpsSource, "opsSurfaceEnabled", "admin_ops_page_must_branch_on_disabled_product_state");
 assertIncludes(adminOpsSource, "平台托管运维入口未启用", "admin_ops_page_must_show_disabled_product_state");
 assertExcludes(adminOpsSource, "Portal 数据暂时不可用", "admin_ops_page_must_not_show_generic_error_for_disabled_surface");

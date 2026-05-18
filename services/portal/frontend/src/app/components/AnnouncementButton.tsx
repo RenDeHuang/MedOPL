@@ -26,24 +26,7 @@ interface AnnouncementButtonProps {
 }
 
 export function AnnouncementButton({
-  announcements = [
-    {
-      id: "1",
-      title: "系统维护通知",
-      content: "本周五晚 22:00-24:00 将进行系统维护，期间部分功能可能暂时不可用。感谢您的理解和支持。",
-      isPinned: true,
-      createdAt: "2024-01-15 10:00",
-      updatedAt: "2024-01-15 10:00",
-    },
-    {
-      id: "2",
-      title: "新功能上线",
-      content: "工作空间现已支持文件预览功能，您可以直接在浏览器中查看输出文件内容。",
-      isPinned: false,
-      createdAt: "2024-01-10 14:30",
-      updatedAt: "2024-01-10 14:30",
-    },
-  ],
+  announcements = [],
 }: AnnouncementButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const unreadCount = announcements.length;

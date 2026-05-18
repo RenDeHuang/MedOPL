@@ -35,49 +35,6 @@ interface FileItem {
   taskName?: string;
 }
 
-const mockInputFiles: FileItem[] = [
-  { name: "protein_sequence.fasta", size: "2.4 MB", type: "fasta", updated: "2 小时前" },
-  { name: "gene_data.csv", size: "8.1 MB", type: "csv", updated: "2 小时前" },
-  { name: "literature_refs.pdf", size: "5.2 MB", type: "pdf", updated: "3 天前" },
-  { name: "sample_images.zip", size: "142 MB", type: "zip", updated: "3 天前" },
-  { name: "metadata.json", size: "124 KB", type: "json", updated: "1 周前" },
-];
-
-const mockOutputFiles: FileItem[] = [
-  {
-    name: "analysis_result_20240517.json",
-    size: "3.2 MB",
-    type: "json",
-    updated: "2 小时前",
-    taskId: "session-20240517-001",
-    taskName: "蛋白质结构分析",
-  },
-  {
-    name: "protein_structure.pdb",
-    size: "1.8 MB",
-    type: "pdb",
-    updated: "2 小时前",
-    taskId: "session-20240517-001",
-    taskName: "蛋白质结构分析",
-  },
-  {
-    name: "alignment_output.txt",
-    size: "856 KB",
-    type: "txt",
-    updated: "5 小时前",
-    taskId: "session-20240517-002",
-    taskName: "基因序列比对",
-  },
-  {
-    name: "visualization.png",
-    size: "2.1 MB",
-    type: "png",
-    updated: "5 小时前",
-    taskId: "session-20240517-003",
-    taskName: "文献数据提取",
-  },
-];
-
 function getFileIcon(type: string) {
   if (type === "png" || type === "jpg") return <Image className="w-4 h-4 text-neutral-400" />;
   if (type === "pdf") return <FileText className="w-4 h-4 text-neutral-400" />;

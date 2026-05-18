@@ -413,6 +413,12 @@ function alertRowKey(row: Record<string, any>) {
   return `alert:items:${type}:${detail}:${primary}:${action}`;
 }
 
+function adminServiceRowKey(source: string, row: Record<string, any>, index: number) {
+  const identity = keyPart(row.id || row.key || row.name || row.title || row.category || row.url, "service");
+  const status = keyPart(row.status || row.mode || row.ok, "unknown");
+  return `admin-service:${source}:${identity}:${status}:${index}`;
+}
+
 export async function loadAdminDashboardModel() {
   const overview = await fetchAdminOverview();
   const payload = objectValue(overview);
@@ -562,9 +568,10 @@ export async function loadAdminSystemModel() {
       totalServices: services.length,
       failedServices,
       degradedServices,
-      keyRoutes: services.slice(0, 6).map((item) => {
+      keyRoutes: services.slice(0, 6).map((item, index) => {
         const row = objectValue(item);
         return {
+          rowKey: adminServiceRowKey("system", row, index),
           name: stringValue(row.name),
           status: row.ok === false ? "failed" : String(row.status || "operational"),
         };
@@ -610,9 +617,10 @@ export async function loadAdminOpsModel() {
       activeConnections: numberValue(systemMetrics.activeWorkspaceSessions || systemMetrics.concurrentRuns),
       errorRate: numberValue(systemMetrics.errorRate),
     },
-    services: services.map((item) => {
+    services: services.map((item, index) => {
       const row = objectValue(item);
       return {
+        rowKey: adminServiceRowKey("ops", row, index),
         name: stringValue(row.name || row.title || row.category),
         status: row.ok === false ? "down" : String(row.status || row.mode || "operational"),
         uptime: row.responseMs ? `${row.responseMs}ms` : stringValue(row.mode || summaries.billing?.mode, "状态可见"),

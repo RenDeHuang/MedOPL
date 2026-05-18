@@ -47,6 +47,8 @@ const [
   adminAlertsSource,
   adminDashboardSource,
   adminAuditSource,
+  adminSystemSource,
+  adminOpsSource,
   dialogSource,
   adminApiSource,
   adapterSource,
@@ -65,6 +67,8 @@ const [
   source(`${appRoot}/pages/admin/AdminAlerts.tsx`),
   source(`${appRoot}/pages/admin/AdminDashboard.tsx`),
   source(`${appRoot}/pages/admin/AdminAudit.tsx`),
+  source(`${appRoot}/pages/admin/AdminSystem.tsx`),
+  source(`${appRoot}/pages/admin/AdminOps.tsx`),
   source(`${appRoot}/components/ui/dialog.tsx`),
   source("services/portal/frontend/src/api/portal/admin.ts"),
   source(`${appRoot}/data/portalAdapters.ts`),
@@ -118,6 +122,9 @@ assertIncludes(billingSource, "exportBillingRecords", "billing_export_must_have_
 assertIncludes(billingSource, "URL.createObjectURL", "billing_export_must_create_download");
 assertIncludes(billingSource, "download =", "billing_export_must_set_download_filename");
 assertIncludes(billingSource, "onClick={exportBillingRecords}", "billing_export_button_must_bind_handler");
+assertIncludes(billingSource, "exportNotice", "billing_empty_export_must_show_visible_notice");
+assertIncludes(billingSource, 'role="status"', "billing_empty_export_notice_must_be_status_region");
+assertExcludes(billingSource, 'disabled title="当前时间窗口没有可导出的账单流水"', "billing_empty_export_must_not_be_dead_disabled_button");
 
 assertIncludes(layoutSource, "flex-col md:flex-row", "layout_shell_must_reflow_mobile");
 assertIncludes(layoutSource, "w-full md:w-64", "layout_sidebar_must_not_force_mobile_width");
@@ -151,6 +158,7 @@ assertIncludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_rechar
 assertIncludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_open_dialog");
 assertIncludes(adminUsersSource, "openToggleDialog(user)", "admin_users_toggle_menu_must_open_confirm_dialog");
 assertIncludes(adminUsersSource, "openDeleteDialog(user)", "admin_users_delete_menu_must_open_confirm_dialog");
+assertIncludes(adminUsersSource, "打开 ${user.name} 的用户操作菜单", "admin_users_action_menu_trigger_must_have_accessible_label");
 assertExcludes(adminUsersSource, "客户账户", "admin_users_page_must_not_use_old_customer_account_copy");
 for (const forbidden of [
   "<DropdownMenuItem disabled>\n                            <CheckCircle",
@@ -172,6 +180,12 @@ assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_tab
 assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
 assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
 assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
+assertIncludes(adapterSource, "adminServiceRowKey(", "admin_service_lists_must_use_stable_row_key_helper");
+assertIncludes(adapterSource, 'return `admin-service:${source}:${identity}:${status}:${index}`;', "admin_service_row_key_must_include_source_identity_status_index");
+assertIncludes(adminSystemSource, "key={route.rowKey}", "admin_system_key_routes_must_use_ui_row_key");
+assertIncludes(adminOpsSource, "key={service.rowKey}", "admin_ops_services_must_use_ui_row_key");
+assertExcludes(adminSystemSource, "key={route.name}", "admin_system_key_routes_must_not_key_by_display_name");
+assertExcludes(adminOpsSource, "key={service.name}", "admin_ops_services_must_not_key_by_display_name");
 const announcementListSource = sliceBetween(
   adminAlertsSource,
   '<TabsContent value="announcements"',

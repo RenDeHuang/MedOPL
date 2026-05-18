@@ -64,91 +64,6 @@ interface TaskCost {
   time: string;
 }
 
-const mockBillingRecords: BillingRecord[] = [
-  {
-    id: "txn-20240517-001",
-    date: "2024-05-17 10:00",
-    type: "扣费",
-    description: "计算资源 - 标准版",
-    amount: "- ¥ 5.00",
-    status: "已扣费",
-  },
-  {
-    id: "txn-20240517-002",
-    date: "2024-05-17 06:00",
-    type: "冻结",
-    description: "预扣 24 小时费用",
-    amount: "冻结 ¥ 120.00",
-    status: "已冻结",
-  },
-  {
-    id: "txn-20240516-045",
-    date: "2024-05-16 23:00",
-    type: "扣费",
-    description: "任务执行 - 批量图像处理",
-    amount: "- ¥ 18.50",
-    status: "已扣费",
-  },
-  {
-    id: "txn-20240516-044",
-    date: "2024-05-16 20:00",
-    type: "充值",
-    description: "余额充值",
-    amount: "+ ¥ 500.00",
-    status: "已到账",
-  },
-  {
-    id: "txn-20240516-043",
-    date: "2024-05-16 18:00",
-    type: "扣费",
-    description: "计算资源 - 标准版",
-    amount: "- ¥ 5.00",
-    status: "已扣费",
-  },
-];
-
-const mockWorkspaceCosts: WorkspaceCost[] = [
-  { workspace: "生物信息学实验", tasks: 8, compute: 120.5, storage: 15.2, total: 135.7 },
-  { workspace: "科研文献分析", tasks: 5, compute: 67.3, storage: 8.5, total: 75.8 },
-  { workspace: "药物筛选项目", tasks: 3, compute: 25.6, storage: 4.2, total: 29.8 },
-  { workspace: "医学影像分析", tasks: 7, compute: 98.4, storage: 12.1, total: 110.5 },
-];
-
-const mockTaskCosts: TaskCost[] = [
-  {
-    id: "session-20240517-001",
-    name: "蛋白质结构分析",
-    workspace: "生物信息学实验",
-    status: "completed",
-    cost: 6.92,
-    time: "2 小时前",
-  },
-  {
-    id: "session-20240517-002",
-    name: "基因序列比对",
-    workspace: "生物信息学实验",
-    status: "running",
-    cost: 3.5,
-    time: "进行中",
-  },
-  {
-    id: "session-20240517-003",
-    name: "文献数据提取",
-    workspace: "科研文献分析",
-    status: "completed",
-    cost: 11.25,
-    time: "5 小时前",
-  },
-  {
-    id: "session-20240516-012",
-    name: "化合物相似性计算",
-    workspace: "药物筛选项目",
-    status: "failed",
-    cost: 1.25,
-    time: "昨天",
-  },
-];
-
 function getTaskStatusIcon(status: string) {
   switch (status) {
     case "running":
@@ -169,6 +84,7 @@ function csvCell(value: string) {
 export function BillingAudit() {
   const query = usePortalQuery(loadBillingAuditModel, []);
   const [timeRange, setTimeRange] = useState("7days");
+  const [exportNotice, setExportNotice] = useState("");
 
   if (query.status === "loading") {
     return (
@@ -191,7 +107,11 @@ export function BillingAudit() {
   const canExportBilling = model.billingRecords.length > 0;
 
   const exportBillingRecords = () => {
-    if (!canExportBilling) return;
+    if (!canExportBilling) {
+      setExportNotice("当前时间窗口没有可导出的账单流水。");
+      return;
+    }
+    setExportNotice("");
     const rows = [
       ["时间", "类型", "说明", "金额", "状态"],
       ...model.billingRecords.map((record) => [
@@ -232,12 +152,18 @@ export function BillingAudit() {
                 查看余额、冻结金额、消费明细和审计状态
               </p>
             </div>
-            <Button variant="outline" className="gap-2" disabled title="当前时间窗口没有可导出的账单流水">
+            <Button variant="outline" className="gap-2" onClick={exportBillingRecords} title="当前时间窗口没有可导出的账单流水">
               <Download className="w-4 h-4" />
               导出账单
             </Button>
           </div>
         </div>
+
+        {exportNotice && (
+          <div role="status" className="mb-6 rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+            {exportNotice}
+          </div>
+        )}
 
         {/* Financial Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">

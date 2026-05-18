@@ -50,67 +50,6 @@ interface Task {
   resourceUsage: string;
 }
 
-const mockTasks: Task[] = [
-  {
-    id: "session-20240517-001",
-    name: "蛋白质结构分析",
-    workspace: "生物信息学实验",
-    status: "completed",
-    startTime: "2024-05-17 08:23",
-    duration: "1 小时 23 分",
-    cost: "¥ 6.92",
-    outputFiles: 3,
-    outputFileNames: ["protein_structure.pdb", "analysis_report.pdf", "visualization.png"],
-    resourceUsage: "2核4GB",
-  },
-  {
-    id: "session-20240517-002",
-    name: "基因序列比对",
-    workspace: "生物信息学实验",
-    status: "running",
-    startTime: "2024-05-17 10:15",
-    duration: "进行中 (42 分钟)",
-    cost: "¥ 3.50",
-    outputFiles: 0,
-    resourceUsage: "4核8GB",
-  },
-  {
-    id: "session-20240517-003",
-    name: "文献数据提取",
-    workspace: "科研文献分析",
-    status: "completed",
-    startTime: "2024-05-17 05:10",
-    duration: "2 小时 15 分",
-    cost: "¥ 11.25",
-    outputFiles: 5,
-    outputFileNames: ["extracted_data.csv", "summary.txt"],
-    resourceUsage: "8核16GB",
-  },
-  {
-    id: "session-20240516-012",
-    name: "化合物相似性计算",
-    workspace: "药物筛选项目",
-    status: "failed",
-    startTime: "2024-05-16 22:45",
-    duration: "15 分钟",
-    cost: "¥ 1.25",
-    outputFiles: 0,
-    resourceUsage: "2核4GB",
-  },
-  {
-    id: "session-20240516-011",
-    name: "批量图像处理",
-    workspace: "医学影像分析",
-    status: "completed",
-    startTime: "2024-05-16 18:30",
-    duration: "3 小时 42 分",
-    cost: "¥ 18.50",
-    outputFiles: 28,
-    outputFileNames: ["processed_images_batch_1.zip"],
-    resourceUsage: "8核16GB",
-  },
-];
-
 function getStatusBadge(status: TaskStatus) {
   const variants: Record<TaskStatus, { variant: string; icon: JSX.Element; text: string }> = {
     running: {

@@ -4,8 +4,9 @@ import { Badge } from "../../components/ui/badge";
 import { loadAdminOpsModel, usePortalQuery } from "../../data/portalAdapters";
 
 interface ServiceStatus {
+  rowKey: string;
   name: string;
-  status: "operational" | "degraded" | "down";
+  status: string;
   uptime: string;
   lastCheck: string;
 }
@@ -157,9 +158,9 @@ export function AdminOps() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {services.map((service) => (
+            {services.map((service: ServiceStatus) => (
               <div
-                key={service.name}
+                key={service.rowKey}
                 className="flex items-center justify-between p-4 rounded-md border border-neutral-200 bg-neutral-50"
               >
                 <div className="flex-1">

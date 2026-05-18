@@ -144,8 +144,15 @@ function sliceBetween(text, start, end, label) {
   return text.slice(startIndex, endIndex);
 }
 
+function sliceFrom(text, start, label) {
+  const startIndex = text.indexOf(start);
+  assert.notEqual(startIndex, -1, `${label}_start_missing:${start}`);
+  return text.slice(startIndex);
+}
+
 const routesSource = await source(`${appRoot}/routes.tsx`);
 const layoutSource = await source(`${appRoot}/components/Layout.tsx`);
+const announcementButtonSource = await source(`${appRoot}/components/AnnouncementButton.tsx`);
 const adapterSource = await source(`${appRoot}/data/portalAdapters.ts`);
 const packageJson = JSON.parse(await source("services/portal/frontend/package.json"));
 const viteSource = await source("services/portal/frontend/vite.config.ts");
@@ -187,6 +194,11 @@ for (const label of ["管理总览", "用户管理", "公告与待处理事项",
   assertIncludes(layoutSource, `name: "${label}"`, `layout_admin_nav_label_missing:${label}`);
 }
 assertExcludes(layoutSource, "客户账户", "layout_admin_nav_must_not_use_old_customer_account_copy");
+assertExcludes(layoutSource, "工作台版本 v1.2.0", "layout_must_not_show_old_static_version_copy");
+assertIncludes(layoutSource, "Portal UI", "layout_footer_must_use_current_portal_ui_copy");
+assertIncludes(announcementButtonSource, "announcements = []", "announcement_button_must_default_to_empty_api_state");
+assertExcludes(announcementButtonSource, "系统维护通知", "announcement_button_must_not_embed_sample_notice");
+assertExcludes(announcementButtonSource, "新功能上线", "announcement_button_must_not_embed_sample_notice");
 for (const retired of retiredRouteFragments) {
   assertExcludes(routesSource, retired, "react_routes_retired_path");
   assertExcludes(layoutSource, retired, "layout_retired_path");
@@ -208,6 +220,7 @@ for (const [pageFile, loader] of Object.entries(requiredPageLoaders)) {
   const pageSource = await source(`${appRoot}/pages/${pageFile}`);
   assertIncludes(pageSource, loader, `page_must_use_portal_api_loader:${pageFile}`);
   assertIncludes(pageSource, "usePortalQuery", `page_must_use_portal_query:${pageFile}`);
+  assertExcludes(pageSource, "const mock", `page_must_not_keep_zip_mock_data:${pageFile}`);
 }
 for (const [pageFile, loader] of Object.entries(requiredAdminPageLoaders)) {
   const pageSource = await source(`${appRoot}/pages/${pageFile}`);
@@ -237,8 +250,20 @@ const auditLoaderSource = sliceBetween(
   "export async function loadAdminSystemModel()",
   "admin_audit_loader_source",
 );
+const adminSystemLoaderSource = sliceBetween(
+  adapterSource,
+  "export async function loadAdminSystemModel()",
+  "export async function loadAdminOpsModel()",
+  "admin_system_loader_source",
+);
+const adminOpsLoaderSource = sliceFrom(
+  adapterSource,
+  "export async function loadAdminOpsModel()",
+  "admin_ops_loader_source",
+);
 const adminBillingSource = await source(`${appRoot}/pages/admin/AdminBillingOps.tsx`);
 const adminAuditSource = await source(`${appRoot}/pages/admin/AdminAudit.tsx`);
+const adminSystemSource = await source(`${appRoot}/pages/admin/AdminSystem.tsx`);
 const adminAlertsSource = await source(`${appRoot}/pages/admin/AdminAlerts.tsx`);
 const adminDashboardSource = await source(`${appRoot}/pages/admin/AdminDashboard.tsx`);
 
@@ -263,6 +288,15 @@ assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_tab
 assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
 assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
 assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
+assertIncludes(adminSystemLoaderSource, "rowKey:", "admin_system_key_routes_must_expose_ui_row_key");
+assertIncludes(adminSystemLoaderSource, "adminServiceRowKey(", "admin_system_key_routes_must_use_stable_service_row_key");
+assertIncludes(adminOpsLoaderSource, "rowKey:", "admin_ops_services_must_expose_ui_row_key");
+assertIncludes(adminOpsLoaderSource, "adminServiceRowKey(", "admin_ops_services_must_use_stable_service_row_key");
+assertIncludes(adapterSource, 'return `admin-service:${source}:${identity}:${status}:${index}`;', "admin_service_row_key_must_include_source_identity_status_index");
+assertIncludes(adminSystemSource, "key={route.rowKey}", "admin_system_key_routes_must_use_ui_row_key");
+assertIncludes(adminOpsPageSource, "key={service.rowKey}", "admin_ops_services_must_use_ui_row_key");
+assertExcludes(adminSystemSource, "key={route.name}", "admin_system_key_routes_must_not_key_by_display_name");
+assertExcludes(adminOpsPageSource, "key={service.name}", "admin_ops_services_must_not_key_by_display_name");
 
 const frontendSources = [];
 for (const filePath of await listFiles("services/portal/frontend/src", [".ts", ".tsx", ".css"])) {

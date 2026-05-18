@@ -136,7 +136,7 @@ export function Layout() {
         {/* Footer */}
         <div className="hidden md:block p-3 border-t border-neutral-200">
           <div className="px-3 py-2 text-xs text-neutral-500">
-            工作台版本 v1.2.0
+            Portal UI
           </div>
         </div>
       </aside>

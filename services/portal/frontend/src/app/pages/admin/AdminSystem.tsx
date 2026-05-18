@@ -165,7 +165,7 @@ export function AdminSystem() {
             <div className="space-y-2">
               {serviceStatus.keyRoutes.map((route) => (
                 <div
-                  key={route.name}
+                  key={route.rowKey}
                   className="flex items-center justify-between p-3 rounded-md border border-neutral-200 bg-neutral-50"
                 >
                   <span className="text-sm text-neutral-900">{route.name}</span>
