@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { hashPassword as defaultHashPassword } from "../domain/portal-auth.mjs";
 import { normalizeAnnouncementRecord } from "../domain/portal-presenters.mjs";
 import { updatePublicSiteSettings } from "../domain/portal-public-settings.mjs";
+import { recordAdminAuditEvent } from "./admin-audit-helper.mjs";
 
 function zitadelErrorDetail(error) {
   return String(error.stdout || error.stderr || error.message || error);
@@ -38,6 +39,12 @@ export function createPortalAdminOpsRoutes({
     if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
     const form = await readForm(req);
     const redirectTo = String(form.redirectTo || "/portal/admin/users").trim();
+    const idempotencyKey = String(form.idempotencyKey || `admin-settings:${Date.now()}:${randomUUID()}`).trim();
+    const reason = String(form.reason || "admin_system_settings_saved").trim() || "admin_system_settings_saved";
+    const before = {
+      allowRegistration: Boolean(db.settings.allowRegistration),
+      publicSettings: { ...updatePublicSiteSettings({ ...db, settings: { ...db.settings } }, {}) },
+    };
     db.settings.allowRegistration = form.allowRegistration === "1";
     const publicSettings = updatePublicSiteSettings(db, {
       siteName: form.siteName,
@@ -51,6 +58,26 @@ export function createPortalAdminOpsRoutes({
       allowRegistration: db.settings.allowRegistration,
       siteName: publicSettings.siteName,
     });
+    await recordAdminAuditEvent({
+      logPortalEvent,
+      actor: user,
+      action: "admin_system_settings_saved",
+      target: {
+        id: "portal_public_settings",
+        key: "portal_public_settings",
+        kind: "system_settings",
+      },
+      before,
+      after: {
+        allowRegistration: Boolean(db.settings.allowRegistration),
+        publicSettings,
+      },
+      reason,
+      idempotencyKey,
+      extra: {
+        type: "admin_system_settings_saved",
+      },
+    });
     await writeDb(db);
     redirect(res, redirectTo);
     return true;
@@ -63,6 +90,8 @@ export function createPortalAdminOpsRoutes({
     const redirectTo = String(form.redirectTo || "/admin/alerts").trim();
     const title = String(form.title || "").trim();
     const content = String(form.content || "").trim();
+    const idempotencyKey = String(form.idempotencyKey || `announcement-save:${form.id || "new"}:${Date.now()}:${randomUUID()}`).trim();
+    const reason = String(form.reason || "admin_announcement_saved").trim() || "admin_announcement_saved";
     if (!title || !content) {
       sendHtml(res, layoutV2("公告保存失败", `<div class="card">标题和内容不能为空。</div>`, user), 400);
       return true;
@@ -70,6 +99,7 @@ export function createPortalAdminOpsRoutes({
     db.settings.announcements = Array.isArray(db.settings.announcements) ? db.settings.announcements : [];
     const announcementId = String(form.id || "").trim();
     const rows = db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean);
+    const previous = rows.find((item) => item.id === announcementId) || null;
     const nextRecord = normalizeAnnouncementRecord({
       id: announcementId || randomUUID(),
       title,
@@ -92,6 +122,24 @@ export function createPortalAdminOpsRoutes({
     nextRows.push(nextRecord);
     db.settings.announcements = nextRows.map(normalizeAnnouncementRecord).filter(Boolean);
     await logPortalEvent({ type: "announcement_saved", userId: user.id, announcementId: nextRecord.id, title: nextRecord.title });
+    await recordAdminAuditEvent({
+      logPortalEvent,
+      actor: user,
+      action: "admin_announcement_saved",
+      target: {
+        id: nextRecord.id,
+        announcementId: nextRecord.id,
+        kind: "announcement",
+      },
+      before: previous,
+      after: nextRecord,
+      reason,
+      idempotencyKey,
+      extra: {
+        title: nextRecord.title,
+        type: "admin_announcement_saved",
+      },
+    });
     await writeDb(db);
     redirect(res, redirectTo);
     return true;
@@ -104,12 +152,15 @@ export function createPortalAdminOpsRoutes({
     const redirectTo = String(form.redirectTo || "/admin/alerts").trim();
     const announcementId = String(form.id || "").trim();
     const action = String(form.actionType || "").trim();
+    const idempotencyKey = String(form.idempotencyKey || `announcement-toggle:${action}:${announcementId}:${Date.now()}:${randomUUID()}`).trim();
+    const reason = String(form.reason || `admin_announcement_${action}`).trim() || `admin_announcement_${action}`;
     const rows = Array.isArray(db.settings.announcements) ? db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean) : [];
     const target = rows.find((item) => item.id === announcementId);
     if (!target) {
       sendHtml(res, layoutV2("公告操作失败", `<div class="card">未找到目标公告。</div>`, user), 404);
       return true;
     }
+    const before = { ...target };
     if (action === "pin") {
       for (const row of rows) row.pinned = row.id === target.id;
     } else if (action === "activate") {
@@ -124,6 +175,31 @@ export function createPortalAdminOpsRoutes({
     target.operatorId = user.id;
     db.settings.announcements = rows.map(normalizeAnnouncementRecord).filter(Boolean);
     await logPortalEvent({ type: "announcement_toggled", userId: user.id, announcementId: target.id, action });
+    await recordAdminAuditEvent({
+      logPortalEvent,
+      actor: user,
+      action: action === "pin"
+        ? "admin_announcement_pinned"
+        : action === "activate"
+          ? "admin_announcement_published"
+          : "admin_announcement_unpublished",
+      target: {
+        id: target.id,
+        announcementId: target.id,
+        kind: "announcement",
+      },
+      before,
+      after: target,
+      reason,
+      idempotencyKey,
+      extra: {
+        type: action === "pin"
+          ? "admin_announcement_pinned"
+          : action === "activate"
+            ? "admin_announcement_published"
+            : "admin_announcement_unpublished",
+      },
+    });
     await writeDb(db);
     redirect(res, redirectTo);
     return true;
@@ -135,9 +211,29 @@ export function createPortalAdminOpsRoutes({
     const form = await readForm(req);
     const redirectTo = String(form.redirectTo || "/admin/alerts").trim();
     const announcementId = String(form.id || "").trim();
+    const idempotencyKey = String(form.idempotencyKey || `announcement-delete:${announcementId}:${Date.now()}:${randomUUID()}`).trim();
+    const reason = String(form.reason || "admin_announcement_deleted").trim() || "admin_announcement_deleted";
     const rows = Array.isArray(db.settings.announcements) ? db.settings.announcements.map(normalizeAnnouncementRecord).filter(Boolean) : [];
+    const before = rows.find((item) => item.id === announcementId) || null;
     db.settings.announcements = rows.filter((item) => item.id !== announcementId);
     await logPortalEvent({ type: "announcement_deleted", userId: user.id, announcementId });
+    await recordAdminAuditEvent({
+      logPortalEvent,
+      actor: user,
+      action: "admin_announcement_deleted",
+      target: {
+        id: announcementId,
+        announcementId,
+        kind: "announcement",
+      },
+      before,
+      after: null,
+      reason,
+      idempotencyKey,
+      extra: {
+        type: "admin_announcement_deleted",
+      },
+    });
     await writeDb(db);
     redirect(res, redirectTo);
     return true;

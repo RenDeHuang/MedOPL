@@ -194,6 +194,7 @@ export async function refundAdminUser(input: {
   userId: string;
   amount: number;
   reason: string;
+  idempotencyKey?: string;
   redirectTo?: string;
 }) {
   await postPortalAdminAction("/portal/admin/ledger-adjust", {
@@ -201,7 +202,45 @@ export async function refundAdminUser(input: {
     amount: input.amount,
     reason: input.reason,
     actionType: "refund",
+    idempotencyKey: input.idempotencyKey || "",
     redirectTo: input.redirectTo || "/admin/users",
+  });
+}
+
+export async function makeupChargeAdminUser(input: {
+  userId: string;
+  amount: number;
+  reason: string;
+  idempotencyKey?: string;
+  redirectTo?: string;
+}) {
+  await postPortalAdminAction("/portal/admin/ledger-adjust", {
+    userId: input.userId,
+    amount: input.amount,
+    reason: input.reason,
+    actionType: "makeup_charge",
+    idempotencyKey: input.idempotencyKey || "",
+    redirectTo: input.redirectTo || "/admin/billing-ops",
+  });
+}
+
+export async function markAdminBillingOp(input: {
+  itemId: string;
+  status: "approved" | "rejected" | "pending";
+  anomaly: boolean;
+  note: string;
+  reason: string;
+  idempotencyKey?: string;
+  redirectTo?: string;
+}) {
+  await postPortalAdminAction("/portal/admin/billing-ops/mark", {
+    itemId: input.itemId,
+    status: input.status,
+    anomaly: input.anomaly,
+    note: input.note,
+    reason: input.reason,
+    idempotencyKey: input.idempotencyKey || "",
+    redirectTo: input.redirectTo || "/admin/billing-ops",
   });
 }
 

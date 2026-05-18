@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { recordAdminAuditEvent } from "./admin-audit-helper.mjs";
 
 function csvEscape(value) {
   const text = String(value ?? "");
@@ -77,6 +78,16 @@ function adminForbidden({ res, user, sendHtml, layoutV2 }) {
   if (user.role === "admin") return false;
   sendHtml(res, layoutV2("无权限", `<div class="card">无权限</div>`, user), 403);
   return true;
+}
+
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function billingOpsStatus(value = "") {
+  const status = text(value).toLowerCase();
+  if (["approved", "rejected", "pending"].includes(status)) return status;
+  return "";
 }
 
 export function createPortalBillingExportRoutes({
@@ -245,12 +256,16 @@ export function createPortalBillingExportRoutes({
       return true;
     }
     const normalizedAmount = Math.abs(amount);
+    const before = {
+      balance: Number(wallet.balance || 0),
+    };
+    const idempotencyKey = String(form.idempotencyKey || `admin-ledger-adjust:${actionType}:${targetUser.id}:${normalizedAmount}:${Date.now()}:${randomUUID()}`);
     const result = await transactionHandler({
       userId: targetUser.id,
       tenantId: targetUser.id,
       amount: normalizedAmount,
       operatorId: user.id,
-      idempotencyKey: String(form.idempotencyKey || `admin-ledger-adjust:${actionType}:${targetUser.id}:${normalizedAmount}:${Date.now()}:${randomUUID()}`),
+      idempotencyKey,
       reason,
       runId: String(form.runId || "").trim(),
       workspaceId: String(form.workspaceId || "").trim(),
@@ -276,6 +291,101 @@ export function createPortalBillingExportRoutes({
       ledgerId: result.ledgerId || "",
       auditEventId: result.auditEventId || "",
     });
+    await recordAdminAuditEvent({
+      logPortalEvent,
+      actor: user,
+      action: actionType === "refund" ? "admin_user_wallet_refund" : "admin_user_wallet_makeup_charge",
+      target: {
+        id: targetUser.id,
+        userId: targetUser.id,
+        workspaceId: String(form.workspaceId || "").trim(),
+        runId: String(form.runId || "").trim(),
+        kind: "user_wallet",
+      },
+      before,
+      after: {
+        balance: Number(wallet.balance || 0),
+      },
+      reason,
+      idempotencyKey,
+      extra: {
+        amount: normalizedAmount,
+        resourceBindingId: String(form.resourceBindingId || "").trim(),
+        sourceId: String(form.sourceId || "").trim(),
+        ledgerId: result.ledgerId || "",
+        auditEventId: result.auditEventId || "",
+        type: actionType === "refund" ? "admin_user_wallet_refund" : "admin_user_wallet_makeup_charge",
+      },
+    });
+    redirect(res, redirectTo);
+    return true;
+  }
+
+  async function handleAdminBillingOpsMark({ req, res, url, db, user }) {
+    if (req.method !== "POST" || url.pathname !== "/portal/admin/billing-ops/mark") return false;
+    if (adminForbidden({ res, user, sendHtml, layoutV2 })) return true;
+    const form = await readForm(req);
+    const itemId = text(form.itemId);
+    const status = billingOpsStatus(form.status);
+    const note = text(form.note);
+    const reason = text(form.reason || "admin_billing_ops_marked") || "admin_billing_ops_marked";
+    const idempotencyKey = text(form.idempotencyKey || `admin-billing-op-mark:${itemId}:${Date.now()}:${randomUUID()}`);
+    const redirectTo = text(form.redirectTo || "/admin/billing-ops") || "/admin/billing-ops";
+    if (!itemId || !status || !note) {
+      sendHtml(res, layoutV2("账单处理失败", `<div class="card">请提供账单项、处理状态和处理备注。</div>`, user), 400);
+      return true;
+    }
+    db.settings = db.settings && typeof db.settings === "object" ? db.settings : {};
+    db.settings.billingOps = Array.isArray(db.settings.billingOps) ? db.settings.billingOps : [];
+    const before = db.settings.billingOps.find((item) => text(item.id || item.itemId) === itemId) || null;
+    const next = {
+      id: itemId,
+      itemId,
+      status,
+      anomaly: form.anomaly === "1" || form.anomaly === "true",
+      note,
+      reason,
+      idempotencyKey,
+      operatorId: user.id,
+      updatedAt: new Date().toISOString(),
+    };
+    const existingIndex = db.settings.billingOps.findIndex((item) => text(item.id || item.itemId) === itemId);
+    if (existingIndex >= 0) {
+      db.settings.billingOps[existingIndex] = { ...db.settings.billingOps[existingIndex], ...next };
+    } else {
+      db.settings.billingOps.push(next);
+    }
+    await logPortalEvent({
+      type: "billing_ops_marked",
+      userId: user.id,
+      operatorId: user.id,
+      itemId,
+      status,
+      anomaly: next.anomaly,
+      note,
+      reason,
+    });
+    await recordAdminAuditEvent({
+      logPortalEvent,
+      actor: user,
+      action: "admin_billing_ops_marked",
+      target: {
+        id: itemId,
+        kind: "billing_ops_item",
+      },
+      before,
+      after: next,
+      reason,
+      idempotencyKey,
+      extra: {
+        itemId,
+        status,
+        anomaly: next.anomaly,
+        note,
+        type: "admin_billing_ops_marked",
+      },
+    });
+    await writeDb(db);
     redirect(res, redirectTo);
     return true;
   }
@@ -325,6 +435,7 @@ export function createPortalBillingExportRoutes({
     if (await handleAdminUserSummaryExport(context)) return true;
     if (await handleAdminPendingExport(context)) return true;
     if (await handleLedgerAdjust(context)) return true;
+    if (await handleAdminBillingOpsMark(context)) return true;
     if (await handleReconcileBilling(context)) return true;
     return false;
   };

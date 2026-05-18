@@ -169,6 +169,14 @@ export function buildAdminAuditRows(events = [], formatDateTime) {
     workspaceId: event.workspaceId || "",
     occurredAt: formatDateTime(event.occurredAt),
     detail: JSON.stringify(event).slice(0, 240),
+    actor: event.actor || null,
+    action: event.action || event.type || "",
+    target: event.target || null,
+    before: event.before ?? null,
+    after: event.after ?? null,
+    reason: event.reason || "",
+    idempotencyKey: event.idempotencyKey || "",
+    createdAt: event.createdAt || event.occurredAt || "",
   }));
 }
 

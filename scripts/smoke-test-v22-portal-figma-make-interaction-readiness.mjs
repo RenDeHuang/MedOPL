@@ -139,6 +139,8 @@ assertExcludes(layoutSource, "客户账户", "layout_must_not_use_old_customer_a
 assertIncludes(adminAuditSource, "overflow-x-auto", "admin_audit_table_must_be_scrollable_instead_of_layout_overflow");
 
 assertIncludes(adminApiSource, "toggleAdminUser", "admin_user_toggle_api_helper_missing");
+assertIncludes(adminApiSource, "createAdminUser", "admin_user_create_api_helper_missing");
+assertIncludes(adminApiSource, "updateAdminUser", "admin_user_update_api_helper_missing");
 assertIncludes(adminApiSource, "rechargeAdminUser", "admin_user_recharge_api_helper_missing");
 assertIncludes(adminApiSource, "deleteAdminUser", "admin_user_delete_api_helper_missing");
 assertIncludes(adminApiSource, "saveAdminAnnouncement", "admin_announcement_save_api_helper_missing");
@@ -151,10 +153,14 @@ assertExcludes(adminApiSource, "response.text()", "admin_action_errors_must_not_
 
 assertIncludes(adminUsersSource, "用户管理", "admin_users_page_must_use_user_management_copy");
 assertIncludes(adminUsersSource, "toggleAdminUser", "admin_users_page_must_wire_toggle_action");
+assertIncludes(adminUsersSource, "createAdminUser", "admin_users_page_must_wire_create_action");
+assertIncludes(adminUsersSource, "updateAdminUser", "admin_users_page_must_wire_update_action");
 assertIncludes(adminUsersSource, "deleteAdminUser", "admin_users_page_must_wire_delete_action");
 assertIncludes(adminUsersSource, "setRefreshVersion", "admin_users_page_must_refresh_after_mutation");
 assertIncludes(adminUsersSource, "Dialog", "admin_users_actions_must_open_dialogs_for_confirmed_actions");
 assertIncludes(adminUsersSource, "openDetailDialog(user)", "admin_users_detail_menu_must_open_dialog");
+assertIncludes(adminUsersSource, "openCreateDialog()", "admin_users_create_button_must_open_dialog");
+assertIncludes(adminUsersSource, "openEditDialog(user)", "admin_users_edit_menu_must_open_dialog");
 assertIncludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_wire_recharge_action");
 assertIncludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_wire_refund_action");
 assertIncludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_open_dialog");
@@ -229,7 +235,9 @@ for (const fieldName of ["siteName", "homeTitle", "registration"]) {
   assertIncludes(adminSystemSource, `name="${fieldName}"`, "admin_system_site_settings_must_be_controlled_form");
 }
 
-assertIncludes(adminBillingSource, "账单审批需要后端审批事务启用；当前只读展示", "admin_billing_ops_must_keep_disabled_product_copy");
+assertIncludes(adminBillingSource, "markAdminBillingOp", "admin_billing_ops_must_wire_local_mark_action");
+assertIncludes(adminBillingSource, "runBillingOpAction", "admin_billing_ops_must_handle_status_action");
+assertIncludes(adminBillingSource, "处理状态、异常标记和备注会写入审计", "admin_billing_ops_must_show_local_action_boundary");
 
 for (const forbidden of [
   "<Button variant=\"outline\">\n                <Upload",

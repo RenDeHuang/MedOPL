@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, MoreVertical, Ban, CheckCircle, DollarSign, Trash2 } from "lucide-react";
+import { Search, MoreVertical, Ban, CheckCircle, DollarSign, Trash2, Plus, Edit } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -37,11 +37,13 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import {
+  createAdminUser,
   deleteAdminUser,
   normalizePortalAdminActionError,
   rechargeAdminUser,
   refundAdminUser,
   toggleAdminUser,
+  updateAdminUser,
 } from "../../../api/portal/admin";
 import { adminLocalActionMessage, loadAdminUsersModel, usePortalQuery } from "../../data/portalAdapters";
 
@@ -64,6 +66,8 @@ export function AdminUsers() {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
@@ -71,6 +75,9 @@ export function AdminUsers() {
   const [rechargeAmount, setRechargeAmount] = useState("");
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
+  const [userNameInput, setUserNameInput] = useState("");
+  const [userEmailInput, setUserEmailInput] = useState("");
+  const [userPasswordInput, setUserPasswordInput] = useState("");
   const [actionError, setActionError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const query = usePortalQuery(loadAdminUsersModel, [refreshVersion]);
@@ -109,6 +116,24 @@ export function AdminUsers() {
     setDetailDialogOpen(true);
   };
 
+  const openCreateDialog = () => {
+    setSelectedUser(null);
+    setUserNameInput("");
+    setUserEmailInput("");
+    setUserPasswordInput("");
+    setActionError("");
+    setCreateDialogOpen(true);
+  };
+
+  const openEditDialog = (user: User) => {
+    setSelectedUser(user);
+    setUserNameInput(user.name);
+    setUserEmailInput(user.email);
+    setUserPasswordInput("");
+    setActionError("");
+    setEditDialogOpen(true);
+  };
+
   const openToggleDialog = (user: User) => {
     setSelectedUser(user);
     setActionError("");
@@ -138,6 +163,16 @@ export function AdminUsers() {
 
   const closeDetailDialog = () => {
     setDetailDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeCreateDialog = () => {
+    setCreateDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
     setSelectedUser(null);
   };
 
@@ -174,6 +209,47 @@ export function AdminUsers() {
     } finally {
       setPendingAction(null);
     }
+  };
+
+  const submitCreate = async () => {
+    const name = userNameInput.trim();
+    const email = userEmailInput.trim();
+    const password = userPasswordInput.trim();
+    if (!name || !email || password.length < 8) {
+      setActionError("请输入姓名、邮箱和至少 8 位密码。");
+      return;
+    }
+    await runUserAction(
+      "create",
+      () => createAdminUser({ name, email, password, redirectTo: "/admin/users" }),
+      closeCreateDialog,
+    );
+  };
+
+  const submitEdit = async () => {
+    if (!selectedUser) return;
+    const name = userNameInput.trim();
+    const email = userEmailInput.trim();
+    const password = userPasswordInput.trim();
+    if (!name || !email) {
+      setActionError("请输入姓名和邮箱。");
+      return;
+    }
+    if (password && password.length < 8) {
+      setActionError("新密码至少 8 位。");
+      return;
+    }
+    await runUserAction(
+      "edit",
+      () => updateAdminUser({
+        userId: selectedUser.id,
+        name,
+        email,
+        password,
+        redirectTo: "/admin/users",
+      }),
+      closeEditDialog,
+    );
   };
 
   const submitToggle = async () => {
@@ -257,6 +333,10 @@ export function AdminUsers() {
                 <SelectItem value="disabled">已禁用</SelectItem>
               </SelectContent>
             </Select>
+            <Button className="gap-2" onClick={() => openCreateDialog()}>
+              <Plus className="w-4 h-4" />
+              新建用户
+            </Button>
           </div>
 
           {/* 用户列表 */}
@@ -304,6 +384,10 @@ export function AdminUsers() {
                           <DropdownMenuItem onSelect={() => openDetailDialog(user)}>
                             <CheckCircle className="w-4 h-4 mr-2" />
                             查看详情
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => openEditDialog(user)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            编辑资料
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => openRechargeDialog(user)}>
                             <DollarSign className="w-4 h-4 mr-2" />
@@ -382,6 +466,78 @@ export function AdminUsers() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={closeDetailDialog}>关闭</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={createDialogOpen}
+        onOpenChange={(open) => {
+          setCreateDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新建用户</DialogTitle>
+            <DialogDescription>创建本地 Portal 账号，并写入用户管理列表。</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="createUserName">姓名</Label>
+              <Input id="createUserName" value={userNameInput} onChange={(event) => setUserNameInput(event.target.value)} disabled={pendingAction === "create"} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="createUserEmail">邮箱</Label>
+              <Input id="createUserEmail" type="email" value={userEmailInput} onChange={(event) => setUserEmailInput(event.target.value)} disabled={pendingAction === "create"} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="createUserPassword">初始密码</Label>
+              <Input id="createUserPassword" type="password" value={userPasswordInput} onChange={(event) => setUserPasswordInput(event.target.value)} disabled={pendingAction === "create"} />
+            </div>
+          </div>
+          {actionError && <div className="text-sm text-red-600">{actionError}</div>}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeCreateDialog} disabled={pendingAction === "create"}>取消</Button>
+            <Button onClick={submitCreate} disabled={pendingAction === "create"}>
+              {pendingAction === "create" ? "提交中..." : "确认创建"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑用户</DialogTitle>
+            <DialogDescription>更新用户姓名、邮箱；密码为空时不修改密码。</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editUserName">姓名</Label>
+              <Input id="editUserName" value={userNameInput} onChange={(event) => setUserNameInput(event.target.value)} disabled={pendingAction === "edit"} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editUserEmail">邮箱</Label>
+              <Input id="editUserEmail" type="email" value={userEmailInput} onChange={(event) => setUserEmailInput(event.target.value)} disabled={pendingAction === "edit"} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editUserPassword">新密码</Label>
+              <Input id="editUserPassword" type="password" value={userPasswordInput} onChange={(event) => setUserPasswordInput(event.target.value)} disabled={pendingAction === "edit"} />
+            </div>
+          </div>
+          {actionError && <div className="text-sm text-red-600">{actionError}</div>}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditDialog} disabled={pendingAction === "edit"}>取消</Button>
+            <Button onClick={submitEdit} disabled={pendingAction === "edit"}>
+              {pendingAction === "edit" ? "提交中..." : "保存修改"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

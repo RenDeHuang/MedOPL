@@ -62,6 +62,7 @@ export function createPortalStoreMigrations({
         allowRegistration: String(process.env.PORTAL_ALLOW_REGISTRATION || "1") !== "0",
         announcements: [],
         publicSite: normalizePublicSiteSettings(),
+        billingOps: [],
       },
     };
   }
@@ -79,6 +80,7 @@ export function createPortalStoreMigrations({
       db.settings = {
         allowRegistration: String(process.env.PORTAL_ALLOW_REGISTRATION || "1") !== "0",
         announcements: [],
+        billingOps: [],
       };
       changed = true;
     }
@@ -91,6 +93,10 @@ export function createPortalStoreMigrations({
         db.settings.announcements = normalizedAnnouncements;
         changed = true;
       }
+    }
+    if (!Array.isArray(db.settings.billingOps)) {
+      db.settings.billingOps = [];
+      changed = true;
     }
     const normalizedPublicSite = normalizePublicSiteSettings(db.settings.publicSite || {});
     if (JSON.stringify(db.settings.publicSite || {}) !== JSON.stringify(normalizedPublicSite)) {

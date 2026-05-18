@@ -72,6 +72,7 @@ export function createPortalStoreStorageBootstrap({
       settings: {
         allowRegistration: String(process.env.PORTAL_ALLOW_REGISTRATION || "1") !== "0",
         announcements: [],
+        billingOps: [],
         publicSite: {
           siteName: "MedOPL",
           siteLogo: "",

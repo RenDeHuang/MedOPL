@@ -30,6 +30,12 @@ interface AuditEvent {
   workspace?: string;
   status: "success" | "failed" | "warning";
   details: string;
+  actor: string;
+  target: string;
+  reason: string;
+  idempotencyKey: string;
+  before: string;
+  after: string;
   timestamp: string;
 }
 
@@ -136,9 +142,14 @@ export function AdminAudit() {
                   <TableHead>类型</TableHead>
                   <TableHead>操作</TableHead>
                   <TableHead>操作人</TableHead>
+                  <TableHead>目标</TableHead>
+                  <TableHead>原因</TableHead>
+                  <TableHead>幂等键</TableHead>
                   <TableHead>工作空间</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>详情</TableHead>
+                  <TableHead>变更前</TableHead>
+                  <TableHead>变更后</TableHead>
                   <TableHead>时间</TableHead>
                 </TableRow>
               </TableHeader>
@@ -152,10 +163,15 @@ export function AdminAudit() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{event.operation}</TableCell>
-                    <TableCell className="text-sm text-neutral-600">{event.user}</TableCell>
+                    <TableCell className="text-sm text-neutral-600">{event.actor || event.user}</TableCell>
+                    <TableCell className="text-sm text-neutral-600">{event.target}</TableCell>
+                    <TableCell className="text-sm max-w-xs truncate">{event.reason}</TableCell>
+                    <TableCell className="text-xs text-neutral-500 max-w-xs truncate">{event.idempotencyKey}</TableCell>
                     <TableCell className="text-sm text-neutral-600">{event.workspace || "-"}</TableCell>
                     <TableCell>{getStatusBadge(event.status)}</TableCell>
                     <TableCell className="text-sm max-w-xs truncate">{event.details}</TableCell>
+                    <TableCell className="text-xs text-neutral-500 max-w-xs truncate">{event.before}</TableCell>
+                    <TableCell className="text-xs text-neutral-500 max-w-xs truncate">{event.after}</TableCell>
                     <TableCell className="text-xs text-neutral-500 whitespace-nowrap">
                       {event.timestamp}
                     </TableCell>

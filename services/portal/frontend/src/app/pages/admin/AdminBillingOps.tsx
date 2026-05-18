@@ -19,7 +19,10 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { adminReadOnlyMessage, loadAdminBillingOpsModel, usePortalQuery } from "../../data/portalAdapters";
+import { Input } from "../../components/ui/input";
+import { markAdminBillingOp } from "../../../api/portal/admin";
+import { normalizePortalAdminActionError } from "../../../api/portal/admin";
+import { loadAdminBillingOpsModel, usePortalQuery } from "../../data/portalAdapters";
 
 interface BillingItem {
   rowKey: string;
@@ -30,13 +33,43 @@ interface BillingItem {
   amount: number;
   status: "pending" | "approved" | "rejected";
   reason: string;
+  anomaly: boolean;
+  note: string;
   createdAt: string;
 }
 
 export function AdminBillingOps() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const query = usePortalQuery(loadAdminBillingOpsModel, []);
-  const billingActionDisabledMessage = "账单审批需要后端审批事务启用；当前只读展示。";
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const query = usePortalQuery(loadAdminBillingOpsModel, [refreshVersion]);
+
+  const runBillingOpAction = async (item: BillingItem, status: "approved" | "rejected", anomaly: boolean) => {
+    const note = (notes[item.id] || item.note || item.reason || "").trim();
+    if (!note) {
+      setActionError("请填写处理备注。");
+      return;
+    }
+    setPendingAction(`${item.id}:${status}`);
+    setActionError("");
+    try {
+      await markAdminBillingOp({
+        itemId: item.id,
+        status,
+        anomaly,
+        note,
+        reason: note,
+        idempotencyKey: `billing-op:${item.id}:${status}`,
+      });
+      setRefreshVersion((value) => value + 1);
+    } catch (error) {
+      setActionError(normalizePortalAdminActionError(error, "账单处理未完成，请稍后重试。"));
+    } finally {
+      setPendingAction(null);
+    }
+  };
 
   const getTypeBadge = (type: string) => {
     switch (type) {
@@ -153,8 +186,9 @@ export function AdminBillingOps() {
         <CardContent>
           <div className="border rounded-md">
             <div className="px-4 py-3 text-xs text-neutral-500 border-b">
-              账单审批需要后端审批事务启用；当前只读展示。
+              退款和补扣由本地 Portal 账本执行；账单处理状态、异常标记和备注会写入审计。
             </div>
+            {actionError && <div className="px-4 py-3 text-sm text-red-600 border-b">{actionError}</div>}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -163,6 +197,7 @@ export function AdminBillingOps() {
                   <TableHead>工作空间</TableHead>
                   <TableHead>金额</TableHead>
                   <TableHead>原因</TableHead>
+                  <TableHead>处理备注</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>时间</TableHead>
                   <TableHead className="w-[150px]">操作</TableHead>
@@ -176,6 +211,15 @@ export function AdminBillingOps() {
                     <TableCell className="text-sm text-neutral-600">{item.workspace}</TableCell>
                     <TableCell className="font-medium">¥{item.amount.toFixed(2)}</TableCell>
                     <TableCell className="text-sm">{item.reason}</TableCell>
+                    <TableCell>
+                      <Input
+                        className="h-8 min-w-48 text-xs"
+                        value={notes[item.id] ?? item.note ?? ""}
+                        onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))}
+                        placeholder="填写处理备注"
+                        disabled={item.status !== "pending" || pendingAction?.startsWith(`${item.id}:`)}
+                      />
+                    </TableCell>
                     <TableCell>{getStatusBadge(item.status)}</TableCell>
                     <TableCell className="text-xs text-neutral-500">{item.createdAt}</TableCell>
                     <TableCell>
@@ -185,9 +229,9 @@ export function AdminBillingOps() {
                             variant="ghost"
                             size="sm"
                             className="text-green-600"
-                            disabled
-                            title={billingActionDisabledMessage}
-                            aria-label={`批准账单 ${item.id}（当前未启用）`}
+                            onClick={() => runBillingOpAction(item, "approved", false)}
+                            disabled={Boolean(pendingAction)}
+                            aria-label={`批准账单 ${item.id}`}
                           >
                             <CheckCircle className="w-4 h-4" />
                           </Button>
@@ -195,9 +239,9 @@ export function AdminBillingOps() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600"
-                            disabled
-                            title={billingActionDisabledMessage}
-                            aria-label={`拒绝账单 ${item.id}（当前未启用）`}
+                            onClick={() => runBillingOpAction(item, "rejected", true)}
+                            disabled={Boolean(pendingAction)}
+                            aria-label={`标记账单异常 ${item.id}`}
                           >
                             <XCircle className="w-4 h-4" />
                           </Button>

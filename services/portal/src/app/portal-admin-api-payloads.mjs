@@ -571,6 +571,9 @@ export function createPortalAdminApiPayloads(deps) {
   }
 
   function buildAdminBillingOpsApiPayload(db, payload) {
+    const billingOpsById = new Map((Array.isArray(db.settings?.billingOps) ? db.settings.billingOps : [])
+      .map((item) => [String(item.id || item.itemId || "").trim(), item])
+      .filter(([id]) => id));
     return {
       billingSync: payload.billingSync,
       pending: payload.pending,
@@ -586,7 +589,10 @@ export function createPortalAdminApiPayloads(deps) {
         .reverse()
         .map((item) => {
           const targetUser = db.users.find((entry) => entry.id === item.userId) || {};
+          const id = String(item.id || "");
+          const operation = billingOpsById.get(id) || {};
           return {
+            id,
             type: item.type,
             userId: item.userId,
             userName: targetUser.name || item.userId,
@@ -594,6 +600,11 @@ export function createPortalAdminApiPayloads(deps) {
             runId: item.runId || "",
             workspaceId: item.workspaceId || "",
             reason: item.reason || "",
+            status: operation.status || "pending",
+            anomaly: Boolean(operation.anomaly),
+            note: operation.note || "",
+            handledAt: operation.updatedAt || "",
+            handledBy: operation.operatorId || "",
             createdAt: item.createdAt,
           };
         }),
