@@ -31,6 +31,13 @@ GET  /api/opl-launch/messages/{messageId}/status
 
 旧入口 `/api/runtime-sessions` 和 `/api/runtime-sessions/{id}/runs` 保持 retired，不得作为 v22 新主路径。
 
+以下 token 在 active surface 视为 retired/forbidden：
+
+- retired resource-order identifier family（包括 snake/camel/kebab 旧字段族）
+- `opencost-pending`
+- `launch_token` URL query 语义
+- 未脱敏 `promptPreview`
+
 ## Session Contract
 
 OPL session 绑定必须满足：

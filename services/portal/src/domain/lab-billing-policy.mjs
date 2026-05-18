@@ -84,7 +84,7 @@ function subscriptionContext(user, subscription = {}) {
     tenantId,
     userId,
     accountId,
-    workspaceId: subscription.workspaceId || "default",
+    workspaceId: text(subscription.workspaceId || subscription.workspace_id || ""),
     runId: "",
     resourceBindingId,
     billingAttributionId,

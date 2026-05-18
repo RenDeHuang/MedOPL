@@ -40,7 +40,7 @@ export function createPortalStoreStorageBootstrap({
           name: adminSeed.name,
           role: "admin",
           status: "active",
-          currentTaskSlug: "default",
+          currentTaskSlug: "",
           preferences: { theme: "light" },
           passwordHash: hashPassword(adminSeed.password),
           createdAt: new Date().toISOString(),

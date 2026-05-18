@@ -4,9 +4,11 @@ program id: v22-cloud-onboarding
 
 current trunk anchor: 9b68c44
 
-current phase: starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only
+current phase: 合同清退与本地 smoke 对齐阶段（不接云）；legacy CO phases are historical aliases only
 
 本文件是 v22 cloud onboarding 的中央执行板。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
+
+当前 recovery 口径：先清合同-smoke-实现漂移，不接云。历史 cloud live/deploy 记录降级为 historical evidence，不等于当前阶段授权。
 
 本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前 cloud-lane 分支清退旧 CO/bridge-blocker 口径，落地 harness manifest、selector/check smoke 和 Portal async worker 控制面。生产真实验收必须按 L1 -> L2a -> L2b -> L3 -> L4 串联执行，不能把 direct canary、deploy runtime smoke 或本地 fake-live 当作完整产品闭环。
 
@@ -26,7 +28,7 @@ Current goal leaf `leaf-cloud-lane-readonly-status-audit` is a repo-tracked loca
 
 - program id: v22-cloud-onboarding
 - current trunk anchor: 9b68c44
-- current phase: starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only
+- current phase: 合同清退与本地 smoke 对齐阶段（不接云）；legacy CO phases are historical aliases only
 - current lane: starter minimal live evidence reconciliation + rebase verification
 - next lane: B review / ff-only absorption decision; future pro, upgrade, add-storage and full matrix live reruns require separate authorization
 - current goal leaf: `leaf-cloud-lane-readonly-status-audit`

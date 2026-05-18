@@ -73,17 +73,20 @@ export function createPortalWorkspaceRuntime({
       .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
       .map((item) => ({
         ...item,
-        title: sanitizeTaskTitle(item.slug || "default", item.title || ""),
+        title: sanitizeTaskTitle(item.slug || "workspace", item.title || ""),
       }));
   }
 
   function findTaskSpace(db, userId, slug) {
-    const normalized = slugify(slug || "default");
+    const requested = String(slug || "").trim();
+    if (!requested) return null;
+    const normalized = slugify(requested);
+    if (!normalized) return null;
     return db.taskSpaces.find((item) => item.userId === userId && item.slug === normalized) || null;
   }
 
   function currentTaskSpaceForUser(db, user) {
-    return findTaskSpace(db, user.id, user.currentTaskSlug || "default");
+    return user.currentTaskSlug ? findTaskSpace(db, user.id, user.currentTaskSlug) : null;
   }
 
   function isRunTerminal(run) {
@@ -109,8 +112,11 @@ export function createPortalWorkspaceRuntime({
     );
   }
 
-  async function ensureTaskSpace(db, user, slug = "default", title = "Default Task") {
+  async function ensureTaskSpace(db, user, slug, title = "") {
     const normalized = slugify(slug);
+    if (!normalized) {
+      throw new Error("workspace_slug_required");
+    }
     const existing = db.taskSpaces.find((item) => item.userId === user.id && item.slug === normalized);
     if (existing) return existing;
     const taskSpace = {
@@ -144,7 +150,7 @@ export function createPortalWorkspaceRuntime({
     taskSpace.updatedAt = taskSpace.archivedAt;
     if (user.currentTaskSlug === taskSpace.slug) {
       const fallback = listTaskSpacesForUser(db, user.id).find((item) => item.slug !== taskSpace.slug && item.status === "active");
-      user.currentTaskSlug = fallback?.slug || "default";
+      user.currentTaskSlug = fallback?.slug || "";
     }
     await logPortalEvent({ type: "workspace_archived", userId: user.id, workspaceId: taskSpace.slug, title: taskSpace.title });
   }
@@ -175,7 +181,7 @@ export function createPortalWorkspaceRuntime({
     });
     if (user.currentTaskSlug === taskSpace.slug) {
       const fallback = listTaskSpacesForUser(db, user.id).find((item) => item.slug !== taskSpace.slug && item.status === "active");
-      user.currentTaskSlug = fallback?.slug || "default";
+      user.currentTaskSlug = fallback?.slug || "";
     }
     await logPortalEvent({
       type: "workspace_deleted",
@@ -448,7 +454,12 @@ export function createPortalWorkspaceRuntime({
 
   async function handleUpload(req, res, user, existingDb = null) {
     const url = new URL(req.url || "/", "http://local");
-    const taskSlug = slugify(url.searchParams.get("task") || "default");
+    const requestedTask = String(url.searchParams.get("task") || user.currentTaskSlug || "").trim();
+    const taskSlug = requestedTask ? slugify(requestedTask) : "";
+    if (!taskSlug) {
+      sendHtml(res, layoutV2("上传失败", `<div class="card">必须指定目标工作空间。</div>`, user), 422);
+      return;
+    }
     const contentType = String(req.headers["content-type"] || "");
     const match = contentType.match(/boundary=(.+)$/);
     if (!match) {

@@ -45,15 +45,6 @@ export function mapRunError(error, context = {}) {
   }
 
   const message = String(source.message || source.error || error || "");
-  if (/resource_order_prepare_failed/i.test(message)) {
-    return buildRunError({
-      code: RUN_ERROR_CODES.RESOURCE_ORDER_PREPARE_FAILED,
-      stage: RUN_STAGES.RESOURCE_ORDER_PREPARE,
-      retryable: false,
-      details,
-      correlationId,
-    });
-  }
   if (/workspace/i.test(message) && /runner/i.test(message)) {
     return buildRunError({
       code: RUN_ERROR_CODES.RUNNER_WORKSPACE_CREATE_FAILED,

@@ -141,6 +141,82 @@ function enrichBinding(binding = {}, maps = {}) {
   };
 }
 
+function publicComputeResourceView(item = {}) {
+  return {
+    region: text(item.region),
+    zone: text(item.zone),
+    instanceType: text(item.instanceType),
+    healthStatus: text(item.healthStatus || "unknown"),
+    status: text(item.status || "active"),
+    billingStartedAt: text(item.billingStartedAt),
+    billingStoppedAt: text(item.billingStoppedAt),
+    createdAt: text(item.createdAt),
+    updatedAt: text(item.updatedAt),
+  };
+}
+
+function publicFileSpaceResourceView(item = {}) {
+  return {
+    region: text(item.region),
+    storageCapacityGb: Number(item.storageCapacityGb || 0) || 0,
+    status: text(item.status || "active"),
+    billingStartedAt: text(item.billingStartedAt),
+    billingStoppedAt: text(item.billingStoppedAt),
+    createdAt: text(item.createdAt),
+    updatedAt: text(item.updatedAt),
+  };
+}
+
+function publicProtectionView(item = {}) {
+  if (!item) return null;
+  return {
+    workspaceId: text(item.workspaceId),
+    usageMode: text(item.usageMode),
+    windowStartAt: text(item.windowStartAt),
+    windowEndAt: text(item.windowEndAt),
+    weeklyAmount: Number(item.weeklyAmount || 0),
+    frozenAmount: Number(item.frozenAmount || 0),
+    consumedAmount: Number(item.consumedAmount || 0),
+    remainingAmount: Number(item.remainingAmount || 0),
+    releasedAmount: Number(item.releasedAmount || 0),
+    reconcile120MinStatus: text(item.reconcile120MinStatus),
+    tPlus1AuditStatus: text(item.tPlus1AuditStatus),
+    status: text(item.status || "active"),
+    createdAt: text(item.createdAt),
+    updatedAt: text(item.updatedAt),
+  };
+}
+
+function publicManagedEnvironmentResourceView(binding = {}) {
+  const computeResource = binding.computeInstance ? publicComputeResourceView(binding.computeInstance) : null;
+  const fileSpace = binding.storageBucket ? publicFileSpaceResourceView(binding.storageBucket) : null;
+  const protection = publicProtectionView(binding.protection);
+  return {
+    workspaceId: text(binding.workspaceId),
+    status: text(binding.status || "active"),
+    bindingAccess: buildWorkspaceBindingAccess(binding),
+    computeResource,
+    fileSpace,
+    protection,
+    createdAt: text(binding.createdAt),
+    updatedAt: text(binding.updatedAt),
+  };
+}
+
+function publicMutationResult(result = {}) {
+  return {
+    ...result,
+    item: result.item?.instanceType ? publicComputeResourceView(result.item) : result.item?.storageCapacityGb !== undefined ? publicFileSpaceResourceView(result.item) : result.item,
+    binding: result.binding ? publicManagedEnvironmentResourceView(result.binding) : result.binding,
+    affectedBindings: Array.isArray(result.affectedBindings) ? result.affectedBindings.map(publicManagedEnvironmentResourceView) : result.affectedBindings,
+    releasedProtection: result.releasedProtection ? {
+      ...result.releasedProtection,
+      items: Array.isArray(result.releasedProtection.items) ? result.releasedProtection.items.map(publicProtectionView) : [],
+    } : result.releasedProtection,
+    freeze: result.freeze ? publicProtectionView(result.freeze) : result.freeze,
+  };
+}
+
 function buildOwnedResourceMaps(db = {}, owner = {}) {
   const computeInstances = collectOwnedComputeInstances(db, owner);
   const storageBuckets = collectOwnedStorageBuckets(db, owner);
@@ -354,28 +430,32 @@ function listOwnerScopedResources(db = {}, user = {}) {
   const activeBindingItems = activeBindings(bindings);
   const inactiveBindingItems = bindings.filter((item) => !isActiveStatus(item.status));
   const protectionSummary = summarizeProtectionFreezes(maps.protectionFreezes);
+  const items = bindings.map(publicManagedEnvironmentResourceView);
+  const computeResources = maps.computeInstances.map(publicComputeResourceView);
+  const fileSpaces = maps.storageBuckets.map(publicFileSpaceResourceView);
+  const protections = maps.protectionFreezes.map(publicProtectionView);
   return {
     ok: true,
     source: "portal_platform_provisioned_resources",
-    computeInstances: maps.computeInstances,
-    storageBuckets: maps.storageBuckets,
-    protectionFreezes: maps.protectionFreezes,
-    bindings,
+    computeResources,
+    fileSpaces,
+    protections,
+    items,
     accessPolicy: buildOwnerAccessPolicy({ activeBindingCount: activeBindingItems.length }),
     summary: {
-      computeInstances: maps.computeInstances.length,
-      storageBuckets: maps.storageBuckets.length,
-      activeBindings: activeBindingItems.length,
-      inactiveBindings: inactiveBindingItems.length,
-      activeProtectionFreezes: protectionSummary.active,
+      computeResources: maps.computeInstances.length,
+      fileSpaces: maps.storageBuckets.length,
+      activeEnvironments: activeBindingItems.length,
+      inactiveEnvironments: inactiveBindingItems.length,
+      activeProtections: protectionSummary.active,
       frozenAmount: moneyDelta(protectionSummary.frozenAmount),
       consumedAmount: moneyDelta(protectionSummary.consumedAmount),
       remainingAmount: moneyDelta(protectionSummary.remainingAmount),
       releasedProtectionAmount: moneyDelta(protectionSummary.releasedAmount),
-      computeInstanceCount: maps.computeInstances.length,
-      storageBucketCount: maps.storageBuckets.length,
-      bindingCount: bindings.length,
-      protectionFreezeCount: maps.protectionFreezes.length,
+      computeResourceCount: maps.computeInstances.length,
+      fileSpaceCount: maps.storageBuckets.length,
+      environmentCount: bindings.length,
+      protectionCount: maps.protectionFreezes.length,
     },
   };
 }
@@ -427,7 +507,7 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
     const item = normalizeCustomerComputeResource(source, owner);
     db.userComputeInstances.push(item);
     await writeDb(db);
-    return item;
+    return publicComputeResourceView(item);
   }
 
   async function createStorageBucket(db = {}, user = {}, payload = {}) {
@@ -443,7 +523,7 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
     const item = normalizeCustomerStorageResource(source, owner);
     db.userStorageBuckets.push(item);
     await writeDb(db);
-    return item;
+    return publicFileSpaceResourceView(item);
   }
 
   async function bindWorkspaceResource(db = {}, user = {}, payload = {}) {
@@ -490,7 +570,7 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
       updatedAt,
     }));
     await writeDb(db);
-    return buildBindingView(db, owner, findOwnedBinding(db, owner, binding.id));
+    return publicManagedEnvironmentResourceView(buildBindingView(db, owner, findOwnedBinding(db, owner, binding.id)));
   }
 
   async function unbindWorkspaceResource(db = {}, user = {}, payload = {}) {
@@ -507,11 +587,11 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
     const releasedProtection = releaseBindingProtection(db, owner, [existing.id]);
     stopComputeBillingWhenUnused(db, owner, text(existing.computeInstanceId));
     await writeDb(db);
-    return {
+    return publicMutationResult({
       ok: true,
       binding: buildBindingView(db, owner, findOwnedBinding(db, owner, existing.id)),
       releasedProtection,
-    };
+    });
   }
 
   async function deleteComputeInstance(db = {}, user = {}, payload = {}) {
@@ -540,12 +620,12 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
       updatedAt,
     }));
     await writeDb(db);
-    return {
+    return publicMutationResult({
       ok: true,
       item,
       affectedBindings: affectedBindings.map((binding) => buildBindingView(db, owner, findOwnedBinding(db, owner, binding.id))),
       releasedProtection,
-    };
+    });
   }
 
   async function deleteStorageBucket(db = {}, user = {}, payload = {}) {
@@ -577,12 +657,12 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
       stopComputeBillingWhenUnused(db, owner, text(binding.computeInstanceId));
     }
     await writeDb(db);
-    return {
+    return publicMutationResult({
       ok: true,
       item,
       affectedBindings: affectedBindings.map((binding) => buildBindingView(db, owner, findOwnedBinding(db, owner, binding.id))),
       releasedProtection,
-    };
+    });
   }
 
   function listOwnerScopedProtectionFreezes(db = {}, user = {}, filters = {}) {
@@ -602,7 +682,7 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
     return {
       ok: true,
       source: "portal_weekly_protection_freezes",
-      items,
+      items: items.map(publicProtectionView),
       summary: summarizeProtectionFreezes(items),
     };
   }
@@ -621,7 +701,7 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
         reason: "api_only_no_freeze",
         deltaFrozenAmount: 0,
         freeze: null,
-        binding: binding ? buildBindingView(db, owner, binding) : null,
+        binding: binding ? publicManagedEnvironmentResourceView(buildBindingView(db, owner, binding)) : null,
       };
     }
     const binding = findActiveOwnedBinding(db, owner, bindingId);
@@ -642,8 +722,8 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
         created: true,
         skipped: false,
         deltaFrozenAmount: Number(normalized.frozenAmount || 0),
-        freeze: withFreezeView(normalized),
-        binding: buildBindingView(db, owner, binding),
+        freeze: publicProtectionView(withFreezeView(normalized)),
+        binding: publicManagedEnvironmentResourceView(buildBindingView(db, owner, binding)),
       };
     }
     const updated = buildUpdatedWeeklyProtectionFreeze(existing, normalized, payload);
@@ -654,8 +734,8 @@ export function createPortalPlatformProvisionedResourceStore({ writeDb, cloudPro
       created: false,
       skipped: false,
       deltaFrozenAmount: moneyDelta(updated.deltaFrozenAmount),
-      freeze: withFreezeView(updated.freeze),
-      binding: buildBindingView(db, owner, binding),
+      freeze: publicProtectionView(withFreezeView(updated.freeze)),
+      binding: publicManagedEnvironmentResourceView(buildBindingView(db, owner, binding)),
     };
   }
 

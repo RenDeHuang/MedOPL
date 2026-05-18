@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const RAW_PROMPT = "raw prompt must not appear in trace file linkage";
 const RAW_COMPLETION = "raw completion must not appear in trace file linkage";
@@ -144,7 +145,8 @@ assert.equal(workspacePayload.counts.outputs, 1, "file_space_must_count_runtime_
 assert.equal(workspacePayload.outputs.length, 1, "file_space_must_list_runtime_bridge_artifact_output");
 assert.equal(workspacePayload.outputs[0].artifactRef, artifactRef, "file_space_artifact_ref_mismatch");
 assert.equal(workspacePayload.outputs[0].fileRef, artifactRef, "file_space_file_ref_mismatch");
-assert.equal(workspacePayload.outputs[0].runId, runId, "file_space_run_link_mismatch");
+assert.ok(workspacePayload.outputs[0].taskRef, "file_space_task_ref_required");
+assert.notEqual(workspacePayload.outputs[0].taskRef, runId, "file_space_task_ref_must_not_expose_run_id");
 assert.equal(workspacePayload.outputs[0].sessionId, sessionId, "file_space_session_link_mismatch");
 assert.equal(workspacePayload.outputs[0].source, "runtime_bridge_artifact_reference", "file_space_source_mismatch");
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
@@ -205,10 +207,12 @@ assert.equal(tracePayload.items.length, 1, "trace_payload_must_have_one_canonica
 assert.equal(traceItem.outputFiles.length, 1, "trace_task_must_expose_linked_output_file");
 assert.equal(traceItem.outputFiles[0].artifactRef, artifactRef, "trace_output_artifact_ref_mismatch");
 assert.equal(traceItem.outputFiles[0].fileRef, artifactRef, "trace_output_file_ref_mismatch");
-assert.equal(traceItem.outputFiles[0].runId, runId, "trace_output_run_link_mismatch");
+assert.equal(traceItem.outputFiles[0].taskRef, workspacePayload.outputs[0].taskRef, "trace_output_task_ref_mismatch");
 assert.equal(traceItem.outputFiles[0].sessionId, sessionId, "trace_output_session_link_mismatch");
 assert.equal(traceItem.files.linkedOutputCount, 1, "trace_file_summary_linked_output_count_mismatch");
 assert.equal(traceItem.observability.source, "langfuse_sanitized_projection", "langfuse_must_remain_observability_attachment");
+assert.equal(JSON.stringify(workspacePayload).includes('"runId"'), false, "workspace_payload_must_not_expose_run_id_field");
+assert.equal(JSON.stringify(tracePayload).includes('"runId"'), false, "trace_payload_must_not_expose_run_id_field");
 assertNoForbiddenLeak(tracePayload, "trace_payload");
 
 const traceSurfaceSource = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
@@ -231,7 +235,7 @@ assert(portalAdapterSource.includes("linkedOutputFiles"), "portal_adapter_must_m
 assert(portalAdapterSource.includes("outputFileNames"), "portal_adapter_must_project_output_file_names");
 assert(traceTypesSource.includes("linkedOutputFiles"), "trace_types_must_include_linked_output_files");
 assert(workspaceTypesSource.includes("artifactRef"), "workspace_types_must_include_artifact_ref");
-assert(suiteSource.includes("smoke-test-v22-portal-trace-file-linkage"), "mvp_suite_must_include_trace_file_linkage_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-portal-trace-file-linkage.mjs"), "mvp_suite_must_include_trace_file_linkage_smoke");
 
 console.log(JSON.stringify({
   ok: true,

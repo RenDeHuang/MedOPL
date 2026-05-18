@@ -30,19 +30,45 @@ function workspaceIdFromPayload(payload = {}) {
   return text(payload.workspaceId || payload.workspace_id);
 }
 
+function activeBindingForWorkspace(db = {}, user = {}, workspaceId = "") {
+  const ownerUserId = text(user.id);
+  const targetWorkspaceId = text(workspaceId);
+  return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
+    .find((item) =>
+      text(item.userId || item.ownerUserId) === ownerUserId &&
+      text(item.workspaceId) === targetWorkspaceId &&
+      text(item.status || "active") === "active"
+    ) || null;
+}
+
+function internalResourceBindingState(binding = null) {
+  if (!binding) return null;
+  const resourceBindingId = text(binding.resourceBindingId || binding.id);
+  if (!resourceBindingId) return null;
+  return {
+    resourceBindingId,
+    id: resourceBindingId,
+    auditTag: text(binding.auditTag),
+  };
+}
+
 function buildState(db, user, payload = {}, {
   activeUserStatus,
   buildUserBillingSummary,
   currentServerPlanSelection,
   currentTaskSpaceForUser,
 } = {}) {
-  return buildCanonicalPortalStatePayload(db, user, {
+  const workspaceId = workspaceIdFromPayload(payload);
+  const state = buildCanonicalPortalStatePayload(db, user, {
     activeUserStatus,
     buildUserBillingSummary,
     currentServerPlanSelection,
     currentTaskSpaceForUser,
-    workspaceId: workspaceIdFromPayload(payload),
+    workspaceId,
   });
+  const resourceBinding = internalResourceBindingState(activeBindingForWorkspace(db, user, workspaceId));
+  if (resourceBinding) state.resourceBinding = resourceBinding;
+  return state;
 }
 
 export function createPortalApiV22OplWorkRoutes({

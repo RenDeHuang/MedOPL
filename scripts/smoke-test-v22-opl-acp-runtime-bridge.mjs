@@ -4,6 +4,20 @@ const repoRoot = process.cwd();
 const port = Number(process.env.PORT || 18796);
 const runtimeBridgeUrl = `http://127.0.0.1:${port}`;
 const oplWebUrl = process.env.OPL_WEB_URL || "http://127.0.0.1:19999/opl-web";
+const acpRuntimeFixtureSource = `
+const readline = require("node:readline");
+const commands = ["initialize", "session_list", "session_ledger", "session_create", "prompt"];
+readline.createInterface({ input: process.stdin, crlfDelay: Infinity }).on("line", (line) => {
+  const request = JSON.parse(line);
+  let result = {};
+  if (request.command === "initialize") {
+    result = { surface_id: "opl-acp-runtime-smoke", version: "v22-smoke", commands };
+  } else if (request.command === "session_list" || request.command === "session_ledger") {
+    result = { items: [] };
+  }
+  process.stdout.write(JSON.stringify({ id: request.id, ok: true, result }) + "\\n");
+});
+`;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -19,6 +33,7 @@ function startRuntimeBridge() {
       OPL_WEB_URL: oplWebUrl,
       OPL_PRODUCT_API_URL: "",
       OPL_RUNTIME_MODE: "acp",
+      OPL_ACP_RUNTIME_COMMAND_JSON: JSON.stringify([process.execPath, "-e", acpRuntimeFixtureSource]),
       NODE_ENV: "production",
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -61,8 +76,8 @@ try {
       portalUserId: "portal-acp-smoke-user",
       portalUserEmail: "portal-acp-smoke@example.com",
       portalUserName: "Portal ACP Smoke",
-      workspaceId: "default",
-      workspaceTitle: "Default workspace",
+      workspaceId: "workspace-acp-smoke",
+      workspaceTitle: "ACP smoke workspace",
       workspacePath: repoRoot,
       workspaceSessionId: "portal-acp-smoke-workspace-session",
       sourceSurface: "portal-control-plane",
@@ -72,7 +87,11 @@ try {
   assert(launch.runtimeSessionId, "runtimeSessionId missing");
   assert(String(launch.oplWebUrl || "").startsWith(oplWebUrl), "oplWebUrl did not use OPL_WEB_URL");
 
-  const bootstrap = await fetchJson(`/api/opl-launch/bootstrap?launch_token=${encodeURIComponent(launch.launchToken)}`);
+  const bootstrap = await fetchJson("/api/opl-launch/bootstrap", {
+    headers: {
+      authorization: `Bearer ${launch.launchToken}`,
+    },
+  });
   assert(bootstrap.opl?.health?.source === "opl_acp_runtime", "bootstrap did not come from OPL ACP runtime");
   assert(bootstrap.system?.id === "opl-acp-runtime", "system id mismatch");
   assert(Array.isArray(bootstrap.system?.commands) && bootstrap.system.commands.includes("initialize"), "ACP command surface missing");

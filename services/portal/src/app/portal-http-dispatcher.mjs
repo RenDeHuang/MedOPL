@@ -147,7 +147,16 @@ export function createPortalHttpDispatcher({
     }
     if (await handleServerPlanRoutes({ req, res, url, db, user })) return;
     if (req.method === "GET" && url.pathname === "/portal/api/workspace") {
-      const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
+      const requestedTask = String(url.searchParams.get("task") || user.currentTaskSlug || "").trim();
+      const taskSlug = requestedTask ? slugify(requestedTask) : "";
+      if (!taskSlug) {
+        sendJson(res, {
+          ok: false,
+          error: "workspace_id_required",
+          message: "必须指定要查看的工作空间。",
+        }, 422);
+        return;
+      }
       sendJson(res, await buildWorkspacePayload(db, user, taskSlug));
       return;
     }

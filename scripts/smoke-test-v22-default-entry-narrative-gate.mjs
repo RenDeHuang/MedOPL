@@ -458,6 +458,39 @@ const branchScopedAllowedDiffPatterns = new Map([
     "services/opl-web-gateway/src/**",
     "services/opl-runtime-bridge/src/**",
   ]],
+  ["cleanup/v22-zero-compat-contract-smoke-physical-retirement", [
+    "OPL-v20-*",
+    "docs/status.md",
+    "docs/contracts/v22-*",
+    "docs/recovery/*",
+    "docs/plan/**",
+    "docs/reports/**",
+    "docs/releases/**",
+    "docs/logs/**",
+    "docs/operations/**",
+    "docs/superpowers/**",
+    "scripts/fixtures/opl-product-api-fixture.mjs",
+    "scripts/smoke-test-v22-*",
+    "scripts/v22-smoke-classification.mjs",
+    "scripts/v22-verify.mjs",
+    "services/portal/src/migrate-schema.mjs",
+    "services/portal/src/portal-cloud-operation-worker.mjs",
+    "services/portal/src/app/portal-auth-runtime-handler.mjs",
+    "services/portal/src/app/portal-http-dispatcher.mjs",
+    "services/portal/src/app/portal-workspace-runtime.mjs",
+    "services/portal/src/app/portal-runtime-observability.mjs",
+    "services/portal/src/app/portal-page-overview-payloads.mjs",
+    "services/portal/src/app/portal-page-payload-helpers.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/app/portal-server-plan-runtime-handler.mjs",
+    "services/portal/src/domain/**",
+    "services/portal/src/routes/**",
+    "services/portal/src/state/**",
+    "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+    "services/portal/frontend/src/**",
+    "services/opl-web-gateway/src/**",
+    "services/opl-runtime-bridge/src/**",
+  ]],
   ["cleanup/v22-system-domain-truth-layer-zero-old-context", [
     "README.md",
     "docs/product.md",
@@ -553,7 +586,7 @@ function changedFilesFromBase() {
     ["diff", "--name-only", "origin/recovery/platform-v22-trunk"],
     ["ls-files", "--others", "--exclude-standard"],
   ].map((args) => {
-    const result = spawnSync("git", args, {
+    const result = spawnSync("git", ["-c", "core.quotepath=false", ...args], {
       cwd: repoRoot,
       encoding: "utf8",
       stdio: "pipe",
@@ -566,7 +599,7 @@ function changedFilesFromBase() {
 }
 
 function isDeletedFromBase(filePath) {
-  const result = spawnSync("git", ["diff", "--name-status", "origin/recovery/platform-v22-trunk", "--", filePath], {
+  const result = spawnSync("git", ["-c", "core.quotepath=false", "diff", "--name-status", "origin/recovery/platform-v22-trunk", "--", filePath], {
     cwd: repoRoot,
     encoding: "utf8",
     stdio: "pipe",

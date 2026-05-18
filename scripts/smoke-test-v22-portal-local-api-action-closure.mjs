@@ -233,7 +233,7 @@ try {
     const userCookie = await login(baseUrl, userEmail, userPassword);
     const activatePackage = await postJson(`${baseUrl}/portal/api/lab-packages/activate`, {
       packageId: "starter_2c4g_10gb",
-      workspaceId: "default",
+      workspaceId: "workspace-local-api",
       idempotencyKey: "local-api-closure-starter",
     }, { cookie: userCookie });
     assert.equal(activatePackage.status, 201, "lab_package_activate_must_create_subscription");
@@ -241,7 +241,7 @@ try {
     assert.equal(activatedPayload.ok, true, "lab_package_activate_payload_ok");
     assert.equal(activatedPayload.currentPackageId, "starter_2c4g_10gb", "lab_package_activate_package_id_mismatch");
 
-    const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=default`, { cookie: userCookie });
+    const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=workspace-local-api`, { cookie: userCookie });
     assert.equal(subscription.response.status, 200, "lab_subscription_must_return_200");
     assert.equal(subscription.json.currentPackageId, "starter_2c4g_10gb", "lab_subscription_must_reflect_activation");
 

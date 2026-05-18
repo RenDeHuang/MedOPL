@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   billingItemsForRun,
   publicBalanceLink,
@@ -27,6 +28,12 @@ function filterMergedTraceRows(rows = [], requestOptions = {}) {
 
 function text(value = "") {
   return String(value ?? "").trim();
+}
+
+function publicTaskRef(...values) {
+  const source = values.map(text).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
 }
 
 function traceSearchText(item = {}) {
@@ -116,7 +123,7 @@ function timelineForEvents(events = [], item = {}) {
     type: event.type,
     occurredAt: event.occurredAt,
     workspaceId: event.workspaceId || item.workspaceId,
-    runId: event.runId || item.runId,
+    taskRef: item.taskRef || publicTaskRef(event.traceId, event.sessionId, event.runId, event.occurredAt),
     })),
   ];
 }
@@ -124,30 +131,35 @@ function timelineForEvents(events = [], item = {}) {
 function canonicalTimelineForTrace(item = {}) {
   const occurredAt = text(item.updatedAt || item.startedAt);
   const workspaceId = text(item.workspaceId);
-  const runId = text(item.runId);
+  const taskRef = text(item.taskRef);
   const events = [];
   if (item.traceId || item.sessionId) {
     events.push({
       type: "portal_session_trace_projected",
       occurredAt,
       workspaceId,
-      runId,
+      taskRef,
     });
   }
-  if (runId) {
+  if (taskRef) {
     events.push({
       type: "runtime_run_projected",
       occurredAt,
       workspaceId,
-      runId,
+      taskRef,
     });
   }
-  for (const artifactRef of Array.isArray(item.artifactRefs) ? item.artifactRefs : []) {
+  const artifactRefs = [
+    ...(Array.isArray(item.artifactRefs) ? item.artifactRefs : []),
+    ...(Array.isArray(item.outputFiles) ? item.outputFiles.map((file) => file.artifactRef || file.fileRef) : []),
+    ...(Array.isArray(item.linkedOutputFiles) ? item.linkedOutputFiles.map((file) => file.artifactRef || file.fileRef) : []),
+  ].map(text).filter(Boolean);
+  for (const artifactRef of [...new Set(artifactRefs)]) {
     events.push({
       type: "runtime_artifact_recorded",
       occurredAt,
       workspaceId,
-      runId,
+      taskRef,
       artifactRef: text(artifactRef),
     });
   }
@@ -157,13 +169,13 @@ function canonicalTimelineForTrace(item = {}) {
 function eventMatchesTrace(event = {}, item = {}, user = {}) {
   return event.userId === (item.userId || user.id) &&
     (!item.workspaceId || event.workspaceId === item.workspaceId) &&
-    (!item.runId || event.runId === item.runId);
+    (!item.taskRef || item.taskRef === publicTaskRef(event.traceId, event.sessionId, event.runId, event.occurredAt));
 }
 
 function findTraceDetailItem(items = [], sessionId = "") {
   const target = String(sessionId || "");
   return items.find((row) => String(row.traceId || "") === target) ||
-    items.find((row) => String(row.runId || "") === target) ||
+    items.find((row) => String(row.taskRef || "") === target) ||
     items.find((row) =>
       String(row.sessionId || row.workspaceSessionId || "") === target
     ) ||
@@ -214,7 +226,7 @@ function observabilityProjection(row = {}, source = "") {
     label: "观测摘要",
     traceId,
     sessionId,
-    runId,
+    taskRef: publicTaskRef(traceId, sessionId, runId),
     status: text(row.status || "recorded"),
     latencyMs: numberValue(row.latencyMs),
     usageSummary: usageSummaryProjection(row),
@@ -259,7 +271,8 @@ function publicOutputFileView(file = {}) {
     fileRef,
     name: text(file.name),
     workspaceId: text(file.workspaceId || file.workspace_id),
-    runId: text(file.runId || file.run_id),
+    taskRef: publicTaskRef(fileRef, file.sessionId, file.session_id, file.oplSessionId, file.opl_session_id, file.runId, file.run_id),
+    internalRunId: text(file.runId || file.run_id),
     sessionId: text(file.sessionId || file.session_id || file.oplSessionId || file.opl_session_id),
     kind: text(file.kind || "outputs"),
     sizeBytes: numberValue(file.sizeBytes || file.size_bytes || file.size),
@@ -281,7 +294,7 @@ function outputFilesFromStorage(storage = {}) {
 function outputFileMatchesTrace(file = {}, row = {}) {
   const artifactRefs = new Set((Array.isArray(row.artifactRefs) ? row.artifactRefs : []).map(text).filter(Boolean));
   return (artifactRefs.size > 0 && artifactRefs.has(text(file.artifactRef || file.fileRef)))
-    || (text(row.runId) && text(file.runId) === text(row.runId))
+    || (text(row.internalRunId) && text(file.internalRunId) === text(row.internalRunId))
     || (text(row.sessionId) && text(file.sessionId) === text(row.sessionId))
     || (text(row.runtimeSessionId) && text(file.sessionId) === text(row.runtimeSessionId));
 }
@@ -293,11 +306,11 @@ function linkedOutputFilesForTrace(row = {}, storage = {}) {
   ];
   const seen = new Set();
   return linked.filter((file) => {
-    const key = file.artifactRef || file.fileRef || `${file.runId}:${file.name}`;
+    const key = file.artifactRef || file.fileRef || `${file.internalRunId}:${file.name}`;
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  });
+  }).map(({ internalRunId: _internalRunId, ...file }) => file);
 }
 
 function artifactOutputFilesFromTrace(row = {}) {
@@ -309,7 +322,8 @@ function artifactOutputFilesFromTrace(row = {}) {
       fileRef: artifactRef,
       name: artifactRef,
       workspaceId: text(row.workspaceId),
-      runId: text(row.runId),
+      taskRef: publicTaskRef(artifactRef, row.traceId, row.sessionId, row.runtimeSessionId, row.workspaceSessionId, row.runId),
+      internalRunId: text(row.runId),
       sessionId: text(row.sessionId || row.runtimeSessionId || row.workspaceSessionId),
       kind: "outputs",
       sizeBytes: 0,
@@ -329,8 +343,9 @@ function canonicalRuntimeTraceRow(row = {}, projectionMap = new Map()) {
     workspaceId: text(row.workspaceId),
     workspaceSessionId: text(row.workspaceSessionId),
     runtimeSessionId: text(row.runtimeSessionId),
-    runId: text(row.runId),
-    messageId: text(row.messageId || row.runId),
+    taskRef: publicTaskRef(row.traceId, row.sessionId, row.runtimeSessionId, row.workspaceSessionId, row.messageId, row.runId),
+    internalRunId: text(row.runId),
+    messageId: text(row.messageId) && text(row.messageId) !== text(row.runId) ? text(row.messageId) : "",
     replyMessageId: text(row.replyMessageId),
     providerInvocationRef: text(row.providerInvocationRef),
     capabilitySource: text(row.capabilitySource),
@@ -386,7 +401,7 @@ async function fetchMergedTraceRowsForPortalUser(deps, user, options = {}) {
 
 async function enrichSessionTraceRow(deps, db, user, row = {}) {
   const workspaceId = String(row.workspaceId || "").trim();
-  const runId = String(row.runId || "").trim();
+  const runId = String(row.internalRunId || "").trim();
   const taskSpace = workspaceId ? deps.findTaskSpace(db, row.userId || user.id, workspaceId) : null;
   const storage = taskSpace ? await deps.fetchWorkspaceStorageSnapshot(taskSpace) : null;
   const linkedOutputFiles = linkedOutputFilesForTrace(row, storage);
@@ -397,8 +412,9 @@ async function enrichSessionTraceRow(deps, db, user, row = {}) {
   const linkedCosts = billingItemsForRun(billing?.items || [], { runId, workspaceId });
   const publicCosts = linkedCosts.length ? linkedCosts : relatedCosts;
   const costEstimate = publicCostEstimate(billing || {}, publicCosts);
+  const { internalRunId: _internalRunId, artifactRefs: _artifactRefs, ...publicRow } = row;
   return {
-    ...row,
+    ...publicRow,
     title: traceTitle(row),
     businessStatus: row.status || "recorded",
     resourceUsage: publicResourceUsage({
@@ -431,7 +447,11 @@ export async function buildSessionTracesApiPayload(deps, db, user, options = {})
   const pagination = deps.paginateRows(merged.rows, options.page, deps.normalizePageSize(options.pageSize || 10));
   const items = await Promise.all(pagination.rows.map((row) => enrichSessionTraceRow(deps, db, user, row)));
   return {
-    filters: merged.filters,
+    filters: {
+      workspaceId: merged.filters.workspaceId,
+      sessionId: merged.filters.sessionId,
+      status: merged.filters.status,
+    },
     summary: traceListSummary(merged),
     items,
     pagination: paginationPayload(pagination),
@@ -446,7 +466,7 @@ export async function buildSessionTraceDetailPayload(deps, db, user, sessionId) 
   const payload = await buildSessionTracesApiPayload(deps, db, user, { sessionId, limit: 200, pageSize: 200 });
   const item = findTraceDetailItem(payload.items, sessionId);
   if (!item) return null;
-  const events = await deps.readPortalEvents({ limit: 200, userId: user.id, workspaceId: item.workspaceId, runId: item.runId });
+  const events = await deps.readPortalEvents({ limit: 200, userId: user.id, workspaceId: item.workspaceId });
   return {
     ...item,
     timeline: timelineForEvents(events, item),

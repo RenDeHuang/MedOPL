@@ -232,6 +232,7 @@ async function uploadThroughOpl(apiRoute, db, user, { workspaceId, fileName }) {
   });
   assert.equal(uploaded.res.statusCode, 201, `${workspaceId}_upload_must_create`);
   assert.equal(uploaded.res.payload.fileRef.workspaceId, workspaceId, `${workspaceId}_upload_workspace_mismatch`);
+  assert.equal(Object.hasOwn(uploaded.res.payload.fileRef, "resourceBindingId"), false, `${workspaceId}_upload_must_not_expose_resource_binding_id`);
   return uploaded.res.payload.fileRef;
 }
 
@@ -338,7 +339,7 @@ try {
     workspaceId: "workspace-package-click-a",
     fileName: "inputs/starter.csv",
   });
-  assert.equal(starterFile.resourceBindingId, starterBindingId, "starter_upload_must_bind_to_own_resource_binding");
+  assert.equal(db.workspaceFiles.find((item) => item.id === starterFile.fileRef)?.resourceBindingId, starterBindingId, "starter_upload_must_bind_to_own_resource_binding_in_store");
 
   const pro = await request({
     route: labRoute,
@@ -361,7 +362,7 @@ try {
     workspaceId: "workspace-package-click-b",
     fileName: "inputs/pro.csv",
   });
-  assert.equal(proFile.resourceBindingId, proBindingId, "pro_upload_must_bind_to_own_resource_binding");
+  assert.equal(db.workspaceFiles.find((item) => item.id === proFile.fileRef)?.resourceBindingId, proBindingId, "pro_upload_must_bind_to_own_resource_binding_in_store");
 
   const foreignDelete = await request({
     route: apiRoute,
@@ -392,23 +393,15 @@ try {
   drainQueued(db, secretFile, 2, "starter_upgrade");
   assert.equal(upgraded.res.payload.cloudOperationPackage.resourceBindingId, starterBindingId, "upgrade_must_keep_existing_binding");
 
-  const addon = await request({
-    route: labRoute,
+  const storageAddonRoute = await routeRequest(labRoute, {
     db,
     method: "POST",
     urlPath: "/portal/api/lab-storage/addons",
     user: starterUser,
     body: { workspaceId: "workspace-package-click-a", addStorageGb: 100, idempotencyKey: "starter-storage-addon-100" },
   });
-  assert.equal(addon.res.statusCode, 201, "storage_addon_must_create");
-  assertPackageCloudResult(addon.res.payload, {
-    packageId: "storage_addon",
-    planId: "pro_8c16g_100gb",
-    fileSpaceGb: 200,
-    operationTypes: ["expand_storage"],
-  });
-  drainQueued(db, secretFile, 1, "starter_storage_addon");
-  assert.equal(addon.res.payload.cloudOperationPackage.resourceBindingId, starterBindingId, "storage_addon_must_keep_existing_binding");
+  assert.equal(storageAddonRoute.handled, false, "storage_addon_route_must_not_be_active");
+  assert.equal(storageAddonRoute.res.payload, null, "storage_addon_route_must_not_return_payload");
 
   const proComputeExpand = await request({
     route: apiRoute,
@@ -430,27 +423,9 @@ try {
   assert.equal(proComputeExpand.res.payload.resourceBindingId, proBindingId, "pro_compute_expand_must_keep_own_binding");
   drainQueued(db, secretFile, 1, "pro_compute_expand");
 
-  const proStorageAddon = await request({
-    route: labRoute,
-    db,
-    method: "POST",
-    urlPath: "/portal/api/lab-storage/addons",
-    user: proUser,
-    body: { workspaceId: "workspace-package-click-b", addStorageGb: 100, idempotencyKey: "pro-storage-addon-100" },
-  });
-  assert.equal(proStorageAddon.res.statusCode, 201, "pro_storage_addon_must_create");
-  assertPackageCloudResult(proStorageAddon.res.payload, {
-    packageId: "pro_storage_addon",
-    planId: "pro_8c16g_100gb",
-    fileSpaceGb: 200,
-    operationTypes: ["expand_storage"],
-  });
-  drainQueued(db, secretFile, 1, "pro_storage_addon");
-  assert.equal(proStorageAddon.res.payload.cloudOperationPackage.resourceBindingId, proBindingId, "pro_storage_addon_must_keep_own_binding");
-
   for (const [label, user, workspaceId, resourceBindingId, fileSpaceGb] of [
-    ["starter", starterUser, "workspace-package-click-a", starterBindingId, 200],
-    ["pro", proUser, "workspace-package-click-b", proBindingId, 200],
+    ["starter", starterUser, "workspace-package-click-a", starterBindingId, 100],
+    ["pro", proUser, "workspace-package-click-b", proBindingId, 100],
   ]) {
     const release = await request({
       route: apiRoute,
@@ -495,9 +470,9 @@ try {
   assert.equal(computeOperationSpecs.filter((item) => item.operationType === "release_compute").every((item) => item.targetDesiredCapacity === "0" && item.providerTargetDesiredCapacity === "2"), true, "compute_release_must_release_user_allocation_without_scaling_shared_pool_to_zero");
   assert.equal(db.computeAllocations.every((item) => item.status === "released"), true, "compute_release_must_release_each_user_compute");
   assert.equal(db.fileSpaceEntitlements.every((item) => item.status === "retention_protected"), true, "storage_delete_must_protect_each_user_file_space");
-  assert.equal(db.billingReconciliations.length >= 13, true, "billing_reconciliation_must_cover_package_lifecycle");
-  assert.equal(db.auditEvents.length >= 26, true, "audit_events_must_cover_package_lifecycle");
-  assert.equal(writes.length >= 12, true, "package_click_loop_must_persist_mutations");
+  assert.equal(db.billingReconciliations.length >= 11, true, "billing_reconciliation_must_cover_package_lifecycle");
+  assert.equal(db.auditEvents.length >= 22, true, "audit_events_must_cover_package_lifecycle");
+  assert.equal(writes.length >= 10, true, "package_click_loop_must_persist_mutations");
 
   console.log(JSON.stringify({
     ok: true,
@@ -509,8 +484,8 @@ try {
       "uploads_bind_to_owner_resource_binding",
       "cross_user_delete_fails_closed",
       "starter_can_upgrade_compute_and_storage_to_pro",
-      "storage_addon_expands_file_space",
-      "pro_can_expand_compute_and_storage",
+      "storage_addon_route_absent_from_active_surface",
+      "pro_can_expand_compute",
       "compute_release_and_storage_delete_are_owner_scoped",
     ],
   }, null, 2));

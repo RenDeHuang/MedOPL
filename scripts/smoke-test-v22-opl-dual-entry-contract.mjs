@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -103,12 +104,12 @@ assertExcludesAll(fullCorpus, [
 ], "forbidden_dual_entry_narrative");
 
 assert(
-  contents.suite.includes("smoke-test-v22-opl-dual-entry-contract"),
+  isSmokeClassifiedIn("scripts/smoke-test-v22-opl-dual-entry-contract.mjs"),
   "mvp_contract_suite_must_include_dual_entry_smoke",
 );
 
 assert(
-  contents.suite.includes("smoke-test-v22-opl-gateway-upstream-proxy-local"),
+  isSmokeClassifiedIn("scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"),
   "mvp_contract_suite_must_include_local_gateway_proxy_smoke",
 );
 

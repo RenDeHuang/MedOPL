@@ -93,8 +93,14 @@ export function validateFullRuntimeScope(record = {}) {
   return { ok: true, scope };
 }
 
-export function launchTokenFrom(input = {}, url) {
-  return input.launchToken || input.launch_token || url.searchParams.get("launch_token") || "";
+function authorizationBearerFrom(req = null) {
+  const authorization = String(req?.headers?.authorization || "").trim();
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
+}
+
+export function launchTokenFrom(input = {}, url, req = null) {
+  return authorizationBearerFrom(req);
 }
 
 export function routeKey(req, url) {

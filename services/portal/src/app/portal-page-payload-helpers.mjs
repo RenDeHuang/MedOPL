@@ -1,3 +1,15 @@
+import { createHash } from "node:crypto";
+
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function publicTaskRef(...values) {
+  const source = values.map(text).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
+}
+
 function taskCostSummary(taskSlug, runs, billingItems) {
   const runIds = new Set(runs.filter((run) => run.workspaceId === taskSlug).map((run) => run.runId));
   const related = billingItems.filter((item) => {
@@ -32,7 +44,7 @@ export function buildOverviewCollections({ tasks = [], runs = [], options = {}, 
     updatedAt: formatDateTime(task.updatedAt || task.createdAt || ""),
   }));
   const latestRunsAll = runs.map((run) => ({
-    runId: run.runId,
+    taskRef: publicTaskRef(run.traceId, run.sessionId, run.workspaceSessionId, run.runId, run.createdAt),
     workspaceId: run.workspaceId,
     workspaceTitle: taskTitleMap.get(run.workspaceId) || run.workspaceId || "-",
     status: isRunTerminal(run) ? "completed" : (run.status || "running"),
@@ -107,7 +119,7 @@ export function buildBillingRunCosts({ filteredRuns = [], filteredItems = [], is
     const related = filteredItems.find((item) => item?.properties?.["label:run_id"] === run.runId || item?.properties?.run_id === run.runId || item?.name?.includes(run.runId));
     const pricingSource = related?.properties?.["label:pricing_source"] || related?.properties?.pricing_source || (related ? "portal_billing_ledger" : "platform_metering_projection");
     return {
-      runId: run.runId,
+      taskRef: publicTaskRef(run.traceId, run.sessionId, run.workspaceSessionId, run.runId, run.createdAt),
       workspaceId: run.workspaceId,
       cpuCost: Number(related?.cpuCost || 0),
       gpuCost: Number(related?.gpuCost || 0),

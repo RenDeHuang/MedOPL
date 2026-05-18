@@ -166,7 +166,7 @@ export function createPortalApiRoutes({
     const commercial = buildCommercialProfile(db, user, { wallet, policy });
     sendJson(res, {
       ...portalUserProfile(user, commercial),
-      currentTaskSlug: user.currentTaskSlug || "default",
+      currentTaskSlug: user.currentTaskSlug || "",
       selectedServerPlan: currentServerPlanSelection(currentTaskSpaceForUser(db, user)),
       productProfile: portalProductProfile(productProfile),
     });

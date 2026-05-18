@@ -101,6 +101,38 @@ const branchScopedAllowedDiffPaths = new Map([
 ]);
 
 const branchScopedAllowedDiffPatterns = new Map([
+  ["cleanup/v22-zero-compat-contract-smoke-physical-retirement", [
+    "OPL-v20-*",
+    "docs/status.md",
+    "docs/contracts/v22-*",
+    "docs/recovery/*",
+    "docs/plan/**",
+    "docs/reports/**",
+    "docs/releases/**",
+    "docs/logs/**",
+    "docs/operations/**",
+    "docs/superpowers/**",
+    "scripts/fixtures/opl-product-api-fixture.mjs",
+    "scripts/smoke-test-v22-*",
+    "scripts/v22-smoke-classification.mjs",
+    "scripts/v22-verify.mjs",
+    "services/portal/src/migrate-schema.mjs",
+    "services/portal/src/portal-cloud-operation-worker.mjs",
+    "services/portal/src/app/portal-auth-runtime-handler.mjs",
+    "services/portal/src/app/portal-http-dispatcher.mjs",
+    "services/portal/src/app/portal-workspace-runtime.mjs",
+    "services/portal/src/app/portal-runtime-observability.mjs",
+    "services/portal/src/app/portal-page-overview-payloads.mjs",
+    "services/portal/src/app/portal-page-payload-helpers.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/app/portal-server-plan-runtime-handler.mjs",
+    "services/portal/src/domain/**",
+    "services/portal/src/routes/**",
+    "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+    "services/portal/frontend/src/**",
+    "services/opl-web-gateway/src/**",
+    "services/opl-runtime-bridge/src/**",
+  ]],
   ["cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", [
     "docs/contracts/README.md",
     "docs/contracts/v22-admin-ops-console-boundary.md",
@@ -366,7 +398,7 @@ function changedFilesFromBase() {
     ["diff", "--name-only", "origin/recovery/platform-v22-trunk"],
     ["ls-files", "--others", "--exclude-standard"],
   ].map((args) => {
-    const result = spawnSync("git", args, {
+    const result = spawnSync("git", ["-c", "core.quotepath=false", ...args], {
       cwd: repoRoot,
       encoding: "utf8",
       stdio: "pipe",
@@ -407,6 +439,10 @@ function manifestAllowedDiffPatterns(verifyManifest = {}) {
   ].map(globToRegExp);
 }
 
+function currentBranchAllowedDiffPatterns() {
+  return (branchScopedAllowedDiffPatterns.get(currentBranchName()) ?? []).map(globToRegExp);
+}
+
 function assertOnlyAllowedFilesChanged(verifyManifest = {}) {
   const branchName = currentBranchName();
   const branchAllowedDiffPaths = branchScopedAllowedDiffPaths.get(branchName) ?? new Set();
@@ -443,18 +479,20 @@ function diffAddedLinesFromBase() {
 }
 
 async function untrackedFileLines(verifyManifest = {}) {
-  const result = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], {
+  const result = spawnSync("git", ["-c", "core.quotepath=false", "ls-files", "--others", "--exclude-standard"], {
     cwd: repoRoot,
     encoding: "utf8",
     stdio: "pipe",
   });
   assert.equal(result.status, 0, `git_ls_files_others_failed:${result.stderr || result.stdout}`);
   const lines = [];
+  const branchAllowedPatterns = currentBranchAllowedDiffPatterns();
   const manifestAllowedPaths = manifestAllowedDiffPaths(verifyManifest);
   const manifestAllowedPatterns = manifestAllowedDiffPatterns(verifyManifest);
   for (const filePath of result.stdout.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)) {
     if (
       !allowedDiffPaths.has(filePath) &&
+      !branchAllowedPatterns.some((pattern) => pattern.test(filePath)) &&
       !manifestAllowedPaths.has(filePath) &&
       !manifestAllowedPatterns.some((pattern) => pattern.test(filePath))
     ) continue;

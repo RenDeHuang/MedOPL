@@ -97,7 +97,10 @@ function runIdFromInput(input = {}) {
 }
 
 function messagePromptPreview(input = {}) {
-  return String(input.message || input.text || input.prompt || input.input?.message || "").slice(0, 120);
+  const source = String(input.message || input.text || input.prompt || input.input?.message || "");
+  if (!source) return "";
+  const digest = createHash("sha256").update(source).digest("hex").slice(0, 16);
+  return `len:${source.length};sha256:${digest}`;
 }
 
 function waitForMessageCompletion(input = {}) {

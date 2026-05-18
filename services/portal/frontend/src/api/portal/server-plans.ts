@@ -14,7 +14,8 @@ export interface ServerPlansSummary {
   purchasableCount: number;
   selectableCount?: number;
   priceStatus: string;
-  lowestHourlyPrice: number;
+  basePrice: null;
+  pendingProductApproval: boolean;
   note: string;
   catalogRuntimeStatus?: CatalogRuntimeStatus | null;
   pricingSourceStatus?: PricingSourceStatus | null;
@@ -48,10 +49,9 @@ export interface ServerPlanItem {
   isSelectable?: boolean;
   reason?: string;
   currency?: string;
-  originalPrice?: number;
-  discountPrice?: number;
-  unitPrice?: number;
-  hourlyPrice?: number;
+  basePrice: null;
+  pendingProductApproval: boolean;
+  priceLabel?: string;
   selectionNote?: string;
   catalogSource?: string;
   priceOrigin?: string;
@@ -110,9 +110,4 @@ export interface ServerPlansPayload {
 export async function fetchServerPlans() {
   const { data } = await apiClient.get<ServerPlansPayload>("/server-plans");
   return data;
-}
-
-export async function selectServerPlan(input: { planId: string; task?: string }) {
-  const { data } = await apiClient.post("/server-plans/select", input);
-  return data as { ok: boolean; workspaceId: string; selectedServerPlan: SelectedServerPlan | null };
 }

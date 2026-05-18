@@ -41,7 +41,7 @@ export interface SessionsPayload {
 
 export interface RunsPayload {
   runs: Array<{
-    runId: string;
+    taskRef: string;
     workspaceId: string;
     workspaceSessionId: string;
     userId: string;

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   createPayloadTimingRecorder,
   paginateRows,
@@ -21,6 +22,12 @@ import { buildPortalFileSpacePayload } from "../domain/portal-file-space-managem
 
 function text(value = "") {
   return String(value ?? "").trim();
+}
+
+function publicTaskRef(...values) {
+  const source = values.map(text).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
 }
 
 function userTenantId(user = {}) {
@@ -47,7 +54,8 @@ function runtimeBridgeOutputFilesForWorkspace(db = {}, user = {}, workspaceId = 
         fullPath: text(item.relativePath || item.relative_path || item.name),
         artifactRef: fileRef,
         fileRef,
-        runId: text(item.runId || item.run_id),
+        taskRef: publicTaskRef(fileRef, item.sessionId, item.session_id, item.oplSessionId, item.opl_session_id, item.runId, item.run_id),
+        internalRunId: text(item.runId || item.run_id),
         sessionId: text(item.sessionId || item.session_id || item.oplSessionId || item.opl_session_id || item.runId || item.run_id),
         workspaceId: text(item.workspaceId || item.workspace_id),
         kind: "outputs",
@@ -89,13 +97,15 @@ function runCostSummary(billing = {}, run = {}, workspaceId = "") {
 }
 
 function outputCostSummary(billing = {}, output = {}, workspaceId = "") {
-  const relatedCosts = billingItemsForRun(billing?.items || [], { runId: output.runId, workspaceId });
+  const relatedCosts = billingItemsForRun(billing?.items || [], { runId: output.internalRunId, workspaceId });
   const costEstimate = publicCostEstimate(billing || {}, relatedCosts);
+  const { internalRunId: _internalRunId, ...publicOutput } = output;
   return {
-    ...output,
+    ...publicOutput,
     resourceUsage: workspaceResourceUsageView(publicResourceUsage({
       row: {
-        runId: output.runId,
+        taskRef: output.taskRef,
+        runId: output.internalRunId,
         sessionId: output.sessionId,
         workspaceId: output.workspaceId || workspaceId,
         status: output.status || "active",
@@ -111,7 +121,7 @@ function outputCostSummary(billing = {}, output = {}, workspaceId = "") {
 function workspaceResourceUsageView(resourceUsage = {}) {
   return {
     source: text(resourceUsage.source),
-    runId: text(resourceUsage.runId),
+    taskRef: text(resourceUsage.taskRef),
     sessionId: text(resourceUsage.sessionId),
     workspaceId: text(resourceUsage.workspaceId),
     status: text(resourceUsage.status),
@@ -130,11 +140,6 @@ function publicStorageEntitlementView(storageEntitlement = {}) {
     freeQuotaGb: Number(storageEntitlement.freeQuotaGb || 0),
     minimumPurchaseGb: Number(storageEntitlement.minimumPurchaseGb || 10),
     retentionPolicy: text(storageEntitlement.retentionPolicy || "workspace_lifecycle"),
-    resourceBindingId: text(storageEntitlement.resourceBindingId),
-    billingAttributionId: text(storageEntitlement.billingAttributionId),
-    accountId: text(storageEntitlement.accountId),
-    storagePlanId: text(storageEntitlement.storagePlanId),
-    serverPlanId: text(storageEntitlement.serverPlanId || storageEntitlement.storagePlanId),
     storageSizeGb: Number(storageEntitlement.storageSizeGb || storageEntitlement.capacityGb || 0),
     message: text(storageEntitlement.message || (storageEntitlement.enabled ? "active" : "storage_required")),
   };
@@ -164,7 +169,7 @@ export function createWorkspacePayloadBuilder({
     const currentTask = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     const current = {
       ...currentTask,
-      title: sanitizeTaskTitle(currentTask.slug || "default", currentTask.title || ""),
+      title: sanitizeTaskTitle(currentTask.slug || "workspace", currentTask.title || ""),
     };
     const allTasks = listTaskSpacesForUser(db, user.id);
     const inputDir = path.join(current.path, "inputs");
@@ -245,7 +250,7 @@ export function createWorkspacePayloadBuilder({
         expiresAt: activeSession.expiresAt || null,
       } : null,
       recentRuns: runPagination.rows.map((run) => ({
-        runId: run.runId,
+        taskRef: publicTaskRef(run.traceId, run.sessionId, run.workspaceSessionId, run.runId, run.createdAt),
         status: isRunTerminal(run) ? "completed" : (run.status || "running"),
         createdAt: formatDateTime(run.createdAt || ""),
         resourceUsage: workspaceResourceUsageView(run.resourceUsage),

@@ -15,7 +15,7 @@ export function buildRunRecord(input = {}) {
   return {
     runId: input.runId || input.run_id || randomUUID(),
     ...runtimeOwnershipFields(input, ownerId),
-    workspaceId: input.workspaceId || input.workspace_id || "default",
+    workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
     traceId: input.traceId || input.trace_id || "",

@@ -41,7 +41,6 @@ function isServerPlanPurchasable(plan = {}) {
 function sanitizeServerPlanPublicItem(plan = {}) {
   const isPurchasable = booleanPlanValue(plan, "isPurchasable");
   const isSelectable = typeof plan.isSelectable === "boolean" ? plan.isSelectable : isPurchasable;
-  const hourlyPrice = numberValue(plan.hourlyPrice ?? plan.discountPrice ?? plan.unitPrice ?? plan.originalPrice, 0);
   return {
     id: stringValue(plan.id || plan.serverPlanId),
     name: stringValue(plan.name || plan.id || plan.serverPlanId),
@@ -55,7 +54,9 @@ function sanitizeServerPlanPublicItem(plan = {}) {
     riskFactor: numberValue(plan.riskFactor, 1),
     reservationFloor: numberValue(plan.reservationFloor, 0),
     currency: stringValue(plan.currency || "CNY") || "CNY",
-    hourlyPrice,
+    basePrice: null,
+    pendingProductApproval: true,
+    priceLabel: "正式售价未定价",
     priceOrigin: publicPriceOrigin(plan.priceOrigin || plan.pricingSource || "catalog_price"),
     catalogSource: publicCatalogSource(plan.catalogSource || plan.source || "platform_catalog"),
     availabilityCategory: stringValue(plan.availabilityCategory || plan.availabilityStatus || plan.statusCategory),
@@ -78,10 +79,6 @@ function sanitizeSelectedServerPlanPublic(selection = null) {
 }
 
 function buildPublicServerPlansSummary(payload = {}, items = []) {
-  const pricedItems = items
-    .map((item) => numberValue(item.hourlyPrice, 0))
-    .filter((value) => value > 0);
-  const lowestHourlyPrice = pricedItems.length ? Math.min(...pricedItems) : 0;
   return {
     catalogSource: stringValue(payload.catalogSource || "platform_catalog"),
     catalogCount: numberValue(payload.catalogCount ?? payload.catalogRuntimeStatus?.catalogCount ?? items.length, items.length),
@@ -89,9 +86,11 @@ function buildPublicServerPlansSummary(payload = {}, items = []) {
     purchasableCount: items.filter((item) => item.isPurchasable).length,
     selectableCount: items.filter((item) => item.isSelectable).length,
     availabilitySnapshotCount: numberValue(payload.availabilitySnapshotCount, 0),
-    pricingStatus: stringValue(payload.pricingSourceStatus?.status || "catalog_price"),
-    lowestHourlyPrice,
-    note: "套餐目录由平台维护；价格与可用性用于套餐选择、保护金和后台对账。",
+    priceStatus: "pending_product_approval",
+    pricingStatus: "pending_product_approval",
+    basePrice: null,
+    pendingProductApproval: true,
+    note: "套餐目录由平台维护；正式售卖价等待产品审批，保护金和后台对账按平台规则校准。",
   };
 }
 
@@ -184,7 +183,16 @@ export function createPortalServerPlanRuntimeHandler({
         sendJson(res, { ok: false, error: "invalid_json_body" }, 400);
         return true;
       }
-      const taskSlug = slugify(payload.task || user.currentTaskSlug || "default");
+      const requestedTask = stringValue(payload.task || user.currentTaskSlug);
+      const taskSlug = requestedTask ? slugify(requestedTask) : "";
+      if (!taskSlug) {
+        sendJson(res, {
+          ok: false,
+          error: "workspace_id_required",
+          message: "必须指定要调整套餐的工作空间。",
+        }, 422);
+        return true;
+      }
       const planId = String(payload.planId || payload.serverPlanId || "").trim();
       if (!planId) {
         sendJson(res, { ok: false, error: "server_plan_id_required" }, 400);
@@ -233,12 +241,13 @@ export function createPortalServerPlanRuntimeHandler({
       const policy = await evaluateUserPolicy(db, user);
       const wallet = db.wallets.find((item) => item.userId === user.id) || { balance: 0 };
       const commercial = buildCommercialProfile(db, user, { wallet, policy });
-      const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
-      const taskSpace = findTaskSpace(db, user.id, taskSlug) || null;
+      const requestedTask = stringValue(url.searchParams.get("task") || user.currentTaskSlug);
+      const taskSlug = requestedTask ? slugify(requestedTask) : "";
+      const taskSpace = taskSlug ? findTaskSpace(db, user.id, taskSlug) || null : null;
       sendJson(res, sanitizeServerPlansPublicPayload(payload, {
         commercial,
         selectedServerPlan: currentServerPlanSelection(taskSpace),
-        workspaceId: taskSpace?.slug || taskSlug,
+        workspaceId: taskSpace?.slug || taskSlug || "",
       }));
       return true;
     }

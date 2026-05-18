@@ -34,7 +34,9 @@ async function atomicWriteJson(file, value) {
 }
 
 function getTaskPath(userId, taskSlug) {
-  return path.join(medWorkspaceRoot, String(userId || ""), String(taskSlug || "default"));
+  if (!userId) throw new Error("portal_user_id_required");
+  if (!taskSlug) throw new Error("workspace_id_required");
+  return path.join(medWorkspaceRoot, String(userId), String(taskSlug));
 }
 
 export async function runPortalCloudOperationWorkerOnce(options = {}) {

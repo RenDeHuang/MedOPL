@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const contractPath = path.join(__dirname, "../docs/contracts/v22-pricing-snapshot-boundary.md");
+const commercialStatePath = path.join(__dirname, "../services/portal/src/domain/commercial-state.mjs");
+const serverPlanRuntimeHandlerPath = path.join(__dirname, "../services/portal/src/app/portal-server-plan-runtime-handler.mjs");
 
 const CONTRACT_START = "<!-- v22-pricing-snapshot-contract:start -->";
 const CONTRACT_END = "<!-- v22-pricing-snapshot-contract:end -->";
@@ -36,6 +38,8 @@ const expectedPlans = new Map([
 ]);
 
 const contractMarkdown = await readFile(contractPath, "utf8");
+const commercialStateSource = await readFile(commercialStatePath, "utf8");
+const serverPlanRuntimeHandlerSource = await readFile(serverPlanRuntimeHandlerPath, "utf8");
 const contract = extractContractJson(contractMarkdown);
 
 assert.equal(contract.contract, "v22_pricing_snapshot_boundary", "pricing_contract_name_mismatch");
@@ -110,6 +114,12 @@ for (const plan of contract.plans) {
   assert.equal(plan.costSnapshot.usage, "internal_cost_review_only", `${plan.id}_cost_snapshot_usage_mismatch`);
   assert.equal(plan.costSnapshot.mayPopulateBasePrice, false, `${plan.id}_provider_cost_must_not_populate_base_price`);
   assert.equal("basePrice" in plan.costSnapshot, false, `${plan.id}_cost_snapshot_must_not_embed_base_price`);
+}
+
+for (const source of [commercialStateSource, serverPlanRuntimeHandlerSource]) {
+  assert.equal(source.includes("腾讯云 CVM 实时报价"), false, "ordinary_user_price_copy_must_not_use_cvm_realtime_quote");
+  assert.equal(source.includes("¥/小时"), false, "ordinary_user_price_copy_must_not_hardcode_hourly_sale_price");
+  assert(source.includes("套餐价格由平台后台价格源、保护金规则与对账记录校准"), "ordinary_user_price_copy_must_use_platform_price_source_language");
 }
 
 console.log(JSON.stringify({

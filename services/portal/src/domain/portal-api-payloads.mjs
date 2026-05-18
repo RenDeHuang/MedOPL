@@ -5,9 +5,7 @@ import {
 } from "./platform-provisioned-resources.mjs";
 import {
   fileSpacePublicView,
-  freezePublicView,
   managedEnvironmentUserNarrative,
-  resourceBindingPublicView,
   workspacePublicView,
 } from "./managed-environment-open-flow.mjs";
 import {
@@ -99,11 +97,7 @@ function identityPayload(user = {}, activeUserStatus = (status) => status || "ac
 
 function tenantPayload(db = {}, user = {}) {
   const tenant = tenantRecord(db, user);
-  const tenantId = userTenantId(user);
   return {
-    tenantId,
-    id: text(tenant.id || tenant.tenantId || tenantId),
-    slug: text(tenant.slug || tenant.name || tenantId),
     status: statusText(tenant.status || "active"),
     runtimeOwnership: "platform_provisioned",
     isolationMode: "customer_dedicated",
@@ -159,25 +153,12 @@ function freezeForBinding(db = {}, user = {}, binding = null) {
   return freeze ? buildWeeklyProtectionFreezeView(freeze) : null;
 }
 
-function resourceBindingPayload(binding = null) {
-  if (!binding) return null;
-  return {
-    ...resourceBindingPublicView(binding),
-    bindingAccess: buildWorkspaceBindingAccess(binding),
-    releasedAt: text(binding.releasedAt),
-    billingStoppedAt: text(binding.billingStoppedAt),
-    billingStopConfirmBy: text(binding.billingStopConfirmBy),
-    auditReadyAt: text(binding.auditReadyAt),
-  };
-}
-
 function workspaceFilePublicView(file = {}) {
   return {
     id: text(file.id),
     fileRef: text(file.id),
     workspaceId: text(file.workspaceId),
     sessionId: text(file.oplSessionId || file.runId),
-    resourceBindingId: text(file.resourceBindingId),
     kind: text(file.kind),
     name: text(file.name),
     relativePath: text(file.kind) ? `${text(file.kind)}/${text(file.relativePath)}` : text(file.relativePath),
@@ -208,7 +189,6 @@ function sessionTraceMetadataView(trace = {}, resourceBinding = null) {
   return {
     sessionId: text(trace.sessionId),
     workspaceId: text(trace.workspaceId),
-    resourceBindingId: text(trace.resourceBindingId),
     providerKeyRef: text(trace.providerKeyRef),
     artifactRefs: Array.isArray(trace.artifactRefs) ? trace.artifactRefs.map(text).filter(Boolean) : [],
     timestamps: {
@@ -216,7 +196,6 @@ function sessionTraceMetadataView(trace = {}, resourceBinding = null) {
       updatedAt: text(timestamps.updatedAt || trace.updatedAt || timestamps.createdAt || trace.createdAt),
     },
     status: text(trace.status || "recorded"),
-    auditTag: text(trace.auditTag || resourceBinding?.auditTag),
   };
 }
 
@@ -259,12 +238,7 @@ function billingSummaryPayload(balance = {}, freeze = null) {
   const estimatedUsageCents = sumPendingUsageCents(balance);
   const pendingItems = Array.isArray(balance.pending) ? balance.pending.map((item) => ({
     id: text(item.id),
-    runId: text(item.runId),
-    resourceBindingId: text(item.resourceBindingId),
-    billingAttributionId: text(item.billingAttributionId),
     workspaceId: text(item.workspaceId),
-    accountId: text(item.accountId),
-    serverPlanId: text(item.serverPlanId),
     amountCents: cents(item.amountCents),
     status: text(item.status || "waiting_exact_bill"),
     createdAt: text(item.createdAt),
@@ -309,17 +283,15 @@ function preauthPayload(freeze = null) {
   return {
     status: text(freeze.preauthStatus || "pending_product_approval"),
     amountCents: amountCents(freeze.frozenAmountCents ?? freeze.weeklyAmountCents, freeze.frozenAmount ?? freeze.weeklyAmount),
-    resourceBindingId: text(freeze.resourceBindingId),
   };
 }
 
-function managedEnvironmentPayload({ runtimeEnabled = false, workspace = null, fileSpace = null, resourceBinding = null, freeze = null, selectedPlan = null } = {}) {
+function managedEnvironmentPayload({ runtimeEnabled = false, workspace = null, fileSpace = null, preauth = null, selectedPlan = null } = {}) {
   return {
     enabled: Boolean(runtimeEnabled),
     workspace,
     fileSpace,
-    resourceBinding,
-    freeze,
+    preauth,
     selectedPlan,
   };
 }
@@ -455,18 +427,18 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
   const selectedServerPlan = currentServerPlanSelection(taskSpace);
   const targetWorkspaceId = text(workspaceId || taskSpace?.slug || taskSpace?.workspaceId || user.currentTaskSlug || "");
   const binding = activeBindingForWorkspace(db, user, targetWorkspaceId);
-  const resourceBinding = resourceBindingPayload(binding);
   const freeze = freezeForBinding(db, user, binding);
   const provider = resolveProviderState(db, user);
   const balance = buildUserBillingSummary(db, { user });
-  const runtimeEnabled = Boolean(resourceBinding?.bindingAccess?.fullRuntime?.allowed);
+  const bindingAccess = binding ? buildWorkspaceBindingAccess(binding) : null;
+  const runtimeEnabled = Boolean(bindingAccess?.fullRuntime?.allowed);
   const readiness = managedEnvironmentReadiness(provider);
   const workspace = workspacePublicView(taskSpace || {}, targetWorkspaceId);
   const selectedPlan = canonicalPlanPayload({ binding, taskSpace, selectedServerPlan });
-  const fileSpace = fileSpacePublicView(resourceBinding || taskSpace || {}, selectedPlan);
-  const publicWorkspaceFiles = workspaceFilesForPortal(db, user, targetWorkspaceId, resourceBinding);
+  const fileSpace = fileSpacePublicView(binding || taskSpace || {}, selectedPlan);
+  const publicWorkspaceFiles = workspaceFilesForPortal(db, user, targetWorkspaceId, binding);
   const outputFiles = publicWorkspaceFiles.filter((item) => item.kind === "outputs");
-  const sessionTraceMetadata = sessionTraceMetadataForPortal(db, user, targetWorkspaceId, resourceBinding);
+  const sessionTraceMetadata = sessionTraceMetadataForPortal(db, user, targetWorkspaceId, binding);
   const release = releasePayload(binding);
   const stopBilling = stopBillingPayload(binding);
   const audit = auditPayload(binding, now);
@@ -486,8 +458,6 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
     runtimeEnabled,
     workspace,
     fileSpace,
-    resourceBinding,
-    freeze: freezePublicView(freeze),
     preauth: preauthPayload(freeze),
     release,
     stopBilling,
@@ -498,8 +468,7 @@ export function buildCanonicalPortalStatePayload(db = {}, user = {}, {
       runtimeEnabled,
       workspace,
       fileSpace,
-      resourceBinding,
-      freeze: freezePublicView(freeze),
+      preauth: preauthPayload(freeze),
       selectedPlan,
     }),
     workspaceFiles: publicWorkspaceFiles,

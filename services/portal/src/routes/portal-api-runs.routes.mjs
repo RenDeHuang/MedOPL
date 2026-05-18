@@ -1,4 +1,5 @@
 import { buildCanonicalPortalStatePayload } from "../domain/portal-api-payloads.mjs";
+import { createHash } from "node:crypto";
 
 function parseJsonBodyOrEmpty(raw = Buffer.from("")) {
   const source = String(raw || "").trim();
@@ -14,10 +15,14 @@ function runtimeNotEnabledPayload(state = {}) {
     runtimeEnabled: false,
     providerBound: Boolean(state.providerBound),
     providerKeyRef: state.providerKeyRef || "",
-    resourceBinding: state.resourceBinding || null,
-    freeze: state.freeze || null,
     plan: state.plan || null,
   };
+}
+
+function publicTaskRef(...values) {
+  const source = values.map((value) => String(value ?? "").trim()).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
 }
 
 export function createPortalApiRunsRoutes({
@@ -65,7 +70,7 @@ export function createPortalApiRunsRoutes({
     for (const targetUser of targetUsers) {
       const rows = await collectRunsForUser(targetUser.id);
       runs.push(...rows.map((item) => ({
-        runId: item.runId || "",
+        taskRef: publicTaskRef(item.traceId, item.sessionId, item.workspaceSessionId, item.runId, item.createdAt),
         workspaceId: item.workspaceId || "",
         workspaceSessionId: item.workspaceSessionId || "",
         userId: targetUser.id,
@@ -83,7 +88,7 @@ export function createPortalApiRunsRoutes({
         return item.portalUserId === user.id;
       })
       .map((item) => ({
-        runId: item.runId || "",
+        taskRef: publicTaskRef(item.traceId, item.sessionId, item.runtimeSessionId, item.workspaceSessionId, item.runId, item.createdAt),
         workspaceId: item.workspaceId || "",
         workspaceSessionId: item.workspaceSessionId || "",
         runtimeSessionId: item.runtimeSessionId || "",
@@ -103,7 +108,7 @@ export function createPortalApiRunsRoutes({
     runs.push(...runtimeBridgeRuns);
     const filtered = runs
       .filter((item) => !workspaceId || item.workspaceId === workspaceId)
-      .filter((item) => !runId || item.runId === runId)
+      .filter((item) => !runId || item.taskRef === runId)
       .sort((a, b) => String(b.startedAt || "").localeCompare(String(a.startedAt || "")));
     sendJson(res, {
       runs: filtered,

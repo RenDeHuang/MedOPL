@@ -20,21 +20,20 @@ function looksLikeCorruptedTitle(value) {
 }
 
 export function sanitizeTaskTitle(slug, title) {
-  const normalizedSlug = slugify(slug || "default");
+  const normalizedSlug = slugify(slug);
   const raw = String(title || "").trim();
   const normalizedRaw = raw.toLowerCase();
   if (["dup validation", "dup-validation", "mas"].includes(normalizedRaw)) {
     return "MAS";
   }
   if (!raw || raw === "????" || raw.includes("Workspace") || looksLikeCorruptedTitle(raw)) {
-    return normalizedSlug === "default" ? "默认工作空间" : normalizedSlug;
+    return normalizedSlug;
   }
   return raw;
 }
 
-export function defaultTaskTitle(slug = "default") {
-  const normalizedSlug = slugify(slug || "default");
-  return normalizedSlug === "default" ? "默认工作空间" : normalizedSlug;
+export function defaultTaskTitle(slug = "") {
+  return slugify(slug);
 }
 
 export function taskStatusLabel(status = "active") {

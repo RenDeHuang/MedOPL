@@ -13,6 +13,7 @@
 
 - `basePrice` 是 MedOPL 对客户售卖价字段。本轮产品审批未完成，因此必须为 `null`。
 - `pendingProductApproval` 必须为 `true`，用于阻止前端、API、文档或测试把套餐展示为正式售卖价。
+- 前端、API、文档、smoke 不得硬编码正式售卖价、小时价、按量单价或任何可被解释为当前可售价格的数值。
 - `costSnapshot` 只允许表达内部云成本快照，不是客户价格，不得写入 `basePrice`，也不得作为 MedOPL 售卖价来源。
 - 腾讯云成本价只能作为内部成本评审输入；不允许把腾讯云成本价当 MedOPL 售卖价。
 

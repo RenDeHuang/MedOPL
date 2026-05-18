@@ -40,6 +40,27 @@ function normalizeWorkspaceStorageSnapshot(snapshot = {}) {
   };
 }
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
+function publicWorkspaceFileMetadata(file = {}) {
+  return {
+    fileRef: text(file.id || file.fileRef || file.file_ref),
+    workspaceId: text(file.workspaceId || file.workspace_id),
+    kind: text(file.kind),
+    name: text(file.name || file.fileName || file.file_name),
+    relativePath: text(file.relativePath || file.relative_path),
+    sizeBytes: numberValue(file.sizeBytes || file.size_bytes),
+    checksum: text(file.checksum),
+    contentType: text(file.contentType || file.content_type),
+    status: text(file.status || "active"),
+    source: text(file.source),
+    createdAt: text(file.createdAt || file.created_at),
+    updatedAt: text(file.updatedAt || file.updated_at),
+  };
+}
+
 export function createWorkspaceStoragePayloadBuilders(deps) {
   const {
     buildWorkspacePayload,
@@ -67,7 +88,7 @@ export function createWorkspaceStoragePayloadBuilders(deps) {
       outputBytes: summary.outputBytes,
       userStorageSynced: false,
       lastSyncAt: new Date().toISOString(),
-      metadata,
+      metadata: metadata.map(publicWorkspaceFileMetadata),
       dataSource: summary.source === "portal_user_storage_index" ? "portal user storage index" : "workspace storage snapshot",
     };
   }

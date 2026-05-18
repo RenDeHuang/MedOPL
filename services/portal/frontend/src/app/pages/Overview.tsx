@@ -377,7 +377,7 @@ export function Overview() {
             <div className="pt-3 border-t border-neutral-200">
               <div className="flex items-center gap-2 text-xs text-neutral-600">
                 <Clock className="w-3.5 h-3.5" />
-                <span>{model.runtimeDays} · 预计费用 {model.pricePerHour}/小时</span>
+                <span>{model.runtimeDays} · {model.pricingStatus}</span>
               </div>
             </div>
           </div>
@@ -452,9 +452,9 @@ export function Overview() {
                 </Badge>
               </div>
               <div className="text-2xl font-semibold text-neutral-900 mb-1">
-                {model.pricePerHour} <span className="text-sm font-normal text-neutral-600">/ 小时</span>
+                {model.priceLabel}
               </div>
-              <div className="text-xs text-neutral-500">预计 {model.pricePerDay} / 天</div>
+              <div className="text-xs text-neutral-500">{model.pricingStatus}</div>
             </div>
 
             <div className="space-y-3 pt-4 border-t border-neutral-200">

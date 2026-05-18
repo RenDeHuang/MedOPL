@@ -1,3 +1,5 @@
+# 历史参考文档，不是 v22 active 合同或当前实现入口；不得作为当前主线、smoke、接云或部署依据。
+
 # OPL v21 Platform-Provisioned OPL Service Refactor Checklist
 
 ## 文档命名说明

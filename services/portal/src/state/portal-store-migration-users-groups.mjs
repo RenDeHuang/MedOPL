@@ -19,8 +19,8 @@ export function migrateUsersAndGroups({ db, ensureUserCommercialState }) {
       user.preferences.theme = "light";
       changed = true;
     }
-    if (!user.currentTaskSlug) {
-      user.currentTaskSlug = "default";
+    if (user.currentTaskSlug === "default") {
+      user.currentTaskSlug = "";
       changed = true;
     }
     if (!("groupId" in user)) {

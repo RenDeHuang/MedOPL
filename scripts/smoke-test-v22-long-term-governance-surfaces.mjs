@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const statusPath = "docs/status.md";
 const invariantsPath = "docs/invariants.md";
@@ -38,10 +39,10 @@ const combinedGovernance = `${status}\n${invariants}\n${decisions}`;
 assertIncludesAll(status, [
   "v22 Status",
   "v22 当前唯一活状态入口",
-  "active program: v22-cloud-onboarding",
-  "current phase: CO-04 check-config",
-  "next phase: CO-05 default gate",
-  "CO-06 requires explicit user authorization",
+  "active program: v22-contract-cleanup-and-drift-control",
+  "current phase: 先清合同-smoke-实现漂移，不接云",
+  "next phase: B 审核后再决定是否进入 future-authorized cloud lane",
+  "所有真实云动作均需 future-authorized 显式授权",
   "docs/recovery/cloud-onboarding-execution-board.md",
   "docs/recovery/cloud-onboarding-status-table.md",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
@@ -105,7 +106,7 @@ assertIncludesAll(matrix, [
   "v22 当前唯一活状态入口",
 ], "status_matrix_governance_references");
 
-assert(suite.includes("smoke-test-v22-long-term-governance-surfaces.mjs"), "mvp_suite_must_include_long_term_governance_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-long-term-governance-surfaces.mjs"), "mvp_suite_must_include_long_term_governance_smoke");
 
 assertNotIncludesAny(combinedGovernance, [
   "SecretId",

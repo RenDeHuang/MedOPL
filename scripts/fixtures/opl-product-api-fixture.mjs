@@ -145,13 +145,18 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && ["/api/opl/workspaces", "/api/opl/workspaces/bind"].includes(url.pathname)) {
       const input = await readBody(req);
+      const workspaceId = input.workspaceId || input.workspace_id || "";
+      if (!workspaceId) {
+        sendJson(res, 422, { ok: false, error: "workspace_id_required" });
+        return;
+      }
       const workspace = {
-        id: input.workspaceId || input.workspace_id || "default",
+        id: workspaceId,
         portalUserId: input.portalUserId || "",
-        workspaceId: input.workspaceId || input.workspace_id || "default",
+        workspaceId,
         project_id: input.project_id || input.projectId || "medautoscience",
         workspace_path: input.workspace_path || input.workspacePath || "",
-        title: input.workspaceTitle || input.workspace_title || input.workspaceId || "default",
+        title: input.workspaceTitle || input.workspace_title || workspaceId,
         status: "active",
         createdAt: nowIso(),
       };
@@ -171,10 +176,15 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/api/opl/sessions") {
       const input = await readBody(req);
+      const workspaceId = input.workspaceId || input.workspace_id || "";
+      if (!workspaceId) {
+        sendJson(res, 422, { ok: false, error: "workspace_id_required" });
+        return;
+      }
       const session = {
         id: input.oplSessionId || input.runtimeSessionId || randomUUID(),
         portalUserId: input.portalUserId || "",
-        workspaceId: input.workspaceId || "default",
+        workspaceId,
         workspaceSessionId: input.workspaceSessionId || "",
         runtimeSessionId: input.runtimeSessionId || "",
         status: "active",

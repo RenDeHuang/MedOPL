@@ -84,6 +84,16 @@ function startPortalFixture(calls) {
         }));
         return;
       }
+      const workspaceId = String(payload.workspaceId || payload.task || "").trim();
+      if (!workspaceId) {
+        res.writeHead(422, { "content-type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          ok: false,
+          error: "workspace_id_required",
+          message: "workspaceId is required.",
+        }));
+        return;
+      }
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         ok: true,
@@ -101,12 +111,12 @@ function startPortalFixture(calls) {
           runtimeSessionId: "runtime-native",
         },
         workspace: {
-          slug: payload.task || "default",
+          slug: workspaceId,
           title: "Default Task",
         },
         workspaceSession: {
           id: "workspace-session-native",
-          workspaceId: payload.task || "default",
+          workspaceId,
         },
         runtimeSession: {
           runtimeSessionId: "runtime-native",
@@ -124,13 +134,13 @@ function startRuntimeBridgeFixture(calls) {
   return http.createServer((req, res) => {
     const url = new URL(req.url || "/", "http://runtime-bridge.local");
     if (req.method === "GET" && url.pathname === "/api/opl-launch/bootstrap") {
-      const launchToken = url.searchParams.get("launch_token") || "";
+      const launchToken = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
       calls.bootstrap.push(launchToken);
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({
         launch: {
           launchId: "launch-native",
-          workspaceId: "default",
+          workspaceId: "workspace-native",
           workspaceSessionId: "workspace-session-native",
           runtimeSessionId: "runtime-native",
         },
@@ -138,13 +148,13 @@ function startRuntimeBridgeFixture(calls) {
           portalUserId: "portal-user-native",
           portalUserEmail: "native-login@example.test",
           portalUserName: "Native Login",
-          workspaceId: "default",
+          workspaceId: "workspace-native",
           workspaceSessionId: "workspace-session-native",
           runtimeSessionId: "runtime-native",
         },
         workspace: {
-          workspaceId: "default",
-          workspacePath: "C:\\tmp\\default",
+          workspaceId: "workspace-native",
+          workspacePath: "C:\\tmp\\workspace-native",
         },
       }));
       return;
@@ -196,7 +206,7 @@ async function main() {
       body: JSON.stringify({
         email: "native-login@example.test",
         password: "PortalPass123!",
-        task: "default",
+        task: "workspace-native",
       }),
       redirect: "manual",
     });
@@ -239,6 +249,7 @@ async function main() {
       body: new URLSearchParams({
         email: "native-login@example.test",
         password: "PortalPass123!",
+        task: "workspace-native",
       }),
       redirect: "manual",
     });
@@ -252,6 +263,7 @@ async function main() {
       body: JSON.stringify({
         email: "native-login@example.test",
         password: "PortalPass123!",
+        task: "workspace-native",
       }),
       redirect: "manual",
     });
@@ -281,6 +293,7 @@ async function main() {
     assert(calls.portalLogin === 4, `portal login bridge expected 4 calls, got ${calls.portalLogin}`);
     assert(calls.upstreamLogin === 0, `upstream login should not be called, got ${calls.upstreamLogin}`);
     assert(calls.bootstrap.length >= 1, "bootstrap should be called at least once after native login");
+    assert(calls.bootstrap.every((item) => item === "launch-native-123"), "bootstrap must use Authorization-bound launch token");
   } finally {
     child.kill("SIGTERM");
     await Promise.all([

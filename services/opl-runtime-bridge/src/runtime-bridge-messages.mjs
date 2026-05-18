@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -22,6 +22,13 @@ function messageTextFrom(input = {}) {
 
 function messageIdFrom(input = {}) {
   return trimText(input.messageId || input.message_id || input.runId || input.run_id) || randomUUID();
+}
+
+function promptPreviewMetadata(message = "") {
+  const content = String(message || "");
+  if (!content) return "";
+  const digest = createHash("sha256").update(content).digest("hex").slice(0, 16);
+  return `len:${content.length};sha256:${digest}`;
 }
 
 function buildMessageContext(runtimeSession, input = {}, req = {}) {
@@ -97,7 +104,10 @@ function markdownReply(context, reply) {
 }
 
 async function writeReplyArtifact(context, reply) {
-  const workspaceDir = path.join(artifactsRoot, context.portalUserId || "unknown-user", context.workspaceId || "default");
+  if (!context.workspaceId) {
+    throw new Error("workspace_id_required");
+  }
+  const workspaceDir = path.join(artifactsRoot, context.portalUserId || "unknown-user", context.workspaceId);
   await mkdir(workspaceDir, { recursive: true });
   const fileName = artifactName(context.messageId);
   const localPath = path.join(workspaceDir, fileName);
@@ -149,7 +159,7 @@ export function createMessageApi({ publishTraceEvent }) {
       replyMetadata: response.replyMetadata || response.reply_metadata || null,
       reply,
       source: response.source || "opl_runtime",
-      promptPreview: context.message.slice(0, 120),
+      promptPreview: promptPreviewMetadata(context.message),
       status: "succeeded",
     });
     const artifact = addArtifactRecord(state, {

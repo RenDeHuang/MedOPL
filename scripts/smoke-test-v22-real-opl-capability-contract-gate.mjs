@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const CONTRACT_PATH = "docs/contracts/v22-real-opl-capability-canary-boundary.md";
 const FLOW_PATH = "docs/recovery/real-opl-capability-canary-validation-path.md";
@@ -158,8 +159,9 @@ assertIncludes(index, "v22-real-opl-capability-canary-boundary.md", "contracts_i
 assertIncludes(index, "Real OPL Capability Canary 合同包", "contracts_index");
 assertIncludes(acceptance, "Real OPL capability canary", "mvp_acceptance");
 assertIncludes(statusMatrix, "Real OPL capability canary", "status_matrix");
-assertIncludes(statusMatrix, "feat/v22-real-opl-capability-canary", "status_matrix");
-assertIncludes(suite, "smoke-test-v22-real-opl-capability-contract-gate.mjs", "mvp_suite");
+assertIncludes(statusMatrix, "not_production_truth_yet", "status_matrix");
+assertIncludes(statusMatrix, "future authorization boundary", "status_matrix");
+assert.ok(isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs"), "mvp_suite: missing scripts/smoke-test-v22-real-opl-capability-contract-gate.mjs");
 
 console.log(JSON.stringify({
   ok: true,

@@ -5,18 +5,18 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const STARTED_AT = "2026-05-07T00:00:00.000Z";
 
 const PACKAGE_CATALOG = Object.freeze({
-  "default-2c4gb-10gb": Object.freeze({
-    id: "default-2c4gb-10gb",
-    title: "Default 2c4gb + 10GB",
-    kind: "default",
+  "starter_2c4g_10gb": Object.freeze({
+    id: "starter_2c4g_10gb",
+    title: "Starter 2c4g + 10GB",
+    kind: "starter",
     compute: Object.freeze({ cpuCores: 2, memoryGb: 4 }),
     storage: Object.freeze({ capacityGb: 10 }),
     weeklyPreauthCents: 3000,
   }),
-  "default-8c16gb-100gb": Object.freeze({
-    id: "default-8c16gb-100gb",
-    title: "Default 8c16gb + 100GB",
-    kind: "default",
+  "pro_8c16g_100gb": Object.freeze({
+    id: "pro_8c16g_100gb",
+    title: "Pro 8c16g + 100GB",
+    kind: "pro",
     compute: Object.freeze({ cpuCores: 8, memoryGb: 16 }),
     storage: Object.freeze({ capacityGb: 100 }),
     weeklyPreauthCents: 12000,
@@ -199,22 +199,16 @@ function packageSelection(input) {
 
   assert.equal(Array.isArray(computeAddons), true, "compute_addons_must_be_array");
   assert.equal(Array.isArray(storageAddons), true, "storage_addons_must_be_array");
-  if (custom) {
-    assert.equal(custom.kind, "custom_package_boundary", "custom_plan_must_be_explicit_boundary");
-    assert.equal(Number.isInteger(custom.compute.cpuCores), true, "custom_cpu_must_be_integer");
-    assert.equal(Number.isInteger(custom.compute.memoryGb), true, "custom_memory_must_be_integer");
-    assert.equal(Number.isInteger(custom.storage.capacityGb), true, "custom_storage_must_be_integer");
-  }
+  assert.equal(computeAddons.length, 0, "compute_addons_active_path_must_be_forbidden_in_mvp");
+  assert.equal(storageAddons.length, 0, "storage_addons_active_path_must_be_forbidden_in_mvp");
+  assert.equal(custom, null, "custom_active_package_must_be_forbidden_in_mvp");
 
-  const addonCpu = computeAddons.reduce((sum, item) => sum + item.cpuCores, 0);
-  const addonMemory = computeAddons.reduce((sum, item) => sum + item.memoryGb, 0);
-  const addonStorage = storageAddons.reduce((sum, item) => sum + item.capacityGb, 0);
-  const selectedCompute = custom?.compute || {
-    cpuCores: basePackage.compute.cpuCores + addonCpu,
-    memoryGb: basePackage.compute.memoryGb + addonMemory,
+  const selectedCompute = {
+    cpuCores: basePackage.compute.cpuCores,
+    memoryGb: basePackage.compute.memoryGb,
   };
-  const selectedStorage = custom?.storage || {
-    capacityGb: basePackage.storage.capacityGb + addonStorage,
+  const selectedStorage = {
+    capacityGb: basePackage.storage.capacityGb,
   };
 
   return {
@@ -228,12 +222,12 @@ function packageSelection(input) {
       compute: computeAddons.map(publicClone),
       storage: storageAddons.map(publicClone),
     },
-    custom,
+    custom: null,
     selected: {
       compute: selectedCompute,
       storage: selectedStorage,
     },
-    weeklyPreauthCents: custom?.weeklyPreauthCents || basePackage.weeklyPreauthCents,
+    weeklyPreauthCents: basePackage.weeklyPreauthCents,
   };
 }
 
@@ -634,30 +628,39 @@ assert.equal(rejectedRun.ok, false, "hosted_run_before_runtime_must_be_rejected"
 assert.equal(rejectedRun.error, "runtime_resource_binding_required", "hosted_run_rejection_error_mismatch");
 
 const starterSelection = packageSelection({
-  packageId: "default-2c4gb-10gb",
-  computeAddons: [{ kind: "additional_compute", cpuCores: 2, memoryGb: 4 }],
-  storageAddons: [{ kind: "additional_storage", capacityGb: 20 }],
+  packageId: "starter_2c4g_10gb",
 });
 assert.equal(starterSelection.base.compute.cpuCores, 2, "starter_package_must_define_2_cores");
 assert.equal(starterSelection.base.compute.memoryGb, 4, "starter_package_must_define_4gb_memory");
 assert.equal(starterSelection.base.storage.capacityGb, 10, "starter_package_must_define_10gb_storage");
-assert.equal(starterSelection.selected.compute.cpuCores, 4, "compute_addon_must_extend_selected_compute");
-assert.equal(starterSelection.selected.storage.capacityGb, 30, "storage_addon_must_extend_selected_storage");
+assert.equal(starterSelection.selected.compute.cpuCores, 2, "starter_selected_compute_must_match_base_in_mvp");
+assert.equal(starterSelection.selected.storage.capacityGb, 10, "starter_selected_storage_must_match_base_in_mvp");
 
-const customSelection = packageSelection({
-  packageId: "default-8c16gb-100gb",
+assert.throws(() => packageSelection({
+  packageId: "starter_2c4g_10gb",
+  computeAddons: [{ kind: "additional_compute", cpuCores: 2, memoryGb: 4 }],
+}), /compute_addons_active_path_must_be_forbidden_in_mvp/u, "compute_addons_active_path_must_be_rejected_in_mvp");
+
+assert.throws(() => packageSelection({
+  packageId: "starter_2c4g_10gb",
+  storageAddons: [{ kind: "additional_storage", capacityGb: 20 }],
+}), /storage_addons_active_path_must_be_forbidden_in_mvp/u, "storage_addons_active_path_must_be_rejected_in_mvp");
+
+const proSelection = packageSelection({
+  packageId: "pro_8c16g_100gb",
+});
+assert.equal(proSelection.base.compute.cpuCores, 8, "pro_package_must_define_8_cores");
+assert.equal(proSelection.base.compute.memoryGb, 16, "pro_package_must_define_16gb_memory");
+assert.equal(proSelection.base.storage.capacityGb, 100, "pro_package_must_define_100gb_storage");
+assert.throws(() => packageSelection({
+  packageId: "pro_8c16g_100gb",
   custom: {
     kind: "custom_package_boundary",
     compute: { cpuCores: 12, memoryGb: 24 },
     storage: { capacityGb: 250 },
     weeklyPreauthCents: 18000,
   },
-});
-assert.equal(customSelection.base.compute.cpuCores, 8, "pro_package_must_define_8_cores");
-assert.equal(customSelection.base.compute.memoryGb, 16, "pro_package_must_define_16gb_memory");
-assert.equal(customSelection.base.storage.capacityGb, 100, "pro_package_must_define_100gb_storage");
-assert.equal(customSelection.selected.compute.cpuCores, 12, "custom_package_must_keep_explicit_compute_boundary");
-assert.equal(customSelection.selected.storage.capacityGb, 250, "custom_package_must_keep_explicit_storage_boundary");
+}), /custom_active_package_must_be_forbidden_in_mvp/u, "custom_active_package_must_be_rejected_in_mvp");
 
 const starterBinding = provisionRuntimeBinding(state, {
   tenantId: tenant.id,
@@ -667,7 +670,7 @@ const starterBinding = provisionRuntimeBinding(state, {
   lifecycleMode: "platform_provisioned",
   cloudMutation: false,
   packageSelection: {
-    packageId: "default-2c4gb-10gb",
+    packageId: "starter_2c4g_10gb",
   },
 });
 assert.equal(starterBinding.compute.cpuCores, 2, "starter_binding_must_provision_2_cores");
@@ -691,7 +694,7 @@ const proBinding = provisionRuntimeBinding(state, {
   lifecycleMode: "platform_provisioned",
   cloudMutation: false,
   packageSelection: {
-    packageId: "default-8c16gb-100gb",
+    packageId: "pro_8c16g_100gb",
   },
 });
 assert.equal(proBinding.compute.cpuCores, 8, "pro_binding_must_provision_8_cores");
@@ -799,14 +802,14 @@ const contractEvidence = {
   },
   coveredPackages: [
     {
-      id: "default-2c4gb-10gb",
-      compute: PACKAGE_CATALOG["default-2c4gb-10gb"].compute,
-      storage: PACKAGE_CATALOG["default-2c4gb-10gb"].storage,
+      id: "starter_2c4g_10gb",
+      compute: PACKAGE_CATALOG["starter_2c4g_10gb"].compute,
+      storage: PACKAGE_CATALOG["starter_2c4g_10gb"].storage,
     },
     {
-      id: "default-8c16gb-100gb",
-      compute: PACKAGE_CATALOG["default-8c16gb-100gb"].compute,
-      storage: PACKAGE_CATALOG["default-8c16gb-100gb"].storage,
+      id: "pro_8c16g_100gb",
+      compute: PACKAGE_CATALOG["pro_8c16g_100gb"].compute,
+      storage: PACKAGE_CATALOG["pro_8c16g_100gb"].storage,
     },
   ],
   providerSurface,

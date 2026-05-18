@@ -52,6 +52,17 @@ v22 cloud onboarding workflow 是状态机。每个阶段必须显式记录：
 - 每个阶段的 blocker 必须回流到明确 owner，不允许靠下一阶段兜底。
 - 涉及真实 secret、真实云、deploy/build/push/kubectl、依赖安装、merge/push 时必须停下来问用户。
 
+## Cloud Authorization Dual Gates
+
+Cloud 路径必须同时满足双门禁：
+
+- Gate-A（人/流程授权门）：用户在当前会话显式授权目标范围（secret allowlist、API allowlist、region、预算、回滚边界、证据路径）。
+- Gate-B（执行门）：runner / allowlist / mode 满足本合同与对应子合同约束，并且默认 fail-closed。
+
+任一门禁未通过时必须保持 `realCloudCalls=false`。
+
+`realCloudCalls` 只能由执行证据正向推出（授权记录 + runner 执行记录 + 脱敏 evidence）；不得由 `runnerMode`、资源物化状态或推测结果反推。
+
 ## Required State Machine
 
 ### 1. official SDK provider strategy

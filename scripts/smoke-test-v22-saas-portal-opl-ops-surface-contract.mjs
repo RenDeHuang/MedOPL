@@ -192,7 +192,9 @@ async function assertFrontendBeginnerSurfaceCopy() {
     "账单",
     "费用估算",
     "冻结金额",
-    "释放计算资源",
+    "价格待审批",
+    "正式售价未定价",
+    "当前页面仅展示状态，不提供资源调整动作。",
     "审计状态",
     "进入 OPL",
     "gflabtoken 模型调用密钥",
@@ -290,12 +292,14 @@ assertIncludesAll(contract.oplWebBeginnerSurface.mustDo, [
 assert.equal(contract.oplWebBeginnerSurface.entrypoint, "opl.medopl.cn", "opl_entrypoint_mismatch");
 
 assertIncludesAll(contract.managementSurface.mustShow, [
-  "tenant 状态",
-  "workspace 状态",
-  "resourceBinding、cloudOperation、billingAttribution 状态",
-  "serverPlan 状态",
-  "run 状态",
-  "COS bucket、prefix、object 状态",
+  "用户管理摘要",
+  "工作空间摘要",
+  "资源管理摘要",
+  "任务记录摘要",
+  "账单管理摘要",
+  "审计记录摘要",
+  "站点设置摘要",
+  "服务状态摘要",
   "分账标签状态",
   "任务失败",
   "账单日内核对状态",
@@ -303,6 +307,7 @@ assertIncludesAll(contract.managementSurface.mustShow, [
   "T+1 审计状态",
   "异常账单、异常资源",
 ], "operations_surface");
+assert.equal(contract.managementSurface.rawBackendTermsAllowedOnlyInDiagnosticDetail, true, "raw_backend_terms_must_be_diagnostic_detail_only");
 assertIncludesAll(contract.managementSurface.primaryPageLanguage, [
   "用户管理",
   "工作空间",

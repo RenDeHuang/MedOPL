@@ -6,6 +6,10 @@ export function createPortalApiSessionsRoutes({
   sendJson,
   workspaceChatSessionsForUser,
 }) {
+  function publicTaskRef(row = {}) {
+    return String(row.taskRef || row.traceId || row.sessionId || row.runtimeSessionId || row.workspaceSessionId || "").trim();
+  }
+
   return async function handlePortalApiSessionsRoutes({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/sessions") return false;
     const requestOptions = readSessionsRequestOptions(url);
@@ -29,7 +33,7 @@ export function createPortalApiSessionsRoutes({
         return latestRun ? {
           ...session,
           runtimeSessionId: latestRun.runtimeSessionId || "",
-          runId: latestRun.runId || "",
+          taskRef: publicTaskRef(latestRun),
           runStatus: latestRun.status || "",
           latencyMs: Number(latestRun.latencyMs || 0),
           tokenCount: Number(latestRun.tokenCount || 0),

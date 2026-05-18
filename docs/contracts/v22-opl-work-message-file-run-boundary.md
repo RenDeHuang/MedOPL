@@ -44,7 +44,7 @@ https://github.com/gaofeng21cn/one-person-lab
 ## Work Flow
 
 1. 用户从 `opl.medopl.cn` 进入 OPL 科研工作台；session 创建请求必须显式包含 `entrypoint=opl.medopl.cn`。
-2. 平台创建 OPL session contract，绑定 workspace、tenant、user、`resourceBinding` 和 `providerKeyRef`。
+2. 平台创建 OPL session contract，内部绑定 workspace、tenant、user、`resourceBinding` 和 `providerKeyRef`；普通用户 response 不返回 `resourceBindingId`、`tenantId`、`runId` 或后台审计标签原值。
 3. 用户上传文件后，平台生成 workspace file reference。
 4. 用户用 workspace file reference 发起 run contract。
 5. Runtime Agent 合同生成 artifact reference / output file reference。
@@ -56,18 +56,24 @@ MVP trace metadata 只允许包含：
 
 - `sessionId`
 - `workspaceId`
-- `resourceBindingId`
 - `providerKeyRef`
 - artifact reference 列表
 - timestamps
 
-trace metadata 不得包含 raw prompt、raw API key、`launchToken` 或 `runtimeToken`。Langfuse 只能作为后续 trace metadata 来源，不进入 MVP 主产品叙事。
+public trace metadata 不得包含 raw prompt、raw API key、`launchToken`、`runtimeToken`、`resourceBindingId`、`tenantId`、`runId` 或未脱敏 `auditTag`。内部 trace store 可使用后台 ID 做审计归因，但不得透出普通用户 response。Langfuse 只能作为后续 trace metadata 来源，不进入 MVP 主产品叙事。
+
+以下 token 在 OPL active surface 视为 retired/forbidden：
+
+- retired resource-order identifier family（包括 snake/camel/kebab 旧字段族）
+- `opencost-pending`
+- `launch_token` URL query 语义
+- 未脱敏 `promptPreview`
 
 ## Public References
 
 - workspace file reference 是用户上传文件的公开引用，不等于 COS key 或本地路径。
 - artifact reference 是输出文件的公开引用，不等于 COS key 或本地路径。
-- download response 只能返回 output file reference 和必要的 workspace/resourceBinding 引用。
+- download response 只能返回 output file reference、workspace reference 和文件状态；不得返回 resourceBinding、内部 storage key、local path 或 signed URL。
 
 ## Non-goals
 

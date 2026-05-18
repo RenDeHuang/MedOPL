@@ -42,5 +42,5 @@ export function slugify(value) {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "default";
+    .replace(/^-+|-+$/g, "");
 }

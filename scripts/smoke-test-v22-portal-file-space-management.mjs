@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const RAW_API_KEY = "gflabtoken_raw_key_file_space";
 const SECRET_ID = "secret-id-file-space";
@@ -50,8 +51,8 @@ const fileAllowedKeys = Object.freeze([
   "folderRef",
   "kind",
   "source",
-  "runId",
   "sessionId",
+  "taskRef",
   "artifactRef",
   "sizeBytes",
   "status",
@@ -271,7 +272,8 @@ const outputFile = fileSpace.files.find((item) => item.kind === "output");
 assert.equal(inputFile.source, "upload", "input_file_source_mismatch");
 assert.equal(inputFile.folderRef, "folder-project-a", "input_file_folder_ref_mismatch");
 assert.equal(outputFile.source, "runtime_output", "output_file_source_mismatch");
-assert.equal(outputFile.runId, runId, "output_file_run_link_mismatch");
+assert.ok(outputFile.taskRef, "output_file_task_ref_required");
+assert.notEqual(outputFile.taskRef, runId, "output_file_task_ref_must_not_expose_run_id");
 assert.equal(outputFile.sessionId, sessionId, "output_file_session_link_mismatch");
 assert.equal(outputFile.artifactRef, outputRef, "output_file_artifact_ref_mismatch");
 assert.equal(outputFile.status, "retention_protected", "output_file_status_mismatch");
@@ -283,6 +285,7 @@ assert.equal(JSON.stringify(workspacePayload).includes("tokenCount"), false, "wo
 assert.equal(JSON.stringify(workspacePayload).includes("cos-prefix-proof-must-not-leak"), false, "workspace_payload_must_not_expose_storage_prefix_value");
 assert.equal(JSON.stringify(workspacePayload).includes("cos_standard_workspace_quota"), false, "workspace_payload_must_not_expose_internal_storage_backend");
 assert.equal(JSON.stringify(workspacePayload).includes("storageBackend"), false, "workspace_payload_must_not_expose_storage_backend_field");
+assert.equal(JSON.stringify(workspacePayload).includes('"runId"'), false, "workspace_payload_must_not_expose_run_id_field");
 
 const workspaceSurfaceSources = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
@@ -303,10 +306,13 @@ assert(workspaceTypesSource.includes("selectedFileRefs"), "workspace_types_must_
 const storageEntitlementType = interfaceBody(workspaceTypesSource, "StorageEntitlementPayload");
 assert.equal(storageEntitlementType.includes("cosPrefix"), false, "workspace_storage_entitlement_type_must_not_expose_storage_prefix");
 assert.equal(storageEntitlementType.includes("storageBackend"), false, "workspace_storage_entitlement_type_must_not_expose_storage_backend");
+for (const forbidden of ["tenantId", "userId", "resourceBindingId", "billingAttributionId", "accountId", "storagePlanId", "serverPlanId"]) {
+  assert.equal(storageEntitlementType.includes(forbidden), false, `workspace_storage_entitlement_type_must_not_expose_internal_field:${forbidden}`);
+}
 assert(contractSource.includes("文件空间属于 workspace，和运行环境生命周期分离"), "contract_must_define_file_space_lifecycle");
 assert(contractSource.includes("本分支允许最小 Portal frontend 文件空间展示"), "contract_must_allow_minimal_frontend_file_space");
 assert.equal(contractSource.includes("- 不改 frontend。"), false, "contract_must_not_keep_old_frontend_non_goal");
-assert(suiteSource.includes("smoke-test-v22-portal-file-space-management"), "mvp_suite_must_include_file_space_management_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-portal-file-space-management.mjs"), "mvp_suite_must_include_file_space_management_smoke");
 
 console.log(JSON.stringify({
   ok: true,

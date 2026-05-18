@@ -58,6 +58,7 @@ API response 和 canonical state 不得泄露：
 
 - raw API key
 - raw prompt
+- `resourceBinding` / `resourceBindingId` / `billingAttributionId` 等后台归因原值
 - `launchToken`
 - `runtimeToken`
 - 内部存储密钥

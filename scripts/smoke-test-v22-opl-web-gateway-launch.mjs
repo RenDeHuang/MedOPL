@@ -83,15 +83,16 @@ function startRuntimeBridgeFixture(calls) {
     const url = new URL(req.url || "/", "http://runtime-bridge.local");
     const authorization = String(req.headers.authorization || "");
     const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || "";
-    if (url.pathname.startsWith("/api/opl-launch/") && bearer !== "launch-token-smoke") {
+    const runtimeApiPath = url.pathname.startsWith("/api/opl-launch/") || url.pathname.startsWith("/api/opl/");
+    if (runtimeApiPath && bearer !== "launch-token-smoke") {
       res.writeHead(401, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ ok: false, error: "launch_token_invalid" }));
       return;
     }
-    if (req.method === "GET" && url.pathname === "/api/opl-launch/bootstrap") {
+    if (req.method === "GET" && (url.pathname === "/api/opl-launch/bootstrap" || url.pathname === "/api/opl/bootstrap")) {
       calls.bootstrap.push({
         authorization,
-        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        forbiddenLaunchQueryPresent: url.search.includes("launch_token"),
         cookie: req.headers.cookie || "",
       });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -107,14 +108,12 @@ function startRuntimeBridgeFixture(calls) {
         portalUserId: "portal-user-smoke",
         portalUserEmail: "portal-smoke@example.test",
         portalUserName: "Portal Smoke",
-        tenantId: "tenant-smoke",
         workspaceId: "workspace-smoke",
         workspaceSessionId: "workspace-session-smoke",
         runtimeSessionId: "runtime-session-smoke",
       },
       identity: {
         portalUserId: "portal-user-smoke",
-        tenantId: "tenant-smoke",
         workspaceId: "workspace-smoke",
         workspaceSessionId: "workspace-session-smoke",
         runtimeSessionId: "runtime-session-smoke",
@@ -142,13 +141,13 @@ function startRuntimeBridgeFixture(calls) {
       }));
       return;
     }
-    if (req.method === "POST" && url.pathname === "/api/opl-launch/runs") {
+    if (req.method === "POST" && (url.pathname === "/api/opl-launch/runs" || url.pathname === "/api/opl/runs")) {
       const raw = await readBody(req);
       const body = JSON.parse(raw || "{}");
       calls.runs.push({
         body,
         authorization,
-        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        forbiddenLaunchQueryPresent: url.search.includes("launch_token"),
         cookie: req.headers.cookie || "",
       });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -163,11 +162,11 @@ function startRuntimeBridgeFixture(calls) {
       }));
       return;
     }
-    if (req.method === "GET" && url.pathname === "/api/opl-launch/runs/run-smoke/status") {
+    if (req.method === "GET" && (url.pathname === "/api/opl-launch/runs/run-smoke/status" || url.pathname === "/api/opl/runs/run-smoke/status")) {
       calls.status.push({
         runId: "run-smoke",
         authorization,
-        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        forbiddenLaunchQueryPresent: url.search.includes("launch_token"),
         cookie: req.headers.cookie || "",
       });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -181,11 +180,11 @@ function startRuntimeBridgeFixture(calls) {
       }));
       return;
     }
-    if (req.method === "GET" && url.pathname === "/api/opl-launch/runs/run-smoke/artifacts") {
+    if (req.method === "GET" && (url.pathname === "/api/opl-launch/runs/run-smoke/artifacts" || url.pathname === "/api/opl/runs/run-smoke/artifacts")) {
       calls.artifacts.push({
         runId: "run-smoke",
         authorization,
-        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        forbiddenLaunchQueryPresent: url.search.includes("launch_token"),
         cookie: req.headers.cookie || "",
       });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -201,12 +200,12 @@ function startRuntimeBridgeFixture(calls) {
       }));
       return;
     }
-    if (req.method === "POST" && url.pathname === "/api/opl-launch/sessions/bind") {
+    if (req.method === "POST" && (url.pathname === "/api/opl-launch/sessions/bind" || url.pathname === "/api/opl/sessions/bind")) {
       const raw = await readBody(req);
       calls.bind.push({
         body: JSON.parse(raw || "{}"),
         authorization,
-        launchTokenQuery: url.searchParams.get("launch_token") || "",
+        forbiddenLaunchQueryPresent: url.search.includes("launch_token"),
         cookie: req.headers.cookie || "",
       });
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
@@ -347,7 +346,7 @@ try {
     env: {
       ...process.env,
       PORT: String(gatewayPort),
-      OPL_WEB_UPSTREAM_URL: `http://127.0.0.1:${oplPort}`,
+      OPL_UPSTREAM_URL: `http://127.0.0.1:${oplPort}`,
       PORTAL_RUNTIME_BRIDGE_URL: `http://127.0.0.1:${runtimeBridgePort}`,
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       PORTAL_PUBLIC_URL: "https://portal.example.test",
@@ -370,15 +369,21 @@ try {
   assert(unauthenticatedPayload.portalLaunchRequired === true, "auth user without launch must require Portal launch");
   assert(unauthenticatedPayload.reason === "portal_login_or_launch_required", "auth user without launch must expose direct entry reason");
 
-  const htmlResponse = await fetch(`${gatewayUrl}/?launch_token=launch-token-smoke`);
-  const setCookie = htmlResponse.headers.get("set-cookie") || "";
-  assert(setCookie.includes("opl_portal_launch=launch-token-smoke"), "gateway did not set launch cookie");
+  const queryTokenResponse = await fetch(`${gatewayUrl}/?launch_token=launch-token-smoke`);
+  const queryTokenPayload = await queryTokenResponse.json();
+  assert(queryTokenResponse.status === 400, "gateway must reject launch_token query entry");
+  assert(queryTokenPayload.error === "gateway_query_secret_forbidden", "gateway query token rejection error mismatch");
+
+  const launchCookie = "opl_portal_launch=launch-token-smoke";
+  const htmlResponse = await fetch(`${gatewayUrl}/`, {
+    headers: { cookie: launchCookie },
+  });
   const html = await htmlResponse.text();
   assert(html.includes("/portal-launch.js"), "gateway did not inject portal launch script");
   assert(html.includes('meta name="opl-portal-direct-entry" content="0"'), "launch html must mark direct entry as false");
 
   const portalUserResponse = await fetch(`${gatewayUrl}/api/auth/user`, {
-    headers: { cookie: setCookie.split(";")[0] },
+    headers: { cookie: launchCookie },
   });
   const portalUser = await portalUserResponse.json();
   assert(portalUser.success === true, "gateway launch SSO auth user response failed");
@@ -402,21 +407,21 @@ try {
     }),
   ]);
 
-  assert(detail.state.authenticated === true, "launch ready event must expose public authenticated state");
-  assert(detail.state.runtimeBridgeUrl === "/runtime-bridge", "launch ready event must expose same-origin runtime bridge");
+  assert(detail.state.launchStatus === "ready", "launch ready event must expose public ready state");
   assert(detail.state.launchToken === undefined, "launch ready event must not expose launch token");
-  assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.launch.runtimeSessionId === "runtime-session-smoke", "bootstrap runtime session was not stored");
+  assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.launch.sessionId === "runtime-session-smoke", "bootstrap public session was not stored");
   assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.identity === undefined, "bootstrap identity must not be exposed in global launch state");
   assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.ownership === undefined, "bootstrap ownership must not be exposed in global launch state");
+  assert(browser.window.__OPL_PORTAL_LAUNCH__.bootstrap.portal === undefined, "bootstrap portal internals must not be exposed in global launch state");
   assert(browser.window.__OPL_PORTAL_DIRECT_ENTRY__.active === false, "launch flow should clear direct entry state");
-  assert(browser.window.__OPL_PORTAL__.bootstrap.portal.portalUserId === "portal-user-smoke", "stable browser API did not expose bootstrap");
+  assert(browser.window.__OPL_PORTAL__.bootstrap.launch.sessionId === "runtime-session-smoke", "stable browser API did not expose public bootstrap session");
   assert(calls.bootstrap.length >= bootstrapCallsBeforeScript + 2, "runtime bridge bootstrap was not called through cookie-only gateway flow");
   assert(calls.bootstrap.at(-1).authorization === "Bearer launch-token-smoke", "gateway must inject launch token as Authorization");
-  assert(calls.bootstrap.at(-1).launchTokenQuery === "", "gateway must not inject launch token query");
+  assert(calls.bootstrap.at(-1).forbiddenLaunchQueryPresent === false, "gateway must not inject launch token query");
   assert(!calls.bootstrap.at(-1).cookie.includes("opl_portal_launch"), "gateway must not forward launch cookie to adapter");
   assert(calls.bind.length === 1, "runtime bridge session bind was not called through gateway");
   assert(calls.bind[0].authorization === "Bearer launch-token-smoke", "gateway must inject Authorization for bind");
-  assert(calls.bind[0].launchTokenQuery === "", "bind callback must not include launch token query");
+  assert(calls.bind[0].forbiddenLaunchQueryPresent === false, "bind callback must not include launch token query");
   assert(!calls.bind[0].cookie.includes("opl_portal_launch"), "bind callback must not forward launch cookie");
   assert(calls.bind[0].body.source === "opl-web-gateway", "session bind source mismatch");
   assert(calls.bind[0].body.runtimeSessionId === "runtime-session-smoke", "runtime session bind mismatch");
@@ -453,7 +458,7 @@ try {
   assert(nativeRun.module.moduleId === "mas", "native module bridge did not resolve MAS module");
   assert(typeof browser.window.__OPL_PORTAL_TIMING__.opl_first_interaction_ms === "number", "first interaction timing marker missing");
   assert(calls.runs.at(-1).authorization === "Bearer launch-token-smoke", "gateway must inject Authorization for native run");
-  assert(calls.runs.at(-1).launchTokenQuery === "", "native run callback must not include launch token query");
+  assert(calls.runs.at(-1).forbiddenLaunchQueryPresent === false, "native run callback must not include launch token query");
   assert(!calls.runs.at(-1).cookie.includes("opl_portal_launch"), "native run callback must not forward launch cookie");
   assert(calls.runs.at(-1).body.launchToken === undefined, "native run body must not include launch token");
   assert(calls.runs.at(-1).body.agentId === "mas", "native module bridge did not call MAS run");
@@ -467,11 +472,11 @@ try {
   const status = await browser.window.__OPL_PORTAL__.getRunStatus("run-smoke");
   assert(status.status === "succeeded", "stable browser API did not read run status");
   assert(calls.status.at(-1).authorization === "Bearer launch-token-smoke", "run status must use gateway Authorization injection");
-  assert(calls.status.at(-1).launchTokenQuery === "", "run status must not include launch token query");
+  assert(calls.status.at(-1).forbiddenLaunchQueryPresent === false, "run status must not include launch token query");
   const artifacts = await browser.window.__OPL_PORTAL__.getArtifacts("run-smoke");
   assert(artifacts.items.length === 1, "stable browser API did not read artifacts");
   assert(calls.artifacts.at(-1).authorization === "Bearer launch-token-smoke", "artifacts must use gateway Authorization injection");
-  assert(calls.artifacts.at(-1).launchTokenQuery === "", "artifacts must not include launch token query");
+  assert(calls.artifacts.at(-1).forbiddenLaunchQueryPresent === false, "artifacts must not include launch token query");
 
   console.log(JSON.stringify({
     ok: true,

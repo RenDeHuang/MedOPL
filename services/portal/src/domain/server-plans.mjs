@@ -16,12 +16,9 @@ export function normalizeServerPlanSelection(value) {
     availabilityStatus: String(value.availabilityStatus || "").trim(),
     statusCategory: String(value.statusCategory || "").trim(),
     soldOutReason: String(value.soldOutReason || value.reason || "").trim(),
-    originalPrice: safePositiveNumber(value.originalPrice, 0),
-    discountPrice: safePositiveNumber(value.discountPrice, 0),
-    unitPrice: safePositiveNumber(value.unitPrice, 0),
-    hourlyPrice: safePositiveNumber(value.hourlyPrice ?? value.discountPrice ?? value.unitPrice, 0),
-    quoteAmount: safePositiveNumber(value.quoteAmount, 0),
-    preauthAmount: safePositiveNumber(value.preauthAmount, 0),
+    basePrice: null,
+    pendingProductApproval: true,
+    priceLabel: "正式售价未定价",
     minBillableHours: Math.max(1, Number(value.minBillableHours || 1)),
     riskFactor: safePositiveNumber(value.riskFactor, 1),
     reservationFloor: safePositiveNumber(value.reservationFloor, 0),
@@ -57,11 +54,9 @@ export function buildTaskSpaceServerPlanSelection(plan) {
     availabilityStatus: plan.availabilityStatus,
     statusCategory: plan.statusCategory,
     soldOutReason: plan.soldOutReason,
-    discountPrice: plan.discountPrice,
-    unitPrice: plan.unitPrice,
-    hourlyPrice: plan.hourlyPrice,
-    quoteAmount: plan.quoteAmount,
-    preauthAmount: plan.preauthAmount,
+    basePrice: null,
+    pendingProductApproval: true,
+    priceLabel: "正式售价未定价",
     minBillableHours: plan.minBillableHours,
     riskFactor: plan.riskFactor,
     reservationFloor: plan.reservationFloor,
@@ -75,7 +70,6 @@ export function buildTaskSpaceServerPlanSelection(plan) {
     gpuCount: plan.gpuCount ?? plan.gpu,
     storageRequest: plan.storageRequest,
     storageLimit: plan.storageLimit,
-    originalPrice: plan.originalPrice,
     selectedAt: new Date().toISOString(),
     isSelectable: plan.isSelectable,
     matrixKey: plan.matrixKey,
@@ -124,11 +118,6 @@ export function buildServerPlansSummary(payload) {
   const quoted = items.filter((item) => item.priceStatus === "quoted");
   const purchasableItems = items.filter((item) => item.isPurchasable);
   const selectableItems = items.filter((item) => item.isSelectable ?? item.isPurchasable);
-  const lowestHourlyPrice = quoted.reduce((min, item) => {
-    const candidate = Number(item.hourlyPrice ?? item.discountPrice ?? item.unitPrice ?? 0);
-    if (!Number.isFinite(candidate) || candidate <= 0) return min;
-    return min === null || candidate < min ? candidate : min;
-  }, null);
   return {
     catalogSource: String(payload?.catalogSource || "platform_catalog"),
     configured: Boolean(payload?.configured),
@@ -141,8 +130,9 @@ export function buildServerPlansSummary(payload) {
     purchasableCount: Number(payload?.purchasableCount ?? purchasableItems.length),
     selectableCount: Number(payload?.selectableCount ?? selectableItems.length),
     availabilityBreakdown: payload?.availabilityBreakdown || {},
-    priceStatus: quoted.length ? "quoted" : (items.length ? "pending" : "unavailable"),
-    lowestHourlyPrice: lowestHourlyPrice ?? 0,
+    priceStatus: "pending_product_approval",
+    basePrice: null,
+    pendingProductApproval: true,
     note: String(payload?.note || "").trim(),
     catalogRuntimeStatus: payload?.catalogRuntimeStatus || null,
     pricingSourceStatus: payload?.pricingSourceStatus || null,

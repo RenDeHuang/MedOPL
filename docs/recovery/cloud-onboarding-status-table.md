@@ -4,6 +4,8 @@ program id: v22-cloud-onboarding
 
 本状态总表记录 v22 cloud onboarding 每阶段状态、证据、owner、下一棒、required smoke 和 user gate。AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒。
 
+当前 recovery 口径：先清合同-smoke-实现漂移，不接云。历史 cloud live/deploy 记录仅作为 historical evidence，不构成当前阶段可执行授权。
+
 当前 cloud-lane 分支是 `cloud-lane/feat/v22-cloud-operation-harness-refactor`，model: gpt-5.4。它不是新增大合同，而是清退旧 cloud 合同/状态中的阶段性口径，把当前执行入口收敛到 `docs/recovery/v22-cloud-harness-manifest.json` 的 L1 -> L2a -> L2b -> L3 -> L4。Portal API 必须 async-first：只写 canonical operation/outbox 并返回 `202 + operationId`；真实 Package C 由独立 leased worker drain；恢复时 cleanup-first/reconcile-first。
 
 历史 Package C/D canary 和 rollout evidence 仍作为 evidence 参考，但不能替代当前完成态。当前完成态必须证明：用户在 Portal 点击套餐后，平台真实开通 COS/TKE/配额/绑定，账本冻结/扣费/120min 对账，用户看到计算资源/文件空间/状态/账单，并且用户可以释放计算、删除文件空间。测试前 node pool baseline desired/current 必须是 `2`；测试后必须回到 `2`，不允许遗留节点或 queued/running operation。当前已记录 starter 最小生产闭环；这不是 pro/升级/加存储/全矩阵 live 完成态。
@@ -27,6 +29,8 @@ Current goal leaf `leaf-cloud-lane-readonly-status-audit` is recorded by branch 
 | L4 | starter-product-accepted | ordinary user starter projection is sanitized and shows compute released, file protection, workbench available, billing reconciling | C/B/user | pro/upgrade/add-storage/full matrix remains local smoke unless a new live run is authorized | `smoke-test-v22-portal-package-click-cloud-resource-loop.mjs`; `smoke-test-v22-mvp-contract-suite.mjs` | required |
 
 ## Plain Status Summary
+
+以下条目中的 live/deploy 结果均按 historical evidence 处理；当前分支阶段不执行真实云动作。
 
 - official SDK provider strategy: done
 - official SDK wrapper: done

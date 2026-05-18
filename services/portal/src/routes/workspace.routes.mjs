@@ -3,6 +3,18 @@ function redirect(res, location) {
   res.end();
 }
 
+function explicitWorkspaceSlug(slugify, values = []) {
+  const raw = values
+    .map((value) => String(value || "").trim())
+    .find(Boolean);
+  const taskSlug = raw ? slugify(raw) : "";
+  return taskSlug ? { ok: true, taskSlug } : { ok: false };
+}
+
+function workspaceRequiredHtml() {
+  return `<div class="card">必须指定目标工作空间。</div>`;
+}
+
 export function createPortalWorkspaceRoutes({
   archiveTaskSpace,
   createZipFromDir,
@@ -48,7 +60,12 @@ export function createPortalWorkspaceRoutes({
 
   async function handleWorkspaceSwitch({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/workspaces/switch") return false;
-    const taskSlug = slugify(url.searchParams.get("task") || "default");
+    const taskResolution = explicitWorkspaceSlug(slugify, [url.searchParams.get("task")]);
+    if (!taskResolution.ok) {
+      sendHtml(res, layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+      return true;
+    }
+    const { taskSlug } = taskResolution;
     const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
     if (taskSpace.status === "active") user.currentTaskSlug = taskSpace.slug;
     await writeDb(db);
@@ -81,7 +98,12 @@ export function createPortalWorkspaceRoutes({
   async function handleWorkspaceArchive({ req, res, url, db, user }) {
     if (req.method !== "POST" || url.pathname !== "/portal/workspaces/archive") return false;
     const form = await readForm(req);
-    const taskSlug = slugify(form.task || user.currentTaskSlug || "default");
+    const taskResolution = explicitWorkspaceSlug(slugify, [form.task, user.currentTaskSlug]);
+    if (!taskResolution.ok) {
+      sendHtml(res, layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+      return true;
+    }
+    const { taskSlug } = taskResolution;
     const taskSpace = findTaskSpace(db, user.id, taskSlug);
     if (!taskSpace) {
       sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
@@ -100,7 +122,12 @@ export function createPortalWorkspaceRoutes({
   async function handleWorkspaceRestore({ req, res, url, db, user }) {
     if (req.method !== "POST" || url.pathname !== "/portal/workspaces/restore") return false;
     const form = await readForm(req);
-    const taskSlug = slugify(form.task || "default");
+    const taskResolution = explicitWorkspaceSlug(slugify, [form.task]);
+    if (!taskResolution.ok) {
+      sendHtml(res, layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+      return true;
+    }
+    const { taskSlug } = taskResolution;
     const taskSpace = findTaskSpace(db, user.id, taskSlug);
     if (!taskSpace) {
       sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
@@ -119,7 +146,12 @@ export function createPortalWorkspaceRoutes({
   async function handleWorkspaceDelete({ req, res, url, db, user }) {
     if (req.method !== "POST" || url.pathname !== "/portal/workspaces/delete") return false;
     const form = await readForm(req);
-    const taskSlug = slugify(form.task || "default");
+    const taskResolution = explicitWorkspaceSlug(slugify, [form.task]);
+    if (!taskResolution.ok) {
+      sendHtml(res, layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+      return true;
+    }
+    const { taskSlug } = taskResolution;
     const taskSpace = findTaskSpace(db, user.id, taskSlug);
     if (!taskSpace) {
       sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
@@ -141,10 +173,19 @@ export function createPortalWorkspaceRoutes({
 
   async function handleDownloadFile({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/workspace/download-file") return false;
-    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
+    const taskResolution = explicitWorkspaceSlug(slugify, [url.searchParams.get("task"), user.currentTaskSlug]);
+    if (!taskResolution.ok) {
+      sendHtml(res, layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+      return true;
+    }
+    const { taskSlug } = taskResolution;
     const kind = url.searchParams.get("kind") === "outputs" ? "outputs" : "inputs";
     const file = safeRelativePath(url.searchParams.get("file") || "");
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
+    const taskSpace = findTaskSpace(db, user.id, taskSlug);
+    if (!taskSpace) {
+      sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
+      return true;
+    }
     const fullPath = path.join(taskSpace.path, kind, file);
     if (!(await exists(fullPath))) {
       sendHtml(res, layoutV2("文件不存在", `<div class="card">未找到要下载的文件。</div>`, user), 404);
@@ -156,9 +197,18 @@ export function createPortalWorkspaceRoutes({
 
   async function handleDownloadAll({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/workspace/download-all") return false;
-    const taskSlug = slugify(url.searchParams.get("task") || user.currentTaskSlug || "default");
+    const taskResolution = explicitWorkspaceSlug(slugify, [url.searchParams.get("task"), user.currentTaskSlug]);
+    if (!taskResolution.ok) {
+      sendHtml(res, layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+      return true;
+    }
+    const { taskSlug } = taskResolution;
     const kind = url.searchParams.get("kind") === "outputs" ? "outputs" : "inputs";
-    const taskSpace = findTaskSpace(db, user.id, taskSlug) || await ensureTaskSpace(db, user, taskSlug, defaultTaskTitle(taskSlug));
+    const taskSpace = findTaskSpace(db, user.id, taskSlug);
+    if (!taskSpace) {
+      sendHtml(res, layoutV2("工作空间不存在", `<div class="card">未找到目标工作空间。</div>`, user), 404);
+      return true;
+    }
     const sourceDir = path.join(taskSpace.path, kind);
     await mkdir(sourceDir, { recursive: true });
     const zipPath = path.join(runtimeRoot, `${user.id}-${taskSlug}-${kind}.zip`);

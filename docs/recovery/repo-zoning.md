@@ -1,6 +1,6 @@
 # MedOPL v22 Repo Zoning Ledger
 
-本台账把仓库上下文裁定为四个区：主线真相区、迁移观察区、退役删除区和授权禁区。strict monolith cleanup 下，旧兼容面、旧测试、旧 public 退役壳、旧 deploy/adapters/infra 资产不再因为历史证据留在 active repo。
+本台账把仓库上下文裁定为四个区：主线真相区、迁移观察区、历史归档/退役删除区和授权禁区。strict monolith cleanup 下，旧兼容面、旧测试、旧 public 退役壳、旧 deploy/adapters/infra 资产不再因为历史证据留在 active repo。
 
 zero-compat active surface cleanup 进一步收紧：`adapters/*`、`deploy/*`、`infra/*`、live/canary/authorized runner executable surface 不再因为曾被合同或 suite 引用而保留。仍有业务价值的能力必须迁入 `services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge` 或 repo-local v22 gate 后，删除旧路径。
 
@@ -27,7 +27,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 
 - Zone 1: Mainline Truth Surface. AI 和新人可以默认学习、扩写和验证的 v22 主线表面。
 - Zone 2: Migration Observation Surface. 位于 active surface 或默认上下文附近，但带旧语义、旧入口、旧命名或污染风险；需要逐项裁定为 `rewrite`、`delete` 或受限 `keep`。
-- Zone 3: Retired Delete Surface. 已被 v22 替代且无 active v22 reason 的旧文件、旧脚本、旧 public shell、旧 deploy/adapters/infra 资产；进入 strict cleanup 删除队列。
+- Zone 3: Historical Archive Surface. 历史 Markdown 只能作为 archive/reference 证据；已被 v22 替代且无 active v22 reason 的旧脚本、旧 public shell、旧 deploy/adapters/infra 资产进入 strict cleanup 删除队列。
 - Zone 4: Authorization Forbidden Surface. 没有单独授权不得修改、执行或扩大接入的路径和操作。
 
 ## Zone 1: Mainline Truth Surface
@@ -87,9 +87,9 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `scripts/smoke-test-v22-*live*`, `*canary*`, `*authorized-deploy*`, `*authorized-resource-lifecycle*` | Zone 2 | rewrite/delete | live/canary/authorized runner 不属于默认 active executable surface | contract-only boundary or non-live local v22 gate | zero-compat-live-runner |
 | deleted live/canary/authorized/proof-loop runner references in contracts/recovery/default suite | Zone 2 | rewritten | Slice N 清退现行命令、授权入口和完成态引用；只保留 `.runtime` historical evidence / future-authorized boundary | current v22 local gates and branch-appropriate verifier | zero-compat-narrative |
 
-## Zone 3: Retired Delete Surface
+## Zone 3: Historical Archive Surface
 
-动作默认值：`delete`。git history 已足够保存历史；旧文件不作为新实现入口，也不作为默认验证入口。
+动作默认值：历史 Markdown 为 `archive`，旧 executable surface 为 `delete`。git history 已足够保存已删除文件历史；保留的历史参考文档不作为新实现入口，也不作为默认验证入口。
 
 | path_or_group | zone | action | reason | replacement | cleanup_slice |
 | --- | --- | --- | --- | --- | --- |

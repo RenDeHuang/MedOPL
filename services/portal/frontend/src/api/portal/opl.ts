@@ -22,7 +22,6 @@ export interface OplBootstrapPayload {
   supportedEvents: string[];
   identity: {
     portalUserId: string;
-    tenantId: string;
     workspaceId: string;
     workspaceSessionId: string;
     runtimeSessionId: string;
@@ -106,20 +105,6 @@ export async function createOplFileRef(input: OplFileInput) {
 export async function startOplRun(input: OplRunInput) {
   const { launchId, ...body } = input;
   const { data } = await apiClient.post("/opl/runs", body, {
-    params: launchParams(launchId),
-  });
-  return data;
-}
-
-export async function fetchOplRunStatus(launchId: string, runId: string) {
-  const { data } = await apiClient.get(`/opl/runs/${encodeURIComponent(runId)}/status`, {
-    params: launchParams(launchId),
-  });
-  return data;
-}
-
-export async function fetchOplRunArtifacts(launchId: string, runId: string) {
-  const { data } = await apiClient.get(`/opl/runs/${encodeURIComponent(runId)}/artifacts`, {
     params: launchParams(launchId),
   });
   return data;

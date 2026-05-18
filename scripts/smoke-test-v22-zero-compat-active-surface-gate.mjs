@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -60,6 +60,12 @@ const oldRouteFieldPatterns = [
   /\buser-owned(?:-runtime)?\b/giu,
   /\bUSER_OWNED_RUNTIME_AGENT_REQUIRED\b/gu,
   /\bUSER_OWNED_RUNTIME_DISPATCH\b/gu,
+];
+
+const retiredActiveTokenPatterns = [
+  /\bresource_order_prepare\b/gu,
+  /\bRESOURCE_ORDER_PREPARE_FAILED\b/gu,
+  /\bopencost-pending\b/gu,
 ];
 
 const residualExecutableScriptNamePatterns = [
@@ -195,6 +201,438 @@ async function assertNoActiveCodeLegacyFields(findings) {
   }
 }
 
+async function assertNoRetiredActiveTokens(findings) {
+  const files = (await Promise.all(activeCodeRoots.map(listFiles))).flat().filter(isTextFile);
+  for (const file of files) {
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "active_code_retired_token",
+      file,
+      source,
+      patterns: retiredActiveTokenPatterns,
+      detail: "Active Portal/Gateway/Runtime Bridge source must physically retire resource_order_prepare, RESOURCE_ORDER_PREPARE_FAILED, and opencost-pending.",
+    });
+  }
+}
+
+async function assertRuntimeBridgeDoesNotAcceptLaunchTokenQuery(findings) {
+  const files = (await listFiles("services/opl-runtime-bridge/src")).filter(isTextFile);
+  for (const file of files) {
+    const source = await readRepoFile(file);
+    for (const pattern of [
+      /url\.searchParams\.get\(["']launch_token["']\)/gu,
+      /searchParams\.get\(["']launch_token["']\)/gu,
+      /input\.launchToken\s*\|\|\s*input\.launch_token/gu,
+    ]) {
+      for (const match of source.matchAll(pattern)) {
+        if (isNegativeRetirementContext(contextAround(source, match.index ?? 0))) continue;
+        findings.push({
+          type: "runtime_bridge_launch_token_query_acceptance",
+          file,
+          line: lineOf(source, match.index ?? 0),
+          match: match[0],
+          detail: "Runtime Bridge active path must use Authorization/header-bound launch token flow, not launch_token query.",
+        });
+      }
+    }
+  }
+}
+
+async function assertPortalRuntimeEnvironmentNoRetiredUi(findings) {
+  const file = "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx";
+  if (!(await exists(file))) return;
+  const source = await readRepoFile(file);
+  for (const pattern of [
+    /\bactivateCustomLabPackage\b/gu,
+    /selectedPlan\s*={0,2}\s*["']custom["']/gu,
+    /selectedPlan\s*===\s*["']custom["']/gu,
+    /setSelectedPlan\(["']custom["']\)/gu,
+    /¥[\s\S]{0,120}\/\s*小时/gu,
+    /price[\s\S]{0,120}小时/giu,
+  ]) {
+    for (const match of source.matchAll(pattern)) {
+      findings.push({
+        type: "portal_runtime_environment_retired_ui",
+        file,
+        line: lineOf(source, match.index ?? 0),
+        match: match[0],
+        detail: "Portal RuntimeEnvironment MVP must expose only starter/pro active plans and no hard-coded formal hourly selling price.",
+      });
+    }
+  }
+}
+
+async function assertNoActiveCustomPackageSurface(findings) {
+  const files = (await Promise.all(activeCodeRoots.map(listFiles))).flat().filter(isTextFile);
+  for (const file of files) {
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "active_custom_package_surface",
+      file,
+      source,
+      patterns: [
+        /\bactivateCustomLabPackage\b/gu,
+        /\/lab-packages\/custom/gu,
+        /\bnormalizeCustomLabPackageSpec\b/gu,
+        /\bcustomLabPackageFromSpec\b/gu,
+        /\bcustomOptions\b/gu,
+        /packageId\s*:\s*["']custom["']/gu,
+        /\bid\s*:\s*["']custom["'][\s\S]{0,200}自定义套餐/gu,
+        /自定义套餐/gu,
+      ],
+      detail: "MVP active source must not expose custom package route/action/catalog/generator; custom stays future-authorized only.",
+    });
+  }
+}
+
+async function assertNoActiveAddonPackageSurface(findings) {
+  const files = (await Promise.all(activeCodeRoots.map(listFiles))).flat().filter(isTextFile);
+  for (const file of files) {
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "active_addon_package_surface",
+      file,
+      source,
+      patterns: [
+        /\/lab-storage\/addons/gu,
+        /\bpurchaseLabStorageAddon\b/gu,
+        /\blabStorageAddonPublicView\b/gu,
+        /\bLAB_STORAGE_ADDON_SIZES_GB\b/gu,
+        /\bstorage_addon_purchased\b/gu,
+      ],
+      detail: "MVP active source must not expose add-on storage/compute package route/action; add-ons stay future-authorized only.",
+    });
+  }
+}
+
+async function assertNoFrontendFormalHourlyPrice(findings) {
+  const files = (await listFiles("services/portal/frontend/src")).filter(isTextFile);
+  for (const file of files) {
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "frontend_formal_hourly_price_surface",
+      file,
+      source,
+      patterns: [
+        /\bpricePerHour\b/gu,
+        /\bpricePerDay\b/gu,
+        /\bhourlyPrice\b/gu,
+        /\/\s*小时/gu,
+        /¥[\s\S]{0,80}小时/gu,
+      ],
+      detail: "Portal ordinary UI must show pending approval / price unset language, not formal hourly selling prices.",
+    });
+  }
+}
+
+async function assertNoImplicitDefaultWorkspacePositivePath(findings) {
+  const scopedFiles = [
+    "services/portal/src/domain/lab-entitlements.mjs",
+    "services/portal/src/domain/lab-subscriptions.mjs",
+    "services/portal/src/routes/lab-package.routes.mjs",
+    "services/portal/src/routes/opl.routes.mjs",
+    "services/portal/src/routes/workspace.routes.mjs",
+    "services/portal/src/routes/workspace-storage-route-handlers.mjs",
+    "services/portal/src/routes/portal-api.routes.mjs",
+    "services/portal/src/app/portal-auth-runtime-handler.mjs",
+    "services/portal/src/app/portal-server-plan-runtime-handler.mjs",
+    "services/portal/src/app/portal-http-dispatcher.mjs",
+    "services/portal/src/app/portal-workspace-runtime.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/state/portal-store-migration-users-groups.mjs",
+    "services/portal/src/state/portal-store-storage-bootstrap.mjs",
+    "services/portal/src/state/portal-store-migrations.mjs",
+    "services/portal/src/state/portal-store-migration-admin-seed.mjs",
+    "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
+    "services/portal/src/state/portal-store-migration-taskspaces.mjs",
+    "services/portal/src/state/portal-store-postgres-lab-persistence.mjs",
+    "services/portal/src/migrate-schema.mjs",
+    "services/portal/src/portal-cloud-operation-worker.mjs",
+    "services/portal/src/domain/user-credit-provider-key-flow.mjs",
+    "services/portal/src/domain/lab-billing-policy.mjs",
+    "services/portal/src/domain/portal-cloud-operation-production.mjs",
+    "services/opl-runtime-bridge/src/state-store.mjs",
+    "services/opl-runtime-bridge/src/state-store-identity.mjs",
+    "services/opl-runtime-bridge/src/state-store-record-field-groups.mjs",
+    "services/opl-runtime-bridge/src/state-store-runtime-records.mjs",
+    "services/opl-runtime-bridge/src/state-store-workspace-records.mjs",
+    "services/opl-runtime-bridge/src/state-store-run-records.mjs",
+    "services/opl-runtime-bridge/src/runtime-bridge-messages.mjs",
+    "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs",
+    "scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+    "scripts/fixtures/opl-product-api-fixture.mjs",
+  ];
+  for (const file of scopedFiles) {
+    if (!(await exists(file))) continue;
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "implicit_default_workspace_positive_path",
+      file,
+      source,
+      patterns: [
+        /workspaceId\s*=\s*["']default["']/gu,
+        /workspaceId\s*\|\|\s*["']default["']/gu,
+        /workspaceId\s*\?\?\s*["']default["']/gu,
+        /searchParams\.get\(["']workspaceId["']\)\s*\|\|\s*["']default["']/gu,
+        /payload\.workspaceId\s*\|\|\s*payload\.task\s*\|\|\s*["']default["']/gu,
+        /payload\.workspaceId\s*\|\|\s*["']default["']/gu,
+        /input\.workspaceId\s*\|\|\s*input\.workspace_id\s*\|\|\s*["']default["']/gu,
+        /body\.task\s*\|\|\s*body\.workspaceId\s*\|\|\s*user\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /url\.searchParams\.get\(["']task["']\)\s*\|\|\s*user\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /payload\.task\s*\|\|\s*payload\.workspaceId\s*\|\|\s*payload\.taskSlug\s*\|\|\s*["']default["']/gu,
+        /payload\.task\s*\|\|\s*user\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /form\.task\s*\|\|\s*user\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /form\.task\s*\|\|\s*["']default["']/gu,
+        /url\.searchParams\.get\(["']task["']\)\s*\|\|\s*["']default["']/gu,
+        /task\s*\|\|\s*user\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /currentTaskSlug\s*:\s*["']default["']/gu,
+        /currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /ensureTaskSpace\([^,\n]+,\s*[^,\n]+,\s*["']default["']/gu,
+        /findTaskSpace\([^,\n]+,\s*[^,\n]+,\s*user\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /user\.currentTaskSlug\s*=\s*fallback\?\.slug\s*\|\|\s*["']default["']/gu,
+        /row\.currentTaskSlug\s*\|\|\s*["']default["']/gu,
+        /item\.slug\s*\|\|\s*["']default["']/gu,
+        /taskSpace\.slug\s*\|\|\s*["']default["']/gu,
+        /workspaceId\s*\|\|\s*["']default["']/gu,
+        /input\.workspaceId\s*\|\|\s*input\.workspaceSlug\s*\|\|\s*["']default["']/gu,
+        /workspaceSessionScopeFields\([^)]*,\s*["']default["']\s*\)/gu,
+        /defaultWorkspaceId\b/gu,
+        /String\(\s*value\s*\|\|\s*["']default["']\s*\)/gu,
+        /taskSlug\s*\|\|\s*["']default["']/gu,
+        /subscription\.workspaceId\s*\|\|\s*["']default["']/gu,
+        /input\.workspaceId\s*\|\|\s*input\.workspace_id\s*\|\|\s*["']default["']/gu,
+        /context\.workspaceId\s*\|\|\s*["']default["']/gu,
+        /firstNonEmpty\(\[\s*runtimeSession\.workspaceId,\s*["']default["']\s*\]\)/gu,
+        /replace\(\/\^-\\\+\|-\\\+\$\/g,\s*["']["']\)\s*\|\|\s*["']default["']/gu,
+      ],
+      detail: "Active lab package/resource entitlement code must require an explicit workspaceId; workspaceId=\"default\" cannot remain a happy-path fallback.",
+    });
+  }
+}
+
+async function assertNoOrdinaryUserInternalPayloadHelpers(findings) {
+  const scopedFiles = [
+    "services/portal/src/domain/managed-environment-open-flow.mjs",
+    "services/portal/src/domain/opl-work-flow.mjs",
+    "services/portal/src/domain/portal-api-payloads.mjs",
+    "services/portal/src/app/portal-page-overview-payloads.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/domain/managed-resource-binding-plan-view.mjs",
+    "services/portal/src/routes/portal-api-runs.routes.mjs",
+  ];
+  for (const file of scopedFiles) {
+    if (!(await exists(file))) continue;
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "ordinary_user_internal_payload_helper",
+      file,
+      source,
+      patterns: [
+        /\bresourceBindingPublicView\b/gu,
+        /\bfreezePublicView\b/gu,
+        /\bresourceBindingPayload\b/gu,
+        /resourceBinding\s*:\s*state\.resourceBinding/gu,
+        /freeze\s*:\s*state\.freeze/gu,
+        /resourceBindingId:\s*text\(file\.resourceBindingId\)/gu,
+        /resourceBindingId:\s*text\(trace\.resourceBindingId\)/gu,
+        /auditTag:\s*text\(trace\.auditTag/gu,
+        /runId:\s*text\(item\.runId\)/gu,
+        /resourceBindingId:\s*text\(item\.resourceBindingId\)/gu,
+        /billingAttributionId:\s*text\(item\.billingAttributionId\)/gu,
+        /accountId:\s*text\(item\.accountId\)/gu,
+        /serverPlanId:\s*text\(item\.serverPlanId\)/gu,
+        /resourceBindingId:\s*text\(file\.resourceBindingId\)/gu,
+        /resourceBindingId:\s*text\(session\.resourceBindingId\)/gu,
+        /resourceBindingId:\s*text\(run\.resourceBindingId\)/gu,
+        /runId:\s*text\(run\.runId\)/gu,
+        /auditTag:\s*text\(metadata\.auditTag\)/gu,
+        /resourceBindingId:\s*bindingId\(/gu,
+        /billingAttributionId:\s*billingAttributionId\(/gu,
+        /accountId:\s*accountId\(/gu,
+        /serverPlanId:\s*serverPlanId\(/gu,
+        /resourceBindingId:\s*text\(binding\.resourceBindingId/gu,
+        /resourcePlanId:\s*text\(resourcePlan\.resourcePlanId/gu,
+      ],
+      detail: "Ordinary Portal payload helpers must use a public whitelist and keep internal ids in backend/admin surfaces only.",
+    });
+  }
+}
+
+function assertNoOrdinaryPublicPayloadInternals(value, label) {
+  const serialized = JSON.stringify(value);
+  for (const forbidden of [
+    "tenantId",
+    "resourceBindingId",
+    "billingAttributionId",
+    "accountId",
+    "billingAccountId",
+    "serverPlanId",
+    "runId",
+    "planId",
+    "implementationKind",
+    "cloudResourceId",
+    "cvmInstanceId",
+    "bucketName",
+    "bucketId",
+    "credentialsSecretRef",
+    "rootPrefix",
+    "storageBucketId",
+    "computeInstanceId",
+    "protectionPolicyId",
+    "resourcePlanId",
+    "storagePlanId",
+    "auditTag",
+    "costAllocationTag",
+  ]) {
+    assert.equal(serialized.includes(`"${forbidden}"`), false, `${label}_must_not_expose_internal_field:${forbidden}`);
+  }
+  for (const forbiddenValue of [
+    "tenant-zero-compat",
+    "rb-zero-compat",
+    "billing-zero-compat",
+    "server-plan-zero-compat",
+    "cloud-resource-zero-compat",
+    "ins-zero-compat",
+    "bucket-zero-compat",
+    "secret-ref-zero-compat",
+    "users/user-zero-compat/workspaces/workspace-zero-compat/",
+    "audit-zero-compat",
+    "cost-zero-compat",
+  ]) {
+    assert.equal(serialized.includes(forbiddenValue), false, `${label}_must_not_expose_internal_value:${forbiddenValue}`);
+  }
+}
+
+async function assertPlatformProvisionedResourcesPublicPayloadIsWhitelisted() {
+  const moduleUrl = pathToFileURL(path.join(repoRoot, "services/portal/src/state/portal-platform-provisioned-resource-store.mjs")).href;
+  const { createPortalPlatformProvisionedResourceStore } = await import(moduleUrl);
+  const store = createPortalPlatformProvisionedResourceStore({ writeDb: async () => {} });
+  const user = {
+    id: "user-zero-compat",
+    tenantId: "tenant-zero-compat",
+  };
+  const db = {
+    userComputeInstances: [{
+      id: "compute-zero-compat",
+      ownerUserId: user.id,
+      ownerTenantId: user.tenantId,
+      provider: "tencent-cloud",
+      region: "na-siliconvalley",
+      zone: "na-siliconvalley-1",
+      cloudResourceId: "cloud-resource-zero-compat",
+      serverPlanId: "server-plan-zero-compat",
+      cvmInstanceId: "ins-zero-compat",
+      instanceId: "ins-zero-compat",
+      instanceType: "S2.MEDIUM4",
+      publicEndpoint: "public-zero-compat",
+      privateEndpoint: "private-zero-compat",
+      runtimeAgentId: "runtime-agent-zero-compat",
+      status: "active",
+    }],
+    userStorageBuckets: [{
+      id: "storage-zero-compat",
+      ownerUserId: user.id,
+      ownerTenantId: user.tenantId,
+      provider: "cos",
+      cloudResourceId: "cloud-resource-zero-compat",
+      region: "na-siliconvalley",
+      bucketName: "bucket-zero-compat",
+      bucketId: "bucket-zero-compat",
+      credentialsSecretRef: "secret-ref-zero-compat",
+      rootPrefix: "users/user-zero-compat/workspaces/workspace-zero-compat/",
+      storageCapacityGb: 100,
+      status: "active",
+    }],
+    workspaceResourceBindings: [{
+      id: "rb-zero-compat",
+      resourceBindingId: "rb-zero-compat",
+      ownerUserId: user.id,
+      ownerTenantId: user.tenantId,
+      tenantId: user.tenantId,
+      userId: user.id,
+      workspaceId: "workspace-zero-compat",
+      computeInstanceId: "compute-zero-compat",
+      storageBucketId: "storage-zero-compat",
+      rootPrefix: "users/user-zero-compat/workspaces/workspace-zero-compat/",
+      billingAttributionId: "billing-zero-compat",
+      accountId: "tenant-zero-compat",
+      serverPlanId: "server-plan-zero-compat",
+      auditTag: "audit-zero-compat",
+      costAllocationTag: "cost-zero-compat",
+      status: "active",
+    }],
+    weeklyProtectionFreezes: [{
+      id: "freeze-zero-compat",
+      ownerUserId: user.id,
+      ownerTenantId: user.tenantId,
+      resourceBindingId: "rb-zero-compat",
+      workspaceId: "workspace-zero-compat",
+      computeInstanceId: "compute-zero-compat",
+      storageBucketId: "storage-zero-compat",
+      protectionPolicyId: "protection-zero-compat",
+      usageMode: "full_runtime",
+      weeklyAmount: 0,
+      frozenAmount: 0,
+      consumedAmount: 0,
+      remainingAmount: 0,
+      releasedAmount: 0,
+      status: "active",
+    }],
+  };
+
+  const payload = store.listOwnerScopedResources(db, user);
+  assert.equal(Array.isArray(payload.items), true, "platform_resources_public_payload_items_required");
+  assert.equal(payload.items[0]?.workspaceId, "workspace-zero-compat", "platform_resources_public_payload_workspace_required");
+  assert.equal(payload.items[0]?.computeResource?.instanceType, "S2.MEDIUM4", "platform_resources_public_payload_compute_summary_required");
+  assert.equal(payload.items[0]?.fileSpace?.storageCapacityGb, 100, "platform_resources_public_payload_file_space_summary_required");
+  assertNoOrdinaryPublicPayloadInternals(payload, "platform_provisioned_resources_public_payload");
+}
+
+async function assertFrontendOrdinaryTypesDoNotExposeInternalResourceFields() {
+  const files = [
+    "services/portal/frontend/src/api/portal/billing.ts",
+    "services/portal/frontend/src/api/portal/opl.ts",
+    "services/portal/frontend/src/api/portal/resources.ts",
+    "services/portal/frontend/src/api/portal/overview.ts",
+    "services/portal/frontend/src/api/portal/server-plans.ts",
+    "services/portal/frontend/src/api/portal/sessions.ts",
+    "services/portal/frontend/src/api/portal/traces.ts",
+    "services/portal/frontend/src/api/portal/workspace.ts",
+  ];
+  for (const file of files) {
+    const source = await readRepoFile(file);
+    for (const forbidden of [
+      "tenantId",
+      "resourceBindingId",
+      "billingAttributionId",
+      "accountId",
+      "serverPlanId",
+      "runId",
+      "fetchOplRunStatus",
+      "fetchOplRunArtifacts",
+      "selectServerPlan",
+      "cloudResourceId",
+      "cvmInstanceId",
+      "bucketName",
+      "bucketId",
+      "credentialsSecretRef",
+      "rootPrefix",
+      "storageBucketId",
+      "computeInstanceId",
+      "protectionPolicyId",
+      "resourcePlanId",
+      "storagePlanId",
+      "UserOwned",
+      "createStorageOrder",
+      "createComputeInstance",
+      "deleteComputeInstance",
+      "ensureProtectionFreeze",
+    ]) {
+      assert.equal(source.includes(forbidden), false, `${file}_must_not_expose_internal_resource_field_or_legacy_client:${forbidden}`);
+    }
+  }
+}
+
 async function assertScriptLegacyTokensOnlyInGuardianGates(findings) {
   const files = (await listFiles("scripts")).filter(isTextFile);
   for (const file of files) {
@@ -213,6 +651,28 @@ async function assertScriptLegacyTokensOnlyInGuardianGates(findings) {
         });
       }
     }
+  }
+}
+
+async function assertDefaultSmokeDoesNotUseRetiredOplLaunchFixtures(findings) {
+  const { isSmokeClassifiedIn } = await import(pathToFileURL(path.join(repoRoot, "scripts/v22-smoke-classification.mjs")).href);
+  const files = (await listFiles("scripts")).filter((file) => /^scripts\/smoke-test-v22-.*\.mjs$/u.test(file));
+  for (const file of files) {
+    if (!isSmokeClassifiedIn(file)) continue;
+    const source = await readRepoFile(file);
+    pushPatternFindings(findings, {
+      type: "default_smoke_retired_opl_launch_fixture",
+      file,
+      source,
+      patterns: [
+        /searchParams\.get\(["']launch_token["']\)/gu,
+        /url\.searchParams\.get\(["']launch_token["']\)/gu,
+        /workspaceId\s*:\s*["']default["']/gu,
+        /task\s*:\s*["']default["']/gu,
+        /payload\.task\s*\|\|\s*["']default["']/gu,
+      ],
+      detail: "Default v22 smoke must not keep launch_token query or workspaceId=\"default\" as an OPL happy-path fixture.",
+    });
   }
 }
 
@@ -313,7 +773,18 @@ async function main() {
   const findings = [];
 
   await assertNoActiveCodeLegacyFields(findings);
+  await assertNoRetiredActiveTokens(findings);
+  await assertRuntimeBridgeDoesNotAcceptLaunchTokenQuery(findings);
+  await assertPortalRuntimeEnvironmentNoRetiredUi(findings);
+  await assertNoActiveCustomPackageSurface(findings);
+  await assertNoActiveAddonPackageSurface(findings);
+  await assertNoFrontendFormalHourlyPrice(findings);
+  await assertNoImplicitDefaultWorkspacePositivePath(findings);
+  await assertNoOrdinaryUserInternalPayloadHelpers(findings);
+  await assertPlatformProvisionedResourcesPublicPayloadIsWhitelisted();
+  await assertFrontendOrdinaryTypesDoNotExposeInternalResourceFields();
   await assertScriptLegacyTokensOnlyInGuardianGates(findings);
+  await assertDefaultSmokeDoesNotUseRetiredOplLaunchFixtures(findings);
   await assertNoResidualAdapterDeployInfra(findings);
   await assertNoResidualLiveCanaryRunnerScripts(findings);
   await assertDefaultSuitesAndWorkflowDoNotReferenceResiduals(findings);

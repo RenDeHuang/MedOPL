@@ -5,7 +5,7 @@ import { nowIso } from "./state-store-record-time.mjs";
 
 export function buildWorkspaceRecord(input = {}, existing = null) {
   const portalUserId = input.portalUserId || input.portal_user_id || "";
-  const workspaceId = slugify(input.workspaceId || input.workspace_id || "default");
+  const workspaceId = slugify(input.workspaceId || input.workspace_id || "");
   const tenantId = tenantIdFrom(input) || portalUserId;
   const ownerId = ownerIdFrom(input) || portalUserId;
   const storageOwnerId = storageOwnerIdFrom(input) || ownerId;

@@ -12,7 +12,7 @@ export interface WorkspaceQuery {
 
 export interface WorkspaceResourceUsagePayload {
   source: string;
-  runId: string;
+  taskRef: string;
   sessionId: string;
   workspaceId: string;
   status: string;
@@ -50,7 +50,6 @@ export interface WorkspaceBalanceLinkPayload {
 }
 
 export interface ManagedResourceBindingPlanPayload {
-  resourceBindingId: string;
   managedEnvironment: string;
   regionLabel: string;
   planSpec: string;
@@ -89,11 +88,6 @@ export interface StorageEntitlementPayload {
   freeQuotaGb: number;
   minimumPurchaseGb: number;
   retentionPolicy: string;
-  resourceBindingId: string;
-  billingAttributionId: string;
-  accountId: string;
-  storagePlanId: string;
-  serverPlanId: string;
   storageSizeGb: number;
   message: string;
 }
@@ -112,8 +106,8 @@ export interface FileSpaceFilePayload {
   folderRef: string;
   kind: "input" | "output" | string;
   source: "upload" | "runtime_output" | string;
-  runId: string;
   sessionId: string;
+  taskRef: string;
   artifactRef: string;
   sizeBytes: number;
   status: string;
@@ -160,11 +154,6 @@ export function disabledStorageEntitlement(): StorageEntitlementPayload {
     freeQuotaGb: 0,
     minimumPurchaseGb: 10,
     retentionPolicy: "workspace_lifecycle",
-    resourceBindingId: "",
-    billingAttributionId: "",
-    accountId: "",
-    storagePlanId: "",
-    serverPlanId: "",
     storageSizeGb: 0,
     message: "storage_required",
   };
@@ -207,7 +196,7 @@ export interface WorkspacePayload {
     expiresAt: string | null;
   } | null;
   recentRuns: Array<{
-    runId: string;
+    taskRef: string;
     status: string;
     createdAt: string;
     resourceUsage?: WorkspaceResourceUsagePayload;
@@ -268,7 +257,7 @@ export interface WorkspacePayload {
     fullPath: string;
     artifactRef?: string;
     fileRef?: string;
-    runId?: string;
+    taskRef?: string;
     sessionId?: string;
     workspaceId?: string;
     kind?: string;
@@ -302,39 +291,20 @@ export interface WorkspaceStoragePayload {
     note?: string;
     objects?: Array<{ key: string; size: number }>;
   };
-  metadata?: WorkspaceFileRecord[];
-}
-
-export interface StorageOrderPayload {
-  workspaceId: string;
-  order: {
-    id: string;
+  metadata?: Array<{
+    fileRef: string;
+    workspaceId: string;
+    kind: "inputs" | "outputs" | "artifacts" | string;
+    name: string;
+    relativePath: string;
+    sizeBytes: number;
+    checksum: string;
+    contentType: string;
     status: string;
-    storagePlanId: string;
-    storageSizeGb: number;
-    retentionPolicy: string;
+    source: string;
     createdAt: string;
     updatedAt: string;
-  };
-  entitlement: StorageEntitlementPayload;
-}
-
-export interface WorkspaceFileRecord {
-  id: string;
-  tenantId: string;
-  userId: string;
-  workspaceId: string;
-  runId?: string;
-  kind: "inputs" | "outputs" | "artifacts" | string;
-  name: string;
-  relativePath: string;
-  sizeBytes: number;
-  checksum: string;
-  contentType: string;
-  status: string;
-  source: string;
-  createdAt: string;
-  updatedAt: string;
+  }>;
 }
 
 export interface WorkspaceFileTransferPayload {
@@ -363,11 +333,6 @@ export async function fetchWorkspaceStorage(params?: Record<string, string | num
 
 export async function fetchStorageEntitlement(params?: Record<string, string | number | undefined>) {
   const { data } = await apiClient.get<{ workspaceId: string; entitlement: StorageEntitlementPayload }>("/storage/entitlement", { params });
-  return data;
-}
-
-export async function createStorageOrder(input: { task?: string; workspaceId?: string; storageSizeGb: number; storagePlanId?: string }) {
-  const { data } = await apiClient.post<StorageOrderPayload>("/storage/orders", input);
   return data;
 }
 

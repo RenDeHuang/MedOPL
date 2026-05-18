@@ -66,7 +66,10 @@ function normalizeProviderKeyPayload(input = {}) {
 
 function providerSecretRefFor(runtimeSession = {}) {
   const owner = firstNonEmpty([runtimeSession.portalUserId, runtimeSession.ownerId, runtimeSession.tenantId, "user"]);
-  const workspace = firstNonEmpty([runtimeSession.workspaceId, "default"]);
+  const workspace = firstNonEmpty([runtimeSession.workspaceId]);
+  if (!workspace) {
+    throw new Error("workspace_id_required");
+  }
   const session = firstNonEmpty([runtimeSession.runtimeSessionId, runtimeSession.workspaceSessionId, randomUUID()]);
   return `gflab-${owner}-${workspace}-${session}`;
 }
@@ -184,7 +187,6 @@ function publicLaunchView(launch = {}, runtimeSession = {}) {
     launchId: text(launch.launchId),
     traceId: text(launch.traceId),
     portalUserId: text(launch.portalUserId),
-    tenantId: text(launch.tenantId),
     workspaceId: text(launch.workspaceId),
     workspaceTitle: text(launch.workspaceTitle),
     workspacePath: text(launch.workspacePath),
@@ -205,10 +207,8 @@ function publicRuntimeSessionView(runtimeSession = {}, scope = {}) {
     runtimeSessionId: text(runtimeSession.runtimeSessionId || scope.runtimeSessionId),
     oplSessionId: text(runtimeSession.oplSessionId || scope.oplSessionId),
     portalUserId: text(runtimeSession.portalUserId || scope.portalUserId),
-    tenantId: text(runtimeSession.tenantId || scope.tenantId),
     workspaceId: text(runtimeSession.workspaceId || scope.workspaceId),
     workspaceSessionId: text(runtimeSession.workspaceSessionId || scope.workspaceSessionId),
-    resourceBindingId: text(runtimeSession.resourceBindingId),
     providerKeyRef: text(runtimeSession.providerKeyRef),
     providerConfigured: bool(runtimeSession.providerConfigured),
     providerConfigStatus: text(runtimeSession.providerConfigStatus || (runtimeSession.providerConfigured ? "configured" : "missing")),
@@ -223,7 +223,6 @@ function publicWorkspaceView(item = {}) {
     workspaceTitle: text(item.workspaceTitle || item.workspace_title || item.title || item.label || item.name),
     workspacePath: text(item.workspacePath || item.workspace_path),
     portalUserId: text(item.portalUserId || item.portal_user_id || item.userId),
-    tenantId: text(item.tenantId || item.tenant_id),
     ownerId: text(item.ownerId || item.owner_id),
     status: text(item.status || "active"),
     createdAt: text(item.createdAt || item.created_at),
@@ -238,7 +237,6 @@ function publicSessionView(item = {}) {
     workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
     runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
     portalUserId: text(item.portalUserId || item.portal_user_id || item.userId),
-    tenantId: text(item.tenantId || item.tenant_id),
     workspaceId: text(item.workspaceId || item.workspace_id),
     status: text(item.status || "active"),
     createdAt: text(item.createdAt || item.created_at),
@@ -257,7 +255,6 @@ function publicMessageView(item = {}) {
     runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
     oplSessionId: text(item.oplSessionId || item.opl_session_id || item.sessionId || item.session_id),
     providerKeyRef: text(item.providerKeyRef || item.provider_key_ref),
-    promptPreview: text(item.promptPreview || item.prompt_preview),
     model: text(item.model),
     tokenCount: number(item.tokenCount || item.token_count),
     artifactRef: text(item.artifactId || item.artifact_id),
@@ -294,13 +291,11 @@ function publicProgressView(item = {}) {
     type: text(item.type || item.eventType || item.event_type),
     status: text(item.status),
     portalUserId: text(item.portalUserId || item.portal_user_id || item.userId),
-    tenantId: text(item.tenantId || item.tenant_id),
     workspaceId: text(item.workspaceId || item.workspace_id),
     workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
     runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
     sessionId: text(item.sessionId || item.session_id || item.oplSessionId || item.opl_session_id),
     messageId: text(item.messageId || item.message_id),
-    runId: text(item.runId || item.run_id),
     artifactRef: text(item.artifactId || item.artifact_id || item.artifactRef || item.artifact_ref),
     traceId: text(item.traceId || item.trace_id),
     source: text(item.source),
@@ -556,7 +551,6 @@ export function createLaunchApi({
       identity: {
         traceId: scope.traceId,
         portalUserId: scope.portalUserId,
-        tenantId: scope.tenantId,
         workspaceId: scope.workspaceId,
         workspaceSessionId: scope.workspaceSessionId,
         runtimeSessionId: scope.runtimeSessionId,
@@ -574,7 +568,6 @@ export function createLaunchApi({
       portal: {
         portalUserId: scope.portalUserId,
         userId: scope.portalUserId,
-        tenantId: scope.tenantId,
         ownerId: scope.ownerId,
         portalUserEmail: launch.portalUserEmail || "",
         userEmail: launch.portalUserEmail || "",
@@ -615,14 +608,12 @@ export function createLaunchApi({
         runtimeSessionId: scope.runtimeSessionId,
         oplSessionId: scope.oplSessionId,
         ownerId: scope.ownerId,
-        tenantId: scope.tenantId,
         traceOwnerId: scope.ownerId,
       },
       storage: {
         workspaceId: scope.workspaceId,
         workspacePath: scope.workspacePath,
         ownerId: scope.storageOwnerId,
-        tenantId: scope.tenantId,
       },
       callbacks: buildCallbacks(),
       system: oplResources.system,

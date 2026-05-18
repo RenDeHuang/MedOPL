@@ -19,9 +19,9 @@ export function runtimeOwnershipFields(input = {}, ownerId = "") {
   };
 }
 
-export function workspaceSessionScopeFields(input = {}, defaultWorkspaceId = "") {
+export function workspaceSessionScopeFields(input = {}) {
   return {
-    workspaceId: input.workspaceId || input.workspace_id || defaultWorkspaceId,
+    workspaceId: input.workspaceId || input.workspace_id || "",
     workspacePath: input.workspacePath || input.workspace_path || "",
     projectId: input.projectId || input.project_id || input.moduleId || input.module_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",

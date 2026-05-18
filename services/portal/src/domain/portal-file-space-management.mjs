@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 const RETENTION_DAYS = 7;
 const ROOT_FOLDER_REF = "root";
 
@@ -8,6 +10,12 @@ function text(value = "") {
 function numberValue(value = 0) {
   const parsed = Number(value || 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function publicTaskRef(...values) {
+  const source = values.map(text).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
 }
 
 function userTenantId(user = {}) {
@@ -65,8 +73,8 @@ function fileView(file = {}) {
     folderRef: defaultFolderForFile(file),
     kind: workspaceFileKind(file.kind),
     source: workspaceFileSource(file.source),
-    runId: text(file.runId || file.run_id),
     sessionId: text(file.sessionId || file.session_id || file.oplSessionId || file.opl_session_id),
+    taskRef: publicTaskRef(file.artifactRef, file.artifact_ref, file.fileRef, file.file_ref, file.id, file.sessionId, file.session_id, file.oplSessionId, file.opl_session_id, file.runId, file.run_id),
     artifactRef: artifactRefFor(file),
     sizeBytes: numberValue(file.sizeBytes || file.size_bytes),
     status: fileStatus(file),

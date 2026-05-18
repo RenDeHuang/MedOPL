@@ -35,6 +35,22 @@ function launchErrorPayload(result) {
   };
 }
 
+function explicitTaskSlug(deps, values = []) {
+  const raw = values
+    .map((value) => String(value || "").trim())
+    .find(Boolean);
+  const taskSlug = raw ? deps.slugify(raw) : "";
+  return taskSlug ? { ok: true, taskSlug } : { ok: false, error: "workspace_id_required" };
+}
+
+function sendWorkspaceRequiredJson(res, deps) {
+  deps.sendJson(res, {
+    ok: false,
+    error: "workspace_id_required",
+    message: "必须指定要进入的工作空间。",
+  }, 422);
+}
+
 function publicLaunchPayload(launch = {}) {
   return {
     launchId: launch.launchId || "",
@@ -84,7 +100,12 @@ async function handleOplLaunchApi(context, deps) {
   if (req.method !== "POST" || url.pathname !== "/portal/api/opl/launch") return false;
 
   const body = await readJsonBody(req, deps.readBody);
-  const taskSlug = deps.slugify(body.task || body.workspaceId || user.currentTaskSlug || "default");
+  const taskResolution = explicitTaskSlug(deps, [body.task, body.workspaceId, user.currentTaskSlug]);
+  if (!taskResolution.ok) {
+    sendWorkspaceRequiredJson(res, deps);
+    return true;
+  }
+  const { taskSlug } = taskResolution;
   const providerKeyPayload = normalizeProviderKeyPayload(body);
   const result = await deps.oplLaunchService.prepareLaunchForIntent({
     db,
@@ -283,6 +304,10 @@ function oplUnavailableHtml(result) {
   return `<div class="card"><h2>OPL Web 暂时不可用</h2><p class="hint">${result.message || result.error}</p></div>`;
 }
 
+function workspaceRequiredHtml() {
+  return `<div class="card"><h2>需要选择工作空间</h2><p class="hint">请从 Portal 工作空间或资源页选择一个工作空间后再进入 OPL。</p></div>`;
+}
+
 function sendOplLaunchErrorPage(res, result, user, deps) {
   if (result.error === "workspace_launch_blocked") {
     deps.sendHtml(res, deps.layoutV2("策略限制", workspaceBlockedHtml(result), user), result.status || 403);
@@ -314,8 +339,12 @@ async function handleOplPage(context, deps) {
   const { req, res, url, db, user } = context;
   if (req.method !== "GET" || url.pathname !== "/portal/opl") return false;
 
-  const requestedTask = String(url.searchParams.get("task") || user.currentTaskSlug || "default").trim();
-  const taskSlug = deps.slugify(requestedTask);
+  const taskResolution = explicitTaskSlug(deps, [url.searchParams.get("task"), user.currentTaskSlug]);
+  if (!taskResolution.ok) {
+    deps.sendHtml(res, deps.layoutV2("需要选择工作空间", workspaceRequiredHtml(), user), 422);
+    return true;
+  }
+  const { taskSlug } = taskResolution;
   const intent = deps.oplLaunchService.createLaunchIntent({ user, taskSlug, source: "portal-page" });
   deps.oplLaunchService.prepareLaunchIntent({
     launchId: intent.launchId,

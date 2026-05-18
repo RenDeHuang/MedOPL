@@ -42,7 +42,7 @@ export function buildCostRecord(input = {}) {
     vpnCost: input.vpnCost ?? null,
     trafficCost: input.trafficCost ?? null,
     totalCost: input.totalCost ?? null,
-    pricingSource: input.pricingSource || "opencost-pending",
+    pricingSource: input.pricingSource || "v22-pricing-pending-product-approval",
     status: input.status || "pending",
     createdAt: input.createdAt || input.created_at || nowIso(),
   };

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const files = {
   portalOplConnection: "docs/contracts/v22-portal-opl-connection-boundary.md",
@@ -100,13 +101,13 @@ assertIncludesAll(contents.goalState, [
 assertIncludesAll(contents.mvpAcceptance, [
   "Leaf 6 OPL productionization contract refresh",
   "contract_refresh_only",
-  "local Runtime Agent HTTP API relay full-loop canary is not production deploy evidence",
+  "local Runtime Agent HTTP API proof is not production deploy evidence",
 ], "mvp_acceptance_leaf6");
 
-assertIncludesAll(contents.mvpSuite, [
-  "smoke-test-v22-opl-productionization-contract-refresh",
-  "scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
-], "mvp_suite_leaf6");
+assert(
+  isSmokeClassifiedIn("scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs"),
+  "mvp_suite_leaf6_missing:scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs",
+);
 
 console.log(JSON.stringify({
   ok: true,

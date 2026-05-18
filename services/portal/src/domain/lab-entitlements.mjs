@@ -55,7 +55,7 @@ export function workspaceUsedBytes(db, { user, workspaceId = "" } = {}) {
     .reduce((sum, item) => sum + Math.max(0, Number(item.sizeBytes || 0)), 0);
 }
 
-export function resolveLabEntitlement(db, { user, workspaceId = "default" } = {}) {
+export function resolveLabEntitlement(db, { user, workspaceId = "" } = {}) {
   const subscription = currentLabSubscription(db, { user, workspaceId });
   if (!subscription) {
     return {
@@ -125,7 +125,7 @@ export function resolveLabEntitlement(db, { user, workspaceId = "default" } = {}
   };
 }
 
-export function storageUsageRatio(db, { user, workspaceId = "default" } = {}) {
+export function storageUsageRatio(db, { user, workspaceId = "" } = {}) {
   const entitlement = resolveLabEntitlement(db, { user, workspaceId });
   const totalGb = Number(entitlement.storage.totalGb || 0);
   const usedGb = Number(entitlement.storage.usedGb || 0);

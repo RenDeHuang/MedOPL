@@ -131,7 +131,6 @@ function workspaceFilePublicView(file = {}) {
     fileRef: text(file.id),
     workspaceId: text(file.workspaceId),
     sessionId: text(file.oplSessionId || file.runId),
-    resourceBindingId: text(file.resourceBindingId),
     kind: text(file.kind),
     name: text(file.name),
     relativePath: `${text(file.kind)}/${text(file.relativePath)}`,
@@ -233,12 +232,22 @@ function traceMetadataFor({ sessionId = "", workspaceId = "", resourceBindingId 
   };
 }
 
+function traceMetadataPublicView(metadata = {}) {
+  return {
+    sessionId: text(metadata.sessionId),
+    workspaceId: text(metadata.workspaceId),
+    providerKeyRef: text(metadata.providerKeyRef),
+    artifactRefs: Array.isArray(metadata.artifactRefs) ? metadata.artifactRefs.map(text).filter(Boolean) : [],
+    status: text(metadata.status || "succeeded"),
+    timestamps: metadata.timestamps || {},
+  };
+}
+
 function sessionPublicView(session = {}) {
   return {
     sessionId: text(session.sessionId),
     oplSessionId: text(session.oplSessionId || session.sessionId),
     workspaceId: text(session.workspaceId),
-    resourceBindingId: text(session.resourceBindingId),
     providerKeyRef: text(session.providerKeyRef),
     status: text(session.status || "active"),
     entrypoint: text(session.entrypoint),
@@ -249,11 +258,10 @@ function sessionPublicView(session = {}) {
 
 function runPublicView(run = {}) {
   return {
-    runId: text(run.runId),
+    runRef: text(run.runId),
     messageId: text(run.messageId),
     sessionId: text(run.sessionId),
     workspaceId: text(run.workspaceId),
-    resourceBindingId: text(run.resourceBindingId),
     providerKeyRef: text(run.providerKeyRef),
     inputFileRefs: Array.isArray(run.inputFileRefs) ? run.inputFileRefs.map(text).filter(Boolean) : [],
     artifactRefs: Array.isArray(run.artifactRefs) ? run.artifactRefs.map(text).filter(Boolean) : [],
@@ -423,7 +431,7 @@ export function runOplWorkWithFiles(db = {}, user = {}, input = {}, { state = {}
     message: messagePublicView(run),
     run: runPublicView(run),
     artifacts: [artifactRef],
-    traceMetadata,
+    traceMetadata: traceMetadataPublicView(traceMetadata),
     upstream: publicUpstreamBoundary(),
   };
 }

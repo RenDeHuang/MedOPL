@@ -10,20 +10,22 @@ MedOPL 提供托管 runtime、计算和存储能力。用户选择套餐或扩�
 
 ## Default Plans
 
-| 套餐 | 计算 | 存储 |
+| 套餐 ID | 计算 | 存储 | 默认并发 |
 | --- | --- | --- |
-| 默认套餐 1 | 2c4gb | 10GB |
-| 默认套餐 2 | 8c16gb | 100GB |
+| `starter_2c4g_10gb` | 2c4gb | 10GB | 1 |
+| `pro_8c16g_100gb` | 8c16gb | 100GB | 2 |
+
+`starter_2c4g_10gb` 与 `pro_8c16g_100gb` 是 v22 默认套餐的唯一标准命名。不得再使用“默认套餐 1/2”命名。
 
 ## Extensions
 
-v22 支持：
+MVP active surface 仅开放两档标准套餐。以下扩展能力属于 future-authorized 产品边界，不能作为当前普通用户 active UI、API 或 smoke 正路径：
 
 - 叠加计算资源。
 - 叠加存储容量。
 - 自定义套餐。
 
-所有叠加和自定义资源都必须进入 billing、quota、audit 边界。
+所有后续叠加和自定义资源都必须先进入 billing、quota、audit 合同边界，并经过单独产品审批；当前 active source 不保留 `custom` 套餐开通 route、action 或默认套餐项。
 
 ## Isolation Modes
 
@@ -41,4 +43,4 @@ v22 支持：
 
 ## Binding Requirement
 
-每个套餐资源、叠加资源和自定义资源都必须绑定 tenant、user、workspace、resource binding、billing account、audit tag / cost allocation tag。
+每个 active 套餐资源都必须绑定 tenant、user、workspace、resource binding、billing account、audit tag / cost allocation tag。后续叠加资源和自定义资源进入 future-authorized 边界前不得作为 active route、action 或默认 smoke 正路径。

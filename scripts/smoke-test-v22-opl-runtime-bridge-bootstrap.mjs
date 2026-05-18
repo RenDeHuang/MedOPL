@@ -35,10 +35,10 @@ async function waitFor(url) {
   throw new Error(`Timed out waiting for ${url}`);
 }
 
-async function postJson(url, payload) {
+async function postJson(url, payload, headers = {}) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
+    headers: { "content-type": "application/json", accept: "application/json", ...headers },
     body: JSON.stringify(payload),
   });
   const body = await response.json().catch(() => ({}));
@@ -103,9 +103,10 @@ try {
   });
 
   await postJson(`${baseUrl}/api/opl-launch/sessions/bind`, {
-    launchToken: launchA.launchToken,
     oplSessionId: "opl-session-a",
     source: "smoke-test",
+  }, {
+    authorization: `Bearer ${launchA.launchToken}`,
   });
 
   process.env.PORTAL_RUNTIME_BRIDGE_STATE_ROOT = stateRoot;
@@ -165,13 +166,17 @@ try {
   });
   await stateStore.writeState(state);
 
-  const bootstrapResponse = await fetch(`${baseUrl}/api/opl-launch/bootstrap?launch_token=${encodeURIComponent(launchA.launchToken)}`);
+  const bootstrapResponse = await fetch(`${baseUrl}/api/opl-launch/bootstrap`, {
+    headers: { authorization: `Bearer ${launchA.launchToken}` },
+  });
   const bootstrap = await bootstrapResponse.json();
   assert(bootstrapResponse.ok, "bootstrap request must succeed");
+  const bootstrapSerialized = JSON.stringify(bootstrap);
+  assert(!bootstrapSerialized.includes('"tenantId"'), "bootstrap public payload must not expose tenantId field");
+  assert(!bootstrapSerialized.includes("tenant-a"), "bootstrap public payload must not expose tenant-a value");
+  assert(!bootstrapSerialized.includes("tenant-b"), "bootstrap public payload must not expose tenant-b value");
   assert(bootstrap.portal.portalUserId === "portal-user-a", "bootstrap portal user mismatch");
-  assert(bootstrap.portal.tenantId === "tenant-a", "bootstrap portal tenant mismatch");
   assert(bootstrap.identity.portalUserId === "portal-user-a", "bootstrap identity portal user mismatch");
-  assert(bootstrap.identity.tenantId === "tenant-a", "bootstrap identity tenant mismatch");
   assert(bootstrap.identity.workspaceId === "workspace-a", "bootstrap identity workspace mismatch");
   assert(bootstrap.identity.workspaceSessionId === "workspace-session-a", "bootstrap identity workspace session mismatch");
   assert(bootstrap.identity.runtimeSessionId === launchA.runtimeSessionId, "bootstrap identity runtime session mismatch");
@@ -183,19 +188,18 @@ try {
   assert(bootstrap.workspace.storageOwnerId === "portal-user-a", "bootstrap workspace storage owner mismatch");
   assert(bootstrap.session.ownerId === "portal-user-a", "bootstrap session owner mismatch");
   assert(bootstrap.storage.ownerId === "portal-user-a", "bootstrap storage owner view mismatch");
-  assert(bootstrap.runtimeSession.ownerId === "portal-user-a", "bootstrap runtime session owner mismatch");
-  assert(bootstrap.runtimeSession.tenantId === "tenant-a", "bootstrap runtime session tenant mismatch");
+  assert(bootstrap.runtimeSession.portalUserId === "portal-user-a", "bootstrap runtime session portal user mismatch");
   assert(bootstrap.resources.workspaces.length === 1, "bootstrap workspaces must be filtered to current workspace scope");
   assert(bootstrap.resources.workspaces[0].workspaceId === "workspace-a", "bootstrap workspace filter mismatch");
   assert(bootstrap.resources.sessions.length === 1, "bootstrap sessions must be filtered to current workspace scope");
   assert(bootstrap.resources.sessions[0].workspaceSessionId === "workspace-session-a", "bootstrap session filter mismatch");
-  assert(bootstrap.resources.sessions[0].ownerId === "portal-user-a", "bootstrap session owner field mismatch");
+  assert(bootstrap.resources.sessions[0].portalUserId === "portal-user-a", "bootstrap session portal user field mismatch");
   assert(bootstrap.traces.length === 1, "bootstrap traces must be filtered by Portal scope");
   assert(bootstrap.traces[0].traceId === "trace-a", "bootstrap trace filter mismatch");
-  assert(bootstrap.traces[0].traceOwnerId === "portal-user-a", "bootstrap trace owner field mismatch");
+  assert(bootstrap.traces[0].runtimeSessionId === launchA.runtimeSessionId, "bootstrap trace runtime session mismatch");
   assert(bootstrap.resources.artifacts.length === 1, "bootstrap artifacts must be filtered by Portal scope");
   assert(bootstrap.resources.artifacts[0].artifactId === "artifact-a", "bootstrap artifact filter mismatch");
-  assert(bootstrap.resources.artifacts[0].storageOwnerId === "portal-user-a", "bootstrap artifact storage owner mismatch");
+  assert(bootstrap.resources.artifacts[0].runtimeSessionId === launchA.runtimeSessionId, "bootstrap artifact runtime session mismatch");
 
   console.log(JSON.stringify({
     ok: true,

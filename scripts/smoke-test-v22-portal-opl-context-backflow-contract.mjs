@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const CONTRACT_PATH = "docs/contracts/v22-portal-opl-context-backflow-boundary.md";
 const FLOW_PATH = "docs/recovery/portal-opl-context-backflow-validation-path.md";
@@ -125,7 +126,7 @@ assertAllIncluded(flow, [
 assertIncludes(index, "v22-portal-opl-context-backflow-boundary.md", "contracts_index");
 assertIncludes(acceptance, "Portal-OPL context/backflow", "mvp_acceptance");
 assertIncludes(statusMatrix, "Portal-OPL context/backflow", "status_matrix");
-assertIncludes(suite, "smoke-test-v22-portal-opl-context-backflow-contract.mjs", "mvp_suite");
+assert.ok(isSmokeClassifiedIn("scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs"), "mvp_suite: missing scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs");
 
 console.log(JSON.stringify({
   ok: true,

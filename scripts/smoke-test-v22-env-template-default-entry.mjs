@@ -21,6 +21,49 @@ const allowedDiffPaths = new Set([
   "scripts/smoke-test-v22-env-template-default-entry.mjs",
 ]);
 
+const branchScopedAllowedDiffPatterns = new Map([
+  ["cleanup/v22-zero-compat-contract-smoke-physical-retirement", [
+    "OPL-v20-*",
+    "docs/status.md",
+    "docs/contracts/v22-*",
+    "docs/recovery/*",
+    "docs/plan/**",
+    "docs/reports/**",
+    "docs/releases/**",
+    "docs/logs/**",
+    "docs/operations/**",
+    "docs/superpowers/**",
+    "scripts/fixtures/opl-product-api-fixture.mjs",
+    "scripts/smoke-test-v22-*",
+    "scripts/v22-smoke-classification.mjs",
+    "scripts/v22-verify.mjs",
+    "services/portal/src/migrate-schema.mjs",
+    "services/portal/src/portal-cloud-operation-worker.mjs",
+    "services/portal/src/app/portal-auth-runtime-handler.mjs",
+    "services/portal/src/app/portal-http-dispatcher.mjs",
+    "services/portal/src/app/portal-workspace-runtime.mjs",
+    "services/portal/src/app/portal-runtime-observability.mjs",
+    "services/portal/src/app/portal-page-overview-payloads.mjs",
+    "services/portal/src/app/portal-page-payload-helpers.mjs",
+    "services/portal/src/app/portal-page-workspace-payloads.mjs",
+    "services/portal/src/app/portal-server-plan-runtime-handler.mjs",
+    "services/portal/src/domain/**",
+    "services/portal/src/routes/**",
+    "services/portal/src/state/**",
+    "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+    "services/portal/frontend/src/**",
+    "services/opl-web-gateway/src/**",
+    "services/opl-runtime-bridge/src/**",
+  ]],
+]);
+
+function globToRegExp(pattern) {
+  const escapedParts = String(pattern)
+    .split("*")
+    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(`^${escapedParts.join(".*")}$`, "u");
+}
+
 const forbiddenEnvTerms = [
   "MED_AUTOSCIENCE_RUNNER_URL",
   "MED_AUTOSCIENCE_RUNNER_TOKEN",
@@ -72,7 +115,7 @@ function changedFilesFromBase() {
     ["diff", "--name-only", "origin/recovery/platform-v22-trunk"],
     ["ls-files", "--others", "--exclude-standard"],
   ].map((args) => {
-    const result = spawnSync("git", args, {
+    const result = spawnSync("git", ["-c", "core.quotepath=false", ...args], {
       cwd: repoRoot,
       encoding: "utf8",
       stdio: "pipe",
@@ -84,9 +127,24 @@ function changedFilesFromBase() {
     .flatMap((output) => output.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean)))];
 }
 
+function currentBranchName() {
+  const result = spawnSync("git", ["branch", "--show-current"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_branch_show_current_failed:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
+}
+
 function assertOnlyAllowedFilesChanged() {
+  const branchName = currentBranchName();
+  const branchAllowedDiffPatterns = (branchScopedAllowedDiffPatterns.get(branchName) ?? []).map(globToRegExp);
   for (const filePath of changedFilesFromBase()) {
-    assert(allowedDiffPaths.has(filePath), `env_template_branch_modified_unsubscribed_file:${filePath}`);
+    assert(
+      allowedDiffPaths.has(filePath) || branchAllowedDiffPatterns.some((pattern) => pattern.test(filePath)),
+      `env_template_branch_modified_unsubscribed_file:${filePath}`,
+    );
   }
 }
 

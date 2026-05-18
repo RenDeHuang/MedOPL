@@ -22,7 +22,8 @@ function nowIso() {
 }
 
 function workspacePathFor(userId = "", workspaceId = "") {
-  return path.join(medWorkspaceRoot, text(userId), text(workspaceId || "default"));
+  const workspaceSlug = text(workspaceId);
+  return workspaceSlug ? path.join(medWorkspaceRoot, text(userId), workspaceSlug) : "";
 }
 
 function userTenantId(user = {}) {
@@ -72,12 +73,13 @@ export function ensureV22PortalUser(db = {}, input = {}) {
   const email = lowerText(input.email);
   const name = text(input.name || email || requestedUserId);
   const tenantId = text(input.tenantId || requestedUserId || email);
-  const workspaceId = text(input.workspaceId || input.workspaceSlug || "default");
+  const workspaceId = text(input.workspaceId || input.workspaceSlug);
 
   if (!requestedUserId) return { ok: false, status: 422, error: "user_id_required" };
   if (!tenantId) return { ok: false, status: 422, error: "tenant_id_required" };
   if (!email) return { ok: false, status: 422, error: "email_required" };
   if (!name) return { ok: false, status: 422, error: "name_required" };
+  if (!workspaceId) return { ok: false, status: 422, error: "workspace_id_required" };
 
   const users = ensureArrayField(db, "users");
   const tenants = ensureArrayField(db, "tenants");

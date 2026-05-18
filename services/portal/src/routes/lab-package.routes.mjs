@@ -2,7 +2,7 @@ import { labPackageCatalogPublicView, listLabPackages, normalizeLabPackageId, pa
 import {
   activateLabSubscription,
   currentLabSubscription,
-  purchaseLabStorageAddon,
+  labSubscriptionPublicView,
   upgradeLabSubscription,
 } from "../domain/lab-subscriptions.mjs";
 import { resolveLabEntitlement } from "../domain/lab-entitlements.mjs";
@@ -61,12 +61,12 @@ export function createLabPackageRoutes({
     }
   }
 
-  function subscriptionPayload(db, user, subscription, workspaceId = "default") {
+  function subscriptionPayload(db, user, subscription, workspaceId = "") {
     const wallet = ensureWallet(db, user.id);
     const activeFreeze = subscription ? labActiveFreezeAmount(db, subscription.id) : 0;
     const walletView = walletPayload(wallet, activeFreeze);
     return {
-      subscription,
+      subscription: labSubscriptionPublicView(subscription),
       status: subscription?.status || "disabled",
       currentPackageId: subscription?.packageId || null,
       currentPackageName: subscriptionPackageName(subscription),
@@ -76,6 +76,23 @@ export function createLabPackageRoutes({
       wallet: walletView,
       entitlement: resolveLabEntitlement(db, { user, workspaceId }),
     };
+  }
+
+  function workspaceIdFromQuery(url) {
+    return String(url.searchParams.get("workspaceId") || url.searchParams.get("workspace_id") || "").trim();
+  }
+
+  function workspaceIdFromPayload(payload = {}) {
+    return String(payload.workspaceId || payload.workspace_id || "").trim();
+  }
+
+  function sendWorkspaceRequired(res) {
+    sendJson(res, {
+      ok: false,
+      error: "workspace_id_required",
+      businessMessage: "请选择工作空间后再操作套餐。",
+    }, 422);
+    return true;
   }
 
   async function persistLabBillingState(db, result = {}) {
@@ -236,35 +253,6 @@ export function createLabPackageRoutes({
     };
   }
 
-  function runStorageAddonCloudOperation(db = {}, user = {}, { workspaceId = "", addStorageGb = 0 } = {}) {
-    const binding = existingBindingForWorkspace(db, user, workspaceId);
-    const resourceBindingId = String(binding?.resourceBindingId || binding?.id || "");
-    if (!resourceBindingId) return { ok: false, status: 409, error: "resource_binding_required", businessMessage: "请先开通套餐，再进行扩容。" };
-    const currentCapacityGb = currentFileSpaceGb(db, resourceBindingId) || Number(binding.fileSpaceGb || 0);
-    const targetFileSpaceGb = currentCapacityGb + Math.max(0, Number(addStorageGb || 0));
-    const plan = {
-      planId: String(binding.planId || binding.serverPlanId || "starter_2c4g_10gb"),
-      fileSpaceGb: targetFileSpaceGb,
-      computeUnits: Number(binding.computeUnits || 0),
-      targetDesiredCapacity: Number(binding.targetDesiredCapacity || 0),
-    };
-    const expandStorage = runCloudOperation(db, user, {
-      workspaceId,
-      resourceBindingId,
-      fileSpaceGb: targetFileSpaceGb,
-      planId: plan.planId,
-    }, "expand_storage");
-    if (!expandStorage.ok) return cloudFailureResult(expandStorage);
-    return {
-      ok: true,
-      cloudOperationPackage: packageCloudResult({
-        plan,
-        resourceBindingId,
-        operations: [expandStorage],
-      }),
-    };
-  }
-
   async function handleListPackages({ req, res, url }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/lab-packages") return false;
     sendJson(res, {
@@ -278,7 +266,8 @@ export function createLabPackageRoutes({
 
   async function handleGetSubscription({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/lab-subscription") return false;
-    const workspaceId = String(url.searchParams.get("workspaceId") || "default").trim() || "default";
+    const workspaceId = workspaceIdFromQuery(url);
+    if (!workspaceId) return sendWorkspaceRequired(res);
     const subscription = currentLabSubscription(db, { user, workspaceId });
     sendJson(res, {
       ok: true,
@@ -289,7 +278,8 @@ export function createLabPackageRoutes({
 
   async function handleGetEntitlement({ req, res, url, db, user }) {
     if (req.method !== "GET" || url.pathname !== "/portal/api/lab-entitlement") return false;
-    const workspaceId = String(url.searchParams.get("workspaceId") || "default").trim() || "default";
+    const workspaceId = workspaceIdFromQuery(url);
+    if (!workspaceId) return sendWorkspaceRequired(res);
     sendJson(res, {
       ok: true,
       workspaceId,
@@ -301,13 +291,13 @@ export function createLabPackageRoutes({
   async function handleActivate({ req, res, db, user }) {
     const payload = await readJsonBody(req, res);
     if (!payload) return true;
-    const workspaceId = String(payload.workspaceId || payload.task || "default").trim() || "default";
+    const workspaceId = workspaceIdFromPayload(payload);
+    if (!workspaceId) return sendWorkspaceRequired(res);
     const labStateBefore = snapshotLabBillingState(db);
     const result = activateLabSubscription(db, {
       user,
       workspaceId,
       packageId: normalizeLabPackageId(payload.packageId),
-      customSpec: payload.customSpec || null,
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
@@ -344,7 +334,8 @@ export function createLabPackageRoutes({
   async function handleUpgrade({ req, res, db, user }) {
     const payload = await readJsonBody(req, res);
     if (!payload) return true;
-    const workspaceId = String(payload.workspaceId || "default").trim() || "default";
+    const workspaceId = workspaceIdFromPayload(payload);
+    if (!workspaceId) return sendWorkspaceRequired(res);
     const subscription = payload.subscriptionId
       ? { id: String(payload.subscriptionId) }
       : currentLabSubscription(db, { user, workspaceId });
@@ -353,7 +344,6 @@ export function createLabPackageRoutes({
       user,
       subscriptionId: subscription?.id || "",
       packageId: normalizeLabPackageId(payload.packageId),
-      customSpec: payload.customSpec || null,
       idempotencyKey: payload.idempotencyKey,
     });
     if (!result.ok) {
@@ -387,90 +377,6 @@ export function createLabPackageRoutes({
     return true;
   }
 
-  async function handleStorageAddon({ req, res, db, user }) {
-    const payload = await readJsonBody(req, res);
-    if (!payload) return true;
-    const subscription = resolveTargetSubscription(db, user, payload);
-    const labStateBefore = snapshotLabBillingState(db);
-    const result = purchaseLabStorageAddon(db, {
-      user,
-      subscriptionId: subscription?.id || "",
-      storageGb: Number(payload.storageGb ?? payload.addStorageGb ?? 100),
-      idempotencyKey: payload.idempotencyKey,
-    });
-    if (!result.ok) {
-      sendJson(res, {
-        ok: false,
-        error: result.error,
-        businessMessage: result.businessMessage || "扩容失败，请稍后重试。",
-      }, result.status || 400);
-      return true;
-    }
-    let packageCloud = null;
-    if (enableCloudOperationProductionBridge) {
-      packageCloud = runStorageAddonCloudOperation(db, user, {
-        workspaceId: result.subscription.workspaceId,
-        addStorageGb: Number(payload.storageGb ?? payload.addStorageGb ?? 100),
-      });
-      if (!packageCloud.ok) {
-        rollbackLabBillingState(db, labStateBefore);
-        sendJson(res, {
-          ok: false,
-          error: packageCloud.error,
-          businessMessage: packageCloud.businessMessage || "存储资源扩容失败，请稍后重试。",
-        }, packageCloud.status || 400);
-        return true;
-      }
-    }
-    await persistLabBillingState(db, result);
-    sendJson(res, {
-      ok: true,
-      created: result.created,
-      addon: result.addon,
-      ...(packageCloud?.cloudOperationPackage ? { cloudOperationPackage: packageCloud.cloudOperationPackage } : {}),
-      ...subscriptionPayload(db, user, result.subscription, result.subscription.workspaceId),
-    }, result.created ? 201 : 200);
-    return true;
-  }
-
-  async function handleCustomPackage(context) {
-    const { req, res, db, user } = context;
-    const payload = await readJsonBody(req, res);
-    if (!payload) return true;
-    const workspaceId = String(payload.workspaceId || "default").trim() || "default";
-    const subscription = currentLabSubscription(db, { user, workspaceId });
-    const result = submitCustomLabPackage(db, { user, workspaceId, subscription, payload });
-    if (!result.ok) {
-      sendJson(res, {
-        ok: false,
-        error: result.error,
-        businessMessage: result.businessMessage || "自定义套餐提交失败，请检查规格后重试。",
-      }, result.status || 400);
-      return true;
-    }
-    await persistLabBillingState(db, result);
-    sendJson(res, {
-      ok: true,
-      action: subscription ? "upgrade" : "activate",
-      created: result.created,
-      ...subscriptionPayload(db, user, result.subscription, result.subscription.workspaceId),
-    }, result.created ? 201 : 200);
-    return true;
-  }
-
-  function submitCustomLabPackage(db, { user, workspaceId, subscription, payload }) {
-    const input = {
-      user,
-      packageId: "custom",
-      customSpec: payload.customSpec || payload,
-      idempotencyKey: payload.idempotencyKey,
-    };
-    if (subscription) {
-      return upgradeLabSubscription(db, { ...input, subscriptionId: subscription.id });
-    }
-    return activateLabSubscription(db, { ...input, workspaceId });
-  }
-
   function snapshotLabBillingState(db = {}) {
     return {
       labSubscriptions: JSON.parse(JSON.stringify(Array.isArray(db.labSubscriptions) ? db.labSubscriptions : [])),
@@ -487,12 +393,6 @@ export function createLabPackageRoutes({
     db.labDailyCharges = JSON.parse(JSON.stringify(Array.isArray(snapshot.labDailyCharges) ? snapshot.labDailyCharges : []));
   }
 
-  function resolveTargetSubscription(db, user, payload = {}) {
-    if (payload.subscriptionId) return { id: String(payload.subscriptionId) };
-    const workspaceId = String(payload.workspaceId || "default").trim() || "default";
-    return currentLabSubscription(db, { user, workspaceId });
-  }
-
   return async function handleLabPackageRoutes(context) {
     const { req, url } = context;
     if (await handleListPackages(context)) return true;
@@ -500,8 +400,6 @@ export function createLabPackageRoutes({
     if (await handleGetEntitlement(context)) return true;
     if (req.method === "POST" && url.pathname === "/portal/api/lab-packages/activate") return handleActivate(context);
     if (req.method === "POST" && url.pathname === "/portal/api/lab-packages/upgrade") return handleUpgrade(context);
-    if (req.method === "POST" && url.pathname === "/portal/api/lab-packages/custom") return handleCustomPackage(context);
-    if (req.method === "POST" && url.pathname === "/portal/api/lab-storage/addons") return handleStorageAddon(context);
     return false;
   };
 }

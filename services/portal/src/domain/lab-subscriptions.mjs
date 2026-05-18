@@ -1,14 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { getLabPackage, normalizeCustomLabPackageSpec, normalizeLabPackageId } from "./lab-packages.mjs";
+import { getLabPackage, normalizeLabPackageId } from "./lab-packages.mjs";
 import { moneyAmount } from "./wallet-ledger.mjs";
 
 export const LAB_SUBSCRIPTION_STATUSES = new Set(["active", "grace_period", "cleanup_queued", "cancelled"]);
-export const LAB_STORAGE_ADDON_SIZES_GB = new Set([100, 500, 1024]);
 const LAB_BUSINESS_MESSAGES = Object.freeze({
   invalid_lab_package_activation: "套餐开通失败：套餐不存在或用户无效。",
-  invalid_custom_lab_package_spec: "自定义套餐失败：请选择有效的 CPU、内存和存储规格。",
+  lab_workspace_required: "套餐开通失败：缺少工作空间。",
   lab_subscription_not_found: "未找到已开通套餐，请先开通套餐。",
-  unsupported_lab_storage_addon_size: "扩容失败：仅支持 100GB、500GB、1024GB 规格。",
 });
 
 function ensureArrayProperty(target, key) {
@@ -34,10 +32,9 @@ export function ensureLabSubscriptionCollections(db) {
 export function normalizeLabSubscription(input = {}) {
   if (!input || typeof input !== "object") return null;
   const userId = String(input.userId || input.user_id || input.tenantId || input.tenant_id || "").trim();
-  const workspaceId = String(input.workspaceId || input.workspace_id || "default").trim() || "default";
+  const workspaceId = String(input.workspaceId || input.workspace_id || "").trim();
   const packageId = normalizeLabPackageId(input.packageId || input.package_id || "");
-  const customSpec = packageId === "custom" ? normalizeCustomLabPackageSpec(input.customSpec || input.custom_spec || input.custom_spec_json || {}) : null;
-  const labPackage = getLabPackage(packageId, customSpec || {});
+  const labPackage = getLabPackage(packageId);
   if (!userId || !workspaceId || !labPackage) return null;
   const now = new Date().toISOString();
   const status = String(input.status || "active").trim().toLowerCase();
@@ -50,13 +47,15 @@ export function normalizeLabSubscription(input = {}) {
     status: LAB_SUBSCRIPTION_STATUSES.has(status) ? status : "active",
     computeTier: String(input.computeTier || input.compute_tier || labPackage.computeTier).trim() || labPackage.computeTier,
     includedStorageGb: Math.max(0, Number(input.includedStorageGb ?? input.included_storage_gb ?? labPackage.storage.includedGb)),
-    dailyPrice: moneyAmount(input.dailyPrice ?? input.daily_price ?? labPackage.billing.dailyPrice, labPackage.billing.dailyPrice),
-    weeklyFreezeAmount: moneyAmount(input.weeklyFreezeAmount ?? input.weekly_freeze_amount ?? labPackage.billing.weeklyFreezeAmount, labPackage.billing.weeklyFreezeAmount),
+    dailyPrice: 0,
+    weeklyFreezeAmount: 0,
+    basePrice: null,
+    pendingProductApproval: true,
+    priceLabel: "正式售价未定价",
     currentFreezeId: String(input.currentFreezeId || input.current_freeze_id || "").trim(),
     graceStartedAt: String(input.graceStartedAt || input.grace_started_at || "").trim(),
     cleanupAfterAt: String(input.cleanupAfterAt || input.cleanup_after_at || "").trim(),
     backingServerPlanId: String(input.backingServerPlanId || input.backing_server_plan_id || labPackage.backingServerPlanId).trim() || labPackage.backingServerPlanId,
-    customSpec,
     idempotencyKey: String(input.idempotencyKey || input.idempotency_key || "").trim(),
     createdAt: String(input.createdAt || input.created_at || now).trim() || now,
     updatedAt: String(input.updatedAt || input.updated_at || input.createdAt || input.created_at || now).trim() || now,
@@ -89,7 +88,10 @@ export function normalizeLabStorageAddon(input = {}) {
     id: String(input.id || randomUUID()).trim(),
     subscriptionId,
     storageGb: Math.max(0, Number(input.storageGb ?? input.storage_gb ?? 0)),
-    dailyPrice: moneyAmount(input.dailyPrice ?? input.daily_price ?? 0, 0),
+    dailyPrice: 0,
+    basePrice: null,
+    pendingProductApproval: true,
+    priceLabel: "正式售价未定价",
     status: status === "cancelled" ? "cancelled" : "active",
     idempotencyKey: String(input.idempotencyKey || input.idempotency_key || "").trim(),
     createdAt: String(input.createdAt || input.created_at || new Date().toISOString()).trim(),
@@ -144,29 +146,28 @@ export function appendLabPackageEvent(db, event) {
 
 export function activateLabSubscription(db, {
   user,
-  workspaceId = "default",
+  workspaceId = "",
   packageId = "starter",
-  customSpec = null,
   idempotencyKey = "",
   now = new Date().toISOString(),
 } = {}) {
   ensureLabSubscriptionCollections(db);
   const normalizedPackageId = normalizeLabPackageId(packageId);
-  const normalizedCustomSpec = normalizedPackageId === "custom" ? normalizeCustomLabPackageSpec(customSpec || {}) : null;
-  if (normalizedPackageId === "custom" && !normalizedCustomSpec) return businessError("invalid_custom_lab_package_spec", 400);
-  const labPackage = getLabPackage(normalizedPackageId, normalizedCustomSpec || {});
+  const labPackage = getLabPackage(normalizedPackageId);
   const userId = String(user?.id || "").trim();
+  const targetWorkspaceId = String(workspaceId || "").trim();
+  if (!targetWorkspaceId) return businessError("lab_workspace_required", 422);
   if (!userId || !labPackage) return businessError("invalid_lab_package_activation", 400);
-  const key = String(idempotencyKey || `lab_subscription_activate:${userId}:${workspaceId}:${normalizedPackageId}`).trim();
+  const key = String(idempotencyKey || `lab_subscription_activate:${userId}:${targetWorkspaceId}:${normalizedPackageId}`).trim();
   const idempotent = activationByEventKey(db, key);
   if (idempotent) return idempotent;
-  const existing = activeSubscriptionForUser(db, userId, workspaceId);
+  const existing = activeSubscriptionForUser(db, userId, targetWorkspaceId);
   if (existing) {
-    return activateExistingSubscription(db, { user, existing, packageId: normalizedPackageId, customSpec: normalizedCustomSpec, key, now, userId });
+    return activateExistingSubscription(db, { user, existing, packageId: normalizedPackageId, key, now, userId });
   }
-  const subscription = createLabSubscriptionRecord({ user, userId, workspaceId, packageId: normalizedPackageId, customSpec: normalizedCustomSpec, key, now });
+  const subscription = createLabSubscriptionRecord({ user, userId, workspaceId: targetWorkspaceId, packageId: normalizedPackageId, key, now });
   db.labSubscriptions.push(subscription);
-  const event = recordActivationEvent(db, { subscription, packageId: normalizedPackageId, customSpec: normalizedCustomSpec, workspaceId, key, now, userId });
+  const event = recordActivationEvent(db, { subscription, packageId: normalizedPackageId, workspaceId: targetWorkspaceId, key, now, userId });
   return { ok: true, created: true, subscription, event };
 }
 
@@ -176,12 +177,12 @@ function activationByEventKey(db, key) {
   return subscription ? { ok: true, created: false, subscription, event } : null;
 }
 
-function activateExistingSubscription(db, { user, existing, packageId, customSpec = null, key, now, userId }) {
+function activateExistingSubscription(db, { user, existing, packageId, key, now, userId }) {
   if (existing.packageId === packageId) {
     const event = appendLabPackageEvent(db, {
       subscriptionId: existing.id,
       eventType: "activate_idempotent",
-      eventPayload: { packageId, customSpec },
+      eventPayload: { packageId },
       actorType: "user",
       actorId: userId,
       idempotencyKey: key,
@@ -193,31 +194,29 @@ function activateExistingSubscription(db, { user, existing, packageId, customSpe
     user,
     subscriptionId: existing.id,
     packageId,
-    customSpec,
     idempotencyKey: key,
     now,
     eventType: "activate_upgrade",
   });
 }
 
-function createLabSubscriptionRecord({ user, userId, workspaceId, packageId, customSpec = null, key, now }) {
+function createLabSubscriptionRecord({ user, userId, workspaceId, packageId, key, now }) {
   return normalizeLabSubscription({
     tenantId: user.tenantId || userId,
     userId,
     workspaceId,
     packageId,
-    customSpec,
     idempotencyKey: key,
     createdAt: now,
     updatedAt: now,
   });
 }
 
-function recordActivationEvent(db, { subscription, packageId, customSpec = null, workspaceId, key, now, userId }) {
+function recordActivationEvent(db, { subscription, packageId, workspaceId, key, now, userId }) {
   return appendLabPackageEvent(db, {
     subscriptionId: subscription.id,
     eventType: "activated",
-    eventPayload: { packageId, customSpec, workspaceId },
+    eventPayload: { packageId, workspaceId },
     actorType: "user",
     actorId: userId,
     idempotencyKey: key,
@@ -229,16 +228,13 @@ export function upgradeLabSubscription(db, {
   user,
   subscriptionId = "",
   packageId = "",
-  customSpec = null,
   idempotencyKey = "",
   now = new Date().toISOString(),
   eventType = "upgraded",
 } = {}) {
   ensureLabSubscriptionCollections(db);
   const normalizedPackageId = normalizeLabPackageId(packageId);
-  const normalizedCustomSpec = normalizedPackageId === "custom" ? normalizeCustomLabPackageSpec(customSpec || {}) : null;
-  if (normalizedPackageId === "custom" && !normalizedCustomSpec) return businessError("invalid_custom_lab_package_spec", 400);
-  const labPackage = getLabPackage(normalizedPackageId, normalizedCustomSpec || {});
+  const labPackage = getLabPackage(normalizedPackageId);
   const userId = String(user?.id || "").trim();
   const target = db.labSubscriptions.find((item) => item.id === subscriptionId && item.userId === userId);
   if (!target || !labPackage) return businessError("lab_subscription_not_found", 404);
@@ -250,7 +246,7 @@ export function upgradeLabSubscription(db, {
   const event = appendLabPackageEvent(db, {
     subscriptionId: target.id,
     eventType,
-    eventPayload: { fromPackageId: previousPackageId, toPackageId: normalizedPackageId, customSpec: normalizedCustomSpec },
+    eventPayload: { fromPackageId: previousPackageId, toPackageId: normalizedPackageId },
     actorType: "user",
     actorId: userId,
     idempotencyKey: key,
@@ -263,60 +259,34 @@ function applyPackageToSubscription(target, labPackage, now) {
   target.packageId = labPackage.id;
   target.computeTier = labPackage.computeTier;
   target.includedStorageGb = labPackage.storage.includedGb;
-  target.dailyPrice = labPackage.billing.dailyPrice;
-  target.weeklyFreezeAmount = labPackage.billing.weeklyFreezeAmount;
+  target.dailyPrice = 0;
+  target.weeklyFreezeAmount = 0;
+  target.basePrice = null;
+  target.pendingProductApproval = true;
+  target.priceLabel = "正式售价未定价";
   target.backingServerPlanId = labPackage.backingServerPlanId;
-  target.customSpec = labPackage.customSpec ? { ...labPackage.customSpec } : null;
   target.status = "active";
   target.graceStartedAt = "";
   target.cleanupAfterAt = "";
   target.updatedAt = now;
 }
 
-export function purchaseLabStorageAddon(db, {
-  user,
-  subscriptionId = "",
-  storageGb = 100,
-  idempotencyKey = "",
-  now = new Date().toISOString(),
-} = {}) {
-  ensureLabSubscriptionCollections(db);
-  const userId = String(user?.id || "").trim();
-  const target = db.labSubscriptions.find((item) => item.id === subscriptionId && item.userId === userId);
-  const size = Number(storageGb || 0);
-  if (!target) return businessError("lab_subscription_not_found", 404);
-  if (!LAB_STORAGE_ADDON_SIZES_GB.has(size)) return businessError("unsupported_lab_storage_addon_size", 400);
-  const key = String(idempotencyKey || `lab_storage_addon:${target.id}:${size}`).trim();
-  const existing = db.labStorageAddons.find((item) => item.idempotencyKey === key);
-  if (existing) return { ok: true, created: false, addon: existing, subscription: target };
-  const addon = normalizeLabStorageAddon({
-    subscriptionId: target.id,
-    storageGb: size,
-    dailyPrice: storageAddonDailyPrice(size),
-    idempotencyKey: key,
-    createdAt: now,
-    updatedAt: now,
-  });
-  db.labStorageAddons.push(addon);
-  appendLabPackageEvent(db, {
-    subscriptionId: target.id,
-    eventType: "storage_addon_purchased",
-    eventPayload: { storageGb: size, dailyPrice: addon.dailyPrice },
-    actorType: "user",
-    actorId: userId,
-    idempotencyKey: `event:${key}`,
-    createdAt: now,
-  });
-  return { ok: true, created: true, addon, subscription: target };
-}
-
-export function storageAddonDailyPrice(storageGb) {
-  return new Map([[100, 3], [500, 12], [1024, 20]]).get(Number(storageGb)) || 0;
-}
-
 export function labSubscriptionPublicView(subscription) {
   if (!subscription) return null;
-  return { ...subscription };
+  return {
+    id: subscription.id,
+    workspaceId: subscription.workspaceId,
+    packageId: subscription.packageId,
+    status: subscription.status,
+    computeTier: subscription.computeTier,
+    includedStorageGb: subscription.includedStorageGb,
+    backingServerPlanId: subscription.backingServerPlanId,
+    basePrice: null,
+    pendingProductApproval: true,
+    priceLabel: "正式售价未定价",
+    createdAt: subscription.createdAt,
+    updatedAt: subscription.updatedAt,
+  };
 }
 
 function businessError(error, status) {

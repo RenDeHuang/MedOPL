@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const RAW_PROMPT = "raw prompt must not appear in cost balance trace linkage";
 const RAW_COMPLETION = "raw completion must not appear in cost balance trace linkage";
@@ -272,7 +273,7 @@ assert(traceTypesSource.includes("balanceLink"), "trace_types_must_include_balan
 assert(workspaceTypesSource.includes("resourceUsage"), "workspace_types_must_include_resource_usage");
 assert(workspaceTypesSource.includes("costEstimate"), "workspace_types_must_include_cost_estimate");
 assert(workspaceTypesSource.includes("balanceLink"), "workspace_types_must_include_balance_link");
-assert(suiteSource.includes("smoke-test-v22-portal-cost-balance-trace-linkage"), "mvp_suite_must_include_cost_balance_trace_linkage_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-portal-cost-balance-trace-linkage.mjs"), "mvp_suite_must_include_cost_balance_trace_linkage_smoke");
 
 console.log(JSON.stringify({
   ok: true,

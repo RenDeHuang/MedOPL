@@ -81,12 +81,14 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 
 管理人员在 Portal 管理台必须能看到：
 
-- tenant 状态
-- workspace 状态
-- resourceBinding、cloudOperation、billingAttribution 状态
-- serverPlan 状态
-- run 状态
-- COS bucket、prefix、object 状态
+- 用户管理摘要
+- 工作空间摘要
+- 资源管理摘要
+- 任务记录摘要
+- 账单管理摘要
+- 审计记录摘要
+- 站点设置摘要
+- 服务状态摘要
 - 分账标签状态
 - 任务失败
 - 账单日内核对状态
@@ -94,7 +96,7 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 - T+1 审计状态
 - 异常账单、异常资源
 
-管理台可以在排查详情中展示后台标识、腾讯云标签映射和异常归因；这些不进入 AI 小白科研用户主叙事，也不作为管理台一级页面和默认摘要的标题语言。管理台一级页面和默认摘要必须优先使用用户管理、工作空间、资源管理、任务记录、账单管理、审计记录、站点设置和服务状态。
+管理台可以在排障详情中展示后台标识、腾讯云标签映射、COS bucket/prefix/object 和异常归因；这些不进入 AI 小白科研用户主叙事，也不作为管理台一级页面和默认摘要的标题语言。管理台一级页面和默认摘要必须优先使用用户管理、工作空间、资源管理、任务记录、账单管理、审计记录、站点设置和服务状态。
 
 ## 后台多租户边界
 
@@ -278,12 +280,14 @@ AI 小白用户进入 Portal 后能回答：
     ],
     "rawBackendTermsAllowedOnlyInDiagnosticDetail": true,
     "mustShow": [
-      "tenant 状态",
-      "workspace 状态",
-      "resourceBinding、cloudOperation、billingAttribution 状态",
-      "serverPlan 状态",
-      "run 状态",
-      "COS bucket、prefix、object 状态",
+      "用户管理摘要",
+      "工作空间摘要",
+      "资源管理摘要",
+      "任务记录摘要",
+      "账单管理摘要",
+      "审计记录摘要",
+      "站点设置摘要",
+      "服务状态摘要",
       "分账标签状态",
       "任务失败",
       "账单日内核对状态",

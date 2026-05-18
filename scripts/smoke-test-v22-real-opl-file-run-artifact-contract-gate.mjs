@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const CONTRACT_PATH = "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md";
 const FLOW_PATH = "docs/recovery/real-opl-file-run-artifact-validation-path.md";
@@ -199,9 +200,9 @@ assertIncludes(statusMatrix, "每个 step 必须 gate", "status_matrix");
 assertIncludes(statusMatrix, "runtime-agent-http-relay.mjs", "status_matrix");
 assertIncludes(statusMatrix, "Runtime Agent HTTP API proof", "status_matrix");
 assertIncludes(statusMatrix, "billingMetadataRef", "status_matrix");
-assertIncludes(suite, "smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs", "mvp_suite");
+assert.ok(isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs"), "mvp_suite: missing scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs");
 assert.equal(
-  suite.includes("smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"),
+  isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"),
   false,
   "runtime_agent_api_loop_must_not_run_in_default_mvp_suite",
 );

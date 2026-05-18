@@ -8,19 +8,13 @@ export interface LabPackagePlan {
   backingServerPlanId?: string;
   computePower: string;
   storageCapacityGb: number;
-  dailyDebit: number;
-  weeklyFreeze: number;
+  basePrice: null;
+  pendingProductApproval: boolean;
+  priceLabel?: string;
   gracePeriodDays: number;
   currency: string;
   planSummary?: string;
   memoryGb?: number;
-  customSpec?: LabCustomPackageSpec | null;
-}
-
-export interface LabCustomPackageSpec {
-  computeCores: number;
-  memoryGb: number;
-  storageIncludedGb: number;
 }
 
 export interface LabPackagesPayload {
@@ -29,14 +23,6 @@ export interface LabPackagesPayload {
   catalog?: {
     starter?: LabPackagePlan | null;
     pro?: LabPackagePlan | null;
-    customOptions?: {
-      computeCores?: number[];
-      memoryGb?: number[];
-      storageIncludedGb?: number[];
-      storageAddonSizesGb?: number[];
-      notes?: string[];
-      upgradeTargets?: string[];
-    };
   };
 }
 
@@ -60,21 +46,6 @@ export interface LabPackageMutationInput {
   packageId: string;
   workspaceId?: string;
   subscriptionId?: string;
-  customSpec?: LabCustomPackageSpec;
-  idempotencyKey?: string;
-}
-
-export interface LabCustomPackageMutationInput {
-  workspaceId?: string;
-  customSpec: LabCustomPackageSpec;
-  idempotencyKey?: string;
-}
-
-export interface LabStorageAddonInput {
-  subscriptionId?: string;
-  workspaceId?: string;
-  storageGb?: number;
-  addStorageGb?: number;
   idempotencyKey?: string;
 }
 
@@ -101,17 +72,9 @@ export async function upgradeLabPackage(input: LabPackageMutationInput) {
   return postLabMutation("/lab-packages/upgrade", input, "套餐升级失败，请稍后重试。");
 }
 
-export async function activateCustomLabPackage(input: { workspaceId?: string; customSpec: LabCustomPackageSpec; idempotencyKey?: string }) {
-  return postLabMutation("/lab-packages/custom", input, "自定义套餐提交失败，请检查规格后重试。");
-}
-
-export async function purchaseLabStorageAddon(input: LabStorageAddonInput) {
-  return postLabMutation("/lab-storage/addons", input, "扩容失败，请稍后重试。");
-}
-
 async function postLabMutation(
   path: string,
-  input: LabPackageMutationInput | LabCustomPackageMutationInput | LabStorageAddonInput,
+  input: LabPackageMutationInput,
   fallback: string,
 ) {
   try {

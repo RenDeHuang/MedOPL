@@ -129,7 +129,10 @@ export function addEvent(state, type, detail = {}) {
 
 export function upsertWorkspace(state, input = {}) {
   const portalUserId = input.portalUserId || input.portal_user_id || "";
-  const workspaceId = slugify(input.workspaceId || input.workspace_id || "default");
+  const workspaceId = slugify(input.workspaceId || input.workspace_id || "");
+  if (!workspaceId) {
+    throw new Error("workspace_id_required");
+  }
   const existing = state.workspaces.find((item) =>
     item.portalUserId === portalUserId &&
     item.workspaceId === workspaceId

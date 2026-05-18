@@ -308,8 +308,11 @@ for (const filePath of await listFiles("services/portal/frontend/src", [".ts", "
 const visibleText = frontendSources.join("\n");
 for (const forbidden of forbiddenCopy) assertExcludes(visibleText, forbidden, "frontend_forbidden_copy");
 for (const forbidden of forbiddenPublicStateKeys) assertExcludes(visibleText, forbidden, "frontend_forbidden_sensitive_public_key");
-assertIncludes(visibleText, "7 天保护期", "storage_protection_copy_missing");
-assertIncludes(visibleText, "释放计算资源", "compute_release_copy_missing");
+assertIncludes(visibleText, "当前页面仅展示状态，不提供资源调整动作。", "runtime_environment_status_only_copy_missing");
+assertIncludes(visibleText, "价格待审批", "pricing_pending_approval_copy_missing");
+assertIncludes(visibleText, "正式售价未定价", "formal_price_unset_copy_missing");
+assertExcludes(visibleText, "释放计算资源", "compute_release_action_must_not_return_to_active_ui");
+assertExcludes(visibleText, "7 天保护期", "storage_protection_action_must_not_return_to_active_ui");
 assertIncludes(visibleText, "托管科研工作台", "service_truth_copy_missing");
 assertIncludes(visibleText, "余额", "balance_copy_missing");
 assertIncludes(visibleText, "冻结金额", "frozen_amount_copy_missing");

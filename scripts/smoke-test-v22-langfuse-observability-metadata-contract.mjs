@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -457,7 +458,7 @@ assertNoForbiddenValue(portalTracePayload, "portal_trace_payload");
 
 assert(readme.includes("v22-langfuse-observability-metadata-boundary.md"), "contracts_readme_missing_langfuse_contract");
 assert(readme.includes("观测附件"), "contracts_readme_must_describe_langfuse_as_observability_attachment");
-assert(suite.includes("smoke-test-v22-langfuse-observability-metadata-contract"), "mvp_suite_missing_langfuse_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs"), "mvp_suite_missing_langfuse_smoke");
 assert(portalPayloadSource.includes("Portal 会话轨迹 sanitized projection"), "portal_payload_trace_summary_datasource_mismatch");
 assert(portalPayloadSource.includes('source: traceRows.source || "langfuse_sanitized_projection"'), "portal_payload_must_preserve_sanitized_projection_source");
 assert(
@@ -477,8 +478,8 @@ assert(
   "inventory_must_record_langfuse_publisher_active_import",
 );
 assert(
-  inventory.includes("slice-3 truth writeback: completed"),
-  "inventory_must_record_slice3_truth_writeback",
+  inventory.includes("zero-compat correction:"),
+  "inventory_must_record_zero_compat_truth_writeback",
 );
 
 console.log(JSON.stringify({

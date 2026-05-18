@@ -114,13 +114,14 @@ assert.equal(stateResult.handled, true, "canonical_state_route_must_be_handled")
 assert.equal(stateResult.res.statusCode, 200, "canonical_state_must_return_200");
 assert.equal(stateResult.res.payload.ok, true, "canonical_state_must_return_ok");
 assert.equal(stateResult.res.payload.identity.userId, user.id, "canonical_state_identity_user_mismatch");
-assert.equal(stateResult.res.payload.tenant.tenantId, user.tenantId, "canonical_state_tenant_mismatch");
+assert.equal(Object.hasOwn(stateResult.res.payload.tenant || {}, "tenantId"), false, "canonical_state_must_not_expose_tenant_id");
+assert.equal(stateResult.res.payload.tenant.status, "active", "canonical_state_tenant_status_mismatch");
 assert.equal(stateResult.res.payload.balance.balanceCents, 12000, "canonical_state_balance_mismatch");
 assert.equal(stateResult.res.payload.providerBound, true, "canonical_state_provider_must_be_bound");
 assert.equal(stateResult.res.payload.providerKeyRef, "provider-key-ref-v22-state", "canonical_state_provider_key_ref_mismatch");
 assert.equal(stateResult.res.payload.runtimeEnabled, false, "canonical_state_runtime_must_be_disabled_without_resource_binding");
-assert.equal(stateResult.res.payload.resourceBinding, null, "canonical_state_resource_binding_must_be_null_before_runtime_open");
-assert.equal(stateResult.res.payload.freeze, null, "canonical_state_freeze_must_be_null_before_runtime_open");
+assert.equal(Object.hasOwn(stateResult.res.payload, "resourceBinding"), false, "canonical_state_must_not_expose_resource_binding_before_runtime_open");
+assert.equal(Object.hasOwn(stateResult.res.payload, "freeze"), false, "canonical_state_must_not_expose_internal_freeze_before_runtime_open");
 assert.equal(stateResult.res.payload.plan.id, "starter_2c4g_10gb", "canonical_state_plan_mismatch");
 assertNoSecrets(stateResult.res.payload, "canonical_state");
 

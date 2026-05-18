@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const RAW_PROMPT = "raw prompt must not appear on Portal session trace";
 const RAW_COMPLETION = "raw completion must not appear on Portal session trace";
@@ -144,16 +145,20 @@ assert.equal(payload.customerDefaultLangfuseUi, false, "customer_default_trace_p
 assert.equal(payload.items.length, 1, "langfuse_projection_must_not_create_second_business_trace_row");
 
 const item = payload.items[0];
-assert.equal(item.runId, "run-v22-session-view", "canonical_run_id_mismatch");
+assert.ok(item.taskRef, "canonical_task_ref_required");
+assert.notEqual(item.taskRef, "run-v22-session-view", "canonical_task_ref_must_not_expose_run_id");
 assert.equal(item.source, "runtime_bridge_canonical_metadata", "item_source_must_be_runtime_bridge_canonical_metadata");
 assert.equal(item.observability.source, "langfuse_sanitized_projection", "observability_source_mismatch");
 assert.equal(item.observability.label, "观测摘要", "observability_label_mismatch");
+assert.ok(item.observability.taskRef, "observability_task_ref_required");
+assert.notEqual(item.observability.taskRef, "run-v22-session-view", "observability_task_ref_must_not_expose_run_id");
 assert.equal(item.observability.latencyMs, 1280, "observability_latency_mismatch");
 assert.deepEqual(item.observability.usageSummary, { inputTokens: 12, outputTokens: 34, totalTokens: 46 }, "observability_usage_summary_mismatch");
 assert.deepEqual(item.observability.costEstimate, { currency: "USD", amount: 0.0123 }, "observability_cost_estimate_mismatch");
 assert.equal(item.observability.traceUrl, "https://trace.medopl.cn/project/platform/traces/trace-runtime-v22-session-view", "sanitized_admin_trace_url_mismatch");
 assert.equal(item.customerDefaultTraceSurface, "Portal 会话轨迹", "item_default_trace_surface_mismatch");
 assert.equal(item.customerDefaultLangfuseUi, false, "item_must_not_default_to_langfuse_ui");
+assert.equal(JSON.stringify(payload).includes('"runId"'), false, "session_trace_payload_must_not_expose_run_id_field");
 assertNoForbiddenLeak(payload, "session_trace_payload");
 
 const traceSurfaceSourceText = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
@@ -171,7 +176,7 @@ assert(traceSurfaceSource.includes("linkedOutputFiles"), "trace_adapter_must_con
 assert(traceSurfaceSource.includes("costEstimate"), "trace_adapter_must_consume_cost_estimate");
 assert(traceTypesSource.includes("observability"), "trace_api_types_must_include_observability_attachment");
 assert(traceTypesSource.includes("businessFactSource"), "trace_api_types_must_include_business_fact_source");
-assert(suiteSource.includes("smoke-test-v22-portal-session-trace-view"), "mvp_suite_must_include_portal_session_trace_view_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-portal-session-trace-view.mjs"), "mvp_suite_must_include_portal_session_trace_view_smoke");
 
 console.log(JSON.stringify({
   ok: true,

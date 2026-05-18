@@ -19,6 +19,28 @@ function assertNoCloudConsoleLanguage(value, label) {
   assert.equal(/K8s|TKE|云资源控制台/.test(serialized), false, `${label}_must_not_use_cloud_console_language`);
 }
 
+function assertNoInternalUserFields(value, label) {
+  const serialized = JSON.stringify(value);
+  for (const forbiddenField of [
+    "tenantId",
+    "resourceBindingId",
+    "serverPlanId",
+    "runId",
+    "implementationKind",
+    "planId",
+    "billingAccountId",
+    "auditTag",
+    "costAllocationTag",
+    "objectKey",
+    "storageKey",
+    "bucketName",
+    "bucket",
+    "prefix",
+  ]) {
+    assert.equal(serialized.includes(`"${forbiddenField}"`), false, `${label}_must_not_expose_internal_field:${forbiddenField}`);
+  }
+}
+
 function responseRecorder() {
   return { statusCode: 0, payload: null };
 }
@@ -216,14 +238,9 @@ try {
   assert.equal(opened.res.payload.fileSpace.capacityGb, 100, "file_space_capacity_mismatch");
   assert.equal(opened.res.payload.fileSpace.storageBackend, "cos_standard_workspace_quota", "file_space_backend_mismatch");
 
-  const binding = opened.res.payload.resourceBinding;
-  assert.ok(binding.resourceBindingId, "resource_binding_id_required");
-  assert.equal(binding.tenantId, user.tenantId, "resource_binding_tenant_mismatch");
-  assert.equal(binding.userId, user.id, "resource_binding_user_mismatch");
-  assert.equal(binding.workspaceId, "workspace-v22-open", "resource_binding_workspace_mismatch");
-  assert.equal(binding.billingAccountId, user.tenantId, "resource_binding_billing_account_mismatch");
-  assert.equal(binding.auditTag, `tenant:${user.tenantId}/user:${user.id}/workspace:workspace-v22-open`, "resource_binding_audit_tag_mismatch");
-  assert.equal(binding.costAllocationTag, `medopl:v22:${user.tenantId}:workspace-v22-open`, "resource_binding_cost_allocation_tag_mismatch");
+  assert.equal(Object.hasOwn(opened.res.payload, "resourceBinding"), false, "managed_environment_open_user_response_must_not_expose_resource_binding");
+  assert.equal(Object.hasOwn(opened.res.payload, "freeze"), false, "managed_environment_open_user_response_must_not_expose_internal_freeze");
+  assertNoInternalUserFields(opened.res.payload, "managed_environment_open_user_response");
 
   assert.equal(db.userComputeInstances.length, 1, "backend_compute_resource_must_be_created");
   assert.equal(db.userStorageBuckets.length, 1, "backend_storage_resource_must_be_created");
@@ -231,8 +248,16 @@ try {
   assert.equal(db.weeklyProtectionFreezes.length, 1, "weekly_freeze_must_be_created");
   assert.equal(db.userComputeInstances[0].implementationKind, "platform-managed CVM / runtime", "backend_compute_implementation_kind_mismatch");
   assert.equal(db.userStorageBuckets[0].implementationKind, "platform-managed COS", "backend_storage_implementation_kind_mismatch");
+  const binding = db.workspaceResourceBindings[0];
+  assert.ok(binding.resourceBindingId, "backend_resource_binding_id_required");
+  assert.equal(binding.tenantId, user.tenantId, "backend_resource_binding_tenant_mismatch");
+  assert.equal(binding.userId, user.id, "backend_resource_binding_user_mismatch");
+  assert.equal(binding.workspaceId, "workspace-v22-open", "backend_resource_binding_workspace_mismatch");
+  assert.equal(binding.billingAccountId, user.tenantId, "backend_resource_binding_billing_account_mismatch");
+  assert.equal(binding.auditTag, `tenant:${user.tenantId}/user:${user.id}/workspace:workspace-v22-open`, "backend_resource_binding_audit_tag_mismatch");
+  assert.equal(binding.costAllocationTag, `medopl:v22:${user.tenantId}:workspace-v22-open`, "backend_resource_binding_cost_allocation_tag_mismatch");
 
-  const freeze = opened.res.payload.freeze;
+  const freeze = db.weeklyProtectionFreezes[0];
   assert.ok(freeze.id, "freeze_id_required");
   assert.equal(freeze.resourceBindingId, binding.resourceBindingId, "freeze_binding_mismatch");
   assert.equal(freeze.status, "active_pending_product_approval", "freeze_status_mismatch");
@@ -253,11 +278,13 @@ try {
   assert.equal(state.res.payload.selectedPlan.id, "pro_8c16g_100gb", "canonical_state_selected_plan_mismatch");
   assert.equal(state.res.payload.selectedPlan.basePrice, null, "canonical_state_selected_plan_base_price_must_be_null");
   assert.equal(state.res.payload.selectedPlan.pendingProductApproval, true, "canonical_state_selected_plan_pending_mismatch");
-  assert.equal(state.res.payload.resourceBinding.resourceBindingId, binding.resourceBindingId, "canonical_state_resource_binding_mismatch");
-  assert.equal(state.res.payload.resourceBinding.billingAccountId, user.tenantId, "canonical_state_billing_account_mismatch");
-  assert.equal(state.res.payload.freeze.resourceBindingId, binding.resourceBindingId, "canonical_state_freeze_mismatch");
+  assert.equal(Object.hasOwn(state.res.payload, "resourceBinding"), false, "canonical_state_user_response_must_not_expose_resource_binding");
+  assert.equal(Object.hasOwn(state.res.payload, "freeze"), false, "canonical_state_user_response_must_not_expose_internal_freeze");
+  assert.equal(Object.hasOwn(state.res.payload.managedEnvironment || {}, "resourceBinding"), false, "canonical_state_managed_environment_must_not_expose_resource_binding");
+  assert.equal(Object.hasOwn(state.res.payload.managedEnvironment || {}, "freeze"), false, "canonical_state_managed_environment_must_not_expose_internal_freeze");
   assert.equal(state.res.payload.balance.balanceCents, 50000, "canonical_state_balance_mismatch");
   assertNoSecretLeak(state.res.payload, "canonical_state_after_open");
+  assertNoInternalUserFields(state.res.payload, "canonical_state_after_open");
   assertNoCloudConsoleLanguage(state.res.payload.userNarrative, "canonical_state_user_narrative");
 
   const contract = await readFile("docs/contracts/v22-managed-environment-open-boundary.md", "utf8");
@@ -271,6 +298,7 @@ try {
     "resourceBinding",
     "billingAccount",
     "auditTag",
+    "后端 store",
     "managedEnvironmentEnabled",
   ]) {
     assert(contract.includes(required), `contract_missing:${required}`);
@@ -279,7 +307,6 @@ try {
   console.log(JSON.stringify({
     ok: true,
     contract: "v22_managed_environment_open_flow",
-    resourceBindingId: binding.resourceBindingId,
     selectedPlanId: opened.res.payload.selectedPlan.id,
   }, null, 2));
 } finally {

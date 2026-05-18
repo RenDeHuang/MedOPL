@@ -60,7 +60,8 @@ function operationIdFor(kind = "storage-create") {
 }
 
 function workspacePathFor(userId = "", workspaceId = "") {
-  return path.join(medWorkspaceRoot, text(userId), text(workspaceId || "default"));
+  const workspaceSlug = text(workspaceId);
+  return workspaceSlug ? path.join(medWorkspaceRoot, text(userId), workspaceSlug) : "";
 }
 
 function bindingAuditTag(user = {}, workspaceId = "") {
@@ -530,7 +531,12 @@ function runPackageCOperation({ repoRoot, runnerScript, secretFile, operationId,
   return {
     ok: true,
     runnerMode,
-    realCloudCalls: runnerMode === "tencent-official-sdk-live",
+    realCloudCalls: Boolean(
+      execute.realCloudCalls === true
+      || execute.summary?.realCloudCalls === true
+      || execute.summary?.risk?.callsRealCloudNow === true
+      || execute.summary?.execution?.realCloudCalls === true
+    ),
     dryRunReportRef: text(dryRun.reportPath),
     executionReportRef: text(execute.reportPath),
     dryRun,
@@ -598,7 +604,7 @@ function markOperationRunning(operation = {}, job = {}, runnerMode = "", workerI
   const now = nowIso();
   operation.status = "running";
   operation.runnerMode = runnerMode;
-  operation.realCloudCalls = runnerMode === "tencent-official-sdk-live";
+  operation.realCloudCalls = false;
   operation.startedAt = now;
   operation.updatedAt = now;
   job.status = "running";
@@ -610,11 +616,19 @@ function markOperationRunning(operation = {}, job = {}, runnerMode = "", workerI
   job.updatedAt = now;
 }
 
+function deriveRealCloudCallsFromEvidence(runner = {}) {
+  return Boolean(runner.realCloudCalls === true);
+}
+
 function markOperationFailed(operation = {}, job = {}, runner = {}) {
   const now = nowIso();
   operation.status = "failed";
   operation.runnerMode = text(runner.runnerMode || operation.runnerMode);
-  operation.realCloudCalls = Boolean(runner.realCloudCalls || operation.realCloudCalls);
+  operation.realCloudCalls = Boolean(
+    runner.realCloudCalls === true
+      || deriveRealCloudCallsFromEvidence(runner)
+      || operation.realCloudCalls
+  );
   operation.failureReason = text(runner.error || runner.blockedReason || "cloud_operation_runner_failed");
   operation.updatedAt = now;
   job.status = "failed";
@@ -628,13 +642,17 @@ function markOperationSucceeded(operation = {}, job = {}, runner = {}) {
   const now = nowIso();
   operation.status = "succeeded";
   operation.runnerMode = text(runner.runnerMode);
-  operation.realCloudCalls = Boolean(runner.realCloudCalls);
+  operation.realCloudCalls = Boolean(
+    runner.realCloudCalls === true || deriveRealCloudCallsFromEvidence(runner)
+  );
+  operation.resourceMaterialized = Boolean(runner.resourceMaterialized);
   operation.dryRunReportRef = text(runner.dryRunReportRef);
   operation.executionReportRef = text(runner.executionReportRef);
   operation.updatedAt = now;
   job.status = "succeeded";
   job.runnerMode = operation.runnerMode;
   job.realCloudCalls = operation.realCloudCalls;
+  job.resourceMaterialized = operation.resourceMaterialized;
   job.dryRunReportRef = operation.dryRunReportRef;
   job.executionReportRef = operation.executionReportRef;
   job.updatedAt = now;
@@ -764,7 +782,8 @@ function materializedResourceForOperation(db = {}, operation = {}) {
     return {
       ok: true,
       runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
-      realCloudCalls: true,
+      realCloudCalls: false,
+      resourceMaterialized: true,
       dryRunReportRef: text(operation.dryRunReportRef),
       executionReportRef: text(operation.executionReportRef),
       materializedResourceKind: "storage",
@@ -777,7 +796,8 @@ function materializedResourceForOperation(db = {}, operation = {}) {
     return {
       ok: true,
       runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
-      realCloudCalls: true,
+      realCloudCalls: false,
+      resourceMaterialized: true,
       dryRunReportRef: text(operation.dryRunReportRef),
       executionReportRef: text(operation.executionReportRef),
       materializedResourceKind: "storage",
@@ -790,7 +810,8 @@ function materializedResourceForOperation(db = {}, operation = {}) {
     return {
       ok: true,
       runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
-      realCloudCalls: true,
+      realCloudCalls: false,
+      resourceMaterialized: true,
       dryRunReportRef: text(operation.dryRunReportRef),
       executionReportRef: text(operation.executionReportRef),
       materializedResourceKind: "compute",
@@ -804,7 +825,8 @@ function materializedResourceForOperation(db = {}, operation = {}) {
     return {
       ok: true,
       runnerMode: text(operation.runnerMode || "tencent-official-sdk-live"),
-      realCloudCalls: true,
+      realCloudCalls: false,
+      resourceMaterialized: true,
       dryRunReportRef: text(operation.dryRunReportRef),
       executionReportRef: text(operation.executionReportRef),
       materializedResourceKind: "compute",
@@ -884,7 +906,7 @@ function reconcileSucceededOperationResource(db = {}, operation = {}, options = 
   }
   upsertProjection(db, user, binding, operation, {
     runnerMode: text(operation.runnerMode || options.runnerMode || "tencent-official-sdk-live"),
-    realCloudCalls: Boolean(operation.realCloudCalls || text(options.runnerMode) === "tencent-official-sdk-live"),
+    realCloudCalls: Boolean(operation.realCloudCalls),
     dryRunReportRef: text(operation.dryRunReportRef),
     executionReportRef: text(operation.executionReportRef),
   });
@@ -936,7 +958,7 @@ function processOneQueuedJob(db = {}, job = {}, options = {}) {
     markOperationFailed(operation, job, {
       error: "compute_node_pool_ref_required",
       runnerMode: text(options.runnerMode || operation.runnerMode || job.runnerMode || "local-executor"),
-      realCloudCalls: text(options.runnerMode || "") === "tencent-official-sdk-live",
+      realCloudCalls: false,
     });
     return { ok: false, error: "compute_node_pool_ref_required", operationId: text(operation.operationId || operation.id) };
   }
@@ -946,7 +968,7 @@ function processOneQueuedJob(db = {}, job = {}, options = {}) {
     markOperationFailed(operation, job, {
       error: "cloud_operation_runner_script_required",
       runnerMode,
-      realCloudCalls: runnerMode === "tencent-official-sdk-live",
+      realCloudCalls: false,
     });
     return { ok: false, error: "cloud_operation_runner_script_required", operationId: text(operation.operationId || operation.id) };
   }
@@ -962,7 +984,11 @@ function processOneQueuedJob(db = {}, job = {}, options = {}) {
     input: inputFromOperation(operation),
   });
   if (!runner.ok) {
-    markOperationFailed(operation, job, { ...runner, runnerMode, realCloudCalls: runnerMode === "tencent-official-sdk-live" });
+    markOperationFailed(operation, job, {
+      ...runner,
+      runnerMode,
+      realCloudCalls: deriveRealCloudCallsFromEvidence(runner),
+    });
     return { ok: false, error: operation.failureReason, operationId: text(operation.operationId || operation.id) };
   }
   const applied = applyRunnerSuccess(db, operation, job, runner, {

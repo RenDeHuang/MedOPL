@@ -39,6 +39,7 @@ const user = {
   id: "user-v22-async-cloud",
   tenantId: "tenant-v22-async-cloud",
 };
+const runnerScript = "scripts/v22-cloud-operation-local-executor.mjs";
 
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-cloud-async-worker-"));
 try {
@@ -67,6 +68,7 @@ try {
   }, {
     operationType: "create_storage",
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     repoRoot: ".",
   });
@@ -157,7 +159,8 @@ try {
     status: "updated",
     productionPortalConnected: true,
     runnerMode: "tencent-official-sdk-live",
-    realCloudCalls: true,
+    realCloudCalls: false,
+    resourceMaterialized: true,
     lastOperationId: "op-reconciled-storage-create",
     visibleSummary: { resources: { fileSpace: { capacityGb: 10, statusLabel: "可用" } } },
     createdAt: "2026-05-13T00:01:00.000Z",
@@ -186,6 +189,10 @@ try {
   assert.equal(reconciled.processed[0].reconciledFromMaterializedState, true, "materialized_storage_must_report_reconciled");
   assert.equal(reconcileDb.cloudOperations[0].status, "succeeded", "materialized_storage_operation_must_be_terminal");
   assert.equal(reconcileDb.cloudOperationJobs[0].status, "succeeded", "materialized_storage_job_must_be_terminal");
+  assert.equal(reconcileDb.cloudOperations[0].realCloudCalls, false, "materialized_storage_must_not_infer_real_cloud_calls_from_runner_mode");
+  assert.equal(reconcileDb.cloudOperationJobs[0].realCloudCalls, false, "materialized_storage_job_must_not_infer_real_cloud_calls_from_runner_mode");
+  assert.equal(reconcileDb.cloudOperations[0].resourceMaterialized, true, "materialized_storage_operation_must_record_materialized_resource_separately");
+  assert.equal(reconcileDb.cloudOperationJobs[0].resourceMaterialized, true, "materialized_storage_job_must_record_materialized_resource_separately");
   assert.equal(reconcileDb.cloudOperationJobs[0].leaseOwner, "worker-v22-reconcile-smoke", "materialized_storage_job_must_record_reconcile_worker");
   assert.equal(reconcileDb.fileSpaceEntitlements.length, 1, "materialized_storage_reconcile_must_not_duplicate_entitlement");
 
@@ -283,6 +290,7 @@ try {
 
   const drain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     computeNodePoolRef: "np-backend-attribution-proof",
     maxOperations: 1,
@@ -304,6 +312,7 @@ try {
   }, {
     operationType: "create_compute",
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     repoRoot: ".",
   });
@@ -314,6 +323,7 @@ try {
 
   const blockedDrain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     maxOperations: 1,
     workerId: "worker-v22-async-smoke",
@@ -337,6 +347,7 @@ try {
   }, {
     operationType: "create_compute",
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     repoRoot: ".",
     computePoolBaselineCapacity: 2,
@@ -346,6 +357,7 @@ try {
 
   const computeDrain = processQueuedPortalProductionCloudOperations(db, {
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     computeNodePoolRef: "np-backend-attribution-proof",
     maxOperations: 1,
@@ -379,6 +391,7 @@ try {
   }, {
     operationType: "release_compute",
     runnerMode: "local-executor",
+    runnerScript,
     secretFile,
     repoRoot: ".",
     computePoolBaselineCapacity: 2,

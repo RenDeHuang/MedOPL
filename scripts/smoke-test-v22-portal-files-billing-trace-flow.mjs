@@ -29,9 +29,7 @@ function assertNoCloudConsoleLanguage(value, label) {
 function assertTraceMetadataWhitelist(metadata, label) {
   assert.deepEqual(Object.keys(metadata).sort(), [
     "artifactRefs",
-    "auditTag",
     "providerKeyRef",
-    "resourceBindingId",
     "sessionId",
     "status",
     "timestamps",
@@ -39,10 +37,8 @@ function assertTraceMetadataWhitelist(metadata, label) {
   ], `${label}_trace_metadata_keys_mismatch`);
   assert.equal(metadata.workspaceId, "workspace-v22-portal-surface", `${label}_trace_workspace_mismatch`);
   assert.ok(metadata.sessionId, `${label}_trace_session_required`);
-  assert.ok(metadata.resourceBindingId, `${label}_trace_resource_binding_required`);
   assert.ok(metadata.providerKeyRef, `${label}_trace_provider_key_ref_required`);
   assert.equal(metadata.status, "succeeded", `${label}_trace_status_mismatch`);
-  assert.ok(metadata.auditTag.includes("workspace:workspace-v22-portal-surface"), `${label}_trace_audit_tag_mismatch`);
   assert.equal(Array.isArray(metadata.artifactRefs), true, `${label}_trace_artifact_refs_must_be_array`);
   assert.equal(typeof metadata.timestamps.createdAt, "string", `${label}_trace_created_at_required`);
   assert.equal(typeof metadata.timestamps.updatedAt, "string", `${label}_trace_updated_at_required`);
@@ -182,7 +178,8 @@ try {
     },
   });
   assert.equal(opened.res.statusCode, 201, "managed_environment_must_open");
-  const resourceBindingId = opened.res.payload.resourceBinding.resourceBindingId;
+  assert.equal(opened.res.payload.resourceBinding, undefined, "managed_environment_open_must_not_expose_resource_binding");
+  const resourceBindingId = db.workspaceResourceBindings.find((item) => item.workspaceId === "workspace-v22-portal-surface")?.resourceBindingId || "";
   assert.ok(resourceBindingId, "resource_binding_id_required");
 
   const session = await request(route, db, {
@@ -252,9 +249,9 @@ try {
   const payload = state.res.payload;
 
   assert.equal(payload.managedEnvironment.enabled, true, "managed_environment_must_be_enabled");
-  assert.equal(payload.managedEnvironment.resourceBinding.resourceBindingId, resourceBindingId, "managed_environment_binding_mismatch");
-  assert.equal(payload.resourceBinding.resourceBindingId, resourceBindingId, "top_level_resource_binding_mismatch");
-  assert.equal(payload.freeze.resourceBindingId, resourceBindingId, "freeze_resource_binding_mismatch");
+  assert.equal(payload.managedEnvironment.resourceBinding, undefined, "managed_environment_must_not_expose_resource_binding");
+  assert.equal(payload.resourceBinding, undefined, "top_level_resource_binding_must_not_be_public");
+  assert.equal(payload.freeze, undefined, "freeze_resource_binding_must_not_be_public");
   assert.equal(payload.preauth.status, "pending_product_approval", "preauth_status_mismatch");
 
   assert.equal(Array.isArray(payload.workspaceFiles), true, "workspace_files_must_be_array");

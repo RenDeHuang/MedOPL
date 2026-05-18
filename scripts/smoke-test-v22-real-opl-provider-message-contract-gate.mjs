@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const CONTRACT_PATH = "docs/contracts/v22-real-opl-provider-message-canary-boundary.md";
 const FLOW_PATH = "docs/recovery/real-opl-provider-message-canary-validation-path.md";
@@ -176,9 +177,9 @@ assertIncludes(statusMatrix, "Real OPL provider message canary", "status_matrix"
 assertIncludes(statusMatrix, "Real OPL provider message live canary", "status_matrix");
 assertIncludes(statusMatrix, "当前 message reply capability 为 `mapped_to_webui_bridge`", "status_matrix");
 assertIncludes(index, "授权 live canary 已证明真实 assistant reply 可按 `mapped_to_webui_bridge` 回流 Portal", "contracts_index");
-assertIncludes(suite, "smoke-test-v22-real-opl-provider-message-contract-gate.mjs", "mvp_suite");
+assert.ok(isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs"), "mvp_suite: missing scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs");
 assert.equal(
-  suite.includes("smoke-test-v22-real-opl-provider-message-live-canary.mjs"),
+  isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-provider-message-live-canary.mjs"),
   false,
   "live_provider_canary_must_not_run_in_default_mvp_suite",
 );

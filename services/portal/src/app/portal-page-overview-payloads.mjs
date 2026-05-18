@@ -105,30 +105,9 @@ function userTenantId(user = {}) {
   return text(user.tenantId || user.tenant_id || user.id);
 }
 
-function bindingId(binding = {}) {
-  return text(binding.resourceBindingId || binding.id);
-}
-
-function billingAttributionId(binding = {}) {
-  return text(binding.billingAttributionId || binding.billing_attribution_id || binding.cloudOperationId || binding.cloud_operation_id || binding.costAllocationTag || bindingId(binding));
-}
-
-function accountId(binding = {}) {
-  return text(binding.accountId || binding.account_id || binding.userId || binding.user_id || binding.ownerUserId || binding.tenantId || binding.tenant_id || binding.ownerTenantId);
-}
-
-function serverPlanId(binding = {}) {
-  return text(binding.serverPlanId || binding.server_plan_id || binding.planId || binding.plan_id || binding.packageId || binding.package_id);
-}
-
 function publicResourceBindingView(binding = {}) {
   return {
-    id: bindingId(binding),
-    resourceBindingId: bindingId(binding),
-    billingAttributionId: billingAttributionId(binding),
     workspaceId: text(binding.workspaceId),
-    accountId: accountId(binding),
-    serverPlanId: serverPlanId(binding),
     status: text(binding.status || "active"),
     createdAt: text(binding.createdAt),
     updatedAt: text(binding.updatedAt),

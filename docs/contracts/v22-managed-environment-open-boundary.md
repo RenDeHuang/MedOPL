@@ -37,6 +37,8 @@ MVP 只支持两个默认套餐：
 
 本轮不写正式价格，不扩展自定义套餐实现。
 
+MVP 不暴露 `custom` active 套餐。普通用户开通与查询只允许 `starter_2c4g_10gb`、`pro_8c16g_100gb`。
+
 ## Open Flow
 
 1. 用户调用 Portal 后端开通“托管运行环境”。
@@ -47,7 +49,7 @@ MVP 只支持两个默认套餐：
 6. 后台生成 `resourceBinding`。
 7. `resourceBinding` 必须绑定 tenant、user、workspace、billingAccount、auditTag 和 costAllocationTag。
 8. 开通后进入预扣费/冻结状态。
-9. API response 和 canonical state 只暴露用户可理解的托管环境、工作空间、文件空间、套餐、余额、预扣费状态，以及必要的 binding/audit 引用。
+9. API response 和 canonical state 只暴露用户可理解的托管环境、工作空间、文件空间、套餐、余额、预扣费状态；`tenantId`、`resourceBindingId`、`userId`、`billingAccountId`、`auditTag`、`costAllocationTag` 等 binding/audit 原值只能留在后端 store、admin/ops internal surface 或审计证据中，不能作为普通用户公开字段。
 
 缺失开通参数时必须稳定失败：
 
@@ -73,21 +75,9 @@ MVP 只支持两个默认套餐：
     "storageBackend": "cos_standard_workspace_quota",
     "status": "active"
   },
-  "resourceBinding": {
-    "resourceBindingId": "resource binding id",
-    "tenantId": "tenant id",
-    "userId": "user id",
-    "workspaceId": "workspace id",
-    "billingAccountId": "billing account id",
-    "auditTag": "audit tag",
-    "costAllocationTag": "cost allocation tag"
-  },
-  "freeze": {
-    "resourceBindingId": "resource binding id",
-    "status": "active_pending_product_approval",
-    "preauthStatus": "pending_product_approval",
-    "basePrice": null,
-    "pendingProductApproval": true
+  "preauth": {
+    "status": "pending_product_approval",
+    "amountCents": 0
   },
   "selectedPlan": {
     "id": "starter_2c4g_10gb or pro_8c16g_100gb",
@@ -100,13 +90,12 @@ MVP 只支持两个默认套餐：
 
 ## Managed Resource Binding Plan View
 
-Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`，用于把“托管运行环境”的区域、规格、状态、预计费用、释放策略和审计状态呈现给普通用户。
+Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`，用于把“托管运行环境”的区域、计算/文件空间规格、状态、价格审批状态和审计模式呈现给普通用户。
 
 该视图是 managed resource binding 的计划摘要，不代表真实资源已创建，不调用真实腾讯云 API，不读取真实 COS、TKE、CVM、kubeconfig、SecretId/SecretKey、token 或任何本地 secret。Portal payload 只暴露业务对象：
 
 ```json
 {
-  "resourceBindingId": "resource binding id",
   "managedEnvironment": "托管运行环境",
   "regionLabel": "硅谷一区",
   "planSpec": "8核 / 16GB 内存 / 100GB 文件空间",
@@ -123,8 +112,6 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
   "quoteStatus": "mock_snapshot",
   "quoteSnapshotId": "quote-snapshot-v22-pro-8c16g-100gb",
   "resourcePlan": {
-    "resourcePlanId": "dry-run-plan-resource binding id",
-    "resourceBindingId": "resource binding id",
     "planMode": "dry_run",
     "regionLabel": "硅谷一区",
     "planSpec": "8核 / 16GB 内存 / 100GB 文件空间",
@@ -160,7 +147,12 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 }
 ```
 
-普通用户界面只使用“托管运行环境、区域、规格、预计费用、释放策略、审计状态、状态”等产品语言，不把 CVM、COS、K8s、TKE 或云资源控制台作为主语言。
+普通用户界面只使用“托管运行环境、区域、计算资源、文件空间、价格待审批、正式售价未定价、审计模式、状态”等产品语言，不把 CVM、COS、K8s、TKE 或云资源控制台作为主语言。
+
+普通用户 view 与 admin/ops internal view 必须拆分：
+
+- 普通用户 view：只读产品态摘要，不暴露 internal 标识或云对象原值。
+- admin/ops internal view：可在排障详情查看 `tenantId`、`resourceBindingId`、`serverPlanId`、`runId`、`implementationKind`、`planId`、cloud object id（bucket/prefix/object 等）及其他内部字段。
 
 `resourcePlan` 来自 `dry-run/tencent resource plan provider`，只生成不会执行的资源创建计划。`resourceSteps` 只能使用“准备托管运行环境”“分配文件空间”“准备运行网络边界”“登记账单和审计边界”等产品语言，不把 CVM、COS、K8s 或 TKE 当普通用户主语言。`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段；真实资源未创建通过 `snapshot.realResourceCreated=false` 表达，未真实扣费通过 `estimatedCost.chargeApplied=false` 或现有费用估算边界表达。
 
@@ -175,7 +167,7 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 本分支允许的最小 Portal frontend 展示范围：
 
 - Portal 工作空间 payload 输出 `managedResourceBindingPlan`。
-- Portal 工作空间普通用户页面展示托管运行环境的区域、规格、状态、预计费用、释放策略和审计状态。
+- Portal 工作空间普通用户页面展示托管运行环境的区域、计算/文件空间规格、状态、价格审批状态和审计模式。
 - 前端只消费 `managedResourceBindingPlan` 里的业务字段，不展示或传递真实云对象、provider 内部字段、密钥或内部存储字段。
 
 ## Non-goals

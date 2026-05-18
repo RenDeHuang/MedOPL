@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const userContractPath = "docs/contracts/v22-portal-user-surface-boundary.md";
 const adminContractPath = "docs/contracts/v22-portal-admin-ops-surface-boundary.md";
@@ -282,7 +283,7 @@ assert.equal(adminContract.forbiddenPaths.includes("upstream"), true, "admin_sur
 assertIncludes(readme, "v22-portal-user-surface-boundary.md", "contracts_readme_must_index_user_surface");
 assertIncludes(readme, "v22-portal-admin-ops-surface-boundary.md", "contracts_readme_must_index_admin_surface");
 assertIncludes(readme, "这两份合同是 Portal 角色真相", "contracts_readme_must_define_role_contract_priority");
-assertIncludes(suite, "smoke-test-v22-portal-role-surface-boundaries", "mvp_suite_must_run_role_surface_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-portal-role-surface-boundaries.mjs"), "mvp_suite_must_run_role_surface_smoke");
 
 console.log(JSON.stringify({
   ok: true,

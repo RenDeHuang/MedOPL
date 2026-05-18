@@ -44,10 +44,9 @@ export interface SelectedServerPlan {
   availabilityStatus?: string;
   statusCategory?: string;
   soldOutReason?: string;
-  originalPrice?: number;
-  discountPrice: number;
-  unitPrice: number;
-  hourlyPrice?: number;
+  basePrice: null;
+  pendingProductApproval: boolean;
+  priceLabel?: string;
   minBillableHours: number;
   riskFactor: number;
   reservationFloor: number;

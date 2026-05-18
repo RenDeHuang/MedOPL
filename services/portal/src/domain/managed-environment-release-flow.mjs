@@ -89,25 +89,6 @@ function releaseAuditEvent(binding = {}, user = {}, release = {}, input = {}) {
   };
 }
 
-function releasePublicResourceBinding(binding = {}) {
-  return {
-    id: text(binding.id),
-    resourceBindingId: text(binding.resourceBindingId || binding.id),
-    tenantId: text(binding.tenantId || binding.ownerTenantId),
-    userId: text(binding.userId || binding.ownerUserId),
-    workspaceId: text(binding.workspaceId),
-    billingAccountId: text(binding.billingAccountId),
-    auditTag: text(binding.auditTag),
-    costAllocationTag: text(binding.costAllocationTag),
-    status: text(binding.status),
-    releasedAt: text(binding.releasedAt),
-    billingStoppedAt: text(binding.billingStoppedAt),
-    billingStopConfirmBy: text(binding.billingStopConfirmBy),
-    auditReadyAt: text(binding.auditReadyAt),
-    updatedAt: text(binding.updatedAt),
-  };
-}
-
 function releasePayload(binding = {}) {
   return {
     status: text(binding.status),
@@ -242,7 +223,6 @@ export function releaseManagedEnvironment(db = {}, user = {}, input = {}) {
   return {
     ok: true,
     released: true,
-    resourceBinding: releasePublicResourceBinding(active),
     release: releasePayload(active),
     stopBilling: stopBillingPayload(active),
     audit: auditPayload(active),

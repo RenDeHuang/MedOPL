@@ -1,3 +1,11 @@
+import { createHash } from "node:crypto";
+
+function publicTaskRef(...values) {
+  const source = values.map((value) => String(value ?? "").trim()).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
+}
+
 export function createPortalApiCostsRoutes({
   fetchBillingSummary,
   fetchRuntimeBridgeCosts,
@@ -38,7 +46,7 @@ export function createPortalApiCostsRoutes({
           source: "runtime_bridge",
           type: "live",
           note: runtimeBridgeCost.status === "pending" ? "run 成本已记录为 pending，等待平台账本投影校准" : "run 成本来自 Runtime Bridge",
-          runId,
+          taskRef: publicTaskRef(runtimeBridgeCost.traceId, runtimeBridgeCost.sessionId, runtimeBridgeCost.runtimeSessionId, runId),
           cost: {
             cpuCost: runtimeBridgeCost.cpuCost,
             gpuCost: runtimeBridgeCost.gpuCost,
@@ -59,7 +67,7 @@ export function createPortalApiCostsRoutes({
           source: "portal_billing_ledger",
           type: "status_only",
           note: "未找到对应 run 成本记录",
-          runId,
+          taskRef: publicTaskRef(runId),
           cost: null,
         });
         return true;
@@ -68,7 +76,7 @@ export function createPortalApiCostsRoutes({
         source: "portal_billing_ledger",
         type: "local_projection",
         note: "数据来自 run 维度 Portal 账本投影",
-        runId,
+        taskRef: publicTaskRef(runId),
         cost: {
           cpuCost: Number(runCost.cpuCost || 0),
           gpuCost: Number(runCost.gpuCost || 0),

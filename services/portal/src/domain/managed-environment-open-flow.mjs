@@ -216,50 +216,6 @@ export function managedEnvironmentUserNarrative() {
   };
 }
 
-export function resourceBindingPublicView(binding = {}) {
-  if (!binding) return null;
-  return {
-    id: text(binding.id),
-    resourceBindingId: text(binding.resourceBindingId || binding.id),
-    tenantId: text(binding.tenantId || binding.ownerTenantId),
-    userId: text(binding.userId || binding.ownerUserId),
-    workspaceId: text(binding.workspaceId),
-    billingAccountId: text(binding.billingAccountId),
-    auditTag: text(binding.auditTag),
-    costAllocationTag: text(binding.costAllocationTag),
-    computeInstanceId: text(binding.computeInstanceId),
-    storageBucketId: text(binding.storageBucketId),
-    fileSpaceGb: Number(binding.fileSpaceGb || 0),
-    storageBackend: text(binding.storageBackend),
-    status: text(binding.status || "active"),
-    createdAt: text(binding.createdAt),
-    updatedAt: text(binding.updatedAt),
-  };
-}
-
-export function freezePublicView(freeze = null) {
-  if (!freeze) return null;
-  return {
-    id: text(freeze.id),
-    resourceBindingId: text(freeze.resourceBindingId),
-    status: text(freeze.status),
-    preauthStatus: text(freeze.preauthStatus),
-    billingAccountId: text(freeze.billingAccountId),
-    auditTag: text(freeze.auditTag),
-    costAllocationTag: text(freeze.costAllocationTag),
-    weeklyAmount: Number(freeze.weeklyAmount || 0),
-    weeklyAmountCents: Number(freeze.weeklyAmountCents || 0),
-    frozenAmount: Number(freeze.frozenAmount || 0),
-    frozenAmountCents: Number(freeze.frozenAmountCents || 0),
-    consumedAmount: Number(freeze.consumedAmount || 0),
-    remainingAmount: Number(freeze.remainingAmount || 0),
-    basePrice: null,
-    pendingProductApproval: true,
-    createdAt: text(freeze.createdAt),
-    updatedAt: text(freeze.updatedAt),
-  };
-}
-
 export function workspacePublicView(workspace = {}, workspaceId = "") {
   return {
     id: text(workspace.id || workspace.slug || workspaceId),
@@ -306,14 +262,19 @@ export function openManagedEnvironment(db = {}, user = {}, input = {}, { state =
       ok: true,
       created: false,
       managedEnvironmentEnabled: true,
-      userNarrative: managedEnvironmentUserNarrative(),
-      workspace: workspacePublicView(existingWorkspace, workspaceId),
-      fileSpace: fileSpacePublicView(existing, existingPlan),
-      selectedPlan: canonicalResourcePlanPublicView(existingPlan),
-      resourceBinding: resourceBindingPublicView(existing),
-      freeze: freezePublicView(existingFreeze),
-    };
-  }
+    userNarrative: managedEnvironmentUserNarrative(),
+    workspace: workspacePublicView(existingWorkspace, workspaceId),
+    fileSpace: fileSpacePublicView(existing, existingPlan),
+    selectedPlan: canonicalResourcePlanPublicView(existingPlan),
+    preauth: existingFreeze
+      ? {
+          status: text(existingFreeze.preauthStatus || "pending_product_approval"),
+          amountCents: Number(existingFreeze.frozenAmountCents || existingFreeze.weeklyAmountCents || 0),
+          pendingProductApproval: true,
+        }
+      : { status: "none", amountCents: 0, pendingProductApproval: true },
+  };
+}
 
   const bindingId = `rb-${randomUUID()}`;
   const workspace = ensureWorkspace(db, user, workspaceId, plan);
@@ -330,7 +291,10 @@ export function openManagedEnvironment(db = {}, user = {}, input = {}, { state =
     workspace: workspacePublicView(workspace, workspaceId),
     fileSpace,
     selectedPlan: canonicalResourcePlanPublicView(plan),
-    resourceBinding: resourceBindingPublicView(binding),
-    freeze: freezePublicView(freeze),
+    preauth: {
+      status: text(freeze.preauthStatus || "pending_product_approval"),
+      amountCents: Number(freeze.frozenAmountCents || freeze.weeklyAmountCents || 0),
+      pendingProductApproval: true,
+    },
   };
 }

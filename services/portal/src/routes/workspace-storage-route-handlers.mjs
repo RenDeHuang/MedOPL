@@ -15,6 +15,45 @@ function userTenantId(user) {
   return text(user?.tenantId || user?.id);
 }
 
+function publicStorageEntitlementView(entitlement = {}) {
+  return {
+    enabled: Boolean(entitlement.enabled),
+    status: text(entitlement.status || (entitlement.enabled ? "active" : "disabled")),
+    freeQuotaGb: Number(entitlement.freeQuotaGb || 0),
+    minimumPurchaseGb: Number(entitlement.minimumPurchaseGb || 10),
+    retentionPolicy: text(entitlement.retentionPolicy || "workspace_lifecycle"),
+    storageSizeGb: Number(entitlement.storageSizeGb || entitlement.capacityGb || 0),
+    message: text(entitlement.message || (entitlement.enabled ? "active" : "storage_required")),
+  };
+}
+
+function publicWorkspaceFileMetadata(file = {}) {
+  return {
+    fileRef: text(file.id || file.fileRef || file.file_ref),
+    workspaceId: text(file.workspaceId || file.workspace_id),
+    kind: text(file.kind),
+    name: text(file.name || file.fileName || file.file_name),
+    relativePath: text(file.relativePath || file.relative_path),
+    sizeBytes: Number(file.sizeBytes || file.size_bytes || 0),
+    checksum: text(file.checksum),
+    contentType: text(file.contentType || file.content_type),
+    status: text(file.status || "active"),
+    source: text(file.source),
+    createdAt: text(file.createdAt || file.created_at),
+    updatedAt: text(file.updatedAt || file.updated_at),
+  };
+}
+
+function publicStorageOrderView(order = {}) {
+  return {
+    status: text(order.status),
+    storageSizeGb: Number(order.storageSizeGb || order.capacityGb || 0),
+    retentionPolicy: text(order.retentionPolicy),
+    createdAt: text(order.createdAt),
+    updatedAt: text(order.updatedAt),
+  };
+}
+
 async function readJsonBody(deps, req, res) {
   try {
     return JSON.parse((await deps.readBody(req)).toString("utf8") || "{}");
@@ -25,9 +64,14 @@ async function readJsonBody(deps, req, res) {
 }
 
 async function resolveTaskSpace(deps, { db, user, task }) {
-  const taskSlug = deps.slugify(task || user.currentTaskSlug || "default");
-  return deps.findTaskSpace(db, user.id, taskSlug)
+  const requestedTask = text(task || user.currentTaskSlug);
+  const taskSlug = requestedTask ? deps.slugify(requestedTask) : "";
+  if (!taskSlug) {
+    return { ok: false, error: "workspace_id_required", status: 422 };
+  }
+  const taskSpace = deps.findTaskSpace(db, user.id, taskSlug)
     || await deps.ensureTaskSpace(db, user, taskSlug, deps.defaultTaskTitle(taskSlug));
+  return { ok: true, taskSpace };
 }
 
 function buildSessionScopedLocalPath(deps, taskSpace, rootPrefix, oplSessionId, kind, relativePath) {
@@ -243,7 +287,12 @@ async function persistStorageOrder(deps, db, taskSpace, created) {
 
 async function handleWorkspaceStorageSnapshot(deps, { req, res, url, db, user }) {
   if (req.method !== "GET" || url.pathname !== "/portal/api/workspace/storage") return false;
-  const taskSpace = await resolveTaskSpace(deps, { db, user, task: url.searchParams.get("task") || url.searchParams.get("workspaceId") });
+  const resolved = await resolveTaskSpace(deps, { db, user, task: url.searchParams.get("task") || url.searchParams.get("workspaceId") });
+  if (!resolved.ok) {
+    deps.sendJson(res, { error: resolved.error }, resolved.status);
+    return true;
+  }
+  const { taskSpace } = resolved;
   const sessionParams = fullRuntimeSessionParams(url);
   const metadata = deps.listWorkspaceFiles(db, {
     tenantId: userTenantId(user),
@@ -257,16 +306,27 @@ async function handleWorkspaceStorageSnapshot(deps, { req, res, url, db, user })
   const storage = mergeWorkspaceStorageSnapshotWithIndex(await deps.fetchWorkspaceStorageSnapshot(taskSpace), metadata);
   const userStorage = await deps.fetchWorkspaceUserStorageState(user.id, taskSpace.slug);
   const entitlement = deps.workspaceStorageEntitlement(db, user, taskSpace.slug);
-  deps.sendJson(res, { workspaceId: taskSpace.slug, entitlement, storage, userStorage, metadata });
+  deps.sendJson(res, {
+    workspaceId: taskSpace.slug,
+    entitlement: publicStorageEntitlementView(entitlement),
+    storage,
+    userStorage,
+    metadata: metadata.map(publicWorkspaceFileMetadata),
+  });
   return true;
 }
 
 async function handleEntitlement(deps, { req, res, url, db, user }) {
   if (req.method !== "GET" || url.pathname !== "/portal/api/storage/entitlement") return false;
-  const taskSpace = await resolveTaskSpace(deps, { db, user, task: url.searchParams.get("task") || url.searchParams.get("workspaceId") });
+  const resolved = await resolveTaskSpace(deps, { db, user, task: url.searchParams.get("task") || url.searchParams.get("workspaceId") });
+  if (!resolved.ok) {
+    deps.sendJson(res, { error: resolved.error }, resolved.status);
+    return true;
+  }
+  const { taskSpace } = resolved;
   deps.sendJson(res, {
     workspaceId: taskSpace.slug,
-    entitlement: deps.workspaceStorageEntitlement(db, user, taskSpace.slug),
+    entitlement: publicStorageEntitlementView(deps.workspaceStorageEntitlement(db, user, taskSpace.slug)),
   });
   return true;
 }
@@ -275,7 +335,12 @@ async function handleStorageOrder(deps, { req, res, url, db, user }) {
   if (req.method !== "POST" || url.pathname !== "/portal/api/storage/orders") return false;
   const payload = await readJsonBody(deps, req, res);
   if (!payload) return true;
-  const taskSpace = await resolveTaskSpace(deps, { db, user, task: payload.task || payload.workspaceId });
+  const resolved = await resolveTaskSpace(deps, { db, user, task: payload.task || payload.workspaceId });
+  if (!resolved.ok) {
+    deps.sendJson(res, { error: resolved.error }, resolved.status);
+    return true;
+  }
+  const { taskSpace } = resolved;
   const storageSizeGb = Math.max(0, Number(payload.storageSizeGb ?? payload.storage_size_gb ?? 0));
   if (storageSizeGb < 10) {
     deps.sendJson(res, { error: "minimum_storage_10gb_required", minimumPurchaseGb: 10 }, 400);
@@ -306,8 +371,8 @@ async function handleStorageOrder(deps, { req, res, url, db, user }) {
   deps.sendJson(res, {
     ok: true,
     workspaceId: taskSpace.slug,
-    order: created.order,
-    entitlement: deps.workspaceStorageEntitlement(db, user, taskSpace.slug),
+    order: publicStorageOrderView(created.order),
+    entitlement: publicStorageEntitlementView(deps.workspaceStorageEntitlement(db, user, taskSpace.slug)),
   }, created.created ? 201 : 200);
   return true;
 }
@@ -316,7 +381,12 @@ async function handleUploadUrl(deps, { req, res, url, db, user }) {
   if (req.method !== "POST" || url.pathname !== "/portal/api/workspace/files/upload-url") return false;
   const payload = await readJsonBody(deps, req, res);
   if (!payload) return true;
-  const taskSpace = await resolveTaskSpace(deps, { db, user, task: payload.task || payload.workspaceId });
+  const resolved = await resolveTaskSpace(deps, { db, user, task: payload.task || payload.workspaceId });
+  if (!resolved.ok) {
+    deps.sendJson(res, { error: resolved.error }, resolved.status);
+    return true;
+  }
+  const { taskSpace } = resolved;
   if (taskSpace.status !== "active") {
     deps.sendJson(res, { error: "workspace_not_active" }, 409);
     return true;
@@ -365,7 +435,12 @@ function sendUploadUrlResponse(deps, { res, taskSpace, fullRuntime, relativePath
 
 async function handleDownloadUrl(deps, { req, res, url, db, user }) {
   if (req.method !== "GET" || url.pathname !== "/portal/api/workspace/files/download-url") return false;
-  const taskSpace = await resolveTaskSpace(deps, { db, user, task: url.searchParams.get("task") || url.searchParams.get("workspaceId") });
+  const resolved = await resolveTaskSpace(deps, { db, user, task: url.searchParams.get("task") || url.searchParams.get("workspaceId") });
+  if (!resolved.ok) {
+    deps.sendJson(res, { error: resolved.error }, resolved.status);
+    return true;
+  }
+  const { taskSpace } = resolved;
   const kind = url.searchParams.get("kind") === "outputs" ? "outputs" : "inputs";
   const relativePath = deps.safeRelativePath(url.searchParams.get("relativePath") || url.searchParams.get("file") || "");
   if (!relativePath) {

@@ -101,6 +101,20 @@ function snapshotView() {
   };
 }
 
+function publicDryRunResourcePlanView(resourcePlan = {}) {
+  return {
+    planMode: text(resourcePlan.planMode || "dry_run"),
+    regionLabel: text(resourcePlan.regionLabel),
+    planSpec: text(resourcePlan.planSpec),
+    estimatedCost: resourcePlan.estimatedCost && typeof resourcePlan.estimatedCost === "object" ? resourcePlan.estimatedCost : {},
+    resourceSteps: Array.isArray(resourcePlan.resourceSteps) ? resourcePlan.resourceSteps.map(text).filter(Boolean) : [],
+    approvalRequired: Boolean(resourcePlan.approvalRequired),
+    releasePolicy: resourcePlan.releasePolicy && typeof resourcePlan.releasePolicy === "object" ? resourcePlan.releasePolicy : {},
+    auditStatus: resourcePlan.auditStatus && typeof resourcePlan.auditStatus === "object" ? resourcePlan.auditStatus : {},
+    riskNotes: Array.isArray(resourcePlan.riskNotes) ? resourcePlan.riskNotes.map(text).filter(Boolean) : [],
+  };
+}
+
 export function findManagedResourceBinding(db = {}, user = {}, workspaceId = "") {
   const targetWorkspaceId = text(workspaceId);
   return (Array.isArray(db.workspaceResourceBindings) ? db.workspaceResourceBindings : [])
@@ -124,7 +138,6 @@ export function managedResourceBindingPlanView({ binding = null, taskSpace = {},
     quote,
   });
   return {
-    resourceBindingId: text(binding.resourceBindingId || binding.id),
     managedEnvironment: "托管运行环境",
     regionLabel: quote.regionLabel || regionLabel(region, zone),
     planSpec: quote.planSpec || planSpec(plan, binding),
@@ -135,7 +148,7 @@ export function managedResourceBindingPlanView({ binding = null, taskSpace = {},
     quoteSnapshotId: text(quote.quoteSnapshotId),
     releasePolicy: releasePolicy(binding),
     auditStatus: auditStatus(binding),
-    resourcePlan,
+    resourcePlan: publicDryRunResourcePlanView(resourcePlan),
     snapshot: snapshotView(),
   };
 }

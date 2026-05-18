@@ -16,7 +16,7 @@ import { fetchMyResources, fetchOplLaunchStatus } from "../../api/portal/resourc
 import { fetchAnnouncements } from "../../api/portal/sessions";
 import { fetchSessionTraces } from "../../api/portal/traces";
 import { fetchWorkspace } from "../../api/portal/workspace";
-import type { CustomerStorageResource, PlatformProvisionedResourcesPayload } from "../../api/portal/resources";
+import type { ManagedFileSpaceResource, PlatformProvisionedResourcesPayload } from "../../api/portal/resources";
 import type { SelectedServerPlan } from "../../api/portal/types";
 
 export type QueryState<T> =
@@ -143,8 +143,8 @@ function taskStatus(status: string): TaskItem["status"] {
   return "waiting";
 }
 
-function firstStorage(resources: PlatformProvisionedResourcesPayload): CustomerStorageResource | null {
-  return resources.items.find((item) => item.storageBucket)?.storageBucket || resources.storageBuckets[0] || null;
+function firstFileSpace(resources: PlatformProvisionedResourcesPayload): ManagedFileSpaceResource | null {
+  return resources.items.find((item) => item.fileSpace)?.fileSpace || resources.fileSpaces[0] || null;
 }
 
 function planSpec(plan: SelectedServerPlan | null | undefined) {
@@ -156,8 +156,8 @@ function planSpec(plan: SelectedServerPlan | null | undefined) {
 export async function loadOverviewModel() {
   const [overview, resources] = await Promise.all([fetchOverview(), fetchMyResources()]);
   const activeBinding = resources.items.find((item) => item.status === "active") || null;
-  const storage = firstStorage(resources);
-  const storageCapacityGb = numberValue(storage?.storageCapacityGb);
+  const fileSpace = firstFileSpace(resources);
+  const storageCapacityGb = numberValue(fileSpace?.storageCapacityGb);
   const usedGb = Math.min(storageCapacityGb, numberValue(overview.kpis.runCount) * 1.2);
   const latestRuns = overview.latestRuns.slice(0, 4);
   const serviceStatus = activeBinding
@@ -166,8 +166,8 @@ export async function loadOverviewModel() {
 
   return {
     serviceStatus: serviceStatus as "ready" | "restricted" | "unprovisioned" | "degraded",
-    planName: overview.selectedServerPlan?.name || activeBinding?.serverPlanId || "未返回",
-    planSpec: planSpec(overview.selectedServerPlan) || activeBinding?.computeInstance?.instanceType || "未返回",
+    planName: overview.selectedServerPlan?.name || "未返回",
+    planSpec: planSpec(overview.selectedServerPlan) || activeBinding?.computeResource?.instanceType || "未返回",
     storageUsed: gb(usedGb),
     storageTotal: gb(storageCapacityGb),
     storagePercent: storageCapacityGb > 0 ? Math.min(100, Math.round((usedGb / storageCapacityGb) * 100)) : 0,
@@ -180,14 +180,14 @@ export async function loadOverviewModel() {
     workspaceCount: overview.kpis.workspaceCount,
     runCount: overview.kpis.runCount,
     runtimeDays: activeBinding?.createdAt ? "已开通" : "未开通",
-    pricePerHour: money(overview.selectedServerPlan?.hourlyPrice ?? 0),
-    pricePerDay: money(numberValue(overview.selectedServerPlan?.hourlyPrice) * 24),
+    pricingStatus: "价格待审批",
+    priceLabel: "正式售价未定价",
     concurrent: overview.commercial.group?.maxConcurrentRuns || "未返回",
     workspaceTitle: overview.taskCards[0]?.title || "当前工作空间",
     inputFiles: overview.taskCards.reduce((sum, task) => sum + numberValue(task.runCount), 0),
     outputFiles: latestRuns.length,
     recentTasks: latestRuns.map((run) => ({
-      name: run.workspaceTitle || run.runId,
+      name: run.workspaceTitle || "任务记录",
       status: taskStatus(run.status),
       time: run.displayTime || dateText(run.createdAt),
       files: run.status === "completed" ? 1 : 0,
@@ -198,13 +198,14 @@ export async function loadOverviewModel() {
 export async function loadRuntimeEnvironmentModel() {
   const resources = await fetchMyResources();
   const activeBinding = resources.items.find((item) => item.status === "active") || null;
-  const storage = firstStorage(resources);
-  const storageCapacityGb = numberValue(storage?.storageCapacityGb);
-  const protection = activeBinding?.protection || resources.protectionFreezes[0] || null;
+  const fileSpace = firstFileSpace(resources);
+  const storageCapacityGb = numberValue(fileSpace?.storageCapacityGb);
+  const protection = activeBinding?.protection || resources.protections[0] || null;
   return {
     serviceStatus: activeBinding ? "active" : "not_activated",
-    currentPlanName: activeBinding?.serverPlanId || "已开通套餐",
-    computeSpec: activeBinding?.computeInstance?.instanceType || "未返回",
+    workspaceId: activeBinding?.workspaceId || "",
+    currentPlanName: "已开通托管套餐",
+    computeSpec: activeBinding?.computeResource?.instanceType || "未返回",
     storageTotal: gb(storageCapacityGb),
     storageUsed: gb(Math.min(storageCapacityGb, numberValue(protection?.consumedAmount))),
     storageAvailable: gb(Math.max(0, storageCapacityGb - numberValue(protection?.consumedAmount))),
@@ -227,8 +228,8 @@ export async function loadWorkspaceModel() {
     size: bytesToSize(file.sizeBytes),
     type: fileType(file.name),
     updated: dateText(file.updatedAt || file.createdAt),
-    taskId: file.runId,
-    taskName: file.sessionId || file.runId,
+    taskId: file.taskRef,
+    taskName: file.sessionId || "会话输出",
   }));
   const usedGb = numberValue(workspace.fileSpace?.usedGb);
   const capacityGb = numberValue(workspace.fileSpace?.capacityGb);
@@ -252,8 +253,8 @@ export async function loadTasksResultsModel() {
   const traces = await fetchSessionTraces();
   return {
     tasks: traces.items.map<TaskItem>((item) => ({
-      id: item.runId || item.traceId,
-      name: item.title || item.traceName || item.inputPreview || item.traceId,
+      id: item.taskRef || item.traceId,
+      name: item.title || item.traceName || item.inputPreview || "任务记录",
       workspace: item.workspaceId,
       status: taskStatus(item.businessStatus || item.status),
       startTime: dateText(item.startedAt),
@@ -261,7 +262,7 @@ export async function loadTasksResultsModel() {
       cost: money(item.costEstimate?.amount ?? item.billing?.exactCost ?? item.billing?.pendingCost),
       outputFiles: item.linkedOutputFiles?.length || item.outputFiles?.length || item.files?.linkedOutputCount || 0,
       outputFileNames: (item.linkedOutputFiles || item.outputFiles || []).map((file) => file.name),
-      resourceUsage: item.serverPlanId || item.resourceUsage?.status || "Portal trace",
+      resourceUsage: item.resourceUsage?.status || "运行记录",
     })),
   };
 }
@@ -287,7 +288,7 @@ export async function loadBillingAuditModel() {
       total: item.totalCost,
     })),
     taskCosts: details.runCosts.map((item) => ({
-      id: item.runId,
+      id: item.taskRef,
       name: item.workspaceId,
       workspace: item.workspaceId,
       cost: item.totalCost,

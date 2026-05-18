@@ -110,7 +110,7 @@ export async function createPortalUserRecord(db, form, {
     name,
     role: "user",
     status: "active",
-    currentTaskSlug: "default",
+    currentTaskSlug: "",
     preferences: { theme: "light" },
     passwordHash: hashPassword(password),
     createdAt,
@@ -123,7 +123,6 @@ export async function createPortalUserRecord(db, form, {
     balance: 0,
     updatedAt: createdAt,
   });
-  await ensureTaskSpace(db, createdUser, "default", defaultTaskTitle("default"));
   return { ok: true, user: createdUser };
 }
 
@@ -395,10 +394,18 @@ export function createPortalAuthRuntimeHandler({
 
       const email = String(payload.email || payload.username || payload.loginName || "").trim();
       const password = String(payload.password || "").trim();
-      const taskSlug = String(payload.task || payload.workspaceId || payload.taskSlug || "default").trim();
+      const taskSlug = String(payload.task || payload.workspaceId || payload.taskSlug || "").trim();
       const providerApiKey = oplEntryProviderApiKey(payload, normalizeProviderApiKey);
       if (!email || !password) {
         sendJson(res, { ok: false, error: "invalid_credentials", message: "邮箱和密码不能为空。" }, 400);
+        return true;
+      }
+      if (!taskSlug) {
+        sendJson(res, {
+          ok: false,
+          error: "workspace_id_required",
+          message: "必须指定要进入的工作空间。",
+        }, 422);
         return true;
       }
 
@@ -536,7 +543,7 @@ export function createPortalAuthRuntimeHandler({
           name: String(profile.name || profile.preferred_username || email).trim(),
           role: "user",
           status: "active",
-          currentTaskSlug: "default",
+          currentTaskSlug: "",
           preferences: { theme: "light" },
           passwordHash: "",
           createdAt: new Date().toISOString(),
@@ -545,7 +552,6 @@ export function createPortalAuthRuntimeHandler({
         ensureUserCommercialState(portalUser, { grantTrial: true });
         db.users.push(portalUser);
         db.wallets.push({ userId: portalUser.id, balance: 0, updatedAt: new Date().toISOString() });
-        await ensureTaskSpace(db, portalUser, "default", defaultTaskTitle("default"));
         await logPortalEvent({ type: "user_provisioned_from_zitadel", userId: portalUser.id, email });
       }
       if (isBlockedUserStatus(portalUser.status)) {

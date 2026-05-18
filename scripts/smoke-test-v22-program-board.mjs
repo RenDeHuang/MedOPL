@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const boardPath = "docs/recovery/v22-program-board.md";
 const statusTablePath = "docs/recovery/v22-program-status-table.md";
@@ -166,7 +167,7 @@ assertIncludesAll(matrix, [
   "v22-program-status-table.md",
 ], "status_matrix_references");
 
-assert(suite.includes("smoke-test-v22-program-board.mjs"), "mvp_suite_must_include_program_board_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-program-board.mjs"), "mvp_suite_must_include_program_board_smoke");
 
 const boardData = extractJsonBlock(board, "v22-program-board");
 assert.equal(boardData.boardId, "v22-program-board", "board_id_mismatch");

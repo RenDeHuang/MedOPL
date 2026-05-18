@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -191,11 +192,13 @@ assertIncludesAll(contents.readme, [
   "Portal-OPL connection",
 ], "readme_connection_subscription");
 
-assertIncludesAll(contents.suite, [
-  "smoke-test-v22-portal-opl-connection-contract",
-  "smoke-test-v22-runtime-bridge-state-store-atomic-flow",
-  "smoke-test-v22-portal-runtime-bridge-api-local-flow",
-], "mvp_suite_includes_connection_contract");
+for (const scriptPath of [
+  "scripts/smoke-test-v22-portal-opl-connection-contract.mjs",
+  "scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+  "scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+]) {
+  assert(isSmokeClassifiedIn(scriptPath), `mvp_suite_includes_connection_contract_missing:${scriptPath}`);
+}
 
 assertIncludesAll(contents.adapterApiSmoke, [
   "/runtime-bridge/api/opl/status",
@@ -280,7 +283,8 @@ assertIncludesAll([
 ].join("\n"), [
   "workspace context is bound",
   "session 必须绑定 `tenantId`、`portalUserId`、`workspaceId`、`workspaceSessionId`、`runtimeSessionId` 和 `resourceBindingId`",
-  "平台创建 OPL session contract，绑定 workspace、tenant、user、`resourceBinding` 和 `providerKeyRef`",
+  "平台创建 OPL session contract，内部绑定 workspace、tenant、user、`resourceBinding` 和 `providerKeyRef`",
+  "普通用户 response 不返回 `resourceBindingId`、`tenantId`、`runId` 或后台审计标签原值",
   "Portal canonical state 必须能输出",
   "两条路径最终进入同一套 Gateway / preflight / launch 逻辑",
   "该逻辑必须保持 MedOPL 的 tenant、workspace、runtime availability、resource binding 和 token provider boundary",

@@ -156,7 +156,7 @@ try {
     env: {
       ...process.env,
       PORT: String(gatewayPort),
-      OPL_WEB_UPSTREAM_URL: `http://127.0.0.1:${oplPort}`,
+      OPL_UPSTREAM_URL: `http://127.0.0.1:${oplPort}`,
       PORTAL_RUNTIME_BRIDGE_URL: "http://127.0.0.1:59999",
       OPL_WEB_GATEWAY_PUBLIC_URL: gatewayUrl,
       PORTAL_PUBLIC_URL: "https://portal.example.test",

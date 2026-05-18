@@ -70,7 +70,7 @@ export interface BillingPayload {
   }>;
   taskPagination: PortalPagination;
   runCosts: Array<{
-    runId: string;
+    taskRef: string;
     workspaceId: string;
     cpuCost: number;
     gpuCost: number;
@@ -142,7 +142,7 @@ export interface RunCostPayload {
   source: string;
   type: string;
   note?: string;
-  runId: string;
+  taskRef: string;
   cost: null | {
     cpuCost: number;
     gpuCost: number;

@@ -3,10 +3,11 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const RAW_API_KEY = "gflabtoken_raw_key_managed_plan_view";
 
-const forbiddenFieldPattern = /SecretId|SecretKey|kubeconfig|rawApiKey|apiKey|bearerToken|token|objectKey|storageKey|localPath|signedUrl|providerRawCost|rawCostInternal/i;
+const forbiddenFieldPattern = /SecretId|SecretKey|kubeconfig|rawApiKey|apiKey|bearerToken|token|tenantId|userId|resourceBindingId|billingAccountId|auditTag|costAllocationTag|resourcePlanId|objectKey|storageKey|localPath|signedUrl|providerRawCost|rawCostInternal/i;
 const forbiddenValuePattern = new RegExp([
   RAW_API_KEY,
   "secret-id-value",
@@ -26,10 +27,10 @@ function assertNoForbiddenLeak(value, label) {
 }
 
 function assertUserCopy(source, label) {
-  for (const required of ["运行环境", "规格", "预计费用", "释放计算资源", "审计状态", "状态"]) {
+  for (const required of ["运行环境", "计算资源", "文件空间", "价格状态", "审计模式", "状态"]) {
     assert(source.includes(required), `${label}_missing_user_copy:${required}`);
   }
-  for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "SecretId", "SecretKey", "kubeconfig", "raw API key", "objectKey", "storageKey", "localPath", "signedUrl"]) {
+  for (const forbidden of ["释放计算资源", "预计费用", "CVM", "COS", "K8s", "TKE", "云资源控制台", "SecretId", "SecretKey", "kubeconfig", "raw API key", "objectKey", "storageKey", "localPath", "signedUrl"]) {
     assert.equal(source.includes(forbidden), false, `${label}_must_not_show_forbidden_copy:${forbidden}`);
   }
 }
@@ -143,7 +144,7 @@ const buildWorkspacePayload = createWorkspacePayloadBuilder({
 const workspacePayload = await buildWorkspacePayload(db, user, workspaceId);
 const planView = workspacePayload.managedResourceBindingPlan;
 
-assert.equal(planView.resourceBindingId, resourceBindingId, "plan_view_resource_binding_id_mismatch");
+assert.equal(Object.hasOwn(planView, "resourceBindingId"), false, "plan_view_must_not_expose_resource_binding_id");
 assert.equal(planView.managedEnvironment, "托管运行环境", "plan_view_managed_environment_label_mismatch");
 assert.equal(planView.regionLabel, "硅谷一区", "plan_view_region_label_mismatch");
 assert.equal(planView.planSpec, "8核 / 16GB 内存 / 100GB 文件空间", "plan_view_plan_spec_mismatch");
@@ -158,6 +159,8 @@ assert.equal(planView.auditStatus.status, "audit_pending", "plan_view_audit_stat
 assert.equal(planView.snapshot.source, "mock_snapshot_provider", "plan_view_snapshot_source_mismatch");
 assert.equal(planView.snapshot.realResourceCreated, false, "plan_view_must_not_claim_real_resource_created");
 assert.equal(planView.snapshot.providerAdapterStage, "mock_snapshot_provider", "plan_view_provider_stage_mismatch");
+assert.equal(Object.hasOwn(planView.resourcePlan || {}, "resourcePlanId"), false, "plan_view_resource_plan_must_not_expose_resource_plan_id");
+assert.equal(Object.hasOwn(planView.resourcePlan || {}, "resourceBindingId"), false, "plan_view_resource_plan_must_not_expose_resource_binding_id");
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 
 const runtimeEnvironmentSource = await readFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx", "utf8");
@@ -169,23 +172,24 @@ const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mj
 
 assertUserCopy(runtimeEnvironmentSource, "runtime_environment_surface");
 assert(runtimeEnvironmentSource.includes("loadRuntimeEnvironmentModel"), "runtime_environment_page_must_use_zip_portal_adapter_loader");
-assert(runtimeEnvironmentSource.includes("审计状态"), "runtime_environment_surface_must_render_audit_status");
-assert(runtimeEnvironmentSource.includes("释放计算资源"), "runtime_environment_surface_must_render_release_action");
-assert(runtimeEnvironmentSource.includes("预计费用"), "runtime_environment_surface_must_render_estimated_cost");
+assert(runtimeEnvironmentSource.includes("审计模式"), "runtime_environment_surface_must_render_audit_mode");
+assert(runtimeEnvironmentSource.includes("价格待审批"), "runtime_environment_surface_must_render_pending_price_approval");
+assert(runtimeEnvironmentSource.includes("正式售价未定价"), "runtime_environment_surface_must_render_unset_formal_price");
+assert(runtimeEnvironmentSource.includes("当前页面仅展示状态，不提供资源调整动作。"), "runtime_environment_surface_must_be_status_only");
 assert(workspaceViewSource.includes("文件空间"), "workspace_view_must_render_file_space_context");
 assert(workspaceSurfaceSource.includes("loadRuntimeEnvironmentModel"), "portal_adapter_must_project_runtime_environment_model");
 assert(workspaceSurfaceSource.includes("loadWorkspaceModel"), "portal_adapter_must_project_workspace_model");
 assert(workspaceTypesSource.includes("managedResourceBindingPlan"), "workspace_types_must_include_managed_resource_binding_plan");
 assert(contractSource.includes("本分支允许的最小 Portal frontend 展示范围"), "contract_must_allow_minimal_portal_frontend_display");
 assert(contractSource.includes("Portal 工作空间 payload 输出 `managedResourceBindingPlan`"), "contract_must_allow_managed_resource_binding_plan_payload");
-assert(contractSource.includes("Portal 工作空间普通用户页面展示托管运行环境的区域、规格、状态、预计费用、释放策略和审计状态"), "contract_must_allow_managed_resource_binding_plan_view");
+assert(contractSource.includes("Portal 工作空间普通用户页面展示托管运行环境的区域、计算/文件空间规格、状态、价格审批状态和审计模式"), "contract_must_allow_managed_resource_binding_plan_view");
 assert.equal(contractSource.includes("- 不改 frontend。"), false, "contract_must_not_prohibit_required_frontend_scope");
 assert(contractSource.includes("不创建、绑定或释放真实腾讯云资源"), "contract_must_forbid_real_tencent_resource_lifecycle");
 assert(contractSource.includes("不调用真实腾讯云、COS、Langfuse 或 one-person-lab API"), "contract_must_forbid_real_external_api_calls");
 assert(contractSource.includes("mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider"), "contract_must_include_tencent_adapter_route");
 assert(contractSource.includes("真实接入另开 feat/* 并单独授权"), "contract_must_require_separate_authorization");
 assert(contractSource.includes("managed resource binding plan / mock snapshot"), "contract_must_define_mock_snapshot_plan_view");
-assert(suiteSource.includes("smoke-test-v22-managed-resource-binding-plan-view"), "mvp_suite_must_include_managed_plan_view_smoke");
+assert(isSmokeClassifiedIn("scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs"), "mvp_suite_must_include_managed_plan_view_smoke");
 
 console.log(JSON.stringify({
   ok: true,

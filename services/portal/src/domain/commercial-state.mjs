@@ -126,7 +126,7 @@ export function buildCommercialProfile(db, user, options = {}) {
       ...(availableBalance > 0 ? [] : ["收费运行前需要充值或试用额度"]),
       ...(balanceFloor > 0 && balance < balanceFloor && !trialActive ? [`当前余额低于分组门槛（${balanceFloor.toFixed(2)}）`] : []),
     ],
-    priceTransparency: "服务器价格来自腾讯云 CVM 实时报价；最终扣费以腾讯云账单明细回补为准。",
+    priceTransparency: "套餐价格由平台后台价格源、保护金规则与对账记录校准；正式售卖价等待产品审批。",
     trialEntitlement,
     group: group
       ? {

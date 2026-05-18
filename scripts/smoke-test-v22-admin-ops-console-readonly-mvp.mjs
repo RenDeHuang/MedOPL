@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const { createPortalAdminApiPayloads } = await import("../services/portal/src/app/portal-admin-api-payloads.mjs");
 
@@ -522,10 +523,10 @@ assertNotIncludesAny(userSurfaceSources, [
   ...forbiddenCloudMutationCopy,
 ], "user_surface_must_not_expose_admin_ops");
 
-const suite = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
-assertIncludesAll(suite, [
-  "smoke-test-v22-admin-ops-console-readonly-mvp",
-], "mvp_suite_must_include_admin_ops_readonly_smoke");
+assert(
+  isSmokeClassifiedIn("scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs"),
+  "mvp_suite_must_include_admin_ops_readonly_smoke",
+);
 
 console.log(JSON.stringify({
   ok: true,

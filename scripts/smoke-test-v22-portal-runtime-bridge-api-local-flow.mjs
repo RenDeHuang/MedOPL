@@ -383,7 +383,7 @@ async function assertPortalProxyRejectsCrossUserLaunch() {
       res.statusCode = status;
       res.payload = payload;
     },
-    slugify: (value) => String(value || "default"),
+    slugify: (value) => String(value || ""),
     workspaceSessionCookie: () => "workspace_session",
   });
   const res = {};
@@ -438,7 +438,7 @@ async function assertPortalLaunchResponseIsPublicOnly() {
       res.statusCode = status;
       res.payload = payload;
     },
-    slugify: (value) => String(value || "default"),
+    slugify: (value) => String(value || ""),
     workspaceSessionCookie: () => "workspace_session",
   });
   const res = {};
@@ -510,7 +510,7 @@ function createPortalProxyHandler({ runtimeBridgeUrl, launchToken }) {
       res.statusCode = status;
       res.payload = payload;
     },
-    slugify: (value) => String(value || "default"),
+    slugify: (value) => String(value || ""),
     workspaceSessionCookie: () => "workspace_session",
   });
 }

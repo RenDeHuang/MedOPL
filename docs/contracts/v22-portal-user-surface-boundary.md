@@ -53,6 +53,7 @@ MedOPL 是同一个 Portal 应用、同一套登录、同一套 UI shell。普�
 - 公告管理
 - CVM / COS / K8s / TKE / 节点池 / 服务器编号 / 云资源清单
 - tenantId / resourceBindingId / cloudOperationId / billingAttributionId / accountId / retired resource-order identifiers / serverPlanId / runId 等后台归因标签
+- tenantId / resourceBindingId / serverPlanId / runId / implementationKind / planId / cloud object id（bucket/prefix/object）等后台归因或排障原值
 - SecretId / SecretKey / token / raw API Key / kubeconfig / objectKey / storageKey / cosPrefix / storageBackend / signedUrl
 
 Portal 普通用户不能有运维视角，也不能通过旧入口、旧 API 暴露或权限绕过看到 admin/ops 数据。
@@ -130,6 +131,9 @@ Cleanup 要清掉旧入口、旧文案、旧 API 暴露和权限绕过。清理�
     "retired resource-order identifiers",
     "serverPlanId",
     "runId",
+    "implementationKind",
+    "planId",
+    "cloud object id",
     "SecretId",
     "SecretKey",
     "token",

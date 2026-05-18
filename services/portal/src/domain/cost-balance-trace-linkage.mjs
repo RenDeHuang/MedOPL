@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 function text(value = "") {
   return String(value ?? "").trim();
 }
@@ -32,6 +34,12 @@ function itemPricingSource(item = {}) {
 
 function itemStatus(item = {}) {
   return text(item.status || item.reconciliationStatus || itemPricingSource(item)).toLowerCase();
+}
+
+function publicTaskRef(...values) {
+  const source = values.map(text).find(Boolean);
+  if (!source) return "";
+  return `task_${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
 }
 
 function sumBy(items = [], key) {
@@ -98,7 +106,7 @@ export function publicResourceUsage({
 } = {}) {
   return {
     source: "runtime_bridge_canonical_metadata",
-    runId: text(row.runId || run.runId),
+    taskRef: text(row.taskRef || run.taskRef) || publicTaskRef(row.traceId, row.sessionId, row.runtimeSessionId, row.messageId, run.sessionId, run.workspaceSessionId, row.runId, run.runId),
     sessionId: text(row.sessionId || row.runtimeSessionId || run.sessionId || run.runtimeSessionId),
     workspaceId: text(row.workspaceId || run.workspaceId),
     status: text(row.status || run.status || "recorded"),

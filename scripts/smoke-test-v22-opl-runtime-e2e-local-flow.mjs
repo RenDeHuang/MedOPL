@@ -62,6 +62,12 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
+function collectValues(value) {
+  if (Array.isArray(value)) return value.flatMap(collectValues);
+  if (value && typeof value === "object") return Object.values(value).flatMap(collectValues);
+  return [String(value ?? "")];
+}
+
 function startFakeUpstreamWeb(calls) {
   return http.createServer(async (req, res) => {
     const body = await readRequestBody(req);
@@ -561,8 +567,11 @@ try {
     pageSize: 20,
   });
   assert.equal(portalTracePayload.dataSource, "portal_session_traces", "portal_trace_payload_source_mismatch");
-  assert(portalTracePayload.items.some((item) => item.runId === "message-v22-local-e2e"), "portal_trace_must_include_message_trace");
-  assert(portalTracePayload.items.some((item) => item.runId === "run-v22-local-e2e"), "portal_trace_must_include_run_trace");
+  assert(portalTracePayload.items.length >= 2, "portal_trace_must_include_message_and_run_traces");
+  assert(portalTracePayload.items.every((item) => item.taskRef), "portal_trace_items_must_include_public_task_ref");
+  assert.equal(JSON.stringify(portalTracePayload).includes('"runId"'), false, "portal_trace_payload_must_not_expose_run_id_field");
+  assert.equal(collectValues(portalTracePayload).includes("message-v22-local-e2e"), false, "portal_trace_payload_must_not_expose_message_run_id_value");
+  assert.equal(collectValues(portalTracePayload).includes("run-v22-local-e2e"), false, "portal_trace_payload_must_not_expose_run_id_value");
   assertNoForbiddenPublicLeak(portalTracePayload, "portal_trace_payload");
 
   assertNoUpstreamSecretLeak(fakeUpstreamCalls, "fake_upstream_web");

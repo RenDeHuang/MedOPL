@@ -106,7 +106,7 @@ function labSubscriptionValues(row) {
     row.id,
     row.tenantId || row.userId || "",
     row.userId || "",
-    row.workspaceId || "default",
+    row.workspaceId || "",
     row.packageId || "",
     row.status || "active",
     row.computeTier || "",

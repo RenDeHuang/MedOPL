@@ -10,7 +10,7 @@ export async function writeUsers({ client, pgTableName, db }) {
         current_task_slug=EXCLUDED.current_task_slug,
         group_id=EXCLUDED.group_id,
         preferences_json=EXCLUDED.preferences_json`, [
-      row.id, row.email, row.name, row.role, row.status, row.passwordHash || "", row.currentTaskSlug || "default", row.groupId || "", JSON.stringify(row.preferences || { theme: "light" }), row.createdAt || new Date().toISOString(),
+      row.id, row.email, row.name, row.role, row.status, row.passwordHash || "", row.currentTaskSlug || "", row.groupId || "", JSON.stringify(row.preferences || { theme: "light" }), row.createdAt || new Date().toISOString(),
     ]);
   }
 }

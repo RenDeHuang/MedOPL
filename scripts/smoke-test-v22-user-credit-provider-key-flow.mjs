@@ -185,7 +185,8 @@ try {
   });
   assert.equal(finalState.res.statusCode, 200, "canonical_state_after_provider_status_mismatch");
   assert.equal(finalState.res.payload.identity.userId, user.id, "canonical_state_identity_mismatch");
-  assert.equal(finalState.res.payload.tenant.tenantId, user.tenantId, "canonical_state_tenant_mismatch");
+  assert.equal(Object.hasOwn(finalState.res.payload.tenant || {}, "tenantId"), false, "canonical_state_must_not_expose_tenant_id");
+  assert.equal(finalState.res.payload.tenant.status, "active", "canonical_state_tenant_status_mismatch");
   assert.equal(finalState.res.payload.balance.balanceCents, 12000, "canonical_state_balance_mismatch");
   assert.equal(finalState.res.payload.providerBound, true, "canonical_state_provider_bound_mismatch");
   assert.equal(finalState.res.payload.providerKeyRef, bound.res.payload.providerKeyRef, "canonical_state_provider_ref_mismatch");

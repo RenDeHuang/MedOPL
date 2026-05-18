@@ -17,7 +17,7 @@ export interface TraceSummaryPayload {
 
 export interface TraceResourceUsagePayload {
   source: string;
-  runId: string;
+  taskRef: string;
   sessionId: string;
   workspaceId: string;
   status: string;
@@ -59,7 +59,6 @@ export interface TracesPayload {
   filters: {
     userId: string;
     workspaceId: string;
-    runId: string;
     sessionId?: string;
     status?: string;
   };
@@ -69,14 +68,10 @@ export interface TracesPayload {
     traceName: string;
     title?: string;
     userId: string;
-    tenantId?: string;
     workspaceId: string;
     workspaceSessionId: string;
     runtimeSessionId?: string;
-    runId: string;
-    resourceBindingId?: string;
-    billingAttributionId?: string;
-    serverPlanId?: string;
+    taskRef: string;
     model: string;
     sessionId: string;
     tokenCount: number;
@@ -99,7 +94,7 @@ export interface TracesPayload {
       label: string;
       traceId: string;
       sessionId: string;
-      runId: string;
+      taskRef: string;
       status: string;
       latencyMs: number;
       usageSummary: {
@@ -119,7 +114,7 @@ export interface TracesPayload {
       fileRef: string;
       name: string;
       workspaceId: string;
-      runId: string;
+      taskRef: string;
       sessionId: string;
       kind: string;
       sizeBytes: number;
@@ -132,7 +127,7 @@ export interface TracesPayload {
       fileRef: string;
       name: string;
       workspaceId: string;
-      runId: string;
+      taskRef: string;
       sessionId: string;
       kind: string;
       sizeBytes: number;
@@ -149,7 +144,7 @@ export interface TracesPayload {
         fileRef: string;
         name: string;
         workspaceId: string;
-        runId: string;
+        taskRef: string;
         sessionId: string;
         kind: string;
         sizeBytes: number;
