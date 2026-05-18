@@ -2,7 +2,7 @@
 
 > Current status: historical PRD draft, superseded for implementation by the Figma Make ZIP contract.
 >
-> 当前 Portal UI 的唯一实现 source-of-truth 是 `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`、`docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`、`docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`、`services/portal/frontend/src/app/**` 和 `services/portal/frontend/src/app/data/portalAdapters.ts`。本 PRD 只保留用户、人群、主流程和语义背景，不再作为前端文件结构、route、组件、harness、visual workbench、screenshot regression 或 API shape 的 current truth。
+> 当前 Portal UI 的唯一实现 source-of-truth 是 `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`、`docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`、`docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`、`services/portal/frontend/src/app/**` 和 `services/portal/frontend/src/app/data/portalAdapters.ts`。本 PRD 只保留用户、人群、主流程和语义背景，不再作为前端文件结构、route、组件、harness、截图回归或 API shape 的 current truth。
 
 本文档把 MedOPL v22 Portal 的 UI 需求背景整理为历史 PRD。它描述 Portal 产品定位、目标人群、信息架构、状态模型、数据边界和文案规范，可作为理解需求的背景材料；实际开发、设计吸收和验收必须以 Figma Make ZIP、当前合同和 smoke 为准。
 
@@ -724,7 +724,7 @@ ZIP surface gate 必须覆盖：
 
 - `.runtime/portal-surface-eval/report.json` 由 surface eval 生成，不进 git。
 - `.runtime/portal-ui-design-quality/report.json` 是 design quality audit evidence，不进 git。
-- 截图 baseline 不再是当前 Portal UI completion evidence；如后续重新启用，必须另开 leaf 并先写 design quality audit evidence。
+- 历史截图证据不再是当前 Portal UI completion evidence；如后续重新启用，必须另开 leaf 并先写 design quality audit evidence。
 
 ## 15. 验收标准
 

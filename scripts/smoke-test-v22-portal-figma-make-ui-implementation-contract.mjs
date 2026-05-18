@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const contractPath = "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md";
 const readmePath = "docs/contracts/README.md";
@@ -251,7 +252,7 @@ assert(await exists(`${repoAppPath}/App.tsx`), "repo_app_source_missing");
 assert(await exists(`${repoStylesPath}/index.css`), "repo_styles_source_missing");
 
 const figmaAppFiles = (await listRelativeFiles(`${figmaSourceRoot}/src/app`, [".ts", ".tsx"]))
-  .filter((file) => file !== "pages/AdminConsole.tsx");
+  .filter((file) => !retiredFigmaZipResidue.includes(file));
 const repoAppFiles = await listRelativeFiles(repoAppPath, [".ts", ".tsx"]);
 assert.deepEqual(repoAppFiles, figmaAppFiles.concat(["data/portalAdapters.ts"]).sort(), "repo_app_files_must_match_figma_zip_without_old_admin_console_plus_adapter");
 
@@ -259,7 +260,7 @@ const figmaStyleFiles = await listRelativeFiles(`${figmaSourceRoot}/src/styles`,
 const repoStyleFiles = await listRelativeFiles(repoStylesPath, [".css"]);
 assert.deepEqual(repoStyleFiles, figmaStyleFiles, "repo_style_files_must_match_figma_zip");
 assert.equal(await exists(`${repoFrontendPath}/src/imports`), false, "figma_imports_residue_must_not_be_copied");
-assert.equal(await exists(`${repoAppPath}/pages/AdminConsole.tsx`), false, "old_admin_console_residue_must_not_be_active_frontend");
+assert.equal(await exists(`${repoAppPath}/${retiredFigmaZipResidue[0]}`), false, "old_admin_console_residue_must_not_be_active_frontend");
 
 for (const staleRootFile of [
   "services/portal/frontend/src/App.tsx",
@@ -342,7 +343,7 @@ for (const forbidden of [
   "current Figma Make 只覆盖普通用户端",
   "当前 Figma Make 只覆盖普通用户端",
   "Admin / Ops 后续同栈单独 leaf",
-  "AdminConsole.tsx` 复制为 ZIP residue",
+  "旧管理员 console 复制为 ZIP residue",
 ]) {
   assertExcludes(markdown, forbidden, "figma_make_contract_copy");
   assertExcludes(readme, forbidden, "contracts_readme_copy");
@@ -356,7 +357,7 @@ assertIncludes(compositionMarkdown, '"activeAdminRouteMounted": true', "composit
 assertIncludes(plan, "Step 1: Add And Align Contracts", "convergence_plan_must_define_step_1");
 assertIncludes(plan, "Step 4: Absorb Figma Make UI And Connect APIs", "convergence_plan_must_define_step_4");
 assertIncludes(plan, "Physically retire current-truth contract assertions", "convergence_plan_must_require_contract_physical_retirement");
-assertIncludes(plan, "Physically delete old `.vue` frontend files", "convergence_plan_must_require_frontend_physical_retirement");
+assertIncludes(plan, "retired frontend paths", "convergence_plan_must_require_frontend_physical_retirement");
 assertIncludes(plan, figmaZipPath, "convergence_plan_must_name_new_zip_source");
 assertIncludes(plan, "overview/resources/workspace/trace/billing/opl-launch and admin routes all call", "convergence_plan_must_require_user_admin_api_connection");
 

@@ -97,11 +97,13 @@ assert.equal(currentSuite.entrypoint, "node scripts/v22-verify.mjs current --bas
 assert(Array.isArray(manifest.branch_override_suites), "manifest_branch_override_suites_must_be_array");
 const portalUiTruthOverride = manifest.branch_override_suites.find((suite) => suite.id === "portal-ui-contract-truth-convergence");
 assert(portalUiTruthOverride, "portal_ui_truth_convergence_branch_override_missing");
-assert.equal(portalUiTruthOverride.branch, "cleanup/v22-portal-ui-contract-truth-convergence", "portal_ui_truth_convergence_override_branch_mismatch");
+assert.equal(portalUiTruthOverride.branch, "cleanup/v22-portal-old-ui-smoke-residue-cleanup", "portal_ui_truth_convergence_override_branch_mismatch");
 assert.deepEqual(portalUiTruthOverride.branches, [
   "cleanup/v22-portal-ui-contract-truth-convergence",
+  "cleanup/v22-portal-old-ui-smoke-residue-cleanup",
 ], "portal_ui_truth_convergence_override_branches_mismatch");
 assertIncludes(portalUiTruthOverride.reason, `current product cursor remains ${current.current_cursor}`, "portal_ui_truth_convergence_override_reason_current_truth");
+assert(portalUiTruthOverride.commands.includes("node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs"), "portal_ui_truth_convergence_override_must_include_retired_frontend_gate");
 assert(portalUiTruthOverride.commands.includes("node scripts/smoke-test-v22-portal-ui-truth-convergence.mjs"), "portal_ui_truth_convergence_override_must_include_truth_gate");
 assertNotIncludes(portalUiTruthOverride.commands.join("\n"), "npm --prefix services/portal/frontend run build", "portal_ui_truth_convergence_override_must_not_run_build");
 

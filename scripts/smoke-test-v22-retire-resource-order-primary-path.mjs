@@ -88,7 +88,6 @@ const allowedPortalFigmaAdminUiAbsorptionDiffPaths = new Set([
   "services/portal/frontend/src/app/components/Layout.tsx",
   "services/portal/frontend/src/app/contexts/RoleContext.tsx",
   "services/portal/frontend/src/app/data/portalAdapters.ts",
-  "services/portal/frontend/src/app/pages/AdminConsole.tsx",
   "services/portal/frontend/src/app/pages/admin/AdminAlerts.tsx",
   "services/portal/frontend/src/app/pages/admin/AdminAudit.tsx",
   "services/portal/frontend/src/app/pages/admin/AdminBillingOps.tsx",

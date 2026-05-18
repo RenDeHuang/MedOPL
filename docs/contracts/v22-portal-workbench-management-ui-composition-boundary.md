@@ -2,7 +2,7 @@
 
 本合同固定 Portal UI 的产品边界、分层规则、禁词、Figma Make ZIP surface gate 和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
 
-本合同 v11 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户和管理员 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。旧 visual workbench、截图 baseline、Vue harness/evalset 和旧 `AdminConsole.tsx` residue 不再是当前完成证据。
+本合同 v11 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户和管理员 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。历史 UI evidence 不再是当前完成证据；旧路径防回归统一由 retired frontend surface gate 承接。
 
 `leaf-portal-figma-make-react-ui-implementation` 把当前普通用户和管理员 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”；7 个管理员路由必须展示管理总览、用户管理、公告与待处理事项、账单处理、审计记录、站点设置和服务状态。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。`/admin/users` 和 `/admin/alerts` 允许接入现有本地 Portal 管理动作；`/admin/ops` 是已挂载服务状态页面，但后端默认可返回 `404 ops_surface_disabled`；前端必须展示明确 disabled 产品态，不能渲染 generic error 或伪成功。
 
@@ -61,15 +61,15 @@ services/portal/frontend/src/app/data/portalAdapters.ts
 
 surface smoke 必须检查：
 
-- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在 `data/portalAdapters.ts`，并排除旧 `pages/AdminConsole.tsx`。
+- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在 `data/portalAdapters.ts`，并按 retired frontend surface gate 排除已退役 ZIP residue。
 - `src/styles` 文件树与 ZIP `src/styles` 一致。
 - active routes 包含 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`。
-- 旧 `AdminConsole.tsx` 不得存在于 active frontend。
+- 已退役管理员 console residue 不得存在于 active frontend。
 - 每个 active page 通过 `usePortalQuery` 调用对应 `load*Model`。
 - `portalAdapters.ts` 调用现有 `/portal/api/*` adapter。
 - `/admin/ops` 对 `ops_surface_disabled` 有明确产品态映射。
-- 旧 Vue SPA、旧 harness、旧 screenshot baseline 和上一轮根级 React shell 物理不存在。
-- 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；旧 `/__portal-harness/components` visual workbench 不得作为 active Playwright webServer URL 或当前必过入口，Playwright 默认预览入口必须指向当前 React route；旧 screenshot baseline 已从本轮必过面降级为后续可选 leaf。
+- retired frontend surface gate 证明历史 UI 路径、旧 harness 入口和上一轮根级 React shell 物理不存在。
+- 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；Playwright 默认预览入口必须指向当前 React route；任何截图类回归重新启用都必须另开 leaf 并写明 design quality audit evidence。
 
 ## 文案边界
 
@@ -159,7 +159,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 - `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
 - `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 
-The current surface smoke proves 6 ordinary user routes, 7 admin routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, old file physical retirement and runtime report generation. Old AdminConsole residue, visual workbench and screenshot regression are no longer current Portal completion evidence.
+The current surface smoke proves 6 ordinary user routes, 7 admin routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, retired file physical checks and runtime report generation. Retired UI evidence is no longer current Portal completion evidence.
 
 This characterization does not change Portal UI implementation, does not upgrade dependencies, does not run deploy/live/cloud/build/push/kubectl, does not read secrets, and does not modify upstream one-person-lab.
 

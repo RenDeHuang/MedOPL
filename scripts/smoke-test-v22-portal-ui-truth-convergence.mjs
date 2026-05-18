@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { retiredFrontendRoutes } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -17,6 +18,7 @@ const files = {
   prd: "docs/recovery/portal-ui-design-prd.md",
   verifyManifest: "docs/recovery/v22-agent-verify-manifest.json",
   playwrightConfig: "services/portal/frontend/playwright.config.ts",
+  retiredFrontendGate: "scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
 };
 
 async function source(filePath) {
@@ -46,6 +48,7 @@ const [
   prd,
   verifyManifest,
   playwrightConfig,
+  retiredFrontendGate,
 ] = await Promise.all([
   source(files.design),
   source(files.compositionContract),
@@ -57,16 +60,18 @@ const [
   source(files.prd),
   json(files.verifyManifest),
   source(files.playwrightConfig),
+  source(files.retiredFrontendGate),
 ]);
 
 assert.equal(current.current_cursor, "leaf-portal-ui-contract-truth-convergence", "current_cursor_mismatch");
 assert.equal(current.next_leaf, "leaf-portal-ui-contract-truth-convergence", "next_leaf_mismatch");
-assert.equal(current.current_branch, "cleanup/v22-portal-ui-contract-truth-convergence", "current_branch_mismatch");
-assert.equal(current.authoring_branch, "cleanup/v22-portal-ui-contract-truth-convergence", "authoring_branch_mismatch");
+assert.equal(current.current_branch, "cleanup/v22-portal-old-ui-smoke-residue-cleanup", "current_branch_mismatch");
+assert.equal(current.authoring_branch, "cleanup/v22-portal-old-ui-smoke-residue-cleanup", "authoring_branch_mismatch");
 assert.equal(current.current_risk_class, "local_service_code", "current_risk_class_mismatch");
 assert.equal(current.current_leaf.step_id, "leaf-portal-ui-contract-truth-convergence", "current_leaf_step_mismatch");
 assert.equal(current.current_leaf.gap_id, "portal-ui-contract-truth-convergence", "current_leaf_gap_mismatch");
 assert(current.current_leaf.allowed_files.includes("services/portal/frontend/playwright.config.ts"), "playwright_config_must_be_allowed");
+assert(current.current_leaf.verification_commands.includes("node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs"), "retired_frontend_gate_must_be_current_command");
 assert(current.current_leaf.verification_commands.includes("node scripts/smoke-test-v22-portal-ui-truth-convergence.mjs"), "truth_convergence_smoke_must_be_current_command");
 
 const manifestLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-ui-contract-truth-convergence");
@@ -83,17 +88,19 @@ assertIncludes(goalState, "- highest-priority executable leaf summary: `leaf-por
 assertIncludes(gapMatrix, "### Gap: portal-ui-contract-truth-convergence", "gap_matrix_truth_convergence_gap");
 assertIncludes(gapMatrix, "- next_leaf_step: leaf-portal-ui-contract-truth-convergence", "gap_matrix_next_leaf");
 
-assertExcludes(design, "services/portal/frontend/src/harness/portal-ui-evalset.json", "design_must_not_reference_old_evalset_path");
 assertIncludes(design, "Figma Make ZIP", "design_must_reference_figma_zip");
 assertIncludes(design, "React app root", "design_must_reference_react_app_root");
-assertIncludes(design, "旧 evalset、visual workbench、截图 baseline 和 Vue harness 不再是当前 UI 完成证据", "design_must_retire_old_completion_evidence");
+assertIncludes(design, "旧路径防回归统一由 retired frontend surface gate 承接", "design_must_point_to_retired_frontend_gate");
 assertIncludes(design, "后续产品系统重构必须保持 Figma 页面视觉、布局、信息架构和主路径不变", "design_must_freeze_figma_ui");
 
-assertIncludes(compositionContract, "旧 `/__portal-harness/components` visual workbench 不得作为 active Playwright webServer URL", "composition_must_ban_active_old_harness_url");
+assertIncludes(compositionContract, "retired frontend surface gate", "composition_must_point_to_retired_frontend_gate");
 assertIncludes(figmaContract, "唯一 Portal UI source-of-truth", "figma_contract_must_keep_zip_truth");
+assertIncludes(retiredFrontendGate, "retiredFrontendSurface", "retired_frontend_gate_must_define_banlist");
 
 assertIncludes(playwrightConfig, "url: \"http://127.0.0.1:17180/overview\"", "playwright_must_use_current_route");
-assertExcludes(playwrightConfig, "__portal-harness/components", "playwright_must_not_use_old_harness_url");
+for (const retiredRoute of retiredFrontendRoutes) {
+  assertExcludes(playwrightConfig, retiredRoute, "playwright_must_not_use_retired_frontend_route");
+}
 
 assertExcludes(architectureTruth, "当前普通用户 Figma Make UI 不包含可吸收 Admin/Ops 前端", "architecture_truth_must_not_claim_admin_missing");
 assertIncludes(architectureTruth, "管理员页面位于 `services/portal/frontend/src/app/pages/admin/*.tsx`", "architecture_truth_must_record_admin_pages");

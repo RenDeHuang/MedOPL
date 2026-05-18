@@ -1,14 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
-
-async function exists(filePath) {
-  try {
-    await stat(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { readFile } from "node:fs/promises";
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
@@ -23,15 +14,6 @@ const stylesSource = await readFile("services/portal/frontend/src/styles/index.c
 const workspaceSource = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
 const traceSource = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
 const billingSource = await readFile("services/portal/frontend/src/app/pages/BillingAudit.tsx", "utf8");
-
-for (const retiredPath of [
-  "services/portal/frontend/src/layouts/AppLayout.vue",
-  "services/portal/frontend/src/layouts/AppHeader.vue",
-  "services/portal/frontend/src/layouts/AppSidebar.vue",
-  "services/portal/frontend/src/style.css",
-]) {
-  assert.equal(await exists(retiredPath), false, `retired_vue_mobile_surface_must_not_exist:${retiredPath}`);
-}
 
 assertIncludes(layoutSource, "flex h-screen", "layout_must_keep_stable_app_shell");
 assertIncludes(layoutSource, "overflow-hidden", "layout_must_bound_app_overflow");

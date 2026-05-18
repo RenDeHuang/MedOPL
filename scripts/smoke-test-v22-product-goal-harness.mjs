@@ -175,7 +175,6 @@ const branchScopedAllowedDiffPatterns = new Map([
     "services/portal/src/state/portal-*.mjs",
     "services/portal/frontend/src/api/portal/resources.ts",
     "services/portal/frontend/src/api/portal/workspace.ts",
-    "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
     "adapters/resource-provisioner/**",
     "adapters/med-autoscience-runner/**",
     "adapters/cloud-provisioner/**",

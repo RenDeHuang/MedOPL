@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
+import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const contractPath = "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md";
 const start = "<!-- v22-portal-workbench-management-ui-composition-contract:start -->";
@@ -101,7 +102,7 @@ const adminOpsPageSource = await source("services/portal/frontend/src/app/pages/
 assertIncludes(adminOpsPageSource, "opsSurfaceEnabled", "admin_ops_page_must_branch_on_disabled_state");
 assertIncludes(adminOpsPageSource, "平台托管运维入口未启用", "admin_ops_page_must_render_disabled_product_state");
 assertExcludes(adminOpsPageSource, "Portal 数据暂时不可用", "admin_ops_page_must_not_render_generic_error_for_disabled_surface");
-assert.equal(await exists("services/portal/frontend/src/app/pages/AdminConsole.tsx"), false, "old_admin_console_zip_residue_must_not_exist");
+assert.equal(await exists(`services/portal/frontend/src/app/${retiredFigmaZipResidue[0]}`), false, "old_admin_console_zip_residue_must_not_exist");
 assertExcludes(routesSource, "AdminConsole", "admin_console_must_not_be_mounted");
 
 assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "runtime_suite_must_include_surface_eval");
@@ -110,7 +111,7 @@ assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-web-route-alignment.
 assertIncludes(figmaContract, "唯一 Portal UI source-of-truth", "figma_contract_must_own_zip_truth");
 assertIncludes(markdown, "React + Vite + TypeScript + react-router + shadcn/Radix + lucide", "composition_contract_must_reference_react_stack");
 assertIncludes(markdown, "普通用户和管理员 Portal", "composition_contract_must_record_user_admin_coverage");
-assertExcludes(markdown, "services/portal/frontend/src/harness/portal-ui-evalset.json", "old_evalset_path_copy");
+assertIncludes(markdown, "retired frontend surface gate", "composition_contract_must_point_to_retired_frontend_gate");
 assertExcludes(markdown, "visualWorkbenchFactsLiveInEvalset", "old_visual_workbench_evalset_field");
 
 console.log(JSON.stringify({

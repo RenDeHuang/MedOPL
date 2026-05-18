@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { retiredFrontendRoutes as retiredCoreFrontendRoutes } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const routesSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
@@ -18,7 +19,16 @@ const requiredAdminRoutes = [
   "/admin/system",
   "/admin/ops",
 ];
-const retiredFrontendRoutes = ["/packages", "/advanced/servers", "/admin/usage", "/admin/trace", "/admin/user", "/admin/groups", "/admin/workspace", "/admin/run", "/admin/sandboxes", "/__portal-harness/components"];
+const retiredFrontendRoutes = [...new Set([
+  ...retiredCoreFrontendRoutes,
+  "/admin/usage",
+  "/admin/trace",
+  "/admin/user",
+  "/admin/groups",
+  "/admin/workspace",
+  "/admin/run",
+  "/admin/sandboxes",
+])];
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);

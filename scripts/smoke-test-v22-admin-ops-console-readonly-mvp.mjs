@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
+import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const { createPortalAdminApiPayloads } = await import("../services/portal/src/app/portal-admin-api-payloads.mjs");
 
@@ -474,7 +475,7 @@ assertNotIncludesAny(payloadJson, forbiddenCloudMutationCopy, "admin_ops_payload
 const routerSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
 const adminPageSources = await readAdminPageSources();
-assert.equal(await exists("services/portal/frontend/src/app/pages/AdminConsole.tsx"), false, "old_admin_console_residue_must_be_removed");
+assert.equal(await exists(`services/portal/frontend/src/app/${retiredFigmaZipResidue[0]}`), false, "old_admin_console_residue_must_be_removed");
 assertIncludesAll(routerSource, [
   'path: "admin/ops"',
   "AdminOps",

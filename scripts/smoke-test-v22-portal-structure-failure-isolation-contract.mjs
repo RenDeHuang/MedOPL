@@ -278,23 +278,6 @@ await assertViewComposableImports(currentCodeShape.frontendViewsComposables.core
 await assertNoBarePortalApiBarrelInViews(currentCodeShape.frontendViewsComposables.currentViewFiles);
 await assertFilesExist(currentCodeShape.frontendApiModules.currentApiModuleFiles, "portal_structure_frontend_api_module");
 await assertFilesExist(currentCodeShape.portalSmokeLayers.currentSmokeFiles, "portal_structure_smoke_file");
-for (const retiredPath of [
-  "services/portal/frontend/src/harness/portal-ui-evalset.json",
-  "services/portal/frontend/src/harness/portal-ui-surfaces.ts",
-  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
-  "services/portal/frontend/tests/visual/portal-surfaces.visual.ts",
-]) {
-  assert.equal(
-    currentCodeShape.frontendApiModules.currentApiModuleFiles.includes(retiredPath),
-    false,
-    `portal_structure_retired_frontend_api_path_must_not_be_current:${retiredPath}`,
-  );
-  assert.equal(
-    markdown.includes(`"${retiredPath}"`),
-    false,
-    `portal_structure_retired_path_must_not_be_current_json:${retiredPath}`,
-  );
-}
 assertIncludesAll(currentCodeShape.knownFutureRefactorRisks, [
   "route_to_state_direct_import_exists",
   "frontend_api_barrel_exists_but_not_page_default",

@@ -58,7 +58,7 @@ Forbidden without separate authorization:
 - Declare current user routes: `/overview`, `/resources`, `/workspace`, `/trace`, `/billing`, `/opl-launch`.
 - Declare current admin routes: `/admin/dashboard`, `/admin/users`, `/admin/alerts`, `/admin/billing-ops`, `/admin/audit`, `/admin/system`, `/admin/ops`.
 - Declare `/admin/ops` as a mounted service-status route whose default API may return `404 ops_surface_disabled`; the frontend must show “平台托管运维入口未启用” instead of generic error or fake success.
-- Declare old `AdminConsole.tsx` residue physically retired.
+- Declare retired admin console residue physically retired through the centralized retired frontend surface gate.
 - Fix storage deletion protection period to 7 days.
 
 ## Step 2: Retire Conflicting Old Contract Copy
@@ -67,22 +67,22 @@ Forbidden without separate authorization:
 - Update design-quality audit contract so the old "no React migration" rule is scoped to the historical audit leaf, not this approved implementation leaf.
 - Update `DESIGN.md` from "Figma roundtrip back to Vue" to "Figma Make as React implementation source".
 - Update recovery current/gap documents to remove `frontend-product-vue-vite-ts-pinia` as the target stack.
-- Physically retire current-truth contract assertions that still treat Vue SPA, old visual workbench, screenshot baseline, old admin routes, or Vue-owned evalset/harness as the current completion surface.
+- Physically retire current-truth contract assertions that still treat historical UI evidence, old admin routes, or old harness ownership as the current completion surface.
 - Update `v22-portal-structure-failure-isolation-boundary.md` so current frontend shape points to `src/app/pages/*`, `src/app/data/portalAdapters.ts`, and ZIP/surface smoke instead of deleted Vue views/composables or deleted harness.
 - Keep Admin role boundary: RoleContext is display-only navigation gating, while `/portal/api/admin/*` remains the authorization boundary.
 
 ## Step 3: Retire Old Portal Frontend Surface
 
 - Replace the current Vue SPA with a React SPA.
-- Remove old frontend routes: `/packages`, `/advanced/servers`, old Vue admin routes, old `AdminConsole.tsx` residue.
-- Retire Vue-specific evalset owner paths, harness ownership, visual workbench ownership and smoke assumptions.
-- Physically delete old `.vue` frontend files, old Vue composables, old component fixture renderer, old visual workbench test, and old screenshot snapshots from current Portal frontend surface.
+- Remove old frontend routes: `/packages`, `/advanced/servers`, old admin routes, and retired admin console residue.
+- Retire historical eval ownership, harness ownership, and smoke assumptions.
+- Physically delete retired frontend paths from current Portal frontend surface; express the detailed banlist only in `scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs`.
 - Preserve backend `/portal/api/*` as the data boundary.
 
 ## Step 4: Absorb Figma Make UI And Connect APIs
 
 - Copy the ordinary-user and admin Figma Make UI into `services/portal/frontend`.
-- Exclude old `src/app/pages/AdminConsole.tsx` residue from active frontend; use `src/app/pages/admin/*` for admin UI.
+- Exclude retired admin console residue from active frontend; use `src/app/pages/admin/*` for admin UI.
 - Replace static mock-only page state with typed Portal API adapters where existing `/portal/api/*` payloads exist: overview/resources/workspace/trace/billing/opl-launch and admin routes all call `services/portal/frontend/src/api/portal/*.ts` through `/portal/api`.
 - Keep no-secret browser hygiene: no raw API key, bearer token, launchToken, runtimeToken, objectKey, localPath, signedUrl or provider secret in public state, logs, evidence or git.
 - Add loading, empty, degraded and error states per page where current APIs can expose them.

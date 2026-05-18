@@ -1,18 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 const resourcesViewPath = "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx";
 const resourcesSurfacePath = "services/portal/frontend/src/app/data/portalAdapters.ts";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
-
-async function exists(filePath) {
-  try {
-    await stat(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 const resourcesView = await readFile(resourcesViewPath, "utf8");
 const resourcesSurface = await readFile(resourcesSurfacePath, "utf8");
@@ -44,15 +35,6 @@ const forbiddenVisibleCopy = [
 
 for (const copy of forbiddenVisibleCopy) {
   assertExcludes(resourcesSurfaceSources, copy, "ordinary_resource_surface_legacy_copy");
-}
-
-for (const retiredPath of [
-  "services/portal/frontend/src/views/resources/ResourcesView.vue",
-  "services/portal/frontend/src/views/servers/ServersView.vue",
-  "services/portal/frontend/src/components/resources/ResourcesCurrentPanel.vue",
-  "services/portal/frontend/src/composables/useResourcesSurface.ts",
-]) {
-  assert.equal(await exists(retiredPath), false, `retired_legacy_resource_surface_must_not_exist:${retiredPath}`);
 }
 
 for (const copy of ["CVM", "COS", "K8s", "TKE"]) {

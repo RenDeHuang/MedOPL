@@ -41,11 +41,11 @@
 - `/admin/system`
 - `/admin/ops`
 
-旧 `AdminConsole.tsx` 是上一轮 ZIP residue，不再进入 active frontend。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
+上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
 
 ## 清退边界
 
-本轮不是只做故事线清退，而是同时做合同 current-truth 清退、Portal frontend 旧代码清退和物理清退。合同层要把旧 Vue/Pinia 目标栈、旧 visual workbench/screenshot baseline 当前完成证据、旧 admin residue 完成声明、上一轮非 ZIP 1:1 的 React shell 从当前事实源移除；代码层要把旧 Vue SPA 文件、旧 Vue 组件、旧 composable、旧 visual harness、旧 snapshot、旧根级 React shell 和旧 `AdminConsole.tsx` 从 `services/portal/frontend/**` 清退，并用 Figma Make ZIP React/Vite UI 接替普通用户和管理员 Portal。
+本轮不是只做故事线清退，而是同时做合同 current-truth 清退、Portal frontend 旧代码清退和物理清退。合同层要把旧目标栈、历史 UI evidence、旧 admin residue 完成声明、上一轮非 ZIP 1:1 的 React shell 从当前事实源移除；代码层要把 retired frontend surface gate 中列出的旧 frontend 路径从 `services/portal/frontend/**` 清退，并用 Figma Make ZIP React/Vite UI 接替普通用户和管理员 Portal。
 
 本轮清退的旧 frontend surface：
 

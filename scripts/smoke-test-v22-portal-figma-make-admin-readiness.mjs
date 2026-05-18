@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
+import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const appRoot = "services/portal/frontend/src/app";
 const figmaRoot = "/tmp/medopl-figma-make-source-admin/src/app";
@@ -102,7 +103,7 @@ const [
 ]);
 
 assert.equal(await exists(`${figmaRoot}/pages/admin/AdminDashboard.tsx`), true, "figma_admin_source_missing");
-assert.equal(await exists(`${appRoot}/pages/AdminConsole.tsx`), false, "old_admin_console_residue_must_be_removed");
+assert.equal(await exists(`${appRoot}/${retiredFigmaZipResidue[0]}`), false, "old_admin_console_residue_must_be_removed");
 assert.equal(await exists("services/portal/frontend/src/imports"), false, "figma_imports_prompt_residue_must_not_be_active_frontend");
 assertIncludes(appSource, "RoleProvider", "app_must_wrap_router_with_role_provider");
 assertIncludes(roleContextSource, "fetchCurrentUser", "role_context_must_fetch_current_user");

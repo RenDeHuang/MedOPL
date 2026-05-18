@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import {
+  retiredFigmaZipResidue,
+  retiredFrontendRoutes,
+} from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
 
 const repoRoot = process.cwd();
 const reportPath = path.join(repoRoot, ".runtime", "portal-surface-eval", "report.json");
@@ -17,7 +21,6 @@ const expectedAdminRoutes = [
   "/admin/ops",
 ];
 const expectedRoutes = [...expectedUserRoutes, ...expectedAdminRoutes];
-const retiredRouteFragments = ["/packages", "/advanced/servers", "/__portal-harness/components"];
 const expectedPages = {
   overview: "Overview.tsx",
   resources: "RuntimeEnvironment.tsx",
@@ -162,7 +165,7 @@ assert.equal(await exists(figmaAppRoot), true, "figma_make_extracted_app_source_
 assert.deepEqual(
   await listRelativeFiles(appRoot, [".ts", ".tsx"]),
   (await listRelativeFiles(figmaAppRoot, [".ts", ".tsx"]))
-    .filter((file) => file !== "pages/AdminConsole.tsx")
+    .filter((file) => !retiredFigmaZipResidue.includes(file))
     .concat(["data/portalAdapters.ts"])
     .sort(),
   "app_file_tree_must_match_figma_zip_without_old_admin_console_plus_portal_adapter",
@@ -199,9 +202,9 @@ assertIncludes(layoutSource, "Portal UI", "layout_footer_must_use_current_portal
 assertIncludes(announcementButtonSource, "announcements = []", "announcement_button_must_default_to_empty_api_state");
 assertExcludes(announcementButtonSource, "系统维护通知", "announcement_button_must_not_embed_sample_notice");
 assertExcludes(announcementButtonSource, "新功能上线", "announcement_button_must_not_embed_sample_notice");
-for (const retired of retiredRouteFragments) {
-  assertExcludes(routesSource, retired, "react_routes_retired_path");
-  assertExcludes(layoutSource, retired, "layout_retired_path");
+for (const retired of retiredFrontendRoutes) {
+  assertExcludes(routesSource, `path: "${retired.slice(1)}"`, "react_routes_retired_path");
+  assertExcludes(layoutSource, `path: "${retired}"`, "layout_retired_path");
 }
 
 assert.equal(packageJson.dependencies.vue, undefined, "package_must_not_depend_on_vue");

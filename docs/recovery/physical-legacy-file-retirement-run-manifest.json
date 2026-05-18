@@ -139,9 +139,7 @@
         "services/portal/src/routes/portal-api.routes.mjs",
         "services/portal/src/app/portal-feature-runtime-handlers.mjs",
         "services/portal/frontend/src/api/portal/resources.ts",
-        "services/portal/frontend/src/api/portal/workspace.ts",
-        "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
-        "services/portal/frontend/src/harness/portal-ui-evalset.json"
+        "services/portal/frontend/src/api/portal/workspace.ts"
       ],
       "red_gate": "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs --portal",
       "green_gates": [

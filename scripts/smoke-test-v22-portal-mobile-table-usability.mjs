@@ -1,14 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
-
-async function exists(filePath) {
-  try {
-    await stat(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { readFile } from "node:fs/promises";
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
@@ -22,15 +13,6 @@ const workspaceSource = await readFile("services/portal/frontend/src/app/pages/W
 const tasksSource = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
 const billingSource = await readFile("services/portal/frontend/src/app/pages/BillingAudit.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
-
-for (const retiredPath of [
-  "services/portal/frontend/src/views/admin/AdminOpsView.vue",
-  "services/portal/frontend/src/views/billing/BillingView.vue",
-  "services/portal/frontend/src/components/billing/BillingWorkspaceCostPanel.vue",
-  "services/portal/frontend/src/components/billing/BillingRunCostPanel.vue",
-]) {
-  assert.equal(await exists(retiredPath), false, `retired_vue_mobile_table_surface_must_not_exist:${retiredPath}`);
-}
 
 for (const [label, source] of [
   ["workspace", workspaceSource],

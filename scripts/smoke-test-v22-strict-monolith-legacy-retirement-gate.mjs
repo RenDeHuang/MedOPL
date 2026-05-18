@@ -145,8 +145,6 @@ async function assertPortalCompatibilityDeleted() {
   const frontendFiles = [
     "services/portal/frontend/src/api/portal/resources.ts",
     "services/portal/frontend/src/api/portal/workspace.ts",
-    "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
-    "services/portal/frontend/src/harness/portal-ui-evalset.json",
   ];
   for (const file of frontendFiles) {
     const source = await readRepoFile(file);

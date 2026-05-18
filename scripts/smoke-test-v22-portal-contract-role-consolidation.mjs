@@ -37,7 +37,7 @@ assertIncludes(composition, "具体页面、组件、API shape 和缺口必须�
 
 for (const [label, markdown] of Object.entries({ shared, userRole, adminRole, structure })) {
   assertExcludes(markdown, '"sourceOfExecutableUiTruth": true', `${label}_must_not_claim_executable_ui_truth`);
-  assertExcludes(markdown, "portal-ui-evalset.json 固定 route", `${label}_must_not_own_evalset_details`);
+  assertExcludes(markdown, "historical evalset fixed route", `${label}_must_not_own_evalset_details`);
   assertExcludes(markdown, '"surfaces": [', `${label}_must_not_embed_ui_surfaces`);
   assertExcludes(markdown, '"apiShapes": [', `${label}_must_not_embed_api_shapes`);
   assertExcludes(markdown, '"requiredDomAnchors"', `${label}_must_not_embed_dom_anchor_matrix`);
