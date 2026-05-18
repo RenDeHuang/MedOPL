@@ -138,16 +138,6 @@ export async function createAdminUser(input: {
   });
 }
 
-export async function updateAdminRegistrationSettings(input: {
-  allowRegistration: boolean;
-  redirectTo?: string;
-}) {
-  await postPortalAdminAction("/portal/admin/settings", {
-    allowRegistration: input.allowRegistration,
-    redirectTo: input.redirectTo || "/admin/users",
-  });
-}
-
 export async function updateAdminSiteSettings(input: PublicSettingsPayload & {
   allowRegistration: boolean;
   redirectTo?: string;

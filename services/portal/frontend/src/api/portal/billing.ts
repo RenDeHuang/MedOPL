@@ -152,11 +152,6 @@ export interface RunCostPayload {
   };
 }
 
-export async function fetchBilling(params: BillingQuery = {}) {
-  const { data } = await apiClient.get<BillingPayload>("/billing", { params });
-  return data;
-}
-
 export async function fetchBillingSummary(params: BillingQuery = {}) {
   const { data } = await apiClient.get<BillingSummaryPayload>("/billing/summary", { params });
   return data;

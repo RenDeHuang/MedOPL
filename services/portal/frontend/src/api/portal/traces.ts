@@ -169,11 +169,6 @@ export interface TracesPayload {
 
 export type SessionTracesPayload = TracesPayload;
 
-export async function fetchTraceSummary() {
-  const { data } = await apiClient.get<TraceSummaryPayload>("/traces/summary");
-  return data;
-}
-
 export async function fetchTraces(params?: Record<string, string | number | undefined>) {
   const { data } = await apiClient.get<TracesPayload>("/traces", { params });
   return data;

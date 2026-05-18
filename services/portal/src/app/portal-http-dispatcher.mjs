@@ -43,31 +43,20 @@ export function createPortalHttpDispatcher({
     const isGetAuthPage = req.method === "GET" && (url.pathname === "/login" || url.pathname === "/register");
     const spaShellPaths = new Set([
       "/overview",
-      "/packages",
       "/resources",
       "/workspace",
       "/opl-launch",
-      "/advanced/servers",
       "/billing",
       "/trace",
-      "/__portal-harness/components",
       "/admin/dashboard",
       "/admin/users",
-      "/admin/trace",
-      "/admin/user",
-      "/admin/groups",
-      "/admin/workspace",
-      "/admin/run",
       "/admin/billing-ops",
       "/admin/alerts",
-      "/admin/usage",
       "/admin/system",
       "/admin/ops",
-      "/admin/sandboxes",
       "/admin/audit",
     ]);
-    const isHarnessComponentShellRequest = req.method === "GET" && url.pathname.startsWith("/__portal-harness/components/");
-    const isPortalAppShellRequest = req.method === "GET" && (spaShellPaths.has(url.pathname) || isHarnessComponentShellRequest);
+    const isPortalAppShellRequest = req.method === "GET" && spaShellPaths.has(url.pathname);
     if (isGetAuthPage) {
       const authHandled = await handleAuthRoutes({ req, res, url, db: null });
       if (authHandled) return;

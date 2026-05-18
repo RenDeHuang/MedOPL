@@ -1,0 +1,476 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
+
+const require = createRequire(import.meta.url);
+const ts = require("../services/portal/frontend/node_modules/typescript");
+
+const repoRoot = process.cwd();
+const apiRoot = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "portal");
+const appRoot = path.join(repoRoot, "services", "portal", "frontend", "src", "app");
+const routesPath = path.join(appRoot, "routes.tsx");
+const portalShellPath = path.join(repoRoot, "services", "portal", "src", "app", "portal-http-dispatcher.mjs");
+
+const retiredShellPaths = [
+  "/__portal-harness/components",
+  "/packages",
+  "/advanced/servers",
+  "/admin/trace",
+  "/admin/user",
+  "/admin/groups",
+  "/admin/workspace",
+  "/admin/run",
+  "/admin/usage",
+  "/admin/sandboxes",
+];
+
+const allowedAdjudicationStatuses = new Set([
+  "active-missing-ui",
+  "active-used",
+  "backend-only",
+  "future-reserved",
+]);
+
+const unusedAdjudications = {
+  "admin.ts:fetchAdminAgentTraces": {
+    status: "future-reserved",
+    reason: "Admin trace endpoint exists, but current React admin route set uses alerts/audit/system/ops instead of a dedicated agent trace page.",
+  },
+  "admin.ts:createAdminUser": {
+    status: "active-missing-ui",
+    reason: "Admin user management has local backend action support, but the current React page has no create-user dialog wired to this client.",
+  },
+  "admin.ts:updateAdminUser": {
+    status: "active-missing-ui",
+    reason: "Admin user management shows user details and local actions, but edit profile/password is not exposed in the current React UI.",
+  },
+  "admin.ts:fetchAdminGroups": {
+    status: "future-reserved",
+    reason: "Backend and shell remnants expose groups, but current React admin navigation does not include a groups page.",
+  },
+  "admin.ts:fetchAdminUsage": {
+    status: "future-reserved",
+    reason: "Usage analytics endpoint is retained for a future admin drilldown, not the current admin dashboard route set.",
+  },
+  "admin.ts:fetchAdminSandboxes": {
+    status: "future-reserved",
+    reason: "Sandbox inventory is not part of the current React admin surface.",
+  },
+  "admin.ts:fetchAdminUserPortrait": {
+    status: "future-reserved",
+    reason: "User portrait drilldown is still represented by backend/shell links, while current React admin uses the users table and detail dialog.",
+  },
+  "admin.ts:fetchAdminWorkspacePortrait": {
+    status: "future-reserved",
+    reason: "Workspace portrait drilldown is not mounted in current React routes.",
+  },
+  "admin.ts:fetchAdminRunPortrait": {
+    status: "future-reserved",
+    reason: "Run portrait drilldown is not mounted in current React routes.",
+  },
+  "billing.ts:fetchCostsSummary": {
+    status: "future-reserved",
+    reason: "Cost summary projection is available for future cost drilldowns; current billing page uses billing summary/details.",
+  },
+  "billing.ts:fetchWorkspaceCosts": {
+    status: "future-reserved",
+    reason: "Workspace cost projection is not shown by the current workspace or billing pages.",
+  },
+  "billing.ts:fetchRunCosts": {
+    status: "future-reserved",
+    reason: "Run cost projection is not shown by the current trace page.",
+  },
+  "lab.ts:fetchLabPackages": {
+    status: "active-missing-ui",
+    reason: "Runtime page still carries local package cards; current active UI should read the backend package catalog before this is closed.",
+  },
+  "lab.ts:fetchLabSubscription": {
+    status: "active-missing-ui",
+    reason: "Runtime page activates packages, but does not read back subscription state through this dedicated client.",
+  },
+  "lab.ts:fetchLabEntitlement": {
+    status: "active-missing-ui",
+    reason: "Runtime entry eligibility exists as an API client, but the current UI relies on resource status instead of entitlement.",
+  },
+  "lab.ts:upgradeLabPackage": {
+    status: "active-missing-ui",
+    reason: "Product direction allows package adjustment, but current runtime UI only wires activation/custom activation.",
+  },
+  "lab.ts:purchaseLabStorageAddon": {
+    status: "active-missing-ui",
+    reason: "Product direction allows independent storage expansion, but current runtime UI has no storage-addon action.",
+  },
+  "opl.ts:sendOplMessage": {
+    status: "future-reserved",
+    reason: "Real provider message canary exists, but Portal's current product surface is OPL launch/session binding rather than embedded chat.",
+  },
+  "opl.ts:fetchOplMessageStatus": {
+    status: "future-reserved",
+    reason: "Message status belongs to the future OPL bridge backflow surface, not the current launch-only Portal UI.",
+  },
+  "opl.ts:createOplFileRef": {
+    status: "future-reserved",
+    reason: "OPL file reference creation is reserved for the file/run/artifact bridge after runtime backflow is productized.",
+  },
+  "opl.ts:startOplRun": {
+    status: "future-reserved",
+    reason: "Portal currently launches OPL and shows traces; direct run submission is not active UI.",
+  },
+  "opl.ts:fetchOplRunStatus": {
+    status: "future-reserved",
+    reason: "Direct OPL run status polling is reserved for the future bridge backflow UI.",
+  },
+  "opl.ts:fetchOplRunArtifacts": {
+    status: "future-reserved",
+    reason: "Artifact listing is not wired into the current workspace/trace UI.",
+  },
+  "opl.ts:fetchOplArtifact": {
+    status: "future-reserved",
+    reason: "Artifact retrieval is not wired into the current workspace/trace UI.",
+  },
+  "public.ts:fetchPublicSettings": {
+    status: "backend-only",
+    reason: "Public settings are consumed by the server-rendered public home and admin system payload, not directly by the React app.",
+  },
+  "resources.ts:createComputeInstance": {
+    status: "future-reserved",
+    reason: "Low-level platform-provisioned compute mutation is not wired by the current ordinary user React resource surface.",
+  },
+  "resources.ts:createStorageBucket": {
+    status: "future-reserved",
+    reason: "Low-level platform-provisioned storage mutation is not wired by the current ordinary user React resource surface.",
+  },
+  "resources.ts:bindWorkspaceResource": {
+    status: "future-reserved",
+    reason: "Direct binding mutation is below the current package/runtime UI level.",
+  },
+  "resources.ts:unbindWorkspaceResource": {
+    status: "future-reserved",
+    reason: "Direct unbind mutation is not exposed by the current React UI.",
+  },
+  "resources.ts:deleteComputeInstance": {
+    status: "future-reserved",
+    reason: "Compute release requires a productized confirmation flow before becoming active UI.",
+  },
+  "resources.ts:deleteStorageBucket": {
+    status: "future-reserved",
+    reason: "Storage deletion requires a productized confirmation flow before becoming active UI.",
+  },
+  "resources.ts:ensureProtectionFreeze": {
+    status: "backend-only",
+    reason: "Protection freeze is part of billing/resource lifecycle bookkeeping, not a direct current UI action.",
+  },
+  "server-plans.ts:fetchServerPlans": {
+    status: "future-reserved",
+    reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",
+  },
+  "server-plans.ts:selectServerPlan": {
+    status: "future-reserved",
+    reason: "Server plan selection is not the current ordinary user UI path while package activation is active.",
+  },
+  "sessions.ts:fetchSessions": {
+    status: "future-reserved",
+    reason: "Session list is not exposed as an active React page; current user trace page consumes session traces.",
+  },
+  "sessions.ts:fetchRuns": {
+    status: "future-reserved",
+    reason: "Run list is not exposed as an active React page; current task/result surface consumes session traces through an adapter.",
+  },
+  "traces.ts:fetchTraces": {
+    status: "backend-only",
+    reason: "Generic traces endpoint is admin scoped; ordinary React trace UI uses fetchSessionTraces.",
+  },
+  "workspace.ts:fetchWorkspaceStorage": {
+    status: "active-missing-ui",
+    reason: "Workspace storage projection exists, but current Workspace page only consumes the aggregate workspace payload.",
+  },
+  "workspace.ts:fetchStorageEntitlement": {
+    status: "active-missing-ui",
+    reason: "Storage entitlement should gate future upload/download and expansion controls, but is not read by current UI.",
+  },
+  "workspace.ts:createStorageOrder": {
+    status: "active-missing-ui",
+    reason: "Independent storage purchase is a product need, but no current Workspace/Runtime control calls this client.",
+  },
+  "workspace.ts:createWorkspaceFileUploadUrl": {
+    status: "active-missing-ui",
+    reason: "Workspace file upload is expected for a usable research workspace, but current UI has no upload-url flow.",
+  },
+  "workspace.ts:createWorkspaceFileDownloadUrl": {
+    status: "active-missing-ui",
+    reason: "Workspace file download should use a backend-issued transfer URL, but current UI does not call this client.",
+  },
+};
+
+function repoRelative(filePath) {
+  return path.relative(repoRoot, filePath).replaceAll(path.sep, "/");
+}
+
+function apiRelative(filePath) {
+  return path.relative(apiRoot, filePath).replaceAll(path.sep, "/");
+}
+
+function readSource(filePath) {
+  return readFileSync(filePath, "utf8");
+}
+
+function listFiles(dir, suffixes) {
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listFiles(fullPath, suffixes));
+      continue;
+    }
+    if (entry.isFile() && suffixes.some((suffix) => entry.name.endsWith(suffix))) {
+      files.push(fullPath);
+    }
+  }
+  return files.sort();
+}
+
+function sourceKind(filePath) {
+  return filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+}
+
+function sourceFile(filePath) {
+  return ts.createSourceFile(
+    filePath,
+    readSource(filePath),
+    ts.ScriptTarget.Latest,
+    true,
+    sourceKind(filePath),
+  );
+}
+
+function hasModifier(node, kind) {
+  return Boolean(node.modifiers?.some((modifier) => modifier.kind === kind));
+}
+
+function lineOf(source, node) {
+  return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+}
+
+function exportKey(file, name) {
+  return `${file}:${name}`;
+}
+
+function collectPortalApiExports() {
+  const exports = [];
+  const exportsByFile = new Map();
+  for (const filePath of listFiles(apiRoot, [".ts"])) {
+    const parsed = sourceFile(filePath);
+    const file = apiRelative(filePath);
+    const names = new Set();
+    function visit(node) {
+      if (
+        ts.isFunctionDeclaration(node) &&
+        node.name &&
+        hasModifier(node, ts.SyntaxKind.ExportKeyword) &&
+        hasModifier(node, ts.SyntaxKind.AsyncKeyword)
+      ) {
+        const name = node.name.text;
+        names.add(name);
+        exports.push({
+          key: exportKey(file, name),
+          file,
+          absoluteFile: filePath,
+          name,
+          line: lineOf(parsed, node.name),
+        });
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(parsed);
+    exportsByFile.set(filePath, { file, names });
+  }
+  return { exports, exportsByFile };
+}
+
+function resolveRelativeImport(importer, specifier) {
+  if (!specifier.startsWith(".")) return null;
+  const base = path.resolve(path.dirname(importer), specifier);
+  for (const candidate of [base, `${base}.ts`, `${base}.tsx`, path.join(base, "index.ts")]) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+function collectPortalApiUsage(exportsByFile) {
+  const used = new Map();
+  const appFiles = listFiles(appRoot, [".ts", ".tsx"]);
+
+  function markUsed({ key, file, name }, appFile, source, node) {
+    if (!used.has(key)) {
+      used.set(key, {
+        key,
+        file,
+        name,
+        references: [],
+      });
+    }
+    used.get(key).references.push(`${repoRelative(appFile)}:${lineOf(source, node)}`);
+  }
+
+  for (const appFile of appFiles) {
+    const parsed = sourceFile(appFile);
+    const namedImports = new Map();
+    const namespaceImports = new Map();
+
+    for (const statement of parsed.statements) {
+      if (!ts.isImportDeclaration(statement)) continue;
+      if (!ts.isStringLiteral(statement.moduleSpecifier)) continue;
+      const resolved = resolveRelativeImport(appFile, statement.moduleSpecifier.text);
+      if (!resolved || !exportsByFile.has(resolved)) continue;
+      const importClause = statement.importClause;
+      if (!importClause || importClause.isTypeOnly) continue;
+
+      const exportInfo = exportsByFile.get(resolved);
+      const namedBindings = importClause.namedBindings;
+      if (namedBindings && ts.isNamedImports(namedBindings)) {
+        for (const imported of namedBindings.elements) {
+          if (imported.isTypeOnly) continue;
+          const exportedName = imported.propertyName?.text || imported.name.text;
+          if (!exportInfo.names.has(exportedName)) continue;
+          namedImports.set(imported.name.text, {
+            key: exportKey(exportInfo.file, exportedName),
+            file: exportInfo.file,
+            name: exportedName,
+          });
+        }
+      }
+      if (namedBindings && ts.isNamespaceImport(namedBindings)) {
+        namespaceImports.set(namedBindings.name.text, exportInfo);
+      }
+    }
+
+    function visit(node) {
+      if (ts.isImportDeclaration(node)) return;
+      if (ts.isIdentifier(node) && namedImports.has(node.text)) {
+        markUsed(namedImports.get(node.text), appFile, parsed, node);
+      }
+      if (
+        ts.isPropertyAccessExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        namespaceImports.has(node.expression.text)
+      ) {
+        const exportInfo = namespaceImports.get(node.expression.text);
+        if (exportInfo.names.has(node.name.text)) {
+          markUsed({
+            key: exportKey(exportInfo.file, node.name.text),
+            file: exportInfo.file,
+            name: node.name.text,
+          }, appFile, parsed, node.name);
+        }
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(parsed);
+  }
+
+  return used;
+}
+
+function groupRows(rows) {
+  return rows.reduce((groups, row) => {
+    groups[row.file] ||= [];
+    groups[row.file].push(row.name);
+    return groups;
+  }, {});
+}
+
+function statusSummary(rows) {
+  return rows.reduce((summary, row) => {
+    summary[row.status] = (summary[row.status] || 0) + 1;
+    return summary;
+  }, {});
+}
+
+function collectRouteAlignmentReport() {
+  const routeSource = readSource(routesPath);
+  const routePaths = [...routeSource.matchAll(/path:\s*"([^"]+)"/g)]
+    .map((match) => match[1])
+    .map((route) => (route === "/" ? route : `/${route}`))
+    .sort();
+
+  const shellSource = readSource(portalShellPath);
+  const shellBlockMatch = shellSource.match(/const spaShellPaths = new Set\(\[([\s\S]*?)\]\);/);
+  const shellPaths = shellBlockMatch
+    ? [...shellBlockMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]).sort()
+    : [];
+
+  return {
+    status: "enforced",
+    reactRoutes: routePaths,
+    shellOnlyPaths: shellPaths.filter((shellPath) => !routePaths.includes(shellPath)),
+    reactOnlyPaths: routePaths.filter((routePath) => !shellPaths.includes(routePath)),
+  };
+}
+
+const { exports, exportsByFile } = collectPortalApiExports();
+const usedMap = collectPortalApiUsage(exportsByFile);
+const usedRows = exports.filter((item) => usedMap.has(item.key));
+const unusedRows = exports.filter((item) => !usedMap.has(item.key));
+const exportKeys = new Set(exports.map((item) => item.key));
+const unusedKeys = new Set(unusedRows.map((item) => item.key));
+const usedKeys = new Set(usedRows.map((item) => item.key));
+
+const invalidAdjudications = [];
+const staleAdjudications = [];
+const usedAdjudications = [];
+for (const [key, value] of Object.entries(unusedAdjudications)) {
+  if (!exportKeys.has(key)) staleAdjudications.push(key);
+  if (usedKeys.has(key)) usedAdjudications.push(key);
+  if (!allowedAdjudicationStatuses.has(value.status) || typeof value.reason !== "string" || !value.reason.trim()) {
+    invalidAdjudications.push(key);
+  }
+}
+
+assert.deepEqual(staleAdjudications, [], `frontend_api_adjudication_must_target_existing_export:${JSON.stringify(staleAdjudications)}`);
+assert.deepEqual(usedAdjudications, [], `frontend_api_adjudication_must_not_target_used_export:${JSON.stringify(usedAdjudications)}`);
+assert.deepEqual(invalidAdjudications, [], `frontend_api_adjudication_invalid:${JSON.stringify(invalidAdjudications)}`);
+
+const uncategorizedUnused = unusedRows.filter((item) => !unusedAdjudications[item.key]);
+const missingExports = Object.keys(unusedAdjudications).filter((key) => !unusedKeys.has(key));
+assert.deepEqual(missingExports, [], `frontend_api_unused_adjudication_not_unused:${JSON.stringify(missingExports)}`);
+assert.deepEqual(uncategorizedUnused, [], `frontend_api_uncategorized_unused:${JSON.stringify(uncategorizedUnused, null, 2)}`);
+
+const adjudicatedUnusedRows = unusedRows.map((row) => ({
+  ...row,
+  status: unusedAdjudications[row.key].status,
+  reason: unusedAdjudications[row.key].reason,
+}));
+
+const retiredFrontendApiExports = [
+  "admin.ts:updateAdminRegistrationSettings",
+  "billing.ts:fetchBilling",
+  "traces.ts:fetchTraceSummary",
+];
+const leakedRetiredExports = retiredFrontendApiExports.filter((key) => exportKeys.has(key));
+assert.deepEqual(leakedRetiredExports, [], `frontend_api_retired_exports_must_be_removed:${JSON.stringify(leakedRetiredExports)}`);
+
+const routeAlignment = collectRouteAlignmentReport();
+const unexpectedShellOnlyPaths = routeAlignment.shellOnlyPaths.filter(
+  (routePath) => !routePath.startsWith("/__never_allow_shell_only__"),
+);
+const leakedRetiredShellPaths = retiredShellPaths.filter((routePath) =>
+  routeAlignment.shellOnlyPaths.includes(routePath) || routeAlignment.reactRoutes.includes(routePath),
+);
+assert.deepEqual(unexpectedShellOnlyPaths, [], `portal_shell_only_paths_must_be_explicitly_allowed:${JSON.stringify(unexpectedShellOnlyPaths)}`);
+assert.deepEqual(leakedRetiredShellPaths, [], `portal_retired_shell_paths_must_be_removed:${JSON.stringify(leakedRetiredShellPaths)}`);
+
+console.log(JSON.stringify({
+  ok: true,
+  contract: "v22_portal_frontend_api_surface_alignment",
+  totals: {
+    exportedAsyncFunctions: exports.length,
+    activeUsed: usedRows.length,
+    unused: unusedRows.length,
+    uncategorizedUnused: uncategorizedUnused.length,
+  },
+  activeUsedByFile: groupRows(usedRows),
+  unusedStatusSummary: statusSummary(adjudicatedUnusedRows),
+  unusedByFile: groupRows(adjudicatedUnusedRows),
+  routeAlignment,
+}, null, 2));
