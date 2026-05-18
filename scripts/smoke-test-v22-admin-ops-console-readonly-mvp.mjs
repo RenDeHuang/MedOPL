@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 
 const { createPortalAdminApiPayloads } = await import("../services/portal/src/app/portal-admin-api-payloads.mjs");
 
@@ -59,6 +59,26 @@ function sliceBetween(source, start, end, label) {
   const endIndex = source.indexOf(end, startIndex + start.length);
   assert.notEqual(endIndex, -1, `${label}_end_marker_missing`);
   return source.slice(startIndex, endIndex);
+}
+
+async function exists(filePath) {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readAdminPageSources() {
+  const root = "services/portal/frontend/src/app/pages/admin";
+  const entries = await readdir(root, { withFileTypes: true });
+  const sources = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".tsx")) continue;
+    sources.push(await readFile(`${root}/${entry.name}`, "utf8"));
+  }
+  return sources.join("\n");
 }
 
 const db = {
@@ -453,26 +473,37 @@ assertNotIncludesAny(payloadJson, forbiddenCloudMutationCopy, "admin_ops_payload
 
 const routerSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
-const adminConsoleResidueSource = await readFile("services/portal/frontend/src/app/pages/AdminConsole.tsx", "utf8");
+const adminPageSources = await readAdminPageSources();
+assert.equal(await exists("services/portal/frontend/src/app/pages/AdminConsole.tsx"), false, "old_admin_console_residue_must_be_removed");
+assertIncludesAll(routerSource, [
+  'path: "admin/ops"',
+  "AdminOps",
+], "admin_ops_active_route");
+assertIncludesAll(layoutSource, [
+  'path: "/admin/ops"',
+  'userRole === "admin"',
+  "RoleContext 不是安全边界",
+], "admin_ops_nav_role_gate");
 assertNotIncludesAny(routerSource, [
-  "/admin/ops",
   "AdminConsole",
   "requiresAdmin",
   "requiresOpsSurface",
-], "admin_ops_must_not_be_active_zip_user_route");
-assertNotIncludesAny(layoutSource, [
-  "/admin/ops",
-  "管理员控制台",
-  "全局审计",
-], "admin_ops_must_not_be_user_navigation");
-assertIncludesAll(adminConsoleResidueSource, [
-  "管理员控制台",
-  "用户管理",
-  "资源池概览",
-  "全局审计日志",
-], "admin_console_zip_residue_required_copy");
-assertNotIncludesAny(adminConsoleResidueSource, forbiddenSecretsAndStorage, "admin_console_residue_secret_storage_copy");
-assert.equal(routerSource.includes("AdminConsole"), false, "admin_console_residue_must_not_be_mounted");
+], "old_admin_console_must_not_be_active_route");
+assertNotIncludesAny(adminPageSources, forbiddenSecretsAndStorage, "admin_pages_secret_storage_copy");
+assertNotIncludesAny(adminPageSources, [
+  "真实云控制台式操作",
+  "直接删除节点池",
+  "直接释放云资源",
+  "直接改真实资源",
+  "删除节点池",
+  "CVM",
+  "COS",
+  "K8s",
+  "TKE",
+  "服务器编号",
+  "云资源清单",
+  "请访问对应的云控制台或运维系统",
+], "admin_pages_cloud_mutation_copy");
 
 const userSurfaceSources = [
   await readFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx", "utf8"),
@@ -483,7 +514,6 @@ const userSurfaceSources = [
   routerSource,
 ].join("\n");
 assertNotIncludesAny(userSurfaceSources, [
-  "/admin/ops",
   "全局账号",
   "全局费用",
   "全局审计",

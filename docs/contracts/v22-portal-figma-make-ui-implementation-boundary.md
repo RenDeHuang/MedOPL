@@ -8,7 +8,7 @@
 
 本轮不新开 v26。v22 Portal 继续是 MedOPL 的 SaaS 控制面：用户购买托管 OPL 科研工作台、计算能力、文件空间和运行环境，平台负责开通、隔离、计费、审计和释放。
 
-本合同授权把 Portal 全体前端技术栈从历史 Vue / Pinia 方向收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide。这里的“Portal 全体前端技术栈”包括普通用户 Portal 和后续 Admin / Ops Portal UI；只是当前 Figma Make ZIP 只覆盖普通用户端 active route。
+本合同授权把 Portal 全体前端技术栈从历史 Vue / Pinia 方向收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide。这里的“Portal 全体前端技术栈”包括普通用户 Portal 和管理员 Portal；当前 Figma Make ZIP 覆盖普通用户和管理员 Portal active route。
 
 ## Figma Make 吸收边界
 
@@ -17,8 +17,8 @@
 - fileKey: `pjLYKml89XFsf8BMNOJ3CV`
 - title: MedOPL Portal UI Design
 - implementation source: Figma Make ZIP
-- zip path: `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip`
-- extracted path: `/tmp/medopl-figma-make-source`
+- zip path: `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`
+- extracted path: `/tmp/medopl-figma-make-source-admin`
 
 本轮的唯一 Portal UI source-of-truth 是上述 Figma Make ZIP，不再按上一轮“合同重组后自行实现的 React shell”作为 UI 事实源继续补丁式吸收。验收以 ZIP 文件树、active route、API adapter、typecheck/build 和本地预览为准。
 
@@ -31,23 +31,30 @@
 - `/billing`
 - `/opl-launch`
 
-当前 Figma Make 源码中存在未被 route 引用的 `AdminConsole.tsx`。为了保持 ZIP 源码物理一致性，本文件复制为 ZIP 源文件残留；但它不是可吸收 admin UI，不得挂载 active route，不得进入导航，不得作为 Admin / Ops 已完成证据。Admin / Ops UI 仍由 `v22-portal-admin-ops-surface-boundary.md` 固定角色边界，后续必须以同一 React 技术栈单独设计、单独合同 leaf、单独验收。
+当前可吸收的管理员路由：
+
+- `/admin/dashboard`
+- `/admin/users`
+- `/admin/alerts`
+- `/admin/billing-ops`
+- `/admin/audit`
+- `/admin/system`
+- `/admin/ops`
+
+旧 `AdminConsole.tsx` 是上一轮 ZIP residue，不再进入 active frontend。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
 
 ## 清退边界
 
-本轮不是只做故事线清退，而是同时做合同 current-truth 清退、Portal frontend 旧代码清退和物理清退。合同层要把旧 Vue/Pinia 目标栈、旧 visual workbench/screenshot baseline 当前完成证据、旧 route/admin 完成声明、上一轮非 ZIP 1:1 的 React shell 从当前事实源移除；代码层要把旧 Vue SPA 文件、旧 Vue 组件、旧 composable、旧 visual harness、旧 snapshot 和旧根级 React shell 从 `services/portal/frontend/**` 清退，并用 Figma Make ZIP React/Vite UI 接替普通用户 Portal。
+本轮不是只做故事线清退，而是同时做合同 current-truth 清退、Portal frontend 旧代码清退和物理清退。合同层要把旧 Vue/Pinia 目标栈、旧 visual workbench/screenshot baseline 当前完成证据、旧 admin residue 完成声明、上一轮非 ZIP 1:1 的 React shell 从当前事实源移除；代码层要把旧 Vue SPA 文件、旧 Vue 组件、旧 composable、旧 visual harness、旧 snapshot、旧根级 React shell 和旧 `AdminConsole.tsx` 从 `services/portal/frontend/**` 清退，并用 Figma Make ZIP React/Vite UI 接替普通用户和管理员 Portal。
 
 本轮清退的旧 frontend surface：
 
 - 历史 Vue SPA 实现。
 - `/packages` 普通用户路由。
 - `/advanced/servers` 旧高级服务器路由。
-- `/admin/*` 当前前端 Vue 页面。
 - 历史 `/runtime`、`/tasks`、`/opl` 兼容入口。
 - Vue/Pinia 作为 Portal frontend 目标技术栈的合同文案。
 - Figma 只能回写历史前端框架或不得引入 React/shadcn 的历史文案。
-
-这些清退不代表 Admin / Ops 产品边界消失，只代表当前 admin UI 没有 Figma Make 完成版，不能被伪装成已完成。
 
 ## API 接入边界
 
@@ -59,6 +66,16 @@ Figma Make UI 不能停留在静态 mock。普通用户 6 个页面必须接现�
 - `/trace`: `fetchSessionTraces()`，对应 `/portal/api/session-traces`。
 - `/billing`: `fetchBillingSummary()` 与 `fetchBillingDetails()`，对应 `/portal/api/billing/summary` 和 `/portal/api/billing/details`。
 - `/opl-launch`: `fetchOplLaunchStatus()`、`fetchOplBootstrap()`、`bindOplSession()`，对应 `/portal/api/opl/launch-status/{launchId}`、`/portal/api/opl/bootstrap` 和 `/portal/api/opl/sessions/bind`。
+
+管理员页面必须接现有 `/portal/api/admin/*` adapter：
+
+- `/admin/dashboard`: `fetchAdminOverview()`，对应 `/portal/api/admin/overview`。
+- `/admin/users`: `fetchAdminUsers()`，对应 `/portal/api/admin/users`。
+- `/admin/alerts`: `fetchAdminAlerts()` 与 `fetchAnnouncements()`，对应 `/portal/api/admin/alerts` 和 `/portal/api/announcements`。
+- `/admin/billing-ops`: `fetchAdminBillingOps()`，对应 `/portal/api/admin/billing-ops`。
+- `/admin/audit`: `fetchAdminAudit()`，对应 `/portal/api/admin/audit`。
+- `/admin/system`: `fetchAdminSystem()`，对应 `/portal/api/admin/system`。
+- `/admin/ops`: `fetchAdminOps()`，对应 `/portal/api/admin/ops`；该后端 API 在默认未启用运维 surface 时允许返回 `404 ops_surface_disabled`，前端必须把它映射成“平台托管运维入口未启用”的产品态，而不是 generic error 或伪成功。
 
 API 接入只允许走 `services/portal/frontend/src/api/portal/*.ts` 和 `apiClient` 的 `/portal/api` baseURL；本轮不改 Portal 后端服务语义，不伪造成功态，不把 raw key、runtime token、objectKey、localPath 或 signedUrl 渲染到页面。
 
@@ -121,7 +138,7 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
 ```json
 {
   "contract": "v22_portal_figma_make_ui_implementation_boundary",
-  "version": 1,
+  "version": 2,
   "model": "gpt-5.4",
   "contractRole": "portal_frontend_stack_and_figma_make_implementation_leaf",
   "scope": {
@@ -135,15 +152,25 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
   },
   "figmaMake": {
     "fileKey": "pjLYKml89XFsf8BMNOJ3CV",
-    "currentCoverage": "user_portal_only",
+    "currentCoverage": "user_portal_and_admin_portal",
     "singleUiSourceOfTruth": "figma_make_zip",
     "implementationSource": "figma_make_react_vite_zip_source",
     "sourceArtifact": {
-      "zipPath": "/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip",
-      "extractedPath": "/tmp/medopl-figma-make-source"
+      "zipPath": "/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip",
+      "extractedPath": "/tmp/medopl-figma-make-source-admin"
     },
-    "adminConsoleCopiedAsUnroutedResidue": true,
-    "activeAdminRouteMounted": false
+    "importsResidueCopiedToActiveFrontend": false,
+    "adminConsoleCopiedAsUnroutedResidue": false,
+    "activeAdminRouteMounted": true,
+    "activeAdminRoutes": [
+      "/admin/dashboard",
+      "/admin/users",
+      "/admin/alerts",
+      "/admin/billing-ops",
+      "/admin/audit",
+      "/admin/system",
+      "/admin/ops"
+    ]
   },
   "portalFrontendStack": {
     "appliesToWholePortalFrontend": true,
@@ -168,10 +195,18 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     "/billing",
     "/opl-launch"
   ],
+  "adminRoutes": [
+    "/admin/dashboard",
+    "/admin/users",
+    "/admin/alerts",
+    "/admin/billing-ops",
+    "/admin/audit",
+    "/admin/system",
+    "/admin/ops"
+  ],
   "retiredFrontendRoutes": [
     "/packages",
     "/advanced/servers",
-    "/admin/*",
     "/runtime",
     "/tasks",
     "/opl"
@@ -182,7 +217,9 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     "oldVisualWorkbenchRemoved": true,
     "oldScreenshotBaselinesRemoved": true,
     "oldContractReorganizedReactUiRemoved": true,
-    "replacementUi": "figma_make_zip_physical_source_absorption"
+    "oldAdminConsoleResidueRemoved": true,
+    "figmaImportsResidueExcluded": true,
+    "replacementUi": "figma_make_zip_user_admin_physical_source_absorption"
   },
   "apiIntegration": {
     "staticMockOnlyUiAllowed": false,
@@ -194,7 +231,10 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
       "workspace",
       "traces",
       "billing",
-      "opl"
+      "opl",
+      "commercial",
+      "sessions",
+      "admin"
     ],
     "userRouteApiCoverage": {
       "/overview": [
@@ -219,13 +259,49 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
         "/portal/api/opl/bootstrap",
         "/portal/api/opl/sessions/bind"
       ]
+    },
+    "adminRouteApiCoverage": {
+      "/admin/dashboard": [
+        "/portal/api/admin/overview"
+      ],
+      "/admin/users": [
+        "/portal/api/admin/users"
+      ],
+      "/admin/alerts": [
+        "/portal/api/admin/alerts"
+      ],
+      "/admin/billing-ops": [
+        "/portal/api/admin/billing-ops"
+      ],
+      "/admin/audit": [
+        "/portal/api/admin/audit"
+      ],
+      "/admin/system": [
+        "/portal/api/admin/system"
+      ],
+      "/admin/ops": [
+        "/portal/api/admin/ops"
+      ]
+    },
+    "adminRouteProductStates": {
+      "/admin/ops": {
+        "defaultDisabledStatus": 404,
+        "defaultDisabledError": "ops_surface_disabled",
+        "frontendMustRenderProductState": "平台托管运维入口未启用",
+        "genericErrorForDisabledSurfaceAllowed": false,
+        "fakeSuccessForDisabledSurfaceAllowed": false
+      }
     }
   },
   "adminOpsUi": {
-    "currentFigmaCoverage": false,
-    "futureSameStack": true,
-    "requiresSeparateDesignAndContractLeaf": true,
-    "roleBoundaryStillApplies": true
+    "currentFigmaCoverage": true,
+    "activeFrontendRoutes": true,
+    "roleBoundaryStillApplies": true,
+    "roleContextSecurityBoundary": false,
+    "backendRoleProjectionRequired": true,
+    "mockOnlyActionsAllowed": false,
+    "opsSurfaceMayBeDisabledByBackend": true,
+    "disabledProductStateRequired": true
   },
   "lifecycle": {
     "storageDeletionProtectionDays": 7,
@@ -243,6 +319,7 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
   },
   "verificationCommands": [
     "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+    "node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
     "git diff --check",
     "npm --prefix services/portal/frontend run typecheck",
     "npm --prefix services/portal/frontend run build"
@@ -254,7 +331,7 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
 ## 非目标
 
 - 不修改 Portal 后端业务语义。
-- 不实现当前 Figma 文件没有覆盖的 Admin / Ops UI。
+- 不绕过后端 admin 权限校验；RoleContext 只控制导航显示，不作为安全边界。
 - 不读取 secret。
 - 不调用真实腾讯云、COS、Langfuse、one-person-lab 或外部生产 API。
 - 不修改 one-person-lab upstream。

@@ -238,6 +238,8 @@
         "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
         "scripts/smoke-test-v22-portal-runtime-suite.mjs",
         "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+        "scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",
         "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
         "scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs"
       ],
@@ -265,6 +267,8 @@
       ],
       "verification_commands": [
         "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+        "node scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",
         "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
         "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
         "node scripts/smoke-test-v22-portal-web-route-alignment.mjs",
@@ -298,6 +302,8 @@
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+        "node scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",
         "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
         "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
         "node scripts/smoke-test-v22-portal-web-route-alignment.mjs",

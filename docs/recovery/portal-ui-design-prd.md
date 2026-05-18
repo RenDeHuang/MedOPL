@@ -2,7 +2,7 @@
 
 > Current status: historical PRD draft, superseded for implementation by the Figma Make ZIP contract.
 >
-> 当前 Portal UI 的唯一实现 source-of-truth 是 `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip`、`docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`、`docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`、`services/portal/frontend/src/app/**` 和 `services/portal/frontend/src/app/data/portalAdapters.ts`。本 PRD 只保留用户、人群、主流程和语义背景，不再作为前端文件结构、route、组件、harness、visual workbench、screenshot regression 或 API shape 的 current truth。
+> 当前 Portal UI 的唯一实现 source-of-truth 是 `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`、`docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`、`docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`、`services/portal/frontend/src/app/**` 和 `services/portal/frontend/src/app/data/portalAdapters.ts`。本 PRD 只保留用户、人群、主流程和语义背景，不再作为前端文件结构、route、组件、harness、visual workbench、screenshot regression 或 API shape 的 current truth。
 
 本文档把 MedOPL v22 Portal 的 UI 需求背景整理为历史 PRD。它描述 Portal 产品定位、目标人群、信息架构、状态模型、数据边界和文案规范，可作为理解需求的背景材料；实际开发、设计吸收和验收必须以 Figma Make ZIP、当前合同和 smoke 为准。
 
@@ -53,8 +53,8 @@ OPL 继续负责科研执行、chatbot、agent、文件理解和结果生成。P
 - `docs/product.md`
 - `docs/architecture.md`
 - `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`
-- `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip`
-- `/tmp/medopl-figma-make-source`
+- `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`
+- `/tmp/medopl-figma-make-source-admin`
 - `services/portal/frontend/src/app/**`
 - `services/portal/frontend/src/app/data/portalAdapters.ts`
 
@@ -131,7 +131,7 @@ Portal UI 的目标是把 MedOPL 表达成一个状态驱动、可扫描、可�
 
 ### 4.3 运维 surface
 
-运维 surface 只在管理员具备 `opsSurfaceEnabled` 时可见。它用于服务状态、运行环境管理、费用估算、账单核对、文件空间状态和审计事项排障，不进入普通用户导航。
+运维 surface 只对管理员可见，不进入普通用户导航。`/admin/ops` 可以作为服务状态页面入口保留；当后端返回 `ops_surface_disabled` 时，页面必须展示“平台托管运维入口未启用”的明确产品态。只有 `opsSurfaceEnabled` 为真时，页面才展示底层服务探针、运行环境管理、费用估算、账单核对、文件空间状态和审计事项排障详情。
 
 ## 5. 范围
 
@@ -188,7 +188,7 @@ Portal 信息架构按用户主线组织：
 - 账单与审计：`/billing`
 - 进入 OPL：`/opl-launch`
 
-管理台导航仅管理员可见。服务状态或运行环境管理等 ops surface 仅在 `opsSurfaceEnabled` 为真时可见。
+管理台导航仅管理员可见。服务状态页面可以在管理员导航中出现；当 `opsSurfaceEnabled` 未启用时必须展示 disabled 产品态，不得显示 generic error。运行环境管理等更深 ops surface 仅在 `opsSurfaceEnabled` 为真时展示详情。
 
 侧边栏底部必须保留 Portal/OPL 职责边界表达：平台托管开通、计费、审计和释放；科研执行进入 OPL。
 
@@ -456,7 +456,8 @@ Portal 信息架构按用户主线组织：
 需求：
 
 - 展示账号、工作空间、运行中任务、费用估算、账单核对、文件空间状态、审计事项和公告。
-- 只能在 `opsSurfaceEnabled` 下出现。
+- route 可以挂载；默认后端返回 `404 ops_surface_disabled` 时，页面展示“平台托管运维入口未启用”。
+- 只有在 `opsSurfaceEnabled` 为真时展示底层服务探针和运行环境详情。
 - 用于排障，不改变普通用户主线。
 
 ### 8.13 账单处理 `/admin/billing-ops`
@@ -687,8 +688,8 @@ API shape 必须由 `services/portal/frontend/src/app/data/portalAdapters.ts`、
 Portal UI 的可执行事实源是：
 
 ```text
-/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip
-/tmp/medopl-figma-make-source
+/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip
+/tmp/medopl-figma-make-source-admin
 services/portal/frontend/src/app
 services/portal/frontend/src/app/data/portalAdapters.ts
 ```
@@ -860,8 +861,8 @@ API：
 
 ZIP / surface gate：
 
-- `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip`
-- `/tmp/medopl-figma-make-source`
+- `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`
+- `/tmp/medopl-figma-make-source-admin`
 - `scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
 - `scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`
 

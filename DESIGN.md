@@ -564,14 +564,14 @@ Portal 是高可扫描、高信息密度但不拥挤的 SaaS 科研工作台。
 
 ## Figma Make 吸收流程
 
-Figma Make 是当前 Portal 普通用户端 UI 的实现源，不是 v22 产品真相源。DESIGN.md、v22 合同、`v22-portal-figma-make-ui-implementation-boundary.md`、evalset 和 smoke 仍是代码侧执行真相。
+Figma Make 是当前 Portal 普通用户和管理员 UI 的实现源，不是 v22 产品真相源。DESIGN.md、v22 合同、`v22-portal-figma-make-ui-implementation-boundary.md`、evalset 和 smoke 仍是代码侧执行真相。
 
 推荐流程：
 
 1. 先按合同确认 Figma Make 页面没有改变 v22 产品语义。
 2. 清退历史 Vue / Pinia frontend surface 和旧路由。
-3. 将 Figma Make 普通用户 React UI 纳入 `services/portal/frontend`。
-4. 排除 Figma 源码残留 `AdminConsole.tsx`，Admin / Ops 后续同栈单独设计。
+3. 将 Figma Make 普通用户和管理员 React UI 纳入 `services/portal/frontend`。
+4. 物理清退旧 `AdminConsole.tsx` residue，管理员 UI 改以新 ZIP 的 `src/app/pages/admin/*` 为准。
 5. 用现有 `/portal/api/*` adapter 替换 mock-only 数据。
 6. Codex 运行合同 smoke、surface suite、typecheck、build 和本地预览。
 7. 只有通过验证且用户认可的分支，才交给 B ff-only 吸收。
@@ -580,7 +580,7 @@ Figma Make 吸收规则：
 
 - Figma 可以调整视觉表达，不能改变产品语义。
 - Portal 全体前端技术栈为 React + Vite + TypeScript + shadcn/Radix + lucide。
-- 当前 Figma Make 只覆盖普通用户端，不覆盖 Admin / Ops 完整 UI。
+- 当前 Figma Make 覆盖普通用户端和管理员端；管理员导航显示依赖 `/portal/api/me` 角色投影，真实权限仍由 `/portal/api/admin/*` 后端校验。
 - Figma 不得把 Portal 改成营销页、云控制台或 OPL chatbot。
 - Figma 版本评审应并排比较完整页面，不只比较单个 hero。
 - Figma 批注必须说明影响的页面、组件、状态和验收点。

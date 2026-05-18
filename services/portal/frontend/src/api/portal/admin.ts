@@ -1,4 +1,5 @@
 import { apiClient } from "../client";
+import axios from "axios";
 import type { PortalPagination, PortalAdminActionValue, PortalActionErrorShape } from "./common";
 import type { SessionTracesPayload } from "./traces";
 import type { PublicSettingsPayload } from "./public";
@@ -222,8 +223,18 @@ export async function fetchAdminSystem() {
 }
 
 export async function fetchAdminOps() {
-  const { data } = await apiClient.get("/admin/ops");
-  return data;
+  try {
+    const { data } = await apiClient.get("/admin/ops");
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404 && error.response.data?.error === "ops_surface_disabled") {
+      return {
+        ...error.response.data,
+        opsSurfaceEnabled: false,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function fetchAdminSandboxes() {

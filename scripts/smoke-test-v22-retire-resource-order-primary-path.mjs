@@ -50,13 +50,53 @@ const allowedStoreAdminFrontendRewriteDiffPaths = new Set([
   "services/portal/frontend/src/api/portal/traces.ts",
   "services/portal/frontend/src/api/portal/workspace.ts",
   "services/portal/frontend/src/app/data/portalAdapters.ts",
-  "services/portal/frontend/src/app/pages/AdminConsole.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminAlerts.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminAudit.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminBillingOps.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminDashboard.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminOps.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminSystem.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminUsers.tsx",
   "docs/recovery/legacy-cleanup-backlog.md",
   "docs/recovery/repo-zoning.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
   "scripts/smoke-test-v22-portal-admin-shared-helper-structure.mjs",
   "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
+]);
+
+const allowedPortalFigmaAdminUiAbsorptionDiffPaths = new Set([
+  "DESIGN.md",
+  "docs/contracts/README.md",
+  "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
+  "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+  "docs/recovery/portal-figma-make-ui-convergence-plan.md",
+  "docs/recovery/portal-ui-design-prd.md",
+  "docs/recovery/status-matrix.md",
+  "docs/recovery/v22-agent-verify-manifest.json",
+  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+  "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
+  "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+  "scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+  "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+  "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+  "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+  "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
+  "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+  gatePath,
+  "services/portal/frontend/src/app/App.tsx",
+  "services/portal/frontend/src/app/components/Layout.tsx",
+  "services/portal/frontend/src/app/contexts/RoleContext.tsx",
+  "services/portal/frontend/src/app/data/portalAdapters.ts",
+  "services/portal/frontend/src/app/pages/AdminConsole.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminAlerts.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminAudit.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminBillingOps.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminDashboard.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminOps.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminSystem.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminUsers.tsx",
+  "services/portal/frontend/src/app/routes.tsx",
 ]);
 
 const allowedStorePostgresSchemaEvalShellDiffPaths = new Set([
@@ -276,7 +316,13 @@ const activeStoreAdminFrontendPaths = [
   "services/portal/frontend/src/api/portal/traces.ts",
   "services/portal/frontend/src/api/portal/workspace.ts",
   "services/portal/frontend/src/app/data/portalAdapters.ts",
-  "services/portal/frontend/src/app/pages/AdminConsole.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminAlerts.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminAudit.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminBillingOps.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminDashboard.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminOps.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminSystem.tsx",
+  "services/portal/frontend/src/app/pages/admin/AdminUsers.tsx",
 ];
 
 const strictMonolithActiveAliasPaths = [
@@ -673,6 +719,7 @@ function allowedDiffPathsForBranch(branchName = currentBranchName()) {
     ])],
     ["cleanup/v22-retire-resource-order-billing-payloads", allowedBillingPayloadRewriteDiffPaths],
     ["cleanup/v22-retire-resource-order-store-admin-frontend", allowedStoreAdminFrontendRewriteDiffPaths],
+    ["feat/v22-portal-figma-admin-ui-absorption", allowedPortalFigmaAdminUiAbsorptionDiffPaths],
   ]);
   return allowedDiffPathsByBranch.get(branchName) || allowedResourceOrderRouteTombstoneDiffPaths;
 }
@@ -905,8 +952,9 @@ function assertModuleSourceUsesResourceBindingSurface(source) {
 }
 
 function assertFrontendAdminUsesResourceBindingSurface(source) {
-  assertIncludes(source, "管理员控制台", "admin_console_zip_residue_copy");
-  assertIncludes(source, "资源池概览", "admin_console_resource_pool_copy");
+  assertIncludes(source, "管理总览", "admin_dashboard_copy");
+  assertIncludes(source, "客户账户", "admin_users_copy");
+  assertIncludes(source, "工作空间", "admin_workspace_copy");
   assert(!source.includes("item.resourceOrderId"), "admin_ops_view_must_not_display_resource_order_id");
 }
 
@@ -1206,7 +1254,15 @@ assertNoRetiredPayloadShape("services/portal/src/app/portal-page-payload-helpers
 
 assertStoreHealthUsesResourceBindingSurface(await readRepoFile("services/portal/src/state/portal-store-health.mjs"));
 assertModuleSourceUsesResourceBindingSurface(await readRepoFile("services/portal/src/app/portal-module-source-payloads.mjs"));
-assertFrontendAdminUsesResourceBindingSurface(await readRepoFile("services/portal/frontend/src/app/pages/AdminConsole.tsx"));
+assertFrontendAdminUsesResourceBindingSurface((await Promise.all([
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminAlerts.tsx"),
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminAudit.tsx"),
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminBillingOps.tsx"),
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminDashboard.tsx"),
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminOps.tsx"),
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminSystem.tsx"),
+  readRepoFile("services/portal/frontend/src/app/pages/admin/AdminUsers.tsx"),
+])).join("\n"));
 
 for (const filePath of activeStoreAdminFrontendPaths) {
   assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, await readRepoFile(filePath));

@@ -5,6 +5,15 @@ const contractPath = "docs/contracts/v22-portal-workbench-management-ui-composit
 const start = "<!-- v22-portal-workbench-management-ui-composition-contract:start -->";
 const end = "<!-- v22-portal-workbench-management-ui-composition-contract:end -->";
 const userRoutes = ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"];
+const adminRoutes = [
+  "/admin/dashboard",
+  "/admin/users",
+  "/admin/alerts",
+  "/admin/billing-ops",
+  "/admin/audit",
+  "/admin/system",
+  "/admin/ops",
+];
 
 async function source(path) {
   return readFile(path, "utf8");
@@ -47,7 +56,7 @@ const layoutSource = await source("services/portal/frontend/src/app/components/L
 const adapterSource = await source("services/portal/frontend/src/app/data/portalAdapters.ts");
 
 assert.equal(contract.contract, "v22_portal_workbench_management_ui_composition_boundary", "contract_name_mismatch");
-assert.equal(contract.version, 10, "contract_version_mismatch");
+assert.equal(contract.version, 11, "contract_version_mismatch");
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.scope.portalOnly, true, "composition_scope_must_be_portal_only");
 assert.equal(contract.scope.implementsUi, true, "composition_contract_must_implement_ui");
@@ -60,8 +69,13 @@ assert.equal(contract.uiImplementationSource.kind, "figma_make_zip", "compositio
 assert.equal(contract.uiImplementationSource.contract, "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md", "composition_source_contract_mismatch");
 assert.equal(contract.uiImplementationSource.appRoot, "services/portal/frontend/src/app", "composition_app_root_mismatch");
 assert.deepEqual(contract.uiImplementationSource.userRoutes, userRoutes, "composition_user_routes_mismatch");
-assert.equal(contract.uiImplementationSource.adminConsoleCopiedAsUnroutedResidue, true, "composition_admin_residue_must_be_copied");
-assert.equal(contract.uiImplementationSource.activeAdminRouteMounted, false, "composition_admin_must_not_be_mounted");
+assert.deepEqual(contract.uiImplementationSource.adminRoutes, adminRoutes, "composition_admin_routes_mismatch");
+assert.equal(contract.uiImplementationSource.adminConsoleCopiedAsUnroutedResidue, false, "composition_admin_residue_must_be_removed");
+assert.equal(contract.uiImplementationSource.activeAdminRouteMounted, true, "composition_admin_must_be_mounted");
+assert.equal(contract.uiImplementationSource.adminOpsDefaultProductState.routeMounted, true, "composition_admin_ops_route_must_remain_mounted");
+assert.equal(contract.uiImplementationSource.adminOpsDefaultProductState.backendDisabledStatus, 404, "composition_admin_ops_disabled_status_mismatch");
+assert.equal(contract.uiImplementationSource.adminOpsDefaultProductState.backendDisabledError, "ops_surface_disabled", "composition_admin_ops_disabled_error_mismatch");
+assert.equal(contract.uiImplementationSource.adminOpsDefaultProductState.frontendDisabledCopy, "平台托管运维入口未启用", "composition_admin_ops_disabled_copy_mismatch");
 assert.equal(contract.surfaceSmoke.smoke, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "surface_smoke_mismatch");
 assert.equal(contract.surfaceSmoke.runtimeReportPath, ".runtime/portal-surface-eval/report.json", "surface_report_path_mismatch");
 assert.equal(contract.surfaceSmoke.runtimeReportCommitted, false, "surface_report_must_not_be_committed");
@@ -73,19 +87,29 @@ assert.equal(contract.uiArchitecture.apiShapeFactsLiveInPortalApiAdapter, true, 
 assert.equal(contract.uiArchitecture.visualWorkbenchFactsLiveInCurrentGate, false, "visual_workbench_must_not_be_current_gate");
 assert.equal(contract.uiArchitecture.screenshotRegressionFactsLiveInCurrentGate, false, "screenshot_regression_must_not_be_current_gate");
 
-for (const route of userRoutes) assertIncludes(routesSource, `path: "${route.slice(1)}"`, `route_missing:${route}`);
-for (const route of userRoutes) assertIncludes(layoutSource, `path: "${route}"`, `nav_route_missing:${route}`);
+for (const route of [...userRoutes, ...adminRoutes]) assertIncludes(routesSource, `path: "${route.slice(1)}"`, `route_missing:${route}`);
+for (const route of [...userRoutes, ...adminRoutes]) assertIncludes(layoutSource, `path: "${route}"`, `nav_route_missing:${route}`);
 for (const apiFunction of ["fetchOverview", "fetchMyResources", "fetchWorkspace", "fetchSessionTraces", "fetchBillingSummary", "fetchBillingDetails", "fetchOplLaunchStatus", "fetchOplBootstrap", "bindOplSession"]) {
   assertIncludes(adapterSource, apiFunction, `adapter_call_missing:${apiFunction}`);
 }
-assert.equal(await exists("services/portal/frontend/src/app/pages/AdminConsole.tsx"), true, "admin_console_zip_residue_must_exist");
+for (const apiFunction of ["fetchCurrentUser", "fetchAnnouncements", "fetchAdminOverview", "fetchAdminUsers", "fetchAdminAlerts", "fetchAdminBillingOps", "fetchAdminAudit", "fetchAdminSystem", "fetchAdminOps"]) {
+  assertIncludes(adapterSource, apiFunction, `admin_adapter_call_missing:${apiFunction}`);
+}
+assertIncludes(adapterSource, "ops_surface_disabled", "admin_ops_adapter_must_handle_disabled_product_state");
+assertIncludes(adapterSource, "平台托管运维入口未启用", "admin_ops_adapter_must_render_disabled_copy");
+const adminOpsPageSource = await source("services/portal/frontend/src/app/pages/admin/AdminOps.tsx");
+assertIncludes(adminOpsPageSource, "opsSurfaceEnabled", "admin_ops_page_must_branch_on_disabled_state");
+assertIncludes(adminOpsPageSource, "平台托管运维入口未启用", "admin_ops_page_must_render_disabled_product_state");
+assertExcludes(adminOpsPageSource, "Portal 数据暂时不可用", "admin_ops_page_must_not_render_generic_error_for_disabled_surface");
+assert.equal(await exists("services/portal/frontend/src/app/pages/AdminConsole.tsx"), false, "old_admin_console_zip_residue_must_not_exist");
 assertExcludes(routesSource, "AdminConsole", "admin_console_must_not_be_mounted");
 
 assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs", "runtime_suite_must_include_surface_eval");
+assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs", "runtime_suite_must_include_admin_readiness");
 assertIncludes(runtimeSuite, "scripts/smoke-test-v22-portal-web-route-alignment.mjs", "runtime_suite_must_include_route_alignment");
 assertIncludes(figmaContract, "唯一 Portal UI source-of-truth", "figma_contract_must_own_zip_truth");
 assertIncludes(markdown, "React + Vite + TypeScript + react-router + shadcn/Radix + lucide", "composition_contract_must_reference_react_stack");
-assertIncludes(markdown, "Admin / Ops 后续按同一 React 技术栈另开 leaf", "composition_contract_must_defer_admin");
+assertIncludes(markdown, "普通用户和管理员 Portal", "composition_contract_must_record_user_admin_coverage");
 assertExcludes(markdown, "services/portal/frontend/src/harness/portal-ui-evalset.json", "old_evalset_path_copy");
 assertExcludes(markdown, "visualWorkbenchFactsLiveInEvalset", "old_visual_workbench_evalset_field");
 
@@ -95,8 +119,8 @@ console.log(JSON.stringify({
   version: contract.version,
   checked: [
     "figma_make_zip_surface_truth",
-    "user_routes_only",
-    "admin_copied_but_unrouted",
+    "user_and_admin_routes",
+    "old_admin_console_removed",
     "visual_workbench_removed_from_current_gate",
     "screenshot_regression_removed_from_current_gate",
   ],

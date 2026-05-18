@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-17",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "18dbc0fe3f5e459b034e48ec2515a99572d57270",
+  "base_trunk_head": "cf7cf01fef1528da36c7cada7a13f27516bd7f3b",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "feat/v22-portal-ui-reference-mapped-shell",
+  "current_branch": "feat/v22-portal-figma-admin-ui-absorption",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-portal-ui-reference-mapped-shell",
+  "authoring_branch": "feat/v22-portal-figma-admin-ui-absorption",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,10 +23,10 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "18dbc0fe3f5e459b034e48ec2515a99572d57270",
-    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base. This reference-mapped shell branch is stacked on the design source commit and still descends from base_trunk_head. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
+    "observed_git_head": "cf7cf01fef1528da36c7cada7a13f27516bd7f3b",
+    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base. This Figma Make admin UI absorption branch is stacked on the design source commit and still descends from base_trunk_head. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "18dbc0fe3f5e459b034e48ec2515a99572d57270",
+  "last_absorbed_commit": "cf7cf01fef1528da36c7cada7a13f27516bd7f3b",
   "current_cursor": "leaf-portal-figma-make-react-ui-implementation",
   "next_leaf": "leaf-portal-figma-make-react-ui-implementation",
   "current_stage": "S5 frontend/backend product completion",
@@ -34,7 +34,7 @@
   "current_blockers": [
     "none_for_portal_ui_design_quality_implementation_local_service_code"
   ],
-  "current_problem": "Current product-goal cursor is leaf-portal-figma-make-react-ui-implementation. This branch aligns contracts, retires old Vue/admin/visual-workbench Portal UI assumptions, replaces the Portal frontend with React + Vite + TypeScript + shadcn/Radix + lucide, absorbs the current Figma Make ordinary-user Portal routes, connects existing /portal/api/* adapters, and provides a local preview deployment path while keeping v22 SaaS control-plane product truth fixed.",
+  "current_problem": "Current product-goal cursor is leaf-portal-figma-make-react-ui-implementation. This branch aligns contracts, retires old Vue/admin/visual-workbench Portal UI assumptions, replaces the Portal frontend with React + Vite + TypeScript + shadcn/Radix + lucide, absorbs the current Figma Make user and admin Portal routes, connects existing /portal/api/* and /portal/api/admin/* adapters, and provides a local preview deployment path while keeping v22 SaaS control-plane product truth fixed.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -241,11 +241,13 @@
     "depends_on": [
       "cloud-lane-mock-readonly-dry-run-authorized"
     ],
-    "problem": "Portal Figma Make React UI implementation is the S5 frontend product leaf. It updates the old Portal UI contract surface, retires Vue/admin/visual-workbench assumptions from the current user Portal, implements ordinary-user routes /overview, /resources, /workspace, /trace, /billing, and /opl-launch with React/Vite/TypeScript/shadcn-Radix/lucide, and connects existing Portal API adapters without changing backend product semantics.",
+    "problem": "Portal Figma Make React UI implementation is the S5 frontend product leaf. It updates the old Portal UI contract surface, retires Vue/admin/visual-workbench assumptions from the current Portal, implements user routes /overview, /resources, /workspace, /trace, /billing, and /opl-launch plus admin routes /admin/dashboard, /admin/users, /admin/alerts, /admin/billing-ops, /admin/audit, /admin/system, and /admin/ops with React/Vite/TypeScript/shadcn-Radix/lucide, and connects existing Portal API adapters without changing backend product semantics.",
     "executable_when": "Cloud lane readonly status audit and Portal UI design quality audit evidence are absorbed; local Portal frontend implementation and Portal frontend dependency migration only under services/portal/frontend/** plus subscribed docs/scripts gates; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no upstream, and no Portal backend services changes.",
     "failure_state": "blocked_portal_figma_make_react_ui_implementation if it requires Portal backend services changes, secret, live cloud, build/push/kubectl, deploy, live-test, upstream changes, product semantics reverting to user-owned cloud console, or UI changes that cannot be verified by frontend surface/typecheck/build gates.",
     "verification_commands": [
       "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+      "node scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",
       "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
       "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
       "node scripts/smoke-test-v22-portal-web-route-alignment.mjs",
@@ -295,6 +297,8 @@
       "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
       "scripts/smoke-test-v22-portal-runtime-suite.mjs",
       "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+      "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+      "scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",
       "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
       "scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs"
     ],
@@ -317,7 +321,9 @@
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-      "docs/recovery/mvp-contract-acceptance.md"
+      "docs/recovery/mvp-contract-acceptance.md",
+      "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
+      "docs/contracts/v22-portal-structure-failure-isolation-boundary.md"
     ]
   },
   "release_readiness_state": {
@@ -342,6 +348,8 @@
   },
   "verification_commands": [
     "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+    "node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+    "node scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",
     "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
     "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
     "node scripts/smoke-test-v22-portal-web-route-alignment.mjs",

@@ -45,14 +45,14 @@ Autonomous Goal Runner is runner governance only. It lets agents keep using the 
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `feat/v22-portal-design-system-source`.
+- authoring/source branch: `feat/v22-portal-figma-admin-ui-absorption`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
 - 当前 goal cursor: `leaf-portal-figma-make-react-ui-implementation`.
 - highest-priority executable leaf step: `leaf-portal-figma-make-react-ui-implementation`.
-- 当前下一问题：S5 continues with `leaf-portal-figma-make-react-ui-implementation`; this branch aligns the contracts, retires the old Vue/admin/visual-workbench current surface, implements the React/Figma Make ordinary-user Portal routes, connects existing Portal API adapters, and provides a local preview path.
+- 当前下一问题：S5 continues with `leaf-portal-figma-make-react-ui-implementation`; this branch aligns the contracts, retires the old Vue/admin/visual-workbench current surface, implements the React/Figma Make user and admin Portal routes, connects existing Portal API and admin API adapters, and provides a local preview path.
 - release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
@@ -63,12 +63,12 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - gap_id: `frontend-product-react-vite-figma-make`.
 - stage: `S5 frontend/backend product completion`.
 - cursor_eligible: true.
-- eval_command: `node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`; `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`; `npm --prefix services/portal/frontend run typecheck`; `npm --prefix services/portal/frontend run build`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`.
+- eval_command: `node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`; `node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs`; `node scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs`; `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`; `npm --prefix services/portal/frontend run typecheck`; `npm --prefix services/portal/frontend run build`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`.
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
 - auth_boundary: this implementation branch may update `services/portal/frontend/**`, Portal frontend package/lockfile, `DESIGN.md`, and subscribed UI contracts/recovery/smoke files. No Portal backend services changes, no non-Portal-frontend dependency changes, no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no upstream modification.
-- truth_writeback_target: `DESIGN.md`, `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/README.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/mvp-contract-acceptance.md`.
+- truth_writeback_target: `DESIGN.md`, `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`, `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/README.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/mvp-contract-acceptance.md`.
 - ui_best_practices_boundary: external UI/UX best practices may be used as expression-quality references only; v22 contracts fix the content semantics, service truth, Portal/OPL responsibility boundary, role boundary, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language.
-- implementation_evidence: current leaf writes `.runtime/portal-ui-design-quality/report.json` from the audit smoke as runtime-only evidence and verifies React route/surface anchors, typecheck and build. Screenshot baseline is no longer current completion evidence.
+- implementation_evidence: current leaf writes `.runtime/portal-ui-design-quality/report.json` from the audit smoke as runtime-only evidence and verifies React user/admin route/surface anchors, admin readiness, `/admin/ops` disabled product state, typecheck and build. Screenshot baseline is no longer current completion evidence.
 - design_source_scope: `DESIGN.md` remains a design execution source, not a replacement for contracts, Figma Make ZIP source-of-truth, smoke, or v22 product truth.
 - implementation_scope: UI implementation must make real Portal frontend changes, keep Portal as the SaaS control plane workbench for the托管 OPL 科研工作台服务, and must not implement OPL chatbot behavior or modify upstream.
 

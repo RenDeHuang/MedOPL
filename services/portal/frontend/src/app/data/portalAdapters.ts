@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react";
+import {
+  fetchAdminAlerts,
+  fetchAdminAudit,
+  fetchAdminBillingOps,
+  fetchAdminOps,
+  fetchAdminOverview,
+  fetchAdminSystem,
+  fetchAdminUsers,
+} from "../../api/portal/admin";
 import { fetchBillingDetails, fetchBillingSummary } from "../../api/portal/billing";
+import { fetchCurrentUser } from "../../api/portal/commercial";
 import { fetchOverview } from "../../api/portal/overview";
 import { bindOplSession, createOplLaunch, fetchOplBootstrap } from "../../api/portal/opl";
 import { fetchMyResources, fetchOplLaunchStatus } from "../../api/portal/resources";
+import { fetchAnnouncements } from "../../api/portal/sessions";
 import { fetchSessionTraces } from "../../api/portal/traces";
 import { fetchWorkspace } from "../../api/portal/workspace";
 import type { CustomerStorageResource, PlatformProvisionedResourcesPayload } from "../../api/portal/resources";
@@ -15,6 +26,7 @@ export type QueryState<T> =
 
 const PORTAL_DATA_UNAVAILABLE_MESSAGE = "Portal 数据暂时不可用，请稍后重试。";
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
+export const adminReadOnlyMessage = "管理员操作需要后端授权接口；当前页面只展示已接入的只读数据。";
 
 class PortalDisplayError extends Error {
   readonly userMessage: string;
@@ -97,6 +109,25 @@ function bytesToSize(value: unknown) {
 
 function dateText(value: unknown) {
   return typeof value === "string" && value ? value.replace("T", " ").slice(0, 16) : "未返回";
+}
+
+function stringValue(value: unknown, fallback = "未返回") {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function keyPart(value: unknown, fallback = "none") {
+  if (typeof value === "string" && value.trim()) return value.trim().replace(/[^a-zA-Z0-9._:-]+/g, "_");
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "boolean") return String(value);
+  return fallback;
+}
+
+function arrayValue<T = any>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : [];
+}
+
+function objectValue(value: unknown): Record<string, any> {
+  return value && typeof value === "object" ? value as Record<string, any> : {};
 }
 
 function fileType(name: string) {
@@ -299,4 +330,284 @@ export async function loadOplEntryModel() {
   } catch {
     throw new PortalDisplayError(OPL_GATEWAY_UNAVAILABLE_MESSAGE);
   }
+}
+
+export async function loadCurrentUserModel() {
+  const user = await fetchCurrentUser();
+  return {
+    userName: user.name || user.email || "MedOPL 用户",
+    userEmail: user.email || "",
+    status: user.status === "disabled" ? "disabled" : user.status === "restricted" ? "restricted" : "active",
+    initials: (user.initials || user.name || user.email || "用户").slice(0, 2),
+  } as const;
+}
+
+export async function loadAnnouncementModel() {
+  const announcements = await fetchAnnouncements();
+  return {
+    announcements: announcements.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      isPinned: Boolean(item.pinned),
+      createdAt: dateText(item.createdAt),
+      updatedAt: dateText(item.updatedAt),
+    })),
+  };
+}
+
+function adminAlertSeverity(severity: unknown): "error" | "warning" | "info" {
+  const value = String(severity || "").toLowerCase();
+  if (["danger", "error", "critical", "failed"].includes(value)) return "error";
+  if (["warning", "warn", "pending"].includes(value)) return "warning";
+  return "info";
+}
+
+function adminUserStatus(status: unknown): "active" | "restricted" | "disabled" {
+  const value = String(status || "").toLowerCase();
+  if (["active", "ok", "success", "operational", "connected", "ready"].includes(value)) return "active";
+  if (["disabled", "deleted", "blocked", "failed", "down"].includes(value)) return "disabled";
+  return "restricted";
+}
+
+function adminBillingType(row: Record<string, any>): "pending" | "anomaly" | "refund" {
+  if (row.type === "refund") return "refund";
+  if (row.severity) return "anomaly";
+  return "pending";
+}
+
+function adminBillingStatus(status: unknown): "pending" | "approved" | "rejected" {
+  const value = String(status || "").toLowerCase();
+  if (value === "approved") return "approved";
+  if (value === "rejected") return "rejected";
+  return "pending";
+}
+
+function adminAuditStatus(type: unknown): "success" | "failed" | "warning" {
+  const value = String(type || "");
+  if (/fail|error|denied|blocked/i.test(value)) return "failed";
+  if (/warning|pending/i.test(value)) return "warning";
+  return "success";
+}
+
+function billingRowKey(source: string, row: Record<string, any>, index: number) {
+  const type = adminBillingType(row);
+  const event = keyPart(row.status || row.type || row.reason || row.title || row.detail, type);
+  const primary = keyPart(row.runId || row.userId || row.workspaceId || row.createdAt || row.occurredAt || row.completedAt, "no-primary");
+  return `billing:${source}:${type}:${event}:${primary}:${index}`;
+}
+
+function auditRowKey(row: Record<string, any>, index: number) {
+  const type = stringValue(row.type, "audit");
+  const detail = keyPart(row.detail || row.operation || row.action || row.type, type);
+  const primary = keyPart(row.id || row.userId || row.operatorId || row.workspaceId || row.occurredAt, "no-primary");
+  return `audit:items:${type}:${detail}:${primary}:${index}`;
+}
+
+export async function loadAdminDashboardModel() {
+  const overview = await fetchAdminOverview();
+  const payload = objectValue(overview);
+  const kpis = objectValue(payload.kpis);
+  const pending = objectValue(payload.pending);
+  const alerts = arrayValue(payload.alerts).slice(0, 5).map((item) => {
+    const row = objectValue(item);
+    return {
+      id: stringValue(row.runId || row.userId || row.title || row.detail),
+      type: stringValue(row.category || row.severity),
+      user: stringValue(row.userName || row.userId, ""),
+      workspace: stringValue(row.workspaceId, ""),
+      message: stringValue(row.title || row.detail),
+      severity: adminAlertSeverity(row.severity),
+    };
+  });
+  return {
+    stats: {
+      activeUsers: numberValue(kpis.activeUsers),
+      totalWorkspaces: numberValue(kpis.workspaceTotal),
+      runningTasks: numberValue(kpis.todayRuns || kpis.totalRuns),
+      todayRevenue: numberValue(kpis.todayTotalCost),
+      frozenAmount: numberValue(payload.ledgerSummary?.frozenAmount || payload.pending?.oldestPendingHours),
+      pendingItems: numberValue(pending.count || alerts.length),
+    },
+    pendingItems: alerts,
+  };
+}
+
+export async function loadAdminUsersModel() {
+  const users = await fetchAdminUsers();
+  return {
+    users: users.items.map((item) => ({
+      id: item.id,
+      name: item.name || item.email || item.id,
+      email: item.email || "",
+      status: adminUserStatus(item.status),
+      balance: numberValue(item.balance),
+      workspaces: numberValue((item as any).taskCount || (item as any).workspaceCount),
+      plan: (item as any).groupName || item.role || "未分组",
+      createdAt: dateText(item.createdAt),
+    })),
+  };
+}
+
+export async function loadAdminAlertsModel() {
+  const [alertsPayload, announcementsPayload] = await Promise.all([fetchAdminAlerts(), fetchAnnouncements()]);
+  const pendingItems = arrayValue(objectValue(alertsPayload).alerts).map((item) => {
+    const row = objectValue(item);
+    return {
+      id: stringValue(row.runId || row.userId || row.title || row.detail),
+      type: stringValue(row.category || row.severity),
+      severity: adminAlertSeverity(row.severity),
+      user: stringValue(row.userName || row.userId, ""),
+      workspace: stringValue(row.workspaceId, ""),
+      message: stringValue(row.title || row.detail),
+      createdAt: dateText(row.occurredAt),
+    };
+  });
+  return {
+    announcements: announcementsPayload.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      isPinned: Boolean(item.pinned),
+      isActive: item.status !== "inactive",
+      createdAt: dateText(item.createdAt),
+      publishedAt: dateText(item.updatedAt || item.createdAt),
+    })),
+    pendingItems,
+  };
+}
+
+export async function loadAdminBillingOpsModel() {
+  const billing = objectValue(await fetchAdminBillingOps());
+  const pending = objectValue(billing.pending);
+  const sync = objectValue(billing.billingSync);
+  const warningEvents = arrayValue(billing.warningEvents);
+  const pendingRuns = arrayValue(billing.pendingRuns);
+  const adjustments = arrayValue(billing.adjustments);
+  const billingItems = [
+    { source: "pendingRuns", items: pendingRuns },
+    { source: "warningEvents", items: warningEvents },
+    { source: "adjustments", items: adjustments },
+  ].flatMap(({ source, items }) => items.map((item, index) => {
+    const row = objectValue(item);
+    return {
+      rowKey: billingRowKey(source, row, index),
+      id: stringValue(row.runId || row.userId || row.createdAt, String(index)),
+      type: adminBillingType(row),
+      user: stringValue(row.userName || row.userId, "-"),
+      workspace: stringValue(row.workspaceId, "-"),
+      amount: numberValue(row.amount || row.totalCost || row.estimatedCost),
+      status: adminBillingStatus(row.status),
+      reason: stringValue(row.reason || row.title || row.detail || row.type),
+      createdAt: dateText(row.createdAt || row.occurredAt || row.completedAt),
+    };
+  }));
+  return {
+    stats: {
+      pendingCount: numberValue(pending.count || pendingRuns.length),
+      t1ReconcileStatus: sync.lastError ? "failed" : sync.lastRunAt ? "completed" : "pending",
+      frozenAnomalies: warningEvents.length,
+      todayRefunds: adjustments.filter((item) => objectValue(item).type === "refund").length,
+    },
+    billingItems,
+  };
+}
+
+export async function loadAdminAuditModel() {
+  const audit = objectValue(await fetchAdminAudit());
+  return {
+    auditEvents: arrayValue(audit.items).map((item, index) => {
+      const row = objectValue(item);
+      const rawType = stringValue(row.type, "audit");
+      return {
+        rowKey: auditRowKey(row, index),
+        id: stringValue(row.id || row.occurredAt, String(index)),
+        type: rawType,
+        operation: rawType,
+        user: stringValue(row.userId || row.operatorId, "-"),
+        workspace: stringValue(row.workspaceId, ""),
+        status: adminAuditStatus(rawType),
+        details: stringValue(row.detail || row.type),
+        timestamp: dateText(row.occurredAt),
+      };
+    }),
+  };
+}
+
+export async function loadAdminSystemModel() {
+  const system = objectValue(await fetchAdminSystem());
+  const publicSettings = objectValue(system.publicSettings);
+  const services = arrayValue(system.serviceStatuses);
+  const metrics = objectValue(system.systemMetrics);
+  const security = objectValue(system.summaries?.security);
+  const failedServices = services.filter((item) => objectValue(item).ok === false).length;
+  const degradedServices = services.filter((item) => ["degraded", "pending"].includes(String(objectValue(item).status || "").toLowerCase())).length;
+  return {
+    siteName: stringValue(publicSettings.siteName, "MedOPL Portal"),
+    homeTitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "托管 OPL 科研工作台"),
+    registrationEnabled: Boolean(system.allowRegistration),
+    adminReadOnlyMessage,
+    serviceStatus: {
+      totalServices: services.length,
+      failedServices,
+      degradedServices,
+      keyRoutes: services.slice(0, 6).map((item) => {
+        const row = objectValue(item);
+        return {
+          name: stringValue(row.name),
+          status: row.ok === false ? "failed" : String(row.status || "operational"),
+        };
+      }),
+      securityChecks: {
+        total: arrayValue(security.checks).length,
+        passed: arrayValue(security.checks).filter((item) => objectValue(item).healthy !== false).length,
+        failed: arrayValue(security.checks).filter((item) => objectValue(item).healthy === false).length,
+      },
+      performance: {
+        avgResponseTime: numberValue(metrics.averageResponseMs || metrics.masFirstReplyApproxMs),
+        errorRate: numberValue(metrics.errorRate),
+      },
+    },
+  };
+}
+
+export async function loadAdminOpsModel() {
+  const ops = objectValue(await fetchAdminOps());
+  if (ops.error === "ops_surface_disabled" || ops.opsSurfaceEnabled === false) {
+    return {
+      opsSurfaceEnabled: false,
+      disabledTitle: "平台托管运维入口未启用",
+      disabledMessage: stringValue(ops.message, "未启用平台托管运维入口。"),
+      platformMetrics: {
+        totalRequests: 0,
+        avgResponseTime: 0,
+        activeConnections: 0,
+        errorRate: 0,
+      },
+      services: [],
+      adminReadOnlyMessage,
+    };
+  }
+  const systemMetrics = objectValue(ops.systemMetrics);
+  const services = arrayValue(ops.serviceStatuses || ops.upstreamStatuses || ops.alerts);
+  const summaries = objectValue(ops.summaries);
+  return {
+    opsSurfaceEnabled: true,
+    platformMetrics: {
+      totalRequests: numberValue(systemMetrics.totalRequests || systemMetrics.totalRuns || ops.summary?.runCount),
+      avgResponseTime: numberValue(systemMetrics.averageResponseMs || systemMetrics.masFirstReplyApproxMs),
+      activeConnections: numberValue(systemMetrics.activeWorkspaceSessions || systemMetrics.concurrentRuns),
+      errorRate: numberValue(systemMetrics.errorRate),
+    },
+    services: services.map((item) => {
+      const row = objectValue(item);
+      return {
+        name: stringValue(row.name || row.title || row.category),
+        status: row.ok === false ? "down" : String(row.status || row.mode || "operational"),
+        uptime: row.responseMs ? `${row.responseMs}ms` : stringValue(row.mode || summaries.billing?.mode, "状态可见"),
+        lastCheck: dateText(row.occurredAt || row.updatedAt),
+      };
+    }),
+    adminReadOnlyMessage,
+  };
 }

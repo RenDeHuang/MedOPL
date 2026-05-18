@@ -9,7 +9,16 @@ const authSource = await readFile("services/portal/src/app/portal-auth-runtime-h
 const figmaContract = await readFile("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md", "utf8");
 
 const requiredRoutes = ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"];
-const retiredFrontendRoutes = ["/packages", "/advanced/servers", "/admin/dashboard", "/admin/billing-ops", "/admin/usage", "/admin/users", "/admin/system", "/admin/audit", "/__portal-harness/components"];
+const requiredAdminRoutes = [
+  "/admin/dashboard",
+  "/admin/users",
+  "/admin/alerts",
+  "/admin/billing-ops",
+  "/admin/audit",
+  "/admin/system",
+  "/admin/ops",
+];
+const retiredFrontendRoutes = ["/packages", "/advanced/servers", "/admin/usage", "/admin/trace", "/admin/user", "/admin/groups", "/admin/workspace", "/admin/run", "/admin/sandboxes", "/__portal-harness/components"];
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
@@ -19,13 +28,33 @@ function assertExcludes(source, forbidden, label) {
   assert.equal(source.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
 }
 
+function assertRoutePathAbsent(source, route, label) {
+  assert.equal(
+    source.includes(`path: "${route.slice(1)}"`),
+    false,
+    `${label}_must_not_include_route:${route}`,
+  );
+  assert.equal(
+    source.includes(`path: "${route}"`),
+    false,
+    `${label}_must_not_include_nav_route:${route}`,
+  );
+}
+
 for (const route of requiredRoutes) {
   assertIncludes(routesSource, `path: "${route.slice(1)}"`, `portal_frontend_route_missing:${route}`);
   assertIncludes(dispatcherSource, `"${route}"`, `portal_dispatcher_shell_route_missing:${route}`);
 }
+for (const route of requiredAdminRoutes) {
+  assertIncludes(routesSource, `path: "${route.slice(1)}"`, `portal_frontend_admin_route_missing:${route}`);
+  assertIncludes(dispatcherSource, `"${route}"`, `portal_dispatcher_admin_shell_route_missing:${route}`);
+}
 
 for (const route of requiredRoutes) {
   assertIncludes(layoutSource, `path: "${route}"`, `portal_nav_route_missing:${route}`);
+}
+for (const route of requiredAdminRoutes) {
+  assertIncludes(layoutSource, `path: "${route}"`, `portal_admin_nav_route_missing:${route}`);
 }
 
 for (const label of ["总览", "运行环境", "工作空间", "任务与结果", "账单与审计", "进入 OPL"]) {
@@ -33,8 +62,8 @@ for (const label of ["总览", "运行环境", "工作空间", "任务与结果"
 }
 
 for (const route of retiredFrontendRoutes) {
-  assertExcludes(routesSource, route, `portal_frontend_retired_route:${route}`);
-  assertExcludes(layoutSource, route, `portal_nav_retired_route:${route}`);
+  assertRoutePathAbsent(routesSource, route, `portal_frontend_retired_route:${route}`);
+  assertRoutePathAbsent(layoutSource, route, `portal_nav_retired_route:${route}`);
 }
 
 for (const proxyPrefix of [
@@ -56,9 +85,9 @@ assertIncludes(routesSource, 'from "react-router"', "portal_router_must_use_zip_
 assertExcludes(routesSource, "react-router-dom", "portal_router_must_not_use_react_router_dom");
 assertExcludes(routesSource, "vue-router", "portal_router_must_not_use_vue_router");
 assertIncludes(authSource, 'const PORTAL_AUTH_SUCCESS_LOCATION = "/overview"', "portal_auth_success_location_must_be_overview");
-assertIncludes(figmaContract, '"currentCoverage": "user_portal_only"', "figma_contract_must_keep_user_only_coverage");
-assertIncludes(figmaContract, '"futureSameStack": true', "figma_contract_must_keep_admin_future_same_stack");
-assertIncludes(figmaContract, '"activeAdminRouteMounted": false', "figma_contract_must_forbid_active_admin_mount");
+assertIncludes(figmaContract, '"currentCoverage": "user_portal_and_admin_portal"', "figma_contract_must_keep_user_admin_coverage");
+assertIncludes(figmaContract, '"activeAdminRouteMounted": true', "figma_contract_must_require_active_admin_mount");
+assertIncludes(figmaContract, '"roleContextSecurityBoundary": false', "figma_contract_must_keep_role_context_non_security_boundary");
 
 console.log(JSON.stringify({
   ok: true,
@@ -66,5 +95,6 @@ console.log(JSON.stringify({
   router: "react-router",
   canonicalLanding: "/overview",
   checkedRoutes: requiredRoutes,
+  checkedAdminRoutes: requiredAdminRoutes,
   retiredFrontendRoutes,
 }, null, 2));

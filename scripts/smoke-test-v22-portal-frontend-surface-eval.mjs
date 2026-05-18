@@ -5,9 +5,19 @@ import path from "node:path";
 const repoRoot = process.cwd();
 const reportPath = path.join(repoRoot, ".runtime", "portal-surface-eval", "report.json");
 const appRoot = "services/portal/frontend/src/app";
-const figmaAppRoot = "/tmp/medopl-figma-make-source/src/app";
-const expectedRoutes = ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"];
-const retiredRouteFragments = ["/packages", "/advanced/servers", "/admin/", "/__portal-harness/components"];
+const figmaAppRoot = "/tmp/medopl-figma-make-source-admin/src/app";
+const expectedUserRoutes = ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"];
+const expectedAdminRoutes = [
+  "/admin/dashboard",
+  "/admin/users",
+  "/admin/alerts",
+  "/admin/billing-ops",
+  "/admin/audit",
+  "/admin/system",
+  "/admin/ops",
+];
+const expectedRoutes = [...expectedUserRoutes, ...expectedAdminRoutes];
+const retiredRouteFragments = ["/packages", "/advanced/servers", "/__portal-harness/components"];
 const expectedPages = {
   overview: "Overview.tsx",
   resources: "RuntimeEnvironment.tsx",
@@ -24,6 +34,24 @@ const requiredPageLoaders = {
   "BillingAudit.tsx": "loadBillingAuditModel",
   "OPLEntry.tsx": "loadOplEntryModel",
 };
+const expectedAdminPages = {
+  "admin/dashboard": "admin/AdminDashboard.tsx",
+  "admin/users": "admin/AdminUsers.tsx",
+  "admin/alerts": "admin/AdminAlerts.tsx",
+  "admin/billing-ops": "admin/AdminBillingOps.tsx",
+  "admin/audit": "admin/AdminAudit.tsx",
+  "admin/system": "admin/AdminSystem.tsx",
+  "admin/ops": "admin/AdminOps.tsx",
+};
+const requiredAdminPageLoaders = {
+  "admin/AdminDashboard.tsx": "loadAdminDashboardModel",
+  "admin/AdminUsers.tsx": "loadAdminUsersModel",
+  "admin/AdminAlerts.tsx": "loadAdminAlertsModel",
+  "admin/AdminBillingOps.tsx": "loadAdminBillingOpsModel",
+  "admin/AdminAudit.tsx": "loadAdminAuditModel",
+  "admin/AdminSystem.tsx": "loadAdminSystemModel",
+  "admin/AdminOps.tsx": "loadAdminOpsModel",
+};
 const requiredAdapterCalls = [
   "fetchOverview",
   "fetchMyResources",
@@ -34,6 +62,15 @@ const requiredAdapterCalls = [
   "fetchOplLaunchStatus",
   "fetchOplBootstrap",
   "bindOplSession",
+  "fetchCurrentUser",
+  "fetchAnnouncements",
+  "fetchAdminOverview",
+  "fetchAdminUsers",
+  "fetchAdminAlerts",
+  "fetchAdminBillingOps",
+  "fetchAdminAudit",
+  "fetchAdminSystem",
+  "fetchAdminOps",
 ];
 const forbiddenPublicStateKeys = [
   "rawApiKey",
@@ -99,6 +136,14 @@ function assertExcludes(text, forbidden, label) {
   assert.equal(text.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
 }
 
+function sliceBetween(text, start, end, label) {
+  const startIndex = text.indexOf(start);
+  assert.notEqual(startIndex, -1, `${label}_start_missing:${start}`);
+  const endIndex = text.indexOf(end, startIndex + start.length);
+  assert.notEqual(endIndex, -1, `${label}_end_missing:${end}`);
+  return text.slice(startIndex, endIndex);
+}
+
 const routesSource = await source(`${appRoot}/routes.tsx`);
 const layoutSource = await source(`${appRoot}/components/Layout.tsx`);
 const adapterSource = await source(`${appRoot}/data/portalAdapters.ts`);
@@ -109,8 +154,11 @@ const contractMarkdown = await source("docs/contracts/v22-portal-figma-make-ui-i
 assert.equal(await exists(figmaAppRoot), true, "figma_make_extracted_app_source_missing");
 assert.deepEqual(
   await listRelativeFiles(appRoot, [".ts", ".tsx"]),
-  (await listRelativeFiles(figmaAppRoot, [".ts", ".tsx"])).concat(["data/portalAdapters.ts"]).sort(),
-  "app_file_tree_must_match_figma_zip_plus_portal_adapter",
+  (await listRelativeFiles(figmaAppRoot, [".ts", ".tsx"]))
+    .filter((file) => file !== "pages/AdminConsole.tsx")
+    .concat(["data/portalAdapters.ts"])
+    .sort(),
+  "app_file_tree_must_match_figma_zip_without_old_admin_console_plus_portal_adapter",
 );
 
 assertIncludes(routesSource, "createBrowserRouter", "routes_must_use_react_router");
@@ -123,12 +171,20 @@ for (const [routeId, pageFile] of Object.entries(expectedPages)) {
   assertIncludes(routesSource, pageFile.replace(".tsx", ""), `route_component_missing:${routeId}`);
   assert.equal(await exists(`${appRoot}/pages/${pageFile}`), true, `page_file_missing:${pageFile}`);
 }
+for (const [routeId, pageFile] of Object.entries(expectedAdminPages)) {
+  assertIncludes(routesSource, `path: "${routeId}"`, `admin_route_path_missing:${routeId}`);
+  assertIncludes(routesSource, pageFile.replace("admin/", "").replace(".tsx", ""), `admin_route_component_missing:${routeId}`);
+  assert.equal(await exists(`${appRoot}/pages/${pageFile}`), true, `admin_page_file_missing:${pageFile}`);
+}
 
 for (const route of expectedRoutes) {
   assertIncludes(layoutSource, `path: "${route}"`, `layout_nav_route_missing:${route}`);
 }
 for (const label of ["总览", "运行环境", "工作空间", "任务与结果", "账单与审计", "进入 OPL"]) {
   assertIncludes(layoutSource, `name: "${label}"`, `layout_nav_label_missing:${label}`);
+}
+for (const label of ["管理总览", "客户账户", "公告与待处理事项", "账单处理", "审计记录", "站点设置", "服务状态"]) {
+  assertIncludes(layoutSource, `name: "${label}"`, `layout_admin_nav_label_missing:${label}`);
 }
 for (const retired of retiredRouteFragments) {
   assertExcludes(routesSource, retired, "react_routes_retired_path");
@@ -152,9 +208,50 @@ for (const [pageFile, loader] of Object.entries(requiredPageLoaders)) {
   assertIncludes(pageSource, loader, `page_must_use_portal_api_loader:${pageFile}`);
   assertIncludes(pageSource, "usePortalQuery", `page_must_use_portal_query:${pageFile}`);
 }
+for (const [pageFile, loader] of Object.entries(requiredAdminPageLoaders)) {
+  const pageSource = await source(`${appRoot}/pages/${pageFile}`);
+  assertIncludes(pageSource, loader, `admin_page_must_use_portal_api_loader:${pageFile}`);
+  assertIncludes(pageSource, "usePortalQuery", `admin_page_must_use_portal_query:${pageFile}`);
+}
 for (const apiFunction of requiredAdapterCalls) {
   assertIncludes(adapterSource, apiFunction, `portal_adapter_must_call:${apiFunction}`);
 }
+const adminOpsPageSource = await source(`${appRoot}/pages/admin/AdminOps.tsx`);
+assertIncludes(adapterSource, "ops_surface_disabled", "admin_ops_adapter_must_handle_disabled_product_state");
+assertIncludes(adapterSource, "opsSurfaceEnabled", "admin_ops_adapter_must_return_surface_enabled_flag");
+assertIncludes(adapterSource, "平台托管运维入口未启用", "admin_ops_adapter_must_map_disabled_state_to_product_copy");
+assertIncludes(adminOpsPageSource, "opsSurfaceEnabled", "admin_ops_page_must_branch_on_surface_enabled_flag");
+assertIncludes(adminOpsPageSource, "平台托管运维入口未启用", "admin_ops_page_must_render_disabled_product_state");
+assertExcludes(adminOpsPageSource, "Portal 数据暂时不可用", "admin_ops_page_must_not_render_generic_error_for_disabled_surface");
+
+const billingLoaderSource = sliceBetween(
+  adapterSource,
+  "export async function loadAdminBillingOpsModel()",
+  "export async function loadAdminAuditModel()",
+  "admin_billing_loader_source",
+);
+const auditLoaderSource = sliceBetween(
+  adapterSource,
+  "export async function loadAdminAuditModel()",
+  "export async function loadAdminSystemModel()",
+  "admin_audit_loader_source",
+);
+const adminBillingSource = await source(`${appRoot}/pages/admin/AdminBillingOps.tsx`);
+const adminAuditSource = await source(`${appRoot}/pages/admin/AdminAudit.tsx`);
+
+assertIncludes(billingLoaderSource, "rowKey:", "admin_billing_rows_must_expose_ui_row_key");
+assertIncludes(billingLoaderSource, "billingRowKey(", "admin_billing_rows_must_use_stable_source_aware_row_key");
+assertIncludes(adapterSource, 'return `billing:${source}:${type}:${event}:${primary}:${index}`;', "admin_billing_row_key_must_include_source_type_event_primary_index");
+for (const sourceCollection of ['source: "pendingRuns"', 'source: "warningEvents"', 'source: "adjustments"']) {
+  assertIncludes(billingLoaderSource, sourceCollection, `admin_billing_row_key_source_collection_missing:${sourceCollection}`);
+}
+assertIncludes(auditLoaderSource, "rowKey:", "admin_audit_rows_must_expose_ui_row_key");
+assertIncludes(auditLoaderSource, "auditRowKey(", "admin_audit_rows_must_use_stable_event_aware_row_key");
+assertIncludes(adapterSource, 'return `audit:items:${type}:${detail}:${primary}:${index}`;', "admin_audit_row_key_must_include_source_type_detail_primary_index");
+assertIncludes(adminBillingSource, "key={item.rowKey}", "admin_billing_table_must_use_ui_row_key");
+assertIncludes(adminAuditSource, "key={event.rowKey}", "admin_audit_table_must_use_ui_row_key");
+assertExcludes(adminBillingSource, "key={item.id}", "admin_billing_table_must_not_key_by_business_id");
+assertExcludes(adminAuditSource, "key={event.id}", "admin_audit_table_must_not_key_by_business_id");
 
 const frontendSources = [];
 for (const filePath of await listFiles("services/portal/frontend/src", [".ts", ".tsx", ".css"])) {
@@ -172,8 +269,11 @@ assertIncludes(visibleText, "进入 OPL", "opl_entry_copy_missing");
 
 assertIncludes(contractMarkdown, "Figma Make ZIP", "contract_must_name_zip_source");
 assertIncludes(contractMarkdown, "唯一 Portal UI source-of-truth", "contract_must_define_zip_source_of_truth");
-assertIncludes(contractMarkdown, "复制为 ZIP 源文件残留", "contract_must_allow_admin_residue_copy");
-assertIncludes(contractMarkdown, "不得挂载 active route", "contract_must_forbid_admin_route_mount");
+assertIncludes(contractMarkdown, '"currentCoverage": "user_portal_and_admin_portal"', "contract_must_record_user_admin_coverage");
+assertIncludes(contractMarkdown, '"activeAdminRouteMounted": true', "contract_must_require_admin_route_mount");
+assertIncludes(contractMarkdown, "RoleContext 不是安全边界", "contract_must_record_role_context_boundary");
+assertIncludes(contractMarkdown, "ops_surface_disabled", "contract_must_record_admin_ops_disabled_product_state");
+assertIncludes(contractMarkdown, "平台托管运维入口未启用", "contract_must_record_admin_ops_disabled_copy");
 
 await mkdir(path.dirname(reportPath), { recursive: true });
 const report = {
@@ -182,18 +282,20 @@ const report = {
   sourceOfTruth: "figma_make_zip",
   coverage: {
     routes: expectedRoutes.length,
-    pages: Object.keys(expectedPages).length,
+    userPages: Object.keys(expectedPages).length,
+    adminPages: Object.keys(expectedAdminPages).length,
     requiredAdapterCalls: requiredAdapterCalls.length,
   },
   checked: [
     "figma_zip_file_tree_parity",
-    "react_router_user_routes",
+    "react_router_user_admin_routes",
     "retired_routes_removed_from_active_frontend",
-    "admin_console_copied_but_unrouted",
+    "old_admin_console_removed",
     "page_api_loader_wiring",
     "portal_adapter_api_calls",
     "forbidden_copy",
     "secret_browser_hygiene_static",
+    "admin_billing_audit_row_key_wiring",
   ],
 };
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);

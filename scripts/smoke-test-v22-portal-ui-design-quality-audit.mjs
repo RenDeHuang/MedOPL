@@ -171,6 +171,10 @@ for (const route of ["/overview", "/resources", "/workspace", "/trace", "/billin
   assertIncludes(routesSource, `path: "${route.slice(1)}"`, `zip_route_missing:${route}`);
   assertIncludes(layoutSource, `path: "${route}"`, `layout_route_missing:${route}`);
 }
+for (const route of ["/admin/dashboard", "/admin/users", "/admin/alerts", "/admin/billing-ops", "/admin/audit", "/admin/system", "/admin/ops"]) {
+  assertIncludes(routesSource, `path: "${route.slice(1)}"`, `zip_admin_route_missing:${route}`);
+  assertIncludes(layoutSource, `path: "${route}"`, `layout_admin_route_missing:${route}`);
+}
 for (const loader of [
   "loadOverviewModel",
   "loadRuntimeEnvironmentModel",
@@ -178,12 +182,19 @@ for (const loader of [
   "loadTasksResultsModel",
   "loadBillingAuditModel",
   "loadOplEntryModel",
+  "loadAdminDashboardModel",
+  "loadAdminUsersModel",
+  "loadAdminAlertsModel",
+  "loadAdminBillingOpsModel",
+  "loadAdminAuditModel",
+  "loadAdminSystemModel",
+  "loadAdminOpsModel",
 ]) {
   assertIncludes(adapterSource, loader, `portal_adapter_loader_missing:${loader}`);
 }
 assertIncludes(figmaContract, "Figma Make ZIP", "figma_contract_must_define_zip_source");
-assertIncludes(figmaContract, '"currentCoverage": "user_portal_only"', "figma_contract_user_coverage_missing");
-assertIncludes(figmaContract, '"activeAdminRouteMounted": false', "figma_contract_admin_unrouted_missing");
+assertIncludes(figmaContract, '"currentCoverage": "user_portal_and_admin_portal"', "figma_contract_user_admin_coverage_missing");
+assertIncludes(figmaContract, '"activeAdminRouteMounted": true', "figma_contract_admin_routed_missing");
 
 await mkdir(".runtime/portal-ui-design-quality", { recursive: true });
 const auditReport = {
@@ -200,7 +211,7 @@ const auditReport = {
     liveCloudExecuted: false,
     buildPushKubectlDeployLiveTestExecuted: false,
     productSemanticsChanged: false,
-    evidenceKind: "figma_make_react_user_portal_implementation_gate",
+    evidenceKind: "figma_make_react_user_admin_portal_implementation_gate",
   },
   mainlineQuestionAnswerability: requiredUserQuestions.map((question) => ({
     question,
@@ -216,8 +227,8 @@ const auditReport = {
   })),
   surfaceAndVisualEvidenceSources: contract.auditEvidenceSchema.evidenceSources,
   expressionQualityFindings: [
-    "Figma Make user Portal is now the implementation reference for current user routes.",
-    "Admin route mounting and visual workbench evidence are deferred instead of being claimed by this user UI leaf.",
+    "Figma Make user and admin Portal is now the implementation reference for current Portal routes.",
+    "Admin navigation is display-gated by backend role projection; authorization remains enforced by /portal/api/admin/*.",
   ],
   productSemanticBoundaryCheck: {
     contentSemanticsFixedByV22Contracts: true,

@@ -2,9 +2,9 @@
 
 本合同固定 Portal UI 的产品边界、分层规则、禁词、Figma Make ZIP surface gate 和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
 
-本合同 v10 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。旧 visual workbench、截图 baseline、Vue harness/evalset 和 admin 页面不再是本轮必过 surface；Admin / Ops 后续按同一 React 技术栈另开 leaf。
+本合同 v11 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户和管理员 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。旧 visual workbench、截图 baseline、Vue harness/evalset 和旧 `AdminConsole.tsx` residue 不再是当前完成证据。
 
-`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。
+`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户和管理员 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”；7 个管理员路由必须展示管理总览、客户账户、公告与待处理事项、账单处理、审计记录、站点设置和服务状态。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。`/admin/ops` 是已挂载服务状态页面，但后端默认可返回 `404 ops_surface_disabled`；前端必须展示明确 disabled 产品态，不能渲染 generic error 或伪成功。
 
 ## 合同职责
 
@@ -53,20 +53,21 @@ Portal UI 必须按以下层级落到代码和 eval：
 Portal UI 的可执行事实源是 Figma Make ZIP 与复制后的 app root：
 
 ```text
-/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip
-/tmp/medopl-figma-make-source
+/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip
+/tmp/medopl-figma-make-source-admin
 services/portal/frontend/src/app
 services/portal/frontend/src/app/data/portalAdapters.ts
 ```
 
 surface smoke 必须检查：
 
-- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在 `data/portalAdapters.ts`。
+- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在 `data/portalAdapters.ts`，并排除旧 `pages/AdminConsole.tsx`。
 - `src/styles` 文件树与 ZIP `src/styles` 一致。
-- active routes 只有 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch`。
-- `AdminConsole.tsx` 复制为 ZIP residue 但不挂 route、不进导航、不算 Admin UI 完成。
+- active routes 包含 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`。
+- 旧 `AdminConsole.tsx` 不得存在于 active frontend。
 - 每个 active page 通过 `usePortalQuery` 调用对应 `load*Model`。
 - `portalAdapters.ts` 调用现有 `/portal/api/*` adapter。
+- `/admin/ops` 对 `ops_surface_disabled` 有明确产品态映射。
 - 旧 Vue SPA、旧 harness、旧 screenshot baseline 和上一轮根级 React shell 物理不存在。
 - 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；旧 `/__portal-harness/components` visual workbench 与 Playwright screenshot baseline 已从本轮必过面降级为后续可选 leaf。
 
@@ -146,24 +147,25 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 - ZIP 文件树是否一致。
 - 禁词是否出现在可见文案中。
 - API adapter 是否调用现有 `/portal/api/*`。
-- Admin / Ops 当前不被伪装成已完成普通用户 surface。
-- 浏览器能真实打开首页、登录页和当前 6 个普通用户 Portal 路由，并能看到关键 DOM 锚点。
+- 管理员 route 存在且导航展示由 `/portal/api/me` 角色投影控制；RoleContext 不是安全边界。
+- `/admin/ops` route 存在，但默认后端 `404 ops_surface_disabled` 必须显示为“平台托管运维入口未启用”产品态。
+- 浏览器能真实打开首页、登录页、当前 6 个普通用户 Portal 路由和当前 7 个管理员 Portal 路由，并能看到关键 DOM 锚点。
 - `.runtime/portal-surface-eval/report.json` 能生成结构化报告；该报告不进 git。
 
 ## Product Goal Characterization
 
-`leaf-frontend-product-evalset-gap` 曾把 Vue 时代的 Portal UI evalset characterization 写成前端产品事实源；本轮 `leaf-portal-figma-make-react-ui-implementation` 将当前可执行事实源收敛为 React/Figma Make ZIP 普通用户 Portal。
+`leaf-frontend-product-evalset-gap` 曾把 Vue 时代的 Portal UI evalset characterization 写成前端产品事实源；本轮 `leaf-portal-figma-make-react-ui-implementation` 将当前可执行事实源收敛为 React/Figma Make ZIP 普通用户和管理员 Portal。
 
 - `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
 - `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 
-The current surface smoke proves 6 ordinary user routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, old file physical retirement and runtime report generation. Admin / Ops, visual workbench and screenshot regression are no longer current user Portal completion evidence.
+The current surface smoke proves 6 ordinary user routes, 7 admin routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, old file physical retirement and runtime report generation. Old AdminConsole residue, visual workbench and screenshot regression are no longer current Portal completion evidence.
 
 This characterization does not change Portal UI implementation, does not upgrade dependencies, does not run deploy/live/cloud/build/push/kubectl, does not read secrets, and does not modify upstream one-person-lab.
 
 ## 分支边界
 
-本分支只处理 Portal 工作台的 Figma Make ZIP absorption、UI composition、surface smoke、页面命名、API adapter wiring、架构边界和测试入口统一；管理台 UI 只保留后续同栈 leaf 的角色边界。
+本分支只处理 Portal 工作台和管理台的 Figma Make ZIP absorption、UI composition、surface smoke、页面命名、API adapter wiring、架构边界和测试入口统一。
 
 本分支不处理 Go 后端迁移，不接真实云，不读取 secret，不修改 upstream，不修改 deploy，不执行 build/push、kubectl 或 live-test。
 
@@ -175,7 +177,7 @@ This characterization does not change Portal UI implementation, does not upgrade
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 10,
+  "version": 11,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -189,8 +191,8 @@ This characterization does not change Portal UI implementation, does not upgrade
   "uiImplementationSource": {
     "kind": "figma_make_zip",
     "contract": "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
-    "zipPath": "/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip",
-    "extractedPath": "/tmp/medopl-figma-make-source",
+    "zipPath": "/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip",
+    "extractedPath": "/tmp/medopl-figma-make-source-admin",
     "appRoot": "services/portal/frontend/src/app",
     "userRoutes": [
       "/overview",
@@ -200,8 +202,23 @@ This characterization does not change Portal UI implementation, does not upgrade
       "/billing",
       "/opl-launch"
     ],
-    "adminConsoleCopiedAsUnroutedResidue": true,
-    "activeAdminRouteMounted": false
+    "adminRoutes": [
+      "/admin/dashboard",
+      "/admin/users",
+      "/admin/alerts",
+      "/admin/billing-ops",
+      "/admin/audit",
+      "/admin/system",
+      "/admin/ops"
+    ],
+    "adminConsoleCopiedAsUnroutedResidue": false,
+    "activeAdminRouteMounted": true,
+    "adminOpsDefaultProductState": {
+      "routeMounted": true,
+      "backendDisabledStatus": 404,
+      "backendDisabledError": "ops_surface_disabled",
+      "frontendDisabledCopy": "平台托管运维入口未启用"
+    }
   },
   "surfaceSmoke": {
     "smoke": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
