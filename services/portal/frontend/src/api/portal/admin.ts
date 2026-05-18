@@ -74,6 +74,27 @@ function buildPortalAdminFormPayload(fields: Record<string, PortalAdminActionVal
 const PORTAL_ADMIN_ACTION_FAILED_MESSAGE = "Portal 管理动作未完成，请稍后重试；如持续失败，请联系管理员。";
 const PORTAL_ADMIN_AUTH_EXPIRED_MESSAGE = "登录状态已失效，请重新登录后再操作。";
 
+export function normalizePortalAdminActionError(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const businessMessage = error.response?.data?.businessMessage;
+    if (typeof businessMessage === "string" && businessMessage.trim()) {
+      return businessMessage.trim();
+    }
+    return fallback;
+  }
+  if (error instanceof Error) {
+    const message =
+      typeof (error as PortalActionErrorShape).businessMessage === "string" &&
+      (error as PortalActionErrorShape).businessMessage?.trim()
+        ? (error as PortalActionErrorShape).businessMessage!.trim()
+        : error.message?.trim();
+    if (message) {
+      return message;
+    }
+  }
+  return fallback;
+}
+
 function portalAdminActionError(message: string, status?: number) {
   const error = new Error(message) as Error & PortalActionErrorShape;
   error.businessMessage = message;

@@ -47,6 +47,8 @@ import {
 
 export function createPortalStore({
   atomicWriteJson,
+  appendLedgerEntry,
+  ensureWallet,
   exists,
   hashPassword,
   normalizeAnnouncementRecord,
@@ -166,6 +168,8 @@ export function createPortalStore({
     appendFile,
     atomicWriteJson,
     dataFile,
+    appendLedgerEntry,
+    ensureWallet,
     ensureStorageInfra,
     ensurePgPool,
     ensureRedis,

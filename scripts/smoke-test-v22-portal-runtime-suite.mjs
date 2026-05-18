@@ -34,6 +34,7 @@ const groups = new Map([
   ]],
   ["browser", [
     "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+    "scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
   ]],
 ]);
 

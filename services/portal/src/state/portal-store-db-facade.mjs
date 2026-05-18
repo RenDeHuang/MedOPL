@@ -13,6 +13,7 @@ export function createPortalStoreDbFacade(deps) {
   const events = createPortalStoreDbEvents(deps);
   const delegates = createPortalStoreDbDelegates({
     ...deps,
+    mutateJsonDb: core.mutateJsonDb,
     writeDb: core.writeDb,
   });
 

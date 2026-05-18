@@ -2,7 +2,7 @@ const FREEZE_DAYS = 7;
 
 const PACKAGE_DEFINITIONS = [
   {
-    id: "starter",
+    id: "starter_2c4g_10gb",
     name: "入门套餐",
     audience: "regular",
     currency: "CNY",
@@ -12,6 +12,7 @@ const PACKAGE_DEFINITIONS = [
       tier: "starter",
       label: "标准计算能力",
       cores: 2,
+      memoryGb: 4,
       maxConcurrentRuns: 1,
     },
     storage: {
@@ -26,10 +27,10 @@ const PACKAGE_DEFINITIONS = [
     plainIncluded: ["10GB 套餐存储", "可上传文件", "可运行小型任务", "可下载结果"],
     plainLimits: ["不适合长时间大规模任务", "余额不足时会先提醒，再限制新任务"],
     overageCopy: "超过套餐容量后需要扩容或清理旧文件",
-    backingServerPlanId: "starter-2c",
+    backingServerPlanId: "starter_2c4g_10gb",
   },
   {
-    id: "pro",
+    id: "pro_8c16g_100gb",
     name: "进阶套餐",
     audience: "regular",
     currency: "CNY",
@@ -39,6 +40,7 @@ const PACKAGE_DEFINITIONS = [
       tier: "pro",
       label: "更快计算能力",
       cores: 8,
+      memoryGb: 16,
       maxConcurrentRuns: 3,
     },
     storage: {
@@ -53,7 +55,7 @@ const PACKAGE_DEFINITIONS = [
     plainIncluded: ["100GB 套餐存储", "可上传文件", "可运行多个任务", "可下载结果"],
     plainLimits: ["长时间大规模任务会产生更多运行费用", "余额不足时会先提醒，再限制新任务"],
     overageCopy: "超过套餐容量后需要扩容或清理旧文件",
-    backingServerPlanId: "pro-8c",
+    backingServerPlanId: "pro_8c16g_100gb",
   },
 ];
 
@@ -120,9 +122,16 @@ const CANONICAL_RESOURCE_PLAN_ALIASES = Object.freeze({
 
 const CANONICAL_RESOURCE_PLAN_BY_ID = new Map(CANONICAL_RESOURCE_PLAN_DEFINITIONS.map((item) => [item.id, item]));
 
-function canonicalResourcePlanId(value = "") {
+export function canonicalResourcePlanId(value = "") {
   const id = String(value || "").trim();
   return CANONICAL_RESOURCE_PLAN_ALIASES[id] || id;
+}
+
+export function normalizeLabPackageId(packageId = "") {
+  const id = String(packageId || "").trim();
+  if (id === "custom") return id;
+  const plan = getCanonicalResourcePlan(id);
+  return plan?.id || id;
 }
 
 export function listCanonicalResourcePlans() {
@@ -205,7 +214,7 @@ export function customLabPackageFromSpec(input = {}) {
 }
 
 export function getLabPackage(packageId = "", customSpec = {}) {
-  const id = String(packageId || "").trim();
+  const id = normalizeLabPackageId(packageId);
   if (id === "custom") return customLabPackageFromSpec(customSpec);
   return PACKAGE_BY_ID.get(id) || null;
 }
@@ -243,8 +252,8 @@ export function packagePublicView(item) {
 }
 
 export function labPackageCatalogPublicView() {
-  const starter = packagePublicView(getLabPackage("starter"));
-  const pro = packagePublicView(getLabPackage("pro"));
+  const starter = packagePublicView(getLabPackage("starter_2c4g_10gb"));
+  const pro = packagePublicView(getLabPackage("pro_8c16g_100gb"));
   return {
     starter,
     pro,

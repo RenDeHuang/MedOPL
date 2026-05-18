@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Save, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
@@ -8,10 +9,27 @@ import { Separator } from "../../components/ui/separator";
 import { Badge } from "../../components/ui/badge";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Link } from "react-router";
+import { normalizePortalAdminActionError, updateAdminSiteSettings } from "../../../api/portal/admin";
 import { loadAdminSystemModel, usePortalQuery } from "../../data/portalAdapters";
 
 export function AdminSystem() {
-  const query = usePortalQuery(loadAdminSystemModel, []);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const [siteName, setSiteName] = useState("");
+  const [siteLogo, setSiteLogo] = useState("");
+  const [siteSubtitle, setSiteSubtitle] = useState("");
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const query = usePortalQuery(loadAdminSystemModel, [refreshVersion]);
+
+  useEffect(() => {
+    if (query.status !== "ready") return;
+    setSiteName(query.data.siteName);
+    setSiteLogo(query.data.siteLogo);
+    setSiteSubtitle(query.data.siteSubtitle || query.data.homeTitle);
+    setRegistrationEnabled(query.data.registrationEnabled);
+  }, [query]);
 
   const getServiceStatusBadge = (status: string) => {
     switch (status) {
@@ -34,7 +52,45 @@ export function AdminSystem() {
     return <div className="p-6"><Card className="p-6 border-red-200 bg-red-50 text-sm text-red-700">{query.error}</Card></div>;
   }
 
-  const { siteName, homeTitle, registrationEnabled, serviceStatus, adminReadOnlyMessage } = query.data;
+  const { serviceStatus, adminReadOnlyMessage } = query.data;
+
+  const refreshSystem = () => setRefreshVersion((value) => value + 1);
+
+  const submitSettings = async () => {
+    const nextSiteName = siteName.trim();
+    const nextSiteSubtitle = siteSubtitle.trim();
+    const nextSiteLogo = siteLogo.trim();
+    if (!nextSiteName) {
+      setActionSuccess("");
+      setActionError("请输入站点名称。");
+      return;
+    }
+    if (!nextSiteSubtitle) {
+      setActionSuccess("");
+      setActionError("请输入首页文案 / 副标题。");
+      return;
+    }
+
+    setIsSaving(true);
+    setActionError("");
+    setActionSuccess("");
+    try {
+      await updateAdminSiteSettings({
+        siteName: nextSiteName,
+        siteLogo: nextSiteLogo,
+        siteSubtitle: nextSiteSubtitle,
+        homeContent: nextSiteSubtitle,
+        allowRegistration: registrationEnabled,
+        redirectTo: "/admin/system",
+      });
+      setActionSuccess("站点设置已保存。");
+      refreshSystem();
+    } catch (error) {
+      setActionError(normalizePortalAdminActionError(error, "保存失败，请稍后重试。"));
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -55,9 +111,11 @@ export function AdminSystem() {
               <Label htmlFor="siteName">站点名称</Label>
               <Input
                 id="siteName"
+                name="siteName"
                 value={siteName}
                 placeholder="输入站点名称"
-                readOnly
+                onChange={(event) => setSiteName(event.target.value)}
+                disabled={isSaving}
               />
             </div>
 
@@ -66,8 +124,11 @@ export function AdminSystem() {
               <div className="flex gap-3">
                 <Input
                   id="siteLogo"
+                  name="siteLogo"
+                  value={siteLogo}
                   placeholder="Logo URL"
-                  disabled
+                  onChange={(event) => setSiteLogo(event.target.value)}
+                  disabled={isSaving}
                 />
                 <Button variant="outline" disabled title={adminReadOnlyMessage}>上传</Button>
               </div>
@@ -80,9 +141,11 @@ export function AdminSystem() {
               <Label htmlFor="homeTitle">首页文案 / 副标题</Label>
               <Input
                 id="homeTitle"
-                value={homeTitle}
+                name="homeTitle"
+                value={siteSubtitle}
                 placeholder="输入首页描述文案"
-                readOnly
+                onChange={(event) => setSiteSubtitle(event.target.value)}
+                disabled={isSaving}
               />
             </div>
           </div>
@@ -102,23 +165,34 @@ export function AdminSystem() {
               </div>
               <Switch
                 id="registration"
+                name="registration"
                 checked={registrationEnabled}
-                disabled
+                onCheckedChange={setRegistrationEnabled}
+                disabled={isSaving}
               />
             </div>
           </div>
 
           <Separator />
 
+          {(actionError || actionSuccess) && (
+            <Alert className={actionError ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"}>
+              <AlertCircle className={`h-4 w-4 ${actionError ? "text-red-600" : "text-green-600"}`} />
+              <AlertDescription className={actionError ? "text-red-700" : "text-green-700"}>
+                {actionError || actionSuccess}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* 保存按钮 */}
           <div className="flex justify-end">
             <Button
-              disabled
-              title={adminReadOnlyMessage}
+              disabled={isSaving}
+              onClick={submitSettings}
               className="gap-2"
             >
               <Save className="w-4 h-4" />
-              保存设置
+              {isSaving ? "保存中..." : "保存设置"}
             </Button>
           </div>
         </CardContent>

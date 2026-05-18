@@ -1,4 +1,4 @@
-import { labPackageCatalogPublicView, listLabPackages, packagePublicView } from "../domain/lab-packages.mjs";
+import { labPackageCatalogPublicView, listLabPackages, normalizeLabPackageId, packagePublicView } from "../domain/lab-packages.mjs";
 import {
   activateLabSubscription,
   currentLabSubscription,
@@ -108,7 +108,9 @@ export function createLabPackageRoutes({
   }
 
   function cloudPlanForPackage(packageId = "") {
-    return PACKAGE_CLOUD_PLANS[String(packageId || "").trim()] || null;
+    const normalizedPackageId = normalizeLabPackageId(packageId);
+    const tier = normalizedPackageId === "starter_2c4g_10gb" ? "starter" : normalizedPackageId === "pro_8c16g_100gb" ? "pro" : normalizedPackageId;
+    return PACKAGE_CLOUD_PLANS[tier] || null;
   }
 
   function currentFileSpaceGb(db = {}, resourceBindingId = "") {
@@ -304,7 +306,7 @@ export function createLabPackageRoutes({
     const result = activateLabSubscription(db, {
       user,
       workspaceId,
-      packageId: payload.packageId,
+      packageId: normalizeLabPackageId(payload.packageId),
       customSpec: payload.customSpec || null,
       idempotencyKey: payload.idempotencyKey,
     });
@@ -318,7 +320,7 @@ export function createLabPackageRoutes({
     }
     let packageCloud = null;
     if (enableCloudOperationProductionBridge) {
-      packageCloud = runPackageOpenCloudOperations(db, user, { workspaceId, packageId: payload.packageId });
+      packageCloud = runPackageOpenCloudOperations(db, user, { workspaceId, packageId: normalizeLabPackageId(payload.packageId) });
       if (!packageCloud.ok) {
         rollbackLabBillingState(db, labStateBefore);
         sendJson(res, {
@@ -350,7 +352,7 @@ export function createLabPackageRoutes({
     const result = upgradeLabSubscription(db, {
       user,
       subscriptionId: subscription?.id || "",
-      packageId: payload.packageId,
+      packageId: normalizeLabPackageId(payload.packageId),
       customSpec: payload.customSpec || null,
       idempotencyKey: payload.idempotencyKey,
     });
@@ -364,7 +366,7 @@ export function createLabPackageRoutes({
     }
     let packageCloud = null;
     if (enableCloudOperationProductionBridge) {
-      packageCloud = runPackageUpgradeCloudOperations(db, user, { workspaceId: result.subscription.workspaceId, packageId: payload.packageId });
+      packageCloud = runPackageUpgradeCloudOperations(db, user, { workspaceId: result.subscription.workspaceId, packageId: normalizeLabPackageId(payload.packageId) });
       if (!packageCloud.ok) {
         rollbackLabBillingState(db, labStateBefore);
         sendJson(res, {

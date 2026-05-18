@@ -99,18 +99,17 @@ export function createPortalBillingExportRoutes({
     if (req.method !== "GET" || url.pathname !== "/portal/billing/export.csv") return false;
     const payload = await buildBillingPayload(db, user, readBillingRequestOptions(url));
     const lines = [
-      ["runId", "workspaceId", "runStatus", "cpuCost", "gpuCost", "storageCost", "totalCost", "startedAt", "endedAt", "pricingSource"].join(","),
-      ...payload.runCosts.map((item) => [
-        csvEscape(item.runId),
-        csvEscape(item.workspaceId),
-        csvEscape(item.runStatus),
-        csvEscape(microMoney(item.cpuCost)),
-        csvEscape(microMoney(item.gpuCost)),
-        csvEscape(microMoney(item.storageCost)),
-        csvEscape(microMoney(item.totalCost)),
-        csvEscape(item.startedAt || ""),
-        csvEscape(item.endedAt || ""),
-        csvEscape(item.pricingSource),
+      ["entryId", "type", "amount", "reason", "createdAt", "workspaceId", "runId", "resourceBindingId", "pricingSource"].join(","),
+      ...payload.ledger.map((item) => [
+        csvEscape(item.id),
+        csvEscape(item.type),
+        csvEscape(money(item.amount)),
+        csvEscape(item.reason || item.type),
+        csvEscape(item.createdAt || ""),
+        csvEscape(item.workspaceId || ""),
+        csvEscape(item.runId || ""),
+        csvEscape(item.resourceBindingId || ""),
+        csvEscape(item.type === "pending_usage" ? "platform_metering_projection" : "portal_billing_ledger"),
       ].join(",")),
     ];
     writeCsv(res, "portal-billing-export.csv", lines);

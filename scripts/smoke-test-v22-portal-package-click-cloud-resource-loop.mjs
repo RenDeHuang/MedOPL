@@ -158,6 +158,7 @@ function drainQueued(db, secretFile, expectedCount, label) {
   for (let index = 0; index < expectedCount; index += 1) {
     const result = processQueuedPortalProductionCloudOperations(db, {
       runnerMode: "local-executor",
+      runnerScript: "scripts/v22-cloud-operation-local-executor.mjs",
       secretFile,
       computeNodePoolRef: "np-backend-attribution-proof",
       maxOperations: 1,

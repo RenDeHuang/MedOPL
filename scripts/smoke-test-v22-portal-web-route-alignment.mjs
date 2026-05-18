@@ -78,6 +78,7 @@ for (const route of retiredFrontendRoutes) {
 
 for (const proxyPrefix of [
   '"/portal/api"',
+  '"/portal/billing"',
   '"/portal/workspace-session"',
   '"/portal/workspaces"',
   '"/portal/admin"',

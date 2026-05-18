@@ -64,6 +64,12 @@ export interface LabPackageMutationInput {
   idempotencyKey?: string;
 }
 
+export interface LabCustomPackageMutationInput {
+  workspaceId?: string;
+  customSpec: LabCustomPackageSpec;
+  idempotencyKey?: string;
+}
+
 export interface LabStorageAddonInput {
   subscriptionId?: string;
   workspaceId?: string;
@@ -96,14 +102,18 @@ export async function upgradeLabPackage(input: LabPackageMutationInput) {
 }
 
 export async function activateCustomLabPackage(input: { workspaceId?: string; customSpec: LabCustomPackageSpec; idempotencyKey?: string }) {
-  return postLabMutation("/lab-packages/custom", input as LabPackageMutationInput, "自定义套餐提交失败，请检查规格后重试。");
+  return postLabMutation("/lab-packages/custom", input, "自定义套餐提交失败，请检查规格后重试。");
 }
 
 export async function purchaseLabStorageAddon(input: LabStorageAddonInput) {
   return postLabMutation("/lab-storage/addons", input, "扩容失败，请稍后重试。");
 }
 
-async function postLabMutation(path: string, input: LabPackageMutationInput | LabStorageAddonInput, fallback: string) {
+async function postLabMutation(
+  path: string,
+  input: LabPackageMutationInput | LabCustomPackageMutationInput | LabStorageAddonInput,
+  fallback: string,
+) {
   try {
     const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>(path, input);
     return data;

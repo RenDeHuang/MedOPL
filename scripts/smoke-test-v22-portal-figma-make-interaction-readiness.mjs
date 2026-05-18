@@ -47,6 +47,7 @@ const [
   adminAlertsSource,
   adminDashboardSource,
   adminAuditSource,
+  adminBillingSource,
   adminSystemSource,
   adminOpsSource,
   dialogSource,
@@ -67,6 +68,7 @@ const [
   source(`${appRoot}/pages/admin/AdminAlerts.tsx`),
   source(`${appRoot}/pages/admin/AdminDashboard.tsx`),
   source(`${appRoot}/pages/admin/AdminAudit.tsx`),
+  source(`${appRoot}/pages/admin/AdminBillingOps.tsx`),
   source(`${appRoot}/pages/admin/AdminSystem.tsx`),
   source(`${appRoot}/pages/admin/AdminOps.tsx`),
   source(`${appRoot}/components/ui/dialog.tsx`),
@@ -119,8 +121,9 @@ assertIncludes(userMenuSource, 'window.location.assign("/logout")', "user_menu_l
 assertIncludes(userMenuSource, "hidden sm:flex", "user_menu_must_not_overflow_mobile_header");
 
 assertIncludes(billingSource, "exportBillingRecords", "billing_export_must_have_handler");
-assertIncludes(billingSource, "URL.createObjectURL", "billing_export_must_create_download");
-assertIncludes(billingSource, "download =", "billing_export_must_set_download_filename");
+assertIncludes(billingSource, "/portal/billing/export.csv", "billing_export_must_call_backend_export_api");
+assertIncludes(billingSource, "triggerCsvDownload", "billing_export_must_trigger_browser_download");
+assertExcludes(billingSource, "URL.createObjectURL", "billing_export_must_not_use_frontend_blob_export");
 assertIncludes(billingSource, "onClick={exportBillingRecords}", "billing_export_button_must_bind_handler");
 assertIncludes(billingSource, "exportNotice", "billing_empty_export_must_show_visible_notice");
 assertIncludes(billingSource, 'role="status"', "billing_empty_export_notice_must_be_status_region");
@@ -152,12 +155,11 @@ assertIncludes(adminUsersSource, "deleteAdminUser", "admin_users_page_must_wire_
 assertIncludes(adminUsersSource, "setRefreshVersion", "admin_users_page_must_refresh_after_mutation");
 assertIncludes(adminUsersSource, "Dialog", "admin_users_actions_must_open_dialogs_for_confirmed_actions");
 assertIncludes(adminUsersSource, "openDetailDialog(user)", "admin_users_detail_menu_must_open_dialog");
-assertIncludes(adminUsersSource, "walletActionDisabledMessage", "admin_users_wallet_actions_must_have_disabled_boundary");
-assertIncludes(adminUsersSource, "账本充值/退款等待后端账务事务能力启用", "admin_users_wallet_actions_must_not_call_unavailable_accounting_store");
-assertExcludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_not_call_recharge_until_accounting_store_enabled");
-assertExcludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_not_call_refund_until_accounting_store_enabled");
-assertExcludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_not_open_executable_dialog");
-assertExcludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_not_open_executable_dialog");
+assertIncludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_wire_recharge_action");
+assertIncludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_wire_refund_action");
+assertIncludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_open_dialog");
+assertIncludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_open_dialog");
+assertExcludes(adminUsersSource, "账本充值/退款等待后端账务事务能力启用", "admin_users_wallet_actions_must_not_use_legacy_disabled_copy");
 assertIncludes(adminUsersSource, "openToggleDialog(user)", "admin_users_toggle_menu_must_open_confirm_dialog");
 assertIncludes(adminUsersSource, "openDeleteDialog(user)", "admin_users_delete_menu_must_open_confirm_dialog");
 assertIncludes(adminUsersSource, "打开 ${user.name} 的用户操作菜单", "admin_users_action_menu_trigger_must_have_accessible_label");
@@ -212,6 +214,21 @@ for (const [label, sourceText, forbidden] of [
 assertIncludes(runtimeSource, "资源调整需要后端确认流程；当前页面只展示已接入的资源状态。", "runtime_adjust_actions_must_show_product_boundary");
 assertIncludes(runtimeSource, "释放计算资源需要后端确认流程；当前入口未接入。", "runtime_release_action_must_not_be_empty_clickable_button");
 assertIncludes(runtimeSource, "删除存储资源需要后端确认流程；当前入口未接入。", "runtime_delete_storage_action_must_not_be_empty_clickable_button");
+assertIncludes(runtimeSource, "activateLabPackage", "runtime_environment_must_wire_activate_lab_package_action");
+assertIncludes(runtimeSource, "activateCustomLabPackage", "runtime_environment_must_wire_activate_custom_lab_package_action");
+assertExcludes(runtimeSource, 'setOptimisticServiceStatus("active")', "runtime_environment_must_not_force_optimistic_active_status");
+assert(
+  runtimeSource.includes("refreshVersion") || runtimeSource.includes("invalidateQueries") || runtimeSource.includes("refetch"),
+  "runtime_environment_must_refresh_after_admin_actions",
+);
+
+assertIncludes(adminSystemSource, "updateAdminSiteSettings", "admin_system_must_wire_update_site_settings_action");
+assertExcludes(adminSystemSource, "disabled={savePending}", "admin_system_save_button_must_not_be_disabled_by_default");
+for (const fieldName of ["siteName", "homeTitle", "registration"]) {
+  assertIncludes(adminSystemSource, `name="${fieldName}"`, "admin_system_site_settings_must_be_controlled_form");
+}
+
+assertIncludes(adminBillingSource, "账单审批需要后端审批事务启用；当前只读展示", "admin_billing_ops_must_keep_disabled_product_copy");
 
 for (const forbidden of [
   "<Button variant=\"outline\">\n                <Upload",

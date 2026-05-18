@@ -39,6 +39,25 @@ export function createPortalStoreDbCore({
     return db;
   }
 
+  async function mutateJsonDb(mutator) {
+    await ensureStorageInfra();
+    return withDbWriteLock(async () => {
+      let raw = await readFile(dataFile, "utf8");
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        raw = await readFile(dataFile, "utf8");
+        parsed = JSON.parse(raw);
+      }
+      const { db } = await migrateDb(parsed);
+      const result = await mutator(db);
+      await atomicWriteJson(dataFile, db);
+      return result;
+    });
+  }
+
   async function writeDb(db) {
     await withDbWriteLock(async () => {
       if (storageMode() === "json") {
@@ -85,6 +104,7 @@ export function createPortalStoreDbCore({
   }
 
   return {
+    mutateJsonDb,
     readDb,
     readJsonDb,
     writeDb,

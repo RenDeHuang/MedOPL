@@ -178,11 +178,31 @@ const planPayload = JSON.parse(planResult.stdout);
 assert.equal(planPayload.ok, true, "verify_current_dry_run_ok_mismatch");
 assert.equal(planPayload.mode, "current", "verify_current_mode_mismatch");
 assert.equal(planPayload.leafId, current.current_cursor, "verify_current_leaf_mismatch");
-assert.equal(planPayload.branchOverride?.suiteId, "portal-ui-contract-truth-convergence", "verify_current_portal_ui_truth_branch_override_mismatch");
-assert.deepEqual(planPayload.commands, portalUiTruthOverride.commands, "verify_current_commands_mismatch");
-assert.deepEqual(planPayload.allowedFiles, portalUiTruthOverride.allowed_files, "verify_current_allowed_files_mismatch");
-assert.deepEqual(planPayload.forbiddenFiles, portalUiTruthOverride.forbidden_files, "verify_current_forbidden_files_mismatch");
+assert.equal(planPayload.branchOverride, undefined, "verify_current_feature_branch_must_not_use_cleanup_override");
+assert.deepEqual(planPayload.commands, currentLeaf.verification_commands, "verify_current_commands_mismatch");
+assert.deepEqual(planPayload.allowedFiles, currentLeaf.allowed_files, "verify_current_allowed_files_mismatch");
+assert.deepEqual(planPayload.forbiddenFiles, currentLeaf.forbidden_files, "verify_current_forbidden_files_mismatch");
 assert.equal(planPayload.dryRun, true, "verify_current_dry_run_flag_mismatch");
+
+const portalUiTruthPlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-portal-old-ui-smoke-residue-cleanup",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(portalUiTruthPlanResult.status, 0, `verify_current_portal_ui_truth_dry_run_must_exit_zero:${portalUiTruthPlanResult.stderr || portalUiTruthPlanResult.stdout}`);
+const portalUiTruthPlanPayload = JSON.parse(portalUiTruthPlanResult.stdout);
+assert.equal(portalUiTruthPlanPayload.ok, true, "verify_current_portal_ui_truth_dry_run_ok_mismatch");
+assert.equal(portalUiTruthPlanPayload.mode, "current", "verify_current_portal_ui_truth_mode_mismatch");
+assert.equal(portalUiTruthPlanPayload.leafId, current.current_cursor, "verify_current_portal_ui_truth_must_not_change_current_leaf");
+assert.equal(portalUiTruthPlanPayload.branchOverride?.suiteId, "portal-ui-contract-truth-convergence", "verify_current_portal_ui_truth_branch_override_mismatch");
+assert.deepEqual(portalUiTruthPlanPayload.commands, portalUiTruthOverride.commands, "verify_current_portal_ui_truth_commands_mismatch");
+assert.deepEqual(portalUiTruthPlanPayload.allowedFiles, portalUiTruthOverride.allowed_files, "verify_current_portal_ui_truth_allowed_files_mismatch");
+assert.deepEqual(portalUiTruthPlanPayload.forbiddenFiles, portalUiTruthOverride.forbidden_files, "verify_current_portal_ui_truth_forbidden_files_mismatch");
+assert.equal(portalUiTruthPlanPayload.dryRun, true, "verify_current_portal_ui_truth_dry_run_flag_mismatch");
 
 const strictCleanupPlanResult = runVerify([
   "current",

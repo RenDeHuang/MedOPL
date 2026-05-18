@@ -28,17 +28,24 @@ import {
 import { cn } from "../components/ui/utils";
 import { loadRuntimeEnvironmentModel, usePortalQuery } from "../data/portalAdapters";
 import { Link } from "react-router";
+import {
+  activateCustomLabPackage,
+  activateLabPackage,
+  type LabCustomPackageSpec,
+} from "../../api/portal/lab";
 
 type ServiceStatus = "not_activated" | "active" | "adjusting";
 
 export function RuntimeEnvironment() {
-  const query = usePortalQuery(loadRuntimeEnvironmentModel, []);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const query = usePortalQuery(loadRuntimeEnvironmentModel, [refreshVersion]);
   const [selectedPlan, setSelectedPlan] = useState<"basic" | "standard" | "custom">("standard");
   const [customCpu, setCustomCpu] = useState([8]);
   const [customMemory, setCustomMemory] = useState([16]);
   const [customStorage, setCustomStorage] = useState([100]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [optimisticServiceStatus, setOptimisticServiceStatus] = useState<ServiceStatus | null>(null);
+  const [activationPending, setActivationPending] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
 
   if (query.status === "loading") {
     return (
@@ -57,7 +64,7 @@ export function RuntimeEnvironment() {
   }
 
   const model = query.data;
-  const serviceStatus: ServiceStatus = optimisticServiceStatus || model.serviceStatus;
+  const serviceStatus: ServiceStatus = model.serviceStatus;
   const resourceActionBoundary = "资源调整需要后端确认流程；当前页面只展示已接入的资源状态。";
 
   const plans = [
@@ -106,12 +113,46 @@ export function RuntimeEnvironment() {
   };
 
   const handleOpenConfirmDialog = () => {
+    setActivationError(null);
     setShowConfirmDialog(true);
   };
 
-  const handleConfirmActivation = () => {
-    setShowConfirmDialog(false);
-    setOptimisticServiceStatus("active");
+  const getActivationIdempotencyKey = () => `${selectedPlan}-${Date.now()}`;
+
+  const handleConfirmActivation = async () => {
+    if (activationPending) return;
+    setActivationPending(true);
+    setActivationError(null);
+    const workspaceId = "default";
+    const idempotencyKey = getActivationIdempotencyKey();
+
+    try {
+      if (selectedPlan === "custom") {
+        const customSpec: LabCustomPackageSpec = {
+          computeCores: customCpu[0],
+          memoryGb: customMemory[0],
+          storageIncludedGb: customStorage[0],
+        };
+        await activateCustomLabPackage({
+          workspaceId,
+          customSpec,
+          idempotencyKey,
+        });
+      } else {
+        const packageId = selectedPlan === "basic" ? "starter_2c4g_10gb" : "pro_8c16g_100gb";
+        await activateLabPackage({
+          packageId,
+          workspaceId,
+          idempotencyKey,
+        });
+      }
+      setShowConfirmDialog(false);
+      setRefreshVersion((value) => value + 1);
+    } catch {
+      setActivationError("开通服务失败，请稍后重试。");
+    } finally {
+      setActivationPending(false);
+    }
   };
 
   // ==================== 状态 1: 未开通 ====================
@@ -198,12 +239,13 @@ export function RuntimeEnvironment() {
 
                   <Button
                     className="w-full"
+                    disabled={activationPending}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleOpenConfirmDialog();
                     }}
                   >
-                    开通服务
+                    {activationPending ? "开通中..." : "开通服务"}
                   </Button>
                 </div>
               </Card>
@@ -305,9 +347,9 @@ export function RuntimeEnvironment() {
                   e.stopPropagation();
                   handleOpenConfirmDialog();
                 }}
-                disabled={selectedPlan !== "custom"}
+                disabled={activationPending || selectedPlan !== "custom"}
               >
-                开通服务
+                {activationPending ? "开通中..." : "开通服务"}
               </Button>
             </div>
           </Card>
@@ -331,6 +373,14 @@ export function RuntimeEnvironment() {
             </DialogHeader>
 
             <div className="space-y-6 py-4">
+              {activationError && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-700 text-sm">
+                    {activationError}
+                  </AlertDescription>
+                </Alert>
+              )}
               {/* 当前配置 */}
               <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
                 <div className="flex items-center justify-between mb-4">
@@ -447,11 +497,11 @@ export function RuntimeEnvironment() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={activationPending}>
                 取消
               </Button>
-              <Button onClick={handleConfirmActivation}>
-                确认开通
+              <Button onClick={handleConfirmActivation} disabled={activationPending}>
+                {activationPending ? "开通中..." : "确认开通"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -26,7 +26,7 @@ export type QueryState<T> =
 
 const PORTAL_DATA_UNAVAILABLE_MESSAGE = "Portal 数据暂时不可用，请稍后重试。";
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
-export const adminLocalActionMessage = "已接入本地 Portal 用户启停/删除和公告管理动作；账本充值/退款等待后端账务事务能力启用。";
+export const adminLocalActionMessage = "已接入本地 Portal 用户启停、删除、充值、退款和公告管理动作。";
 export const adminReadOnlyMessage = "该管理面当前只展示已接入的只读数据；真实云资源、真实扣费或高风险设置仍需单独授权接口。";
 
 class PortalDisplayError extends Error {
@@ -466,7 +466,7 @@ export async function loadAdminUsersModel() {
 }
 
 export async function loadAdminAlertsModel() {
-  const [alertsPayload, announcementsPayload] = await Promise.all([fetchAdminAlerts(), fetchAnnouncements()]);
+  const [alertsPayload, announcementsPayload] = await Promise.all([fetchAdminAlerts(), fetchAnnouncements({ mode: "all" })]);
   const pendingItems = arrayValue(objectValue(alertsPayload).alerts).map((item) => {
     const row = objectValue(item);
     return {
@@ -561,7 +561,10 @@ export async function loadAdminSystemModel() {
   const degradedServices = services.filter((item) => ["degraded", "pending"].includes(String(objectValue(item).status || "").toLowerCase())).length;
   return {
     siteName: stringValue(publicSettings.siteName, "MedOPL Portal"),
+    siteLogo: stringValue(publicSettings.siteLogo, ""),
     homeTitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "托管 OPL 科研工作台"),
+    siteSubtitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "托管 OPL 科研工作台"),
+    homeContent: stringValue(publicSettings.homeContent || publicSettings.siteSubtitle, "托管 OPL 科研工作台"),
     registrationEnabled: Boolean(system.allowRegistration),
     adminReadOnlyMessage,
     serviceStatus: {

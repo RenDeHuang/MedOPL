@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +36,13 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { deleteAdminUser, toggleAdminUser } from "../../../api/portal/admin";
+import {
+  deleteAdminUser,
+  normalizePortalAdminActionError,
+  rechargeAdminUser,
+  refundAdminUser,
+  toggleAdminUser,
+} from "../../../api/portal/admin";
 import { adminLocalActionMessage, loadAdminUsersModel, usePortalQuery } from "../../data/portalAdapters";
 
 type UserStatus = "active" | "restricted" | "disabled";
@@ -58,10 +66,14 @@ export function AdminUsers() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [rechargeAmount, setRechargeAmount] = useState("");
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
   const [actionError, setActionError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const query = usePortalQuery(loadAdminUsersModel, [refreshVersion]);
-  const walletActionDisabledMessage = "账本充值/退款等待后端账务事务能力启用；当前入口不执行本地写入。";
 
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
@@ -109,6 +121,46 @@ export function AdminUsers() {
     setDeleteDialogOpen(true);
   };
 
+  const openRechargeDialog = (user: User) => {
+    setSelectedUser(user);
+    setRechargeAmount("");
+    setActionError("");
+    setRechargeDialogOpen(true);
+  };
+
+  const openRefundDialog = (user: User) => {
+    setSelectedUser(user);
+    setRefundAmount("");
+    setRefundReason("");
+    setActionError("");
+    setRefundDialogOpen(true);
+  };
+
+  const closeDetailDialog = () => {
+    setDetailDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeToggleDialog = () => {
+    setToggleDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeRechargeDialog = () => {
+    setRechargeDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeRefundDialog = () => {
+    setRefundDialogOpen(false);
+    setSelectedUser(null);
+  };
+
   const runUserAction = async (actionName: string, action: () => Promise<void>, closeDialog: () => void) => {
     setPendingAction(actionName);
     setActionError("");
@@ -118,7 +170,7 @@ export function AdminUsers() {
       setSelectedUser(null);
       refreshUsers();
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "操作失败，请稍后重试。");
+      setActionError(normalizePortalAdminActionError(error, "操作失败，请稍后重试。"));
     } finally {
       setPendingAction(null);
     }
@@ -139,6 +191,39 @@ export function AdminUsers() {
       "delete",
       () => deleteAdminUser({ userId: selectedUser.id, redirectTo: "/admin/users" }),
       () => setDeleteDialogOpen(false),
+    );
+  };
+
+  const submitRecharge = async () => {
+    if (!selectedUser) return;
+    const amount = Number(rechargeAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setActionError("请输入大于 0 的充值金额。");
+      return;
+    }
+    await runUserAction(
+      "recharge",
+      () => rechargeAdminUser({ userId: selectedUser.id, amount, redirectTo: "/admin/users" }),
+      () => setRechargeDialogOpen(false),
+    );
+  };
+
+  const submitRefund = async () => {
+    if (!selectedUser) return;
+    const amount = Number(refundAmount);
+    const reason = refundReason.trim();
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setActionError("请输入大于 0 的退款金额。");
+      return;
+    }
+    if (!reason) {
+      setActionError("请输入退款原因。");
+      return;
+    }
+    await runUserAction(
+      "refund",
+      () => refundAdminUser({ userId: selectedUser.id, amount, reason, redirectTo: "/admin/users" }),
+      () => setRefundDialogOpen(false),
     );
   };
 
@@ -220,11 +305,11 @@ export function AdminUsers() {
                             <CheckCircle className="w-4 h-4 mr-2" />
                             查看详情
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled title={walletActionDisabledMessage}>
+                          <DropdownMenuItem onSelect={() => openRechargeDialog(user)}>
                             <DollarSign className="w-4 h-4 mr-2" />
                             充值
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled title={walletActionDisabledMessage}>
+                          <DropdownMenuItem onSelect={() => openRefundDialog(user)}>
                             <DollarSign className="w-4 h-4 mr-2" />
                             退款
                           </DropdownMenuItem>
@@ -263,7 +348,13 @@ export function AdminUsers() {
         </CardContent>
       </Card>
 
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+      <Dialog
+        open={detailDialogOpen}
+        onOpenChange={(open) => {
+          setDetailDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>用户详情</DialogTitle>
@@ -290,12 +381,18 @@ export function AdminUsers() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>关闭</Button>
+            <Button variant="outline" onClick={closeDetailDialog}>关闭</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={toggleDialogOpen} onOpenChange={setToggleDialogOpen}>
+      <Dialog
+        open={toggleDialogOpen}
+        onOpenChange={(open) => {
+          setToggleDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{selectedUser?.status === "disabled" ? "启用账号" : "禁用账号"}</DialogTitle>
@@ -310,7 +407,7 @@ export function AdminUsers() {
           )}
           {actionError && <div className="text-sm text-red-600">{actionError}</div>}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setToggleDialogOpen(false)} disabled={pendingAction === "toggle"}>取消</Button>
+            <Button variant="outline" onClick={closeToggleDialog} disabled={pendingAction === "toggle"}>取消</Button>
             <Button onClick={submitToggle} disabled={pendingAction === "toggle"} variant={selectedUser?.status === "disabled" ? "default" : "destructive"}>
               {pendingAction === "toggle" ? "提交中..." : selectedUser?.status === "disabled" ? "确认启用" : "确认禁用"}
             </Button>
@@ -318,7 +415,13 @@ export function AdminUsers() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>删除账号</DialogTitle>
@@ -331,9 +434,107 @@ export function AdminUsers() {
           )}
           {actionError && <div className="text-sm text-red-600">{actionError}</div>}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={pendingAction === "delete"}>取消</Button>
+            <Button variant="outline" onClick={closeDeleteDialog} disabled={pendingAction === "delete"}>取消</Button>
             <Button onClick={submitDelete} disabled={pendingAction === "delete"} variant="destructive">
               {pendingAction === "delete" ? "提交中..." : "确认删除"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={rechargeDialogOpen}
+        onOpenChange={(open) => {
+          setRechargeDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>账户充值</DialogTitle>
+            <DialogDescription>向当前 Portal 本地账户账本写入充值金额。</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="text-sm text-neutral-700">
+                {selectedUser.name} · {selectedUser.email}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="rechargeAmount">充值金额</Label>
+                <Input
+                  id="rechargeAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={rechargeAmount}
+                  onChange={(event) => setRechargeAmount(event.target.value)}
+                  placeholder="输入充值金额"
+                  disabled={pendingAction === "recharge"}
+                />
+              </div>
+            </div>
+          )}
+          {actionError && <div className="text-sm text-red-600">{actionError}</div>}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeRechargeDialog} disabled={pendingAction === "recharge"}>取消</Button>
+            <Button onClick={submitRecharge} disabled={pendingAction === "recharge"} className="gap-2">
+              <DollarSign className="w-4 h-4" />
+              {pendingAction === "recharge" ? "提交中..." : "确认充值"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={refundDialogOpen}
+        onOpenChange={(open) => {
+          setRefundDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>账本退款</DialogTitle>
+            <DialogDescription>从当前 Portal 本地账本登记退款金额和退款原因。</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="text-sm text-neutral-700">
+                {selectedUser.name} · {selectedUser.email}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="refundAmount">退款金额</Label>
+                <Input
+                  id="refundAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={refundAmount}
+                  onChange={(event) => setRefundAmount(event.target.value)}
+                  placeholder="输入退款金额"
+                  disabled={pendingAction === "refund"}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="refundReason">退款原因</Label>
+                <Textarea
+                  id="refundReason"
+                  value={refundReason}
+                  onChange={(event) => setRefundReason(event.target.value)}
+                  placeholder="输入退款原因"
+                  disabled={pendingAction === "refund"}
+                />
+              </div>
+            </div>
+          )}
+          {actionError && <div className="text-sm text-red-600">{actionError}</div>}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeRefundDialog} disabled={pendingAction === "refund"}>取消</Button>
+            <Button onClick={submitRefund} disabled={pendingAction === "refund"} variant="destructive" className="gap-2">
+              <DollarSign className="w-4 h-4" />
+              {pendingAction === "refund" ? "提交中..." : "确认退款"}
             </Button>
           </DialogFooter>
         </DialogContent>

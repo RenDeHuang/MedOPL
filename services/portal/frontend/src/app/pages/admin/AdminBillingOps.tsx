@@ -36,6 +36,7 @@ interface BillingItem {
 export function AdminBillingOps() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const query = usePortalQuery(loadAdminBillingOpsModel, []);
+  const billingActionDisabledMessage = "账单审批需要后端审批事务启用；当前只读展示。";
 
   const getTypeBadge = (type: string) => {
     switch (type) {
@@ -151,7 +152,9 @@ export function AdminBillingOps() {
         </CardHeader>
         <CardContent>
           <div className="border rounded-md">
-            <div className="px-4 py-3 text-xs text-neutral-500 border-b">{adminReadOnlyMessage}</div>
+            <div className="px-4 py-3 text-xs text-neutral-500 border-b">
+              账单审批需要后端审批事务启用；当前只读展示。
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -178,10 +181,24 @@ export function AdminBillingOps() {
                     <TableCell>
                       {item.status === "pending" && (
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" className="text-green-600" disabled title={adminReadOnlyMessage}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-600"
+                            disabled
+                            title={billingActionDisabledMessage}
+                            aria-label={`批准账单 ${item.id}（当前未启用）`}
+                          >
                             <CheckCircle className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600" disabled title={adminReadOnlyMessage}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600"
+                            disabled
+                            title={billingActionDisabledMessage}
+                            aria-label={`拒绝账单 ${item.id}（当前未启用）`}
+                          >
                             <XCircle className="w-4 h-4" />
                           </Button>
                         </div>

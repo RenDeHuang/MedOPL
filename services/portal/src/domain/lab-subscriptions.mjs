@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { getLabPackage, normalizeCustomLabPackageSpec } from "./lab-packages.mjs";
+import { getLabPackage, normalizeCustomLabPackageSpec, normalizeLabPackageId } from "./lab-packages.mjs";
 import { moneyAmount } from "./wallet-ledger.mjs";
 
 export const LAB_SUBSCRIPTION_STATUSES = new Set(["active", "grace_period", "cleanup_queued", "cancelled"]);
@@ -35,7 +35,7 @@ export function normalizeLabSubscription(input = {}) {
   if (!input || typeof input !== "object") return null;
   const userId = String(input.userId || input.user_id || input.tenantId || input.tenant_id || "").trim();
   const workspaceId = String(input.workspaceId || input.workspace_id || "default").trim() || "default";
-  const packageId = String(input.packageId || input.package_id || "").trim();
+  const packageId = normalizeLabPackageId(input.packageId || input.package_id || "");
   const customSpec = packageId === "custom" ? normalizeCustomLabPackageSpec(input.customSpec || input.custom_spec || input.custom_spec_json || {}) : null;
   const labPackage = getLabPackage(packageId, customSpec || {});
   if (!userId || !workspaceId || !labPackage) return null;
@@ -151,21 +151,22 @@ export function activateLabSubscription(db, {
   now = new Date().toISOString(),
 } = {}) {
   ensureLabSubscriptionCollections(db);
-  const normalizedCustomSpec = String(packageId || "") === "custom" ? normalizeCustomLabPackageSpec(customSpec || {}) : null;
-  if (String(packageId || "") === "custom" && !normalizedCustomSpec) return businessError("invalid_custom_lab_package_spec", 400);
-  const labPackage = getLabPackage(packageId, normalizedCustomSpec || {});
+  const normalizedPackageId = normalizeLabPackageId(packageId);
+  const normalizedCustomSpec = normalizedPackageId === "custom" ? normalizeCustomLabPackageSpec(customSpec || {}) : null;
+  if (normalizedPackageId === "custom" && !normalizedCustomSpec) return businessError("invalid_custom_lab_package_spec", 400);
+  const labPackage = getLabPackage(normalizedPackageId, normalizedCustomSpec || {});
   const userId = String(user?.id || "").trim();
   if (!userId || !labPackage) return businessError("invalid_lab_package_activation", 400);
-  const key = String(idempotencyKey || `lab_subscription_activate:${userId}:${workspaceId}:${packageId}`).trim();
+  const key = String(idempotencyKey || `lab_subscription_activate:${userId}:${workspaceId}:${normalizedPackageId}`).trim();
   const idempotent = activationByEventKey(db, key);
   if (idempotent) return idempotent;
   const existing = activeSubscriptionForUser(db, userId, workspaceId);
   if (existing) {
-    return activateExistingSubscription(db, { user, existing, packageId, customSpec: normalizedCustomSpec, key, now, userId });
+    return activateExistingSubscription(db, { user, existing, packageId: normalizedPackageId, customSpec: normalizedCustomSpec, key, now, userId });
   }
-  const subscription = createLabSubscriptionRecord({ user, userId, workspaceId, packageId, customSpec: normalizedCustomSpec, key, now });
+  const subscription = createLabSubscriptionRecord({ user, userId, workspaceId, packageId: normalizedPackageId, customSpec: normalizedCustomSpec, key, now });
   db.labSubscriptions.push(subscription);
-  const event = recordActivationEvent(db, { subscription, packageId, customSpec: normalizedCustomSpec, workspaceId, key, now, userId });
+  const event = recordActivationEvent(db, { subscription, packageId: normalizedPackageId, customSpec: normalizedCustomSpec, workspaceId, key, now, userId });
   return { ok: true, created: true, subscription, event };
 }
 
@@ -234,13 +235,14 @@ export function upgradeLabSubscription(db, {
   eventType = "upgraded",
 } = {}) {
   ensureLabSubscriptionCollections(db);
-  const normalizedCustomSpec = String(packageId || "") === "custom" ? normalizeCustomLabPackageSpec(customSpec || {}) : null;
-  if (String(packageId || "") === "custom" && !normalizedCustomSpec) return businessError("invalid_custom_lab_package_spec", 400);
-  const labPackage = getLabPackage(packageId, normalizedCustomSpec || {});
+  const normalizedPackageId = normalizeLabPackageId(packageId);
+  const normalizedCustomSpec = normalizedPackageId === "custom" ? normalizeCustomLabPackageSpec(customSpec || {}) : null;
+  if (normalizedPackageId === "custom" && !normalizedCustomSpec) return businessError("invalid_custom_lab_package_spec", 400);
+  const labPackage = getLabPackage(normalizedPackageId, normalizedCustomSpec || {});
   const userId = String(user?.id || "").trim();
   const target = db.labSubscriptions.find((item) => item.id === subscriptionId && item.userId === userId);
   if (!target || !labPackage) return businessError("lab_subscription_not_found", 404);
-  const key = String(idempotencyKey || `lab_subscription_upgrade:${target.id}:${packageId}`).trim();
+  const key = String(idempotencyKey || `lab_subscription_upgrade:${target.id}:${normalizedPackageId}`).trim();
   const existingEvent = db.labPackageEvents.find((item) => item.idempotencyKey === key);
   if (existingEvent) return { ok: true, created: false, subscription: target, event: existingEvent };
   const previousPackageId = target.packageId;
@@ -248,7 +250,7 @@ export function upgradeLabSubscription(db, {
   const event = appendLabPackageEvent(db, {
     subscriptionId: target.id,
     eventType,
-    eventPayload: { fromPackageId: previousPackageId, toPackageId: packageId, customSpec: normalizedCustomSpec },
+    eventPayload: { fromPackageId: previousPackageId, toPackageId: normalizedPackageId, customSpec: normalizedCustomSpec },
     actorType: "user",
     actorId: userId,
     idempotencyKey: key,

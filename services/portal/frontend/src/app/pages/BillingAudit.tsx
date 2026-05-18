@@ -77,8 +77,13 @@ function getTaskStatusIcon(status: string) {
   }
 }
 
-function csvCell(value: string) {
-  return `"${value.replaceAll("\"", "\"\"")}"`;
+function triggerCsvDownload(url: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export function BillingAudit() {
@@ -112,26 +117,7 @@ export function BillingAudit() {
       return;
     }
     setExportNotice("");
-    const rows = [
-      ["时间", "类型", "说明", "金额", "状态"],
-      ...model.billingRecords.map((record) => [
-        record.date,
-        record.type,
-        record.description,
-        record.amount,
-        record.status,
-      ]),
-    ];
-    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `medopl-billing-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    triggerCsvDownload("/portal/billing/export.csv");
   };
 
   // Empty Ledger State

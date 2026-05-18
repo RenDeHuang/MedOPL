@@ -16,6 +16,8 @@ function figmaAssetResolver() {
   };
 }
 
+const portalBackendTarget = process.env.VITE_PORTAL_BACKEND_URL || "http://127.0.0.1:17080";
+
 export default defineConfig({
   plugins: [
     figmaAssetResolver(),
@@ -30,15 +32,16 @@ export default defineConfig({
   server: {
     port: 17180,
     proxy: {
-      "/portal/api": "http://127.0.0.1:17080",
-      "/portal/workspace-session": "http://127.0.0.1:17080",
-      "/portal/workspaces": "http://127.0.0.1:17080",
-      "/portal/admin": "http://127.0.0.1:17080",
-      "/login": "http://127.0.0.1:17080",
-      "/register": "http://127.0.0.1:17080",
-      "/logout": "http://127.0.0.1:17080",
-      "/auth": "http://127.0.0.1:17080",
-      "/opl/entry/preflight": "http://127.0.0.1:17080"
+      "/portal/api": portalBackendTarget,
+      "/portal/billing": portalBackendTarget,
+      "/portal/workspace-session": portalBackendTarget,
+      "/portal/workspaces": portalBackendTarget,
+      "/portal/admin": portalBackendTarget,
+      "/login": portalBackendTarget,
+      "/register": portalBackendTarget,
+      "/logout": portalBackendTarget,
+      "/auth": portalBackendTarget,
+      "/opl/entry/preflight": portalBackendTarget
     }
   },
   build: {
