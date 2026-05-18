@@ -25,8 +25,8 @@ export const ZITADEL_ADMIN_USER_SCRIPT = path.join(repoRoot, "scripts", "zitadel
 
 export const PORT = Number(process.env.PORT || 17080);
 export const PORTAL_STORAGE_MODE = String(process.env.PORTAL_STORAGE_MODE || "json").trim().toLowerCase();
-export const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "postgres://postgres:postgres@127.0.0.1:5432/med_meta").trim();
-export const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "redis://127.0.0.1:6379").trim();
+export const PORTAL_POSTGRES_URL = String(process.env.PORTAL_POSTGRES_URL || "").trim();
+export const PORTAL_REDIS_URL = String(process.env.PORTAL_REDIS_URL || "").trim();
 export const PORTAL_DB_NAMESPACE = String(process.env.PORTAL_DB_NAMESPACE || "portal").trim() || "portal";
 export const PORTAL_RUNTIME_BRIDGE_URL = String(process.env.PORTAL_RUNTIME_BRIDGE_URL || "http://127.0.0.1:8788").replace(/\/$/, "");
 export const PORTAL_OPL_RESOURCE_BINDING_ID = String(process.env.PORTAL_OPL_RESOURCE_BINDING_ID || "").trim();

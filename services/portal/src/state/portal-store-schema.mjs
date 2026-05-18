@@ -6,8 +6,8 @@ export function createPortalStoreSchema({
     return `"${ns}_${name}"`;
   }
 
-  async function initializePostgresSchema(pool) {
-    await pool.query(`
+  async function initializePostgresSchema(poolOrClient) {
+    await poolOrClient.query(`
       CREATE TABLE IF NOT EXISTS ${pgTableName("users")} (
         id text PRIMARY KEY,
         email text NOT NULL,
@@ -428,6 +428,21 @@ export function createPortalStoreSchema({
       ALTER TABLE ${pgTableName("cloud_operation_jobs")} ADD COLUMN IF NOT EXISTS lease_owner text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("cloud_operation_jobs")} ADD COLUMN IF NOT EXISTS lease_acquired_at text NOT NULL DEFAULT '';
       ALTER TABLE ${pgTableName("cloud_operation_jobs")} ADD COLUMN IF NOT EXISTS failure_reason text NOT NULL DEFAULT '';
+      CREATE UNIQUE INDEX IF NOT EXISTS ${pgTableName("ledger_entries_idempotency_key_uidx")}
+        ON ${pgTableName("ledger_entries")} (idempotency_key)
+        WHERE idempotency_key <> '';
+      CREATE UNIQUE INDEX IF NOT EXISTS ${pgTableName("lab_subscriptions_idempotency_key_uidx")}
+        ON ${pgTableName("lab_subscriptions")} (idempotency_key)
+        WHERE idempotency_key <> '';
+      CREATE UNIQUE INDEX IF NOT EXISTS ${pgTableName("lab_package_events_idempotency_key_uidx")}
+        ON ${pgTableName("lab_package_events")} (idempotency_key)
+        WHERE idempotency_key <> '';
+      CREATE UNIQUE INDEX IF NOT EXISTS ${pgTableName("lab_storage_addons_idempotency_key_uidx")}
+        ON ${pgTableName("lab_storage_addons")} (idempotency_key)
+        WHERE idempotency_key <> '';
+      CREATE UNIQUE INDEX IF NOT EXISTS ${pgTableName("lab_daily_charges_idempotency_key_uidx")}
+        ON ${pgTableName("lab_daily_charges")} (idempotency_key)
+        WHERE idempotency_key <> '';
     `);
   }
 

@@ -17,6 +17,9 @@ export function createPortalStoreRuntimeConnections({
   let labBillingStore = null;
 
   async function ensurePgPool() {
+    if (!String(postgresUrl || "").trim()) {
+      throw new Error("portal_pg_connection_required");
+    }
     if (!pgPool) {
       const { Pool } = pg;
       pgPool = new Pool({ connectionString: postgresUrl });
@@ -25,9 +28,12 @@ export function createPortalStoreRuntimeConnections({
   }
 
   async function ensureRedis() {
+    if (!String(redisUrl || "").trim()) {
+      throw new Error("portal_redis_connection_required");
+    }
     if (!redisClient) {
       redisClient = createRedisClient({ url: redisUrl });
-      redisClient.on("error", (error) => console.error("portal redis error", error));
+      redisClient.on("error", () => console.error("portal redis error: connection unavailable"));
       if (!redisClient.isOpen) {
         await redisClient.connect();
       }
