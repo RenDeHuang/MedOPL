@@ -515,6 +515,26 @@ try {
     assert.equal(markedWarningEvent?.note, "本地 warning event 处理备注", "billing_op_warning_event_mark_must_persist_note");
     assert.equal(Boolean(markedWarningEvent?.anomaly), true, "billing_op_warning_event_mark_must_persist_anomaly");
 
+    const forgedBillingOpId = "billing-op:forged:none";
+    const forgedBillingOpMark = await postForm(`${baseUrl}/portal/admin/billing-ops/mark`, {
+      itemId: forgedBillingOpId,
+      status: "approved",
+      anomaly: "1",
+      note: "伪造账单运营项不应被接受",
+      reason: "billing op forged item must fail closed",
+      idempotencyKey: "billing-op-forged-must-not-write",
+      redirectTo: "/admin/billing-ops",
+    }, { cookie: adminCookie });
+    assert.notEqual(forgedBillingOpMark.status, 302, "billing_op_forged_item_must_not_redirect_as_success");
+    assert.equal(forgedBillingOpMark.status, 404, "billing_op_forged_item_must_return_not_found");
+    const billingOpsAfterForgedMark = await getJson(`${baseUrl}/portal/api/admin/billing-ops`, { cookie: adminCookie });
+    const forgedBillingOpVisible = [
+      ...(billingOpsAfterForgedMark.json.pendingRuns || []),
+      ...(billingOpsAfterForgedMark.json.warningEvents || []),
+      ...(billingOpsAfterForgedMark.json.adjustments || []),
+    ].some((item) => item.id === forgedBillingOpId || item.itemId === forgedBillingOpId);
+    assert.equal(forgedBillingOpVisible, false, "billing_op_forged_item_must_not_be_projected");
+
     const auditPayload = await getJson(`${baseUrl}/portal/api/admin/audit`, { cookie: adminCookie });
     assert.equal(auditPayload.response.status, 200, "admin_audit_payload_must_return_200");
     assert((auditPayload.json.items || []).length > 0, "admin_audit_payload_must_not_be_empty");
@@ -546,6 +566,11 @@ try {
     requireAuditEvent(auditEvents, (event) => event.action === "admin_announcement_deleted" && event.idempotencyKey === "announcement-delete-once", "audit_announcement_deleted");
     requireAuditEvent(auditEvents, (event) => event.action === "admin_system_settings_saved" && event.idempotencyKey === "admin-settings-save-once", "audit_system_settings");
     requireAuditEvent(auditEvents, (event) => event.action === "admin_billing_ops_marked" && event.idempotencyKey === "billing-op-mark-once", "audit_billing_ops_marked");
+    assert.equal(
+      auditEvents.some((event) => event.action === "admin_billing_ops_marked" && event.idempotencyKey === "billing-op-forged-must-not-write"),
+      false,
+      "billing_op_forged_item_must_not_write_success_audit",
+    );
   });
 
   console.log(JSON.stringify({
@@ -565,6 +590,7 @@ try {
       "admin_billing_ops_mark_status_note_anomaly",
       "admin_billing_ops_pending_run_status_note_anomaly",
       "admin_billing_ops_warning_event_status_note_anomaly",
+      "admin_billing_ops_unknown_item_fail_closed",
       "audit_event_shape",
       "user_lab_package_activation",
       "logout_route",

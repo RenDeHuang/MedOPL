@@ -87,7 +87,8 @@ Admin / Ops Console 可以查看分账标签归因和异常：
     "readsSecret": false,
     "realBillingMutation": false,
     "realResourceMutation": false,
-    "localPortalAdminActionsEnabled": true
+    "localPortalAdminActionsEnabled": true,
+    "localPortalAccountingActionsEnabled": true
   },
   "adminOpsVisibleCapabilities": [
     "租户列表",
@@ -205,13 +206,14 @@ Admin / Ops Console 可以查看分账标签归因和异常：
     "发布公告",
     "下线公告",
     "置顶公告",
-    "删除公告"
+    "删除公告",
+    "标记当前 billing ops 事实源中的本地账单运营项"
   ],
   "readonlyOrDisabledProductStates": [
     "/admin/ops",
-    "账单审批",
+    "真实账单审批",
     "高风险站点设置",
-    "待处理事项处理",
+    "真实待处理事项审批",
     "真实云资源操作",
     "真实扣费"
   ],

@@ -248,13 +248,14 @@ assertArrayIncludesAll(adminContract.localPortalAdminActions, [
   "下线公告",
   "置顶公告",
   "删除公告",
+  "标记当前 billing ops 事实源中的本地账单运营项",
 ], "admin_surface_local_portal_actions");
 
 assertArrayIncludesAll(adminContract.readonlyOrDisabledProductStates, [
   "/admin/ops",
-  "账单审批",
+  "真实账单审批",
   "高风险站点设置",
-  "待处理事项处理",
+  "真实待处理事项审批",
   "真实云资源操作",
   "真实扣费",
 ], "admin_surface_readonly_or_disabled_product_states");

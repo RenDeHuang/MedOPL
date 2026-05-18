@@ -60,6 +60,7 @@ assert.equal(contract.scope.readsSecret, false, "admin_ops_contract_must_not_rea
 assert.equal(contract.scope.realBillingMutation, false, "admin_ops_contract_must_not_mutate_real_billing");
 assert.equal(contract.scope.realResourceMutation, false, "admin_ops_contract_must_not_mutate_real_resources");
 assert.equal(contract.scope.localPortalAdminActionsEnabled, true, "admin_ops_contract_must_allow_local_portal_admin_actions");
+assert.equal(contract.scope.localPortalAccountingActionsEnabled, true, "admin_ops_contract_must_allow_local_portal_accounting_actions");
 
 assertArrayIncludesAll(contract.adminOpsVisibleCapabilities, [
   "租户列表",
@@ -149,12 +150,13 @@ assertArrayIncludesAll(contract.localPortalAdminActions, [
   "下线公告",
   "置顶公告",
   "删除公告",
+  "标记当前 billing ops 事实源中的本地账单运营项",
 ], "admin_ops_local_portal_admin_actions");
 assertArrayIncludesAll(contract.readonlyOrDisabledProductStates, [
   "/admin/ops",
-  "账单审批",
+  "真实账单审批",
   "高风险站点设置",
-  "待处理事项处理",
+  "真实待处理事项审批",
   "真实云资源操作",
   "真实扣费",
 ], "admin_ops_readonly_or_disabled_product_states");

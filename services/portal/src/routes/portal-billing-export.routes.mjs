@@ -91,6 +91,8 @@ function billingOpsStatus(value = "") {
 }
 
 export function createPortalBillingExportRoutes({
+  buildAdminBillingOpsApiPayload,
+  buildAdminOverviewPayload,
   buildBillingPayload,
   fetchBillingSummary,
   fetchPendingSummary,
@@ -333,6 +335,18 @@ export function createPortalBillingExportRoutes({
     const redirectTo = text(form.redirectTo || "/admin/billing-ops") || "/admin/billing-ops";
     if (!itemId || !status || !note) {
       sendHtml(res, layoutV2("账单处理失败", `<div class="card">请提供账单项、处理状态和处理备注。</div>`, user), 400);
+      return true;
+    }
+    const overviewPayload = await buildAdminOverviewPayload(db);
+    const billingOpsPayload = buildAdminBillingOpsApiPayload(db, overviewPayload);
+    const currentBillingOpsItems = [
+      ...(billingOpsPayload.pendingRuns || []),
+      ...(billingOpsPayload.warningEvents || []),
+      ...(billingOpsPayload.adjustments || []),
+    ];
+    const currentBillingOpsItem = currentBillingOpsItems.find((item) => text(item.id || item.itemId) === itemId);
+    if (!currentBillingOpsItem) {
+      sendHtml(res, layoutV2("账单处理失败", `<div class="card">账单运营项不存在或已不在当前待处理事实源中。</div>`, user), 404);
       return true;
     }
     db.settings = db.settings && typeof db.settings === "object" ? db.settings : {};

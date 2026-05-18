@@ -176,6 +176,8 @@ export function createPortalApiRuntimeHandlers({
   });
 
   return {
+    buildAdminBillingOpsApiPayload: adminPayloads.buildAdminBillingOpsApiPayload,
+    buildAdminOverviewPayload: adminPayloads.buildAdminOverviewPayload,
     ...portalApiPayloads,
     handlePortalAdminApiRoutes,
     handlePortalApiRoutes,

@@ -545,6 +545,8 @@ const {
 });
 
 const {
+  buildAdminBillingOpsApiPayload,
+  buildAdminOverviewPayload,
   buildCostsSummaryApiPayload,
   buildRegistryImagesApiPayload,
   buildRegistrySummaryApiPayload,
@@ -640,6 +642,8 @@ const {
 } = createPortalRuntimeRouteWiring({
   activeUserStatus,
   appendLedgerEntry,
+  buildAdminBillingOpsApiPayload,
+  buildAdminOverviewPayload,
   buildBillingPayload,
   archiveTaskSpace,
   defaultTaskTitle,
