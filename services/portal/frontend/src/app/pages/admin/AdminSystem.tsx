@@ -203,7 +203,7 @@ export function AdminSystem() {
           {/* 性能状态摘要 */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-neutral-900">性能状态摘要</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-md border border-neutral-200 bg-neutral-50">
                 <div className="text-xs text-neutral-500 mb-1">平均响应时间</div>
                 <div className="text-lg font-semibold text-neutral-900">

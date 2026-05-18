@@ -129,7 +129,7 @@ export function AdminAudit() {
           </div>
 
           {/* 审计事件列表 */}
-          <div className="border rounded-md">
+          <div className="overflow-x-auto border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>

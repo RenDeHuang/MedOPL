@@ -111,9 +111,9 @@ export function AdminDashboard() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>待处理事项</CardTitle>
-            <Link to="/admin/alerts">
-              <Button variant="ghost" size="sm">查看全部</Button>
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/alerts">查看全部</Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -151,31 +151,31 @@ export function AdminDashboard() {
           <CardTitle>快速入口</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Link to="/admin/users">
-              <Button variant="outline" className="w-full justify-start gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <Button asChild variant="outline" className="w-full justify-start gap-2">
+              <Link to="/admin/users">
                 <Users className="w-4 h-4" />
                 客户账户
-              </Button>
-            </Link>
-            <Link to="/admin/billing-ops">
-              <Button variant="outline" className="w-full justify-start gap-2">
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start gap-2">
+              <Link to="/admin/billing-ops">
                 <DollarSign className="w-4 h-4" />
                 账单处理
-              </Button>
-            </Link>
-            <Link to="/admin/audit">
-              <Button variant="outline" className="w-full justify-start gap-2">
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start gap-2">
+              <Link to="/admin/audit">
                 <Activity className="w-4 h-4" />
                 审计记录
-              </Button>
-            </Link>
-            <Link to="/admin/alerts">
-              <Button variant="outline" className="w-full justify-start gap-2">
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start gap-2">
+              <Link to="/admin/alerts">
                 <AlertCircle className="w-4 h-4" />
                 公告管理
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

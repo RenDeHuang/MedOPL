@@ -135,7 +135,7 @@ export function Overview() {
         </div>
 
         {/* Financial Metrics */}
-        <div className="grid grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-neutral-600">余额</span>
@@ -237,7 +237,7 @@ export function Overview() {
       </div>
 
       {/* Current Status Summary */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         <Card className="p-4 border border-neutral-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-neutral-600">套餐</span>
@@ -280,7 +280,7 @@ export function Overview() {
       {/* Financial and Task Summary */}
       <div className="mb-8">
         <h2 className="font-semibold text-neutral-900 mb-4">资金与任务摘要</h2>
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           <Card className="p-4 border border-neutral-200">
             <div className="text-sm text-neutral-600 mb-1">余额</div>
             <div className="text-xl font-semibold text-neutral-900">{model.balance}</div>
@@ -319,15 +319,17 @@ export function Overview() {
       </div>
 
       {/* Runtime Environment and Recent Tasks */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Runtime Environment Summary */}
         <Card className="border border-neutral-200">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-neutral-900">运行环境</h2>
-              <Button variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                查看详情
-                <ExternalLink className="w-3 h-3" />
+              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
+                <Link to="/resources">
+                  查看详情
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -386,9 +388,11 @@ export function Overview() {
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-neutral-900">最近任务</h2>
-              <Button variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                查看全部
-                <ExternalLink className="w-3 h-3" />
+              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
+                <Link to="/trace">
+                  查看全部
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -414,8 +418,8 @@ export function Overview() {
                   </div>
                 </div>
                 {task.files > 0 && (
-                  <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                    查看结果
+                  <Button asChild variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                    <Link to="/workspace">查看结果</Link>
                   </Button>
                 )}
               </div>
@@ -425,15 +429,17 @@ export function Overview() {
       </div>
 
       {/* Package and Workspace Summary */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Package Summary */}
         <Card className="border border-neutral-200">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-neutral-900">套餐摘要</h2>
-              <Button variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                更改套餐
-                <ExternalLink className="w-3 h-3" />
+              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
+                <Link to="/resources">
+                  更改套餐
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -477,9 +483,11 @@ export function Overview() {
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-neutral-900">工作空间摘要</h2>
-              <Button variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                查看详情
-                <ExternalLink className="w-3 h-3" />
+              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
+                <Link to="/workspace">
+                  查看详情
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </Button>
             </div>
           </div>
@@ -493,7 +501,7 @@ export function Overview() {
               <div className="text-xs text-neutral-500">创建于 2024-04-15</div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-neutral-200">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="w-3.5 h-3.5 text-neutral-400" />

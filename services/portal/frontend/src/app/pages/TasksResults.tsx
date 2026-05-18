@@ -234,7 +234,7 @@ export function TasksResults() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-neutral-600">运行中</span>
@@ -283,7 +283,7 @@ export function TasksResults() {
               <Filter className="w-4 h-4 text-neutral-600" />
               <h2 className="font-semibold text-neutral-900">筛选</h2>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
@@ -367,7 +367,7 @@ export function TasksResults() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
         <Card className="p-4 border border-neutral-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-neutral-600">运行中</span>
@@ -416,7 +416,7 @@ export function TasksResults() {
             <Filter className="w-4 h-4 text-neutral-600" />
             <h2 className="font-semibold text-neutral-900">筛选</h2>
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <Input

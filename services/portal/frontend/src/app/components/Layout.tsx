@@ -59,17 +59,17 @@ export function Layout() {
   const isAdmin = userRole === "admin";
 
   return (
-    <div className="flex h-screen bg-neutral-50">
+    <div className="flex h-screen flex-col md:flex-row bg-neutral-50">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-neutral-200 bg-white flex flex-col">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-neutral-200 bg-white flex flex-col md:flex-none">
         {/* Logo */}
         <div className="h-14 border-b border-neutral-200 flex items-center px-4">
           <h1 className="font-semibold text-neutral-900">MedOPL Portal</h1>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <div className="space-y-1">
+        <nav className="flex-none md:flex-1 p-3 space-y-3 md:space-y-1 overflow-y-auto">
+          <div className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
             {userNavigation.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -77,7 +77,7 @@ export function Layout() {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    "flex shrink-0 items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors md:shrink",
                     isActive
                       ? "bg-neutral-900 text-white"
                       : "text-neutral-700 hover:bg-neutral-100"
@@ -107,7 +107,7 @@ export function Layout() {
                   )}
                 </button>
                 {adminExpanded && (
-                  <div className="space-y-1">
+                  <div className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
                     {adminNavigation.map((item) => {
                       const isActive = location.pathname === item.path;
                       return (
@@ -115,7 +115,7 @@ export function Layout() {
                           key={item.path}
                           to={item.path}
                           className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                            "flex shrink-0 items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors md:shrink",
                             isActive
                               ? "bg-neutral-900 text-white"
                               : "text-neutral-700 hover:bg-neutral-100"
@@ -134,7 +134,7 @@ export function Layout() {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-neutral-200">
+        <div className="hidden md:block p-3 border-t border-neutral-200">
           <div className="px-3 py-2 text-xs text-neutral-500">
             工作台版本 v1.2.0
           </div>
@@ -142,21 +142,21 @@ export function Layout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="h-14 border-b border-neutral-200 bg-white flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold text-neutral-900">
+        <header className="h-14 border-b border-neutral-200 bg-white flex items-center justify-between gap-3 px-3 sm:px-6">
+          <div className="min-w-0 flex items-center gap-4">
+            <h2 className="truncate text-lg font-semibold text-neutral-900">
               {getPageTitle(location.pathname)}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <Button variant="ghost" size="sm" className="gap-2" disabled title="帮助中心暂未接入">
               <HelpCircle className="w-4 h-4" />
               <span className="hidden sm:inline">帮助</span>
             </Button>
             <AnnouncementButton announcements={announcements.status === "ready" ? announcements.data.announcements : []} />
-            <Separator orientation="vertical" className="h-6 mx-2" />
+            <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2" />
             <UserMenu {...(currentUser.status === "ready" ? currentUser.data : {})} />
           </div>
         </header>

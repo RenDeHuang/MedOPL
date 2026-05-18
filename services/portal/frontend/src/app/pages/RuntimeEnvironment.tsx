@@ -58,6 +58,7 @@ export function RuntimeEnvironment() {
 
   const model = query.data;
   const serviceStatus: ServiceStatus = optimisticServiceStatus || model.serviceStatus;
+  const resourceActionBoundary = "资源调整需要后端确认流程；当前页面只展示已接入的资源状态。";
 
   const plans = [
     {
@@ -140,7 +141,7 @@ export function RuntimeEnvironment() {
             <h2 className="font-semibold text-neutral-900 mb-1">选择套餐</h2>
             <p className="text-sm text-neutral-600">根据科研任务需求选择合适的套餐配置</p>
           </div>
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {plans.map((plan) => (
               <Card
                 key={plan.id}
@@ -239,7 +240,7 @@ export function RuntimeEnvironment() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-8 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-6">
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-medium text-neutral-900">CPU 核心</span>
@@ -338,7 +339,7 @@ export function RuntimeEnvironment() {
                     {getCurrentPlanConfig().name}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div className="flex justify-between">
                     <span className="text-neutral-600">计费方式</span>
                     <span className="font-semibold text-neutral-900">
@@ -360,7 +361,7 @@ export function RuntimeEnvironment() {
                   <Server className="w-4 h-4 text-neutral-600" />
                   <h3 className="font-semibold text-neutral-900">计算资源</h3>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   <div>
                     <div className="text-neutral-600 mb-1">CPU 规格</div>
                     <div className="font-semibold text-neutral-900">{getCurrentPlanConfig().cpu} 核</div>
@@ -382,7 +383,7 @@ export function RuntimeEnvironment() {
                   <HardDrive className="w-4 h-4 text-neutral-600" />
                   <h3 className="font-semibold text-neutral-900">文件空间</h3>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   <div>
                     <div className="text-neutral-600 mb-1">总容量</div>
                     <div className="font-semibold text-neutral-900">{getCurrentPlanConfig().storage} GB</div>
@@ -399,7 +400,7 @@ export function RuntimeEnvironment() {
               </div>
 
               {/* 计费状态 */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Zap className="w-4 h-4 text-neutral-600" />
@@ -497,7 +498,7 @@ export function RuntimeEnvironment() {
               {model.billingStatus}
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <div className="flex items-center gap-3">
               <Server className="w-5 h-5 text-neutral-400" />
               <div>
@@ -542,11 +543,11 @@ export function RuntimeEnvironment() {
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled title={resourceActionBoundary}>
                 <Plus className="w-4 h-4 mr-1" />
                 增加
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled title={resourceActionBoundary}>
                 <Minus className="w-4 h-4 mr-1" />
                 减少
               </Button>
@@ -555,7 +556,7 @@ export function RuntimeEnvironment() {
 
           <Card className="border border-neutral-200">
             <div className="p-5">
-              <div className="grid grid-cols-4 gap-6 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
                 <div>
                   <div className="text-xs text-neutral-600 mb-1">CPU 规格</div>
                   <div className="text-xl font-semibold text-neutral-900">{model.computeSpec}</div>
@@ -590,6 +591,8 @@ export function RuntimeEnvironment() {
                   variant="outline"
                   size="sm"
                   className="border-red-300 text-red-700 hover:bg-red-100 flex-shrink-0"
+                  disabled
+                  title="释放计算资源需要后端确认流程；当前入口未接入。"
                 >
                   释放
                 </Button>
@@ -611,11 +614,11 @@ export function RuntimeEnvironment() {
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled title={resourceActionBoundary}>
                 <Plus className="w-4 h-4 mr-1" />
                 增加
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled title={resourceActionBoundary}>
                 <Minus className="w-4 h-4 mr-1" />
                 减少
               </Button>
@@ -624,7 +627,7 @@ export function RuntimeEnvironment() {
 
           <Card className="border border-neutral-200">
             <div className="p-5">
-              <div className="grid grid-cols-4 gap-6 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
                 <div>
                   <div className="text-xs text-neutral-600 mb-1">总容量</div>
                   <div className="text-xl font-semibold text-neutral-900">{model.storageTotal}</div>
@@ -663,6 +666,8 @@ export function RuntimeEnvironment() {
                   variant="outline"
                   size="sm"
                   className="border-red-300 text-red-700 hover:bg-red-100 flex-shrink-0"
+                  disabled
+                  title="删除存储资源需要后端确认流程；当前入口未接入。"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   删除
@@ -673,7 +678,7 @@ export function RuntimeEnvironment() {
         </div>
 
         {/* 5. 计费与审计区 - 简洁展示 */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <div className="flex items-center gap-3 mb-4">
               <Zap className="w-5 h-5 text-neutral-600" />
@@ -778,7 +783,7 @@ export function RuntimeEnvironment() {
             ¥ 5.00 → ¥ 9.00 / 小时
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="flex items-center gap-3">
             <Server className="w-5 h-5 text-amber-600" />
             <div>
@@ -826,7 +831,7 @@ export function RuntimeEnvironment() {
 
         <Card className="border border-neutral-200">
           <div className="p-5">
-            <div className="grid grid-cols-4 gap-6 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
               <div>
                 <div className="text-xs text-neutral-600 mb-1">当前规格</div>
                 <div className="text-xl font-semibold text-neutral-400">8 核 16 GB</div>
@@ -868,7 +873,7 @@ export function RuntimeEnvironment() {
 
         <Card className="border border-neutral-200">
           <div className="p-5">
-            <div className="grid grid-cols-4 gap-6 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
               <div>
                 <div className="text-xs text-neutral-600 mb-1">总容量</div>
                 <div className="text-xl font-semibold text-neutral-900">100 GB</div>
@@ -895,7 +900,7 @@ export function RuntimeEnvironment() {
       </div>
 
       {/* 5. 计费与审计区 */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-5 h-5 text-neutral-600" />

@@ -162,6 +162,10 @@ function getTaskStatusIcon(status: string) {
   }
 }
 
+function csvCell(value: string) {
+  return `"${value.replaceAll("\"", "\"\"")}"`;
+}
+
 export function BillingAudit() {
   const query = usePortalQuery(loadBillingAuditModel, []);
   const [timeRange, setTimeRange] = useState("7days");
@@ -184,6 +188,31 @@ export function BillingAudit() {
 
   const model = query.data;
   const pageState: PageState = model.billingRecords.length === 0 ? "empty-ledger" : "ready";
+  const canExportBilling = model.billingRecords.length > 0;
+
+  const exportBillingRecords = () => {
+    if (!canExportBilling) return;
+    const rows = [
+      ["时间", "类型", "说明", "金额", "状态"],
+      ...model.billingRecords.map((record) => [
+        record.date,
+        record.type,
+        record.description,
+        record.amount,
+        record.status,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `medopl-billing-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   // Empty Ledger State
   if (pageState === "empty-ledger") {
@@ -191,7 +220,7 @@ export function BillingAudit() {
       <div className="p-8 max-w-7xl mx-auto">
         {/* Hero */}
         <div className="mb-8 pb-8 border-b border-neutral-200">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <h1 className="text-2xl font-semibold text-neutral-900">账单与审计</h1>
@@ -203,7 +232,7 @@ export function BillingAudit() {
                 查看余额、冻结金额、消费明细和审计状态
               </p>
             </div>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" disabled title="当前时间窗口没有可导出的账单流水">
               <Download className="w-4 h-4" />
               导出账单
             </Button>
@@ -211,7 +240,7 @@ export function BillingAudit() {
         </div>
 
         {/* Financial Summary */}
-        <div className="grid grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <Card className="p-4 border border-neutral-200">
             <div className="text-sm text-neutral-600 mb-1">余额</div>
             <div className="text-xl font-semibold text-neutral-900">{model.balance}</div>
@@ -256,7 +285,7 @@ export function BillingAudit() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* Hero - Billing Status and Financial Summary */}
       <div className="mb-8 pb-8 border-b border-neutral-200">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
               <h1 className="text-2xl font-semibold text-neutral-900">账单与审计</h1>
@@ -270,7 +299,7 @@ export function BillingAudit() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={exportBillingRecords}>
               <Download className="w-4 h-4" />
               导出明细
             </Button>
@@ -281,7 +310,7 @@ export function BillingAudit() {
       {/* Financial Metrics */}
       <div className="mb-8">
         <h2 className="font-semibold text-neutral-900 mb-4">资金摘要</h2>
-        <div className="grid grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-neutral-600">余额</span>
@@ -340,7 +369,7 @@ export function BillingAudit() {
 
       {/* Cost Breakdown and Filters */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="font-semibold text-neutral-900">费用拆分与趋势</h2>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-40">
@@ -355,7 +384,7 @@ export function BillingAudit() {
           </Select>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center gap-2 mb-2">
               <Server className="w-4 h-4 text-neutral-400" />
@@ -397,7 +426,7 @@ export function BillingAudit() {
       </div>
 
       {/* Workspace and Task Costs */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Workspace Costs */}
         <Card className="border border-neutral-200">
           <div className="p-5 border-b border-neutral-200">
@@ -464,9 +493,9 @@ export function BillingAudit() {
       </div>
 
       {/* Account Ledger and Audit Status */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Account Ledger - 2 columns */}
-        <Card className="border border-neutral-200 col-span-2">
+        <Card className="border border-neutral-200 lg:col-span-2">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4 text-neutral-600" />

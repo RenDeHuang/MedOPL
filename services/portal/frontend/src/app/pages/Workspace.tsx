@@ -121,14 +121,14 @@ export function Workspace() {
       <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 pb-8 border-b border-neutral-200">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-neutral-900 mb-3">工作空间</h1>
               <p className="text-neutral-600 text-sm">
                 当前工作空间可用，文件空间正常，可以上传输入文件或进入 OPL
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button asChild variant="outline">
                 <Link to="/opl-launch" title="上传请进入 OPL 工作台">
                   <Upload className="w-4 h-4 mr-2" />
@@ -159,7 +159,7 @@ export function Workspace() {
             </div>
           </div>
           <div className="p-5">
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
                 <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
                 <div className="font-semibold text-neutral-900">生物信息学实验</div>
@@ -249,7 +249,7 @@ export function Workspace() {
             </div>
           </div>
           <div className="p-5">
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
                 <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
                 <div className="font-semibold text-neutral-900">生物信息学实验</div>
@@ -341,14 +341,14 @@ export function Workspace() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header - Workspace Summary */}
       <div className="mb-8 pb-8 border-b border-neutral-200">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-neutral-900 mb-3">工作空间</h1>
             <p className="text-neutral-600 text-sm">
               查看输入文件、输出文件、结果回流和文件空间状态
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button variant="outline" disabled title="结果下载请在 OPL 工作台或任务详情中完成">
               <Download className="w-4 h-4 mr-2" />
               下载全部结果
@@ -378,7 +378,7 @@ export function Workspace() {
           </div>
         </div>
         <div className="p-5">
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <div>
               <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
               <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
@@ -446,29 +446,35 @@ export function Workspace() {
                 {filteredInputFiles.map((file, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
+                    className="flex items-center justify-between gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
                   >
-                    <div className="flex items-center gap-3 flex-1">
+                    <div className="min-w-0 flex items-center gap-3 flex-1">
                       {getFileIcon(file.type)}
-                      <div className="flex-1">
-                        <div className="font-medium text-neutral-900 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium text-neutral-900 text-sm">
                           {file.name}
                         </div>
-                        <div className="text-xs text-neutral-500">
+                        <div className="truncate text-xs text-neutral-500">
                           {file.size} · 上传于 {file.updated}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="outline" className="text-xs">
                         {file.type.toUpperCase()}
                       </Badge>
                       <Button size="sm" variant="ghost" disabled title="文件下载请在 OPL 工作台或任务详情中完成">
                         <Download className="w-4 h-4" />
                       </Button>
-                      <button className="p-1 hover:bg-neutral-100 rounded">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled
+                        title="更多文件操作请在 OPL 工作台完成"
+                        aria-label="更多文件操作暂未接入"
+                      >
                         <MoreVertical className="w-4 h-4 text-neutral-400" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -485,26 +491,26 @@ export function Workspace() {
                 {filteredOutputFiles.map((file, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
+                    className="flex items-center justify-between gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
                   >
-                    <div className="flex items-center gap-3 flex-1">
+                    <div className="min-w-0 flex items-center gap-3 flex-1">
                       {getFileIcon(file.type)}
-                      <div className="flex-1">
-                        <div className="font-medium text-neutral-900 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium text-neutral-900 text-sm">
                           {file.name}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-neutral-500">
-                          <span>{file.size} · 生成于 {file.updated}</span>
+                        <div className="flex min-w-0 items-center gap-2 text-xs text-neutral-500">
+                          <span className="truncate">{file.size} · 生成于 {file.updated}</span>
                           {file.taskName && (
                             <>
                               <span>·</span>
-                              <span className="text-blue-600">来自 {file.taskName}</span>
+                              <span className="truncate text-blue-600">来自 {file.taskName}</span>
                             </>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="outline" className="text-xs">
                         {file.type.toUpperCase()}
                       </Badge>
@@ -529,7 +535,7 @@ export function Workspace() {
       </Card>
 
       {/* File Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card className="p-4 border border-neutral-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-neutral-600">输入文件</span>
