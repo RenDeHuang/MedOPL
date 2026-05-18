@@ -26,7 +26,7 @@ export type QueryState<T> =
 
 const PORTAL_DATA_UNAVAILABLE_MESSAGE = "Portal 数据暂时不可用，请稍后重试。";
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
-export const adminLocalActionMessage = "已接入本地 Portal 管理动作；真实云资源和真实扣费仍需单独授权。";
+export const adminLocalActionMessage = "已接入本地 Portal 用户启停/删除和公告管理动作；账本充值/退款等待后端账务事务能力启用。";
 export const adminReadOnlyMessage = "该管理面当前只展示已接入的只读数据；真实云资源、真实扣费或高风险设置仍需单独授权接口。";
 
 class PortalDisplayError extends Error {

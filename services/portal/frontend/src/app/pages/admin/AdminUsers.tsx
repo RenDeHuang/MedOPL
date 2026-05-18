@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
-import { Label } from "../../components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { deleteAdminUser, rechargeAdminUser, refundAdminUser, toggleAdminUser } from "../../../api/portal/admin";
+import { deleteAdminUser, toggleAdminUser } from "../../../api/portal/admin";
 import { adminLocalActionMessage, loadAdminUsersModel, usePortalQuery } from "../../data/portalAdapters";
 
 type UserStatus = "active" | "restricted" | "disabled";
@@ -57,16 +56,12 @@ export function AdminUsers() {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [rechargeAmount, setRechargeAmount] = useState("100");
-  const [refundAmount, setRefundAmount] = useState("100");
-  const [refundReason, setRefundReason] = useState("");
   const [actionError, setActionError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const query = usePortalQuery(loadAdminUsersModel, [refreshVersion]);
+  const walletActionDisabledMessage = "账本充值/退款等待后端账务事务能力启用；当前入口不执行本地写入。";
 
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
@@ -102,21 +97,6 @@ export function AdminUsers() {
     setDetailDialogOpen(true);
   };
 
-  const openRechargeDialog = (user: User) => {
-    setSelectedUser(user);
-    setRechargeAmount("100");
-    setActionError("");
-    setRechargeDialogOpen(true);
-  };
-
-  const openRefundDialog = (user: User) => {
-    setSelectedUser(user);
-    setRefundAmount("100");
-    setRefundReason("");
-    setActionError("");
-    setRefundDialogOpen(true);
-  };
-
   const openToggleDialog = (user: User) => {
     setSelectedUser(user);
     setActionError("");
@@ -142,39 +122,6 @@ export function AdminUsers() {
     } finally {
       setPendingAction(null);
     }
-  };
-
-  const submitRecharge = async () => {
-    if (!selectedUser) return;
-    const amount = Number(rechargeAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setActionError("充值金额必须大于 0。");
-      return;
-    }
-    await runUserAction(
-      "recharge",
-      () => rechargeAdminUser({ userId: selectedUser.id, amount, redirectTo: "/admin/users" }),
-      () => setRechargeDialogOpen(false),
-    );
-  };
-
-  const submitRefund = async () => {
-    if (!selectedUser) return;
-    const amount = Number(refundAmount);
-    const reason = refundReason.trim();
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setActionError("退款金额必须大于 0。");
-      return;
-    }
-    if (!reason) {
-      setActionError("退款原因不能为空。");
-      return;
-    }
-    await runUserAction(
-      "refund",
-      () => refundAdminUser({ userId: selectedUser.id, amount, reason, redirectTo: "/admin/users" }),
-      () => setRefundDialogOpen(false),
-    );
   };
 
   const submitToggle = async () => {
@@ -273,11 +220,11 @@ export function AdminUsers() {
                             <CheckCircle className="w-4 h-4 mr-2" />
                             查看详情
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => openRechargeDialog(user)}>
+                          <DropdownMenuItem disabled title={walletActionDisabledMessage}>
                             <DollarSign className="w-4 h-4 mr-2" />
                             充值
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => openRefundDialog(user)}>
+                          <DropdownMenuItem disabled title={walletActionDisabledMessage}>
                             <DollarSign className="w-4 h-4 mr-2" />
                             退款
                           </DropdownMenuItem>
@@ -344,78 +291,6 @@ export function AdminUsers() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>关闭</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={rechargeDialogOpen} onOpenChange={setRechargeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>充值</DialogTitle>
-            <DialogDescription>为选中用户增加 Portal 本地账户余额。</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-neutral-600">
-              {selectedUser ? `${selectedUser.name} · ${selectedUser.email}` : ""}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rechargeAmount">充值金额</Label>
-              <Input
-                id="rechargeAmount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={rechargeAmount}
-                onChange={(event) => setRechargeAmount(event.target.value)}
-              />
-            </div>
-            {actionError && <div className="text-sm text-red-600">{actionError}</div>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRechargeDialogOpen(false)} disabled={pendingAction === "recharge"}>取消</Button>
-            <Button onClick={submitRecharge} disabled={pendingAction === "recharge"}>
-              {pendingAction === "recharge" ? "提交中..." : "确认充值"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>退款</DialogTitle>
-            <DialogDescription>为选中用户执行 Portal 本地账本退款。</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-neutral-600">
-              {selectedUser ? `${selectedUser.name} · ${selectedUser.email}` : ""}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="refundAmount">退款金额</Label>
-              <Input
-                id="refundAmount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={refundAmount}
-                onChange={(event) => setRefundAmount(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="refundReason">退款原因</Label>
-              <Input
-                id="refundReason"
-                value={refundReason}
-                onChange={(event) => setRefundReason(event.target.value)}
-              />
-            </div>
-            {actionError && <div className="text-sm text-red-600">{actionError}</div>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} disabled={pendingAction === "refund"}>取消</Button>
-            <Button onClick={submitRefund} disabled={pendingAction === "refund"}>
-              {pendingAction === "refund" ? "提交中..." : "确认退款"}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

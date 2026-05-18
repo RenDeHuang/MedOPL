@@ -285,10 +285,12 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     },
     "adminRouteActionCoverage": {
       "/admin/users": [
-        "/portal/admin/recharge",
-        "/portal/admin/ledger-adjust",
         "/portal/admin/toggle-user",
         "/portal/admin/delete-user"
+      ],
+      "/admin/users/deferredWalletActions": [
+        "/portal/admin/recharge",
+        "/portal/admin/ledger-adjust"
       ],
       "/admin/alerts": [
         "/portal/admin/announcements/save",

@@ -191,11 +191,13 @@ for (const route of adminRoutes) {
   );
 }
 assert.deepEqual(contract.apiIntegration.adminRouteActionCoverage["/admin/users"], [
-  "/portal/admin/recharge",
-  "/portal/admin/ledger-adjust",
   "/portal/admin/toggle-user",
   "/portal/admin/delete-user",
 ], "admin_users_action_coverage_mismatch");
+assert.deepEqual(contract.apiIntegration.adminRouteActionCoverage["/admin/users/deferredWalletActions"], [
+  "/portal/admin/recharge",
+  "/portal/admin/ledger-adjust",
+], "admin_users_deferred_wallet_action_coverage_mismatch");
 assert.deepEqual(contract.apiIntegration.adminRouteActionCoverage["/admin/alerts"], [
   "/portal/admin/announcements/save",
   "/portal/admin/announcements/toggle",

@@ -148,14 +148,16 @@ assertExcludes(adminApiSource, "response.text()", "admin_action_errors_must_not_
 
 assertIncludes(adminUsersSource, "用户管理", "admin_users_page_must_use_user_management_copy");
 assertIncludes(adminUsersSource, "toggleAdminUser", "admin_users_page_must_wire_toggle_action");
-assertIncludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_wire_recharge_action");
-assertIncludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_wire_refund_action");
 assertIncludes(adminUsersSource, "deleteAdminUser", "admin_users_page_must_wire_delete_action");
 assertIncludes(adminUsersSource, "setRefreshVersion", "admin_users_page_must_refresh_after_mutation");
 assertIncludes(adminUsersSource, "Dialog", "admin_users_actions_must_open_dialogs_for_confirmed_actions");
 assertIncludes(adminUsersSource, "openDetailDialog(user)", "admin_users_detail_menu_must_open_dialog");
-assertIncludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_open_dialog");
-assertIncludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_open_dialog");
+assertIncludes(adminUsersSource, "walletActionDisabledMessage", "admin_users_wallet_actions_must_have_disabled_boundary");
+assertIncludes(adminUsersSource, "账本充值/退款等待后端账务事务能力启用", "admin_users_wallet_actions_must_not_call_unavailable_accounting_store");
+assertExcludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_not_call_recharge_until_accounting_store_enabled");
+assertExcludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_not_call_refund_until_accounting_store_enabled");
+assertExcludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_not_open_executable_dialog");
+assertExcludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_not_open_executable_dialog");
 assertIncludes(adminUsersSource, "openToggleDialog(user)", "admin_users_toggle_menu_must_open_confirm_dialog");
 assertIncludes(adminUsersSource, "openDeleteDialog(user)", "admin_users_delete_menu_must_open_confirm_dialog");
 assertIncludes(adminUsersSource, "打开 ${user.name} 的用户操作菜单", "admin_users_action_menu_trigger_must_have_accessible_label");
