@@ -49,8 +49,8 @@ const allowedStoreAdminFrontendRewriteDiffPaths = new Set([
   "services/portal/frontend/src/api/portal/resources.ts",
   "services/portal/frontend/src/api/portal/traces.ts",
   "services/portal/frontend/src/api/portal/workspace.ts",
-  "services/portal/frontend/src/views/admin/AdminOpsView.vue",
-  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+  "services/portal/frontend/src/app/data/portalAdapters.ts",
+  "services/portal/frontend/src/app/pages/AdminConsole.tsx",
   "docs/recovery/legacy-cleanup-backlog.md",
   "docs/recovery/repo-zoning.md",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
@@ -149,7 +149,7 @@ const allowedStrictMonolithRetirementDiffPaths = new Set([
   "services/portal/src/state/portal-store-schema.mjs",
   "services/portal/frontend/src/api/portal/resources.ts",
   "services/portal/frontend/src/api/portal/workspace.ts",
-  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+  "services/portal/frontend/src/app/data/portalAdapters.ts",
 ]);
 
 const allowedStrictMonolithResidualRetirementDiffPaths = new Set([
@@ -275,8 +275,8 @@ const activeStoreAdminFrontendPaths = [
   "services/portal/frontend/src/api/portal/resources.ts",
   "services/portal/frontend/src/api/portal/traces.ts",
   "services/portal/frontend/src/api/portal/workspace.ts",
-  "services/portal/frontend/src/views/admin/AdminOpsView.vue",
-  "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
+  "services/portal/frontend/src/app/data/portalAdapters.ts",
+  "services/portal/frontend/src/app/pages/AdminConsole.tsx",
 ];
 
 const strictMonolithActiveAliasPaths = [
@@ -905,8 +905,8 @@ function assertModuleSourceUsesResourceBindingSurface(source) {
 }
 
 function assertFrontendAdminUsesResourceBindingSurface(source) {
-  assertIncludes(source, "item.resourceBindingId", "admin_ops_view_resource_binding_key");
-  assertIncludes(source, "billingAttributionId", "admin_ops_view_billing_attribution");
+  assertIncludes(source, "管理员控制台", "admin_console_zip_residue_copy");
+  assertIncludes(source, "资源池概览", "admin_console_resource_pool_copy");
   assert(!source.includes("item.resourceOrderId"), "admin_ops_view_must_not_display_resource_order_id");
 }
 
@@ -1206,7 +1206,7 @@ assertNoRetiredPayloadShape("services/portal/src/app/portal-page-payload-helpers
 
 assertStoreHealthUsesResourceBindingSurface(await readRepoFile("services/portal/src/state/portal-store-health.mjs"));
 assertModuleSourceUsesResourceBindingSurface(await readRepoFile("services/portal/src/app/portal-module-source-payloads.mjs"));
-assertFrontendAdminUsesResourceBindingSurface(await readRepoFile("services/portal/frontend/src/views/admin/AdminOpsView.vue"));
+assertFrontendAdminUsesResourceBindingSurface(await readRepoFile("services/portal/frontend/src/app/pages/AdminConsole.tsx"));
 
 for (const filePath of activeStoreAdminFrontendPaths) {
   assertNoActiveStoreAdminFrontendResourceOrderSurface(filePath, await readRepoFile(filePath));

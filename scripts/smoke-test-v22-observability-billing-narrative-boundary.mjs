@@ -421,10 +421,9 @@ async function assertDefaultEntrypointsDoNotRunLegacyObservabilityScripts() {
 
 async function assertOrdinaryUserPagesDoNotPromoteObservabilityTools() {
   const userSurfaceFiles = [
-    "services/portal/frontend/src/views/trace/TraceView.vue",
-    "services/portal/frontend/src/components/trace/TraceFilterPanel.vue",
-    "services/portal/frontend/src/components/trace/TraceHero.vue",
-    "services/portal/frontend/src/components/trace/TraceSessionTablePanel.vue",
+    "services/portal/frontend/src/app/pages/TasksResults.tsx",
+    "services/portal/frontend/src/app/pages/BillingAudit.tsx",
+    "services/portal/frontend/src/app/data/portalAdapters.ts",
   ];
 
   for (const filePath of userSurfaceFiles) {

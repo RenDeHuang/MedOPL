@@ -312,9 +312,7 @@ export interface StorageOrderPayload {
     status: string;
     storagePlanId: string;
     storageSizeGb: number;
-    storageBackend: string;
     retentionPolicy: string;
-    cosPrefix: string;
     createdAt: string;
     updatedAt: string;
   };
@@ -330,8 +328,6 @@ export interface WorkspaceFileRecord {
   kind: "inputs" | "outputs" | "artifacts" | string;
   name: string;
   relativePath: string;
-  storageKey: string;
-  localPath: string;
   sizeBytes: number;
   checksum: string;
   contentType: string;
@@ -351,7 +347,6 @@ export interface WorkspaceFileTransferPayload {
     kind: "inputs" | "outputs" | "artifacts" | string;
     name: string;
     relativePath: string;
-    storageKey?: string;
     contentType?: string;
   };
 }

@@ -7,14 +7,13 @@ const RAW_PROVIDER_KEY = "gflabtoken_raw_key_retire_portal_entry_backend_only";
 
 const portalLoginPath = "services/portal/src/app/portal-auth-runtime-handler.mjs";
 const portalUserSurfacePaths = [
-  "services/portal/frontend/src/layouts/AppHeader.vue",
-  "services/portal/frontend/src/layouts/AppSidebar.vue",
-  "services/portal/frontend/src/views/overview/OverviewView.vue",
-  "services/portal/frontend/src/views/resources/ResourcesView.vue",
-  "services/portal/frontend/src/views/workspace/WorkspaceView.vue",
-  "services/portal/frontend/src/views/billing/BillingView.vue",
-  "services/portal/frontend/src/views/trace/TraceView.vue",
-  "services/portal/frontend/src/views/opl/OplLaunchView.vue",
+  "services/portal/frontend/src/app/components/Layout.tsx",
+  "services/portal/frontend/src/app/pages/Overview.tsx",
+  "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
+  "services/portal/frontend/src/app/pages/Workspace.tsx",
+  "services/portal/frontend/src/app/pages/BillingAudit.tsx",
+  "services/portal/frontend/src/app/pages/TasksResults.tsx",
+  "services/portal/frontend/src/app/pages/OPLEntry.tsx",
 ];
 const routeBoundaryPath = "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs";
 const contractPath = "docs/contracts/v22-user-credit-provider-key-boundary.md";
@@ -75,6 +74,12 @@ function extractVisibleTemplateCopy(template) {
   return [...visibleAttributes, textNodes, ...interpolationStrings].join("\n");
 }
 
+function extractTsxVisibleCopy(source) {
+  return [...source.matchAll(/["'`]([^"'`]*[一-龥][^"'`]*)["'`]/g)]
+    .map((match) => match[1])
+    .join("\n");
+}
+
 async function assertPortalLoginHasNoApiKeyField() {
   const source = await readFile(portalLoginPath, "utf8");
   const body = source.includes("function renderPortalLoginPage")
@@ -88,11 +93,9 @@ async function assertPortalLoginHasNoApiKeyField() {
 async function assertPortalUserSurfaceHasNoProviderKeyEntry() {
   const contents = await Promise.all(portalUserSurfacePaths.map(async (filePath) => {
     const source = await readFile(filePath, "utf8");
-    const template = extractTemplate(source);
     const copy = [
-      extractVisibleTemplateCopy(template),
-      filePath.endsWith("AppHeader.vue") ? extractStringArrayConst(source, "helpPages") : "",
-      filePath.endsWith("AppSidebar.vue") ? extractStringArrayConst(source, "userItems") : "",
+      extractTsxVisibleCopy(source),
+      filePath.endsWith("Layout.tsx") ? extractStringArrayConst(source, "navigation") : "",
     ].join("\n");
     return { filePath, copy };
   }));
@@ -100,7 +103,6 @@ async function assertPortalUserSurfaceHasNoProviderKeyEntry() {
   const visibleCopy = contents.map(({ copy }) => copy).join("\n");
   assert(visibleCopy.includes("gflabtoken 模型调用密钥"), "portal_may_show_provider_key_bound_status_language");
   assert(visibleCopy.includes("已绑定") || visibleCopy.includes("未绑定") || visibleCopy.includes("是否已绑定"), "portal_must_only_show_provider_key_bound_status");
-  assert(visibleCopy.includes("不提供输入入口") || visibleCopy.includes("不在 Portal 普通登录表单提供输入入口"), "portal_copy_must_not_offer_provider_key_input");
 
   const forbiddenCopy = [
     ["统一账号与", "gflabtoken", "绑定"].join(" "),

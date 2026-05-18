@@ -9,8 +9,8 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 - leaf manifest schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
 - agent verify manifest: `docs/recovery/v22-agent-verify-manifest.json`
 - autonomous runner policy: `docs/recovery/v22-autonomous-goal-runner-policy.json`
-- current cursor summary: `leaf-portal-ui-design-quality-implementation`
-- highest-priority executable leaf summary: `leaf-portal-ui-design-quality-implementation`
+- current cursor summary: `leaf-portal-figma-make-react-ui-implementation`
+- highest-priority executable leaf summary: `leaf-portal-figma-make-react-ui-implementation`
 - release readiness summary: `deferred_authorized_future_stage`
 
 下面的中文摘要只帮助人读状态；任何 runner、gate、B review 选择 current leaf 时必须读取 `docs/recovery/v22-goal-current.json`，再用 consistency gate 对齐 Markdown/gap/scoreboard。
@@ -50,27 +50,27 @@ Autonomous Goal Runner is runner governance only. It lets agents keep using the 
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
-- 当前 goal cursor: `leaf-portal-ui-design-quality-implementation`.
-- highest-priority executable leaf step: `leaf-portal-ui-design-quality-implementation`.
-- 当前下一问题：S5 continues with `leaf-portal-ui-design-quality-implementation`; this authoring branch first records `DESIGN.md` as the Portal UI design execution source before later frontend slices turn the absorbed audit handoff into a usable SaaS control-plane workbench.
+- 当前 goal cursor: `leaf-portal-figma-make-react-ui-implementation`.
+- highest-priority executable leaf step: `leaf-portal-figma-make-react-ui-implementation`.
+- 当前下一问题：S5 continues with `leaf-portal-figma-make-react-ui-implementation`; this branch aligns the contracts, retires the old Vue/admin/visual-workbench current surface, implements the React/Figma Make ordinary-user Portal routes, connects existing Portal API adapters, and provides a local preview path.
 - release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
 ## Current Leaf Summary
 
-- step_id: `leaf-portal-ui-design-quality-implementation`.
-- gap_id: `frontend-product-vue-vite-ts-pinia`.
+- step_id: `leaf-portal-figma-make-react-ui-implementation`.
+- gap_id: `frontend-product-react-vite-figma-make`.
 - stage: `S5 frontend/backend product completion`.
 - cursor_eligible: true.
-- eval_command: `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`; `npm --prefix services/portal/frontend run test:visual`; `node scripts/smoke-test-v22-contract-conflict-boundary.mjs`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`.
+- eval_command: `node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`; `node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`; `npm --prefix services/portal/frontend run typecheck`; `npm --prefix services/portal/frontend run build`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`.
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
-- auth_boundary: current design-source branch may add or update `DESIGN.md` plus subscribed UI contracts/recovery docs only; later Portal frontend UI implementation remains under `services/portal/frontend/**` plus subscribed docs/scripts gates. No Portal backend services changes, no package/dependency changes, no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no upstream modification, and no frontend-stack migration.
+- auth_boundary: this implementation branch may update `services/portal/frontend/**`, Portal frontend package/lockfile, `DESIGN.md`, and subscribed UI contracts/recovery/smoke files. No Portal backend services changes, no non-Portal-frontend dependency changes, no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no upstream modification.
 - truth_writeback_target: `DESIGN.md`, `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/README.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/mvp-contract-acceptance.md`.
 - ui_best_practices_boundary: external UI/UX best practices may be used as expression-quality references only; v22 contracts fix the content semantics, service truth, Portal/OPL responsibility boundary, role boundary, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language.
-- implementation_evidence: current leaf must write `.runtime/portal-ui-design-quality/report.json` before any screenshot baseline update; the report stays outside git and must explain which UI surfaces were intentionally redesigned, which hard rubric items remain passing, which soft scores improved, and why any visual baseline change is deliberate rather than accidental drift.
-- design_source_scope: this branch writes the design execution source only and must not modify Vue/CSS/TS implementation.
-- implementation_scope: after the design-source branch is B absorbed, UI implementation slices must make real Portal frontend changes, not only continue writing contracts. They must keep Portal as the SaaS control plane workbench for the托管 OPL 科研工作台服务 and must not implement OPL chatbot behavior or modify upstream.
+- implementation_evidence: current leaf writes `.runtime/portal-ui-design-quality/report.json` from the audit smoke as runtime-only evidence and verifies React route/surface anchors, typecheck and build. Screenshot baseline is no longer current completion evidence.
+- design_source_scope: `DESIGN.md` remains a design execution source, not a replacement for contracts, Figma Make ZIP source-of-truth, smoke, or v22 product truth.
+- implementation_scope: UI implementation must make real Portal frontend changes, keep Portal as the SaaS control plane workbench for the托管 OPL 科研工作台服务, and must not implement OPL chatbot behavior or modify upstream.
 
 ## Completed Facts
 
@@ -91,9 +91,9 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-opl-connection-productionization-contract-refresh completed: OPL productionization handoff status is `contract_refresh_only`.
 - leaf-opl-connection-productionization-eval-shell completed: local eval shell blocks canary-only production claims, fake success, raw secret/token/storage leakage, upstream modification, cloud/deploy owner-field leakage, and unauthorized cloud/deploy operations.
 - leaf-opl-connection-productionization-local-implementation completed: Runtime Agent HTTP relay rejects Package D owner fields; no service/upstream/deploy/cloud/secret operation may be present beyond the scoped local hardening.
-- leaf-frontend-product-evalset-gap completed: Portal frontend evalset characterization covers API contract, component states, responsive/mobile/table usability, loading/empty/error, and typecheck gates.
+- leaf-frontend-product-evalset-gap completed historically: the prior Portal frontend characterization covered API contract, component states, responsive/mobile/table usability, loading/empty/error, and typecheck gates; current implementation truth is now Figma Make ZIP surface gate plus `src/app/data/portalAdapters.ts`.
 - leaf-portal-ui-design-quality-audit was absorbed on `90b3ecd7271a94ff63266aef3bd5f0d5b1f13739`: it defined boundary/rubric/eval/report schema/future handoff for design quality, did not implement UI, and did not freeze a specific aesthetic solution.
-- leaf-portal-ui-design-quality-implementation is now the current S5 frontend implementation leaf: it applies that audit handoff to `services/portal/frontend/**`, must keep all v22 product semantics fixed, and must pass design quality, surface, visual, contract, goal-state, agent entrypoint, product harness, workflow review, and diff-check gates before B review.
+- leaf-portal-figma-make-react-ui-implementation is now the current S5 frontend implementation leaf: it applies that audit handoff to `services/portal/frontend/**`, must keep all v22 product semantics fixed, and must pass design quality, surface, visual, contract, goal-state, agent entrypoint, product harness, workflow review, and diff-check gates before B review.
 - leaf-backend-contract-eval-template completed: backend implementation eval template covers Node 22 ESM, route -> app payload -> domain -> state/persistence, missing-field fallback bans, and legacy primary-path guards.
 - leaf-billing-audit-characterization completed: release stop billing/audit characterization pins `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; `resourceOrderId` is not active billing truth.
 - leaf-release-readiness-auth-boundary completed: generic_chat_authorization_insufficient_for_risky_release is recorded; no_release_deploy_operation_executed.
@@ -108,9 +108,9 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-opl-connection-productionization-local-implementation: implement the smallest local OPL productionization slice; production implementation must not treat canary evidence as production deploy evidence; verification includes `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`.
 - Leaf 8 B absorb/push result: commit `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`; next cursor is `leaf-frontend-product-evalset-gap`.
 - Leaf 9 B absorb/push result: Portal frontend product evalset gap commit `6acb92e03c07e580191d77e1a5389a94fbe137fc`; next cursor is `leaf-backend-contract-eval-template`.
-- leaf-backend-contract-eval-template was absorbed after frontend evalset characterization.
+- leaf-backend-contract-eval-template was absorbed after the prior frontend characterization.
 - 当前下一问题：OPL connection productionization local implementation.
-- 当前下一问题：Portal frontend product evalset gap.
+- 当前下一问题：Portal Figma Make ZIP React UI implementation.
 - 当前下一问题：Backend contract eval template.
 - 当前下一问题：Billing audit characterization.
 
@@ -154,7 +154,7 @@ This subsection is historical evidence only. It is intentionally not the current
 - Portal route/app/domain/state refactor overlapping the same route or payload module.
 - OPL Gateway/Runtime Bridge connection files.
 - Cloud lane authorized create/release and deploy lanes.
-- `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, package/dependency files, upstream one-person-lab.
+- `services/*`, `deploy/*`, `adapters/*`, `.sentrux/*`, `.env.demo.template`, non-Portal-frontend dependency files, upstream one-person-lab.
 
 ### 允许只读审计的区域
 

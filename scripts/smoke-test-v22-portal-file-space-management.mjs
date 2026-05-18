@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 
@@ -72,21 +72,13 @@ function assertNoForbiddenLeak(value, label) {
 function assertUserCopy(source, label) {
   for (const required of [
     "文件空间",
-    "文件夹",
     "输入文件",
     "输出文件",
-    "运行轨迹",
-    "保护期",
-    "批量下载",
-    "批量删除",
-    "创建文件夹",
-    "重命名文件夹",
-    "删除文件或文件夹",
-    "上传文件到当前文件夹",
-    "移动文件或文件夹",
-    "永久删除",
-    "清空文件空间",
-    "二次确认",
+    "上传文件",
+    "下载全部结果",
+    "结果回流",
+    "文件空间可读写",
+    "前往运行环境",
   ]) {
     assert(source.includes(required), `${label}_missing_user_copy:${required}`);
   }
@@ -292,24 +284,20 @@ assert.equal(JSON.stringify(workspacePayload).includes("cos-prefix-proof-must-no
 assert.equal(JSON.stringify(workspacePayload).includes("cos_standard_workspace_quota"), false, "workspace_payload_must_not_expose_internal_storage_backend");
 assert.equal(JSON.stringify(workspacePayload).includes("storageBackend"), false, "workspace_payload_must_not_expose_storage_backend_field");
 
-const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
-const workspaceComponentSources = await Promise.all(
-  (await readdir("services/portal/frontend/src/components/workspace"))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`services/portal/frontend/src/components/workspace/${entry}`, "utf8")),
-);
-const workspaceSurfaceSources = `${workspaceViewSource}\n${workspaceComponentSources.join("\n")}`;
-const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
+const workspaceSurfaceSources = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
+const workspaceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const contractSource = await readFile("docs/contracts/v22-portal-files-billing-trace-boundary.md", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertUserCopy(workspaceSurfaceSources, "workspace_surface");
-assert(workspaceViewSource.includes("WorkspaceFileSpacePanel"), "workspace_view_must_render_file_space_panel_component");
-assert(workspaceViewSource.includes("WorkspaceFilesPanel"), "workspace_view_must_render_workspace_files_panel_component");
-assert(workspaceSurfaceSources.includes("payload.fileSpace"), "workspace_surface_must_render_file_space_payload");
-assert(workspaceSurfaceSources.includes('data-component-id="workspace.file_space"'), "file_space_panel_must_keep_dom_anchor");
-assert(workspaceSurfaceSource.includes("ordinaryDeleteRequiresConfirmation"), "workspace_surface_must_describe_delete_policy");
+assert(workspaceSurfaceSources.includes("loadWorkspaceModel"), "workspace_page_must_use_zip_portal_adapter_loader");
+assert(workspaceSurfaceSources.includes("TabsTrigger value=\"input\""), "workspace_page_must_render_input_file_tab");
+assert(workspaceSurfaceSources.includes("TabsTrigger value=\"output\""), "workspace_page_must_render_output_file_tab");
+assert(workspaceSurfaceSources.includes("model.fileSpaceUsed"), "workspace_page_must_render_file_space_usage");
+assert(workspaceSurfaceSources.includes("file.taskName"), "workspace_page_must_render_output_task_linkage");
+assert(workspaceSurfaceSource.includes("workspace.fileSpace"), "workspace_adapter_must_read_file_space_payload");
+assert(workspaceSurfaceSource.includes("fileSpacePercent"), "workspace_adapter_must_project_file_space_usage");
 assert(workspaceTypesSource.includes("FileSpacePayload"), "workspace_types_must_define_file_space_payload");
 assert(workspaceTypesSource.includes("selectedFileRefs"), "workspace_types_must_include_selected_file_refs");
 const storageEntitlementType = interfaceBody(workspaceTypesSource, "StorageEntitlementPayload");

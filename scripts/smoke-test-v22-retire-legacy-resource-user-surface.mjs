@@ -1,19 +1,24 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 
-const resourcesViewPath = "services/portal/frontend/src/views/resources/ResourcesView.vue";
-const resourcesComponentsDir = "services/portal/frontend/src/components/resources";
-const resourcesSurfacePath = "services/portal/frontend/src/composables/useResourcesSurface.ts";
+const resourcesViewPath = "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx";
+const resourcesSurfacePath = "services/portal/frontend/src/app/data/portalAdapters.ts";
 const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
+async function exists(filePath) {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const resourcesView = await readFile(resourcesViewPath, "utf8");
-const resourcesComponents = await Promise.all(
-  (await readdir(resourcesComponentsDir))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`${resourcesComponentsDir}/${entry}`, "utf8")),
-);
 const resourcesSurface = await readFile(resourcesSurfacePath, "utf8");
-const resourcesSurfaceSources = `${resourcesView}\n${resourcesComponents.join("\n")}\n${resourcesSurface}`;
+const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
+const routesSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
+const resourcesSurfaceSources = `${resourcesView}\n${resourcesSurface}\n${layoutSource}\n${routesSource}`;
 const suite = await readFile(suitePath, "utf8");
 
 function assertIncludes(source, expected, label) {
@@ -41,38 +46,40 @@ for (const copy of forbiddenVisibleCopy) {
   assertExcludes(resourcesSurfaceSources, copy, "ordinary_resource_surface_legacy_copy");
 }
 
+for (const retiredPath of [
+  "services/portal/frontend/src/views/resources/ResourcesView.vue",
+  "services/portal/frontend/src/views/servers/ServersView.vue",
+  "services/portal/frontend/src/components/resources/ResourcesCurrentPanel.vue",
+  "services/portal/frontend/src/composables/useResourcesSurface.ts",
+]) {
+  assert.equal(await exists(retiredPath), false, `retired_legacy_resource_surface_must_not_exist:${retiredPath}`);
+}
+
 for (const copy of ["CVM", "COS", "K8s", "TKE"]) {
   assertExcludes(resourcesSurfaceSources, `>${copy}<`, "ordinary_resource_surface_cloud_console_copy");
   assertExcludes(resourcesSurfaceSources, `${copy}：`, "ordinary_resource_surface_cloud_console_copy");
 }
 
 for (const required of [
-  "工作台资源",
-  "基础套餐",
-  "Pro 套餐",
-  "2 核 4GB",
-  "8 核 16GB",
-  "10GB 文件空间",
-  "100GB 文件空间",
-  "当前套餐",
-  "计算规格",
+  "基础版",
+  "标准版",
+  "2 核",
+  "4 GB",
+  "8 核",
+  "16 GB",
   "文件空间",
-  "并发数",
+  "并发任务",
   "预计费用",
-  "余额状态",
   "冻结金额",
-  "释放策略",
+  "释放计算资源",
   "审计状态",
-  "增加计算资源",
-  "增加存储资源",
 ]) {
   assertIncludes(resourcesSurfaceSources, required, "ordinary_resource_surface_required_copy");
 }
 
-assertIncludes(resourcesSurfaceSources, "dry-run", "resource_adjustment_must_be_dry_run_copy");
-assertIncludes(resourcesSurfaceSources, "不会真实开通", "resource_adjustment_must_not_create_real_resources");
-assertIncludes(resourcesSurfaceSources, "生成套餐调整计划", "package_card_cta_must_be_dry_run_copy");
-assertIncludes(resourcesSurfaceSources, "shrink-0 whitespace-nowrap", "resource_confirmation_badge_must_not_wrap_on_mobile");
+assertIncludes(resourcesSurfaceSources, "loadRuntimeEnvironmentModel", "resource_surface_must_use_portal_adapter_loader");
+assertIncludes(resourcesSurfaceSources, "fetchMyResources", "resource_adapter_must_call_platform_provisioned_resources_api");
+assertIncludes(resourcesSurfaceSources, "释放计算资源", "resource_surface_must_offer_compute_release_copy");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitEnsureProtectionFreeze\"", "ordinary_resource_surface_must_not_offer_freeze_form");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateCompute\"", "ordinary_resource_surface_must_not_offer_direct_compute_create");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateStorage\"", "ordinary_resource_surface_must_not_offer_direct_storage_create");
@@ -86,7 +93,6 @@ assertExcludes(resourcesSurfaceSources, "unbindWorkspaceResource(", "ordinary_re
 
 assertIncludes(suite, "smoke-test-v22-retire-legacy-resource-user-surface", "mvp_suite_must_run_resource_surface_cleanup_smoke");
 
-const serversView = await readFile("services/portal/frontend/src/views/servers/ServersView.vue", "utf8");
 for (const retiredServerDependency of [
   "fetchCloudResources",
   "fetchResourceOrders",
@@ -98,9 +104,9 @@ for (const retiredServerDependency of [
   "CloudResourcesPayload",
   "ResourceOrdersPayload",
 ]) {
-  assertExcludes(serversView, retiredServerDependency, "servers_view_must_not_import_retired_resource_surface_api");
+  assertExcludes(resourcesSurfaceSources, retiredServerDependency, "resource_surface_must_not_import_retired_resource_surface_api");
 }
-assertIncludes(serversView, "旧服务器目录已退役", "servers_view_must_explain_retired_surface");
+assertExcludes(routesSource, "/advanced/servers", "servers_route_must_be_physically_retired");
 
 console.log(JSON.stringify({
   ok: true,

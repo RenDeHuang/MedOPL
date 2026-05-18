@@ -6,34 +6,15 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const contractPath = path.join(__dirname, "../docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md");
 const frontendUserSurfacePaths = [
-  "../services/portal/frontend/src/layouts/AppHeader.vue",
-  "../services/portal/frontend/src/layouts/AppSidebar.vue",
-  "../services/portal/frontend/src/components/overview/OverviewHero.vue",
-  "../services/portal/frontend/src/components/overview/OverviewFinancialMetricsPanel.vue",
-  "../services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue",
-  "../services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue",
-  "../services/portal/frontend/src/components/overview/OverviewWorkspacePanel.vue",
-  "../services/portal/frontend/src/components/billing/BillingHero.vue",
-  "../services/portal/frontend/src/components/billing/BillingCostBreakdownPanel.vue",
-  "../services/portal/frontend/src/components/billing/BillingWorkspaceCostPanel.vue",
-  "../services/portal/frontend/src/components/resources/ResourcesHero.vue",
-  "../services/portal/frontend/src/components/resources/ResourcesCurrentPanel.vue",
-  "../services/portal/frontend/src/components/resources/ResourcesReleaseAuditPanel.vue",
-  "../services/portal/frontend/src/components/trace/TraceHero.vue",
-  "../services/portal/frontend/src/components/trace/TraceSessionTablePanel.vue",
-  "../services/portal/frontend/src/components/workspace/WorkspaceHero.vue",
-  "../services/portal/frontend/src/components/workspace/WorkspaceFileSpacePanel.vue",
-  "../services/portal/frontend/src/components/workspace/WorkspaceManagedPlanPanel.vue",
-  "../services/portal/frontend/src/components/workspace/WorkspaceListPanel.vue",
-  "../services/portal/frontend/src/components/workspace/WorkspaceFilesPanel.vue",
-  "../services/portal/frontend/src/views/overview/OverviewView.vue",
-  "../services/portal/frontend/src/views/resources/ResourcesView.vue",
-  "../services/portal/frontend/src/views/workspace/WorkspaceView.vue",
-  "../services/portal/frontend/src/views/billing/BillingView.vue",
-  "../services/portal/frontend/src/views/trace/TraceView.vue",
-  "../services/portal/frontend/src/views/opl/OplLaunchView.vue",
+  "../services/portal/frontend/src/app/components/Layout.tsx",
+  "../services/portal/frontend/src/app/pages/Overview.tsx",
+  "../services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
+  "../services/portal/frontend/src/app/pages/Workspace.tsx",
+  "../services/portal/frontend/src/app/pages/BillingAudit.tsx",
+  "../services/portal/frontend/src/app/pages/TasksResults.tsx",
+  "../services/portal/frontend/src/app/pages/OPLEntry.tsx",
 ].map((relativePath) => path.join(__dirname, relativePath));
-const traceViewPath = path.join(__dirname, "../services/portal/frontend/src/views/trace/TraceView.vue");
+const traceViewPath = path.join(__dirname, "../services/portal/frontend/src/app/pages/TasksResults.tsx");
 
 const CONTRACT_START = "<!-- v22-saas-portal-opl-ops-surface-contract:start -->";
 const CONTRACT_END = "<!-- v22-saas-portal-opl-ops-surface-contract:end -->";
@@ -159,6 +140,20 @@ function extractVisibleTemplateCopy(template) {
   return [...visibleAttributes, textNodes, ...interpolationStrings].join("\n");
 }
 
+function extractTsxVisibleCopy(source) {
+  const stringLiterals = [...source.matchAll(/["'`]([^"'`]*[一-龥][^"'`]*)["'`]/g)]
+    .map((match) => match[1]);
+  const jsxText = source
+    .replace(/import[\s\S]*?;\n/g, " ")
+    .replace(/type\s+[A-Za-z0-9_]+\s*=[\s\S]*?;\n/g, " ")
+    .replace(/interface\s+[A-Za-z0-9_]+\s*\{[\s\S]*?\n\}/g, " ")
+    .replace(/\{[\s\S]*?\}/g, " ")
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ");
+  return [...stringLiterals, jsxText].join("\n");
+}
+
 function extractUserFacingScriptAssignments(source) {
   return [...source.matchAll(/(?:errorMessage|noticeMessage|actionFeedback)\.value\s*=\s*"([^"]*)"/g)]
     .map((match) => match[1])
@@ -168,38 +163,28 @@ function extractUserFacingScriptAssignments(source) {
 async function assertFrontendBeginnerSurfaceCopy() {
   const visibleSurface = (await Promise.all(frontendUserSurfacePaths.map(async (filePath) => {
     const source = await readFile(filePath, "utf8");
-    const templateMatch = /<template>([\s\S]*?)<\/template>/.exec(source);
-    const visibleTemplate = [
-      extractVisibleTemplateCopy(templateMatch?.[1] || ""),
+    return [
+      extractTsxVisibleCopy(source),
       extractUserFacingScriptAssignments(source),
+      filePath.endsWith("Layout.tsx") ? extractStringArrayConst(source, "navigation") : "",
     ].join("\n");
-    if (filePath.endsWith("AppHeader.vue")) {
-      return [visibleTemplate, extractStringArrayConst(source, "helpPages")].join("\n");
-    }
-    if (filePath.endsWith("AppSidebar.vue")) {
-      return [visibleTemplate, extractStringArrayConst(source, "userItems")].join("\n");
-    }
-    return visibleTemplate;
   }))).join("\n");
   assertIncludesAll(visibleSurface, [
-    "科研工作台",
     "工作台",
-    "托管运行环境",
+    "托管科研工作台",
+    "运行环境",
     "工作空间",
     "文件空间",
-    "会话",
     "任务",
     "输入文件",
     "输出文件",
-    "运行轨迹",
     "余额",
-    "消费",
     "账单",
-    "预扣费",
+    "费用估算",
     "冻结金额",
-    "停止计费",
+    "释放计算资源",
     "审计状态",
-    "进入 OPL 工作台",
+    "进入 OPL",
     "gflabtoken 模型调用密钥",
   ], "frontend_beginner_surface_copy");
   assertNoForbiddenBeginnerText(visibleSurface, "frontend_beginner_surface_copy");
@@ -207,10 +192,8 @@ async function assertFrontendBeginnerSurfaceCopy() {
 
 async function assertTraceTaskHeaderCopy() {
   const source = await readFile(traceViewPath, "utf8");
-  const templateMatch = /<template>([\s\S]*?)<\/template>/.exec(source);
-  const visibleTemplate = extractVisibleTemplateCopy(templateMatch?.[1] || "");
-  assert.equal(visibleTemplate.includes("任务编号"), false, "trace_view_task_header_must_not_use_number_label");
-  assert(visibleTemplate.includes("任务"), "trace_view_task_header_must_use_task_label");
+  assert.equal(source.includes("任务编号"), false, "trace_view_task_header_must_not_use_number_label");
+  assert(source.includes("任务"), "trace_view_task_header_must_use_task_label");
 }
 
 const markdown = await readFile(contractPath, "utf8");

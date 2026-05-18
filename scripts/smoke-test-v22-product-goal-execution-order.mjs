@@ -38,7 +38,7 @@ const releasePrerequisites = [
   "architecture-refactor-portal-layering",
   "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
   "cloud-lane-mock-readonly-dry-run-authorized",
-  "frontend-product-vue-vite-ts-pinia",
+  "frontend-product-react-vite-figma-make",
   "backend-product-node22-esm-layering",
   "billing-audit-preauth-ledger-release-t1",
 ];

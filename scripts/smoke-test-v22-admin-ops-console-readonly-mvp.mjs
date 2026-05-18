@@ -451,57 +451,36 @@ const payloadJson = JSON.stringify(adminOpsPayload);
 assertNotIncludesAny(payloadJson, forbiddenSecretsAndStorage, "admin_ops_payload_secret_storage_leak");
 assertNotIncludesAny(payloadJson, forbiddenCloudMutationCopy, "admin_ops_payload_cloud_mutation_copy");
 
-const routerSource = await readFile("services/portal/frontend/src/router/index.ts", "utf8");
-assertIncludesAll(routerSource, [
-  "{ path: \"/admin/ops\"",
-  "requiresAdmin: true",
-  "requiresOpsSurface: true",
-  "return \"/overview\"",
-], "admin_ops_router_guard");
-
-const sidebarSource = await readFile("services/portal/frontend/src/layouts/AppSidebar.vue", "utf8");
-assertIncludesAll(sidebarSource, [
-  "const isAdmin = computed(() => currentUser.value?.role === \"admin\")",
-  "opsSurfaceEnabled",
-  "{ to: \"/admin/ops\", label: \"服务状态\" }",
-], "admin_ops_sidebar_guard");
-assert.equal(sidebarSource.includes("adminItems") && sidebarSource.includes("v-if=\"isAdmin\""), true, "admin_items_must_be_admin_only");
-
-const viewSource = await readFile("services/portal/frontend/src/views/admin/AdminOpsView.vue", "utf8");
-assertIncludesAll(viewSource, [
-  "服务状态",
-  "账号状态",
-  "工作空间状态",
-  "当前运行",
-  "文件空间状态",
-  "账单对账",
-  "审计事项",
-  "账号",
-  "工作空间",
-  "只读",
-], "admin_ops_view_required_copy");
-assertNotIncludesAny(viewSource, forbiddenSecretsAndStorage, "admin_ops_view_secret_storage_copy");
-assertNotIncludesAny(viewSource, forbiddenCloudMutationCopy, "admin_ops_view_cloud_console_copy");
-assert.equal(viewSource.includes("租户") || viewSource.includes("运行环境"), false, "tenant_environment_must_not_be_primary_ui_copy");
-const currentRunsViewSection = sliceBetween(
-  viewSource,
-  "<h2 class=\"panel-title\">当前运行</h2>",
-  "<h2 class=\"panel-title\">文件空间状态</h2>",
-  "admin_ops_current_runs_view_section",
-);
-assertNotIncludesAny(currentRunsViewSection, [
-  "tenantId",
-  "resourceBindingId",
-  "environmentId",
-  "retiredResourceOrderIdentifier",
-  "serverPlanId",
-], "current_runs_view_must_not_render_attribution_tags");
+const routerSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
+const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
+const adminConsoleResidueSource = await readFile("services/portal/frontend/src/app/pages/AdminConsole.tsx", "utf8");
+assertNotIncludesAny(routerSource, [
+  "/admin/ops",
+  "AdminConsole",
+  "requiresAdmin",
+  "requiresOpsSurface",
+], "admin_ops_must_not_be_active_zip_user_route");
+assertNotIncludesAny(layoutSource, [
+  "/admin/ops",
+  "管理员控制台",
+  "全局审计",
+], "admin_ops_must_not_be_user_navigation");
+assertIncludesAll(adminConsoleResidueSource, [
+  "管理员控制台",
+  "用户管理",
+  "资源池概览",
+  "全局审计日志",
+], "admin_console_zip_residue_required_copy");
+assertNotIncludesAny(adminConsoleResidueSource, forbiddenSecretsAndStorage, "admin_console_residue_secret_storage_copy");
+assert.equal(routerSource.includes("AdminConsole"), false, "admin_console_residue_must_not_be_mounted");
 
 const userSurfaceSources = [
-  await readFile("services/portal/frontend/src/views/resources/ResourcesView.vue", "utf8"),
-  await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8"),
-  await readFile("services/portal/frontend/src/views/overview/OverviewView.vue", "utf8"),
-  await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8"),
+  await readFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx", "utf8"),
+  await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8"),
+  await readFile("services/portal/frontend/src/app/pages/Overview.tsx", "utf8"),
+  await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8"),
+  layoutSource,
+  routerSource,
 ].join("\n");
 assertNotIncludesAny(userSurfaceSources, [
   "/admin/ops",

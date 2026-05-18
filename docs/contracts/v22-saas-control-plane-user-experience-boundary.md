@@ -2,7 +2,7 @@
 
 本合同固定 MedOPL 与 One Person Lab 的产品关系：MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台，让 clean upstream OPL 从需要部署、配置和维护的科研工作台，变成开箱即用、可购买、可管理、可计费、可审计、可释放的托管服务。
 
-本合同只定义产品真相和 Portal 用户体验边界，不实现 UI，不修改 `services/*`，不读取 secret，不调用真实云，不修改 upstream，不运行 build/push/kubectl/live-test。后续 Portal UI 改版必须订阅本合同，再由 `v22-portal-workbench-management-ui-composition-boundary.md` 和 `services/portal/frontend/src/harness/portal-ui-evalset.json` 承接具体页面、组件、文案、DOM 锚点和验收。
+本合同只定义产品真相和 Portal 用户体验边界，不实现 UI，不修改 `services/*`，不读取 secret，不调用真实云，不修改 upstream，不运行 build/push/kubectl/live-test。后续 Portal UI 改版必须订阅本合同，再由 `v22-portal-workbench-management-ui-composition-boundary.md`、`v22-portal-figma-make-ui-implementation-boundary.md` 和对应 frontend surface gate 承接具体页面、组件、文案和验收。
 
 模型记录：`gpt-5.4`。
 
@@ -135,7 +135,7 @@ node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs
     "把 raw API key、launchToken、runtimeToken、bearer token 写入浏览器持久化状态、日志、evidence 或 git"
   ],
   "downstreamImplementationContract": "v22-portal-workbench-management-ui-composition-boundary.md",
-  "evalset": "services/portal/frontend/src/harness/portal-ui-evalset.json",
+  "currentUiImplementationSource": "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
   "smoke": "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"
 }
 ```

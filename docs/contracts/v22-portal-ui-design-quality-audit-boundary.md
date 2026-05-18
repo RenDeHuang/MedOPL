@@ -50,37 +50,38 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 
 允许在审计报告和后续 UI implementation leaf 中参考外部 UI/UX best practices、web design guidelines、frontend development guidelines 或 UI UX Pro 类设计经验，但只能作为表达质量参考：信息层级、可扫描性、留白密度、状态表达、操作区清晰度、响应式无溢出、文案可信度和现代 SaaS 工作台质感。
 
-内容语义必须由 v22 合同固定。外部设计参考不得改变用户购买的服务、Portal/OPL 职责、账单/冻结/释放/文件/任务/结果状态、角色可见边界、secret/browser hygiene、no-cloud-console language、OPL chatbot 边界或 Cloud lane 授权边界。`vercel-react-best-practices` 一类资料可以贡献通用前端质量原则，但不得把 Vue 3 + Vite + TypeScript + Pinia 迁成 React/Vercel，不得引入依赖升级，不得把本 audit leaf 变成 UI implementation leaf。
+内容语义必须由 v22 合同固定。外部设计参考不得改变用户购买的服务、Portal/OPL 职责、账单/冻结/释放/文件/任务/结果状态、角色可见边界、secret/browser hygiene、no-cloud-console language、OPL chatbot 边界或 Cloud lane 授权边界。`vercel-react-best-practices` 一类资料可以贡献通用前端质量原则，但不得把本 audit leaf 本身变成 UI implementation leaf。Portal 前端技术栈迁移的授权只来自 `v22-portal-figma-make-ui-implementation-boundary.md`，并被限制在 Portal frontend、Figma Make 吸收、本地验证和本地可预览部署边界内。
 
 ## 与现有 UI 合同关系
 
 本合同不替代 UI composition 合同。分工如下：
 
 - `v22-saas-control-plane-user-experience-boundary.md` 定义用户体验主线问题。
-- `v22-portal-workbench-management-ui-composition-boundary.md` 定义 UI 分层、evalset、DOM anchor、fixture、截图回归和统一验证入口。
-- 本合同定义 design quality audit 的评价标准、报告形态和 baseline 更新边界。
-- `DESIGN.md` 是 Portal UI 重构的设计执行源，用于把合同和 evalset 转成产品气质、信息架构、组件、文案、视觉和 Figma 往返规则；它不替代本合同、UI composition 合同、evalset 或 smoke，也不授权修改后端、依赖、真实云、deploy、upstream 或 secret 边界。
+- `v22-portal-workbench-management-ui-composition-boundary.md` 定义 UI 分层、Figma Make ZIP surface gate 和统一验证入口。
+- 本合同定义 design quality audit 的评价标准、报告形态和 runtime evidence 边界。
+- `DESIGN.md` 是 Portal UI 重构的设计执行源，用于把合同和 Figma Make implementation leaf 转成产品气质、信息架构、组件、文案、视觉和 Figma Make ZIP 吸收规则；它不替代本合同、UI composition 合同、Figma Make ZIP source-of-truth 或 smoke，也不授权修改后端、真实云、deploy、upstream 或 secret 边界。
 
-视觉回归只能证明“和 baseline 一致”，不能证明 baseline 本身足够好。截图 baseline 可以因有意 redesign 更新，但必须先有 `.runtime/portal-ui-design-quality/report.json` 审计证据说明哪些硬约束仍通过、哪些软评分改善，以及为什么这是有意改版而不是偶然漂移。
+旧截图回归只能证明“和 baseline 一致”，不能证明 baseline 本身足够好；它已不再是当前 Portal UI completion evidence。当前实现 leaf 以 React route/surface eval、typecheck、build 和本地预览作为完成证据；如果后续重新引入截图回归，必须先有 `.runtime/portal-ui-design-quality/report.json` 审计证据说明哪些硬约束仍通过、哪些软评分改善，以及为什么这是有意改版而不是偶然漂移。
 
 ## 审计证据和后续 handoff
 
-本 leaf 产出的审计证据只证明合同、rubric、报告 schema 和后续 implementation handoff 已被定义并可被 gate 检查；它不声明当前 UI 已完成 redesign，也不声明 surface/visual 验证已在本 leaf 执行。运行时报告路径固定为 `.runtime/portal-ui-design-quality/report.json`，报告不进 git。
+本 leaf 产出的审计证据只证明合同、rubric、报告 schema 和后续 implementation handoff 已被定义并可被 gate 检查；当前 implementation leaf 的执行证据由 React route/surface eval、typecheck、build 和本地预览承接。运行时报告路径固定为 `.runtime/portal-ui-design-quality/report.json`，报告不进 git。
 
-审计报告必须覆盖七个主线问题、全部硬约束、全部软评分轴、surface/visual 证据来源、表达质量发现、产品语义边界检查和后续 UI implementation leaf handoff。任何 screenshot baseline 更新都必须先有该报告作为 evidence；没有报告时不得把视觉漂移解释为有意 redesign。
+审计报告必须覆盖七个主线问题、全部硬约束、全部软评分轴、surface/typecheck/build 证据来源、表达质量发现、产品语义边界检查和后续 UI implementation leaf handoff。
 
-后续 UI implementation leaf handoff 必须作为独立 leaf 处理。它可以在单独授权和 manifest allowlist 下修改 `services/portal/frontend/**`，但不得默认开放 Portal 后端、package/dependency files、deploy、adapters、`.sentrux`、upstream、secret 或真实云路径。它必须继续订阅本合同、UI composition 合同和 SaaS control-plane UX 合同，并把实现验证与 truth writeback 明确写入下一 leaf。
+后续 UI implementation leaf handoff 必须作为独立 leaf 处理。它可以在单独授权和 manifest allowlist 下修改 `services/portal/frontend/**` 以及 Portal frontend package/lockfile，但不得默认开放 Portal 后端、非 Portal frontend 依赖、deploy、adapters、`.sentrux`、upstream、secret 或真实云路径。它必须继续订阅本合同、UI composition 合同和 SaaS control-plane UX 合同，并把实现验证与 truth writeback 明确写入下一 leaf。
 
 ## Implementation Truth Writeback
 
-`leaf-portal-ui-design-quality-implementation` 在 `feat/v22-portal-ui-design-quality-implementation` 中执行本 handoff，范围保持在 Portal frontend、当前 design-quality gate 和订阅 truth writeback 文档内。已完成的 UI surface：
+`leaf-portal-figma-make-react-ui-implementation` 在当前分支执行本 handoff，范围保持在 Portal frontend、Portal frontend package/lockfile、当前 design-quality gate 和订阅 truth writeback 文档内。Portal 全体前端技术栈由 implementation leaf 固定为 React + Vite + TypeScript + shadcn/Radix + lucide，覆盖普通用户 Portal 和后续 Admin / Ops Portal；当前完成的 UI surface：
 
-- `overview.hero`: 首屏改为托管科研工作台服务摘要、环境/套餐/算力/存储/释放状态、状态驱动下一步动作，以及 Portal / OPL runtime 职责边界。
-- `overview.managed_environment`: 补平台负责托管运行环境、文件空间、冻结金额、审计和释放的表达，并把释放状态作为一等指标。
-- `overview.plans`: 从“套餐与文件空间”收敛为套餐、算力、存储和入门预估摘要。
-- `overview.recent_runs`: 明确输入文件 -> OPL runtime 任务运行 -> 输出结果回工作空间的链路。
-- `overview.workspace`: 明确文件进入工作空间、结果回到工作空间、Portal 负责展示/下载/账单关联和释放后保留状态。
-- `services/portal/frontend/src/harness/portal-ui-evalset.json`, `portal-ui-surfaces.ts`, overview fixture 和 visual workbench 已同步新的 page task、copy registry、surface invariants 和 screenshot baseline。
+- `overview`: 说明托管 OPL 科研工作台服务、工作台可用性、下一步动作、运行环境、文件任务结果和账单摘要。
+- `resources`: 说明托管运行环境、文件空间、释放计算资源和删除存储资源的 7 天保护期。
+- `workspace`: 展示文件空间、任务、输出结果和托管环境计划。
+- `trace`: 展示任务运行轨迹、输出回流和费用关联，不暴露外部 trace 直链。
+- `billing`: 展示余额、冻结金额、运行费用和账本审计。
+- `opl-launch`: 展示 OPL 启动阶段，不暴露 providerKeyRef、runtime token 或 raw key。
+- `services/portal/frontend/src/app/**` 已按 Figma Make ZIP 复制为 React user Portal route 和 surface source；`services/portal/frontend/src/app/data/portalAdapters.ts` 已接现有 `/portal/api/*`。
 
 仍不属于本 leaf 的后续事项：Portal backend services、Node 22 ESM layering、billing preauth/ledger/release T+1 后端闭环、真实云、release readiness、deploy、build/push/kubectl、live-test、secret-backed canary 和 upstream OPL 修改。B 吸收本分支后，cursor 是否推进到 `backend-product-node22-esm-layering` 必须继续由 `docs/recovery/v22-goal-current.json`、gap matrix 和 B review 规则决定；本实现分支不提前声明全局 cursor 完成。
 
@@ -92,11 +93,12 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs
 ```
 
-Portal UI design quality audit 的现有执行证据由 composition/evalset 的 surface 组和截图回归承接：
+Portal UI design quality audit 的现有执行证据由 Figma Make ZIP surface 组、React typecheck 和 build 承接：
 
 ```bash
 node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
-npm --prefix services/portal/frontend run test:visual
+npm --prefix services/portal/frontend run typecheck
+npm --prefix services/portal/frontend run build
 ```
 
 本合同 smoke 只读取 repo-tracked 文档和 manifest，不读取 secret，不调用真实云，不执行 build/push/kubectl/live-test，不修改 upstream。
@@ -122,8 +124,9 @@ npm --prefix services/portal/frontend run test:visual
   "referenceBoundaries": [
     "external_ui_ux_best_practices_reference_only",
     "content_semantics_fixed_by_v22_contracts",
-    "vue_vite_ts_pinia_stack_preserved",
-    "no_react_or_vercel_migration_in_this_leaf"
+    "frontend_stack_migration_authorized_only_by_figma_make_implementation_leaf",
+    "portal_wide_react_vite_typescript_shadcn_radix_lucide_stack",
+    "audit_leaf_does_not_implement_ui"
   ],
   "mainlineQuestions": [
     "我买的是什么服务？",
@@ -207,7 +210,8 @@ npm --prefix services/portal/frontend run test:visual
     "evidenceSources": [
       "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
       "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-      "npm --prefix services/portal/frontend run test:visual"
+      "npm --prefix services/portal/frontend run typecheck",
+      "npm --prefix services/portal/frontend run build"
     ],
     "findingScope": "expression_quality_only_not_product_semantics",
     "baselineUpdateGate": {
@@ -216,7 +220,7 @@ npm --prefix services/portal/frontend run test:visual
     }
   },
   "futureImplementationLeafHandoff": {
-    "leafIntent": "portal_ui_design_quality_implementation",
+    "leafIntent": "portal_figma_make_react_ui_implementation",
     "allowedFiles": [
       "services/portal/frontend/**",
       "DESIGN.md",
@@ -230,12 +234,17 @@ npm --prefix services/portal/frontend run test:visual
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/mvp-contract-acceptance.md",
       "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-      "scripts/smoke-test-v22-portal-runtime-suite.mjs"
+      "scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+      "services/portal/frontend/package.json",
+      "services/portal/frontend/package-lock.json"
     ],
     "verificationCommands": [
+      "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
       "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
       "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-      "npm --prefix services/portal/frontend run test:visual",
+      "npm --prefix services/portal/frontend run typecheck",
+      "npm --prefix services/portal/frontend run build",
       "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
@@ -254,7 +263,7 @@ npm --prefix services/portal/frontend run test:visual
     ],
     "stopConditions": [
       "requires_backend_services_change",
-      "requires_package_or_dependency_change",
+      "requires_non_portal_frontend_dependency_change",
       "requires_secret_or_live_cloud",
       "requires_deploy_build_push_kubectl_or_live_test",
       "changes_product_semantics_instead_of_expression_quality",
@@ -262,7 +271,7 @@ npm --prefix services/portal/frontend run test:visual
     ],
     "forbiddenAllowedFilePatterns": [
       "services/portal/**/backend_or_api_except_frontend",
-      "package_or_dependency_files",
+      "non_portal_frontend_package_or_dependency_files",
       "deploy/*",
       "adapters/*",
       ".sentrux/*",
@@ -282,7 +291,8 @@ npm --prefix services/portal/frontend run test:visual
   "validationCommands": [
     "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
     "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-    "npm --prefix services/portal/frontend run test:visual"
+    "npm --prefix services/portal/frontend run typecheck",
+    "npm --prefix services/portal/frontend run build"
   ]
 }
 ```

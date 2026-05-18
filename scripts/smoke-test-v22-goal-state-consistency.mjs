@@ -53,7 +53,7 @@ const releasePrerequisites = [
   "architecture-refactor-portal-layering",
   "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
   "cloud-lane-mock-readonly-dry-run-authorized",
-  "frontend-product-vue-vite-ts-pinia",
+  "frontend-product-react-vite-figma-make",
   "backend-product-node22-esm-layering",
   "billing-audit-preauth-ledger-release-t1",
 ];
@@ -304,10 +304,10 @@ function assertCurrentShape(current, verifyManifest = {}) {
   assert.equal(current.model, "gpt-5.4", "current_model_mismatch");
   assert.equal(current.branch_baseline, "origin/recovery/platform-v22-trunk", "branch_baseline_mismatch");
   assert.equal(current.target_branch, "recovery/platform-v22-trunk", "target_branch_mismatch");
-  assert.equal(current.current_branch, current.authoring_branch, "current_branch_must_be_authoring_source_branch");
+  assert.equal(current.current_branch, current.authoring_branch, "current_branch_must_be_authoring_branch");
   assert.equal(
     current.current_branch_role,
-    "authoring_source_branch_not_runtime_git_branch",
+    "authoring_implementation_branch_not_runtime_git_branch",
     "current_branch_role_mismatch",
   );
   const runtimeBranch = runGit(["branch", "--show-current"]);
@@ -375,7 +375,10 @@ function assertCurrentShape(current, verifyManifest = {}) {
       const pendingDiff = runGit(["status", "--porcelain"]);
       assert(pendingDiff.length > 0, "authoring_branch_at_base_requires_pending_cleanup_completion_diff");
     } else {
-      assert.equal(localHeadParent, current.base_trunk_head, "authoring_branch_head_parent_must_equal_base_trunk_head");
+      assert(
+        localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
+        "authoring_branch_head_must_descend_from_base_trunk_head",
+      );
     }
     assert(
       typeof current.git_observation.branch_ahead_explanation === "string" &&

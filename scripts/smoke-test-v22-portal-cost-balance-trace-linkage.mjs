@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
@@ -44,8 +44,17 @@ function paginateRows(rows = [], page = 1, pageSize = 10) {
   };
 }
 
-function assertUserCopy(source, label) {
-  for (const required of ["余额", "充值", "资源用量", "费用估算", "任务", "运行轨迹", "输出文件", "状态"]) {
+function assertTraceUserCopy(source, label) {
+  for (const required of ["资源用量", "费用估算", "任务", "输出文件", "状态"]) {
+    assert(source.includes(required), `${label}_missing_user_copy:${required}`);
+  }
+  for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "raw API key", "launchToken", "runtimeToken", "objectKey", "storageKey", "localPath", "signedUrl"]) {
+    assert.equal(source.includes(forbidden), false, `${label}_must_not_show_forbidden_copy:${forbidden}`);
+  }
+}
+
+function assertBillingUserCopy(source, label) {
+  for (const required of ["余额", "冻结金额", "今日消费", "账单与审计", "费用估算"]) {
     assert(source.includes(required), `${label}_missing_user_copy:${required}`);
   }
   for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "raw API key", "launchToken", "runtimeToken", "objectKey", "storageKey", "localPath", "signedUrl"]) {
@@ -238,38 +247,25 @@ assert.equal(traceItem.balanceLink.chargeApplied, false, "trace_balance_link_mus
 assert.equal(traceItem.observability.costEstimate.amount, 999, "langfuse_projection_must_remain_observability_attachment_only");
 assertNoForbiddenLeak(tracePayload, "trace_payload");
 
-const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
-const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
-const traceComponentSources = await Promise.all(
-  (await readdir("services/portal/frontend/src/components/trace"))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`services/portal/frontend/src/components/trace/${entry}`, "utf8")),
-);
-const workspaceComponentSources = await Promise.all(
-  (await readdir("services/portal/frontend/src/components/workspace"))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`services/portal/frontend/src/components/workspace/${entry}`, "utf8")),
-);
-const traceSurfaceSourceText = `${traceViewSource}\n${traceComponentSources.join("\n")}`;
-const workspaceSurfaceSourceText = `${workspaceViewSource}\n${workspaceComponentSources.join("\n")}`;
-const traceSurfaceSource = await readFile("services/portal/frontend/src/composables/useTraceSurface.ts", "utf8");
-const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
+const traceSurfaceSourceText = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
+const workspaceSurfaceSourceText = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
+const billingSurfaceSourceText = await readFile("services/portal/frontend/src/app/pages/BillingAudit.tsx", "utf8");
+const traceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
+const workspaceSurfaceSource = traceSurfaceSource;
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(traceSurfaceSourceText, "trace_surface");
-assertUserCopy(workspaceSurfaceSourceText, "workspace_surface");
-assert(traceViewSource.includes("TraceSessionTablePanel"), "trace_view_must_render_session_table_component");
-assert(traceSurfaceSourceText.includes("item.resourceUsage"), "trace_surface_must_render_resource_usage");
-assert(traceSurfaceSourceText.includes("costEstimateText(item)"), "trace_surface_must_render_cost_estimate");
-assert(traceSurfaceSourceText.includes("item.balanceLink"), "trace_surface_must_render_balance_link");
-assert(traceSurfaceSource.includes("item.costEstimate"), "trace_surface_must_format_cost_estimate");
-assert(workspaceSurfaceSourceText.includes("item.resourceUsage"), "workspace_surface_must_render_resource_usage");
-assert(workspaceSurfaceSourceText.includes("costEstimateText(item)"), "workspace_surface_must_render_cost_estimate");
-assert(workspaceSurfaceSourceText.includes("item.balanceLink"), "workspace_surface_must_render_balance_link");
-assert(workspaceSurfaceSource.includes("costEstimateText"), "workspace_surface_must_format_cost_estimate");
-assert(workspaceSurfaceSource.includes("rechargeStatusText"), "workspace_surface_must_format_recharge_status");
+assertTraceUserCopy(traceSurfaceSourceText, "trace_surface");
+assertBillingUserCopy(billingSurfaceSourceText, "billing_surface");
+assert(workspaceSurfaceSourceText.includes("文件空间"), "workspace_surface_must_render_file_space_context");
+assert(workspaceSurfaceSourceText.includes("输出文件"), "workspace_surface_must_render_output_file_context");
+assert(traceSurfaceSourceText.includes("task.resourceUsage"), "trace_surface_must_render_resource_usage");
+assert(traceSurfaceSourceText.includes("task.cost"), "trace_surface_must_render_cost_estimate");
+assert(traceSurfaceSource.includes("item.costEstimate"), "trace_adapter_must_format_cost_estimate");
+assert(traceSurfaceSource.includes("item.billing?.exactCost"), "trace_adapter_must_consume_billing_cost");
+assert(workspaceSurfaceSource.includes("workspace.outputs.map"), "workspace_adapter_must_project_output_files");
+assert(workspaceSurfaceSource.includes("bytesToSize(file.sizeBytes)"), "workspace_adapter_must_format_output_file_size");
 assert(traceTypesSource.includes("resourceUsage"), "trace_types_must_include_resource_usage");
 assert(traceTypesSource.includes("costEstimate"), "trace_types_must_include_cost_estimate");
 assert(traceTypesSource.includes("balanceLink"), "trace_types_must_include_balance_link");

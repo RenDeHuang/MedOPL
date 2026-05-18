@@ -8,7 +8,7 @@ const PASSWORD = "portal-password-v22";
 
 const contractPath = "docs/contracts/v22-opl-entry-preflight-auth-boundary.md";
 const authHandlerPath = "services/portal/src/app/portal-auth-runtime-handler.mjs";
-const oplLaunchViewPath = "services/portal/frontend/src/views/opl/OplLaunchView.vue";
+const oplLaunchViewPath = "services/portal/frontend/src/app/pages/OPLEntry.tsx";
 const userVisibleEntryPath = "/opl/entry/preflight";
 const internalImplementationPath = "/internal/opl/auth/login";
 

@@ -27,14 +27,14 @@
     "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base. This reference-mapped shell branch is stacked on the design source commit and still descends from base_trunk_head. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
   "last_absorbed_commit": "18dbc0fe3f5e459b034e48ec2515a99572d57270",
-  "current_cursor": "leaf-portal-ui-design-quality-implementation",
-  "next_leaf": "leaf-portal-ui-design-quality-implementation",
+  "current_cursor": "leaf-portal-figma-make-react-ui-implementation",
+  "next_leaf": "leaf-portal-figma-make-react-ui-implementation",
   "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_service_code",
   "current_blockers": [
     "none_for_portal_ui_design_quality_implementation_local_service_code"
   ],
-  "current_problem": "Current product-goal cursor remains leaf-portal-ui-design-quality-implementation. This authoring branch uses DESIGN.md as the Portal UI design execution source and rebuilds the Portal app shell plus Overview first screen against reference-mapped SaaS dashboard patterns while keeping content semantics, product responsibilities, role boundaries, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language fixed by v22 contracts.",
+  "current_problem": "Current product-goal cursor is leaf-portal-figma-make-react-ui-implementation. This branch aligns contracts, retires old Vue/admin/visual-workbench Portal UI assumptions, replaces the Portal frontend with React + Vite + TypeScript + shadcn/Radix + lucide, absorbs the current Figma Make ordinary-user Portal routes, connects existing /portal/api/* adapters, and provides a local preview deployment path while keeping v22 SaaS control-plane product truth fixed.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -57,7 +57,7 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-portal-ui-design-quality-implementation",
+    "repaired_current_cursor": "leaf-portal-figma-make-react-ui-implementation",
     "rule": "cleanup_completion truth is historical after B absorption; when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path, normal product-goal selection resumes at the lowest-priority eligible non-cleanup leaf."
   },
   "gaps": [
@@ -155,12 +155,12 @@
       ]
     },
     {
-      "id": "frontend-product-vue-vite-ts-pinia",
+      "id": "frontend-product-react-vite-figma-make",
       "stage": "S5 frontend/backend product completion",
       "priority": 80,
       "cursor_eligible": true,
       "status": "in_progress",
-      "next_leaf_step": "leaf-portal-ui-design-quality-implementation",
+      "next_leaf_step": "leaf-portal-figma-make-react-ui-implementation",
       "depends_on": [
         "cloud-lane-mock-readonly-dry-run-authorized"
       ]
@@ -173,7 +173,7 @@
       "status": "gated",
       "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
-        "frontend-product-vue-vite-ts-pinia"
+        "frontend-product-react-vite-figma-make"
       ]
     },
     {
@@ -202,7 +202,7 @@
         "architecture-refactor-portal-layering",
         "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
         "cloud-lane-mock-readonly-dry-run-authorized",
-        "frontend-product-vue-vite-ts-pinia",
+        "frontend-product-react-vite-figma-make",
         "backend-product-node22-esm-layering",
         "billing-audit-preauth-ledger-release-t1"
       ]
@@ -234,20 +234,23 @@
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-portal-ui-design-quality-implementation",
-    "gap_id": "frontend-product-vue-vite-ts-pinia",
+    "step_id": "leaf-portal-figma-make-react-ui-implementation",
+    "gap_id": "frontend-product-react-vite-figma-make",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
     "depends_on": [
       "cloud-lane-mock-readonly-dry-run-authorized"
     ],
-    "problem": "Portal UI design quality implementation is the S5 frontend product leaf after the absorbed audit evidence. It implements the minimum complete Portal frontend redesign needed for users to understand the purchased托管 OPL 科研工作台 service, current environment/package/compute/storage/release state, OPL entry, file/task/result flow, Portal/OPL responsibility boundary, and next action.",
-    "executable_when": "Cloud lane readonly status audit and Portal UI design quality audit evidence are absorbed; local Portal frontend implementation only under services/portal/frontend/** plus subscribed docs/scripts gates; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no upstream, no Portal backend services changes, and no dependency files",
-    "failure_state": "blocked_portal_ui_design_quality_implementation if it requires Portal backend services changes, package/dependency changes, secret, live cloud, build/push/kubectl, deploy, live-test, upstream changes, product semantics reverting to user-owned cloud console, or UI changes that cannot be verified by frontend harness/surface/visual gates",
+    "problem": "Portal Figma Make React UI implementation is the S5 frontend product leaf. It updates the old Portal UI contract surface, retires Vue/admin/visual-workbench assumptions from the current user Portal, implements ordinary-user routes /overview, /resources, /workspace, /trace, /billing, and /opl-launch with React/Vite/TypeScript/shadcn-Radix/lucide, and connects existing Portal API adapters without changing backend product semantics.",
+    "executable_when": "Cloud lane readonly status audit and Portal UI design quality audit evidence are absorbed; local Portal frontend implementation and Portal frontend dependency migration only under services/portal/frontend/** plus subscribed docs/scripts gates; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no upstream, and no Portal backend services changes.",
+    "failure_state": "blocked_portal_figma_make_react_ui_implementation if it requires Portal backend services changes, secret, live cloud, build/push/kubectl, deploy, live-test, upstream changes, product semantics reverting to user-owned cloud console, or UI changes that cannot be verified by frontend surface/typecheck/build gates.",
     "verification_commands": [
+      "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
       "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
       "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-      "npm --prefix services/portal/frontend run test:visual",
+      "node scripts/smoke-test-v22-portal-web-route-alignment.mjs",
+      "npm --prefix services/portal/frontend run typecheck",
+      "npm --prefix services/portal/frontend run build",
       "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
@@ -257,7 +260,11 @@
     ],
     "allowed_files": [
       "services/portal/frontend/**",
+      "services/portal/frontend/package.json",
+      "services/portal/frontend/package-lock.json",
       "DESIGN.md",
+      "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
+      "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
       "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
       "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
       "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
@@ -267,12 +274,33 @@
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/mvp-contract-acceptance.md",
+      "docs/recovery/architecture-truth.md",
+      "docs/recovery/status-matrix.md",
+      "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+      "docs/recovery/portal-figma-make-ui-convergence-plan.md",
+      "docs/recovery/portal-ui-design-generation-brief.md",
+      "docs/recovery/portal-ui-design-prd.md",
+      "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+      "scripts/smoke-test-v22-goal-state-consistency.mjs",
+      "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "scripts/smoke-test-v22-product-goal-execution-order.mjs",
+      "scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+      "scripts/smoke-test-v22-portal-auth-landing-route.mjs",
+      "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
       "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-      "scripts/smoke-test-v22-portal-runtime-suite.mjs"
+      "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
+      "scripts/smoke-test-v22-portal-mobile-usability.mjs",
+      "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
+      "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+      "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+      "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
+      "scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs"
     ],
     "forbidden_files": [
       "Portal backend services changes unless separately authorized",
-      "package/dependency files",
+      "non-Portal-frontend dependency files",
       "deploy/*",
       "adapters/*",
       ".sentrux/*",
@@ -313,12 +341,16 @@
     ]
   },
   "verification_commands": [
+    "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+    "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+    "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+    "node scripts/smoke-test-v22-portal-web-route-alignment.mjs",
+    "npm --prefix services/portal/frontend run typecheck",
+    "npm --prefix services/portal/frontend run build",
+    "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
     "node scripts/smoke-test-v22-goal-state-consistency.mjs",
     "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "node scripts/smoke-test-v22-product-goal-harness.mjs",
-    "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-    "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-    "npm --prefix services/portal/frontend run test:visual",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
   ],

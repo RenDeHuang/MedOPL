@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const authRuntimeSource = await readFile("services/portal/src/app/portal-auth-runtime-handler.mjs", "utf8");
-const routerSource = await readFile("services/portal/frontend/src/router/index.ts", "utf8");
+const routesSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
 
 assert(
   authRuntimeSource.includes('"/overview"'),
@@ -15,12 +15,22 @@ assert(
 );
 
 assert(
-  routerSource.includes("createWebHistory()"),
-  "portal_frontend_history_base_must_be_top_level",
+  routesSource.includes("createBrowserRouter"),
+  "portal_frontend_router_must_use_react_browser_router",
 );
 
 assert(
-  !routerSource.includes('{ path: "/portal", redirect: "/overview" }'),
+  routesSource.includes('from "react-router"'),
+  "portal_frontend_router_must_use_zip_react_router",
+);
+
+assert(
+  !routesSource.includes("react-router-dom"),
+  "portal_frontend_router_must_not_use_react_router_dom",
+);
+
+assert(
+  !routesSource.includes('{ path: "/portal", redirect: "/overview" }'),
   "portal_frontend_must_not_alias_legacy_inner_portal_route_to_overview",
 );
 

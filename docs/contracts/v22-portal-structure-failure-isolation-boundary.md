@@ -101,14 +101,14 @@ builder 必须是纯 builder：只组合、裁剪和格式化已传入的数据�
 
 单个 builder 或单个 domain payload 出错时，失败必须尽量局部化。套餐 payload 的失败不能拖垮 Portal shell；admin payload 的失败不能拖垮普通用户 surface；单个 domain 的失败不能变成整个 web 崩溃。
 
-## Frontend view / composable 边界
+## Frontend view / adapter 边界
 
-Portal frontend view 应保留：
+Portal frontend page 应保留：
 
 - template
 - local wiring
 
-以下逻辑应进入 composable：
+以下逻辑应进入 Portal API adapter：
 
 - query state
 - loader
@@ -480,54 +480,41 @@ Portal 必须按低耦合目标治理：
     },
     "frontendViewsComposables": {
       "currentViewFiles": [
-        "services/portal/frontend/src/views/overview/OverviewView.vue",
-        "services/portal/frontend/src/views/resources/ResourcesView.vue",
-        "services/portal/frontend/src/views/workspace/WorkspaceView.vue",
-        "services/portal/frontend/src/views/billing/BillingView.vue",
-        "services/portal/frontend/src/views/trace/TraceView.vue",
-        "services/portal/frontend/src/views/packages/PackagesView.vue",
-        "services/portal/frontend/src/views/admin/AdminDashboardView.vue",
-        "services/portal/frontend/src/views/admin/AdminUsersView.vue"
+        "services/portal/frontend/src/app/pages/Overview.tsx",
+        "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
+        "services/portal/frontend/src/app/pages/Workspace.tsx",
+        "services/portal/frontend/src/app/pages/BillingAudit.tsx",
+        "services/portal/frontend/src/app/pages/TasksResults.tsx",
+        "services/portal/frontend/src/app/pages/OPLEntry.tsx"
       ],
       "currentComposableFiles": [
-        "services/portal/frontend/src/composables/useOverviewSurface.ts",
-        "services/portal/frontend/src/composables/useResourcesSurface.ts",
-        "services/portal/frontend/src/composables/useWorkspaceSurface.ts",
-        "services/portal/frontend/src/composables/useBillingSurface.ts",
-        "services/portal/frontend/src/composables/useTraceSurface.ts",
-        "services/portal/frontend/src/composables/usePackageSurface.ts",
-        "services/portal/frontend/src/composables/useAdminUsersSurface.ts",
-        "services/portal/frontend/src/composables/resourceFormatters.ts",
-        "services/portal/frontend/src/composables/traceFormatters.ts"
+        "services/portal/frontend/src/app/data/portalAdapters.ts",
+        "services/portal/frontend/src/app/components/ui/utils.ts"
       ],
       "coreViewComposableImports": [
         {
-          "viewFile": "services/portal/frontend/src/views/overview/OverviewView.vue",
-          "composableImport": "useOverviewSurface"
+          "viewFile": "services/portal/frontend/src/app/pages/Overview.tsx",
+          "composableImport": "usePortalQuery"
         },
         {
-          "viewFile": "services/portal/frontend/src/views/resources/ResourcesView.vue",
-          "composableImport": "useResourcesSurface"
+          "viewFile": "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
+          "composableImport": "usePortalQuery"
         },
         {
-          "viewFile": "services/portal/frontend/src/views/workspace/WorkspaceView.vue",
-          "composableImport": "useWorkspaceSurface"
+          "viewFile": "services/portal/frontend/src/app/pages/Workspace.tsx",
+          "composableImport": "usePortalQuery"
         },
         {
-          "viewFile": "services/portal/frontend/src/views/billing/BillingView.vue",
-          "composableImport": "useBillingSurface"
+          "viewFile": "services/portal/frontend/src/app/pages/BillingAudit.tsx",
+          "composableImport": "usePortalQuery"
         },
         {
-          "viewFile": "services/portal/frontend/src/views/trace/TraceView.vue",
-          "composableImport": "useTraceSurface"
+          "viewFile": "services/portal/frontend/src/app/pages/TasksResults.tsx",
+          "composableImport": "usePortalQuery"
         },
         {
-          "viewFile": "services/portal/frontend/src/views/packages/PackagesView.vue",
-          "composableImport": "usePackageSurface"
-        },
-        {
-          "viewFile": "services/portal/frontend/src/views/admin/AdminUsersView.vue",
-          "composableImport": "useAdminUsersSurface"
+          "viewFile": "services/portal/frontend/src/app/pages/OPLEntry.tsx",
+          "composableImport": "usePortalQuery"
         }
       ]
     },
@@ -541,16 +528,23 @@ Portal 必须按低耦合目标治理：
         "services/portal/frontend/src/api/portal/billing.ts",
         "services/portal/frontend/src/api/portal/traces.ts",
         "services/portal/frontend/src/api/portal/admin.ts",
-        "services/portal/frontend/src/api/portal/opl.ts"
+        "services/portal/frontend/src/api/portal/opl.ts",
+        "services/portal/frontend/src/api/portal/common.ts",
+        "services/portal/frontend/src/api/portal/commercial.ts",
+        "services/portal/frontend/src/api/portal/lab.ts",
+        "services/portal/frontend/src/api/portal/public.ts",
+        "services/portal/frontend/src/api/portal/server-plans.ts",
+        "services/portal/frontend/src/api/portal/sessions.ts",
+        "services/portal/frontend/src/api/portal/types.ts"
       ]
     },
     "portalSmokeLayers": {
       "currentSmokeFiles": [
         "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
         "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
-        "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
-        "scripts/smoke-test-v22-portal-mobile-usability.mjs",
-        "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
+        "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
+        "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
         "scripts/smoke-test-v22-portal-runtime-suite.mjs"
       ]
     },
@@ -560,11 +554,10 @@ Portal 必须按低耦合目标治理：
       "domain_contains_payload_and_provider_bridge_modules",
       "app_layer_mixes_orchestration_and_view_model_payloads",
       "frontend_api_barrel_exists_but_not_page_default",
-      "harness_renderer_is_large_cross_domain_registry",
-      "some_admin_views_directly_call_admin_api_module",
+      "admin_ops_frontend_is_future_same_stack_leaf",
       "retired_resource_order_schema_store_physically_deleted",
       "retired_user_owned_public_route_deleted",
-      "duplicate_announcement_dialog_names"
+      "old_vue_visual_workbench_removed_from_current_gate"
     ]
   }
 }

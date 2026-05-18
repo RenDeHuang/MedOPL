@@ -32,8 +32,8 @@ assertIncludes(shared, "Portal 可运行 UI、组件组合、路由入口和验�
 assertIncludes(userRole, "role surface 合同，不实现新 UI", "user_role_contract_role");
 assertIncludes(adminRole, "role surface 合同，不实现新 UI", "admin_role_contract_role");
 assertIncludes(structure, "Portal 结构治理 / failure isolation 三级合同，不实现 UI，不改业务代码", "structure_contract_role");
-assertIncludes(composition, "本 composition 合同只管 Portal UI 执行入口、分层规则和 evalset 入口", "composition_contract_role");
-assertIncludes(composition, "具体页面、组件、API shape、DOM selector 和 partial 缺口必须进入 evalset", "composition_evalset_owns_details");
+assertIncludes(composition, "ZIP surface gate 入口：`node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`", "composition_contract_role");
+assertIncludes(composition, "具体页面、组件、API shape 和缺口必须进入 ZIP source、Portal adapter 或后续专门 UI leaf", "composition_surface_gate_owns_details");
 
 for (const [label, markdown] of Object.entries({ shared, userRole, adminRole, structure })) {
   assertExcludes(markdown, '"sourceOfExecutableUiTruth": true', `${label}_must_not_claim_executable_ui_truth`);
@@ -59,7 +59,7 @@ console.log(JSON.stringify({
     "shared_surface_delegates_ui",
     "role_contracts_remain_role_only",
     "structure_contract_remains_structure_only",
-    "composition_contract_points_to_evalset",
+    "composition_contract_points_to_zip_surface_gate",
     "surface_details_not_embedded_in_contracts",
   ],
 }, null, 2));

@@ -2,7 +2,7 @@
 
 模型记录：`gpt-5.4`
 
-本文件是 MedOPL v22 Portal UI 重构的设计执行源。它把 v22 合同中的产品真相转成可执行的视觉、信息架构、组件、文案、Figma 往返和重构分片规则。
+本文件是 MedOPL v22 Portal UI 重构的设计执行源。它把 v22 合同中的产品真相转成可执行的视觉、信息架构、组件、文案、Figma Make 吸收和重构分片规则。
 
 本文件不替代合同，不替代 `services/portal/frontend/src/harness/portal-ui-evalset.json`，也不声明当前 UI 已完成重构。产品语义、角色边界、secret 边界、OPL 边界、云资源授权边界和验收入口仍以 `docs/contracts/*`、`docs/recovery/*`、evalset 和 smoke 为准。
 
@@ -20,6 +20,7 @@
 - `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
 - `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
 - `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`
+- `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`
 
 ## 产品气质
 
@@ -561,25 +562,25 @@ Portal 是高可扫描、高信息密度但不拥挤的 SaaS 科研工作台。
 - 表格在移动端必须有可读替代形态。
 - 按钮文本不得挤压或覆盖。
 
-## Figma 往返流程
+## Figma Make 吸收流程
 
-Figma 是视觉评审和协作画布，不是合同真相源。DESIGN.md、v22 合同、evalset 和 smoke 仍是代码侧执行真相。
+Figma Make 是当前 Portal 普通用户端 UI 的实现源，不是 v22 产品真相源。DESIGN.md、v22 合同、`v22-portal-figma-make-ui-implementation-boundary.md`、evalset 和 smoke 仍是代码侧执行真相。
 
 推荐流程：
 
-1. Codex 在本地分支实现可运行 UI variant。
-2. 本地启动 Portal 前端 preview 或 dev server。
-3. 使用 Figma Dev Mode MCP / Make Designs 将本地 live UI capture 到 Figma。
-4. 在 Figma 中按 DESIGN.md 做视觉批注、局部调整或版本比较。
-5. 用户回传 Figma frame URL、node id 或截图批注。
-6. Codex 读取 frame 或批注，并按 DESIGN.md、合同和 evalset 回写 Vue 组件。
-7. Codex 运行 smoke、surface suite、visual tests 和必要 typecheck。
-8. 只有通过验证且用户选中的分支，才交给 B ff-only 吸收。
+1. 先按合同确认 Figma Make 页面没有改变 v22 产品语义。
+2. 清退历史 Vue / Pinia frontend surface 和旧路由。
+3. 将 Figma Make 普通用户 React UI 纳入 `services/portal/frontend`。
+4. 排除 Figma 源码残留 `AdminConsole.tsx`，Admin / Ops 后续同栈单独设计。
+5. 用现有 `/portal/api/*` adapter 替换 mock-only 数据。
+6. Codex 运行合同 smoke、surface suite、typecheck、build 和本地预览。
+7. 只有通过验证且用户认可的分支，才交给 B ff-only 吸收。
 
-Figma 往返规则：
+Figma Make 吸收规则：
 
 - Figma 可以调整视觉表达，不能改变产品语义。
-- Figma 不得引入 React、Vercel、shadcn 或新依赖要求。
+- Portal 全体前端技术栈为 React + Vite + TypeScript + shadcn/Radix + lucide。
+- 当前 Figma Make 只覆盖普通用户端，不覆盖 Admin / Ops 完整 UI。
 - Figma 不得把 Portal 改成营销页、云控制台或 OPL chatbot。
 - Figma 版本评审应并排比较完整页面，不只比较单个 hero。
 - Figma 批注必须说明影响的页面、组件、状态和验收点。
@@ -600,7 +601,7 @@ Figma 往返规则：
 - Overview view。
 - Overview components。
 - Overview fixtures。
-- Overview evalset page task / surface invariants / visual baseline。
+- Overview evalset page task / surface invariants / React route anchors。
 
 验收：
 
@@ -620,7 +621,7 @@ Figma 往返规则：
 - Resources view。
 - Resources components。
 - Resources fixtures。
-- Resources evalset / visual baseline。
+- Resources evalset / React route anchors。
 
 验收：
 
@@ -638,7 +639,7 @@ Figma 往返规则：
 - Workspace view。
 - Workspace components。
 - Workspace fixtures。
-- Workspace evalset / visual baseline。
+- Workspace evalset / React route anchors。
 
 验收：
 
@@ -658,7 +659,7 @@ Figma 往返规则：
 - Billing view。
 - Billing components。
 - Billing fixtures。
-- Billing evalset / visual baseline。
+- Billing evalset / React route anchors。
 
 验收：
 
@@ -677,7 +678,7 @@ Figma 往返规则：
 - Trace view。
 - Trace components。
 - Trace fixtures。
-- Trace evalset / visual baseline。
+- Trace evalset / React route anchors。
 
 验收：
 
@@ -697,7 +698,7 @@ Figma 往返规则：
 - Admin views。
 - Admin components。
 - Admin fixtures。
-- Admin evalset / visual baseline。
+- Admin evalset / route anchors in a future same-stack leaf。
 
 验收：
 
@@ -719,7 +720,7 @@ git diff --check -- DESIGN.md docs scripts services/portal/frontend
 
 ```bash
 npm --prefix services/portal/frontend run typecheck
-npm --prefix services/portal/frontend run test:visual
+npm --prefix services/portal/frontend run build
 node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 ```
 
@@ -727,12 +728,11 @@ node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 
 本设计源分支不做以下事情：
 
-- 不修改 `services/portal/frontend` 的 Vue、CSS 或 TypeScript 实现。
+- 不修改 Portal 后端业务语义。
 - 不修改 Portal 后端、Gateway、Runtime Bridge 或 Runtime Agent。
 - 不修改 deploy、`.sentrux`、adapters 或 one-person-lab upstream。
 - 不读取 secret。
 - 不调用真实云。
 - 不执行 build/push/kubectl/live-test。
-- 不新增依赖。
-- 不迁移框架。
+- 不新增与 Portal frontend React/Vite/Figma Make 吸收无关的依赖。
 - 不把 Portal 改成云控制台、营销页、OPL chatbot 或普通云资源管理台。

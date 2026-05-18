@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
 
@@ -27,7 +27,7 @@ function assertNoForbiddenLeak(value, label) {
 }
 
 function assertPortalUserCopy(source, label) {
-  for (const required of ["运行轨迹", "任务", "输出文件", "用量", "费用估算", "状态", "观测摘要"]) {
+  for (const required of ["任务与结果", "任务", "输出文件", "资源用量", "费用估算", "状态"]) {
     assert(source.includes(required), `${label}_missing_user_copy:${required}`);
   }
   for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "raw API key", "launchToken", "runtimeToken", "objectKey", "storageKey", "localPath", "signedUrl"]) {
@@ -156,24 +156,19 @@ assert.equal(item.customerDefaultTraceSurface, "Portal 会话轨迹", "item_defa
 assert.equal(item.customerDefaultLangfuseUi, false, "item_must_not_default_to_langfuse_ui");
 assertNoForbiddenLeak(payload, "session_trace_payload");
 
-const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
-const traceComponentSources = await Promise.all(
-  (await readdir("services/portal/frontend/src/components/trace"))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`services/portal/frontend/src/components/trace/${entry}`, "utf8")),
-);
-const traceSurfaceSourceText = `${traceViewSource}\n${traceComponentSources.join("\n")}`;
-const traceSurfaceSource = await readFile("services/portal/frontend/src/composables/useTraceSurface.ts", "utf8");
+const traceSurfaceSourceText = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
+const traceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertPortalUserCopy(traceSurfaceSourceText, "trace_surface");
-assert(traceViewSource.includes("TraceHero"), "trace_view_must_render_trace_hero_component");
-assert(traceViewSource.includes("TraceSessionTablePanel"), "trace_view_must_render_session_table_component");
-assert(traceSurfaceSourceText.includes("item.observability"), "trace_surface_must_consume_observability_attachment");
-assert(traceSurfaceSourceText.includes("payload.summary.businessFactSource"), "trace_surface_must_read_business_fact_source");
-assert(traceSurfaceSourceText.includes("payload.customerDefaultLangfuseUi"), "trace_surface_must_keep_portal_as_customer_default_trace_surface");
+assert(traceSurfaceSourceText.includes("任务与结果"), "trace_page_must_render_tasks_results_heading");
+assert(traceSurfaceSourceText.includes("Table"), "trace_page_must_render_structured_task_table");
+assert(traceSurfaceSourceText.includes("task.resourceUsage"), "trace_surface_must_render_resource_usage");
+assert(traceSurfaceSourceText.includes("task.cost"), "trace_surface_must_render_cost_estimate");
 assert(traceSurfaceSource.includes("fetchSessionTraces"), "trace_surface_must_load_session_traces");
+assert(traceSurfaceSource.includes("linkedOutputFiles"), "trace_adapter_must_consume_linked_output_files");
+assert(traceSurfaceSource.includes("costEstimate"), "trace_adapter_must_consume_cost_estimate");
 assert(traceTypesSource.includes("observability"), "trace_api_types_must_include_observability_attachment");
 assert(traceTypesSource.includes("businessFactSource"), "trace_api_types_must_include_business_fact_source");
 assert(suiteSource.includes("smoke-test-v22-portal-session-trace-view"), "mvp_suite_must_include_portal_session_trace_view_smoke");

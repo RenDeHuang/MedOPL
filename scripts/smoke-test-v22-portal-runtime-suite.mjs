@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 
 const groups = new Map([
   ["contract", [
+    "scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
     "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
     "scripts/smoke-test-v22-portal-contract-role-consolidation.mjs",
     "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
@@ -12,13 +13,11 @@ const groups = new Map([
     "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
     "scripts/smoke-test-v22-portal-contract-role-consolidation.mjs",
     "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-    "scripts/smoke-test-v22-portal-frontend-surface-composables.mjs",
-    "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
   ]],
   ["surface", [
     "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-    "services/portal/frontend:test:visual",
-    "scripts/smoke-test-v22-portal-workbench-management-ui-browser.mjs",
+    "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
+    "scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
   ]],
   ["api", [
     "scripts/smoke-test-v22-portal-workbench-management-ui-api.mjs",
@@ -32,7 +31,7 @@ const groups = new Map([
     "services/portal:frontend:build",
   ]],
   ["browser", [
-    "scripts/smoke-test-v22-portal-workbench-management-ui-browser.mjs",
+    "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
   ]],
 ]);
 

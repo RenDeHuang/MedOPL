@@ -1,9 +1,27 @@
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
+function figmaAssetResolver() {
+  return {
+    name: "figma-asset-resolver",
+    resolveId(id: string) {
+      if (id.startsWith("figma:asset/")) {
+        const filename = id.replace("figma:asset/", "");
+        return path.resolve(__dirname, "src/assets", filename);
+      }
+      return undefined;
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    figmaAssetResolver(),
+    react(),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src")
@@ -26,5 +44,6 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true
-  }
+  },
+  assetsInclude: ["**/*.svg", "**/*.csv"]
 });

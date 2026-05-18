@@ -16,9 +16,9 @@ This framework constrains future AI-driven cleanup, refactor, and development wo
 
 ## Frontend Framework
 
-- frontend 当前基线使用 Vue 3 + Vite + TypeScript + Pinia。
-- frontend eval 必须覆盖 vue-tsc typecheck、Vitest 或 component eval、Playwright/UI evalset、desktop/mobile responsive check、loading/empty/error state、table/card usability。
-- Vite/Vitest modernization 作为 future gap 记录，不在本 harness 分支升级。
+- frontend 当前基线使用 React + Vite + TypeScript + shadcn/Radix + lucide，普通用户 Portal routes 由 Figma Make ZIP implementation leaf 和 surface gate 承接。
+- frontend eval 必须覆盖 `npm --prefix services/portal/frontend run typecheck`、`npm --prefix services/portal/frontend run build`、React route/surface gate、desktop/mobile responsive check、loading/empty/error state、table/card usability。
+- Admin / Ops Portal UI 是同技术栈 future leaf；当前 Figma Make 文件只覆盖普通用户 Portal routes。
 - 每个 frontend 改动必须有 API contract、组件状态、响应式/mobile/table 可用性验证。
 - User-facing copy must preserve `开箱即用 SaaS 托管科研工作台`, `不是云资源控制台`, and `不是用户自配云资源`.
 - Admin/ops may expose CVM/COS/runtime/resourceBinding/billingAccount/auditTag only as admin/ops facts, not ordinary user language.

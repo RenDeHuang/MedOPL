@@ -26,7 +26,7 @@ function assertNoForbiddenLeak(value, label) {
 }
 
 function assertUserCopy(source, label) {
-  for (const required of ["托管运行环境", "区域", "规格", "预计费用", "释放策略", "审计状态", "状态"]) {
+  for (const required of ["运行环境", "规格", "预计费用", "释放计算资源", "审计状态", "状态"]) {
     assert(source.includes(required), `${label}_missing_user_copy:${required}`);
   }
   for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "SecretId", "SecretKey", "kubeconfig", "raw API key", "objectKey", "storageKey", "localPath", "signedUrl"]) {
@@ -160,19 +160,21 @@ assert.equal(planView.snapshot.realResourceCreated, false, "plan_view_must_not_c
 assert.equal(planView.snapshot.providerAdapterStage, "mock_snapshot_provider", "plan_view_provider_stage_mismatch");
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 
-const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
-const workspaceManagedPlanPanelSource = await readFile("services/portal/frontend/src/components/workspace/WorkspaceManagedPlanPanel.vue", "utf8");
-const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
+const runtimeEnvironmentSource = await readFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx", "utf8");
+const workspaceViewSource = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
+const workspaceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const contractSource = await readFile("docs/contracts/v22-managed-environment-open-boundary.md", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(workspaceManagedPlanPanelSource, "workspace_managed_plan_panel");
-assert(workspaceViewSource.includes("WorkspaceManagedPlanPanel"), "workspace_view_must_render_managed_plan_panel_component");
-assert(workspaceViewSource.includes(':managed-plan="managedPlan"'), "workspace_view_must_pass_managed_plan_to_panel");
-assert(workspaceViewSource.includes("managedPlan"), "workspace_view_must_render_managed_resource_binding_plan");
-assert(workspaceManagedPlanPanelSource.includes('data-component-id="workspace.managed_plan"'), "managed_plan_panel_must_keep_dom_anchor");
-assert(workspaceSurfaceSource.includes("managedResourceBindingPlan"), "workspace_surface_must_bind_managed_resource_binding_plan");
+assertUserCopy(runtimeEnvironmentSource, "runtime_environment_surface");
+assert(runtimeEnvironmentSource.includes("loadRuntimeEnvironmentModel"), "runtime_environment_page_must_use_zip_portal_adapter_loader");
+assert(runtimeEnvironmentSource.includes("审计状态"), "runtime_environment_surface_must_render_audit_status");
+assert(runtimeEnvironmentSource.includes("释放计算资源"), "runtime_environment_surface_must_render_release_action");
+assert(runtimeEnvironmentSource.includes("预计费用"), "runtime_environment_surface_must_render_estimated_cost");
+assert(workspaceViewSource.includes("文件空间"), "workspace_view_must_render_file_space_context");
+assert(workspaceSurfaceSource.includes("loadRuntimeEnvironmentModel"), "portal_adapter_must_project_runtime_environment_model");
+assert(workspaceSurfaceSource.includes("loadWorkspaceModel"), "portal_adapter_must_project_workspace_model");
 assert(workspaceTypesSource.includes("managedResourceBindingPlan"), "workspace_types_must_include_managed_resource_binding_plan");
 assert(contractSource.includes("本分支允许的最小 Portal frontend 展示范围"), "contract_must_allow_minimal_portal_frontend_display");
 assert(contractSource.includes("Portal 工作空间 payload 输出 `managedResourceBindingPlan`"), "contract_must_allow_managed_resource_binding_plan_payload");

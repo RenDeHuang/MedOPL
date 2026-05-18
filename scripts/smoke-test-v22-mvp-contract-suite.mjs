@@ -222,7 +222,7 @@ function runBranchOverrideVerify(expectedSuiteId) {
 
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true, "branch_override_verify_must_be_ok");
-  assert.equal(payload.leafId, "leaf-portal-ui-design-quality-implementation", "branch_override_verify_must_not_change_current_leaf");
+  assert.equal(payload.leafId, "leaf-portal-figma-make-react-ui-implementation", "branch_override_verify_must_not_change_current_leaf");
   assert(branchOverrideSuiteIds.has(payload.branchOverride?.suiteId), `branch_override_verify_suite_unknown:${payload.branchOverride?.suiteId || "(missing)"}`);
   assert.equal(payload.branchOverride?.suiteId, expectedSuiteId, "branch_override_verify_suite_mismatch");
   assert.equal(
@@ -242,7 +242,7 @@ if (branchOverrideSuite) {
     ok: true,
     contract: "v22_mvp_contract_acceptance_suite",
     branchOverride: branchOverrideSuite.id,
-    currentLeaf: "leaf-portal-ui-design-quality-implementation",
+    currentLeaf: "leaf-portal-figma-make-react-ui-implementation",
     passed,
   }, null, 2));
   process.exit(0);

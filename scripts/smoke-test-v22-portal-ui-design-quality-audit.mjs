@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const contractPath = "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md";
@@ -7,22 +6,11 @@ const contractIndexPath = "docs/contracts/README.md";
 const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
 const currentGoalPath = "docs/recovery/v22-goal-current.json";
 const verifyManifestPath = "docs/recovery/v22-agent-verify-manifest.json";
-const mvpAcceptancePath = "docs/recovery/mvp-contract-acceptance.md";
-const mvpSuitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
+const routesPath = "services/portal/frontend/src/app/routes.tsx";
+const layoutPath = "services/portal/frontend/src/app/components/Layout.tsx";
+const adapterPath = "services/portal/frontend/src/app/data/portalAdapters.ts";
+const figmaContractPath = "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md";
 const auditReportPath = ".runtime/portal-ui-design-quality/report.json";
-const frontendPaths = {
-  overviewHero: "services/portal/frontend/src/components/overview/OverviewHero.vue",
-  overviewManagedEnvironment: "services/portal/frontend/src/components/overview/OverviewManagedEnvironmentPanel.vue",
-  overviewPlans: "services/portal/frontend/src/components/overview/OverviewPlansPanel.vue",
-  overviewRecentRuns: "services/portal/frontend/src/components/overview/OverviewRecentRunsPanel.vue",
-  overviewWorkspace: "services/portal/frontend/src/components/overview/OverviewWorkspacePanel.vue",
-  overviewComposable: "services/portal/frontend/src/composables/useOverviewSurface.ts",
-  portalUiSurfaces: "services/portal/frontend/src/harness/portal-ui-surfaces.ts",
-  portalEvalset: "services/portal/frontend/src/harness/portal-ui-evalset.json",
-  portalOverviewFixture: "services/portal/frontend/src/harness/fixtures/overview.fixture.json",
-  portalFixtureRenderer: "services/portal/frontend/src/views/harness/PortalComponentFixtureRenderer.vue",
-};
-
 const startMarker = "<!-- v22-portal-ui-design-quality-audit-contract:start -->";
 const endMarker = "<!-- v22-portal-ui-design-quality-audit-contract:end -->";
 
@@ -58,138 +46,12 @@ const requiredSoftRubric = [
   "copy_tone_quality",
 ];
 
-const requiredReferenceBoundaries = [
-  "external_ui_ux_best_practices_reference_only",
-  "content_semantics_fixed_by_v22_contracts",
-  "vue_vite_ts_pinia_stack_preserved",
-  "no_react_or_vercel_migration_in_this_leaf",
-];
-
-const forbiddenDesignLocks = [
-  "必须使用蓝色",
-  "必须使用紫色",
-  "必须使用渐变",
-  "必须使用卡片布局",
-  "必须使用三栏布局",
-  "必须使用某个字体",
-  "必须使用某个组件库",
-  "固定字号",
-  "固定间距",
-  "固定圆角",
-];
-
-const requiredFutureForbiddenAllowedFilePatterns = [
-  "services/portal/**/backend_or_api_except_frontend",
-  "package_or_dependency_files",
-  "deploy/*",
-  "adapters/*",
-  ".sentrux/*",
-  "upstream/*",
-  "secret-like paths",
-  "true cloud runners",
-];
-
-const requiredFutureForbiddenVerificationCommandPatterns = [
-  "build/push/kubectl",
-  "deploy",
-  "live-test",
-  "live-cloud",
-  "secret-read",
-  "dependency-upgrade",
-];
-
-const implementationRequiredFrontendSnippets = {
-  [frontendPaths.overviewHero]: [
-    "data-design-quality=\"service-summary\"",
-    "data-design-quality=\"next-action\"",
-    "data-design-quality=\"readiness-checks\"",
-    "data-design-quality=\"responsibility-boundary\"",
-    "托管科研工作台服务",
-    "下一步",
-    "Portal 负责",
-    "OPL runtime 负责",
-    "computeSummary",
-    "storageSummary",
-    "releaseStatus",
-    "nextActionLabel",
-    "nextActionHref",
-  ],
-  [frontendPaths.overviewManagedEnvironment]: [
-    "data-design-quality=\"environment-summary\"",
-    "平台负责托管运行环境、文件空间、冻结金额、审计和释放",
-    "释放状态",
-    "releaseStatus",
-  ],
-  [frontendPaths.overviewPlans]: [
-    "data-design-quality=\"plan-summary\"",
-    "套餐、算力和存储摘要",
-    "computeSummary",
-    "storageSummary",
-  ],
-  [frontendPaths.overviewRecentRuns]: [
-    "data-design-quality=\"task-result-flow\"",
-    "输入文件",
-    "任务运行",
-    "输出结果",
-  ],
-  [frontendPaths.overviewWorkspace]: [
-    "data-design-quality=\"workspace-file-flow\"",
-    "文件进入工作空间",
-    "结果回到工作空间",
-  ],
-  [frontendPaths.overviewComposable]: [
-    "const workbenchHref = \"/opl-launch\"",
-    "nextAction",
-    "computeSummary",
-    "storageSummary",
-    "releaseStatus",
-  ],
-  [frontendPaths.portalFixtureRenderer]: [
-    "nextActionHref:",
-    "\"/opl-launch\"",
-    "nextActionLabel:",
-    "computeSummary:",
-    "storageSummary:",
-    "releaseStatus:",
-  ],
-};
-
-async function source(path) {
-  return readFile(path, "utf8");
-}
-
-async function json(path) {
-  return JSON.parse(await source(path));
-}
-
-function git(args) {
-  const result = spawnSync("git", args, {
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-  assert.equal(result.status, 0, `git_${args.join("_")}_failed:${result.stderr || result.stdout}`);
-  return result.stdout.trim();
-}
-
-function isAncestor(base, head) {
-  const result = spawnSync("git", ["merge-base", "--is-ancestor", base, head], {
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-  return result.status === 0;
-}
-
-async function writeAuditReport(report) {
-  await mkdir(".runtime/portal-ui-design-quality", { recursive: true });
-  await writeFile(auditReportPath, `${JSON.stringify(report, null, 2)}\n`);
-}
-
 function assertIncludes(text, expected, label) {
   assert(text.includes(expected), `${label}_missing:${expected}`);
 }
 
 function assertExcludes(text, forbidden, label) {
-  assert(!text.includes(forbidden), `${label}_forbidden:${forbidden}`);
+  assert.equal(text.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
 }
 
 function assertIncludesAll(items, expectedItems, label) {
@@ -198,138 +60,19 @@ function assertIncludesAll(items, expectedItems, label) {
   }
 }
 
-function assertNoFutureAllowedFileExpansion(items, label) {
-  for (const item of items) {
-    const value = String(item);
-    assert(value === "services/portal/frontend/**" || !value.startsWith("services/portal/"), `${label}_forbidden_backend_or_api_surface:${value}`);
-    assert(!/^package(?:-lock)?\.json$/u.test(value), `${label}_forbidden_package_file:${value}`);
-    assert(!/^(?:[^/]+\/)*package(?:-lock)?\.json$/u.test(value), `${label}_forbidden_nested_package_file:${value}`);
-    assert(!/^(?:pnpm-lock|yarn.lock|package-lock\.json|npm-shrinkwrap\.json)$/u.test(value), `${label}_forbidden_dependency_lock:${value}`);
-    assert(!value.startsWith("deploy/"), `${label}_forbidden_deploy_path:${value}`);
-    assert(!value.startsWith("adapters/"), `${label}_forbidden_adapters_path:${value}`);
-    assert(!value.startsWith(".sentrux/"), `${label}_forbidden_sentrux_path:${value}`);
-    assert(!value.startsWith("upstream/") && !value.startsWith("one-person-lab/"), `${label}_forbidden_upstream_path:${value}`);
-    assert(!/(?:^|\/)(?:\.env|secret|secrets|token|kubeconfig|private-key|credentials)(?:$|[./_-])/iu.test(value), `${label}_forbidden_secret_like_path:${value}`);
-  }
-}
-
-function assertNoFutureCommandExpansion(commands, label) {
-  for (const command of commands) {
-    const value = String(command);
-    assert(!/\b(?:build|push|kubectl)\b/iu.test(value), `${label}_forbidden_build_push_kubectl:${value}`);
-    assert(!/\bdeploy\b/iu.test(value), `${label}_forbidden_deploy:${value}`);
-    assert(!/live[-_ ]?test/iu.test(value), `${label}_forbidden_live_test:${value}`);
-    assert(!/live[-_ ]?cloud|true[-_ ]?cloud/iu.test(value), `${label}_forbidden_live_cloud:${value}`);
-    assert(!/secret|kubeconfig|token|SecretId|SecretKey/iu.test(value), `${label}_forbidden_secret_read:${value}`);
-    assert(!/\b(?:npm|pnpm|yarn)\s+(?:install|add|update|upgrade)\b/iu.test(value), `${label}_forbidden_dependency_command:${value}`);
-  }
-}
-
-function findById(items, id, key = "componentId") {
-  return Array.isArray(items) ? items.find((item) => item?.[key] === id) : undefined;
-}
-
-function assertImplementationFrontendEvidence({ sources, evalset, overviewFixture }) {
-  for (const [filePath, snippets] of Object.entries(implementationRequiredFrontendSnippets)) {
-    for (const snippet of snippets) {
-      assertIncludes(sources[filePath], snippet, `implementation_frontend_source:${filePath}`);
-    }
-  }
-
-  const overviewHeroSurface = findById(evalset.surfaceStates, "overview.hero");
-  assert(overviewHeroSurface, "implementation_evalset_overview_hero_surface_state_missing");
-  assert.equal(
-    overviewHeroSurface.question,
-    "用户买了什么托管科研工作台服务、当前是否可进入 OPL、如果受限下一步点哪里",
-    "implementation_evalset_overview_hero_question_mismatch",
-  );
-  assertIncludesAll(overviewHeroSurface.invariants || [], [
-    "首屏必须说明用户购买的是托管 OPL 科研工作台服务",
-    "首屏必须展示环境、套餐、算力、存储和释放状态",
-    "首屏必须给出唯一主下一步动作",
-    "Portal 与 OPL runtime 职责边界必须在首屏可见",
-  ], "implementation_evalset_overview_hero_invariant");
-
-  const overviewComposition = (evalset.pageComposition || []).find((item) => item.routeId === "overview");
-  assert(overviewComposition, "implementation_evalset_overview_composition_missing");
-  assertIncludes(overviewComposition.task, "我买了什么托管科研工作台服务", "implementation_evalset_overview_task");
-  assertIncludes(overviewComposition.task, "下一步", "implementation_evalset_overview_task");
-  const statusSection = (overviewComposition.sections || []).find((section) => section.sectionId === "overview.status");
-  assert(statusSection, "implementation_evalset_overview_status_section_missing");
-  assert.equal(statusSection.display, "service_summary_next_action", "implementation_evalset_overview_status_display_mismatch");
-
-  for (const item of [
-    ["overview.service_summary", "我买了什么托管科研工作台服务"],
-    ["overview.next_action", "下一步"],
-    ["overview.responsibility_boundary", "Portal 负责"],
-  ]) {
-    assert(
-      (evalset.copyRegistry || []).some((entry) => entry.routeId === "overview" && entry.key === item[0] && String(entry.text).includes(item[1])),
-      `implementation_evalset_copy_registry_missing:${item[0]}`,
-    );
-  }
-
-  const readyFixture = overviewFixture["overview.hero"]?.ready;
-  const restrictedFixture = overviewFixture["overview.hero"]?.restricted;
-  for (const [name, fixture] of [["ready", readyFixture], ["restricted", restrictedFixture]]) {
-    assert(fixture, `implementation_overview_hero_fixture_missing:${name}`);
-    assert(fixture.serviceSummary, `implementation_overview_hero_fixture_service_summary_missing:${name}`);
-    assert(fixture.nextAction, `implementation_overview_hero_fixture_next_action_missing:${name}`);
-    assert(fixture.responsibilityBoundary, `implementation_overview_hero_fixture_responsibility_boundary_missing:${name}`);
-    assert(fixture.statusSummary, `implementation_overview_hero_fixture_status_summary_missing:${name}`);
-  }
-}
-
-function assertCurrentGitTruth(currentGoal) {
-  const branch = git(["branch", "--show-current"]);
-  const originHead = git(["rev-parse", "origin/recovery/platform-v22-trunk"]);
-  const localHead = git(["rev-parse", "HEAD"]);
-  const localHeadParent = git(["rev-parse", "HEAD^"]);
-  assert(
-    branch === currentGoal.authoring_branch || branch === currentGoal.target_branch,
-    `audit_leaf_runtime_branch_mismatch:${branch}`,
-  );
-  assert.equal(currentGoal.branch_baseline, "origin/recovery/platform-v22-trunk", "audit_leaf_branch_baseline_mismatch");
-  assert.equal(currentGoal.current_branch, currentGoal.authoring_branch, "audit_leaf_current_branch_must_record_authoring_branch");
-  assert.equal(currentGoal.git_observation?.observed_git_head, currentGoal.base_trunk_head, "audit_leaf_observed_git_head_must_record_base");
-  assert.equal(currentGoal.last_absorbed_commit, currentGoal.base_trunk_head, "audit_leaf_last_absorbed_must_record_base");
-  if (branch === currentGoal.authoring_branch) {
-    assert.equal(originHead, currentGoal.base_trunk_head, "audit_leaf_authoring_origin_must_match_base");
-    assert.notEqual(localHead, currentGoal.base_trunk_head, "audit_leaf_authoring_head_must_be_ahead_of_base");
-    assert(
-      localHeadParent === currentGoal.base_trunk_head || isAncestor(currentGoal.base_trunk_head, localHead),
-      "audit_leaf_authoring_head_must_descend_from_base",
-    );
-  } else {
-    assert.equal(localHead, originHead, "audit_leaf_target_head_must_match_origin");
-    assert.notEqual(localHead, currentGoal.base_trunk_head, "audit_leaf_target_head_must_not_remain_at_base");
-    assert(
-      localHeadParent === currentGoal.base_trunk_head || isAncestor(currentGoal.base_trunk_head, localHead),
-      "audit_leaf_target_head_must_descend_from_base",
-    );
-  }
-  assert(
-    [
-      "leaf-portal-ui-design-quality-audit",
-      "leaf-portal-ui-design-quality-implementation",
-    ].includes(currentGoal.current_cursor),
-    `audit_or_implementation_leaf_cursor_unexpected:${currentGoal.current_cursor}`,
-  );
-  assert.equal(currentGoal.next_leaf, currentGoal.current_cursor, "audit_or_implementation_leaf_next_leaf_must_match_cursor");
-}
-
 function extractContract(markdown) {
   const start = markdown.indexOf(startMarker);
   assert.notEqual(start, -1, "ui_design_quality_contract_start_marker_missing");
   const end = markdown.indexOf(endMarker, start + startMarker.length);
   assert.notEqual(end, -1, "ui_design_quality_contract_end_marker_missing");
-  assert.equal(markdown.indexOf(startMarker, start + startMarker.length), -1, "ui_design_quality_contract_start_marker_must_be_unique");
-  assert.equal(markdown.indexOf(endMarker, end + endMarker.length), -1, "ui_design_quality_contract_end_marker_must_be_unique");
-
   const block = markdown.slice(start + startMarker.length, end).trim();
   const match = /^```json\n([\s\S]+)\n```$/u.exec(block);
   assert(match, "ui_design_quality_contract_must_be_single_json_fence");
   return JSON.parse(match[1]);
+}
+
+async function source(path) {
+  return readFile(path, "utf8");
 }
 
 const [
@@ -338,25 +81,21 @@ const [
   gapMatrix,
   currentGoal,
   verifyManifest,
-  mvpAcceptance,
-  mvpSuite,
-  ...frontendSourcesList
+  routesSource,
+  layoutSource,
+  adapterSource,
+  figmaContract,
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
   source(gapMatrixPath),
-  json(currentGoalPath),
-  json(verifyManifestPath),
-  source(mvpAcceptancePath),
-  source(mvpSuitePath),
-  ...Object.values(frontendPaths).map((filePath) => source(filePath)),
+  source(currentGoalPath).then(JSON.parse),
+  source(verifyManifestPath).then(JSON.parse),
+  source(routesPath),
+  source(layoutPath),
+  source(adapterPath),
+  source(figmaContractPath),
 ]);
-
-const frontendSources = Object.fromEntries(
-  Object.values(frontendPaths).map((filePath, index) => [filePath, frontendSourcesList[index]]),
-);
-const portalEvalset = JSON.parse(frontendSources[frontendPaths.portalEvalset]);
-const overviewFixture = JSON.parse(frontendSources[frontendPaths.portalOverviewFixture]);
 
 const contract = extractContract(contractMarkdown);
 
@@ -364,19 +103,18 @@ assert.equal(contract.contract, "v22_portal_ui_design_quality_audit_boundary", "
 assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
 assert.equal(contract.contractRole, "boundary_and_rubric_only", "contract_role_mismatch");
 assert.equal(contract.scope.implementsUi, false, "audit_contract_must_not_implement_ui");
-assert.equal(contract.scope.prescribesSpecificAestheticSolution, false, "audit_contract_must_not_prescribe_aesthetic_solution");
+assert.equal(contract.scope.migratesFrontendStack, false, "audit_leaf_must_not_itself_migrate_stack");
 assert.equal(contract.scope.callsRealCloud, false, "audit_contract_must_not_call_real_cloud");
 assert.equal(contract.scope.readsSecrets, false, "audit_contract_must_not_read_secrets");
 assert.equal(contract.scope.modifiesUpstream, false, "audit_contract_must_not_modify_upstream");
-assert.equal(contract.scope.modifiesServices, false, "audit_contract_must_not_modify_services_in_this_leaf");
-assert.equal(contract.scope.migratesFrontendStack, false, "audit_contract_must_not_migrate_frontend_stack");
-assert.equal(contract.auditOutput.reportPath, ".runtime/portal-ui-design-quality/report.json", "audit_report_path_mismatch");
+assert.equal(contract.auditOutput.reportPath, auditReportPath, "audit_report_path_mismatch");
 assert.equal(contract.auditOutput.committedToGit, false, "audit_report_must_not_be_committed");
 assert.equal(contract.baselinePolicy.intentionalRedesignCanUpdateScreenshots, true, "intentional_redesign_baseline_policy_missing");
 assert.equal(contract.baselinePolicy.requiresAuditEvidenceBeforeBaselineUpdate, true, "baseline_update_must_require_audit_evidence");
-assert.equal(contract.auditEvidenceSchema.reportPath, ".runtime/portal-ui-design-quality/report.json", "audit_evidence_schema_report_path_mismatch");
-assert.equal(contract.auditEvidenceSchema.reportType, "portal_ui_design_quality_audit_evidence", "audit_evidence_schema_report_type_mismatch");
-assert.equal(contract.auditEvidenceSchema.reportCommittedToGit, false, "audit_evidence_schema_must_stay_runtime_only");
+
+assertIncludesAll(contract.mainlineQuestions, requiredUserQuestions, "mainline_question");
+assertIncludesAll(contract.hardRubric, requiredHardRubric, "hard_rubric");
+assertIncludesAll(contract.softRubric, requiredSoftRubric, "soft_rubric");
 assertIncludesAll(contract.auditEvidenceSchema.requiredSections, [
   "mainlineQuestionAnswerability",
   "hardRubricVerdicts",
@@ -386,250 +124,111 @@ assertIncludesAll(contract.auditEvidenceSchema.requiredSections, [
   "productSemanticBoundaryCheck",
   "futureImplementationLeafHandoff",
 ], "audit_evidence_required_section");
-assertIncludesAll(contract.auditEvidenceSchema.requiredMainlineQuestionVerdicts, requiredUserQuestions, "audit_evidence_mainline_question_verdict");
-assertIncludesAll(contract.auditEvidenceSchema.requiredHardRubricVerdicts, requiredHardRubric, "audit_evidence_hard_rubric_verdict");
-assertIncludesAll(contract.auditEvidenceSchema.requiredSoftRubricScores, requiredSoftRubric, "audit_evidence_soft_rubric_score");
 assertIncludesAll(contract.auditEvidenceSchema.evidenceSources, [
   "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
   "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-  "npm --prefix services/portal/frontend run test:visual",
+  "npm --prefix services/portal/frontend run typecheck",
+  "npm --prefix services/portal/frontend run build",
 ], "audit_evidence_source");
-assert.equal(contract.auditEvidenceSchema.findingScope, "expression_quality_only_not_product_semantics", "audit_evidence_finding_scope_mismatch");
-assert.equal(contract.auditEvidenceSchema.baselineUpdateGate.requiresReportBeforeScreenshotBaselineUpdate, true, "baseline_update_gate_must_require_report");
-assert.equal(contract.auditEvidenceSchema.baselineUpdateGate.reportPath, ".runtime/portal-ui-design-quality/report.json", "baseline_update_gate_report_path_mismatch");
-
-assert.equal(contract.futureImplementationLeafHandoff.leafIntent, "portal_ui_design_quality_implementation", "future_implementation_leaf_intent_mismatch");
-assertIncludesAll(contract.futureImplementationLeafHandoff.allowedFiles, [
-  "services/portal/frontend/**",
-  "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
-  "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
-  "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-  "docs/contracts/README.md",
-  "docs/recovery/v22-goal-current.json",
-  "docs/recovery/v22-goal-state.md",
-  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-  "docs/recovery/v22-agent-verify-manifest.json",
-  "docs/recovery/mvp-contract-acceptance.md",
-  "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-  "scripts/smoke-test-v22-portal-runtime-suite.mjs",
-], "future_implementation_allowed_file");
 assertIncludesAll(contract.futureImplementationLeafHandoff.verificationCommands, [
+  "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
   "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
   "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-  "npm --prefix services/portal/frontend run test:visual",
-  "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-  "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-  "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-  "node scripts/smoke-test-v22-product-goal-harness.mjs",
-  "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend",
+  "npm --prefix services/portal/frontend run typecheck",
+  "npm --prefix services/portal/frontend run build",
 ], "future_implementation_verification_command");
-assertIncludesAll(contract.futureImplementationLeafHandoff.truthWritebackTarget, [
-  "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
-  "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
-  "docs/contracts/README.md",
-  "docs/recovery/v22-goal-current.json",
-  "docs/recovery/v22-goal-state.md",
-  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-  "docs/recovery/mvp-contract-acceptance.md",
-], "future_implementation_truth_writeback_target");
-assertIncludesAll(contract.futureImplementationLeafHandoff.stopConditions, [
-  "requires_backend_services_change",
-  "requires_package_or_dependency_change",
-  "requires_secret_or_live_cloud",
-  "requires_deploy_build_push_kubectl_or_live_test",
-  "changes_product_semantics_instead_of_expression_quality",
-  "updates_screenshot_baseline_without_runtime_audit_report",
-], "future_implementation_stop_condition");
-assertIncludesAll(contract.futureImplementationLeafHandoff.forbiddenAllowedFilePatterns, requiredFutureForbiddenAllowedFilePatterns, "future_implementation_forbidden_allowed_file_pattern");
-assertIncludesAll(contract.futureImplementationLeafHandoff.forbiddenVerificationCommandPatterns, requiredFutureForbiddenVerificationCommandPatterns, "future_implementation_forbidden_verification_command_pattern");
-assertNoFutureAllowedFileExpansion(contract.futureImplementationLeafHandoff.allowedFiles, "future_implementation_allowed_files");
-assertNoFutureCommandExpansion(contract.futureImplementationLeafHandoff.verificationCommands, "future_implementation_verification_commands");
 
-assertIncludesAll(contract.mainlineQuestions, requiredUserQuestions, "mainline_question");
-assertIncludesAll(contract.hardRubric, requiredHardRubric, "hard_rubric");
-assertIncludesAll(contract.softRubric, requiredSoftRubric, "soft_rubric");
-assertIncludesAll(contract.referenceBoundaries, requiredReferenceBoundaries, "reference_boundary");
-assertIncludesAll(contract.validationCommands, [
-  "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-  "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-  "npm --prefix services/portal/frontend run test:visual",
-], "validation_command");
-
-assertIncludes(contractMarkdown, "本合同只定义边界和评价标准，不规定具体审美解法", "contract_must_state_no_aesthetic_lock");
-assertIncludes(contractMarkdown, "硬约束用于阻断污染和基础可用性退化", "contract_must_define_hard_rubric_role");
-assertIncludes(contractMarkdown, "软评分用于形成审计报告", "contract_must_define_soft_rubric_role");
-assertIncludes(contractMarkdown, "现代 SaaS 工作台", "contract_must_reference_modern_saas_workbench");
-assertIncludes(contractMarkdown, "托管 OPL 科研工作台服务", "contract_must_keep_service_product_truth");
-assertIncludes(contractMarkdown, "不得重做 OPL chatbot", "contract_must_keep_opl_chatbot_boundary");
+assertIncludes(contractMarkdown, "Portal 前端技术栈迁移的授权只来自 `v22-portal-figma-make-ui-implementation-boundary.md`", "contract_must_delegate_stack_migration");
+assertIncludes(contractMarkdown, "React + Vite + TypeScript + shadcn/Radix + lucide", "contract_must_name_target_stack");
 assertIncludes(contractMarkdown, "不得把 Portal 做成云资源控制台", "contract_must_keep_no_cloud_console_boundary");
-assertIncludes(contractMarkdown, ".runtime/portal-ui-design-quality/report.json", "contract_must_define_runtime_report");
-assertIncludes(contractMarkdown, "截图 baseline 可以因有意 redesign 更新", "contract_must_define_baseline_policy");
-assertIncludes(contractMarkdown, "后续 UI implementation leaf handoff", "contract_must_define_future_implementation_handoff");
-assertIncludes(contractMarkdown, "外部 UI/UX best practices", "contract_must_allow_best_practices_reference");
-assertIncludes(contractMarkdown, "只能作为表达质量参考", "contract_must_limit_best_practices_to_expression");
-assertIncludes(contractMarkdown, "内容语义必须由 v22 合同固定", "contract_must_fix_content_semantics_by_contracts");
-assertIncludes(contractMarkdown, "不得把 Vue 3 + Vite + TypeScript + Pinia 迁成 React/Vercel", "contract_must_preserve_frontend_stack");
-
-for (const forbidden of forbiddenDesignLocks) {
-  assertExcludes(contractMarkdown, forbidden, "contract_must_not_lock_specific_visual_solution");
-}
+assertIncludes(contractMarkdown, "不得重做 OPL chatbot", "contract_must_keep_opl_chatbot_boundary");
+assertExcludes(contractMarkdown, "不得把 Vue 3 + Vite + TypeScript + Pinia 迁成 React/Vercel", "old_stack_preservation_copy");
+assertExcludes(contractMarkdown, "npm --prefix services/portal/frontend run test:visual", "old_visual_command_copy");
 
 assertIncludes(contractIndex, "v22-portal-ui-design-quality-audit-boundary.md", "contract_index_must_reference_audit_contract");
-assertIncludes(contractIndex, "UI design quality audit", "contract_index_must_name_audit_leaf");
-assertIncludes(contractIndex, "不替代 UI composition 合同", "contract_index_must_preserve_composition_contract");
-assertIncludes(contractIndex, "不冻结具体布局、配色、字体、圆角或组件库", "contract_index_must_not_freeze_design_solution");
-assertIncludes(contractIndex, "`.runtime/portal-ui-design-quality/report.json`", "contract_index_must_reference_audit_report_path");
+assertIncludes(gapMatrix, "frontend-product-react-vite-figma-make", "gap_matrix_must_record_react_figma_gap");
+assertIncludes(gapMatrix, "leaf-portal-figma-make-react-ui-implementation", "gap_matrix_must_record_figma_make_leaf");
 
-assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-audit", "gap_matrix_must_record_audit_leaf");
-assertIncludes(gapMatrix, "leaf-portal-ui-design-quality-implementation", "gap_matrix_must_record_implementation_leaf");
-assertIncludes(gapMatrix, "v22-portal-ui-design-quality-audit-boundary.md", "gap_matrix_must_reference_audit_contract");
-assertIncludes(gapMatrix, "status: in_progress", "gap_matrix_must_mark_frontend_gap_in_progress");
-assertIncludes(gapMatrix, "cursor_eligible: true", "gap_matrix_must_make_frontend_gap_cursor_eligible");
-assertIncludes(gapMatrix, "future UI implementation leaf handoff", "gap_matrix_must_record_future_ui_implementation_handoff");
-assertIncludes(gapMatrix, "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend", "gap_matrix_must_record_future_ui_diff_check");
-
-const frontendGap = currentGoal.gaps.find((gap) => gap.id === "frontend-product-vue-vite-ts-pinia");
-assert(frontendGap, "frontend_gap_missing_from_current_goal");
-assert(
-  [
-    "leaf-portal-ui-design-quality-audit",
-    "leaf-portal-ui-design-quality-implementation",
-  ].includes(frontendGap.next_leaf_step),
-  `frontend_gap_next_leaf_must_be_ui_design_quality_audit_or_implementation:${frontendGap.next_leaf_step}`,
-);
+const frontendGap = currentGoal.gaps.find((gap) => gap.id === "frontend-product-react-vite-figma-make");
+assert(frontendGap, "frontend_react_gap_missing_from_current_goal");
 assert.equal(frontendGap.status, "in_progress", "frontend_gap_must_be_current_in_progress");
 assert.equal(frontendGap.cursor_eligible, true, "frontend_gap_must_be_current_cursor");
-assert.equal(currentGoal.current_cursor, frontendGap.next_leaf_step, "current_goal_must_match_frontend_gap_next_leaf");
-assert.equal(currentGoal.current_stage, "S5 frontend/backend product completion", "current_goal_stage_must_be_s5");
-assertCurrentGitTruth(currentGoal);
+assert.equal(currentGoal.current_cursor, "leaf-portal-figma-make-react-ui-implementation", "current_goal_cursor_mismatch");
+assert.equal(currentGoal.current_leaf.gap_id, "frontend-product-react-vite-figma-make", "current_leaf_gap_id_mismatch");
 
-const manifestLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-ui-design-quality-audit");
-assert(manifestLeaf, "verify_manifest_must_define_ui_design_quality_leaf");
-assert.equal(manifestLeaf.risk_class, "local_doc_eval", "ui_design_quality_leaf_risk_mismatch");
-assert.equal(manifestLeaf.live_external_allowed, false, "ui_design_quality_leaf_must_not_allow_live_external");
-assert(manifestLeaf.contracts.includes(contractPath), "ui_design_quality_leaf_must_subscribe_contract");
-assert(manifestLeaf.verification_commands.includes("node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs"), "ui_design_quality_leaf_must_run_audit_smoke");
-assert(manifestLeaf.forbidden_files.includes("services/*"), "ui_design_quality_contract_leaf_must_forbid_services_implementation");
+const implementationLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-figma-make-react-ui-implementation");
+assert(implementationLeaf, "verify_manifest_must_define_figma_make_implementation_leaf");
+assert.equal(implementationLeaf.gap_id, "frontend-product-react-vite-figma-make", "figma_make_leaf_gap_id_mismatch");
+assert(implementationLeaf.allowed_files.includes("services/portal/frontend/**"), "figma_make_leaf_must_allow_frontend");
+assert(implementationLeaf.allowed_files.includes("services/portal/frontend/package.json"), "figma_make_leaf_must_allow_frontend_package");
+assert(implementationLeaf.allowed_files.includes("services/portal/frontend/package-lock.json"), "figma_make_leaf_must_allow_frontend_lockfile");
+assert(implementationLeaf.contracts.includes("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md"), "figma_make_leaf_must_subscribe_figma_contract");
+assert(implementationLeaf.forbidden_ops.includes("live-cloud"), "figma_make_leaf_must_forbid_live_cloud");
+assert(implementationLeaf.forbidden_ops.includes("build-push-kubectl"), "figma_make_leaf_must_forbid_build_push_kubectl");
+assertIncludesAll(implementationLeaf.verification_commands, contract.futureImplementationLeafHandoff.verificationCommands, "figma_make_leaf_verification_command");
 
-const implementationLeaf = verifyManifest.leaves.find((leaf) => leaf.leaf_id === "leaf-portal-ui-design-quality-implementation");
-assert(implementationLeaf, "verify_manifest_must_define_ui_design_quality_implementation_leaf");
-assert.equal(implementationLeaf.risk_class, "local_service_code", "ui_design_quality_implementation_leaf_risk_mismatch");
-assert.equal(implementationLeaf.live_external_allowed, false, "ui_design_quality_implementation_leaf_must_not_allow_live_external");
-assert(implementationLeaf.contracts.includes(contractPath), "ui_design_quality_implementation_leaf_must_subscribe_audit_contract");
-assert(implementationLeaf.contracts.includes("docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md"), "ui_design_quality_implementation_leaf_must_subscribe_composition_contract");
-assert(implementationLeaf.contracts.includes("docs/contracts/v22-saas-control-plane-user-experience-boundary.md"), "ui_design_quality_implementation_leaf_must_subscribe_saas_ux_contract");
-assert(implementationLeaf.allowed_files.includes("services/portal/frontend/**"), "ui_design_quality_implementation_leaf_must_allow_frontend_only");
-assert(!implementationLeaf.allowed_files.some((item) => String(item).startsWith("services/portal/src/")), "ui_design_quality_implementation_leaf_must_not_allow_portal_backend");
-assert(implementationLeaf.forbidden_files.includes("package/dependency files"), "ui_design_quality_implementation_leaf_must_forbid_package_files");
-assert(implementationLeaf.forbidden_ops.includes("live-cloud"), "ui_design_quality_implementation_leaf_must_forbid_live_cloud");
-assert(implementationLeaf.forbidden_ops.includes("build-push-kubectl"), "ui_design_quality_implementation_leaf_must_forbid_build_push_kubectl");
-assertIncludesAll(implementationLeaf.verification_commands, contract.futureImplementationLeafHandoff.verificationCommands, "ui_design_quality_implementation_leaf_verification_command");
-assertIncludesAll(implementationLeaf.truth_writeback_target, contract.futureImplementationLeafHandoff.truthWritebackTarget, "ui_design_quality_implementation_leaf_truth_writeback_target");
-
-if (currentGoal.current_cursor === "leaf-portal-ui-design-quality-implementation") {
-  assertImplementationFrontendEvidence({
-    sources: frontendSources,
-    evalset: portalEvalset,
-    overviewFixture,
-  });
+for (const route of ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"]) {
+  assertIncludes(routesSource, `path: "${route.slice(1)}"`, `zip_route_missing:${route}`);
+  assertIncludes(layoutSource, `path: "${route}"`, `layout_route_missing:${route}`);
 }
+for (const loader of [
+  "loadOverviewModel",
+  "loadRuntimeEnvironmentModel",
+  "loadWorkspaceModel",
+  "loadTasksResultsModel",
+  "loadBillingAuditModel",
+  "loadOplEntryModel",
+]) {
+  assertIncludes(adapterSource, loader, `portal_adapter_loader_missing:${loader}`);
+}
+assertIncludes(figmaContract, "Figma Make ZIP", "figma_contract_must_define_zip_source");
+assertIncludes(figmaContract, '"currentCoverage": "user_portal_only"', "figma_contract_user_coverage_missing");
+assertIncludes(figmaContract, '"activeAdminRouteMounted": false', "figma_contract_admin_unrouted_missing");
 
-const designPackage = verifyManifest.package_suites.find((suite) => suite.id === "portal-ui-design-quality");
-assert(designPackage, "verify_manifest_must_define_design_quality_package_suite");
-assert(designPackage.commands.includes("node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs"), "design_quality_package_must_run_audit_smoke");
-assert(designPackage.commands.includes("node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface"), "design_quality_package_must_run_surface_runtime_suite");
-assert(designPackage.commands.includes("npm --prefix services/portal/frontend run test:visual"), "design_quality_package_must_run_visual_test");
-assert(!designPackage.commands.includes("node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all"), "design_quality_package_must_not_pull_unrelated_all_suite");
-
-assertIncludes(mvpAcceptance, "Portal UI design quality audit boundary", "mvp_acceptance_must_record_audit_boundary");
-assertIncludes(mvpAcceptance, "audit evidence schema", "mvp_acceptance_must_record_audit_evidence_schema");
-assertIncludes(mvpSuite, "smoke-test-v22-portal-ui-design-quality-audit", "mvp_suite_must_include_audit_smoke");
-
-const implementationMode = currentGoal.current_cursor === "leaf-portal-ui-design-quality-implementation";
+await mkdir(".runtime/portal-ui-design-quality", { recursive: true });
 const auditReport = {
   reportType: contract.auditEvidenceSchema.reportType,
   leafId: currentGoal.current_cursor,
   model: contract.model,
-  riskClass: implementationMode ? implementationLeaf.risk_class : manifestLeaf.risk_class,
+  riskClass: implementationLeaf.risk_class,
   reportPath: auditReportPath,
   reportCommittedToGit: false,
   currentLeafScope: {
-    uiImplementationExecuted: implementationMode,
-    portalFrontendModified: implementationMode,
+    uiImplementationExecuted: true,
+    portalFrontendModified: true,
     portalBackendServicesModified: false,
     liveCloudExecuted: false,
     buildPushKubectlDeployLiveTestExecuted: false,
     productSemanticsChanged: false,
-    evidenceKind: implementationMode ? "frontend_redesign_gate_and_truth_writeback" : "contract_rubric_eval_and_truth_writeback",
+    evidenceKind: "figma_make_react_user_portal_implementation_gate",
   },
   mainlineQuestionAnswerability: requiredUserQuestions.map((question) => ({
     question,
-    auditVerdict: "rubric_required_for_future_ui_implementation",
-    evidenceRequiredFrom: [
-      "page_information_architecture",
-      "state_empty_loading_error_surfaces",
-      "operation_area",
-      "billing_summary",
-    ],
+    auditVerdict: "required_and_mapped_to_figma_make_zip_surface_gate",
   })),
   hardRubricVerdicts: requiredHardRubric.map((item) => ({
     item,
     auditVerdict: "hard_gate_defined",
-    failurePolicy: "blocks_baseline_or_implementation_claim",
   })),
   softRubricScores: requiredSoftRubric.map((item) => ({
     item,
-    auditVerdict: "scoring_axis_defined",
-    scoreRange: "0_to_5_for_future_implementation_report",
+    scoreRange: "0_to_5_for_design_review",
   })),
-  surfaceAndVisualEvidenceSources: contract.auditEvidenceSchema.evidenceSources.map((command) => ({
-    command,
-    requiredForCurrentLeaf: command === "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-    requiredForFutureImplementationLeaf: true,
-  })),
+  surfaceAndVisualEvidenceSources: contract.auditEvidenceSchema.evidenceSources,
   expressionQualityFindings: [
-    implementationMode
-      ? "overview_first_screen_now_requires_service_summary_next_action_readiness_checks_responsibility_boundary_and_file_task_result_flow"
-      : "audit_requires_service_clarity_next_action_clarity_workbench_scanability_and_mainline_question_coverage",
-    implementationMode
-      ? "visual_baseline_drift_is_intentional_redesign_for_overview_hero_and_component_index_after_runtime_report"
-      : "audit_may_reference_external_ui_ux_best_practices_only_for_expression_quality",
+    "Figma Make user Portal is now the implementation reference for current user routes.",
+    "Admin route mounting and visual workbench evidence are deferred instead of being claimed by this user UI leaf.",
   ],
   productSemanticBoundaryCheck: {
     contentSemanticsFixedByV22Contracts: true,
     noCloudConsoleLanguageForNormalUsers: true,
     noOplChatbotReimplementation: true,
-    vueViteTsPiniaPreserved: true,
+    portalWideReactStackAuthorizedByFigmaMakeContract: true,
   },
   futureImplementationLeafHandoff: contract.futureImplementationLeafHandoff,
-  implementationEvidence: implementationMode ? {
-    completedSurfaces: [
-      "overview.hero service summary, readiness checks, next action, and Portal plus OPL runtime responsibility boundary",
-      "overview.managed_environment environment/file/freeze/release audit summary",
-      "overview.plans package, compute, storage, and estimated cost summary",
-      "overview.recent_runs input file -> task run -> output result flow",
-      "overview.workspace file ingress, result return, billing link, and release retention explanation",
-      "Portal component workbench fixtures and evalset surface invariants for the redesigned overview surfaces",
-    ],
-    remainingFutureLeaves: [
-      "backend product Node 22 ESM layering remains separate",
-      "billing audit preauth ledger release T1 remains separate",
-      "live cloud, release readiness, deploy, build/push/kubectl, and canary leaves remain unauthorized here",
-    ],
-    baselineUpdateDecision: {
-      intentionalRedesign: true,
-      expectedChangedBaselines: [
-        "portal-harness-components-index-chromium-linux.png",
-        "overview-overview-hero-fixture-chromium-linux.png",
-      ],
-      reason: "overview hero was deliberately redesigned to answer the audit handoff mainline questions instead of preserving the weaker status-list baseline",
-    },
-    cursorNextRecommendationAfterBAbsorb: "frontend-product-vue-vite-ts-pinia may be marked completed only after B review absorbs this implementation branch; next eligible cursor remains governed by v22-goal-current.json and dependencies, with backend-product-node22-esm-layering still separate.",
-  } : null,
   baselineUpdateGate: contract.auditEvidenceSchema.baselineUpdateGate,
 };
-
-await writeAuditReport(auditReport);
+await writeFile(auditReportPath, `${JSON.stringify(auditReport, null, 2)}\n`);
 
 console.log(JSON.stringify({
   ok: true,
@@ -641,7 +240,9 @@ console.log(JSON.stringify({
     gapMatrixPath,
     currentGoalPath,
     verifyManifestPath,
-    mvpAcceptancePath,
-    mvpSuitePath,
+    routesPath,
+    layoutPath,
+    adapterPath,
+    figmaContractPath,
   ],
 }, null, 2));

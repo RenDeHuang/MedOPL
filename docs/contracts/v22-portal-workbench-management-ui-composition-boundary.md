@@ -1,20 +1,21 @@
 # v22 Portal Workbench Management UI Composition Boundary
 
-本合同固定 Portal UI 的产品边界、分层规则、禁词、evalset 入口和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
+本合同固定 Portal UI 的产品边界、分层规则、禁词、Figma Make ZIP surface gate 和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
 
-本合同 v8 的核心变化是继续瘦身：页面任务、组件锚点、组件状态、组件 fixture、组件可视化工作台、截图回归、route、API shape、禁词、设计 token 和展示规则进入可执行 evalset，由 smoke 读取 evalset 执行检查。合同只作为边界和入口索引。
+本合同 v10 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。旧 visual workbench、截图 baseline、Vue harness/evalset 和 admin 页面不再是本轮必过 surface；Admin / Ops 后续按同一 React 技术栈另开 leaf。
 
-`leaf-portal-ui-design-quality-implementation` 已把 overview 首屏的可执行 UI truth 写回 evalset：`overview.hero` 的 page task 现在要求回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”。对应 fixture、surface invariants、copy registry 和 screenshot baseline 均由 `services/portal/frontend/src/harness/portal-ui-evalset.json` 与 visual workbench 承接。
+`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。
 
 ## 合同职责
 
 本合同只负责：
 
 - 产品边界：Portal 是工作台和管理台，不是云资源控制台。
-- UI 分层规则：route entry、page shell、layout、common、feature component、view orchestration、composable、API module、harness eval。
+- UI 分层规则：route entry、page shell、layout、ZIP page component、Portal API adapter、API module、ZIP surface smoke。
 - 禁词和主叙事：工作台、管理台、账单、余额、冻结金额、累计消费、今日消费、计算资源、文件空间、任务执行、运行轨迹。
-- evalset 路径：`services/portal/frontend/src/harness/portal-ui-evalset.json`。
+- Figma Make ZIP app root：`services/portal/frontend/src/app`。
 - 统一验证入口：`node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all`。
+- ZIP surface gate 入口：`node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`。
 
 本合同不再负责：
 
@@ -23,13 +24,13 @@
 - 逐条列出所有 DOM selector。
 - 用长篇执行矩阵替代可执行测试。
 
-上述细节必须进入 evalset 和 smoke。
+上述细节必须进入 ZIP source、Portal API adapter 和 smoke。
 
 ## 设计参考和工程框架
 
-Portal UI 的工程框架以本仓库 Vue、Tailwind、composition API、Portal API module、composable、component 和 smoke harness 为准。
+Portal UI 的工程框架由本合同和 `v22-portal-figma-make-ui-implementation-boundary.md` 分层固定：本合同继续负责 UI composition 和 smoke 入口；当前实现 leaf 授权 Portal 全体前端技术栈收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide。历史 Vue / Pinia 代码只作为待清退实现，不再是目标技术栈。
 
-`DESIGN.md` 是后续 Portal UI 重构的设计执行源，用于把本合同、role surface 合同、SaaS control-plane UX 合同和 evalset 转成产品气质、信息架构、组件系统、文案规则、视觉规则、Figma 往返流程和重构 slice。`DESIGN.md` 不替代本合同，不替代 `services/portal/frontend/src/harness/portal-ui-evalset.json`，不替代 smoke，也不授权修改 Portal 后端、Gateway、Runtime Bridge、deploy、`.sentrux`、adapters、upstream、secret、真实云、build/push/kubectl/live-test 或 package/dependency files。
+`DESIGN.md` 是 Portal UI 重构的设计执行源，用于把本合同、role surface 合同、SaaS control-plane UX 合同和 Figma Make implementation leaf 转成产品气质、信息架构、组件系统、文案规则、视觉规则、Figma Make ZIP 吸收流程和重构 slice。`DESIGN.md` 不替代本合同，不替代 Figma Make ZIP source-of-truth，不替代 smoke，也不授权修改 Portal 后端、Gateway、Runtime Bridge、deploy、`.sentrux`、adapters、upstream、secret、真实云、build/push/kubectl 或 live-test。
 
 Sub2API 只作为工程化验证模式参考：顶层 route、账号密码登录、role-based surface、token/primitive、layout、common、业务组件、view 组装、store/composable 和 build/test/browser 校验。不得复制 Sub2API 代码、路由、鉴权、存储结构或产品名词。
 
@@ -40,72 +41,34 @@ Sub2API 只作为工程化验证模式参考：顶层 route、账号密码登录
 Portal UI 必须按以下层级落到代码和 eval：
 
 - route entry：公开首页、登录页、注册页由后端渲染；登录后工作台和管理台由 SPA route 承接；旧 `/portal/app/*` 已删除且不得恢复为兼容入口。
-- page shell：`AppLayout`、`AppHeader`、`AppSidebar` 只负责应用壳、导航、顶部栏、移动端展开和滚动边界。
-- page layout：`DashboardPageLayout`、`TablePageLayout`、`DetailPageLayout` 固定页面骨架和 slot 顺序。
-- common component：跨页面复用原语放在 `src/components/common/*`。
-- feature component：业务组件按域放在 `src/components/overview`、`billing`、`resources`、`workspace`、`trace`、`admin`。
-- page orchestration：`src/views/*` 只负责 route 参数、composable 调用和组件装配，不沉淀大段重复 UI。
-- state/composable：`src/composables/*` 承担 loader、query、formatter、pagination、action handler 和局部错误态。
+- page shell：`src/app/components/Layout.tsx` 只负责应用壳、导航、顶部栏和滚动边界。
+- ZIP page component：`src/app/pages/*` 保持 Figma Make 页面结构，并只增加必要的 Portal API query wiring。
+- shared UI component：`src/app/components/ui/*` 保持 Figma Make / shadcn-Radix primitives。
+- Portal API adapter：`src/app/data/portalAdapters.ts` 承担 loader、query、formatter 和 API payload 到页面 model 的映射。
 - API module：`src/api/portal/*` 只承担 HTTP 和类型映射。
-- harness eval：`portal-ui-evalset.json` 固定 route、layout、surface、API shape、禁词、DOM 锚点和页面任务。
+- ZIP surface smoke：`scripts/smoke-test-v22-portal-frontend-surface-eval.mjs` 固定 ZIP 文件树、route、layout、API adapter、禁词、secret hygiene 和旧文件清退。
 
-## 可执行 Evalset
+## 可执行 Surface Gate
 
-Portal UI 的可执行事实源是：
+Portal UI 的可执行事实源是 Figma Make ZIP 与复制后的 app root：
 
 ```text
-services/portal/frontend/src/harness/portal-ui-evalset.json
+/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip
+/tmp/medopl-figma-make-source
+services/portal/frontend/src/app
+services/portal/frontend/src/app/data/portalAdapters.ts
 ```
 
-evalset 当前 schema 是 `2026-05-harness-native`。它必须作为机器可执行事实源，而不是新的长篇合同正文。
+surface smoke 必须检查：
 
-evalset 必须包含：
-
-- `routes`
-- `surfaces`
-- `layouts`
-- `apiShapes`
-- `forbiddenCopy`
-- `requiredDomAnchors`
-- `pageTasks`
-- `primitives`
-- `copyRegistry`
-- `fixtures`
-- `visualRoutes`
-- `pageComposition`
-- `surfaceStates`
-- `componentFixtures`
-- `designTokens`
-- `presentationRules`
-- `visualWorkbench`
-- `screenshotRegression`
-- `owners`
-- `acceptance`
-- `artifactPolicy`
-- `coverage`
-
-evalset 中 `status` 只能是 `done`、`partial` 或 `missing`。`partial` 和 `missing` 必须写明 `nextRequiredChange`，不得伪装成完成。
-
-DOM 锚点规则：
-
-- layout 使用 `data-layout-id`。
-- feature surface 使用 `data-route-id` 和 `data-component-id`。
-- 已标记 `done` 的 surface 必须真实埋锚点，并进入 `portal-ui-surfaces.ts`。
-- 管理台尚未组件化页面必须在 evalset 中标为 `partial`，不能在合同中写成已完成。
-
-下一层 UI gate 仍由 evalset 承接：
-
-- 页面组合 gate 固定在 `pageComposition`，用于检查每页是否按指标区、筛选区、主列表或主表格、操作区和详情区组织。
-- 组件状态 gate 固定在 `surfaceStates`，用于检查每个 done surface 是否声明稳定问题、状态和不变量，并与 `portal-ui-surfaces.ts` 对齐。
-- 组件 fixture gate 固定在 `componentFixtures`，用于检查每个 done surface 是否至少有可执行状态样例。
-- 设计 token gate 固定在 `designTokens`，用于检查 Tailwind token 和共享样式原语仍在代码中承接。
-- 展示规则 gate 固定在 `presentationRules`，用于检查指标优先、筛选先于表格、动作明确、表格只用于多对象比较和禁词边界。
-- 通用组件 gate 固定在 `primitives`，用于检查 DataTable、Pagination、EmptyState、StatusBadge、MetricCard、FormField、FilterToolbar、ActionToolbar 和 PageSection 等可复用组件是否有稳定锚点和状态声明。
-- 文案 gate 固定在 `copyRegistry`，用于阻止内部治理词、斜杠组合字段、英文散落和 raw status 成为可见主语言。
-- 数据样例 gate 固定在 `fixtures`，用于保证页面至少覆盖 ready 和 empty 数据态。
-- 视觉 gate 固定在 `visualRoutes`，用于浏览器打开关键页面并检查关键 selector 与横向溢出。
-- 组件可视化工作台 gate 固定在 `visualWorkbench`，用于检查 `/__portal-harness/components` 和每个 fixture state 独立 URL；页面从 evalset、fixtures 和真实组件 registry 生成，不新增 Storybook stories 第二事实源。`done` 必须代表 fixture state 页面真实渲染对应业务组件，JSON payload 只能作为辅助检查信息。
-- 截图回归 gate 固定在 `screenshotRegression`，用于检查 Playwright `toHaveScreenshot()` 视觉测试入口、关键页面和真实组件 fixture URL、以及提交到 git 的 baseline 目录。
+- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在 `data/portalAdapters.ts`。
+- `src/styles` 文件树与 ZIP `src/styles` 一致。
+- active routes 只有 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch`。
+- `AdminConsole.tsx` 复制为 ZIP residue 但不挂 route、不进导航、不算 Admin UI 完成。
+- 每个 active page 通过 `usePortalQuery` 调用对应 `load*Model`。
+- `portalAdapters.ts` 调用现有 `/portal/api/*` adapter。
+- 旧 Vue SPA、旧 harness、旧 screenshot baseline 和上一轮根级 React shell 物理不存在。
+- 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；旧 `/__portal-harness/components` visual workbench 与 Playwright screenshot baseline 已从本轮必过面降级为后续可选 leaf。
 
 ## 文案边界
 
@@ -158,8 +121,8 @@ UI 不使用斜杠组合词表达一个字段；需要两个含义时拆成两�
 - role surface 合同只管普通用户和管理台的角色边界。
 - structure/failure isolation 合同只管 Portal 模块边界和 failure isolation。
 - shared surface 合同只管 Portal、OPL 和管理台共享产品语义。
-- 本 composition 合同只管 Portal UI 执行入口、分层规则和 evalset 入口。
-- 具体页面、组件、API shape、DOM selector 和 partial 缺口必须进入 evalset，不再散落在合同正文。
+- 本 composition 合同只管 Portal UI 执行入口、分层规则和 ZIP surface gate 入口。
+- 具体页面、组件、API shape 和缺口必须进入 ZIP source、Portal adapter 或后续专门 UI leaf，不再散落在合同正文。
 
 ## 验收方式
 
@@ -177,34 +140,30 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group api
 node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```
 
-`surface` 分组必须读取 evalset 并检查：
+`surface` 分组必须读取 ZIP source、React app 和 Portal adapter 并检查：
 
 - route 是否存在。
-- DOM 锚点是否存在。
-- surface registry 是否和 done surface 对齐。
+- ZIP 文件树是否一致。
 - 禁词是否出现在可见文案中。
-- API shape 是否有 required keys、required paths 和 forbidden keys。
-- frontend test 入口是否存在。
-- admin 页面 partial 缺口是否明确。
-- 浏览器能真实打开首页、登录页、工作台、管理台站点设置和 evalset visual routes，并能看到关键 DOM 锚点。
-- page composition、surface states、component fixtures、design tokens 和 presentation rules 全部由 surface smoke 静态检查。
+- API adapter 是否调用现有 `/portal/api/*`。
+- Admin / Ops 当前不被伪装成已完成普通用户 surface。
+- 浏览器能真实打开首页、登录页和当前 6 个普通用户 Portal 路由，并能看到关键 DOM 锚点。
 - `.runtime/portal-surface-eval/report.json` 能生成结构化报告；该报告不进 git。
 
 ## Product Goal Characterization
 
-`leaf-frontend-product-evalset-gap` has characterized the Portal UI evalset as the current executable frontend product truth source. The absorbed local gates are:
+`leaf-frontend-product-evalset-gap` 曾把 Vue 时代的 Portal UI evalset characterization 写成前端产品事实源；本轮 `leaf-portal-figma-make-react-ui-implementation` 将当前可执行事实源收敛为 React/Figma Make ZIP 普通用户 Portal。
 
-- `node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs`
 - `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
 - `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 
-The evalset currently proves 14 routes, 3 layouts, 32 done surfaces, 8 API shapes, 9 primitives, 26 copy registry entries, 11 fixtures, 13 visual routes, page composition, surface states, component fixtures, visual workbench, screenshot regression metadata, design tokens, presentation rules, browser DOM anchors, and runtime report generation. The surface runtime suite also runs 8 Playwright visual tests through component fixture pages. Runtime evidence remains under `.runtime/portal-surface-eval/report.json` and is not committed.
+The current surface smoke proves 6 ordinary user routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, old file physical retirement and runtime report generation. Admin / Ops, visual workbench and screenshot regression are no longer current user Portal completion evidence.
 
 This characterization does not change Portal UI implementation, does not upgrade dependencies, does not run deploy/live/cloud/build/push/kubectl, does not read secrets, and does not modify upstream one-person-lab.
 
 ## 分支边界
 
-本分支只处理 Portal 工作台和管理台的 UI composition、evalset、surface harness、站点设置、公用首页、登录注册、页面命名、组件落点、架构边界和测试入口统一。
+本分支只处理 Portal 工作台的 Figma Make ZIP absorption、UI composition、surface smoke、页面命名、API adapter wiring、架构边界和测试入口统一；管理台 UI 只保留后续同栈 leaf 的角色边界。
 
 本分支不处理 Go 后端迁移，不接真实云，不读取 secret，不修改 upstream，不修改 deploy，不执行 build/push、kubectl 或 live-test。
 
@@ -216,7 +175,7 @@ This characterization does not change Portal UI implementation, does not upgrade
 ```json
 {
   "contract": "v22_portal_workbench_management_ui_composition_boundary",
-  "version": 8,
+  "version": 10,
   "model": "gpt-5.4",
   "scope": {
     "portalOnly": true,
@@ -226,62 +185,45 @@ This characterization does not change Portal UI implementation, does not upgrade
     "modifiesUpstream": false,
     "modifiesDeploy": false
   },
-  "contractRole": "ui_boundary_and_eval_entrypoint_only",
-  "evalset": {
-    "path": "services/portal/frontend/src/harness/portal-ui-evalset.json",
-    "schemaVersion": "2026-05-harness-native",
-    "owns": [
-      "routes",
-      "surfaces",
-      "layouts",
-      "apiShapes",
-      "forbiddenCopy",
-      "requiredDomAnchors",
-      "pageTasks",
-      "primitives",
-      "copyRegistry",
-      "fixtures",
-      "visualRoutes",
-      "pageComposition",
-      "surfaceStates",
-      "componentFixtures",
-      "designTokens",
-      "presentationRules",
-      "visualWorkbench",
-      "screenshotRegression",
-      "owners",
-      "acceptance",
-      "artifactPolicy",
-      "coverage"
+  "contractRole": "ui_boundary_and_zip_surface_eval_entrypoint",
+  "uiImplementationSource": {
+    "kind": "figma_make_zip",
+    "contract": "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
+    "zipPath": "/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design.zip",
+    "extractedPath": "/tmp/medopl-figma-make-source",
+    "appRoot": "services/portal/frontend/src/app",
+    "userRoutes": [
+      "/overview",
+      "/resources",
+      "/workspace",
+      "/trace",
+      "/billing",
+      "/opl-launch"
     ],
+    "adminConsoleCopiedAsUnroutedResidue": true,
+    "activeAdminRouteMounted": false
+  },
+  "surfaceSmoke": {
     "smoke": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
     "runtimeReportPath": ".runtime/portal-surface-eval/report.json",
     "runtimeReportCommitted": false
   },
   "uiArchitecture": {
-    "method": "sub2api_style_layout_first_with_executable_evalset",
+    "method": "figma_make_zip_routes_with_portal_api_adapter",
     "layers": [
       "route_entry",
       "page_shell",
       "page_layout",
-      "common_component",
-      "feature_component",
-      "page_orchestration",
-      "state_composable",
+      "zip_page_component",
+      "portal_api_adapter",
       "api_module",
-      "harness_eval"
+      "zip_surface_smoke"
     ],
-    "pageRole": "orchestration_only",
-    "surfaceFactsLiveInEvalset": true,
-    "apiShapeFactsLiveInEvalset": true,
-    "productizedUiSystemFactsLiveInEvalset": true,
-    "pageCompositionFactsLiveInEvalset": true,
-    "surfaceStateFactsLiveInEvalset": true,
-    "componentFixtureFactsLiveInEvalset": true,
-    "designTokenFactsLiveInEvalset": true,
-    "presentationRuleFactsLiveInEvalset": true,
-    "visualWorkbenchFactsLiveInEvalset": true,
-    "screenshotRegressionFactsLiveInEvalset": true
+    "pageRole": "zip_page_with_portal_api_wiring",
+    "surfaceFactsLiveInZipSource": true,
+    "apiShapeFactsLiveInPortalApiAdapter": true,
+    "visualWorkbenchFactsLiveInCurrentGate": false,
+    "screenshotRegressionFactsLiveInCurrentGate": false
   },
   "copyArchitecture": {
     "rawStatusVisible": false,
@@ -303,8 +245,8 @@ This characterization does not change Portal UI implementation, does not upgrade
     "roleSurfaceContractsOwn": "role_boundary_only",
     "structureContractOwns": "module_boundary_and_failure_isolation_only",
     "sharedSurfaceContractOwns": "shared_product_semantics_only",
-    "compositionContractOwns": "ui_boundary_and_eval_entrypoint_only",
-    "surfaceAndApiDetailsOwn": "portal_ui_evalset"
+    "compositionContractOwns": "ui_boundary_and_zip_surface_eval_entrypoint",
+    "surfaceAndApiDetailsOwn": "figma_make_zip_and_portal_api_adapter"
   },
   "runtimeSmokeEntrypoint": "scripts/smoke-test-v22-portal-runtime-suite.mjs",
   "validationGroups": [

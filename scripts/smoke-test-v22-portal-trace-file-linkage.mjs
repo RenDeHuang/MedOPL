@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../services/portal/src/app/portal-page-workspace-payloads.mjs";
 import { buildSessionTracesApiPayload } from "../services/portal/src/domain/session-traces.mjs";
@@ -42,8 +42,17 @@ function paginateRows(rows = [], page = 1, pageSize = 10) {
   };
 }
 
-function assertUserCopy(source, label) {
-  for (const required of ["任务", "运行轨迹", "输出文件", "文件空间", "状态", "用量", "费用估算"]) {
+function assertTraceUserCopy(source, label) {
+  for (const required of ["任务与结果", "任务", "输出文件", "状态", "资源用量", "费用估算"]) {
+    assert(source.includes(required), `${label}_missing_user_copy:${required}`);
+  }
+  for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "raw API key", "launchToken", "runtimeToken", "objectKey", "storageKey", "localPath", "signedUrl"]) {
+    assert.equal(source.includes(forbidden), false, `${label}_must_not_show_forbidden_copy:${forbidden}`);
+  }
+}
+
+function assertWorkspaceUserCopy(source, label) {
+  for (const required of ["工作空间", "输入文件", "输出文件", "文件空间", "下载全部结果", "来自"]) {
     assert(source.includes(required), `${label}_missing_user_copy:${required}`);
   }
   for (const forbidden of ["CVM", "COS", "K8s", "TKE", "云资源控制台", "raw API key", "launchToken", "runtimeToken", "objectKey", "storageKey", "localPath", "signedUrl"]) {
@@ -202,33 +211,24 @@ assert.equal(traceItem.files.linkedOutputCount, 1, "trace_file_summary_linked_ou
 assert.equal(traceItem.observability.source, "langfuse_sanitized_projection", "langfuse_must_remain_observability_attachment");
 assertNoForbiddenLeak(tracePayload, "trace_payload");
 
-const traceViewSource = await readFile("services/portal/frontend/src/views/trace/TraceView.vue", "utf8");
-const workspaceViewSource = await readFile("services/portal/frontend/src/views/workspace/WorkspaceView.vue", "utf8");
-const traceComponentSources = await Promise.all(
-  (await readdir("services/portal/frontend/src/components/trace"))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`services/portal/frontend/src/components/trace/${entry}`, "utf8")),
-);
-const workspaceComponentSources = await Promise.all(
-  (await readdir("services/portal/frontend/src/components/workspace"))
-    .filter((entry) => entry.endsWith(".vue"))
-    .map((entry) => readFile(`services/portal/frontend/src/components/workspace/${entry}`, "utf8")),
-);
-const traceSurfaceSource = `${traceViewSource}\n${traceComponentSources.join("\n")}`;
-const workspaceSurfaceSourceText = `${workspaceViewSource}\n${workspaceComponentSources.join("\n")}`;
-const workspaceSurfaceSource = await readFile("services/portal/frontend/src/composables/useWorkspaceSurface.ts", "utf8");
+const traceSurfaceSource = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
+const workspaceSurfaceSourceText = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
+const portalAdapterSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
 const traceTypesSource = await readFile("services/portal/frontend/src/api/portal/traces.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
 const suiteSource = await readFile("scripts/smoke-test-v22-mvp-contract-suite.mjs", "utf8");
 
-assertUserCopy(traceSurfaceSource, "trace_surface");
-assertUserCopy(workspaceSurfaceSourceText, "workspace_surface");
-assert(traceViewSource.includes("TraceSessionTablePanel"), "trace_view_must_render_session_table_component");
-assert(traceSurfaceSource.includes("linkedOutputFiles"), "trace_surface_must_render_linked_output_files");
-assert(traceSurfaceSource.includes("查看文件空间"), "trace_surface_must_link_to_file_space");
-assert(workspaceSurfaceSourceText.includes("item.artifactRef"), "workspace_surface_must_render_artifact_reference_linkage");
-assert(workspaceSurfaceSourceText.includes("关联任务"), "workspace_surface_must_show_task_linkage_in_user_language");
-assert(workspaceSurfaceSource.includes("linkedTaskText"), "workspace_surface_must_format_task_linkage");
+assertTraceUserCopy(traceSurfaceSource, "trace_surface");
+assertWorkspaceUserCopy(workspaceSurfaceSourceText, "workspace_surface");
+assert(traceSurfaceSource.includes("loadTasksResultsModel"), "trace_page_must_use_zip_portal_adapter_loader");
+assert(traceSurfaceSource.includes("task.outputFiles"), "trace_surface_must_render_linked_output_file_count");
+assert(traceSurfaceSource.includes("task.outputFileNames"), "trace_surface_must_render_linked_output_file_names");
+assert(traceSurfaceSource.includes("查看结果"), "trace_surface_must_offer_result_action");
+assert(workspaceSurfaceSourceText.includes("loadWorkspaceModel"), "workspace_page_must_use_zip_portal_adapter_loader");
+assert(workspaceSurfaceSourceText.includes("file.taskName"), "workspace_surface_must_show_task_linkage_in_user_language");
+assert(workspaceSurfaceSourceText.includes("来自"), "workspace_surface_must_show_task_linkage_copy");
+assert(portalAdapterSource.includes("linkedOutputFiles"), "portal_adapter_must_map_trace_linked_output_files");
+assert(portalAdapterSource.includes("outputFileNames"), "portal_adapter_must_project_output_file_names");
 assert(traceTypesSource.includes("linkedOutputFiles"), "trace_types_must_include_linked_output_files");
 assert(workspaceTypesSource.includes("artifactRef"), "workspace_types_must_include_artifact_ref");
 assert(suiteSource.includes("smoke-test-v22-portal-trace-file-linkage"), "mvp_suite_must_include_trace_file_linkage_smoke");

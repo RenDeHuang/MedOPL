@@ -37,13 +37,13 @@
 - MedOPL 产品语言已收敛为面向 AI 小白科研用户的 OPL 科研托管平台，不是云资源控制台。
 - SaaS 控制面用户体验真相已收敛：MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台；Portal 负责让用户知道自己买的是什么托管 OPL 工作台服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里，以及余额、预扣费、冻结金额和停止计费状态是否正常；OPL 继续负责 chatbot、agent、科研任务执行、文件理解、结果生成和工作台内交互体验。
 - v22 合同索引已建立，主合同、用户闭环段合同、共享边界合同、界面/运维合同和合同包模板已有明确入口。
-- v22 合同索引已将服务商品、用户体验、信息架构、生命周期、权限/角色、状态/数据源、操作风险、UI composition、交付/平台、运营/支持十层 truth 映射到现有合同和 evalset；后续会改变普通用户可见体验、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支，必须订阅 SaaS 控制面用户体验 truth。
+- v22 合同索引已将服务商品、用户体验、信息架构、生命周期、权限/角色、状态/数据源、操作风险、UI composition、交付/平台、运营/支持十层 truth 映射到现有合同和 Figma Make ZIP surface gate；后续会改变普通用户可见体验、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支，必须订阅 SaaS 控制面用户体验 truth。
 - 默认套餐边界已收敛到 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
 - pricing snapshot 与 MedOPL 售卖价保持分离，`basePrice = null`，`pendingProductApproval = true`。
 - 用户、充值、gflabtoken provider key 绑定、canonical state readiness 已具备合同级闭环；provider key 已从 Portal 普通登录/普通入口退场，进入 OPL entry/preflight 和后端密钥边界。
 - 托管运行环境开通要求显式 `workspaceId`、`planId`、`fileSpaceGb`，不做隐式兜底。
 - Portal UI MVP 已覆盖普通用户可见的余额、消费、托管运行环境、工作空间、文件空间、会话、任务、输入文件、输出文件、运行轨迹、账单、预扣费、冻结金额、停止计费和审计状态等基础表面。
-- Portal UI design quality audit boundary 已定义为边界和评价标准合同：它不实现 UI，不冻结具体审美解法，不替代 UI composition 合同；它把主线问题、Portal/OPL 职责、普通用户非云控制台语言、非 OPL chatbot、角色边界、secret/browser hygiene、响应式不溢出、状态覆盖和 runtime-only 审计报告作为硬约束，把现代 SaaS 工作台信息层级、可扫描性、服务清晰度、下一步动作清晰度、科研工作台感、信息密度平衡和文案质量作为软评分。当前 audit leaf 还固定了 audit evidence schema：`.runtime/portal-ui-design-quality/report.json` 必须覆盖七个主线问题、全部 hard/soft rubric、surface/visual 证据来源、表达质量发现、产品语义边界检查和后续 UI implementation leaf handoff；该 report 不进 git，后续 screenshot baseline 更新前必须先有该 evidence。
+- Portal UI design quality audit boundary 已定义为边界和评价标准合同：它不实现 UI，不冻结具体审美解法，不替代 UI composition 合同；它把主线问题、Portal/OPL 职责、普通用户非云控制台语言、非 OPL chatbot、角色边界、secret/browser hygiene、响应式不溢出、状态覆盖和 runtime-only 审计报告作为硬约束，把现代 SaaS 工作台信息层级、可扫描性、服务清晰度、下一步动作清晰度、科研工作台感、信息密度平衡和文案质量作为软评分。当前 audit leaf 还固定了 audit evidence schema：`.runtime/portal-ui-design-quality/report.json` 必须覆盖七个主线问题、全部 hard/soft rubric、surface/typecheck/build 证据来源、表达质量发现、产品语义边界检查和后续 UI implementation leaf handoff；该 report 不进 git；旧 screenshot baseline 不再是当前 Portal UI 完成证据。
 - Portal UI design quality implementation 已把 audit handoff 落到真实前端：overview 首屏现在回答托管科研工作台服务是什么、能否进入 OPL、环境/套餐/算力/存储/释放状态、Portal/OPL runtime 职责、文件/任务/结果链路和下一步动作。实现只改 Portal frontend、design-quality gate 和订阅 truth writeback；不改 Portal backend services、package/dependency、deploy、adapters、`.sentrux`、upstream、secret、live cloud、build/push/kubectl、deploy 或 live-test。后续 backend/cloud/release 仍由独立 leaf 处理。
 - Portal 结构治理 / failure isolation 三级合同已定义后端 route/dispatcher、payload/DTO builder、frontend view/composable、frontend API module 和 Portal smoke 分层边界；该合同不代表真实云、真实 OPL 或真实部署已接入。
 - OPL entry/preflight 合同已定义：`portal.medopl.cn` 登录不需要 gflabtoken API Key；`opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key。

@@ -103,7 +103,7 @@ assert.deepEqual(strictCleanupOverride.branches, [
   "cleanup/v22-strict-monolith-residual-test-anchor-retirement",
   "cleanup/v22-strict-monolith-zero-compat-active-surface",
 ], "strict_monolith_cleanup_override_branches_mismatch");
-assertIncludes(strictCleanupOverride.reason, "current product cursor remains leaf-portal-ui-design-quality-implementation", "strict_monolith_cleanup_override_reason_current_truth");
+assertIncludes(strictCleanupOverride.reason, "current product cursor remains leaf-portal-figma-make-react-ui-implementation", "strict_monolith_cleanup_override_reason_current_truth");
 assertIncludes(strictCleanupOverride.reason, "without weakening the UI authoring gate", "strict_monolith_cleanup_override_reason_no_ui_gate_weakening");
 assertNotIncludes(strictCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs", "strict_monolith_cleanup_override_must_not_run_ui_authoring_gate");
 assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs"), "strict_monolith_cleanup_override_must_include_observability_boundary");
@@ -123,7 +123,7 @@ assert.equal(contractIndexCleanupOverride.branch, "cleanup/v22-zero-compat-contr
 assert.deepEqual(contractIndexCleanupOverride.branches, [
   "cleanup/v22-zero-compat-contract-index-runtime-bridge-alignment",
 ], "contract_index_cleanup_override_branches_mismatch");
-assertIncludes(contractIndexCleanupOverride.reason, "current product cursor remains leaf-portal-ui-design-quality-implementation", "contract_index_cleanup_override_reason_current_truth");
+assertIncludes(contractIndexCleanupOverride.reason, "current product cursor remains leaf-portal-figma-make-react-ui-implementation", "contract_index_cleanup_override_reason_current_truth");
 assertIncludes(contractIndexCleanupOverride.reason, "without weakening the UI authoring gate", "contract_index_cleanup_override_reason_no_ui_gate_weakening");
 assert(contractIndexCleanupOverride.commands.includes("node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"), "contract_index_cleanup_override_must_include_ux_boundary");
 assert(contractIndexCleanupOverride.commands.includes("node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"), "contract_index_cleanup_override_must_include_zero_compat_gate");
