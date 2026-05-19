@@ -225,7 +225,7 @@ async function canRunPostgresRedisPositiveClosure({ runtimeRoot, postgresUrl, re
   if (migrateResult.code === 0) return true;
   assert.match(
     `${migrateResult.stdout}\n${migrateResult.stderr}`,
-    /portal_pg_connection_required|portal_redis_connection_required|portal_schema_not_ready|ECONNREFUSED|Connection terminated unexpectedly/i,
+    /portal_pg_connection_required|portal_redis_connection_required|portal_schema_not_ready|ECONNREFUSED|ECONNRESET|Connection terminated unexpectedly/i,
     "postgres_redis_unavailable_must_fail_closed_with_known_reason",
   );
   return false;
