@@ -759,6 +759,70 @@
   ],
   "branch_override_suites": [
     {
+      "id": "truth-freeze-and-doc-physical-retirement",
+      "branch": "cleanup/v22-truth-freeze-and-doc-physical-retirement",
+      "branches": [
+        "cleanup/v22-truth-freeze-and-doc-physical-retirement"
+      ],
+      "description": "Verification bundle for the truth freeze and scoped physical retirement cleanup branch. This branch freezes current business, architecture, data, cloud and AI workflow truth, retires two stage-only fact files, and records the cleanup agent run without implementing PostgreSQL/Redis, admin closure, cloud, deploy, upstream or UI changes.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped truth-freeze, reference-retirement and archive trace gates before B review.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery docs/contracts scripts"
+      ],
+      "allowed_files": [
+        "docs/contracts/README.md",
+        "docs/contracts/v22-canonical-user-loop.md",
+        "docs/recovery/product-truth.md",
+        "docs/recovery/architecture-truth.md",
+        "docs/recovery/v22-truth-freeze.md",
+        "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-leaf-manifest.schema.json",
+        "docs/recovery/agent-runs/2026-05-19-cleanup-v22-truth-freeze-and-doc-physical-retirement.md",
+        "scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs",
+        "scripts/smoke-test-v22-product-goal-harness.mjs",
+        "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "scripts/smoke-test-v22-workflow-gate.mjs",
+        "scripts/v22-smoke-classification.mjs",
+        "scripts/v22-workflow-gate.mjs"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation"
+      ]
+    },
+    {
       "id": "post-absorb-portal-opl-truth-and-next-index",
       "branch": "cleanup/v22-post-absorb-portal-opl-truth-and-next-index",
       "branches": [

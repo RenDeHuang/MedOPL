@@ -2,6 +2,24 @@
 
 platform-v22 的架构真相是：Portal 提供托管科研工作台控制面，OPL Web Gateway 接入 clean upstream OPL Web，Runtime Bridge / Runtime Agent 连接平台管理的 TKE/存储资源池，并把所有计算资源、存储资源和文件空间纳入 tenant binding、billing、quota、audit 和 admin 边界。
 
+## 数据与云控制面真相
+
+Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL。Redis 不是事实源，只能用于 session、cache、queue、lock 或短期协调。
+
+Portal 保存账号、用户、工作空间、钱包、冻结金额、账本、审计、资源 binding、文件 logical index、session/run/artifact/trace metadata 的业务事实。Runtime Bridge 只提供 launch/session/run/artifact/trace 的 canonical integration boundary；它不是 billing ledger truth，也不是 cloud inventory truth。
+
+云控制面当前采用 Portal 内部 operation/job/projection/reconciliation 模型：
+
+- desired state：Portal 中形成的资源、文件空间、计费和释放意图。
+- actual state：云资源、runtime、文件空间、账单和审计的实际观测事实。
+- reconciled state：Portal 对 desired state 和 actual state 的核对结果、异常、补偿和审计记录。
+
+Object/blob plane 当前仍属本地/过渡实现；后续对象存储只承载文件正文和私有 locator，不成为账本、资源或审计事实源。secret plane、object/blob plane、runtime state plane 仍属本地/过渡实现，不能写成 productionized truth。
+
+## 代码解耦真相
+
+Portal frontend 只负责 UI composition、typed API client 和 UI-safe adapter，不直接接触云、secret、objectKey、localPath、signedUrl 或 runtime token。Portal backend 继续保持 route / domain / state / integration 分层。Gateway = 入口反腐层，只处理 launch、bootstrap、auth context、proxy 和 clean upstream 边界。Runtime Bridge = launch/session/run/artifact/trace 的 canonical integration boundary。
+
 ## 架构定位
 
 MedOPL 是 `platform-provisioned / customer-dedicated` 托管科研工作台，不是云资源控制台。用户不直接配置 CVM、COS、K8s。平台管理自己的 TKE 和存储资源池，向账号和工作空间提供可选开通的计算资源和文件空间。

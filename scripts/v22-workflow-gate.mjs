@@ -386,7 +386,7 @@ export function evaluateReview({
   const forbiddenPaths = normalizedFiles.filter((file) =>
     isForbiddenPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikePaths = normalizedFiles.filter((file) =>
-    isSecretLikePath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
+    isSecretLikePath(file) && !isV22SmokePath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const servicesChanged = normalizedFiles.some(isServicesPath);
   const contractsChanged = normalizedFiles.some(isContractPath);
   const smokeChanged = normalizedFiles.some(isV22SmokePath);

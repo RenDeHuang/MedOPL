@@ -45,6 +45,7 @@
 ## 共享边界合同
 
 - smoke / eval 分层: [v22-smoke-eval-boundary.md](./v22-smoke-eval-boundary.md)。`scripts/smoke-test-v22-*` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
+- truth freeze: [../recovery/v22-truth-freeze.md](../recovery/v22-truth-freeze.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
 - token/provider key: [v22-token-provider-boundary.md](./v22-token-provider-boundary.md), [v22-user-credit-provider-key-boundary.md](./v22-user-credit-provider-key-boundary.md), [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md)。API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
@@ -84,10 +85,6 @@
 - Admin / Ops Console 边界: [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md)。该合同只定义管理员/运维界面边界，不实现 UI，不调用真实云，不读取 secret；普通用户资源页不得恢复云控制台或运维语义。
 - 腾讯云分账标签后台边界: [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-pricing-snapshot-boundary.md](./v22-pricing-snapshot-boundary.md)
 
-## 相关合同
-
-- [v22-canonical-user-loop.md](./v22-canonical-user-loop.md): canonical user loop 的早期/共享参考合同，阅读时以 v22 主合同和各段边界合同为当前执行入口。
-
 ## Truth Layer 索引
 
 以下索引用于回答“当前真相在哪里”。它不新增产品方向，只把已经存在的 truth 固定到可订阅入口，避免后续 coding 只订阅交付层、漏读用户体验层。
@@ -97,7 +94,7 @@
 | 服务商品真相 | [../recovery/product-truth.md](../recovery/product-truth.md), [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 用户购买的是托管 OPL 科研工作台服务，不是云资源控制台对象。 |
 | 用户体验真相 | [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md) | Portal 必须解释买了什么、能不能用、缺什么、下一步点哪里、结果和费用在哪里。 |
 | 信息架构真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [v22-portal-figma-make-ui-implementation-boundary.md](./v22-portal-figma-make-ui-implementation-boundary.md), [../../services/portal/frontend/src/app](../../services/portal/frontend/src/app) | Figma Make ZIP、active route、page composition、layout、API adapter 和旧 UI 物理清退。 |
-| 生命周期真相 | [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md), [v22-canonical-user-loop.md](./v22-canonical-user-loop.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
+| 生命周期真相 | [../recovery/v22-truth-freeze.md](../recovery/v22-truth-freeze.md), [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
 | 权限/角色真相 | [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md) | 普通用户、管理员和运维的可见、不可见和可操作边界。 |
 | 状态/数据源真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
 | 操作风险真相 | [v22-authorized-tencent-create-release-execution-boundary.md](./v22-authorized-tencent-create-release-execution-boundary.md), [v22-cloud-onboarding-workflow-boundary.md](./v22-cloud-onboarding-workflow-boundary.md) | 真实资源、真实扣费、release、rollback、审计队列和 fail-closed gate。 |

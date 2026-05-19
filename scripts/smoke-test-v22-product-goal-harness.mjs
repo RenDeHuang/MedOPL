@@ -12,7 +12,7 @@ const docs = {
   productE2eContract: "docs/recovery/v22-product-e2e-contract.md",
   gapMatrix: "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
   goalLoop: "docs/recovery/v22-codex-goal-loop.md",
-  developmentFramework: "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+  truthFreeze: "docs/recovery/v22-truth-freeze.md",
   goalState: "docs/recovery/v22-goal-state.md",
   currentState: "docs/recovery/v22-goal-current.json",
   scoreboard: "docs/recovery/v22-product-completion-scoreboard.json",

@@ -2,6 +2,14 @@
 
 platform-v22 是 MedOPL 的 canonical trunk。本文件只记录当前 v22 产品真相。
 
+## 当前阶段真相
+
+当前 trunk 已完成的是合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环和 Portal-OPL file/run/artifact 本地闭环。当前不是真实云生产闭环，不是 PostgreSQL/Redis production data layer 完成态，也不是 admin 全业务闭环完成态。
+
+后续进度以 `docs/recovery/v22-goal-current.json`、`docs/recovery/v22-agent-verify-manifest.json` 和 `docs/recovery/v22-truth-freeze.md` 为准；agent-run 记录只作为 leaf 证据，不替代 current truth。
+
+释放计算资源后的停止计费确认进入 120min 核对窗口，账单、资源、文件保留和异常处理进入 T+1 审计。
+
 ## 产品定位
 
 MedOPL 是面向小白科研用户的 `platform-provisioned / customer-dedicated` 托管 OPL 工作台，不是云资源控制台。用户通过 Portal 购买和使用科研工作台能力，不需要懂 CVM、COS、K8s，也不直接配置云资源。
@@ -21,6 +29,7 @@ MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台。它不重做
 - 工作空间是业务容器。
 - 计算资源可独立开通、扩容、缩容、释放。
 - 存储资源 / 文件空间可独立开通、扩容、删除。
+- 释放托管运行环境不等于删除文件空间。
 - 释放计算资源不删除文件空间。
 - 释放计算资源不让文件空间进入 7 天保护期。
 - 删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。
@@ -62,6 +71,8 @@ Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普�
 
 ## 资源套餐
 
+当前 MVP active 套餐只有 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
+
 当前套餐：
 
 | 套餐 | 计算资源 | 文件空间 | 任务并发 |
@@ -71,9 +82,8 @@ Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普�
 
 扩展能力：
 
-- 可以叠加计算资源。
-- 可以叠加存储容量。
-- 可以自定义规格：CPU、内存、文件空间和任务并发数。
+- 叠加计算、叠加存储和自定义规格属于 future-authorized。
+- future-authorized 能力可以规划为 CPU、内存、文件空间和任务并发数的扩展。
 - 所有叠加和自定义资源都必须进入 billing、quota、audit 边界。
 - 资源套餐不能描述成用户自己配置 CVM、COS、K8s。
 
@@ -107,6 +117,7 @@ Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普�
 15. 余额或冻结金额不足时，停止新任务和计算资源续用，但不得把释放计算资源自动写成删除文件空间。
 16. 释放计算资源只停止计算计费和任务续用；删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。
 17. 文件空间进入保护期或不可用时，新任务不能依赖该文件空间。
+18. 计算停止计费需要在 120min 内核对，账单与资源状态进入 T+1 审计。
 
 ## Trace Metadata
 

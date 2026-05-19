@@ -109,6 +109,16 @@ assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
   "npm --prefix services/portal run check",
 ], "review_recommended_commands");
 
+const reviewWithTokenNamedSmoke = evaluateReview({
+  base: "recovery/platform-v22-trunk",
+  changedFiles: [
+    "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs",
+  ],
+});
+
+assert.equal(reviewWithTokenNamedSmoke.ok, true, "v22_smoke_file_with_token_in_name_must_not_be_secret_like_path");
+assert.deepEqual(reviewWithTokenNamedSmoke.secretLikePaths, [], "v22_smoke_file_with_token_in_name_secret_like_paths_must_be_empty");
+
 const reviewWithSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [

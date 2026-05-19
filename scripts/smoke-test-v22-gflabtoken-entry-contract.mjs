@@ -9,9 +9,9 @@ const repoRoot = path.resolve(__dirname, "..");
 const checkedFiles = [
   "docs/contracts/v22-user-credit-provider-key-boundary.md",
   "docs/contracts/v22-token-provider-boundary.md",
-  "docs/contracts/v22-canonical-user-loop.md",
   "docs/contracts/v22-mvp-managed-opl-loop.md",
   "docs/contracts/README.md",
+  "docs/recovery/v22-truth-freeze.md",
   "docs/recovery/decisions.md",
   "docs/recovery/product-truth.md",
   "docs/recovery/architecture-truth.md",

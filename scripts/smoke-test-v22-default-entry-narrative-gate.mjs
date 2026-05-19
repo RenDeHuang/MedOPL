@@ -151,7 +151,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/v22-product-e2e-contract.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-codex-goal-loop.md",
-    "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+    "docs/recovery/v22-truth-freeze.md",
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
@@ -166,7 +166,7 @@ const branchScopedAllowedDiffPaths = new Map([
   ])],
   ["cleanup/v22-secret-hygiene-diff-scan-eval-shell", new Set([
     "docs/recovery/status-matrix.md",
-    "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+    "docs/recovery/v22-truth-freeze.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
@@ -241,7 +241,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/real-opl-file-run-artifact-validation-path.md",
     "docs/recovery/repo-zoning.md",
     "docs/recovery/status-matrix.md",
-    "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+    "docs/recovery/v22-truth-freeze.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-goal-state.md",
     "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
@@ -528,6 +528,13 @@ const branchScopedAllowedDiffPatterns = new Map([
     "services/portal/**",
     "services/opl-web-gateway/**",
     "services/opl-runtime-bridge/**",
+  ]],
+  ["cleanup/v22-truth-freeze-and-doc-physical-retirement", [
+    "docs/contracts/README.md",
+    "docs/contracts/v22-*",
+    "docs/recovery/*",
+    "scripts/smoke-test-v22-*",
+    "scripts/v22-smoke-classification.mjs",
   ]],
 ]);
 
