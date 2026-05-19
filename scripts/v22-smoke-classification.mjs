@@ -116,6 +116,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs": "opl-local",
   "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-portal-package-surface-isolation.mjs": "portal-local",
+  "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs": "default/local-contract",
   "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs": "portal-local",

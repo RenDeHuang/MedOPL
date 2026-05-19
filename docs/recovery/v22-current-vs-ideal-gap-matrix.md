@@ -240,18 +240,18 @@ Every gap entry must contain:
 ### Gap: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
 
 - id: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
-- current_fact: workspace file action closure 已在 trunk `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 吸收，post-absorb 留痕已在 `061956f6524dc1e02753f33b326cef9c2f3d390d` 吸收；Portal 与 OPL/Gateway/Runtime Bridge 的 file/run/artifact 本地闭环现在由 `feat/v22-portal-opl-file-run-artifact-closure` 执行。已有合同固定 Portal launch、Gateway bootstrap、session bind、workspace file reference、run start、artifact backflow、billing metadata handoff 和 trace projection；本 feature 分支只做本地 API/action/data wiring 和 eval/trace 收敛，不接真实云、不部署、不改 upstream。
+- current_fact: workspace file action closure 已在 trunk `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 吸收，post-absorb 留痕已在 `061956f6524dc1e02753f33b326cef9c2f3d390d` 吸收；Portal 与 OPL/Gateway/Runtime Bridge 的 file/run/artifact 本地闭环已由 `feat/v22-portal-opl-file-run-artifact-closure` 完成并在 trunk `8797ffc6f3ba3747cfac55554012b648fcbfb5c9` B 复审、ff-only 吸收、push。已有合同固定 Portal launch、Gateway bootstrap、session bind、workspace file reference、run start、artifact backflow、billing metadata handoff 和 trace projection；完成事实仍是本地 API/action/data wiring 和 eval/trace 收敛，不接真实云、不部署、不改 upstream。
 - ideal_state: Portal 可以通过现有 OPL API client 和 Portal OPL routes 发起 workspace-scoped fileRef、run 和 artifact 查询；Gateway/Runtime Bridge 保持 clean upstream 边界；Portal 只展示脱敏 projection，不暴露 raw provider key、launchToken、runtimeToken、objectKey、localPath 或 signedUrl。
-- problem: 当前需要从 launch-only / trace-only 进入 file/run/artifact 本地闭环；如果没有 current truth、manifest 索引、前端 API surface gate 和 agent-run 留痕，agent 容易跳到云、deploy、upstream 或 fake 200。
+- problem: 本 gap 已完成并进入 monitor-only；后续只在 Portal-OPL file/run/artifact regression、secret hygiene regression、upstream boundary regression 或 fake-success regression 时重新打开。
 - dependency: architecture-refactor-portal-layering 已满足；workspace file action closure 已吸收并提供 workspace 文件基础能力。
 - depends_on: [architecture-refactor-portal-layering]
 - blocked_by: []
-- executable_when: workspace file action closure 已吸收，且实现只订阅现有 OPL / Runtime Bridge / Portal files billing trace 合同与本地 eval；no secret、no build/push/kubectl、no deploy、no live-test、no true cloud mutation、no upstream modification、no Figma visual redesign。
+- executable_when: monitor-only after B absorb; it becomes executable again only if later regression reopens Portal-OPL file/run/artifact behavior or public projection hygiene.
 - stage: S3 OPL connection productionization
 - priority: 60
-- cursor_eligible: true
-- status: in_progress
-- next_leaf_step: leaf-portal-opl-file-run-artifact-closure
+- cursor_eligible: false
+- status: completed
+- next_leaf_step: monitor_only_after_B_absorb
 - eval: `node scripts/smoke-test-v22-agent-run-record-gate.mjs`; `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`; `node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs`; `node scripts/smoke-test-v22-portal-trace-file-linkage.mjs`; `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`; `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`; `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 - allowed_files: `services/portal/frontend/src/api/portal/opl.ts`, `services/portal/frontend/src/app/data/portalAdapters.ts`, `services/portal/frontend/src/app/pages/Workspace.tsx`, `services/portal/frontend/src/app/pages/TasksResults.tsx`, `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/opl-web-gateway/src/launch-client-script.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, docs/recovery current truth files, and scoped OPL/Runtime/Portal eval scripts
 - forbidden_files: `deploy/*`; `adapters/*`; `.sentrux/*`; `infra/*`; upstream / one-person-lab; secret-like paths; true cloud/provider files; Figma visual/layout/information-architecture redesign
@@ -396,6 +396,27 @@ truth writeback section:
 - truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`, `docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md`, `docs/recovery/portal-local-runtime-health-runbook.md`
 - B_absorb_criteria: B confirms workspace leaf is completed/monitor-only, agent-run record exists, local runtime runbook exists, agent-run gate passes, and current cursor advances to `leaf-portal-opl-file-run-artifact-closure` without implementing that leaf.
 
+### Gap: portal-postgres-redis-local-production-data-closure
+
+- id: portal-postgres-redis-local-production-data-closure
+- current_fact: Portal 本地 JSON-mode、可见 API/action closure、workspace 文件动作闭环、Portal-OPL file/run/artifact 本地闭环均已吸收；PostgreSQL/Redis 本地生产数据层还没有实现，但已有 eval shell `scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs` 覆盖 schema unique index、migrator 事务边界、postgres_redis fail-closed 和本地正向闭环探测。
+- ideal_state: PostgreSQL 是 canonical truth；Redis 只用于 session/cache/queue/lock；`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时 fail-closed，不回退 JSON；admin actions、wallet、announcements、billing ops、audit、workspace storage 的本地持久化可未来迁云。
+- problem: 如果继续依赖 JSON runtime root 或 Redis 账本真相，管理台业务闭环、公告闭环、账单审计和 workspace 文件状态无法成为可迁云的本地生产数据层。
+- dependency: Portal local API/action closure、workspace file action closure、React/Figma UI baseline 和 Portal-OPL local closure 已吸收；storage mode eval shell 已存在。
+- depends_on: [portal-workspace-file-action-closure, portal-local-api-action-closure, frontend-product-react-vite-figma-make, opl-connection-gateway-preflight-runtime-file-run-artifact-trace]
+- blocked_by: [postgres_redis implementation leaf not started, local PostgreSQL/Redis services not wired in this post-absorb truth branch]
+- executable_when: next dedicated implementation branch starts from current trunk, subscribes storage mode eval and recovery truth, and keeps no secret、no build/push/kubectl、no deploy、no live-test、no true cloud mutation、no upstream modification、no Figma visual redesign.
+- stage: S5 frontend/backend product completion
+- priority: 87
+- cursor_eligible: true
+- status: gated
+- next_leaf_step: leaf-portal-postgres-redis-local-production-data-closure
+- eval: `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`; `node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs`; `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- allowed_files: future implementation branch may write scoped `services/portal/src/state/*`, `services/portal/src/domain/*`, `services/portal/src/app/*`, `services/portal/src/routes/*`, `services/portal/src/storage/*`, `services/portal/src/migrations/*`, `services/portal/src/config/*`, docs/recovery current truth files, agent-run records, and storage mode eval gates.
+- forbidden_files: `deploy/*`; `adapters/*`; `.sentrux/*`; `infra/*`; upstream / one-person-lab; secret-like paths; true cloud/provider files; Figma visual/layout/information-architecture redesign; `.runtime/*`
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`
+- B_absorb_criteria: B confirms PostgreSQL is canonical truth, Redis is not ledger truth, postgres_redis mode fails closed when dependencies or schema are missing, idempotencyKey replay does not double-apply wallet/admin mutations, restart preserves balances/announcements/billing ops/audit/workspace storage, no secret/cloud/deploy/upstream/Figma boundary is crossed, and the branch is ff-only absorbable.
+
 ### Gap: backend-product-node22-esm-layering
 
 - id: backend-product-node22-esm-layering
@@ -449,7 +470,7 @@ truth writeback section:
 - ideal_state: release readiness is evaluated only after contracts, local suite, secret scan, and authorized deploy plan pass.
 - problem: deploy readiness can be falsely inferred from local smoke or from operation-type authorization without a concrete release plan/evidence package.
 - dependency: product e2e, cloud lane, OPL connection, billing/audit.
-- depends_on: [legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace, cloud-lane-mock-readonly-dry-run-authorized, portal-ui-contract-truth-convergence, frontend-product-react-vite-figma-make, portal-workspace-file-action-closure, backend-product-node22-esm-layering, billing-audit-preauth-ledger-release-t1]
+- depends_on: [legacy-cleanup-resource-order, legacy-cleanup-secret-hygiene, legacy-cleanup-legacy-scripts, architecture-refactor-portal-layering, opl-connection-gateway-preflight-runtime-file-run-artifact-trace, cloud-lane-mock-readonly-dry-run-authorized, portal-ui-contract-truth-convergence, frontend-product-react-vite-figma-make, portal-workspace-file-action-closure, portal-postgres-redis-local-production-data-closure, backend-product-node22-esm-layering, billing-audit-preauth-ledger-release-t1]
 - blocked_by: [missing concrete Package D release plan, missing region, missing accepted preflight/build-push/dry-run evidence, missing rollback evidence, missing baseline/cleanup evidence]
 - executable_when: all release readiness dependency gate prerequisites are satisfied and a step-local release auth record includes concrete plan, scope, budget, baseline, rollback, cleanup, evidence path, and stop conditions.
 - stage: S6 release readiness

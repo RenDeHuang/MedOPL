@@ -30,7 +30,11 @@ feat/v22-portal-opl-file-run-artifact-closure
 
 ## commit_sha
 
-pending_B_review
+8797ffc6f3ba3747cfac55554012b648fcbfb5c9
+
+## absorbed_commit
+
+8797ffc6f3ba3747cfac55554012b648fcbfb5c9
 
 ## contract_subscription
 
@@ -150,7 +154,28 @@ added-lines secret value scan
 
 ## b_review_result
 
-pending_B_review
+passed / ff-only absorbed / pushed.
+
+- B reviewed the A branch as local Portal-OPL file/run/artifact closure and found no blocker.
+- B ff-only absorbed it into `recovery/platform-v22-trunk`.
+- B pushed GitHub remote to `8797ffc6f3ba3747cfac55554012b648fcbfb5c9`.
+- The absorb did not read secrets, did not call real cloud, did not modify upstream, did not run build/push/kubectl/deploy/live-test, and did not change Figma Portal UI visual/layout/information architecture.
+
+## post_absorb_verification
+
+Post-absorb truth branch `cleanup/v22-post-absorb-portal-opl-truth-and-next-index` records this result and verifies:
+
+```bash
+node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs
+node scripts/smoke-test-v22-goal-state-consistency.mjs
+node scripts/smoke-test-v22-agent-run-record-gate.mjs
+node scripts/smoke-test-v22-agent-verify-entrypoint.mjs
+node scripts/smoke-test-v22-product-goal-harness.mjs
+node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json
+node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json
+node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
+git diff --check -- docs/recovery scripts
+```
 
 ## runtime_notes
 
@@ -173,4 +198,15 @@ pending_B_review
 
 ## next_leaf
 
-After B review, ff-only absorb and push, open a small post-absorb truth branch to mark this leaf absorbed. The next implementation leaf should be selected from current contracts and gates; the strongest existing local candidate is PostgreSQL/Redis local production data closure via `scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`, unless B identifies an admin/business closure regression that should take priority.
+The next implementation leaf should be `leaf-portal-postgres-redis-local-production-data-closure`, because current contracts and gates already include the storage mode eval shell `scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`.
+
+## remaining_non_goals
+
+- No real cloud.
+- No secret read.
+- No upstream modification.
+- No build, image push, kubectl, deploy, or live-test.
+- No PostgreSQL/Redis implementation in the post-absorb truth branch.
+- No admin new business closure in the post-absorb truth branch.
+- No Figma Portal UI visual/layout/information-architecture change.
+- No production claim for real cloud runtime, COS billing reconciliation, cloud PostgreSQL/Redis migration, or Langfuse deployment.

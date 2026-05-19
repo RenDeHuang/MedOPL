@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-19",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "061956f6524dc1e02753f33b326cef9c2f3d390d",
+  "base_trunk_head": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "feat/v22-portal-opl-file-run-artifact-closure",
+  "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-portal-opl-file-run-artifact-closure",
+  "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "061956f6524dc1e02753f33b326cef9c2f3d390d",
-    "branch_ahead_explanation": "This feature authoring branch starts from the already absorbed trunk head 061956f6524dc1e02753f33b326cef9c2f3d390d and implements the local Portal-OPL file/run/artifact closure under existing contracts. It wires existing Portal OPL API clients into the React/Figma UI action layer, keeps Runtime Bridge/Gateway/upstream clean, does not read secrets, does not call real cloud, does not build/push/kubectl/live-test/deploy, and does not modify upstream."
+    "observed_git_head": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
+    "branch_ahead_explanation": "The previous Portal-OPL file/run/artifact closure was B-reviewed, ff-only absorbed and pushed at 8797ffc6f3ba3747cfac55554012b648fcbfb5c9. The next authoring implementation branch is the local PostgreSQL/Redis production data closure. It remains local service code only: no secret read, no real cloud, no build/push/kubectl/live-test/deploy, no upstream modification, and no Figma UI visual/layout/information-architecture change."
   },
-  "last_absorbed_commit": "061956f6524dc1e02753f33b326cef9c2f3d390d",
-  "current_cursor": "leaf-portal-opl-file-run-artifact-closure",
-  "next_leaf": "leaf-portal-opl-file-run-artifact-closure",
-  "current_stage": "S3 OPL connection productionization",
+  "last_absorbed_commit": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
+  "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
+  "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
+  "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "pending_B_review_ff_only_absorb_for_portal_opl_file_run_artifact_closure"
+    "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
   ],
-  "current_problem": "Trunk has absorbed workspace file action closure at 6b9485c0a9a02e23524c4776e6e0d2ef76ac6670 and post-absorb trace at 061956f6524dc1e02753f33b326cef9c2f3d390d. Current feature work is the Portal-OPL file/run/artifact local closure: connect existing Portal OPL API clients, Portal OPL routes, Gateway/Runtime Bridge boundaries, workspace file references, run start, artifact backflow, billing metadata and trace projection under existing contracts. This branch remains local-service-code only and does not call real cloud, read secrets, modify upstream, build/push/kubectl, deploy or live-test.",
+  "current_problem": "Trunk has B-reviewed, ff-only absorbed and pushed the Portal-OPL file/run/artifact local closure at 8797ffc6f3ba3747cfac55554012b648fcbfb5c9. The next indexed local implementation leaf is PostgreSQL/Redis production data closure: make PostgreSQL the canonical truth for local production data, keep Redis limited to session/cache/queue/lock, fail closed when postgres_redis mode lacks connection or schema, and keep admin actions, wallet, announcements, billing ops, audit and workspace storage cloud-migratable. This is not implemented yet and must not be claimed complete; this truth branch only records the post-absorb state and next leaf index.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -57,8 +57,8 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-portal-opl-file-run-artifact-closure",
-    "rule": "After workspace file action closure was absorbed, normal product-goal selection resumes at the next eligible OPL connection productionization leaf while preserving B-review-only absorption and no-cloud/no-secret/no-upstream boundaries."
+    "repaired_current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
+    "rule": "After Portal-OPL file/run/artifact closure was B-reviewed, ff-only absorbed and pushed, normal product-goal selection resumes at the next eligible local production data leaf while preserving B-review-only absorption and no-cloud/no-secret/no-upstream boundaries."
   },
   "gaps": [
     {
@@ -131,9 +131,9 @@
       "id": "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
       "stage": "S3 OPL connection productionization",
       "priority": 60,
-      "cursor_eligible": true,
-      "status": "in_progress",
-      "next_leaf_step": "leaf-portal-opl-file-run-artifact-closure",
+      "cursor_eligible": false,
+      "status": "completed",
+      "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "architecture-refactor-portal-layering"
       ]
@@ -203,6 +203,20 @@
       ]
     },
     {
+      "id": "portal-postgres-redis-local-production-data-closure",
+      "stage": "S5 frontend/backend product completion",
+      "priority": 87,
+      "cursor_eligible": true,
+      "status": "gated",
+      "next_leaf_step": "leaf-portal-postgres-redis-local-production-data-closure",
+      "depends_on": [
+        "portal-workspace-file-action-closure",
+        "portal-local-api-action-closure",
+        "frontend-product-react-vite-figma-make",
+        "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+      ]
+    },
+    {
       "id": "backend-product-node22-esm-layering",
       "stage": "S5 frontend/backend product completion",
       "priority": 90,
@@ -242,6 +256,7 @@
         "portal-ui-contract-truth-convergence",
         "frontend-product-react-vite-figma-make",
         "portal-workspace-file-action-closure",
+        "portal-postgres-redis-local-production-data-closure",
         "backend-product-node22-esm-layering",
         "billing-audit-preauth-ledger-release-t1"
       ]
@@ -273,55 +288,48 @@
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-portal-opl-file-run-artifact-closure",
-    "gap_id": "opl-connection-gateway-preflight-runtime-file-run-artifact-trace",
-    "stage": "S3 OPL connection productionization",
+    "step_id": "leaf-portal-postgres-redis-local-production-data-closure",
+    "gap_id": "portal-postgres-redis-local-production-data-closure",
+    "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
     "depends_on": [
-      "architecture-refactor-portal-layering"
+      "portal-workspace-file-action-closure",
+      "portal-local-api-action-closure",
+      "frontend-product-react-vite-figma-make",
+      "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
     ],
-    "problem": "Workspace file action closure is absorbed; Portal now needs the next local OPL bridge leaf to connect workspace file references, OPL run start, artifact backflow, billing metadata handoff and trace projection through existing Portal, OPL Gateway and Runtime Bridge contracts without treating canary evidence as production deploy evidence.",
-    "executable_when": "workspace file action closure is absorbed on trunk and existing OPL / Runtime Bridge contracts remain the source of truth; this next leaf may wire existing Portal OPL API clients, Portal OPL routes, OPL Gateway public bridge, Runtime Bridge run/file/artifact routes and local projection eval. No real cloud, no secret, no build/push/kubectl, no deploy, no live-test, no upstream modification and no Figma visual redesign are allowed.",
-    "failure_state": "blocked_portal_opl_file_run_artifact_closure if the step requires raw provider keys in browser state, real cloud/provider access, secret reads, upstream changes, unsupported fake success, build/push/kubectl/deploy/live-test, or hidden local runtime fallback.",
+    "problem": "Portal has local JSON-mode product loops, workspace file actions, and Portal-OPL file/run/artifact closure absorbed. The next production-readiness gap is local durable data truth: PostgreSQL must become the canonical local production data store while Redis is limited to session/cache/queue/lock, with fail-closed startup and migration behavior before cloud migration is attempted.",
+    "executable_when": "Portal local API/action closure, workspace file action closure, React/Figma UI baseline, and Portal-OPL file/run/artifact closure are absorbed on trunk; the branch may add local PostgreSQL/Redis storage mode implementation, migrations, state adapters, idempotency and persistence eval only inside Portal local service boundaries. no secret, no real cloud, no build/push/kubectl, no deploy, no live-test, no upstream modification and no Figma visual redesign are allowed.",
+    "failure_state": "blocked_postgres_redis_local_production_data_closure if postgres_redis mode falls back to JSON, Redis becomes ledger truth, schema/migration absence does not fail closed, idempotency replays double-apply wallet/admin mutations, public responses leak internal storage details, or the step requires secret reads, real cloud/provider access, upstream changes, build/push/kubectl/deploy/live-test, or hidden runtime fallback.",
     "verification_commands": [
+      "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
       "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-      "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-      "node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
-      "node scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
-      "node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
-      "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-      "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-      "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+      "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+      "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "node scripts/smoke-test-v22-product-goal-harness.mjs",
       "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
-      "npm --prefix services/portal/frontend run typecheck",
       "npm --prefix services/portal run check",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- docs/recovery scripts services/portal/frontend services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src"
+      "git diff --check -- docs/recovery scripts services/portal/src"
     ],
     "allowed_files": [
-      "services/portal/frontend/src/api/portal/opl.ts",
-      "services/portal/frontend/src/app/data/portalAdapters.ts",
-      "services/portal/frontend/src/app/pages/Workspace.tsx",
-      "services/portal/frontend/src/app/pages/TasksResults.tsx",
-      "services/portal/src/routes/opl.routes.mjs",
-      "services/portal/src/routes/portal-api-v22-opl-work.routes.mjs",
-      "services/opl-web-gateway/src/launch-client-script.mjs",
-      "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
-      "services/opl-runtime-bridge/src/runtime-bridge-runs.mjs",
+      "services/portal/src/state/*",
+      "services/portal/src/domain/*",
+      "services/portal/src/app/*",
+      "services/portal/src/routes/*",
+      "services/portal/src/storage/*",
+      "services/portal/src/migrations/*",
+      "services/portal/src/config/*",
       "docs/recovery/v22-goal-current.json",
       "docs/recovery/v22-goal-state.md",
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/status-matrix.md",
-      "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
-      "scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-      "scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
-      "scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
-      "scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
-      "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-      "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-      "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+      "docs/recovery/agent-runs/*",
+      "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+      "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
       "scripts/smoke-test-v22-agent-run-record-gate.mjs",
       "scripts/v22-smoke-classification.mjs"
     ],
@@ -345,22 +353,25 @@
       "docs/recovery/status-matrix.md"
     ],
     "execution_index": {
-      "prior_leaf_id": "leaf-portal-workspace-file-action-closure",
-      "prior_absorbed_commit": "6b9485c0a9a02e23524c4776e6e0d2ef76ac6670",
-      "agent_run_record": "docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md",
-      "local_runtime_runbook": "docs/recovery/portal-local-runtime-health-runbook.md",
+      "prior_leaf_id": "leaf-portal-opl-file-run-artifact-closure",
+      "prior_absorbed_commit": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
+      "agent_run_record": "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
+      "storage_eval_shell": "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
       "next_leaf_contracts": [
-        "docs/contracts/v22-portal-opl-connection-boundary.md",
-        "docs/contracts/v22-opl-work-message-file-run-boundary.md",
-        "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
-        "docs/contracts/v22-portal-files-billing-trace-boundary.md"
+        "docs/contracts/v22-mvp-managed-opl-loop.md",
+        "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+        "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+        "docs/contracts/v22-smoke-eval-boundary.md",
+        "docs/contracts/v22-production-cloud-topology-boundary.md"
       ],
-      "next_leaf_api_bindings": [
-        "createOplFileRef",
-        "startOplRun",
-        "fetchOplArtifact"
+      "next_leaf_storage_invariants": [
+        "PostgreSQL canonical truth",
+        "Redis session/cache/queue/lock only",
+        "PORTAL_STORAGE_MODE=postgres_redis fail-closed when connection or schema is missing",
+        "idempotencyKey replay cannot double-apply wallet/admin mutations",
+        "restart preserves balances, announcements, billing ops, audit and workspace storage"
       ],
-      "post_absorb_trace_gate": "node scripts/smoke-test-v22-agent-run-record-gate.mjs"
+      "post_absorb_trace_gate": "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs"
     }
   },
   "release_readiness_state": {
@@ -384,6 +395,7 @@
     ]
   },
   "verification_commands": [
+    "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
     "node scripts/smoke-test-v22-goal-state-consistency.mjs",
     "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
     "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",

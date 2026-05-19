@@ -570,6 +570,91 @@
         "docs/recovery/status-matrix.md",
         "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md"
       ]
+    },
+    {
+      "leaf_id": "leaf-portal-postgres-redis-local-production-data-closure",
+      "gap_id": "portal-postgres-redis-local-production-data-closure",
+      "stage": "S5 frontend/backend product completion",
+      "risk_class": "local_service_code",
+      "live_external_allowed": false,
+      "requires_step_local_auth_record": false,
+      "contracts": [
+        "AGENTS.md",
+        "docs/contracts/README.md",
+        "docs/contracts/v22-mvp-managed-opl-loop.md",
+        "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+        "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+        "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+        "docs/contracts/v22-smoke-eval-boundary.md",
+        "docs/contracts/v22-production-cloud-topology-boundary.md",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/mvp-contract-acceptance.md"
+      ],
+      "allowed_files": [
+        "services/portal/src/state/*",
+        "services/portal/src/domain/*",
+        "services/portal/src/app/*",
+        "services/portal/src/routes/*",
+        "services/portal/src/storage/*",
+        "services/portal/src/migrations/*",
+        "services/portal/src/config/*",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/agent-runs/*",
+        "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "forbidden_files": [
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        "real cloud/provider files",
+        "non-allowed recovery or script files",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign"
+      ],
+      "verification_commands": [
+        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "npm --prefix services/portal run check",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts services/portal/src"
+      ],
+      "truth_writeback_target": [
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/status-matrix.md"
+      ]
     }
   ],
   "suites": [
@@ -578,20 +663,17 @@
       "description": "Default agent verification bundle for the current executable leaf.",
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
+        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
         "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
-        "node scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
-        "node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
-        "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-        "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
-        "npm --prefix services/portal/frontend run typecheck",
         "npm --prefix services/portal run check",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs/recovery scripts services/portal/frontend services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src"
+        "git diff --check -- docs/recovery scripts services/portal/src"
       ]
     },
     {
@@ -632,6 +714,7 @@
         "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
         "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/smoke-test-v22-workflow-gate.mjs",
@@ -676,13 +759,69 @@
   ],
   "branch_override_suites": [
     {
+      "id": "post-absorb-portal-opl-truth-and-next-index",
+      "branch": "cleanup/v22-post-absorb-portal-opl-truth-and-next-index",
+      "branches": [
+        "cleanup/v22-post-absorb-portal-opl-truth-and-next-index"
+      ],
+      "description": "Verification bundle for the post-absorb Portal-OPL truth writeback and next leaf index cleanup branch. This branch does not implement PostgreSQL/Redis; it only records the absorbed Portal-OPL result, updates the agent-run record, and indexes the next local production data leaf.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this post-absorb cleanup branch must run only the scoped truth/index gates before B review and must not execute the future PostgreSQL/Redis implementation bundle.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts"
+      ],
+      "allowed_files": [
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/v22-product-completion-scoreboard.json",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
+        "scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation"
+      ]
+    },
+    {
       "id": "portal-workspace-file-action-closure",
       "branch": "feat/v22-portal-workspace-file-action-closure",
       "branches": [
         "feat/v22-portal-workspace-file-action-closure"
       ],
       "description": "Implementation verification bundle for the Step 1 /workspace file-space closure branch. This keeps the Figma UI visually unchanged while wiring the existing workspace storage, entitlement, upload-url and download-url APIs into the Portal frontend and local Portal workspace storage routes.",
-      "reason": "The current product cursor remains leaf-portal-opl-file-run-artifact-closure. This branch executes the Step 1 implementation bundle from the current truth execution index; it must run service-code gates rather than the Step 0 doc-only current-truth bundle.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure. This branch executes the Step 1 implementation bundle from the current truth execution index; it must run service-code gates rather than the Step 0 doc-only current-truth bundle.",
       "risk_class": "local_service_code",
       "commands": [
         "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
@@ -755,7 +894,7 @@
         "cleanup/v22-portal-old-ui-smoke-residue-cleanup"
       ],
       "description": "Verification bundle for the Portal UI contract truth convergence cleanup branches. This keeps Figma UI visuals frozen while retiring old UI current-truth evidence, the active Playwright harness URL, and smoke residue references into the centralized retired frontend surface gate.",
-      "reason": "The current product cursor remains leaf-portal-opl-file-run-artifact-closure, and this cleanup branch must run only the scoped local truth-convergence bundle before B review.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, and this cleanup branch must run only the scoped local truth-convergence bundle before B review.",
       "risk_class": "local_service_code",
       "commands": [
         "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
@@ -840,7 +979,7 @@
         "cleanup/v22-strict-monolith-zero-compat-active-surface"
       ],
       "description": "Verification bundle for the strict monolith cleanup branch. This does not change v22-goal-current.json or advance the current product leaf; it verifies the active cleanup branch truth and deletion-only authorized retired surfaces.",
-      "reason": "The current product cursor remains leaf-portal-opl-file-run-artifact-closure, while this cleanup branch has an explicit B-review requirement to run a branch-appropriate verification bundle without weakening the UI authoring gate.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch has an explicit B-review requirement to run a branch-appropriate verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_service_code",
       "commands": [
         "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
@@ -931,7 +1070,7 @@
         "cleanup/v22-zero-compat-contract-index-runtime-bridge-alignment"
       ],
       "description": "Verification bundle for the zero-compat contract index naming alignment cleanup branch. This does not change v22-goal-current.json or advance the current product leaf; it verifies Runtime Bridge contract package naming, zero-compat narrative boundaries, and B-review workflow gates without running the UI authoring branch gate.",
-      "reason": "The current product cursor remains leaf-portal-opl-file-run-artifact-closure, while this contract-index cleanup branch only aligns Runtime Bridge contract package naming and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this contract-index cleanup branch only aligns Runtime Bridge contract package naming and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_doc_eval",
       "commands": [
         "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
@@ -982,7 +1121,7 @@
         "cleanup/v22-system-domain-truth-layer-zero-old-context"
       ],
       "description": "Verification bundle for the system-domain x truth-layer zero-old-context cleanup branch. This does not change v22-goal-current.json or advance the current product leaf; it verifies old naming, old entry, old explanation, and truth-layer gap cleanup without running the UI authoring branch gate.",
-      "reason": "The current product cursor remains leaf-portal-opl-file-run-artifact-closure, while this cleanup branch only removes old context across system domains and truth layers and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch only removes old context across system domains and truth layers and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_service_code",
       "commands": [
         "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",

@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const currentPath = "docs/recovery/v22-goal-current.json";
 const current = JSON.parse(await readFile(path.join(repoRoot, currentPath), "utf8"));
+const portalOplAbsorbedCommit = "8797ffc6f3ba3747cfac55554012b648fcbfb5c9";
 const requiredRecords = [
   {
     leafId: "leaf-portal-workspace-file-action-closure",
@@ -51,6 +52,38 @@ if (current.current_cursor === "leaf-portal-opl-file-run-artifact-closure") {
       "runtime_notes",
       "non_goals",
       "next_leaf",
+    ],
+  });
+}
+
+if (current.last_absorbed_commit === portalOplAbsorbedCommit) {
+  requiredRecords.push({
+    leafId: "leaf-portal-opl-file-run-artifact-closure",
+    recordPath: "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
+    commitField: "absorbed_commit",
+    commit: portalOplAbsorbedCommit,
+    requiredFields: [
+      "leaf_id",
+      "goal",
+      "model",
+      "subagents_and_models",
+      "branch",
+      "base_trunk_head",
+      "commit_sha",
+      "absorbed_commit",
+      "contract_subscription",
+      "allowed_write_scope",
+      "forbidden_scope",
+      "implementation_summary",
+      "eval_first_changes",
+      "blocker_review_and_fix_log",
+      "verification_commands",
+      "b_review_result",
+      "post_absorb_verification",
+      "runtime_notes",
+      "non_goals",
+      "next_leaf",
+      "remaining_non_goals",
     ],
   });
 }

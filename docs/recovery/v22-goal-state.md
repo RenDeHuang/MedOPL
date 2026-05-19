@@ -9,8 +9,8 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 - leaf manifest schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
 - agent verify manifest: `docs/recovery/v22-agent-verify-manifest.json`
 - autonomous runner policy: `docs/recovery/v22-autonomous-goal-runner-policy.json`
-- current cursor summary: `leaf-portal-opl-file-run-artifact-closure`
-- highest-priority executable leaf summary: `leaf-portal-opl-file-run-artifact-closure`
+- current cursor summary: `leaf-portal-postgres-redis-local-production-data-closure`
+- highest-priority executable leaf summary: `leaf-portal-postgres-redis-local-production-data-closure`
 - release readiness summary: `deferred_authorized_future_stage`
 
 下面的中文摘要只帮助人读状态；任何 runner、gate、B review 选择 current leaf 时必须读取 `docs/recovery/v22-goal-current.json`，再用 consistency gate 对齐 Markdown/gap/scoreboard。
@@ -45,32 +45,32 @@ Autonomous Goal Runner is runner governance only. It lets agents keep using the 
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `feat/v22-portal-opl-file-run-artifact-closure`.
+- authoring/source branch: `feat/v22-portal-postgres-redis-local-production-data-closure`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
-- 当前 goal cursor: `leaf-portal-opl-file-run-artifact-closure`.
-- highest-priority executable leaf step: `leaf-portal-opl-file-run-artifact-closure`.
-- 当前下一问题：S3 OPL connection productionization continues with `leaf-portal-opl-file-run-artifact-closure`; trunk 已吸收 `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 上的 workspace file action closure，并已吸收 `061956f6524dc1e02753f33b326cef9c2f3d390d` 上的 post-absorb 留痕。本 feature 分支执行 Portal-OPL file/run/artifact 本地闭环，不接真实云、不读 secret、不改 upstream、不改 Figma 视觉。
+- 当前 goal cursor: `leaf-portal-postgres-redis-local-production-data-closure`.
+- highest-priority executable leaf step: `leaf-portal-postgres-redis-local-production-data-closure`.
+- 当前下一问题：S5 frontend/backend product completion resumes with `leaf-portal-postgres-redis-local-production-data-closure`; trunk 已吸收 `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 上的 workspace file action closure，已吸收 `061956f6524dc1e02753f33b326cef9c2f3d390d` 上的 post-absorb 留痕，并已在 `8797ffc6f3ba3747cfac55554012b648fcbfb5c9` B 复审、ff-only 吸收、push Portal-OPL file/run/artifact 本地闭环。下一 implementation leaf 只索引 PostgreSQL/Redis 本地生产数据层，不接真实云、不读 secret、不改 upstream、不改 Figma 视觉。
 - release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
 ## Current Leaf Summary
 
-- step_id: `leaf-portal-opl-file-run-artifact-closure`.
-- gap_id: `opl-connection-gateway-preflight-runtime-file-run-artifact-trace`.
-- stage: `S3 OPL connection productionization`.
+- step_id: `leaf-portal-postgres-redis-local-production-data-closure`.
+- gap_id: `portal-postgres-redis-local-production-data-closure`.
+- stage: `S5 frontend/backend product completion`.
 - cursor_eligible: true.
-- eval_command: Step 0 current-truth gate uses `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`; `node scripts/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`. Step 1 implementation eval remains the workspace file-space bundle listed in Step Index.
+- eval_command: Step 0 current-truth gate uses `node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`; `node scripts/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`. The next implementation eval shell is `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`.
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
-- auth_boundary: this feature branch may update the scoped Portal frontend OPL API/action wiring, current truth, manifest, gap matrix, goal summary, agent-run record and the agent-run record gate. It may not change Figma visual/layout/information architecture, read secrets, live-test, mutate true cloud, build/push/kubectl, deploy, or modify upstream.
+- auth_boundary: the next feature branch may update scoped Portal local storage/state/domain/app/routes/migrations/config code, current truth, manifest, gap matrix, goal summary, agent-run record and storage mode eval gates. It may not change Figma visual/layout/information architecture, read secrets, live-test, mutate true cloud, build/push/kubectl, deploy, or modify upstream.
 - truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`, `docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md`.
 - ui_best_practices_boundary: external UI/UX best practices may be used as expression-quality references only; v22 contracts fix the content semantics, service truth, Portal/OPL responsibility boundary, role boundary, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language.
-- implementation_evidence: current leaf now wires existing Portal OPL API clients into the React adapter/page action layer, includes Portal OPL runtime loop and trace-file linkage gates in the surface bundle, and keeps Gateway/Runtime Bridge/upstream boundaries clean.
+- implementation_evidence: previous leaf wires existing Portal OPL API clients into the React adapter/page action layer, includes Portal OPL runtime loop and trace-file linkage gates in the surface bundle, and keeps Gateway/Runtime Bridge/upstream boundaries clean; current leaf is indexed but not yet implemented.
 - design_source_scope: `DESIGN.md` remains a design execution source, not a replacement for contracts, Figma Make ZIP source-of-truth, smoke, or v22 product truth.
-- implementation_scope: this branch closes local Portal-OPL file/run/artifact behavior already represented by existing OPL/Runtime Bridge contracts; it does not change Figma UI visuals, layout or information architecture and does not claim true cloud/runtime deployment.
+- implementation_scope: the current cursor indexes local PostgreSQL/Redis production data closure. PostgreSQL must become canonical truth and Redis must remain session/cache/queue/lock only; this post-absorb truth branch does not implement it and does not claim true cloud/runtime deployment.
 
 ## Completed Facts
 
@@ -93,7 +93,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-opl-connection-productionization-local-implementation completed: Runtime Agent HTTP relay rejects Package D owner fields; no service/upstream/deploy/cloud/secret operation may be present beyond the scoped local hardening.
 - leaf-frontend-product-evalset-gap completed historically: the prior Portal frontend characterization covered API contract, component states, responsive/mobile/table usability, loading/empty/error, and typecheck gates; current implementation truth is now Figma Make ZIP surface gate plus `src/app/data/portalAdapters.ts`.
 - leaf-portal-ui-design-quality-audit was absorbed on `90b3ecd7271a94ff63266aef3bd5f0d5b1f13739`: it defined boundary/rubric/eval/report schema/future handoff for design quality, did not implement UI, and did not freeze a specific aesthetic solution.
-- leaf-portal-figma-make-react-ui-implementation is absorbed as the current user/admin React/Figma Make UI baseline. `leaf-portal-ui-contract-truth-convergence`, `portal-local-api-action-closure`, and `leaf-portal-workspace-file-action-closure` are absorbed/monitor-only facts on trunk; `leaf-portal-opl-file-run-artifact-closure` is now the current feature leaf index for the next Portal-OPL local closure branch.
+- leaf-portal-figma-make-react-ui-implementation is absorbed as the current user/admin React/Figma Make UI baseline. `leaf-portal-ui-contract-truth-convergence`, `portal-local-api-action-closure`, `leaf-portal-workspace-file-action-closure`, and `leaf-portal-opl-file-run-artifact-closure` are absorbed/monitor-only facts on trunk; `leaf-portal-postgres-redis-local-production-data-closure` is now the current feature leaf index for the next local production data layer branch.
 
 ## Step Index
 
@@ -103,12 +103,18 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Step 1 local runtime runbook: `docs/recovery/portal-local-runtime-health-runbook.md`
 - Step 1 completed scope: `/workspace`, `fetchWorkspaceStorage`, `fetchStorageEntitlement`, `createWorkspaceFileUploadUrl`, `createWorkspaceFileDownloadUrl`, signed upload/download, no internal storage identifiers in public responses.
 - Step 1 non-goals: 不接真实云；不读 secret；不改 Figma 视觉；不返回 `objectKey` / `localPath` / `signedUrl` 到浏览器持久状态；不修改 upstream
-- Step 2 current leaf: `leaf-portal-opl-file-run-artifact-closure`
+- Step 2 completed leaf: `leaf-portal-opl-file-run-artifact-closure`
 - Step 2 gap: `opl-connection-gateway-preflight-runtime-file-run-artifact-trace`
+- Step 2 absorbed commit: `8797ffc6f3ba3747cfac55554012b648fcbfb5c9`
 - Step 2 API bindings: `createOplFileRef`, `startOplRun`, `fetchOplArtifact`
 - Step 2 subscribed contracts: `v22-portal-opl-connection-boundary.md`, `v22-opl-work-message-file-run-boundary.md`, `v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `v22-portal-files-billing-trace-boundary.md`, `v22-smoke-eval-boundary.md`, recovery `status-matrix.md`, recovery gap matrix
 - Step 2 eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`, `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`, `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`, `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`, `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
-- Step 2 note: this feature branch implements the local Portal-OPL file/run/artifact closure under existing OPL / Runtime Bridge contracts and eval. B must review and ff-only absorb before a post-absorb truth branch advances the cursor.
+- Step 2 note: this feature branch implemented the local Portal-OPL file/run/artifact closure under existing OPL / Runtime Bridge contracts and eval. B reviewed, ff-only absorbed and pushed it before this post-absorb truth branch advanced the cursor.
+- Step 3 current leaf: `leaf-portal-postgres-redis-local-production-data-closure`
+- Step 3 gap: `portal-postgres-redis-local-production-data-closure`
+- Step 3 eval shell: `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`
+- Step 3 desired local data truth: PostgreSQL canonical truth; Redis session/cache/queue/lock only; `PORTAL_STORAGE_MODE=postgres_redis` fail-closed when connection or schema is missing; admin actions, wallet, announcements, billing ops, audit and workspace storage persist across restart and can later migrate to cloud PostgreSQL/Redis.
+- Step 3 note: this post-absorb truth branch only indexes Step 3 and records the absorbed Step 2 result. It does not implement PostgreSQL/Redis.
 
 ## Historical Leaf Results
 
