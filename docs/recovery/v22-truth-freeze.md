@@ -6,17 +6,20 @@
 
 MedOPL 的最小闭环是托管 OPL 科研工作台闭环，不是云资源控制台闭环：
 
+用户在 Portal 主动开通托管计算资源和文件空间；平台代管底层云资源，普通用户不直接配置 CVM、COS、K8s。
+
 1. 管理员创建 1 名用户。
 2. 管理员给该用户充值额度。
 3. 用户分别登录 `portal.medopl.cn` 与 `opl.medopl.cn`。
 4. `portal.medopl.cn` 登录不需要 gflabtoken API Key。
 5. `opl.medopl.cn` 登录 / 进入 OPL 工作台需要 gflabtoken API Key；输入框位于密码下面，并标明来源于 gflabtoken。
-6. 用户在 Portal 创建工作空间，选择托管计算资源和文件空间。
+6. 用户在 Portal 创建工作空间，主动开通托管计算资源和文件空间；平台代管底层云资源，普通用户不直接配置 CVM、COS、K8s。
 7. Portal 展示用户自己的计算资源、文件空间、工作空间、余额、冻结金额和预扣费状态。
 8. 用户在 clean upstream OPL Web 中发送消息、上传文件、触发 run、下载输出文件。
 9. Portal 回流并展示 workspace 文件、账单、session trace、run、artifact metadata。
-10. 用户释放托管运行环境 / 计算资源，停止计算计费。
-11. 账单日内核对、120min 停止计费确认和 T+1 审计进入 billing / audit 边界。
+10. 用户释放托管运行环境 / 计算资源，停止计算计费；文件空间继续保留。
+11. 用户删除文件空间才进入 7 天保护期，平台保留数据以降低误删风险。
+12. 账单日内核对、120min 停止计费确认和 T+1 审计进入 billing / audit 边界。
 
 ## 当前阶段真相
 
@@ -48,7 +51,7 @@ MedOPL 的最小闭环是托管 OPL 科研工作台闭环，不是云资源控�
 
 - 释放计算资源：停止计算计费和任务续用。
 - 文件空间：独立保留，除非用户删除文件空间或独立欠费保留策略触发。
-- 7 天保护期：由文件空间删除或独立欠费策略触发，不由计算资源释放自动触发。
+- 7 天保护期：用户删除文件空间才进入 7 天保护期，平台保留数据以降低误删风险；释放计算资源不触发文件空间 7 天保护期。
 - 账单确认：计算停止计费需要 120min 内确认。
 - 审计：T+1 审计用于账单、资源释放、文件保留和异常处理核对。
 
@@ -115,12 +118,3 @@ current truth only in `docs/recovery/v22-goal-current.json`。
 verify authority only in `docs/recovery/v22-agent-verify-manifest.json`。
 unified eval entrypoint is `scripts/v22-verify.mjs`。
 agent-runs 保存 leaf 证据，不替代 current truth。
-
-## 物理清退边界
-
-本次清退只移除阶段性事实源：
-
-- `docs/recovery/v22-ai-frontend-backend-development-framework.md`
-- `docs/contracts/v22-canonical-user-loop.md`
-
-这些文件的长期内容已收敛进本 truth freeze、product truth、architecture truth、主合同和 verify manifest。后续不得恢复兼容层、旧 Portal、旧 Adapter、旧 upstream 叙事或阶段性合同作为当前事实源。

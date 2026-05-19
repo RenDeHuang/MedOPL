@@ -41,7 +41,6 @@ const freeze = readText(freezePath);
   "云真相",
   "代码解耦真相",
   "AI 开发治理真相",
-  "物理清退边界",
   "starter_2c4g_10gb",
   "pro_8c16g_100gb",
   "future-authorized",
@@ -54,6 +53,15 @@ const freeze = readText(freezePath);
   "secret plane、object/blob plane、runtime state plane 仍属本地/过渡实现",
   "contracts / truth / index / eval / agent-runs",
 ].forEach((needle) => assertIncludes(freeze, needle, freezePath));
+assertNotIncludes(freeze, "## 物理清退边界", freezePath);
+
+const compactionIndex = readText("docs/recovery/v22-contract-eval-compaction-index.md");
+[
+  "已清退阶段文件索引",
+  "清退证据属于 index / agent-runs / eval 语境",
+  "docs/recovery/v22-ai-frontend-backend-development-framework.md",
+  "docs/contracts/v22-canonical-user-loop.md",
+].forEach((needle) => assertIncludes(compactionIndex, needle, "docs/recovery/v22-contract-eval-compaction-index.md"));
 
 const productTruth = readText("docs/recovery/product-truth.md");
 [

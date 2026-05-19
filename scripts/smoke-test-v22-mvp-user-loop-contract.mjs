@@ -525,21 +525,14 @@ function releaseResourceBinding(state, input) {
   const billingAccount = state.billingAccounts.find((item) => item.id === binding.billingAccountId);
   assert.ok(billingAccount, "billing_account_required_for_release");
   const releasedAt = input.releasedAt;
-  binding.status = "released";
+  binding.status = "compute_released_storage_active";
   binding.releasedAt = releasedAt;
   binding.compute.billingStoppedAt = releasedAt;
-  binding.storage.billingStoppedAt = releasedAt;
-  binding.protection.status = "released";
-  binding.protection.cleanupState = "retention_protected";
-  binding.protection.cleanupEligibleAt = new Date(Date.parse(releasedAt) + 7 * DAY_MS).toISOString();
+  binding.storage.billingStoppedAt = "";
+  binding.protection.status = "compute_released";
+  binding.protection.cleanupState = "storage_active";
+  binding.protection.cleanupEligibleAt = "";
   billingAccount.frozenCents -= binding.protection.remainingCents;
-  state.workspaceFiles
-    .filter((item) => item.resourceBindingId === binding.id)
-    .forEach((file) => {
-      file.status = "retention_protected";
-      file.deletedAt = releasedAt;
-      file.cleanupEligibleAt = binding.protection.cleanupEligibleAt;
-    });
   state.ledger.push({
     id: `ledger-${state.ledger.length + 1}`,
     tenantId: binding.tenantId,
@@ -547,7 +540,7 @@ function releaseResourceBinding(state, input) {
     workspaceId: binding.workspaceId,
     resourceBindingId: binding.id,
     billingAccountId: binding.billingAccountId,
-    type: "resource_billing_stopped",
+    type: "compute_billing_stopped",
     releasedProtectionCents: binding.protection.remainingCents,
     createdAt: releasedAt,
   });
@@ -558,9 +551,53 @@ function releaseResourceBinding(state, input) {
     resourceBindingId: binding.id,
     billingAccountId: binding.billingAccountId,
     auditTag: binding.auditTag,
-    action: "resource_binding_released_billing_stopped",
+    action: "compute_resource_released_billing_stopped_storage_retained",
     boundary: "portal_resource_control_plane",
     createdAt: releasedAt,
+  });
+  return publicClone(binding);
+}
+
+function deleteWorkspaceStorage(state, input) {
+  const binding = state.resourceBindings.find((item) => item.id === input.resourceBindingId);
+  assert.ok(binding, "binding_required_for_storage_delete");
+  assert.equal(binding.storage.deletedAt || "", "", "storage_delete_requires_not_deleted");
+  const deletedAt = input.deletedAt;
+  binding.status = "storage_retention_protected";
+  binding.storage.status = "retention_protected";
+  binding.storage.deletedAt = deletedAt;
+  binding.storage.billingStoppedAt = deletedAt;
+  binding.storage.cleanupEligibleAt = new Date(Date.parse(deletedAt) + 7 * DAY_MS).toISOString();
+  binding.protection.status = "storage_delete_retention_protected";
+  binding.protection.cleanupState = "retention_protected";
+  binding.protection.cleanupEligibleAt = binding.storage.cleanupEligibleAt;
+  state.workspaceFiles
+    .filter((item) => item.resourceBindingId === binding.id)
+    .forEach((file) => {
+      file.status = "retention_protected";
+      file.deletedAt = deletedAt;
+      file.cleanupEligibleAt = binding.storage.cleanupEligibleAt;
+    });
+  state.ledger.push({
+    id: `ledger-${state.ledger.length + 1}`,
+    tenantId: binding.tenantId,
+    userId: binding.userId,
+    workspaceId: binding.workspaceId,
+    resourceBindingId: binding.id,
+    billingAccountId: binding.billingAccountId,
+    type: "storage_delete_retention_started",
+    createdAt: deletedAt,
+  });
+  appendAudit(state, {
+    tenantId: binding.tenantId,
+    userId: binding.userId,
+    workspaceId: binding.workspaceId,
+    resourceBindingId: binding.id,
+    billingAccountId: binding.billingAccountId,
+    auditTag: binding.auditTag,
+    action: "workspace_storage_deleted_retention_protected",
+    boundary: "portal_storage_control_plane",
+    createdAt: deletedAt,
   });
   return publicClone(binding);
 }
@@ -569,9 +606,10 @@ function transitionCleanupAfterProtection(state, input) {
   const nowMs = Date.parse(input.now);
   const binding = state.resourceBindings.find((item) => item.id === input.resourceBindingId);
   assert.ok(binding, "binding_required_for_cleanup_transition");
-  assert.equal(binding.status, "released", "cleanup_transition_requires_released_binding");
+  assert.equal(binding.status, "storage_retention_protected", "cleanup_transition_requires_storage_delete_retention");
   assert.equal(nowMs >= Date.parse(binding.protection.cleanupEligibleAt), true, "cleanup_transition_requires_7_day_protection_elapsed");
   binding.protection.cleanupState = "cleanup_ready";
+  binding.storage.cleanupState = "cleanup_ready";
   state.workspaceFiles
     .filter((item) => item.resourceBindingId === binding.id)
     .forEach((file) => {
@@ -585,7 +623,7 @@ function transitionCleanupAfterProtection(state, input) {
     resourceBindingId: binding.id,
     billingAccountId: binding.billingAccountId,
     auditTag: binding.auditTag,
-    action: "resource_binding_entered_cleanup_ready_after_7_day_protection",
+    action: "workspace_storage_entered_cleanup_ready_after_7_day_protection",
     boundary: "retention_cleanup_controller",
     createdAt: input.now,
   });
@@ -594,12 +632,12 @@ function transitionCleanupAfterProtection(state, input) {
 
 const state = createContractState();
 const { tenant, user, billingAccount, workspace } = createTenantUser(state, {
-  tenantId: "tenant-v22-canonical",
-  userId: "user-v22-canonical",
-  email: "canonical@example.test",
-  slug: "canonical-lab",
-  workspaceId: "workspace-v22-canonical",
-  workspaceSlug: "canonical-workspace",
+  tenantId: "tenant-v22-mvp",
+  userId: "user-v22-mvp",
+  email: "mvp@example.test",
+  slug: "mvp-lab",
+  workspaceId: "workspace-v22-mvp",
+  workspaceSlug: "mvp-workspace",
 });
 
 assert.equal(tenant.runtimeOwnership, "platform_provisioned", "tenant_must_be_platform_provisioned");
@@ -681,7 +719,7 @@ const proWorkspace = {
   id: "workspace-v22-pro",
   tenantId: tenant.id,
   userId: user.id,
-  slug: "canonical-pro-workspace",
+  slug: "mvp-pro-workspace",
   status: "active",
   createdAt: STARTED_AT,
 };
@@ -707,7 +745,7 @@ for (const binding of [starterBinding, proBinding]) {
   assert.equal(binding.userId, user.id, "binding_user_relation_mismatch");
   assert.equal(Boolean(binding.workspaceId), true, "binding_workspace_relation_required");
   assert.equal(binding.billingAccountId, billingAccount.id, "binding_billing_account_relation_mismatch");
-  assert.match(binding.auditTag, /tenant:tenant-v22-canonical\/user:user-v22-canonical\/workspace:/, "binding_audit_tag_must_include_core_relationships");
+  assert.match(binding.auditTag, /tenant:tenant-v22-mvp\/user:user-v22-mvp\/workspace:/, "binding_audit_tag_must_include_core_relationships");
 }
 
 const trace = launchOplWorkspace(state, {
@@ -759,9 +797,10 @@ const released = releaseResourceBinding(state, {
   resourceBindingId: starterBinding.id,
   releasedAt: "2026-05-07T01:00:00.000Z",
 });
-assert.equal(released.status, "released", "release_must_mark_binding_released");
+assert.equal(released.status, "compute_released_storage_active", "release_must_mark_compute_released_storage_active");
 assert.equal(released.compute.billingStoppedAt, "2026-05-07T01:00:00.000Z", "release_must_stop_compute_billing");
-assert.equal(released.storage.billingStoppedAt, "2026-05-07T01:00:00.000Z", "release_must_stop_storage_billing");
+assert.equal(released.storage.billingStoppedAt, "", "release_must_not_stop_storage_billing");
+assert.equal(state.workspaceFiles[0].status, "active", "release_must_not_delete_workspace_file");
 
 const postReleaseCharge = settleRunCost(state, {
   resourceBindingId: starterBinding.id,
@@ -772,12 +811,22 @@ const postReleaseCharge = settleRunCost(state, {
 assert.equal(postReleaseCharge.chargedCents, 0, "released_resource_must_not_accrue_new_charge");
 assert.equal(postReleaseCharge.skippedReason, "billing_stopped_after_release", "released_resource_charge_skip_reason_mismatch");
 
+const storageDeleted = deleteWorkspaceStorage(state, {
+  resourceBindingId: starterBinding.id,
+  deletedAt: "2026-05-07T03:00:00.000Z",
+});
+assert.equal(storageDeleted.status, "storage_retention_protected", "storage_delete_must_enter_retention_protected");
+assert.equal(storageDeleted.storage.billingStoppedAt, "2026-05-07T03:00:00.000Z", "storage_delete_must_stop_storage_billing");
+assert.equal(storageDeleted.storage.cleanupEligibleAt, "2026-05-14T03:00:00.000Z", "storage_delete_must_start_7_day_protection");
+assert.equal(state.workspaceFiles[0].status, "retention_protected", "workspace_file_must_enter_retention_after_storage_delete");
+
 const cleanupReady = transitionCleanupAfterProtection(state, {
   resourceBindingId: starterBinding.id,
-  now: "2026-05-14T01:00:00.001Z",
+  now: "2026-05-14T03:00:00.001Z",
 });
-assert.equal(cleanupReady.protection.cleanupState, "cleanup_ready", "binding_must_enter_cleanup_after_7_day_protection");
-assert.equal(state.workspaceFiles[0].status, "cleanup_ready", "workspace_file_must_enter_cleanup_state_after_protection");
+assert.equal(cleanupReady.protection.cleanupState, "cleanup_ready", "storage_must_enter_cleanup_after_7_day_protection");
+assert.equal(cleanupReady.storage.cleanupState, "cleanup_ready", "storage_cleanup_state_must_be_ready_after_protection");
+assert.equal(state.workspaceFiles[0].status, "cleanup_ready", "workspace_file_must_enter_cleanup_state_after_storage_protection");
 
 const relationAudit = state.auditEvents.find((event) => event.action === "platform_runtime_resource_binding_provisioned");
 assert.ok(relationAudit, "resource_binding_audit_event_required");
@@ -789,7 +838,7 @@ assert.match(relationAudit.auditTag, /binding:rb-1/, "audit_tag_must_include_bin
 
 const contractEvidence = {
   ok: true,
-  contract: "v22_canonical_user_loop",
+  contract: "v22_mvp_user_loop",
   mode: "scripts_only_no_real_cloud",
   branchSafeBoundaries: {
     touchesServices: false,
@@ -825,6 +874,7 @@ const contractEvidence = {
     preauthFrozenCents: 15000,
     runArtifactId: run.artifacts[0].id,
     billingStoppedAt: released.compute.billingStoppedAt,
+    storageRetentionStartedAt: storageDeleted.storage.deletedAt,
     cleanupStateAfterSevenDays: cleanupReady.protection.cleanupState,
   },
 };

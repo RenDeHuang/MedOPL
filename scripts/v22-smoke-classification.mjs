@@ -47,7 +47,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs": "cloud-future-authorized",
-  "scripts/smoke-test-v22-canonical-user-loop-contract.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-contract-eval-compaction.mjs": "default/local-contract",
   "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-cloud-connection-runnable-path.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs": "cloud-future-authorized",
@@ -70,6 +70,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs": "portal-local",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs": "default/local-contract",
   "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs": "opl-local",
+  "scripts/smoke-test-v22-mvp-user-loop-contract.mjs": "default/local-contract",
   "scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs": "portal-local",
   "scripts/smoke-test-v22-opl-acp-runtime-bridge.mjs": "opl-local",
   "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs": "cloud-future-authorized",
@@ -192,9 +193,9 @@ export const HEALTH_CHECK_SCRIPTS = Object.freeze([
 ]);
 
 export const SMOKE_GOLDEN_SCRIPTS = Object.freeze([
-  "scripts/smoke-test-v22-canonical-user-loop-contract.mjs",
   "scripts/smoke-test-v22-managed-environment-open-flow.mjs",
   "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs",
+  "scripts/smoke-test-v22-mvp-user-loop-contract.mjs",
   "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
   "scripts/smoke-test-v22-portal-opl-connection-contract.mjs",
   "scripts/smoke-test-v22-pricing-plan-contract.mjs",
