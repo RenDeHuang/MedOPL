@@ -9,8 +9,8 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 - leaf manifest schema: `docs/recovery/v22-goal-leaf-manifest.schema.json`
 - agent verify manifest: `docs/recovery/v22-agent-verify-manifest.json`
 - autonomous runner policy: `docs/recovery/v22-autonomous-goal-runner-policy.json`
-- current cursor summary: `leaf-portal-local-api-action-closure`
-- highest-priority executable leaf summary: `leaf-portal-local-api-action-closure`
+- current cursor summary: `leaf-portal-workspace-file-action-closure`
+- highest-priority executable leaf summary: `leaf-portal-workspace-file-action-closure`
 - release readiness summary: `deferred_authorized_future_stage`
 
 下面的中文摘要只帮助人读状态；任何 runner、gate、B review 选择 current leaf 时必须读取 `docs/recovery/v22-goal-current.json`，再用 consistency gate 对齐 Markdown/gap/scoreboard。
@@ -45,32 +45,32 @@ Autonomous Goal Runner is runner governance only. It lets agents keep using the 
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `feat/v22-portal-local-api-closure`.
+- authoring/source branch: `cleanup/v22-post-absorb-current-truth`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
-- 当前 goal cursor: `leaf-portal-local-api-action-closure`.
-- highest-priority executable leaf step: `leaf-portal-local-api-action-closure`.
-- 当前下一问题：S5 frontend/backend product completion continues with `leaf-portal-local-api-action-closure`; this branch keeps the Figma Make user/admin Portal UI visually unchanged while closing local Portal API/action wiring for resource activation, admin user operations, announcement operations, site settings, account/logout, billing export behavior and explicit disabled product states.
+- 当前 goal cursor: `leaf-portal-workspace-file-action-closure`.
+- highest-priority executable leaf step: `leaf-portal-workspace-file-action-closure`.
+- 当前下一问题：S5 frontend/backend product completion continues with `leaf-portal-workspace-file-action-closure`; trunk 已吸收 `955fb78866e5f2d4130cec604cc2fbe13ae263e1` 上的 `portal-local-api-action-closure`，所以下一步只绑定现有合同和现有 eval，继续闭合 `/workspace` 文件空间、storage entitlement、upload/download URL 与现有 Portal workspace route/domain/state 的真实对齐，不新增产品合同，不改 Figma 视觉。
 - release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
 
 ## Current Leaf Summary
 
-- step_id: `leaf-portal-local-api-action-closure`.
-- gap_id: `portal-local-api-action-closure`.
+- step_id: `leaf-portal-workspace-file-action-closure`.
+- gap_id: `portal-workspace-file-action-closure`.
 - stage: `S5 frontend/backend product completion`.
 - cursor_eligible: true.
-- eval_command: `node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`; `node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs`; `node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`; `npm --prefix services/portal/frontend run typecheck`; `npm --prefix services/portal run check`.
+- eval_command: Step 0 current-truth gate uses `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`; `node scripts/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`. Step 1 implementation eval remains the workspace file-space bundle listed in Step Index.
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
-- auth_boundary: this feature branch may update Portal frontend API/action wiring, subscribed UI/admin contracts, recovery truth and v22 smoke gates only. No Portal visual/layout/information-architecture changes, no Portal backend services changes, no non-Portal-frontend dependency changes, no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no upstream modification.
-- truth_writeback_target: `DESIGN.md`, `docs/contracts/README.md`, `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/v22-portal-admin-ops-surface-boundary.md`, `docs/contracts/v22-admin-ops-console-boundary.md`, `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/mvp-contract-acceptance.md`, `docs/recovery/status-matrix.md`.
+- auth_boundary: this cleanup branch may update current truth, manifest, gap matrix and goal summary only. Step 1 implementation is indexed but not executed here. No service edits in Step 0, no Portal visual/layout/information-architecture changes, no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no upstream modification.
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`.
 - ui_best_practices_boundary: external UI/UX best practices may be used as expression-quality references only; v22 contracts fix the content semantics, service truth, Portal/OPL responsibility boundary, role boundary, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language.
-- implementation_evidence: current leaf verifies that Figma Make ZIP plus the React/Vite app root remain current Portal UI truth, retired frontend surface remains banned, user/admin visible actions call local Portal APIs or show explicit disabled product states, and Portal user surfaces do not expose transport errors.
+- implementation_evidence: current leaf is an execution index only in this branch. It binds the next Step 1 workspace file-space closure to existing contracts, frontend APIs, `/workspace`, `portalAdapters`, and existing Portal workspace route/domain/state plus the required eval bundle.
 - design_source_scope: `DESIGN.md` remains a design execution source, not a replacement for contracts, Figma Make ZIP source-of-truth, smoke, or v22 product truth.
-- implementation_scope: this feature leaf must not change Figma UI visuals, layout or information architecture; it only closes local Portal API/action behavior that the current Figma UI already exposes.
+- implementation_scope: Step 0 only corrects current truth after trunk absorb. Step 1, when opened in its own implementation branch, must not change Figma UI visuals, layout or information architecture; it only closes workspace file-space behavior that the current Figma UI already exposes.
 
 ## Completed Facts
 
@@ -93,7 +93,20 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - leaf-opl-connection-productionization-local-implementation completed: Runtime Agent HTTP relay rejects Package D owner fields; no service/upstream/deploy/cloud/secret operation may be present beyond the scoped local hardening.
 - leaf-frontend-product-evalset-gap completed historically: the prior Portal frontend characterization covered API contract, component states, responsive/mobile/table usability, loading/empty/error, and typecheck gates; current implementation truth is now Figma Make ZIP surface gate plus `src/app/data/portalAdapters.ts`.
 - leaf-portal-ui-design-quality-audit was absorbed on `90b3ecd7271a94ff63266aef3bd5f0d5b1f13739`: it defined boundary/rubric/eval/report schema/future handoff for design quality, did not implement UI, and did not freeze a specific aesthetic solution.
-- leaf-portal-figma-make-react-ui-implementation is absorbed as the current user/admin React/Figma Make UI baseline. `leaf-portal-ui-contract-truth-convergence` is cleanup-complete; `leaf-portal-local-api-action-closure` is now the current feature leaf that keeps the Figma UI baseline unchanged while closing local Portal API/action behavior.
+- leaf-portal-figma-make-react-ui-implementation is absorbed as the current user/admin React/Figma Make UI baseline. `leaf-portal-ui-contract-truth-convergence` and `portal-local-api-action-closure` are absorbed/monitor-only facts on trunk; `leaf-portal-workspace-file-action-closure` is now the current feature leaf and only indexes the next implementation branch around `/workspace` file-space closure.
+
+## Step Index
+
+- Step 1 current leaf: `leaf-portal-workspace-file-action-closure`
+- Step 1 gap: `portal-workspace-file-action-closure`
+- Step 1 subscribed contracts: `v22-mvp-managed-opl-loop.md`, `v22-saas-control-plane-user-experience-boundary.md`, `v22-portal-figma-make-ui-implementation-boundary.md`, `v22-portal-workbench-management-ui-composition-boundary.md`, `v22-portal-files-billing-trace-boundary.md`, `v22-opl-work-message-file-run-boundary.md`, `v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `v22-portal-structure-failure-isolation-boundary.md`, `v22-smoke-eval-boundary.md`, recovery `status-matrix.md`, recovery gap matrix
+- Step 1 frontend API bindings: `fetchWorkspaceStorage`, `fetchStorageEntitlement`, `createWorkspaceFileUploadUrl`, `createWorkspaceFileDownloadUrl`
+- Step 1 page/files: `/workspace`, `services/portal/frontend/src/api/portal/workspace.ts`, `services/portal/frontend/src/app/pages/Workspace.tsx`, `services/portal/frontend/src/app/data/portalAdapters.ts`, and necessary Portal backend workspace route/domain/state files
+- Step 1 eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`, `node scripts/smoke-test-v22-portal-file-space-management.mjs`, `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`, `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`, `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`, `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
+- Step 1 non-goals: 不接真实云；不读 secret；不改 Figma 视觉；不返回 `objectKey` / `localPath` / `signedUrl` 到浏览器持久状态；不修改 upstream
+- Step 2 indexed-only follow-up: `leaf-portal-opl-file-run-artifact-closure` / `portal-opl-file-run-artifact-closure`
+- Step 2 API bindings: `createOplFileRef`, `startOplRun`, `fetchOplArtifact`
+- Step 2 note: this is not the current executable leaf in this branch; it is only the next indexed follow-up for later OPL file/run/artifact closure under existing OPL / Runtime Bridge contracts and eval.
 - leaf-backend-contract-eval-template completed: backend implementation eval template covers Node 22 ESM, route -> app payload -> domain -> state/persistence, missing-field fallback bans, and legacy primary-path guards.
 - leaf-billing-audit-characterization completed: release stop billing/audit characterization pins `resourceBindingId`, `billingAttributionId`, `workspaceId`, `accountId`, and `serverPlanId`; `resourceOrderId` is not active billing truth.
 - leaf-release-readiness-auth-boundary completed: generic_chat_authorization_insufficient_for_risky_release is recorded; no_release_deploy_operation_executed.

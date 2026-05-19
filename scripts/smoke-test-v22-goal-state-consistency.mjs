@@ -56,6 +56,7 @@ const releasePrerequisites = [
   "cloud-lane-mock-readonly-dry-run-authorized",
   "portal-ui-contract-truth-convergence",
   "frontend-product-react-vite-figma-make",
+  "portal-workspace-file-action-closure",
   "backend-product-node22-esm-layering",
   "billing-audit-preauth-ledger-release-t1",
 ];

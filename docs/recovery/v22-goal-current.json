@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-19",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "67887ac23ac0af4af3ec3ecd2c402a3baceb1fe4",
+  "base_trunk_head": "955fb78866e5f2d4130cec604cc2fbe13ae263e1",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "feat/v22-portal-local-production-closure",
+  "current_branch": "cleanup/v22-post-absorb-current-truth",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-portal-local-production-closure",
+  "authoring_branch": "cleanup/v22-post-absorb-current-truth",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "67887ac23ac0af4af3ec3ecd2c402a3baceb1fe4",
-    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base after commit. This feature branch starts from the absorbed zero-compat contract smoke retirement baseline, then integrates API surface alignment, admin business action closure, PostgreSQL/Redis local storage closure, and billing ops fail-closed handling without changing Figma UI visuals or information architecture. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
+    "observed_git_head": "955fb78866e5f2d4130cec604cc2fbe13ae263e1",
+    "branch_ahead_explanation": "This cleanup authoring branch starts from the already absorbed trunk head 955fb78866e5f2d4130cec604cc2fbe13ae263e1 and only repairs current truth. The absorbed fact is that portal-local-api-action-closure has already landed on trunk; current truth must therefore move to the next executable S5 file-space leaf and record the following OPL file/run/artifact closure as a later indexed step. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "67887ac23ac0af4af3ec3ecd2c402a3baceb1fe4",
-  "current_cursor": "leaf-portal-local-api-action-closure",
-  "next_leaf": "leaf-portal-local-api-action-closure",
+  "last_absorbed_commit": "955fb78866e5f2d4130cec604cc2fbe13ae263e1",
+  "current_cursor": "leaf-portal-workspace-file-action-closure",
+  "next_leaf": "leaf-portal-workspace-file-action-closure",
   "current_stage": "S5 frontend/backend product completion",
-  "current_risk_class": "local_service_code",
+  "current_risk_class": "local_doc_eval",
   "current_blockers": [
-    "none_for_portal_local_production_closure_local_service_code"
+    "step1_workspace_file_action_closure_is_indexed_but_not_executed_in_step0"
   ],
-  "current_problem": "Current product-goal cursor is leaf-portal-local-api-action-closure. This branch keeps the Figma Make user/admin Portal UI visually unchanged and closes local Portal API/action/data wiring across API surface alignment, admin business actions, and PostgreSQL/Redis local storage mode while keeping cloud, secret, deploy, upstream, push, kubectl and live-test out of scope.",
+  "current_problem": "Current product-goal cursor is leaf-portal-workspace-file-action-closure. Trunk has already absorbed portal-local-api-action-closure at 955fb78866e5f2d4130cec604cc2fbe13ae263e1, so current truth now moves to the next S5 workspace file-space closure: keep the Figma Make Portal UI visually unchanged, bind the /workspace page and existing frontend API surface to managed file-space/storage truth, close upload/download/storage entitlement behavior against existing Portal workspace routes/domain/state, and keep cloud, secret, deploy, upstream, push, kubectl and live-test out of scope.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -57,7 +57,7 @@
   },
   "dependency_ordering_repair": {
     "status": "active",
-    "repaired_current_cursor": "leaf-portal-local-api-action-closure",
+    "repaired_current_cursor": "leaf-portal-workspace-file-action-closure",
     "rule": "cleanup_completion truth is historical after B absorption; when no cleanup gap remains open, in_progress, needs_eval, or deferred_authorized_current_path, normal product-goal selection resumes at the lowest-priority eligible non-cleanup leaf."
   },
   "gaps": [
@@ -181,12 +181,25 @@
       "id": "portal-local-api-action-closure",
       "stage": "S5 frontend/backend product completion",
       "priority": 85,
-      "cursor_eligible": true,
-      "status": "in_progress",
-      "next_leaf_step": "leaf-portal-local-api-action-closure",
+      "cursor_eligible": false,
+      "status": "completed",
+      "next_leaf_step": "monitor_only_after_B_absorb",
       "depends_on": [
         "portal-ui-contract-truth-convergence",
         "frontend-product-react-vite-figma-make"
+      ]
+    },
+    {
+      "id": "portal-workspace-file-action-closure",
+      "stage": "S5 frontend/backend product completion",
+      "priority": 86,
+      "cursor_eligible": true,
+      "status": "in_progress",
+      "next_leaf_step": "leaf-portal-workspace-file-action-closure",
+      "depends_on": [
+        "portal-local-api-action-closure",
+        "frontend-product-react-vite-figma-make",
+        "cloud-lane-mock-readonly-dry-run-authorized"
       ]
     },
     {
@@ -228,6 +241,7 @@
         "cloud-lane-mock-readonly-dry-run-authorized",
         "portal-ui-contract-truth-convergence",
         "frontend-product-react-vite-figma-make",
+        "portal-workspace-file-action-closure",
         "backend-product-node22-esm-layering",
         "billing-audit-preauth-ledger-release-t1"
       ]
@@ -259,73 +273,121 @@
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-portal-local-api-action-closure",
-    "gap_id": "portal-local-api-action-closure",
+      "step_id": "leaf-portal-workspace-file-action-closure",
+    "gap_id": "portal-workspace-file-action-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
     "depends_on": [
-      "portal-ui-contract-truth-convergence",
-      "frontend-product-react-vite-figma-make"
+      "portal-local-api-action-closure",
+      "frontend-product-react-vite-figma-make",
+      "cloud-lane-mock-readonly-dry-run-authorized"
     ],
-    "problem": "Figma Make user/admin Portal UI baseline is fixed, but core visible controls and local data truth must close against local Portal APIs instead of mock-only state, empty buttons, stale API exports, or JSON-only persistence. This leaf keeps Figma visuals and information architecture unchanged while wiring resource activation, API surface alignment, local wallet ledger transactions, admin user wallet actions, announcement actions, billing operations, site settings save, header account/logout, billing export product behavior, canonical plan IDs, PostgreSQL/Redis local storage mode, and explicit disabled product states for unsupported billing/cloud operations.",
-    "executable_when": "Figma Make user/admin Portal UI baseline and retired frontend truth convergence are absorbed; this leaf may update Portal frontend API/action wiring, scoped Portal backend local API/action closure code, PostgreSQL/Redis local storage-mode implementation, subscribed UI/admin/storage contracts, recovery truth, and v22 smoke gates only; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no Gateway/Runtime Bridge backend changes, no upstream, and no Figma visual/layout/information-architecture change.",
-    "failure_state": "blocked_portal_local_api_action_closure if it requires Portal page visual changes, Gateway/Runtime Bridge backend changes, secret, live cloud, true cloud mutation, build/push/kubectl, deploy, live-test, upstream changes, JSON fallback in postgres_redis mode, Redis ledger truth, or fake success for unsupported billing/cloud/resource operations.",
+    "problem": "Portal local API/action closure is already absorbed on trunk, but the /workspace file-space surface still needs explicit closure against current truth: file storage summary, entitlement projection, upload URL creation and download URL creation must align with the existing frontend API exports, Workspace page composition, portalAdapters data binding, and Portal backend workspace route/domain/state behavior without leaking raw objectKey, localPath, signedUrl or other storage internals into browser-persisted state.",
+    "executable_when": "portal-local-api-action-closure is absorbed on trunk and Figma Make user/admin Portal UI baseline stays unchanged; this leaf may update recovery truth only here, while Step 1 implementation must subscribe existing contracts and modify the /workspace page plus existing Portal workspace API/route/domain/state files to close file-space behavior. No real cloud, no secret, no Figma visual redesign, no upstream change, no build/push/kubectl, no deploy, no live-test, and no browser-persisted raw storage/path/token leakage are allowed.",
+    "failure_state": "blocked_portal_workspace_file_action_closure if the step requires new product contracts, real cloud/provider access, secret reads, Figma visual redesign, upstream changes, unsupported fake success, or any browser-persisted raw objectKey/localPath/signedUrl/runtime token data.",
     "verification_commands": [
-      "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-      "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
-      "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
-      "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
-      "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-      "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-      "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-      "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
       "node scripts/smoke-test-v22-goal-state-consistency.mjs",
       "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "node scripts/smoke-test-v22-product-goal-harness.mjs",
-      "npm --prefix services/portal/frontend run typecheck",
-      "npm --prefix services/portal run check",
+      "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+      "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+      "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- DESIGN.md docs/contracts docs/recovery scripts services/portal/frontend services/portal/src"
+      "git diff --check -- docs/recovery docs/contracts scripts"
     ],
     "allowed_files": [
-      "services/portal/frontend/**",
-      "services/portal/src/**",
-      "DESIGN.md",
-      "docs/contracts/README.md",
-      "docs/contracts/v22-*",
-      "docs/recovery/*",
-      "scripts/smoke-test-v22-*",
-      "scripts/v22-verify.mjs",
-      "scripts/v22-workflow-gate.mjs",
-      "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-      "scripts/v22-retired-surface-data.mjs"
+      "docs/recovery/v22-goal-current.json",
+      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+      "docs/recovery/v22-agent-verify-manifest.json",
+      "docs/recovery/v22-goal-state.md",
+      "docs/recovery/status-matrix.md",
+      "scripts/smoke-test-v22-goal-state-consistency.mjs"
     ],
     "forbidden_files": [
-      "Portal backend changes outside scoped local API/action closure",
-      "Gateway/Runtime Bridge backend changes unless separately authorized",
-      "non-Portal-frontend dependency files",
+      "services/* in Step 0",
       "deploy/*",
       "adapters/*",
       ".sentrux/*",
-      ".env.demo.template",
-      "upstream one-person-lab",
+      "infra/*",
+      "one-person-lab/*",
+      "upstream/*",
       "secret-like paths",
-      "true cloud runners"
+      "real cloud/provider files",
+      "non-allowed recovery or script files"
     ],
     "truth_writeback_target": [
-      "DESIGN.md",
-      "docs/contracts/README.md",
-      "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
-      "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
-      "docs/contracts/v22-portal-admin-ops-surface-boundary.md",
-      "docs/contracts/v22-admin-ops-console-boundary.md",
       "docs/recovery/v22-goal-current.json",
-      "docs/recovery/v22-goal-state.md",
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
       "docs/recovery/v22-agent-verify-manifest.json",
-      "docs/recovery/mvp-contract-acceptance.md",
+      "docs/recovery/v22-goal-state.md",
       "docs/recovery/status-matrix.md"
-    ]
+    ],
+    "execution_index": {
+      "step_1_leaf_id": "leaf-portal-workspace-file-action-closure",
+      "step_1_gap_id": "portal-workspace-file-action-closure",
+      "step_1_contracts": [
+        "docs/contracts/v22-mvp-managed-opl-loop.md",
+        "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+        "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
+        "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+        "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+        "docs/contracts/v22-opl-work-message-file-run-boundary.md",
+        "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
+        "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
+        "docs/contracts/v22-smoke-eval-boundary.md",
+        "docs/recovery/status-matrix.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+      ],
+      "step_1_frontend_api_bindings": [
+        "fetchWorkspaceStorage",
+        "fetchStorageEntitlement",
+        "createWorkspaceFileUploadUrl",
+        "createWorkspaceFileDownloadUrl"
+      ],
+      "step_1_pages_and_files": [
+        "/workspace",
+        "services/portal/frontend/src/api/portal/workspace.ts",
+        "services/portal/frontend/src/app/pages/Workspace.tsx",
+        "services/portal/frontend/src/app/data/portalAdapters.ts",
+        "services/portal/src/routes/workspace-storage.routes.mjs",
+        "services/portal/src/routes/workspace-storage-route-handlers.mjs",
+        "services/portal/src/app/portal-workspace-runtime.mjs",
+        "services/portal/src/domain/workspace-storage.mjs"
+      ],
+      "step_1_eval": [
+        "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "node scripts/smoke-test-v22-portal-file-space-management.mjs",
+        "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json"
+      ],
+      "step_1_non_goals": [
+        "不接真实云",
+        "不读 secret",
+        "不改 Figma 视觉",
+        "不返回 objectKey/localPath/signedUrl 到浏览器持久状态",
+        "不修改 upstream"
+      ],
+      "step_2_leaf_id": "leaf-portal-opl-file-run-artifact-closure",
+      "step_2_gap_id": "portal-opl-file-run-artifact-closure",
+      "step_2_status": "indexed_only_not_current",
+      "step_2_api_bindings": [
+        "createOplFileRef",
+        "startOplRun",
+        "fetchOplArtifact"
+      ],
+      "step_2_contracts_and_eval": [
+        "docs/contracts/v22-opl-work-message-file-run-boundary.md",
+        "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
+        "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+        "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
+        "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+        "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"
+      ]
+    }
   },
   "release_readiness_state": {
     "status": "deferred_authorized_future_stage",
@@ -348,21 +410,14 @@
     ]
   },
   "verification_commands": [
-    "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-    "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
-    "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
-    "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
-    "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-    "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-    "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-    "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
     "node scripts/smoke-test-v22-goal-state-consistency.mjs",
     "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "node scripts/smoke-test-v22-product-goal-harness.mjs",
-    "npm --prefix services/portal/frontend run typecheck",
-    "npm --prefix services/portal run check",
+    "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+    "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+    "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-    "git diff --check -- DESIGN.md docs/contracts docs/recovery scripts services/portal/frontend services/portal/src"
+    "git diff --check -- docs/recovery docs/contracts scripts"
   ],
   "truth_source_files": [
     "docs/recovery/v22-goal-current.json",
