@@ -147,6 +147,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-real-resource-contract-alignment.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs": "default/local-contract",
   "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs": "portal-local",
+  "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs": "default/local-contract",
   "scripts/smoke-test-v22-repo-zoning-boundary.mjs": "default/local-contract",
   "scripts/smoke-test-v22-resource-plan-contract.mjs": "default/local-contract",
   "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs": "portal-local",

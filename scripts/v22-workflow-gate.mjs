@@ -298,6 +298,13 @@ function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = 
       /^scripts\/(?:smoke-test-no-legacy-billing-paths|smoke-test-v11-cloud-status-ui-contract)\.mjs$/u,
     ].some((pattern) => pattern.test(normalized));
   }
+  if (branchName === "cleanup/v22-repo-governance-physical-compaction") {
+    return [
+      /^configs(?:\/|$)/u,
+      /^scripts\/(?:check-production-entry-health|check-production-entry-performance|update-dnspod-records|smoke-test-root-dockerignore)\.mjs$/u,
+      /^scripts\/fixtures\/fake-kubectl-success\.cmd$/u,
+    ].some((pattern) => pattern.test(normalized));
+  }
   if (branchName !== "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return false;
   return [
     /^adapters\/(?:resource-provisioner|med-autoscience-runner|cloud-provisioner|shared)(?:\/|$)/u,

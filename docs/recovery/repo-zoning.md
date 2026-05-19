@@ -62,7 +62,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | --- | --- | --- | --- | --- | --- |
 | `.env.demo.template` | Zone 2 | review/rewrite | 默认环境变量会影响 AI 和新人对主线的理解，且会触发 secret-like path gate | v22 platform-provisioned defaults | cleanup/v22-env-template-default-entry |
 | `compose.product.yaml` | Zone 2 | review/rewrite | 默认 product compose 可能携带旧运行叙事 | v22 product runtime entry | default-entry |
-| `configs/**` | Zone 2 | review/rewrite | 配置面可能携带旧默认值或真实外部系统暗示 | explicit v22 config | default-entry |
+| `configs/**` | Zone 4 | physically retired | 配置面携带旧 infra/deploy/secret-store 叙事，不属于 v22 active surface | `docs/recovery/v22-repo-governance-physical-compaction-index.md` | repo-governance |
 | `scripts/smoke-test-portal-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 Portal 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-opl-*` | Zone 2 | delete | 无 v22 前缀的 OPL smoke 不再作为 active 验证入口；仍有 v22 价值的本地 Gateway / Runtime Bridge smoke 已迁到 `scripts/smoke-test-v22-*` | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-billing-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 billing 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
@@ -144,6 +144,8 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | deploy/adapters/infra/sentrux | Zone 4 | forbidden_without_authorization | 普通 cleanup 分支不得触碰。 |
 
 default-entry cleanup completed on `cleanup/v22-default-entry-legacy-narrative`: `compose.product.yaml` is a v22 product runtime entry without v19 appliance naming, `user_owned` default mode, legacy runner/provisioner services, or deploy/adapters default wiring.
+
+repo-governance physical compaction completed on `cleanup/v22-repo-governance-physical-compaction`: `configs/**` was physically retired from active repo. `compose.product.yaml` remains as a blocked-retire-candidate because it is still covered by the default-entry narrative gate and may be used by the local PostgreSQL/Redis production-data closure leaf.
 
 env-template cleanup completed on `cleanup/v22-env-template-default-entry`: `.env.demo.template` is now a tracked v22 local template for Portal, OPL Web Gateway, Runtime Bridge, and clean One Person Lab upstream entry wiring. It no longer carries legacy runner, K8s namespace, resource-provisioner, OpenCost billing truth, Langfuse stack image, `user_owned`, or `resource-order` defaults.
 
