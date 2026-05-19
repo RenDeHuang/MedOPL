@@ -39,6 +39,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs": "portal-local",
   "scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs": "portal-local",
   "scripts/smoke-test-v22-agent-verify-entrypoint.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-agent-run-record-gate.mjs": "default/local-contract",
   "scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs": "default/local-contract",
   "scripts/smoke-test-v22-autonomous-goal-runner.mjs": "default/local-contract",

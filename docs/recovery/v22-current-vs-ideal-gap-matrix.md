@@ -240,23 +240,23 @@ Every gap entry must contain:
 ### Gap: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
 
 - id: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
-- current_fact: local contracts prove Gateway/preflight/Runtime Bridge, selected file/run/artifact gates, a local OPL productionization eval shell, and Runtime Agent HTTP relay rejection of Package D owner fields. Production connection is not fully live.
-- ideal_state: Portal -> Gateway -> clean upstream OPL -> Runtime Agent -> file/run/artifact -> Portal trace works without fake 200.
-- problem: canary facts must not become production truth without productionized branch absorption.
-- dependency: OPL capability and file/run/artifact contracts.
+- current_fact: workspace file action closure 已在 trunk `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 吸收；Portal 与 OPL/Gateway/Runtime Bridge 的 file/run/artifact 本地闭环现在成为下一可执行 leaf。已有合同固定 Portal launch、Gateway bootstrap、session bind、workspace file reference、run start、artifact backflow、billing metadata handoff 和 trace projection；本 post-absorb 分支只更新索引、留痕和本地运行态纪律，不实现该 leaf。
+- ideal_state: Portal 可以通过现有 OPL API client 和 Portal OPL routes 发起 workspace-scoped fileRef、run 和 artifact 查询；Gateway/Runtime Bridge 保持 clean upstream 边界；Portal 只展示脱敏 projection，不暴露 raw provider key、launchToken、runtimeToken、objectKey、localPath 或 signedUrl。
+- problem: 下一步需要从 launch-only / trace-only 进入 file/run/artifact 本地闭环；如果没有 current truth 和 manifest 索引，agent 容易跳到云、deploy、upstream 或 fake 200。
+- dependency: architecture-refactor-portal-layering 已满足；workspace file action closure 已吸收并提供 workspace 文件基础能力。
 - depends_on: [architecture-refactor-portal-layering]
-- blocked_by: [true cloud runtime, COS billing reconciliation, Langfuse / trace.medopl.cn, deploy evidence, secret-backed live provider calls]
-- executable_when: repo-local OPL contract/eval/local projection work is scoped and does not require secret/live/cloud/deploy/upstream actions.
+- blocked_by: []
+- executable_when: workspace file action closure 已吸收，且实现只订阅现有 OPL / Runtime Bridge / Portal files billing trace 合同与本地 eval；no secret、no build/push/kubectl、no deploy、no live-test、no true cloud mutation、no upstream modification、no Figma visual redesign。
 - stage: S3 OPL connection productionization
 - priority: 60
-- cursor_eligible: false
-- status: gated
-- next_leaf_step: deferred_authorized_without_step_local_auth_record
-- eval: `node scripts/smoke-test-v22-opl-productionization-contract-refresh.mjs`, `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`, `node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`; Runtime Agent HTTP API proof is retained as historical proof only, not default MVP suite or production deploy evidence.
-- allowed_files: local OPL productionization implementation only under `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/portal/src/domain/opl-work-flow.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs`, `services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-messages.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs`, `services/opl-runtime-bridge/src/run-contract.mjs`, OPL productionization smokes, and scoped recovery truth writeback
-- forbidden_files: upstream one-person-lab, `deploy/*` without authorization, raw provider key paths
-- truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`
-- B_absorb_criteria: B confirms clean upstream one-person-lab boundary, no fake success path, no Package D owner-field leakage, no raw secret/token/storage/path leakage, no canary-only production claim, and no secret/live/cloud/deploy/upstream operation.
+- cursor_eligible: true
+- status: in_progress
+- next_leaf_step: leaf-portal-opl-file-run-artifact-closure
+- eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`; `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`; `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`; `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
+- allowed_files: `services/portal/frontend/src/api/portal/opl.ts`, `services/portal/frontend/src/app/data/portalAdapters.ts`, `services/portal/frontend/src/app/pages/Workspace.tsx`, `services/portal/frontend/src/app/pages/TasksResults.tsx`, `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/opl-web-gateway/src/launch-client-script.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, docs/recovery current truth files, and scoped OPL/Runtime/Portal eval scripts
+- forbidden_files: `deploy/*`; `adapters/*`; `.sentrux/*`; `infra/*`; upstream / one-person-lab; secret-like paths; true cloud/provider files; Figma visual/layout/information-architecture redesign
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`
+- B_absorb_criteria: B confirms Portal-OPL closure remains local, contract-bound and no fake success; B reruns current verify, OPL work flow, Runtime Bridge session/run/file/providerKeyRef flow, Portal files/billing/trace flow, frontend typecheck, Portal check and workflow gate before ff-only absorption.
 
 ### Gap: cloud-lane-mock-readonly-dry-run-authorized
 
@@ -378,33 +378,23 @@ truth writeback section:
 ### Gap: portal-workspace-file-action-closure
 
 - id: portal-workspace-file-action-closure
-- current_fact: trunk 已吸收 local Portal API/action closure，但 `/workspace` 文件空间表面仍需成为下一可执行 leaf：现有 frontend API `fetchWorkspaceStorage`、`fetchStorageEntitlement`、`createWorkspaceFileUploadUrl`、`createWorkspaceFileDownloadUrl` 已存在，相关 Portal workspace route/domain/state 已存在，current truth 现在要求把这些现有 API 与 `/workspace` 页面、`portalAdapters` 和后端 workspace storage truth 对齐成受合同约束的托管文件空间闭环。
-- ideal_state: `/workspace` 上所有文件空间入口都由 typed frontend API 和现有 Portal workspace route/domain/state 驱动；storage summary、entitlement、upload URL、download URL 行为与 v22 文件/计费/trace 合同一致；浏览器持久状态不暴露 `objectKey`、`localPath`、`signedUrl`、raw token 或 runtime token。
-- problem: 当前 trunk 已经完成 local API/action closure，但 workspace file-space 仍缺少明确的 goal/current truth 执行索引，容易继续停留在旧 leaf 或把下一步误写成新合同工作。
+- current_fact: trunk 已吸收 `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670`；/workspace 文件空间动作闭环已完成：现有 frontend API `fetchWorkspaceStorage`、`fetchStorageEntitlement`、`createWorkspaceFileUploadUrl`、`createWorkspaceFileDownloadUrl` 已接到 `/workspace` 页面、`portalAdapters` 和 Portal workspace storage route/domain/state；上传为 file input -> upload-url -> multipart signed upload，下载为 download-url -> signed download。
+- ideal_state: completed and monitor-only after B absorb; 后续只在 regression 破坏 workspace file action closure 时重新打开。
+- problem: 已完成事实需要 agent-run record 和 post-absorb current truth 留痕；本分支补齐留痕，不重新实现 workspace 文件空间功能。
 - dependency: `portal-local-api-action-closure`、`frontend-product-react-vite-figma-make`、`cloud-lane-mock-readonly-dry-run-authorized` 已吸收或完成。
 - depends_on: [portal-local-api-action-closure, frontend-product-react-vite-figma-make, cloud-lane-mock-readonly-dry-run-authorized]
 - blocked_by: []
-- executable_when: 当前 trunk truth 已明确 `portal-local-api-action-closure` 为已完成/monitor-only，且本步只绑定现有合同、现有 frontend API、现有 Portal workspace route/domain/state 与既有 eval，不新增产品合同、不改 Figma 视觉、不接真实云、不读 secret、不改 upstream。
+- executable_when: monitor-only after B absorb; it becomes executable again only if later regression reopens `/workspace` file-space behavior or public response hygiene.
 - stage: S5 frontend/backend product completion
 - priority: 86
-- cursor_eligible: true
-- status: in_progress
-- next_leaf_step: leaf-portal-workspace-file-action-closure
-- eval: Step 0 current-truth gate: `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`; `node scripts/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`. Step 1 implementation eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`; `node scripts/smoke-test-v22-portal-file-space-management.mjs`; `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`; `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
-- allowed_files: Step 0 current-truth writeback 仅允许 `docs/recovery/v22-goal-current.json`、`docs/recovery/v22-current-vs-ideal-gap-matrix.md`、`docs/recovery/v22-agent-verify-manifest.json`、`docs/recovery/v22-goal-state.md`、`docs/recovery/status-matrix.md`，以及如有必要的 `scripts/smoke-test-v22-goal-state-consistency.mjs`
-- forbidden_files: `services/*` in Step 0；`deploy/*`；`adapters/*`；`.sentrux/*`；`infra/*`；upstream / one-person-lab；secret-like paths；真实云/真实 provider 文件
-- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`
-- B_absorb_criteria: B confirms current truth no longer stays on old authoring branch / `67887ac` / `leaf-portal-local-api-action-closure`, confirms Step 1 index binds only existing contracts and eval, confirms Step 2 is indexed but not current, and reruns `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` without weakening core gates.
-
-- Step 1 execution index contracts: `docs/contracts/v22-mvp-managed-opl-loop.md`, `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`, `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`, `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`, `docs/contracts/v22-portal-files-billing-trace-boundary.md`, `docs/contracts/v22-opl-work-message-file-run-boundary.md`, `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`, `docs/contracts/v22-smoke-eval-boundary.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-- Step 1 execution index frontend API: `fetchWorkspaceStorage`, `fetchStorageEntitlement`, `createWorkspaceFileUploadUrl`, `createWorkspaceFileDownloadUrl`
-- Step 1 execution index page/files: `/workspace`, `services/portal/frontend/src/api/portal/workspace.ts`, `services/portal/frontend/src/app/pages/Workspace.tsx`, `services/portal/frontend/src/app/data/portalAdapters.ts`, plus necessary Portal backend workspace route/domain/state files
-- Step 1 execution index non-goals: 不接真实云；不读 secret；不改 Figma 视觉；不返回 `objectKey` / `localPath` / `signedUrl` 到浏览器持久状态；不修改 upstream
-
-- Step 2 indexed-only follow-up leaf: `leaf-portal-opl-file-run-artifact-closure`
-- Step 2 indexed-only follow-up gap: `portal-opl-file-run-artifact-closure`
-- Step 2 API bindings: `createOplFileRef`, `startOplRun`, `fetchOplArtifact`
-- Step 2 contracts/eval anchor: existing OPL / Runtime Bridge contracts and eval only; it must subscribe `v22-opl-work-message-file-run-boundary.md`, `v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `v22-portal-files-billing-trace-boundary.md` and existing OPL/Runtime Bridge eval bundles when that later leaf is opened. Step 2 is not the current executable leaf in this branch.
+- cursor_eligible: false
+- status: completed
+- next_leaf_step: monitor_only_after_B_absorb
+- eval: `node scripts/smoke-test-v22-workspace-storage-public-response.mjs`; `node scripts/smoke-test-v22-agent-run-record-gate.mjs`; `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- allowed_files: monitor-only; post-absorb trace branch may write `docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md`, `docs/recovery/portal-local-runtime-health-runbook.md`, current truth and gate metadata
+- forbidden_files: `services/*` in this post-absorb trace branch; `deploy/*`; `adapters/*`; `.sentrux/*`; `infra/*`; upstream / one-person-lab; secret-like paths; true cloud/provider files; `.runtime/*`
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/status-matrix.md`, `docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md`, `docs/recovery/portal-local-runtime-health-runbook.md`
+- B_absorb_criteria: B confirms workspace leaf is completed/monitor-only, agent-run record exists, local runtime runbook exists, agent-run gate passes, and current cursor advances to `leaf-portal-opl-file-run-artifact-closure` without implementing that leaf.
 
 ### Gap: backend-product-node22-esm-layering
 
