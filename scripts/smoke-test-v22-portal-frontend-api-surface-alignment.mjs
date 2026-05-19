@@ -89,10 +89,6 @@ const unusedAdjudications = {
     status: "active-missing-ui",
     reason: "Product direction allows package adjustment, but current runtime UI only wires activation/custom activation.",
   },
-  "lab.ts:purchaseLabStorageAddon": {
-    status: "active-missing-ui",
-    reason: "Product direction allows independent storage expansion, but current runtime UI has no storage-addon action.",
-  },
   "opl.ts:sendOplMessage": {
     status: "future-reserved",
     reason: "Real provider message canary exists, but Portal's current product surface is OPL launch/session binding rather than embedded chat.",
@@ -109,14 +105,6 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Portal currently launches OPL and shows traces; direct run submission is not active UI.",
   },
-  "opl.ts:fetchOplRunStatus": {
-    status: "future-reserved",
-    reason: "Direct OPL run status polling is reserved for the future bridge backflow UI.",
-  },
-  "opl.ts:fetchOplRunArtifacts": {
-    status: "future-reserved",
-    reason: "Artifact listing is not wired into the current workspace/trace UI.",
-  },
   "opl.ts:fetchOplArtifact": {
     status: "future-reserved",
     reason: "Artifact retrieval is not wired into the current workspace/trace UI.",
@@ -125,41 +113,9 @@ const unusedAdjudications = {
     status: "backend-only",
     reason: "Public settings are consumed by the server-rendered public home and admin system payload, not directly by the React app.",
   },
-  "resources.ts:createComputeInstance": {
-    status: "future-reserved",
-    reason: "Low-level platform-provisioned compute mutation is not wired by the current ordinary user React resource surface.",
-  },
-  "resources.ts:createStorageBucket": {
-    status: "future-reserved",
-    reason: "Low-level platform-provisioned storage mutation is not wired by the current ordinary user React resource surface.",
-  },
-  "resources.ts:bindWorkspaceResource": {
-    status: "future-reserved",
-    reason: "Direct binding mutation is below the current package/runtime UI level.",
-  },
-  "resources.ts:unbindWorkspaceResource": {
-    status: "future-reserved",
-    reason: "Direct unbind mutation is not exposed by the current React UI.",
-  },
-  "resources.ts:deleteComputeInstance": {
-    status: "future-reserved",
-    reason: "Compute release requires a productized confirmation flow before becoming active UI.",
-  },
-  "resources.ts:deleteStorageBucket": {
-    status: "future-reserved",
-    reason: "Storage deletion requires a productized confirmation flow before becoming active UI.",
-  },
-  "resources.ts:ensureProtectionFreeze": {
-    status: "backend-only",
-    reason: "Protection freeze is part of billing/resource lifecycle bookkeeping, not a direct current UI action.",
-  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",
-  },
-  "server-plans.ts:selectServerPlan": {
-    status: "future-reserved",
-    reason: "Server plan selection is not the current ordinary user UI path while package activation is active.",
   },
   "sessions.ts:fetchSessions": {
     status: "future-reserved",
@@ -180,10 +136,6 @@ const unusedAdjudications = {
   "workspace.ts:fetchStorageEntitlement": {
     status: "active-missing-ui",
     reason: "Storage entitlement should gate future upload/download and expansion controls, but is not read by current UI.",
-  },
-  "workspace.ts:createStorageOrder": {
-    status: "active-missing-ui",
-    reason: "Independent storage purchase is a product need, but no current Workspace/Runtime control calls this client.",
   },
   "workspace.ts:createWorkspaceFileUploadUrl": {
     status: "active-missing-ui",
