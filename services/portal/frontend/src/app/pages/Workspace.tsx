@@ -141,6 +141,17 @@ export function Workspace() {
     }
   }
 
+  function renderOplEntryButton({ variant, className, showArrow = false }: { variant?: "outline"; className?: string; showArrow?: boolean } = {}) {
+    return (
+      <Button asChild variant={variant} className={className} title={model.runStartMessage || "进入 OPL 工作台"}>
+        <Link to="/opl-launch">
+          进入 OPL
+          {showArrow && <ArrowRight className="w-4 h-4" />}
+        </Link>
+      </Button>
+    );
+  }
+
   // Empty Inputs State
   if (pageState === "empty-inputs") {
     return (
@@ -170,12 +181,7 @@ export function Workspace() {
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件
               </Button>
-              <Button asChild className="gap-2">
-                <Link to="/opl-launch">
-                  进入 OPL
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
+              {renderOplEntryButton({ className: "gap-2", showArrow: true })}
             </div>
           </div>
         </div>
@@ -239,9 +245,7 @@ export function Workspace() {
               <Upload className="w-4 h-4 mr-2" />
               上传文件
             </Button>
-            <Button asChild variant="outline">
-              <Link to="/opl-launch">进入 OPL</Link>
-            </Button>
+            {renderOplEntryButton({ variant: "outline" })}
           </div>
         </div>
       </div>
@@ -265,12 +269,7 @@ export function Workspace() {
               <Button asChild variant="outline">
                 <Link to="/trace">查看任务与结果</Link>
               </Button>
-              <Button asChild className="gap-2">
-                <Link to="/opl-launch">
-                  进入 OPL
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
+              {renderOplEntryButton({ className: "gap-2", showArrow: true })}
             </div>
           </div>
         </div>
@@ -329,9 +328,7 @@ export function Workspace() {
             <Button asChild variant="outline">
               <Link to="/trace">查看任务与结果</Link>
             </Button>
-            <Button asChild>
-              <Link to="/opl-launch">进入 OPL</Link>
-            </Button>
+            {renderOplEntryButton()}
           </div>
         </div>
       </div>
@@ -407,12 +404,7 @@ export function Workspace() {
               <Download className="w-4 h-4 mr-2" />
               下载全部结果
             </Button>
-            <Button asChild className="gap-2">
-              <Link to="/opl-launch">
-                进入 OPL
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
+            {renderOplEntryButton({ className: "gap-2", showArrow: true })}
           </div>
         </div>
       </div>

@@ -45,14 +45,14 @@ Autonomous Goal Runner is runner governance only. It lets agents keep using the 
 
 - 当前 trunk HEAD: see `docs/recovery/v22-goal-current.json`.
 - branch baseline: `origin/recovery/platform-v22-trunk`.
-- authoring/source branch: `cleanup/v22-post-absorb-agent-loop-runtime-trace`.
+- authoring/source branch: `feat/v22-portal-opl-file-run-artifact-closure`.
 - target branch: `recovery/platform-v22-trunk`.
 - branch field semantics: `v22-goal-current.json` 是 trunk current truth；`authoring_branch` / `current_branch` 只记录最近写入该 truth 的分支来源，不绑定 runtime git branch。
 - head field semantics: `base_trunk_head` = 本 leaf 写入时基线；`expected_absorbed_head` = B ff-only absorb 后的 trunk 目标 HEAD 解析规则，而不是写死在同一提交里的 SHA；`last_absorbed_commit` = 上一个已吸收事实，不等同于当前分支 commit，除非已经在 trunk 上。
 - model: gpt-5.4.
 - 当前 goal cursor: `leaf-portal-opl-file-run-artifact-closure`.
 - highest-priority executable leaf step: `leaf-portal-opl-file-run-artifact-closure`.
-- 当前下一问题：S3 OPL connection productionization continues with `leaf-portal-opl-file-run-artifact-closure`; trunk 已吸收 `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 上的 workspace file action closure，所以下一步进入 Portal-OPL file/run/artifact 本地闭环索引。本 post-absorb 分支只补 agent-run 留痕、本地 UI 运行态 runbook 和 gate，不实现下一 leaf，不改 Figma 视觉。
+- 当前下一问题：S3 OPL connection productionization continues with `leaf-portal-opl-file-run-artifact-closure`; trunk 已吸收 `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 上的 workspace file action closure，并已吸收 `061956f6524dc1e02753f33b326cef9c2f3d390d` 上的 post-absorb 留痕。本 feature 分支执行 Portal-OPL file/run/artifact 本地闭环，不接真实云、不读 secret、不改 upstream、不改 Figma 视觉。
 - release readiness 当前状态: `deferred_authorized_future_stage`.
 
 B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行声明全局完成。B 吸收后 cursor 才能前进。
@@ -65,12 +65,12 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - cursor_eligible: true.
 - eval_command: Step 0 current-truth gate uses `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`; `node scripts/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`. Step 1 implementation eval remains the workspace file-space bundle listed in Step Index.
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
-- auth_boundary: this cleanup branch may update current truth, manifest, gap matrix, goal summary, agent-run record, local runtime runbook and the agent-run record gate only. The next Portal-OPL implementation leaf is indexed but not executed here. No service edits, no Portal visual/layout/information-architecture changes, no secret, no live-test, no true cloud mutation, no build/push/kubectl, no deploy, no upstream modification.
-- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`.
+- auth_boundary: this feature branch may update the scoped Portal frontend OPL API/action wiring, current truth, manifest, gap matrix, goal summary, agent-run record and the agent-run record gate. It may not change Figma visual/layout/information architecture, read secrets, live-test, mutate true cloud, build/push/kubectl, deploy, or modify upstream.
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`, `docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md`.
 - ui_best_practices_boundary: external UI/UX best practices may be used as expression-quality references only; v22 contracts fix the content semantics, service truth, Portal/OPL responsibility boundary, role boundary, secret hygiene, billing/release/file/task/result truth, and no-cloud-console language.
-- implementation_evidence: current leaf is the next execution index only in this branch. It binds the future Portal-OPL file/run/artifact closure to existing contracts, OPL API clients, Portal OPL routes, Gateway/Runtime Bridge boundaries, workspace file references, run/artifact projection and the required eval bundle.
+- implementation_evidence: current leaf now wires existing Portal OPL API clients into the React adapter/page action layer, includes Portal OPL runtime loop and trace-file linkage gates in the surface bundle, and keeps Gateway/Runtime Bridge/upstream boundaries clean.
 - design_source_scope: `DESIGN.md` remains a design execution source, not a replacement for contracts, Figma Make ZIP source-of-truth, smoke, or v22 product truth.
-- implementation_scope: this branch only corrects post-absorb current truth, agent traceability and local runtime health discipline. The next feature branch must not change Figma UI visuals, layout or information architecture; it only closes Portal-OPL file/run/artifact behavior already represented by existing OPL/Runtime Bridge contracts.
+- implementation_scope: this branch closes local Portal-OPL file/run/artifact behavior already represented by existing OPL/Runtime Bridge contracts; it does not change Figma UI visuals, layout or information architecture and does not claim true cloud/runtime deployment.
 
 ## Completed Facts
 
@@ -108,7 +108,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Step 2 API bindings: `createOplFileRef`, `startOplRun`, `fetchOplArtifact`
 - Step 2 subscribed contracts: `v22-portal-opl-connection-boundary.md`, `v22-opl-work-message-file-run-boundary.md`, `v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `v22-portal-files-billing-trace-boundary.md`, `v22-smoke-eval-boundary.md`, recovery `status-matrix.md`, recovery gap matrix
 - Step 2 eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`, `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`, `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`, `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`, `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
-- Step 2 note: this post-absorb branch only indexes the next Portal-OPL file/run/artifact closure; the implementation must be opened in its own feature branch under existing OPL / Runtime Bridge contracts and eval.
+- Step 2 note: this feature branch implements the local Portal-OPL file/run/artifact closure under existing OPL / Runtime Bridge contracts and eval. B must review and ff-only absorb before a post-absorb truth branch advances the cursor.
 
 ## Historical Leaf Results
 

@@ -16,6 +16,8 @@ const groups = new Map([
   ]],
   ["surface", [
     "scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+    "scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
+    "scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
     "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
     "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
     "scripts/smoke-test-v22-admin-ops-disabled-product-state.mjs",

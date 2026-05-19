@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -31,24 +31,13 @@ import {
   Filter,
   ArrowRight
 } from "lucide-react";
-import { loadTasksResultsModel, usePortalQuery } from "../data/portalAdapters";
-import { Link } from "react-router";
+import { loadTasksResultsModel, usePortalQuery, type OplArtifactView, type TaskItem } from "../data/portalAdapters";
+import { Link, useNavigate } from "react-router";
 
 type TaskStatus = "running" | "completed" | "failed" | "waiting";
 type PageState = "ready" | "empty" | "filtered-empty" | "degraded" | "loading";
 
-interface Task {
-  id: string;
-  name: string;
-  workspace: string;
-  status: TaskStatus;
-  startTime: string;
-  duration: string;
-  cost: string;
-  outputFiles: number;
-  outputFileNames?: string[];
-  resourceUsage: string;
-}
+type Task = TaskItem;
 
 function getStatusBadge(status: TaskStatus) {
   const variants: Record<TaskStatus, { variant: string; icon: JSX.Element; text: string }> = {
@@ -85,10 +74,13 @@ function getStatusBadge(status: TaskStatus) {
 }
 
 export function TasksResults() {
+  const navigate = useNavigate();
   const query = usePortalQuery(loadTasksResultsModel, []);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [pendingArtifactTask, setPendingArtifactTask] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState("");
 
   if (query.status === "loading") {
     return (
@@ -106,7 +98,33 @@ export function TasksResults() {
     );
   }
 
-  const tasks = query.data.tasks;
+  const model = query.data;
+  const tasks = model.tasks;
+  const workspaceOptions = model.workspaceOptions;
+
+  async function handleViewArtifact(task: Task) {
+    setActionMessage("");
+    setPendingArtifactTask(task.id);
+    try {
+      const artifact: OplArtifactView = await model.resolveTraceArtifact(task);
+      setActionMessage(`${artifact.name || artifact.artifactRef} 已确认回流，类型 ${artifact.contentType || artifact.kind}，大小 ${artifact.sizeBytes} B。`);
+      return true;
+    } catch {
+      setActionMessage(task.artifactActionMessage || "当前任务结果暂不可读取，请稍后重试。");
+      return false;
+    } finally {
+      setPendingArtifactTask(null);
+    }
+  }
+
+  async function handleOpenResult(event: MouseEvent<HTMLAnchorElement>, task: Task) {
+    event.preventDefault();
+    if (pendingArtifactTask) return;
+    const resolved = await handleViewArtifact(task);
+    if (resolved || task.outputFileRef) {
+      navigate("/workspace");
+    }
+  }
 
   // Filter tasks based on current filters
   const filteredTasks = tasks.filter((task) => {
@@ -250,10 +268,9 @@ export function TasksResults() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部工作空间</SelectItem>
-                  <SelectItem value="生物信息学实验">生物信息学实验</SelectItem>
-                  <SelectItem value="科研文献分析">科研文献分析</SelectItem>
-                  <SelectItem value="药物筛选项目">药物筛选项目</SelectItem>
-                  <SelectItem value="医学影像分析">医学影像分析</SelectItem>
+                  {workspaceOptions.map((workspace) => (
+                    <SelectItem key={workspace} value={workspace}>{workspace}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select defaultValue="7days">
@@ -383,10 +400,9 @@ export function TasksResults() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部工作空间</SelectItem>
-                <SelectItem value="生物信息学实验">生物信息学实验</SelectItem>
-                <SelectItem value="科研文献分析">科研文献分析</SelectItem>
-                <SelectItem value="药物筛选项目">药物筛选项目</SelectItem>
-                <SelectItem value="医学影像分析">医学影像分析</SelectItem>
+                {workspaceOptions.map((workspace) => (
+                  <SelectItem key={workspace} value={workspace}>{workspace}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select defaultValue="7days">
@@ -405,6 +421,10 @@ export function TasksResults() {
       </Card>
 
       {/* Tasks Table */}
+      {actionMessage && (
+        <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+      )}
+
       <Card className="border border-neutral-200">
         <div className="overflow-x-auto">
           <Table>
@@ -471,15 +491,29 @@ export function TasksResults() {
                   </TableCell>
                   <TableCell className="text-right">
                     {task.outputFiles > 0 ? (
-                      <Button asChild size="sm" variant="ghost" className="gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                        <Link to="/workspace">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        title={task.artifactActionMessage || "读取 OPL artifact 投影"}
+                      >
+                        <Link
+                          to="/workspace"
+                          onClick={(event) => handleOpenResult(event, task)}
+                          aria-disabled={pendingArtifactTask === task.id}
+                        >
                           查看结果
                           <ArrowRight className="w-3 h-3" />
                         </Link>
                       </Button>
                     ) : (
                       <Button asChild size="sm" variant="ghost" className="gap-1">
-                        <Link to="/trace">
+                        <Link
+                          to="/trace"
+                          onClick={() => setActionMessage(task.artifactActionMessage || "当前任务还没有回流的结果文件。")}
+                          title="当前任务还没有回流的结果文件"
+                        >
                           查看详情
                           <ExternalLink className="w-3 h-3" />
                         </Link>

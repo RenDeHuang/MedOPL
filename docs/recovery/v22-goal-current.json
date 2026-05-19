@@ -6,16 +6,16 @@
   "last_updated_at": "2026-05-19",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "6b9485c0a9a02e23524c4776e6e0d2ef76ac6670",
+  "base_trunk_head": "061956f6524dc1e02753f33b326cef9c2f3d390d",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
     "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
   },
   "trunk_head": "compatibility_alias_for_expected_absorbed_head_not_static_base",
-  "current_branch": "cleanup/v22-post-absorb-agent-loop-runtime-trace",
+  "current_branch": "feat/v22-portal-opl-file-run-artifact-closure",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "cleanup/v22-post-absorb-agent-loop-runtime-trace",
+  "authoring_branch": "feat/v22-portal-opl-file-run-artifact-closure",
   "target_branch": "recovery/platform-v22-trunk",
   "git_observation": {
     "expected_trunk_head": {
@@ -23,18 +23,18 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "6b9485c0a9a02e23524c4776e6e0d2ef76ac6670",
-    "branch_ahead_explanation": "This cleanup authoring branch starts from the already absorbed trunk head 6b9485c0a9a02e23524c4776e6e0d2ef76ac6670 and records post-absorb agent-loop traceability for the completed workspace file action closure. It advances current truth to the next executable Portal-OPL file/run/artifact closure without implementing that leaf, without touching services, without reading secrets, without real cloud, without deploy/build/push/kubectl/live-test, and without upstream modification."
+    "observed_git_head": "061956f6524dc1e02753f33b326cef9c2f3d390d",
+    "branch_ahead_explanation": "This feature authoring branch starts from the already absorbed trunk head 061956f6524dc1e02753f33b326cef9c2f3d390d and implements the local Portal-OPL file/run/artifact closure under existing contracts. It wires existing Portal OPL API clients into the React/Figma UI action layer, keeps Runtime Bridge/Gateway/upstream clean, does not read secrets, does not call real cloud, does not build/push/kubectl/live-test/deploy, and does not modify upstream."
   },
-  "last_absorbed_commit": "6b9485c0a9a02e23524c4776e6e0d2ef76ac6670",
+  "last_absorbed_commit": "061956f6524dc1e02753f33b326cef9c2f3d390d",
   "current_cursor": "leaf-portal-opl-file-run-artifact-closure",
   "next_leaf": "leaf-portal-opl-file-run-artifact-closure",
   "current_stage": "S3 OPL connection productionization",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "portal_opl_file_run_artifact_closure_not_executed_in_this_post_absorb_trace_branch"
+    "pending_B_review_ff_only_absorb_for_portal_opl_file_run_artifact_closure"
   ],
-  "current_problem": "Trunk has absorbed workspace file action closure at 6b9485c0a9a02e23524c4776e6e0d2ef76ac6670. Current truth now moves to the next Portal-OPL file/run/artifact closure: connect existing Portal OPL API clients, Portal OPL routes, Gateway/Runtime Bridge boundaries, workspace file references, run start, artifact backflow, billing metadata and trace projection under existing contracts. This post-absorb branch only records traceability and local runtime health discipline; it does not implement the next leaf and does not call real cloud, read secrets, modify upstream, build/push/kubectl, deploy or live-test.",
+  "current_problem": "Trunk has absorbed workspace file action closure at 6b9485c0a9a02e23524c4776e6e0d2ef76ac6670 and post-absorb trace at 061956f6524dc1e02753f33b326cef9c2f3d390d. Current feature work is the Portal-OPL file/run/artifact local closure: connect existing Portal OPL API clients, Portal OPL routes, Gateway/Runtime Bridge boundaries, workspace file references, run start, artifact backflow, billing metadata and trace projection under existing contracts. This branch remains local-service-code only and does not call real cloud, read secrets, modify upstream, build/push/kubectl, deploy or live-test.",
   "scoreboard_boundary": "product_completion_only_not_execution_order",
   "execution_order_source": "v22-goal-current.json + gap matrix depends_on/executable_when/cursor_eligible",
   "stage_order": [
@@ -286,6 +286,8 @@
     "verification_commands": [
       "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
       "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+      "node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
+      "node scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
       "node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
       "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
       "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
@@ -312,7 +314,10 @@
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/status-matrix.md",
+      "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
       "scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+      "scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
+      "scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
       "scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
       "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
       "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
@@ -404,6 +409,7 @@
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/v22-agent-verify-manifest.json",
     "docs/recovery/status-matrix.md",
+    "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
     "docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md",
     "docs/recovery/portal-local-runtime-health-runbook.md",
     "scripts/smoke-test-v22-agent-run-record-gate.mjs",

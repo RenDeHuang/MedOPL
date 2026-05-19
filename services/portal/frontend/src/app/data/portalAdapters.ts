@@ -11,7 +11,14 @@ import {
 import { fetchBillingDetails, fetchBillingSummary } from "../../api/portal/billing";
 import { fetchCurrentUser } from "../../api/portal/commercial";
 import { fetchOverview } from "../../api/portal/overview";
-import { bindOplSession, createOplLaunch, fetchOplBootstrap } from "../../api/portal/opl";
+import {
+  bindOplSession,
+  createOplFileRef,
+  createOplLaunch,
+  fetchOplArtifact,
+  fetchOplBootstrap,
+  startOplRun,
+} from "../../api/portal/opl";
 import { fetchMyResources, fetchOplLaunchStatus } from "../../api/portal/resources";
 import { fetchAnnouncements } from "../../api/portal/sessions";
 import { fetchSessionTraces } from "../../api/portal/traces";
@@ -75,7 +82,9 @@ export interface FileItem {
   id: string;
   name: string;
   size: string;
+  sizeBytes: number;
   type: string;
+  contentType: string;
   updated: string;
   kind: "inputs" | "outputs";
   relativePath: string;
@@ -84,6 +93,7 @@ export interface FileItem {
   taskId?: string;
   taskName?: string;
   fileRef?: string;
+  artifactRef?: string;
   sessionId?: string;
 }
 
@@ -98,6 +108,19 @@ export interface TaskItem {
   outputFiles: number;
   outputFileNames?: string[];
   resourceUsage: string;
+  artifactRef?: string;
+  outputFileRef?: string;
+  launchId?: string;
+  artifactActionEnabled?: boolean;
+  artifactActionMessage?: string;
+}
+
+export interface OplArtifactView {
+  artifactRef: string;
+  name: string;
+  contentType: string;
+  sizeBytes: number;
+  kind: string;
 }
 
 function numberValue(value: unknown, fallback = 0) {
@@ -151,6 +174,22 @@ function downloadTargetUrl(url: string) {
 function fileType(name: string) {
   const ext = name.split(".").pop();
   return ext ? ext.toLowerCase() : "file";
+}
+
+function contentTypeFromName(name: string) {
+  const ext = fileType(name);
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "csv") return "text/csv";
+  if (ext === "json") return "application/json";
+  if (ext === "txt") return "text/plain";
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return "application/octet-stream";
+}
+
+function currentLaunchId() {
+  const launchId = new URLSearchParams(window.location.search).get("launchId");
+  return typeof launchId === "string" && launchId.trim() ? launchId.trim() : "";
 }
 
 function relativePathFromFile(value: { name?: string; fullPath?: string; relativePath?: string }) {
@@ -246,6 +285,7 @@ export async function loadRuntimeEnvironmentModel() {
 
 export async function loadWorkspaceModel() {
   const workspace = await fetchWorkspace();
+  const launchId = currentLaunchId();
   const workspaceId = workspace.workspace.slug;
   const sessionId = workspace.activeSession?.id || workspace.outputs.find((file) => file.sessionId)?.sessionId || "";
   const storageParams = {
@@ -279,7 +319,9 @@ export async function loadWorkspaceModel() {
       id: metadata?.fileRef || relativePath || file.name,
       name: file.name,
       size: metadata ? bytesToSize(metadata.sizeBytes) : "Portal 文件",
+      sizeBytes: numberValue(metadata?.sizeBytes),
       type: fileType(file.name),
+      contentType: stringValue(metadata?.contentType, contentTypeFromName(file.name)),
       updated: dateText(metadata?.updatedAt || metadata?.createdAt || workspace.workspace.createdAt),
       kind: "inputs",
       relativePath,
@@ -298,7 +340,9 @@ export async function loadWorkspaceModel() {
       id: file.fileRef || metadata?.fileRef || file.artifactRef || relativePath || file.name,
       name: file.name,
       size: bytesToSize(file.sizeBytes ?? metadata?.sizeBytes ?? fileSpaceFile?.sizeBytes),
+      sizeBytes: numberValue(file.sizeBytes ?? metadata?.sizeBytes ?? fileSpaceFile?.sizeBytes),
       type: fileType(file.name),
+      contentType: stringValue(file.contentType || metadata?.contentType, contentTypeFromName(file.name)),
       updated: dateText(file.updatedAt || file.createdAt || metadata?.updatedAt || fileSpaceFile?.retentionUntil),
       kind: "outputs",
       relativePath,
@@ -309,6 +353,7 @@ export async function loadWorkspaceModel() {
       taskId: file.taskRef,
       taskName: file.sessionId || "会话输出",
       fileRef: file.fileRef || metadata?.fileRef || fileSpaceFile?.fileRef,
+      artifactRef: file.artifactRef,
       sessionId: outputSessionId,
     };
   });
@@ -358,7 +403,62 @@ export async function loadWorkspaceModel() {
     };
   }
 
+  const runStartMessage = !launchId
+    ? "当前页面没有 launchId，不能直接向 OPL 发起运行。请从“进入 OPL”流程进入后再执行。"
+    : files.length === 0
+      ? "当前没有可用于发起运行的输入文件。"
+      : "";
+
+  async function createRunFromWorkspaceFiles() {
+    if (!launchId) {
+      throw new PortalDisplayError("当前页面没有 launchId，无法向 OPL 发起运行。请先从 Portal 进入 OPL。");
+    }
+    if (files.length === 0) {
+      throw new PortalDisplayError("当前没有可用于发起运行的输入文件。");
+    }
+    const fileRefs: string[] = [];
+    for (const file of files) {
+      if (file.fileRef) {
+        fileRefs.push(file.fileRef);
+        continue;
+      }
+      const projection = await createOplFileRef({
+        launchId,
+        fileName: file.name,
+        relativePath: file.relativePath || file.name,
+        contentType: file.contentType,
+        sizeBytes: file.sizeBytes,
+      });
+      const createdFileRef = stringValue(projection.fileRef || projection.file?.fileRef, "");
+      if (!createdFileRef) {
+        throw new PortalDisplayError(
+          projection.error === "file_upload_capability_not_supported"
+            ? "当前 OPL 映射尚未观测到可复用的文件引用能力。"
+            : "OPL 文件引用创建失败，当前不能直接发起运行。",
+        );
+      }
+      fileRefs.push(createdFileRef);
+    }
+    const run = await startOplRun({
+      launchId,
+      message: `使用工作空间输入文件发起运行：${files.map((file) => file.name).join(", ")}`,
+      fileRefs,
+      toolName: "workspace-files",
+      mode: "full_runtime",
+    });
+    const runProjection = run.run as { runId?: string; traceId?: string } | undefined;
+    return {
+      ok: Boolean(run.ok),
+      error: stringValue(run.error, ""),
+      gate: stringValue(run.gate, ""),
+      status: stringValue(run.status || run.run?.status, run.ok ? "submitted" : "gated"),
+      runId: stringValue(runProjection?.runId, ""),
+      traceId: stringValue(runProjection?.traceId, ""),
+    };
+  }
+
   return {
+    launchId,
     pageState,
     workspaceTitle: workspace.workspace.title,
     createdAt: dateText(workspace.workspace.createdAt),
@@ -374,26 +474,66 @@ export async function loadWorkspaceModel() {
     outputFiles: outputs,
     inputsCount: storageProjection.storage.inputsCount || workspace.counts.inputs,
     outputsCount: storageProjection.storage.outputsCount || workspace.counts.outputs,
+    runStartEnabled: Boolean(launchId && files.length > 0),
+    runStartMessage,
     createUploadIntent,
     createDownloadIntent,
+    createRunFromWorkspaceFiles,
   } as const;
 }
 
 export async function loadTasksResultsModel() {
   const traces = await fetchSessionTraces();
+  const launchId = currentLaunchId();
   return {
-    tasks: traces.items.map<TaskItem>((item) => ({
-      id: item.taskRef || item.traceId,
-      name: item.title || item.traceName || item.inputPreview || "任务记录",
-      workspace: item.workspaceId,
-      status: taskStatus(item.businessStatus || item.status),
-      startTime: dateText(item.startedAt),
-      duration: item.latencyMs ? `${Math.round(item.latencyMs / 1000)} 秒` : "未返回",
-      cost: money(item.costEstimate?.amount ?? item.billing?.exactCost ?? item.billing?.pendingCost),
-      outputFiles: item.linkedOutputFiles?.length || item.outputFiles?.length || item.files?.linkedOutputCount || 0,
-      outputFileNames: (item.linkedOutputFiles || item.outputFiles || []).map((file) => file.name),
-      resourceUsage: item.resourceUsage?.status || "运行记录",
-    })),
+    launchId,
+    workspaceOptions: Array.from(new Set(traces.items.map((item) => item.workspaceId).filter(Boolean))),
+    tasks: traces.items.map<TaskItem>((item) => {
+      const outputFile = (item.linkedOutputFiles || item.outputFiles || item.files?.linkedOutputFiles || [])[0];
+      const artifactRef = stringValue(outputFile?.artifactRef, "");
+      return {
+        id: item.taskRef || item.traceId,
+        name: item.title || item.traceName || item.inputPreview || "任务记录",
+        workspace: item.workspaceId,
+        status: taskStatus(item.businessStatus || item.status),
+        startTime: dateText(item.startedAt),
+        duration: item.latencyMs ? `${Math.round(item.latencyMs / 1000)} 秒` : "未返回",
+        cost: money(item.costEstimate?.amount ?? item.billing?.exactCost ?? item.billing?.pendingCost),
+        outputFiles: item.linkedOutputFiles?.length || item.outputFiles?.length || item.files?.linkedOutputCount || 0,
+        outputFileNames: (item.linkedOutputFiles || item.outputFiles || []).map((file) => file.name),
+        resourceUsage: item.resourceUsage?.status || "运行记录",
+        artifactRef,
+        outputFileRef: stringValue(outputFile?.fileRef, ""),
+        launchId,
+        artifactActionEnabled: Boolean(launchId && artifactRef),
+        artifactActionMessage: launchId
+          ? artifactRef ? "" : "当前任务没有可解析的 artifactRef。"
+          : "当前页面没有 launchId，不能直接读取 OPL artifact 投影。",
+      };
+    }),
+    async resolveTraceArtifact(task: TaskItem) {
+      if (!launchId) {
+        throw new PortalDisplayError("当前页面没有 launchId，无法读取 OPL artifact 投影。请先从 Portal 进入 OPL。");
+      }
+      if (!task.artifactRef) {
+        throw new PortalDisplayError("当前任务没有可读取的 artifactRef。");
+      }
+      const payload = await fetchOplArtifact(launchId, task.artifactRef);
+      if (!payload.ok || !payload.artifact) {
+        throw new PortalDisplayError(
+          payload.error === "artifact_not_observed"
+            ? "当前任务的 artifact 尚未回流到 Portal 可见投影。"
+            : "当前任务结果暂不可读取，请稍后重试。",
+        );
+      }
+      return {
+        artifactRef: payload.artifact.artifactRef,
+        name: payload.artifact.name,
+        contentType: payload.artifact.contentType,
+        sizeBytes: payload.artifact.sizeBytes,
+        kind: payload.artifact.kind,
+      } satisfies OplArtifactView;
+    },
   };
 }
 

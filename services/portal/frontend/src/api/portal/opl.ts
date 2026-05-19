@@ -44,6 +44,7 @@ export interface OplMessageInput {
 export interface OplFileInput {
   launchId: string;
   fileName: string;
+  relativePath?: string;
   contentType: string;
   sizeBytes: number;
 }
@@ -53,6 +54,64 @@ export interface OplRunInput {
   message: string;
   fileRefs: string[];
   toolName?: string;
+  mode?: "full_runtime";
+}
+
+export interface OplFileRefPayload {
+  ok: boolean;
+  fileRef?: string;
+  error?: string;
+  gate?: string;
+  status?: string;
+  capability?: string;
+  file?: {
+    fileRef?: string;
+    name?: string;
+    relativePath?: string;
+    sizeBytes?: number;
+    contentType?: string;
+    status?: string;
+  };
+}
+
+export interface OplRunStatusPayload {
+  traceId?: string;
+  status: string;
+  error?: string;
+}
+
+export interface OplRunPayload {
+  ok: boolean;
+  error?: string;
+  gate?: string;
+  status?: string;
+  statusUrl?: string;
+  run?: OplRunStatusPayload;
+  artifacts?: Array<{
+    artifactRef: string;
+    name: string;
+    relativePath: string;
+    sizeBytes: number;
+    contentType: string;
+  }>;
+}
+
+export interface OplArtifactPayload {
+  ok: boolean;
+  error?: string;
+  gate?: string;
+  status?: string;
+  artifactRef?: string;
+  artifact?: {
+    artifactRef: string;
+    workspaceId: string;
+    providerKeyRef: string;
+    kind: string;
+    name: string;
+    relativePath: string;
+    sizeBytes: number;
+    contentType: string;
+  };
 }
 
 function launchParams(launchId: string) {
@@ -96,7 +155,7 @@ export async function fetchOplMessageStatus(launchId: string, messageId: string)
 
 export async function createOplFileRef(input: OplFileInput) {
   const { launchId, ...body } = input;
-  const { data } = await apiClient.post("/opl/files", body, {
+  const { data } = await apiClient.post<OplFileRefPayload>("/opl/files", body, {
     params: launchParams(launchId),
   });
   return data;
@@ -104,14 +163,14 @@ export async function createOplFileRef(input: OplFileInput) {
 
 export async function startOplRun(input: OplRunInput) {
   const { launchId, ...body } = input;
-  const { data } = await apiClient.post("/opl/runs", body, {
+  const { data } = await apiClient.post<OplRunPayload>("/opl/runs", body, {
     params: launchParams(launchId),
   });
   return data;
 }
 
 export async function fetchOplArtifact(launchId: string, artifactRef: string) {
-  const { data } = await apiClient.get(`/opl/artifacts/${encodeURIComponent(artifactRef)}`, {
+  const { data } = await apiClient.get<OplArtifactPayload>(`/opl/artifacts/${encodeURIComponent(artifactRef)}`, {
     params: launchParams(launchId),
   });
   return data;

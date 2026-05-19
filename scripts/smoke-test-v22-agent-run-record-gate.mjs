@@ -5,19 +5,55 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
-const recordPath = "docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md";
-const absorbedCommit = "6b9485c0a9a02e23524c4776e6e0d2ef76ac6670";
+const currentPath = "docs/recovery/v22-goal-current.json";
+const current = JSON.parse(await readFile(path.join(repoRoot, currentPath), "utf8"));
+const requiredRecords = [
+  {
+    leafId: "leaf-portal-workspace-file-action-closure",
+    recordPath: "docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md",
+    commitField: "absorbed_commit",
+    commit: "6b9485c0a9a02e23524c4776e6e0d2ef76ac6670",
+    requiredFields: [
+      "leaf_id",
+      "model",
+      "base_trunk_head",
+      "absorbed_commit",
+      "contract_subscription",
+      "verification_commands",
+      "b_review_result",
+      "non_goals",
+    ],
+  },
+];
 
-const requiredFields = Object.freeze([
-  "leaf_id",
-  "model",
-  "base_trunk_head",
-  "absorbed_commit",
-  "contract_subscription",
-  "verification_commands",
-  "b_review_result",
-  "non_goals",
-]);
+if (current.current_cursor === "leaf-portal-opl-file-run-artifact-closure") {
+  requiredRecords.push({
+    leafId: "leaf-portal-opl-file-run-artifact-closure",
+    recordPath: "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
+    commitField: "commit_sha",
+    commit: "pending_B_review",
+    requiredFields: [
+      "leaf_id",
+      "goal",
+      "model",
+      "subagents_and_models",
+      "branch",
+      "base_trunk_head",
+      "commit_sha",
+      "contract_subscription",
+      "allowed_write_scope",
+      "forbidden_scope",
+      "implementation_summary",
+      "eval_first_changes",
+      "blocker_review_and_fix_log",
+      "verification_commands",
+      "b_review_result",
+      "runtime_notes",
+      "non_goals",
+      "next_leaf",
+    ],
+  });
+}
 
 const boundaryPhrases = Object.freeze({
   noRealCloud: Object.freeze(["no real cloud", "不调用真实云", "不触发真实云", "不使用真实云"]),
@@ -25,33 +61,42 @@ const boundaryPhrases = Object.freeze({
   noUpstream: Object.freeze(["no upstream", "不修改 upstream", "不触碰 upstream", "不改 upstream"]),
 });
 
-let recordText = "";
-try {
-  recordText = await readFile(path.join(repoRoot, recordPath), "utf8");
-} catch (error) {
-  if (error && error.code === "ENOENT") {
-    assert.fail(`agent_run_record_missing:${recordPath}`);
+const checked = [];
+for (const record of requiredRecords) {
+  let recordText = "";
+  try {
+    recordText = await readFile(path.join(repoRoot, record.recordPath), "utf8");
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      assert.fail(`agent_run_record_missing:${record.recordPath}`);
+    }
+    throw error;
   }
-  throw error;
-}
 
-for (const field of requiredFields) {
-  assert(recordText.includes(field), `agent_run_record_field_missing:${field}`);
-}
+  for (const field of record.requiredFields) {
+    assert(recordText.includes(field), `agent_run_record_field_missing:${record.recordPath}:${field}`);
+  }
 
-assert(recordText.includes(absorbedCommit), `agent_run_record_absorbed_commit_missing:${absorbedCommit}`);
+  assert(recordText.includes(record.leafId), `agent_run_record_leaf_id_missing:${record.recordPath}:${record.leafId}`);
+  assert(recordText.includes(record.commitField), `agent_run_record_commit_field_missing:${record.recordPath}:${record.commitField}`);
+  assert(recordText.includes(record.commit), `agent_run_record_commit_missing:${record.recordPath}:${record.commit}`);
 
-for (const [boundary, phrases] of Object.entries(boundaryPhrases)) {
-  assert(
-    phrases.some((phrase) => recordText.includes(phrase)),
-    `agent_run_record_boundary_phrase_missing:${boundary}`,
-  );
+  for (const [boundary, phrases] of Object.entries(boundaryPhrases)) {
+    assert(
+      phrases.some((phrase) => recordText.includes(phrase)),
+      `agent_run_record_boundary_phrase_missing:${record.recordPath}:${boundary}`,
+    );
+  }
+  checked.push(record.recordPath);
 }
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_agent_run_record_gate",
-  recordPath,
-  absorbedCommit,
-  requiredFields,
+  currentCursor: current.current_cursor,
+  checked,
+  requiredRecords: requiredRecords.map((record) => ({
+    recordPath: record.recordPath,
+    requiredFields: record.requiredFields,
+  })),
 }, null, 2));

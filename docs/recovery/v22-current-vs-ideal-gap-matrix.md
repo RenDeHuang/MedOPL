@@ -240,9 +240,9 @@ Every gap entry must contain:
 ### Gap: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
 
 - id: opl-connection-gateway-preflight-runtime-file-run-artifact-trace
-- current_fact: workspace file action closure 已在 trunk `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 吸收；Portal 与 OPL/Gateway/Runtime Bridge 的 file/run/artifact 本地闭环现在成为下一可执行 leaf。已有合同固定 Portal launch、Gateway bootstrap、session bind、workspace file reference、run start、artifact backflow、billing metadata handoff 和 trace projection；本 post-absorb 分支只更新索引、留痕和本地运行态纪律，不实现该 leaf。
+- current_fact: workspace file action closure 已在 trunk `6b9485c0a9a02e23524c4776e6e0d2ef76ac6670` 吸收，post-absorb 留痕已在 `061956f6524dc1e02753f33b326cef9c2f3d390d` 吸收；Portal 与 OPL/Gateway/Runtime Bridge 的 file/run/artifact 本地闭环现在由 `feat/v22-portal-opl-file-run-artifact-closure` 执行。已有合同固定 Portal launch、Gateway bootstrap、session bind、workspace file reference、run start、artifact backflow、billing metadata handoff 和 trace projection；本 feature 分支只做本地 API/action/data wiring 和 eval/trace 收敛，不接真实云、不部署、不改 upstream。
 - ideal_state: Portal 可以通过现有 OPL API client 和 Portal OPL routes 发起 workspace-scoped fileRef、run 和 artifact 查询；Gateway/Runtime Bridge 保持 clean upstream 边界；Portal 只展示脱敏 projection，不暴露 raw provider key、launchToken、runtimeToken、objectKey、localPath 或 signedUrl。
-- problem: 下一步需要从 launch-only / trace-only 进入 file/run/artifact 本地闭环；如果没有 current truth 和 manifest 索引，agent 容易跳到云、deploy、upstream 或 fake 200。
+- problem: 当前需要从 launch-only / trace-only 进入 file/run/artifact 本地闭环；如果没有 current truth、manifest 索引、前端 API surface gate 和 agent-run 留痕，agent 容易跳到云、deploy、upstream 或 fake 200。
 - dependency: architecture-refactor-portal-layering 已满足；workspace file action closure 已吸收并提供 workspace 文件基础能力。
 - depends_on: [architecture-refactor-portal-layering]
 - blocked_by: []
@@ -252,10 +252,10 @@ Every gap entry must contain:
 - cursor_eligible: true
 - status: in_progress
 - next_leaf_step: leaf-portal-opl-file-run-artifact-closure
-- eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`; `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`; `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`; `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
+- eval: `node scripts/smoke-test-v22-agent-run-record-gate.mjs`; `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`; `node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs`; `node scripts/smoke-test-v22-portal-trace-file-linkage.mjs`; `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`; `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`; `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`; `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 - allowed_files: `services/portal/frontend/src/api/portal/opl.ts`, `services/portal/frontend/src/app/data/portalAdapters.ts`, `services/portal/frontend/src/app/pages/Workspace.tsx`, `services/portal/frontend/src/app/pages/TasksResults.tsx`, `services/portal/src/routes/opl.routes.mjs`, `services/portal/src/routes/portal-api-v22-opl-work.routes.mjs`, `services/opl-web-gateway/src/launch-client-script.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`, docs/recovery current truth files, and scoped OPL/Runtime/Portal eval scripts
 - forbidden_files: `deploy/*`; `adapters/*`; `.sentrux/*`; `infra/*`; upstream / one-person-lab; secret-like paths; true cloud/provider files; Figma visual/layout/information-architecture redesign
-- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`
+- truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`, `docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md`
 - B_absorb_criteria: B confirms Portal-OPL closure remains local, contract-bound and no fake success; B reruns current verify, OPL work flow, Runtime Bridge session/run/file/providerKeyRef flow, Portal files/billing/trace flow, frontend typecheck, Portal check and workflow gate before ff-only absorption.
 
 ### Gap: cloud-lane-mock-readonly-dry-run-authorized

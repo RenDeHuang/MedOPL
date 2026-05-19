@@ -30,6 +30,9 @@ const requiredUsedExports = [
   "workspace.ts:fetchStorageEntitlement",
   "workspace.ts:createWorkspaceFileUploadUrl",
   "workspace.ts:createWorkspaceFileDownloadUrl",
+  "opl.ts:createOplFileRef",
+  "opl.ts:startOplRun",
+  "opl.ts:fetchOplArtifact",
 ];
 
 const allowedAdjudicationStatuses = new Set([
@@ -103,18 +106,6 @@ const unusedAdjudications = {
   "opl.ts:fetchOplMessageStatus": {
     status: "future-reserved",
     reason: "Message status belongs to the future OPL bridge backflow surface, not the current launch-only Portal UI.",
-  },
-  "opl.ts:createOplFileRef": {
-    status: "future-reserved",
-    reason: "OPL file reference creation is reserved for the file/run/artifact bridge after runtime backflow is productized.",
-  },
-  "opl.ts:startOplRun": {
-    status: "future-reserved",
-    reason: "Portal currently launches OPL and shows traces; direct run submission is not active UI.",
-  },
-  "opl.ts:fetchOplArtifact": {
-    status: "future-reserved",
-    reason: "Artifact retrieval is not wired into the current workspace/trace UI.",
   },
   "public.ts:fetchPublicSettings": {
     status: "backend-only",
@@ -370,8 +361,12 @@ assert.deepEqual(missingRequiredUsedExports, [], `frontend_api_required_workspac
 
 const uncategorizedUnused = unusedRows.filter((item) => !unusedAdjudications[item.key]);
 const missingExports = Object.keys(unusedAdjudications).filter((key) => !unusedKeys.has(key));
+const activeUsedButUnused = unusedRows
+  .filter((item) => unusedAdjudications[item.key]?.status === "active-used")
+  .map((item) => item.key);
 assert.deepEqual(missingExports, [], `frontend_api_unused_adjudication_not_unused:${JSON.stringify(missingExports)}`);
 assert.deepEqual(uncategorizedUnused, [], `frontend_api_uncategorized_unused:${JSON.stringify(uncategorizedUnused, null, 2)}`);
+assert.deepEqual(activeUsedButUnused, [], `frontend_api_active_used_exports_must_be_consumed:${JSON.stringify(activeUsedButUnused)}`);
 
 const adjudicatedUnusedRows = unusedRows.map((row) => ({
   ...row,
