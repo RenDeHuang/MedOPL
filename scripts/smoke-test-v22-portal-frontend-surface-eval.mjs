@@ -4,7 +4,7 @@ import path from "node:path";
 import {
   retiredFigmaZipResidue,
   retiredFrontendRoutes,
-} from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
+} from "./v22-retired-surface-data.mjs";
 
 const repoRoot = process.cwd();
 const reportPath = path.join(repoRoot, ".runtime", "portal-surface-eval", "report.json");

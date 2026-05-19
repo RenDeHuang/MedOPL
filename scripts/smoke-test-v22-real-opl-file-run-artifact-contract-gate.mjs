@@ -202,7 +202,7 @@ assertIncludes(statusMatrix, "Runtime Agent HTTP API proof", "status_matrix");
 assertIncludes(statusMatrix, "billingMetadataRef", "status_matrix");
 assert.ok(isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs"), "mvp_suite: missing scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs");
 assert.equal(
-  isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-file-run-artifact-runtime-agent-api-loop.mjs"),
+  isSmokeClassifiedIn("scripts/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs"),
   false,
   "runtime_agent_api_loop_must_not_run_in_default_mvp_suite",
 );

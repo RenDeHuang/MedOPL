@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
+import { retiredFigmaZipResidue } from "./v22-retired-surface-data.mjs";
 
 const contractPath = "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md";
 const readmePath = "docs/contracts/README.md";

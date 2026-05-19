@@ -38,7 +38,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-token-provider-boundary.md", "docs/contracts/v22-opl-entry-preflight-auth-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-retire-portal-provider-key-entry.mjs"]
+      "evidence": ["node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"]
     },
     {
       "id": "opl-login-with-provider-key",

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "canonical": true,
-  "last_updated_at": "2026-05-15",
+  "last_updated_at": "2026-05-19",
   "model": "gpt-5.4",
   "runner": "scripts/v22-verify.mjs",
   "default_agent_entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
@@ -40,10 +40,12 @@
     "docs/recovery/v22-codex-goal-loop.md",
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
-    "scripts/smoke-test-v22-autonomous-goal-runner.mjs",
     "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "scripts/smoke-test-v22-workflow-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs"
+    "scripts/smoke-test-v22-product-goal-harness.mjs",
+    "scripts/smoke-test-v22-autonomous-goal-runner.mjs",
+    "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+    "scripts/v22-retired-surface-data.mjs"
   ],
   "control_plane_branches": [
     "cleanup/v22-agent-verify-manifest-entrypoint",
@@ -70,7 +72,9 @@
       "allowed_files": [
         "docs/recovery/*",
         "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-        "scripts/smoke-test-v22-*"
+        "scripts/smoke-test-v22-*",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         "services/*",
@@ -95,6 +99,7 @@
         "dependency-upgrade"
       ],
       "verification_commands": [
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
         "node scripts/smoke-test-v22-goal-state-consistency.mjs",
         "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
@@ -141,7 +146,9 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/mvp-contract-acceptance.md",
         "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs"
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         "services/*",
@@ -166,6 +173,7 @@
         "dependency-upgrade"
       ],
       "verification_commands": [
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-goal-state-consistency.mjs",
@@ -219,15 +227,13 @@
         "docs/recovery/mvp-contract-acceptance.md",
         "docs/recovery/architecture-truth.md",
         "docs/recovery/status-matrix.md",
-        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "docs/recovery/archive-policy.md",
         "docs/recovery/portal-figma-make-ui-convergence-plan.md",
         "docs/recovery/portal-ui-design-generation-brief.md",
         "docs/recovery/portal-ui-design-prd.md",
-        "scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
-        "scripts/smoke-test-v22-portal-ui-truth-convergence.mjs",
         "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
         "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
         "scripts/smoke-test-v22-goal-state-consistency.mjs",
         "scripts/smoke-test-v22-mvp-contract-suite.mjs",
@@ -244,9 +250,8 @@
         "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
         "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
         "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
         "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs",
-        "scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs"
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         "Portal backend services changes unless separately authorized",
@@ -271,8 +276,7 @@
         "non-portal-frontend-dependency-change"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
-        "node scripts/smoke-test-v22-portal-ui-truth-convergence.mjs",
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
         "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
@@ -333,7 +337,9 @@
         "docs/recovery/*",
         "scripts/smoke-test-v22-*",
         "scripts/v22-verify.mjs",
-        "scripts/v22-workflow-gate.mjs"
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         "Portal backend changes outside scoped local API/action closure",
@@ -360,7 +366,7 @@
         "non-portal-frontend-dependency-change"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
         "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
         "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
@@ -398,7 +404,7 @@
       "description": "Default agent verification bundle for the current executable leaf.",
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
         "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
         "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
@@ -454,8 +460,7 @@
       "reason": "The current product cursor remains leaf-portal-local-api-action-closure, and this cleanup branch must run only the scoped local truth-convergence bundle before B review.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
-        "node scripts/smoke-test-v22-portal-ui-truth-convergence.mjs",
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
         "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
@@ -479,15 +484,13 @@
         "docs/recovery/mvp-contract-acceptance.md",
         "docs/recovery/architecture-truth.md",
         "docs/recovery/status-matrix.md",
-        "docs/recovery/physical-legacy-file-retirement-run-manifest.json",
+        "docs/recovery/archive-policy.md",
         "docs/recovery/portal-figma-make-ui-convergence-plan.md",
         "docs/recovery/portal-ui-design-generation-brief.md",
         "docs/recovery/portal-ui-design-prd.md",
-        "scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
-        "scripts/smoke-test-v22-portal-ui-truth-convergence.mjs",
         "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
         "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
         "scripts/smoke-test-v22-goal-state-consistency.mjs",
         "scripts/smoke-test-v22-mvp-contract-suite.mjs",
@@ -504,9 +507,8 @@
         "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
         "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
         "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
         "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs",
-        "scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs"
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         "Portal backend services changes unless separately authorized",
@@ -543,15 +545,9 @@
       "reason": "The current product cursor remains leaf-portal-local-api-action-closure, while this cleanup branch has an explicit B-review requirement to run a branch-appropriate verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-        "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-        "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
-        "node scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
-        "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-        "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
         "node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
-        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra"
@@ -606,7 +602,9 @@
         "infra/codex-runtime/**",
         "infra/production-hardening/**",
         "compose.demo.yaml",
-        "compose.langfuse.yaml"
+        "compose.langfuse.yaml",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         ".sentrux/*",
@@ -638,9 +636,9 @@
       "reason": "The current product cursor remains leaf-portal-local-api-action-closure, while this contract-index cleanup branch only aligns Runtime Bridge contract package naming and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_doc_eval",
       "commands": [
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
         "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
-        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
         "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -653,7 +651,9 @@
         "scripts/smoke-test-v22-mvp-contract-suite.mjs",
         "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
         "scripts/v22-verify.mjs",
-        "scripts/v22-workflow-gate.mjs"
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         ".sentrux/*",
@@ -687,12 +687,10 @@
       "reason": "The current product cursor remains leaf-portal-local-api-action-closure, while this cleanup branch only removes old context across system domains and truth layers and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
         "node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
         "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
-        "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/contracts docs/recovery scripts services"
@@ -707,7 +705,9 @@
         "scripts/smoke-test-v22-*",
         "services/portal/**",
         "services/opl-web-gateway/**",
-        "services/opl-runtime-bridge/**"
+        "services/opl-runtime-bridge/**",
+        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
         ".sentrux/*",
@@ -729,6 +729,63 @@
         "upstream-write",
         "dependency-upgrade",
         "real-db-migration-execution"
+      ]
+    },
+    {
+      "id": "archive-smoke-contract-physical-retirement",
+      "branch": "cleanup/v22-archive-smoke-contract-physical-retirement",
+      "branches": [
+        "cleanup/v22-archive-smoke-contract-physical-retirement"
+      ],
+      "description": "Verification bundle for the second-round archive markdown, retired smoke, contract narrative, and physical-retirement cleanup branch.",
+      "reason": "This cleanup branch physically retires archive Markdown and archive/retired smoke files while keeping cloud, secret, deploy, upstream, build/push/kubectl and live-test out of scope.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- AGENTS.md docs scripts"
+      ],
+      "allowed_files": [
+        "AGENTS.md",
+        "docs/status.md",
+        "docs/contracts/README.md",
+        "docs/contracts/v22-*",
+        "docs/recovery/*",
+        "docs/plan/**",
+        "docs/reports/**",
+        "docs/releases/**",
+        "docs/logs/**",
+        "docs/operations/**",
+        "docs/superpowers/**",
+        "OPL-v20-*",
+        "scripts/smoke-test-v17-*",
+        "scripts/smoke-test-v22-*",
+        "scripts/v22-smoke-classification.mjs",
+        "scripts/v22-retired-surface-data.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/v22-agent-workflow.mjs"
+      ],
+      "forbidden_files": [
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "upstream one-person-lab",
+        "secret-like paths except deletion-only archive Markdown path in this branch",
+        "true cloud runners"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade"
       ]
     }
   ],

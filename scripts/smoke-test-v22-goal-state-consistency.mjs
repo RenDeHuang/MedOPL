@@ -314,11 +314,15 @@ function assertCurrentShape(current, verifyManifest = {}) {
   );
   const runtimeBranch = runGit(["branch", "--show-current"]);
   const manifestControlPlaneBranches = new Set(verifyManifest.control_plane_branches || []);
+  const manifestBranchOverrideBranches = new Set((verifyManifest.branch_override_suites || [])
+    .flatMap((suite) => [suite.branch, ...(suite.branches || [])])
+    .filter(Boolean));
   assert(
     runtimeBranch === current.authoring_branch ||
       runtimeBranch === current.target_branch ||
       additiveTruthBranches.has(runtimeBranch) ||
-      manifestControlPlaneBranches.has(runtimeBranch),
+      manifestControlPlaneBranches.has(runtimeBranch) ||
+      manifestBranchOverrideBranches.has(runtimeBranch),
     `runtime_branch_must_be_authoring_or_target_or_additive_truth:${runtimeBranch}`,
   );
   assert.deepEqual(current.stage_order, expectedStageOrder, "stage_order_mismatch");
@@ -394,7 +398,11 @@ function assertCurrentShape(current, verifyManifest = {}) {
       localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
       "target_branch_head_must_descend_from_base_trunk_head",
     );
-  } else if (additiveTruthBranches.has(runtimeBranch) || manifestControlPlaneBranches.has(runtimeBranch)) {
+  } else if (
+    additiveTruthBranches.has(runtimeBranch) ||
+    manifestControlPlaneBranches.has(runtimeBranch) ||
+    manifestBranchOverrideBranches.has(runtimeBranch)
+  ) {
     if (localHead === originTrunkHead) {
       const pendingDiff = runGit(["status", "--porcelain"]);
       assert(pendingDiff.length > 0, "additive_truth_branch_at_origin_requires_pending_diff");

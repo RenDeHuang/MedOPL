@@ -18,6 +18,7 @@ const adminEmail = "zitadel-admin@zitadel.localhost";
 const adminPassword = "Password1!";
 const userEmail = "portal-storage-mode-user@example.test";
 const userPassword = "Password123!";
+const workspaceId = "workspace-storage-mode-local";
 
 function listen(server, port = 0) {
   return new Promise((resolve, reject) => {
@@ -340,19 +341,19 @@ async function runClosureSuite({
     const userCookie = await login(baseUrl, userEmail, userPassword);
     const activatePackage = await postJson(`${baseUrl}/portal/api/lab-packages/activate`, {
       packageId: "starter_2c4g_10gb",
-      workspaceId: "default",
+      workspaceId,
       idempotencyKey: `${storageMode}-lab-package-activate`,
     }, { cookie: userCookie });
     assert.equal(activatePackage.status, 201, "lab_package_activate_must_create_subscription");
 
     const replayActivatePackage = await postJson(`${baseUrl}/portal/api/lab-packages/activate`, {
       packageId: "starter_2c4g_10gb",
-      workspaceId: "default",
+      workspaceId,
       idempotencyKey: `${storageMode}-lab-package-activate`,
     }, { cookie: userCookie });
     assert.ok([200, 201].includes(replayActivatePackage.status), "lab_package_activate_replay_must_return_success");
 
-    const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=default`, { cookie: userCookie });
+    const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=${encodeURIComponent(workspaceId)}`, { cookie: userCookie });
     assert.equal(subscription.response.status, 200, "lab_subscription_must_return_200");
     assert.equal(subscription.json.currentPackageId, "starter_2c4g_10gb", "lab_subscription_must_reflect_activation");
 
@@ -416,7 +417,7 @@ async function verifyPersistedState({
     assert(announcement, "persisted_announcement_must_survive_restart");
     assert.equal(announcement.status, "active", "persisted_announcement_status_mismatch");
 
-    const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=default`, { cookie: userCookie });
+    const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=${encodeURIComponent(workspaceId)}`, { cookie: userCookie });
     assert.equal(subscription.json.currentPackageId, "starter_2c4g_10gb", "persisted_subscription_must_survive_restart");
 
     const audit = await getJson(`${baseUrl}/portal/api/admin/audit`, { cookie: adminCookie });

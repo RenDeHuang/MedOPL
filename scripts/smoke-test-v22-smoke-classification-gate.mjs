@@ -31,6 +31,10 @@ for (const [scriptPath, category] of Object.entries(SMOKE_CLASSIFICATION)) {
 
 const defaultScripts = listClassifiedSmokeScripts({ categories: DEFAULT_SMOKE_CATEGORIES });
 assert(defaultScripts.includes("scripts/smoke-test-v22-smoke-classification-gate.mjs"), "default_suite_must_run_smoke_classification_gate");
+assert(defaultScripts.includes("scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"), "default_suite_must_run_archive_physical_retirement_gate");
+
+const retiredScripts = listClassifiedSmokeScripts({ categories: ["archive/retired"] });
+assert.deepEqual(retiredScripts, [], `archive_retired_smoke_category_must_be_empty:${retiredScripts.join(",")}`);
 
 for (const scriptPath of defaultScripts) {
   const category = SMOKE_CLASSIFICATION[scriptPath];

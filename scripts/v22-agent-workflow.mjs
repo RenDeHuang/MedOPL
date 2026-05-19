@@ -603,7 +603,7 @@ function packageContractsForType(type) {
       "docs/vibe-coding.md",
       "docs/contracts/README.md",
       "docs/recovery/status-matrix.md",
-      "scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "scripts/smoke-test-v22-workflow-gate.mjs",
     ];
   }
@@ -614,7 +614,7 @@ function packageContractsForType(type) {
 function validationCommandsForType(type) {
   if (type === "workflow") {
     return [
-      "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "node scripts/smoke-test-v22-workflow-gate.mjs",
       "git diff --check -- scripts docs .gitignore",
     ];
@@ -1090,7 +1090,7 @@ function createReviewPack({ branch, base }) {
   const verificationCommands = [
     `git diff --name-only ${targetBase}...${branch}`,
     `node scripts/v22-workflow-gate.mjs review --base ${targetBase}`,
-    "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+    "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
     "node scripts/smoke-test-v22-workflow-gate.mjs",
     "git diff --check -- scripts docs",
   ];
@@ -1162,7 +1162,7 @@ function createFixPack({ state, window = "A" } = {}) {
       "修复后回复 status: A_FIXED。",
     ],
     verificationCommands: [
-      "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "node scripts/smoke-test-v22-workflow-gate.mjs",
       "git diff --check -- scripts docs",
     ],
@@ -1188,7 +1188,7 @@ function createReReviewPack({ state } = {}) {
     ],
     verificationCommands: [
       "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
-      "node scripts/smoke-test-v22-agent-workflow-orchestrator.mjs",
+      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
       "node scripts/smoke-test-v22-workflow-gate.mjs",
     ],
     mergeConditions: [

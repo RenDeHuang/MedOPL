@@ -271,7 +271,7 @@
     "executable_when": "Figma Make user/admin Portal UI baseline and retired frontend truth convergence are absorbed; this leaf may update Portal frontend API/action wiring, scoped Portal backend local API/action closure code, PostgreSQL/Redis local storage-mode implementation, subscribed UI/admin/storage contracts, recovery truth, and v22 smoke gates only; no secret, no live cloud, no true cloud mutation, no build/push/kubectl, no deploy, no live-test, no deploy/adapters/.sentrux, no Gateway/Runtime Bridge backend changes, no upstream, and no Figma visual/layout/information-architecture change.",
     "failure_state": "blocked_portal_local_api_action_closure if it requires Portal page visual changes, Gateway/Runtime Bridge backend changes, secret, live cloud, true cloud mutation, build/push/kubectl, deploy, live-test, upstream changes, JSON fallback in postgres_redis mode, Redis ledger truth, or fake success for unsupported billing/cloud/resource operations.",
     "verification_commands": [
-      "node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
+      "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
       "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
       "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
       "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
@@ -296,7 +296,9 @@
       "docs/recovery/*",
       "scripts/smoke-test-v22-*",
       "scripts/v22-verify.mjs",
-      "scripts/v22-workflow-gate.mjs"
+      "scripts/v22-workflow-gate.mjs",
+      "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+      "scripts/v22-retired-surface-data.mjs"
     ],
     "forbidden_files": [
       "Portal backend changes outside scoped local API/action closure",
@@ -346,7 +348,7 @@
     ]
   },
   "verification_commands": [
-    "node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs",
+    "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
     "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
     "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
     "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
@@ -370,5 +372,9 @@
     "docs/recovery/v22-goal-state.md",
     "docs/recovery/v22-codex-goal-loop.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md"
+  ],
+  "truth_writeback_target": [
+    "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+    "scripts/v22-retired-surface-data.mjs"
   ]
 }

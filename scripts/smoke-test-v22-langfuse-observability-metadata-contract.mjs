@@ -12,7 +12,7 @@ const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 const portalPayloadPath = "services/portal/src/domain/portal-api-payloads.mjs";
 const portalRuntimeClientsPath = "services/portal/src/app/portal-runtime-clients.mjs";
 const runtimeBridgeRoutesPath = "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs";
-const inventoryPath = "docs/recovery/physical-legacy-file-retirement-inventory.md";
+const statusMatrixPath = "docs/recovery/status-matrix.md";
 
 const CONTRACT_START = "<!-- v22-langfuse-observability-metadata-contract:start -->";
 const CONTRACT_END = "<!-- v22-langfuse-observability-metadata-contract:end -->";
@@ -162,7 +162,7 @@ const { createPortalApiPayloads } = await import("../services/portal/src/domain/
 const portalPayloadSource = await readFile(path.join(repoRoot, portalPayloadPath), "utf8");
 const portalRuntimeClientsSource = await readFile(path.join(repoRoot, portalRuntimeClientsPath), "utf8");
 const runtimeBridgeRoutesSource = await readFile(path.join(repoRoot, runtimeBridgeRoutesPath), "utf8");
-const inventory = await readFile(path.join(repoRoot, inventoryPath), "utf8");
+const statusMatrix = await readFile(path.join(repoRoot, statusMatrixPath), "utf8");
 
 assertNoOldNarrative(markdown, "langfuse_contract");
 assertNoOldNarrative(portalPayloadSource, "portal_api_payloads");
@@ -470,16 +470,16 @@ assert(
   "langfuse_publisher_active_import_missing",
 );
 assert(
-  inventory.includes("active import from `services/portal/src/app/portal-runtime-clients.mjs`"),
-  "inventory_must_record_langfuse_trace_client_active_import",
+  statusMatrix.includes("| Langfuse | sanitized trace metadata implementation boundary |"),
+  "status_matrix_must_record_langfuse_sanitized_metadata_boundary",
 );
 assert(
-  inventory.includes("active import from `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`"),
-  "inventory_must_record_langfuse_publisher_active_import",
+  statusMatrix.includes("keep only for active sanitized client/publisher code"),
+  "status_matrix_must_record_active_langfuse_client_publisher_boundary",
 );
 assert(
-  inventory.includes("zero-compat correction:"),
-  "inventory_must_record_zero_compat_truth_writeback",
+  statusMatrix.includes("旧 compose/deploy/infra 资产删除"),
+  "status_matrix_must_record_langfuse_legacy_asset_retirement",
 );
 
 console.log(JSON.stringify({

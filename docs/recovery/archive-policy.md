@@ -10,21 +10,23 @@
 
 ## Archive / Reference Surface
 
-以下路径默认归档为 reference：
+以下路径已从 active repo 物理清退；历史事实只通过 git history 和已收敛的 `docs/recovery/*` 摘要保留：
 
 - `docs/plan/*`
 - `docs/reports/*`
 - `docs/releases/*`
 - `docs/logs/*`
+- `docs/operations/*`
+- `docs/superpowers/*`
 - `OPL-v20-商业化产品套餐开发方案.md`
 
-旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 check/daily/live-prepare、resource-provisioner 和 OpenCost 脚本已由 strict monolith cleanup 物理删除；未来真实外部 canary 只能通过新的授权合同和新的 v22 gate 重新引入。
+旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 check/daily/live-prepare、旧 v17 smoke、resource-provisioner、OpenCost 脚本和 `archive/retired` v22 smoke 已由 cleanup 分支物理删除；未来真实外部 canary 只能通过新的授权合同和新的 v22 gate 重新引入。
 
-Archive/reference 资产可以被阅读、摘取事实或转写为新的 v22 contract，但不能被当成 v22 active 入口、默认验证入口或当前产品叙事。
+Archive/reference 资产不得以当前文件形态恢复。确需迁移历史事实时，只能从 git history 摘取并重写成新的 v22 contract/recovery 摘要，且不能被当成 v22 active 入口、默认验证入口或当前产品叙事。
 
 ## Migration Rule
 
-从 archive/reference 迁移到 active surface 时，必须重新落地到以下路径之一：
+从 git history 中迁移历史事实到 active surface 时，必须重新落地到以下路径之一：
 
 - `docs/product.md`
 - `docs/architecture.md`

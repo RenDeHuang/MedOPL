@@ -72,7 +72,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-retire-user-owned-primary-path.mjs`
+- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 
 检查要点：
 
@@ -87,7 +87,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
+- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 
 检查要点：
 
@@ -108,7 +108,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs`
+- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 
 检查要点：
 
@@ -116,7 +116,7 @@
 - `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite，也不留在 active scripts 目录。
 - `scripts/live-test-*` 不进入默认 suite；当前物理删除事实由 `slice-authorized-live-test-physical-delete` 单独记录，不属于 Slice 4 archive boundary 本体。
 - 无 v22 前缀但仍有价值的 smoke 必须迁名进入 v22 active surface；不能因为历史证据保留旧脚本本体。
-- completed on `cleanup/v22-legacy-scripts-archive-eval-shell`: `scripts/smoke-test-v22-legacy-script-archive-boundary.mjs` verifies default README / vibe-coding commands, v22 MVP suite script references, and repo-zoning archive/review-rewrite rows without running live-test, deleting legacy scripts, touching services, or reading secrets.
+- completed on `cleanup/v22-archive-smoke-contract-physical-retirement`: `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs` verifies archive/reference Markdown and retired v17/v22 smoke entrypoints are physically absent, keeps `archive/retired` smoke classification empty, and does not run live-test, touch services/deploy/adapters/upstream/packages, or read secrets.
 - follow-up physical delete on `cleanup/v22-physical-legacy-batch-run`: `slice-authorized-live-test-physical-delete` physically deletes `scripts/live-test-*` after explicit user authorization; future real external canary must use a new v22 authorization contract and must not restore the old default entry.
 - strict monolith follow-up on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old non-v22 billing/portal smoke anchors and `scripts/start-billing-live.mjs` were physically deleted after import/default-suite scan proved they were not v22 active validation. The deleted scripts were historical billing/resource-order/OpenCost/Portal structure anchors, not current v22 smoke.
 - residual strict monolith follow-up on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, and local MinIO/Harbor install or port-forward helper remnants are deleted after import/default-suite scan proved no active v22 reference. Active validation must use `scripts/smoke-test-v22-*` or `scripts/v22-verify.mjs`.

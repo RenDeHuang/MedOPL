@@ -16,6 +16,7 @@ const userEmail = "portal-local-api-user@example.test";
 const updatedUserEmail = "portal-local-api-updated-user@example.test";
 const userPassword = "Password123!";
 const eventsFileName = "events.jsonl";
+const workspaceId = "workspace-local-api-action";
 
 function listen(server, port = 0) {
   return new Promise((resolve, reject) => {
@@ -184,7 +185,7 @@ async function seedPendingUsage(runtimeRoot, userId) {
     id: "ledger-pending-run-local",
     tenantId: userId,
     userId,
-    workspaceId: "default",
+    workspaceId,
     runId: "run-billing-pending-local",
     resourceBindingId: "rb-billing-pending-local",
     billingAttributionId: "billing-op-pending-local",
@@ -465,7 +466,7 @@ try {
       actionType: "refund",
       amount: "10",
       reason: "billing op local closure refund",
-      workspaceId: "default",
+      workspaceId,
       idempotencyKey: billingOpIdempotencyKey,
       redirectTo: "/admin/billing-ops",
     }, { cookie: adminCookie });

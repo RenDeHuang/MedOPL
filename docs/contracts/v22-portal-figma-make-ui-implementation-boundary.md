@@ -41,7 +41,7 @@
 - `/admin/system`
 - `/admin/ops`
 
-上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
+上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
 
 ## 清退边界
 

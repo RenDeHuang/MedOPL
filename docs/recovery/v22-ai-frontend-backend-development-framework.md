@@ -76,7 +76,7 @@ This framework constrains future AI-driven cleanup, refactor, and development wo
 
 - `node scripts/smoke-test-v22-product-goal-harness.mjs`
 - `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
-- `node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs`
+- `node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 - `node scripts/smoke-test-v22-mvp-contract-suite.mjs`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
 - `git diff --check -- docs/recovery scripts`

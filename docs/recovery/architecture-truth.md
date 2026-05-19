@@ -141,7 +141,7 @@ Langfuse 只作为后续可能的 trace metadata 来源，不是当前 v22 主�
 - `compose.demo.yaml` 和 `compose.langfuse.yaml` 已在 Slice D 删除。
 - 旧 OpenCost 脚本 `scripts/start-opencost-*`、`scripts/install-opencost-local.ps1`、`scripts/smoke-test-billing-opencost.mjs` 已在 Slice C 删除。
 - 旧 v13 Langfuse / commercial / COS 脚本、旧 portal resource-order/provisioner 脚本、旧 med-autoscience runner fixture、旧 v19/v20 helper lib 已在 Slice D 删除；未来真实外部 canary 必须使用新的 v22 授权合同和 gate。
-- 旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*` 仍只可作为迁移输入，不作为 active repo 默认实现入口。
+- 旧 `docs/logs/*`、旧 `docs/plan/*`、旧 `docs/releases/*`、旧 `docs/reports/*`、旧 `docs/operations/*`、旧 `docs/superpowers/*` 和根部 v20 商业化方案已从 active repo 物理清退；历史事实只通过 git history 或已收敛的 v22 recovery/contract 摘要迁移，不能作为 active repo 默认实现入口。
 
 后续 cleanup/delete 目标是继续清掉 active services 中残留的旧 deploy/live/canary runner 叙事和任何新发现的旧测试锚点；不得把已删除的旧 deploy/adapters/infra 资产、旧 billing adapter 或旧 Portal provisioner client 作为参考重新引入。
 

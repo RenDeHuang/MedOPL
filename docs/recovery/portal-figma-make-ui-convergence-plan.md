@@ -76,7 +76,7 @@ Forbidden without separate authorization:
 - Replace the current Vue SPA with a React SPA.
 - Remove old frontend routes: `/packages`, `/advanced/servers`, old admin routes, and retired admin console residue.
 - Retire historical eval ownership, harness ownership, and smoke assumptions.
-- Physically delete old `.vue` frontend files and other `retired frontend paths` from current Portal frontend surface; express the detailed banlist only in `scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs`.
+- Physically delete old `.vue` frontend files and other `retired frontend paths` from current Portal frontend surface; express the detailed banlist only in `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`.
 - Preserve backend `/portal/api/*` as the data boundary.
 
 ## Step 4: Absorb Figma Make UI And Connect APIs

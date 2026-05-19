@@ -338,8 +338,8 @@ Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-t
 - [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../recovery/active-surface.md](../recovery/active-surface.md)
-- [../recovery/physical-legacy-file-retirement-goal.md](../recovery/physical-legacy-file-retirement-goal.md)
-- [../recovery/physical-legacy-file-retirement-inventory.md](../recovery/physical-legacy-file-retirement-inventory.md)
+- [../recovery/archive-policy.md](../recovery/archive-policy.md)
+- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 - 与被退役路径相关的分支合同
 
 cleanup 分支必须证明：退役后每个核心域只剩一个正式入口。

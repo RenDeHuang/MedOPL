@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
-import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
+import { retiredFigmaZipResidue } from "./v22-retired-surface-data.mjs";
 
 const contractPath = "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md";
 const start = "<!-- v22-portal-workbench-management-ui-composition-contract:start -->";

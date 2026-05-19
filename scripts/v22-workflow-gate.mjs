@@ -282,6 +282,14 @@ function isContractPath(filePath) {
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
   if (!String(status || "").startsWith("D")) return false;
   const normalized = normalizePath(filePath);
+  if (branchName === "cleanup/v22-archive-smoke-contract-physical-retirement") {
+    return [
+      /^docs\/(?:plan|reports|releases|logs|operations|superpowers)(?:\/|$)/u,
+      /^OPL-v20-商业化产品套餐开发方案\.md$/u,
+      /^scripts\/smoke-test-v17-/u,
+      /^scripts\/smoke-test-v22-(?:agent-workflow-orchestrator|cleanup-completion-truth|legacy-script-archive-boundary|opl-legacy-paths-retired|physical-delete-user-owned-retired-domain-store|physical-legacy-batch-run-manifest|physical-legacy-file-retirement-goal|physical-legacy-file-retirement-inventory|portal-retired-frontend-surface-gate|portal-ui-truth-convergence|real-opl-file-run-artifact-runtime-agent-api-loop|retire-portal-provider-key-entry|retire-resource-order-primary-path|retire-user-owned-primary-path|strict-monolith-legacy-retirement-gate|system-domain-truth-layer-zero-old-context-gate)\.mjs$/u,
+    ].some((pattern) => pattern.test(normalized));
+  }
   if (branchName === "cleanup/v22-strict-monolith-zero-compat-active-surface") {
     return [
       /^deploy\/local\/dockerfiles\/(?:portal|opl-web-gateway|opl-runtime-bridge)\.Dockerfile$/u,

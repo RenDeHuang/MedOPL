@@ -27,19 +27,11 @@ const currentNarrativeFiles = [
 
 const allowedTokenGuardianScripts = new Set([
   "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
-  "scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
-  "scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
-  "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  "scripts/smoke-test-v22-physical-delete-user-owned-retired-domain-store.mjs",
-  "scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
-  "scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-  "scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-  "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
   "scripts/smoke-test-v22-contract-conflict-boundary.mjs",
   "scripts/smoke-test-v22-goal-state-consistency.mjs",
   "scripts/smoke-test-v22-product-goal-harness.mjs",
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-  "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
   "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
   "scripts/smoke-test-v22-admin-ops-console-boundary.mjs",
   "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs",
@@ -47,7 +39,7 @@ const allowedTokenGuardianScripts = new Set([
   "scripts/smoke-test-v22-env-template-default-entry.mjs",
   "scripts/smoke-test-v22-product-goal-execution-order.mjs",
   "scripts/smoke-test-v22-repo-zoning-boundary.mjs",
-  "scripts/smoke-test-v22-system-domain-truth-layer-zero-old-context-gate.mjs",
+  "scripts/v22-workflow-gate.mjs",
 ]);
 
 const oldRouteFieldPatterns = [

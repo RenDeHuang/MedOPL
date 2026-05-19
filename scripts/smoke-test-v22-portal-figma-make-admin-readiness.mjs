@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
-import { retiredFigmaZipResidue } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
+import { retiredFigmaZipResidue } from "./v22-retired-surface-data.mjs";
 
 const appRoot = "services/portal/frontend/src/app";
 const figmaRoot = "/tmp/medopl-figma-make-source-admin/src/app";

@@ -93,13 +93,13 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 
 | path_or_group | zone | action | reason | replacement | cleanup_slice |
 | --- | --- | --- | --- | --- | --- |
-| `docs/plan/*` | Zone 3 | delete-or-migrate | 历史计划和路线证据不进入 active default context | v22 contracts/recovery | legacy-docs |
-| `docs/reports/*` | Zone 3 | delete-or-migrate | 历史报告证据不进入 active default context | v22 status/recovery | legacy-docs |
-| `docs/releases/*` | Zone 3 | delete-or-migrate | 历史 release 证据不进入 active default context | v22 status/recovery | legacy-docs |
-| `docs/logs/*` | Zone 3 | delete-or-migrate | 历史日志证据不进入 active default context | v22 recovery docs | legacy-docs |
+| `docs/plan/*` | Zone 3 | deleted | 历史计划和路线证据不进入 active default context；历史只保留在 git history 或 v22 recovery 摘要 | v22 contracts/recovery | legacy-docs |
+| `docs/reports/*` | Zone 3 | deleted | 历史报告证据不进入 active default context；历史只保留在 git history 或 v22 recovery 摘要 | v22 status/recovery | legacy-docs |
+| `docs/releases/*` | Zone 3 | deleted | 历史 release 证据不进入 active default context；历史只保留在 git history 或 v22 recovery 摘要 | v22 status/recovery | legacy-docs |
+| `docs/logs/*` | Zone 3 | deleted | 历史日志证据不进入 active default context；历史只保留在 git history 或 v22 recovery 摘要 | v22 recovery docs | legacy-docs |
 | `docs/deployment/*` | Zone 3 | deleted | 旧部署说明不能成为默认 deploy truth；`docker-product-appliance.md` 已删除，不再把 v19 appliance、旧 adapter/provisioner/runner 或 local Dockerfiles 解释成当前上下文 | authorized deploy contracts | legacy-docs |
-| `docs/operations/*` | Zone 3 | delete-or-migrate | 旧运维说明不能成为默认 product truth | authorized ops contracts | legacy-docs |
-| `docs/superpowers/*` | Zone 3 | delete-or-migrate | 本地计划/技能输出，不是 v22 产品主线合同 | recovery/contracts | legacy-docs |
+| `docs/operations/*` | Zone 3 | deleted | 旧运维说明不能成为默认 product truth；历史只保留在 git history 或授权 ops 合同 | authorized ops contracts | legacy-docs |
+| `docs/superpowers/*` | Zone 3 | deleted | 本地计划/技能输出不是 v22 产品主线合同；历史只保留在 git history 或 recovery 摘要 | recovery/contracts | legacy-docs |
 | `scripts/smoke-test-v19-*` | Zone 3 | delete | v19 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-v20*` | Zone 3 | delete | v20 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
 | `scripts/smoke-test-v21-*` | Zone 3 | delete | v21 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
@@ -109,7 +109,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `scripts/check-v20*` | Zone 3 | delete | v20 check 不是当前验证体系 | v22 smoke | legacy-scripts |
 | `scripts/check-v21-*` | Zone 3 | delete | v21 check 不是当前验证体系 | v22 smoke | legacy-scripts |
 | `scripts/live-prepare-v19-*` | Zone 3 | delete | v19 live prepare 不是当前验证体系 | authorized canary only | legacy-scripts |
-| `OPL-v20-商业化产品套餐开发方案.md` | Zone 3 | delete-or-migrate | v20 商业化历史参考不作为 v22 默认合同 | v22 product/contracts | legacy-docs |
+| `OPL-v20-商业化产品套餐开发方案.md` | Zone 3 | deleted | v20 商业化历史参考不作为 v22 默认合同；历史只保留在 git history 或 v22 product/contracts 摘要 | v22 product/contracts | legacy-docs |
 | `compose.demo.yaml` | Zone 3 | delete-or-migrate | demo compose 不作为 v22 产品默认入口 | explicit v22 local smoke setup | default-entry |
 | `compose.langfuse.yaml` | Zone 3 | delete | Langfuse 旧默认叙事不能成为主产品入口 | sanitized observability attachment | observability-narrative |
 

@@ -103,8 +103,7 @@ assert.deepEqual(portalUiTruthOverride.branches, [
   "cleanup/v22-portal-old-ui-smoke-residue-cleanup",
 ], "portal_ui_truth_convergence_override_branches_mismatch");
 assertIncludes(portalUiTruthOverride.reason, `current product cursor remains ${current.current_cursor}`, "portal_ui_truth_convergence_override_reason_current_truth");
-assert(portalUiTruthOverride.commands.includes("node scripts/smoke-test-v22-portal-retired-frontend-surface-gate.mjs"), "portal_ui_truth_convergence_override_must_include_retired_frontend_gate");
-assert(portalUiTruthOverride.commands.includes("node scripts/smoke-test-v22-portal-ui-truth-convergence.mjs"), "portal_ui_truth_convergence_override_must_include_truth_gate");
+assert(portalUiTruthOverride.commands.includes("node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"), "portal_ui_truth_convergence_override_must_include_retired_frontend_gate");
 assertNotIncludes(portalUiTruthOverride.commands.join("\n"), "npm --prefix services/portal/frontend run build", "portal_ui_truth_convergence_override_must_not_run_build");
 
 const strictCleanupOverride = manifest.branch_override_suites.find((suite) => suite.id === "strict-monolith-cleanup");
@@ -119,7 +118,7 @@ assertIncludes(strictCleanupOverride.reason, `current product cursor remains ${c
 assertIncludes(strictCleanupOverride.reason, "without weakening the UI authoring gate", "strict_monolith_cleanup_override_reason_no_ui_gate_weakening");
 assertNotIncludes(strictCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs", "strict_monolith_cleanup_override_must_not_run_ui_authoring_gate");
 assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs"), "strict_monolith_cleanup_override_must_include_observability_boundary");
-assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs"), "strict_monolith_cleanup_override_must_include_strict_gate");
+assert(strictCleanupOverride.commands.includes("node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"), "strict_monolith_cleanup_override_must_include_archive_physical_retirement_gate");
 assert(strictCleanupOverride.forbidden_files.some((item) => item.includes("only deletion of explicit retired assets is authorized")), "strict_monolith_cleanup_override_must_forbid_zone4_add_modify");
 assert(strictCleanupOverride.forbidden_ops.includes("real-db-migration-execution"), "strict_monolith_cleanup_override_must_forbid_real_db_migration");
 
@@ -139,9 +138,9 @@ assertIncludes(contractIndexCleanupOverride.reason, `current product cursor rema
 assertIncludes(contractIndexCleanupOverride.reason, "without weakening the UI authoring gate", "contract_index_cleanup_override_reason_no_ui_gate_weakening");
 assert(contractIndexCleanupOverride.commands.includes("node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"), "contract_index_cleanup_override_must_include_ux_boundary");
 assert(contractIndexCleanupOverride.commands.includes("node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"), "contract_index_cleanup_override_must_include_zero_compat_gate");
-assert(contractIndexCleanupOverride.commands.includes("node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs"), "contract_index_cleanup_override_must_include_strict_gate");
+assert(contractIndexCleanupOverride.commands.includes("node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"), "contract_index_cleanup_override_must_include_archive_physical_retirement_gate");
 assertNotIncludes(contractIndexCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs", "contract_index_cleanup_override_must_not_run_ui_authoring_gate");
-assertNotIncludes(contractIndexCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs", "contract_index_cleanup_override_must_not_run_resource_order_physical_branch_gate");
+assertNotIncludes(contractIndexCleanupOverride.commands.join("\n"), "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs", "contract_index_cleanup_override_must_not_run_deleted_resource_order_physical_branch_gate");
 
 assertIncludes(runnerSource, "docs/recovery/v22-agent-verify-manifest.json", "runner_must_read_manifest");
 assertIncludes(runnerSource, "docs/recovery/v22-goal-current.json", "runner_must_read_current_state");
@@ -221,15 +220,9 @@ assert.equal(strictCleanupPlanPayload.leafId, current.current_cursor, "verify_cu
 assert.equal(strictCleanupPlanPayload.branchOverride?.branch, "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement", "verify_current_strict_cleanup_branch_override_mismatch");
 assert.equal(strictCleanupPlanPayload.branchOverride?.suiteId, "strict-monolith-cleanup", "verify_current_strict_cleanup_suite_id_mismatch");
 assert.deepEqual(strictCleanupPlanPayload.commands, [
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-inventory.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-batch-run-manifest.mjs",
-  "node scripts/smoke-test-v22-physical-legacy-file-retirement-goal.mjs",
-  "node scripts/smoke-test-v22-retire-user-owned-primary-path.mjs",
-  "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  "node scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
   "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
   "node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
-  "node scripts/smoke-test-v22-strict-monolith-legacy-retirement-gate.mjs",
   "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
   "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra",
@@ -302,10 +295,11 @@ assert.equal(contractIndexCleanupPlanPayload.branchOverride?.branch, "cleanup/v2
 assert.equal(contractIndexCleanupPlanPayload.branchOverride?.suiteId, "contract-index-runtime-bridge-alignment", "verify_current_contract_index_cleanup_suite_id_mismatch");
 assert(contractIndexCleanupPlanPayload.commands.includes("node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"), "verify_current_contract_index_cleanup_must_run_ux_boundary");
 assert(contractIndexCleanupPlanPayload.commands.includes("node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"), "verify_current_contract_index_cleanup_must_run_zero_compat_gate");
+assert(contractIndexCleanupPlanPayload.commands.includes("node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"), "verify_current_contract_index_cleanup_must_run_archive_physical_retirement_gate");
 assertNotIncludes(
   contractIndexCleanupPlanPayload.commands.join("\n"),
   "node scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
-  "verify_current_contract_index_cleanup_must_not_run_resource_order_physical_branch_gate",
+  "verify_current_contract_index_cleanup_must_not_run_deleted_resource_order_physical_branch_gate",
 );
 assertNotIncludes(
   contractIndexCleanupPlanPayload.commands.join("\n"),

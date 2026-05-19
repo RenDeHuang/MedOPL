@@ -30,10 +30,10 @@ const allowedDiffPaths = new Set([
   executionOrderGatePath,
   consistencyGatePath,
   "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-  "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+  "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
   "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
-  "scripts/smoke-test-v22-legacy-script-archive-boundary.mjs",
-  "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+  "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+  "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
   "docs/recovery/legacy-cleanup-backlog.md",
   "docs/recovery/repo-zoning.md",
 ]);
@@ -50,7 +50,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "scripts/smoke-test-v22-goal-state-consistency.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-product-goal-execution-order.mjs",
-    "scripts/smoke-test-v22-retire-resource-order-primary-path.mjs",
+    "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
   ])],
   ["cleanup/v22-goal-harness-consolidation", new Set([
     "docs/recovery/v22-goal-current.json",
@@ -69,7 +69,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
     "docs/recovery/legacy-cleanup-backlog.md",
     "docs/recovery/repo-zoning.md",
-    "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+    "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
     "scripts/smoke-test-v22-goal-state-consistency.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
   ])],
@@ -93,7 +93,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/v22-goal-leaf-manifest.schema.json",
     "docs/recovery/v22-goal-state.md",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-    "scripts/smoke-test-v22-cleanup-completion-truth.mjs",
+    "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
     "scripts/smoke-test-v22-goal-state-consistency.mjs",
     "scripts/smoke-test-v22-product-goal-harness.mjs",
   ])],
@@ -426,16 +426,29 @@ function globToRegExp(pattern) {
   return new RegExp(`^${escapedParts.join(".*")}$`, "u");
 }
 
+function manifestBranchOverrideSuites(verifyManifest = {}) {
+  const branchName = currentBranchName();
+  return (verifyManifest.branch_override_suites || []).filter((suite) =>
+    suite.branch === branchName || (suite.branches || []).includes(branchName),
+  );
+}
+
 function manifestAllowedDiffPaths(verifyManifest = {}) {
   return new Set([
     ...(verifyManifest.control_plane_files || []),
     ...((verifyManifest.leaves || []).flatMap((leaf) => leaf.allowed_files || []).filter((item) => !String(item).includes("*"))),
+    ...(manifestBranchOverrideSuites(verifyManifest)
+      .flatMap((suite) => suite.allowed_files || [])
+      .filter((item) => !String(item).includes("*"))),
   ]);
 }
 
 function manifestAllowedDiffPatterns(verifyManifest = {}) {
   return [
     ...((verifyManifest.leaves || []).flatMap((leaf) => leaf.allowed_files || []).filter((item) => String(item).includes("*"))),
+    ...(manifestBranchOverrideSuites(verifyManifest)
+      .flatMap((suite) => suite.allowed_files || [])
+      .filter((item) => String(item).includes("*"))),
   ].map(globToRegExp);
 }
 

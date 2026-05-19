@@ -13,7 +13,7 @@
 - `platform-v21` 是 legacy reference，只能作为历史参考或迁移输入；不得把 v21 的默认叙事、目录边界或旧运行路径扩散成 v22 主线。
 - v22 当前产品方向是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台；用户购买套餐、计算能力、存储容量和运行环境，平台负责开通、隔离、计费、审计和释放。
 - active surface 仅限：`services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge`、`docs/product.md`、`docs/architecture.md`、`docs/contracts/v22-*`、`docs/recovery/*`、`scripts/smoke-test-v22-*`。
-- archive/reference surface 包括：`docs/plan/*`、`docs/reports/*`、`docs/releases/*`、`docs/logs/*`、`scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/live-test-*`、`OPL-v20-商业化产品套餐开发方案.md`。这些只能作为历史证据或迁移参考，不能作为新实现入口。
+- archive/reference surface 已从 active repo 物理清退：`docs/plan/*`、`docs/reports/*`、`docs/releases/*`、`docs/logs/*`、`docs/operations/*`、`docs/superpowers/*`、`scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/live-test-*`、`OPL-v20-商业化产品套餐开发方案.md` 均不得作为当前文件入口恢复；历史证据只以 git history 或已收敛的 `docs/recovery/*` 摘要存在。
 - delete/cleanup target 包括：`user_owned` primary path、`resource-order` primary path、旧 `med-autoscience-runner`、旧 `resource-provisioner`、OpenCost 主叙事、Langfuse 主产品叙事。它们进入 cleanup 分支处理，不在普通功能分支继续扩写。
 - forbidden without explicit authorization：`deploy/*`、`.sentrux/*`、`adapters/*`、one-person-lab upstream、build/push/kubectl/live-test/真实云资源操作。
 - `user_owned` 只能作为 legacy alias；新代码、新文档、新测试和默认产品叙事不得把它解释成用户自带 CVM/COS/K8s 或用户配置云资源。

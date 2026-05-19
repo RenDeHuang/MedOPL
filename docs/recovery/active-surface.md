@@ -54,19 +54,21 @@ Zero-compat 下，文件名是 `v22-*` 不自动等于 active。`live`、`canary
 - 不把 v19/v20/v21 的 smoke、live-test、部署脚本或报告当成 v22 默认验证入口。
 - 不把 live/canary/authorized runner 当成默认 executable surface。
 - 不把 `adapters/*`、`deploy/*`、`infra/*` 当成 active repo 默认上下文。
-- 不移动目录，不删除文件；清理动作另走 `cleanup/*`。
+- 迁移动作不能保留旧路径作为 active 入口；需要物理清退时必须另走明确的 `cleanup/*` 分支并由 gate 证明不存在。
 
 ## Archive / Reference
 
-以下路径只作为 archive/reference，允许阅读和引用证据，不作为新实现入口。strict monolith cleanup 下旧脚本本体不再因为历史证据保留；git history 已足够保存 v19/v20/v21 脚本事实。
+以下 archive/reference Markdown 已从 active repo 物理清退，不再作为可读目录保留。历史事实只通过 git history 和已收敛的 `docs/recovery/*` 摘要保留；不得恢复为当前实现入口、默认上下文、smoke 输入或接云依据。
 
 - `docs/plan/*`
 - `docs/reports/*`
 - `docs/releases/*`
 - `docs/logs/*`
+- `docs/operations/*`
+- `docs/superpowers/*`
 - `OPL-v20-商业化产品套餐开发方案.md`
 
-旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 v13 脚本、旧 check/daily/live-prepare、resource-provisioner/OpenCost 脚本、旧 portal resource-order/provisioner 脚本、旧 non-v22 billing/portal smoke、旧 runner fixture、旧 v19/v20 helper lib 和旧 live helper 已在 strict monolith cleanup 中删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 或旧版本 smoke 默认入口。
+旧 `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*`、旧 v13/v17 脚本、旧 check/daily/live-prepare、resource-provisioner/OpenCost 脚本、旧 portal resource-order/provisioner 脚本、旧 non-v22 billing/portal smoke、旧 runner fixture、旧 v19/v20 helper lib、旧 live helper 和 `archive/retired` v22 smoke 已删除；未来真实外部 canary 必须重新走单独授权合同，不得恢复旧 live-test 或旧版本 smoke 默认入口。
 
 ## Delete / Cleanup Target
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { retiredFrontendRoutes as retiredCoreFrontendRoutes } from "./smoke-test-v22-portal-retired-frontend-surface-gate.mjs";
+import { retiredFrontendRoutes as retiredCoreFrontendRoutes } from "./v22-retired-surface-data.mjs";
 
 const routesSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
