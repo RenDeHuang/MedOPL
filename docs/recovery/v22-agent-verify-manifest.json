@@ -571,6 +571,78 @@
   ],
   "branch_override_suites": [
     {
+      "id": "portal-workspace-file-action-closure",
+      "branch": "feat/v22-portal-workspace-file-action-closure",
+      "branches": [
+        "feat/v22-portal-workspace-file-action-closure"
+      ],
+      "description": "Implementation verification bundle for the Step 1 /workspace file-space closure branch. This keeps the Figma UI visually unchanged while wiring the existing workspace storage, entitlement, upload-url and download-url APIs into the Portal frontend and local Portal workspace storage routes.",
+      "reason": "The current product cursor remains leaf-portal-workspace-file-action-closure. This branch executes the Step 1 implementation bundle from the current truth execution index; it must run service-code gates rather than the Step 0 doc-only current-truth bundle.",
+      "risk_class": "local_service_code",
+      "commands": [
+        "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "node scripts/smoke-test-v22-portal-file-space-management.mjs",
+        "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node scripts/smoke-test-v22-workspace-storage-public-response.mjs",
+        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "npm --prefix services/portal/frontend run typecheck",
+        "npm --prefix services/portal run check",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts services/portal/frontend services/portal/src"
+      ],
+      "allowed_files": [
+        "services/portal/frontend/src/api/portal/workspace.ts",
+        "services/portal/frontend/src/app/pages/Workspace.tsx",
+        "services/portal/frontend/src/app/data/portalAdapters.ts",
+        "services/portal/src/routes/workspace-storage.routes.mjs",
+        "services/portal/src/routes/workspace-storage-route-handlers.mjs",
+        "services/portal/src/routes/workspace-storage-upload-support.mjs",
+        "services/portal/src/app/portal-workspace-runtime.mjs",
+        "services/portal/src/domain/workspace-storage.mjs",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/v22-goal-current.json",
+        "docs/recovery/v22-goal-state.md",
+        "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+        "docs/recovery/status-matrix.md",
+        "scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "scripts/smoke-test-v22-portal-file-space-management.mjs",
+        "scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
+        "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+        "scripts/v22-smoke-classification.mjs",
+        "scripts/smoke-test-v22-workspace-storage-public-response.mjs"
+      ],
+      "forbidden_files": [
+        "services/portal files outside the explicit Step 1 workspace storage write set",
+        "services/opl-web-gateway/**",
+        "services/opl-runtime-bridge/**",
+        "docs/contracts/* unless separately reviewed by the user",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        "real cloud/provider files"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign"
+      ]
+    },
+    {
       "id": "portal-ui-contract-truth-convergence",
       "branch": "cleanup/v22-portal-old-ui-smoke-residue-cleanup",
       "branches": [

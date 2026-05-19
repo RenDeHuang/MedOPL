@@ -28,6 +28,7 @@ const groups = new Map([
     "scripts/smoke-test-v22-portal-api-auth-boundary.mjs",
     "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
     "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+    "scripts/smoke-test-v22-workspace-storage-public-response.mjs",
   ]],
   ["build", [
     "services/portal:check",

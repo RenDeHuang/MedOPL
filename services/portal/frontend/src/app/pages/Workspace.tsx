@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -21,19 +21,10 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Input } from "../components/ui/input";
-import { loadWorkspaceModel, usePortalQuery } from "../data/portalAdapters";
+import { loadWorkspaceModel, usePortalQuery, type FileItem } from "../data/portalAdapters";
 import { Link } from "react-router";
 
 type PageState = "ready" | "empty-inputs" | "empty-outputs" | "file-space-unavailable" | "archived";
-
-interface FileItem {
-  name: string;
-  size: string;
-  type: string;
-  updated: string;
-  taskId?: string;
-  taskName?: string;
-}
 
 function getFileIcon(type: string) {
   if (type === "png" || type === "jpg") return <Image className="w-4 h-4 text-neutral-400" />;
@@ -42,8 +33,12 @@ function getFileIcon(type: string) {
 }
 
 export function Workspace() {
-  const query = usePortalQuery(loadWorkspaceModel, []);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const query = usePortalQuery(loadWorkspaceModel, [refreshVersion]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const uploadFileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (query.status === "loading") {
     return (
@@ -72,10 +67,90 @@ export function Workspace() {
     file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const openTransfer = (url: string) => {
+    window.location.assign(url);
+  };
+
+  function handleUploadClick() {
+    setActionMessage("");
+    uploadFileInputRef.current?.click();
+  }
+
+  async function handleUploadFileSelected(file: globalThis.File | null) {
+    if (!file) return;
+    setActionMessage("");
+    setPendingAction("upload");
+    try {
+      const intent = await model.createUploadIntent(file.name);
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      const response = await fetch(intent.url, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("workspace_upload_failed");
+      setActionMessage(`${file.name} 已上传，文件空间数据正在刷新。`);
+      setRefreshVersion((version) => version + 1);
+    } catch {
+      setActionMessage(model.fileSpaceActionMessage || "上传通道暂不可用，请确认文件空间和托管运行环境状态。");
+    } finally {
+      setPendingAction(null);
+      if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDownloadFile(file: FileItem) {
+    setActionMessage("");
+    setPendingAction(file.id);
+    try {
+      const intent = await model.createDownloadIntent(file);
+      setActionMessage(`${intent.fileName} 下载链接有效至 ${intent.expiresAt}`);
+      openTransfer(intent.url);
+    } catch {
+      setActionMessage(file.downloadUnavailableReason || "下载通道暂不可用，请稍后重试。");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleDownloadAllResults() {
+    const downloadable = model.outputFiles.filter((file) => file.canDownload);
+    if (downloadable.length === 0) {
+      setActionMessage(model.fileSpaceActionMessage || "当前没有可下载的结果文件。");
+      return;
+    }
+    setActionMessage("");
+    setPendingAction("download-all");
+    try {
+      for (const file of downloadable) {
+        const intent = await model.createDownloadIntent(file);
+        const anchor = document.createElement("a");
+        anchor.href = intent.url;
+        anchor.download = intent.fileName;
+        anchor.rel = "noreferrer";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+      setActionMessage(`已创建 ${downloadable.length} 个结果文件下载通道。`);
+    } catch {
+      setActionMessage("部分结果文件下载通道暂不可用，请稍后重试。");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   // Empty Inputs State
   if (pageState === "empty-inputs") {
     return (
       <div className="p-8 max-w-7xl mx-auto">
+        <input
+          ref={uploadFileInputRef}
+          type="file"
+          className="hidden"
+          onChange={(event) => handleUploadFileSelected(event.target.files?.[0] || null)}
+        />
         {/* Header */}
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -86,11 +161,14 @@ export function Workspace() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button asChild variant="outline">
-                <Link to="/opl-launch" title="上传请进入 OPL 工作台">
-                  <Upload className="w-4 h-4 mr-2" />
-                  上传文件
-                </Link>
+              <Button
+                variant="outline"
+                onClick={handleUploadClick}
+                disabled={!model.uploadEnabled || pendingAction === "upload"}
+                title={model.fileSpaceActionMessage || "创建文件上传通道"}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                上传文件
               </Button>
               <Button asChild className="gap-2">
                 <Link to="/opl-launch">
@@ -101,6 +179,9 @@ export function Workspace() {
             </div>
           </div>
         </div>
+        {actionMessage && (
+          <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+        )}
 
         {/* Workspace Info */}
         <Card className="border border-neutral-200 mb-6">
@@ -119,22 +200,22 @@ export function Workspace() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
                 <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
-                <div className="font-semibold text-neutral-900">生物信息学实验</div>
-                <div className="text-xs text-neutral-500 mt-1">创建于 2024-04-15</div>
+                <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
+                <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">文件空间</div>
-                <div className="font-semibold text-neutral-900">10.3 GB / 100 GB</div>
-                <div className="text-xs text-neutral-500 mt-1">剩余 89.7 GB</div>
+                <div className="font-semibold text-neutral-900">{model.fileSpaceUsed} / {model.fileSpaceTotal}</div>
+                <div className="text-xs text-neutral-500 mt-1">剩余 {model.fileSpaceAvailable}</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">工作空间状态</div>
-                <div className="font-semibold text-neutral-900">正常运行</div>
+                <div className="font-semibold text-neutral-900">{model.status}</div>
                 <div className="text-xs text-neutral-500 mt-1">文件空间可读写</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">最近回流</div>
-                <div className="font-semibold text-neutral-900">5 小时前</div>
+                <div className="font-semibold text-neutral-900">{model.latestBackflow}</div>
                 <div className="text-xs text-neutral-500 mt-1">输出结果已同步</div>
               </div>
             </div>
@@ -150,11 +231,13 @@ export function Workspace() {
             上传输入文件后，可以在 OPL 中使用这些文件进行分析和处理
           </p>
           <div className="flex gap-3">
-            <Button asChild>
-              <Link to="/opl-launch" title="上传请进入 OPL 工作台">
-                <Upload className="w-4 h-4 mr-2" />
-                上传文件
-              </Link>
+            <Button
+              onClick={handleUploadClick}
+              disabled={!model.uploadEnabled || pendingAction === "upload"}
+              title={model.fileSpaceActionMessage || "创建文件上传通道"}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              上传文件
             </Button>
             <Button asChild variant="outline">
               <Link to="/opl-launch">进入 OPL</Link>
@@ -191,6 +274,9 @@ export function Workspace() {
             </div>
           </div>
         </div>
+        {actionMessage && (
+          <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+        )}
 
         {/* Workspace Info */}
         <Card className="border border-neutral-200 mb-6">
@@ -209,23 +295,23 @@ export function Workspace() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
                 <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
-                <div className="font-semibold text-neutral-900">生物信息学实验</div>
-                <div className="text-xs text-neutral-500 mt-1">创建于 2024-04-15</div>
+                <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
+                <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">文件空间</div>
-                <div className="font-semibold text-neutral-900">18.2 GB / 100 GB</div>
-                <div className="text-xs text-neutral-500 mt-1">剩余 81.8 GB</div>
+                <div className="font-semibold text-neutral-900">{model.fileSpaceUsed} / {model.fileSpaceTotal}</div>
+                <div className="text-xs text-neutral-500 mt-1">剩余 {model.fileSpaceAvailable}</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">工作空间状态</div>
-                <div className="font-semibold text-neutral-900">正常运行</div>
+                <div className="font-semibold text-neutral-900">{model.status}</div>
                 <div className="text-xs text-neutral-500 mt-1">文件空间可读写</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">输入文件</div>
-                <div className="font-semibold text-neutral-900">127 个文件</div>
-                <div className="text-xs text-neutral-500 mt-1">占用 18.2 GB</div>
+                <div className="font-semibold text-neutral-900">{model.inputsCount} 个文件</div>
+                <div className="text-xs text-neutral-500 mt-1">占用 {model.fileSpaceUsed}</div>
               </div>
             </div>
           </div>
@@ -296,6 +382,12 @@ export function Workspace() {
   // Ready State
   return (
     <div className="p-8 max-w-7xl mx-auto">
+      <input
+        ref={uploadFileInputRef}
+        type="file"
+        className="hidden"
+        onChange={(event) => handleUploadFileSelected(event.target.files?.[0] || null)}
+      />
       {/* Header - Workspace Summary */}
       <div className="mb-8 pb-8 border-b border-neutral-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -306,7 +398,12 @@ export function Workspace() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" disabled title="结果下载请在 OPL 工作台或任务详情中完成">
+            <Button
+              variant="outline"
+              onClick={handleDownloadAllResults}
+              disabled={!model.outputFiles.some((file) => file.canDownload) || pendingAction === "download-all"}
+              title={model.fileSpaceActionMessage || "创建全部结果下载通道"}
+            >
               <Download className="w-4 h-4 mr-2" />
               下载全部结果
             </Button>
@@ -319,6 +416,9 @@ export function Workspace() {
           </div>
         </div>
       </div>
+      {actionMessage && (
+        <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+      )}
 
       {/* Workspace Info Card */}
       <Card className="border border-neutral-200 mb-6">
@@ -355,7 +455,7 @@ export function Workspace() {
               <div className="text-sm text-neutral-600 mb-1">最近回流</div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-neutral-400" />
-                <span className="font-semibold text-neutral-900">2 小时前</span>
+                <span className="font-semibold text-neutral-900">{model.latestBackflow}</span>
               </div>
               <div className="text-xs text-neutral-500 mt-1">输出结果已同步</div>
             </div>
@@ -383,11 +483,15 @@ export function Workspace() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <Button asChild size="sm" className="gap-2">
-                    <Link to="/opl-launch" title="上传请进入 OPL 工作台">
-                      <Upload className="w-4 h-4" />
-                      上传文件
-                    </Link>
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={handleUploadClick}
+                    disabled={!model.uploadEnabled || pendingAction === "upload"}
+                    title={model.fileSpaceActionMessage || "创建文件上传通道"}
+                  >
+                    <Upload className="w-4 h-4" />
+                    上传文件
                   </Button>
                 </div>
               </div>
@@ -400,9 +504,9 @@ export function Workspace() {
                 共 {model.inputFiles.length} 个文件，占用 {model.fileSpaceUsed}
               </div>
               <div className="space-y-2">
-                {filteredInputFiles.map((file, i) => (
+                {filteredInputFiles.map((file) => (
                   <div
-                    key={i}
+                    key={file.id}
                     className="flex items-center justify-between gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
                   >
                     <div className="min-w-0 flex items-center gap-3 flex-1">
@@ -420,7 +524,13 @@ export function Workspace() {
                       <Badge variant="outline" className="text-xs">
                         {file.type.toUpperCase()}
                       </Badge>
-                      <Button size="sm" variant="ghost" disabled title="文件下载请在 OPL 工作台或任务详情中完成">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDownloadFile(file)}
+                        disabled={!file.canDownload || pendingAction === file.id}
+                        title={file.downloadUnavailableReason || "创建文件下载通道"}
+                      >
                         <Download className="w-4 h-4" />
                       </Button>
                       <Button
@@ -445,9 +555,9 @@ export function Workspace() {
                 共 {model.outputFiles.length} 个结果文件
               </div>
               <div className="space-y-2">
-                {filteredOutputFiles.map((file, i) => (
+                {filteredOutputFiles.map((file) => (
                   <div
-                    key={i}
+                    key={file.id}
                     className="flex items-center justify-between gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
                   >
                     <div className="min-w-0 flex items-center gap-3 flex-1">
@@ -471,7 +581,13 @@ export function Workspace() {
                       <Badge variant="outline" className="text-xs">
                         {file.type.toUpperCase()}
                       </Badge>
-                      <Button size="sm" variant="outline" disabled title="结果下载请在 OPL 工作台或任务详情中完成">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadFile(file)}
+                        disabled={!file.canDownload || pendingAction === file.id}
+                        title={file.downloadUnavailableReason || "创建结果下载通道"}
+                      >
                         <Download className="w-4 h-4 mr-1" />
                         下载
                       </Button>
@@ -525,7 +641,7 @@ export function Workspace() {
             <span className="text-sm text-neutral-600">最近回流</span>
             <Clock className="w-4 h-4 text-neutral-400" />
           </div>
-          <div className="text-2xl font-semibold text-neutral-900">2 小时前</div>
+          <div className="text-2xl font-semibold text-neutral-900">{model.latestBackflow}</div>
           <div className="text-xs text-neutral-500 mt-1">自动同步中</div>
         </Card>
       </div>

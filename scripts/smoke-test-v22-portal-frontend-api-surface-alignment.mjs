@@ -25,6 +25,13 @@ const retiredShellPaths = [
   "/admin/sandboxes",
 ];
 
+const requiredUsedExports = [
+  "workspace.ts:fetchWorkspaceStorage",
+  "workspace.ts:fetchStorageEntitlement",
+  "workspace.ts:createWorkspaceFileUploadUrl",
+  "workspace.ts:createWorkspaceFileDownloadUrl",
+];
+
 const allowedAdjudicationStatuses = new Set([
   "active-missing-ui",
   "active-used",
@@ -128,22 +135,6 @@ const unusedAdjudications = {
   "traces.ts:fetchTraces": {
     status: "backend-only",
     reason: "Generic traces endpoint is admin scoped; ordinary React trace UI uses fetchSessionTraces.",
-  },
-  "workspace.ts:fetchWorkspaceStorage": {
-    status: "active-missing-ui",
-    reason: "Workspace storage projection exists, but current Workspace page only consumes the aggregate workspace payload.",
-  },
-  "workspace.ts:fetchStorageEntitlement": {
-    status: "active-missing-ui",
-    reason: "Storage entitlement should gate future upload/download and expansion controls, but is not read by current UI.",
-  },
-  "workspace.ts:createWorkspaceFileUploadUrl": {
-    status: "active-missing-ui",
-    reason: "Workspace file upload is expected for a usable research workspace, but current UI has no upload-url flow.",
-  },
-  "workspace.ts:createWorkspaceFileDownloadUrl": {
-    status: "active-missing-ui",
-    reason: "Workspace file download should use a backend-issued transfer URL, but current UI does not call this client.",
   },
 };
 
@@ -359,6 +350,7 @@ const unusedRows = exports.filter((item) => !usedMap.has(item.key));
 const exportKeys = new Set(exports.map((item) => item.key));
 const unusedKeys = new Set(unusedRows.map((item) => item.key));
 const usedKeys = new Set(usedRows.map((item) => item.key));
+const missingRequiredUsedExports = requiredUsedExports.filter((key) => !usedKeys.has(key));
 
 const invalidAdjudications = [];
 const staleAdjudications = [];
@@ -374,6 +366,7 @@ for (const [key, value] of Object.entries(unusedAdjudications)) {
 assert.deepEqual(staleAdjudications, [], `frontend_api_adjudication_must_target_existing_export:${JSON.stringify(staleAdjudications)}`);
 assert.deepEqual(usedAdjudications, [], `frontend_api_adjudication_must_not_target_used_export:${JSON.stringify(usedAdjudications)}`);
 assert.deepEqual(invalidAdjudications, [], `frontend_api_adjudication_invalid:${JSON.stringify(invalidAdjudications)}`);
+assert.deepEqual(missingRequiredUsedExports, [], `frontend_api_required_workspace_exports_must_be_used:${JSON.stringify(missingRequiredUsedExports)}`);
 
 const uncategorizedUnused = unusedRows.filter((item) => !unusedAdjudications[item.key]);
 const missingExports = Object.keys(unusedAdjudications).filter((key) => !unusedKeys.has(key));

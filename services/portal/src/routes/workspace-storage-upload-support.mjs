@@ -11,7 +11,7 @@ export function createWorkspaceUploadSupport({
   recordWorkspaceFile,
   safeRelativePath,
   stat,
-  syncWorkspaceFileToMinio,
+  syncWorkspaceFileToUserStorage,
   writeFile,
 }) {
   function readMultipartFiles(body, boundary) {
@@ -54,15 +54,19 @@ export function createWorkspaceUploadSupport({
       kind: normalizedKind,
       name: file.name || fileNameFrom(relativePath),
       relativePath,
-      storageKey: buildWorkspaceStorageKey(tenantId, taskSpace.slug, normalizedKind, relativePath),
-      localPath: targetFile,
+      storageKey: file.storageTarget?.storageKey || buildWorkspaceStorageKey(tenantId, taskSpace.slug, normalizedKind, relativePath),
+      localPath: file.storageTarget?.localPath || targetFile,
       sizeBytes: Number(meta.size || file.buffer.length || 0),
       checksum: buildWorkspaceFileChecksum(file.buffer),
       contentType: file.contentType || guessContentType(relativePath) || "application/octet-stream",
       status: "active",
-      source: "portal_upload",
+      source: file.storageTarget?.source || "portal_upload",
+      storageMode: file.storageTarget?.storageMode,
+      storageRootPrefix: file.storageTarget?.rootPrefix,
+      oplSessionId: file.storageTarget?.oplSessionId,
+      resourceBindingId: file.storageTarget?.resourceBindingId,
     });
-    await syncWorkspaceFileToMinio(user.id, taskSpace.slug, normalizedKind, targetFile, relativePath);
+    await syncWorkspaceFileToUserStorage(user.id, taskSpace.slug, normalizedKind, targetFile, relativePath);
     return {
       ok: true,
       file: recorded.file,

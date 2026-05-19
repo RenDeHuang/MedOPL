@@ -175,6 +175,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-user-credit-provider-key-flow.mjs": "opl-local",
   "scripts/smoke-test-v22-workflow-gate.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-workspace-storage-public-response.mjs": "portal-local",
   "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs": "default/local-contract",
 });
 

@@ -321,6 +321,26 @@ export interface WorkspaceFileTransferPayload {
   };
 }
 
+export interface WorkspaceFileUploadUrlInput {
+  task?: string;
+  workspaceId?: string;
+  kind?: "inputs" | "outputs";
+  fileName: string;
+  relativePath?: string;
+  oplSessionId?: string;
+  sessionId?: string;
+}
+
+export interface WorkspaceFileDownloadUrlParams {
+  task?: string;
+  workspaceId?: string;
+  kind?: "inputs" | "outputs";
+  file: string;
+  relativePath?: string;
+  oplSessionId?: string;
+  sessionId?: string;
+}
+
 export async function fetchWorkspace(params: WorkspaceQuery = {}) {
   const { data } = await apiClient.get<WorkspacePayload>("/workspace", { params });
   return data;
@@ -336,12 +356,12 @@ export async function fetchStorageEntitlement(params?: Record<string, string | n
   return data;
 }
 
-export async function createWorkspaceFileUploadUrl(input: { task?: string; workspaceId?: string; kind?: "inputs" | "outputs"; fileName: string; relativePath?: string }) {
+export async function createWorkspaceFileUploadUrl(input: WorkspaceFileUploadUrlInput) {
   const { data } = await apiClient.post<WorkspaceFileTransferPayload>("/workspace/files/upload-url", input);
   return data;
 }
 
-export async function createWorkspaceFileDownloadUrl(params: { task?: string; workspaceId?: string; kind?: "inputs" | "outputs"; file: string; relativePath?: string }) {
+export async function createWorkspaceFileDownloadUrl(params: WorkspaceFileDownloadUrlParams) {
   const { data } = await apiClient.get<WorkspaceFileTransferPayload>("/workspace/files/download-url", {
     params: {
       ...params,

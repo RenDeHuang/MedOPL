@@ -28,6 +28,7 @@ function publicStorageEntitlementView(entitlement = {}) {
 }
 
 function publicWorkspaceFileMetadata(file = {}) {
+  const source = text(file.source);
   return {
     fileRef: text(file.id || file.fileRef || file.file_ref),
     workspaceId: text(file.workspaceId || file.workspace_id),
@@ -38,10 +39,27 @@ function publicWorkspaceFileMetadata(file = {}) {
     checksum: text(file.checksum),
     contentType: text(file.contentType || file.content_type),
     status: text(file.status || "active"),
-    source: text(file.source),
+    source: source.split(":")[0] || "portal_upload",
     createdAt: text(file.createdAt || file.created_at),
     updatedAt: text(file.updatedAt || file.updated_at),
   };
+}
+
+function publicPendingWorkspaceFileView(file = {}) {
+  return publicWorkspaceFileMetadata({
+    id: file.fileRef || "",
+    workspaceId: file.workspaceId,
+    kind: file.kind,
+    name: file.name,
+    relativePath: file.relativePath,
+    sizeBytes: file.sizeBytes,
+    checksum: file.checksum,
+    contentType: file.contentType,
+    status: file.status || "pending_upload",
+    source: file.source || "portal_signed_proxy",
+    createdAt: file.createdAt,
+    updatedAt: file.updatedAt,
+  });
 }
 
 function publicStorageOrderView(order = {}) {
@@ -109,27 +127,27 @@ function findActiveWorkspaceBinding(deps, db, user, workspaceId, resourceBinding
   const bindingId = text(resourceBindingId);
   const ownerUserId = text(user?.id);
   const ownerTenantId = userTenantId(user);
-  if (!bindingId) return null;
-  return (db.workspaceResourceBindings || []).find((item) =>
+  const matches = (db.workspaceResourceBindings || []).filter((item) =>
     text(item.status).toLowerCase() === "active" &&
     text(item.workspaceId) === text(workspaceId) &&
-    (text(item.id) === bindingId || text(item.resourceBindingId) === bindingId) &&
+    (!bindingId || text(item.id) === bindingId || text(item.resourceBindingId) === bindingId) &&
     text(item.ownerUserId || item.userId) === ownerUserId &&
     text(item.ownerTenantId || item.tenantId || item.userId) === ownerTenantId
-  ) || null;
+  );
+  if (bindingId) return matches[0] || null;
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function fullRuntimeStorageError(input, binding) {
-  const oplSessionId = safePathSegment(input.oplSessionId || input.runId || input.sessionId);
-  const resourceBindingId = text(input.resourceBindingId);
-  if (!oplSessionId || !resourceBindingId) return { error: "full_runtime_session_required", status: 409 };
+  const oplSessionId = safePathSegment(input.oplSessionId || input.sessionId);
+  if (!oplSessionId) return { error: "full_runtime_session_required", status: 409 };
   if (!binding) return { error: "workspace_storage_binding_inactive", status: 409 };
   if (!safeRelativePrefix(binding.rootPrefix || binding.root_prefix || "")) return { error: "workspace_storage_root_invalid", status: 409 };
   return null;
 }
 
 function buildFullRuntimeStorageContext(deps, { user, taskSpace, binding, relativePath, kind, input }) {
-  const oplSessionId = safePathSegment(input.oplSessionId || input.runId || input.sessionId);
+  const oplSessionId = safePathSegment(input.oplSessionId || input.sessionId);
   const resourceBindingId = text(binding.resourceBindingId || binding.id);
   const rootPrefix = safeRelativePrefix(binding.rootPrefix || `users/${user.id}/workspaces/${taskSpace.slug}/`);
   const localPath = buildSessionScopedLocalPath(deps, taskSpace, rootPrefix, oplSessionId, kind, relativePath);
@@ -237,16 +255,21 @@ async function persistStorageRouteDb(deps, { db, taskSpace, file }) {
 
 function fullRuntimeSessionParams(url) {
   return {
-    oplSessionId: safePathSegment(url.searchParams.get("oplSessionId") || url.searchParams.get("runId") || url.searchParams.get("sessionId")),
+    oplSessionId: safePathSegment(url.searchParams.get("oplSessionId") || url.searchParams.get("sessionId")),
     resourceBindingId: text(url.searchParams.get("resourceBindingId")),
   };
 }
 
 function resolveIndexedDownload(deps, { db, user, taskSpace, kind, relativePath, oplSessionId, resourceBindingId }) {
-  if (!oplSessionId || !resourceBindingId) return { ok: false, error: "full_runtime_session_required", status: 409 };
+  if (!oplSessionId) return { ok: false, error: "full_runtime_session_required", status: 409 };
   const binding = findActiveWorkspaceBinding(deps, db, user, taskSpace.slug, resourceBindingId);
   if (!binding) return { ok: false, error: "workspace_storage_binding_inactive", status: 409 };
-  const indexedFile = findIndexedWorkspaceFile(deps, db, user, taskSpace, { kind, relativePath, oplSessionId, resourceBindingId });
+  const indexedFile = findIndexedWorkspaceFile(deps, db, user, taskSpace, {
+    kind,
+    relativePath,
+    oplSessionId,
+    resourceBindingId: text(binding.resourceBindingId || binding.id),
+  });
   if (!indexedFile) return { ok: false, error: "file_not_found", status: 404 };
   return { ok: true, binding, indexedFile };
 }
@@ -423,13 +446,13 @@ function sendUploadUrlResponse(deps, { res, taskSpace, fullRuntime, relativePath
     method: "POST",
     expiresAt: issued.expiresAt,
     url: `/portal/workspace/files/upload-signed?token=${encodeURIComponent(issued.token)}`,
-    file: {
+    file: publicPendingWorkspaceFileView({
+      workspaceId: taskSpace.slug,
       kind: "inputs",
       name: fullRuntime.storageContext.fileName,
       relativePath,
-      storageKey: fullRuntime.storageContext.storageKey,
       contentType: deps.guessContentType(relativePath),
-    },
+    }),
   });
 }
 
@@ -512,7 +535,7 @@ async function handleSignedUpload(deps, { req, res, url, db, user }) {
   }
   await deps.logPortalEvent({ type: "workspace_input_uploaded", userId: user.id, workspaceId: taskSpace.slug, fileCount: 1, fileName: saved.file.name });
   await persistStorageRouteDb(deps, { db, taskSpace, file: saved.file });
-  deps.sendJson(res, { ok: true, workspaceId: taskSpace.slug, file: saved.file });
+  deps.sendJson(res, { ok: true, workspaceId: taskSpace.slug, file: publicWorkspaceFileMetadata(saved.file) });
   return true;
 }
 

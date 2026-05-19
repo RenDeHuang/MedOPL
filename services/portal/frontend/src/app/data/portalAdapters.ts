@@ -15,7 +15,13 @@ import { bindOplSession, createOplLaunch, fetchOplBootstrap } from "../../api/po
 import { fetchMyResources, fetchOplLaunchStatus } from "../../api/portal/resources";
 import { fetchAnnouncements } from "../../api/portal/sessions";
 import { fetchSessionTraces } from "../../api/portal/traces";
-import { fetchWorkspace } from "../../api/portal/workspace";
+import {
+  createWorkspaceFileDownloadUrl,
+  createWorkspaceFileUploadUrl,
+  fetchStorageEntitlement,
+  fetchWorkspace,
+  fetchWorkspaceStorage,
+} from "../../api/portal/workspace";
 import type { ManagedFileSpaceResource, PlatformProvisionedResourcesPayload } from "../../api/portal/resources";
 import type { SelectedServerPlan } from "../../api/portal/types";
 
@@ -66,12 +72,19 @@ export function usePortalQuery<T>(loader: () => Promise<T>, deps: unknown[] = []
 }
 
 export interface FileItem {
+  id: string;
   name: string;
   size: string;
   type: string;
   updated: string;
+  kind: "inputs" | "outputs";
+  relativePath: string;
+  canDownload: boolean;
+  downloadUnavailableReason?: string;
   taskId?: string;
   taskName?: string;
+  fileRef?: string;
+  sessionId?: string;
 }
 
 export interface TaskItem {
@@ -131,9 +144,25 @@ function objectValue(value: unknown): Record<string, any> {
   return value && typeof value === "object" ? value as Record<string, any> : {};
 }
 
+function downloadTargetUrl(url: string) {
+  return url.startsWith("/") ? url : "/";
+}
+
 function fileType(name: string) {
   const ext = name.split(".").pop();
   return ext ? ext.toLowerCase() : "file";
+}
+
+function relativePathFromFile(value: { name?: string; fullPath?: string; relativePath?: string }) {
+  return stringValue(value.relativePath || value.fullPath || value.name, "");
+}
+
+function latestEventText(events: Array<{ occurredAt?: string }>) {
+  const latest = events
+    .map((event) => stringValue(event.occurredAt, ""))
+    .filter(Boolean)
+    .sort((left, right) => right.localeCompare(left))[0];
+  return latest ? dateText(latest) : "未返回";
 }
 
 function taskStatus(status: string): TaskItem["status"] {
@@ -217,35 +246,136 @@ export async function loadRuntimeEnvironmentModel() {
 
 export async function loadWorkspaceModel() {
   const workspace = await fetchWorkspace();
-  const files = workspace.files.map<FileItem>((file) => ({
-    name: file.name,
-    size: "Portal 文件",
-    type: fileType(file.name),
-    updated: workspace.workspace.createdAt ? dateText(workspace.workspace.createdAt) : "未返回",
-  }));
-  const outputs = workspace.outputs.map<FileItem>((file) => ({
-    name: file.name,
-    size: bytesToSize(file.sizeBytes),
-    type: fileType(file.name),
-    updated: dateText(file.updatedAt || file.createdAt),
-    taskId: file.taskRef,
-    taskName: file.sessionId || "会话输出",
-  }));
-  const usedGb = numberValue(workspace.fileSpace?.usedGb);
-  const capacityGb = numberValue(workspace.fileSpace?.capacityGb);
+  const workspaceId = workspace.workspace.slug;
+  const sessionId = workspace.activeSession?.id || workspace.outputs.find((file) => file.sessionId)?.sessionId || "";
+  const storageParams = {
+    workspaceId,
+    ...(sessionId ? { oplSessionId: sessionId } : {}),
+  };
+  const [storageProjection, entitlementProjection] = await Promise.all([
+    fetchWorkspaceStorage(storageParams),
+    fetchStorageEntitlement({ workspaceId }),
+  ]);
+  const entitlement = entitlementProjection.entitlement || storageProjection.entitlement || workspace.storageEntitlement;
+  const metadataByRelativePath = new Map(
+    arrayValue<NonNullable<typeof storageProjection.metadata>[number]>(storageProjection.metadata)
+      .map((item) => [item.relativePath, item] as const),
+  );
+  const fileSpaceFiles = arrayValue(workspace.fileSpace?.files);
+  const fileSpaceByRef = new Map(fileSpaceFiles.map((file) => [file.fileRef, file] as const));
+  const canUseTransferActions = Boolean(entitlement?.enabled && sessionId);
+  const downloadUnavailableReason = canUseTransferActions
+    ? ""
+    : !entitlement?.enabled
+      ? "文件空间未开通"
+      : !sessionId
+        ? "当前没有可用 OPL 会话"
+        : "托管运行环境未绑定";
+  const files = workspace.files.map<FileItem>((file) => {
+    const relativePath = relativePathFromFile(file);
+    const metadata = metadataByRelativePath.get(relativePath);
+    const fileSpaceFile = metadata?.fileRef ? fileSpaceByRef.get(metadata.fileRef) : undefined;
+    return {
+      id: metadata?.fileRef || relativePath || file.name,
+      name: file.name,
+      size: metadata ? bytesToSize(metadata.sizeBytes) : "Portal 文件",
+      type: fileType(file.name),
+      updated: dateText(metadata?.updatedAt || metadata?.createdAt || workspace.workspace.createdAt),
+      kind: "inputs",
+      relativePath,
+      canDownload: Boolean(canUseTransferActions && relativePath),
+      downloadUnavailableReason,
+      fileRef: metadata?.fileRef || fileSpaceFile?.fileRef,
+      sessionId,
+    };
+  });
+  const outputs = workspace.outputs.map<FileItem>((file) => {
+    const relativePath = relativePathFromFile(file);
+    const metadata = metadataByRelativePath.get(relativePath);
+    const fileSpaceFile = file.fileRef ? fileSpaceByRef.get(file.fileRef) : undefined;
+    const outputSessionId = file.sessionId || fileSpaceFile?.sessionId || sessionId;
+    return {
+      id: file.fileRef || metadata?.fileRef || file.artifactRef || relativePath || file.name,
+      name: file.name,
+      size: bytesToSize(file.sizeBytes ?? metadata?.sizeBytes ?? fileSpaceFile?.sizeBytes),
+      type: fileType(file.name),
+      updated: dateText(file.updatedAt || file.createdAt || metadata?.updatedAt || fileSpaceFile?.retentionUntil),
+      kind: "outputs",
+      relativePath,
+      canDownload: Boolean(entitlement?.enabled && outputSessionId && relativePath),
+      downloadUnavailableReason: entitlement?.enabled
+        ? outputSessionId ? "" : "当前结果缺少 OPL 会话"
+        : "文件空间未开通",
+      taskId: file.taskRef,
+      taskName: file.sessionId || "会话输出",
+      fileRef: file.fileRef || metadata?.fileRef || fileSpaceFile?.fileRef,
+      sessionId: outputSessionId,
+    };
+  });
+  const storageBytes = numberValue(storageProjection.storage.inputBytes) + numberValue(storageProjection.storage.outputBytes);
+  const usedGb = Math.max(numberValue(workspace.fileSpace?.usedGb), storageBytes / 1024 ** 3);
+  const capacityGb = numberValue(entitlement?.storageSizeGb, numberValue(workspace.fileSpace?.capacityGb));
+  const pageState = workspace.workspace.archivedAt
+    ? "archived"
+    : !workspace.fileSpace || !entitlement?.enabled
+      ? "file-space-unavailable"
+      : files.length === 0
+        ? "empty-inputs"
+        : outputs.length === 0
+          ? "empty-outputs"
+          : "ready";
+
+  async function createUploadIntent(fileName: string) {
+    const cleanName = stringValue(fileName, "portal-upload-placeholder.txt");
+    const transfer = await createWorkspaceFileUploadUrl({
+      workspaceId,
+      fileName: cleanName,
+      relativePath: cleanName,
+      kind: "inputs",
+      ...(sessionId ? { oplSessionId: sessionId } : {}),
+    });
+    return {
+      url: downloadTargetUrl(transfer.url),
+      method: transfer.method,
+      expiresAt: transfer.expiresAt,
+      fileName: transfer.file.name,
+    };
+  }
+
+  async function createDownloadIntent(file: FileItem) {
+    const transfer = await createWorkspaceFileDownloadUrl({
+      workspaceId,
+      kind: file.kind,
+      file: file.relativePath || file.name,
+      relativePath: file.relativePath || file.name,
+      ...(file.sessionId ? { oplSessionId: file.sessionId } : sessionId ? { oplSessionId: sessionId } : {}),
+    });
+    return {
+      url: downloadTargetUrl(transfer.url),
+      method: transfer.method,
+      expiresAt: transfer.expiresAt,
+      fileName: transfer.file.name,
+    };
+  }
+
   return {
-    pageState: workspace.workspace.archivedAt ? "archived" : workspace.fileSpace ? "ready" : "file-space-unavailable",
+    pageState,
     workspaceTitle: workspace.workspace.title,
     createdAt: dateText(workspace.workspace.createdAt),
     status: workspace.workspace.status,
+    latestBackflow: latestEventText(workspace.eventTimeline),
     fileSpaceUsed: gb(usedGb),
     fileSpaceTotal: gb(capacityGb),
     fileSpaceAvailable: gb(Math.max(0, capacityGb - usedGb)),
     fileSpacePercent: capacityGb > 0 ? Math.min(100, Math.round((usedGb / capacityGb) * 100)) : 0,
+    fileSpaceActionMessage: downloadUnavailableReason,
+    uploadEnabled: Boolean(canUseTransferActions),
     inputFiles: files,
     outputFiles: outputs,
-    inputsCount: workspace.counts.inputs,
-    outputsCount: workspace.counts.outputs,
+    inputsCount: storageProjection.storage.inputsCount || workspace.counts.inputs,
+    outputsCount: storageProjection.storage.outputsCount || workspace.counts.outputs,
+    createUploadIntent,
+    createDownloadIntent,
   } as const;
 }
 
