@@ -3,10 +3,10 @@
   "canonical": true,
   "current_truth_role": "single_write_entry",
   "markdown_role": "human_summary_history_rules_only",
-  "last_updated_at": "2026-05-18",
+  "last_updated_at": "2026-05-19",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "c00e8b8fa3148b8595863e056609ce4fbddcbfe0",
+  "base_trunk_head": "67887ac23ac0af4af3ec3ecd2c402a3baceb1fe4",
   "expected_absorbed_head": {
     "mode": "runtime_git_head_after_ff_only_absorb",
     "target_branch": "recovery/platform-v22-trunk",
@@ -23,10 +23,10 @@
       "target_branch": "recovery/platform-v22-trunk",
       "reason": "commit_sha_cannot_be_embedded_in_the_same_commit_without_changing_the_commit_sha"
     },
-    "observed_git_head": "c00e8b8fa3148b8595863e056609ce4fbddcbfe0",
-    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base after commit. This feature branch starts from the absorbed Portal local API action closure baseline, then integrates API surface alignment, admin business action closure, and PostgreSQL/Redis local storage closure without changing Figma UI visuals or information architecture. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
+    "observed_git_head": "67887ac23ac0af4af3ec3ecd2c402a3baceb1fe4",
+    "branch_ahead_explanation": "On the authoring branch, origin/recovery/platform-v22-trunk must remain at base_trunk_head while HEAD must be ahead of and descend from that base after commit. This feature branch starts from the absorbed zero-compat contract smoke retirement baseline, then integrates API surface alignment, admin business action closure, PostgreSQL/Redis local storage closure, and billing ops fail-closed handling without changing Figma UI visuals or information architecture. After ff-only absorb, the target trunk HEAD and origin/recovery/platform-v22-trunk must equal the runtime absorbed HEAD; this value is not embedded as a literal SHA because writing a commit SHA into the same commit changes the SHA."
   },
-  "last_absorbed_commit": "c00e8b8fa3148b8595863e056609ce4fbddcbfe0",
+  "last_absorbed_commit": "67887ac23ac0af4af3ec3ecd2c402a3baceb1fe4",
   "current_cursor": "leaf-portal-local-api-action-closure",
   "next_leaf": "leaf-portal-local-api-action-closure",
   "current_stage": "S5 frontend/backend product completion",
