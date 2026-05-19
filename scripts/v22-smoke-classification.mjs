@@ -6,11 +6,33 @@ export const SMOKE_CATEGORIES = Object.freeze([
   "archive/retired",
 ]);
 
+export const SMOKE_EVAL_TIERS = Object.freeze([
+  "health-check",
+  "smoke-golden",
+  "contract-local",
+  "local-regression",
+  "future-authorized",
+  "retired",
+]);
+
+export const SMOKE_EVAL_SURFACES = Object.freeze([
+  "control-plane",
+  "portal",
+  "opl",
+  "runtime-bridge",
+  "cloud",
+  "archive",
+]);
+
 export const DEFAULT_SMOKE_CATEGORIES = Object.freeze([
   "default/local-contract",
   "portal-local",
   "opl-local",
 ]);
+
+export const HEALTH_CHECK_MAX = 6;
+export const SMOKE_GOLDEN_MIN = 8;
+export const SMOKE_GOLDEN_MAX = 15;
 
 export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-admin-ops-console-boundary.mjs": "portal-local",
@@ -40,6 +62,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-env-template-default-entry.mjs": "default/local-contract",
   "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs": "opl-local",
   "scripts/smoke-test-v22-goal-state-consistency.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-golden-smoke-suite.mjs": "default/local-contract",
   "scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs": "portal-local",
   "scripts/smoke-test-v22-long-term-governance-surfaces.mjs": "default/local-contract",
   "scripts/smoke-test-v22-managed-environment-open-flow.mjs": "portal-local",
@@ -130,6 +153,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs": "default/local-contract",
   "scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs": "portal-local",
   "scripts/smoke-test-v22-smoke-classification-gate.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-smoke-eval-boundary.mjs": "default/local-contract",
   "scripts/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs": "cloud-future-authorized",
@@ -154,8 +178,99 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs": "default/local-contract",
 });
 
+export const HEALTH_CHECK_SCRIPTS = Object.freeze([
+  "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+  "scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+  "scripts/smoke-test-v22-smoke-classification-gate.mjs",
+  "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+  "scripts/smoke-test-v22-workflow-gate.mjs",
+  "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+]);
+
+export const SMOKE_GOLDEN_SCRIPTS = Object.freeze([
+  "scripts/smoke-test-v22-canonical-user-loop-contract.mjs",
+  "scripts/smoke-test-v22-managed-environment-open-flow.mjs",
+  "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs",
+  "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+  "scripts/smoke-test-v22-portal-opl-connection-contract.mjs",
+  "scripts/smoke-test-v22-pricing-plan-contract.mjs",
+  "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+  "scripts/smoke-test-v22-resource-plan-contract.mjs",
+  "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+  "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+  "scripts/smoke-test-v22-user-credit-provider-key-flow.mjs",
+]);
+
+export const SMOKE_SUITE_ENTRYPOINTS = Object.freeze([
+  "scripts/smoke-test-v22-golden-smoke-suite.mjs",
+  "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+]);
+
+const HEALTH_CHECK_SET = new Set(HEALTH_CHECK_SCRIPTS);
+const SMOKE_GOLDEN_SET = new Set(SMOKE_GOLDEN_SCRIPTS);
+const RUNTIME_BRIDGE_SURFACE_SET = new Set([
+  "scripts/smoke-test-v22-opl-acp-runtime-bridge.mjs",
+  "scripts/smoke-test-v22-opl-runtime-bridge-bootstrap.mjs",
+  "scripts/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+  "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+  "scripts/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+  "scripts/smoke-test-v22-runtime-gate-contract.mjs",
+]);
+
+const CONTROL_PLANE_SURFACE_SET = new Set([
+  ...HEALTH_CHECK_SCRIPTS,
+  ...SMOKE_SUITE_ENTRYPOINTS,
+  "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+  "scripts/smoke-test-v22-autonomous-goal-runner.mjs",
+  "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
+  "scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs",
+  "scripts/smoke-test-v22-env-template-default-entry.mjs",
+  "scripts/smoke-test-v22-goal-state-consistency.mjs",
+  "scripts/smoke-test-v22-long-term-governance-surfaces.mjs",
+  "scripts/smoke-test-v22-product-goal-execution-order.mjs",
+  "scripts/smoke-test-v22-product-goal-harness.mjs",
+  "scripts/smoke-test-v22-program-board.mjs",
+  "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
+  "scripts/smoke-test-v22-repo-zoning-boundary.mjs",
+]);
+
+const SURFACE_CONTRACT_REFS = Object.freeze({
+  "control-plane": Object.freeze(["docs/recovery/v22-agent-verify-manifest.json"]),
+  portal: Object.freeze([
+    "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+    "docs/contracts/v22-portal-user-surface-boundary.md",
+  ]),
+  opl: Object.freeze([
+    "docs/contracts/v22-portal-opl-connection-boundary.md",
+    "docs/contracts/v22-opl-work-message-file-run-boundary.md",
+  ]),
+  "runtime-bridge": Object.freeze([
+    "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
+  ]),
+  cloud: Object.freeze(["docs/contracts/v22-cloud-onboarding-workflow-boundary.md"]),
+  archive: Object.freeze(["docs/recovery/archive-policy.md"]),
+});
+
 export function smokeCategoryOf(scriptPath) {
   return SMOKE_CLASSIFICATION[normalizeSmokeScriptPath(scriptPath)] || "";
+}
+
+export function smokeEvalMetadataOf(scriptPath) {
+  const normalized = normalizeSmokeScriptPath(scriptPath);
+  const category = smokeCategoryOf(normalized);
+  const tier = smokeEvalTierOf(normalized, category);
+  const surface = smokeEvalSurfaceOf(normalized, category);
+  const contractRefs = [
+    "docs/contracts/v22-smoke-eval-boundary.md",
+    ...(SURFACE_CONTRACT_REFS[surface] || []),
+  ].filter((value, index, values) => values.indexOf(value) === index);
+  return Object.freeze({
+    scriptPath: normalized,
+    category,
+    tier,
+    surface,
+    contractRefs: Object.freeze(contractRefs),
+  });
 }
 
 export function listClassifiedSmokeScripts({ categories = SMOKE_CATEGORIES } = {}) {
@@ -166,10 +281,42 @@ export function listClassifiedSmokeScripts({ categories = SMOKE_CATEGORIES } = {
     .sort();
 }
 
+export function listSmokeEvalScripts({ tiers = SMOKE_EVAL_TIERS, surfaces = SMOKE_EVAL_SURFACES } = {}) {
+  const allowedTiers = new Set(tiers);
+  const allowedSurfaces = new Set(surfaces);
+  return Object.keys(SMOKE_CLASSIFICATION)
+    .filter((scriptPath) => {
+      const metadata = smokeEvalMetadataOf(scriptPath);
+      return allowedTiers.has(metadata.tier) && allowedSurfaces.has(metadata.surface);
+    })
+    .sort();
+}
+
 export function isSmokeClassifiedIn(scriptPath, { categories = DEFAULT_SMOKE_CATEGORIES } = {}) {
   const normalized = normalizeSmokeScriptPath(scriptPath);
   const allowed = new Set(categories);
   return allowed.has(smokeCategoryOf(normalized));
+}
+
+function smokeEvalTierOf(scriptPath, category) {
+  if (category === "archive/retired") return "retired";
+  if (category === "cloud-future-authorized") return "future-authorized";
+  if (HEALTH_CHECK_SET.has(scriptPath)) return "health-check";
+  if (SMOKE_GOLDEN_SET.has(scriptPath)) return "smoke-golden";
+  if (category === "default/local-contract") return "contract-local";
+  if (category === "portal-local" || category === "opl-local") return "local-regression";
+  return "";
+}
+
+function smokeEvalSurfaceOf(scriptPath, category) {
+  if (category === "archive/retired") return "archive";
+  if (category === "cloud-future-authorized") return "cloud";
+  if (RUNTIME_BRIDGE_SURFACE_SET.has(scriptPath)) return "runtime-bridge";
+  if (CONTROL_PLANE_SURFACE_SET.has(scriptPath)) return "control-plane";
+  if (category === "portal-local") return "portal";
+  if (category === "opl-local") return "opl";
+  if (category === "default/local-contract") return "control-plane";
+  return "";
 }
 
 function normalizeSmokeScriptPath(scriptPath) {

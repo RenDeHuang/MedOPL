@@ -15,6 +15,7 @@ const branchOverrideSuiteIds = new Set([
   "strict-monolith-cleanup",
   "contract-index-runtime-bridge-alignment",
   "system-domain-truth-layer-zero-old-context",
+  "smoke-eval-suite-semantic-convergence",
 ]);
 
 const requiredReportPhrases = [

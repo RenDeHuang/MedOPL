@@ -45,6 +45,8 @@
     "scripts/smoke-test-v22-product-goal-harness.mjs",
     "scripts/smoke-test-v22-autonomous-goal-runner.mjs",
     "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+    "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+    "scripts/smoke-test-v22-golden-smoke-suite.mjs",
     "scripts/v22-retired-surface-data.mjs"
   ],
   "control_plane_branches": [
@@ -423,10 +425,62 @@
     },
     {
       "id": "mvp",
-      "description": "Default local, no-secret, no-live-cloud MVP regression suite.",
+      "description": "Legacy local deterministic regression entrypoint. It is not the pure smoke suite; use suite smoke for the small golden path.",
       "entrypoint": "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ]
+    },
+    {
+      "id": "health",
+      "description": "Smallest local control-plane health check. This proves gate integrity only; it does not run Portal/OPL/cloud regressions.",
+      "entrypoint": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node scripts/smoke-test-v22-workflow-gate.mjs",
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"
+      ]
+    },
+    {
+      "id": "smoke",
+      "description": "Small golden-path smoke suite. This is the only broad v22 suite that should be called smoke.",
+      "entrypoint": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-golden-smoke-suite.mjs"
+      ]
+    },
+    {
+      "id": "local-contract",
+      "description": "Local deterministic contract/control-plane eval suite. This is wider than smoke and does not call cloud, deploy, live-test, or secrets.",
+      "entrypoint": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node scripts/smoke-test-v22-workflow-gate.mjs",
+        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"
+      ]
+    },
+    {
+      "id": "local-regression",
+      "description": "Local deterministic regression suite for Portal, OPL, Runtime Bridge, and contracts. This supersedes treating the old mvp suite as pure smoke.",
+      "entrypoint": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+      ]
+    },
+    {
+      "id": "cloud-future-authorized",
+      "description": "Classification-only visibility suite for future-authorized cloud/live/deploy gates. It does not authorize or execute real cloud operations.",
+      "entrypoint": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs"
       ]
     },
     {
@@ -784,6 +838,55 @@
         "build-push-kubectl",
         "deploy",
         "live-test",
+        "upstream-write",
+        "dependency-upgrade"
+      ]
+    },
+    {
+      "id": "smoke-eval-suite-semantic-convergence",
+      "branch": "cleanup/v22-smoke-eval-suite-semantic-convergence",
+      "branches": [
+        "cleanup/v22-smoke-eval-suite-semantic-convergence"
+      ],
+      "description": "Verification bundle for the smoke/eval suite semantic convergence cleanup branch. This narrows smoke to health-check and golden-path semantics while keeping broader evals in local contract/regression suites.",
+      "reason": "This cleanup branch changes only docs and scripts classification/runner metadata for local deterministic smoke/eval semantics; it does not touch services, cloud, secret, deploy, upstream, build/push/kubectl or live-test.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/contracts docs/recovery scripts"
+      ],
+      "allowed_files": [
+        "docs/contracts/README.md",
+        "docs/contracts/v22-smoke-eval-boundary.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "scripts/smoke-test-v22-golden-smoke-suite.mjs",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        ".env.demo.template",
+        "upstream one-person-lab",
+        "secret-like paths",
+        "true cloud runners"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
         "upstream-write",
         "dependency-upgrade"
       ]

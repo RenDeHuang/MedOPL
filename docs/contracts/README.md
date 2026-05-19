@@ -44,6 +44,7 @@
 
 ## 共享边界合同
 
+- smoke / eval 分层: [v22-smoke-eval-boundary.md](./v22-smoke-eval-boundary.md)。`scripts/smoke-test-v22-*` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - token/provider key: [v22-token-provider-boundary.md](./v22-token-provider-boundary.md), [v22-user-credit-provider-key-boundary.md](./v22-user-credit-provider-key-boundary.md), [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md)。API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-managed-environment-open-boundary.md](./v22-managed-environment-open-boundary.md)
