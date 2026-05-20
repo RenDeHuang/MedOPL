@@ -47,6 +47,76 @@ History 承接：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity
+
+Status: `ready_for_b_review`
+
+Branch: `cleanup/v22-post-absorb-closeout-and-gate-integrity`
+
+Base trunk HEAD: `2e644fc774e567db9418e3d13942e1598434433e`
+
+Model:
+
+- controller: `gpt-5.5` runtime; repository policy for future native subagents remains `gpt-5.4`, `gpt-5.3-codex`, or `gpt-5.4-mini`.
+- subagents: none.
+
+Commits:
+
+- `bcf97e8 docs(v22): close current index loop absorb truth`
+- `a57ac0c test(v22): gate workflow command references`
+- final closeout commit: records this A handoff.
+
+Scope:
+
+- Close the absorbed `cleanup/v22-current-state-index-loop-normalization` truth to `2e644fc774e567db9418e3d13942e1598434433e`.
+- Align `docs/active/README.md`, this history summary, and `tests/fixtures/v22/goal-current.json` on the same latest absorbed commit.
+- Harden workflow start templates so every referenced `tests/**/*.mjs` command must point at an existing tracked test file.
+- Replace stale workflow template commands that referenced retired tests with current existing gates.
+- Add this cleanup branch override to the verify manifest without changing the business cursor.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/active/README.md`
+- `docs/history/README.md`
+- `docs/policies/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+
+Verification before handoff:
+
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
+- `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`: pass.
+- `node tests/health/health-check-v22-workflow-gate.mjs`: pass.
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs tests scripts`: pass.
+
+Non-goals:
+
+- No PostgreSQL/Redis implementation.
+- No services business code change.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream modification.
+- No compatibility layer or old contracts/recovery/scripts resurrection.
+
+B review packet:
+
+- Review branch: `cleanup/v22-post-absorb-closeout-and-gate-integrity`.
+- Review base: `2e644fc774e567db9418e3d13942e1598434433e`.
+- Review focus: latest absorbed commit closeout, workflow start-template test reference integrity, manifest branch override, no services/forbidden-surface changes, and no business cursor advancement.
+- Verify: run `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts`.
+- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, and run post-push verification.
+
+Next recommendation:
+
+- After B absorbs this closeout/gate-integrity branch and post-absorb truth closeout is recorded, run the product cursor `leaf-portal-postgres-redis-local-production-data-closure`.
+
 ### 2026-05-21 cleanup/v22-current-state-index-loop-normalization
 
 Status: `absorbed / pushed / post-push verified`
