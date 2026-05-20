@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。下一业务 leaf 必须让 PostgreSQL 成为 local production data 的 canonical truth，让 Redis 只用于 session/cache/queue/lock。`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
 
-最近已吸收的治理闭环是 `cleanup/v22-retirement-lifecycle-system-closure`，absorbed commit 为 `3ca2ee48f55bb154776c60605a497d9a2e7e1752`。该 closeout 只建立 OPL-style 清退生命周期和 post-absorb truth 纪律，不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
+最近已吸收的治理闭环是 `cleanup/v22-current-state-index-loop-normalization`，absorbed commit 为 `2e644fc774e567db9418e3d13942e1598434433e`。该 closeout 建立 docs -> active truth -> specs/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor 的自治索引闭环，不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
 
 当前已收敛的事实：
 

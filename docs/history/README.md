@@ -49,7 +49,7 @@ History 承接：
 
 ### 2026-05-21 cleanup/v22-current-state-index-loop-normalization
 
-Status: `ready_for_b_review`
+Status: `absorbed / pushed / post-push verified`
 
 Branch: `cleanup/v22-current-state-index-loop-normalization`
 
@@ -67,7 +67,7 @@ Commits:
 - `82891db docs(v22): tighten autonomous taxonomy index loop`
 - `e14f055 docs(v22): close lifecycle absorb truth to latest trunk`
 - `2123791 test(v22): gate current state index loop`
-- final closeout commit: records this A handoff.
+- `2e644fc docs(v22): record current state index loop run`
 
 Scope:
 
@@ -95,13 +95,27 @@ Contract subscription:
 - `scripts/v22-verify.mjs`
 - `scripts/v22-workflow-gate.mjs`
 
-Verification before handoff:
+post_push_verification:
 
 - `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
 - `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`: pass.
 - `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
-- Final A handoff verification must re-run current, local-contract, workflow review, diff check and added-lines secret scan.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs tests scripts`: pass.
+
+
+absorbed_commit: `2e644fc774e567db9418e3d13942e1598434433e`
+
+b_review_result: `passed / ff-only absorbed / pushed`
+
+post_absorb_truth_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 
 Non-goals:
 
@@ -112,17 +126,17 @@ Non-goals:
 - No Figma UI visual/layout/information-architecture change.
 - No compatibility layer or old contracts/recovery/scripts resurrection.
 
-B review packet:
+B review result:
 
 - Review branch: `cleanup/v22-current-state-index-loop-normalization`.
 - Review base: `3ca2ee48f55bb154776c60605a497d9a2e7e1752`.
 - Review focus: docs root truth lookup, product/runtime spec-anchor indexes, latest absorbed commit closeout, new index-loop gate, manifest current/local-contract/history-closeout wiring, and no services/forbidden-surface changes.
 - Verify: run `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts`.
-- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, and run post-push verification.
+- Absorbed by B with ff-only merge, pushed to `origin/recovery/platform-v22-trunk`, post-push verification recorded above.
 
 Next recommendation:
 
-- After B absorbs this index-loop normalization and post-absorb closeout is recorded, run `leaf-portal-postgres-redis-local-production-data-closure`.
+- Run the product cursor `leaf-portal-postgres-redis-local-production-data-closure`.
 
 ### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure
 

@@ -8,7 +8,8 @@ const repoRoot = path.resolve(__dirname, "../..");
 
 const lifecycleGate = "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs";
 const hardRetirementCommit = "2a4254915f43186e312f406e5de31629c1c6700b";
-const latestAbsorbedCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
+const lifecycleClosureCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
+const latestAbsorbedCommit = "2e644fc774e567db9418e3d13942e1598434433e";
 
 function repoPath(...parts) {
   return parts.join("/");
@@ -191,12 +192,22 @@ assertNotIncludes(hardRetirementSection, "Status: `ready_for_b_review`", "histor
 const lifecycleClosureSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure");
 assertIncludesAll(lifecycleClosureSection, [
   "Status: `absorbed / pushed / post-push verified`",
-  `absorbed_commit: \`${latestAbsorbedCommit}\``,
+  `absorbed_commit: \`${lifecycleClosureCommit}\``,
   "b_review_result: `passed / ff-only absorbed / pushed`",
   "post_absorb_truth_closeout: `completed`",
   "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
 ], "history_lifecycle_closure_closeout");
 assertNotIncludes(lifecycleClosureSection, "Status: `ready_for_b_review`", "history_absorbed_lifecycle_closure");
+
+const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
+assertIncludesAll(latestRunSection, [
+  "Status: `absorbed / pushed / post-push verified`",
+  `absorbed_commit: \`${latestAbsorbedCommit}\``,
+  "b_review_result: `passed / ff-only absorbed / pushed`",
+  "post_absorb_truth_closeout: `completed`",
+  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
+], "history_latest_closeout");
+assertNotIncludes(latestRunSection, "Status: `ready_for_b_review`", "history_absorbed_latest_run");
 
 assert.equal(current.current_cursor, "leaf-portal-postgres-redis-local-production-data-closure", "current_cursor_must_remain_business_leaf");
 assert.equal(current.next_leaf, "leaf-portal-postgres-redis-local-production-data-closure", "next_leaf_must_remain_business_leaf");

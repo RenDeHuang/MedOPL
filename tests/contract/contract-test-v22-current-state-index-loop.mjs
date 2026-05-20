@@ -18,7 +18,7 @@ const files = {
   current: "tests/fixtures/v22/goal-current.json",
 };
 
-const latestAbsorbedCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
+const latestAbsorbedCommit = "2e644fc774e567db9418e3d13942e1598434433e";
 const currentCursor = "leaf-portal-postgres-redis-local-production-data-closure";
 const indexLoopGate = "node tests/contract/contract-test-v22-current-state-index-loop.mjs";
 
@@ -130,7 +130,7 @@ assert(currentSuite.commands.includes(indexLoopGate), "current_suite_must_run_in
 assert(localContractSuite.commands.includes(indexLoopGate), "local_contract_must_run_index_loop_gate");
 assert.deepEqual(historyCloseoutSuite.commands, [indexLoopGate], "history_closeout_suite_must_only_run_index_loop_gate");
 
-const lifecycleSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure");
+const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
 for (const expected of [
   "Status: `absorbed / pushed / post-push verified`",
   `absorbed_commit: \`${latestAbsorbedCommit}\``,
@@ -139,9 +139,10 @@ for (const expected of [
   "post_absorb_truth_closeout: `completed`",
   `next_cursor: \`${currentCursor}\``,
 ]) {
-  assertIncludes(lifecycleSection, expected, "history_lifecycle_closeout");
+  assertIncludes(latestRunSection, expected, "history_lifecycle_closeout");
 }
-assert.equal(lifecycleSection.includes("Status: `ready_for_b_review`"), false, "absorbed_history_must_not_be_ready_for_b_review");
+assert.equal(latestRunSection.includes("Status: `ready_for_b_review`"), false, "absorbed_history_must_not_be_ready_for_b_review");
+assertIncludes(latestRunSection, "post_absorb_truth_closeout: `completed`", "history_latest_run_closeout");
 assert.equal(current.last_absorbed_commit, latestAbsorbedCommit, "history_current_commit_must_match_goal");
 
 console.log(JSON.stringify({
