@@ -718,6 +718,7 @@
         "node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
         "node scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
         "node scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
+        "node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
         "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
@@ -764,6 +765,79 @@
     }
   ],
   "branch_override_suites": [
+    {
+      "id": "docs-taxonomy-skeleton",
+      "branch": "cleanup/v22-docs-taxonomy-skeleton",
+      "branches": [
+        "cleanup/v22-docs-taxonomy-skeleton"
+      ],
+      "description": "Verification bundle for the OPL-style docs/tests taxonomy skeleton cleanup branch. This branch creates one-README-per-lifecycle-directory skeletons, records blocked-retain old paths, and adds a local gate without moving or deleting existing contracts, recovery docs, agent-runs or smoke/eval scripts.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped docs taxonomy, classification, agent-run and workflow gates and must not execute the future PostgreSQL/Redis implementation bundle.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts"
+      ],
+      "allowed_files": [
+        "docs/README.md",
+        "docs/active/README.md",
+        "docs/product/README.md",
+        "docs/runtime/README.md",
+        "docs/specs/README.md",
+        "docs/policies/README.md",
+        "docs/delivery/README.md",
+        "docs/source/README.md",
+        "docs/public/README.md",
+        "docs/references/README.md",
+        "docs/history/README.md",
+        "tests/README.md",
+        "docs/recovery/v22-repo-governance-physical-compaction-index.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/agent-runs/2026-05-20-cleanup-v22-docs-taxonomy-skeleton.md",
+        "scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "retired_files": [],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "physical deletion of docs/contracts/**",
+        "physical deletion of docs/recovery/**",
+        "physical deletion of scripts/smoke-test-v22-*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation",
+        "admin-business-closure",
+        "physical-delete",
+        "ff-only-absorb",
+        "git-push"
+      ]
+    },
     {
       "id": "contract-smoke-eval-index-compaction",
       "branch": "cleanup/v22-contract-smoke-eval-index-compaction",

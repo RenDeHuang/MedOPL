@@ -39,6 +39,21 @@ const blockedRetireCandidates = Object.freeze([
   ".env.demo.template",
 ]);
 
+const taxonomySkeletonReadmes = Object.freeze([
+  "docs/README.md",
+  "docs/active/README.md",
+  "docs/product/README.md",
+  "docs/runtime/README.md",
+  "docs/specs/README.md",
+  "docs/policies/README.md",
+  "docs/delivery/README.md",
+  "docs/source/README.md",
+  "docs/public/README.md",
+  "docs/references/README.md",
+  "docs/history/README.md",
+  "tests/README.md",
+]);
+
 const allowedNonV22Scripts = Object.freeze([
   "scripts/check-mojibake.mjs",
   "scripts/fixtures/opl-product-api-fixture.mjs",
@@ -140,6 +155,7 @@ function classifyTrackedFile(filePath) {
   if (filePath.startsWith(".sentrux/")) return "frozen-governance";
   if (filePath === "docs/product.md" || filePath === "docs/architecture.md") return "truth";
   if (["docs/status.md", "docs/vibe-coding.md", "docs/invariants.md", "docs/decisions.md"].includes(filePath)) return "governance-reference";
+  if (taxonomySkeletonReadmes.includes(filePath)) return "taxonomy-skeleton";
   if (filePath === "docs/contracts/README.md" || /^docs\/contracts\/v22-.+\.md$/u.test(filePath)) return "contracts";
   if (filePath.startsWith("docs/recovery/agent-runs/")) return "agent-runs";
   if (filePath.startsWith("docs/recovery/")) return "truth-index";
@@ -222,6 +238,10 @@ for (const repoPath of smokeEvalRetiredPaths) {
 
 for (const repoPath of blockedRetireCandidates) {
   assert(indexText.includes(repoPath), `repo_governance_index_must_record_blocked_candidate:${repoPath}`);
+}
+
+for (const repoPath of taxonomySkeletonReadmes) {
+  assert(indexText.includes(repoPath), `repo_governance_index_must_record_taxonomy_skeleton:${repoPath}`);
 }
 
 const loopText = await source("docs/recovery/v22-agent-first-development-loop.md");

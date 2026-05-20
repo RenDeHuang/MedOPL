@@ -107,6 +107,25 @@
 - `docs/recovery/v22-contract-eval-compaction-index.md`
 - `docs/recovery/v22-repo-governance-physical-compaction-index.md`
 
+### taxonomy-skeleton
+
+`cleanup/v22-docs-taxonomy-skeleton` 新增 OPL-style lifecycle taxonomy 骨架。它们是过渡期的人读目录入口，不替代当前 machine truth、contracts、recovery cursor 或 verify manifest。
+
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/public/README.md`
+- `docs/references/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+
+本组文件的删除门槛与旧文档相反：它们是后续清退旧 `docs/contracts/**`、`docs/recovery/**` 和 `scripts/smoke-test-v22-*` 前的替代 taxonomy skeleton；本轮不物理删除旧路径。
+
 ### eval
 
 Eval 入口继续保留分层：
