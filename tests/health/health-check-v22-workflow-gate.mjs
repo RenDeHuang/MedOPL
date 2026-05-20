@@ -140,6 +140,7 @@ const fullTaxonomyAuthorizedDeletes = evaluateReview({
     ["docs", "product.md"].join("/"),
     ["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"),
     "tests/contract/contract-test-v22-goal-state-consistency.mjs",
+    "tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs",
   ],
   changedStatuses: new Map([
     [["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"), "D"],
@@ -147,16 +148,19 @@ const fullTaxonomyAuthorizedDeletes = evaluateReview({
     [["docs", "product.md"].join("/"), "D"],
     [["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"), "D"],
     ["tests/contract/contract-test-v22-goal-state-consistency.mjs", "D"],
+    ["tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs", "D"],
   ]),
 });
 assert.equal(fullTaxonomyAuthorizedDeletes.ok, true, "full_taxonomy_authorized_deletes_must_be_ok");
 assert.deepEqual(fullTaxonomyAuthorizedDeletes.forbiddenPaths, [], "full_taxonomy_deletes_forbidden_paths_must_be_empty");
+assert.deepEqual(fullTaxonomyAuthorizedDeletes.secretLikePaths, [], "full_taxonomy_deletes_secret_like_paths_must_be_empty");
 assert.deepEqual(fullTaxonomyAuthorizedDeletes.authorizedCleanupDeletions, [
   ["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"),
   ["docs", "recovery", "status-matrix.md"].join("/"),
   ["docs", "product.md"].join("/"),
   ["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"),
   "tests/contract/contract-test-v22-goal-state-consistency.mjs",
+  "tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs",
 ], "full_taxonomy_delete_authorization_mismatch");
 
 const strictCleanupAuthorizedDeletes = evaluateReview({
