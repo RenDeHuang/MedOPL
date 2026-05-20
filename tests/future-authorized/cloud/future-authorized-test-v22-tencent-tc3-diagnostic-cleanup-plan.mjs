@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 const smokePath = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 
@@ -71,7 +71,7 @@ assertIncludesAll(contract, [
 ], "tc3_cleanup_contract_data");
 
 assertIncludesAll(readme, [
-  "v22-tencent-tc3-diagnostic-cleanup-plan.md",
+  "spec:v22-tencent-tc3-diagnostic-cleanup-plan",
   "TC3 diagnostic cleanup plan",
   "official SDK readonly live 成功生成脱敏 report",
 ], "tc3_cleanup_readme");

@@ -25,7 +25,7 @@ const branchScopedAllowedDiffPatterns = new Map([
   ["cleanup/v22-zero-compat-contract-smoke-physical-retirement", [
     "OPL-v20-*",
     "docs/status.md",
-    "docs/contracts/v22-*",
+    "docs/specs/v22-*",
     "docs/recovery/*",
     "docs/plan/**",
     "docs/reports/**",

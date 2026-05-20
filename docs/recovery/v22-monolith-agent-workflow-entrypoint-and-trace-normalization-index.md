@@ -20,8 +20,8 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - `README.md`
 - `docs/status.md`
 - `docs/vibe-coding.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-truth-repo-narrative-reference-unification-index.md`
@@ -41,7 +41,7 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 | Entrypoint references | `gpt-5.4` | `README.md`, `AGENTS.md`, `docs/**`, `scripts/**` | `mvp-contract-suite` still appeared as default validation in root/recovery docs; `v22-agent-workflow.mjs` remained blocked-retain, not delete-ready. |
 | Agent-run records | `gpt-5.4` | `docs/recovery/agent-runs/**`, agent-run gate | Directory lacked README/schema; records have mixed headings, pending/absorbed ambiguity, and only partial gate coverage. |
 | Smoke/eval scripts | `gpt-5.4` | `tests/**/*.mjs`, classification, smoke/eval contract | `portal-runtime-suite` and `cloud-resource-contract-suite` are suite wrappers but were counted as atomic. |
-| Contracts/recovery docs | `gpt-5.4` | `docs/contracts/**`, `docs/recovery/**` | No delete-ready docs; blocked-retain docs still have live references or authorization-boundary semantics. |
+| Contracts/recovery docs | `gpt-5.4` | `docs/specs/**`, `docs/recovery/**` | No delete-ready docs; blocked-retain docs still have live references or authorization-boundary semantics. |
 
 ## Entrypoint Truth
 
@@ -85,8 +85,8 @@ Current blocked-retain candidates include:
 - `docs/recovery/cloud-onboarding-execution-board.md`
 - `docs/recovery/cloud-onboarding-status-table.md`
 - `docs/recovery/cloud-onboarding-verification-matrix.md`
-- `docs/contracts/v22-admin-ops-console-boundary.md`
-- `docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 ## Physical Retirement Rule
 

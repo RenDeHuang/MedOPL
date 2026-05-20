@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-saas-control-plane-user-experience-boundary.md";
-const contractIndexPath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const contractIndexPath = "docs/specs/README.md";
 const activeTruthPath = "docs/active/README.md";
 const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
 const mvpAcceptancePath = "docs/recovery/mvp-contract-acceptance.md";
 
 const startMarker = "<!-- v22-saas-control-plane-user-experience-contract:start -->";
 const endMarker = "<!-- v22-saas-control-plane-user-experience-contract:end -->";
-const uxContractRef = "v22-saas-control-plane-user-experience-boundary.md";
+const uxContractRef = "spec:v22-saas-control-plane-user-experience-boundary";
 
 const truthLayerNames = [
   "服务商品真相",

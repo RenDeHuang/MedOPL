@@ -29,7 +29,7 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 
 | Scope | Model | Result |
 | --- | --- | --- |
-| `docs/contracts/**` | `gpt-5.4-mini` | 43 个合同 Markdown 文件均不是 delete-ready；12 个 future-authorized / 阶段合同是 retire-candidate，但仍承担授权边界。 |
+| `docs/specs/**` | `gpt-5.4-mini` | 43 个合同 Markdown 文件均不是 delete-ready；12 个 future-authorized / 阶段合同是 retire-candidate，但仍承担授权边界。 |
 | `docs/recovery/**` | `gpt-5.4-mini` | recovery 层稳定分为 truth / index / agent-runs / blocked-retain / retire-candidate；无 delete-ready。 |
 | `scripts/**` | `gpt-5.4-mini` | 149 个 `smoke-test-v22-*` 均已分类；只有 health-check 和 smoke-golden 是 smoke，其余是 eval / future-authorized / wrapper / gate-self-test。 |
 | reference chain | `gpt-5.4-mini` | 所有可疑 retire 候选仍有活引用；替代权威已存在但旧引用未迁完，因此无 delete-ready。 |
@@ -38,7 +38,7 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 
 | Layer | 当前权威 | Decision |
 | --- | --- | --- |
-| contracts | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | keep / blocked-retain；无 delete-ready。 |
+| contracts | `AGENTS.md`, `docs/specs/README.md`, `docs/specs/README.md` | keep / blocked-retain；无 delete-ready。 |
 | truth | `docs/product.md`, `docs/architecture.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-truth-freeze.md`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` | keep。 |
 | index | `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, compaction indexes | keep；本文件加入治理索引层。 |
 | eval | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs` | keep / blocked-retain；无 delete-ready。 |

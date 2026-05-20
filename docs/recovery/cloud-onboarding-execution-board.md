@@ -10,7 +10,7 @@ current phase: 合同清退与本地 smoke 对齐阶段（不接云）；legacy 
 
 当前 recovery 口径：先清合同-smoke-实现漂移，不接云。历史 cloud live/deploy 记录降级为 historical evidence，不等于当前阶段授权。
 
-本执行板不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前 cloud-lane 分支清退旧 CO/bridge-blocker 口径，落地 harness manifest、selector/check smoke 和 Portal async worker 控制面。生产真实验收必须按 L1 -> L2a -> L2b -> L3 -> L4 串联执行，不能把 direct canary、deploy runtime smoke 或本地 fake-live 当作完整产品闭环。
+本执行板不替代 `docs/specs/README.md`。workflow contract 定义完整状态机；本文件只记录当前 program 位置、lane 编排、离场条件、blocker 回流和需要用户确认的 gate。当前 cloud-lane 分支清退旧 CO/bridge-blocker 口径，落地 harness manifest、selector/check smoke 和 Portal async worker 控制面。生产真实验收必须按 L1 -> L2a -> L2b -> L3 -> L4 串联执行，不能把 direct canary、deploy runtime smoke 或本地 fake-live 当作完整产品闭环。
 
 2026-05 framework mapping：Portal API 采用 async request-reply，只写 operation/outbox 并返回 `202 + operationId`；真实 COS/TKE mutation 由独立 leased worker drain；reconciliation 使用 controller desired/current 模型，恢复时 cleanup-first/reconcile-first；harness engineering 要求合同、manifest、selector、smoke、evidence 和 handoff 全部 repo-tracked。
 
@@ -40,7 +40,7 @@ Current goal leaf `leaf-cloud-lane-readonly-status-audit` is a repo-tracked loca
 - cloud-lane model: `gpt-5.4`
 - cloud-lane stack base: `origin/recovery/platform-v22-trunk` at `9b68c44`
 - cloud-lane status: rebased; starter minimal Portal live loop evidence recorded with cleanup proof; production full-matrix acceptance is not claimed
-- workflow contract: `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
+- workflow contract: `docs/specs/README.md`
 - harness manifest: `docs/recovery/v22-cloud-harness-manifest.json`
 - status table: `docs/recovery/cloud-onboarding-status-table.md`
 - execution board owner: B for board truth, A for implementation task packages, user for live authorization
@@ -108,7 +108,7 @@ serial real side effects:
 
 parallel lane rules:
 
-- docs/contracts。
+- docs/specs。
 - smoke。
 - fake wrapper。
 - cleanup plan。
@@ -235,7 +235,7 @@ Contract problem to solve next:
 
 Contract update:
 
-- `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` is the repo-tracked OPL deployment ownership / release plan sub-contract.
+- `docs/specs/README.md` is the repo-tracked OPL deployment ownership / release plan sub-contract.
 - `platform_service_target` covers Portal/Gateway/Runtime Bridge/shared Runtime Bridge target classes and requires `ownerRef/operationId`.
 - `workspace_runtime_target` covers workspace Runtime Agent/runtime workload target classes and requires `ownerRef/operationId/workspaceId/resourceBindingId`.
 - This contract only enables config/fake-live ownership validation; real TCR push, kubectl dry-run, rollout, runtime smoke and rollback evidence remain separate Package D steps requiring explicit authorization.
@@ -306,7 +306,7 @@ Discovery status:
     "requiresHarnessManifestBeforeLive": true,
     "requiresCleanupProofBeforeAbsorption": true
   },
-  "workflowContract": "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+  "workflowContract": "docs/specs/README.md",
   "statusTable": "docs/recovery/cloud-onboarding-status-table.md",
   "readsSecretNow": false,
   "callsRealCloudNow": false,
@@ -377,7 +377,7 @@ Discovery status:
     "rolloutDone": true,
     "ownerGuardBlocked": false,
     "requiresOwnershipReleasePlanSubContract": true,
-    "ownershipReleasePlanContract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+    "ownershipReleasePlanContract": "docs/specs/README.md",
     "ownershipReleasePlanContractReady": true,
     "realRolloutStillBlocked": false,
     "realRolloutBlocker": null,
@@ -429,7 +429,7 @@ Discovery status:
     "merge/push"
   ],
   "parallelLaneRules": [
-    "docs/contracts",
+    "docs/specs",
     "smoke",
     "fake wrapper",
     "cleanup plan",

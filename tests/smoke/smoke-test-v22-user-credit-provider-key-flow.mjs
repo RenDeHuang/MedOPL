@@ -208,7 +208,7 @@ try {
 
   assert.equal(writes.length >= 3, true, "mutating_routes_must_persist_db");
 
-  const contract = await readFile("docs/contracts/v22-user-credit-provider-key-boundary.md", "utf8");
+  const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
     "provider_key_required",
     "readyForManagedEnvironment",

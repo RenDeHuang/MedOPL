@@ -24,13 +24,13 @@
 - recovery truth/index auditor：`gpt-5.4`
 - scripts smoke/eval auditor：`gpt-5.4`
 
-四个 subagent 都是只读审计：未改文件、未读 secret、未触云、未执行 build/deploy/kubectl/live-test。审计范围覆盖 `AGENTS.md`、`README.md`、`docs/*.md`、`docs/contracts/**`、`docs/recovery/**`、`scripts/**`。
+四个 subagent 都是只读审计：未改文件、未读 secret、未触云、未执行 build/deploy/kubectl/live-test。审计范围覆盖 `AGENTS.md`、`README.md`、`docs/*.md`、`docs/specs/**`、`docs/recovery/**`、`scripts/**`。
 
 ## 五层权威
 
 | Layer | 当前权威 | 规则 |
 | --- | --- | --- |
-| contracts | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | 长期不变量、接口边界、授权边界、非目标。 |
+| contracts | `AGENTS.md`, `docs/specs/README.md`, `docs/specs/README.md` | 长期不变量、接口边界、授权边界、非目标。 |
 | truth | `docs/product.md`, `docs/architecture.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-truth-freeze.md`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` | 当前产品、架构、数据、云、治理事实。 |
 | index | `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, compaction indexes | current cursor、next leaf、allowed files、forbidden surface、verification bundle、cleanup 顺序。 |
 | eval | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs` | 机器验收入口；smoke 只指 health/golden，小范围之外都叫 eval/local-regression/future-authorized。 |
@@ -55,7 +55,7 @@
 - active MVP/user loop contracts: keep.
 - future-authorized/cloud contracts: keep but demoted in index language; they do not authorize real cloud, deploy, kubectl, live-test or secret reads.
 - blocked-retain evidence contracts: keep.
-- strongest cleanup candidate: `docs/contracts/v22-admin-ops-console-boundary.md`, but it is not delete-ready because references are not fully migrated.
+- strongest cleanup candidate: `docs/specs/README.md`, but it is not delete-ready because references are not fully migrated.
 - delete-ready contracts: `0`.
 
 ## Recovery 裁定
@@ -100,8 +100,8 @@ These are still retained until references migrate:
 - `tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-board-status.mjs`
 - `tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-absorption-sequence.mjs`
 - `tests/future-authorized/cloud/future-authorized-test-v22-cloud-connection-runnable-path.mjs`
-- `docs/contracts/v22-admin-ops-console-boundary.md`
-- `docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 ## Delete-Ready
 

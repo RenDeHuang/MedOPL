@@ -408,7 +408,7 @@ try {
   assert.equal(auditReadyState.res.payload.audit.status, "audit_ready", "audit_must_be_ready_after_t_plus_1");
   assert.equal(auditReadyState.res.payload.billingSummary.billingLifecycle.auditReady, true, "billing_summary_audit_ready_mismatch");
 
-  const contract = await readFile("docs/contracts/v22-release-stop-billing-audit-boundary.md", "utf8");
+  const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
     "managed_environment_required",
     "managed_environment_already_released",

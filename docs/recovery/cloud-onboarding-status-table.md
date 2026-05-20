@@ -77,7 +77,7 @@ Current goal leaf `leaf-cloud-lane-readonly-status-audit` is recorded by branch 
 - owner guard blocker resolved for the authorized `default` Package D platform-service targets by adding `targetClass/ownerRef/operationId` labels. The rule remains hard: Package D cannot use `k8s-app/qcloud-app`, deployment name, namespace, IP, creation time, or manual memory as ownership proof.
 - Legacy Portal production cloud bridge blocker is superseded by L2b/L3: the active blocker is no longer only env presence, but whether Portal click queues operation, independent worker drains, PostgreSQL canonical store updates, billing/reconciliation records exist, and cleanup returns baseline to 2.
 - Node pool cleanup blocker: the authorized TKE native node pool is not an idle test-only pool; it currently carries Portal/OPL/trace/billing/system workloads. It must not be deleted or scaled to 0 as cleanup. Releasing a user compute allocation must use Package C ownership and desired-capacity gates, not direct node pool deletion.
-- contract issue resolved for config/fake-live gate: `docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` defines `platform_service_target` and `workspace_runtime_target`; real target metadata and authorization are still required before build/push/kubectl.
+- contract issue resolved for config/fake-live gate: `docs/specs/README.md` defines `platform_service_target` and `workspace_runtime_target`; real target metadata and authorization are still required before build/push/kubectl.
 - D2 issue resolved for config/fake-live gate: `build-push` now requires `acceptedPreflightId`; real TCR preflight/build/push still requires deploy secret and explicit user authorization.
 - D3a issue resolved for config/fake-live gate: `deploy-dry-run` now requires `imageDigestsFile`; real kubectl server-side dry-run still requires deploy secret/kubeconfig and explicit user authorization.
 - This branch modifies the workflow contract and status docs to retire old CO phase execution as the current entry while preserving historical evidence.
@@ -245,7 +245,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
     "branch": "docs/v22-package-d-opl-deploy-discovery",
     "model": "gpt-5.4",
     "status": "blocked_by_owner_guard_and_release_plan_contract",
-    "ownershipReleasePlanContract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+    "ownershipReleasePlanContract": "docs/specs/README.md",
     "ownershipReleasePlanContractReady": true,
     "realRolloutStillBlocked": false,
     "readsSecretNow": false,

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const matrixPath = "docs/recovery/cloud-onboarding-verification-matrix.md";
-const deployContractPath = "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md";
+const deployContractPath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 function assertIncludesAll(source, phrases, label) {
@@ -95,7 +95,7 @@ assertIncludesAll(deployContract, [
   "platform service target",
   "workspace runtime target",
   "workspaceId/resourceBindingId",
-  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "spec:v22-opl-deployment-ownership-release-plan-boundary",
   "Package D real rollout remains blocked for any target that lacks a reviewed release plan",
 ], "deploy_contract_implementation_note");
 

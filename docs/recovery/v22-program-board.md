@@ -6,7 +6,7 @@ current trunk anchor: bb1238c
 
 current phase: repo-tracked program coordination
 
-current lane: docs/contracts/status lane
+current lane: docs/specs/status lane
 
 next lane: B review and ff-only absorption
 
@@ -20,7 +20,7 @@ next lane: B review and ff-only absorption
 | --- | --- | --- | --- | --- |
 | Window A | implementation owner | 负责代码实现、局部 smoke、自测、commit；使用独立 worktree。 | 可在独立 worktree 写目标实现和局部 smoke；不得 merge/push。 | 需要读 secret、真实云、deploy、build/push/kubectl、merge/push 或超出实现边界时停。 |
 | Window B | integration/review/absorption owner | 只在主工作区审查、复验、ff-only merge、checkpoint、push。 | 可在主工作区做审查、复验、ff-only merge、checkpoint、push；不得做大功能实现。 | 遇到 dirty/不能 ff-only 必须停。 |
-| Window C | docs/contracts/status owner | 负责 docs/contracts/status/board/matrix/smoke；使用独立 worktree。 | 可在独立 worktree 写 docs 和 smoke；不得打云；不得 merge/push。 | 需要 services、真实云、secret、deploy 或业务实现时停。 |
+| Window C | docs/specs/status owner | 负责 docs/specs/status/board/matrix/smoke；使用独立 worktree。 | 可在独立 worktree 写 docs 和 smoke；不得打云；不得 merge/push。 | 需要 services、真实云、secret、deploy 或业务实现时停。 |
 | Window D | authorized side-effect/live coordination owner | 只在用户显式授权后协调真实 readonly live、dependency install、create/release、deploy 等串行副作用。 | 默认不得执行副作用。 | 未有当前会话显式授权、授权范围不清或副作用要扩展时停。 |
 
 ## Program Snapshot
@@ -67,7 +67,7 @@ Each program record must keep these fields:
 | next lane | user-flow-hardening |
 | lane worktree policy | implementation and QA lanes use independent worktree; B only reviews in main workspace |
 | branch naming pattern | `feat/v22-portal-*`, `fix/v22-portal-*`, `docs/v22-portal-*` |
-| write scope | `docs/recovery/`, `docs/contracts/`, `tests/**/*.mjs`, and targeted Portal files only when a future implementation task explicitly allows services |
+| write scope | `docs/recovery/`, `docs/specs/`, `tests/**/*.mjs`, and targeted Portal files only when a future implementation task explicitly allows services |
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, real cloud, secret files |
 | owner self-test boundary | local dev/preview QA evidence, role-surface smoke, mobile usability smoke, payload smoke when UI/API changes are in scope |
 | B revalidation boundary | rerun affected smoke, inspect screenshots/payloads, confirm ordinary users do not see admin/cloud/internal language |
@@ -98,7 +98,7 @@ lanes:
 | next lane | readonly-report-review |
 | lane worktree policy | docs/status lanes use C independent worktree; implementation lanes use A independent worktree; live coordination uses D only after explicit authorization; B absorbs from main workspace |
 | branch naming pattern | `docs/v22-cloud-onboarding-*`, `contract/v22-*`, `feat/v22-tencent-*`, `fix/v22-tencent-*` |
-| write scope | `docs/recovery/`, `docs/contracts/`, `tests/**/*.mjs` for C; targeted implementation files only in A branches when explicitly scoped |
+| write scope | `docs/recovery/`, `docs/specs/`, `tests/**/*.mjs` for C; targeted implementation files only in A branches when explicitly scoped |
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, secrets, real cloud, build/push/kubectl |
 | owner self-test boundary | workflow gate, program-board smoke, cloud onboarding board/status/matrix smoke, MVP suite |
 | B revalidation boundary | rerun workflow gate, relevant smoke, diff scope, secret hygiene, ff-only merge check |
@@ -132,7 +132,7 @@ lanes:
 | next lane | read-only-download-spike |
 | lane worktree policy | docs/status lanes use C independent worktree; any later downloader/runner work uses A independent worktree; B absorbs from main workspace |
 | branch naming pattern | `docs/v22-one-person-lab-*`, `contract/v22-one-person-lab-*`, `feat/v22-one-person-lab-*` |
-| write scope | `docs/recovery/`, `docs/contracts/`, `tests/**/*.mjs` for C; no upstream writes |
+| write scope | `docs/recovery/`, `docs/specs/`, `tests/**/*.mjs` for C; no upstream writes |
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, one-person-lab upstream, secrets, real cloud, build/push/kubectl |
 | owner self-test boundary | contract/status smoke, workflow gate, no-upstream-write diff check |
 | B revalidation boundary | confirm upstream remains clean, no upstream imports, no deploy/adapters/services drift in docs lane |
@@ -195,7 +195,7 @@ lane markers:
   "boardId": "v22-program-board",
   "currentTrunkAnchor": "bb1238c",
   "currentPhase": "repo-tracked program coordination",
-  "currentLane": "docs/contracts/status lane",
+  "currentLane": "docs/specs/status lane",
   "nextLane": "B review and ff-only absorption",
   "readsSecretNow": false,
   "callsRealCloudNow": false,
@@ -235,7 +235,7 @@ lane markers:
     },
     {
       "windowId": "Window C",
-      "role": "docs/contracts/status owner",
+      "role": "docs/specs/status owner",
       "responsibility": "docs, contracts, status, board, matrix, smoke in independent worktree",
       "requiresIndependentWorktree": true,
       "mayCallRealCloudByDefault": false
@@ -258,7 +258,7 @@ lane markers:
       "branchNamingPattern": "feat/v22-portal-* | fix/v22-portal-* | docs/v22-portal-*",
       "writeScope": [
         "docs/recovery/",
-        "docs/contracts/",
+        "docs/specs/",
         "tests/**/*.mjs"
       ],
       "forbiddenScope": [
@@ -308,7 +308,7 @@ lane markers:
       "branchNamingPattern": "docs/v22-cloud-onboarding-* | contract/v22-* | feat/v22-tencent-* | fix/v22-tencent-*",
       "writeScope": [
         "docs/recovery/",
-        "docs/contracts/",
+        "docs/specs/",
         "tests/**/*.mjs"
       ],
       "forbiddenScope": [
@@ -368,7 +368,7 @@ lane markers:
       "branchNamingPattern": "docs/v22-one-person-lab-* | contract/v22-one-person-lab-* | feat/v22-one-person-lab-*",
       "writeScope": [
         "docs/recovery/",
-        "docs/contracts/",
+        "docs/specs/",
         "tests/**/*.mjs"
       ],
       "forbiddenScope": [

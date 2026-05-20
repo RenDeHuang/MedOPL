@@ -4,7 +4,7 @@
 
 本文件是 MedOPL v22 Portal UI 重构的设计执行源。它把 v22 合同中的产品真相转成可执行的视觉、信息架构、组件、文案、Figma Make 吸收和重构分片规则。
 
-本文件不替代 v22 合同、Figma Make ZIP source-of-truth、`services/portal/frontend/src/app/**` 的 React/Vite 实现，也不替代 smoke。产品语义、角色边界、secret 边界、OPL 边界、云资源授权边界和验收入口仍以 `docs/contracts/*`、`docs/recovery/*`、Figma Make ZIP、React app root 和 smoke 为准；历史 UI evidence 不再是当前 UI 完成证据，旧路径防回归统一由 retired frontend surface gate 承接。
+本文件不替代 v22 合同、Figma Make ZIP source-of-truth、`services/portal/frontend/src/app/**` 的 React/Vite 实现，也不替代 smoke。产品语义、角色边界、secret 边界、OPL 边界、云资源授权边界和验收入口仍以 `docs/specs/*`、`docs/recovery/*`、Figma Make ZIP、React app root 和 smoke 为准；历史 UI evidence 不再是当前 UI 完成证据，旧路径防回归统一由 retired frontend surface gate 承接。
 
 ## 订阅合同包
 
@@ -12,15 +12,15 @@
 
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-user-surface-boundary.md`
-- `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
-- `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`
-- `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 ## 产品气质
 
@@ -564,7 +564,7 @@ Portal 是高可扫描、高信息密度但不拥挤的 SaaS 科研工作台。
 
 ## Figma Make 吸收流程
 
-Figma Make 是当前 Portal 普通用户和管理员 UI 的实现源，不是 v22 产品真相源。DESIGN.md、v22 合同、`v22-portal-figma-make-ui-implementation-boundary.md`、`services/portal/frontend/src/app/**`、`services/portal/frontend/src/app/data/portalAdapters.ts` 和 smoke 共同构成代码侧执行真相；历史 UI evidence 不再承载 current truth，旧路径防回归统一由 retired frontend surface gate 承接。
+Figma Make 是当前 Portal 普通用户和管理员 UI 的实现源，不是 v22 产品真相源。DESIGN.md、v22 合同、`spec:v22-portal-figma-make-ui-implementation-boundary`、`services/portal/frontend/src/app/**`、`services/portal/frontend/src/app/data/portalAdapters.ts` 和 smoke 共同构成代码侧执行真相；历史 UI evidence 不再承载 current truth，旧路径防回归统一由 retired frontend surface gate 承接。
 
 当前吸收基准已经固定。后续产品系统重构必须保持 Figma 页面视觉、布局、信息架构和主路径不变，只允许改变工程结构、组件复用、状态处理和 API adapter 连接；任何视觉或信息架构变更必须回到 Figma 侧重新确认。
 

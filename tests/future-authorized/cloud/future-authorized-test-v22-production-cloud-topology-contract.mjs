@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-production-cloud-topology-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 function assertIncludesAll(source, phrases, label) {
@@ -103,7 +103,7 @@ assertNotIncludesAny(contract, [
 ], "production_cloud_topology_forbidden_contract_data");
 
 assertIncludesAll(readme, [
-  "v22-production-cloud-topology-boundary.md",
+  "spec:v22-production-cloud-topology-boundary",
   "production cloud topology",
   "CLB / TKE / CBS / NAT / Redis / PostgreSQL",
   "当前只是合同",

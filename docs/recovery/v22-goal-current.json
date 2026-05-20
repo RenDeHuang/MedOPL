@@ -358,11 +358,11 @@
       "agent_run_record": "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
       "storage_eval_shell": "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "next_leaf_contracts": [
-        "docs/contracts/v22-mvp-managed-opl-loop.md",
-        "docs/contracts/v22-portal-files-billing-trace-boundary.md",
-        "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-        "docs/contracts/v22-smoke-eval-boundary.md",
-        "docs/contracts/v22-production-cloud-topology-boundary.md"
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md"
       ],
       "next_leaf_storage_invariants": [
         "PostgreSQL canonical truth",
@@ -404,7 +404,7 @@
     "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-    "git diff --check -- docs/recovery docs/contracts scripts"
+    "git diff --check -- docs/recovery docs/specs scripts"
   ],
   "truth_source_files": [
     "docs/recovery/v22-goal-current.json",

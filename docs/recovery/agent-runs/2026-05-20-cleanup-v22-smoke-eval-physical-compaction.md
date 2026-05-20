@@ -42,8 +42,8 @@
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-agent-first-development-loop.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-contract-eval-compaction-index.md`
@@ -91,12 +91,12 @@
 
 ## blocker_review_and_fix_log
 
-- `v22-agent-workflow.mjs` 仍被 docs/contracts/smoke 引用，本轮不删。
+- `v22-agent-workflow.mjs` 仍被 docs/specs/smoke 引用，本轮不删。
 - `sync-workspace-file-to-minio.ps1` 仍被 Portal config 引用，本轮不删。
 - `check-one-person-lab-upstream-clean.mjs` 删除前需要迁移真实检查逻辑；已迁入 `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`。
 - `smoke-test-workspace-storage-routes-contract.mjs` 旧断言会公开 `storageKey`，与 v22 脱敏合同冲突；替代入口采用 v22 public-response/file-space gates。
 - `local-contract` baseline 在本分支最初失败，因为 goal-state gate 不认识该 cleanup branch；通过 manifest branch override 修正，不改 current cursor。
-- 本 leaf 不新增产品合同；`v22-smoke-eval-boundary.md` 已覆盖长期语义。
+- 本 leaf 不新增产品合同；`spec:v22-smoke-eval-boundary` 已覆盖长期语义。
 
 ## verification_commands
 

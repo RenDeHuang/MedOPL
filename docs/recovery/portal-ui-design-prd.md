@@ -2,7 +2,7 @@
 
 > Current status: historical PRD draft, superseded for implementation by the Figma Make ZIP contract.
 >
-> 当前 Portal UI 的唯一实现 source-of-truth 是 `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`、`docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`、`docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`、`services/portal/frontend/src/app/**` 和 `services/portal/frontend/src/app/data/portalAdapters.ts`。本 PRD 只保留用户、人群、主流程和语义背景，不再作为前端文件结构、route、组件、harness、截图回归或 API shape 的 current truth。
+> 当前 Portal UI 的唯一实现 source-of-truth 是 `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`、`docs/specs/README.md`、`docs/specs/README.md`、`services/portal/frontend/src/app/**` 和 `services/portal/frontend/src/app/data/portalAdapters.ts`。本 PRD 只保留用户、人群、主流程和语义背景，不再作为前端文件结构、route、组件、harness、截图回归或 API shape 的 current truth。
 
 本文档把 MedOPL v22 Portal 的 UI 需求背景整理为历史 PRD。它描述 Portal 产品定位、目标人群、信息架构、状态模型、数据边界和文案规范，可作为理解需求的背景材料；实际开发、设计吸收和验收必须以 Figma Make ZIP、当前合同和 smoke 为准。
 
@@ -37,22 +37,22 @@ OPL 继续负责科研执行、chatbot、agent、文件理解和结果生成。P
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/active-surface.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-user-surface-boundary.md`
-- `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
-- `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`
-- `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
-- `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`
-- `docs/contracts/v22-portal-opl-connection-boundary.md`
-- `docs/contracts/v22-portal-opl-context-backflow-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `DESIGN.md`
 - `docs/product.md`
 - `docs/architecture.md`
-- `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`
+- `docs/specs/README.md`
 - `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`
 - `/tmp/medopl-figma-make-source-admin`
 - `services/portal/frontend/src/app/**`
@@ -871,14 +871,14 @@ ZIP / surface gate：
 - `DESIGN.md`
 - `docs/product.md`
 - `docs/architecture.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
-- `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-user-surface-boundary.md`
-- `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/active-surface.md`

@@ -91,7 +91,7 @@ for (const [label, source] of [
 }
 
 assertIncludesAll(combinedGovernance, [
-  "docs/contracts/README.md",
+  "docs/specs/README.md",
   "docs/recovery/v22-goal-current.json",
   "docs/recovery/v22-agent-verify-manifest.json",
   "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

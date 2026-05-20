@@ -225,7 +225,7 @@ assert.deepEqual(strictCleanupPlanPayload.commands, [
   "node tests/regression/portal/regression-test-v22-observability-billing-narrative-boundary.mjs",
   "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-  "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra",
+  "git diff --check -- docs/recovery docs/specs scripts services deploy adapters infra",
 ], "verify_current_strict_cleanup_commands_mismatch");
 assertNotIncludes(
   strictCleanupPlanPayload.commands.join("\n"),

@@ -287,7 +287,7 @@ try {
   assertNoInternalUserFields(state.res.payload, "canonical_state_after_open");
   assertNoCloudConsoleLanguage(state.res.payload.userNarrative, "canonical_state_user_narrative");
 
-  const contract = await readFile("docs/contracts/v22-managed-environment-open-boundary.md", "utf8");
+  const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
     "provider_key_required",
     "starter_2c4g_10gb",

@@ -12,7 +12,7 @@
 - `platform-v22` 是 canonical trunk；`recovery/platform-v22-trunk` 是 v22 收敛主线，所有新产品语义以 v22 为准。
 - `platform-v21` 是 legacy reference，只能作为历史参考或迁移输入；不得把 v21 的默认叙事、目录边界或旧运行路径扩散成 v22 主线。
 - v22 当前产品方向是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台；用户购买套餐、计算能力、存储容量和运行环境，平台负责开通、隔离、计费、审计和释放。
-- active surface 仅限：`services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge`、`docs/product.md`、`docs/architecture.md`、`docs/contracts/v22-*`、`docs/recovery/*`、`tests/**/*.mjs`。
+- active surface 仅限：`services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge`、`docs/product.md`、`docs/architecture.md`、`docs/specs/v22-*`、`docs/recovery/*`、`tests/**/*.mjs`。
 - archive/reference surface 已从 active repo 物理清退：`docs/plan/*`、`docs/reports/*`、`docs/releases/*`、`docs/logs/*`、`docs/operations/*`、`docs/superpowers/*`、`scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/live-test-*`、`OPL-v20-商业化产品套餐开发方案.md` 均不得作为当前文件入口恢复；历史证据只以 git history 或已收敛的 `docs/recovery/*` 摘要存在。
 - delete/cleanup target 包括：`user_owned` primary path、`resource-order` primary path、旧 `med-autoscience-runner`、旧 `resource-provisioner`、OpenCost 主叙事、Langfuse 主产品叙事。它们进入 cleanup 分支处理，不在普通功能分支继续扩写。
 - forbidden without explicit authorization：`deploy/*`、`.sentrux/*`、`adapters/*`、one-person-lab upstream、build/push/kubectl/live-test/真实云资源操作。
@@ -23,7 +23,7 @@
 
 ## 阶段状态
 
-- v22 当前阶段以 `docs/recovery/mvp-contract-acceptance.md`、`docs/recovery/status-matrix.md` 和 `docs/contracts/README.md` 为准；不得根据过期聊天记忆判断当前阶段。
+- v22 当前阶段以 `docs/recovery/mvp-contract-acceptance.md`、`docs/recovery/status-matrix.md` 和 `docs/specs/README.md` 为准；不得根据过期聊天记忆判断当前阶段。
 - 新开发必须先读取当前阶段文档、合同索引和本次订阅合同，再声明分支意图、合同订阅包、授权边界和验收命令。
 - 阶段推进后优先更新 recovery 阶段文档；本文件只保留稳定纪律，不写死会随阶段变化的完成状态。
 

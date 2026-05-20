@@ -156,7 +156,7 @@ function classifyTrackedFile(filePath) {
   if (filePath === "docs/product.md" || filePath === "docs/architecture.md") return "truth";
   if (["docs/status.md", "docs/vibe-coding.md", "docs/invariants.md", "docs/decisions.md"].includes(filePath)) return "governance-reference";
   if (taxonomySkeletonReadmes.includes(filePath)) return "taxonomy-skeleton";
-  if (filePath === "docs/contracts/README.md" || /^docs\/contracts\/v22-.+\.md$/u.test(filePath)) return "contracts";
+  if (filePath === "docs/specs/README.md" || /^docs\/contracts\/v22-.+\.md$/u.test(filePath)) return "contracts";
   if (filePath.startsWith("docs/recovery/agent-runs/")) return "agent-runs";
   if (filePath.startsWith("docs/recovery/")) return "truth-index";
   if (Object.hasOwn(SMOKE_CLASSIFICATION, filePath)) return "v22-eval";

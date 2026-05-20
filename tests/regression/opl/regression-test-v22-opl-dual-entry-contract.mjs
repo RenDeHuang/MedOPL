@@ -8,10 +8,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
 
 const files = {
-  saas: "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-  entry: "docs/contracts/v22-opl-entry-preflight-auth-boundary.md",
-  upstream: "docs/contracts/v22-upstream-opl-boundary.md",
-  readme: "docs/contracts/README.md",
+  saas: "docs/specs/README.md",
+  entry: "docs/specs/README.md",
+  upstream: "docs/specs/README.md",
+  readme: "docs/specs/README.md",
   activeTruth: "docs/active/README.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   suite: "tests/contract/contract-test-v22-mvp-contract-suite.mjs",

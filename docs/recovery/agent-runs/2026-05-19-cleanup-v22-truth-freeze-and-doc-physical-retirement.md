@@ -11,13 +11,13 @@
 ## contract_subscription
 
 - AGENTS.md
-- docs/contracts/README.md
-- docs/contracts/v22-smoke-eval-boundary.md
-- docs/contracts/v22-mvp-managed-opl-loop.md
-- docs/contracts/v22-saas-control-plane-user-experience-boundary.md
-- docs/contracts/v22-portal-opl-connection-boundary.md
-- docs/contracts/v22-portal-files-billing-trace-boundary.md
-- docs/contracts/v22-production-cloud-topology-boundary.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
 - docs/recovery/product-truth.md
 - docs/recovery/architecture-truth.md
 - docs/recovery/v22-goal-current.json
@@ -28,7 +28,7 @@
 - docs/recovery/v22-truth-freeze.md
 - docs/recovery/product-truth.md
 - docs/recovery/architecture-truth.md
-- docs/contracts/README.md
+- docs/specs/README.md
 - docs/recovery/v22-agent-verify-manifest.json
 - docs/recovery/agent-runs/2026-05-19-cleanup-v22-truth-freeze-and-doc-physical-retirement.md
 - tests/contract/contract-test-v22-truth-freeze-physical-retirement.mjs
@@ -39,7 +39,7 @@
 - scripts/v22-test-classification.mjs
 - scripts/v22-workflow-gate.mjs
 - deletion-only: docs/recovery/v22-ai-frontend-backend-development-framework.md
-- deletion-only: docs/contracts/v22-canonical-user-loop.md
+- deletion-only: docs/specs/README.md
 
 ## forbidden_scope
 
@@ -68,7 +68,7 @@
 ## blocker_review_and_fix_log
 
 - 只读 auditor 发现 product goal harness、default-entry gate、gflabtoken gate、contracts README 和 verify manifest 仍引用将删除文件。
-- 处理方式：引用替换到 `docs/recovery/v22-truth-freeze.md` 或 `docs/contracts/v22-mvp-managed-opl-loop.md`；不保留兼容层。
+- 处理方式：引用替换到 `docs/recovery/v22-truth-freeze.md` 或 `docs/specs/README.md`；不保留兼容层。
 
 ## verification_commands
 
@@ -83,7 +83,7 @@
 - node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json
 - node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json
 - node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
-- git diff --check -- docs/recovery docs/contracts scripts
+- git diff --check -- docs/recovery docs/specs scripts
 
 ## b_review_result
 

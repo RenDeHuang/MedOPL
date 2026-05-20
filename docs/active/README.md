@@ -29,7 +29,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前未闭合的事实：
 
-- `docs/contracts/**` 与 `docs/recovery/**` 中仍有 machine-boundary leaf、manifest、gap matrix、agent-run evidence 和历史 index；它们不是 current truth 的第二来源。
+- `docs/specs/**` 与 `docs/recovery/**` 中仍有 machine-boundary leaf、manifest、gap matrix、agent-run evidence 和历史 index；它们不是 current truth 的第二来源。
 - `tests/**/*.mjs` 已承载 v22 repo-local eval；剩余债务是部分文件名仍保留 `smoke-test-v22-*` 历史前缀，但分类和执行入口不再把全部 eval 写成 smoke。
 - PostgreSQL/Redis local production data closure 仍未实现。
 
@@ -166,7 +166,7 @@ Current docs / eval surface during migration：
 - `docs/active/README.md`
 - `docs/product.md`
 - `docs/architecture.md`
-- `docs/contracts/v22-*`
+- `docs/specs/v22-*`
 - `docs/recovery/*`
 - `tests/**/*.mjs`
 - `scripts/v22-verify.mjs`
@@ -180,7 +180,7 @@ Current docs / eval surface during migration：
 | --- | --- | --- | --- | --- | --- | --- |
 | Current truth | 一个 current truth 文件 | `docs/active/README.md` | 旧 recovery truth 文件仍有历史引用 | hard compaction | `product-truth.md` / `architecture-truth.md` / `active-surface.md` 物理清退，活跃引用迁移 | `node tests/contract/contract-test-v22-opl-style-taxonomy-hard-compaction.mjs` |
 | Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` 已承载 155 个 repo-local eval | 非 smoke eval 文件名仍保留 `smoke-test-v22-*` 历史前缀 | 后续 test filename hard-retirement | 文件名与分类语义一致，`scripts/` 只留 runner/classifier/workflow | tests taxonomy hard-retirement + verify |
-| Contracts compaction | human truth 吸收到 `docs/specs/README.md` 等目录 README | 42 个 `docs/contracts/v22-*` 仍被 gate 引用 | README 与 leaf contract 混合 | 后续 contracts-to-specs | 旧合同引用迁移且 leaf boundary 保留策略明确 | local-contract suite |
+| Contracts compaction | human truth 吸收到 `docs/specs/README.md` 等目录 README | 42 个 `docs/specs/v22-*` 仍被 gate 引用 | README 与 leaf contract 混合 | 后续 contracts-to-specs | 旧合同引用迁移且 leaf boundary 保留策略明确 | local-contract suite |
 | Recovery retirement | recovery 不再是长期 docs taxonomy | recovery 根层仍有 manifest/gap/agent-run/history | 过程记录和机器状态混放 | 分批迁引用 | current truth / history / references 全部有替代入口 | local-contract suite |
 
 ## Cannot Claim
@@ -196,5 +196,5 @@ Current docs / eval surface during migration：
 - 唯一人读 current truth：`docs/active/README.md`
 - 机器 cursor：`docs/recovery/v22-goal-current.json`
 - 验证 manifest：`docs/recovery/v22-agent-verify-manifest.json`
-- smoke/eval 边界：`docs/contracts/v22-smoke-eval-boundary.md`
+- smoke/eval 边界：`docs/specs/README.md`
 - agent-run evidence：`docs/recovery/agent-runs/*`

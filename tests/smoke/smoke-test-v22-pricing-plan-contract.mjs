@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const contractPath = path.join(__dirname, "../../docs/contracts/v22-pricing-snapshot-boundary.md");
+const contractPath = path.join(__dirname, "../../docs/specs/README.md");
 const commercialStatePath = path.join(__dirname, "../../services/portal/src/domain/commercial-state.mjs");
 const serverPlanRuntimeHandlerPath = path.join(__dirname, "../../services/portal/src/app/portal-server-plan-runtime-handler.mjs");
 

@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const contracts = {
-  shared: "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-  userRole: "docs/contracts/v22-portal-user-surface-boundary.md",
-  adminRole: "docs/contracts/v22-portal-admin-ops-surface-boundary.md",
-  structure: "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
-  composition: "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+  shared: "docs/specs/README.md",
+  userRole: "docs/specs/README.md",
+  adminRole: "docs/specs/README.md",
+  structure: "docs/specs/README.md",
+  composition: "docs/specs/README.md",
 };
 
 async function source(filePath) {
@@ -28,7 +28,7 @@ const structure = await source(contracts.structure);
 const composition = await source(contracts.composition);
 
 assertIncludes(shared, "共享产品表面合同，不单独实现 UI", "shared_contract_role");
-assertIncludes(shared, "Portal 可运行 UI、组件组合、路由入口和验证链路由 `v22-portal-workbench-management-ui-composition-boundary.md` 承接", "shared_contract_ui_delegate");
+assertIncludes(shared, "Portal 可运行 UI、组件组合、路由入口和验证链路由 `spec:v22-portal-workbench-management-ui-composition-boundary` 承接", "shared_contract_ui_delegate");
 assertIncludes(userRole, "role surface 合同，不实现新 UI", "user_role_contract_role");
 assertIncludes(adminRole, "role surface 合同，不实现新 UI", "admin_role_contract_role");
 assertIncludes(structure, "Portal 结构治理 / failure isolation 三级合同，不实现 UI，不改业务代码", "structure_contract_role");

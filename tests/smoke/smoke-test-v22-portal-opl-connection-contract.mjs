@@ -8,14 +8,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
 const files = {
-  connection: "docs/contracts/v22-portal-opl-connection-boundary.md",
-  readme: "docs/contracts/README.md",
-  mvp: "docs/contracts/v22-mvp-managed-opl-loop.md",
-  entry: "docs/contracts/v22-opl-entry-preflight-auth-boundary.md",
-  upstream: "docs/contracts/v22-upstream-opl-boundary.md",
-  runtime: "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
-  oplWork: "docs/contracts/v22-opl-work-message-file-run-boundary.md",
-  portalFiles: "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+  connection: "docs/specs/README.md",
+  readme: "docs/specs/README.md",
+  mvp: "docs/specs/README.md",
+  entry: "docs/specs/README.md",
+  upstream: "docs/specs/README.md",
+  runtime: "docs/specs/README.md",
+  oplWork: "docs/specs/README.md",
+  portalFiles: "docs/specs/README.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   suite: "tests/contract/contract-test-v22-mvp-contract-suite.mjs",
   stateStoreSmoke: "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
@@ -188,7 +188,7 @@ assertIncludesAll(contents.upstream, [
 ], "upstream_real_canary_findings");
 
 assertIncludesAll(contents.readme, [
-  "v22-portal-opl-connection-boundary.md",
+  "spec:v22-portal-opl-connection-boundary",
   "Portal-OPL connection",
 ], "readme_connection_subscription");
 

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md";
-const deployContractPath = "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md";
-const contractsIndexPath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const deployContractPath = "docs/specs/README.md";
+const contractsIndexPath = "docs/specs/README.md";
 const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const matrixPath = "docs/recovery/cloud-onboarding-verification-matrix.md";
@@ -132,8 +132,8 @@ assertIncludesAll(contract, [
   "v22 OPL Deployment Ownership Release Plan Boundary",
   "Level 4",
   "Package D",
-  "v22-authorized-tencent-deploy-execution-boundary.md",
-  "v22-real-opl-file-run-artifact-canary-boundary.md",
+  "spec:v22-authorized-tencent-deploy-execution-boundary",
+  "spec:v22-real-opl-file-run-artifact-canary-boundary",
   "platform_service_target",
   "workspace_runtime_target",
   "ownerRef",
@@ -148,13 +148,13 @@ assertIncludesAll(contract, [
 ], "contract_scope");
 
 assertIncludesAll(deployContract, [
-  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "spec:v22-opl-deployment-ownership-release-plan-boundary",
   "platform_service_target",
   "workspace_runtime_target",
 ], "deploy_contract_reference");
 
 assertIncludesAll(contractsIndex, [
-  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "spec:v22-opl-deployment-ownership-release-plan-boundary",
   "OPL deployment ownership release plan",
 ], "contracts_index");
 

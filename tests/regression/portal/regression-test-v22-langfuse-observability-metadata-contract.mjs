@@ -6,8 +6,8 @@ import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mj
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
-const contractPath = "docs/contracts/v22-langfuse-observability-metadata-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 const portalPayloadPath = "services/portal/src/domain/portal-api-payloads.mjs";
 const portalRuntimeClientsPath = "services/portal/src/app/portal-runtime-clients.mjs";
@@ -456,7 +456,7 @@ assert.equal(portalTracePayload.customerTraceSurface, "Portal 会话轨迹", "po
 assert.equal(portalTracePayload.customerDefaultLangfuseUi, false, "portal_trace_must_not_use_langfuse_ui_as_customer_default");
 assertNoForbiddenValue(portalTracePayload, "portal_trace_payload");
 
-assert(readme.includes("v22-langfuse-observability-metadata-boundary.md"), "contracts_readme_missing_langfuse_contract");
+assert(readme.includes("spec:v22-langfuse-observability-metadata-boundary"), "contracts_readme_missing_langfuse_contract");
 assert(readme.includes("观测附件"), "contracts_readme_must_describe_langfuse_as_observability_attachment");
 assert(isSmokeClassifiedIn("tests/regression/portal/regression-test-v22-langfuse-observability-metadata-contract.mjs"), "mvp_suite_missing_langfuse_smoke");
 assert(portalPayloadSource.includes("Portal 会话轨迹 sanitized projection"), "portal_payload_trace_summary_datasource_mismatch");

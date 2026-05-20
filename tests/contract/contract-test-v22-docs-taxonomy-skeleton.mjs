@@ -36,7 +36,7 @@ const requiredReadmeTokens = Object.freeze({
     "OPL-style lifecycle taxonomy",
     "一目录一 README 真相",
     "blocked-retain",
-    "docs/contracts/**",
+    "docs/specs/**",
     "docs/recovery/**",
     "tests/**/*.mjs",
   ]),
@@ -63,10 +63,11 @@ const requiredReadmeTokens = Object.freeze({
     "Current Truth Pointer",
   ]),
   "docs/specs/README.md": Object.freeze([
-    "Purpose: `specs_contract_index`",
-    "docs/contracts/README.md",
-    "docs/contracts/v22-*",
-    "machine-boundary leaf",
+    "Purpose: `v22_contract_spec_single_truth`",
+    "State: `active`",
+    "Spec Anchor Index",
+    "spec:v22-mvp-managed-opl-loop",
+    "spec:v22-smoke-eval-boundary",
     "future-authorized",
   ]),
   "docs/policies/README.md": Object.freeze([
@@ -133,8 +134,8 @@ const requiredTestsTaxonomyDirs = Object.freeze([
 ]);
 
 const blockedRetainPaths = Object.freeze([
-  "docs/contracts/README.md",
-  "docs/contracts/v22-smoke-eval-boundary.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
   "docs/recovery/status-matrix.md",
   "docs/recovery/mvp-contract-acceptance.md",
   "docs/recovery/v22-goal-current.json",
@@ -252,7 +253,7 @@ assert.equal(metadata.tier, "contract-local", "this_gate_tier_mismatch");
 assert.equal(metadata.surface, "control-plane", "this_gate_surface_mismatch");
 assert.equal(metadata.entryKind, "atomic", "this_gate_entry_kind_mismatch");
 assert.equal(metadata.authorization, "none", "this_gate_authorization_mismatch");
-assert(metadata.contractRefs.includes("docs/contracts/v22-smoke-eval-boundary.md"), "this_gate_contract_ref_missing");
+assert(metadata.contractRefs.includes("docs/specs/README.md"), "this_gate_contract_ref_missing");
 assert(metadata.contractRefs.includes("docs/recovery/v22-agent-verify-manifest.json"), "this_gate_manifest_ref_missing");
 
 const manifest = JSON.parse(await source("docs/recovery/v22-agent-verify-manifest.json"));

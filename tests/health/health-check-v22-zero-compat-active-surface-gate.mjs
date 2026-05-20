@@ -15,7 +15,7 @@ const activeCodeRoots = [
 
 const currentNarrativeRoots = [
   "docs/recovery",
-  "docs/contracts",
+  "docs/specs",
 ];
 
 const currentNarrativeFiles = [
@@ -748,7 +748,7 @@ async function assertCurrentNarrativeDoesNotRetainCompatibility(findings) {
 }
 
 async function assertRuntimeBridgeContractPackageNaming() {
-  const contractIndex = await readRepoFile("docs/contracts/README.md");
+  const contractIndex = await readRepoFile("docs/specs/README.md");
   assert(contractIndex.includes("### Runtime Bridge 合同包"), "contract_index_must_use_runtime_bridge_contract_package_title");
   assert.equal(
     contractIndex.includes("### Runtime Bridge / Runtime Agent 合同包"),

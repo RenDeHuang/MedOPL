@@ -232,7 +232,7 @@ assertNoSecretLeak(state.runs, "state_runs");
 assertNoSecretLeak(state.sessionLedgerEntries, "state_session_ledger");
 assertNoInternalFileLeak(state.sessionLedgerEntries, "state_session_ledger");
 
-const contract = await readFile("docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md", "utf8");
+const contract = await readFile("docs/specs/README.md", "utf8");
 for (const required of [
   "POST /api/opl-launch/runs",
   "POST /api/opl-launch/sessions/bind",

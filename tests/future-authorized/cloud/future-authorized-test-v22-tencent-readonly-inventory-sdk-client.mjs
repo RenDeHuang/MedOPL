@@ -5,7 +5,7 @@ import { createTencentReadonlyInventoryAdapter } from "../../../services/portal/
 import { createTencentReadonlyInventorySdkClient } from "../../../services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
 
 const modulePath = "services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs";
-const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
+const contractPath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 const allowedApis = [

@@ -7,7 +7,7 @@ import { runCli } from "../../../scripts/v22-tencent-readonly-inventory-runner.m
 
 const repoRoot = path.resolve(".");
 const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
-const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
+const contractPath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 const portalPackagePath = "services/portal/package.json";
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");

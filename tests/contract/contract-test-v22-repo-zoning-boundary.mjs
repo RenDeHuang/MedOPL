@@ -43,7 +43,7 @@ for (const requiredToken of [
   "delete",
   "tombstone",
   "forbidden_without_authorization",
-  "docs/contracts/v22-*",
+  "docs/specs/v22-*",
   "docs/recovery/*",
   "services/portal/**",
   "services/opl-web-gateway/**",

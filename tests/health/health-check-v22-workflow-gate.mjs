@@ -41,11 +41,11 @@ assertIncludesAll(startResult.stdout, [
   "当前必须读取的阶段文档",
   "AGENTS.md",
   "docs/vibe-coding.md",
-  "docs/contracts/README.md",
+  "docs/specs/README.md",
   "docs/recovery/status-matrix.md",
   "推荐合同包",
   "Portal / UI 合同包",
-  "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+  "docs/specs/README.md",
   "本次不修改项",
   "污染防护",
   "推荐验证命令",
@@ -56,14 +56,14 @@ assertIncludesAll(startResult.stdout, [
 const startTemplate = renderStartTemplate({ type: "tencent-quote" });
 assertIncludesAll(startTemplate, [
   "Tencent Quote Provider 合同包",
-  "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-  "docs/contracts/v22-tencent-readonly-quote-provider-boundary.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
   "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-quote-provider-boundary.mjs",
 ], "tencent_quote_start_template");
 
 for (const type of contractPackageTypes) {
   assertIncludesAll(renderStartTemplate({ type }), [
-    "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+    "docs/specs/README.md",
   ], `workflow_start_template_must_subscribe_ux_truth:${type}`);
 }
 
@@ -87,7 +87,7 @@ const reviewWithBlockers = evaluateReview({
     ".env.production",
     "local/github",
     "services/portal/src/domain/example.mjs",
-    "docs/contracts/v22-example-boundary.md",
+    "docs/specs/README.md",
   ],
 });
 
@@ -123,7 +123,7 @@ const reviewWithSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [
     "services/portal/src/domain/example.mjs",
-    "docs/contracts/v22-example-boundary.md",
+    "docs/specs/README.md",
     "tests/contract/contract-test-v22-example-boundary.mjs",
   ],
 });

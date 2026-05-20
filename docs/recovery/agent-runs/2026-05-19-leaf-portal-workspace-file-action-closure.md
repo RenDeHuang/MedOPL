@@ -33,12 +33,12 @@ feat/v22-portal-workspace-file-action-closure
 
 ## contract_subscription
 
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
-- `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`
-- `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`
-- `docs/contracts/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
 
@@ -46,7 +46,7 @@ feat/v22-portal-workspace-file-action-closure
 
 - `services/portal/**` for the absorbed feature branch implementation.
 - `tests/**/*.mjs` only where local contract gates were required by the absorbed feature branch.
-- `docs/recovery/**` and `docs/contracts/**` only for subscribed contract/status writeback where required by the absorbed feature branch.
+- `docs/recovery/**` and `docs/specs/**` only for subscribed contract/status writeback where required by the absorbed feature branch.
 
 For this cleanup trace branch, the allowed write scope is limited to:
 

@@ -109,7 +109,7 @@ assert.deepEqual(tierCounts, {
 
 for (const scriptPath of testEvalFiles) {
   const metadata = smokeEvalMetadataOf(scriptPath);
-  assert(metadata.contractRefs.includes("docs/contracts/v22-smoke-eval-boundary.md"), `smoke_eval_contract_ref_missing:${scriptPath}`);
+  assert(metadata.contractRefs.includes("docs/specs/README.md"), `smoke_eval_contract_ref_missing:${scriptPath}`);
   assert(["atomic", "suite-wrapper", "gate-self-test"].includes(metadata.entryKind), `entry_kind_invalid:${scriptPath}`);
   assert(["none", "future-authorized"].includes(metadata.authorization), `authorization_invalid:${scriptPath}`);
 }

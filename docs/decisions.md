@@ -5,7 +5,7 @@ This file records currently effective v22 decisions. AGENTS governs discipline, 
 References:
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
@@ -17,7 +17,7 @@ References:
 - production default provider 使用 Tencent official SDK wrapper.
 - TC3 保留为 diagnostic/reference.
 - official SDK live report 通过后再 cleanup.
-- cloud onboarding 保留为 future-authorized lane；`docs/contracts/v22-cloud-onboarding-workflow-boundary.md`、cloud/program boards 和 `scripts/v22-agent-workflow.mjs` 只作为 blocked-retain 参考，不是当前 active program 或默认执行入口.
+- cloud onboarding 保留为 future-authorized lane；`docs/specs/README.md`、cloud/program boards 和 `scripts/v22-agent-workflow.mjs` 只作为 blocked-retain 参考，不是当前 active program 或默认执行入口.
 - 真实外部副作用串行.
 - create/release 与 readonly 分离.
 - create/release 另有独立合同和 RUN gate.

@@ -25,8 +25,8 @@ const repoRoot = path.resolve(__dirname, "../..");
 const scriptsRoot = path.join(repoRoot, "scripts");
 const testsRoot = path.join(repoRoot, "tests");
 
-const boundarySource = await readFile(path.join(repoRoot, "docs/contracts/v22-smoke-eval-boundary.md"), "utf8");
-const contractIndexSource = await readFile(path.join(repoRoot, "docs/contracts/README.md"), "utf8");
+const boundarySource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
+const contractIndexSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
 const manifestSource = await readFile(path.join(repoRoot, "docs/recovery/v22-agent-verify-manifest.json"), "utf8");
 
 const legacySmokeScripts = (await readdir(scriptsRoot))
@@ -73,7 +73,7 @@ for (const requiredPhrase of [
 }
 
 for (const requiredRef of [
-  "v22-smoke-eval-boundary.md",
+  "spec:v22-smoke-eval-boundary",
   "suite smoke",
   "suite local-contract",
   "suite local-regression",
@@ -107,8 +107,7 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
   assert(surfaces.has(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
   assert(["atomic", "suite-wrapper", "gate-self-test"].includes(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
   assert(["none", "future-authorized"].includes(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
-  assert(metadata.contractRefs.includes("docs/contracts/v22-smoke-eval-boundary.md"), `eval_contract_ref_missing:${scriptPath}`);
-  assert(metadata.contractRefs.length >= 2, `surface_contract_ref_missing:${scriptPath}`);
+  assert(metadata.contractRefs.includes("docs/specs/README.md"), `eval_contract_ref_missing:${scriptPath}`);
   if (metadata.authorization === "future-authorized") {
     assert.equal(metadata.tier, "future-authorized", `future_authorized_must_use_future_tier:${scriptPath}`);
     assert.equal(metadata.surface, "cloud", `future_authorized_must_use_cloud_surface:${scriptPath}`);

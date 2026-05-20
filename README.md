@@ -13,18 +13,18 @@ One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstr
 - `services/portal`: Portal SaaS 科研托管平台控制面，包括 API/domain 小闭包和 Portal UI MVP。
 - `services/opl-web-gateway`: OPL Web entry/preflight 与统一身份边界，当前不作为本分支修改范围。
 - `services/opl-runtime-bridge`: Runtime Bridge / Runtime Agent 合同边界，当前不作为本分支修改范围。
-- `docs/contracts`: v22 contract-level 产品、闭环和共享边界合同。
+- `docs/specs`: v22 contract-level 产品、闭环和共享边界合同。
 - `docs/recovery`: v22 recovery、active surface、验收和 GitHub handoff 文档。
 - `tests/**/*.mjs`: v22 contract/API smoke。
 
 ## Contract Index
 
-v22 合同目录见 [docs/contracts/README.md](./docs/contracts/README.md)。
+v22 合同目录见 [docs/specs/README.md](./docs/specs/README.md)。
 
 核心入口：
 
-- [docs/contracts/v22-mvp-managed-opl-loop.md](./docs/contracts/v22-mvp-managed-opl-loop.md)
-- [docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md](./docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md)
+- [docs/specs/README.md](./docs/specs/README.md)
+- [docs/specs/README.md](./docs/specs/README.md)
 - [docs/recovery/mvp-contract-acceptance.md](./docs/recovery/mvp-contract-acceptance.md)
 
 ## Default Entry

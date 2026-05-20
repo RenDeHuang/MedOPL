@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 const routesSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
 const adapterSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
-const figmaContract = await readFile("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md", "utf8");
+const figmaContract = await readFile("docs/specs/README.md", "utf8");
 
 for (const retiredRoute of ["/packages", "/advanced/servers", "/runtime", "/tasks"]) {
   assert.equal(routesSource.includes(retiredRoute), false, `retired_package_route_must_not_be_active:${retiredRoute}`);

@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md";
-const contractIndexPath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const contractIndexPath = "docs/specs/README.md";
 const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
 const currentGoalPath = "docs/recovery/v22-goal-current.json";
 const verifyManifestPath = "docs/recovery/v22-agent-verify-manifest.json";
 const routesPath = "services/portal/frontend/src/app/routes.tsx";
 const layoutPath = "services/portal/frontend/src/app/components/Layout.tsx";
 const adapterPath = "services/portal/frontend/src/app/data/portalAdapters.ts";
-const figmaContractPath = "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md";
+const figmaContractPath = "docs/specs/README.md";
 const auditReportPath = ".runtime/portal-ui-design-quality/report.json";
 const startMarker = "<!-- v22-portal-ui-design-quality-audit-contract:start -->";
 const endMarker = "<!-- v22-portal-ui-design-quality-audit-contract:end -->";
@@ -138,14 +138,14 @@ assertIncludesAll(contract.futureImplementationLeafHandoff.verificationCommands,
   "npm --prefix services/portal/frontend run build",
 ], "future_implementation_verification_command");
 
-assertIncludes(contractMarkdown, "Portal 前端技术栈迁移的授权只来自 `v22-portal-figma-make-ui-implementation-boundary.md`", "contract_must_delegate_stack_migration");
+assertIncludes(contractMarkdown, "Portal 前端技术栈迁移的授权只来自 `spec:v22-portal-figma-make-ui-implementation-boundary`", "contract_must_delegate_stack_migration");
 assertIncludes(contractMarkdown, "React + Vite + TypeScript + shadcn/Radix + lucide", "contract_must_name_target_stack");
 assertIncludes(contractMarkdown, "不得把 Portal 做成云资源控制台", "contract_must_keep_no_cloud_console_boundary");
 assertIncludes(contractMarkdown, "不得重做 OPL chatbot", "contract_must_keep_opl_chatbot_boundary");
 assertExcludes(contractMarkdown, "不得把 Vue 3 + Vite + TypeScript + Pinia 迁成 React/Vercel", "old_stack_preservation_copy");
 assertExcludes(contractMarkdown, "npm --prefix services/portal/frontend run test:visual", "old_visual_command_copy");
 
-assertIncludes(contractIndex, "v22-portal-ui-design-quality-audit-boundary.md", "contract_index_must_reference_audit_contract");
+assertIncludes(contractIndex, "spec:v22-portal-ui-design-quality-audit-boundary", "contract_index_must_reference_audit_contract");
 assertIncludes(gapMatrix, "frontend-product-react-vite-figma-make", "gap_matrix_must_record_react_figma_gap");
 assertIncludes(gapMatrix, "leaf-portal-figma-make-react-ui-implementation", "gap_matrix_must_record_figma_make_leaf");
 
@@ -155,7 +155,7 @@ assert(["in_progress", "completed"].includes(frontendGap.status), "frontend_gap_
 
 const portalUiLeaf = verifyManifest.leaves.find((leaf) =>
   leaf.leaf_id === currentGoal.current_cursor &&
-  leaf.contracts.includes("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md"));
+  leaf.contracts.includes("docs/specs/README.md"));
 assert(portalUiLeaf, "verify_manifest_must_define_current_portal_ui_leaf");
 assert(portalUiLeaf.forbidden_ops.includes("live-cloud"), "portal_ui_leaf_must_forbid_live_cloud");
 assert(portalUiLeaf.forbidden_ops.includes("build-push-kubectl"), "portal_ui_leaf_must_forbid_build_push_kubectl");

@@ -6,7 +6,7 @@ import path from "node:path";
 const RAW_PROVIDER_KEY = "gflabtoken_raw_key_opl_entry_preflight_backend_only";
 const PASSWORD = "portal-password-v22";
 
-const contractPath = "docs/contracts/v22-opl-entry-preflight-auth-boundary.md";
+const contractPath = "docs/specs/README.md";
 const authHandlerPath = "services/portal/src/app/portal-auth-runtime-handler.mjs";
 const oplLaunchViewPath = "services/portal/frontend/src/app/pages/OPLEntry.tsx";
 const userVisibleEntryPath = "/opl/entry/preflight";

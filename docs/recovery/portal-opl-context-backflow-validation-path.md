@@ -1,6 +1,6 @@
 # v22 Portal-OPL Context Backflow Complete Link And Validation Path
 
-本文定义 Portal-OPL context/backflow 的完整链路和后续开发验证验收顺序。它是 [v22-portal-opl-context-backflow-boundary.md](../contracts/v22-portal-opl-context-backflow-boundary.md) 的执行路径，不替代一级主合同和二级段合同。
+本文定义 Portal-OPL context/backflow 的完整链路和后续开发验证验收顺序。它是 [spec:v22-portal-opl-context-backflow-boundary](../specs/README.md) 的执行路径，不替代一级主合同和二级段合同。
 
 ## Complete Portal-OPL Link
 
@@ -232,7 +232,7 @@ Runtime Bridge session/message metadata
 
 实现分支进入 B 窗口前必须满足：
 
-1. 订阅 [v22-portal-opl-context-backflow-boundary.md](../contracts/v22-portal-opl-context-backflow-boundary.md) 和其合同包。
+1. 订阅 [spec:v22-portal-opl-context-backflow-boundary](../specs/README.md) 和其合同包。
 2. `node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
 3. `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
 4. `node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs` 通过。

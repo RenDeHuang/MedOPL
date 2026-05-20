@@ -12,7 +12,7 @@
 
 ## 压缩原则
 
-1. 长期合同保留在 `docs/contracts/v22-*.md`，只表达不变量、边界和授权。
+1. 长期合同保留在 `docs/specs/README.md`，只表达不变量、边界和授权。
 2. 当前产品、架构、数据、云和治理事实写入 truth 层，不再恢复阶段性事实源。
 3. 下一步 cursor、gap、允许写入范围和验证命令只以 index / manifest 为准。
 4. eval gate 可以保留较多，但必须按 health、smoke-golden、contract-local、local-regression、future-authorized 分层。
@@ -23,15 +23,15 @@
 | File | Layer | Role | Decision | Replacement / Authority | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `AGENTS.md` | contracts | 稳定工作纪律 | keep | AGENTS.md | 禁区、A/B/C、secret、upstream、cloud 授权红线。 |
-| `docs/contracts/README.md` | contracts | 合同索引 | keep | contracts index | 只索引长期合同和 truth layer，不再承接阶段故事线。 |
-| `docs/contracts/v22-mvp-managed-opl-loop.md` | contracts | MVP 主闭环合同 | keep | MVP loop authority | 当前用户闭环主合同。 |
-| `docs/contracts/v22-saas-control-plane-user-experience-boundary.md` | contracts | 用户体验边界 | keep | UX boundary | 保证 Portal 是托管科研工作台控制面，不是云控制台。 |
-| `docs/contracts/v22-portal-opl-connection-boundary.md` | contracts | Portal-OPL 连接边界 | keep | OPL connection boundary | 长期边界。 |
-| `docs/contracts/v22-opl-work-message-file-run-boundary.md` | contracts | OPL work 边界 | keep | OPL work boundary | 长期边界。 |
-| `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md` | contracts | Runtime Bridge 边界 | keep | Runtime Bridge boundary | 长期边界。 |
-| `docs/contracts/v22-portal-files-billing-trace-boundary.md` | contracts | 文件/账单/trace 边界 | keep | files billing trace boundary | 长期边界。 |
-| `docs/contracts/v22-authorized-tencent-create-release-*.md` | contracts | future-authorized 云 mutation 边界 | keep | future-authorized | 不代表已上线，但防止越权真实云操作。 |
-| `docs/contracts/v22-production-cloud-topology-boundary.md` | contracts | future-authorized 云拓扑边界 | keep | future-authorized | 不执行真实云。 |
+| `docs/specs/README.md` | contracts | 合同索引 | keep | contracts index | 只索引长期合同和 truth layer，不再承接阶段故事线。 |
+| `docs/specs/README.md` | contracts | MVP 主闭环合同 | keep | MVP loop authority | 当前用户闭环主合同。 |
+| `docs/specs/README.md` | contracts | 用户体验边界 | keep | UX boundary | 保证 Portal 是托管科研工作台控制面，不是云控制台。 |
+| `docs/specs/README.md` | contracts | Portal-OPL 连接边界 | keep | OPL connection boundary | 长期边界。 |
+| `docs/specs/README.md` | contracts | OPL work 边界 | keep | OPL work boundary | 长期边界。 |
+| `docs/specs/README.md` | contracts | Runtime Bridge 边界 | keep | Runtime Bridge boundary | 长期边界。 |
+| `docs/specs/README.md` | contracts | 文件/账单/trace 边界 | keep | files billing trace boundary | 长期边界。 |
+| `docs/specs/v22-authorized-tencent-create-release-*.md` | contracts | future-authorized 云 mutation 边界 | keep | future-authorized | 不代表已上线，但防止越权真实云操作。 |
+| `docs/specs/README.md` | contracts | future-authorized 云拓扑边界 | keep | future-authorized | 不执行真实云。 |
 | `docs/recovery/v22-truth-freeze.md` | truth | 当前主线真相冻结 | keep | truth authority | 业务、架构、数据、云、AI 治理真相。 |
 | `docs/recovery/product-truth.md` | truth | 产品真相 | keep | product truth | 补充用户主动开通托管计算资源和文件空间、用户删除文件空间才进入 7 天保护期。 |
 | `docs/recovery/architecture-truth.md` | truth | 架构真相 | keep | architecture truth | Portal/Gateway/Runtime Bridge/PostgreSQL/Redis/object plane 边界。 |
@@ -59,4 +59,4 @@
 以下文件已被物理清退。清退证据属于 index / agent-runs / eval 语境，不再写入 truth 层作为当前事实：
 
 - `docs/recovery/v22-ai-frontend-backend-development-framework.md`
-- `docs/contracts/v22-canonical-user-loop.md`
+- `docs/specs/README.md`

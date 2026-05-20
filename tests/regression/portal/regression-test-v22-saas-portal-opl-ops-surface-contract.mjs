@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const contractPath = path.join(__dirname, "../../../docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md");
+const contractPath = path.join(__dirname, "../../../docs/specs/README.md");
 const frontendUserSurfacePaths = [
   "../../../services/portal/frontend/src/app/components/Layout.tsx",
   "../../../services/portal/frontend/src/app/pages/Overview.tsx",
@@ -213,7 +213,7 @@ assert(markdown.includes("MedOPL 是面向 AI 小白科研用户的 OPL 托管�
 assert(markdown.includes("普通用户不需要理解云厂商控制台或工程后台。"), "not_cloud_console_statement_missing");
 assert.equal(markdown.includes("本轮只落共享界面合同和 smoke，不写业务代码，不做 UI。"), false, "saas_surface_contract_must_not_claim_no_ui_globally");
 assert(markdown.includes("本合同不单独实现 UI"), "saas_surface_contract_must_delegate_ui_implementation");
-assert(markdown.includes("v22-portal-workbench-management-ui-composition-boundary.md"), "saas_surface_contract_must_reference_composition_contract");
+assert(markdown.includes("spec:v22-portal-workbench-management-ui-composition-boundary"), "saas_surface_contract_must_reference_composition_contract");
 await assertFrontendBeginnerSurfaceCopy();
 await assertTraceTaskHeaderCopy();
 
@@ -222,7 +222,7 @@ const contract = extractContractJson(markdown);
 assert.equal(contract.contract, "v22_saas_portal_opl_ops_surface_boundary", "contract_name_mismatch");
 assert.equal(contract.version, 2, "contract_version_mismatch");
 assert.equal(contract.implementationBoundary.thisContractImplementsUiDirectly, false, "saas_surface_contract_must_not_implement_ui_directly");
-assert.equal(contract.implementationBoundary.portalUiImplementationContract, "v22-portal-workbench-management-ui-composition-boundary.md", "saas_surface_ui_implementation_contract_mismatch");
+assert.equal(contract.implementationBoundary.portalUiImplementationContract, "spec:v22-portal-workbench-management-ui-composition-boundary", "saas_surface_ui_implementation_contract_mismatch");
 assert.equal(contract.implementationBoundary.mustNotClaimNoUiWhenCompositionImplementsUi, true, "saas_surface_must_not_conflict_with_composition_ui");
 assert.deepEqual(
   sortedKeys(contract),

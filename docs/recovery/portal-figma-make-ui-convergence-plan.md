@@ -16,17 +16,17 @@
 
 ## Contract Subscription Package
 
-- `docs/contracts/README.md`
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-user-surface-boundary.md`
-- `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
-- `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`
-- `docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md`
-- `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`
-- `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
 
@@ -34,8 +34,8 @@
 
 Allowed files:
 
-- `docs/contracts/v22-*.md`
-- `docs/contracts/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/*`
 - `DESIGN.md`
 - `services/portal/frontend/**`
@@ -52,7 +52,7 @@ Forbidden without separate authorization:
 
 ## Step 1: Add And Align Contracts
 
-- Create `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`.
+- Create `docs/specs/README.md`.
 - Declare React + Vite + TypeScript + react-router + shadcn/Radix + lucide as the Portal-wide frontend target stack.
 - Declare Figma Make ZIP `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip` and file `pjLYKml89XFsf8BMNOJ3CV` as current ordinary user and admin Portal UI implementation source.
 - Declare current user routes: `/overview`, `/resources`, `/workspace`, `/trace`, `/billing`, `/opl-launch`.
@@ -68,7 +68,7 @@ Forbidden without separate authorization:
 - Update `DESIGN.md` from "Figma roundtrip back to Vue" to "Figma Make as React implementation source".
 - Update recovery current/gap documents to remove `frontend-product-vue-vite-ts-pinia` as the target stack.
 - Physically retire current-truth contract assertions that still treat historical UI evidence, old admin routes, or old harness ownership as the current completion surface.
-- Update `v22-portal-structure-failure-isolation-boundary.md` so current frontend shape points to `src/app/pages/*`, `src/app/data/portalAdapters.ts`, and ZIP/surface smoke instead of deleted Vue views/composables or deleted harness.
+- Update `spec:v22-portal-structure-failure-isolation-boundary` so current frontend shape points to `src/app/pages/*`, `src/app/data/portalAdapters.ts`, and ZIP/surface smoke instead of deleted Vue views/composables or deleted harness.
 - Keep Admin role boundary: RoleContext is display-only navigation gating, while `/portal/api/admin/*` remains the authorization boundary.
 
 ## Step 3: Retire Old Portal Frontend Surface

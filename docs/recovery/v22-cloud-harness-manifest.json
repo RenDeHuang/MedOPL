@@ -51,9 +51,9 @@
       "id": "L1",
       "name": "production env secret schema gate",
       "contracts": [
-        "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-        "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
-        "docs/contracts/v22-production-cloud-topology-boundary.md"
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md"
       ],
       "ownedPaths": [
         "docs/recovery/v22-cloud-harness-manifest.json",
@@ -77,8 +77,8 @@
       "id": "L2a",
       "name": "package c resource lifecycle local gate",
       "contracts": [
-        "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
-        "docs/contracts/v22-resource-plan-boundary.md"
+        "docs/specs/README.md",
+        "docs/specs/README.md"
       ],
       "ownedPaths": [
         "scripts/v22-cloud-operation-local-executor.mjs",
@@ -104,9 +104,9 @@
       "id": "L2b",
       "name": "portal click to worker to projection",
       "contracts": [
-        "docs/contracts/v22-managed-environment-open-boundary.md",
-        "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
-        "docs/contracts/v22-portal-user-surface-boundary.md"
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md"
       ],
       "ownedPaths": [
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
@@ -141,9 +141,9 @@
       "id": "L3",
       "name": "billing reconciliation and cleanup",
       "contracts": [
-        "docs/contracts/v22-billing-freeze-boundary.md",
-        "docs/contracts/v22-release-stop-billing-audit-boundary.md",
-        "docs/contracts/v22-authorized-tencent-create-release-implementation-boundary.md"
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md"
       ],
       "ownedPaths": [
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
@@ -170,9 +170,9 @@
       "id": "L4",
       "name": "ordinary user product lifecycle",
       "contracts": [
-        "docs/contracts/v22-mvp-managed-opl-loop.md",
-        "docs/contracts/v22-portal-user-surface-boundary.md",
-        "docs/contracts/v22-portal-files-billing-trace-boundary.md"
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md"
       ],
       "ownedPaths": [
         "services/portal/frontend/src/views/packages/*",

@@ -40,9 +40,9 @@ Readonly and mutation lanes must use separate authorization, secret allowlists, 
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/mvp-contract-acceptance.md`
-- `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
-- `docs/contracts/v22-authorized-tencent-create-release-boundary.md`
-- `docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 ## Migration Status
 

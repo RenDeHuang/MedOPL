@@ -98,7 +98,7 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
   assert(allowedSurfaces.has(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
   assert(allowedEntryKinds.has(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
   assert(allowedAuthorizations.has(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
-  assert(metadata.contractRefs.includes("docs/contracts/v22-smoke-eval-boundary.md"), `smoke_eval_contract_ref_missing:${scriptPath}`);
+  assert(metadata.contractRefs.includes("docs/specs/README.md"), `smoke_eval_contract_ref_missing:${scriptPath}`);
   if (metadata.entryKind === "suite-wrapper") suiteWrapperScripts.push(scriptPath);
   if (metadata.entryKind === "gate-self-test") gateSelfTestScripts.push(scriptPath);
   if (metadata.authorization === "future-authorized") {

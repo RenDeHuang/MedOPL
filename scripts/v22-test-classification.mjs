@@ -271,17 +271,17 @@ const CONTROL_PLANE_SURFACE_SET = new Set([
 const SURFACE_CONTRACT_REFS = Object.freeze({
   "control-plane": Object.freeze(["docs/recovery/v22-agent-verify-manifest.json"]),
   portal: Object.freeze([
-    "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-    "docs/contracts/v22-portal-user-surface-boundary.md",
+    "docs/specs/README.md",
+    "docs/specs/README.md",
   ]),
   opl: Object.freeze([
-    "docs/contracts/v22-portal-opl-connection-boundary.md",
-    "docs/contracts/v22-opl-work-message-file-run-boundary.md",
+    "docs/specs/README.md",
+    "docs/specs/README.md",
   ]),
   "runtime-bridge": Object.freeze([
-    "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
+    "docs/specs/README.md",
   ]),
-  cloud: Object.freeze(["docs/contracts/v22-cloud-onboarding-workflow-boundary.md"]),
+  cloud: Object.freeze(["docs/specs/README.md"]),
   archive: Object.freeze(["docs/recovery/archive-policy.md"]),
 });
 
@@ -295,7 +295,7 @@ export function smokeEvalMetadataOf(scriptPath) {
   const tier = smokeEvalTierOf(normalized, category);
   const surface = smokeEvalSurfaceOf(normalized, category);
   const contractRefs = [
-    "docs/contracts/v22-smoke-eval-boundary.md",
+    "docs/specs/README.md",
     ...(SURFACE_CONTRACT_REFS[surface] || []),
   ].filter((value, index, values) => values.indexOf(value) === index);
   const entryKind = smokeEvalEntryKindOf(normalized);

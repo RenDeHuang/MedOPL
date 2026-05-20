@@ -204,7 +204,7 @@ const result = await withTempRepo(async (tempRoot) => {
   };
 });
 
-const contractSource = await readFile(path.join(repoRoot, "docs/contracts/v22-token-provider-boundary.md"), "utf8");
+const contractSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
 assert(contractSource.includes("raw API Key 只能进入后端密钥边界"), "token_provider_raw_key_boundary_missing");
 assert(contractSource.includes("不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git"), "token_provider_forbidden_storage_missing");
 

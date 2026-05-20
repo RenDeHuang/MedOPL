@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 function assertIncludesAll(source, phrases, label) {
@@ -205,7 +205,7 @@ assertNotIncludesAny(contract, [
   "migration-only alias",
 ], "execution_contract_forbidden_mixed_gate_language");
 
-assert(readme.includes("v22-authorized-tencent-create-release-execution-boundary.md"), "readme_must_index_execution_contract");
+assert(readme.includes("spec:v22-authorized-tencent-create-release-execution-boundary"), "readme_must_index_execution_contract");
 assert(readme.includes("authorized/tencent create/release execution"), "readme_must_name_execution_contract");
 assert(suite.includes("future-authorized-test-v22-authorized-tencent-create-release-execution-contract.mjs"), "mvp_suite_must_include_execution_smoke");
 

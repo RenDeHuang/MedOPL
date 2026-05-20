@@ -3,11 +3,11 @@ import { readFile } from "node:fs/promises";
 import { createRuntimeAgentHttpRelay } from "../../../services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs";
 
 const files = {
-  portalOplConnection: "docs/contracts/v22-portal-opl-connection-boundary.md",
-  realOplFileRunArtifact: "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
-  runtimeBridge: "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
-  portalFilesBillingTrace: "docs/contracts/v22-portal-files-billing-trace-boundary.md",
-  upstreamOpl: "docs/contracts/v22-upstream-opl-boundary.md",
+  portalOplConnection: "docs/specs/README.md",
+  realOplFileRunArtifact: "docs/specs/README.md",
+  runtimeBridge: "docs/specs/README.md",
+  portalFilesBillingTrace: "docs/specs/README.md",
+  upstreamOpl: "docs/specs/README.md",
   validationPath: "docs/recovery/real-opl-file-run-artifact-validation-path.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   mvpAcceptance: "docs/recovery/mvp-contract-acceptance.md",

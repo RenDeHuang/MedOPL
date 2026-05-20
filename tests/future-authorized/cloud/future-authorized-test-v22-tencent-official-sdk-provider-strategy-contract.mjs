@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 function assertIncludesAll(source, phrases, label) {

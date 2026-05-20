@@ -60,7 +60,7 @@ const compactionIndex = readText("docs/recovery/v22-contract-eval-compaction-ind
   "已清退阶段文件索引",
   "清退证据属于 index / agent-runs / eval 语境",
   "docs/recovery/v22-ai-frontend-backend-development-framework.md",
-  "docs/contracts/v22-canonical-user-loop.md",
+  "docs/specs/README.md",
 ].forEach((needle) => assertIncludes(compactionIndex, needle, "docs/recovery/v22-contract-eval-compaction-index.md"));
 
 const activeTruth = readText("docs/active/README.md");
@@ -106,11 +106,11 @@ assertIncludes(
 );
 
 assertMissing("docs/recovery/v22-ai-frontend-backend-development-framework.md");
-assertMissing("docs/contracts/v22-canonical-user-loop.md");
+assertMissing("docs/specs/README.md");
 
-const contractsReadme = readText("docs/contracts/README.md");
-assertNotIncludes(contractsReadme, "v22-canonical-user-loop.md", "docs/contracts/README.md");
-assertIncludes(contractsReadme, "v22-truth-freeze.md", "docs/contracts/README.md");
+const contractsReadme = readText("docs/specs/README.md");
+assertNotIncludes(contractsReadme, "spec:v22-canonical-user-loop", "docs/specs/README.md");
+assertIncludes(contractsReadme, "spec:v22-truth-freeze", "docs/specs/README.md");
 
 const agentRun = readText(agentRunPath);
 [

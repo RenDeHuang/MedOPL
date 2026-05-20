@@ -7,7 +7,7 @@ const layoutSource = await readFile("services/portal/frontend/src/app/components
 const dispatcherSource = await readFile("services/portal/src/app/portal-http-dispatcher.mjs", "utf8");
 const viteSource = await readFile("services/portal/frontend/vite.config.ts", "utf8");
 const authSource = await readFile("services/portal/src/app/portal-auth-runtime-handler.mjs", "utf8");
-const figmaContract = await readFile("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md", "utf8");
+const figmaContract = await readFile("docs/specs/README.md", "utf8");
 
 const requiredRoutes = ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"];
 const requiredAdminRoutes = [

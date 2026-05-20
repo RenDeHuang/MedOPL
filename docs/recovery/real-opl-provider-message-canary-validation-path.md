@@ -1,6 +1,6 @@
 # v22 Real OPL Provider Message Canary Workflow And Validation Path
 
-本文定义真实 OPL provider message reply canary 的完整工作流和验证顺序。它是 [v22-real-opl-provider-message-canary-boundary.md](../contracts/v22-real-opl-provider-message-canary-boundary.md) 的执行路径，不替代 [real-opl-capability-canary-validation-path.md](./real-opl-capability-canary-validation-path.md)。
+本文定义真实 OPL provider message reply canary 的完整工作流和验证顺序。它是 [spec:v22-real-opl-provider-message-canary-boundary](../specs/README.md) 的执行路径，不替代 [real-opl-capability-canary-validation-path.md](./real-opl-capability-canary-validation-path.md)。
 
 ## Complete Workflow
 
@@ -331,8 +331,8 @@ GET /portal/api/session-traces/{traceId}
 
 验收：
 
-- 真实发现已回写 [v22-real-opl-provider-message-canary-boundary.md](../contracts/v22-real-opl-provider-message-canary-boundary.md)。
-- 上层 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 已引用本细分合同。
+- 真实发现已回写 [spec:v22-real-opl-provider-message-canary-boundary](../specs/README.md)。
+- 上层 [spec:v22-real-opl-capability-canary-boundary](../specs/README.md) 已引用本细分合同。
 - [status-matrix.md](./status-matrix.md) 和 [mvp-contract-acceptance.md](./mvp-contract-acceptance.md) 已说明当前状态。
 - productionized Runtime Bridge 映射另开分支，并补正式 smoke。
 - B 窗口只吸收清理后的正式分支，不吸收 `.runtime` canary 临时代码。
@@ -376,7 +376,7 @@ node tests/regression/opl/regression-test-v22-real-opl-provider-message-contract
 node tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs
 node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs
 node tests/contract/contract-test-v22-mvp-contract-suite.mjs
-git diff --check -- docs/contracts docs/recovery scripts
+git diff --check -- docs/specs docs/recovery scripts
 ```
 
 真实 provider message reply canary 必须由用户单独授权，并在授权时明确：

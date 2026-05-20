@@ -31,8 +31,8 @@
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-repo-governance-physical-compaction-index.md`

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
-const contractPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
+const contractPath = "docs/specs/README.md";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const workflowScriptPath = "scripts/v22-agent-workflow.mjs";

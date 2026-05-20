@@ -14,7 +14,7 @@
 
 ## subagents_and_models
 
-- Dalton：`gpt-5.4-mini`，只读审计 `docs/contracts/**`。
+- Dalton：`gpt-5.4-mini`，只读审计 `docs/specs/**`。
 - Galileo：`gpt-5.4-mini`，只读审计 `docs/recovery/**`。
 - Kierkegaard：`gpt-5.4-mini`，只读审计 `scripts/**`、smoke/eval 分层与 detached trunk 缺口。
 - Ohm：`gpt-5.4-mini`，只读审计引用链和 delete-ready 条件。
@@ -38,8 +38,8 @@
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-contract-smoke-eval-index-compaction-index.md`

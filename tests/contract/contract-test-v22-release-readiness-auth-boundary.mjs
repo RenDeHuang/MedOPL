@@ -10,8 +10,8 @@ const files = {
   goalState: "docs/recovery/v22-goal-state.md",
   gapMatrix: "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
   goalLoop: "docs/recovery/v22-codex-goal-loop.md",
-  deployContract: "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md",
-  ownershipContract: "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+  deployContract: "docs/specs/README.md",
+  ownershipContract: "docs/specs/README.md",
 };
 
 const authRecordFields = [

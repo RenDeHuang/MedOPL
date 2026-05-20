@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const contractPath = path.join(__dirname, "../../docs/contracts/v22-mvp-managed-opl-loop.md");
+const contractPath = path.join(__dirname, "../../docs/specs/README.md");
 
 const CONTRACT_START = "<!-- v22-mvp-managed-opl-loop-contract:start -->";
 const CONTRACT_END = "<!-- v22-mvp-managed-opl-loop-contract:end -->";

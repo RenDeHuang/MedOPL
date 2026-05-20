@@ -12,11 +12,11 @@ This document is an absorption guide only. It does not authorize reading secrets
 
 This branch subscribes to:
 
-- `docs/contracts/README.md`
-- `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
-- `docs/contracts/v22-tencent-readonly-inventory-boundary.md`
-- `docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md`
-- `docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/cloud-onboarding-execution-board.md`
 - `docs/recovery/cloud-onboarding-status-table.md`
 - `docs/recovery/cloud-onboarding-verification-matrix.md`

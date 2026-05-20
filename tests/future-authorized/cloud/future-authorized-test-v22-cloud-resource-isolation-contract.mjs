@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const files = {
-  createRelease: "docs/contracts/v22-authorized-tencent-create-release-boundary.md",
-  execution: "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md",
-  resourcePlan: "docs/contracts/v22-resource-plan-boundary.md",
-  pricing: "docs/contracts/v22-pricing-snapshot-boundary.md",
-  topology: "docs/contracts/v22-production-cloud-topology-boundary.md",
-  deploy: "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md",
-  workflow: "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-  readme: "docs/contracts/README.md",
+  createRelease: "docs/specs/README.md",
+  execution: "docs/specs/README.md",
+  resourcePlan: "docs/specs/README.md",
+  pricing: "docs/specs/README.md",
+  topology: "docs/specs/README.md",
+  deploy: "docs/specs/README.md",
+  workflow: "docs/specs/README.md",
+  readme: "docs/specs/README.md",
   status: "docs/recovery/cloud-onboarding-status-table.md",
   board: "docs/recovery/cloud-onboarding-execution-board.md",
   matrix: "docs/recovery/cloud-onboarding-verification-matrix.md",

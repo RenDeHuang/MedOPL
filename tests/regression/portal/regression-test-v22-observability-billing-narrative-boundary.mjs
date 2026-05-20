@@ -8,9 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
 
 const filePaths = {
-  contractsReadme: "docs/contracts/README.md",
-  langfuseContract: "docs/contracts/v22-langfuse-observability-metadata-boundary.md",
-  traceContract: "docs/contracts/v22-trace-metadata-boundary.md",
+  contractsReadme: "docs/specs/README.md",
+  langfuseContract: "docs/specs/README.md",
+  traceContract: "docs/specs/README.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   repoZoning: "docs/recovery/repo-zoning.md",
   legacyBacklog: "docs/recovery/legacy-cleanup-backlog.md",

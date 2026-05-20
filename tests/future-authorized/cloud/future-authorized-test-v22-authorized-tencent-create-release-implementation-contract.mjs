@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-authorized-tencent-create-release-implementation-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 function assertIncludesAll(source, phrases, label) {
@@ -109,7 +109,7 @@ assertIncludesAll(contract, [
   "普通用户和管理员 surface 按角色分离",
   "不复制 Sub2API 代码、路由、鉴权或存储结构",
   "借鉴 one-person-lab 的 worktree / repo-tracked truth / 防污染纪律",
-  "truth 进入 docs/contracts/scripts/tests",
+  "truth 进入 docs/specs/scripts/tests",
   "tmux/session/agent 对话/本地 runtime state 不进仓库",
 ], "implementation_contract_borrowed_boundaries");
 
@@ -145,7 +145,7 @@ assertNotIncludesAny(contract, [
 ], "implementation_contract_forbidden_copy");
 
 assertIncludesAll(readme, [
-  "v22-authorized-tencent-create-release-implementation-boundary.md",
+  "spec:v22-authorized-tencent-create-release-implementation-boundary",
   "authorized/tencent create/release implementation",
   "默认风控上限",
   "计算资源和存储资源生命周期分离",

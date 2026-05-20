@@ -22,7 +22,7 @@ const retiredTruthFiles = Object.freeze([
 
 const activeRefScopes = Object.freeze([
   "scripts",
-  "docs/contracts/README.md",
+  "docs/specs/README.md",
   "docs/README.md",
   "docs/active/README.md",
   "docs/product/README.md",

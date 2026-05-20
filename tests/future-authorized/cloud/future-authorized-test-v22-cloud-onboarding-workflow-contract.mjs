@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 const vibePath = "docs/vibe-coding.md";
 
@@ -127,7 +127,7 @@ assertIncludesAll(contract, [
 
 assertIncludesAll(contract, [
   "可并发项",
-  "docs/contracts",
+  "docs/specs",
   "smoke",
   "fake wrapper",
   "cleanup plan",
@@ -181,7 +181,7 @@ assert.deepEqual(workflow.serialExternalSideEffects, [
 ], "serial_side_effects_mismatch");
 
 assert.deepEqual(workflow.parallelizableWork, [
-  "docs/contracts",
+  "docs/specs",
   "smoke",
   "fake wrapper",
   "cleanup plan",
@@ -297,7 +297,7 @@ assert.equal(phases.find((item) => item.name === "minimal authorized create/rele
 assert.equal(phases.find((item) => item.name === "production deploy execution").realCloudAllowed, true, "deploy_execution_requires_user_authorized_real_cloud");
 
 assertIncludesAll(readme, [
-  "v22-cloud-onboarding-workflow-boundary.md",
+  "spec:v22-cloud-onboarding-workflow-boundary",
   "cloud onboarding workflow",
   "业务推进顺序",
   "不替代 AGENTS.md",
@@ -307,7 +307,7 @@ assert(suite.includes("future-authorized-test-v22-cloud-onboarding-workflow-cont
 
 assertIncludesAll(vibe, [
   "v22 cloud onboarding workflow",
-  "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+  "docs/specs/README.md",
   "AGENTS 管流程与红线，合同管语义与验收",
 ], "vibe_cloud_onboarding_reference");
 

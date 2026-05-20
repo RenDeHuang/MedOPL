@@ -16,9 +16,9 @@ function assertNotIncludesAny(source, phrases, label) {
   }
 }
 
-const authorizedBoundaryPath = "docs/contracts/v22-authorized-tencent-create-release-boundary.md";
-const implementationBoundaryPath = "docs/contracts/v22-authorized-tencent-create-release-implementation-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const authorizedBoundaryPath = "docs/specs/README.md";
+const implementationBoundaryPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const productPath = "docs/product.md";
 const activeTruthPath = "docs/active/README.md";
 const decisionsPath = "docs/recovery/decisions.md";

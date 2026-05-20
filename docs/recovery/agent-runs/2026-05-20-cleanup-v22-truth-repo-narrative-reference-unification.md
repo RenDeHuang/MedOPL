@@ -15,7 +15,7 @@
 ## subagents_and_models
 
 - Raman：`gpt-5.4`，只读审计 root governance docs。
-- Kepler：`gpt-5.4`，只读审计 `docs/contracts/**`。
+- Kepler：`gpt-5.4`，只读审计 `docs/specs/**`。
 - Feynman：`gpt-5.4`，只读审计 `docs/recovery/**`。
 - Averroes：`gpt-5.4`，只读审计 `scripts/**`、smoke/eval/classification/manifest 引用链。
 
@@ -45,8 +45,8 @@
 - `docs/invariants.md`
 - `docs/decisions.md`
 - `docs/vibe-coding.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
@@ -107,7 +107,7 @@
 ## blocker_review_and_fix_log
 
 - root governance auditor 确认 `docs/status.md`、`docs/invariants.md`、`docs/decisions.md`、`docs/vibe-coding.md` 仍有旧 active cloud/program/workflow 口径，建议收敛为五层权威。
-- contracts auditor 确认 43 个合同文件没有 delete-ready；`v22-admin-ops-console-boundary.md` 只是最强候选，但引用未迁完。
+- contracts auditor 确认 43 个合同文件没有 delete-ready；`spec:v22-admin-ops-console-boundary` 只是最强候选，但引用未迁完。
 - recovery auditor 确认 53 个 recovery 文件没有 delete-ready；`49b99d` 缺显式 recovery 留痕，且 post-absorb trace leaf 需要闭合。
 - scripts auditor 确认 162 个 scripts 文件没有 delete-ready；`v22-agent-workflow.mjs` 和 cloud onboarding CO-* family 是 blocked-retain / retire-candidate。
 - 本轮不物理删除文件，只迁口径和 gate；下一轮若要删除，必须先完成引用迁移 gate。

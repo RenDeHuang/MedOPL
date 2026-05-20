@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const verificationMatrixPath = "docs/recovery/cloud-onboarding-verification-matrix.md";

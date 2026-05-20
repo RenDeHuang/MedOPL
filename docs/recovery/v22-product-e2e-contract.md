@@ -32,16 +32,16 @@ This contract defines the top-level product loop that every future implementatio
 
 ## Contract Subscription
 
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-opl-entry-preflight-auth-boundary.md`
-- `docs/contracts/v22-portal-opl-connection-boundary.md`
-- `docs/contracts/v22-upstream-opl-boundary.md`
-- `docs/contracts/v22-opl-work-message-file-run-boundary.md`
-- `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
-- `docs/contracts/v22-release-stop-billing-audit-boundary.md`
-- `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 

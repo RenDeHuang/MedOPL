@@ -16,7 +16,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 - subscribed baseline:
   - `AGENTS.md`
   - `docs/vibe-coding.md`
-  - `docs/contracts/README.md`
+  - `docs/specs/README.md`
   - `docs/recovery/mvp-contract-acceptance.md`
   - `docs/recovery/status-matrix.md`
   - `docs/active/README.md`
@@ -44,8 +44,8 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `docs/invariants.md` | Zone 1 | keep | 长期红线入口 | v22 invariants | none |
 | `docs/decisions.md` | Zone 1 | keep | 当前有效关键决策入口 | v22 decisions | none |
 | `docs/vibe-coding.md` | Zone 1 | keep | A/B/C/D、worktree 和合同优先工作流 | v22 workflow truth | none |
-| `docs/contracts/README.md` | Zone 1 | keep/rewrite | v22 合同索引 | v22 contract index | default-entry |
-| `docs/contracts/v22-*` | Zone 1 | keep/rewrite | v22 合同和边界真相 | relevant v22 contract | per-contract |
+| `docs/specs/README.md` | Zone 1 | keep/rewrite | v22 合同索引 | v22 contract index | default-entry |
+| `docs/specs/v22-*` | Zone 1 | keep/rewrite | v22 合同和边界真相 | relevant v22 contract | per-contract |
 | `docs/recovery/*` | Zone 1 | keep/rewrite | 阶段、状态、program board 和恢复裁定 | recovery truth | per-recovery-doc |
 | `services/portal/**` | Zone 1 | keep/rewrite | v22 Portal active service | Portal product surface | portal-layering |
 | `services/opl-web-gateway/**` | Zone 1 | keep/rewrite | v22 OPL Web Gateway active service | Gateway boundary | gateway |

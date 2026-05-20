@@ -56,11 +56,11 @@ function defaultSuiteScriptNames(suiteSource) {
 
 const docEntries = await Promise.all(
   [
-    "docs/contracts/README.md",
-    ...(await readdir(path.join(repoRoot, "docs/contracts")))
+    "docs/specs/README.md",
+    ...(await readdir(path.join(repoRoot, "docs/specs")))
       .filter((name) => /^v22-.*\.md$/u.test(name))
       .sort()
-      .map((name) => `docs/contracts/${name}`),
+      .map((name) => `docs/specs/${name}`),
     ...recoveryDocs,
   ].map(async (filePath) => [filePath, await readRepoFile(filePath)]),
 );

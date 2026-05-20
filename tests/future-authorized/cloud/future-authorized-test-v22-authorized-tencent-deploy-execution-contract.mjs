@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md";
-const workflowPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const workflowPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const boardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const statusPath = "docs/recovery/cloud-onboarding-status-table.md";
 const verificationMatrixPath = "docs/recovery/cloud-onboarding-verification-matrix.md";
@@ -80,7 +80,7 @@ assertIncludesAll(contract, [
   "`targets[]`",
   "`runtimeSmokeTargets[]`",
   "`targetClass`",
-  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "spec:v22-opl-deployment-ownership-release-plan-boundary",
   "platform_service_target",
   "workspace_runtime_target",
   "`component`",
@@ -260,7 +260,7 @@ assert.equal(deployData.runner?.defaultProviderMode, "config-only", "deploy_runn
 assert.equal(deployData.runner?.realProviderMode, "real", "deploy_runner_real_mode");
 
 assertIncludesAll(workflow, [
-  "v22-authorized-tencent-deploy-execution-boundary.md",
+  "spec:v22-authorized-tencent-deploy-execution-boundary",
   "Package D release plan",
   "portal.medopl.cn",
   "opl.medopl.cn",
@@ -282,10 +282,10 @@ assert(workflowData.packageD?.forbiddenActions.includes("DeleteNodePool"), "work
 assert(workflowData.packageD?.forbiddenActions.includes("deleteObject"), "workflow_package_d_forbid_delete_object");
 
 assertIncludesAll(readme, [
-  "v22-authorized-tencent-deploy-execution-boundary.md",
+  "spec:v22-authorized-tencent-deploy-execution-boundary",
   "authorized/tencent deploy execution",
   "Package D",
-  "v22-opl-deployment-ownership-release-plan-boundary.md",
+  "spec:v22-opl-deployment-ownership-release-plan-boundary",
   "OPL deployment ownership release plan",
 ], "readme_deploy_contract");
 

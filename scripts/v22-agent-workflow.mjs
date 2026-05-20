@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const stageDocuments = [
   "AGENTS.md",
   "docs/vibe-coding.md",
-  "docs/contracts/README.md",
+  "docs/specs/README.md",
   "docs/recovery/status-matrix.md",
   "docs/recovery/mvp-contract-acceptance.md",
 ];
@@ -54,7 +54,7 @@ const runtimeStateRoot = ".runtime/v22-agent-workflow";
 const laneStateDir = `${runtimeStateRoot}/lanes`;
 const cloudOnboardingBoardPath = "docs/recovery/cloud-onboarding-execution-board.md";
 const cloudOnboardingStatusTablePath = "docs/recovery/cloud-onboarding-status-table.md";
-const cloudOnboardingWorkflowContractPath = "docs/contracts/v22-cloud-onboarding-workflow-boundary.md";
+const cloudOnboardingWorkflowContractPath = "docs/specs/README.md";
 const cloudHarnessManifestPath = "docs/recovery/v22-cloud-harness-manifest.json";
 
 const cloudOnboardingRunnablePath = Object.freeze([
@@ -112,7 +112,7 @@ const workspaceDiscipline = Object.freeze({
 const repoGovernanceTruth = Object.freeze([
   "AGENTS.md",
   "docs/vibe-coding.md",
-  "docs/contracts",
+  "docs/specs",
   "docs/recovery",
   "scripts/smoke-*",
 ]);
@@ -125,7 +125,7 @@ const workflowTypes = {
     intent: "退役旧路线、入口收敛、文档归档和污染防护。",
     branchPrefix: "cleanup/",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
+      "docs/specs/README.md",
       "docs/active/README.md",
       "docs/recovery/status-matrix.md",
       "docs/recovery/archive-policy.md",
@@ -142,10 +142,10 @@ const workflowTypes = {
     intent: "Portal 普通用户界面、托管运行环境、工作空间、文件、账单和运行轨迹。",
     branchPrefix: "feat/",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-      "docs/contracts/v22-portal-files-billing-trace-boundary.md",
-      "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/active/README.md",
       "docs/recovery/status-matrix.md",
     ],
@@ -162,13 +162,13 @@ const workflowTypes = {
     intent: "托管运行环境、资源绑定、预扣费、冻结金额、释放停止计费和审计状态。",
     branchPrefix: "feat/",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-managed-environment-open-boundary.md",
-      "docs/contracts/v22-resource-plan-boundary.md",
-      "docs/contracts/v22-pricing-snapshot-boundary.md",
-      "docs/contracts/v22-tenant-resource-binding-boundary.md",
-      "docs/contracts/v22-billing-freeze-boundary.md",
-      "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validations: [
@@ -184,16 +184,16 @@ const workflowTypes = {
     intent: "合同、阶段文档、边界文档和对应 v22 smoke 的收敛。",
     branchPrefix: "contract/",
     contracts: [
-      "docs/contracts/README.md",
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
       "docs/recovery/mvp-contract-acceptance.md",
     ],
     validations: [
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node tests/health/health-check-v22-workflow-gate.mjs",
-      "git diff --check -- docs/contracts docs/recovery scripts",
+      "git diff --check -- docs/specs docs/recovery scripts",
     ],
     cScope: "只读检查合同范围、非目标、授权边界和 smoke 可验证性。",
   },
@@ -202,10 +202,10 @@ const workflowTypes = {
     intent: "平台运维视图、后台边界、异常归因、审计状态和普通用户叙事隔离。",
     branchPrefix: "feat/",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-      "docs/contracts/v22-tenant-resource-binding-boundary.md",
-      "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validations: [
@@ -601,7 +601,7 @@ function packageContractsForType(type) {
     return [
       "AGENTS.md",
       "docs/vibe-coding.md",
-      "docs/contracts/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
       "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
       "tests/health/health-check-v22-workflow-gate.mjs",
@@ -892,7 +892,7 @@ function buildCloudOnboardingTaskPackets({ checkConfigPhase, defaultGatePhase, u
     "node tests/future-authorized/cloud/future-authorized-test-v22-agent-workflow-cloud-onboarding.mjs",
     "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-board-status.mjs",
     "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
-    "git diff --check -- scripts docs/recovery docs/contracts",
+    "git diff --check -- scripts docs/recovery docs/specs",
   ];
 
   return [
@@ -997,7 +997,7 @@ function buildBoardCurrentTaskPacket(board = {}) {
       "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
       "node tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
-      "git diff --check -- scripts docs/recovery docs/contracts services/portal",
+      "git diff --check -- scripts docs/recovery docs/specs services/portal",
     ],
     allowedActions: ["review rebase", "run local harness smoke", "record B absorption decision"],
     forbiddenActions: sharedBoundaries,

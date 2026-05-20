@@ -63,7 +63,7 @@ assertIncludesAll(board, [
   "current trunk anchor: 9b68c44",
   "current phase: starter minimal production cloud loop recorded; B rebase review pending; legacy CO phases are historical aliases only",
   "AGENTS 管纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒",
-  "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+  "docs/specs/README.md",
   "docs/recovery/cloud-onboarding-status-table.md",
   "docs/recovery/v22-cloud-harness-manifest.json",
   "async request-reply",
@@ -87,7 +87,7 @@ assertIncludesAll(board, [
   "deploy/build/push/kubectl",
   "依赖安装",
   "merge/push",
-  "docs/contracts",
+  "docs/specs",
   "smoke",
   "fake wrapper",
   "cleanup plan",
@@ -211,7 +211,7 @@ assert.deepEqual(boardData.serialRealSideEffects, [
   "merge/push",
 ], "board_serial_side_effects_mismatch");
 assert.deepEqual(boardData.parallelLaneRules, [
-  "docs/contracts",
+  "docs/specs",
   "smoke",
   "fake wrapper",
   "cleanup plan",

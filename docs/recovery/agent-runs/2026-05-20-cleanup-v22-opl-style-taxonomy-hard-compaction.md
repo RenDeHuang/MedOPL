@@ -38,8 +38,8 @@
 - `docs/policies/README.md`
 - `docs/delivery/README.md`
 - `docs/history/README.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/mvp-contract-acceptance.md`
@@ -52,7 +52,7 @@
 - `docs/product/README.md`
 - `docs/runtime/README.md`
 - `docs/source/README.md`
-- `docs/contracts/README.md`
+- `docs/specs/README.md`
 - `docs/vibe-coding.md`
 - `docs/recovery/repo-zoning.md`
 - `docs/recovery/v22-agent-first-development-loop.md`
@@ -143,7 +143,7 @@ not_applicable_yet
 
 - 不实现 PostgreSQL/Redis local production data closure。
 - 不迁移全部 `tests/**/*.mjs` 到 `tests/**`。
-- 不删除 42 个 `docs/contracts/v22-*` machine-boundary leaf。
+- 不删除 42 个 `docs/specs/v22-*` machine-boundary leaf。
 - 不删除 `docs/recovery/v22-goal-current.json`、manifest、gap matrix、status matrix 或 agent-run evidence。
 - 不修改 services 业务代码。
 

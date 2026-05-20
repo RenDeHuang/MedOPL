@@ -159,7 +159,7 @@ const announcementButtonSource = await source(`${appRoot}/components/Announcemen
 const adapterSource = await source(`${appRoot}/data/portalAdapters.ts`);
 const packageJson = JSON.parse(await source("services/portal/frontend/package.json"));
 const viteSource = await source("services/portal/frontend/vite.config.ts");
-const contractMarkdown = await source("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md");
+const contractMarkdown = await source("docs/specs/README.md");
 
 assert.equal(await exists(figmaAppRoot), true, "figma_make_extracted_app_source_missing");
 assert.deepEqual(

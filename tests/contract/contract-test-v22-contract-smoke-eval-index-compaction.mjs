@@ -18,17 +18,17 @@ const agentRunPath = "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-s
 const previousSmokeEvalRunPath = "docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md";
 const previousSmokeEvalAbsorbedCommit = "422547d2ed61c7ecc231e07e1d9b1214dc5df715";
 
-const blockedContractCandidates = Object.freeze([
-  "docs/contracts/v22-admin-ops-console-boundary.md",
-  "docs/contracts/v22-user-credit-provider-key-boundary.md",
-  "docs/contracts/v22-billing-freeze-boundary.md",
-  "docs/contracts/v22-real-opl-capability-canary-boundary.md",
-  "docs/contracts/v22-real-opl-provider-message-canary-boundary.md",
-  "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
-  "docs/contracts/v22-portal-ui-design-quality-audit-boundary.md",
-  "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
-  "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-  "docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md",
+const absorbedSpecAnchors = Object.freeze([
+  "spec:v22-admin-ops-console-boundary",
+  "spec:v22-user-credit-provider-key-boundary",
+  "spec:v22-billing-freeze-boundary",
+  "spec:v22-real-opl-capability-canary-boundary",
+  "spec:v22-real-opl-provider-message-canary-boundary",
+  "spec:v22-real-opl-file-run-artifact-canary-boundary",
+  "spec:v22-portal-ui-design-quality-audit-boundary",
+  "spec:v22-portal-figma-make-ui-implementation-boundary",
+  "spec:v22-cloud-onboarding-workflow-boundary",
+  "spec:v22-tencent-tc3-diagnostic-cleanup-plan",
 ]);
 
 const blockedRecoveryCandidates = Object.freeze([
@@ -84,7 +84,7 @@ for (const requiredPath of [
   indexPath,
   agentRunPath,
   previousSmokeEvalRunPath,
-  "docs/contracts/v22-smoke-eval-boundary.md",
+  "docs/specs/README.md",
   "docs/recovery/v22-agent-verify-manifest.json",
   "tests/contract/contract-test-v22-contract-smoke-eval-index-compaction.mjs",
 ]) {
@@ -93,6 +93,8 @@ for (const requiredPath of [
 
 const files = trackedFiles();
 const contractFiles = files.filter((file) => /^docs\/contracts\/v22-.+\.md$/u.test(file));
+const specsText = await source("docs/specs/README.md");
+const specAnchorCount = (specsText.match(/^### spec:v22-/gmu) || []).length;
 const legacyScriptSmokeFiles = files.filter((file) => /^scripts\/smoke-test-v22-.+\.mjs$/u.test(file));
 assert.deepEqual(legacyScriptSmokeFiles, [], `legacy_scripts_smoke_tests_must_not_be_tracked:${legacyScriptSmokeFiles.join(",")}`);
 const smokeEvalScripts = Object.keys(SMOKE_CLASSIFICATION)
@@ -110,7 +112,8 @@ const tierCounts = Object.fromEntries([
   "retired",
 ].map((tier) => [tier, listSmokeEvalScripts({ tiers: [tier] }).length]));
 
-assert.equal(contractFiles.length, 42, `contract_file_count_mismatch:${contractFiles.length}`);
+assert.equal(contractFiles.length, 0, `legacy_contract_leaf_files_must_be_retired:${contractFiles.length}`);
+assert.equal(specAnchorCount, 42, `spec_anchor_count_mismatch:${specAnchorCount}`);
 assert.deepEqual(classifiedTrackedScripts, smokeEvalScripts, "all_tracked_v22_eval_scripts_must_be_classified");
 assert(smokeEvalScripts.length >= 149, `v22_eval_script_count_must_not_drop_below_compaction_baseline:${smokeEvalScripts.length}`);
 assert.equal(tierCounts["health-check"], 6, "health_check_count_must_remain_small");
@@ -152,7 +155,8 @@ for (const scriptPath of listSmokeEvalScripts({ tiers: ["future-authorized"] }))
 const indexText = await source(indexPath);
 for (const token of [
   "contracts / truth / index / eval / agent-runs",
-  "v22 contract files: `42`",
+  "v22 contract files: `0`",
+  "v22 spec anchors: `42`",
   "v22 eval scripts after this branch: `149`",
   "contract-local: `22`",
   "本轮物理删除",
@@ -163,8 +167,13 @@ for (const token of [
   assert(indexText.includes(token), `compaction_index_token_missing:${token}`);
 }
 
+for (const anchor of absorbedSpecAnchors) {
+  assert(specsText.includes(anchor), `absorbed_spec_anchor_missing:${anchor}`);
+  assert(indexText.includes(anchor), `compaction_index_must_record_absorbed_anchor:${anchor}`);
+}
+
 for (const repoPath of [
-  ...blockedContractCandidates,
+  "docs/specs/README.md",
   ...blockedRecoveryCandidates,
   ...blockedScriptCandidates,
 ]) {
@@ -207,7 +216,7 @@ for (const token of [
 }
 assert(!runRecord.includes("`pending_B_review`"), "accepted_compaction_run_must_not_remain_pending");
 
-const boundary = await source("docs/contracts/v22-smoke-eval-boundary.md");
+const boundary = specsText;
 for (const token of [
   "entryKind",
   "authorization",
@@ -237,10 +246,11 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_contract_smoke_eval_index_compaction",
   contractFiles: contractFiles.length,
+  specAnchorCount,
   smokeEvalScripts: smokeEvalScripts.length,
   tierCounts,
   blockedCounts: {
-    contracts: blockedContractCandidates.length,
+    specs: absorbedSpecAnchors.length,
     recovery: blockedRecoveryCandidates.length,
     scripts: blockedScriptCandidates.length,
   },

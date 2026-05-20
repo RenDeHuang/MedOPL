@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DEFAULT_SMOKE_CATEGORIES, listClassifiedSmokeScripts } from "../../../scripts/v22-test-classification.mjs";
 
-const contractPath = "docs/contracts/v22-admin-ops-console-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 const smokeScriptPath = "tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs";
 
@@ -199,7 +199,7 @@ assertArrayIncludesAll(contract.forbiddenPaths, [
   "Runtime Bridge",
 ], "admin_ops_forbidden_paths");
 
-assertIncludes(readme, "v22-admin-ops-console-boundary.md", "contracts_readme_must_index_admin_ops_contract");
+assertIncludes(readme, "spec:v22-admin-ops-console-boundary", "contracts_readme_must_index_admin_ops_contract");
 assertIncludes(suite, "listClassifiedSmokeScripts", "mvp_suite_must_use_classified_smoke_selector");
 assert(
   listClassifiedSmokeScripts({ categories: DEFAULT_SMOKE_CATEGORIES }).includes(smokeScriptPath),

@@ -1,6 +1,6 @@
 # v22 Real OPL Capability Canary Complete Workflow And Validation Path
 
-本文定义真实 OPL 能力 canary 的完整工作流和验证顺序。它是 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md) 的执行路径，不替代一级主合同、二级 Portal-OPL 连接合同或 [portal-opl-context-backflow-validation-path.md](./portal-opl-context-backflow-validation-path.md)。provider message reply 的细分验证路径是 [real-opl-provider-message-canary-validation-path.md](./real-opl-provider-message-canary-validation-path.md)。file/run/artifact 的细分验证路径是 [real-opl-file-run-artifact-validation-path.md](./real-opl-file-run-artifact-validation-path.md)。
+本文定义真实 OPL 能力 canary 的完整工作流和验证顺序。它是 [spec:v22-real-opl-capability-canary-boundary](../specs/README.md) 的执行路径，不替代一级主合同、二级 Portal-OPL 连接合同或 [portal-opl-context-backflow-validation-path.md](./portal-opl-context-backflow-validation-path.md)。provider message reply 的细分验证路径是 [real-opl-provider-message-canary-validation-path.md](./real-opl-provider-message-canary-validation-path.md)。file/run/artifact 的细分验证路径是 [real-opl-file-run-artifact-validation-path.md](./real-opl-file-run-artifact-validation-path.md)。
 
 ## Complete Workflow
 
@@ -311,7 +311,7 @@ canary evidence 只进 `.runtime`，不得进入 git。
 
 canary 成功不自动等于 productionized Runtime Bridge。进入正式实现前必须：
 
-1. 把真实能力发现回写 [v22-real-opl-capability-canary-boundary.md](../contracts/v22-real-opl-capability-canary-boundary.md)。
+1. 把真实能力发现回写 [spec:v22-real-opl-capability-canary-boundary](../specs/README.md)。
 2. 更新 [status-matrix.md](./status-matrix.md) 和 [mvp-contract-acceptance.md](./mvp-contract-acceptance.md)。
 3. 明确每个 capability 的状态：`supported`、`mapped_to_webui_bridge`、`mapped_to_acp_runtime`、`requires_runtime_agent`、`deferred_authorization` 或 `capability_not_supported`。
 4. 新开 productionized Runtime Bridge 映射分支。

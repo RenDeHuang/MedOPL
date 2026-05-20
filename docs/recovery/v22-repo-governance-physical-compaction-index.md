@@ -17,7 +17,7 @@
 
 | Domain | Files Reviewed | Layer | Decision |
 | --- | ---: | --- | --- |
-| `docs/product.md`, `docs/architecture.md`, `docs/contracts/**` | 45 | `contracts / truth` | 长期主线边界保留，只记录 merge/rename/retire 候选，不在本分支物理删除合同。 |
+| `docs/product.md`, `docs/architecture.md`, `docs/specs/**` | 45 | `contracts / truth` | 长期主线边界保留，只记录 merge/rename/retire 候选，不在本分支物理删除合同。 |
 | `docs/recovery/**` | 43 | `truth / index / agent-runs` | 核心 truth/index 保留；阶段性 recovery 文件进入候选清单，待引用迁移后退场。 |
 | `scripts/**` | 162 before smoke/eval compaction, 160 after smoke/eval compaction | `eval` | v22 smoke/eval 主链保留；真实生产/DNS/kubectl 残留脚本和已迁移旧 eval/support 脚本物理清退。 |
 | `services/**` | 289 | `active-code` | `portal`、`opl-web-gateway`、`opl-runtime-bridge` 是 active code surface，本分支不删除服务代码。 |
@@ -35,42 +35,42 @@
 
 必须保留：
 
-- `docs/contracts/README.md`
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-user-surface-boundary.md`
-- `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
-- `docs/contracts/v22-opl-entry-preflight-auth-boundary.md`
-- `docs/contracts/v22-token-provider-boundary.md`
-- `docs/contracts/v22-upstream-opl-boundary.md`
-- `docs/contracts/v22-portal-opl-connection-boundary.md`
-- `docs/contracts/v22-portal-opl-context-backflow-boundary.md`
-- `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`
-- `docs/contracts/v22-opl-work-message-file-run-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
-- `docs/contracts/v22-trace-metadata-boundary.md`
-- `docs/contracts/v22-resource-plan-boundary.md`
-- `docs/contracts/v22-tenant-resource-binding-boundary.md`
-- `docs/contracts/v22-managed-environment-open-boundary.md`
-- `docs/contracts/v22-release-stop-billing-audit-boundary.md`
-- `docs/contracts/v22-production-cloud-topology-boundary.md`
-- `docs/contracts/v22-authorized-tencent-create-release-*.md`
-- `docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/v22-authorized-tencent-create-release-*.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 候选但不在本分支删除：
 
 | File | Decision | Blocker |
 | --- | --- | --- |
-| `docs/contracts/v22-admin-ops-console-boundary.md` | merge-candidate | 仍被 UI/admin 合同包引用。 |
-| `docs/contracts/v22-user-credit-provider-key-boundary.md` | merge-candidate | provider key 语义需先并入 token/preflight 主合同并迁引用。 |
-| `docs/contracts/v22-billing-freeze-boundary.md` | merge-candidate | 需先并入 release/stop billing/audit 合同并迁引用。 |
-| `docs/contracts/v22-real-opl-*canary*.md` | merge-candidate | canary 证据尚被 validation path 和 gate 引用。 |
-| `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md` | rename-candidate | 本质是 eval rubric，改名会影响现有 gate。 |
-| `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md` | retire-candidate | Figma UI 已冻结，但仍被当前 UI 历史边界引用。 |
-| `docs/contracts/v22-cloud-onboarding-workflow-boundary.md` | rename-candidate | 仍是 cloud future-authorized workflow 入口。 |
-| `docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md` | retire-candidate | 仍被 readonly inventory / workflow 引用。 |
+| `docs/specs/README.md` | merge-candidate | 仍被 UI/admin 合同包引用。 |
+| `docs/specs/README.md` | merge-candidate | provider key 语义需先并入 token/preflight 主合同并迁引用。 |
+| `docs/specs/README.md` | merge-candidate | 需先并入 release/stop billing/audit 合同并迁引用。 |
+| `docs/specs/v22-real-opl-*canary*.md` | merge-candidate | canary 证据尚被 validation path 和 gate 引用。 |
+| `docs/specs/README.md` | rename-candidate | 本质是 eval rubric，改名会影响现有 gate。 |
+| `docs/specs/README.md` | retire-candidate | Figma UI 已冻结，但仍被当前 UI 历史边界引用。 |
+| `docs/specs/README.md` | rename-candidate | 仍是 cloud future-authorized workflow 入口。 |
+| `docs/specs/README.md` | retire-candidate | 仍被 readonly inventory / workflow 引用。 |
 
 ### truth
 
@@ -124,7 +124,7 @@
 - `docs/history/README.md`
 - `tests/README.md`
 
-本组文件的删除门槛与旧文档相反：它们是后续清退旧 `docs/contracts/**`、`docs/recovery/**` 和 `tests/**/*.mjs` 前的替代 taxonomy skeleton；本轮不物理删除旧路径。
+本组文件的删除门槛与旧文档相反：它们是后续清退旧 `docs/specs/**`、`docs/recovery/**` 和 `tests/**/*.mjs` 前的替代 taxonomy skeleton；本轮不物理删除旧路径。
 
 ### eval
 

@@ -7,10 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
 
 const checkedFiles = [
-  "docs/contracts/v22-user-credit-provider-key-boundary.md",
-  "docs/contracts/v22-token-provider-boundary.md",
-  "docs/contracts/v22-mvp-managed-opl-loop.md",
-  "docs/contracts/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
   "docs/recovery/v22-truth-freeze.md",
   "docs/recovery/decisions.md",
   "docs/active/README.md",

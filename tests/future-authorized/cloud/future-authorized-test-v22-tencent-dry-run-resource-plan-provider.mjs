@@ -251,10 +251,10 @@ assertNoForbiddenLeak(workspacePayload, "portal_workspace_payload");
 
 const providerSource = await readFile("services/portal/src/domain/tencent-dry-run-resource-plan-provider.mjs", "utf8");
 const planViewSource = await readFile("services/portal/src/domain/managed-resource-binding-plan-view.mjs", "utf8");
-const dryRunContractSource = await readFile("docs/contracts/v22-tencent-dry-run-resource-plan-provider-boundary.md", "utf8");
-const readonlyContractSource = await readFile("docs/contracts/v22-tencent-readonly-quote-provider-boundary.md", "utf8");
-const managedContractSource = await readFile("docs/contracts/v22-managed-environment-open-boundary.md", "utf8");
-const readmeSource = await readFile("docs/contracts/README.md", "utf8");
+const dryRunContractSource = await readFile("docs/specs/README.md", "utf8");
+const readonlyContractSource = await readFile("docs/specs/README.md", "utf8");
+const managedContractSource = await readFile("docs/specs/README.md", "utf8");
+const readmeSource = await readFile("docs/specs/README.md", "utf8");
 const suiteSource = await readFile("tests/contract/contract-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertNoRealTencentSdkSource(providerSource, "dry_run_provider_source");
@@ -268,7 +268,7 @@ assert(dryRunContractSource.includes("estimatedCost.chargeApplied=false"), "dry_
 assert(dryRunContractSource.includes("mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release"), "dry_run_contract_must_keep_adapter_route");
 assert(readonlyContractSource.includes("dry-run/tencent plan provider"), "readonly_contract_must_reference_dry_run_stage");
 assert(managedContractSource.includes("dry-run/tencent plan provider"), "managed_contract_must_reference_dry_run_stage");
-assert(readmeSource.includes("v22-tencent-dry-run-resource-plan-provider-boundary.md"), "contracts_readme_must_index_dry_run_provider");
+assert(readmeSource.includes("spec:v22-tencent-dry-run-resource-plan-provider-boundary"), "contracts_readme_must_index_dry_run_provider");
 assert(suiteSource.includes("smoke-test-v22-tencent-dry-run-resource-plan-provider"), "mvp_suite_must_include_dry_run_smoke");
 
 console.log(JSON.stringify({

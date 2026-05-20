@@ -17,19 +17,19 @@
 
 ## goal
 
-Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one lifecycle directory, one `README.md` truth, plus a target `tests/README.md`. This branch does not move or delete old `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs` files because the current audit found active references and delete-ready remains zero for this first skeleton cut.
+Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one lifecycle directory, one `README.md` truth, plus a target `tests/README.md`. This branch does not move or delete old `docs/specs/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs` files because the current audit found active references and delete-ready remains zero for this first skeleton cut.
 
 ## subagents_and_models
 
-- Carver: `gpt-5.4`, read-only audit of `docs/contracts/**` grouping into product/specs/runtime/policies/delivery.
+- Carver: `gpt-5.4`, read-only audit of `docs/specs/**` grouping into product/specs/runtime/policies/delivery.
 - Wegener: `gpt-5.4`, read-only audit of `docs/recovery/**` and `docs/recovery/agent-runs/**` grouping into active/delivery/policies/history/references.
 - Carson: `gpt-5.4`, read-only audit of `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs` and `tests/**/*.mjs` for future `tests/**` taxonomy.
 
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/v22-goal-current.json`
@@ -70,7 +70,7 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - no PostgreSQL/Redis implementation
 - no admin business closure implementation
 - no Portal UI visual/layout/information-architecture change
-- no physical deletion of `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs`
+- no physical deletion of `docs/specs/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs`
 - A window does not ff-only absorb and does not git push
 
 ## implementation_summary
@@ -95,7 +95,7 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 
 ## blocker_review_and_fix_log
 
-- Contracts auditor found `docs/contracts/**` still has active machine-boundary references, so direct physical deletion is blocked.
+- Contracts auditor found `docs/specs/**` still has active machine-boundary references, so direct physical deletion is blocked.
 - Recovery auditor found `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` and `docs/recovery/agent-runs/{README.md,schema.md}` are active references, so direct recovery deletion is blocked.
 - Scripts auditor found `v22-verify` and smoke classification are path-bound, so moving tests before updating runner/classifier/manifest would break verification.
 - The implementation therefore only creates taxonomy skeletons and a gate, with delete-ready remaining zero in this branch.
@@ -137,7 +137,7 @@ No UI, Portal backend, PostgreSQL, Redis, OPL, real cloud, upstream, deploy or l
 - No secret read.
 - No upstream modification.
 - No Portal UI change.
-- No physical deletion or path movement of `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs`.
+- No physical deletion or path movement of `docs/specs/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs`.
 - No claim that this skeleton completes final OPL-style physical cleanup.
 
 ## next_leaf

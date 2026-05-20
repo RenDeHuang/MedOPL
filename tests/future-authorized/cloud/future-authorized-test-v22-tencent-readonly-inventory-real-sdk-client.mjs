@@ -10,7 +10,7 @@ import { createTencentReadonlyInventoryRealSdkClient } from "../../../services/p
 const repoRoot = path.resolve(".");
 const modulePath = "services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs";
 const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
-const contractPath = "docs/contracts/v22-tencent-readonly-inventory-boundary.md";
+const contractPath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 const liveSecretPathProof = ["/home/dev", ".secrets", "medopl", "tencent-readonly-inventory.env"].join("/");
 

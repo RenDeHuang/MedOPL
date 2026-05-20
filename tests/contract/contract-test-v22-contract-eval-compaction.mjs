@@ -72,7 +72,7 @@ const index = readText(indexPath);
 [
   "| File | Layer | Role | Decision | Replacement / Authority | Notes |",
   "contracts / truth / index / eval / agent-runs",
-  "docs/contracts/v22-mvp-managed-opl-loop.md",
+  "docs/specs/README.md",
   "docs/recovery/v22-truth-freeze.md",
   renamedLoopGate,
   "rename",
@@ -83,10 +83,10 @@ const index = readText(indexPath);
 ].forEach((needle) => assertIncludes(index, needle, indexPath));
 [
   "docs/recovery/v22-ai-frontend-backend-development-framework.md",
-  "docs/contracts/v22-canonical-user-loop.md",
+  "docs/specs/README.md",
 ].forEach((needle) => assertIncludes(index, needle, indexPath));
-assertNotIncludes(index, "v22-ai-frontend-backend-development-framework.md |", indexPath);
-assertNotIncludes(index, "v22-canonical-user-loop.md |", indexPath);
+assertNotIncludes(index, "spec:v22-ai-frontend-backend-development-framework |", indexPath);
+assertNotIncludes(index, "spec:v22-canonical-user-loop |", indexPath);
 
 const manifest = readText("docs/recovery/v22-agent-verify-manifest.json");
 [

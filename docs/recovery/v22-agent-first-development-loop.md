@@ -7,7 +7,7 @@
 每个 leaf 必须按这个顺序推进：
 
 1. `goal`：明确本次目标、非目标、分支、允许写入范围、禁止事项和模型记录。
-2. `contracts`：读取 `AGENTS.md`、`docs/contracts/README.md`、相关 `docs/contracts/v22-*.md`、`docs/recovery/status-matrix.md`、`docs/recovery/mvp-contract-acceptance.md`。
+2. `contracts`：读取 `AGENTS.md`、`docs/specs/README.md`、相关 `docs/specs/README.md`、`docs/recovery/status-matrix.md`、`docs/recovery/mvp-contract-acceptance.md`。
 3. `truth`：读取当前产品/架构/阶段事实，不能用聊天记忆替代 `docs/recovery/*`。
 4. `index`：确认 `docs/recovery/v22-goal-current.json`、`docs/recovery/v22-agent-verify-manifest.json`、gap matrix 和 branch override。
 5. `eval-first`：先确认现有 eval 是否覆盖目标；不足时先补窄 gate，再实现。
@@ -21,9 +21,9 @@
 
 | Layer | Files | Purpose |
 | --- | --- | --- |
-| `contracts` | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | 长期边界、授权和非目标。 |
-| `truth` | `docs/active/README.md`, `docs/product.md`, `docs/architecture.md`, `v22-truth-freeze.md`, `status-matrix.md`, `mvp-contract-acceptance.md` | 当前产品和系统事实；`docs/active/README.md` 是唯一人读 current truth。 |
-| `index` | `v22-goal-current.json`, `v22-agent-verify-manifest.json`, `v22-current-vs-ideal-gap-matrix.md`, `v22-product-completion-scoreboard.json` | 下一步 cursor、gap、允许写入范围和验证入口。 |
+| `contracts` | `AGENTS.md`, `docs/specs/README.md`, `docs/specs/README.md` | 长期边界、授权和非目标。 |
+| `truth` | `docs/active/README.md`, `docs/product.md`, `docs/architecture.md`, `spec:v22-truth-freeze`, `status-matrix.md`, `mvp-contract-acceptance.md` | 当前产品和系统事实；`docs/active/README.md` 是唯一人读 current truth。 |
+| `index` | `v22-goal-current.json`, `v22-agent-verify-manifest.json`, `spec:v22-current-vs-ideal-gap-matrix`, `v22-product-completion-scoreboard.json` | 下一步 cursor、gap、允许写入范围和验证入口。 |
 | `eval` | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs.mjs` | 机器验收。 |
 | `agent-runs` | `docs/recovery/agent-runs/*.md` | 每一步开发证据和吸收记录。 |
 

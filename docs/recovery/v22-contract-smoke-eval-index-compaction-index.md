@@ -5,7 +5,8 @@
 ## 基线
 
 - base trunk: `422547d2ed61c7ecc231e07e1d9b1214dc5df715`
-- v22 contract files: `42`
+- v22 contract files: `0`
+- v22 spec anchors: `42`
 - v22 eval scripts after this branch: `149`
 - health-check: `6`
 - smoke-golden: `11`
@@ -29,13 +30,15 @@
 
 | Layer | 当前权威 | 规则 |
 | --- | --- | --- |
-| contracts | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | 只写长期不变量、边界、授权和非目标。 |
+| contracts | `AGENTS.md`, `docs/specs/README.md` | 只写长期不变量、边界、授权和非目标。 |
 | truth | `docs/product.md`, `docs/architecture.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-truth-freeze.md`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` | 只回答当前产品、架构、数据、云和治理事实。 |
 | index | `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, compaction indexes | 只回答下一步 cursor、gap、允许写入范围、验证入口和 cleanup 顺序。 |
 | eval | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs` | 只做机器验收，不讲阶段故事；`smoke-test-v22-*` 是 repo-local eval 文件族。 |
 | agent-runs | `docs/recovery/agent-runs/*` | 只保存每一步开发证据、验证、B review 和吸收记录，不替代 current truth。 |
 
 ## 合同裁定
+
+本 hard retirement 后，旧 `docs/contracts/**` leaf 已被物理删除；合同 authority 压缩到 `docs/specs/README.md` 的 42 个 `spec:v22-*` anchor。
 
 | Group | Count | Decision | Reason |
 | --- | ---: | --- | --- |
@@ -47,23 +50,23 @@
 
 ### 合同清退顺序
 
-1. 先合并 `v22-user-credit-provider-key-boundary.md`、`v22-billing-freeze-boundary.md`、`v22-admin-ops-console-boundary.md`，分别迁到 token/preflight、release-stop-billing-audit、portal-admin-ops surface。
+1. 先合并 `spec:v22-user-credit-provider-key-boundary`、`spec:v22-billing-freeze-boundary`、`spec:v22-admin-ops-console-boundary`，分别迁到 token/preflight、release-stop-billing-audit、portal-admin-ops surface。
 2. 再收敛 real OPL 三份 canary 合同；当前真实 OPL validation path 和 contract gate 仍依赖它们，不能直接删。
-3. 再处理 `v22-portal-ui-design-quality-audit-boundary.md` 与 `v22-cloud-onboarding-workflow-boundary.md` 的 rename；rename 前必须同步 smoke、manifest、README、scoreboard。
-4. 最后退 `v22-portal-figma-make-ui-implementation-boundary.md` 与 `v22-tencent-tc3-diagnostic-cleanup-plan.md`；前者必须由 DESIGN + composition + frontend code 承接，后者必须等 official SDK readonly path 成为唯一主路径。
+3. 再处理 `spec:v22-portal-ui-design-quality-audit-boundary` 与 `spec:v22-cloud-onboarding-workflow-boundary` 的 rename；rename 前必须同步 smoke、manifest、README、scoreboard。
+4. 最后退 `spec:v22-portal-figma-make-ui-implementation-boundary` 与 `spec:v22-tencent-tc3-diagnostic-cleanup-plan`；前者必须由 DESIGN + composition + frontend code 承接，后者必须等 official SDK readonly path 成为唯一主路径。
 
-Blocked contract paths:
+Absorbed spec anchors now live in `docs/specs/README.md`; the old leaf files are not blocked-retain and must not return:
 
-- `docs/contracts/v22-admin-ops-console-boundary.md`
-- `docs/contracts/v22-user-credit-provider-key-boundary.md`
-- `docs/contracts/v22-billing-freeze-boundary.md`
-- `docs/contracts/v22-real-opl-capability-canary-boundary.md`
-- `docs/contracts/v22-real-opl-provider-message-canary-boundary.md`
-- `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`
-- `docs/contracts/v22-portal-ui-design-quality-audit-boundary.md`
-- `docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md`
-- `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
-- `docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md`
+- `spec:v22-admin-ops-console-boundary`
+- `spec:v22-user-credit-provider-key-boundary`
+- `spec:v22-billing-freeze-boundary`
+- `spec:v22-real-opl-capability-canary-boundary`
+- `spec:v22-real-opl-provider-message-canary-boundary`
+- `spec:v22-real-opl-file-run-artifact-canary-boundary`
+- `spec:v22-portal-ui-design-quality-audit-boundary`
+- `spec:v22-portal-figma-make-ui-implementation-boundary`
+- `spec:v22-cloud-onboarding-workflow-boundary`
+- `spec:v22-tencent-tc3-diagnostic-cleanup-plan`
 
 ## Recovery / truth / index 裁定
 
@@ -73,14 +76,14 @@ Blocked contract paths:
 | current/index files | keep | `goal-current + gap-matrix + verify-manifest` 是下一步执行入口。 |
 | agent-run records | keep | 当前 gate 仍引用这些 trace-first 证据；不建议删。 |
 | stage boards and phase summaries | blocked-retire-candidate | 仍被根级治理 docs、cloud workflow、status 或 smoke 引用。 |
-| duplicate governance docs | blocked-retire-candidate | `active-surface.md`、`archive-policy.md`、`recovery/decisions.md`、`system-domain-truth-layer-matrix.md`、`v22-agent-first-development-loop.md` 需要先迁引用。 |
+| duplicate governance docs | blocked-retire-candidate | `active-surface.md`、`archive-policy.md`、`recovery/decisions.md`、`system-domain-truth-layer-matrix.md`、`spec:v22-agent-first-development-loop` 需要先迁引用。 |
 
 ### Recovery 清退顺序
 
 1. 先修根级权威漂移：`docs/status.md`、`docs/invariants.md`、`docs/decisions.md`、`docs/vibe-coding.md` 不应再把 cloud onboarding board/status table 或 `v22-agent-workflow.mjs` 写成当前唯一入口。
-2. 再退重复治理件：`active-surface.md`、`archive-policy.md`、`recovery/decisions.md`、`system-domain-truth-layer-matrix.md`、`v22-agent-first-development-loop.md`。
-3. 再退阶段 goal 文档：`v22-goal-state.md`、`v22-product-goal.md`、`legacy-cleanup-backlog.md`，前提是相关 gate 改成只认 `goal-current + gap-matrix + manifest`。
-4. 最后处理 cloud/program 阶段板：`v22-program-board.md`、`v22-program-status-table.md`、`cloud-onboarding-execution-board.md`、`cloud-onboarding-status-table.md`；必须先确认 `cloud-onboarding-verification-matrix.md`、`v22-cloud-harness-manifest.json` 和 cloud workflow contract 已接住全部引用。
+2. 再退重复治理件：`active-surface.md`、`archive-policy.md`、`recovery/decisions.md`、`system-domain-truth-layer-matrix.md`、`spec:v22-agent-first-development-loop`。
+3. 再退阶段 goal 文档：`spec:v22-goal-state`、`spec:v22-product-goal`、`legacy-cleanup-backlog.md`，前提是相关 gate 改成只认 `goal-current + gap-matrix + manifest`。
+4. 最后处理 cloud/program 阶段板：`spec:v22-program-board`、`spec:v22-program-status-table`、`cloud-onboarding-execution-board.md`、`cloud-onboarding-status-table.md`；必须先确认 `cloud-onboarding-verification-matrix.md`、`v22-cloud-harness-manifest.json` 和 cloud workflow contract 已接住全部引用。
 
 Blocked recovery paths:
 
@@ -129,7 +132,7 @@ Blocked recovery paths:
 
 ## 本轮收紧
 
-- 扩展 `v22-smoke-eval-boundary.md`：把 `entryKind` 和 `authorization` 纳入 smoke/eval 元数据。
+- 扩展 `spec:v22-smoke-eval-boundary`：把 `entryKind` 和 `authorization` 纳入 smoke/eval 元数据。
 - 扩展 `v22-test-classification.mjs`：给每个 eval 生成 `entryKind` 和 `authorization`。
 - 扩展 smoke classification / boundary gate：验证 suite wrapper、gate self-test、future-authorized authorization 不混入默认 smoke。
 - 新增本索引和本 leaf gate，机器验证全量审计结论、blocked 清退顺序和 no-cloud/no-secret/no-services 边界。

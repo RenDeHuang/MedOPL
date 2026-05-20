@@ -39,20 +39,20 @@ feat/v22-portal-opl-file-run-artifact-closure
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-portal-opl-connection-boundary.md`
-- `docs/contracts/v22-opl-work-message-file-run-boundary.md`
-- `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`
-- `docs/contracts/v22-portal-files-billing-trace-boundary.md`
-- `docs/contracts/v22-portal-structure-failure-isolation-boundary.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/portal-local-runtime-health-runbook.md`
 
 ## allowed_write_scope

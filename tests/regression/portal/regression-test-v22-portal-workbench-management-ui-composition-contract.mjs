@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import { retiredFigmaZipResidue } from "../../../scripts/v22-retired-surface-data.mjs";
 
-const contractPath = "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md";
+const contractPath = "docs/specs/README.md";
 const start = "<!-- v22-portal-workbench-management-ui-composition-contract:start -->";
 const end = "<!-- v22-portal-workbench-management-ui-composition-contract:end -->";
 const userRoutes = ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"];
@@ -51,7 +51,7 @@ function assertExcludes(text, forbidden, label) {
 const markdown = await source(contractPath);
 const contract = extractJson(markdown);
 const runtimeSuite = await source("tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs");
-const figmaContract = await source("docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md");
+const figmaContract = await source("docs/specs/README.md");
 const routesSource = await source("services/portal/frontend/src/app/routes.tsx");
 const layoutSource = await source("services/portal/frontend/src/app/components/Layout.tsx");
 const adapterSource = await source("services/portal/frontend/src/app/data/portalAdapters.ts");
@@ -67,7 +67,7 @@ assert.equal(contract.scope.modifiesUpstream, false, "composition_contract_must_
 assert.equal(contract.scope.modifiesDeploy, false, "composition_contract_must_not_modify_deploy");
 assert.equal(contract.contractRole, "ui_boundary_and_zip_surface_eval_entrypoint", "composition_contract_role_mismatch");
 assert.equal(contract.uiImplementationSource.kind, "figma_make_zip", "composition_must_use_figma_zip_source");
-assert.equal(contract.uiImplementationSource.contract, "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md", "composition_source_contract_mismatch");
+assert.equal(contract.uiImplementationSource.contract, "docs/specs/README.md", "composition_source_contract_mismatch");
 assert.equal(contract.uiImplementationSource.appRoot, "services/portal/frontend/src/app", "composition_app_root_mismatch");
 assert.deepEqual(contract.uiImplementationSource.userRoutes, userRoutes, "composition_user_routes_mismatch");
 assert.deepEqual(contract.uiImplementationSource.adminRoutes, adminRoutes, "composition_admin_routes_mismatch");

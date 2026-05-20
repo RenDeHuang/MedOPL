@@ -14,7 +14,7 @@
 
 ## subagents_and_models
 
-- Wegener：`gpt-5.4`，只读审计 `docs/contracts/**` 的长期合同、merge/rename/retire candidates 和阻塞引用。
+- Wegener：`gpt-5.4`，只读审计 `docs/specs/**` 的长期合同、merge/rename/retire candidates 和阻塞引用。
 - Kierkegaard：`gpt-5.4`，只读审计 `docs/recovery/**` 与根级治理文档的 truth/index/agent-runs/stage-history 分类。
 - Gauss：`gpt-5.4`，只读审计 `scripts/**`、smoke/eval 分类、suite wrapper 与 future-authorized 语义。
 - Laplace：`gpt-5.4`，只读审计合同、recovery、scripts 候选文件的引用链和可删阻塞。
@@ -42,8 +42,8 @@
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-contract-eval-compaction-index.md`
@@ -54,7 +54,7 @@
 
 ## allowed_write_scope
 
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-contract-smoke-eval-index-compaction-index.md`
 - `docs/recovery/v22-smoke-eval-physical-compaction-index.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
@@ -113,7 +113,7 @@
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
-- `git diff --check -- docs/recovery docs/contracts scripts`
+- `git diff --check -- docs/recovery docs/specs scripts`
 - added-lines secret value scan
 
 ## b_review_result

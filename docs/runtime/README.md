@@ -22,13 +22,13 @@ Runtime Bridge 负责 session/message/run/file/artifact/providerKeyRef/trace pro
 
 ## Runtime Contract Groups
 
-- `docs/contracts/v22-upstream-opl-boundary.md`
-- `docs/contracts/v22-portal-opl-connection-boundary.md`
-- `docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`
-- `docs/contracts/v22-opl-work-message-file-run-boundary.md`
-- `docs/contracts/v22-real-opl-capability-canary-boundary.md`
-- `docs/contracts/v22-real-opl-provider-message-canary-boundary.md`
-- `docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 ## Current Truth Pointer
 

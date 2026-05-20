@@ -18,7 +18,7 @@ Current docs / eval surface during migration：
 - `docs/active/README.md`
 - `docs/product.md`
 - `docs/architecture.md`
-- `docs/contracts/v22-*`
+- `docs/specs/v22-*`
 - `docs/recovery/*`
 - `tests/**/*.mjs`
 - `scripts/v22-verify.mjs`

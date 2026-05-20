@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
-const contractPath = "docs/contracts/v22-portal-structure-failure-isolation-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 
 const CONTRACT_START = "<!-- v22-portal-structure-failure-isolation-contract:start -->";
 const CONTRACT_END = "<!-- v22-portal-structure-failure-isolation-contract:end -->";
@@ -242,11 +242,11 @@ assertIncludesAll(contract.forbiddenSensitiveData, [
   "signedUrl",
 ], "portal_structure_forbidden_sensitive_data");
 assertIncludesAll(contract.subscribedContracts, [
-  "docs/contracts/v22-mvp-managed-opl-loop.md",
-  "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-  "docs/contracts/v22-portal-user-surface-boundary.md",
-  "docs/contracts/v22-portal-admin-ops-surface-boundary.md",
-  "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
   "docs/recovery/mvp-contract-acceptance.md",
   "docs/recovery/status-matrix.md",
 ], "portal_structure_subscribed_contract");
@@ -285,7 +285,7 @@ assertIncludesAll(currentCodeShape.knownFutureRefactorRisks, [
   "admin_ops_frontend_is_future_same_stack_leaf",
 ], "portal_structure_known_future_refactor_risk");
 
-assert(readme.includes("v22-portal-structure-failure-isolation-boundary.md"), "portal_structure_contract_must_be_indexed");
+assert(readme.includes("spec:v22-portal-structure-failure-isolation-boundary"), "portal_structure_contract_must_be_indexed");
 assert(readme.includes("Portal 结构治理 / failure isolation"), "portal_structure_contract_readme_label_missing");
 
 console.log(JSON.stringify({

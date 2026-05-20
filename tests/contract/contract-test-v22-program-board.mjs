@@ -115,7 +115,7 @@ assertIncludesAll(board, [
 assertIncludesAll(board, [
   "implementation owner",
   "integration/review/absorption owner",
-  "docs/contracts/status owner",
+  "docs/specs/status owner",
   "authorized side-effect/live coordination owner",
   "不得 merge/push",
   "ff-only merge",
@@ -163,8 +163,8 @@ assertIncludesAll(status, [
 
 assertIncludesAll(matrix, [
   "v22 program board",
-  "v22-program-board.md",
-  "v22-program-status-table.md",
+  "spec:v22-program-board",
+  "spec:v22-program-status-table",
 ], "status_matrix_references");
 
 assert(isSmokeClassifiedIn("tests/contract/contract-test-v22-program-board.mjs"), "mvp_suite_must_include_program_board_smoke");
@@ -194,7 +194,7 @@ for (const windowId of windowIds) {
 }
 assert.equal(windowsById["Window A"].role, "implementation owner", "window_a_role_mismatch");
 assert.equal(windowsById["Window B"].role, "integration/review/absorption owner", "window_b_role_mismatch");
-assert.equal(windowsById["Window C"].role, "docs/contracts/status owner", "window_c_role_mismatch");
+assert.equal(windowsById["Window C"].role, "docs/specs/status owner", "window_c_role_mismatch");
 assert.equal(windowsById["Window D"].role, "authorized side-effect/live coordination owner", "window_d_role_mismatch");
 assert.equal(windowsById["Window A"].mayMergePush, false, "window_a_must_not_merge_push");
 assert.equal(windowsById["Window C"].mayCallRealCloudByDefault, false, "window_c_must_not_call_cloud");

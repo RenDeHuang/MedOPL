@@ -88,7 +88,7 @@
 
 ## 使用方式
 
-本文件是阶段快照，不是永久非目标清单。Agent 开工前必须读取 `AGENTS.md`、`docs/vibe-coding.md`、`docs/contracts/README.md`、`docs/recovery/status-matrix.md` 和本次订阅合同。
+本文件是阶段快照，不是永久非目标清单。Agent 开工前必须读取 `AGENTS.md`、`docs/vibe-coding.md`、`docs/specs/README.md`、`docs/recovery/status-matrix.md` 和本次订阅合同。
 
 开工时必须声明：
 

@@ -31,8 +31,8 @@ const blockedRetain = Object.freeze([
   "docs/recovery/cloud-onboarding-execution-board.md",
   "docs/recovery/cloud-onboarding-status-table.md",
   "docs/recovery/cloud-onboarding-verification-matrix.md",
-  "docs/contracts/v22-admin-ops-console-boundary.md",
-  "docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
 ]);
 
 function git(args) {

@@ -317,7 +317,7 @@ try {
   assertNoInternalStorageLeak(db.oplWorkTraceMetadata, "db_trace_metadata");
   assert.ok(db.oplWorkTraceMetadata[0].resourceBindingId, "db_trace_metadata_keeps_internal_resource_binding");
 
-  const contract = await readFile("docs/contracts/v22-opl-work-message-file-run-boundary.md", "utf8");
+  const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
     "provider_key_required",
     "managed_environment_required",

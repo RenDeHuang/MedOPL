@@ -78,9 +78,9 @@ const residueCarrierFiles = Object.freeze([
 
 const currentTruthFiles = Object.freeze([
   "DESIGN.md",
-  "docs/contracts/README.md",
-  "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
-  "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
   "docs/recovery/v22-goal-current.json",
   "docs/recovery/v22-goal-state.md",
   "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

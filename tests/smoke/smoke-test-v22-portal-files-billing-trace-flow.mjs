@@ -283,7 +283,7 @@ try {
   assertNoInternalStorageLeak(payload.sessionTraceMetadata, "session_trace_metadata");
   assertNoCloudConsoleLanguage(payload.userNarrative, "user_narrative");
 
-  const contract = await readFile("docs/contracts/v22-portal-files-billing-trace-boundary.md", "utf8");
+  const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
     "workspaceFiles",
     "outputFiles",

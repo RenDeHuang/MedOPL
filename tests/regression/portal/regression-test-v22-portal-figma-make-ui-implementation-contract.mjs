@@ -3,9 +3,9 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { retiredFigmaZipResidue } from "../../../scripts/v22-retired-surface-data.mjs";
 
-const contractPath = "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md";
-const readmePath = "docs/contracts/README.md";
-const compositionContractPath = "docs/contracts/v22-portal-workbench-management-ui-composition-boundary.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
+const compositionContractPath = "docs/specs/README.md";
 const convergencePlanPath = "docs/recovery/portal-figma-make-ui-convergence-plan.md";
 const repoFrontendPath = "services/portal/frontend";
 const repoAppPath = `${repoFrontendPath}/src/app`;
@@ -354,7 +354,7 @@ for (const forbidden of [
 }
 
 assertIncludes(readme, "普通用户和管理员 Portal UI", "contracts_readme_must_record_user_admin_coverage");
-assertIncludes(readme, "v22-portal-figma-make-ui-implementation-boundary.md", "contracts_readme_must_index_figma_make_contract");
+assertIncludes(readme, "spec:v22-portal-figma-make-ui-implementation-boundary", "contracts_readme_must_index_figma_make_contract");
 assertIncludes(compositionMarkdown, figmaZipPath, "composition_contract_must_record_new_zip");
 assertIncludes(compositionMarkdown, '"activeAdminRouteMounted": true', "composition_contract_must_enable_admin_routes");
 assertIncludes(plan, "Step 1: Add And Align Contracts", "convergence_plan_must_define_step_1");

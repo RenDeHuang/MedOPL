@@ -17,7 +17,7 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 
 ## Consolidation Motivation
 
-- Problem: goal-state.md 太长，容易在长跑和上下文压缩后漂移。Solution: v22-goal-current.json 成为唯一 current truth；v22-goal-state.md 降级为 human summary / history。
+- Problem: goal-state.md 太长，容易在长跑和上下文压缩后漂移。Solution: v22-goal-current.json 成为唯一 current truth；spec:v22-goal-state 降级为 human summary / history。
 - Problem: allowlist 分散在多个 gate，导致每个新 leaf 都要改多个脚本。Solution: `docs/recovery/v22-agent-verify-manifest.json` 是 agent-facing verify manifest；`scripts/v22-verify.mjs current` 是默认统一验证入口。smoke 只做 atomic gate，不再作为新增 leaf 的 allowlist 权威。
 - Problem: low-risk 和 high-risk 还没有完全分流。Solution: `risk_class` 固定为 `local_doc_eval` / `local_service_code` / `sensitive_boundary` / `live_external`；当前分支只确保字段和说明存在，不改变现有授权边界。
 - Problem: 缺真正的产品完成度计分板。Solution: docs/recovery/v22-product-completion-scoreboard.json 记录产品能力完成度，等级为 `0_not_started` / `1_contract_defined` / `2_local_api` / `3_local_ui` / `4_fake_live` / `5_authorized_canary` / `6_productionized` / `7_monitored`。scoreboard 只表达 product completion，不决定 execution order。
@@ -107,7 +107,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Step 2 gap: `opl-connection-gateway-preflight-runtime-file-run-artifact-trace`
 - Step 2 absorbed commit: `8797ffc6f3ba3747cfac55554012b648fcbfb5c9`
 - Step 2 API bindings: `createOplFileRef`, `startOplRun`, `fetchOplArtifact`
-- Step 2 subscribed contracts: `v22-portal-opl-connection-boundary.md`, `v22-opl-work-message-file-run-boundary.md`, `v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `v22-portal-files-billing-trace-boundary.md`, `v22-smoke-eval-boundary.md`, recovery `status-matrix.md`, recovery gap matrix
+- Step 2 subscribed contracts: `spec:v22-portal-opl-connection-boundary`, `spec:v22-opl-work-message-file-run-boundary`, `spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary`, `spec:v22-portal-files-billing-trace-boundary`, `spec:v22-smoke-eval-boundary`, recovery `status-matrix.md`, recovery gap matrix
 - Step 2 eval: `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`, `node tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs`, `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`, `node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs`, `node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface`
 - Step 2 note: this feature branch implemented the local Portal-OPL file/run/artifact closure under existing OPL / Runtime Bridge contracts and eval. B reviewed, ff-only absorbed and pushed it before this post-absorb truth branch advanced the cursor.
 - Step 3 current leaf: `leaf-portal-postgres-redis-local-production-data-closure`
@@ -175,8 +175,8 @@ This subsection is historical evidence only. It is intentionally not the current
 
 ### 允许只读审计的区域
 
-- `docs/contracts/README.md`
-- `docs/contracts/v22-*`
+- `docs/specs/README.md`
+- `docs/specs/v22-*`
 - `docs/recovery/*`
 - `tests/**/*.mjs`
 - `README.md`

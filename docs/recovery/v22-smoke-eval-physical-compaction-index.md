@@ -4,7 +4,7 @@
 
 ## 当前权威
 
-- `docs/contracts/v22-smoke-eval-boundary.md`：smoke/eval 语义边界。
+- `docs/specs/README.md`：smoke/eval 语义边界。
 - `scripts/v22-test-classification.mjs`：所有 `tests/**/*.mjs` 的 category/tier/surface 权威。
 - `docs/recovery/v22-agent-verify-manifest.json`：suite、branch override 和允许写入范围权威。
 - `scripts/v22-verify.mjs`：统一验证入口。
@@ -55,7 +55,7 @@
 后续若继续压缩，不应直接删大批 `tests/**/*.mjs`。正确顺序是：
 
 1. 先把 `local-regression` 从 `mvp` 旧命名聚合迁到更清晰的 runner。
-2. 再把 `v22-agent-workflow.mjs` 与 `v22-workflow-gate.mjs` 的职责拆清，迁移 docs/contracts 引用。
+2. 再把 `v22-agent-workflow.mjs` 与 `v22-workflow-gate.mjs` 的职责拆清，迁移 docs/specs 引用。
 3. 对 future-authorized cloud gates 做 grouped manifest，而不是执行真实云。
 4. 每个物理删除都必须有替代 gate 或 explicit retired record。
 

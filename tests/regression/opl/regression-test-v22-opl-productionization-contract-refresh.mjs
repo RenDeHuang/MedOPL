@@ -3,8 +3,8 @@ import { readFile } from "node:fs/promises";
 import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
 
 const files = {
-  portalOplConnection: "docs/contracts/v22-portal-opl-connection-boundary.md",
-  realOplFileRunArtifact: "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md",
+  portalOplConnection: "docs/specs/README.md",
+  realOplFileRunArtifact: "docs/specs/README.md",
   validationPath: "docs/recovery/real-opl-file-run-artifact-validation-path.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   gapMatrix: "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

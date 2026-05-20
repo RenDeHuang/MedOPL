@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/contracts/v22-authorized-tencent-create-release-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const contractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 const contract = await readFile(contractPath, "utf8");
@@ -100,7 +100,7 @@ for (const forbidden of [
   assert.equal(contract.includes(forbidden), false, `authorized_tencent_contract_retired_alias_must_not_be_required:${forbidden}`);
 }
 
-assert(readme.includes("v22-authorized-tencent-create-release-boundary.md"), "contracts_readme_missing_authorized_tencent_contract");
+assert(readme.includes("spec:v22-authorized-tencent-create-release-boundary"), "contracts_readme_missing_authorized_tencent_contract");
 assert(readme.includes("authorized/tencent create/release"), "contracts_readme_missing_authorized_tencent_route");
 assert(suite.includes("smoke-test-v22-authorized-tencent-create-release-contract"), "mvp_suite_missing_authorized_tencent_smoke");
 

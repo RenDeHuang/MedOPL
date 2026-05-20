@@ -10,7 +10,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const stageDocuments = [
   "AGENTS.md",
   "docs/vibe-coding.md",
-  "docs/contracts/README.md",
+  "docs/specs/README.md",
   "docs/recovery/status-matrix.md",
   "docs/recovery/mvp-contract-acceptance.md",
 ];
@@ -42,11 +42,11 @@ const packageDefinitions = {
     title: "Portal / UI 合同包",
     intent: "Portal 普通用户界面、工作空间、托管运行环境、文件、账单和会话轨迹。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-      "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-      "docs/contracts/v22-portal-files-billing-trace-boundary.md",
-      "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/active/README.md",
       "docs/recovery/status-matrix.md",
     ],
@@ -61,12 +61,12 @@ const packageDefinitions = {
     title: "OPL Entry / Gateway 合同包",
     intent: "OPL entry/preflight、Gateway launch/proxy、Portal 进入 OPL 工作台和 direct OPL 入口。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-      "docs/contracts/v22-opl-entry-preflight-auth-boundary.md",
-      "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
-      "docs/contracts/v22-token-provider-boundary.md",
-      "docs/contracts/v22-upstream-opl-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
@@ -80,12 +80,12 @@ const packageDefinitions = {
     title: "Runtime Bridge 合同包",
     intent: "Runtime Bridge session/run/file/providerKeyRef、artifact reference 和 Runtime Agent relay；当前实现目录是 services/opl-runtime-bridge，不是旧 adapters/* 兼容层。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-      "docs/contracts/v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
-      "docs/contracts/v22-opl-work-message-file-run-boundary.md",
-      "docs/contracts/v22-token-provider-boundary.md",
-      "docs/contracts/v22-trace-metadata-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
@@ -98,11 +98,11 @@ const packageDefinitions = {
     title: "Langfuse / Trace 合同包",
     intent: "Langfuse sanitized projection、Portal 会话轨迹和非 canonical source 边界。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-      "docs/contracts/v22-langfuse-observability-metadata-boundary.md",
-      "docs/contracts/v22-trace-metadata-boundary.md",
-      "docs/contracts/v22-portal-files-billing-trace-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
@@ -115,14 +115,14 @@ const packageDefinitions = {
     title: "Resource / Billing / Audit 合同包",
     intent: "托管运行环境、资源绑定、预扣费、冻结金额、释放停止计费和审计状态。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-      "docs/contracts/v22-managed-environment-open-boundary.md",
-      "docs/contracts/v22-resource-plan-boundary.md",
-      "docs/contracts/v22-pricing-snapshot-boundary.md",
-      "docs/contracts/v22-tenant-resource-binding-boundary.md",
-      "docs/contracts/v22-billing-freeze-boundary.md",
-      "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
@@ -136,12 +136,12 @@ const packageDefinitions = {
     title: "Tencent Quote Provider 合同包",
     intent: "readonly/tencent quote provider、mock adapter、套餐估算和 quote snapshot。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-      "docs/contracts/v22-managed-environment-open-boundary.md",
-      "docs/contracts/v22-tencent-readonly-quote-provider-boundary.md",
-      "docs/contracts/v22-pricing-snapshot-boundary.md",
-      "docs/contracts/v22-resource-plan-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
@@ -154,8 +154,8 @@ const packageDefinitions = {
     title: "Cleanup 合同包",
     intent: "旧路线退役、入口收敛、文档归档和污染防护。",
     contracts: [
-      "docs/contracts/v22-mvp-managed-opl-loop.md",
-      "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+      "docs/specs/README.md",
+      "docs/specs/README.md",
       "docs/active/README.md",
       "docs/recovery/status-matrix.md",
       "docs/recovery/archive-policy.md",
@@ -282,7 +282,7 @@ function isServicesPath(filePath) {
 }
 
 function isContractPath(filePath) {
-  return normalizePath(filePath).startsWith("docs/contracts/");
+  return normalizePath(filePath).startsWith("docs/specs/");
 }
 
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
@@ -309,6 +309,11 @@ function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = 
       /^configs(?:\/|$)/u,
       /^scripts\/(?:check-production-entry-health|check-production-entry-performance|update-dnspod-records|smoke-test-root-dockerignore)\.mjs$/u,
       /^scripts\/fixtures\/fake-kubectl-success\.cmd$/u,
+    ].some((pattern) => pattern.test(normalized));
+  }
+  if (branchName === "cleanup/v22-full-taxonomy-hard-retirement") {
+    return [
+      /^docs\/contracts(?:\/|$)/u,
     ].some((pattern) => pattern.test(normalized));
   }
   if (branchName !== "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return false;
@@ -430,7 +435,7 @@ export function evaluateReview({
     findings.push({
       code: "contracts_changed_without_v22_smoke_update",
       severity: "warning",
-      message: "docs/contracts 改动需要对应 v22 smoke 更新或在审计中说明已有 smoke 覆盖。",
+      message: "docs/specs 改动需要对应 v22 smoke 更新或在审计中说明已有 smoke 覆盖。",
     });
   }
 
@@ -451,7 +456,7 @@ export function evaluateReview({
     recommendedCommands.push("node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs");
   }
   if (contractsChanged) {
-    recommendedCommands.push("git diff --check -- docs/contracts tests scripts");
+    recommendedCommands.push("git diff --check -- docs/specs tests scripts");
   }
 
   return {

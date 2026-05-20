@@ -114,7 +114,7 @@ platform-v22 不是空仓。现有文件必须先按域裁定为 `keep`、`migra
 - Billing / Usage / Freeze：wallet ledger、lab billing policy、billing payload/client/frontend、billing aggregator。
 - Resource Plan / Tenant Binding：server plans、platform-provisioned resources、user resource bindings、resource views。
 - Admin / Ops：admin routes、admin payloads 和 admin frontend views。
-- Scripts / Contracts：`docs/contracts/v22-*.md` 和直接验证 v22 billing/resource/tenant/freeze 边界的 smoke contracts。
+- Scripts / Contracts：`docs/specs/README.md` 和直接验证 v22 billing/resource/tenant/freeze 边界的 smoke contracts。
 
 ## D021: user_owned 不保留兼容别名
 

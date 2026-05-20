@@ -10,14 +10,14 @@ v22 的完成阶段会变化。每个分支开工前必须读取：
 
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/status-matrix.md`
-- `docs/contracts/README.md`
+- `docs/specs/README.md`
 - 本次订阅的合同文件
 
 开工声明必须写明：基于当前阶段，本分支做什么、不做什么、订阅哪些合同、需要哪些授权边界和验收命令。Agent 不得根据过期聊天记忆判断当前阶段。
 
 当前默认开发动作只包括本地合同、Portal、Gateway / Runtime Bridge 小闭包和本地 smoke。真实云、真实部署、真实账单核对、真实 Langfuse、真实 upstream 生产接入不属于默认动作，必须单独授权。
 
-涉及 v22 cloud onboarding workflow 的分支必须显式订阅 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。AGENTS 管流程与红线，合同管语义与验收；该 future-authorized workflow 只作为 blocked-retain 参考和任务包来源，不是当前 active program 或默认执行入口，不自动 merge、不自动 push、不读 secret、不调用真实云。
+涉及 v22 cloud onboarding workflow 的分支必须显式订阅 `docs/specs/README.md`。AGENTS 管流程与红线，合同管语义与验收；该 future-authorized workflow 只作为 blocked-retain 参考和任务包来源，不是当前 active program 或默认执行入口，不自动 merge、不自动 push、不读 secret、不调用真实云。
 
 ## Canonical Trunk
 
@@ -143,7 +143,7 @@ node scripts/v22-workflow-gate.mjs checkpoint
 
 第三阶段把 A/B/C/D 工作流升级为 repo-governed lane state + handoff bundle。
 
-- repo-tracked truth：`AGENTS.md`、`docs/vibe-coding.md`、`docs/contracts`、`docs/recovery`、`scripts/smoke-*`。
+- repo-tracked truth：`AGENTS.md`、`docs/vibe-coding.md`、`docs/specs`、`docs/recovery`、`scripts/smoke-*`。
 - local runtime state：`.runtime/v22-agent-workflow/lanes/*.json`，不得进 git。
 - tmux/session/agent 对话只是执行面，不是 truth。
 - 主工作区只给 B 做审计、ff-only merge、checkpoint、push、清理。
@@ -166,8 +166,8 @@ feat/v22-xxx
 本分支只解决 xxx。
 
 订阅合同：
-- docs/contracts/v22-mvp-managed-opl-loop.md
-- docs/contracts/xxx.md
+- docs/specs/README.md
+- docs/specs/xxx.md
 - docs/recovery/status-matrix.md
 - docs/active/README.md
 

@@ -12,12 +12,12 @@
 ## contract_subscription
 
 - AGENTS.md
-- docs/contracts/README.md
-- docs/contracts/v22-smoke-eval-boundary.md
-- docs/contracts/v22-mvp-managed-opl-loop.md
-- docs/contracts/v22-saas-control-plane-user-experience-boundary.md
-- docs/contracts/v22-resource-plan-boundary.md
-- docs/contracts/v22-authorized-tencent-create-release-boundary.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
+- docs/specs/README.md
 - docs/recovery/v22-truth-freeze.md
 - docs/recovery/product-truth.md
 - docs/recovery/architecture-truth.md

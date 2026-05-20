@@ -51,8 +51,8 @@ const blockedRetainPaths = Object.freeze([
   "tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-board-status.mjs",
   "tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-absorption-sequence.mjs",
   "tests/future-authorized/cloud/future-authorized-test-v22-cloud-connection-runnable-path.mjs",
-  "docs/contracts/v22-admin-ops-console-boundary.md",
-  "docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md",
+  "docs/specs/README.md",
+  "docs/specs/README.md",
 ]);
 
 function git(args) {
@@ -137,7 +137,9 @@ for (const repoPath of [
 
 const files = trackedFiles();
 const docFiles = files.filter((file) => file.startsWith("docs/"));
-const contractFiles = files.filter((file) => file === "docs/contracts/README.md" || /^docs\/contracts\/v22-.+\.md$/u.test(file));
+const contractFiles = files.filter((file) => file === "docs/specs/README.md");
+const specsText = await source("docs/specs/README.md");
+const specAnchorCount = (specsText.match(/^### spec:v22-/gmu) || []).length;
 const recoveryFiles = files.filter((file) => file.startsWith("docs/recovery/"));
 const scriptFiles = files.filter((file) => file.startsWith("scripts/"));
 const legacyScriptSmokeFiles = files.filter((file) => /^scripts\/smoke-test-v22-.+\.mjs$/u.test(file));
@@ -145,7 +147,8 @@ const smokeFiles = Object.keys(SMOKE_CLASSIFICATION)
   .filter((scriptPath) => files.includes(scriptPath))
   .sort();
 
-assert.equal(contractFiles.length, 43, `contract_file_count_mismatch:${contractFiles.length}`);
+assert.equal(contractFiles.length, 1, `contract_file_count_mismatch:${contractFiles.length}`);
+assert.equal(specAnchorCount, 42, `spec_anchor_count_mismatch:${specAnchorCount}`);
 assert(recoveryFiles.length >= absorbedRecoveryFileBaseline, `recovery_file_count_must_not_drop_below_truth_repo_baseline:${recoveryFiles.length}`);
 assert.deepEqual(legacyScriptSmokeFiles, [], `legacy_scripts_smoke_tests_must_not_be_tracked:${legacyScriptSmokeFiles.join(",")}`);
 assert(scriptFiles.length <= 20, `scripts_must_only_hold_support_runners_after_tests_taxonomy:${scriptFiles.length}`);
@@ -219,7 +222,7 @@ assertNotIncludesAll(decisions, [
 const vibe = await source("docs/vibe-coding.md");
 assertIncludesAll(vibe, [
   "v22 cloud onboarding workflow",
-  "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
+  "docs/specs/README.md",
   "AGENTS 管流程与红线，合同管语义与验收",
   "scripts/v22-verify.mjs",
   "docs/recovery/v22-agent-verify-manifest.json",
@@ -305,6 +308,7 @@ console.log(JSON.stringify({
   audited: {
     rootGovernanceDocs: rootDocs.length,
     contractFiles: contractFiles.length,
+    specAnchorCount,
     recoveryFiles: recoveryFiles.length,
     scriptFiles: scriptFiles.length,
     smokeFiles: smokeFiles.length,

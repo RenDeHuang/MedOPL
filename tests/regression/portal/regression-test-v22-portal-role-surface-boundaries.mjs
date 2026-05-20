@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
 
-const userContractPath = "docs/contracts/v22-portal-user-surface-boundary.md";
-const adminContractPath = "docs/contracts/v22-portal-admin-ops-surface-boundary.md";
-const readmePath = "docs/contracts/README.md";
+const userContractPath = "docs/specs/README.md";
+const adminContractPath = "docs/specs/README.md";
+const readmePath = "docs/specs/README.md";
 const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 const USER_CONTRACT_START = "<!-- v22-portal-user-surface-contract:start -->";
@@ -65,8 +65,8 @@ for (const phrase of [
   "历史 v19/v20/v21 路线不得重新成为 v22 主线",
   "账号 / 工作空间 是 UI 主语言",
   "租户 / 运行环境 不是 UI 主叙事",
-  "角色真相由 `v22-portal-user-surface-boundary.md` 和 `v22-portal-admin-ops-surface-boundary.md` 共同定义",
-  "`v22-saas-portal-opl-ops-surface-boundary.md` 是更宽的 Portal、OPL 和管理台共享界面总述，不替代这两份 role surface 合同",
+  "角色真相由 `spec:v22-portal-user-surface-boundary` 和 `spec:v22-portal-admin-ops-surface-boundary` 共同定义",
+  "`spec:v22-saas-portal-opl-ops-surface-boundary` 是更宽的 Portal、OPL 和管理台共享界面总述，不替代这两份 role surface 合同",
 ]) {
   assertIncludes(combinedMarkdown, phrase, "role_surface_shared_boundary_copy");
 }
@@ -281,8 +281,8 @@ assert.equal(adminContract.forbiddenPaths.includes(".sentrux"), true, "admin_sur
 assert.equal(adminContract.forbiddenPaths.includes("adapters"), true, "admin_surface_forbidden_adapters");
 assert.equal(adminContract.forbiddenPaths.includes("upstream"), true, "admin_surface_forbidden_upstream");
 
-assertIncludes(readme, "v22-portal-user-surface-boundary.md", "contracts_readme_must_index_user_surface");
-assertIncludes(readme, "v22-portal-admin-ops-surface-boundary.md", "contracts_readme_must_index_admin_surface");
+assertIncludes(readme, "spec:v22-portal-user-surface-boundary", "contracts_readme_must_index_user_surface");
+assertIncludes(readme, "spec:v22-portal-admin-ops-surface-boundary", "contracts_readme_must_index_admin_surface");
 assertIncludes(readme, "这两份合同是 Portal 角色真相", "contracts_readme_must_define_role_contract_priority");
 assert(isSmokeClassifiedIn("tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs"), "mvp_suite_must_run_role_surface_smoke");
 

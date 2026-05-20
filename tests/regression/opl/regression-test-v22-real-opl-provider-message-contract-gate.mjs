@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
 
-const CONTRACT_PATH = "docs/contracts/v22-real-opl-provider-message-canary-boundary.md";
+const CONTRACT_PATH = "docs/specs/README.md";
 const FLOW_PATH = "docs/recovery/real-opl-provider-message-canary-validation-path.md";
-const CONTRACT_INDEX_PATH = "docs/contracts/README.md";
-const CAPABILITY_CONTRACT_PATH = "docs/contracts/v22-real-opl-capability-canary-boundary.md";
+const CONTRACT_INDEX_PATH = "docs/specs/README.md";
+const CAPABILITY_CONTRACT_PATH = "docs/specs/README.md";
 const CAPABILITY_FLOW_PATH = "docs/recovery/real-opl-capability-canary-validation-path.md";
 const ACCEPTANCE_PATH = "docs/recovery/mvp-contract-acceptance.md";
 const STATUS_MATRIX_PATH = "docs/recovery/status-matrix.md";
@@ -60,17 +60,17 @@ assertAllIncluded(contract, [
 ], "contract_sections");
 
 assertAllIncluded(contract, [
-  "v22-mvp-managed-opl-loop.md",
-  "v22-portal-opl-connection-boundary.md",
-  "v22-portal-opl-context-backflow-boundary.md",
-  "v22-real-opl-capability-canary-boundary.md",
-  "v22-upstream-opl-boundary.md",
-  "v22-opl-work-message-file-run-boundary.md",
-  "v22-runtime-bridge-session-run-file-provider-keyref-boundary.md",
-  "v22-portal-files-billing-trace-boundary.md",
-  "v22-token-provider-boundary.md",
-  "v22-trace-metadata-boundary.md",
-  "v22-langfuse-observability-metadata-boundary.md",
+  "spec:v22-mvp-managed-opl-loop",
+  "spec:v22-portal-opl-connection-boundary",
+  "spec:v22-portal-opl-context-backflow-boundary",
+  "spec:v22-real-opl-capability-canary-boundary",
+  "spec:v22-upstream-opl-boundary",
+  "spec:v22-opl-work-message-file-run-boundary",
+  "spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary",
+  "spec:v22-portal-files-billing-trace-boundary",
+  "spec:v22-token-provider-boundary",
+  "spec:v22-trace-metadata-boundary",
+  "spec:v22-langfuse-observability-metadata-boundary",
   "docs/recovery/real-opl-provider-message-canary-validation-path.md",
 ], "subscription_package");
 
@@ -166,9 +166,9 @@ assertAllIncluded(flow, [
   "no fake 200",
 ], "workflow_terms");
 
-assertIncludes(index, "v22-real-opl-provider-message-canary-boundary.md", "contracts_index");
+assertIncludes(index, "spec:v22-real-opl-provider-message-canary-boundary", "contracts_index");
 assertIncludes(index, "Real OPL Provider Message Canary 合同包", "contracts_index");
-assertIncludes(capabilityContract, "v22-real-opl-provider-message-canary-boundary.md", "capability_contract");
+assertIncludes(capabilityContract, "spec:v22-real-opl-provider-message-canary-boundary", "capability_contract");
 assertIncludes(capabilityFlow, "real-opl-provider-message-canary-validation-path.md", "capability_flow");
 assertIncludes(acceptance, "Real OPL provider message canary", "mvp_acceptance");
 assertIncludes(acceptance, "授权 live canary 已证明真实 OPL WebUI bridge + gflab provider message 能返回 assistant reply", "mvp_acceptance");

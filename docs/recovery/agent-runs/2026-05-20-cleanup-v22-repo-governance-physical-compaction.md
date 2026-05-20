@@ -43,8 +43,8 @@
 ## contract_subscription
 
 - `AGENTS.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/mvp-contract-acceptance.md`
 - `docs/recovery/v22-goal-current.json`
@@ -99,7 +99,7 @@
 ## blocker_review_and_fix_log
 
 - `compose.product.yaml` 仍被 default-entry gate 和 recovery zoning 引用，未删除，记录为 blocked-retire-candidate。
-- `scripts/v22-agent-workflow.mjs` 仍被 docs/contracts/smoke 引用，未删除，记录为 duplicate-governance-candidate。
+- `scripts/v22-agent-workflow.mjs` 仍被 docs/specs/smoke 引用，未删除，记录为 duplicate-governance-candidate。
 - `services/**` 是 active surface，服务内 residue 只记录，不删除。
 - `.sentrux/**` 是 forbidden surface，虽然陈旧但未触碰。
 - `configs/**` 中含 secret-store 路径名；本分支只做 deletion-only，并通过 workflow gate 限定该 branch 的授权删除范围。

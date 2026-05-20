@@ -13,13 +13,13 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 ## Product Contract Groups
 
-- `docs/contracts/v22-mvp-managed-opl-loop.md`
-- `docs/contracts/v22-saas-control-plane-user-experience-boundary.md`
-- `docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md`
-- `docs/contracts/v22-portal-user-surface-boundary.md`
-- `docs/contracts/v22-portal-admin-ops-surface-boundary.md`
-- `docs/contracts/v22-pricing-snapshot-boundary.md`
-- `docs/contracts/v22-billing-freeze-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 
 ## Current Truth Pointer
 

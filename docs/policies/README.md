@@ -28,7 +28,7 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 ## Current Sources
 
 - `AGENTS.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
 - `docs/recovery/agent-runs/README.md`
 - `docs/recovery/agent-runs/schema.md`
 - `docs/recovery/v22-contract-smoke-eval-index-compaction-index.md`

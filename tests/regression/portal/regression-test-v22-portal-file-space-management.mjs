@@ -290,7 +290,7 @@ assert.equal(JSON.stringify(workspacePayload).includes('"runId"'), false, "works
 const workspaceSurfaceSources = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
-const contractSource = await readFile("docs/contracts/v22-portal-files-billing-trace-boundary.md", "utf8");
+const contractSource = await readFile("docs/specs/README.md", "utf8");
 const suiteSource = await readFile("tests/contract/contract-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertUserCopy(workspaceSurfaceSources, "workspace_surface");

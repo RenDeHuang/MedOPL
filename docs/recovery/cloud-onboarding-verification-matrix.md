@@ -4,7 +4,7 @@ program id: v22-cloud-onboarding
 
 本矩阵定义 v22 cloud onboarding 的验证分层。AGENTS 管协作纪律，contracts 管边界，execution board 管当前 program/phase/lane/离场条件，status table 管每阶段状态和下一棒；本文件只说明每类验证证明什么、什么时候必须跑、不能做什么，以及 blocker 应回流到哪里。
 
-本矩阵不推进 CO-06，不授权新的 live，不替代 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal production cloud bridge blocker 后回滚。之后的 Portal async worker live deployment 已跑通 starter 最小生产闭环，并 cleanup 回 node pool baseline `2`。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
+本矩阵不推进 CO-06，不授权新的 live，不替代 `docs/specs/README.md`，也不代表完整 create/release、deploy 或 Package D 已完成。Portal production integration 的本地 API + PostgreSQL canonical store smoke 可以作为 productionization evidence；用户在 2026-05-11 显式提供 Package C mutation secret file path 后，本分支已完成最小 real Tencent `storage-create` canary。后续用户授权 Package D deploy secret、kubeconfig、docker build/push、kubectl 和 rollback 后，本分支完成 real TCR build/push、owner guard label application、real server-side dry-run，并在 R-17 rollout 暴露 Portal production cloud bridge blocker 后回滚。之后的 Portal async worker live deployment 已跑通 starter 最小生产闭环，并 cleanup 回 node pool baseline `2`。所有真实 canary 证据只在 `.runtime`，不进 git；当前分支不 merge，不 push。
 
 资源隔离验证必须覆盖共享用户计算池 + 硬 quota、高级隔离套餐、`dedicated_node_pool` 和 Package C / Package D 边界。标准套餐验证不能证明“一用户一个节点池”；它必须证明 compute allocation、ResourceQuota / LimitRange / admission policy 和 fail-closed over-allocation 语义。Package D 不授权 Package C 的资源生命周期动作。
 
@@ -43,7 +43,7 @@ verification matrix does not cover:
 
 | layer | purpose | must run when | forbidden before user authorization | required evidence | owner | blocker routing |
 | --- | --- | --- | --- | --- | --- | --- |
-| contract smoke | 证明合同、状态表、执行板和治理入口不漂移 | 修改 `docs/contracts/*`、`docs/status.md`、`docs/decisions.md`、`docs/invariants.md`、`docs/recovery/cloud-onboarding-*` 或 `docs/recovery/status-matrix.md` 时 | 不读 secret；不调用真实云；不创建/释放资源；不 build/push/kubectl；不推进状态 | local smoke output, workflow gate output, diff limited to intended docs/smoke | A/C 编写，B 审查 | A/C 修 docs/smoke，B 阻断状态漂移 |
+| contract smoke | 证明合同、状态表、执行板和治理入口不漂移 | 修改 `docs/specs/*`、`docs/status.md`、`docs/decisions.md`、`docs/invariants.md`、`docs/recovery/cloud-onboarding-*` 或 `docs/recovery/status-matrix.md` 时 | 不读 secret；不调用真实云；不创建/释放资源；不 build/push/kubectl；不推进状态 | local smoke output, workflow gate output, diff limited to intended docs/smoke | A/C 编写，B 审查 | A/C 修 docs/smoke，B 阻断状态漂移 |
 | loader smoke | 证明 official SDK loader 默认 fail-closed，未显式启用时不加载真实 live path | 安装或升级 SDK 依赖后；修改 loader/factory/wrapper 边界后；CO-06 preflight 前 | 不读 secret；不 source env；不传 live flag；不调用真实 Tencent API | loader smoke output, default fail-closed evidence | A | A 修 loader/factory，B 审查默认路径 |
 | shape smoke | 证明 SDK package service/version/client shape 与 wrapper 假设一致 | 安装或升级 SDK 依赖后；修改 official SDK wrapper/factory 后；新增 service family 前 | 不读 secret；不调用真实云；不把 package load 当作 service shape 通过 | package shape smoke output, explicit service/version/client evidence | A | A 修 wrapper 假设或拆分 service contract，B 审查 dependency diff |
 | preflight smoke | 证明 readonly live 前本地前置条件完整 | CO-06 live 授权前；修改 readonly API allowlist、region/VPC scope、report output、redaction policy 后 | 不读 secret；不调用真实云；不读取 COS object body；不执行 mutation API | preflight smoke output, check-config report, explicit stop conditions | A | A 修 preflight，B 审查 live 前 gate，user 决定授权 |
@@ -113,7 +113,7 @@ Contract issue for next branch:
 
 ## OPL Deployment Ownership Release Plan Verification
 
-`docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md` is the Package D Level 4 sub-contract for release plan owner guard.
+`docs/specs/README.md` is the Package D Level 4 sub-contract for release plan owner guard.
 
 It verifies:
 
@@ -224,14 +224,14 @@ Required follow-through:
 | phase | verification expectation | current state reference |
 | --- | --- | --- |
 | CO-01 official SDK provider strategy | contract smoke confirms official SDK wrapper is production default provider strategy and TC3 is diagnostic/reference | `docs/recovery/cloud-onboarding-status-table.md` |
-| CO-02 official SDK wrapper | wrapper smoke confirms business code depends on readonly inventory interface, not raw SDK client | `docs/contracts/v22-tencent-readonly-inventory-boundary.md` |
+| CO-02 official SDK wrapper | wrapper smoke confirms business code depends on readonly inventory interface, not raw SDK client | `docs/specs/README.md` |
 | CO-03 official SDK dependency loader | loader smoke confirms fail-closed default and no live path by default | `docs/recovery/cloud-onboarding-status-table.md` |
 | CO-04 check-config | preflight/local guard confirms no secret read, no env source, no live flag, no real Tencent API call | `docs/recovery/cloud-onboarding-status-table.md` |
 | CO-05 default gate | B confirms default path has no secret read, no real cloud call, no real SDK live path, no mutation | `docs/recovery/cloud-onboarding-status-table.md` |
 | CO-06 user-authorized readonly live | requires explicit user authorization before any readonly live call | `docs/recovery/cloud-onboarding-status-table.md` |
-| CO-07 readonly report review | reviews only redacted report evidence generated outside git | `docs/contracts/v22-cloud-onboarding-workflow-boundary.md` |
+| CO-07 readonly report review | reviews only redacted report evidence generated outside git | `docs/specs/README.md` |
 | CO-08 TC3 cleanup gate | remains blocked until official SDK live report exists and B accepts cleanup readiness | `docs/recovery/cloud-onboarding-status-table.md` |
-| CO-09 through CO-14 | later dry-run, mutation, deploy, Portal integration and canary/QA require their own contracts/gates | `docs/contracts/v22-cloud-onboarding-workflow-boundary.md` |
+| CO-09 through CO-14 | later dry-run, mutation, deploy, Portal integration and canary/QA require their own contracts/gates | `docs/specs/README.md` |
 
 ## Matrix Data
 
@@ -268,7 +268,7 @@ Required follow-through:
     ]
   },
   "oplDeploymentOwnershipReleasePlan": {
-    "contract": "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md",
+    "contract": "docs/specs/README.md",
     "level": 4,
     "package": "Package D",
     "doesNotAuthorizeBuildPushKubectlByItself": true,

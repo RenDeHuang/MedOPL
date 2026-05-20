@@ -29,8 +29,8 @@
 - `docs/active/README.md`
 - `docs/README.md`
 - `tests/README.md`
-- `docs/contracts/README.md`
-- `docs/contracts/v22-smoke-eval-boundary.md`
+- `docs/specs/README.md`
+- `docs/specs/README.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/agent-runs/schema.md`
@@ -129,7 +129,7 @@ not_applicable_yet
 - 不接真实云、不执行 deploy 或 live-test。
 - 不修改 services 业务代码。
 - 不把 155 个 repo-local eval 都改名为 smoke。
-- 不清退 `docs/contracts/**` 或 `docs/recovery/**` 的 machine-boundary 文件。
+- 不清退 `docs/specs/**` 或 `docs/recovery/**` 的 machine-boundary 文件。
 - 不改 Portal Figma UI 视觉、布局或信息架构。
 
 ## next_leaf

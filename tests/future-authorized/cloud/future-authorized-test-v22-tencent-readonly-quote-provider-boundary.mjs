@@ -187,9 +187,9 @@ assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 
 const providerSource = await readFile("services/portal/src/domain/tencent-readonly-quote-provider.mjs", "utf8");
 const planViewSource = await readFile("services/portal/src/domain/managed-resource-binding-plan-view.mjs", "utf8");
-const contractSource = await readFile("docs/contracts/v22-tencent-readonly-quote-provider-boundary.md", "utf8");
-const managedContractSource = await readFile("docs/contracts/v22-managed-environment-open-boundary.md", "utf8");
-const readmeSource = await readFile("docs/contracts/README.md", "utf8");
+const contractSource = await readFile("docs/specs/README.md", "utf8");
+const managedContractSource = await readFile("docs/specs/README.md", "utf8");
+const readmeSource = await readFile("docs/specs/README.md", "utf8");
 const suiteSource = await readFile("tests/contract/contract-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertNoRealTencentSdkSource(providerSource, "quote_provider_source");
@@ -199,7 +199,7 @@ assert(contractSource.includes("不读取 secret"), "contract_must_forbid_secret
 assert(contractSource.includes("不调用真实腾讯云 API"), "contract_must_forbid_real_tencent_api");
 assert(contractSource.includes("mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider"), "contract_must_keep_adapter_route");
 assert(managedContractSource.includes("quoteSource"), "managed_environment_contract_must_include_quote_source");
-assert(readmeSource.includes("v22-tencent-readonly-quote-provider-boundary.md"), "contracts_readme_must_index_quote_provider");
+assert(readmeSource.includes("spec:v22-tencent-readonly-quote-provider-boundary"), "contracts_readme_must_index_quote_provider");
 assert(suiteSource.includes("smoke-test-v22-tencent-readonly-quote-provider-boundary"), "mvp_suite_must_include_quote_provider_smoke");
 
 console.log(JSON.stringify({
