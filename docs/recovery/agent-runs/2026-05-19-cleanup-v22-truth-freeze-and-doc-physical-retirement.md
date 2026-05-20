@@ -31,12 +31,12 @@
 - docs/contracts/README.md
 - docs/recovery/v22-agent-verify-manifest.json
 - docs/recovery/agent-runs/2026-05-19-cleanup-v22-truth-freeze-and-doc-physical-retirement.md
-- scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs
-- scripts/smoke-test-v22-gflabtoken-entry-contract.mjs
-- scripts/smoke-test-v22-workflow-gate.mjs
-- scripts/smoke-test-v22-product-goal-harness.mjs
-- scripts/smoke-test-v22-default-entry-narrative-gate.mjs
-- scripts/v22-smoke-classification.mjs
+- tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs
+- tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs
+- tests/health/smoke-test-v22-workflow-gate.mjs
+- tests/contract/smoke-test-v22-product-goal-harness.mjs
+- tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs
+- scripts/v22-test-classification.mjs
 - scripts/v22-workflow-gate.mjs
 - deletion-only: docs/recovery/v22-ai-frontend-backend-development-framework.md
 - deletion-only: docs/contracts/v22-canonical-user-loop.md
@@ -62,7 +62,7 @@
 
 ## eval_first_changes
 
-- RED: `node scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs` 初始失败，缺少 `docs/recovery/v22-truth-freeze.md`。
+- RED: `node tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs` 初始失败，缺少 `docs/recovery/v22-truth-freeze.md`。
 - GREEN target: 该 gate 要求 truth freeze、product/architecture truth、manifest branch override、classification、引用替换、删除旧阶段文件和本 agent-run record 同时成立。
 
 ## blocker_review_and_fix_log
@@ -72,12 +72,12 @@
 
 ## verification_commands
 
-- node scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs
-- node scripts/smoke-test-v22-goal-state-consistency.mjs
-- node scripts/smoke-test-v22-agent-run-record-gate.mjs
-- node scripts/smoke-test-v22-agent-verify-entrypoint.mjs
-- node scripts/smoke-test-v22-product-goal-harness.mjs
-- node scripts/smoke-test-v22-smoke-classification-gate.mjs
+- node tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs
+- node tests/contract/smoke-test-v22-goal-state-consistency.mjs
+- node tests/contract/smoke-test-v22-agent-run-record-gate.mjs
+- node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs
+- node tests/contract/smoke-test-v22-product-goal-harness.mjs
+- node tests/health/smoke-test-v22-smoke-classification-gate.mjs
 - node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json
 - node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json
 - node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json

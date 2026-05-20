@@ -126,8 +126,8 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "purpose": "production env/secret/schema gate without reading secret content",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
-        "scripts/smoke-test-v22-portal-runtime-startup-config.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-runtime-startup-config.mjs"
       ],
       "cleanupRequired": false
     },
@@ -137,8 +137,8 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A/user",
       "purpose": "direct Package C resource lifecycle canary from baseline 2 back to baseline 2",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
-        "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "cleanupRequired": true
     },
@@ -148,10 +148,10 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "purpose": "Portal click queues operation, independent worker drains, projection updates without HTTP 504",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
-        "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
-        "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-        "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "cleanupRequired": true
     },
@@ -161,9 +161,9 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A/B/user",
       "purpose": "120min billing reconciliation, release stop billing, and cleanup proof",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
-        "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-        "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs",
+        "tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+        "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs"
       ],
       "cleanupRequired": true
     },
@@ -173,9 +173,9 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "C/B/user",
       "purpose": "ordinary user open/upload/upgrade/release/delete product lifecycle with sanitized language",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-        "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
       ],
       "cleanupRequired": true
     }
@@ -324,7 +324,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "none",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"
       ],
       "userGate": "none"
     },
@@ -336,7 +336,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "none",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"
       ],
       "userGate": "none"
     },
@@ -348,7 +348,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "none",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
       ],
       "userGate": "none"
     },
@@ -360,9 +360,9 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "none; CO-04 evidence remains local/static only and does not advance CO-06 without user authorization",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
-        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
-        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs"
       ],
       "userGate": "stop if real secret, real cloud, deploy, or dependency install is needed"
     },
@@ -374,9 +374,9 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "B",
       "nextAction": "handoff to CO-06 user-authorized readonly live; no further default gate action",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
-        "scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
-        "scripts/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
       ],
       "userGate": "stop before merge/push or any live path"
     },
@@ -388,7 +388,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "user",
       "nextAction": "decide whether to authorize official SDK readonly secret allowlist and readonly API call",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
         "check-config output"
       ],
       "userGate": "must explicitly authorize secret allowlist, region/API scope, real cloud call, report location"
@@ -401,7 +401,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "B",
       "nextAction": "review redacted report after CO-06",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-readonly-inventory-boundary.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-boundary.mjs",
         "report redaction checks"
       ],
       "userGate": "stop if another real cloud read or report sharing is needed"
@@ -414,7 +414,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "B",
       "nextAction": "wait for official SDK live report and B acceptance",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
       ],
       "userGate": "stop if cleanup would delete TC3 before report review"
     },
@@ -426,8 +426,8 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "design no-mutation dry-run plan after readonly report review",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs",
-        "scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-contract.mjs"
       ],
       "userGate": "stop if dry-run wants real cloud, mutation secret, charge, or ledger mutation"
     },
@@ -439,8 +439,8 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "define fake-only mutation wrapper and gates",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs",
-        "scripts/smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs"
       ],
       "userGate": "stop if mutation secret, real API, dependency change, build/push/kubectl, or deploy is needed"
     },
@@ -466,9 +466,9 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "B",
       "nextAction": "review Package D evidence for absorption readiness; do not treat Package D as Package C storage/compute lifecycle or Portal cloud-operation bridge enablement",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
-        "scripts/smoke-test-v22-package-d-image-push-gate.mjs",
-        "scripts/smoke-test-v22-package-d-deploy-dry-run-gate.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-package-d-image-push-gate.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-package-d-deploy-dry-run-gate.mjs",
         "deploy plan smoke",
         "server-side dry-run",
         "rollout status",
@@ -484,11 +484,11 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "owner": "A",
       "nextAction": "use L2b/L3 harness gates instead of this CO phase as active execution entry",
       "requiredSmoke": [
-        "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
-        "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
-        "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
-        "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs"
+        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
       ],
       "userGate": "stop if Portal would expose secret/internal/cloud console language, if ordinary user projection exposes nodePoolRef/TKE/Kubernetes, if billing truth would be altered without reconciliation, or if live Portal bridge env/secret config changes without a deploy gate"
     },
@@ -501,7 +501,7 @@ Package D 不授权 Package C 的资源生命周期动作。不得删除、关�
       "nextAction": "run QA/status update after Portal integration and authorized canary scope",
       "requiredSmoke": [
         "canary/QA smoke",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
         "workflow gate review"
       ],
       "userGate": "stop if QA needs live credentials, canary calls real service, or release status implies readiness"

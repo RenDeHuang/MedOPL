@@ -49,8 +49,8 @@ This contract defines the top-level product loop that every future implementatio
 
 Default local eval:
 
-- `node scripts/smoke-test-v22-product-goal-harness.mjs`
-- `node scripts/smoke-test-v22-mvp-contract-suite.mjs`
+- `node tests/contract/smoke-test-v22-product-goal-harness.mjs`
+- `node tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
 - `git diff --check -- docs/recovery scripts`
 

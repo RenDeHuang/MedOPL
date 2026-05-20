@@ -45,7 +45,7 @@ feat/v22-portal-workspace-file-action-closure
 ## allowed_write_scope
 
 - `services/portal/**` for the absorbed feature branch implementation.
-- `scripts/smoke-test-v22-*` only where local contract gates were required by the absorbed feature branch.
+- `tests/**/*.mjs` only where local contract gates were required by the absorbed feature branch.
 - `docs/recovery/**` and `docs/contracts/**` only for subscribed contract/status writeback where required by the absorbed feature branch.
 
 For this cleanup trace branch, the allowed write scope is limited to:
@@ -56,8 +56,8 @@ For this cleanup trace branch, the allowed write scope is limited to:
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-goal-state.md`
 - `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
-- `scripts/smoke-test-v22-agent-run-record-gate.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## forbidden_scope
 
@@ -97,7 +97,7 @@ The absorbed leaf completed the `/workspace` file space action loop in Portal:
 Absorbed feature branch verification recorded by B review:
 
 ```bash
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group all
 git diff --check
 ```
 

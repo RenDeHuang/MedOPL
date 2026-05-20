@@ -17,13 +17,13 @@
 
 ## goal
 
-Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one lifecycle directory, one `README.md` truth, plus a target `tests/README.md`. This branch does not move or delete old `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `scripts/smoke-test-v22-*` files because the current audit found active references and delete-ready remains zero for this first skeleton cut.
+Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one lifecycle directory, one `README.md` truth, plus a target `tests/README.md`. This branch does not move or delete old `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs` files because the current audit found active references and delete-ready remains zero for this first skeleton cut.
 
 ## subagents_and_models
 
 - Carver: `gpt-5.4`, read-only audit of `docs/contracts/**` grouping into product/specs/runtime/policies/delivery.
 - Wegener: `gpt-5.4`, read-only audit of `docs/recovery/**` and `docs/recovery/agent-runs/**` grouping into active/delivery/policies/history/references.
-- Carson: `gpt-5.4`, read-only audit of `scripts/v22-verify.mjs`, `scripts/v22-smoke-classification.mjs` and `scripts/smoke-test-v22-*` for future `tests/**` taxonomy.
+- Carson: `gpt-5.4`, read-only audit of `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs` and `tests/**/*.mjs` for future `tests/**` taxonomy.
 
 ## contract_subscription
 
@@ -37,7 +37,7 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - `docs/recovery/agent-runs/README.md`
 - `docs/recovery/agent-runs/schema.md`
 - `scripts/v22-verify.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## allowed_write_scope
 
@@ -55,9 +55,9 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - `tests/README.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-docs-taxonomy-skeleton.md`
-- `scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs`
-- `scripts/smoke-test-v22-mvp-contract-suite.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`
+- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## forbidden_scope
 
@@ -70,7 +70,7 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - no PostgreSQL/Redis implementation
 - no admin business closure implementation
 - no Portal UI visual/layout/information-architecture change
-- no physical deletion of `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `scripts/smoke-test-v22-*`
+- no physical deletion of `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs`
 - A window does not ff-only absorb and does not git push
 
 ## implementation_summary
@@ -79,16 +79,16 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - Added target directory README skeletons for `active`, `product`, `runtime`, `specs`, `policies`, `delivery`, `source`, `public`, `references` and `history`.
 - Added `tests/README.md` to define the future test taxonomy before moving any executable tests.
 - Marked old contract, recovery, agent-run and smoke/eval paths as blocked-retain until replacement truth, reference migration and gates exist.
-- Added `scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs` to enforce one README per new target directory, blocked-retain existence, branch override wiring and changed-file scope.
+- Added `tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs` to enforce one README per new target directory, blocked-retain existence, branch override wiring and changed-file scope.
 - Added a `docs-taxonomy-skeleton` branch override so `v22-verify current` does not run the future PostgreSQL/Redis product leaf on this cleanup branch.
-- Added the new gate to `local-contract` and to `scripts/v22-smoke-classification.mjs` as `default/local-contract`, `contract-local`, `control-plane`, `atomic`, `none`.
+- Added the new gate to `local-contract` and to `scripts/v22-test-classification.mjs` as `default/local-contract`, `contract-local`, `control-plane`, `atomic`, `none`.
 - Updated the legacy local-regression runner's branch-override allowlist to recognize this cleanup override without changing its underlying regression script set.
 
 ## eval_first_changes
 
 - RED: Without a branch override, `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` would execute the current PostgreSQL/Redis product cursor instead of the scoped docs cleanup.
 - GREEN target: add a manifest override named `docs-taxonomy-skeleton` that runs only docs taxonomy, classification, agent-run, agent-verify and workflow gates.
-- RED: A new `scripts/smoke-test-v22-*` gate must be explicitly classified or the classification gate fails.
+- RED: A new `tests/**/*.mjs` gate must be explicitly classified or the classification gate fails.
 - GREEN target: classify the new gate and keep it out of health/smoke golden paths.
 - RED: The legacy local-regression runner rejects unknown branch override suite ids.
 - GREEN target: add `docs-taxonomy-skeleton` to that runner's existing allowlist and include the change in this branch's allowed scope.
@@ -102,11 +102,11 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 
 ## verification_commands
 
-- `node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs`
-- `node scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `node scripts/smoke-test-v22-smoke-eval-boundary.mjs`
-- `node scripts/smoke-test-v22-agent-run-record-gate.mjs`
-- `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`
+- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
@@ -137,7 +137,7 @@ No UI, Portal backend, PostgreSQL, Redis, OPL, real cloud, upstream, deploy or l
 - No secret read.
 - No upstream modification.
 - No Portal UI change.
-- No physical deletion or path movement of `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `scripts/smoke-test-v22-*`.
+- No physical deletion or path movement of `docs/contracts/**`, `docs/recovery/**`, `docs/recovery/agent-runs/**` or `tests/**/*.mjs`.
 - No claim that this skeleton completes final OPL-style physical cleanup.
 
 ## next_leaf

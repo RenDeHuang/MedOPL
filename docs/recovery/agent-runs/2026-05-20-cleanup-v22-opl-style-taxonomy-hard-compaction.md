@@ -58,20 +58,20 @@
 - `docs/recovery/v22-agent-first-development-loop.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-opl-style-taxonomy-hard-compaction.md`
-- `scripts/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs`
-- `scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs`
-- `scripts/smoke-test-v22-contract-eval-compaction.mjs`
-- `scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
-- `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
-- `scripts/smoke-test-v22-gflabtoken-entry-contract.mjs`
-- `scripts/smoke-test-v22-opl-dual-entry-contract.mjs`
-- `scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
-- `scripts/smoke-test-v22-product-goal-harness.mjs`
-- `scripts/smoke-test-v22-real-resource-contract-alignment.mjs`
-- `scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
-- `scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs`
+- `tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs`
+- `tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`
+- `tests/contract/smoke-test-v22-contract-eval-compaction.mjs`
+- `tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs`
+- `tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs`
+- `tests/regression/opl/smoke-test-v22-opl-dual-entry-contract.mjs`
+- `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
+- `tests/contract/smoke-test-v22-product-goal-harness.mjs`
+- `tests/future-authorized/cloud/smoke-test-v22-real-resource-contract-alignment.mjs`
+- `tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
+- `tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs`
 - `scripts/v22-agent-workflow.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `scripts/v22-test-classification.mjs`
 - `scripts/v22-workflow-gate.mjs`
 - delete: `docs/recovery/product-truth.md`
 - delete: `docs/recovery/architecture-truth.md`
@@ -99,10 +99,10 @@
 
 ## eval_first_changes
 
-- 新增 `scripts/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs`。
-- 将 hard-compaction gate 加入 `scripts/v22-smoke-classification.mjs`。
+- 新增 `tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs`。
+- 将 hard-compaction gate 加入 `scripts/v22-test-classification.mjs`。
 - 将 hard-compaction gate 加入 `docs/recovery/v22-agent-verify-manifest.json` 的 branch override 与 local-contract suite。
-- 调整 `scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs`，只在原 skeleton 分支执行 diff allowlist；在 trunk/local-contract 语境下只验证 taxonomy 结构不退化。
+- 调整 `tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`，只在原 skeleton 分支执行 diff allowlist；在 trunk/local-contract 语境下只验证 taxonomy 结构不退化。
 
 ## blocker_review_and_fix_log
 
@@ -112,12 +112,12 @@
 
 ## verification_commands
 
-- `node scripts/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs`
-- `node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs`
-- `node scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `node scripts/smoke-test-v22-smoke-eval-boundary.mjs`
-- `node scripts/smoke-test-v22-agent-run-record-gate.mjs`
-- `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs`
+- `node tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`
+- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
@@ -142,7 +142,7 @@ not_applicable_yet
 ## non_goals
 
 - 不实现 PostgreSQL/Redis local production data closure。
-- 不迁移全部 `scripts/smoke-test-v22-*` 到 `tests/**`。
+- 不迁移全部 `tests/**/*.mjs` 到 `tests/**`。
 - 不删除 42 个 `docs/contracts/v22-*` machine-boundary leaf。
 - 不删除 `docs/recovery/v22-goal-current.json`、manifest、gap matrix、status matrix 或 agent-run evidence。
 - 不修改 services 业务代码。

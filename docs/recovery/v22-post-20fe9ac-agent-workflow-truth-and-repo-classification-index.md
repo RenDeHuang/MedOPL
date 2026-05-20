@@ -41,7 +41,7 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 | contracts | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | keep / blocked-retain；无 delete-ready。 |
 | truth | `docs/product.md`, `docs/architecture.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-truth-freeze.md`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` | keep。 |
 | index | `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, compaction indexes | keep；本文件加入治理索引层。 |
-| eval | `scripts/v22-verify.mjs`, `scripts/v22-smoke-classification.mjs`, `scripts/smoke-test-v22-*` | keep / blocked-retain；无 delete-ready。 |
+| eval | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs` | keep / blocked-retain；无 delete-ready。 |
 | agent-runs | `docs/recovery/agent-runs/*` | keep；补 `20fe9ac` post-absorb 与 A/B 边界偏差。 |
 
 ## Delete-Ready
@@ -73,14 +73,14 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 - `docs/recovery/cloud-onboarding-status-table.md`
 - `scripts/v22-agent-workflow.mjs`
 - `scripts/sync-workspace-file-to-minio.ps1`
-- `scripts/smoke-test-v22-mvp-contract-suite.mjs`
-- `scripts/smoke-test-v22-workflow-gate.mjs`
+- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
+- `tests/health/smoke-test-v22-workflow-gate.mjs`
 
 ## Gate Tightening
 
-- `scripts/smoke-test-v22-goal-state-consistency.mjs` now treats detached runtime as target trunk only when `git branch --show-current` is empty and `HEAD == origin/recovery/platform-v22-trunk`.
+- `tests/contract/smoke-test-v22-goal-state-consistency.mjs` now treats detached runtime as target trunk only when `git branch --show-current` is empty and `HEAD == origin/recovery/platform-v22-trunk`.
 - Detached HEAD that is not exactly origin trunk remains fail-closed.
-- New gate: `scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`.
+- New gate: `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`.
 
 ## Non-Goals
 

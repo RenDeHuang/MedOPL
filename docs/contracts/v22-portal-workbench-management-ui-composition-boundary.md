@@ -14,8 +14,8 @@
 - UI 分层规则：route entry、page shell、layout、ZIP page component、Portal API adapter、API module、ZIP surface smoke。
 - 禁词和主叙事：工作台、管理台、账单、余额、冻结金额、累计消费、今日消费、计算资源、文件空间、任务执行、运行轨迹。
 - Figma Make ZIP app root：`services/portal/frontend/src/app`。
-- 统一验证入口：`node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all`。
-- ZIP surface gate 入口：`node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`。
+- 统一验证入口：`node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group all`。
+- ZIP surface gate 入口：`node tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs`。
 
 本合同不再负责：
 
@@ -46,7 +46,7 @@ Portal UI 必须按以下层级落到代码和 eval：
 - shared UI component：`src/app/components/ui/*` 保持 Figma Make / shadcn-Radix primitives。
 - Portal API adapter：`src/app/data/portalAdapters.ts` 承担 loader、query、formatter 和 API payload 到页面 model 的映射。
 - API module：`src/api/portal/*` 只承担 HTTP 和类型映射。
-- ZIP surface smoke：`scripts/smoke-test-v22-portal-frontend-surface-eval.mjs` 固定 ZIP 文件树、route、layout、API adapter、禁词、secret hygiene 和旧文件清退。
+- ZIP surface smoke：`tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs` 固定 ZIP 文件树、route、layout、API adapter、禁词、secret hygiene 和旧文件清退。
 
 ## 可执行 Surface Gate
 
@@ -130,15 +130,15 @@ UI 不使用斜杠组合词表达一个字段；需要两个含义时拆成两�
 正式验收入口统一为：
 
 ```bash
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group all
 ```
 
 关键分组：
 
 ```bash
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group api
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group api
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```
 
 `surface` 分组必须读取 ZIP source、React app 和 Portal adapter 并检查：
@@ -156,8 +156,8 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
 
 `leaf-frontend-product-evalset-gap` 曾把 Vue 时代的 Portal UI evalset characterization 写成前端产品事实源；本轮 `leaf-portal-figma-make-react-ui-implementation` 将当前可执行事实源收敛为 React/Figma Make ZIP 普通用户和管理员 Portal。
 
-- `node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs`
-- `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
+- `node tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs`
+- `node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 
 The current surface smoke proves 6 ordinary user routes, 7 admin routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, retired file physical checks and runtime report generation. Retired UI evidence is no longer current Portal completion evidence.
 
@@ -221,7 +221,7 @@ This characterization does not change Portal UI implementation, does not upgrade
     }
   },
   "surfaceSmoke": {
-    "smoke": "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
+    "smoke": "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
     "runtimeReportPath": ".runtime/portal-surface-eval/report.json",
     "runtimeReportCommitted": false
   },
@@ -265,7 +265,7 @@ This characterization does not change Portal UI implementation, does not upgrade
     "compositionContractOwns": "ui_boundary_and_zip_surface_eval_entrypoint",
     "surfaceAndApiDetailsOwn": "figma_make_zip_and_portal_api_adapter"
   },
-  "runtimeSmokeEntrypoint": "scripts/smoke-test-v22-portal-runtime-suite.mjs",
+  "runtimeSmokeEntrypoint": "tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs",
   "validationGroups": [
     "contract",
     "surface",

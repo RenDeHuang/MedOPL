@@ -5,7 +5,7 @@ Purpose: `docs_taxonomy_index`
 State: `taxonomy_skeleton`
 Machine boundary: 本文是人读入口。机器验证入口仍是 `scripts/v22-verify.mjs`，当前 cursor / allowlist / suite 权威仍在 `docs/recovery/v22-goal-current.json` 和 `docs/recovery/v22-agent-verify-manifest.json`，直到后续迁移分支完成引用迁移。
 
-本目录采用 OPL-style lifecycle taxonomy，并在 v22 严格版里执行“一目录一 README 真相”。本分支只建立目标骨架，不物理删除仍被引用的 `docs/contracts/**`、`docs/recovery/**` 或 `scripts/smoke-test-v22-*`。
+本目录采用 OPL-style lifecycle taxonomy，并在 v22 严格版里执行“一目录一 README 真相”。本分支只建立目标骨架，不物理删除仍被引用的 `docs/contracts/**`、`docs/recovery/**` 或 `tests/**/*.mjs`。
 
 ## Reading Order
 

@@ -5,7 +5,7 @@
 ## 当前权威
 
 - `docs/contracts/v22-smoke-eval-boundary.md`：smoke/eval 语义边界。
-- `scripts/v22-smoke-classification.mjs`：所有 `scripts/smoke-test-v22-*` 的 category/tier/surface 权威。
+- `scripts/v22-test-classification.mjs`：所有 `tests/**/*.mjs` 的 category/tier/surface 权威。
 - `docs/recovery/v22-agent-verify-manifest.json`：suite、branch override 和允许写入范围权威。
 - `scripts/v22-verify.mjs`：统一验证入口。
 
@@ -28,8 +28,8 @@
 | File | Decision | Replacement / Authority |
 | --- | --- | --- |
 | `scripts/check-portal-copy.mjs` | delete | `scripts/check-mojibake.mjs` 已覆盖 Portal server mojibake 和更宽文本面。 |
-| `scripts/check-one-person-lab-upstream-clean.mjs` | delete | upstream checkout clean 检查迁入 `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`；当 `.runtime/one-person-lab-upstream` 存在时，gate 执行 `git status --short` 并要求为空。 |
-| `scripts/smoke-test-workspace-storage-routes-contract.mjs` | delete | v22 workspace storage gates 覆盖更强公开响应和文件空间行为：`scripts/smoke-test-v22-workspace-storage-public-response.mjs`、`scripts/smoke-test-v22-portal-file-space-management.mjs`；旧 gate 还会要求公开响应返回 `storageKey`，与当前脱敏合同冲突。 |
+| `scripts/check-one-person-lab-upstream-clean.mjs` | delete | upstream checkout clean 检查迁入 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`；当 `.runtime/one-person-lab-upstream` 存在时，gate 执行 `git status --short` 并要求为空。 |
+| `scripts/smoke-test-workspace-storage-routes-contract.mjs` | delete | v22 workspace storage gates 覆盖更强公开响应和文件空间行为：`tests/regression/portal/smoke-test-v22-workspace-storage-public-response.mjs`、`tests/regression/portal/smoke-test-v22-portal-file-space-management.mjs`；旧 gate 还会要求公开响应返回 `storageKey`，与当前脱敏合同冲突。 |
 
 ## 暂不删除
 
@@ -52,7 +52,7 @@
 
 ## 后续候选
 
-后续若继续压缩，不应直接删大批 `scripts/smoke-test-v22-*`。正确顺序是：
+后续若继续压缩，不应直接删大批 `tests/**/*.mjs`。正确顺序是：
 
 1. 先把 `local-regression` 从 `mvp` 旧命名聚合迁到更清晰的 runner。
 2. 再把 `v22-agent-workflow.mjs` 与 `v22-workflow-gate.mjs` 的职责拆清，迁移 docs/contracts 引用。

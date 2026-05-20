@@ -40,7 +40,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
+- `tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs`
 
 检查要点：
 
@@ -56,7 +56,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-env-template-default-entry.mjs`
+- `tests/contract/smoke-test-v22-env-template-default-entry.mjs`
 
 检查要点：
 
@@ -72,7 +72,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
+- `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 
 检查要点：
 
@@ -87,7 +87,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
+- `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 
 检查要点：
 
@@ -108,7 +108,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
+- `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 
 检查要点：
 
@@ -116,10 +116,10 @@
 - `scripts/smoke-test-v19-*`、`scripts/smoke-test-v20*`、`scripts/smoke-test-v21-*` 不进入默认 suite，也不留在 active scripts 目录。
 - `scripts/live-test-*` 不进入默认 suite；当前物理删除事实由 `slice-authorized-live-test-physical-delete` 单独记录，不属于 Slice 4 archive boundary 本体。
 - 无 v22 前缀但仍有价值的 smoke 必须迁名进入 v22 active surface；不能因为历史证据保留旧脚本本体。
-- completed on `cleanup/v22-archive-smoke-contract-physical-retirement`: `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs` verifies archive/reference Markdown and retired v17/v22 smoke entrypoints are physically absent, keeps `archive/retired` smoke classification empty, and does not run live-test, touch services/deploy/adapters/upstream/packages, or read secrets.
+- completed on `cleanup/v22-archive-smoke-contract-physical-retirement`: `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs` verifies archive/reference Markdown and retired v17/v22 smoke entrypoints are physically absent, keeps `archive/retired` smoke classification empty, and does not run live-test, touch services/deploy/adapters/upstream/packages, or read secrets.
 - follow-up physical delete on `cleanup/v22-physical-legacy-batch-run`: `slice-authorized-live-test-physical-delete` physically deletes `scripts/live-test-*` after explicit user authorization; future real external canary must use a new v22 authorization contract and must not restore the old default entry.
 - strict monolith follow-up on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old non-v22 billing/portal smoke anchors and `scripts/start-billing-live.mjs` were physically deleted after import/default-suite scan proved they were not v22 active validation. The deleted scripts were historical billing/resource-order/OpenCost/Portal structure anchors, not current v22 smoke.
-- residual strict monolith follow-up on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, and local MinIO/Harbor install or port-forward helper remnants are deleted after import/default-suite scan proved no active v22 reference. Active validation must use `scripts/smoke-test-v22-*` or `scripts/v22-verify.mjs`.
+- residual strict monolith follow-up on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, and local MinIO/Harbor install or port-forward helper remnants are deleted after import/default-suite scan proved no active v22 reference. Active validation must use `tests/**/*.mjs` or `scripts/v22-verify.mjs`.
 
 ## Slice 5: OpenCost and Langfuse Primary Narrative Retirement
 
@@ -127,7 +127,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs`
+- `tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs`
 
 检查要点：
 
@@ -136,7 +136,7 @@
 - OpenCost 只作历史或后续授权运维参考，不是当前主账单事实源。
 - OpenCost 旧脚本、旧 compose、旧 infra 不在 active repo 保留。
 - 普通用户页面不把 OpenCost/Langfuse 展示成核心产品能力。
-- completed by cleanup/v22-cleanup-completion-truth：`scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 不得恢复为主产品事实源；strict monolith cleanup 删除旧 OpenCost/Langfuse compose/deploy/infra 资产。
+- completed by cleanup/v22-cleanup-completion-truth：`tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs` 已证明 Langfuse 只能是 sanitized observability attachment，OpenCost 不得恢复为主产品事实源；strict monolith cleanup 删除旧 OpenCost/Langfuse compose/deploy/infra 资产。
 
 ## Slice 8: Zero-Compat Active Surface
 
@@ -144,7 +144,7 @@
 
 建议 smoke/gate：
 
-- `scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs`
+- `tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs`
 
 检查要点：
 

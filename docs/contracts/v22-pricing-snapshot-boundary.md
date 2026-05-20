@@ -98,4 +98,4 @@
 
 ## Smoke Boundary
 
-`scripts/smoke-test-v22-pricing-plan-contract.mjs` 是纯本地 contract 校验。它只读取本文件中的 JSON 契约块，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不执行 build、push、kubectl 或 live-test。
+`tests/smoke/smoke-test-v22-pricing-plan-contract.mjs` 是纯本地 contract 校验。它只读取本文件中的 JSON 契约块，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不执行 build、push、kubectl 或 live-test。

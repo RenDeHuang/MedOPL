@@ -24,7 +24,7 @@
 | `contracts` | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | 长期边界、授权和非目标。 |
 | `truth` | `docs/active/README.md`, `docs/product.md`, `docs/architecture.md`, `v22-truth-freeze.md`, `status-matrix.md`, `mvp-contract-acceptance.md` | 当前产品和系统事实；`docs/active/README.md` 是唯一人读 current truth。 |
 | `index` | `v22-goal-current.json`, `v22-agent-verify-manifest.json`, `v22-current-vs-ideal-gap-matrix.md`, `v22-product-completion-scoreboard.json` | 下一步 cursor、gap、允许写入范围和验证入口。 |
-| `eval` | `scripts/v22-verify.mjs`, `scripts/v22-smoke-classification.mjs`, `scripts/smoke-test-v22-*.mjs` | 机器验收。 |
+| `eval` | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs.mjs` | 机器验收。 |
 | `agent-runs` | `docs/recovery/agent-runs/*.md` | 每一步开发证据和吸收记录。 |
 
 ## 分支类型

@@ -32,7 +32,7 @@ Archive/reference 资产不得以当前文件形态恢复。确需迁移历史�
 - `docs/architecture.md`
 - `docs/contracts/v22-*`
 - `docs/recovery/*`
-- `scripts/smoke-test-v22-*`
+- `tests/**/*.mjs`
 - `services/portal`
 - `services/opl-web-gateway`
 - `services/opl-runtime-bridge`

@@ -75,8 +75,8 @@ Portal HTTP API
 验证命令：
 
 ```text
-node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
-node scripts/smoke-test-v22-portal-opl-context-backflow-contract.mjs
+node tests/regression/opl/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
+node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs
 ```
 
 验收：
@@ -304,7 +304,7 @@ Runtime Bridge sanitized metadata
 验证命令：
 
 ```text
-node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs
+node tests/regression/opl/smoke-test-v22-real-opl-file-run-artifact-gates.mjs
 ```
 
 必须覆盖的 gate：
@@ -356,7 +356,7 @@ Leaf 6: OPL productionization contract refresh
 Leaf 7: OPL productionization eval shell
 
 - This leaf is eval-shell only.
-- `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs` is the local gate before any production implementation.
+- `node tests/regression/opl/smoke-test-v22-opl-productionization-eval-shell.mjs` is the local gate before any production implementation.
 - The eval shell reads only repo-tracked contracts, recovery truth, and existing smoke scripts.
 - It proves the next production branch must keep canary facts out of production truth, keep upstream clean, and keep unverified file/run/artifact capabilities gated.
 - It allows only OPL-lane projection fields: `resourceBindingId`, `billingMetadataRef`, `usageMetadataRef`, `fileRef`, `runId`, `artifactRef`, and `outputFileRef`.

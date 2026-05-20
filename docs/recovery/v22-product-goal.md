@@ -7,9 +7,9 @@
 - intent: 建立 Codex 可持续执行的 product-goal harness，把当前 legacy-mixed repo 收敛为 MedOPL v22 production-ready SaaS workbench。
 - this is not: cleanup 路线图、业务代码实现、依赖升级、真实云授权、deploy 授权或 upstream 修改。
 - validation:
-  - `node scripts/smoke-test-v22-product-goal-harness.mjs`
-  - `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
-  - `node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
+  - `node tests/contract/smoke-test-v22-product-goal-harness.mjs`
+  - `node tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs`
+  - `node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
   - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`
   - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk`
   - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

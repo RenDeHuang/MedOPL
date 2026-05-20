@@ -33,7 +33,7 @@
 | contracts | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | 长期不变量、接口边界、授权边界、非目标。 |
 | truth | `docs/product.md`, `docs/architecture.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-truth-freeze.md`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` | 当前产品、架构、数据、云、治理事实。 |
 | index | `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, compaction indexes | current cursor、next leaf、allowed files、forbidden surface、verification bundle、cleanup 顺序。 |
-| eval | `scripts/v22-verify.mjs`, `scripts/v22-smoke-classification.mjs`, `scripts/smoke-test-v22-*` | 机器验收入口；smoke 只指 health/golden，小范围之外都叫 eval/local-regression/future-authorized。 |
+| eval | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs` | 机器验收入口；smoke 只指 health/golden，小范围之外都叫 eval/local-regression/future-authorized。 |
 | agent-runs | `docs/recovery/agent-runs/*` | 每一步执行证据、模型、subagent、验证、B review、吸收和未做事项。 |
 
 ## Root Governance 裁定
@@ -71,7 +71,7 @@
 ## Scripts / Eval 裁定
 
 - main verification authority: `scripts/v22-verify.mjs` + `docs/recovery/v22-agent-verify-manifest.json`.
-- smoke/eval classification authority: `scripts/v22-smoke-classification.mjs`.
+- smoke/eval classification authority: `scripts/v22-test-classification.mjs`.
 - `scripts/v22-workflow-gate.mjs`: keep as review/checkpoint guard.
 - `scripts/v22-agent-workflow.mjs`: blocked-retain / retire-candidate; not current truth, not default eval entrypoint, not auto-merge/push automation.
 - cloud onboarding `CO-*` / board family: future-authorized / blocked-retain; not current product cursor.
@@ -83,8 +83,8 @@
 - `docs/invariants.md` removes stage-board-as-current-truth wording and records cloud/program boards plus `v22-agent-workflow.mjs` as future-authorized / blocked-retain references.
 - `docs/decisions.md` no longer says the active program is `v22-cloud-onboarding`; it records the active cursor and future-authorized cloud lane boundary.
 - `docs/vibe-coding.md` keeps the cloud workflow reference required by the cloud workflow contract, but demotes `scripts/v22-agent-workflow.mjs` to blocked-retain / retire-candidate.
-- `scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs` no longer requires origin trunk to equal historical `20fe9ac`; it verifies `20fe9ac` and `49b99d` remain ancestors of current origin trunk.
-- `scripts/smoke-test-v22-long-term-governance-surfaces.mjs` now verifies `v22-goal-current + v22-agent-verify-manifest + v22-verify` as current entrypoints and blocks old root governance active-cloud wording.
+- `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs` no longer requires origin trunk to equal historical `20fe9ac`; it verifies `20fe9ac` and `49b99d` remain ancestors of current origin trunk.
+- `tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs` now verifies `v22-goal-current + v22-agent-verify-manifest + v22-verify` as current entrypoints and blocks old root governance active-cloud wording.
 
 ## Blocked Retain
 
@@ -96,10 +96,10 @@ These are still retained until references migrate:
 - `docs/recovery/cloud-onboarding-status-table.md`
 - `docs/recovery/cloud-onboarding-verification-matrix.md`
 - `scripts/v22-agent-workflow.mjs`
-- `scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs`
-- `scripts/smoke-test-v22-cloud-onboarding-board-status.mjs`
-- `scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs`
-- `scripts/smoke-test-v22-cloud-connection-runnable-path.mjs`
+- `tests/future-authorized/cloud/smoke-test-v22-agent-workflow-cloud-onboarding.mjs`
+- `tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-board-status.mjs`
+- `tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs`
+- `tests/future-authorized/cloud/smoke-test-v22-cloud-connection-runnable-path.mjs`
 - `docs/contracts/v22-admin-ops-console-boundary.md`
 - `docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md`
 

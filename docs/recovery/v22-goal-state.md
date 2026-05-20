@@ -27,7 +27,7 @@ JSON 是机器可读 current truth。Markdown 是人类说明/历史，不再承
 
 ### Migration order rule
 
-迁移顺序必须固定为：先建立或更新 `docs/recovery/v22-goal-current.json`，再降级本 Markdown 的 current truth 职责，最后让 `node scripts/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。不得先删除 Markdown current context 再补 JSON。
+迁移顺序必须固定为：先建立或更新 `docs/recovery/v22-goal-current.json`，再降级本 Markdown 的 current truth 职责，最后让 `node tests/contract/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。不得先删除 Markdown current context 再补 JSON。
 
 ### Single write entry rule
 
@@ -63,7 +63,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - gap_id: `portal-postgres-redis-local-production-data-closure`.
 - stage: `S5 frontend/backend product completion`.
 - cursor_eligible: true.
-- eval_command: Step 0 current-truth gate uses `node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs`; `node scripts/smoke-test-v22-goal-state-consistency.mjs`; `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`; `node scripts/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`. The next implementation eval shell is `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`.
+- eval_command: Step 0 current-truth gate uses `node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs`; `node tests/contract/smoke-test-v22-goal-state-consistency.mjs`; `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`; `node tests/contract/smoke-test-v22-product-goal-harness.mjs`; `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`; `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`. The next implementation eval shell is `node tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs`.
 - default_agent_verify_entrypoint: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`.
 - auth_boundary: the next feature branch may update scoped Portal local storage/state/domain/app/routes/migrations/config code, current truth, manifest, gap matrix, goal summary, agent-run record and storage mode eval gates. It may not change Figma visual/layout/information architecture, read secrets, live-test, mutate true cloud, build/push/kubectl, deploy, or modify upstream.
 - truth_writeback_target: `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-goal-state.md`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/status-matrix.md`, `docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md`.
@@ -83,7 +83,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - strict monolith Slice E completed: resource-order store/schema/domain remnants, unused Portal resource-provisioner client wiring, old non-v22 billing/portal smoke anchors, and old live/kubectl helper remnants are physically retired from active repo without executing real DB migration, live-test, kubectl, deploy, build/push, or true cloud operation; active Portal persistence now retains resource binding/workspace/billing/audit surfaces only.
 - leaf-secret-hygiene-diff-scan-eval-shell completed: diff-scoped sensitive hygiene eval proves changed-files / added-lines scanning without reading real secret-like paths.
 - leaf-legacy-scripts-archive-eval-shell completed: legacy script archive boundary eval keeps v19/v20/v21/live-test scripts out of default validation.
-- OpenCost/Langfuse primary narrative retirement is cleanup-complete: `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment and OpenCost is archive/reference, not Portal, billing, artifact, run, or product truth.
+- OpenCost/Langfuse primary narrative retirement is cleanup-complete: `tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment and OpenCost is archive/reference, not Portal, billing, artifact, run, or product truth.
 - cleanup_completion truth is written by `leaf-cleanup-completion-truth-writeback`: all cleanup gaps were cleaned or intentionally retained at that historical point. Strict monolith cleanup supersedes old shell/archive completion states and removes legacy files from active repo.
 - cleanup_completion truth is historical after `cleanup/v22-retire-cleanup-stop-current-lock`: the cleanup-only execution lock no longer remains the current cursor; at that historical repair point, normal product-goal selection resumed at `leaf-cloud-lane-readonly-status-audit`.
 - leaf-cloud-lane-readonly-status-audit B absorbed on `377641b47ed2de5f6f9f2528fc06e7f3d5c16adc`; normal product-goal selection now resumes at `leaf-portal-ui-design-quality-audit`.
@@ -108,11 +108,11 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - Step 2 absorbed commit: `8797ffc6f3ba3747cfac55554012b648fcbfb5c9`
 - Step 2 API bindings: `createOplFileRef`, `startOplRun`, `fetchOplArtifact`
 - Step 2 subscribed contracts: `v22-portal-opl-connection-boundary.md`, `v22-opl-work-message-file-run-boundary.md`, `v22-runtime-bridge-session-run-file-provider-keyref-boundary.md`, `v22-portal-files-billing-trace-boundary.md`, `v22-smoke-eval-boundary.md`, recovery `status-matrix.md`, recovery gap matrix
-- Step 2 eval: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`, `node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs`, `node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`, `node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs`, `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface`
+- Step 2 eval: `node tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`, `node tests/regression/opl/smoke-test-v22-opl-work-message-file-run-flow.mjs`, `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`, `node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs`, `node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface`
 - Step 2 note: this feature branch implemented the local Portal-OPL file/run/artifact closure under existing OPL / Runtime Bridge contracts and eval. B reviewed, ff-only absorbed and pushed it before this post-absorb truth branch advanced the cursor.
 - Step 3 current leaf: `leaf-portal-postgres-redis-local-production-data-closure`
 - Step 3 gap: `portal-postgres-redis-local-production-data-closure`
-- Step 3 eval shell: `node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`
+- Step 3 eval shell: `node tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs`
 - Step 3 desired local data truth: PostgreSQL canonical truth; Redis session/cache/queue/lock only; `PORTAL_STORAGE_MODE=postgres_redis` fail-closed when connection or schema is missing; admin actions, wallet, announcements, billing ops, audit and workspace storage persist across restart and can later migrate to cloud PostgreSQL/Redis.
 - Step 3 note: this post-absorb truth branch only indexes Step 3 and records the absorbed Step 2 result. It does not implement PostgreSQL/Redis.
 
@@ -122,7 +122,7 @@ B ff-only 吸收并 push 后，goal-state cursor 才能前进；A 不得自行�
 - OPL connection productionization contract refresh; OPL connection productionization eval shell; OPL connection productionization local implementation.
 - no raw provider key, no live canary unless separately authorized.
 - truth_writeback_target: `docs/recovery/real-opl-file-run-artifact-validation-path.md`, `docs/recovery/status-matrix.md`, `docs/recovery/v22-goal-state.md`.
-- leaf-opl-connection-productionization-local-implementation: implement the smallest local OPL productionization slice; production implementation must not treat canary evidence as production deploy evidence; verification includes `node scripts/smoke-test-v22-opl-productionization-eval-shell.mjs`.
+- leaf-opl-connection-productionization-local-implementation: implement the smallest local OPL productionization slice; production implementation must not treat canary evidence as production deploy evidence; verification includes `node tests/regression/opl/smoke-test-v22-opl-productionization-eval-shell.mjs`.
 - Leaf 8 B absorb/push result: commit `f114ee587db2a41a3a85fc5f67bbed4fbe63e57b`; next cursor is `leaf-frontend-product-evalset-gap`.
 - Leaf 9 B absorb/push result: Portal frontend product evalset gap commit `6acb92e03c07e580191d77e1a5389a94fbe137fc`; next cursor is `leaf-backend-contract-eval-template`.
 - leaf-backend-contract-eval-template was absorbed after the prior frontend characterization.
@@ -147,7 +147,7 @@ This subsection is historical evidence only. It is intentionally not the current
 - release_readiness_deploy_runtime_smoke.
 - build_push_kubectl_deploy.
 - live_runtime_smoke.
-- node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs.
+- node tests/contract/smoke-test-v22-release-readiness-auth-boundary.mjs.
 - build/push/kubectl, live-test, deploy, true cloud, and secret remain forbidden until the JSON current state marks a risky release leaf executable with a concrete step-local auth record, release plan, owner guard, baseline, rollback, cleanup, and evidence path.
 
 ## Later Problems
@@ -178,7 +178,7 @@ This subsection is historical evidence only. It is intentionally not the current
 - `docs/contracts/README.md`
 - `docs/contracts/v22-*`
 - `docs/recovery/*`
-- `scripts/smoke-test-v22-*`
+- `tests/**/*.mjs`
 - `README.md`
 - `docs/product.md`
 - `docs/architecture.md`

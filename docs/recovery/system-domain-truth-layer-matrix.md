@@ -38,5 +38,5 @@
 - active code 已迁到 Runtime Bridge client、Runtime Bridge state root、Runtime Bridge contract field 和 `/runtime-bridge` proxy path。
 - legacy redirect route 和 `/portal/tasks/*` 旧公开入口从 active route wiring 中清退；workspace 操作入口是 `/portal/workspaces/*`。
 - Runtime Bridge 旧 `managed_runtime` mode、`runtime-bridge-managed-runs.mjs` 和 Adapter 命名已从 active Runtime Bridge / Portal-OPL 合同入口清退；普通 v22 smoke 变量名也使用 Runtime Bridge 语义。
-- non-v22 OPL smoke 已删除或迁名为 `scripts/smoke-test-v22-*`，旧 `/portal/app/*` redirect、旧 `/portal/tasks/*` 入口和 `task-space.routes.mjs` 已从 active route wiring 清退。
+- non-v22 OPL smoke 已删除或迁名为 `tests/**/*.mjs`，旧 `/portal/app/*` redirect、旧 `/portal/tasks/*` 入口和 `task-space.routes.mjs` 已从 active route wiring 清退。
 - Adapter、legacy redirect、task-space、deploy/adapters/infra/live/canary 只能作为已删除、不得恢复或 future-authorized boundary 记录存在。

@@ -63,7 +63,7 @@ verification matrix does not cover:
 
 ## Smoke Entry Policy
 
-smoke 数量较多是因为每个合同都有原子验收入口，方便 B 定位漂移原因；但 B 审 cloud resource isolation 分支时不应从聊天记录里拼命令。`scripts/smoke-test-v22-cloud-resource-contract-suite.mjs` 是本分支的 scoped review entry：它聚合 Package C resource isolation、pricing/resource plan/topology、Package D no-resource-lifecycle-mutation、workflow 和 board/status 相关 smoke。它不替代 `scripts/smoke-test-v22-mvp-contract-suite.mjs`，不读取 secret，不调用真实云，不 build/push/kubectl。
+smoke 数量较多是因为每个合同都有原子验收入口，方便 B 定位漂移原因；但 B 审 cloud resource isolation 分支时不应从聊天记录里拼命令。`tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs` 是本分支的 scoped review entry：它聚合 Package C resource isolation、pricing/resource plan/topology、Package D no-resource-lifecycle-mutation、workflow 和 board/status 相关 smoke。它不替代 `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`，不读取 secret，不调用真实云，不 build/push/kubectl。
 
 ## Package D Deploy Verification Boundary
 
@@ -276,7 +276,7 @@ Required follow-through:
       "platform_service_target",
       "workspace_runtime_target"
     ],
-    "smoke": "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
+    "smoke": "tests/future-authorized/cloud/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
     "realRolloutStillRequiresExplicitAuthorization": true,
     "currentAuthorizedRealDryRunDone": true,
     "currentAuthorizedRealRolloutStatus": "rollout_and_runtime_smoke_passed",

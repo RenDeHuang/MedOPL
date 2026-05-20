@@ -60,11 +60,11 @@
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md`
-- `scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
-- `scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `scripts/smoke-test-v22-smoke-eval-boundary.mjs`
-- `scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## forbidden_scope
 
@@ -89,7 +89,7 @@
 
 ## eval_first_changes
 
-- RED: 新增 `scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs` 前，classification 已登记新 gate 时 `smoke-classification-gate` 失败，暴露“分类有、文件不存在”的悬空状态。
+- RED: 新增 `tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs` 前，classification 已登记新 gate 时 `smoke-classification-gate` 失败，暴露“分类有、文件不存在”的悬空状态。
 - GREEN target: 新 gate、索引、manifest override、agent-run、smoke/eval 元数据和 previous post-absorb truth 同时成立。
 
 ## blocker_review_and_fix_log
@@ -102,12 +102,12 @@
 
 ## verification_commands
 
-- `node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
-- `node scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `node scripts/smoke-test-v22-smoke-eval-boundary.mjs`
-- `node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
-- `node scripts/smoke-test-v22-agent-run-record-gate.mjs`
-- `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
@@ -126,12 +126,12 @@ Process note: the content is accepted, but the absorb/push action was executed f
 
 ## post_absorb_verification
 
-- `node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `node tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 
-Post-push note: `current` verification exposed a narrow detached-trunk runtime gap in `scripts/smoke-test-v22-goal-state-consistency.mjs`. The intended follow-up is to allow only detached `HEAD == origin/recovery/platform-v22-trunk`; arbitrary detached HEAD remains fail-closed.
+Post-push note: `current` verification exposed a narrow detached-trunk runtime gap in `tests/contract/smoke-test-v22-goal-state-consistency.mjs`. The intended follow-up is to allow only detached `HEAD == origin/recovery/platform-v22-trunk`; arbitrary detached HEAD remains fail-closed.
 
 ## runtime_notes
 

@@ -61,9 +61,9 @@ feat/v22-portal-opl-file-run-artifact-closure
 - `services/portal/frontend/src/app/data/portalAdapters.ts`
 - `services/portal/frontend/src/app/pages/Workspace.tsx`
 - `services/portal/frontend/src/app/pages/TasksResults.tsx`
-- `scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`
-- `scripts/smoke-test-v22-portal-runtime-suite.mjs`
-- `scripts/smoke-test-v22-agent-run-record-gate.mjs`
+- `tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs`
+- `tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs`
+- `tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
 - `docs/recovery/v22-goal-current.json`
 - `docs/recovery/v22-goal-state.md`
 - `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
@@ -96,10 +96,10 @@ feat/v22-portal-opl-file-run-artifact-closure
 
 ## eval_first_changes
 
-- RED: `node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs` failed with `frontend_api_active_used_exports_must_be_consumed:["opl.ts:createOplFileRef","opl.ts:startOplRun","opl.ts:fetchOplArtifact"]`.
+- RED: `node tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs` failed with `frontend_api_active_used_exports_must_be_consumed:["opl.ts:createOplFileRef","opl.ts:startOplRun","opl.ts:fetchOplArtifact"]`.
 - GREEN: the same gate now reports all three OPL API clients under `activeUsedByFile.opl.ts`.
-- Added `scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs` and `scripts/smoke-test-v22-portal-trace-file-linkage.mjs` to the surface bundle and current leaf verify manifest.
-- Tightened `scripts/smoke-test-v22-agent-run-record-gate.mjs` so the current cursor requires this agent-run record in addition to the previously absorbed workspace record.
+- Added `tests/regression/opl/smoke-test-v22-portal-opl-api-runtime-loop.mjs` and `tests/regression/portal/smoke-test-v22-portal-trace-file-linkage.mjs` to the surface bundle and current leaf verify manifest.
+- Tightened `tests/contract/smoke-test-v22-agent-run-record-gate.mjs` so the current cursor requires this agent-run record in addition to the previously absorbed workspace record.
 
 ## blocker_review_and_fix_log
 
@@ -121,28 +121,28 @@ feat/v22-portal-opl-file-run-artifact-closure
 Executed during this branch before commit:
 
 ```bash
-node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs
-node scripts/smoke-test-v22-portal-trace-file-linkage.mjs
-node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs
-node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
-node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs
+node tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs
+node tests/regression/portal/smoke-test-v22-portal-trace-file-linkage.mjs
+node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs
+node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
+node tests/regression/opl/smoke-test-v22-portal-opl-api-runtime-loop.mjs
 npm --prefix services/portal/frontend run typecheck
-node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs
-node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser
+node tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs
+node tests/regression/portal/smoke-test-v22-portal-figma-make-interaction-readiness.mjs
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group browser
 ```
 
 Full B handoff verification to run before absorb:
 
 ```bash
-node scripts/smoke-test-v22-agent-run-record-gate.mjs
-node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs
-node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs
-node scripts/smoke-test-v22-portal-trace-file-linkage.mjs
-node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs
-node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
-node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
+node tests/contract/smoke-test-v22-agent-run-record-gate.mjs
+node tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs
+node tests/regression/opl/smoke-test-v22-portal-opl-api-runtime-loop.mjs
+node tests/regression/portal/smoke-test-v22-portal-trace-file-linkage.mjs
+node tests/regression/opl/smoke-test-v22-opl-work-message-file-run-flow.mjs
+node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
+node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
 node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json
 node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json
 npm --prefix services/portal/frontend run typecheck
@@ -166,11 +166,11 @@ passed / ff-only absorbed / pushed.
 Post-absorb truth branch `cleanup/v22-post-absorb-portal-opl-truth-and-next-index` records this result and verifies:
 
 ```bash
-node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs
-node scripts/smoke-test-v22-goal-state-consistency.mjs
-node scripts/smoke-test-v22-agent-run-record-gate.mjs
-node scripts/smoke-test-v22-agent-verify-entrypoint.mjs
-node scripts/smoke-test-v22-product-goal-harness.mjs
+node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs
+node tests/contract/smoke-test-v22-goal-state-consistency.mjs
+node tests/contract/smoke-test-v22-agent-run-record-gate.mjs
+node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs
+node tests/contract/smoke-test-v22-product-goal-harness.mjs
 node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json
 node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
@@ -180,8 +180,8 @@ git diff --check -- docs/recovery scripts
 ## runtime_notes
 
 - This leaf uses local Portal, Gateway, Runtime Bridge and Vite smoke coverage only.
-- `scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs` starts local fake product API, local upstream web, Runtime Bridge, Gateway, Portal and Vite, then verifies launch, bootstrap, session bind, message, file, run, artifact, trace projection and secret hygiene.
-- `node scripts/smoke-test-v22-portal-runtime-suite.mjs --group browser` starts local Portal/Vite with Playwright and verifies account dialog, logout, backend CSV export, admin recharge/refund actions, announcement create/delete visibility, desktop/mobile overflow, and no captured console/request failures.
+- `tests/regression/opl/smoke-test-v22-portal-opl-api-runtime-loop.mjs` starts local fake product API, local upstream web, Runtime Bridge, Gateway, Portal and Vite, then verifies launch, bootstrap, session bind, message, file, run, artifact, trace projection and secret hygiene.
+- `node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group browser` starts local Portal/Vite with Playwright and verifies account dialog, logout, backend CSV export, admin recharge/refund actions, announcement create/delete visibility, desktop/mobile overflow, and no captured console/request failures.
 - If UI appears blank or broken during browser checks, first follow `docs/recovery/portal-local-runtime-health-runbook.md` to distinguish stale Vite/Tailwind/backend runtime drift from code regression.
 - No `.runtime` evidence is committed.
 
@@ -198,7 +198,7 @@ git diff --check -- docs/recovery scripts
 
 ## next_leaf
 
-The next implementation leaf should be `leaf-portal-postgres-redis-local-production-data-closure`, because current contracts and gates already include the storage mode eval shell `scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs`.
+The next implementation leaf should be `leaf-portal-postgres-redis-local-production-data-closure`, because current contracts and gates already include the storage mode eval shell `tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs`.
 
 ## remaining_non_goals
 

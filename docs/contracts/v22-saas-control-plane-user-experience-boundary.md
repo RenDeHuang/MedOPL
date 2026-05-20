@@ -80,7 +80,7 @@ OPL 负责科研执行，包括：
 本合同的本地验收入口是：
 
 ```bash
-node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs
+node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs
 ```
 
 该 smoke 只读取 repo-tracked 文档，不读取 secret，不调用真实云，不执行 build/push/kubectl/live-test，不修改 upstream。
@@ -136,7 +136,7 @@ node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs
   ],
   "downstreamImplementationContract": "v22-portal-workbench-management-ui-composition-boundary.md",
   "currentUiImplementationSource": "docs/contracts/v22-portal-figma-make-ui-implementation-boundary.md",
-  "smoke": "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"
+  "smoke": "tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs"
 }
 ```
 <!-- v22-saas-control-plane-user-experience-contract:end -->

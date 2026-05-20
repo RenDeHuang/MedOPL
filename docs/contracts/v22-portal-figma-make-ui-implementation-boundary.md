@@ -41,7 +41,7 @@
 - `/admin/system`
 - `/admin/ops`
 
-上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
+上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
 
 ## 清退边界
 
@@ -332,8 +332,8 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     "trueProductionDeployRequiresSeparateAuthorization": true
   },
   "verificationCommands": [
-    "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-    "node scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+    "node tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+    "node tests/regression/portal/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
     "git diff --check",
     "npm --prefix services/portal/frontend run typecheck",
     "npm --prefix services/portal/frontend run build"

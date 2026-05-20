@@ -43,7 +43,7 @@
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-repo-governance-physical-compaction.md`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-absorb-repo-governance-truth.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
-- `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
 
 ## forbidden_scope
 
@@ -65,7 +65,7 @@
 
 ## eval_first_changes
 
-- 更新 `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`，不再强制 agent-run 必须包含 `pending_B_review`，而是要求存在 pending 或 absorbed evidence。
+- 更新 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`，不再强制 agent-run 必须包含 `pending_B_review`，而是要求存在 pending 或 absorbed evidence。
 - 新增 branch override，确保本 cleanup 分支只运行 post-absorb truth/gate 验证，不误跑 PostgreSQL/Redis leaf。
 
 ## blocker_review_and_fix_log
@@ -75,7 +75,7 @@
 
 ## verification_commands
 
-- `node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

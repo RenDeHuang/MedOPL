@@ -56,9 +56,9 @@
 - `docs/recovery/v22-repo-governance-physical-compaction-index.md`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
-- `scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
-- `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `scripts/v22-test-classification.mjs`
 - deletion-only: `scripts/check-portal-copy.mjs`
 - deletion-only: `scripts/check-one-person-lab-upstream-clean.mjs`
 - deletion-only: `scripts/smoke-test-workspace-storage-routes-contract.mjs`
@@ -85,25 +85,25 @@
 
 ## eval_first_changes
 
-- `scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs`
 - `docs/recovery/v22-agent-verify-manifest.json` branch override
-- `scripts/v22-smoke-classification.mjs` category entry
+- `scripts/v22-test-classification.mjs` category entry
 
 ## blocker_review_and_fix_log
 
 - `v22-agent-workflow.mjs` 仍被 docs/contracts/smoke 引用，本轮不删。
 - `sync-workspace-file-to-minio.ps1` 仍被 Portal config 引用，本轮不删。
-- `check-one-person-lab-upstream-clean.mjs` 删除前需要迁移真实检查逻辑；已迁入 `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`。
+- `check-one-person-lab-upstream-clean.mjs` 删除前需要迁移真实检查逻辑；已迁入 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`。
 - `smoke-test-workspace-storage-routes-contract.mjs` 旧断言会公开 `storageKey`，与 v22 脱敏合同冲突；替代入口采用 v22 public-response/file-space gates。
 - `local-contract` baseline 在本分支最初失败，因为 goal-state gate 不认识该 cleanup branch；通过 manifest branch override 修正，不改 current cursor。
 - 本 leaf 不新增产品合同；`v22-smoke-eval-boundary.md` 已覆盖长期语义。
 
 ## verification_commands
 
-- `node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
-- `node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`
-- `node scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `node scripts/smoke-test-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
@@ -120,7 +120,7 @@
 
 ## post_absorb_verification
 
-- `node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `node tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`

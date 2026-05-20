@@ -53,9 +53,9 @@
 - `docs/recovery/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification-index.md`
 - `docs/recovery/v22-contract-smoke-eval-index-compaction-index.md`
 - `scripts/v22-verify.mjs`
-- `scripts/v22-smoke-classification.mjs`
-- `scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
-- `scripts/smoke-test-v22-long-term-governance-surfaces.mjs`
+- `scripts/v22-test-classification.mjs`
+- `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
+- `tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs`
 
 ## allowed_write_scope
 
@@ -68,11 +68,11 @@
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-truth-repo-narrative-reference-unification.md`
-- `scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
-- `scripts/smoke-test-v22-long-term-governance-surfaces.mjs`
-- `scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs`
-- `scripts/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
+- `tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs`
+- `tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs`
+- `tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## forbidden_scope
 
@@ -99,9 +99,9 @@
 
 ## eval_first_changes
 
-- RED: `node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs` 在 trunk 已前进到 `49b99d` 后失败，错误为 `origin_trunk_must_be_accepted_20fe9ac_for_this_post_absorb_leaf`。
+- RED: `node tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs` 在 trunk 已前进到 `49b99d` 后失败，错误为 `origin_trunk_must_be_accepted_20fe9ac_for_this_post_absorb_leaf`。
 - GREEN target: `20fe9ac` 和 `49b99d` 必须是当前 `origin/recovery/platform-v22-trunk` 祖先。
-- RED: 新 gate `node scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs` 先失败于缺 agent-run record。
+- RED: 新 gate `node tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs` 先失败于缺 agent-run record。
 - GREEN target: 新增本 agent-run record，并接入 classification / manifest / agent-verify-entrypoint。
 
 ## blocker_review_and_fix_log
@@ -114,12 +114,12 @@
 
 ## verification_commands
 
-- `node scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs`
-- `node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
-- `node scripts/smoke-test-v22-long-term-governance-surfaces.mjs`
-- `node scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `node scripts/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `node scripts/smoke-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs`
+- `node tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
+- `node tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs`
+- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`

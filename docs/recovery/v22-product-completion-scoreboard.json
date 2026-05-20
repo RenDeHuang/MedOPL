@@ -22,7 +22,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-mvp-managed-opl-loop.md", "docs/recovery/status-matrix.md"],
-      "evidence": ["node scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs"]
     },
     {
       "id": "credit-account-funded",
@@ -30,7 +30,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-user-credit-provider-key-boundary.md", "docs/contracts/v22-billing-freeze-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-user-credit-provider-key-flow.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs"]
     },
     {
       "id": "portal-login-without-provider-key",
@@ -38,7 +38,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-token-provider-boundary.md", "docs/contracts/v22-opl-entry-preflight-auth-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"]
+      "evidence": ["node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs"]
     },
     {
       "id": "opl-login-with-provider-key",
@@ -46,7 +46,7 @@
       "stage": "S3 OPL connection productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-opl-entry-preflight-auth-boundary.md", "docs/contracts/v22-portal-opl-connection-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs", "node scripts/smoke-test-v22-opl-dual-entry-contract.mjs"]
+      "evidence": ["node tests/regression/opl/smoke-test-v22-opl-entry-preflight-auth-flow.mjs", "node tests/regression/opl/smoke-test-v22-opl-dual-entry-contract.mjs"]
     },
     {
       "id": "managed-environment-open",
@@ -54,7 +54,7 @@
       "stage": "S4 Cloud lane productionization",
       "status": "in_progress",
       "contracts": ["docs/contracts/v22-managed-environment-open-boundary.md", "docs/contracts/v22-cloud-onboarding-workflow-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-managed-environment-open-flow.mjs", "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs", "node tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-workflow-contract.mjs"]
     },
     {
       "id": "plan-and-file-space-selection",
@@ -62,7 +62,7 @@
       "stage": "S4 Cloud lane productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-resource-plan-boundary.md", "docs/contracts/v22-managed-environment-open-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs"]
+      "evidence": ["node tests/regression/portal/smoke-test-v22-managed-resource-binding-plan-view.mjs"]
     },
     {
       "id": "user-visible-managed-workspace-state",
@@ -70,7 +70,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md", "docs/contracts/v22-portal-files-billing-trace-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-portal-frontend-surface-composables.mjs"]
+      "evidence": ["node tests/regression/portal/smoke-test-v22-portal-frontend-surface-composables.mjs"]
     },
     {
       "id": "admin-ops-internal-resource-facts",
@@ -78,7 +78,7 @@
       "stage": "S2 architecture refactor",
       "status": "gated",
       "contracts": ["docs/contracts/v22-admin-ops-console-boundary.md", "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-admin-ops-console-boundary.mjs"]
+      "evidence": ["node tests/regression/portal/smoke-test-v22-admin-ops-console-boundary.mjs"]
     },
     {
       "id": "billing-day-reconciliation",
@@ -86,7 +86,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-release-stop-billing-audit-boundary.md", "docs/contracts/v22-billing-freeze-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs"]
     },
     {
       "id": "clean-upstream-opl-boundary",
@@ -94,7 +94,7 @@
       "stage": "S3 OPL connection productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-upstream-opl-boundary.md", "docs/contracts/v22-portal-opl-connection-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"]
+      "evidence": ["node tests/regression/opl/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"]
     },
     {
       "id": "opl-message-send",
@@ -102,7 +102,7 @@
       "stage": "S3 OPL connection productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-opl-work-message-file-run-boundary.md", "docs/contracts/v22-real-opl-provider-message-canary-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-real-opl-provider-message-contract-gate.mjs"]
+      "evidence": ["node tests/regression/opl/smoke-test-v22-real-opl-provider-message-contract-gate.mjs"]
     },
     {
       "id": "opl-file-upload",
@@ -110,7 +110,7 @@
       "stage": "S3 OPL connection productionization",
       "status": "gated",
       "contracts": ["docs/contracts/v22-opl-work-message-file-run-boundary.md", "docs/contracts/v22-real-opl-file-run-artifact-canary-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs"]
+      "evidence": ["node tests/regression/opl/smoke-test-v22-real-opl-file-run-artifact-gates.mjs"]
     },
     {
       "id": "opl-file-backed-run",
@@ -134,7 +134,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-portal-files-billing-trace-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs"]
     },
     {
       "id": "portal-billing-projection",
@@ -142,7 +142,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-portal-files-billing-trace-boundary.md", "docs/contracts/v22-release-stop-billing-audit-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-portal-cost-balance-trace-linkage.mjs"]
+      "evidence": ["node tests/regression/portal/smoke-test-v22-portal-cost-balance-trace-linkage.mjs"]
     },
     {
       "id": "portal-session-trace",
@@ -150,7 +150,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-trace-metadata-boundary.md", "docs/contracts/v22-portal-files-billing-trace-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-portal-session-trace-view.mjs"]
+      "evidence": ["node tests/regression/portal/smoke-test-v22-portal-session-trace-view.mjs"]
     },
     {
       "id": "managed-environment-release",
@@ -158,7 +158,7 @@
       "stage": "S4 Cloud lane productionization",
       "status": "in_progress",
       "contracts": ["docs/contracts/v22-managed-environment-open-boundary.md", "docs/contracts/v22-authorized-tencent-create-release-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-authorized-tencent-create-release-contract.mjs"]
+      "evidence": ["node tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-contract.mjs"]
     },
     {
       "id": "release-stop-billing",
@@ -166,7 +166,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-release-stop-billing-audit-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs"]
     },
     {
       "id": "release-audit-record",
@@ -174,7 +174,7 @@
       "stage": "S5 frontend/backend product completion",
       "status": "gated",
       "contracts": ["docs/contracts/v22-release-stop-billing-audit-boundary.md", "docs/contracts/v22-tenant-resource-binding-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs"]
+      "evidence": ["node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs"]
     },
     {
       "id": "secret-token-browser-hygiene",
@@ -182,7 +182,7 @@
       "stage": "S1 legacy cleanup",
       "status": "gated",
       "contracts": ["docs/contracts/v22-token-provider-boundary.md", "docs/recovery/status-matrix.md"],
-      "evidence": ["node scripts/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs"]
+      "evidence": ["node tests/contract/smoke-test-v22-diff-scoped-sensitive-hygiene.mjs"]
     },
     {
       "id": "cloud-lane-readonly-dry-run-authorized-order",
@@ -190,7 +190,7 @@
       "stage": "S4 Cloud lane productionization",
       "status": "in_progress",
       "contracts": ["docs/contracts/v22-cloud-onboarding-workflow-boundary.md", "docs/contracts/v22-tencent-readonly-inventory-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs", "node scripts/smoke-test-v22-product-goal-execution-order.mjs"]
+      "evidence": ["node tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-workflow-contract.mjs", "node tests/contract/smoke-test-v22-product-goal-execution-order.mjs"]
     },
     {
       "id": "release-readiness-deploy-runtime-smoke",
@@ -198,7 +198,7 @@
       "stage": "S6 release readiness",
       "status": "deferred_authorized_future_stage",
       "contracts": ["docs/contracts/v22-authorized-tencent-deploy-execution-boundary.md", "docs/contracts/v22-opl-deployment-ownership-release-plan-boundary.md"],
-      "evidence": ["node scripts/smoke-test-v22-release-readiness-auth-boundary.mjs"],
+      "evidence": ["node tests/contract/smoke-test-v22-release-readiness-auth-boundary.mjs"],
       "blockers": [
         "concrete Package D release plan",
         "concrete region",

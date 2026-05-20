@@ -22,7 +22,7 @@
 - docs/recovery/product-truth.md
 - docs/recovery/architecture-truth.md
 - docs/recovery/v22-agent-verify-manifest.json
-- scripts/v22-smoke-classification.mjs
+- scripts/v22-test-classification.mjs
 
 ## allowed_write_scope
 
@@ -32,10 +32,10 @@
 - docs/recovery/architecture-truth.md
 - docs/recovery/v22-agent-verify-manifest.json
 - docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-eval-compaction.md
-- scripts/smoke-test-v22-contract-eval-compaction.mjs
-- scripts/smoke-test-v22-mvp-user-loop-contract.mjs
+- tests/contract/smoke-test-v22-contract-eval-compaction.mjs
+- tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs
 - scripts/smoke-test-v22-canonical-user-loop-contract.mjs deletion/rename only
-- scripts/v22-smoke-classification.mjs
+- scripts/v22-test-classification.mjs
 
 ## forbidden_scope
 
@@ -57,25 +57,25 @@
 
 ## eval_first_changes
 
-- RED: `node scripts/smoke-test-v22-contract-eval-compaction.mjs` 初始失败，缺少 `docs/recovery/v22-contract-eval-compaction-index.md`。
+- RED: `node tests/contract/smoke-test-v22-contract-eval-compaction.mjs` 初始失败，缺少 `docs/recovery/v22-contract-eval-compaction-index.md`。
 - GREEN target: compaction index、MVP loop gate rename、storage deletion truth、manifest override、classification 和 agent-run record 同时成立。
 
 ## blocker_review_and_fix_log
 
 - Read-only auditor Ampere returned no blockers.
-- Important finding: truth layer still carried physical cleanup history. Fixed by moving retired stage-file evidence into `docs/recovery/v22-contract-eval-compaction-index.md` and tightening `scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs`.
+- Important finding: truth layer still carried physical cleanup history. Fixed by moving retired stage-file evidence into `docs/recovery/v22-contract-eval-compaction-index.md` and tightening `tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs`.
 - Important finding: branch override `allowed_files` still carried the retired canonical loop gate. Fixed by moving it to `retired_files` and adding a compaction gate assertion.
 - Minor finding: duplicate release-compute storage-retention wording in product truth. Fixed by removing the redundant line.
 
 ## verification_commands
 
-- node scripts/smoke-test-v22-contract-eval-compaction.mjs
-- node scripts/smoke-test-v22-mvp-user-loop-contract.mjs
-- node scripts/smoke-test-v22-smoke-classification-gate.mjs
-- node scripts/smoke-test-v22-golden-smoke-suite.mjs
-- node scripts/smoke-test-v22-goal-state-consistency.mjs
-- node scripts/smoke-test-v22-agent-verify-entrypoint.mjs
-- node scripts/smoke-test-v22-product-goal-harness.mjs
+- node tests/contract/smoke-test-v22-contract-eval-compaction.mjs
+- node tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs
+- node tests/health/smoke-test-v22-smoke-classification-gate.mjs
+- node tests/contract/smoke-test-v22-golden-smoke-suite.mjs
+- node tests/contract/smoke-test-v22-goal-state-consistency.mjs
+- node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs
+- node tests/contract/smoke-test-v22-product-goal-harness.mjs
 - node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json
 - node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json
 - node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json

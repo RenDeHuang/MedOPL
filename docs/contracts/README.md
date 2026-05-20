@@ -44,7 +44,7 @@
 
 ## 共享边界合同
 
-- smoke / eval 分层: [v22-smoke-eval-boundary.md](./v22-smoke-eval-boundary.md)。`scripts/smoke-test-v22-*` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
+- smoke / eval 分层: [v22-smoke-eval-boundary.md](./v22-smoke-eval-boundary.md)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - truth freeze: [../recovery/v22-truth-freeze.md](../recovery/v22-truth-freeze.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
 - token/provider key: [v22-token-provider-boundary.md](./v22-token-provider-boundary.md), [v22-user-credit-provider-key-boundary.md](./v22-user-credit-provider-key-boundary.md), [v22-opl-entry-preflight-auth-boundary.md](./v22-opl-entry-preflight-auth-boundary.md)。API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
@@ -62,7 +62,7 @@
 - OPL deployment ownership release plan: [v22-opl-deployment-ownership-release-plan-boundary.md](./v22-opl-deployment-ownership-release-plan-boundary.md)。Package D 的 Level 4 子合同，定义 `platform_service_target` 与 `workspace_runtime_target` 的 release plan owner guard。平台服务 target 需要 `ownerRef/operationId`，不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须绑定 `workspaceId/resourceBindingId`。该合同只证明 release plan ownership gate，不授权 build/push/kubectl，也不把 OPL lane 扩权成 deploy lane。
 - Package D image push gate: [v22-authorized-tencent-deploy-execution-boundary.md](./v22-authorized-tencent-deploy-execution-boundary.md) 的 R-14/R-15 子链路。`build-push` 必须先有已审查的 TCR preflight evidence，并显式传入 `acceptedPreflightId`；缺失时 runner fail-closed。cloud-lane 分支可长期保存 D1/D2/D3 stacked evidence，但不得把 fake-live 或未授权真实 push 当作 production deploy 完成。
 - Package D deploy dry-run gate: [v22-authorized-tencent-deploy-execution-boundary.md](./v22-authorized-tencent-deploy-execution-boundary.md) 的 R-16 子链路。`deploy-dry-run` 必须消费 D2 build-push digest report，并显式传入 `imageDigestsFile`；缺失时 runner fail-closed。该 gate 不授权 `kubectl apply`、rollout、runtime smoke 或 Package C 资源生命周期动作。
-- real resource contract alignment smoke: [../../scripts/smoke-test-v22-real-resource-contract-alignment.mjs](../../scripts/smoke-test-v22-real-resource-contract-alignment.mjs)。该 smoke 守住基础套餐、Pro 套餐、自定义规格、任务并发、计算资源和存储资源生命周期分离，以及普通用户主语言边界，防止真实资源接入前恢复旧口径。
+- real resource contract alignment smoke: [../../tests/future-authorized/cloud/smoke-test-v22-real-resource-contract-alignment.mjs](../../tests/future-authorized/cloud/smoke-test-v22-real-resource-contract-alignment.mjs)。该 smoke 守住基础套餐、Pro 套餐、自定义规格、任务并发、计算资源和存储资源生命周期分离，以及普通用户主语言边界，防止真实资源接入前恢复旧口径。
 - billing freeze/preauth: [v22-billing-freeze-boundary.md](./v22-billing-freeze-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md)
 - trace metadata: [v22-trace-metadata-boundary.md](./v22-trace-metadata-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md), [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)
 - Langfuse 观测附件: [v22-langfuse-observability-metadata-boundary.md](./v22-langfuse-observability-metadata-boundary.md)。该合同只定义 sanitized trace/session metadata 边界，不代表 Langfuse 部署、ClickHouse、真实 API key 或真实 trace source 已接入。
@@ -130,13 +130,13 @@
 统一验证入口：
 
 ```bash
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group all
 ```
 
 Portal frontend surface 可执行验证入口：
 
 ```bash
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
 ```
 
 ### OPL Entry / Gateway 合同包
@@ -242,7 +242,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 
 ### Real OPL File Run Artifact Canary 合同包
 
-适用于真实 OPL file upload 或 file intent、workspace-scoped fileRef、run intent、Runtime Agent gate、run state projection、artifact/output backflow、Portal workspace/session/run 查询、trace metadata、billing metadata handoff、Production Runtime Agent binding 和 Langfuse optional attachment boundary。该合同包是 Real OPL Capability Canary 的三级细分执行合同；默认合同 smoke 不修改 one-person-lab upstream、不读取 secret、不调用真实云 mutation、不部署 Langfuse、不实现 COS 真实账单结算。每个 step 必须有明确 gate，例如 `file_ref_not_observed`、`workspace_file_scope_missing`、`requires_runtime_agent`、`runtime_authorization_required`、`run_not_observed`、`artifact_not_observed`、`output_file_ref_not_observed`、`portal_projection_missing`、`trace_sink_not_configured`，不能用 200 假成功。Runtime Agent HTTP API proof 已证明 Portal -> Runtime Bridge -> Runtime Agent HTTP API -> fileRef/run/artifact -> Portal trace projection 闭环；该 proof 不进入默认 MVP suite，也不是 production deploy evidence。`scripts/smoke-test-v22-real-opl-file-run-artifact-gates.mjs` 是负向保护，证明真实 WebUI bridge profile 下未验证 file/run/artifact 能力会返回明确 gate 而不是 200 假成功。OPL 分支只传 `billingMetadataRef`、`usageMetadataRef` 或 `resourceBindingId`，真实 COS/云账单核对归云服务链路；OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels。
+适用于真实 OPL file upload 或 file intent、workspace-scoped fileRef、run intent、Runtime Agent gate、run state projection、artifact/output backflow、Portal workspace/session/run 查询、trace metadata、billing metadata handoff、Production Runtime Agent binding 和 Langfuse optional attachment boundary。该合同包是 Real OPL Capability Canary 的三级细分执行合同；默认合同 smoke 不修改 one-person-lab upstream、不读取 secret、不调用真实云 mutation、不部署 Langfuse、不实现 COS 真实账单结算。每个 step 必须有明确 gate，例如 `file_ref_not_observed`、`workspace_file_scope_missing`、`requires_runtime_agent`、`runtime_authorization_required`、`run_not_observed`、`artifact_not_observed`、`output_file_ref_not_observed`、`portal_projection_missing`、`trace_sink_not_configured`，不能用 200 假成功。Runtime Agent HTTP API proof 已证明 Portal -> Runtime Bridge -> Runtime Agent HTTP API -> fileRef/run/artifact -> Portal trace projection 闭环；该 proof 不进入默认 MVP suite，也不是 production deploy evidence。`tests/regression/opl/smoke-test-v22-real-opl-file-run-artifact-gates.mjs` 是负向保护，证明真实 WebUI bridge profile 下未验证 file/run/artifact 能力会返回明确 gate 而不是 200 假成功。OPL 分支只传 `billingMetadataRef`、`usageMetadataRef` 或 `resourceBindingId`，真实 COS/云账单核对归云服务链路；OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels。
 
 订阅：
 
@@ -322,7 +322,7 @@ node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
 
 readonly inventory 的 official Tencent SDK wrapper 是 future authorized provider candidate；当前 trunk 默认路径仍是合同级、本地 smoke 和 fail-closed gate，`defaultExecutable=false`、`readsSecretNow=false`、`implementsRealCloudCallNow=false`。TC3 仅作为 diagnostic/reference，不能作为默认 readonly live 主路径或 create/release provider。新增官方 SDK 依赖必须另开 feat/* 或 cloud-lane candidate，并经 package diff 审查；不得把 cloud-lane evidence 写成 trunk 当前已生效事实。
 
-Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-test-v22-cloud-resource-contract-suite.mjs`。它只聚合本分支相关合同 smoke，方便 B 审查 Package C resource isolation、Package D no-resource-lifecycle-mutation、workflow 和 recovery 状态是否一致；它不替代 `node scripts/smoke-test-v22-mvp-contract-suite.mjs`，也不读取 secret、不调用真实云、不 build/push/kubectl。
+Cloud resource isolation 分支的 scoped review entry 是 `node tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs`。它只聚合本分支相关合同 smoke，方便 B 审查 Package C resource isolation、Package D no-resource-lifecycle-mutation、workflow 和 recovery 状态是否一致；它不替代 `node tests/contract/smoke-test-v22-mvp-contract-suite.mjs`，也不读取 secret、不调用真实云、不 build/push/kubectl。
 
 [v22-tencent-tc3-diagnostic-cleanup-plan.md](./v22-tencent-tc3-diagnostic-cleanup-plan.md) 是 TC3 diagnostic cleanup plan。它规定 official SDK wrapper 合并、official SDK 依赖合并、official SDK readonly live 成功生成脱敏 report、B 审查确认 future authorized provider candidate 不再依赖 TC3 之后，才能另开 cleanup 分支让 runner future authorized default candidate 不再使用 `tencent-tc3-readonly`，并将 TC3 smoke 改为 diagnostic fixture 或删除、让 TC3 live bridge 从生产路径退场。本计划当前不删除 TC3、不读 secret、不调用真实云、不改 official SDK implementation、不改 create/release。
 
@@ -337,7 +337,7 @@ Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-t
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
 - [../active/README.md](../active/README.md)
 - [../recovery/archive-policy.md](../recovery/archive-policy.md)
-- `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
+- `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 - 与被退役路径相关的分支合同
 
 cleanup 分支必须证明：退役后每个核心域只剩一个正式入口。

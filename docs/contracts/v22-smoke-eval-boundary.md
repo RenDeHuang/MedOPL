@@ -6,9 +6,9 @@
 
 ## 主线定义
 
-Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所有 `scripts/smoke-test-v22-*` 都是 repo-local eval gate 文件；只有 `health-check` 和 `smoke-golden` 两层可以被称为 smoke。
+Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所有 `tests/**/*.mjs` 都是 repo-local eval gate 文件；只有 `health-check` 和 `smoke-golden` 两层可以被称为 smoke。
 
-当前 `scripts/smoke-test-v22-*` 文件名暂不机械重命名，避免制造无业务价值的大 diff。语义权威来自 `scripts/v22-smoke-classification.mjs` 里的 `tier + surface + entryKind + authorization + contractRefs` 元数据和 `scripts/v22-verify.mjs` suite 入口。
+当前 `tests/**/*.mjs` 文件名暂不机械重命名，避免制造无业务价值的大 diff。语义权威来自 `scripts/v22-test-classification.mjs` 里的 `tier + surface + entryKind + authorization + contractRefs` 元数据和 `scripts/v22-verify.mjs` suite 入口。
 
 ## Tier
 
@@ -81,7 +81,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 
 ## 门禁
 
-- 新增 `scripts/smoke-test-v22-*` 必须有 category、tier、surface、entryKind、authorization、contractRefs。
+- 新增 `tests/**/*.mjs` 必须有 category、tier、surface、entryKind、authorization、contractRefs。
 - `health-check` 数量必须不超过 `HEALTH_CHECK_MAX`。
 - `smoke-golden` 数量必须在 `SMOKE_GOLDEN_MIN` 和 `SMOKE_GOLDEN_MAX` 之间。
 - `future-authorized` 不得进入默认 local deterministic suite。
@@ -92,7 +92,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 
 ## 非目标
 
-- 不重命名全部 `scripts/smoke-test-v22-*` 文件。
+- 不重命名全部 `tests/**/*.mjs` 文件。
 - 不删除 active Portal / OPL / Runtime Bridge 本地 eval。
 - 不接真实云。
 - 不读取 secret、`.env`、kubeconfig、token 或 SSH key。

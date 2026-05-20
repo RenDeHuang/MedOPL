@@ -302,12 +302,12 @@
     "executable_when": "Portal local API/action closure, workspace file action closure, React/Figma UI baseline, and Portal-OPL file/run/artifact closure are absorbed on trunk; the branch may add local PostgreSQL/Redis storage mode implementation, migrations, state adapters, idempotency and persistence eval only inside Portal local service boundaries. no secret, no real cloud, no build/push/kubectl, no deploy, no live-test, no upstream modification and no Figma visual redesign are allowed.",
     "failure_state": "blocked_postgres_redis_local_production_data_closure if postgres_redis mode falls back to JSON, Redis becomes ledger truth, schema/migration absence does not fail closed, idempotency replays double-apply wallet/admin mutations, public responses leak internal storage details, or the step requires secret reads, real cloud/provider access, upstream changes, build/push/kubectl/deploy/live-test, or hidden runtime fallback.",
     "verification_commands": [
-      "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-      "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-      "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-      "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "node scripts/smoke-test-v22-product-goal-harness.mjs",
+      "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+      "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+      "node tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+      "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+      "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
       "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
       "npm --prefix services/portal run check",
@@ -328,10 +328,10 @@
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/status-matrix.md",
       "docs/recovery/agent-runs/*",
-      "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-      "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-      "scripts/smoke-test-v22-agent-run-record-gate.mjs",
-      "scripts/v22-smoke-classification.mjs"
+      "tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+      "tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+      "tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+      "scripts/v22-test-classification.mjs"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -356,7 +356,7 @@
       "prior_leaf_id": "leaf-portal-opl-file-run-artifact-closure",
       "prior_absorbed_commit": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
       "agent_run_record": "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
-      "storage_eval_shell": "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+      "storage_eval_shell": "tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
       "next_leaf_contracts": [
         "docs/contracts/v22-mvp-managed-opl-loop.md",
         "docs/contracts/v22-portal-files-billing-trace-boundary.md",
@@ -371,7 +371,7 @@
         "idempotencyKey replay cannot double-apply wallet/admin mutations",
         "restart preserves balances, announcements, billing ops, audit and workspace storage"
       ],
-      "post_absorb_trace_gate": "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs"
+      "post_absorb_trace_gate": "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs"
     }
   },
   "release_readiness_state": {
@@ -395,11 +395,11 @@
     ]
   },
   "verification_commands": [
-    "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-    "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-    "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-    "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-    "node scripts/smoke-test-v22-product-goal-harness.mjs",
+    "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+    "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+    "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+    "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+    "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
     "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
@@ -424,7 +424,7 @@
     "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
     "docs/recovery/agent-runs/2026-05-19-leaf-portal-workspace-file-action-closure.md",
     "docs/recovery/portal-local-runtime-health-runbook.md",
-    "scripts/smoke-test-v22-agent-run-record-gate.mjs",
-    "scripts/v22-smoke-classification.mjs"
+    "tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+    "scripts/v22-test-classification.mjs"
   ]
 }

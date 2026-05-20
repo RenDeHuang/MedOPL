@@ -39,7 +39,7 @@ Allowed files:
 - `docs/recovery/*`
 - `DESIGN.md`
 - `services/portal/frontend/**`
-- `scripts/smoke-test-v22-*`
+- `tests/**/*.mjs`
 
 Forbidden without separate authorization:
 
@@ -76,7 +76,7 @@ Forbidden without separate authorization:
 - Replace the current Vue SPA with a React SPA.
 - Remove old frontend routes: `/packages`, `/advanced/servers`, old admin routes, and retired admin console residue.
 - Retire historical eval ownership, harness ownership, and smoke assumptions.
-- Physically delete old `.vue` frontend files and other `retired frontend paths` from current Portal frontend surface; express the detailed banlist only in `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`.
+- Physically delete old `.vue` frontend files and other `retired frontend paths` from current Portal frontend surface; express the detailed banlist only in `tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`.
 - Preserve backend `/portal/api/*` as the data boundary.
 
 ## Step 4: Absorb Figma Make UI And Connect APIs
@@ -99,12 +99,12 @@ Forbidden without separate authorization:
 
 ```bash
 git diff --check
-node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs
-node scripts/smoke-test-v22-portal-role-surface-boundaries.mjs
-node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs
+node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs
+node tests/regression/portal/smoke-test-v22-portal-role-surface-boundaries.mjs
+node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs
 npm --prefix services/portal/frontend run typecheck
 npm --prefix services/portal/frontend run build
-node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
 ```
 
-If `node scripts/smoke-test-v22-mvp-contract-suite.mjs` is run and fails on an existing recovery/status gate unrelated to this work, record the exact failing gate instead of treating it as a Portal UI regression.
+If `node tests/contract/smoke-test-v22-mvp-contract-suite.mjs` is run and fails on an existing recovery/status gate unrelated to this work, record the exact failing gate instead of treating it as a Portal UI regression.

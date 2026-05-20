@@ -75,20 +75,20 @@ git diff <previous-branch>...<next-branch> | rg -n -f <secret-hygiene-patterns-f
 B should run these smoke commands at the end of the stacked absorption, or on the branch that first introduces each smoke:
 
 ```bash
-node scripts/smoke-test-v22-portal-cloud-operation-test-api-local-gate.mjs
-node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs
-node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs
-node scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs
-node scripts/smoke-test-v22-cloud-connection-runnable-path.mjs
-node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs
-node scripts/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs
-node scripts/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs
-node scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs
-node scripts/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs
-node scripts/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs
+node tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-test-api-local-gate.mjs
+node tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs
+node tests/future-authorized/cloud/smoke-test-v22-cloud-harness-manifest-selector.mjs
+node tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs
+node tests/future-authorized/cloud/smoke-test-v22-cloud-connection-runnable-path.mjs
+node tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs
+node tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs
+node tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs
+node tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs
+node tests/future-authorized/cloud/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs
+node tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs
 ```
 
-`node scripts/smoke-test-v22-mvp-contract-suite.mjs` remains the suite-level gate, but it requires the local Portal dependencies needed by the Portal runtime loop. If `services/portal/node_modules` is absent, B must either explicitly authorize dependency installation for that verification worktree or record the suite as blocked by missing local dependencies; B must not treat that blocked run as a product failure or as a pass.
+`node tests/contract/smoke-test-v22-mvp-contract-suite.mjs` remains the suite-level gate, but it requires the local Portal dependencies needed by the Portal runtime loop. If `services/portal/node_modules` is absent, B must either explicitly authorize dependency installation for that verification worktree or record the suite as blocked by missing local dependencies; B must not treat that blocked run as a product failure or as a pass.
 
 ## Not Yet Production Complete
 

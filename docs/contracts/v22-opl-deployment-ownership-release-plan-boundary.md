@@ -229,7 +229,7 @@ D1 验证路径：
   "runnerGate": {
     "executableSurfaceDeleted": true,
     "futureRunnerRequiresNewV22Boundary": true,
-    "smoke": "scripts/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
+    "smoke": "tests/future-authorized/cloud/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs",
     "modesCovered": [
       "local-contract",
       "local-owner-guard"

@@ -20,9 +20,9 @@ Current docs / eval surface during migration：
 - `docs/architecture.md`
 - `docs/contracts/v22-*`
 - `docs/recovery/*`
-- `scripts/smoke-test-v22-*`
+- `tests/**/*.mjs`
 - `scripts/v22-verify.mjs`
-- `scripts/v22-smoke-classification.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## Forbidden Without Authorization
 

@@ -32,7 +32,7 @@
 | contracts | `AGENTS.md`, `docs/contracts/README.md`, `docs/contracts/v22-*.md` | 只写长期不变量、边界、授权和非目标。 |
 | truth | `docs/product.md`, `docs/architecture.md`, `docs/recovery/product-truth.md`, `docs/recovery/architecture-truth.md`, `docs/recovery/v22-truth-freeze.md`, `docs/recovery/status-matrix.md`, `docs/recovery/mvp-contract-acceptance.md` | 只回答当前产品、架构、数据、云和治理事实。 |
 | index | `docs/recovery/v22-goal-current.json`, `docs/recovery/v22-agent-verify-manifest.json`, `docs/recovery/v22-current-vs-ideal-gap-matrix.md`, compaction indexes | 只回答下一步 cursor、gap、允许写入范围、验证入口和 cleanup 顺序。 |
-| eval | `scripts/v22-verify.mjs`, `scripts/v22-smoke-classification.mjs`, `scripts/smoke-test-v22-*` | 只做机器验收，不讲阶段故事；`smoke-test-v22-*` 是 repo-local eval 文件族。 |
+| eval | `scripts/v22-verify.mjs`, `scripts/v22-test-classification.mjs`, `tests/**/*.mjs` | 只做机器验收，不讲阶段故事；`smoke-test-v22-*` 是 repo-local eval 文件族。 |
 | agent-runs | `docs/recovery/agent-runs/*` | 只保存每一步开发证据、验证、B review 和吸收记录，不替代 current truth。 |
 
 ## 合同裁定
@@ -99,7 +99,7 @@ Blocked recovery paths:
 
 ## Smoke / Eval 裁定
 
-当前不应继续大面积物理删除 `scripts/smoke-test-v22-*`。这些脚本已经全部分类，但语义需要更清楚：
+当前不应继续大面积物理删除 `tests/**/*.mjs`。这些脚本已经全部分类，但语义需要更清楚：
 
 - `health-check` 和 `smoke-golden` 才可以称为 smoke。
 - `contract-local` 与 `local-regression` 是 eval，不叫 smoke。
@@ -113,10 +113,10 @@ Blocked recovery paths:
 | --- | --- | --- |
 | `scripts/v22-verify.mjs` | keep | 统一 agent 验证入口。 |
 | `scripts/v22-workflow-gate.mjs` | keep | A/B/C 合同订阅和 review/checkpoint 纪律本体。 |
-| `scripts/v22-smoke-classification.mjs` | keep | 当前唯一 eval 分类 authority。 |
-| `scripts/smoke-test-v22-golden-smoke-suite.mjs` | keep | 唯一纯 golden smoke wrapper。 |
-| `scripts/smoke-test-v22-mvp-contract-suite.mjs` | keep / legacy alias | 仍被 manifest 的 `mvp` 与 `local-regression` 引用；直接删会断链。 |
-| `scripts/smoke-test-v22-workflow-gate.mjs` | keep / gate-self-test | 这是 workflow gate 自检壳，不是业务 smoke。 |
+| `scripts/v22-test-classification.mjs` | keep | 当前唯一 eval 分类 authority。 |
+| `tests/contract/smoke-test-v22-golden-smoke-suite.mjs` | keep | 唯一纯 golden smoke wrapper。 |
+| `tests/contract/smoke-test-v22-mvp-contract-suite.mjs` | keep / legacy alias | 仍被 manifest 的 `mvp` 与 `local-regression` 引用；直接删会断链。 |
+| `tests/health/smoke-test-v22-workflow-gate.mjs` | keep / gate-self-test | 这是 workflow gate 自检壳，不是业务 smoke。 |
 | `scripts/v22-retired-surface-data.mjs` | keep | retired surface 证据层仍依赖它。 |
 | `scripts/v22-agent-workflow.mjs` | blocked-retire-candidate | 根级治理 docs、cloud workflow 合同和多个 smoke 仍引用。 |
 | `scripts/sync-workspace-file-to-minio.ps1` | blocked-retire-candidate | `services/portal/src/config/portal-config.mjs` 仍直接挂载；删除要另开 service cleanup leaf。 |
@@ -130,7 +130,7 @@ Blocked recovery paths:
 ## 本轮收紧
 
 - 扩展 `v22-smoke-eval-boundary.md`：把 `entryKind` 和 `authorization` 纳入 smoke/eval 元数据。
-- 扩展 `v22-smoke-classification.mjs`：给每个 eval 生成 `entryKind` 和 `authorization`。
+- 扩展 `v22-test-classification.mjs`：给每个 eval 生成 `entryKind` 和 `authorization`。
 - 扩展 smoke classification / boundary gate：验证 suite wrapper、gate self-test、future-authorized authorization 不混入默认 smoke。
 - 新增本索引和本 leaf gate，机器验证全量审计结论、blocked 清退顺序和 no-cloud/no-secret/no-services 边界。
 - 补上个 `cleanup/v22-smoke-eval-physical-compaction` 的 post-absorb trace truth。

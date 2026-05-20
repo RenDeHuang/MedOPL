@@ -40,7 +40,7 @@ This suite only proves policy/manifest/runner wiring. It does not change the cur
 ## Loop Rules
 
 - Codex goal 不是自然语言愿望，而是 repo 内的 goal-state state machine。
-- Codex 每轮必须读取 `docs/recovery/v22-goal-current.json`，并用 `node scripts/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。
+- Codex 每轮必须读取 `docs/recovery/v22-goal-current.json`，并用 `node tests/contract/smoke-test-v22-goal-state-consistency.mjs` 校验 JSON/Markdown/gap/scoreboard 一致。
 - `docs/recovery/v22-goal-current.json` is the single write entry for current state. All `current_cursor`, `next_leaf`, `current_stage`, `current_blockers`, `release_readiness_state`, and `dependency_ordering_repair` changes must land there before Markdown summaries are synchronized. Markdown may explain history and rules, but must not be the only current truth.
 - `docs/recovery/v22-product-completion-scoreboard.json` is product-completion evidence only. It must not decide execution order, cursor eligibility, dependencies, priority, or the next executable leaf.
 - `docs/recovery/v22-goal-current.json` is trunk current truth. `authoring_branch` records the source branch that last wrote that truth, and `target_branch` records the trunk target; branch metadata must not be treated as the runtime git branch for cursor selection.
@@ -297,11 +297,11 @@ Every leaf step must contain:
 
 ## Required Local Validation
 
-- `node scripts/smoke-test-v22-goal-state-consistency.mjs`
-- `node scripts/smoke-test-v22-product-goal-harness.mjs`
-- `node scripts/smoke-test-v22-product-goal-execution-order.mjs`
-- `node scripts/smoke-test-v22-default-entry-narrative-gate.mjs`
-- `node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
+- `node tests/contract/smoke-test-v22-goal-state-consistency.mjs`
+- `node tests/contract/smoke-test-v22-product-goal-harness.mjs`
+- `node tests/contract/smoke-test-v22-product-goal-execution-order.mjs`
+- `node tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs`
+- `node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

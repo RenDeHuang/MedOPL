@@ -15,7 +15,7 @@ One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstr
 - `services/opl-runtime-bridge`: Runtime Bridge / Runtime Agent 合同边界，当前不作为本分支修改范围。
 - `docs/contracts`: v22 contract-level 产品、闭环和共享边界合同。
 - `docs/recovery`: v22 recovery、active surface、验收和 GitHub handoff 文档。
-- `scripts/smoke-test-v22-*`: v22 contract/API smoke。
+- `tests/**/*.mjs`: v22 contract/API smoke。
 
 ## Contract Index
 

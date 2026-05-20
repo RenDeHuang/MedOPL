@@ -67,7 +67,7 @@ Each program record must keep these fields:
 | next lane | user-flow-hardening |
 | lane worktree policy | implementation and QA lanes use independent worktree; B only reviews in main workspace |
 | branch naming pattern | `feat/v22-portal-*`, `fix/v22-portal-*`, `docs/v22-portal-*` |
-| write scope | `docs/recovery/`, `docs/contracts/`, `scripts/smoke-test-v22-*`, and targeted Portal files only when a future implementation task explicitly allows services |
+| write scope | `docs/recovery/`, `docs/contracts/`, `tests/**/*.mjs`, and targeted Portal files only when a future implementation task explicitly allows services |
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, real cloud, secret files |
 | owner self-test boundary | local dev/preview QA evidence, role-surface smoke, mobile usability smoke, payload smoke when UI/API changes are in scope |
 | B revalidation boundary | rerun affected smoke, inspect screenshots/payloads, confirm ordinary users do not see admin/cloud/internal language |
@@ -98,7 +98,7 @@ lanes:
 | next lane | readonly-report-review |
 | lane worktree policy | docs/status lanes use C independent worktree; implementation lanes use A independent worktree; live coordination uses D only after explicit authorization; B absorbs from main workspace |
 | branch naming pattern | `docs/v22-cloud-onboarding-*`, `contract/v22-*`, `feat/v22-tencent-*`, `fix/v22-tencent-*` |
-| write scope | `docs/recovery/`, `docs/contracts/`, `scripts/smoke-test-v22-*` for C; targeted implementation files only in A branches when explicitly scoped |
+| write scope | `docs/recovery/`, `docs/contracts/`, `tests/**/*.mjs` for C; targeted implementation files only in A branches when explicitly scoped |
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, secrets, real cloud, build/push/kubectl |
 | owner self-test boundary | workflow gate, program-board smoke, cloud onboarding board/status/matrix smoke, MVP suite |
 | B revalidation boundary | rerun workflow gate, relevant smoke, diff scope, secret hygiene, ff-only merge check |
@@ -132,7 +132,7 @@ lanes:
 | next lane | read-only-download-spike |
 | lane worktree policy | docs/status lanes use C independent worktree; any later downloader/runner work uses A independent worktree; B absorbs from main workspace |
 | branch naming pattern | `docs/v22-one-person-lab-*`, `contract/v22-one-person-lab-*`, `feat/v22-one-person-lab-*` |
-| write scope | `docs/recovery/`, `docs/contracts/`, `scripts/smoke-test-v22-*` for C; no upstream writes |
+| write scope | `docs/recovery/`, `docs/contracts/`, `tests/**/*.mjs` for C; no upstream writes |
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, one-person-lab upstream, secrets, real cloud, build/push/kubectl |
 | owner self-test boundary | contract/status smoke, workflow gate, no-upstream-write diff check |
 | B revalidation boundary | confirm upstream remains clean, no upstream imports, no deploy/adapters/services drift in docs lane |
@@ -259,7 +259,7 @@ lane markers:
       "writeScope": [
         "docs/recovery/",
         "docs/contracts/",
-        "scripts/smoke-test-v22-*"
+        "tests/**/*.mjs"
       ],
       "forbiddenScope": [
         "services/",
@@ -275,9 +275,9 @@ lane markers:
       "ownerSelfTestBoundary": "local dev/mock QA, role-surface smoke, mobile usability smoke, payload smoke when relevant",
       "bRevalidationBoundary": "affected smoke, screenshots/payload inspection, user/admin boundary review",
       "requiredSmokeOrVerification": [
-        "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
-        "scripts/smoke-test-v22-portal-mobile-usability.mjs",
-        "scripts/smoke-test-v22-portal-mobile-table-usability.mjs"
+        "tests/regression/portal/smoke-test-v22-portal-role-surface-boundaries.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-mobile-usability.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-mobile-table-usability.mjs"
       ],
       "parallelizable": true,
       "requiresUserAuthorization": false,
@@ -309,7 +309,7 @@ lane markers:
       "writeScope": [
         "docs/recovery/",
         "docs/contracts/",
-        "scripts/smoke-test-v22-*"
+        "tests/**/*.mjs"
       ],
       "forbiddenScope": [
         "services/",
@@ -325,10 +325,10 @@ lane markers:
       "ownerSelfTestBoundary": "workflow gate, program-board smoke, cloud onboarding board/status/matrix smoke, MVP suite",
       "bRevalidationBoundary": "workflow gate, relevant smoke, diff scope, secret hygiene, ff-only merge check",
       "requiredSmokeOrVerification": [
-        "scripts/smoke-test-v22-program-board.mjs",
-        "scripts/smoke-test-v22-cloud-onboarding-board-status.mjs",
-        "scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs"
+        "tests/contract/smoke-test-v22-program-board.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-board-status.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
       ],
       "parallelizable": false,
       "requiresUserAuthorization": true,
@@ -369,7 +369,7 @@ lane markers:
       "writeScope": [
         "docs/recovery/",
         "docs/contracts/",
-        "scripts/smoke-test-v22-*"
+        "tests/**/*.mjs"
       ],
       "forbiddenScope": [
         "services/",
@@ -384,7 +384,7 @@ lane markers:
       "ownerSelfTestBoundary": "contract/status smoke, workflow gate, no-upstream-write diff check",
       "bRevalidationBoundary": "upstream remains clean, no upstream imports, no deploy/adapters/services drift in docs lane",
       "requiredSmokeOrVerification": [
-        "scripts/smoke-test-v22-program-board.mjs"
+        "tests/contract/smoke-test-v22-program-board.mjs"
       ],
       "parallelizable": true,
       "requiresUserAuthorization": false,

@@ -50,7 +50,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `services/portal/**` | Zone 1 | keep/rewrite | v22 Portal active service | Portal product surface | portal-layering |
 | `services/opl-web-gateway/**` | Zone 1 | keep/rewrite | v22 OPL Web Gateway active service | Gateway boundary | gateway |
 | `services/opl-runtime-bridge/**` | Zone 1 | keep/rewrite | v22 Runtime Bridge active service | Runtime Bridge boundary | runtime-bridge |
-| `scripts/smoke-test-v22-*` | Zone 1 | keep/rewrite | v22 本地合同和 smoke 验证入口 | v22 smoke | smoke-governance |
+| `tests/**/*.mjs` | Zone 1 | keep/rewrite | v22 本地合同和 smoke 验证入口 | v22 smoke | smoke-governance |
 | `.dockerignore` | Zone 1 | keep | 仓库 hygiene | none | none |
 | `.gitignore` | Zone 1 | keep | 仓库 hygiene | none | none |
 
@@ -63,9 +63,9 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `.env.demo.template` | Zone 2 | review/rewrite | 默认环境变量会影响 AI 和新人对主线的理解，且会触发 secret-like path gate | v22 platform-provisioned defaults | cleanup/v22-env-template-default-entry |
 | `compose.product.yaml` | Zone 2 | review/rewrite | 默认 product compose 可能携带旧运行叙事 | v22 product runtime entry | default-entry |
 | `configs/**` | Zone 4 | physically retired | 配置面携带旧 infra/deploy/secret-store 叙事，不属于 v22 active surface | `docs/recovery/v22-repo-governance-physical-compaction-index.md` | repo-governance |
-| `scripts/smoke-test-portal-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 Portal 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-opl-*` | Zone 2 | delete | 无 v22 前缀的 OPL smoke 不再作为 active 验证入口；仍有 v22 价值的本地 Gateway / Runtime Bridge smoke 已迁到 `scripts/smoke-test-v22-*` | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-billing-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 billing 合同入口 | `scripts/smoke-test-v22-*` | legacy-scripts |
+| `scripts/smoke-test-portal-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 Portal 合同入口 | `tests/**/*.mjs` | legacy-scripts |
+| `scripts/smoke-test-opl-*` | Zone 2 | delete | 无 v22 前缀的 OPL smoke 不再作为 active 验证入口；仍有 v22 价值的本地 Gateway / Runtime Bridge smoke 已迁到 `tests/**/*.mjs` | `tests/**/*.mjs` | legacy-scripts |
+| `scripts/smoke-test-billing-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否仍是当前 billing 合同入口 | `tests/**/*.mjs` | legacy-scripts |
 | `scripts/smoke-test-resource-*` | Zone 2 | review/rewrite | 无 v22 前缀，需确认是否恢复旧 resource-order 或 provisioner 叙事 | managed environment/resource binding smoke | legacy-scripts |
 | `services/portal/src/config/portal-config.mjs` | Zone 2 | rewrite | active config 中存在 legacy runtime mode 风险 | `platform_provisioned` / `customer_dedicated` | default-entry |
 | `services/portal/src/routes/user-owned-resource.routes.mjs` | Zone 2 | delete | 旧用户自带资源 route 风险 | managed environment / resource binding routes | user-owned-retirement |
@@ -84,7 +84,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `services/opl-runtime-bridge/**` `resourceOrderId` / `resource_order_id` / `user_owned` / `USER_OWNED_*` hits | Zone 2 | deleted | zero-compat 下 Runtime Bridge active code 不得接受、映射、持久化或发布 retired resource-order / user-owned alias；本 cleanup branch 已清退这些 active code hits | `resourceBindingId` / `platform_provisioned` / v22 run stage and error code | zero-compat-runtime-bridge |
 | `adapters/billing-aggregator/**` | Zone 4 | deleted | residual adapter 形态不能作为 strict monolith active repo 默认上下文；Slice K 已删除并把账单投影收回 Portal monolith ledger | Portal billing ledger projection | zero-compat-adapters |
 | `deploy/local/dockerfiles/**` | Zone 3 | deleted | strict monolith local verification 不需要 build/deploy；future deploy 只保留合同边界并需重新授权 | future authorized v22 deploy boundary | zero-compat-deploy |
-| `scripts/smoke-test-v22-*live*`, `*canary*`, `*authorized-deploy*`, `*authorized-resource-lifecycle*` | Zone 2 | rewrite/delete | live/canary/authorized runner 不属于默认 active executable surface | contract-only boundary or non-live local v22 gate | zero-compat-live-runner |
+| `tests/**/*.mjslive*`, `*canary*`, `*authorized-deploy*`, `*authorized-resource-lifecycle*` | Zone 2 | rewrite/delete | live/canary/authorized runner 不属于默认 active executable surface | contract-only boundary or non-live local v22 gate | zero-compat-live-runner |
 | deleted live/canary/authorized/proof-loop runner references in contracts/recovery/default suite | Zone 2 | rewritten | Slice N 清退现行命令、授权入口和完成态引用；只保留 `.runtime` historical evidence / future-authorized boundary | current v22 local gates and branch-appropriate verifier | zero-compat-narrative |
 
 ## Zone 3: Historical Archive Surface
@@ -100,9 +100,9 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
 | `docs/deployment/*` | Zone 3 | deleted | 旧部署说明不能成为默认 deploy truth；`docker-product-appliance.md` 已删除，不再把 v19 appliance、旧 adapter/provisioner/runner 或 local Dockerfiles 解释成当前上下文 | authorized deploy contracts | legacy-docs |
 | `docs/operations/*` | Zone 3 | deleted | 旧运维说明不能成为默认 product truth；历史只保留在 git history 或授权 ops 合同 | authorized ops contracts | legacy-docs |
 | `docs/superpowers/*` | Zone 3 | deleted | 本地计划/技能输出不是 v22 产品主线合同；历史只保留在 git history 或 recovery 摘要 | recovery/contracts | legacy-docs |
-| `scripts/smoke-test-v19-*` | Zone 3 | delete | v19 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-v20*` | Zone 3 | delete | v20 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
-| `scripts/smoke-test-v21-*` | Zone 3 | delete | v21 smoke 不是当前验证体系 | `scripts/smoke-test-v22-*` | legacy-scripts |
+| `scripts/smoke-test-v19-*` | Zone 3 | delete | v19 smoke 不是当前验证体系 | `tests/**/*.mjs` | legacy-scripts |
+| `scripts/smoke-test-v20*` | Zone 3 | delete | v20 smoke 不是当前验证体系 | `tests/**/*.mjs` | legacy-scripts |
+| `scripts/smoke-test-v21-*` | Zone 3 | delete | v21 smoke 不是当前验证体系 | `tests/**/*.mjs` | legacy-scripts |
 | `scripts/live-test-*` | Zone 3 | delete | live-test 是高风险历史/授权操作，不是默认验证入口；2026-05-14 用户已授权物理删除仓库内旧 live-test 文件，不授权执行 live-test | v22 local smoke / authorized future canary contract | legacy-scripts |
 | `scripts/daily-check-v19-*` | Zone 3 | delete | v19 daily check 不是当前验证体系 | v22 smoke/canary | legacy-scripts |
 | `scripts/check-v18-*` | Zone 3 | delete | v18 check 不是当前验证体系 | v22 smoke | legacy-scripts |
@@ -165,13 +165,13 @@ resource-order store/Postgres/schema implementation completed on `cleanup/v22-re
 
 strict monolith Slice E completed on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: resource-order store/schema/domain remnants, resource-order Postgres fragments, snapshot helper writers, JSON migration collection keys, the old characterization gate, old non-v22 billing/portal smoke anchors, `scripts/start-billing-live.mjs`, and the unused Portal `resource-provisioner-client` runtime wiring are physically retired from active repo. Active Portal persistence keeps resource binding, workspace, billing, audit and trace surfaces only.
 
-residual strict monolith cleanup Phase G completed on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, MinIO/Harbor local install or port-forward helper remnants, and v22 fixture acceptance of `resourceOrders` / `resourceOrderEvents` are retired. Current Portal/API validation references `scripts/smoke-test-v22-*` and `scripts/v22-verify.mjs` only.
+residual strict monolith cleanup Phase G completed on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, MinIO/Harbor local install or port-forward helper remnants, and v22 fixture acceptance of `resourceOrders` / `resourceOrderEvents` are retired. Current Portal/API validation references `tests/**/*.mjs` and `scripts/v22-verify.mjs` only.
 
-observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is not the current billing truth. Strict monolith cleanup now deletes old OpenCost/Langfuse compose/deploy/infra assets while retaining active sanitized trace metadata implementation code.
+observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is not the current billing truth. Strict monolith cleanup now deletes old OpenCost/Langfuse compose/deploy/infra assets while retaining active sanitized trace metadata implementation code.
 
 strict monolith Slice D completed on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old adapters, old deploy/tke-package, old infra, old compose assets, old runner/provisioner Dockerfiles, old v13 scripts, old portal resource-order/provisioner scripts, old runner fixtures, and old v19/v20 helper libs are physically deleted from active repo. Future real external canary or deploy implementation must use new v22 contracts and active v22 surfaces rather than restoring these paths.
 
-Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `scripts/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
+Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `tests/contract/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
 
 ## Adjudication Rules
 
@@ -196,7 +196,7 @@ Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gat
 - 不在本分支 delete files in this branch。
 - 不在本分支 modify cloud-lane implementation。
 - 不在本分支 modify Portal cloud handlers。
-- 不在本分支修改 `scripts/smoke-test-v22-mvp-contract-suite.mjs`。
+- 不在本分支修改 `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`。
 - 不在本分支 run live-test。
 - 不在本分支执行 kubectl。
 - 不在本分支执行 build/push。

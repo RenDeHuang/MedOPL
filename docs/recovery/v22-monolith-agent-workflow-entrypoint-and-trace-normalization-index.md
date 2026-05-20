@@ -28,11 +28,11 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - `docs/recovery/agent-runs/README.md`
 - `docs/recovery/agent-runs/schema.md`
 - `scripts/v22-verify.mjs`
-- `scripts/v22-smoke-classification.mjs`
-- `scripts/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `scripts/smoke-test-v22-smoke-classification-gate.mjs`
-- `scripts/smoke-test-v22-smoke-eval-boundary.mjs`
-- `scripts/smoke-test-v22-agent-run-record-gate.mjs`
+- `scripts/v22-test-classification.mjs`
+- `tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `tests/health/smoke-test-v22-smoke-classification-gate.mjs`
+- `tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
 
 ## Subagent Audit Summary
 
@@ -40,7 +40,7 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 | --- | --- | --- | --- |
 | Entrypoint references | `gpt-5.4` | `README.md`, `AGENTS.md`, `docs/**`, `scripts/**` | `mvp-contract-suite` still appeared as default validation in root/recovery docs; `v22-agent-workflow.mjs` remained blocked-retain, not delete-ready. |
 | Agent-run records | `gpt-5.4` | `docs/recovery/agent-runs/**`, agent-run gate | Directory lacked README/schema; records have mixed headings, pending/absorbed ambiguity, and only partial gate coverage. |
-| Smoke/eval scripts | `gpt-5.4` | `scripts/smoke-test-v22-*`, classification, smoke/eval contract | `portal-runtime-suite` and `cloud-resource-contract-suite` are suite wrappers but were counted as atomic. |
+| Smoke/eval scripts | `gpt-5.4` | `tests/**/*.mjs`, classification, smoke/eval contract | `portal-runtime-suite` and `cloud-resource-contract-suite` are suite wrappers but were counted as atomic. |
 | Contracts/recovery docs | `gpt-5.4` | `docs/contracts/**`, `docs/recovery/**` | No delete-ready docs; blocked-retain docs still have live references or authorization-boundary semantics. |
 
 ## Entrypoint Truth
@@ -49,7 +49,7 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - Small smoke entrypoint: `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk`.
 - Local deterministic eval entrypoint: `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk`.
 - Wider local regression entrypoint: `node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk`.
-- `scripts/smoke-test-v22-mvp-contract-suite.mjs` remains a legacy local-regression alias and is not the default smoke or default agent entrypoint.
+- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs` remains a legacy local-regression alias and is not the default smoke or default agent entrypoint.
 - `scripts/v22-agent-workflow.mjs` remains blocked-retain / retire-candidate and is not current truth, not default verify, and not auto-merge/push automation.
 
 ## Smoke / Eval Truth
@@ -61,7 +61,7 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - `future-authorized`: classification-only visibility for future cloud/live/deploy/canary gates.
 - `suite-wrapper`: aggregation script; it must not be counted as atomic business eval.
 
-This branch records `scripts/smoke-test-v22-portal-runtime-suite.mjs` and `scripts/smoke-test-v22-cloud-resource-contract-suite.mjs` as suite wrappers. They are blocked-retain, not delete-ready.
+This branch records `tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs` and `tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs` as suite wrappers. They are blocked-retain, not delete-ready.
 
 ## Agent-Run Truth
 
@@ -76,10 +76,10 @@ None.
 
 Current blocked-retain candidates include:
 
-- `scripts/smoke-test-v22-mvp-contract-suite.mjs`
+- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
 - `scripts/v22-agent-workflow.mjs`
-- `scripts/smoke-test-v22-portal-runtime-suite.mjs`
-- `scripts/smoke-test-v22-cloud-resource-contract-suite.mjs`
+- `tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs`
+- `tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs`
 - `docs/recovery/v22-program-board.md`
 - `docs/recovery/v22-program-status-table.md`
 - `docs/recovery/cloud-onboarding-execution-board.md`

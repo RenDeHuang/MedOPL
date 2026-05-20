@@ -129,7 +129,7 @@ one-person-lab upstream 必须保持 clean：
 本合同由本地 smoke 固化：
 
 ```text
-node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
+node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
 ```
 
 该 smoke 只使用本地 mock `runtimeAgentRelay` 和内存 state，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不启动真实 Runtime Agent。

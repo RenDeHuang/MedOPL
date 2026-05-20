@@ -51,8 +51,8 @@ const packageDefinitions = {
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/regression/portal/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       "npm --prefix services/portal run check",
       "npm --prefix services/portal run frontend:typecheck",
     ],
@@ -70,10 +70,10 @@ const packageDefinitions = {
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs",
-      "node scripts/smoke-test-v22-opl-dual-entry-contract.mjs",
-      "node scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/regression/opl/smoke-test-v22-opl-entry-preflight-auth-flow.mjs",
+      "node tests/regression/opl/smoke-test-v22-opl-dual-entry-contract.mjs",
+      "node tests/regression/opl/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
   },
   runtime: {
@@ -89,9 +89,9 @@ const packageDefinitions = {
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-      "node scripts/smoke-test-v22-opl-runtime-e2e-local-flow.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+      "node tests/regression/opl/smoke-test-v22-opl-runtime-e2e-local-flow.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
   },
   "langfuse-trace": {
@@ -106,9 +106,9 @@ const packageDefinitions = {
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-langfuse-observability-metadata-contract.mjs",
-      "node scripts/smoke-test-v22-portal-session-trace-view.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/regression/portal/smoke-test-v22-langfuse-observability-metadata-contract.mjs",
+      "node tests/regression/portal/smoke-test-v22-portal-session-trace-view.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
   },
   "resource-billing": {
@@ -126,10 +126,10 @@ const packageDefinitions = {
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-managed-environment-open-flow.mjs",
-      "node scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs",
-      "node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
+      "node tests/regression/portal/smoke-test-v22-managed-resource-binding-plan-view.mjs",
+      "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
   },
   "tencent-quote": {
@@ -145,9 +145,9 @@ const packageDefinitions = {
       "docs/recovery/status-matrix.md",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-tencent-readonly-quote-provider-boundary.mjs",
-      "node scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-quote-provider-boundary.mjs",
+      "node tests/regression/portal/smoke-test-v22-managed-resource-binding-plan-view.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
   },
   cleanup: {
@@ -162,7 +162,7 @@ const packageDefinitions = {
       "与被退役路径相关的分支合同",
     ],
     validationCommands: [
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       "git diff --check -- docs scripts",
     ],
   },
@@ -268,7 +268,7 @@ function isSecretLikePath(filePath) {
 
 function isV22SmokePath(filePath) {
   const normalized = normalizePath(filePath);
-  return /^scripts\/smoke-test-v22-.*\.mjs$/.test(normalized);
+  return /^tests\/.+\/smoke-test-v22-.*\.mjs$/u.test(normalized);
 }
 
 function isServicesPath(filePath) {
@@ -439,13 +439,13 @@ export function evaluateReview({
   }
   if (normalizedFiles.some((file) => file.startsWith("services/opl-web-gateway/"))) {
     recommendedCommands.push("npm --prefix services/opl-web-gateway run check");
-    recommendedCommands.push("node scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs");
+    recommendedCommands.push("node tests/regression/opl/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs");
   }
   if (normalizedFiles.some((file) => file.startsWith("services/opl-runtime-bridge/"))) {
-    recommendedCommands.push("node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs");
+    recommendedCommands.push("node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs");
   }
   if (contractsChanged) {
-    recommendedCommands.push("git diff --check -- docs/contracts scripts");
+    recommendedCommands.push("git diff --check -- docs/contracts tests scripts");
   }
 
   return {

@@ -249,9 +249,9 @@ Portal 必须按低耦合目标治理：
       "state_persistence"
     ],
     "requiredVerificationCommands": [
-      "node scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+      "node tests/regression/portal/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
       "npm --prefix services/portal run check",
-      "node scripts/smoke-test-v22-product-goal-harness.mjs",
+      "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
     ],
     "routeLayer": {
@@ -540,12 +540,12 @@ Portal 必须按低耦合目标治理：
     },
     "portalSmokeLayers": {
       "currentSmokeFiles": [
-        "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
-        "scripts/smoke-test-v22-portal-role-surface-boundaries.mjs",
-        "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-        "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
-        "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "scripts/smoke-test-v22-portal-runtime-suite.mjs"
+        "tests/regression/portal/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-role-surface-boundaries.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-web-route-alignment.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs"
       ]
     },
     "knownFutureRefactorRisks": [

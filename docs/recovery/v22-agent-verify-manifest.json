@@ -40,13 +40,13 @@
     "docs/recovery/v22-codex-goal-loop.md",
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
-    "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-    "scripts/smoke-test-v22-workflow-gate.mjs",
-    "scripts/smoke-test-v22-product-goal-harness.mjs",
-    "scripts/smoke-test-v22-autonomous-goal-runner.mjs",
-    "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-    "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-    "scripts/smoke-test-v22-golden-smoke-suite.mjs",
+    "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+    "tests/health/smoke-test-v22-workflow-gate.mjs",
+    "tests/contract/smoke-test-v22-product-goal-harness.mjs",
+    "tests/contract/smoke-test-v22-autonomous-goal-runner.mjs",
+    "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+    "tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+    "tests/contract/smoke-test-v22-golden-smoke-suite.mjs",
     "scripts/v22-retired-surface-data.mjs"
   ],
   "control_plane_branches": [
@@ -74,8 +74,8 @@
       "allowed_files": [
         "docs/recovery/*",
         "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-        "scripts/smoke-test-v22-*",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/**/*.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -101,13 +101,13 @@
         "dependency-upgrade"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-execution-order.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
-        "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-execution-order.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -147,9 +147,9 @@
         "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/mvp-contract-acceptance.md",
-        "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -175,12 +175,12 @@
         "dependency-upgrade"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "git diff --check -- docs/contracts docs/recovery scripts"
       ],
       "truth_writeback_target": [
@@ -233,26 +233,26 @@
         "docs/recovery/portal-figma-make-ui-convergence-plan.md",
         "docs/recovery/portal-ui-design-generation-brief.md",
         "docs/recovery/portal-ui-design-prd.md",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
-        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "scripts/smoke-test-v22-product-goal-execution-order.mjs",
-        "scripts/smoke-test-v22-product-goal-harness.mjs",
-        "scripts/smoke-test-v22-portal-contract-role-consolidation.mjs",
-        "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
-        "scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-        "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-        "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
-        "scripts/smoke-test-v22-portal-mobile-usability.mjs",
-        "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
-        "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
-        "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
-        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/regression/portal/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
+        "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/contract/smoke-test-v22-product-goal-execution-order.mjs",
+        "tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-contract-role-consolidation.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-mobile-table-usability.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-mobile-usability.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-package-surface-isolation.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-web-route-alignment.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-retire-legacy-resource-user-surface.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -278,13 +278,13 @@
         "non-portal-frontend-dependency-change"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- DESIGN.md docs/contracts docs/recovery scripts services/portal/frontend/playwright.config.ts"
       ],
@@ -337,10 +337,10 @@
         "docs/contracts/README.md",
         "docs/contracts/v22-*",
         "docs/recovery/*",
-        "scripts/smoke-test-v22-*",
+        "tests/**/*.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -368,17 +368,17 @@
         "non-portal-frontend-dependency-change"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-portal-local-api-action-closure.mjs",
-        "node scripts/smoke-test-v22-portal-local-api-action-browser.mjs",
-        "node scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
-        "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-        "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-local-api-action-closure.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-local-api-action-browser.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "npm --prefix services/portal/frontend run typecheck",
         "npm --prefix services/portal run check",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -430,7 +430,7 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/v22-goal-state.md",
         "docs/recovery/status-matrix.md",
-        "scripts/smoke-test-v22-goal-state-consistency.mjs"
+        "tests/contract/smoke-test-v22-goal-state-consistency.mjs"
       ],
       "forbidden_files": [
         "services/* in Step 0",
@@ -456,9 +456,9 @@
         "dependency-upgrade"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
@@ -513,15 +513,15 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/status-matrix.md",
         "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
-        "scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
-        "scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
-        "scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
-        "scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-        "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-        "scripts/smoke-test-v22-portal-runtime-suite.mjs",
-        "scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "tests/regression/opl/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-trace-file-linkage.mjs",
+        "tests/regression/opl/smoke-test-v22-opl-work-message-file-run-flow.mjs",
+        "tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+        "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs",
+        "tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "forbidden_files": [
         "deploy/*",
@@ -547,14 +547,14 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "node scripts/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
-        "node scripts/smoke-test-v22-portal-trace-file-linkage.mjs",
-        "node scripts/smoke-test-v22-opl-work-message-file-run-flow.mjs",
-        "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-        "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "node tests/regression/opl/smoke-test-v22-portal-opl-api-runtime-loop.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-trace-file-linkage.mjs",
+        "node tests/regression/opl/smoke-test-v22-opl-work-message-file-run-flow.mjs",
+        "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+        "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal/frontend run typecheck",
@@ -607,10 +607,10 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/status-matrix.md",
         "docs/recovery/agent-runs/*",
-        "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-        "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-        "scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "forbidden_files": [
         "deploy/*",
@@ -636,12 +636,12 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
-        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal run check",
@@ -663,12 +663,12 @@
       "description": "Default agent verification bundle for the current executable leaf.",
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal run check",
@@ -681,7 +681,7 @@
       "description": "Legacy local deterministic regression entrypoint. It is not the pure smoke suite; use suite smoke for the small golden path.",
       "entrypoint": "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+        "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
       ]
     },
     {
@@ -689,12 +689,12 @@
       "description": "Smallest local control-plane health check. This proves gate integrity only; it does not run Portal/OPL/cloud regressions.",
       "entrypoint": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-workflow-gate.mjs",
-        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/health/smoke-test-v22-workflow-gate.mjs",
+        "node tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs"
       ]
     },
     {
@@ -702,7 +702,7 @@
       "description": "Small golden-path smoke suite. This is the only broad v22 suite that should be called smoke.",
       "entrypoint": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-golden-smoke-suite.mjs"
+        "node tests/contract/smoke-test-v22-golden-smoke-suite.mjs"
       ]
     },
     {
@@ -710,23 +710,23 @@
       "description": "Local deterministic contract/control-plane eval suite. This is wider than smoke and does not call cloud, deploy, live-test, or secrets.",
       "entrypoint": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
-        "node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
-        "node scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
-        "node scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
-        "node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
-        "node scripts/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
-        "node scripts/smoke-test-v22-workflow-gate.mjs",
-        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs"
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "node tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "node tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "node tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "node tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
+        "node tests/contract/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
+        "node tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "node tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/health/smoke-test-v22-workflow-gate.mjs",
+        "node tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs"
       ]
     },
     {
@@ -734,7 +734,7 @@
       "description": "Local deterministic regression suite for Portal, OPL, Runtime Bridge, and contracts. This supersedes treating the old mvp suite as pure smoke.",
       "entrypoint": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-mvp-contract-suite.mjs"
+        "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
       ]
     },
     {
@@ -742,8 +742,8 @@
       "description": "Classification-only visibility suite for future-authorized cloud/live/deploy gates. It does not authorize or execute real cloud operations.",
       "entrypoint": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs"
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs"
       ]
     },
     {
@@ -759,9 +759,9 @@
       "description": "Autonomous runner governance suite. This proves policy/manifest/runner wiring only; it does not advance the current cursor, merge, push, read secrets, run live cloud, or deploy.",
       "entrypoint": "node scripts/v22-verify.mjs suite autonomous --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-autonomous-goal-runner.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs"
+        "node tests/contract/smoke-test-v22-autonomous-goal-runner.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs"
       ]
     }
   ],
@@ -776,11 +776,11 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped docs taxonomy, classification, agent-run and workflow gates and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts"
       ],
@@ -800,10 +800,10 @@
         "docs/recovery/v22-repo-governance-physical-compaction-index.md",
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-docs-taxonomy-skeleton.md",
-        "scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
-        "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "retired_files": [],
       "forbidden_files": [
@@ -818,7 +818,7 @@
         ".runtime/*",
         "physical deletion of docs/contracts/**",
         "physical deletion of docs/recovery/**",
-        "physical deletion of scripts/smoke-test-v22-*",
+        "physical deletion of tests/**/*.mjs",
         "Figma visual/layout/information-architecture redesign"
       ],
       "forbidden_ops": [
@@ -849,12 +849,12 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped docs taxonomy, truth compaction, classification, agent-run and workflow gates and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs",
-        "node scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs",
+        "node tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts"
       ],
@@ -876,26 +876,99 @@
         "docs/recovery/v22-agent-first-development-loop.md",
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-opl-style-taxonomy-hard-compaction.md",
-        "scripts/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs",
-        "scripts/smoke-test-v22-docs-taxonomy-skeleton.mjs",
-        "scripts/smoke-test-v22-contract-eval-compaction.mjs",
-        "scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
-        "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs",
-        "scripts/smoke-test-v22-opl-dual-entry-contract.mjs",
-        "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
-        "scripts/smoke-test-v22-product-goal-harness.mjs",
-        "scripts/smoke-test-v22-real-resource-contract-alignment.mjs",
-        "scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
-        "scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs",
+        "tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs",
+        "tests/contract/smoke-test-v22-contract-eval-compaction.mjs",
+        "tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs",
+        "tests/regression/opl/smoke-test-v22-opl-dual-entry-contract.mjs",
+        "tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-real-resource-contract-alignment.mjs",
+        "tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+        "tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs",
         "scripts/v22-agent-workflow.mjs",
-        "scripts/v22-smoke-classification.mjs",
+        "scripts/v22-test-classification.mjs",
         "scripts/v22-workflow-gate.mjs"
       ],
       "retired_files": [
         "docs/recovery/product-truth.md",
         "docs/recovery/architecture-truth.md",
         "docs/recovery/active-surface.md"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation",
+        "admin-business-closure",
+        "ff-only-absorb",
+        "git-push"
+      ]
+    },
+    {
+      "id": "tests-taxonomy-hard-retirement",
+      "branch": "cleanup/v22-tests-taxonomy-hard-retirement",
+      "branches": [
+        "cleanup/v22-tests-taxonomy-hard-retirement"
+      ],
+      "description": "Verification bundle for tests taxonomy hard retirement. This branch physically retires scripts/smoke-test-v22-* as executable eval entrypoints, moves v22 eval files under tests/**, renames the classifier to v22-test-classification, and keeps scripts/ limited to runner/classifier/workflow/support utilities without changing services, cloud, deploy, upstream, PostgreSQL/Redis or UI behavior.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped tests taxonomy, manifest, classification, docs and trace gates and must not execute the future PostgreSQL/Redis implementation bundle.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node tests/contract/smoke-test-v22-tests-taxonomy-hard-retirement.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- AGENTS.md README.md DESIGN.md docs tests scripts"
+      ],
+      "allowed_files": [
+        "AGENTS.md",
+        "README.md",
+        "DESIGN.md",
+        "docs/**/*.md",
+        "docs/decisions.md",
+        "docs/invariants.md",
+        "docs/vibe-coding.md",
+        "docs/status.md",
+        "docs/README.md",
+        "docs/recovery/*.json",
+        "docs/recovery/agent-runs/*.md",
+        "tests/README.md",
+        "tests/**/*.mjs",
+        "scripts/v22-test-classification.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/v22-agent-workflow.mjs",
+        "scripts/smoke-test-v22-*.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "retired_files": [
+        "scripts/smoke-test-v22-*.mjs",
+        "scripts/v22-smoke-classification.mjs"
       ],
       "forbidden_files": [
         "services/*",
@@ -936,12 +1009,12 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped governance gates and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery docs/contracts scripts"
       ],
@@ -952,11 +1025,11 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md",
-        "scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
-        "scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "retired_files": [],
       "forbidden_files": [
@@ -996,11 +1069,11 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped workflow-truth, repo-classification and gate verification and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
-        "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "node tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -1009,10 +1082,10 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md",
-        "scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
-        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "retired_files": [],
       "forbidden_files": [
@@ -1054,12 +1127,12 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped truth/repo narrative, classification and trace gates and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
-        "node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
-        "node scripts/smoke-test-v22-long-term-governance-surfaces.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
+        "node tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "node tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs README.md AGENTS.md scripts"
       ],
@@ -1073,11 +1146,11 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-truth-repo-narrative-reference-unification.md",
-        "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
-        "scripts/smoke-test-v22-long-term-governance-surfaces.mjs",
-        "scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
-        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs",
+        "tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
+        "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "retired_files": [],
       "forbidden_files": [
@@ -1119,11 +1192,11 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped entrypoint, trace, smoke/eval classification, and no-delete-before-reference-migration gates and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- README.md docs/recovery scripts"
       ],
@@ -1138,17 +1211,17 @@
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-truth-repo-narrative-reference-unification.md",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.md",
         "docs/recovery/v22-monolith-agent-workflow-entrypoint-and-trace-normalization-index.md",
-        "scripts/v22-smoke-classification.mjs",
-        "scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
-        "scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
-        "scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
-        "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
-        "scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs"
+        "scripts/v22-test-classification.mjs",
+        "tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs",
+        "tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
+        "tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "tests/contract/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs"
       ],
       "retired_files": [],
       "forbidden_files": [
@@ -1190,9 +1263,9 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this post-absorb cleanup branch must run only scoped trace/gate verification and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -1200,7 +1273,7 @@
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-repo-governance-physical-compaction.md",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-absorb-repo-governance-truth.md",
         "docs/recovery/v22-agent-verify-manifest.json",
-        "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs"
+        "tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs"
       ],
       "forbidden_files": [
         "services/*",
@@ -1239,12 +1312,12 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped smoke/eval governance gates before B review and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -1254,9 +1327,9 @@
         "docs/recovery/v22-repo-governance-physical-compaction-index.md",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md",
         "docs/recovery/v22-agent-verify-manifest.json",
-        "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
-        "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "scripts/v22-smoke-classification.mjs",
+        "tests/contract/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "scripts/v22-test-classification.mjs",
         "scripts/check-portal-copy.mjs",
         "scripts/check-one-person-lab-upstream-clean.mjs",
         "scripts/smoke-test-workspace-storage-routes-contract.mjs"
@@ -1303,11 +1376,11 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped repository governance compaction gates before B review and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -1318,8 +1391,8 @@
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/v22-contract-eval-compaction-index.md",
         "docs/recovery/repo-zoning.md",
-        "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
-        "scripts/v22-smoke-classification.mjs",
+        "tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "scripts/v22-test-classification.mjs",
         "scripts/v22-workflow-gate.mjs",
         "configs/**",
         "scripts/check-production-entry-health.mjs",
@@ -1373,14 +1446,14 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped contract/eval compaction, truth alignment and smoke classification gates before B review.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-contract-eval-compaction.mjs",
-        "node scripts/smoke-test-v22-mvp-user-loop-contract.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-golden-smoke-suite.mjs",
-        "node scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-contract-eval-compaction.mjs",
+        "node tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/contract/smoke-test-v22-golden-smoke-suite.mjs",
+        "node tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -1391,10 +1464,10 @@
         "docs/active/README.md",
         "docs/recovery/v22-agent-verify-manifest.json",
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-eval-compaction.md",
-        "scripts/smoke-test-v22-contract-eval-compaction.mjs",
-        "scripts/smoke-test-v22-mvp-user-loop-contract.mjs",
-        "scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-contract-eval-compaction.mjs",
+        "tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs",
+        "tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "retired_files": [
         "scripts/smoke-test-v22-canonical-user-loop-contract.mjs"
@@ -1436,12 +1509,12 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped truth-freeze, reference-retirement and archive trace gates before B review.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery docs/contracts scripts"
       ],
@@ -1456,12 +1529,12 @@
         "docs/recovery/v22-goal-current.json",
         "docs/recovery/v22-goal-leaf-manifest.schema.json",
         "docs/recovery/agent-runs/2026-05-19-cleanup-v22-truth-freeze-and-doc-physical-retirement.md",
-        "scripts/smoke-test-v22-truth-freeze-physical-retirement.mjs",
-        "scripts/smoke-test-v22-gflabtoken-entry-contract.mjs",
-        "scripts/smoke-test-v22-product-goal-harness.mjs",
-        "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "scripts/smoke-test-v22-workflow-gate.mjs",
-        "scripts/v22-smoke-classification.mjs",
+        "tests/contract/smoke-test-v22-truth-freeze-physical-retirement.mjs",
+        "tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs",
+        "tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "tests/health/smoke-test-v22-workflow-gate.mjs",
+        "scripts/v22-test-classification.mjs",
         "scripts/v22-workflow-gate.mjs"
       ],
       "forbidden_files": [
@@ -1500,11 +1573,11 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this post-absorb cleanup branch must run only the scoped truth/index gates before B review and must not execute the future PostgreSQL/Redis implementation bundle.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery scripts"
       ],
@@ -1516,9 +1589,9 @@
         "docs/recovery/v22-product-completion-scoreboard.json",
         "docs/recovery/status-matrix.md",
         "docs/recovery/agent-runs/2026-05-19-leaf-portal-opl-file-run-artifact-closure.md",
-        "scripts/smoke-test-v22-agent-run-record-gate.mjs",
-        "scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-agent-run-record-gate.mjs",
+        "tests/contract/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "forbidden_files": [
         "services/*",
@@ -1556,12 +1629,12 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure. This branch executes the Step 1 implementation bundle from the current truth execution index; it must run service-code gates rather than the Step 0 doc-only current-truth bundle.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "node scripts/smoke-test-v22-portal-file-space-management.mjs",
-        "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-        "node scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-        "node scripts/smoke-test-v22-workspace-storage-public-response.mjs",
-        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-file-space-management.mjs",
+        "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/regression/portal/smoke-test-v22-workspace-storage-public-response.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal/frontend run typecheck",
@@ -1583,14 +1656,14 @@
         "docs/recovery/v22-goal-state.md",
         "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
         "docs/recovery/status-matrix.md",
-        "scripts/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "scripts/smoke-test-v22-portal-file-space-management.mjs",
-        "scripts/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
-        "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-        "scripts/smoke-test-v22-portal-storage-mode-local-closure.mjs",
-        "scripts/smoke-test-v22-portal-runtime-suite.mjs",
-        "scripts/v22-smoke-classification.mjs",
-        "scripts/smoke-test-v22-workspace-storage-public-response.mjs"
+        "tests/regression/portal/smoke-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-file-space-management.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-figma-make-interaction-readiness.mjs",
+        "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs",
+        "scripts/v22-test-classification.mjs",
+        "tests/regression/portal/smoke-test-v22-workspace-storage-public-response.mjs"
       ],
       "forbidden_files": [
         "services/portal files outside the explicit Step 1 workspace storage write set",
@@ -1629,13 +1702,13 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, and this cleanup branch must run only the scoped local truth-convergence bundle before B review.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
-        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-product-goal-harness.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- DESIGN.md docs/contracts docs/recovery scripts services/portal/frontend/playwright.config.ts"
       ],
@@ -1657,26 +1730,26 @@
         "docs/recovery/portal-figma-make-ui-convergence-plan.md",
         "docs/recovery/portal-ui-design-generation-brief.md",
         "docs/recovery/portal-ui-design-prd.md",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "scripts/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
-        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "scripts/smoke-test-v22-goal-state-consistency.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "scripts/smoke-test-v22-product-goal-execution-order.mjs",
-        "scripts/smoke-test-v22-product-goal-harness.mjs",
-        "scripts/smoke-test-v22-portal-contract-role-consolidation.mjs",
-        "scripts/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
-        "scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-        "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-        "scripts/smoke-test-v22-portal-mobile-table-usability.mjs",
-        "scripts/smoke-test-v22-portal-mobile-usability.mjs",
-        "scripts/smoke-test-v22-portal-package-surface-isolation.mjs",
-        "scripts/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
-        "scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "scripts/smoke-test-v22-portal-web-route-alignment.mjs",
-        "scripts/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
-        "scripts/smoke-test-v22-retire-legacy-resource-user-surface.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/regression/portal/smoke-test-v22-admin-ops-console-readonly-mvp.mjs",
+        "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "tests/contract/smoke-test-v22-goal-state-consistency.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/contract/smoke-test-v22-product-goal-execution-order.mjs",
+        "tests/contract/smoke-test-v22-product-goal-harness.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-contract-role-consolidation.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-figma-make-admin-readiness.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-mobile-table-usability.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-mobile-usability.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-package-surface-isolation.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-structure-failure-isolation-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-web-route-alignment.mjs",
+        "tests/regression/portal/smoke-test-v22-portal-workbench-management-ui-composition-contract.mjs",
+        "tests/regression/portal/smoke-test-v22-retire-legacy-resource-user-surface.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -1714,10 +1787,10 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch has an explicit B-review requirement to run a branch-appropriate verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "node scripts/smoke-test-v22-observability-billing-narrative-boundary.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "node tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/recovery docs/contracts scripts services deploy adapters infra"
       ],
@@ -1725,7 +1798,7 @@
         "docs/contracts/v22-*",
         "docs/contracts/README.md",
         "docs/recovery/*",
-        "scripts/smoke-test-v22-*",
+        "tests/**/*.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
         "scripts/v22-tencent-readonly-inventory-runner.mjs",
@@ -1772,7 +1845,7 @@
         "infra/production-hardening/**",
         "compose.demo.yaml",
         "compose.langfuse.yaml",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -1805,23 +1878,23 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this contract-index cleanup branch only aligns Runtime Bridge contract package naming and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
-        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
-        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+        "node tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/contracts docs/recovery scripts"
       ],
       "allowed_files": [
         "docs/contracts/README.md",
         "docs/recovery/v22-agent-verify-manifest.json",
-        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -1856,11 +1929,11 @@
       "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch only removes old context across system domains and truth layers and must run a branch-appropriate local verification bundle without weakening the UI authoring gate.",
       "risk_class": "local_service_code",
       "commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
-        "node scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
-        "node scripts/smoke-test-v22-default-entry-narrative-gate.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+        "node tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs/contracts docs/recovery scripts services"
       ],
@@ -1871,11 +1944,11 @@
         "docs/contracts/README.md",
         "docs/contracts/v22-*",
         "docs/recovery/*",
-        "scripts/smoke-test-v22-*",
+        "tests/**/*.mjs",
         "services/portal/**",
         "services/opl-web-gateway/**",
         "services/opl-runtime-bridge/**",
-        "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
         "scripts/v22-retired-surface-data.mjs"
       ],
       "forbidden_files": [
@@ -1910,10 +1983,10 @@
       "reason": "This cleanup branch physically retires archive Markdown and archive/retired smoke files while keeping cloud, secret, deploy, upstream, build/push/kubectl and live-test out of scope.",
       "risk_class": "local_doc_eval",
       "commands": [
-        "node scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
-        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "node scripts/smoke-test-v22-zero-compat-active-surface-gate.mjs",
-        "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
+        "node tests/health/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
+        "node tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "node tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- AGENTS.md docs scripts"
       ],
@@ -1931,8 +2004,8 @@
         "docs/superpowers/**",
         "OPL-v20-*",
         "scripts/smoke-test-v17-*",
-        "scripts/smoke-test-v22-*",
-        "scripts/v22-smoke-classification.mjs",
+        "tests/**/*.mjs",
+        "scripts/v22-test-classification.mjs",
         "scripts/v22-retired-surface-data.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
@@ -1978,11 +2051,11 @@
         "docs/contracts/README.md",
         "docs/contracts/v22-smoke-eval-boundary.md",
         "docs/recovery/v22-agent-verify-manifest.json",
-        "scripts/smoke-test-v22-golden-smoke-suite.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
-        "scripts/smoke-test-v22-smoke-classification-gate.mjs",
-        "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
-        "scripts/v22-smoke-classification.mjs"
+        "tests/contract/smoke-test-v22-golden-smoke-suite.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/health/smoke-test-v22-smoke-classification-gate.mjs",
+        "tests/health/smoke-test-v22-smoke-eval-boundary.mjs",
+        "scripts/v22-test-classification.mjs"
       ],
       "forbidden_files": [
         "services/*",
@@ -2012,16 +2085,16 @@
       "id": "portal-ui",
       "entrypoint": "node scripts/v22-verify.mjs package portal-ui --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group all"
+        "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group all"
       ]
     },
     {
       "id": "portal-ui-design-quality",
       "entrypoint": "node scripts/v22-verify.mjs package portal-ui-design-quality --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-        "node scripts/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-        "node scripts/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+        "node tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
+        "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
         "npm --prefix services/portal/frontend run typecheck",
         "npm --prefix services/portal/frontend run build"
       ]
@@ -2030,17 +2103,17 @@
       "id": "gateway",
       "entrypoint": "node scripts/v22-verify.mjs package gateway --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-opl-entry-preflight-auth-flow.mjs",
-        "node scripts/smoke-test-v22-opl-dual-entry-contract.mjs",
-        "node scripts/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"
+        "node tests/regression/opl/smoke-test-v22-opl-entry-preflight-auth-flow.mjs",
+        "node tests/regression/opl/smoke-test-v22-opl-dual-entry-contract.mjs",
+        "node tests/regression/opl/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs"
       ]
     },
     {
       "id": "runtime",
       "entrypoint": "node scripts/v22-verify.mjs package runtime --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node scripts/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-        "node scripts/smoke-test-v22-opl-runtime-e2e-local-flow.mjs"
+        "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+        "node tests/regression/opl/smoke-test-v22-opl-runtime-e2e-local-flow.mjs"
       ]
     }
   ]

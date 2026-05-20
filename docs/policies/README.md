@@ -15,7 +15,7 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 
 ## Smoke / Eval Policy
 
-`scripts/smoke-test-v22-*` 当前是 repo-local eval 文件族。只有 `health-check` 和 `smoke-golden` 可以被称为 smoke。`contract-local` 与 `local-regression` 是 eval；`future-authorized` 只表示未来授权边界可见性，不授权真实云。
+`tests/**/*.mjs` 当前是 repo-local eval 文件族。只有 `health-check` 和 `smoke-golden` 可以被称为 smoke。`contract-local` 与 `local-regression` 是 eval；`future-authorized` 只表示未来授权边界可见性，不授权真实云。
 
 ## Physical Retirement Policy
 
@@ -32,7 +32,7 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 - `docs/recovery/agent-runs/README.md`
 - `docs/recovery/agent-runs/schema.md`
 - `docs/recovery/v22-contract-smoke-eval-index-compaction-index.md`
-- `scripts/v22-smoke-classification.mjs`
+- `scripts/v22-test-classification.mjs`
 
 ## Migration Status
 

@@ -132,7 +132,7 @@ const workflowTypes = {
       "与被退役路径相关的分支合同",
     ],
     validations: [
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       "git diff --check -- docs scripts",
     ],
     cScope: "只读检查被退役入口没有重新出现在普通用户主叙事。",
@@ -150,8 +150,8 @@ const workflowTypes = {
       "docs/recovery/status-matrix.md",
     ],
     validations: [
-      "node scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/regression/portal/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       "npm --prefix services/portal run check",
       "npm --prefix services/portal run frontend:typecheck",
     ],
@@ -172,10 +172,10 @@ const workflowTypes = {
       "docs/recovery/status-matrix.md",
     ],
     validations: [
-      "node scripts/smoke-test-v22-managed-environment-open-flow.mjs",
-      "node scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs",
-      "node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
+      "node tests/regression/portal/smoke-test-v22-managed-resource-binding-plan-view.mjs",
+      "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
     cScope: "只读检查套餐、余额、预扣费、冻结金额和释放审计是否可解释。",
   },
@@ -191,8 +191,8 @@ const workflowTypes = {
       "docs/recovery/mvp-contract-acceptance.md",
     ],
     validations: [
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
-      "node scripts/smoke-test-v22-workflow-gate.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/health/smoke-test-v22-workflow-gate.mjs",
       "git diff --check -- docs/contracts docs/recovery scripts",
     ],
     cScope: "只读检查合同范围、非目标、授权边界和 smoke 可验证性。",
@@ -209,8 +209,8 @@ const workflowTypes = {
       "docs/recovery/status-matrix.md",
     ],
     validations: [
-      "node scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/regression/portal/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       "npm --prefix services/portal run check",
       "npm --prefix services/portal run frontend:typecheck",
     ],
@@ -603,8 +603,8 @@ function packageContractsForType(type) {
       "docs/vibe-coding.md",
       "docs/contracts/README.md",
       "docs/recovery/status-matrix.md",
-      "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "scripts/smoke-test-v22-workflow-gate.mjs",
+      "tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "tests/health/smoke-test-v22-workflow-gate.mjs",
     ];
   }
   if (!workflow) return stageDocuments;
@@ -614,14 +614,14 @@ function packageContractsForType(type) {
 function validationCommandsForType(type) {
   if (type === "workflow") {
     return [
-      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "node scripts/smoke-test-v22-workflow-gate.mjs",
+      "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "node tests/health/smoke-test-v22-workflow-gate.mjs",
       "git diff --check -- scripts docs .gitignore",
     ];
   }
   const workflow = workflowTypes[type];
   return workflow?.validations || [
-    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     "git diff --check -- scripts docs",
   ];
 }
@@ -889,9 +889,9 @@ function buildCloudOnboardingTaskPackets({ checkConfigPhase, defaultGatePhase, u
   ];
   const reviewCommands = [
     "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
-    "node scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs",
-    "node scripts/smoke-test-v22-cloud-onboarding-board-status.mjs",
-    "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+    "node tests/future-authorized/cloud/smoke-test-v22-agent-workflow-cloud-onboarding.mjs",
+    "node tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-board-status.mjs",
+    "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     "git diff --check -- scripts docs/recovery docs/contracts",
   ];
 
@@ -945,9 +945,9 @@ function buildCloudOnboardingTaskPackets({ checkConfigPhase, defaultGatePhase, u
       status: "pending",
       handoffTarget: "B",
       requiredSmoke: [
-        "scripts/smoke-test-v22-agent-workflow-cloud-onboarding.mjs",
-        "scripts/smoke-test-v22-cloud-onboarding-board-status.mjs",
-        "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-agent-workflow-cloud-onboarding.mjs",
+        "tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-board-status.mjs",
+        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       ],
       userGate: "stop before merge/push or any live path",
       requiresManualMergeDecision: true,
@@ -967,36 +967,36 @@ function buildBoardCurrentTaskPacket(board = {}) {
     status: "starter-live-done",
     handoffTarget: "B",
     requiredSmoke: [
-      "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
-      "scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
-      "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
-      "scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
-      "scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
-      "scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
-      "scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
-      "scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
-      "scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-      "scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-      "scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-      "scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-      "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+      "tests/regression/portal/smoke-test-v22-portal-runtime-startup-config.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+      "tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+      "tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+      "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
+      "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
     ],
     userGate: "starter minimal live loop is recorded; future pro, upgrade, add-storage, dedicated node pool, or full matrix live reruns need separate authorization; node pool baseline desired/current must remain 2 and cleanup must return to 2",
     requiresManualMergeDecision: true,
     suggestedCommands: [
-      "node scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs",
-      "node scripts/smoke-test-v22-portal-runtime-startup-config.mjs",
-      "node scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs",
-      "node scripts/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
-      "node scripts/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
-      "node scripts/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
-      "node scripts/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
-      "node scripts/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
-      "node scripts/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-      "node scripts/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-      "node scripts/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-      "node scripts/smoke-test-v22-portal-frontend-surface-eval.mjs",
-      "node scripts/smoke-test-v22-mvp-contract-suite.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+      "node tests/regression/portal/smoke-test-v22-portal-runtime-startup-config.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-resource-lifecycle-loop.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-postgres-canonical-store.mjs",
+      "node tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
+      "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+      "node tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
+      "node tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
       "git diff --check -- scripts docs/recovery docs/contracts services/portal",
     ],
     allowedActions: ["review rebase", "run local harness smoke", "record B absorption decision"],
@@ -1090,8 +1090,8 @@ function createReviewPack({ branch, base }) {
   const verificationCommands = [
     `git diff --name-only ${targetBase}...${branch}`,
     `node scripts/v22-workflow-gate.mjs review --base ${targetBase}`,
-    "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-    "node scripts/smoke-test-v22-workflow-gate.mjs",
+    "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+    "node tests/health/smoke-test-v22-workflow-gate.mjs",
     "git diff --check -- scripts docs",
   ];
   const mergeConditions = [
@@ -1162,8 +1162,8 @@ function createFixPack({ state, window = "A" } = {}) {
       "修复后回复 status: A_FIXED。",
     ],
     verificationCommands: [
-      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "node scripts/smoke-test-v22-workflow-gate.mjs",
+      "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "node tests/health/smoke-test-v22-workflow-gate.mjs",
       "git diff --check -- scripts docs",
     ],
     recommendedBranch: branch,
@@ -1188,8 +1188,8 @@ function createReReviewPack({ state } = {}) {
     ],
     verificationCommands: [
       "node scripts/v22-workflow-gate.mjs review --base recovery/platform-v22-trunk",
-      "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "node scripts/smoke-test-v22-workflow-gate.mjs",
+      "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
+      "node tests/health/smoke-test-v22-workflow-gate.mjs",
     ],
     mergeConditions: [
       "工作区干净",
