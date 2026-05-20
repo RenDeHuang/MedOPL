@@ -42,7 +42,8 @@
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
     "scripts/v22-test-classification.mjs",
-    "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs"
+    "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+    "tests/contract/contract-test-v22-retirement-lifecycle-system.mjs"
   ],
   "leaves": [
     {
@@ -99,6 +100,7 @@
       ],
       "verification_commands": [
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
@@ -121,6 +123,7 @@
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
@@ -161,6 +164,7 @@
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"
