@@ -17,6 +17,18 @@ State: `active`
 - `tests/future-authorized/cloud/`: future-authorized cloud boundary eval；不授权真实云。
 - `tests/fixtures/v22/`: 机器 cursor 和 verify manifest。
 
+## Lifecycle Gate Policy
+
+`tests/contract/` 承载治理闭环 gate。生命周期 gate 必须验证：
+
+- docs taxonomy 不恢复旧 `docs/contracts/`、`docs/recovery/` 或 root stage docs。
+- `docs/active/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/history/README.md` 和 `tests/README.md` 均声明 OPL-style lifecycle。
+- B 已吸收的 cleanup 记录不能长期停在 `ready_for_b_review`。
+- 当前业务 cursor 仍由 `tests/fixtures/v22/goal-current.json` 表达。
+- verify manifest 必须把 lifecycle gate 纳入 `current` 和 `local-contract`。
+
+新增测试必须先选定 taxonomy 目录；不能为了便利新增 `scripts/smoke-test-*` 或把所有 repo-local eval 叫 smoke。
+
 ## Runner Boundary
 
 默认验证入口：

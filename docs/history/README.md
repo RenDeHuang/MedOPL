@@ -33,9 +33,63 @@ History 承接：
 - risk notes
 - next recommendation
 
+吸收后的记录还必须补齐：
+
+- absorbed_commit
+- b_review_result
+- post_push_verification
+- post_absorb_truth_closeout
+- next_cursor
+
+`ready_for_b_review` 只能出现在未吸收 A 分支的临时 handoff 中。B 已 ff-only absorb 并 push 后，history 摘要必须改为 `absorbed / pushed / post-push verified`。历史细节不再展开成独立 `agent-runs/` 文件；详细证据以 git history 和 B review 输出为准。
+
 ## Current Run Summaries
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
+
+### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure
+
+Status: `in_progress`
+
+Branch: `cleanup/v22-retirement-lifecycle-system-closure`
+
+Base trunk HEAD: `2a4254915f43186e312f406e5de31629c1c6700b`
+
+Model:
+
+- controller: `gpt-5.4`
+
+Scope:
+
+- Codify the OPL-style retirement lifecycle as the default MedOPL v22 development loop.
+- Add a machine gate that checks taxonomy truth, history closeout schema, retired-path protection, tests taxonomy, and manifest wiring.
+- Record the post-absorb closeout for `cleanup/v22-full-taxonomy-hard-retirement`.
+- Keep the business cursor on `leaf-portal-postgres-redis-local-production-data-closure`.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+
+Non-goals:
+
+- No PostgreSQL/Redis implementation.
+- No services business code change.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream modification.
+- No Figma UI visual/layout/information-architecture change.
+
+Next recommendation:
+
+- After B absorbs this lifecycle closure, run the product cursor `leaf-portal-postgres-redis-local-production-data-closure`.
 
 ### 2026-05-20 cleanup/v22-full-taxonomy-hard-retirement
 

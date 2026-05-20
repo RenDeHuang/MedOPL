@@ -32,6 +32,25 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 2. 活引用已迁移，旧路径不再作为 current truth、default verify 或 compatibility alias。
 3. gate 证明旧路径不能恢复为 current truth、default verify 或 compatibility alias。
 
+## Retirement Lifecycle Policy
+
+每个 v22 leaf 必须按同一个生命周期运行：
+
+```text
+truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-absorb truth closeout -> next cursor
+```
+
+稳定规则：
+
+- `docs/active/README.md` 是唯一人读 current truth；不得新建第二份 active truth 或阶段板。
+- `docs/specs/README.md` 是唯一合同/spec truth；不得恢复 `docs/contracts/`。
+- `docs/history/README.md` 是唯一 agent-run / B absorb / cleanup closeout 摘要入口；不得恢复 `docs/recovery/` 或 `docs/recovery/agent-runs/`。
+- `tests/fixtures/v22/goal-current.json` 是唯一机器 cursor；`tests/fixtures/v22/agent-verify-manifest.json` 是唯一 verify manifest。
+- 新增 repo-local eval 必须进入 `tests/{health,smoke,contract,regression,future-authorized}`；不得新增 `scripts/smoke-test-*`。
+- `scripts/` 只保 runner、classifier、workflow gate，以及当前仍被 services 引用的 workspace-to-minio sync helper。
+- B 已吸收并 push 的 leaf 不能长期保持 `ready_for_b_review`；必须执行 post-absorb truth closeout。
+- current cursor 不能停在已完成 leaf，也不能把 `future-authorized`、真实云、deploy、live-test 或 release readiness 标成 cursor-eligible，除非用户单独授权。
+
 ## Current Sources
 
 - `AGENTS.md`

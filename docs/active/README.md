@@ -33,6 +33,26 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 - 真实云、deploy、kubectl、live-test、真实资源 mutation、真实价格审批和 production release readiness 仍需单独授权。
 - `scripts/sync-workspace-file-to-minio.ps1` 因 `services/portal/src/config/portal-config.mjs` 仍引用，暂属服务实现债，不在 docs/eval 清退中删除。
 
+### OPL-style 清退生命周期真相
+
+MedOPL v22 的仓库治理采用 OPL-style lifecycle，但执行更严格的单页 truth 规则。每个 leaf 的推进顺序必须是：
+
+```text
+truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-absorb truth closeout -> next cursor
+```
+
+该生命周期不是一次性清退动作，而是默认开发闭环：
+
+- truth：当前事实只写入本文；长期不变量只写入 `docs/specs/README.md`。
+- gap：本文 `Gap Matrix` 保持当前差距和下一步 cursor；机器 cursor 只写入 `tests/fixtures/v22/goal-current.json`。
+- eval：新增或修改行为前必须先确认或补 `tests/**` eval；不能把宽回归或 future-authorized gate 写成 smoke。
+- implementation/cleanup：A 分支按 step commit 推进；不新增 shadow archive、compat alias、旧 recovery 或旧 contracts 目录。
+- verify：默认入口是 `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`。
+- B absorb：只有 B 窗口可以 fresh review、ff-only absorb 和 push。
+- post-absorb truth closeout：B 吸收后必须把 absorbed commit、post-push verification 和下一 cursor 写回 `docs/history/README.md` 与 `tests/fixtures/v22/*`。
+
+任何 leaf 完成后如果没有 post-absorb truth closeout，不能把下一 leaf 作为稳定当前事实推进。
+
 ## 产品真相
 
 MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台。它不重做 OPL chatbot，不成为独立科研聊天产品；它把 clean upstream OPL 变成开箱即用、可购买、可管理、可计费、可审计、可释放的托管服务。
@@ -189,6 +209,7 @@ Current docs / eval surface during migration：
 | Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` + dynamic classifier | 仅保真实 eval 分类，不保旧脚本目录 | maintain | `scripts/` 只留 runner/classifier/workflow 和服务引用的 sync helper | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` |
 | Contracts compaction | human truth 吸收到 `docs/specs/README.md` | `docs/specs/README.md` | 无分散合同叶子 | maintain | 合同新增直接写 specs anchor 和 eval | local-contract suite |
 | Recovery retirement | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | hard-retirement gate |
+| Retirement lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | hard retirement 已吸收后需要机器化生命周期 gate | retirement lifecycle gate | post-absorb truth closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs` |
 
 ## Cannot Claim
 
@@ -197,6 +218,7 @@ Current docs / eval surface during migration：
 - 不能写成 `future-authorized` 等于真实云、deploy、kubectl 或 live-test 已授权。
 - 不能写成 PostgreSQL/Redis、本地 production data layer、admin 全业务闭环或真实云生产闭环已完成。
 - 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
+- 不能跳过 post-absorb truth closeout 直接把下一个 leaf 写成已完成或已吸收。
 
 ## Source Of Truth During Migration
 
