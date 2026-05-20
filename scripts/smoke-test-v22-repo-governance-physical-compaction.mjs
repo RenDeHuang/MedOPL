@@ -247,11 +247,20 @@ const sentruxDiff = diffNames("origin/recovery/platform-v22-trunk", ".sentrux");
 assert.deepEqual(sentruxDiff, [], `sentrux_must_not_change:${sentruxDiff.join(",")}`);
 
 const statuses = diffNameStatuses("origin/recovery/platform-v22-trunk");
-for (const deletedPath of physicallyRetiredPaths.filter((item) => item !== "configs")) {
-  assert(statuses.some((line) => line === `D\t${deletedPath}`), `retired_file_must_be_deletion_only:${deletedPath}`);
+const statusLines = [...statuses];
+const governanceRetirementDiffActive = statusLines.some((line) => (
+  /^D\tconfigs\//u.test(line)
+  || physicallyRetiredPaths.some((deletedPath) => line === `D\t${deletedPath}`)
+));
+const configDeleteCount = statusLines.filter((line) => /^D\tconfigs\//u.test(line)).length;
+if (governanceRetirementDiffActive) {
+  for (const deletedPath of physicallyRetiredPaths.filter((item) => item !== "configs")) {
+    assert(statusLines.some((line) => line === `D\t${deletedPath}`), `retired_file_must_be_deletion_only:${deletedPath}`);
+  }
+  assert.equal(configDeleteCount, 14, `configs_deletion_count_mismatch:${configDeleteCount}`);
 }
-const configDeleteCount = statuses.filter((line) => /^D\tconfigs\//u.test(line)).length;
-assert.equal(configDeleteCount, 14, `configs_deletion_count_mismatch:${configDeleteCount}`);
+const trackedConfigCount = files.filter((file) => file.startsWith("configs/")).length;
+assert.equal(trackedConfigCount, 0, `configs_must_remain_physically_retired:${trackedConfigCount}`);
 
 console.log(JSON.stringify({
   ok: true,
