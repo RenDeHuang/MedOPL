@@ -19,7 +19,7 @@ Slice O 已记录 zero-compat active surface completed。后续 feature leaf 碰
   - `docs/contracts/README.md`
   - `docs/recovery/mvp-contract-acceptance.md`
   - `docs/recovery/status-matrix.md`
-  - `docs/recovery/active-surface.md`
+  - `docs/active/README.md`
 - authorization boundary: 不读 secret，不调用真实云，不运行 live-test，不 build/push，不 kubectl，不修改 `deploy/**`、`.sentrux/**`、`adapters/**` 或 upstream。
 - branch non-action: 本分支不删除文件、不移动 scripts、不修改 cloud-lane implementation、不修改 Portal cloud handlers、不修改 MVP suite。
 

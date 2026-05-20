@@ -91,16 +91,16 @@
 
 | Truth layer | 当前事实源 | 订阅用途 |
 | --- | --- | --- |
-| 服务商品真相 | [../recovery/product-truth.md](../recovery/product-truth.md), [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 用户购买的是托管 OPL 科研工作台服务，不是云资源控制台对象。 |
+| 服务商品真相 | [../active/README.md](../active/README.md), [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 用户购买的是托管 OPL 科研工作台服务，不是云资源控制台对象。 |
 | 用户体验真相 | [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md), [v22-saas-portal-opl-ops-surface-boundary.md](./v22-saas-portal-opl-ops-surface-boundary.md) | Portal 必须解释买了什么、能不能用、缺什么、下一步点哪里、结果和费用在哪里。 |
 | 信息架构真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [v22-portal-figma-make-ui-implementation-boundary.md](./v22-portal-figma-make-ui-implementation-boundary.md), [../../services/portal/frontend/src/app](../../services/portal/frontend/src/app) | Figma Make ZIP、active route、page composition、layout、API adapter 和旧 UI 物理清退。 |
 | 生命周期真相 | [../recovery/v22-truth-freeze.md](../recovery/v22-truth-freeze.md), [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
 | 权限/角色真相 | [v22-portal-user-surface-boundary.md](./v22-portal-user-surface-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md) | 普通用户、管理员和运维的可见、不可见和可操作边界。 |
-| 状态/数据源真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
+| 状态/数据源真相 | [../active/README.md](../active/README.md), [v22-authorized-tencent-create-release-boundary.md](./v22-authorized-tencent-create-release-boundary.md), [v22-portal-files-billing-trace-boundary.md](./v22-portal-files-billing-trace-boundary.md) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
 | 操作风险真相 | [v22-authorized-tencent-create-release-execution-boundary.md](./v22-authorized-tencent-create-release-execution-boundary.md), [v22-cloud-onboarding-workflow-boundary.md](./v22-cloud-onboarding-workflow-boundary.md) | 真实资源、真实扣费、release、rollback、审计队列和 fail-closed gate。 |
 | UI composition 真相 | [v22-portal-workbench-management-ui-composition-boundary.md](./v22-portal-workbench-management-ui-composition-boundary.md), [v22-portal-ui-design-quality-audit-boundary.md](./v22-portal-ui-design-quality-audit-boundary.md), [v22-portal-figma-make-ui-implementation-boundary.md](./v22-portal-figma-make-ui-implementation-boundary.md), [../../services/portal/frontend/src/app](../../services/portal/frontend/src/app) | 页面层级、组件状态、空态、错误态、Figma Make ZIP source、design quality audit 和 surface gate。 |
 | UI implementation source | [v22-portal-figma-make-ui-implementation-boundary.md](./v22-portal-figma-make-ui-implementation-boundary.md), [../../DESIGN.md](../../DESIGN.md) | v22 Portal UI 实现源：Portal 全体前端技术栈为 React + Vite + TypeScript + shadcn/Radix + lucide；当前 Figma Make ZIP 覆盖普通用户和管理员 Portal UI。 |
-| 交付/平台真相 | [../recovery/architecture-truth.md](../recovery/architecture-truth.md), [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-production-cloud-topology-boundary.md](./v22-production-cloud-topology-boundary.md) | 开通、隔离、计费、审计、释放、secret 和 deploy 授权边界。 |
+| 交付/平台真相 | [../active/README.md](../active/README.md), [v22-resource-plan-boundary.md](./v22-resource-plan-boundary.md), [v22-tenant-resource-binding-boundary.md](./v22-tenant-resource-binding-boundary.md), [v22-production-cloud-topology-boundary.md](./v22-production-cloud-topology-boundary.md) | 开通、隔离、计费、审计、释放、secret 和 deploy 授权边界。 |
 | 运营/支持真相 | [v22-admin-ops-console-boundary.md](./v22-admin-ops-console-boundary.md), [v22-portal-admin-ops-surface-boundary.md](./v22-portal-admin-ops-surface-boundary.md), [v22-release-stop-billing-audit-boundary.md](./v22-release-stop-billing-audit-boundary.md) | 服务状态、异常账单、失败任务、释放失败、审计查询和排障。 |
 
 订阅规则：凡是会改变普通用户可见页面、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支，都必须订阅 [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)，再订阅对应实现合同。
@@ -125,7 +125,7 @@
 - [v22-portal-figma-make-ui-implementation-boundary.md](./v22-portal-figma-make-ui-implementation-boundary.md): 当前 Portal frontend implementation leaf，授权 Portal 全体前端栈收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide，并以 Figma Make ZIP 作为唯一 Portal UI source-of-truth，吸收普通用户路由 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和管理员路由 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`；retired frontend surface gate 已证明旧管理员 console residue 物理清退，管理员导航显示由后端角色投影控制，真实权限仍由 `/portal/api/admin/*` 后端校验；`/admin/ops` 默认后端可返回 `404 ops_surface_disabled`，前端必须展示“平台托管运维入口未启用”的产品态。
 - [../../DESIGN.md](../../DESIGN.md): Portal UI 重构设计执行源，用于指导当前 React implementation 的产品气质、信息架构、组件使用、文案、视觉规则和 Figma Make ZIP 吸收流程；它不替代本合同包、不替代 Figma Make ZIP source-of-truth、不替代 smoke，也不授权修改后端、真实云、deploy、upstream 或 secret 边界。
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/active-surface.md](../recovery/active-surface.md)
+- [../active/README.md](../active/README.md)
 
 统一验证入口：
 
@@ -335,7 +335,7 @@ Cloud resource isolation 分支的 scoped review entry 是 `node scripts/smoke-t
 - [v22-mvp-managed-opl-loop.md](./v22-mvp-managed-opl-loop.md)
 - [v22-saas-control-plane-user-experience-boundary.md](./v22-saas-control-plane-user-experience-boundary.md)
 - [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/active-surface.md](../recovery/active-surface.md)
+- [../active/README.md](../active/README.md)
 - [../recovery/archive-policy.md](../recovery/archive-policy.md)
 - `scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 - 与被退役路径相关的分支合同

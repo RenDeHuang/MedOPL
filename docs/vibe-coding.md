@@ -169,7 +169,7 @@ feat/v22-xxx
 - docs/contracts/v22-mvp-managed-opl-loop.md
 - docs/contracts/xxx.md
 - docs/recovery/status-matrix.md
-- docs/recovery/active-surface.md
+- docs/active/README.md
 
 本次会修改：
 - xxx
