@@ -740,10 +740,10 @@ ZIP surface gate 必须覆盖：
 后续任何 Portal UI 实现 slice 必须至少考虑以下命令：
 
 ```bash
-node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group all
-node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
-node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group api
-node tests/regression/portal/smoke-test-v22-portal-web-route-alignment.mjs
+node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all
+node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group api
+node tests/regression/portal/regression-test-v22-portal-web-route-alignment.mjs
 npm --prefix services/portal/frontend run typecheck
 npm --prefix services/portal/frontend run build
 ```
@@ -751,8 +751,8 @@ npm --prefix services/portal/frontend run build
 相关合同级检查：
 
 ```bash
-node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs
-node tests/contract/smoke-test-v22-mvp-contract-suite.mjs
+node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs
+node tests/contract/contract-test-v22-mvp-contract-suite.mjs
 ```
 
 ### 15.3 Design Quality Rubric
@@ -863,8 +863,8 @@ ZIP / surface gate：
 
 - `/mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip`
 - `/tmp/medopl-figma-make-source-admin`
-- `tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs`
+- `tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs`
+- `tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs`
 
 合同与设计源：
 

@@ -71,7 +71,7 @@ Each program record must keep these fields:
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, real cloud, secret files |
 | owner self-test boundary | local dev/preview QA evidence, role-surface smoke, mobile usability smoke, payload smoke when UI/API changes are in scope |
 | B revalidation boundary | rerun affected smoke, inspect screenshots/payloads, confirm ordinary users do not see admin/cloud/internal language |
-| required smoke / verification | `smoke-test-v22-portal-role-surface-boundaries.mjs`, `smoke-test-v22-portal-mobile-usability.mjs`, `smoke-test-v22-portal-mobile-table-usability.mjs`, `smoke-test-v22-portal-runtime-suite.mjs --group api` when relevant |
+| required smoke / verification | `regression-test-v22-portal-role-surface-boundaries.mjs`, `regression-test-v22-portal-mobile-usability.mjs`, `regression-test-v22-portal-mobile-table-usability.mjs`, `regression-test-v22-portal-runtime-suite.mjs --group api` when relevant |
 | parallelizable | yes |
 | requires user authorization | no for local mock/dev QA; yes for any production/live endpoint |
 | serial side effects | none by default; deploy/build/push/kubectl remains forbidden without explicit authorization |
@@ -102,7 +102,7 @@ lanes:
 | forbidden scope | `services/` in this docs/status lane, `deploy/`, `.sentrux/`, `adapters/`, `upstream/`, Gateway, Runtime Bridge, secrets, real cloud, build/push/kubectl |
 | owner self-test boundary | workflow gate, program-board smoke, cloud onboarding board/status/matrix smoke, MVP suite |
 | B revalidation boundary | rerun workflow gate, relevant smoke, diff scope, secret hygiene, ff-only merge check |
-| required smoke / verification | `smoke-test-v22-program-board.mjs`, `smoke-test-v22-cloud-onboarding-board-status.mjs`, `smoke-test-v22-cloud-onboarding-workflow-contract.mjs`, `smoke-test-v22-mvp-contract-suite.mjs` |
+| required smoke / verification | `contract-test-v22-program-board.mjs`, `future-authorized-test-v22-cloud-onboarding-board-status.mjs`, `future-authorized-test-v22-cloud-onboarding-workflow-contract.mjs`, `contract-test-v22-mvp-contract-suite.mjs` |
 | parallelizable | mixed |
 | requires user authorization | yes for readonly live, create/release, dependency install, deploy/build/push/kubectl; no for docs/smoke |
 | serial side effects | readonly live; create/release; deploy/build/push/kubectl; dependency install; merge/push |
@@ -275,9 +275,9 @@ lane markers:
       "ownerSelfTestBoundary": "local dev/mock QA, role-surface smoke, mobile usability smoke, payload smoke when relevant",
       "bRevalidationBoundary": "affected smoke, screenshots/payload inspection, user/admin boundary review",
       "requiredSmokeOrVerification": [
-        "tests/regression/portal/smoke-test-v22-portal-role-surface-boundaries.mjs",
-        "tests/regression/portal/smoke-test-v22-portal-mobile-usability.mjs",
-        "tests/regression/portal/smoke-test-v22-portal-mobile-table-usability.mjs"
+        "tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
+        "tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs",
+        "tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs"
       ],
       "parallelizable": true,
       "requiresUserAuthorization": false,
@@ -325,10 +325,10 @@ lane markers:
       "ownerSelfTestBoundary": "workflow gate, program-board smoke, cloud onboarding board/status/matrix smoke, MVP suite",
       "bRevalidationBoundary": "workflow gate, relevant smoke, diff scope, secret hygiene, ff-only merge check",
       "requiredSmokeOrVerification": [
-        "tests/contract/smoke-test-v22-program-board.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-board-status.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-workflow-contract.mjs",
-        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
+        "tests/contract/contract-test-v22-program-board.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-board-status.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-workflow-contract.mjs",
+        "tests/contract/contract-test-v22-mvp-contract-suite.mjs"
       ],
       "parallelizable": false,
       "requiresUserAuthorization": true,
@@ -384,7 +384,7 @@ lane markers:
       "ownerSelfTestBoundary": "contract/status smoke, workflow gate, no-upstream-write diff check",
       "bRevalidationBoundary": "upstream remains clean, no upstream imports, no deploy/adapters/services drift in docs lane",
       "requiredSmokeOrVerification": [
-        "tests/contract/smoke-test-v22-program-board.mjs"
+        "tests/contract/contract-test-v22-program-board.mjs"
       ],
       "parallelizable": true,
       "requiresUserAuthorization": false,

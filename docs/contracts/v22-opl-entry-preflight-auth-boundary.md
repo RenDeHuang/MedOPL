@@ -82,4 +82,4 @@ Gateway / preflight / launch 边界必须满足：
 
 ## Smoke
 
-`tests/regression/opl/smoke-test-v22-opl-entry-preflight-auth-flow.mjs` 是本地合同 smoke。它只使用本地 fixture 和临时 provider secret store，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不执行 build、push、kubectl 或 live-test。
+`tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs` 是本地合同 smoke。它只使用本地 fixture 和临时 provider secret store，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不执行 build、push、kubectl 或 live-test。

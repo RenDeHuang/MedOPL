@@ -459,5 +459,5 @@ B 窗口吸收实现分支前必须确认：
 本合同由以下 smoke 固化：
 
 ```text
-node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs
+node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs
 ```

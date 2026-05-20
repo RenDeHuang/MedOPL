@@ -83,8 +83,8 @@
 - `docs/invariants.md` removes stage-board-as-current-truth wording and records cloud/program boards plus `v22-agent-workflow.mjs` as future-authorized / blocked-retain references.
 - `docs/decisions.md` no longer says the active program is `v22-cloud-onboarding`; it records the active cursor and future-authorized cloud lane boundary.
 - `docs/vibe-coding.md` keeps the cloud workflow reference required by the cloud workflow contract, but demotes `scripts/v22-agent-workflow.mjs` to blocked-retain / retire-candidate.
-- `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs` no longer requires origin trunk to equal historical `20fe9ac`; it verifies `20fe9ac` and `49b99d` remain ancestors of current origin trunk.
-- `tests/contract/smoke-test-v22-long-term-governance-surfaces.mjs` now verifies `v22-goal-current + v22-agent-verify-manifest + v22-verify` as current entrypoints and blocks old root governance active-cloud wording.
+- `tests/contract/contract-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs` no longer requires origin trunk to equal historical `20fe9ac`; it verifies `20fe9ac` and `49b99d` remain ancestors of current origin trunk.
+- `tests/contract/contract-test-v22-long-term-governance-surfaces.mjs` now verifies `v22-goal-current + v22-agent-verify-manifest + v22-verify` as current entrypoints and blocks old root governance active-cloud wording.
 
 ## Blocked Retain
 
@@ -96,10 +96,10 @@ These are still retained until references migrate:
 - `docs/recovery/cloud-onboarding-status-table.md`
 - `docs/recovery/cloud-onboarding-verification-matrix.md`
 - `scripts/v22-agent-workflow.mjs`
-- `tests/future-authorized/cloud/smoke-test-v22-agent-workflow-cloud-onboarding.mjs`
-- `tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-board-status.mjs`
-- `tests/future-authorized/cloud/smoke-test-v22-cloud-onboarding-absorption-sequence.mjs`
-- `tests/future-authorized/cloud/smoke-test-v22-cloud-connection-runnable-path.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-agent-workflow-cloud-onboarding.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-board-status.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-cloud-onboarding-absorption-sequence.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-cloud-connection-runnable-path.mjs`
 - `docs/contracts/v22-admin-ops-console-boundary.md`
 - `docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md`
 

@@ -372,7 +372,7 @@ Portal /portal/api/opl/launch
 
 live canary success evidence 必须包含 `messageId`、`replyMessageId`、`messageTraceId`、`providerInvocationRef`、`capabilitySource=mapped_to_webui_bridge` 和 Portal session trace projection。evidence 只写 `.runtime/real-opl-provider-message-live-canary/evidence.json`，只允许记录 key fingerprint、prompt/reply 长度、hash prefix、ID、状态和 timing metadata。
 
-live canary 不进入默认 `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`，因为它需要真实 provider key、真实 provider 调用授权和真实 WebUI canary 来源。
+live canary 不进入默认 `tests/contract/contract-test-v22-mvp-contract-suite.mjs`，因为它需要真实 provider key、真实 provider 调用授权和真实 WebUI canary 来源。
 
 最近一次授权 live canary 脱敏结果：
 
@@ -454,10 +454,10 @@ canary 成功不自动等于 productionized Runtime Bridge。进入正式实现�
 本合同对应分支进入 B 窗口前必须满足：
 
 1. 明确声明订阅本合同包和模型记录。当前 lane 分支名为 `feat/v22-real-opl-provider-message-canary-contract`，模型记录为 `gpt-5.4`。
-2. `node tests/regression/opl/smoke-test-v22-real-opl-provider-message-contract-gate.mjs` 通过。
-3. `node tests/regression/opl/smoke-test-v22-real-opl-capability-contract-gate.mjs` 通过。
-4. `node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
-5. `node tests/contract/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
+2. `node tests/regression/opl/regression-test-v22-real-opl-provider-message-contract-gate.mjs` 通过。
+3. `node tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs` 通过。
+4. `node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
+5. `node tests/contract/contract-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
 6. 合同索引、阶段状态和验证链路已更新。
 7. 默认合同 smoke 未使用 raw provider key，未调用真实 provider，未读取 secret，未调用真实云；授权 live canary 必须明确记录 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1` 和脱敏 evidence path。
 8. 未修改 one-person-lab upstream、deploy、`.sentrux` 或 adapters。

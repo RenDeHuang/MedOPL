@@ -90,13 +90,13 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 本合同的合同级验收入口是：
 
 ```bash
-node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs
+node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs
 ```
 
 Portal UI design quality audit 的现有执行证据由 Figma Make ZIP surface 组、React typecheck 和 build 承接：
 
 ```bash
-node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
 npm --prefix services/portal/frontend run typecheck
 npm --prefix services/portal/frontend run build
 ```
@@ -208,8 +208,8 @@ npm --prefix services/portal/frontend run build
       "copy_tone_quality"
     ],
     "evidenceSources": [
-      "node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-      "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+      "node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface",
       "npm --prefix services/portal/frontend run typecheck",
       "npm --prefix services/portal/frontend run build"
     ],
@@ -233,22 +233,22 @@ npm --prefix services/portal/frontend run build
       "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
       "docs/recovery/v22-agent-verify-manifest.json",
       "docs/recovery/mvp-contract-acceptance.md",
-      "tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-      "tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-      "tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs",
+      "tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
+      "tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
       "services/portal/frontend/package.json",
       "services/portal/frontend/package-lock.json"
     ],
     "verificationCommands": [
-      "node tests/regression/portal/smoke-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-      "node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-      "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+      "node tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface",
       "npm --prefix services/portal/frontend run typecheck",
       "npm --prefix services/portal/frontend run build",
-      "node tests/health/smoke-test-v22-contract-conflict-boundary.mjs",
-      "node tests/contract/smoke-test-v22-goal-state-consistency.mjs",
-      "node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs",
-      "node tests/contract/smoke-test-v22-product-goal-harness.mjs",
+      "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+      "node tests/contract/contract-test-v22-goal-state-consistency.mjs",
+      "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+      "node tests/contract/contract-test-v22-product-goal-harness.mjs",
       "git diff --check -- docs/contracts docs/recovery scripts services/portal/frontend"
     ],
     "truthWritebackTarget": [
@@ -289,8 +289,8 @@ npm --prefix services/portal/frontend run build
     ]
   },
   "validationCommands": [
-    "node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs",
-    "node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface",
+    "node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface",
     "npm --prefix services/portal/frontend run typecheck",
     "npm --prefix services/portal/frontend run build"
   ]

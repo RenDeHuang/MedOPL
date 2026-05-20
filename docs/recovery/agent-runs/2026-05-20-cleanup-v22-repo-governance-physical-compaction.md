@@ -62,7 +62,7 @@
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/v22-contract-eval-compaction-index.md`
 - `docs/recovery/repo-zoning.md`
-- `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`
 - `scripts/v22-test-classification.mjs`
 - `scripts/v22-workflow-gate.mjs`
 - deletion-only: `configs/**`
@@ -92,7 +92,7 @@
 
 ## eval_first_changes
 
-- 新增 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`。
+- 新增 `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`。
 - 将该 gate 加入 `scripts/v22-test-classification.mjs`。
 - 将该 gate 接入 `docs/recovery/v22-agent-verify-manifest.json` 的 branch override 和 local-contract suite。
 
@@ -106,9 +106,9 @@
 
 ## verification_commands
 
-- `node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
-- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`
+- `node tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `node tests/health/health-check-v22-smoke-eval-boundary.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
@@ -121,11 +121,11 @@
 
 窗口 B 已将 `cleanup/v22-repo-governance-physical-compaction` ff-only 合入 `recovery/platform-v22-trunk` 并 push。吸收提交为 `3fa576b8809560629c5a1677ebacae9b76034810`。
 
-post-push 发现 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs` 在分支 review 态依赖 `origin...HEAD` deletion-only diff；合入 trunk 后 diff 为空，导致 trunk 上的 local-contract suite 失败。B 追加修复提交 `b00bb23a6e05ed15d2612e0341664948f682364a`，让 gate 同时支持 branch review 态和已吸收 trunk 态。
+post-push 发现 `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs` 在分支 review 态依赖 `origin...HEAD` deletion-only diff；合入 trunk 后 diff 为空，导致 trunk 上的 local-contract suite 失败。B 追加修复提交 `b00bb23a6e05ed15d2612e0341664948f682364a`，让 gate 同时支持 branch review 态和已吸收 trunk 态。
 
 ## post_absorb_verification
 
-- `node tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `node tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

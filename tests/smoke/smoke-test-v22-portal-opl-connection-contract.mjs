@@ -17,10 +17,10 @@ const files = {
   oplWork: "docs/contracts/v22-opl-work-message-file-run-boundary.md",
   portalFiles: "docs/contracts/v22-portal-files-billing-trace-boundary.md",
   statusMatrix: "docs/recovery/status-matrix.md",
-  suite: "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
-  stateStoreSmoke: "tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  adapterApiSmoke: "tests/regression/runtime-bridge/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
-  realOplWebuiAdapterSmoke: "tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs",
+  suite: "tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+  stateStoreSmoke: "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+  adapterApiSmoke: "tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+  realOplWebuiAdapterSmoke: "tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs",
   webuiBridgeClient: "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
 };
 
@@ -194,8 +194,8 @@ assertIncludesAll(contents.readme, [
 
 for (const scriptPath of [
   "tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
-  "tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  "tests/regression/runtime-bridge/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+  "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+  "tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
 ]) {
   assert(isSmokeClassifiedIn(scriptPath), `mvp_suite_includes_connection_contract_missing:${scriptPath}`);
 }

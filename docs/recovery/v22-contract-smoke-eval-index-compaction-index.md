@@ -114,9 +114,9 @@ Blocked recovery paths:
 | `scripts/v22-verify.mjs` | keep | 统一 agent 验证入口。 |
 | `scripts/v22-workflow-gate.mjs` | keep | A/B/C 合同订阅和 review/checkpoint 纪律本体。 |
 | `scripts/v22-test-classification.mjs` | keep | 当前唯一 eval 分类 authority。 |
-| `tests/contract/smoke-test-v22-golden-smoke-suite.mjs` | keep | 唯一纯 golden smoke wrapper。 |
-| `tests/contract/smoke-test-v22-mvp-contract-suite.mjs` | keep / legacy alias | 仍被 manifest 的 `mvp` 与 `local-regression` 引用；直接删会断链。 |
-| `tests/health/smoke-test-v22-workflow-gate.mjs` | keep / gate-self-test | 这是 workflow gate 自检壳，不是业务 smoke。 |
+| `tests/contract/contract-test-v22-golden-smoke-suite.mjs` | keep | 唯一纯 golden smoke wrapper。 |
+| `tests/contract/contract-test-v22-mvp-contract-suite.mjs` | keep / legacy alias | 仍被 manifest 的 `mvp` 与 `local-regression` 引用；直接删会断链。 |
+| `tests/health/health-check-v22-workflow-gate.mjs` | keep / gate-self-test | 这是 workflow gate 自检壳，不是业务 smoke。 |
 | `scripts/v22-retired-surface-data.mjs` | keep | retired surface 证据层仍依赖它。 |
 | `scripts/v22-agent-workflow.mjs` | blocked-retire-candidate | 根级治理 docs、cloud workflow 合同和多个 smoke 仍引用。 |
 | `scripts/sync-workspace-file-to-minio.ps1` | blocked-retire-candidate | `services/portal/src/config/portal-config.mjs` 仍直接挂载；删除要另开 service cleanup leaf。 |

@@ -264,8 +264,8 @@ Package D 的闭环链路：
 
 当前 repo-tracked 验证入口：
 
-- `tests/future-authorized/cloud/smoke-test-v22-opl-deployment-ownership-release-plan-contract.mjs`
-- `tests/future-authorized/cloud/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-opl-deployment-ownership-release-plan-contract.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`
 
 zero-compat cleanup 已删除 deploy runner executable surface。当前 active repo 只保留合同和本地 shape gate；未来若重新授权真实 build/push/kubectl/deploy，必须先建立新的 v22 build recipe / deploy execution boundary 和新的执行入口。release plan 缺 `runId`、`versionTag`、`targets[]`、`runtimeSmokeTargets[]`、任一 owner guard 字段、任一 target repository/source/deploy 字段或任一 smoke surface 覆盖关系都必须 fail-closed。
 
@@ -425,7 +425,7 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
   "runner": {
     "executableSurfaceDeleted": true,
     "futureRunnerRequiresNewV22Boundary": true,
-    "localGateSmoke": "tests/future-authorized/cloud/smoke-test-v22-tencent-deploy-execution-config-local-gate.mjs",
+    "localGateSmoke": "tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs",
     "requiresExplicitNonSecretExecutionParameters": [
       "releasePlan",
       "acceptedPreflightId",

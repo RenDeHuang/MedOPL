@@ -58,12 +58,12 @@
       "ownedPaths": [
         "docs/recovery/v22-cloud-harness-manifest.json",
         "scripts/v22-cloud-harness-select-checks.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-harness-manifest-selector.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-harness-manifest-selector.mjs",
         "services/portal/src/config/portal-config.mjs"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-harness-manifest-selector.mjs",
-        "tests/regression/portal/smoke-test-v22-portal-runtime-startup-config.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-harness-manifest-selector.mjs",
+        "tests/regression/portal/regression-test-v22-portal-runtime-startup-config.mjs"
       ],
       "requiredEvidence": [
         "productionEnvSummary",
@@ -82,13 +82,13 @@
       ],
       "ownedPaths": [
         "scripts/v22-cloud-operation-local-executor.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-config-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "requiredEvidence": [
         "baselineSnapshot",
@@ -114,16 +114,16 @@
         "services/portal/src/routes/lab-package.routes.mjs",
         "services/portal/src/portal-cloud-operation-worker.mjs",
         "services/portal/src/workers/portal-cloud-operation-worker.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-cloud-operation-async-worker-loop.mjs"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-portal-cloud-operation-async-worker-loop.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-portal-production-cloud-operation-loop.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-cloud-operation-worker-entrypoint.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-cloud-operation-async-worker-loop.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-production-cloud-operation-loop.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "requiredEvidence": [
         "baselineSnapshot",
@@ -149,11 +149,11 @@
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
         "services/portal/src/domain/wallet-ledger.mjs",
         "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-cloud-cleanup-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-baseline-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
         "tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
         "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs"
       ],
@@ -178,12 +178,12 @@
         "services/portal/frontend/src/views/packages/*",
         "services/portal/frontend/src/views/resources/*",
         "services/portal/frontend/src/views/workspace/*",
-        "tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-package-click-cloud-resource-loop.mjs"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-portal-package-click-cloud-resource-loop.mjs",
-        "tests/regression/portal/smoke-test-v22-portal-frontend-surface-eval.mjs",
-        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-portal-package-click-cloud-resource-loop.mjs",
+        "tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
+        "tests/contract/contract-test-v22-mvp-contract-suite.mjs"
       ],
       "requiredEvidence": [
         "ordinaryUserClick",

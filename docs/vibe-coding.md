@@ -250,7 +250,7 @@ B 合并前必须检查：
 默认最小验证：
 
 ```bash
-node tests/contract/smoke-test-v22-mvp-contract-suite.mjs
+node tests/contract/contract-test-v22-mvp-contract-suite.mjs
 npm --prefix services/portal run check
 npm --prefix services/portal run frontend:typecheck
 ```
@@ -264,14 +264,14 @@ sentrux check .
 涉及 Gateway / Runtime Bridge 时补充：
 
 ```bash
-node tests/regression/opl/smoke-test-v22-opl-entry-preflight-auth-flow.mjs
+node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs
 node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
 ```
 
 涉及 Langfuse / trace 时补充：
 
 ```bash
-node tests/regression/portal/smoke-test-v22-langfuse-observability-metadata-contract.mjs
+node tests/regression/portal/regression-test-v22-langfuse-observability-metadata-contract.mjs
 ```
 
 涉及腾讯云 quote provider 时补充对应 v22 quote provider smoke。真实腾讯云 API、真实云资源、deploy、build/push、kubectl 和 live-test 必须单独授权。

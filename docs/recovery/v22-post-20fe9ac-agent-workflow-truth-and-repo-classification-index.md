@@ -73,14 +73,14 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 - `docs/recovery/cloud-onboarding-status-table.md`
 - `scripts/v22-agent-workflow.mjs`
 - `scripts/sync-workspace-file-to-minio.ps1`
-- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
-- `tests/health/smoke-test-v22-workflow-gate.mjs`
+- `tests/contract/contract-test-v22-mvp-contract-suite.mjs`
+- `tests/health/health-check-v22-workflow-gate.mjs`
 
 ## Gate Tightening
 
-- `tests/contract/smoke-test-v22-goal-state-consistency.mjs` now treats detached runtime as target trunk only when `git branch --show-current` is empty and `HEAD == origin/recovery/platform-v22-trunk`.
+- `tests/contract/contract-test-v22-goal-state-consistency.mjs` now treats detached runtime as target trunk only when `git branch --show-current` is empty and `HEAD == origin/recovery/platform-v22-trunk`.
 - Detached HEAD that is not exactly origin trunk remains fail-closed.
-- New gate: `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`.
+- New gate: `tests/contract/contract-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`.
 
 ## Non-Goals
 

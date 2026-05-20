@@ -60,8 +60,8 @@ cleanup 分支可以选择：
 本计划分支只通过静态合同 smoke 验收：
 
 ```bash
-node tests/future-authorized/cloud/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs
-node tests/contract/smoke-test-v22-mvp-contract-suite.mjs
+node tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs
+node tests/contract/contract-test-v22-mvp-contract-suite.mjs
 git diff --check -- docs/contracts scripts
 ```
 

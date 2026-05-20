@@ -78,14 +78,14 @@ historical future-authorized provider message runner
 验证命令：
 
 ```text
-node tests/regression/opl/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
+node tests/regression/opl/regression-test-v22-real-opl-provider-message-contract-gate.mjs
 ```
 
 后续真实 canary 必须由用户单独授权，并显式提供 canary 来源；active repo 不保留默认 WebUI/live runner：
 
 ```text
 future-authorized WebUI capability runner
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs
 ```
 
 验收：
@@ -108,7 +108,7 @@ OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/smo
 
 ```text
 node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
-node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs
+node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs
 ```
 
 验收：
@@ -127,8 +127,8 @@ node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mj
 验证命令：
 
 ```text
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
-node tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs
+node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs
 ```
 
 验收：
@@ -372,10 +372,10 @@ canary evidence 只进 `.runtime`，不得进入 git。
 默认本地验证只验证合同和 gate，不触发真实 provider 调用：
 
 ```text
-node tests/regression/opl/smoke-test-v22-real-opl-provider-message-contract-gate.mjs
-node tests/regression/opl/smoke-test-v22-real-opl-capability-contract-gate.mjs
-node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs
-node tests/contract/smoke-test-v22-mvp-contract-suite.mjs
+node tests/regression/opl/regression-test-v22-real-opl-provider-message-contract-gate.mjs
+node tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs
+node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs
+node tests/contract/contract-test-v22-mvp-contract-suite.mjs
 git diff --check -- docs/contracts docs/recovery scripts
 ```
 
@@ -409,4 +409,4 @@ git diff --check -- docs/contracts docs/recovery scripts
 - Portal message status projection 与直接 message response 的 `replyMessageId/providerInvocationRef/messageTraceId` 一致。
 - Portal session trace projection 能按 `workspaceId + messageId` 查到同一 trace。
 - `.runtime/real-opl-provider-message-live-canary/evidence.json` 不包含 raw prompt、raw completion、raw API key、bearer token、launchToken、runtimeToken、secret path 或本地文件路径。
-- 该 live canary 不进入默认 `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`。
+- 该 live canary 不进入默认 `tests/contract/contract-test-v22-mvp-contract-suite.mjs`。

@@ -75,7 +75,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-production-cloud-topology-boundary.md`
-- required smoke: `smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs`
+- required smoke: `future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs`
 - success status: provider strategy contract accepted and smoke passed
 - blocker 回流到谁: A 修合同，B 复审策略冲突
 - 什么时候必须停下来问用户: provider strategy 与已有 readonly inventory / create-release 合同冲突，或需要新增 SDK 依赖、真实 secret、真实云授权
@@ -90,7 +90,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`
 - success status: official SDK wrapper shell merged with static smoke
 - blocker 回流到谁: A 修 wrapper，B 审查 raw SDK exposure
 - 什么时候必须停下来问用户: 需要安装依赖、读取 secret、启用真实 SDK fetch、或改变 create/release mutation 边界
@@ -105,7 +105,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
 - success status: dependency loader contract/smoke merged; loader fail-closed by default
 - blocker 回流到谁: A 修 loader，B 审查 package diff 和默认 gate
 - 什么时候必须停下来问用户: 需要新增或升级 npm 依赖、修改 lockfile、加载真实 SDK package、或启用 live readonly
@@ -120,7 +120,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-cloud-onboarding-workflow-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-local-guard.mjs`, `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-local-guard.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
 - success status: check-config blocks missing RUN gate, mutation API, read-all secret, and non-redacted output
 - blocker 回流到谁: A 修 check-config，B 审查 gate
 - 什么时候必须停下来问用户: 静态检查需要读取真实 secret 文件、source env、调用真实云或修改 deploy
@@ -135,7 +135,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-tencent-tc3-diagnostic-cleanup-plan.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`, `smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`, `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`, `future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`
 - success status: default gate confirms official SDK wrapper path is default and all live paths are opt-in
 - blocker 回流到谁: B blocks; A fixes default gate or wrapper
 - 什么时候必须停下来问用户: default behavior would read secret, call cloud, install dependency, push, merge, or change deploy
@@ -150,7 +150,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 是，但仅限用户授权的 readonly secret allowlist。
 - 是否允许真实云: 是，但仅限用户授权的 readonly live。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-production-cloud-topology-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`, check-config output；真实 readonly inventory live runner 已退出 active repo executable surface，后续真实云 readonly 必须重新开 future-authorized boundary。
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`, check-config output；真实 readonly inventory live runner 已退出 active repo executable surface，后续真实云 readonly 必须重新开 future-authorized boundary。
 - success status: redacted readonly inventory report generated outside git
 - blocker 回流到谁: user decides retry/stop; A fixes config-only blockers; B reviews safety blockers
 - 什么时候必须停下来问用户: before reading secret, before real cloud call, before changing region/API allowlist, on permission/limit/account mismatch, before sharing report contents
@@ -165,7 +165,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-readonly-inventory-boundary.md`, `v22-production-cloud-topology-boundary.md`, `v22-tenant-resource-binding-boundary.md`
-- required smoke: `smoke-test-v22-tencent-readonly-inventory-boundary.mjs`, report redaction checks
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs`, report redaction checks
 - success status: B accepts report or returns blocker list
 - blocker 回流到谁: A for contract/code gaps, user for cloud/account/permission decisions, C for QA reproduction
 - 什么时候必须停下来问用户: report shows unknown resources, missing tags, conflicting ownership, permission gaps, cost anomaly, or requires another real cloud read
@@ -180,7 +180,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-tc3-diagnostic-cleanup-plan.md`, `v22-tencent-readonly-inventory-boundary.md`
-- required smoke: `smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`
+- required smoke: `future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`
 - success status: TC3 cleanup branch may start; TC3 remains diagnostic/reference until cleanup proves removal
 - blocker 回流到谁: B blocks; A updates cleanup plan
 - 什么时候必须停下来问用户: cleanup would delete TC3 before official SDK report review, change official SDK implementation, or touch create/release
@@ -195,7 +195,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-tencent-dry-run-resource-plan-provider-boundary.md`, `v22-authorized-tencent-create-release-boundary.md`, `v22-production-cloud-topology-boundary.md`
-- required smoke: `smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs`, `smoke-test-v22-authorized-tencent-create-release-contract.mjs`
+- required smoke: `future-authorized-test-v22-tencent-dry-run-resource-plan-provider.mjs`, `future-authorized-test-v22-authorized-tencent-create-release-contract.mjs`
 - success status: dry-run create/release plan produces no mutation and no charge
 - blocker 回流到谁: A fixes plan, B reviews mutation leakage
 - 什么时候必须停下来问用户: dry-run plan wants to call real cloud, read mutation secret, alter ledger, or expose cloud console language to ordinary users
@@ -210,7 +210,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `v22-authorized-tencent-create-release-implementation-boundary.md`, `v22-authorized-tencent-create-release-execution-boundary.md`
-- required smoke: `smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs`, `smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs`
+- required smoke: `future-authorized-test-v22-authorized-tencent-create-release-implementation-contract.mjs`, `future-authorized-test-v22-authorized-tencent-create-release-execution-contract.mjs`
 - success status: mutation wrapper shell is gated, fake-only by default, and separate from readonly runner/secret
 - blocker 回流到谁: A fixes wrapper, B reviews side-effect boundary
 - 什么时候必须停下来问用户: need mutation secret, real API, SDK dependency change, build/push, kubectl, or deploy change
@@ -583,7 +583,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-production-cloud-topology-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"
       ],
       "successStatus": "provider strategy contract accepted and smoke passed",
       "blockerReturnsTo": "A; B reviews strategy conflicts",
@@ -603,7 +603,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-tencent-readonly-inventory-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs"
       ],
       "successStatus": "official SDK wrapper shell merged with static smoke",
       "blockerReturnsTo": "A; B reviews raw SDK exposure",
@@ -624,7 +624,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-tencent-readonly-inventory-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
       ],
       "successStatus": "dependency loader contract/smoke merged and fail-closed by default",
       "blockerReturnsTo": "A; B reviews package diff and default gate",
@@ -645,8 +645,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-cloud-onboarding-workflow-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-local-guard.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-local-guard.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
       ],
       "successStatus": "check-config blocks missing gate, mutation API, read-all secret, and non-redacted output",
       "blockerReturnsTo": "A; B reviews gate",
@@ -667,9 +667,9 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-tencent-tc3-diagnostic-cleanup-plan.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
       ],
       "successStatus": "default gate confirms official SDK wrapper path is default and all live paths are opt-in",
       "blockerReturnsTo": "B blocks; A fixes default gate or wrapper",
@@ -690,7 +690,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-production-cloud-topology-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs",
         "check-config output"
       ],
       "successStatus": "redacted readonly inventory report generated outside git",
@@ -716,7 +716,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-tenant-resource-binding-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-readonly-inventory-boundary.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs",
         "report redaction checks"
       ],
       "successStatus": "B accepts report or returns blocker list",
@@ -739,7 +739,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-tencent-readonly-inventory-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
       ],
       "successStatus": "TC3 cleanup branch may start; TC3 remains diagnostic/reference until cleanup proves removal",
       "blockerReturnsTo": "B blocks; A updates cleanup plan",
@@ -761,8 +761,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-production-cloud-topology-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-tencent-dry-run-resource-plan-provider.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-contract.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-dry-run-resource-plan-provider.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-contract.mjs"
       ],
       "successStatus": "dry-run create/release plan produces no mutation and no charge",
       "blockerReturnsTo": "A fixes plan; B reviews mutation leakage",
@@ -783,8 +783,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/contracts/v22-authorized-tencent-create-release-execution-boundary.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs",
-        "tests/future-authorized/cloud/smoke-test-v22-authorized-tencent-create-release-execution-contract.mjs"
+        "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-implementation-contract.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-execution-contract.mjs"
       ],
       "successStatus": "mutation wrapper shell is gated, fake-only by default, and separate from readonly runner/secret",
       "blockerReturnsTo": "A fixes wrapper; B reviews side-effect boundary",
@@ -887,7 +887,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       ],
       "requiredSmoke": [
         "canary/QA smoke",
-        "tests/contract/smoke-test-v22-mvp-contract-suite.mjs",
+        "tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "workflow gate review"
       ],
       "successStatus": "C_PASS or B_BLOCKER with release status updated",

@@ -48,7 +48,7 @@
 - `docs/recovery/v22-repo-governance-physical-compaction-index.md`
 - `docs/recovery/status-matrix.md`
 - `docs/recovery/mvp-contract-acceptance.md`
-- `tests/contract/smoke-test-v22-goal-state-consistency.mjs`
+- `tests/contract/contract-test-v22-goal-state-consistency.mjs`
 
 ## allowed_write_scope
 
@@ -56,9 +56,9 @@
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md`
-- `tests/contract/smoke-test-v22-goal-state-consistency.mjs`
-- `tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
-- `tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `tests/contract/contract-test-v22-goal-state-consistency.mjs`
+- `tests/contract/contract-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
+- `tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
 - `scripts/v22-test-classification.mjs`
 
 ## forbidden_scope
@@ -78,12 +78,12 @@
 
 - 将 `docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md` 从 `pending_B_review` 更新为 `20fe9ac` 已进入 trunk，并记录 A/B 边界偏差。
 - 新增 post-20fe9ac 分类索引，固定四个只读 subagent 的全量审计结论：无 delete-ready。
-- 收紧 `tests/contract/smoke-test-v22-goal-state-consistency.mjs`：detached runtime 只在 `HEAD == origin/recovery/platform-v22-trunk` 时等价 target trunk。
+- 收紧 `tests/contract/contract-test-v22-goal-state-consistency.mjs`：detached runtime 只在 `HEAD == origin/recovery/platform-v22-trunk` 时等价 target trunk。
 - 新增本 leaf gate，验证 post-absorb 记录、分类索引、无 delete-ready、A/B 边界恢复规则、detached trunk 语义和 no-cloud/no-secret/no-services 边界。
 
 ## eval_first_changes
 
-- RED: `node tests/contract/smoke-test-v22-goal-state-consistency.mjs` 在 detached `origin/recovery/platform-v22-trunk` 语境失败，错误为 `runtime_branch_must_be_authoring_or_target_or_additive_truth:`.
+- RED: `node tests/contract/contract-test-v22-goal-state-consistency.mjs` 在 detached `origin/recovery/platform-v22-trunk` 语境失败，错误为 `runtime_branch_must_be_authoring_or_target_or_additive_truth:`.
 - GREEN target: 只允许 detached `HEAD == origin/recovery/platform-v22-trunk`；任意其他 detached HEAD 不放行。
 - RED: `20fe9ac` agent-run 仍写 `pending_B_review`。
 - GREEN target: 记录 `absorbed_commit`、`post_absorb_verification` 和 A/B boundary deviation。
@@ -98,11 +98,11 @@
 
 ## verification_commands
 
-- `node tests/contract/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
-- `node tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
-- `node tests/contract/smoke-test-v22-goal-state-consistency.mjs`
-- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
-- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/contract-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs`
+- `node tests/contract/contract-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `node tests/contract/contract-test-v22-goal-state-consistency.mjs`
+- `node tests/contract/contract-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

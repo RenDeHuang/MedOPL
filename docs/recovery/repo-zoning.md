@@ -167,11 +167,11 @@ strict monolith Slice E completed on `cleanup/v22-strict-monolith-ideal-gap-and-
 
 residual strict monolith cleanup Phase G completed on `cleanup/v22-strict-monolith-residual-test-anchor-retirement`: remaining non-v22 Portal/Billing smoke anchors, `start-opl-web-runtime.mjs`, MinIO/Harbor local install or port-forward helper remnants, and v22 fixture acceptance of `resourceOrders` / `resourceOrderEvents` are retired. Current Portal/API validation references `tests/**/*.mjs` and `scripts/v22-verify.mjs` only.
 
-observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is not the current billing truth. Strict monolith cleanup now deletes old OpenCost/Langfuse compose/deploy/infra assets while retaining active sanitized trace metadata implementation code.
+observability/billing primary narrative cleanup completed by `cleanup/v22-cleanup-completion-truth`: `tests/regression/portal/regression-test-v22-observability-billing-narrative-boundary.mjs` proves Langfuse is optional sanitized observability attachment, not Portal/billing/artifact/run canonical source, and OpenCost is not the current billing truth. Strict monolith cleanup now deletes old OpenCost/Langfuse compose/deploy/infra assets while retaining active sanitized trace metadata implementation code.
 
 strict monolith Slice D completed on `cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement`: old adapters, old deploy/tke-package, old infra, old compose assets, old runner/provisioner Dockerfiles, old v13 scripts, old portal resource-order/provisioner scripts, old runner fixtures, and old v19/v20 helper libs are physically deleted from active repo. Future real external canary or deploy implementation must use new v22 contracts and active v22 surfaces rather than restoring these paths.
 
-Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `tests/contract/smoke-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
+Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` may still report `secret_like_path_changed` for `.env.demo.template` because the generic workflow gate treats any `.env*` path as fail-closed. This branch is explicitly authorized to modify `.env.demo.template`. `tests/contract/contract-test-v22-env-template-default-entry.mjs` performs a content-level secret scan and enforces that all secret-like template values remain empty placeholders.
 
 ## Adjudication Rules
 
@@ -196,7 +196,7 @@ Workflow gate blocker disposition for this slice: `node scripts/v22-workflow-gat
 - 不在本分支 delete files in this branch。
 - 不在本分支 modify cloud-lane implementation。
 - 不在本分支 modify Portal cloud handlers。
-- 不在本分支修改 `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`。
+- 不在本分支修改 `tests/contract/contract-test-v22-mvp-contract-suite.mjs`。
 - 不在本分支 run live-test。
 - 不在本分支执行 kubectl。
 - 不在本分支执行 build/push。

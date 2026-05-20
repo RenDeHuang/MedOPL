@@ -178,7 +178,7 @@ Current docs / eval surface during migration：
 
 | Area | Ideal | Current Evidence | Gap | Next Action | Done When | Verify |
 | --- | --- | --- | --- | --- | --- | --- |
-| Current truth | 一个 current truth 文件 | `docs/active/README.md` | 旧 recovery truth 文件仍有历史引用 | hard compaction | `product-truth.md` / `architecture-truth.md` / `active-surface.md` 物理清退，活跃引用迁移 | `node tests/contract/smoke-test-v22-opl-style-taxonomy-hard-compaction.mjs` |
+| Current truth | 一个 current truth 文件 | `docs/active/README.md` | 旧 recovery truth 文件仍有历史引用 | hard compaction | `product-truth.md` / `architecture-truth.md` / `active-surface.md` 物理清退，活跃引用迁移 | `node tests/contract/contract-test-v22-opl-style-taxonomy-hard-compaction.mjs` |
 | Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` 已承载 155 个 repo-local eval | 非 smoke eval 文件名仍保留 `smoke-test-v22-*` 历史前缀 | 后续 test filename hard-retirement | 文件名与分类语义一致，`scripts/` 只留 runner/classifier/workflow | tests taxonomy hard-retirement + verify |
 | Contracts compaction | human truth 吸收到 `docs/specs/README.md` 等目录 README | 42 个 `docs/contracts/v22-*` 仍被 gate 引用 | README 与 leaf contract 混合 | 后续 contracts-to-specs | 旧合同引用迁移且 leaf boundary 保留策略明确 | local-contract suite |
 | Recovery retirement | recovery 不再是长期 docs taxonomy | recovery 根层仍有 manifest/gap/agent-run/history | 过程记录和机器状态混放 | 分批迁引用 | current truth / history / references 全部有替代入口 | local-contract suite |

@@ -73,7 +73,7 @@ future-authorized upstream/WebUI capability runner only
 验证：
 
 ```text
-node tests/regression/opl/smoke-test-v22-opl-gateway-upstream-proxy-local.mjs
+node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs
 node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
 ```
 
@@ -95,8 +95,8 @@ node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
 验证：
 
 ```text
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
-node tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs
+node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs
 ```
 
 验收：
@@ -233,10 +233,10 @@ Runtime Bridge session/message metadata
 实现分支进入 B 窗口前必须满足：
 
 1. 订阅 [v22-portal-opl-context-backflow-boundary.md](../contracts/v22-portal-opl-context-backflow-boundary.md) 和其合同包。
-2. `node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
+2. `node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
 3. `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
-4. `node tests/regression/runtime-bridge/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs` 通过。
-5. 如本分支明确授权真实 WebUI 来源，`OPL_REAL_WEBUI_DIR=... node tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs` 通过；否则只保留合同 gate，不得把真实 WebUI 运行当默认入口。
+4. `node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs` 通过。
+5. 如本分支明确授权真实 WebUI 来源，`OPL_REAL_WEBUI_DIR=... node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs` 通过；否则只保留合同 gate，不得把真实 WebUI 运行当默认入口。
 6. message backflow 未完成真实 canary 时必须明确写入状态矩阵和合同，不得宣称完整真实上线。
 7. downstream runtime 未授权时必须 gate，不得伪造 run/artifact。
 8. downstream Langfuse 未授权时不得部署、不得读 secret、不得把 `trace.medopl.cn` 当已上线。

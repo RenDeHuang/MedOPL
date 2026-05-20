@@ -133,7 +133,7 @@ Eval 入口继续保留分层：
 - `scripts/v22-verify.mjs` 是统一 runner。
 - `docs/recovery/v22-agent-verify-manifest.json` 是 suite / branch override authority。
 - `scripts/v22-test-classification.mjs` 是 v22 smoke/eval 分类 authority。
-- `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs` 是本轮仓库治理压缩 gate。
+- `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs` 是本轮仓库治理压缩 gate。
 
 ### agent-runs
 
@@ -194,14 +194,14 @@ Eval 入口继续保留分层：
 理由：
 
 - `scripts/check-portal-copy.mjs` 的 Portal copy/mojibake 检查由 `scripts/check-mojibake.mjs` 的全仓库文本扫描覆盖。
-- `scripts/check-one-person-lab-upstream-clean.mjs` 的 upstream checkout clean 检查已迁入 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`：当 `.runtime/one-person-lab-upstream` 存在时，gate 会执行 `git status --short` 并要求为空；该检查不把 `.runtime` 内容提交进 git。
-- `scripts/smoke-test-workspace-storage-routes-contract.mjs` 是非 v22 旧命名 route gate，并且会断言公开响应返回 `storageKey`；当前 v22 替代入口是 `tests/regression/portal/smoke-test-v22-workspace-storage-public-response.mjs` 和 `tests/regression/portal/smoke-test-v22-portal-file-space-management.mjs`，公开响应不得泄漏内部存储字段。
+- `scripts/check-one-person-lab-upstream-clean.mjs` 的 upstream checkout clean 检查已迁入 `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`：当 `.runtime/one-person-lab-upstream` 存在时，gate 会执行 `git status --short` 并要求为空；该检查不把 `.runtime` 内容提交进 git。
+- `scripts/smoke-test-workspace-storage-routes-contract.mjs` 是非 v22 旧命名 route gate，并且会断言公开响应返回 `storageKey`；当前 v22 替代入口是 `tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs` 和 `tests/regression/portal/regression-test-v22-portal-file-space-management.mjs`，公开响应不得泄漏内部存储字段。
 
 ## 暂不删除的阻塞候选
 
 | File / Pattern | Classification | Why blocked |
 | --- | --- | --- |
-| `compose.product.yaml` | blocked-retire-candidate | 仍被 `tests/contract/smoke-test-v22-default-entry-narrative-gate.mjs` 和 `docs/recovery/repo-zoning.md` 明确引用；同时是本地 PostgreSQL/Redis 下一 leaf 的潜在本地编排入口。 |
+| `compose.product.yaml` | blocked-retire-candidate | 仍被 `tests/contract/contract-test-v22-default-entry-narrative-gate.mjs` 和 `docs/recovery/repo-zoning.md` 明确引用；同时是本地 PostgreSQL/Redis 下一 leaf 的潜在本地编排入口。 |
 | `scripts/v22-agent-workflow.mjs` | duplicate-governance-candidate | 仍被 `docs/status.md`、`docs/vibe-coding.md`、`docs/invariants.md`、`docs/decisions.md`、cloud workflow 合同和 smoke 引用。 |
 | `scripts/sync-workspace-file-to-minio.ps1` | blocked-retire-candidate | 仍被 `services/portal/src/config/portal-config.mjs` 挂载。 |
 | `services/**` residue candidates | future-cleanup-candidate | 服务代码属于 active surface；候选文件必须另开 service cleanup leaf，补 import/runtime/eval 证明后再删。 |

@@ -55,8 +55,8 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - `tests/README.md`
 - `docs/recovery/v22-agent-verify-manifest.json`
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-docs-taxonomy-skeleton.md`
-- `tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`
-- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
+- `tests/contract/contract-test-v22-docs-taxonomy-skeleton.mjs`
+- `tests/contract/contract-test-v22-mvp-contract-suite.mjs`
 - `scripts/v22-test-classification.mjs`
 
 ## forbidden_scope
@@ -79,7 +79,7 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 - Added target directory README skeletons for `active`, `product`, `runtime`, `specs`, `policies`, `delivery`, `source`, `public`, `references` and `history`.
 - Added `tests/README.md` to define the future test taxonomy before moving any executable tests.
 - Marked old contract, recovery, agent-run and smoke/eval paths as blocked-retain until replacement truth, reference migration and gates exist.
-- Added `tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs` to enforce one README per new target directory, blocked-retain existence, branch override wiring and changed-file scope.
+- Added `tests/contract/contract-test-v22-docs-taxonomy-skeleton.mjs` to enforce one README per new target directory, blocked-retain existence, branch override wiring and changed-file scope.
 - Added a `docs-taxonomy-skeleton` branch override so `v22-verify current` does not run the future PostgreSQL/Redis product leaf on this cleanup branch.
 - Added the new gate to `local-contract` and to `scripts/v22-test-classification.mjs` as `default/local-contract`, `contract-local`, `control-plane`, `atomic`, `none`.
 - Updated the legacy local-regression runner's branch-override allowlist to recognize this cleanup override without changing its underlying regression script set.
@@ -102,11 +102,11 @@ Create the first OPL-style docs/tests taxonomy skeleton for MedOPL v22: one life
 
 ## verification_commands
 
-- `node tests/contract/smoke-test-v22-docs-taxonomy-skeleton.mjs`
-- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
-- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
-- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/contract-test-v22-docs-taxonomy-skeleton.mjs`
+- `node tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `node tests/health/health-check-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/contract-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`

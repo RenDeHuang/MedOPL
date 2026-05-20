@@ -37,8 +37,8 @@
 - `scripts/v22-verify.mjs`
 - `scripts/v22-workflow-gate.mjs`
 - `scripts/v22-test-classification.mjs`
-- `tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `tests/health/health-check-v22-smoke-eval-boundary.mjs`
 
 ## allowed_write_scope
 
@@ -78,7 +78,7 @@
 - 将 `scripts/v22-smoke-classification.mjs` 重命名为 `scripts/v22-test-classification.mjs`，分类统计为 health-check 6、smoke-golden 11、contract-local 28、local-regression 62、future-authorized 48、retired 0。
 - 更新 `scripts/v22-verify.mjs`、`scripts/v22-workflow-gate.mjs`、manifest、合同文档、recovery 文档和 tests README，使活跃执行入口全部指向 `tests/**`。
 - 修正迁移后的相对 import，确保 `tests/smoke/*`、`tests/regression/*/*`、`tests/future-authorized/cloud/*` 和 `tests/contract/runtime-bridge/*` 都能从新目录解析 repo 内模块。
-- 新增 `tests/contract/smoke-test-v22-tests-taxonomy-hard-retirement.mjs`，验证旧 scripts eval 入口不存在、classification 与 tracked tests 文件一致、manifest 不执行旧路径、agent-run 留痕存在且禁区未触碰。
+- 新增 `tests/contract/contract-test-v22-tests-taxonomy-hard-retirement.mjs`，验证旧 scripts eval 入口不存在、classification 与 tracked tests 文件一致、manifest 不执行旧路径、agent-run 留痕存在且禁区未触碰。
 - 更新 `docs/active/README.md` 与 `tests/README.md`，把 tests taxonomy 写成当前真相而不是未来 skeleton。
 
 ## eval_first_changes
@@ -96,11 +96,11 @@
 
 ## verification_commands
 
-- `node tests/contract/smoke-test-v22-tests-taxonomy-hard-retirement.mjs`
-- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
-- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
-- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/contract/contract-test-v22-tests-taxonomy-hard-retirement.mjs`
+- `node tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `node tests/health/health-check-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/contract-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`

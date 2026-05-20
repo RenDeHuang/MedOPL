@@ -289,8 +289,8 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 
 ```text
 node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
-node tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
-node tests/regression/runtime-bridge/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs
+node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs
+node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs
 ```
 
 这些 smoke 只检查 repo-tracked 合同、索引、本地 Portal/Gateway/Runtime Bridge contract shape 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
@@ -299,4 +299,4 @@ node tests/regression/runtime-bridge/smoke-test-v22-portal-runtime-bridge-api-lo
 
 真实 WebUI canary 的历史 evidence 只保留为 `.runtime/real-opl-webui-canary/evidence.json` 脱敏记录和合同状态；对应真实 WebUI runner 不属于 active repo executable surface。后续如果要重新启动或连接独立 OPL/AionUI WebUI，必须单独授权 WebUI 来源，不修改 WebUI/upstream，不读取 secret，不调用真实云，不把 HTTP 200 placeholder 当真实 Product API。
 
-`tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs` 暂保留为显式 WebUI 来源下的 Runtime Bridge boundary proof；它不进入默认 MVP suite，不能作为默认产品入口、live-test 或 production deploy evidence。运行它必须有明确 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL`，证据只保存在 `.runtime/real-opl-webui-runtime-bridge-flow`，不进 git。
+`tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs` 暂保留为显式 WebUI 来源下的 Runtime Bridge boundary proof；它不进入默认 MVP suite，不能作为默认产品入口、live-test 或 production deploy evidence。运行它必须有明确 `OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL`，证据只保存在 `.runtime/real-opl-webui-runtime-bridge-flow`，不进 git。

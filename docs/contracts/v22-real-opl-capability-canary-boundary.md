@@ -396,10 +396,10 @@ HTTP status 必须表达业务失败类别。若网关或 Runtime Bridge 使用 
 本合同对应分支进入 B 窗口前必须满足：
 
 1. 明确声明订阅本合同包和模型记录。当前 lane 分支名为 `feat/v22-real-opl-capability-canary`，模型记录为 `gpt-5.4`。
-2. `node tests/regression/opl/smoke-test-v22-real-opl-capability-contract-gate.mjs` 通过。
-3. `node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
+2. `node tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs` 通过。
+3. `node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
 4. `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
-5. `node tests/contract/smoke-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
+5. `node tests/contract/contract-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
 6. canary 事实已回写合同、status 和 validation path。
 7. message/file/run/artifact/observability 未完成真实 canary 时，必须在状态矩阵标记为未完成或需授权。
 8. 没有修改 one-person-lab upstream。

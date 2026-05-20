@@ -29,10 +29,10 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - `docs/recovery/agent-runs/schema.md`
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
-- `tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
-- `tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
+- `tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
+- `tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `tests/health/health-check-v22-smoke-eval-boundary.mjs`
+- `tests/contract/contract-test-v22-agent-run-record-gate.mjs`
 
 ## Subagent Audit Summary
 
@@ -49,7 +49,7 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - Small smoke entrypoint: `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk`.
 - Local deterministic eval entrypoint: `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk`.
 - Wider local regression entrypoint: `node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk`.
-- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs` remains a legacy local-regression alias and is not the default smoke or default agent entrypoint.
+- `tests/contract/contract-test-v22-mvp-contract-suite.mjs` remains a legacy local-regression alias and is not the default smoke or default agent entrypoint.
 - `scripts/v22-agent-workflow.mjs` remains blocked-retain / retire-candidate and is not current truth, not default verify, and not auto-merge/push automation.
 
 ## Smoke / Eval Truth
@@ -61,7 +61,7 @@ It does not implement PostgreSQL/Redis, services code, cloud, deploy, upstream, 
 - `future-authorized`: classification-only visibility for future cloud/live/deploy/canary gates.
 - `suite-wrapper`: aggregation script; it must not be counted as atomic business eval.
 
-This branch records `tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs` and `tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs` as suite wrappers. They are blocked-retain, not delete-ready.
+This branch records `tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs` and `tests/future-authorized/cloud/future-authorized-test-v22-cloud-resource-contract-suite.mjs` as suite wrappers. They are blocked-retain, not delete-ready.
 
 ## Agent-Run Truth
 
@@ -76,10 +76,10 @@ None.
 
 Current blocked-retain candidates include:
 
-- `tests/contract/smoke-test-v22-mvp-contract-suite.mjs`
+- `tests/contract/contract-test-v22-mvp-contract-suite.mjs`
 - `scripts/v22-agent-workflow.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs`
-- `tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs`
+- `tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-cloud-resource-contract-suite.mjs`
 - `docs/recovery/v22-program-board.md`
 - `docs/recovery/v22-program-status-table.md`
 - `docs/recovery/cloud-onboarding-execution-board.md`

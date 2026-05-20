@@ -713,8 +713,8 @@ Figma Make 吸收规则：
 设计源分支必须通过：
 
 ```bash
-node tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs
-node tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs
+node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
 git diff --check -- DESIGN.md docs scripts services/portal/frontend
 ```
 

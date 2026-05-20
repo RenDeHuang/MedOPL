@@ -41,10 +41,10 @@ Normalize the monolith agent workflow entrypoint and trace evidence layer after 
 - `docs/recovery/agent-runs/schema.md`
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
-- `tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
-- `tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
+- `tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
+- `tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `tests/health/health-check-v22-smoke-eval-boundary.mjs`
+- `tests/contract/contract-test-v22-agent-run-record-gate.mjs`
 
 ## allowed_write_scope
 
@@ -59,16 +59,16 @@ Normalize the monolith agent workflow entrypoint and trace evidence layer after 
 - `docs/recovery/agent-runs/2026-05-20-cleanup-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.md`
 - `docs/recovery/v22-monolith-agent-workflow-entrypoint-and-trace-normalization-index.md`
 - `scripts/v22-test-classification.mjs`
-- `tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
-- `tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
-- `tests/health/smoke-test-v22-contract-conflict-boundary.mjs`
-- `tests/contract/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
-- `tests/regression/portal/smoke-test-v22-observability-billing-narrative-boundary.mjs`
-- `tests/contract/smoke-test-v22-truth-repo-narrative-reference-unification.mjs`
-- `tests/health/smoke-test-v22-zero-compat-active-surface-gate.mjs`
-- `tests/contract/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs`
+- `tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `tests/health/health-check-v22-smoke-eval-boundary.mjs`
+- `tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
+- `tests/contract/contract-test-v22-agent-run-record-gate.mjs`
+- `tests/health/health-check-v22-contract-conflict-boundary.mjs`
+- `tests/contract/contract-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `tests/regression/portal/regression-test-v22-observability-billing-narrative-boundary.mjs`
+- `tests/contract/contract-test-v22-truth-repo-narrative-reference-unification.mjs`
+- `tests/health/health-check-v22-zero-compat-active-surface-gate.mjs`
+- `tests/contract/contract-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs`
 
 ## forbidden_scope
 
@@ -90,13 +90,13 @@ Normalize the monolith agent workflow entrypoint and trace evidence layer after 
 - Added directory-level agent-run README and schema for new records.
 - Kept historical records as legacy evidence instead of rewriting all evidence in one large diff.
 - Reframed root/recovery local verification text around `scripts/v22-verify.mjs`.
-- Marked `tests/regression/portal/smoke-test-v22-portal-runtime-suite.mjs` and `tests/future-authorized/cloud/smoke-test-v22-cloud-resource-contract-suite.mjs` as suite wrappers.
+- Marked `tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs` and `tests/future-authorized/cloud/future-authorized-test-v22-cloud-resource-contract-suite.mjs` as suite wrappers.
 - Added a branch-scoped verification bundle so this cleanup branch does not run the future PostgreSQL/Redis implementation leaf.
 - Recorded no delete-ready files in this branch.
 
 ## eval_first_changes
 
-- RED: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` initially ran the current PostgreSQL/Redis product leaf and failed in `tests/regression/portal/smoke-test-v22-portal-storage-mode-local-closure.mjs`; root cause was missing branch override for this cleanup branch.
+- RED: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` initially ran the current PostgreSQL/Redis product leaf and failed in `tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs`; root cause was missing branch override for this cleanup branch.
 - GREEN target: add branch override and a scoped cleanup gate for this branch.
 - RED: smoke/eval metadata counted `portal-runtime-suite` and `cloud-resource-contract-suite` as atomic.
 - GREEN target: classify both as `suite-wrapper` and update classification gates.
@@ -112,11 +112,11 @@ Normalize the monolith agent workflow entrypoint and trace evidence layer after 
 
 ## verification_commands
 
-- `node tests/contract/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs`
-- `node tests/contract/smoke-test-v22-agent-run-record-gate.mjs`
-- `node tests/contract/smoke-test-v22-agent-verify-entrypoint.mjs`
-- `node tests/health/smoke-test-v22-smoke-classification-gate.mjs`
-- `node tests/health/smoke-test-v22-smoke-eval-boundary.mjs`
+- `node tests/contract/contract-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs`
+- `node tests/contract/contract-test-v22-agent-run-record-gate.mjs`
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
+- `node tests/health/health-check-v22-smoke-classification-gate.mjs`
+- `node tests/health/health-check-v22-smoke-eval-boundary.mjs`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`

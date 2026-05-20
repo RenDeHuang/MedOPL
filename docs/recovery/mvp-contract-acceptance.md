@@ -106,35 +106,35 @@
 
 ## Legacy 本地 MVP regression alias
 
-默认 agent 验证入口是 `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`，suite 分层由 `docs/recovery/v22-agent-verify-manifest.json` 和 `scripts/v22-verify.mjs` 决定。`tests/contract/smoke-test-v22-mvp-contract-suite.mjs` 只保留为 legacy local-regression alias，用来串联合同级、本地 fixture、fail-closed 和不读取 secret 的本地 deterministic eval；它不再被称为默认 smoke，也不替代 `suite smoke` 的 golden path。该 suite 不读取 secret、不调用真实云、不运行真实 upstream/WebUI/provider live canary、不执行 build/push/kubectl、不执行真实 runtime eval；任何需要真实外部系统的验证都必须进入 future-authorized boundary，不作为默认 active executable surface。
+默认 agent 验证入口是 `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`，suite 分层由 `docs/recovery/v22-agent-verify-manifest.json` 和 `scripts/v22-verify.mjs` 决定。`tests/contract/contract-test-v22-mvp-contract-suite.mjs` 只保留为 legacy local-regression alias，用来串联合同级、本地 fixture、fail-closed 和不读取 secret 的本地 deterministic eval；它不再被称为默认 smoke，也不替代 `suite smoke` 的 golden path。该 suite 不读取 secret、不调用真实云、不运行真实 upstream/WebUI/provider live canary、不执行 build/push/kubectl、不执行真实 runtime eval；任何需要真实外部系统的验证都必须进入 future-authorized boundary，不作为默认 active executable surface。
 
 - `tests/smoke/smoke-test-v22-pricing-plan-contract.mjs`
 - `tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-ui-design-quality-audit.mjs`
+- `tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs`
 - `tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs`
 - `tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs`
 - `tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs`
-- `tests/regression/opl/smoke-test-v22-opl-work-message-file-run-flow.mjs`
-- `tests/regression/opl/smoke-test-v22-opl-entry-preflight-auth-flow.mjs`
+- `tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs`
+- `tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`
 - `tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs`
-- `tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs`
-- `tests/regression/opl/smoke-test-v22-real-opl-capability-contract-gate.mjs`
-- `tests/regression/opl/smoke-test-v22-real-opl-provider-message-contract-gate.mjs`
-- `tests/regression/opl/smoke-test-v22-real-opl-file-run-artifact-contract-gate.mjs`
-- `tests/regression/opl/smoke-test-v22-real-opl-file-run-artifact-gates.mjs`
-- `tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs`
-- `tests/regression/runtime-bridge/smoke-test-v22-portal-runtime-bridge-api-local-flow.mjs`
+- `tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs`
+- `tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs`
+- `tests/regression/opl/regression-test-v22-real-opl-provider-message-contract-gate.mjs`
+- `tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-contract-gate.mjs`
+- `tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs`
+- `tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs`
+- `tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs`
 - `tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-runtime-startup-config.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-dev-server-auth-proxy.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-auth-landing-route.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-web-route-alignment.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-api-auth-boundary.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-package-surface-isolation.mjs`
-- `tests/regression/portal/smoke-test-v22-portal-structure-failure-isolation-contract.mjs`
+- `tests/regression/portal/regression-test-v22-portal-runtime-startup-config.mjs`
+- `tests/regression/portal/regression-test-v22-portal-dev-server-auth-proxy.mjs`
+- `tests/regression/portal/regression-test-v22-portal-auth-landing-route.mjs`
+- `tests/regression/portal/regression-test-v22-portal-web-route-alignment.mjs`
+- `tests/regression/portal/regression-test-v22-portal-api-auth-boundary.mjs`
+- `tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs`
+- `tests/regression/portal/regression-test-v22-portal-structure-failure-isolation-contract.mjs`
 - `tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs`
 - `tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs`
-- `tests/regression/portal/smoke-test-v22-langfuse-observability-metadata-contract.mjs`
+- `tests/regression/portal/regression-test-v22-langfuse-observability-metadata-contract.mjs`
 
 ## 授权外部 canary 边界
 

@@ -28,8 +28,8 @@
 | File | Decision | Replacement / Authority |
 | --- | --- | --- |
 | `scripts/check-portal-copy.mjs` | delete | `scripts/check-mojibake.mjs` 已覆盖 Portal server mojibake 和更宽文本面。 |
-| `scripts/check-one-person-lab-upstream-clean.mjs` | delete | upstream checkout clean 检查迁入 `tests/contract/smoke-test-v22-repo-governance-physical-compaction.mjs`；当 `.runtime/one-person-lab-upstream` 存在时，gate 执行 `git status --short` 并要求为空。 |
-| `scripts/smoke-test-workspace-storage-routes-contract.mjs` | delete | v22 workspace storage gates 覆盖更强公开响应和文件空间行为：`tests/regression/portal/smoke-test-v22-workspace-storage-public-response.mjs`、`tests/regression/portal/smoke-test-v22-portal-file-space-management.mjs`；旧 gate 还会要求公开响应返回 `storageKey`，与当前脱敏合同冲突。 |
+| `scripts/check-one-person-lab-upstream-clean.mjs` | delete | upstream checkout clean 检查迁入 `tests/contract/contract-test-v22-repo-governance-physical-compaction.mjs`；当 `.runtime/one-person-lab-upstream` 存在时，gate 执行 `git status --short` 并要求为空。 |
+| `scripts/smoke-test-workspace-storage-routes-contract.mjs` | delete | v22 workspace storage gates 覆盖更强公开响应和文件空间行为：`tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs`、`tests/regression/portal/regression-test-v22-portal-file-space-management.mjs`；旧 gate 还会要求公开响应返回 `storageKey`，与当前脱敏合同冲突。 |
 
 ## 暂不删除
 
@@ -46,7 +46,7 @@
 - `suite health`：最小控制面生命体征，6 个脚本。
 - `suite smoke`：唯一 broad smoke 入口，运行 golden smoke suite。
 - `suite local-contract`：合同/治理/control-plane eval，包含本 compaction gate。
-- `suite local-regression`：本地业务回归，当前仍通过 `smoke-test-v22-mvp-contract-suite.mjs` 聚合。
+- `suite local-regression`：本地业务回归，当前仍通过 `contract-test-v22-mvp-contract-suite.mjs` 聚合。
 - `suite mvp`：保留 legacy alias，但语义已收敛为 local deterministic regression，不再作为纯 smoke。
 - `suite cloud-future-authorized`：分类可见性，不跑真实云。
 

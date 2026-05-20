@@ -80,7 +80,7 @@ future-authorized upstream/WebUI capability runner only
 
 ```text
 node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
-node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mjs
+node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs
 ```
 
 验收：
@@ -100,8 +100,8 @@ node tests/regression/opl/smoke-test-v22-portal-opl-context-backflow-contract.mj
 验证命令：
 
 ```text
-OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/smoke-test-v22-real-opl-webui-runtime-bridge-flow.mjs
-node tests/regression/runtime-bridge/smoke-test-v22-runtime-bridge-state-store-atomic-flow.mjs
+OPL_REAL_WEBUI_DIR=<authorized-webui-dir> node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs
+node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs
 ```
 
 验收：
