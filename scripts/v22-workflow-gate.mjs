@@ -47,8 +47,8 @@ const packageDefinitions = {
       "docs/contracts/v22-saas-portal-opl-ops-surface-boundary.md",
       "docs/contracts/v22-portal-files-billing-trace-boundary.md",
       "docs/contracts/v22-release-stop-billing-audit-boundary.md",
+      "docs/active/README.md",
       "docs/recovery/status-matrix.md",
-      "docs/recovery/active-surface.md",
     ],
     validationCommands: [
       "node scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs",
@@ -156,8 +156,8 @@ const packageDefinitions = {
     contracts: [
       "docs/contracts/v22-mvp-managed-opl-loop.md",
       "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
+      "docs/active/README.md",
       "docs/recovery/status-matrix.md",
-      "docs/recovery/active-surface.md",
       "docs/recovery/archive-policy.md",
       "与被退役路径相关的分支合同",
     ],

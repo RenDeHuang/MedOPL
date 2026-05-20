@@ -13,8 +13,7 @@ const checkedFiles = [
   "docs/contracts/README.md",
   "docs/recovery/v22-truth-freeze.md",
   "docs/recovery/decisions.md",
-  "docs/recovery/product-truth.md",
-  "docs/recovery/architecture-truth.md",
+  "docs/active/README.md",
   "docs/recovery/status-matrix.md",
 ];
 

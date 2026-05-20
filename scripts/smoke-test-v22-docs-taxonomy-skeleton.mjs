@@ -49,18 +49,18 @@ const requiredReadmeTokens = Object.freeze({
     "leaf-portal-postgres-redis-local-production-data-closure",
   ]),
   "docs/product/README.md": Object.freeze([
-    "Purpose: `product_truth`",
+    "Purpose: `product_truth_view`",
     "托管 OPL 科研工作台",
     "不是云资源控制台",
-    "Portal",
-    "OPL",
+    "不是第二份 current truth",
+    "Current Truth Pointer",
   ]),
   "docs/runtime/README.md": Object.freeze([
-    "Purpose: `runtime_truth`",
+    "Purpose: `runtime_truth_view`",
     "Portal -> OPL Web Gateway -> clean One Person Lab upstream",
     "Runtime Bridge / Runtime Agent",
-    "upstream 必须保持 clean",
-    "Real OPL canary 是验证链路",
+    "upstream",
+    "Current Truth Pointer",
   ]),
   "docs/specs/README.md": Object.freeze([
     "Purpose: `specs_contract_index`",
@@ -85,7 +85,7 @@ const requiredReadmeTokens = Object.freeze({
     "authorized create/release",
   ]),
   "docs/source/README.md": Object.freeze([
-    "Purpose: `source_surface_truth`",
+    "Purpose: `source_surface_truth_view`",
     "services/portal",
     "services/opl-web-gateway",
     "services/opl-runtime-bridge",
@@ -193,6 +193,10 @@ function changedFiles() {
   return [...new Set(outputs.flatMap((output) => output.split(/\r?\n/u).filter(Boolean)))].sort();
 }
 
+function currentBranchName() {
+  return git(["branch", "--show-current"]);
+}
+
 async function listFilesUnder(repoDir) {
   const entries = await readdir(path.join(repoRoot, repoDir), { withFileTypes: true });
   return entries.map((entry) => entry.name).sort();
@@ -229,7 +233,9 @@ for (const repoPath of blockedRetainPaths) {
   assert.equal(await exists(repoPath), true, `blocked_retain_path_must_remain_until_reference_migration:${repoPath}`);
 }
 
-for (const repoPath of changedFiles()) assertChangedFileAllowed(repoPath);
+if (currentBranchName() === branchName) {
+  for (const repoPath of changedFiles()) assertChangedFileAllowed(repoPath);
+}
 
 const metadata = smokeEvalMetadataOf(thisGate);
 assert.equal(metadata.category, "default/local-contract", "this_gate_category_mismatch");

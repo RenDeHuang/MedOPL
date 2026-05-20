@@ -76,8 +76,7 @@ const branchScopedAllowedDiffPaths = new Map([
   ["contract/v22-saas-control-plane-ux-truth", new Set([
     "docs/contracts/README.md",
     "docs/contracts/v22-saas-control-plane-user-experience-boundary.md",
-    "docs/recovery/product-truth.md",
-    "docs/recovery/architecture-truth.md",
+    "docs/active/README.md",
     "docs/recovery/mvp-contract-acceptance.md",
     "docs/recovery/v22-goal-current.json",
     "docs/recovery/v22-current-vs-ideal-gap-matrix.md",

@@ -17,7 +17,6 @@ const runPath = "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-ag
 const absorbedRunPath = "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md";
 
 const blockedRetainPaths = Object.freeze([
-  "docs/recovery/active-surface.md",
   "docs/recovery/archive-policy.md",
   "docs/recovery/decisions.md",
   "docs/recovery/legacy-cleanup-backlog.md",

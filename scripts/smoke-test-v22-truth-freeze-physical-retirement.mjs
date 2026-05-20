@@ -63,7 +63,7 @@ const compactionIndex = readText("docs/recovery/v22-contract-eval-compaction-ind
   "docs/contracts/v22-canonical-user-loop.md",
 ].forEach((needle) => assertIncludes(compactionIndex, needle, "docs/recovery/v22-contract-eval-compaction-index.md"));
 
-const productTruth = readText("docs/recovery/product-truth.md");
+const activeTruth = readText("docs/active/README.md");
 [
   "当前阶段真相",
   "当前 MVP active 套餐只有",
@@ -73,9 +73,8 @@ const productTruth = readText("docs/recovery/product-truth.md");
   "120min",
   "T+1",
   "释放托管运行环境不等于删除文件空间",
-].forEach((needle) => assertIncludes(productTruth, needle, "docs/recovery/product-truth.md"));
+].forEach((needle) => assertIncludes(activeTruth, needle, "docs/active/README.md"));
 
-const architectureTruth = readText("docs/recovery/architecture-truth.md");
 [
   "数据与云控制面真相",
   "Portal canonical truth",
@@ -88,7 +87,7 @@ const architectureTruth = readText("docs/recovery/architecture-truth.md");
   "Gateway = 入口反腐层",
   "Runtime Bridge = launch/session/run/artifact/trace 的 canonical integration boundary",
   "Portal 内部 operation/job/projection/reconciliation",
-].forEach((needle) => assertIncludes(architectureTruth, needle, "docs/recovery/architecture-truth.md"));
+].forEach((needle) => assertIncludes(activeTruth, needle, "docs/active/README.md"));
 
 const manifest = readText("docs/recovery/v22-agent-verify-manifest.json");
 [

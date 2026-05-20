@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isSmokeClassifiedIn } from "./v22-smoke-classification.mjs";
 
 const read = (filePath) => readFile(filePath, "utf8");
 
@@ -19,37 +20,30 @@ const authorizedBoundaryPath = "docs/contracts/v22-authorized-tencent-create-rel
 const implementationBoundaryPath = "docs/contracts/v22-authorized-tencent-create-release-implementation-boundary.md";
 const readmePath = "docs/contracts/README.md";
 const productPath = "docs/product.md";
-const productTruthPath = "docs/recovery/product-truth.md";
-const architectureTruthPath = "docs/recovery/architecture-truth.md";
+const activeTruthPath = "docs/active/README.md";
 const decisionsPath = "docs/recovery/decisions.md";
-const suitePath = "scripts/smoke-test-v22-mvp-contract-suite.mjs";
 
 const [
   authorizedBoundary,
   implementationBoundary,
   readme,
   product,
-  productTruth,
-  architectureTruth,
+  activeTruth,
   decisions,
-  suite,
 ] = await Promise.all([
   read(authorizedBoundaryPath),
   read(implementationBoundaryPath),
   read(readmePath),
   read(productPath),
-  read(productTruthPath),
-  read(architectureTruthPath),
+  read(activeTruthPath),
   read(decisionsPath),
-  read(suitePath),
 ]);
 
 const packageDocs = [
   ["authorized_boundary", authorizedBoundary],
   ["implementation_boundary", implementationBoundary],
   ["product", product],
-  ["product_truth", productTruth],
-  ["architecture_truth", architectureTruth],
+  ["active_truth", activeTruth],
   ["decisions", decisions],
 ];
 
@@ -72,8 +66,7 @@ const lifecycleDocs = [
   ["authorized_boundary", authorizedBoundary],
   ["implementation_boundary", implementationBoundary],
   ["product", product],
-  ["product_truth", productTruth],
-  ["architecture_truth", architectureTruth],
+  ["active_truth", activeTruth],
   ["decisions", decisions],
 ];
 
@@ -98,8 +91,7 @@ for (const [label, source] of lifecycleDocs) {
 
 const userNarrativeDocs = [
   ["product", product],
-  ["product_truth", productTruth],
-  ["architecture_truth", architectureTruth],
+  ["active_truth", activeTruth],
   ["decisions", decisions],
 ];
 
@@ -123,9 +115,11 @@ assertIncludesAll(readme, [
   "7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发",
 ], "contracts_readme_alignment");
 
-assertIncludesAll(suite, [
-  "smoke-test-v22-real-resource-contract-alignment",
-], "mvp_suite_alignment");
+assert.equal(
+  isSmokeClassifiedIn("scripts/smoke-test-v22-real-resource-contract-alignment.mjs", { categories: ["cloud-future-authorized"] }),
+  true,
+  "real_resource_alignment_must_remain_classified_future_authorized",
+);
 
 console.log(JSON.stringify({
   ok: true,
@@ -135,9 +129,7 @@ console.log(JSON.stringify({
     implementationBoundaryPath,
     readmePath,
     productPath,
-    productTruthPath,
-    architectureTruthPath,
+    activeTruthPath,
     decisionsPath,
-    suitePath,
   },
 }, null, 2));

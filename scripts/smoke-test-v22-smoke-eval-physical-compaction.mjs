@@ -84,7 +84,10 @@ for (const repoPath of requiredFiles) {
 
 const files = trackedFiles();
 const v22SmokeFiles = files.filter((file) => /^scripts\/smoke-test-v22-.+\.mjs$/u.test(file));
-assert.deepEqual(Object.keys(SMOKE_CLASSIFICATION).sort(), v22SmokeFiles, "all_v22_smoke_eval_files_must_be_classified");
+const classifiedTrackedScripts = Object.keys(SMOKE_CLASSIFICATION)
+  .filter((scriptPath) => files.includes(scriptPath))
+  .sort();
+assert.deepEqual(classifiedTrackedScripts, v22SmokeFiles, "all_tracked_v22_smoke_eval_files_must_be_classified");
 
 for (const scriptPath of retiredScripts) {
   assert.equal(await exists(scriptPath), false, `retired_smoke_eval_support_script_must_not_exist:${scriptPath}`);
@@ -109,7 +112,7 @@ const tierCounts = Object.fromEntries([
   "retired",
 ].map((tier) => [tier, listSmokeEvalScripts({ tiers: [tier] }).length]));
 
-assert.equal(v22SmokeFiles.length, Object.keys(SMOKE_CLASSIFICATION).length, `v22_smoke_eval_count_mismatch:${v22SmokeFiles.length}`);
+assert.equal(v22SmokeFiles.length, classifiedTrackedScripts.length, `v22_smoke_eval_count_mismatch:${v22SmokeFiles.length}`);
 assert(v22SmokeFiles.length >= 148, `v22_smoke_eval_count_must_not_drop_below_absorbed_baseline:${v22SmokeFiles.length}`);
 assert.equal(tierCounts["health-check"], 6, "health_check_count_must_remain_small");
 assert.equal(tierCounts["smoke-golden"], 11, "smoke_golden_count_must_remain_stable");

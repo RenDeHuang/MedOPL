@@ -45,19 +45,18 @@ const truthFreeze = readText("docs/recovery/v22-truth-freeze.md");
 ].forEach((needle) => assertIncludes(truthFreeze, needle, "docs/recovery/v22-truth-freeze.md"));
 assertNotIncludes(truthFreeze, "## 物理清退边界", "docs/recovery/v22-truth-freeze.md");
 
-const productTruth = readText("docs/recovery/product-truth.md");
+const activeTruth = readText("docs/active/README.md");
 [
   "用户在 Portal 主动开通托管计算资源和文件空间",
   "用户删除文件空间才进入 7 天保护期",
   "释放计算资源不触发文件空间 7 天保护期",
-].forEach((needle) => assertIncludes(productTruth, needle, "docs/recovery/product-truth.md"));
+].forEach((needle) => assertIncludes(activeTruth, needle, "docs/active/README.md"));
 
-const architectureTruth = readText("docs/recovery/architecture-truth.md");
 [
   "用户在 Portal 主动开通托管计算资源和文件空间",
   "平台代管底层云资源",
   "用户删除文件空间才进入 7 天保护期",
-].forEach((needle) => assertIncludes(architectureTruth, needle, "docs/recovery/architecture-truth.md"));
+].forEach((needle) => assertIncludes(activeTruth, needle, "docs/active/README.md"));
 
 const classification = readText("scripts/v22-smoke-classification.mjs");
 assertIncludes(classification, `"${renamedLoopGate}": "default/local-contract"`, "scripts/v22-smoke-classification.mjs");

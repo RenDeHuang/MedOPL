@@ -12,7 +12,7 @@ const files = {
   entry: "docs/contracts/v22-opl-entry-preflight-auth-boundary.md",
   upstream: "docs/contracts/v22-upstream-opl-boundary.md",
   readme: "docs/contracts/README.md",
-  activeSurface: "docs/recovery/active-surface.md",
+  activeTruth: "docs/active/README.md",
   statusMatrix: "docs/recovery/status-matrix.md",
   suite: "scripts/smoke-test-v22-mvp-contract-suite.mjs",
 };
@@ -43,7 +43,7 @@ const contractCorpus = [
   contents.readme,
 ].join("\n");
 const recoveryCorpus = [
-  contents.activeSurface,
+  contents.activeTruth,
   contents.statusMatrix,
 ].join("\n");
 const fullCorpus = `${contractCorpus}\n${recoveryCorpus}`;

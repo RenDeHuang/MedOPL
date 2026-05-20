@@ -279,7 +279,7 @@ const branchScopedAllowedDiffPaths = new Map([
     "docs/recovery/archive-policy.md",
     "docs/recovery/status-matrix.md",
     "docs/recovery/repo-zoning.md",
-    "docs/recovery/architecture-truth.md",
+    "docs/active/README.md",
     "docs/contracts/v22-portal-structure-failure-isolation-boundary.md",
     "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",
     "scripts/smoke-test-v22-archive-smoke-contract-physical-retirement-gate.mjs",

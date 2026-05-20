@@ -3,8 +3,7 @@ import { readFile } from "node:fs/promises";
 
 const contractPath = "docs/contracts/v22-saas-control-plane-user-experience-boundary.md";
 const contractIndexPath = "docs/contracts/README.md";
-const productTruthPath = "docs/recovery/product-truth.md";
-const architectureTruthPath = "docs/recovery/architecture-truth.md";
+const activeTruthPath = "docs/active/README.md";
 const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
 const mvpAcceptancePath = "docs/recovery/mvp-contract-acceptance.md";
 
@@ -82,15 +81,13 @@ function extractContractPackageSection(markdown, packageName) {
 const [
   contractMarkdown,
   contractIndex,
-  productTruth,
-  architectureTruth,
+  activeTruth,
   gapMatrix,
   mvpAcceptance,
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
-  source(productTruthPath),
-  source(architectureTruthPath),
+  source(activeTruthPath),
   source(gapMatrixPath),
   source(mvpAcceptancePath),
 ]);
@@ -159,10 +156,10 @@ for (const packageName of userVisiblePackageNames) {
   const section = extractContractPackageSection(contractIndex, packageName);
   assertIncludes(section, uxContractRef, `contract_package_must_subscribe_ux_truth:${packageName}`);
 }
-assertIncludes(productTruth, "SaaS 控制面", "product_truth_must_name_saas_control_plane");
-assertIncludes(productTruth, "托管交付平台", "product_truth_must_name_managed_delivery_platform");
-assertIncludes(architectureTruth, "Portal 不重做 OPL chatbot", "architecture_truth_must_keep_opl_chatbot_boundary");
-assertIncludes(architectureTruth, "OPL 负责科研执行", "architecture_truth_must_assign_opl_execution");
+assertIncludes(activeTruth, "SaaS 控制面", "active_truth_must_name_saas_control_plane");
+assertIncludes(activeTruth, "托管交付平台", "active_truth_must_name_managed_delivery_platform");
+assertIncludes(activeTruth, "Portal 不回答科研问题，不复制 OPL 的 chatbot", "active_truth_must_keep_opl_chatbot_boundary");
+assertIncludes(activeTruth, "OPL 负责科研执行", "active_truth_must_assign_opl_execution");
 assertIncludes(gapMatrix, "saas-control-plane-user-experience-truth", "gap_matrix_must_track_truth_layer_gap");
 assertIncludes(gapMatrix, uxContractRef, "gap_matrix_must_reference_contract");
 assertIncludes(gapMatrix, "status: completed", "gap_matrix_must_mark_truth_completed");
@@ -172,8 +169,7 @@ assertIncludes(mvpAcceptance, "scripts/smoke-test-v22-saas-control-plane-user-ex
 
 for (const text of [
   contractMarkdown,
-  productTruth,
-  architectureTruth,
+  activeTruth,
 ]) {
   assertExcludes(text, "Portal 是科研聊天界面", "truth_must_not_make_portal_chat_ui");
   assertExcludes(text, "Portal 是云资源控制台", "truth_must_not_make_portal_cloud_console");
@@ -185,8 +181,7 @@ console.log(JSON.stringify({
   checked: [
     contractPath,
     contractIndexPath,
-    productTruthPath,
-    architectureTruthPath,
+    activeTruthPath,
     gapMatrixPath,
     mvpAcceptancePath,
   ],
