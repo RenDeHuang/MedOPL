@@ -1,13 +1,13 @@
 {
   "schema_version": 2,
   "canonical": true,
-  "last_updated_at": "2026-05-20",
+  "last_updated_at": "2026-05-21",
   "model": "gpt-5.4",
   "runner": "scripts/v22-verify.mjs",
   "default_agent_entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "allowlist_authority": "tests_fixtures_manifest_not_scattered_smoke",
   "smoke_role": "health_and_golden_only",
-  "purpose": "Centralize v22 agent-facing verification after OPL-style hard retirement. docs/active/README.md is the only human current truth; docs/specs/README.md is the only contract/spec truth; tests/fixtures/v22/goal-current.json is the machine cursor.",
+  "purpose": "Centralize v22 agent-facing verification after OPL-style hard retirement and current-state index-loop normalization. docs/active/README.md is the only human current truth; docs/specs/README.md is the only contract/spec truth; tests/fixtures/v22/goal-current.json is the machine cursor; docs/history/README.md records post-absorb closeout.",
   "risk_classes": [
     "local_doc_eval",
     "local_service_code",
@@ -43,6 +43,7 @@
     "scripts/v22-workflow-gate.mjs",
     "scripts/v22-test-classification.mjs",
     "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+    "tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "tests/contract/contract-test-v22-retirement-lifecycle-system.mjs"
   ],
   "leaves": [
@@ -100,6 +101,7 @@
       ],
       "verification_commands": [
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -114,7 +116,10 @@
         "docs/history/README.md",
         "tests/fixtures/v22/goal-current.json",
         "tests/fixtures/v22/agent-verify-manifest.json"
-      ]
+      ],
+      "requires_post_absorb_truth_closeout": true,
+      "history_truth_file": "docs/history/README.md",
+      "machine_truth_commit_field": "last_absorbed_commit"
     }
   ],
   "suites": [
@@ -123,6 +128,7 @@
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -164,10 +170,17 @@
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"
+      ]
+    },
+    {
+      "id": "history-closeout",
+      "commands": [
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs"
       ]
     },
     {
@@ -192,6 +205,54 @@
   ],
   "package_suites": [],
   "branch_override_suites": [
+    {
+      "id": "current-state-index-loop-normalization",
+      "branch": "cleanup/v22-current-state-index-loop-normalization",
+      "branches": [
+        "cleanup/v22-current-state-index-loop-normalization"
+      ],
+      "reason": "Current-state index-loop normalization updates docs taxonomy pointers, machine cursor, history closeout, and index-loop gates without changing services or product implementation.",
+      "commands": [
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+        "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts"
+      ],
+      "allowed_files": [
+        "docs/**/*.md",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-test-classification.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        ".runtime/*",
+        "secret-like paths"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "git-push"
+      ]
+    },
     {
       "id": "full-taxonomy-hard-retirement",
       "branch": "cleanup/v22-full-taxonomy-hard-retirement",
