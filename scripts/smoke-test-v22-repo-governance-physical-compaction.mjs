@@ -13,6 +13,7 @@ const requiredFiles = Object.freeze([
   "docs/recovery/v22-repo-governance-physical-compaction-index.md",
   "docs/recovery/v22-agent-first-development-loop.md",
   "docs/recovery/agent-runs/2026-05-20-cleanup-v22-repo-governance-physical-compaction.md",
+  "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-absorb-repo-governance-truth.md",
 ]);
 
 const physicallyRetiredPaths = Object.freeze([
@@ -209,12 +210,25 @@ for (const token of [
   "forbidden_scope",
   "verification_commands",
   "b_review_result",
-  "pending_B_review",
   "不读取 secret",
   "不调用真实云",
   "不修改 upstream",
 ]) {
   assert(runRecordText.includes(token), `agent_run_record_token_missing:${token}`);
+}
+const hasPendingReview = runRecordText.includes("pending_B_review");
+const hasAbsorbedReview = runRecordText.includes("passed / ff-only absorbed / pushed");
+assert(hasPendingReview || hasAbsorbedReview, "agent_run_record_must_have_pending_or_absorbed_review_state");
+if (hasAbsorbedReview) {
+  for (const token of [
+    "absorbed_commit",
+    "post_absorb_fix_commit",
+    "post_absorb_verification",
+    "3fa576b8809560629c5a1677ebacae9b76034810",
+    "b00bb23a6e05ed15d2612e0341664948f682364a",
+  ]) {
+    assert(runRecordText.includes(token), `absorbed_agent_run_record_token_missing:${token}`);
+  }
 }
 
 assert.equal(

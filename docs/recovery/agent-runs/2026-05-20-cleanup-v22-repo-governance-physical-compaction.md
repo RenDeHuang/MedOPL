@@ -30,7 +30,15 @@
 
 ## commit_sha
 
-`pending_B_review`
+`3fa576b8809560629c5a1677ebacae9b76034810`
+
+## absorbed_commit
+
+`3fa576b8809560629c5a1677ebacae9b76034810`
+
+## post_absorb_fix_commit
+
+`b00bb23a6e05ed15d2612e0341664948f682364a`
 
 ## contract_subscription
 
@@ -109,7 +117,19 @@
 
 ## b_review_result
 
-`pending_B_review`
+`passed / ff-only absorbed / pushed`
+
+窗口 B 已将 `cleanup/v22-repo-governance-physical-compaction` ff-only 合入 `recovery/platform-v22-trunk` 并 push。吸收提交为 `3fa576b8809560629c5a1677ebacae9b76034810`。
+
+post-push 发现 `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs` 在分支 review 态依赖 `origin...HEAD` deletion-only diff；合入 trunk 后 diff 为空，导致 trunk 上的 local-contract suite 失败。B 追加修复提交 `b00bb23a6e05ed15d2612e0341664948f682364a`，让 gate 同时支持 branch review 态和已吸收 trunk 态。
+
+## post_absorb_verification
+
+- `node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- docs/recovery scripts services/portal/src`
 
 ## runtime_notes
 
