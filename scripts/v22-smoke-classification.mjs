@@ -48,6 +48,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-contract-eval-compaction.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs": "default/local-contract",
   "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-cloud-connection-runnable-path.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-cloud-harness-manifest-selector.mjs": "cloud-future-authorized",
@@ -238,6 +239,7 @@ const CONTROL_PLANE_SURFACE_SET = new Set([
   "scripts/smoke-test-v22-program-board.mjs",
   "scripts/smoke-test-v22-release-readiness-auth-boundary.mjs",
   "scripts/smoke-test-v22-repo-zoning-boundary.mjs",
+  "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
 ]);
 
 const SURFACE_CONTRACT_REFS = Object.freeze({

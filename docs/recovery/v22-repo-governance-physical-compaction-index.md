@@ -19,11 +19,11 @@
 | --- | ---: | --- | --- |
 | `docs/product.md`, `docs/architecture.md`, `docs/contracts/**` | 45 | `contracts / truth` | 长期主线边界保留，只记录 merge/rename/retire 候选，不在本分支物理删除合同。 |
 | `docs/recovery/**` | 43 | `truth / index / agent-runs` | 核心 truth/index 保留；阶段性 recovery 文件进入候选清单，待引用迁移后退场。 |
-| `scripts/**` | 166 before cleanup, 161 after cleanup | `eval` | v22 smoke/eval 主链保留；真实生产/DNS/kubectl 残留脚本物理清退。 |
+| `scripts/**` | 162 before smoke/eval compaction, 160 after smoke/eval compaction | `eval` | v22 smoke/eval 主链保留；真实生产/DNS/kubectl 残留脚本和已迁移旧 eval/support 脚本物理清退。 |
 | `services/**` | 289 | `active-code` | `portal`、`opl-web-gateway`、`opl-runtime-bridge` 是 active code surface，本分支不删除服务代码。 |
 | root / `configs/**` / `.sentrux/**` | 24 before cleanup, 10 after cleanup | `frozen-governance / retired-config` | `configs/**` 物理清退；`.sentrux/**` 冻结不触碰；`compose.product.yaml` 因仍被本地运行 gate 引用暂不删除。 |
 
-本 leaf 提交后的 tracked 文件总数：`555`。
+本 leaf 提交后的 tracked 文件总数：`556`。
 
 根级 `docs/status.md`、`docs/vibe-coding.md`、`docs/invariants.md`、`docs/decisions.md` 归为 governance reference。它们仍引用 `scripts/v22-agent-workflow.mjs`，因此本轮不物理删除该脚本。
 
@@ -164,15 +164,26 @@ Eval 入口继续保留分层：
 - 生产入口探针、DNS 变更器、kubectl fixture 或 build-surface 旧检查不属于当前 v22 local eval 主链。
 - 删除后 v22 eval 主链仍由 `scripts/smoke-test-v22-*`、`scripts/v22-verify.mjs`、`scripts/v22-workflow-gate.mjs` 覆盖。
 
+### smoke/eval support compaction
+
+`cleanup/v22-smoke-eval-physical-compaction` 追加删除：
+
+- `scripts/check-portal-copy.mjs`
+- `scripts/check-one-person-lab-upstream-clean.mjs`
+- `scripts/smoke-test-workspace-storage-routes-contract.mjs`
+
+理由：
+
+- `scripts/check-portal-copy.mjs` 的 Portal copy/mojibake 检查由 `scripts/check-mojibake.mjs` 的全仓库文本扫描覆盖。
+- `scripts/check-one-person-lab-upstream-clean.mjs` 的 upstream checkout clean 检查已迁入 `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs`：当 `.runtime/one-person-lab-upstream` 存在时，gate 会执行 `git status --short` 并要求为空；该检查不把 `.runtime` 内容提交进 git。
+- `scripts/smoke-test-workspace-storage-routes-contract.mjs` 是非 v22 旧命名 route gate，并且会断言公开响应返回 `storageKey`；当前 v22 替代入口是 `scripts/smoke-test-v22-workspace-storage-public-response.mjs` 和 `scripts/smoke-test-v22-portal-file-space-management.mjs`，公开响应不得泄漏内部存储字段。
+
 ## 暂不删除的阻塞候选
 
 | File / Pattern | Classification | Why blocked |
 | --- | --- | --- |
 | `compose.product.yaml` | blocked-retire-candidate | 仍被 `scripts/smoke-test-v22-default-entry-narrative-gate.mjs` 和 `docs/recovery/repo-zoning.md` 明确引用；同时是本地 PostgreSQL/Redis 下一 leaf 的潜在本地编排入口。 |
 | `scripts/v22-agent-workflow.mjs` | duplicate-governance-candidate | 仍被 `docs/status.md`、`docs/vibe-coding.md`、`docs/invariants.md`、`docs/decisions.md`、cloud workflow 合同和 smoke 引用。 |
-| `scripts/check-portal-copy.mjs` | merge-candidate | 可并入 `scripts/check-mojibake.mjs`，但需单独验证 copy/mojibake gate。 |
-| `scripts/check-one-person-lab-upstream-clean.mjs` | merge-candidate | 可并入 workflow/zero-compat gate，需迁引用。 |
-| `scripts/smoke-test-workspace-storage-routes-contract.mjs` | merge-candidate | 可并入 v22 workspace storage gates，需迁引用和 gate 对齐。 |
 | `scripts/sync-workspace-file-to-minio.ps1` | blocked-retire-candidate | 仍被 `services/portal/src/config/portal-config.mjs` 挂载。 |
 | `services/**` residue candidates | future-cleanup-candidate | 服务代码属于 active surface；候选文件必须另开 service cleanup leaf，补 import/runtime/eval 证明后再删。 |
 | `.sentrux/**` | frozen-forbidden | AGENTS 明确禁止普通分支修改；虽然内容陈旧，只能记录，不可触碰。 |

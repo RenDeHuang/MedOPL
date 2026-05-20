@@ -5,7 +5,7 @@
 ## 当前统计
 
 - v22 contracts: 42
-- v22 eval files: 147
+- v22 eval files: 148
 - current truth entry: `docs/recovery/v22-goal-current.json`
 - verify authority: `docs/recovery/v22-agent-verify-manifest.json`
 - unified eval entrypoint: `scripts/v22-verify.mjs`
@@ -45,6 +45,7 @@
 | `scripts/smoke-test-v22-golden-smoke-suite.mjs` | eval | smoke-golden runner | keep | smoke suite | 使用 classification，不硬编码旧名。 |
 | `scripts/smoke-test-v22-contract-eval-compaction.mjs` | eval | 本 leaf gate | keep | compaction gate | 防止旧命名和保护期真相回退。 |
 | `scripts/smoke-test-v22-repo-governance-physical-compaction.mjs` | eval | 仓库治理压缩 gate | keep | repo governance gate | 验证文件分层、物理清退、agent-first loop 和 no second truth source。 |
+| `scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs` | eval | smoke/eval 物理压缩 gate | keep | smoke/eval compaction gate | 验证 3 个旧 eval/support 脚本已删除、分类统计稳定、manifest/local-contract 入口对齐。 |
 | `docs/recovery/agent-runs/*` | agent-runs | leaf 证据 | keep | trace-first archive | 只保存执行证据，不替代 current truth。 |
 
 ## 业务真相修正

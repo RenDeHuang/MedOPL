@@ -713,6 +713,7 @@
         "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
         "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
         "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
         "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
@@ -780,6 +781,70 @@
         "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-absorb-repo-governance-truth.md",
         "docs/recovery/v22-agent-verify-manifest.json",
         "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation",
+        "admin-business-closure"
+      ]
+    },
+    {
+      "id": "smoke-eval-physical-compaction",
+      "branch": "cleanup/v22-smoke-eval-physical-compaction",
+      "branches": [
+        "cleanup/v22-smoke-eval-physical-compaction"
+      ],
+      "description": "Verification bundle for the smoke/eval physical compaction cleanup branch. This branch retires three migrated eval/support scripts, records the smoke/eval compaction index, and updates classification/manifest/repo-governance gates without changing services, product cursor, cloud, deploy, upstream, PostgreSQL/Redis or UI behavior.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped smoke/eval governance gates before B review and must not execute the future PostgreSQL/Redis implementation bundle.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts"
+      ],
+      "allowed_files": [
+        "docs/recovery/v22-smoke-eval-physical-compaction-index.md",
+        "docs/recovery/v22-contract-eval-compaction-index.md",
+        "docs/recovery/v22-repo-governance-physical-compaction-index.md",
+        "docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
+        "scripts/v22-smoke-classification.mjs",
+        "scripts/check-portal-copy.mjs",
+        "scripts/check-one-person-lab-upstream-clean.mjs",
+        "scripts/smoke-test-workspace-storage-routes-contract.mjs"
+      ],
+      "retired_files": [
+        "scripts/check-portal-copy.mjs",
+        "scripts/check-one-person-lab-upstream-clean.mjs",
+        "scripts/smoke-test-workspace-storage-routes-contract.mjs"
       ],
       "forbidden_files": [
         "services/*",

@@ -25,12 +25,15 @@ const physicallyRetiredPaths = Object.freeze([
   "scripts/fixtures/fake-kubectl-success.cmd",
 ]);
 
-const blockedRetireCandidates = Object.freeze([
-  "compose.product.yaml",
-  "scripts/v22-agent-workflow.mjs",
+const smokeEvalRetiredPaths = Object.freeze([
   "scripts/check-portal-copy.mjs",
   "scripts/check-one-person-lab-upstream-clean.mjs",
   "scripts/smoke-test-workspace-storage-routes-contract.mjs",
+]);
+
+const blockedRetireCandidates = Object.freeze([
+  "compose.product.yaml",
+  "scripts/v22-agent-workflow.mjs",
   "scripts/sync-workspace-file-to-minio.ps1",
   ".sentrux/**",
   ".env.demo.template",
@@ -38,11 +41,8 @@ const blockedRetireCandidates = Object.freeze([
 
 const allowedNonV22Scripts = Object.freeze([
   "scripts/check-mojibake.mjs",
-  "scripts/check-one-person-lab-upstream-clean.mjs",
-  "scripts/check-portal-copy.mjs",
   "scripts/fixtures/opl-product-api-fixture.mjs",
   "scripts/lib/portal-oidc-playwright.mjs",
-  "scripts/smoke-test-workspace-storage-routes-contract.mjs",
   "scripts/sync-workspace-file-to-minio.ps1",
   "scripts/v22-agent-workflow.mjs",
   "scripts/v22-cloud-harness-select-checks.mjs",
@@ -77,6 +77,16 @@ function git(args) {
 async function exists(repoPath) {
   try {
     await access(path.join(repoRoot, repoPath));
+    return true;
+  } catch (error) {
+    if (error && error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+async function absolutePathExists(absolutePath) {
+  try {
+    await access(absolutePath);
     return true;
   } catch (error) {
     if (error && error.code === "ENOENT") return false;
@@ -141,6 +151,29 @@ function classifyTrackedFile(filePath) {
   return "";
 }
 
+async function findOptionalRuntimeUpstreamPath() {
+  let current = repoRoot;
+  for (;;) {
+    const candidate = path.join(current, ".runtime", "one-person-lab-upstream");
+    if (await absolutePathExists(candidate)) return candidate;
+    const parent = path.dirname(current);
+    if (parent === current) return "";
+    current = parent;
+  }
+}
+
+async function assertOptionalRuntimeUpstreamClean() {
+  const upstreamPath = await findOptionalRuntimeUpstreamPath();
+  if (!upstreamPath) return { checked: false, upstreamPath: "" };
+  const result = spawnSync("git", ["-C", upstreamPath, "status", "--short"], {
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `runtime_upstream_git_status_failed:${upstreamPath}:${result.stderr || result.stdout}`);
+  assert.equal(result.stdout.trim(), "", `one_person_lab_upstream_must_remain_unmodified:${result.stdout}`);
+  return { checked: true, upstreamPath };
+}
+
 for (const repoPath of requiredFiles) {
   assert.equal(await exists(repoPath), true, `required_governance_file_missing:${repoPath}`);
 }
@@ -158,9 +191,14 @@ assert.equal(files.some((file) => file.startsWith("configs/")), false, "configs_
 for (const repoPath of physicallyRetiredPaths.filter((item) => item !== "configs")) {
   assert.equal(files.includes(repoPath), false, `physical_retire_file_must_not_be_tracked:${repoPath}`);
 }
+for (const repoPath of smokeEvalRetiredPaths) {
+  assert.equal(await exists(repoPath), false, `smoke_eval_retired_file_must_not_exist:${repoPath}`);
+  assert.equal(files.includes(repoPath), false, `smoke_eval_retired_file_must_not_be_tracked:${repoPath}`);
+}
 
 const unclassified = files.filter((filePath) => !classifyTrackedFile(filePath));
 assert.deepEqual(unclassified, [], `tracked_file_unclassified:${unclassified.join(",")}`);
+const runtimeUpstreamClean = await assertOptionalRuntimeUpstreamClean();
 
 const indexText = await source("docs/recovery/v22-repo-governance-physical-compaction-index.md");
 for (const token of [
@@ -177,6 +215,9 @@ for (const token of [
 
 for (const repoPath of physicallyRetiredPaths) {
   assert(indexText.includes(repoPath), `repo_governance_index_must_record_retired_path:${repoPath}`);
+}
+for (const repoPath of smokeEvalRetiredPaths) {
+  assert(indexText.includes(repoPath), `repo_governance_index_must_record_smoke_eval_retired_path:${repoPath}`);
 }
 
 for (const repoPath of blockedRetireCandidates) {
@@ -275,6 +316,10 @@ if (governanceRetirementDiffActive) {
 }
 const trackedConfigCount = files.filter((file) => file.startsWith("configs/")).length;
 assert.equal(trackedConfigCount, 0, `configs_must_remain_physically_retired:${trackedConfigCount}`);
+for (const deletedPath of smokeEvalRetiredPaths) {
+  const activeDeletionDiff = statusLines.some((line) => line === `D\t${deletedPath}`);
+  assert(activeDeletionDiff || !files.includes(deletedPath), `smoke_eval_retired_file_must_be_deleted_or_absorbed:${deletedPath}`);
+}
 
 console.log(JSON.stringify({
   ok: true,
@@ -283,5 +328,7 @@ console.log(JSON.stringify({
   classifiedFiles: files.length - unclassified.length,
   physicallyRetiredPaths,
   configDeleteCount,
+  smokeEvalRetiredPaths,
   blockedRetireCandidates,
+  runtimeUpstreamClean,
 }, null, 2));
