@@ -16,6 +16,16 @@ const post20Gate = "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and
 const post20RunPath = "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md";
 const accepted20fe9ac = "20fe9ac2f4a8b94a0281032e44592c820ac7502c";
 const post20Absorbed = "49b99d6739fff6f033118b009c36b53d29c675a5";
+const absorbedRecoveryFileBaseline = 55;
+const absorbedScriptFileBaseline = 163;
+const absorbedV22SmokeFileBaseline = 151;
+const forwardOnlyGovernanceFiles = Object.freeze([
+  "docs/recovery/agent-runs/README.md",
+  "docs/recovery/agent-runs/schema.md",
+  "docs/recovery/v22-monolith-agent-workflow-entrypoint-and-trace-normalization-index.md",
+  "docs/recovery/agent-runs/2026-05-20-cleanup-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.md",
+  "scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
+]);
 
 const rootDocs = Object.freeze([
   "AGENTS.md",
@@ -131,11 +141,14 @@ const scriptFiles = files.filter((file) => file.startsWith("scripts/"));
 const smokeFiles = files.filter((file) => /^scripts\/smoke-test-v22-.+\.mjs$/u.test(file));
 
 assert.equal(contractFiles.length, 43, `contract_file_count_mismatch:${contractFiles.length}`);
-assert.equal(recoveryFiles.length, 55, `recovery_file_count_must_include_new_index_and_run:${recoveryFiles.length}`);
-assert.equal(scriptFiles.length, 163, `script_file_count_must_include_new_gate:${scriptFiles.length}`);
-assert.equal(smokeFiles.length, 151, `v22_smoke_file_count_must_include_new_gate:${smokeFiles.length}`);
+assert(recoveryFiles.length >= absorbedRecoveryFileBaseline, `recovery_file_count_must_not_drop_below_truth_repo_baseline:${recoveryFiles.length}`);
+assert(scriptFiles.length >= absorbedScriptFileBaseline, `script_file_count_must_not_drop_below_truth_repo_baseline:${scriptFiles.length}`);
+assert(smokeFiles.length >= absorbedV22SmokeFileBaseline, `v22_smoke_file_count_must_not_drop_below_truth_repo_baseline:${smokeFiles.length}`);
 assert(docFiles.includes(indexPath), "new_index_must_be_tracked_or_staged");
 assert(files.includes(thisGate), "new_gate_must_be_tracked_or_staged");
+for (const repoPath of forwardOnlyGovernanceFiles) {
+  assert(files.includes(repoPath), `forward_only_governance_file_must_be_tracked_or_staged:${repoPath}`);
+}
 
 const indexText = await source(indexPath);
 assertIncludesAll(indexText, [

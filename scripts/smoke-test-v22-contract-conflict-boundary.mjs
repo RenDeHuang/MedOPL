@@ -146,27 +146,27 @@ for (const liveScript of liveCanaryScripts) {
 }
 
 const mvpAcceptance = docEntries.find(([filePath]) => filePath === "docs/recovery/mvp-contract-acceptance.md")?.[1] ?? "";
-const defaultSuiteSection = mvpAcceptance.match(/## 默认本地 MVP suite([\s\S]*?)(?:\n## |\n$)/)?.[1] ?? "";
-if (defaultSuiteSection) {
+const legacyMvpAliasSection = mvpAcceptance.match(/## Legacy 本地 MVP regression alias([\s\S]*?)(?:\n## |\n$)/)?.[1] ?? "";
+if (legacyMvpAliasSection) {
   for (const liveScript of liveCanaryScripts) {
-    const index = defaultSuiteSection.indexOf(liveScript);
+    const index = legacyMvpAliasSection.indexOf(liveScript);
     if (index !== -1) {
       findings.push({
-        type: "default_mvp_suite_section_lists_authorized_live_canary",
+        type: "legacy_mvp_alias_section_lists_authorized_live_canary",
         file: "docs/recovery/mvp-contract-acceptance.md",
-        line: lineOf(mvpAcceptance, mvpAcceptance.indexOf(defaultSuiteSection) + index),
+        line: lineOf(mvpAcceptance, mvpAcceptance.indexOf(legacyMvpAliasSection) + index),
         match: liveScript,
-        detail: "Default local MVP suite documentation must list live canaries only in the authorized external canary section.",
+        detail: "Legacy local-regression alias documentation must list live canaries only in the authorized external canary section.",
       });
     }
   }
 } else {
   findings.push({
-    type: "mvp_acceptance_default_suite_section_missing",
+    type: "mvp_acceptance_legacy_mvp_alias_section_missing",
     file: "docs/recovery/mvp-contract-acceptance.md",
     line: 1,
-    match: "## 默认本地 MVP suite",
-    detail: "MVP acceptance must split the default local MVP suite from authorized external canaries.",
+    match: "## Legacy 本地 MVP regression alias",
+    detail: "MVP acceptance must split the legacy local-regression alias from authorized external canaries.",
   });
 }
 

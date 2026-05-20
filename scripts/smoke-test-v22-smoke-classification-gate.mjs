@@ -91,8 +91,10 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
 }
 
 assert.deepEqual(suiteWrapperScripts.sort(), [
+  "scripts/smoke-test-v22-cloud-resource-contract-suite.mjs",
   "scripts/smoke-test-v22-golden-smoke-suite.mjs",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "scripts/smoke-test-v22-portal-runtime-suite.mjs",
 ], "suite_wrappers_must_be_explicit");
 assert.deepEqual(gateSelfTestScripts.sort(), [
   "scripts/smoke-test-v22-workflow-gate.mjs",

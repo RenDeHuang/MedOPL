@@ -391,8 +391,8 @@ async function assertDefaultEntrypointsDoNotRunLegacyObservabilityScripts() {
   const mvpSuite = await readRepoFile(filePaths.mvpSuite);
   const mvpAcceptance = await readRepoFile(filePaths.mvpAcceptance);
   const suiteScripts = defaultSuiteScriptReferences(mvpSuite);
-  const defaultSuiteDoc = mvpAcceptance.match(/## 默认本地 MVP suite([\s\S]*?)(?:\n## |\n$)/u)?.[1] ?? "";
-  assert(defaultSuiteDoc, "mvp_acceptance_default_suite_section_missing");
+  const legacyMvpAliasDoc = mvpAcceptance.match(/## Legacy 本地 MVP regression alias([\s\S]*?)(?:\n## |\n$)/u)?.[1] ?? "";
+  assert(legacyMvpAliasDoc, "mvp_acceptance_legacy_mvp_alias_section_missing");
 
   for (const scriptPath of deletedExternalScriptNames) {
     assert.equal(await fileExists(scriptPath), false, `authorized_observability_script_must_be_deleted:${scriptPath}`);
@@ -403,7 +403,7 @@ async function assertDefaultEntrypointsDoNotRunLegacyObservabilityScripts() {
       !suiteScripts.includes(scriptPath),
       `default_mvp_suite_must_not_include_authorized_observability_script:${scriptPath}`,
     );
-    assertDoesNotInclude(defaultSuiteDoc, scriptPath, "default_mvp_suite_doc_authorized_observability_script");
+    assertDoesNotInclude(legacyMvpAliasDoc, scriptPath, "legacy_mvp_alias_doc_authorized_observability_script");
   }
 
   for (const scriptReference of suiteScripts) {

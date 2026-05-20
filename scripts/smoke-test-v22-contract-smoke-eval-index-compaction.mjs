@@ -124,8 +124,10 @@ const suiteWrappers = smokeEvalScripts
   .filter((scriptPath) => smokeEvalMetadataOf(scriptPath).entryKind === "suite-wrapper")
   .sort();
 assert.deepEqual(suiteWrappers, [
+  "scripts/smoke-test-v22-cloud-resource-contract-suite.mjs",
   "scripts/smoke-test-v22-golden-smoke-suite.mjs",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "scripts/smoke-test-v22-portal-runtime-suite.mjs",
 ], "suite_wrappers_must_remain_explicit");
 assert.deepEqual(
   smokeEvalScripts

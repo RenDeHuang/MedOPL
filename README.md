@@ -51,12 +51,13 @@ GitHub handoff runbook 见 [docs/recovery/github-handoff.md](./docs/recovery/git
 
 ## Local Verification
 
-当前 v22 contract/API smoke 入口：
+当前 v22 验证入口以 `scripts/v22-verify.mjs` 为准。`mvp` 只是 legacy local-regression alias，不再作为默认 smoke 或默认 agent 入口：
 
 ```bash
-node scripts/smoke-test-v22-default-entry-narrative-gate.mjs
-node scripts/smoke-test-v22-mvp-contract-suite.mjs
-node scripts/smoke-test-v22-saas-portal-opl-ops-surface-contract.mjs
+node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
+node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk
+node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk
+node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk
 npm --prefix services/portal run frontend:typecheck
 ```
 

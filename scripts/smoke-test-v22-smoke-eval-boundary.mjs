@@ -108,7 +108,13 @@ for (const scriptPath of futureScripts) {
 }
 
 for (const scriptPath of SMOKE_SUITE_ENTRYPOINTS) {
-  assert(defaultScripts.includes(scriptPath), `suite_entrypoint_must_be_default_local:${scriptPath}`);
+  const metadata = smokeEvalMetadataOf(scriptPath);
+  assert.equal(metadata.entryKind, "suite-wrapper", `suite_entrypoint_must_be_wrapper:${scriptPath}`);
+  if (metadata.authorization === "future-authorized") {
+    assert(!defaultScripts.includes(scriptPath), `future_authorized_suite_entrypoint_must_not_be_default:${scriptPath}`);
+  } else {
+    assert(defaultScripts.includes(scriptPath), `local_suite_entrypoint_must_be_default_local:${scriptPath}`);
+  }
 }
 
 assert(manifestSource.includes('"id": "smoke"'), "manifest_must_register_smoke_suite");

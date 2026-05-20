@@ -409,6 +409,42 @@ assert.deepEqual(truthRepoPlanPayload.commands, truthRepoOverride.commands, "ver
 assert.deepEqual(truthRepoPlanPayload.allowedFiles, truthRepoOverride.allowed_files, "verify_current_truth_repo_allowed_files_mismatch");
 assert.equal(truthRepoPlanPayload.dryRun, true, "verify_current_truth_repo_dry_run_flag_mismatch");
 
+const monolithEntryTraceOverride = manifest.branch_override_suites.find((suite) => suite.id === "monolith-agent-workflow-entrypoint-and-trace-normalization");
+assert(monolithEntryTraceOverride, "monolith_entry_trace_override_missing");
+assert.equal(monolithEntryTraceOverride.branch, "cleanup/v22-monolith-agent-workflow-entrypoint-and-trace-normalization", "monolith_entry_trace_branch_mismatch");
+assert.deepEqual(monolithEntryTraceOverride.branches, [
+  "cleanup/v22-monolith-agent-workflow-entrypoint-and-trace-normalization",
+], "monolith_entry_trace_branches_mismatch");
+assertIncludes(monolithEntryTraceOverride.reason, `current product cursor remains ${current.current_cursor}`, "monolith_entry_trace_reason_current_truth");
+assert(monolithEntryTraceOverride.commands.includes("node scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs"), "monolith_entry_trace_must_run_own_gate");
+assert(monolithEntryTraceOverride.commands.includes("node scripts/smoke-test-v22-agent-run-record-gate.mjs"), "monolith_entry_trace_must_run_agent_record_gate");
+assert(monolithEntryTraceOverride.commands.includes("node scripts/smoke-test-v22-smoke-classification-gate.mjs"), "monolith_entry_trace_must_run_classification_gate");
+assert(monolithEntryTraceOverride.allowed_files.includes("docs/recovery/agent-runs/README.md"), "monolith_entry_trace_must_allow_agent_runs_readme");
+assert(monolithEntryTraceOverride.allowed_files.includes("docs/recovery/agent-runs/schema.md"), "monolith_entry_trace_must_allow_agent_runs_schema");
+assert(monolithEntryTraceOverride.allowed_files.includes("docs/recovery/v22-monolith-agent-workflow-entrypoint-and-trace-normalization-index.md"), "monolith_entry_trace_must_allow_index");
+assert(monolithEntryTraceOverride.allowed_files.includes("scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs"), "monolith_entry_trace_must_allow_gate");
+assert(monolithEntryTraceOverride.forbidden_files.includes("services/*"), "monolith_entry_trace_must_forbid_services");
+assert(monolithEntryTraceOverride.forbidden_ops.includes("ff-only-absorb"), "monolith_entry_trace_must_forbid_absorb_in_a_window");
+assert(monolithEntryTraceOverride.forbidden_ops.includes("git-push"), "monolith_entry_trace_must_forbid_push_in_a_window");
+
+const monolithEntryTracePlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-monolith-agent-workflow-entrypoint-and-trace-normalization",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(monolithEntryTracePlanResult.status, 0, `verify_current_monolith_entry_trace_dry_run_must_exit_zero:${monolithEntryTracePlanResult.stderr || monolithEntryTracePlanResult.stdout}`);
+const monolithEntryTracePlanPayload = JSON.parse(monolithEntryTracePlanResult.stdout);
+assert.equal(monolithEntryTracePlanPayload.ok, true, "verify_current_monolith_entry_trace_dry_run_ok_mismatch");
+assert.equal(monolithEntryTracePlanPayload.leafId, current.current_cursor, "verify_current_monolith_entry_trace_must_not_change_current_leaf");
+assert.equal(monolithEntryTracePlanPayload.branchOverride?.suiteId, "monolith-agent-workflow-entrypoint-and-trace-normalization", "verify_current_monolith_entry_trace_suite_id_mismatch");
+assert.deepEqual(monolithEntryTracePlanPayload.commands, monolithEntryTraceOverride.commands, "verify_current_monolith_entry_trace_commands_mismatch");
+assert.deepEqual(monolithEntryTracePlanPayload.allowedFiles, monolithEntryTraceOverride.allowed_files, "verify_current_monolith_entry_trace_allowed_files_mismatch");
+assert.equal(monolithEntryTracePlanPayload.dryRun, true, "verify_current_monolith_entry_trace_dry_run_flag_mismatch");
+
 const mvpPlanResult = runVerify(["suite", "mvp", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
 assert.equal(mvpPlanResult.status, 0, `verify_mvp_dry_run_must_exit_zero:${mvpPlanResult.stderr || mvpPlanResult.stdout}`);
 const mvpPlanPayload = JSON.parse(mvpPlanResult.stdout);

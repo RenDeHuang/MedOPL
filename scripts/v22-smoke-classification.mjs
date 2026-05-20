@@ -83,6 +83,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-long-term-governance-surfaces.mjs": "default/local-contract",
   "scripts/smoke-test-v22-managed-environment-open-flow.mjs": "portal-local",
   "scripts/smoke-test-v22-managed-resource-binding-plan-view.mjs": "portal-local",
+  "scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs": "default/local-contract",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs": "default/local-contract",
   "scripts/smoke-test-v22-mvp-managed-opl-loop-contract.mjs": "opl-local",
   "scripts/smoke-test-v22-mvp-user-loop-contract.mjs": "default/local-contract",
@@ -223,8 +224,10 @@ export const SMOKE_GOLDEN_SCRIPTS = Object.freeze([
 ]);
 
 export const SMOKE_SUITE_ENTRYPOINTS = Object.freeze([
+  "scripts/smoke-test-v22-cloud-resource-contract-suite.mjs",
   "scripts/smoke-test-v22-golden-smoke-suite.mjs",
   "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "scripts/smoke-test-v22-portal-runtime-suite.mjs",
 ]);
 
 const HEALTH_CHECK_SET = new Set(HEALTH_CHECK_SCRIPTS);
@@ -248,6 +251,7 @@ const CONTROL_PLANE_SURFACE_SET = new Set([
   "scripts/smoke-test-v22-env-template-default-entry.mjs",
   "scripts/smoke-test-v22-goal-state-consistency.mjs",
   "scripts/smoke-test-v22-long-term-governance-surfaces.mjs",
+  "scripts/smoke-test-v22-monolith-agent-workflow-entrypoint-and-trace-normalization.mjs",
   "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
   "scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs",
   "scripts/smoke-test-v22-product-goal-execution-order.mjs",

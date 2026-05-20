@@ -104,9 +104,9 @@
 
 是否修改 frontend、Gateway、Runtime Bridge / Runtime Agent、Portal domain、docs 或 smoke，由本次分支意图和订阅合同决定，不能从旧阶段快照推断。
 
-## 默认本地 MVP suite
+## Legacy 本地 MVP regression alias
 
-`scripts/smoke-test-v22-mvp-contract-suite.mjs` 作为默认本地 v22 MVP contract acceptance suite，只串联运行合同级、本地 fixture、fail-closed 和不读取 secret 的 smoke，并输出 `ok: true` 与 passed smoke 名称。该 suite 不读取 secret、不调用真实云、不运行真实 upstream/WebUI/provider live canary、不执行 build/push/kubectl、不执行真实 runtime smoke；任何需要真实外部系统的验证都必须进入 future-authorized boundary，不作为默认 active executable surface。
+默认 agent 验证入口是 `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`，suite 分层由 `docs/recovery/v22-agent-verify-manifest.json` 和 `scripts/v22-verify.mjs` 决定。`scripts/smoke-test-v22-mvp-contract-suite.mjs` 只保留为 legacy local-regression alias，用来串联合同级、本地 fixture、fail-closed 和不读取 secret 的本地 deterministic eval；它不再被称为默认 smoke，也不替代 `suite smoke` 的 golden path。该 suite 不读取 secret、不调用真实云、不运行真实 upstream/WebUI/provider live canary、不执行 build/push/kubectl、不执行真实 runtime eval；任何需要真实外部系统的验证都必须进入 future-authorized boundary，不作为默认 active executable surface。
 
 - `scripts/smoke-test-v22-pricing-plan-contract.mjs`
 - `scripts/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
@@ -138,7 +138,7 @@
 
 ## 授权外部 canary 边界
 
-active repo 不保留真实 upstream/WebUI/provider/cloud/deploy 的默认可执行 runner。历史授权 canary / live / deploy evidence 只作为 `.runtime` 脱敏证据和合同状态记录存在，不作为当前命令、默认验证入口或完成态。未来如果需要真实外部验证，必须由用户重新授权，并在新 v22 boundary 下新增或恢复专用 runner；该 runner 不得自动进入默认本地 MVP suite。
+active repo 不保留真实 upstream/WebUI/provider/cloud/deploy 的默认可执行 runner。历史授权 canary / live / deploy evidence 只作为 `.runtime` 脱敏证据和合同状态记录存在，不作为当前命令、默认验证入口或完成态。未来如果需要真实外部验证，必须由用户重新授权，并在新 v22 boundary 下新增或恢复专用 runner；该 runner 不得自动进入 legacy 本地 MVP regression alias 或默认 `v22-verify` 入口。
 
 - 真实 upstream / WebUI / provider message 验证：future-authorized boundary only；历史 evidence 只写 `.runtime`。
 - 真实 Tencent readonly inventory：future-authorized boundary only；必须重新确认 secret allowlist、region/API scope 和 report path。
