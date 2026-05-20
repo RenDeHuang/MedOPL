@@ -83,7 +83,7 @@
 ## Long-Term Governance Surfaces
 
 - long-term governance surfaces: [../status.md](../status.md), [../invariants.md](../invariants.md), [../decisions.md](../decisions.md)
-- `docs/status.md` 是 v22 当前唯一活状态入口，指向 active program、cloud onboarding execution board、status table 和 MVP suite。
+- `docs/status.md` 是 v22 当前唯一人读状态入口，指向 active program、cloud onboarding execution board、status table 和 MVP suite。
 - `docs/invariants.md` 固化长期红线；`docs/decisions.md` 记录当前有效关键决策。
 
 ## 现有仓库域分类

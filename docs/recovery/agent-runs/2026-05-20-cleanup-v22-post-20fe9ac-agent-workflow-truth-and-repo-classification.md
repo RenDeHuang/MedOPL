@@ -29,7 +29,11 @@
 
 ## commit_sha
 
-`pending_B_review`
+`49b99d6739fff6f033118b009c36b53d29c675a5`
+
+## absorbed_commit
+
+`49b99d6739fff6f033118b009c36b53d29c675a5`
 
 ## contract_subscription
 
@@ -107,7 +111,13 @@
 
 ## b_review_result
 
-`pending_B_review`
+`passed / ff-only absorbed / pushed`
+
+## post_absorb_verification
+
+- B absorbed `cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification` into `recovery/platform-v22-trunk` and pushed it to GitHub at `49b99d6739fff6f033118b009c36b53d29c675a5`.
+- Post-absorb truth: `20fe9ac2f4a8b94a0281032e44592c820ac7502c` is historical accepted content and must remain an ancestor of the current `origin/recovery/platform-v22-trunk`; later trunk movement must not require origin trunk to equal `20fe9ac`.
+- No secret read, no real cloud call, no upstream modification, no build/deploy/kubectl/live-test, no PostgreSQL/Redis implementation, and no Portal UI visual/layout/information-architecture change happened in this trace leaf.
 
 ## runtime_notes
 

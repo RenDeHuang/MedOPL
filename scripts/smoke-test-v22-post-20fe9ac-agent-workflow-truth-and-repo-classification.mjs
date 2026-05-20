@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
 const acceptedCommit = "20fe9ac2f4a8b94a0281032e44592c820ac7502c";
+const traceAbsorbedCommit = "49b99d6739fff6f033118b009c36b53d29c675a5";
 const thisGate = "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs";
 const indexPath = "docs/recovery/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification-index.md";
 const runPath = "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md";
@@ -70,6 +71,15 @@ function runNode(args) {
   });
 }
 
+function assertAncestor(ancestor, descendantRef, message) {
+  const result = spawnSync("git", ["merge-base", "--is-ancestor", ancestor, descendantRef], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `${message}:${result.stderr || result.stdout}`);
+}
+
 for (const repoPath of [
   indexPath,
   runPath,
@@ -82,12 +92,16 @@ for (const repoPath of [
 }
 
 const originHead = git(["rev-parse", "origin/recovery/platform-v22-trunk"]);
-assert.equal(originHead, acceptedCommit, "origin_trunk_must_be_accepted_20fe9ac_for_this_post_absorb_leaf");
+assert.notEqual(originHead, "", "origin_trunk_head_must_resolve");
+assertAncestor(acceptedCommit, "origin/recovery/platform-v22-trunk", "accepted_20fe9ac_must_remain_origin_trunk_ancestor");
+assertAncestor(traceAbsorbedCommit, "origin/recovery/platform-v22-trunk", "post_20fe9ac_trace_commit_must_remain_origin_trunk_ancestor");
 
 const indexText = await source(indexPath);
 for (const token of [
   "contracts / truth / index / eval / agent-runs",
   "accepted absorbed commit: `20fe9ac2f4a8b94a0281032e44592c820ac7502c`",
+  "trace absorbed commit: `49b99d6739fff6f033118b009c36b53d29c675a5`",
+  "20fe9ac must remain an ancestor of `origin/recovery/platform-v22-trunk`",
   "A/B 边界偏差",
   "无 delete-ready",
   "HEAD == origin/recovery/platform-v22-trunk",
@@ -121,12 +135,15 @@ for (const token of [
   "subagents_and_models",
   "base_trunk_head",
   "commit_sha",
-  "pending_B_review",
+  "absorbed_commit",
+  traceAbsorbedCommit,
   "contract_subscription",
   "allowed_write_scope",
   "forbidden_scope",
   "verification_commands",
   "b_review_result",
+  "passed / ff-only absorbed / pushed",
+  "post_absorb_verification",
   "不读取 secret",
   "不调用真实云",
   "不修改 upstream",

@@ -38,14 +38,15 @@ const combinedGovernance = `${status}\n${invariants}\n${decisions}`;
 
 assertIncludesAll(status, [
   "v22 Status",
-  "v22 当前唯一活状态入口",
+  "v22 当前唯一人读状态入口",
   "active program: v22-contract-cleanup-and-drift-control",
   "current phase: 先清合同-smoke-实现漂移，不接云",
   "next phase: B 审核后再决定是否进入 future-authorized cloud lane",
   "所有真实云动作均需 future-authorized 显式授权",
-  "docs/recovery/cloud-onboarding-execution-board.md",
-  "docs/recovery/cloud-onboarding-status-table.md",
-  "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "canonical current truth: `docs/recovery/v22-goal-current.json`",
+  "verify manifest: `docs/recovery/v22-agent-verify-manifest.json`",
+  "eval entrypoint: `scripts/v22-verify.mjs`",
+  "retained future-authorized references",
   "真实云 live/create/release/deploy 都必须用户显式授权",
 ], "status_surface");
 
@@ -60,6 +61,7 @@ assertIncludesAll(invariants, [
   "文件空间和计算资源生命周期分离",
   "不恢复 user_owned/resource-order/旧云控制台叙事",
   "不自动 merge/push/build/push/kubectl",
+  "cloud onboarding boards、program boards 和 `scripts/v22-agent-workflow.mjs` 只能作为 future-authorized / blocked-retain 参考",
 ], "invariants_surface");
 
 assertIncludesAll(decisions, [
@@ -67,7 +69,8 @@ assertIncludesAll(decisions, [
   "production default provider 使用 Tencent official SDK wrapper",
   "TC3 保留为 diagnostic/reference",
   "official SDK live report 通过后再 cleanup",
-  "cloud onboarding 使用 execution board + status table + v22-agent-workflow 生成任务包",
+  "cloud onboarding 保留为 future-authorized lane",
+  "不是当前 active program 或默认执行入口",
   "真实外部副作用串行",
   "create/release 与 readonly 分离",
   "独立合同和 RUN gate",
@@ -81,29 +84,41 @@ for (const [label, source] of [
   assertIncludesAll(source, [
     "AGENTS",
     "contracts",
-    "cloud onboarding",
-    "execution board",
-    "status table",
-    "MVP suite",
+    "v22-goal-current.json",
+    "v22-agent-verify-manifest.json",
+    "v22-verify.mjs",
   ], `${label}_shared_references`);
 }
 
 assertIncludesAll(combinedGovernance, [
   "docs/contracts/README.md",
-  "docs/contracts/v22-cloud-onboarding-workflow-boundary.md",
-  "docs/recovery/cloud-onboarding-execution-board.md",
-  "docs/recovery/cloud-onboarding-status-table.md",
-  "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+  "docs/recovery/v22-goal-current.json",
+  "docs/recovery/v22-agent-verify-manifest.json",
+  "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
+  "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",
-  "scripts/v22-agent-workflow.mjs",
 ], "governance_cross_references");
+
+assertIncludesAll(combinedGovernance, [
+  "cloud-onboarding-execution-board.md",
+  "v22-agent-workflow.mjs",
+  "future-authorized",
+  "blocked-retain",
+], "retained_future_authorized_references");
+
+assertNotIncludesAny(combinedGovernance, [
+  "The active program is `v22-cloud-onboarding`",
+  "execution board governs the active cloud onboarding program lane",
+  "cloud onboarding 使用 execution board + status table + v22-agent-workflow 生成任务包",
+  "当前 program/phase/lane/离场条件写在 cloud onboarding execution board",
+], "root_governance_must_not_restore_old_active_cloud_program");
 
 assertIncludesAll(matrix, [
   "long-term governance surfaces",
   "docs/status.md",
   "docs/invariants.md",
   "docs/decisions.md",
-  "v22 当前唯一活状态入口",
+  "v22 当前唯一人读状态入口",
 ], "status_matrix_governance_references");
 
 assert(isSmokeClassifiedIn("scripts/smoke-test-v22-long-term-governance-surfaces.mjs"), "mvp_suite_must_include_long_term_governance_smoke");
@@ -130,7 +145,8 @@ console.log(JSON.stringify({
     "status_is_single_live_status_entry",
     "invariants_capture_long_term_red_lines",
     "decisions_capture_current_effective_decisions",
-    "cloud_onboarding_board_status_mvp_suite_references",
+    "verify_manifest_current_truth_references",
+    "cloud_onboarding_references_are_retained_not_current_truth",
     "status_matrix_reference",
     "no_secret_artifacts",
   ],

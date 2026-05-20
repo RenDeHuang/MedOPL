@@ -8,6 +8,7 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 
 - base trunk: `20fe9ac2f4a8b94a0281032e44592c820ac7502c`
 - accepted absorbed commit: `20fe9ac2f4a8b94a0281032e44592c820ac7502c`
+- trace absorbed commit: `49b99d6739fff6f033118b009c36b53d29c675a5`
 - current cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 - branch: `cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification`
 - risk class: `local_doc_eval`
@@ -15,6 +16,8 @@ Layer authority phrase: `contracts / truth / index / eval / agent-runs`.
 ## Workflow Truth
 
 `20fe9ac` 的内容被接受，并已进入 `origin/recovery/platform-v22-trunk`。该提交完成 contract / smoke / eval / index compaction：补总索引、补 gate、扩展 smoke/eval 元数据、记录上一轮 smoke/eval physical compaction 的 post-absorb 事实。
+
+持续验证规则：20fe9ac must remain an ancestor of `origin/recovery/platform-v22-trunk`，而不是要求当前 trunk 永远等于 `20fe9ac`。该 post-absorb trace leaf 已由 B 吸收并 push 到 `49b99d6739fff6f033118b009c36b53d29c675a5`；后续 trunk 前进时，本 gate 只验证历史吸收事实仍在 trunk 祖先链上，避免历史 gate 阻塞后续主线。
 
 本轮同时记录流程偏差：`20fe9ac` 的 absorb/push 动作由 authoring conversation 执行，而不是独立 B 窗口执行。该偏差不改变代码内容裁定，但必须进入 agent-run 证据。恢复后的规则为：
 

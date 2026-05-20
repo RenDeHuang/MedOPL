@@ -17,7 +17,7 @@ v22 的完成阶段会变化。每个分支开工前必须读取：
 
 当前默认开发动作只包括本地合同、Portal、Gateway / Runtime Bridge 小闭包和本地 smoke。真实云、真实部署、真实账单核对、真实 Langfuse、真实 upstream 生产接入不属于默认动作，必须单独授权。
 
-涉及 v22 cloud onboarding workflow 的分支必须显式订阅 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`，并按合同状态机推进 official SDK、readonly live、report review、dry-run、mutation、deploy、Portal production integration 和 canary/QA/status update。AGENTS 管流程与红线，合同管语义与验收；该 workflow 只生成任务包和下一步建议，不自动 merge、不自动 push、不读 secret、不调用真实云。
+涉及 v22 cloud onboarding workflow 的分支必须显式订阅 `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`。AGENTS 管流程与红线，合同管语义与验收；该 future-authorized workflow 只作为 blocked-retain 参考和任务包来源，不是当前 active program 或默认执行入口，不自动 merge、不自动 push、不读 secret、不调用真实云。
 
 ## Canonical Trunk
 
@@ -81,9 +81,15 @@ cleanup 计划必须写清楚：
 10. B 无 blocker 时 `ff-only` 合入 trunk。
 11. B push GitHub。
 
-## 本地 workflow gate
+## 本地 verify / workflow gate
 
-`scripts/v22-workflow-gate.mjs` 是本地可执行的合同优先工作流检查器，只输出模板和检查结果，不自动修改、不自动合并、不自动 push。
+`scripts/v22-verify.mjs` 是默认 agent-facing eval 入口；命令、allowlist、forbidden surface 和 branch override 都来自 `docs/recovery/v22-agent-verify-manifest.json`。`scripts/v22-workflow-gate.mjs` 是本地可执行的合同优先工作流检查器，只输出模板和检查结果，不自动修改、不自动合并、不自动 push。
+
+默认验证入口：
+
+```bash
+node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
+```
 
 开工时可运行：
 
@@ -105,24 +111,7 @@ node scripts/v22-workflow-gate.mjs checkpoint
 
 当前内置合同包类型包括 `portal-ui`、`gateway`、`runtime`、`langfuse-trace`、`resource-billing`、`tencent-quote` 和 `cleanup`。gate 只检查 git diff、路径、remote URL 和推荐验证命令；它不读取 secret 内容，不执行 build/push/kubectl/live-test，也不调用真实云 API。
 
-`scripts/v22-agent-workflow.mjs` 是 A/B/C 本地 workflow orchestrator，只生成任务包和下一步建议，不自动 merge、不自动 push、不启动 tmux、不读 secret、不调用真实云、不执行 build/push/kubectl/live-test。
-
-```bash
-node scripts/v22-agent-workflow.mjs start --type <cleanup|portal-ui|resource-billing|contract|ops-console>
-node scripts/v22-agent-workflow.mjs review-pack --branch <branch> --base recovery/platform-v22-trunk
-node scripts/v22-agent-workflow.mjs c-qa-pack --surface <resources|workspace|trace|billing|overview>
-node scripts/v22-agent-workflow.mjs checkpoint-pack
-node scripts/v22-agent-workflow.mjs next --state <json>
-node scripts/v22-agent-workflow.mjs ingest --from A|B|C|D --file <reply.txt>
-node scripts/v22-agent-workflow.mjs write-pack --window A|B|C|D --state <state.json>
-node scripts/v22-agent-workflow.mjs status
-node scripts/v22-agent-workflow.mjs lane init --id <lane-id> --type <portal-ui|contract|ops-console|resource-billing|cleanup|workflow> --goal <text> --owner A|C|D --branch <branch> --worktree <path>
-node scripts/v22-agent-workflow.mjs lane ingest --id <lane-id> --from A|B|C|D --file <reply.txt>
-node scripts/v22-agent-workflow.mjs lane next --id <lane-id>
-node scripts/v22-agent-workflow.mjs lane board
-node scripts/v22-agent-workflow.mjs lane handoff --id <lane-id>
-node scripts/v22-agent-workflow.mjs lane close --id <lane-id> --status <merged|abandoned|superseded>
-```
+`scripts/v22-agent-workflow.mjs` 是 blocked-retain / retire-candidate：仍被 cloud-onboarding 合同、program board 和历史 gates 引用，因此当前不能删；但新开发不得把它当作 current truth、默认验证入口或吸收/push 自动化。退役前必须先完成引用迁移，并由专门 gate 证明 `v22-verify + manifest + v22-cloud-harness-manifest` 已接住原职责。
 
 ## Owner worktree / long autonomy 纪律
 

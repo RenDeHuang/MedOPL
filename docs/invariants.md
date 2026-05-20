@@ -1,17 +1,16 @@
 # v22 Invariants
 
-This file records long-term v22 invariants. AGENTS defines collaboration discipline, contracts define product and interface boundaries, cloud onboarding execution board tracks current program/phase/lane/exit criteria, status table tracks per-phase state and next owner, and MVP suite guards the local contract regression bundle.
+This file records long-term v22 invariants. AGENTS defines collaboration discipline, contracts define product and interface boundaries, `docs/recovery/v22-goal-current.json` defines current cursor truth, `docs/recovery/v22-agent-verify-manifest.json` defines agent-facing verification bundles, and `scripts/v22-verify.mjs` is the default local eval entrypoint.
 
 References:
 
 - `AGENTS.md`
 - `docs/contracts/README.md`
-- `docs/contracts/v22-cloud-onboarding-workflow-boundary.md`
-- `docs/recovery/cloud-onboarding-execution-board.md`
-- `docs/recovery/cloud-onboarding-status-table.md`
-- `scripts/smoke-test-v22-mvp-contract-suite.mjs`
+- `docs/recovery/v22-goal-current.json`
+- `docs/recovery/v22-agent-verify-manifest.json`
+- `docs/recovery/v22-current-vs-ideal-gap-matrix.md`
+- `scripts/v22-verify.mjs`
 - `scripts/v22-workflow-gate.mjs`
-- `scripts/v22-agent-workflow.mjs`
 
 ## Long-Term Red Lines
 
@@ -24,6 +23,7 @@ References:
 - 文件空间和计算资源生命周期分离。
 - 不恢复 user_owned/resource-order/旧云控制台叙事。
 - 不自动 merge/push/build/push/kubectl。
+- cloud onboarding boards、program boards 和 `scripts/v22-agent-workflow.mjs` 只能作为 future-authorized / blocked-retain 参考，不能重新成为 current truth 或默认执行入口。
 
 ## Product Boundary Invariants
 

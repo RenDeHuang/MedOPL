@@ -373,6 +373,42 @@ assert.deepEqual(post20fe9acPlanPayload.commands, post20fe9acOverride.commands, 
 assert.deepEqual(post20fe9acPlanPayload.allowedFiles, post20fe9acOverride.allowed_files, "verify_current_post_20fe9ac_allowed_files_mismatch");
 assert.equal(post20fe9acPlanPayload.dryRun, true, "verify_current_post_20fe9ac_dry_run_flag_mismatch");
 
+const truthRepoOverride = manifest.branch_override_suites.find((suite) => suite.id === "truth-repo-narrative-reference-unification");
+assert(truthRepoOverride, "truth_repo_narrative_reference_unification_override_missing");
+assert.equal(truthRepoOverride.branch, "cleanup/v22-truth-repo-narrative-reference-unification", "truth_repo_branch_mismatch");
+assert.deepEqual(truthRepoOverride.branches, [
+  "cleanup/v22-truth-repo-narrative-reference-unification",
+], "truth_repo_branches_mismatch");
+assertIncludes(truthRepoOverride.reason, `current product cursor remains ${current.current_cursor}`, "truth_repo_reason_current_truth");
+assert(truthRepoOverride.commands.includes("node scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs"), "truth_repo_must_run_own_gate");
+assert(truthRepoOverride.commands.includes("node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs"), "truth_repo_must_run_post_20fe9ac_gate");
+assert(truthRepoOverride.commands.includes("node scripts/smoke-test-v22-long-term-governance-surfaces.mjs"), "truth_repo_must_run_governance_gate");
+assert(truthRepoOverride.commands.includes("node scripts/smoke-test-v22-agent-run-record-gate.mjs"), "truth_repo_must_run_agent_record_gate");
+assert(truthRepoOverride.allowed_files.includes("docs/recovery/v22-truth-repo-narrative-reference-unification-index.md"), "truth_repo_must_allow_index");
+assert(truthRepoOverride.allowed_files.includes("docs/recovery/agent-runs/2026-05-20-cleanup-v22-truth-repo-narrative-reference-unification.md"), "truth_repo_must_allow_run");
+assert(truthRepoOverride.allowed_files.includes("scripts/smoke-test-v22-truth-repo-narrative-reference-unification.mjs"), "truth_repo_must_allow_gate");
+assert(truthRepoOverride.forbidden_files.includes("services/*"), "truth_repo_must_forbid_services");
+assert(truthRepoOverride.forbidden_ops.includes("ff-only-absorb"), "truth_repo_must_forbid_absorb_in_a_window");
+assert(truthRepoOverride.forbidden_ops.includes("git-push"), "truth_repo_must_forbid_push_in_a_window");
+
+const truthRepoPlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-truth-repo-narrative-reference-unification",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(truthRepoPlanResult.status, 0, `verify_current_truth_repo_dry_run_must_exit_zero:${truthRepoPlanResult.stderr || truthRepoPlanResult.stdout}`);
+const truthRepoPlanPayload = JSON.parse(truthRepoPlanResult.stdout);
+assert.equal(truthRepoPlanPayload.ok, true, "verify_current_truth_repo_dry_run_ok_mismatch");
+assert.equal(truthRepoPlanPayload.leafId, current.current_cursor, "verify_current_truth_repo_must_not_change_current_leaf");
+assert.equal(truthRepoPlanPayload.branchOverride?.suiteId, "truth-repo-narrative-reference-unification", "verify_current_truth_repo_suite_id_mismatch");
+assert.deepEqual(truthRepoPlanPayload.commands, truthRepoOverride.commands, "verify_current_truth_repo_commands_mismatch");
+assert.deepEqual(truthRepoPlanPayload.allowedFiles, truthRepoOverride.allowed_files, "verify_current_truth_repo_allowed_files_mismatch");
+assert.equal(truthRepoPlanPayload.dryRun, true, "verify_current_truth_repo_dry_run_flag_mismatch");
+
 const mvpPlanResult = runVerify(["suite", "mvp", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
 assert.equal(mvpPlanResult.status, 0, `verify_mvp_dry_run_must_exit_zero:${mvpPlanResult.stderr || mvpPlanResult.stdout}`);
 const mvpPlanPayload = JSON.parse(mvpPlanResult.stdout);
