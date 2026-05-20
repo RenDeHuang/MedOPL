@@ -22,13 +22,15 @@ Runtime Bridge 负责 session/message/run/file/artifact/providerKeyRef/trace pro
 
 ## Runtime Contract Groups
 
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
+| Runtime question | Spec anchors |
+| --- | --- |
+| Portal 到 OPL 工作台入口、preflight、launch 和 Gateway 反腐层 | [spec:v22-portal-opl-connection-boundary](../specs/README.md#spec-v22-portal-opl-connection-boundary), [spec:v22-opl-entry-preflight-auth-boundary](../specs/README.md#spec-v22-opl-entry-preflight-auth-boundary), [spec:v22-saas-portal-opl-ops-surface-boundary](../specs/README.md#spec-v22-saas-portal-opl-ops-surface-boundary) |
+| clean upstream OPL 边界，不修改 upstream，不 import 内部模块 | [spec:v22-upstream-opl-boundary](../specs/README.md#spec-v22-upstream-opl-boundary) |
+| message/file/run/artifact/providerKeyRef/session trace 集成边界 | [spec:v22-opl-work-message-file-run-boundary](../specs/README.md#spec-v22-opl-work-message-file-run-boundary), [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](../specs/README.md#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary), [spec:v22-portal-opl-context-backflow-boundary](../specs/README.md#spec-v22-portal-opl-context-backflow-boundary) |
+| token、raw key、launch/runtime token 和浏览器存储禁区 | [spec:v22-token-provider-boundary](../specs/README.md#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-key-boundary](../specs/README.md#spec-v22-user-credit-provider-key-boundary) |
+| Portal canonical data truth、文件/账单/trace projection | [spec:v22-portal-files-billing-trace-boundary](../specs/README.md#spec-v22-portal-files-billing-trace-boundary), [spec:v22-trace-metadata-boundary](../specs/README.md#spec-v22-trace-metadata-boundary) |
+| 真实 OPL canary 只证明能力发现，不等于 production completion | [spec:v22-real-opl-capability-canary-boundary](../specs/README.md#spec-v22-real-opl-capability-canary-boundary), [spec:v22-real-opl-provider-message-canary-boundary](../specs/README.md#spec-v22-real-opl-provider-message-canary-boundary), [spec:v22-real-opl-file-run-artifact-canary-boundary](../specs/README.md#spec-v22-real-opl-file-run-artifact-canary-boundary) |
+| cloud/deploy/runtime release 的授权顺序 | [spec:v22-cloud-onboarding-workflow-boundary](../specs/README.md#spec-v22-cloud-onboarding-workflow-boundary), [spec:v22-production-cloud-topology-boundary](../specs/README.md#spec-v22-production-cloud-topology-boundary), [spec:v22-authorized-tencent-deploy-execution-boundary](../specs/README.md#spec-v22-authorized-tencent-deploy-execution-boundary) |
 
 ## Current Truth Pointer
 

@@ -203,3 +203,5 @@ Next recommendation:
 ## Reading Rule
 
 Use history to understand how a change was made. Use active/specs/policies/delivery/source and verify fixtures to decide what is currently true.
+
+When judging whether the current loop is closed, do not stop at one run summary. Check `docs/active/README.md`, `docs/delivery/README.md`, `tests/README.md`, `tests/fixtures/v22/goal-current.json`, and `tests/fixtures/v22/agent-verify-manifest.json` together.

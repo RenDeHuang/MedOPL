@@ -29,6 +29,8 @@ State: `active`
 
 新增测试必须先选定 taxonomy 目录；不能为了便利新增 `scripts/smoke-test-*` 或把所有 repo-local eval 叫 smoke。
 
+`docs/README.md` 必须把本文件作为 lifecycle taxonomy 的验证入口之一；docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移。
+
 ## Runner Boundary
 
 默认验证入口：

@@ -43,7 +43,16 @@ Current docs / eval surface during migration：
 
 ## Retired Source Semantics
 
-`user_owned`、`resource-order`、旧 `med-autoscience-runner`、旧 `resource-provisioner`、OpenCost 主叙事和 Langfuse 主产品叙事不得恢复为 active source、默认入口、fixture、compat alias 或文档默认上下文。
+| Retired item | Must not return as |
+| --- | --- |
+| `user_owned` primary path | product mainline, code default, fixture, compat alias |
+| `resource-order` primary path | product mainline, route, state model, fixture |
+| 旧 `med-autoscience-runner` | active service, runtime bridge dependency, default task runner |
+| 旧 `resource-provisioner` | active service, cloud lifecycle source, billing source |
+| OpenCost 主叙事 | product billing truth, Portal ledger source |
+| Langfuse 主产品叙事 | product trace truth, required production dependency |
+| v19/v20/v21 OPL direct path / direct upstream path / internal path | user-visible entry, default OPL route, fixture |
+| one-person-lab upstream internals | active source import, Portal/Gateway/Runtime Bridge implementation surface |
 
 ## Current Truth Pointer
 
