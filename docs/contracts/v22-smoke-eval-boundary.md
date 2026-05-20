@@ -8,7 +8,7 @@
 
 Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所有 `scripts/smoke-test-v22-*` 都是 repo-local eval gate 文件；只有 `health-check` 和 `smoke-golden` 两层可以被称为 smoke。
 
-当前 `scripts/smoke-test-v22-*` 文件名暂不机械重命名，避免制造无业务价值的大 diff。语义权威来自 `scripts/v22-smoke-classification.mjs` 里的 `tier + surface + contractRefs` 元数据和 `scripts/v22-verify.mjs` suite 入口。
+当前 `scripts/smoke-test-v22-*` 文件名暂不机械重命名，避免制造无业务价值的大 diff。语义权威来自 `scripts/v22-smoke-classification.mjs` 里的 `tier + surface + entryKind + authorization + contractRefs` 元数据和 `scripts/v22-verify.mjs` suite 入口。
 
 ## Tier
 
@@ -31,6 +31,21 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | `runtime-bridge` | Runtime Bridge / Runtime Agent / run-file-providerKeyRef 本地 eval。 |
 | `cloud` | Tencent/cloud/live/deploy/future-authorized 边界 eval。 |
 | `archive` | 历史退役入口；active repo 中不应存在 retired eval。 |
+
+## Entry Kind
+
+| Entry kind | 语义 |
+| --- | --- |
+| `atomic` | 单个可执行 eval gate。它可以属于 health、golden、contract-local、local-regression 或 future-authorized。 |
+| `suite-wrapper` | suite 聚合入口，例如 golden smoke suite 或 legacy MVP/local-regression wrapper；它不应被当作业务 eval 数量本身。 |
+| `gate-self-test` | gate/runner 自检壳，用于验证 gate 体系本身，不代表业务功能闭环。 |
+
+## Authorization
+
+| Authorization | 语义 |
+| --- | --- |
+| `none` | 本地 deterministic eval，不授权 secret、真实云、deploy、kubectl、live-test 或真实外部 canary。 |
+| `future-authorized` | 仅代表未来授权 lane 的本地边界可见性；默认 suite 不执行真实云、secret、deploy、kubectl、live-test。 |
 
 ## Golden Smoke 收录条件
 
@@ -66,10 +81,12 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 
 ## 门禁
 
-- 新增 `scripts/smoke-test-v22-*` 必须有 category、tier、surface、contractRefs。
+- 新增 `scripts/smoke-test-v22-*` 必须有 category、tier、surface、entryKind、authorization、contractRefs。
 - `health-check` 数量必须不超过 `HEALTH_CHECK_MAX`。
 - `smoke-golden` 数量必须在 `SMOKE_GOLDEN_MIN` 和 `SMOKE_GOLDEN_MAX` 之间。
 - `future-authorized` 不得进入默认 local deterministic suite。
+- `future-authorized` 必须显式标记 authorization，不能只靠文件名里的 local/readonly/dry-run 推断授权状态。
+- `suite-wrapper` 和 `gate-self-test` 必须显式列出，不能混入 atomic 业务 eval 统计。
 - `retired` 必须为空。
 - `smoke-golden` 和 `health-check` 不得包含 cloud/tencent/authorized/deploy/package-d/live/canary 语义。
 

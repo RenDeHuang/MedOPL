@@ -19,6 +19,8 @@
 - future-authorized: 48
 - retired: 0
 
+以上统计是 `cleanup/v22-smoke-eval-physical-compaction` 吸收时的基线。后续治理 gate 会增加当前 eval 总量，但不得改变本 leaf 已清退 3 个旧脚本、health/smoke-golden 保持小集合、future-authorized 不授权真实云这三条事实。
+
 `health` 和 `smoke` 保持小集合。`local-contract` 和 `local-regression` 是 eval，不再叫 smoke。`future-authorized` 只做分类可见性，不授权真实云或 live/deploy。
 
 ## 本轮物理清退

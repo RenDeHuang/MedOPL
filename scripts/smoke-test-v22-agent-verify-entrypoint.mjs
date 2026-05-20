@@ -308,6 +308,37 @@ assertNotIncludes(
 );
 assert.equal(contractIndexCleanupPlanPayload.dryRun, true, "verify_current_contract_index_cleanup_dry_run_flag_mismatch");
 
+const contractSmokeEvalIndexCompactionOverride = manifest.branch_override_suites.find((suite) => suite.id === "contract-smoke-eval-index-compaction");
+assert(contractSmokeEvalIndexCompactionOverride, "contract_smoke_eval_index_compaction_override_missing");
+assert.equal(contractSmokeEvalIndexCompactionOverride.branch, "cleanup/v22-contract-smoke-eval-index-compaction", "contract_smoke_eval_index_compaction_branch_mismatch");
+assert.deepEqual(contractSmokeEvalIndexCompactionOverride.branches, [
+  "cleanup/v22-contract-smoke-eval-index-compaction",
+], "contract_smoke_eval_index_compaction_branches_mismatch");
+assertIncludes(contractSmokeEvalIndexCompactionOverride.reason, `current product cursor remains ${current.current_cursor}`, "contract_smoke_eval_index_compaction_reason_current_truth");
+assert(contractSmokeEvalIndexCompactionOverride.commands.includes("node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs"), "contract_smoke_eval_index_compaction_must_run_own_gate");
+assert(contractSmokeEvalIndexCompactionOverride.commands.includes("node scripts/smoke-test-v22-smoke-classification-gate.mjs"), "contract_smoke_eval_index_compaction_must_run_classification_gate");
+assert(contractSmokeEvalIndexCompactionOverride.commands.includes("node scripts/smoke-test-v22-smoke-eval-boundary.mjs"), "contract_smoke_eval_index_compaction_must_run_boundary_gate");
+assert(contractSmokeEvalIndexCompactionOverride.forbidden_files.includes("services/*"), "contract_smoke_eval_index_compaction_must_forbid_services");
+assert(contractSmokeEvalIndexCompactionOverride.forbidden_ops.includes("postgres-redis-implementation"), "contract_smoke_eval_index_compaction_must_forbid_postgres_redis");
+
+const contractSmokeEvalIndexCompactionPlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-contract-smoke-eval-index-compaction",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(contractSmokeEvalIndexCompactionPlanResult.status, 0, `verify_current_contract_smoke_eval_index_compaction_dry_run_must_exit_zero:${contractSmokeEvalIndexCompactionPlanResult.stderr || contractSmokeEvalIndexCompactionPlanResult.stdout}`);
+const contractSmokeEvalIndexCompactionPlanPayload = JSON.parse(contractSmokeEvalIndexCompactionPlanResult.stdout);
+assert.equal(contractSmokeEvalIndexCompactionPlanPayload.ok, true, "verify_current_contract_smoke_eval_index_compaction_dry_run_ok_mismatch");
+assert.equal(contractSmokeEvalIndexCompactionPlanPayload.leafId, current.current_cursor, "verify_current_contract_smoke_eval_index_compaction_must_not_change_current_leaf");
+assert.equal(contractSmokeEvalIndexCompactionPlanPayload.branchOverride?.suiteId, "contract-smoke-eval-index-compaction", "verify_current_contract_smoke_eval_index_compaction_suite_id_mismatch");
+assert.deepEqual(contractSmokeEvalIndexCompactionPlanPayload.commands, contractSmokeEvalIndexCompactionOverride.commands, "verify_current_contract_smoke_eval_index_compaction_commands_mismatch");
+assert.deepEqual(contractSmokeEvalIndexCompactionPlanPayload.allowedFiles, contractSmokeEvalIndexCompactionOverride.allowed_files, "verify_current_contract_smoke_eval_index_compaction_allowed_files_mismatch");
+assert.equal(contractSmokeEvalIndexCompactionPlanPayload.dryRun, true, "verify_current_contract_smoke_eval_index_compaction_dry_run_flag_mismatch");
+
 const mvpPlanResult = runVerify(["suite", "mvp", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
 assert.equal(mvpPlanResult.status, 0, `verify_mvp_dry_run_must_exit_zero:${mvpPlanResult.stderr || mvpPlanResult.stdout}`);
 const mvpPlanPayload = JSON.parse(mvpPlanResult.stdout);

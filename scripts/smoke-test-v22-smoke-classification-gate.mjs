@@ -9,6 +9,8 @@ import {
   HEALTH_CHECK_SCRIPTS,
   SMOKE_CATEGORIES,
   SMOKE_CLASSIFICATION,
+  SMOKE_EVAL_AUTHORIZATIONS,
+  SMOKE_EVAL_ENTRY_KINDS,
   SMOKE_EVAL_SURFACES,
   SMOKE_EVAL_TIERS,
   SMOKE_GOLDEN_MAX,
@@ -33,6 +35,8 @@ const allowedCategories = new Set(SMOKE_CATEGORIES);
 const defaultCategories = new Set(DEFAULT_SMOKE_CATEGORIES);
 const allowedTiers = new Set(SMOKE_EVAL_TIERS);
 const allowedSurfaces = new Set(SMOKE_EVAL_SURFACES);
+const allowedEntryKinds = new Set(SMOKE_EVAL_ENTRY_KINDS);
+const allowedAuthorizations = new Set(SMOKE_EVAL_AUTHORIZATIONS);
 
 assert.deepEqual(classifiedScripts, allSmokeScripts, "all_v22_smoke_scripts_must_be_explicitly_classified");
 
@@ -53,6 +57,8 @@ const healthScripts = listSmokeEvalScripts({ tiers: ["health-check"] });
 const goldenScripts = listSmokeEvalScripts({ tiers: ["smoke-golden"] });
 const futureScripts = listSmokeEvalScripts({ tiers: ["future-authorized"] });
 const evalRetiredScripts = listSmokeEvalScripts({ tiers: ["retired"] });
+const suiteWrapperScripts = [];
+const gateSelfTestScripts = [];
 
 assert.deepEqual(healthScripts, [...HEALTH_CHECK_SCRIPTS].sort(), "health_check_scripts_must_be_explicit");
 assert.deepEqual(goldenScripts, [...SMOKE_GOLDEN_SCRIPTS].sort(), "golden_smoke_scripts_must_be_explicit");
@@ -71,8 +77,26 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
   const metadata = smokeEvalMetadataOf(scriptPath);
   assert(allowedTiers.has(metadata.tier), `unknown_eval_tier:${scriptPath}:${metadata.tier}`);
   assert(allowedSurfaces.has(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
+  assert(allowedEntryKinds.has(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
+  assert(allowedAuthorizations.has(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
   assert(metadata.contractRefs.includes("docs/contracts/v22-smoke-eval-boundary.md"), `smoke_eval_contract_ref_missing:${scriptPath}`);
+  if (metadata.entryKind === "suite-wrapper") suiteWrapperScripts.push(scriptPath);
+  if (metadata.entryKind === "gate-self-test") gateSelfTestScripts.push(scriptPath);
+  if (metadata.authorization === "future-authorized") {
+    assert.equal(metadata.tier, "future-authorized", `future_authorized_must_map_to_future_tier:${scriptPath}`);
+    assert.equal(metadata.surface, "cloud", `future_authorized_must_map_to_cloud_surface:${scriptPath}`);
+  } else {
+    assert.notEqual(metadata.tier, "future-authorized", `non_future_authorized_must_not_use_future_tier:${scriptPath}`);
+  }
 }
+
+assert.deepEqual(suiteWrapperScripts.sort(), [
+  "scripts/smoke-test-v22-golden-smoke-suite.mjs",
+  "scripts/smoke-test-v22-mvp-contract-suite.mjs",
+], "suite_wrappers_must_be_explicit");
+assert.deepEqual(gateSelfTestScripts.sort(), [
+  "scripts/smoke-test-v22-workflow-gate.mjs",
+], "gate_self_tests_must_be_explicit");
 
 for (const scriptPath of [...healthScripts, ...goldenScripts]) {
   assert(defaultScripts.includes(scriptPath), `health_or_golden_must_be_default_local:${scriptPath}`);
@@ -91,6 +115,11 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_smoke_classification_gate",
   classifiedCount: classifiedScripts.length,
+  atomicCount: classifiedScripts
+    .filter((scriptPath) => smokeEvalMetadataOf(scriptPath).entryKind === "atomic")
+    .length,
+  suiteWrapperCount: suiteWrapperScripts.length,
+  gateSelfTestCount: gateSelfTestScripts.length,
   categories: SMOKE_CATEGORIES.map((category) => ({
     category,
     count: classifiedScripts.filter((scriptPath) => SMOKE_CLASSIFICATION[scriptPath] === category).length,

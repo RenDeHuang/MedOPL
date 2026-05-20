@@ -29,7 +29,11 @@
 
 ## commit_sha
 
-`pending_B_review`
+`422547d2ed61c7ecc231e07e1d9b1214dc5df715`
+
+## absorbed_commit
+
+`422547d2ed61c7ecc231e07e1d9b1214dc5df715`
 
 ## branch_override_id
 
@@ -110,7 +114,16 @@
 
 ## b_review_result
 
-`pending_B_review`
+`passed / ff-only absorbed / pushed`
+
+窗口 B 已将 `cleanup/v22-smoke-eval-physical-compaction` ff-only 合入 `recovery/platform-v22-trunk` 并 push。吸收提交为 `422547d2ed61c7ecc231e07e1d9b1214dc5df715`。
+
+## post_absorb_verification
+
+- `node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 
 ## runtime_notes
 

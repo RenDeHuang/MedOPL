@@ -24,6 +24,17 @@ export const SMOKE_EVAL_SURFACES = Object.freeze([
   "archive",
 ]);
 
+export const SMOKE_EVAL_ENTRY_KINDS = Object.freeze([
+  "atomic",
+  "suite-wrapper",
+  "gate-self-test",
+]);
+
+export const SMOKE_EVAL_AUTHORIZATIONS = Object.freeze([
+  "none",
+  "future-authorized",
+]);
+
 export const DEFAULT_SMOKE_CATEGORIES = Object.freeze([
   "default/local-contract",
   "portal-local",
@@ -48,6 +59,7 @@ export const SMOKE_CLASSIFICATION = Object.freeze({
   "scripts/smoke-test-v22-authorized-tencent-create-release-implementation-contract.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-authorized-tencent-deploy-execution-contract.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-contract-eval-compaction.mjs": "default/local-contract",
+  "scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs": "default/local-contract",
   "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs": "default/local-contract",
   "scripts/smoke-test-v22-cloud-cleanup-local-gate.mjs": "cloud-future-authorized",
   "scripts/smoke-test-v22-cloud-connection-runnable-path.mjs": "cloud-future-authorized",
@@ -272,11 +284,15 @@ export function smokeEvalMetadataOf(scriptPath) {
     "docs/contracts/v22-smoke-eval-boundary.md",
     ...(SURFACE_CONTRACT_REFS[surface] || []),
   ].filter((value, index, values) => values.indexOf(value) === index);
+  const entryKind = smokeEvalEntryKindOf(normalized);
+  const authorization = smokeEvalAuthorizationOf(category);
   return Object.freeze({
     scriptPath: normalized,
     category,
     tier,
     surface,
+    entryKind,
+    authorization,
     contractRefs: Object.freeze(contractRefs),
   });
 }
@@ -325,6 +341,17 @@ function smokeEvalSurfaceOf(scriptPath, category) {
   if (category === "opl-local") return "opl";
   if (category === "default/local-contract") return "control-plane";
   return "";
+}
+
+function smokeEvalEntryKindOf(scriptPath) {
+  if (SMOKE_SUITE_ENTRYPOINTS.includes(scriptPath)) return "suite-wrapper";
+  if (scriptPath === "scripts/smoke-test-v22-workflow-gate.mjs") return "gate-self-test";
+  return "atomic";
+}
+
+function smokeEvalAuthorizationOf(category) {
+  if (category === "cloud-future-authorized") return "future-authorized";
+  return "none";
 }
 
 function normalizeSmokeScriptPath(scriptPath) {

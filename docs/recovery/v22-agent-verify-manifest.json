@@ -714,6 +714,7 @@
         "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
         "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
         "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
         "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
@@ -760,6 +761,66 @@
     }
   ],
   "branch_override_suites": [
+    {
+      "id": "contract-smoke-eval-index-compaction",
+      "branch": "cleanup/v22-contract-smoke-eval-index-compaction",
+      "branches": [
+        "cleanup/v22-contract-smoke-eval-index-compaction"
+      ],
+      "description": "Verification bundle for contract/smoke/eval/index compaction. This branch records full-read audit results, tightens smoke/eval metadata, updates compaction indexes and trace records, and must not implement PostgreSQL/Redis, services code, cloud, deploy, upstream or UI changes.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped governance gates and must not execute the future PostgreSQL/Redis implementation bundle.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "node scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "node scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery docs/contracts scripts"
+      ],
+      "allowed_files": [
+        "docs/contracts/v22-smoke-eval-boundary.md",
+        "docs/recovery/v22-contract-smoke-eval-index-compaction-index.md",
+        "docs/recovery/v22-smoke-eval-physical-compaction-index.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/agent-runs/2026-05-20-cleanup-v22-smoke-eval-physical-compaction.md",
+        "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md",
+        "scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "scripts/smoke-test-v22-smoke-classification-gate.mjs",
+        "scripts/smoke-test-v22-smoke-eval-boundary.mjs",
+        "scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "retired_files": [],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation",
+        "admin-business-closure"
+      ]
+    },
     {
       "id": "post-absorb-repo-governance-truth",
       "branch": "cleanup/v22-post-absorb-repo-governance-truth",

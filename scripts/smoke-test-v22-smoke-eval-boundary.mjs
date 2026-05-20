@@ -43,7 +43,9 @@ for (const requiredPhrase of [
   "local-regression",
   "future-authorized",
   "retired",
-  "tier + surface + contractRefs",
+  "tier + surface + entryKind + authorization + contractRefs",
+  "suite-wrapper",
+  "gate-self-test",
   "不得读取 secret",
   "不得调用真实云",
   "不得 build/push/deploy/kubectl/live-test",
@@ -84,8 +86,16 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
   assert(categories.has(metadata.category), `unknown_legacy_category:${scriptPath}:${metadata.category}`);
   assert(tiers.has(metadata.tier), `unknown_eval_tier:${scriptPath}:${metadata.tier}`);
   assert(surfaces.has(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
+  assert(["atomic", "suite-wrapper", "gate-self-test"].includes(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
+  assert(["none", "future-authorized"].includes(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
   assert(metadata.contractRefs.includes("docs/contracts/v22-smoke-eval-boundary.md"), `eval_contract_ref_missing:${scriptPath}`);
   assert(metadata.contractRefs.length >= 2, `surface_contract_ref_missing:${scriptPath}`);
+  if (metadata.authorization === "future-authorized") {
+    assert.equal(metadata.tier, "future-authorized", `future_authorized_must_use_future_tier:${scriptPath}`);
+    assert.equal(metadata.surface, "cloud", `future_authorized_must_use_cloud_surface:${scriptPath}`);
+  } else {
+    assert.notEqual(metadata.tier, "future-authorized", `non_future_authorized_must_not_use_future_tier:${scriptPath}`);
+  }
 }
 
 for (const scriptPath of [...healthScripts, ...goldenScripts]) {

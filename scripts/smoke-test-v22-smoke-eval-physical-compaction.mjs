@@ -109,7 +109,8 @@ const tierCounts = Object.fromEntries([
   "retired",
 ].map((tier) => [tier, listSmokeEvalScripts({ tiers: [tier] }).length]));
 
-assert.equal(v22SmokeFiles.length, 148, `v22_smoke_eval_count_mismatch:${v22SmokeFiles.length}`);
+assert.equal(v22SmokeFiles.length, Object.keys(SMOKE_CLASSIFICATION).length, `v22_smoke_eval_count_mismatch:${v22SmokeFiles.length}`);
+assert(v22SmokeFiles.length >= 148, `v22_smoke_eval_count_must_not_drop_below_absorbed_baseline:${v22SmokeFiles.length}`);
 assert.equal(tierCounts["health-check"], 6, "health_check_count_must_remain_small");
 assert.equal(tierCounts["smoke-golden"], 11, "smoke_golden_count_must_remain_stable");
 assert.equal(tierCounts.retired, 0, "retired_eval_tier_must_remain_zero");
@@ -130,6 +131,7 @@ for (const token of [
   "local-regression: 62",
   "future-authorized: 48",
   "retired: 0",
+  "后续治理 gate 会增加当前 eval 总量",
 ]) {
   assert(indexText.includes(token), `smoke_eval_compaction_index_stat_missing:${token}`);
 }
