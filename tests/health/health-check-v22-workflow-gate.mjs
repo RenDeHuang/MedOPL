@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,10 +62,26 @@ assertIncludesAll(startTemplate, [
   "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-quote-provider-boundary.mjs",
 ], "tencent_quote_start_template");
 
+function localTestFilesFromTemplate(template) {
+  return [...template.matchAll(/\b(?:node\s+)?(tests\/[^\s`'"]+\.mjs)\b/gu)]
+    .map((match) => match[1])
+    .sort();
+}
+
+async function assertLocalTestFilesExist(template, label) {
+  for (const filePath of localTestFilesFromTemplate(template)) {
+    await access(path.join(repoRoot, filePath)).catch((error) => {
+      throw new Error(`${label}_references_missing_test_file:${filePath}:${error.message}`);
+    });
+  }
+}
+
 for (const type of contractPackageTypes) {
-  assertIncludesAll(renderStartTemplate({ type }), [
+  const template = renderStartTemplate({ type });
+  assertIncludesAll(template, [
     "docs/specs/README.md",
   ], `workflow_start_template_must_subscribe_ux_truth:${type}`);
+  await assertLocalTestFilesExist(template, `workflow_start_template_${type}`);
 }
 
 assert.deepEqual(contractPackageTypes, [

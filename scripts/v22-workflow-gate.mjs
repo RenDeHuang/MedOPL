@@ -71,7 +71,7 @@ const packageDefinitions = {
     ],
     validationCommands: [
       "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
-      "node tests/regression/opl/regression-test-v22-opl-dual-entry-contract.mjs",
+      "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
       "node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     ],
@@ -106,8 +106,8 @@ const packageDefinitions = {
       "docs/delivery/README.md",
     ],
     validationCommands: [
-      "node tests/regression/portal/regression-test-v22-langfuse-observability-metadata-contract.mjs",
       "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     ],
   },

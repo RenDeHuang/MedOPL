@@ -206,6 +206,55 @@
   "package_suites": [],
   "branch_override_suites": [
     {
+      "id": "post-absorb-closeout-and-gate-integrity",
+      "branch": "cleanup/v22-post-absorb-closeout-and-gate-integrity",
+      "branches": [
+        "cleanup/v22-post-absorb-closeout-and-gate-integrity"
+      ],
+      "reason": "Post-absorb closeout and gate integrity branch updates history/current truth and hardens workflow validation-command references without changing services or product implementation.",
+      "commands": [
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+        "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
+        "node tests/health/health-check-v22-workflow-gate.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts"
+      ],
+      "allowed_files": [
+        "docs/**/*.md",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-test-classification.mjs"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        ".runtime/*",
+        "secret-like paths"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "git-push"
+      ]
+    },
+    {
       "id": "current-state-index-loop-normalization",
       "branch": "cleanup/v22-current-state-index-loop-normalization",
       "branches": [
