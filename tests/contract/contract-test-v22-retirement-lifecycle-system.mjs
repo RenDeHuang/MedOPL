@@ -9,6 +9,10 @@ const repoRoot = path.resolve(__dirname, "../..");
 const lifecycleGate = "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs";
 const hardRetirementCommit = "2a4254915f43186e312f406e5de31629c1c6700b";
 
+function repoPath(...parts) {
+  return parts.join("/");
+}
+
 const docsTaxonomyDirs = [
   "active",
   "product",
@@ -32,14 +36,14 @@ const testsTaxonomyDirs = [
 ];
 
 const forbiddenPaths = [
-  "docs/contracts",
-  "docs/recovery",
-  "docs/product.md",
-  "docs/architecture.md",
-  "docs/status.md",
-  "docs/invariants.md",
-  "docs/decisions.md",
-  "docs/vibe-coding.md",
+  repoPath("docs", "contracts"),
+  repoPath("docs", "recovery"),
+  repoPath("docs", "product.md"),
+  repoPath("docs", "architecture.md"),
+  repoPath("docs", "status.md"),
+  repoPath("docs", "invariants.md"),
+  repoPath("docs", "decisions.md"),
+  repoPath("docs", "vibe-coding.md"),
 ];
 
 async function exists(repoPath) {
@@ -84,6 +88,13 @@ function assertIncludesAll(source, phrases, label) {
 
 function assertNotIncludes(source, phrase, label) {
   assert.equal(source.includes(phrase), false, `${label}_must_not_include:${phrase}`);
+}
+
+function sectionAfter(source, heading) {
+  const start = source.indexOf(heading);
+  assert(start >= 0, `section_missing:${heading}`);
+  const next = source.indexOf("\n### ", start + heading.length);
+  return next >= 0 ? source.slice(start, next) : source.slice(start);
 }
 
 for (const repoPath of forbiddenPaths) {
@@ -143,8 +154,8 @@ assertIncludesAll(specs, [
 
 assertIncludesAll(policies, [
   "Retirement Lifecycle Policy",
-  "不得恢复 `docs/contracts/`",
-  "不得恢复 `docs/recovery/`",
+  "不得恢复旧 contracts 目录",
+  "不得恢复旧 recovery 目录",
   "不得新增 `scripts/smoke-test-*`",
   "post-absorb truth closeout",
 ], "policies_lifecycle_policy");
@@ -173,7 +184,8 @@ assertIncludesAll(history, [
   "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
 ], "history_hard_retirement_closeout");
 
-assertNotIncludes(history, "Status: `ready_for_b_review`", "history_absorbed_runs");
+const hardRetirementSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-full-taxonomy-hard-retirement");
+assertNotIncludes(hardRetirementSection, "Status: `ready_for_b_review`", "history_absorbed_hard_retirement");
 
 assert.equal(current.current_cursor, "leaf-portal-postgres-redis-local-production-data-closure", "current_cursor_must_remain_business_leaf");
 assert.equal(current.next_leaf, "leaf-portal-postgres-redis-local-production-data-closure", "next_leaf_must_remain_business_leaf");

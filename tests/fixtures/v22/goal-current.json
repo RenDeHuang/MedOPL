@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-20",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "365c2a676ed243ead64338d62ce2ec6262ce4767",
+  "base_trunk_head": "2a4254915f43186e312f406e5de31629c1c6700b",
   "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
   "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_absorbed_commit": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
+  "last_absorbed_commit": "2a4254915f43186e312f406e5de31629c1c6700b",
   "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
   "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
   "current_stage": "S5 frontend/backend product completion",
@@ -21,7 +21,7 @@
   "current_blockers": [
     "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
   ],
-  "current_problem": "The next indexed local implementation leaf is PostgreSQL/Redis local production data closure. PostgreSQL must become canonical truth; Redis remains session/cache/queue/lock only; postgres_redis mode must fail closed without connection or schema. This cleanup branch does not implement that leaf.",
+  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL-style hard taxonomy retirement was absorbed at 2a4254915f43186e312f406e5de31629c1c6700b and does not implement PostgreSQL/Redis.",
   "gaps": [
     {
       "id": "portal-postgres-redis-local-production-data-closure",

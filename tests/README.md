@@ -21,7 +21,7 @@ State: `active`
 
 `tests/contract/` 承载治理闭环 gate。生命周期 gate 必须验证：
 
-- docs taxonomy 不恢复旧 `docs/contracts/`、`docs/recovery/` 或 root stage docs。
+- docs taxonomy 不恢复旧 contracts 目录、旧 recovery 目录或 root stage docs。
 - `docs/active/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/history/README.md` 和 `tests/README.md` 均声明 OPL-style lifecycle。
 - B 已吸收的 cleanup 记录不能长期停在 `ready_for_b_review`。
 - 当前业务 cursor 仍由 `tests/fixtures/v22/goal-current.json` 表达。

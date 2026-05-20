@@ -49,7 +49,7 @@ History 承接：
 
 ### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure
 
-Status: `in_progress`
+Status: `ready_for_b_review`
 
 Branch: `cleanup/v22-retirement-lifecycle-system-closure`
 
@@ -58,6 +58,13 @@ Base trunk HEAD: `2a4254915f43186e312f406e5de31629c1c6700b`
 Model:
 
 - controller: `gpt-5.4`
+
+Commits:
+
+- `2d2ee07 docs(v22): codify retirement lifecycle rules`
+- `42a2cbf test(v22): add retirement lifecycle gate`
+- `82a1d4b test(v22): wire retirement lifecycle gate into verify manifest`
+- final closeout commit: records hard retirement post-absorb truth and this A handoff.
 
 Scope:
 
@@ -93,11 +100,25 @@ Next recommendation:
 
 ### 2026-05-20 cleanup/v22-full-taxonomy-hard-retirement
 
-Status: `ready_for_b_review`
+Status: `absorbed / pushed / post-push verified`
 
 Branch: `cleanup/v22-full-taxonomy-hard-retirement`
 
 Base trunk HEAD: `365c2a676ed243ead64338d62ce2ec6262ce4767`
+
+absorbed_commit: `2a4254915f43186e312f406e5de31629c1c6700b`
+
+b_review_result: `passed / ff-only absorbed / pushed`
+
+post_push_verification:
+
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- AGENTS.md README.md DESIGN.md docs tests scripts services/portal/src`: pass.
+
+post_absorb_truth_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 
 Model:
 
@@ -173,11 +194,11 @@ Risk notes:
 - Large deletion diff is intentional. B should check that removed contract leaves are absorbed into `docs/specs/README.md`, removed recovery stage records are summarized here, and removed tests are no longer active manifest entries.
 - `scripts/sync-workspace-file-to-minio.ps1` remains because services still reference it; removing it requires a service-surface branch.
 - `local-regression` now runs `tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all`; that suite excludes build and true cloud operations.
-- No B review or absorb has happened in this A window.
+- B review and absorb happened outside this A window; this lifecycle closure records the post-absorb truth.
 
 Next recommendation:
 
-- After B absorb and post-push truth confirmation, resume the current product cursor: `leaf-portal-postgres-redis-local-production-data-closure`.
+- Resume the current product cursor: `leaf-portal-postgres-redis-local-production-data-closure`.
 
 ## Reading Rule
 
