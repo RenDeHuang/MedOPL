@@ -13,19 +13,21 @@ One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstr
 - `services/portal`: Portal SaaS 科研托管平台控制面，包括 API/domain 小闭包和 Portal UI MVP。
 - `services/opl-web-gateway`: OPL Web entry/preflight 与统一身份边界，当前不作为本分支修改范围。
 - `services/opl-runtime-bridge`: Runtime Bridge / Runtime Agent 合同边界，当前不作为本分支修改范围。
-- `docs/specs`: v22 contract-level 产品、闭环和共享边界合同。
-- `docs/recovery`: v22 recovery、active surface、验收和 GitHub handoff 文档。
-- `tests/**/*.mjs`: v22 contract/API smoke。
+- `docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/README.md`: OPL-style taxonomy truth。
+- `tests/**/*.mjs`: v22 repo-local eval。只有 health 和 golden 才叫 smoke。
+- `tests/fixtures/v22/{goal-current,agent-verify-manifest}.json`: 当前机器 cursor 和 verify manifest。
+- `scripts/v22-verify.mjs`、`scripts/v22-test-classification.mjs`、`scripts/v22-workflow-gate.mjs`: 默认 runner / classifier / workflow gate。
 
 ## Contract Index
 
-v22 合同目录见 [docs/specs/README.md](./docs/specs/README.md)。
+v22 合同和长期边界只有一个入口：[docs/specs/README.md](./docs/specs/README.md)。
 
 核心入口：
 
+- [docs/active/README.md](./docs/active/README.md)
 - [docs/specs/README.md](./docs/specs/README.md)
-- [docs/specs/README.md](./docs/specs/README.md)
-- [docs/recovery/mvp-contract-acceptance.md](./docs/recovery/mvp-contract-acceptance.md)
+- [docs/delivery/README.md](./docs/delivery/README.md)
+- [docs/history/README.md](./docs/history/README.md)
 
 ## Default Entry
 
@@ -47,7 +49,7 @@ v22 合同目录见 [docs/specs/README.md](./docs/specs/README.md)。
 - 本地 `github` 私有配置文件
 - 任何包含真实凭据值的 README、docs、logs、commit message 或 evidence
 
-GitHub handoff runbook 见 [docs/recovery/github-handoff.md](./docs/recovery/github-handoff.md)。
+GitHub handoff 纪律见 [docs/policies/README.md](./docs/policies/README.md) 和 [docs/history/README.md](./docs/history/README.md)。
 
 ## Local Verification
 

@@ -23,4 +23,4 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 ## Current Truth Pointer
 
-产品当前事实、资源生命周期、套餐、gflabtoken、7 天保护期、`120min` 和 `T+1` 审计口径统一见 `docs/active/README.md`。旧 `docs/recovery/product-truth.md` 已被吸收到 current truth，不得恢复为当前产品真相入口。
+产品当前事实、资源生命周期、套餐、gflabtoken、7 天保护期、`120min` 和 `T+1` 审计口径统一见 `docs/active/README.md`。旧分散 product truth 不得恢复为当前产品真相入口。

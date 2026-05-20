@@ -2,35 +2,36 @@ import { spawn } from "node:child_process";
 
 const groups = new Map([
   ["contract", [
-    "tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-    "tests/regression/portal/regression-test-v22-portal-workbench-management-ui-composition-contract.mjs",
     "tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs",
     "tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
-    "tests/regression/portal/regression-test-v22-portal-structure-failure-isolation-contract.mjs",
     "tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs",
+    "tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
+    "tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
+    "tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
   ]],
   ["architecture", [
-    "tests/regression/portal/regression-test-v22-portal-workbench-management-ui-composition-contract.mjs",
     "tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs",
-    "tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
+    "tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+    "tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs",
+    "tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
+    "tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs",
   ]],
   ["surface", [
     "tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
     "tests/regression/opl/regression-test-v22-portal-opl-api-runtime-loop.mjs",
     "tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
-    "tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
-    "tests/regression/portal/regression-test-v22-portal-figma-make-admin-readiness.mjs",
     "tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
-    "tests/regression/portal/regression-test-v22-portal-web-route-alignment.mjs",
     "tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
+    "tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs",
+    "tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs",
   ]],
   ["api", [
     "tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
     "tests/regression/portal/regression-test-v22-portal-workbench-management-ui-api.mjs",
     "tests/regression/portal/regression-test-v22-portal-api-auth-boundary.mjs",
-    "tests/regression/portal/regression-test-v22-portal-web-route-alignment.mjs",
     "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
     "tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
+    "tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
   ]],
   ["build", [
     "services/portal:check",
@@ -39,7 +40,6 @@ const groups = new Map([
     "services/portal:frontend:build",
   ]],
   ["browser", [
-    "tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
     "tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs",
   ]],
 ]);
@@ -59,7 +59,9 @@ function unique(items) {
 function selectedTasks() {
   const group = argValue("--group") || "all";
   if (group === "all") {
-    return unique([...groups.values()].flat());
+    return unique([...groups.entries()]
+      .filter(([name]) => name !== "build")
+      .flatMap(([, tasks]) => tasks));
   }
   if (!groups.has(group)) {
     throw new Error(`unknown_group:${group}`);

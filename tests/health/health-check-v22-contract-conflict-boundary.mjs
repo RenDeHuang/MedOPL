@@ -1,15 +1,11 @@
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
-const recoveryDocs = [
-  "docs/recovery/status-matrix.md",
-  "docs/recovery/mvp-contract-acceptance.md",
-];
 const mvpSuitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
 
 async function readRepoFile(filePath) {
@@ -57,11 +53,8 @@ function defaultSuiteScriptNames(suiteSource) {
 const docEntries = await Promise.all(
   [
     "docs/specs/README.md",
-    ...(await readdir(path.join(repoRoot, "docs/specs")))
-      .filter((name) => /^v22-.*\.md$/u.test(name))
-      .sort()
-      .map((name) => `docs/specs/${name}`),
-    ...recoveryDocs,
+    "docs/active/README.md",
+    "docs/delivery/README.md",
   ].map(async (filePath) => [filePath, await readRepoFile(filePath)]),
 );
 const docsToScan = docEntries.map(([filePath]) => filePath);
@@ -145,28 +138,14 @@ for (const liveScript of liveCanaryScripts) {
   }
 }
 
-const mvpAcceptance = docEntries.find(([filePath]) => filePath === "docs/recovery/mvp-contract-acceptance.md")?.[1] ?? "";
-const legacyMvpAliasSection = mvpAcceptance.match(/## Legacy 本地 MVP regression alias([\s\S]*?)(?:\n## |\n$)/)?.[1] ?? "";
-if (legacyMvpAliasSection) {
-  for (const liveScript of liveCanaryScripts) {
-    const index = legacyMvpAliasSection.indexOf(liveScript);
-    if (index !== -1) {
-      findings.push({
-        type: "legacy_mvp_alias_section_lists_authorized_live_canary",
-        file: "docs/recovery/mvp-contract-acceptance.md",
-        line: lineOf(mvpAcceptance, mvpAcceptance.indexOf(legacyMvpAliasSection) + index),
-        match: liveScript,
-        detail: "Legacy local-regression alias documentation must list live canaries only in the authorized external canary section.",
-      });
-    }
-  }
-} else {
+const activeTruth = docEntries.find(([filePath]) => filePath === "docs/active/README.md")?.[1] ?? "";
+if (!activeTruth.includes("future-authorized") || !activeTruth.includes("真实云、deploy、kubectl、live-test")) {
   findings.push({
-    type: "mvp_acceptance_legacy_mvp_alias_section_missing",
-    file: "docs/recovery/mvp-contract-acceptance.md",
+    type: "active_truth_future_authorized_boundary_missing",
+    file: "docs/active/README.md",
     line: 1,
-    match: "## Legacy 本地 MVP regression alias",
-    detail: "MVP acceptance must split the legacy local-regression alias from authorized external canaries.",
+    match: "future-authorized / true cloud boundary",
+    detail: "Active truth must keep future-authorized/live execution separate from current local product truth.",
   });
 }
 

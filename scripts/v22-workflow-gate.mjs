@@ -9,10 +9,10 @@ const repoRoot = path.resolve(__dirname, "..");
 
 const stageDocuments = [
   "AGENTS.md",
-  "docs/vibe-coding.md",
+  "docs/active/README.md",
   "docs/specs/README.md",
-  "docs/recovery/status-matrix.md",
-  "docs/recovery/mvp-contract-acceptance.md",
+  "docs/policies/README.md",
+  "docs/delivery/README.md",
 ];
 
 const forbiddenPathPatterns = [
@@ -48,7 +48,7 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/active/README.md",
-      "docs/recovery/status-matrix.md",
+      "docs/delivery/README.md",
     ],
     validationCommands: [
       "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs",
@@ -67,7 +67,7 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
-      "docs/recovery/status-matrix.md",
+      "docs/delivery/README.md",
     ],
     validationCommands: [
       "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
@@ -86,7 +86,7 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
-      "docs/recovery/status-matrix.md",
+      "docs/delivery/README.md",
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
@@ -103,7 +103,7 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
-      "docs/recovery/status-matrix.md",
+      "docs/delivery/README.md",
     ],
     validationCommands: [
       "node tests/regression/portal/regression-test-v22-langfuse-observability-metadata-contract.mjs",
@@ -123,7 +123,7 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
-      "docs/recovery/status-matrix.md",
+      "docs/delivery/README.md",
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
@@ -142,7 +142,7 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
-      "docs/recovery/status-matrix.md",
+      "docs/delivery/README.md",
     ],
     validationCommands: [
       "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-quote-provider-boundary.mjs",
@@ -157,8 +157,8 @@ const packageDefinitions = {
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/active/README.md",
-      "docs/recovery/status-matrix.md",
-      "docs/recovery/archive-policy.md",
+      "docs/policies/README.md",
+      "docs/history/README.md",
       "与被退役路径相关的分支合同",
     ],
     validationCommands: [
@@ -314,6 +314,24 @@ function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = 
   if (branchName === "cleanup/v22-full-taxonomy-hard-retirement") {
     return [
       /^docs\/contracts(?:\/|$)/u,
+      /^docs\/recovery(?:\/|$)/u,
+      /^docs\/(?:product|architecture|status|invariants|decisions|vibe-coding)\.md$/u,
+      new RegExp(`^scripts/(?:${
+        [
+          ["v22", "agent", "workflow"].join("-"),
+          ["v22", "cloud", "harness", "select", "checks"].join("-"),
+          ["v22", "cloud", "operation", "local", "executor"].join("-"),
+          ["v22", "retired", "surface", "data"].join("-"),
+          ["v22", "tencent", "readonly", "inventory", "runner"].join("-"),
+          ["check", "mojibake"].join("-"),
+        ].join("|")
+      })\\.mjs$`, "u"),
+      /^tests\/fixtures\/v22\/(?:autonomous-goal-runner-policy|cloud-harness-manifest|goal-leaf-manifest\.schema|product-completion-scoreboard)\.json$/u,
+      /^tests\/contract\/contract-test-v22-(?:agent-run-record-gate|autonomous-goal-runner|contract-eval-compaction|contract-smoke-eval-index-compaction|default-entry-narrative-gate|docs-taxonomy-skeleton|env-template-default-entry|goal-state-consistency|long-term-governance-surfaces|monolith-agent-workflow-entrypoint-and-trace-normalization|opl-style-taxonomy-hard-compaction|post-20fe9ac-agent-workflow-truth-and-repo-classification|post-absorb-portal-opl-truth|product-goal-execution-order|product-goal-harness|program-board|release-readiness-auth-boundary|repo-governance-physical-compaction|repo-zoning-boundary|smoke-eval-physical-compaction|tests-taxonomy-hard-retirement|truth-freeze-physical-retirement|truth-repo-narrative-reference-unification)\.mjs$/u,
+      /^tests\/future-authorized\/cloud\/future-authorized-test-v22-(?:agent-workflow-cloud-onboarding|authorized-tencent-deploy-execution-contract|cloud-connection-runnable-path|cloud-harness-manifest-selector|cloud-onboarding-absorption-sequence|cloud-onboarding-board-status|cloud-onboarding-workflow-contract|cloud-resource-isolation-contract|discovery-governance-local-gate|opl-deployment-ownership-release-plan-contract|package-d-.+|portal-cloud-operation-async-worker-loop|portal-cloud-operation-runner-loop|portal-package-click-cloud-resource-loop|portal-production-cloud-operation-.+|real-resource-contract-alignment|tencent-readonly-inventory-.+|tencent-resource-lifecycle-.+)\.mjs$/u,
+      /^tests\/health\/health-check-v22-archive-smoke-contract-physical-retirement-gate\.mjs$/u,
+      /^tests\/regression\/opl\/regression-test-v22-(?:gflabtoken-entry-contract|opl-dual-entry-contract|opl-productionization-.+|portal-opl-context-backflow-contract|real-opl-capability-contract-gate|real-opl-file-run-artifact-contract-gate|real-opl-provider-message-contract-gate)\.mjs$/u,
+      /^tests\/regression\/portal\/regression-test-v22-(?:langfuse-observability-metadata-contract|observability-billing-narrative-boundary|portal-figma-make-admin-readiness|portal-figma-make-ui-implementation-contract|portal-frontend-surface-eval|portal-structure-failure-isolation-contract|portal-ui-design-quality-audit|portal-web-route-alignment|portal-workbench-management-ui-composition-contract)\.mjs$/u,
     ].some((pattern) => pattern.test(normalized));
   }
   if (branchName !== "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement") return false;

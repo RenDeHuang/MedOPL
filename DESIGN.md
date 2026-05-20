@@ -4,14 +4,16 @@
 
 本文件是 MedOPL v22 Portal UI 重构的设计执行源。它把 v22 合同中的产品真相转成可执行的视觉、信息架构、组件、文案、Figma Make 吸收和重构分片规则。
 
-本文件不替代 v22 合同、Figma Make ZIP source-of-truth、`services/portal/frontend/src/app/**` 的 React/Vite 实现，也不替代 smoke。产品语义、角色边界、secret 边界、OPL 边界、云资源授权边界和验收入口仍以 `docs/specs/*`、`docs/recovery/*`、Figma Make ZIP、React app root 和 smoke 为准；历史 UI evidence 不再是当前 UI 完成证据，旧路径防回归统一由 retired frontend surface gate 承接。
+本文件不替代 v22 合同、Figma Make ZIP source-of-truth、`services/portal/frontend/src/app/**` 的 React/Vite 实现，也不替代 eval。产品语义、角色边界、secret 边界、OPL 边界、云资源授权边界和验收入口仍以 `docs/active/README.md`、`docs/specs/README.md`、Figma Make ZIP、React app root、`tests/**/*.mjs` 和 `scripts/v22-verify.mjs` 为准；历史 UI evidence 不再是当前 UI 完成证据。
 
 ## 订阅合同包
 
-本设计源订阅以下 v22 合同和 recovery 状态：
+本设计源订阅以下 v22 当前真相和合同：
 
-- `docs/recovery/mvp-contract-acceptance.md`
-- `docs/recovery/status-matrix.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/product/README.md`
+- `docs/source/README.md`
 - `docs/specs/README.md`
 - `docs/specs/README.md`
 - `docs/specs/README.md`

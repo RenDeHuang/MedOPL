@@ -266,7 +266,7 @@ assert(traceSurfaceSourceText.includes("task.cost"), "trace_surface_must_render_
 assert(traceSurfaceSource.includes("item.costEstimate"), "trace_adapter_must_format_cost_estimate");
 assert(traceSurfaceSource.includes("item.billing?.exactCost"), "trace_adapter_must_consume_billing_cost");
 assert(workspaceSurfaceSource.includes("workspace.outputs.map"), "workspace_adapter_must_project_output_files");
-assert(workspaceSurfaceSource.includes("bytesToSize(file.sizeBytes)"), "workspace_adapter_must_format_output_file_size");
+assert(workspaceSurfaceSource.includes("bytesToSize(file.sizeBytes ?? metadata?.sizeBytes ?? fileSpaceFile?.sizeBytes)"), "workspace_adapter_must_format_output_file_size");
 assert(traceTypesSource.includes("resourceUsage"), "trace_types_must_include_resource_usage");
 assert(traceTypesSource.includes("costEstimate"), "trace_types_must_include_cost_estimate");
 assert(traceTypesSource.includes("balanceLink"), "trace_types_must_include_balance_link");

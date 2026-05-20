@@ -32,4 +32,4 @@ Runtime Bridge 负责 session/message/run/file/artifact/providerKeyRef/trace pro
 
 ## Current Truth Pointer
 
-Runtime 当前事实、Portal canonical data truth、PostgreSQL/Redis 方向、object/blob plane、clean upstream 和 no-fake-success 边界统一见 `docs/active/README.md`。旧 `docs/recovery/architecture-truth.md` 已被吸收到 current truth，不得恢复为当前架构真相入口。
+Runtime 当前事实、Portal canonical data truth、PostgreSQL/Redis 方向、object/blob plane、clean upstream 和 no-fake-success 边界统一见 `docs/active/README.md`。旧分散 architecture truth 不得恢复为当前架构真相入口。

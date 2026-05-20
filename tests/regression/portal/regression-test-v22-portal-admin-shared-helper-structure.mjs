@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { access, readFile, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 
-const root = new URL("../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 
 async function readProjectFile(path) {
   return readFile(new URL(path, root), "utf8");

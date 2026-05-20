@@ -14,14 +14,22 @@ const activeCodeRoots = [
 ];
 
 const currentNarrativeRoots = [
-  "docs/recovery",
+  "docs/active",
   "docs/specs",
+  "docs/product",
+  "docs/runtime",
+  "docs/policies",
+  "docs/delivery",
+  "docs/source",
+  "docs/public",
+  "docs/references",
+  "docs/history",
 ];
 
 const currentNarrativeFiles = [
   "README.md",
-  "docs/product.md",
-  "docs/architecture.md",
+  "docs/README.md",
+  "DESIGN.md",
   "scripts/v22-workflow-gate.mjs",
 ];
 
@@ -352,7 +360,7 @@ async function assertNoImplicitDefaultWorkspacePositivePath(findings) {
     "services/opl-runtime-bridge/src/runtime-bridge-messages.mjs",
     "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs",
     "tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
-    "scripts/fixtures/opl-product-api-fixture.mjs",
+    "tests/fixtures/v22/agent-verify-manifest.json",
   ];
   for (const file of scopedFiles) {
     if (!(await exists(file))) continue;
@@ -703,8 +711,8 @@ async function assertNoResidualLiveCanaryRunnerScripts(findings) {
 async function assertDefaultSuitesAndWorkflowDoNotReferenceResiduals(findings) {
   const files = [
     "README.md",
-    "docs/product.md",
-    "docs/architecture.md",
+    "docs/product/README.md",
+    "docs/runtime/README.md",
     "tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",

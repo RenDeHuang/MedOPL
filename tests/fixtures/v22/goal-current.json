@@ -1,0 +1,125 @@
+{
+  "schema_version": 2,
+  "canonical": true,
+  "current_truth_role": "machine_cursor_fixture",
+  "human_truth": "docs/active/README.md",
+  "spec_truth": "docs/specs/README.md",
+  "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
+  "last_updated_at": "2026-05-20",
+  "model": "gpt-5.4",
+  "branch_baseline": "origin/recovery/platform-v22-trunk",
+  "base_trunk_head": "365c2a676ed243ead64338d62ce2ec6262ce4767",
+  "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
+  "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
+  "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
+  "target_branch": "recovery/platform-v22-trunk",
+  "last_absorbed_commit": "8797ffc6f3ba3747cfac55554012b648fcbfb5c9",
+  "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
+  "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
+  "current_stage": "S5 frontend/backend product completion",
+  "current_risk_class": "local_service_code",
+  "current_blockers": [
+    "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
+  ],
+  "current_problem": "The next indexed local implementation leaf is PostgreSQL/Redis local production data closure. PostgreSQL must become canonical truth; Redis remains session/cache/queue/lock only; postgres_redis mode must fail closed without connection or schema. This cleanup branch does not implement that leaf.",
+  "gaps": [
+    {
+      "id": "portal-postgres-redis-local-production-data-closure",
+      "stage": "S5 frontend/backend product completion",
+      "priority": 87,
+      "cursor_eligible": true,
+      "status": "gated",
+      "next_leaf_step": "leaf-portal-postgres-redis-local-production-data-closure",
+      "depends_on": [
+        "portal-workspace-file-action-closure",
+        "portal-local-api-action-closure",
+        "frontend-product-react-vite-figma-make",
+        "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+      ]
+    }
+  ],
+  "current_leaf": {
+    "step_id": "leaf-portal-postgres-redis-local-production-data-closure",
+    "gap_id": "portal-postgres-redis-local-production-data-closure",
+    "stage": "S5 frontend/backend product completion",
+    "cursor_eligible": true,
+    "problem": "Local durable data truth is not closed yet.",
+    "verification_commands": [
+      "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+      "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+      "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+      "npm --prefix services/portal run check",
+      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+      "git diff --check -- docs tests scripts services/portal/src"
+    ],
+    "allowed_files": [
+      "services/portal/src/state/*",
+      "services/portal/src/domain/*",
+      "services/portal/src/app/*",
+      "services/portal/src/routes/*",
+      "services/portal/src/storage/*",
+      "services/portal/src/migrations/*",
+      "services/portal/src/config/*",
+      "docs/active/README.md",
+      "docs/history/README.md",
+      "tests/fixtures/v22/*",
+      "tests/**/*.mjs",
+      "scripts/v22-test-classification.mjs",
+      "scripts/v22-verify.mjs",
+      "scripts/v22-workflow-gate.mjs"
+    ],
+    "forbidden_files": [
+      "deploy/*",
+      "adapters/*",
+      ".sentrux/*",
+      "infra/*",
+      "one-person-lab/*",
+      "upstream/*",
+      "secret-like paths",
+      "real cloud/provider files",
+      "Figma visual/layout/information-architecture redesign"
+    ],
+    "truth_writeback_target": [
+      "docs/active/README.md",
+      "docs/history/README.md",
+      "tests/fixtures/v22/goal-current.json",
+      "tests/fixtures/v22/agent-verify-manifest.json"
+    ]
+  },
+  "release_readiness_state": {
+    "status": "deferred_authorized_future_stage",
+    "cursor_eligible": false,
+    "blocked_before_risky_execution": true,
+    "forbidden_until_executable": [
+      "secret read",
+      "true cloud call",
+      "build/push/kubectl",
+      "deploy",
+      "live-test"
+    ]
+  },
+  "verification_commands": [
+    "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+    "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+    "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+    "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+    "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+    "npm --prefix services/portal run check",
+    "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+    "git diff --check -- docs tests scripts services/portal/src"
+  ],
+  "truth_source_files": [
+    "docs/active/README.md",
+    "docs/specs/README.md",
+    "tests/fixtures/v22/goal-current.json",
+    "tests/fixtures/v22/agent-verify-manifest.json"
+  ],
+  "truth_writeback_target": [
+    "docs/active/README.md",
+    "docs/history/README.md",
+    "tests/fixtures/v22/goal-current.json",
+    "tests/fixtures/v22/agent-verify-manifest.json"
+  ]
+}

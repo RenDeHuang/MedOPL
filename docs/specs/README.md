@@ -121,7 +121,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 ## 共享边界合同
 
 - smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
-- truth freeze: [../recovery/v22-truth-freeze.md](../recovery/v22-truth-freeze.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
+- truth freeze: [../history/README.md](../history/README.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
@@ -170,7 +170,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | 服务商品真相 | [../active/README.md](../active/README.md), [spec:v22-saas-control-plane-user-experience-boundary](#spec-v22-saas-control-plane-user-experience-boundary), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | 用户购买的是托管 OPL 科研工作台服务，不是云资源控制台对象。 |
 | 用户体验真相 | [spec:v22-saas-control-plane-user-experience-boundary](#spec-v22-saas-control-plane-user-experience-boundary), [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary) | Portal 必须解释买了什么、能不能用、缺什么、下一步点哪里、结果和费用在哪里。 |
 | 信息架构真相 | [spec:v22-portal-workbench-management-ui-composition-boundary](#spec-v22-portal-workbench-management-ui-composition-boundary), [spec:v22-portal-figma-make-ui-implementation-boundary](#spec-v22-portal-figma-make-ui-implementation-boundary), [../../services/portal/frontend/src/app](../../services/portal/frontend/src/app) | Figma Make ZIP、active route、page composition、layout、API adapter 和旧 UI 物理清退。 |
-| 生命周期真相 | [../recovery/v22-truth-freeze.md](../recovery/v22-truth-freeze.md), [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
+| 生命周期真相 | [../history/README.md](../history/README.md), [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
 | 权限/角色真相 | [spec:v22-portal-user-surface-boundary](#spec-v22-portal-user-surface-boundary), [spec:v22-portal-admin-ops-surface-boundary](#spec-v22-portal-admin-ops-surface-boundary), [spec:v22-admin-ops-console-boundary](#spec-v22-admin-ops-console-boundary) | 普通用户、管理员和运维的可见、不可见和可操作边界。 |
 | 状态/数据源真相 | [../active/README.md](../active/README.md), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary), [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
 | 操作风险真相 | [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary), [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary) | 真实资源、真实扣费、release、rollback、审计队列和 fail-closed gate。 |
@@ -200,7 +200,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 - [spec:v22-portal-ui-design-quality-audit-boundary](#spec-v22-portal-ui-design-quality-audit-boundary): UI design quality audit 合同只管边界、评价标准、audit evidence schema 和后续 UI implementation leaf handoff，不替代 UI composition 合同，不冻结具体布局、配色、字体、圆角或组件库；它审计 Portal 是否回答用户买了什么、能不能用、缺什么、下一步点哪里、结果在哪里和费用是否正常。审计证据路径固定为 `.runtime/portal-ui-design-quality/report.json` 且不进 git；当前 React/Figma Make implementation leaf 已在 `services/portal/frontend/**` 落地普通用户 6 个路由、服务摘要、状态驱动下一步、Portal/OPL runtime 职责边界、环境/套餐/算力/存储/释放状态和文件/任务/结果链路，并同步 React route/surface eval、typecheck 和 build 验证。
 - [spec:v22-portal-figma-make-ui-implementation-boundary](#spec-v22-portal-figma-make-ui-implementation-boundary): 当前 Portal frontend implementation leaf，授权 Portal 全体前端栈收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide，并以 Figma Make ZIP 作为唯一 Portal UI source-of-truth，吸收普通用户路由 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和管理员路由 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`；retired frontend surface gate 已证明旧管理员 console residue 物理清退，管理员导航显示由后端角色投影控制，真实权限仍由 `/portal/api/admin/*` 后端校验；`/admin/ops` 默认后端可返回 `404 ops_surface_disabled`，前端必须展示“平台托管运维入口未启用”的产品态。
 - [../../DESIGN.md](../../DESIGN.md): Portal UI 重构设计执行源，用于指导当前 React implementation 的产品气质、信息架构、组件使用、文案、视觉规则和 Figma Make ZIP 吸收流程；它不替代本合同包、不替代 Figma Make ZIP source-of-truth、不替代 smoke，也不授权修改后端、真实云、deploy、upstream 或 secret 边界。
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 - [../active/README.md](../active/README.md)
 
 统一验证入口：
@@ -228,7 +228,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary)
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 
 ### Runtime Bridge 合同包
 
@@ -244,7 +244,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 
 ### Portal-OPL Context Backflow 合同包
 
@@ -262,9 +262,9 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary)
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 ### Real OPL Capability Canary 合同包
 
@@ -285,11 +285,11 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
-- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
-- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 ### Real OPL Provider Message Canary 合同包
 
@@ -310,11 +310,11 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
-- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
-- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 ### Real OPL File Run Artifact Canary 合同包
 
@@ -336,12 +336,12 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
-- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
-- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
-- [../recovery/real-opl-file-run-artifact-validation-path.md](../recovery/real-opl-file-run-artifact-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 ### Langfuse / Trace 合同包
 
@@ -354,7 +354,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 
 ### Resource / Billing / Audit 合同包
 
@@ -370,7 +370,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary)
 - [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary)
 - [spec:v22-release-stop-billing-audit-boundary](#spec-v22-release-stop-billing-audit-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 
 ### Tencent Provider 合同包
 
@@ -392,7 +392,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary)
 - [spec:v22-pricing-snapshot-boundary](#spec-v22-pricing-snapshot-boundary)
 - [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 
 真实腾讯云 API、真实 SecretId/SecretKey、真实资源创建/释放、deploy、build/push、kubectl 和 live-test 必须另开 feat/* 并单独授权。
 
@@ -410,9 +410,9 @@ Cloud resource isolation 分支的 scoped review entry 是 `node tests/future-au
 
 - [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop)
 - [spec:v22-saas-control-plane-user-experience-boundary](#spec-v22-saas-control-plane-user-experience-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
 - [../active/README.md](../active/README.md)
-- [../recovery/archive-policy.md](../recovery/archive-policy.md)
+- [../history/README.md](../history/README.md)
 - `tests/health/health-check-v22-archive-smoke-contract-physical-retirement-gate.mjs`
 - 与被退役路径相关的分支合同
 
@@ -2105,7 +2105,7 @@ Former title: v22 Cloud Onboarding Workflow Boundary
 
 本合同不替代 AGENTS.md。AGENTS.md 管 A/B/C/D 纪律、授权红线、协作规则和禁止路径；本合同管业务推进顺序、阶段依赖、验收状态和 blocker 回流。后续 cloud onboarding 不得只依赖聊天记忆推进，必须以 repo-tracked workflow 合同、合同索引、status/execution board 和 smoke 为准。
 
-旧 `CO-01..CO-14` 只保留为历史阶段和证据索引，不再作为当前验收主线。当前 cloud-lane 执行入口是 `docs/recovery/v22-cloud-harness-manifest.json` 中的 L1 -> L2a -> L2b -> L3 -> L4 串联验收；该 manifest 不是新大合同，而是本合同的 harness-native 执行路由层。
+旧 `CO-01..CO-14` 只保留为历史阶段和证据索引，不再作为当前验收主线。当前 cloud-lane 执行入口是 `docs/delivery/README.md` 中的 L1 -> L2a -> L2b -> L3 -> L4 串联验收；该 manifest 不是新大合同，而是本合同的 harness-native 执行路由层。
 
 当前分支允许修改旧 cloud 合同、recovery 状态、selector/check smoke 和 Portal cloud operation 控制面；读取 secret、调用真实云、build/push、kubectl、live-test 仍只能发生在本地 gate 通过后的 L1-L4 授权验收步骤中。
 
@@ -2458,7 +2458,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
 
 本 workflow 不自动 merge、不自动 push、不读 secret、不调用真实云；只能生成任务包、可跑路径和下一步建议。
 
-本分支只允许 `scripts/v22-agent-workflow.mjs cloud-onboarding status --json` 输出 future authorized task packet 形状；这些 task packet 默认 blocked，不新增真实云执行能力、不读 secret、不执行 build/push/kubectl。
+本分支只允许 `scripts/v22-workflow-gate.mjs cloud-onboarding status --json` 输出 future authorized task packet 形状；这些 task packet 默认 blocked，不新增真实云执行能力、不读 secret、不执行 build/push/kubectl。
 
 ## Contract Data
 
@@ -2488,7 +2488,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     "CO-01..CO-14"
   ],
   "loopName": "cloud_harness_native_async_lifecycle_loop",
-  "harnessManifest": "docs/recovery/v22-cloud-harness-manifest.json",
+  "harnessManifest": "docs/delivery/README.md",
   "productionAcceptanceLevels": [
     "L1",
     "L2a",
@@ -2522,15 +2522,15 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     "deploy_and_production_integration"
   ],
   "futureAuthorizedPath": [
-    { "step": "R-00", "gateId": "CC-01", "authorizationPackage": "none", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
-    { "step": "R-01", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "services/portal", "artifactPath": "services/portal/package.json and services/portal/package-lock.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
-    { "step": "R-02", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-verification-matrix.md" },
-    { "step": "R-03", "gateId": "CC-02", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
-    { "step": "R-04", "gateId": "CC-02", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": ".runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json", "blockerWriteback": "docs/recovery/cloud-onboarding-execution-board.md" },
+    { "step": "R-00", "gateId": "CC-01", "authorizationPackage": "none", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/delivery/README.md" },
+    { "step": "R-01", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "services/portal", "artifactPath": "services/portal/package.json and services/portal/package-lock.json", "blockerWriteback": "docs/delivery/README.md" },
+    { "step": "R-02", "gateId": "CC-01", "authorizationPackage": "dependency_install", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/delivery/README.md" },
+    { "step": "R-03", "gateId": "CC-02", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/delivery/README.md" },
+    { "step": "R-04", "gateId": "CC-02", "authorizationPackage": "readonly_connection", "entrypoint": "repo root", "artifactPath": ".runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json", "blockerWriteback": "docs/delivery/README.md" },
     { "step": "R-05", "gateId": "CC-03", "authorizationPackage": "local_contract_smoke", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/specs/README.md" },
-    { "step": "R-06", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-dry-run.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
-    { "step": "R-07", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-execution.json", "blockerWriteback": "cloud operation row and docs/recovery/cloud-onboarding-execution-board.md" },
-    { "step": "R-08", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-dry-run.json", "blockerWriteback": "docs/recovery/cloud-onboarding-status-table.md" },
+    { "step": "R-06", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-dry-run.json", "blockerWriteback": "docs/delivery/README.md" },
+    { "step": "R-07", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-execution.json", "blockerWriteback": "cloud operation row and docs/delivery/README.md" },
+    { "step": "R-08", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-dry-run.json", "blockerWriteback": "docs/delivery/README.md" },
     { "step": "R-09", "gateId": "CC-05", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-compute-execution.json", "blockerWriteback": "cloud operation row and CC-05 status" },
     { "step": "R-10", "gateId": "CC-03", "authorizationPackage": "local_contract_smoke", "entrypoint": "repo root", "artifactPath": "stdout JSON only", "blockerWriteback": "docs/specs/README.md and CC-03 blocker" },
     { "step": "R-11", "gateId": "CC-04", "authorizationPackage": "authorized_resource_lifecycle", "entrypoint": "repo root", "artifactPath": ".runtime/v22-cloud-lifecycle/<operation-id>-storage-expand.json", "blockerWriteback": "cloud operation row and CC-04 status" },
@@ -3753,10 +3753,10 @@ Package D 在 build/push/kubectl 之前，如何证明 release plan 中每个 Po
 - [spec:v22-portal-opl-context-backflow-boundary](#spec-v22-portal-opl-context-backflow-boundary)
 - [spec:v22-real-opl-file-run-artifact-canary-boundary](#spec-v22-real-opl-file-run-artifact-canary-boundary)
 - [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary)
-- [../recovery/cloud-onboarding-execution-board.md](../recovery/cloud-onboarding-execution-board.md)
-- [../recovery/cloud-onboarding-status-table.md](../recovery/cloud-onboarding-status-table.md)
-- [../recovery/cloud-onboarding-verification-matrix.md](../recovery/cloud-onboarding-verification-matrix.md)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 ## Product Truth
 
@@ -4135,7 +4135,7 @@ public trace metadata 不得包含 raw prompt、raw API key、`launchToken`、`r
 
 ## Non-goals
 
-- 不改 frontend。
+- 不在本合同内实现 frontend；Portal frontend 改动必须由对应 UI leaf、Figma source 和 frontend surface eval 授权。
 - 不修改 one-person-lab upstream。
 - 不调用真实云 API。
 - 不读取 secrets。
@@ -5179,13 +5179,13 @@ Former title: v22 Portal-OPL Context Backflow Boundary Contract
 - [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary)
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 规范路径为：
 
-- `docs/recovery/status-matrix.md`
-- `docs/recovery/mvp-contract-acceptance.md`
+- `docs/active/README.md`
+- `docs/active/README.md`
 
 ## Product Truth
 
@@ -5214,7 +5214,7 @@ Portal 不理解 OPL 内部协议。Gateway 不成为业务真相源。Runtime B
 
 ## Complete Portal-OPL Link Validation Path
 
-完整开发验收必须沿着 [portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md) 执行。该链路从 discovery baseline 开始，依次验证 Portal launch、Gateway proxy、OPL context bootstrap、session binding、message backflow、Portal projection、下游 runtime gate、下游 Langfuse session trace boundary 和性能对比。
+完整开发验收必须沿着 [portal-opl-context-backflow-validation-path.md](../history/README.md) 执行。该链路从 discovery baseline 开始，依次验证 Portal launch、Gateway proxy、OPL context bootstrap、session binding、message backflow、Portal projection、下游 runtime gate、下游 Langfuse session trace boundary 和性能对比。
 
 任何实现分支如果只通过本地 fake Product API 或只返回 200/201/202，不能宣称完成真实 Portal-OPL context/backflow 闭环。
 
@@ -5587,7 +5587,7 @@ B 窗口吸收实现分支前必须确认：
 6. Runtime 只作为下游 canonical boundary；没有授权时不实现云 runtime，不伪造 run/artifact。
 7. Langfuse 只作为 `trace.medopl.cn` session trace attachment；没有授权时不部署、不读 secret、不接真实 Langfuse。
 8. raw prompt、raw completion、raw API key、bearer token、`launchToken`、`runtimeToken`、`objectKey`、`storageKey`、`localPath`、`signedUrl`、`presignedUrl` 未进入 public response、browser state、log、evidence 或 git。
-9. 完整链路按 [portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md) 验证。
+9. 完整链路按 [portal-opl-context-backflow-validation-path.md](../history/README.md) 验证。
 
 ## Non-goals
 
@@ -5650,8 +5650,8 @@ Former title: v22 Portal Structure / Failure Isolation Boundary
 - `docs/specs/README.md`
 - `docs/specs/README.md`
 - `docs/specs/README.md`
-- `docs/recovery/mvp-contract-acceptance.md`
-- `docs/recovery/status-matrix.md`
+- `docs/active/README.md`
+- `docs/active/README.md`
 
 ## Portal 后端 route / dispatcher 边界
 
@@ -6020,8 +6020,8 @@ Portal 必须按低耦合目标治理：
     "docs/specs/README.md",
     "docs/specs/README.md",
     "docs/specs/README.md",
-    "docs/recovery/mvp-contract-acceptance.md",
-    "docs/recovery/status-matrix.md"
+    "docs/active/README.md",
+    "docs/active/README.md"
   ],
   "currentPortalCodeShape": {
     "characterizationOnly": true,
@@ -6281,7 +6281,7 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 - `opl-launch`: 展示 OPL 启动阶段，不暴露 providerKeyRef、runtime token 或 raw key。
 - `services/portal/frontend/src/app/**` 已按 Figma Make ZIP 复制为 React user Portal route 和 surface source；`services/portal/frontend/src/app/data/portalAdapters.ts` 已接现有 `/portal/api/*`。
 
-仍不属于本 leaf 的后续事项：Portal backend services、Node 22 ESM layering、billing preauth/ledger/release T+1 后端闭环、真实云、release readiness、deploy、build/push/kubectl、live-test、secret-backed canary 和 upstream OPL 修改。B 吸收本分支后，cursor 是否推进到 `backend-product-node22-esm-layering` 必须继续由 `docs/recovery/v22-goal-current.json`、gap matrix 和 B review 规则决定；本实现分支不提前声明全局 cursor 完成。
+仍不属于本 leaf 的后续事项：Portal backend services、Node 22 ESM layering、billing preauth/ledger/release T+1 后端闭环、真实云、release readiness、deploy、build/push/kubectl、live-test、secret-backed canary 和 upstream OPL 修改。B 吸收本分支后，cursor 是否推进到 `backend-product-node22-esm-layering` 必须继续由 `tests/fixtures/v22/goal-current.json`、gap matrix 和 B review 规则决定；本实现分支不提前声明全局 cursor 完成。
 
 ## 验收方式
 
@@ -6426,11 +6426,11 @@ npm --prefix services/portal/frontend run build
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
-      "docs/recovery/v22-goal-current.json",
-      "docs/recovery/v22-goal-state.md",
-      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-      "docs/recovery/v22-agent-verify-manifest.json",
-      "docs/recovery/mvp-contract-acceptance.md",
+      "tests/fixtures/v22/goal-current.json",
+      "docs/history/README.md",
+      "docs/active/README.md",
+      "tests/fixtures/v22/agent-verify-manifest.json",
+      "docs/active/README.md",
       "tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
       "tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
       "tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
@@ -6447,17 +6447,17 @@ npm --prefix services/portal/frontend run build
       "node tests/contract/contract-test-v22-goal-state-consistency.mjs",
       "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
       "node tests/contract/contract-test-v22-product-goal-harness.mjs",
-      "git diff --check -- docs/specs docs/recovery scripts services/portal/frontend"
+      "git diff --check -- docs/specs docs tests scripts services/portal/frontend"
     ],
     "truthWritebackTarget": [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "DESIGN.md",
       "docs/specs/README.md",
-      "docs/recovery/v22-goal-current.json",
-      "docs/recovery/v22-goal-state.md",
-      "docs/recovery/v22-current-vs-ideal-gap-matrix.md",
-      "docs/recovery/mvp-contract-acceptance.md"
+      "tests/fixtures/v22/goal-current.json",
+      "docs/history/README.md",
+      "docs/active/README.md",
+      "docs/active/README.md"
     ],
     "stopConditions": [
       "requires_backend_services_change",
@@ -6503,7 +6503,7 @@ Former title: v22 Portal User Surface Boundary
 
 这是 Portal 普通用户 role surface 合同，不实现新 UI。
 
-本合同定义 MedOPL v22 Portal 普通用户页面边界。它不推翻既有 Portal UI MVP，也不是重新冻结 UI；`docs/recovery/mvp-contract-acceptance.md` 仍只是阶段快照，是否修改 UI 由当前分支意图和订阅合同决定。
+本合同定义 MedOPL v22 Portal 普通用户页面边界。它不推翻既有 Portal UI MVP，也不是重新冻结 UI；`docs/active/README.md` 仍只是阶段快照，是否修改 UI 由当前分支意图和订阅合同决定。
 
 ## 定位
 
@@ -7319,21 +7319,21 @@ Portal 和 OPL 已经打通 context/backflow 骨架后，如何逐项验证真�
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
-- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
-- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
-- [../recovery/real-opl-file-run-artifact-validation-path.md](../recovery/real-opl-file-run-artifact-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 规范路径为：
 
-- `docs/recovery/status-matrix.md`
-- `docs/recovery/mvp-contract-acceptance.md`
-- `docs/recovery/portal-opl-context-backflow-validation-path.md`
-- `docs/recovery/real-opl-capability-canary-validation-path.md`
-- `docs/recovery/real-opl-provider-message-canary-validation-path.md`
-- `docs/recovery/real-opl-file-run-artifact-validation-path.md`
+- `docs/active/README.md`
+- `docs/active/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
 
 ## Product Truth
 
@@ -7515,7 +7515,7 @@ evidence 禁止包含：
 
 message reply canary 的目标是证明 message 真正进入 OPL/agent/provider，并形成可查询回流。
 
-message reply 的 provider 级细分验收以 [spec:v22-real-opl-provider-message-canary-boundary](#spec-v22-real-opl-provider-message-canary-boundary) 和 `docs/recovery/real-opl-provider-message-canary-validation-path.md` 为准。该细分合同只证明真实 message/reply/provider 边界，不证明 file、run、artifact、真实云 runtime 或 Langfuse 已上线。
+message reply 的 provider 级细分验收以 [spec:v22-real-opl-provider-message-canary-boundary](#spec-v22-real-opl-provider-message-canary-boundary) 和 `docs/delivery/README.md` 为准。该细分合同只证明真实 message/reply/provider 边界，不证明 file、run、artifact、真实云 runtime 或 Langfuse 已上线。
 
 请求必须携带：
 
@@ -7689,7 +7689,7 @@ HTTP status 必须表达业务失败类别。若网关或 Runtime Bridge 使用 
 7. message/file/run/artifact/observability 未完成真实 canary 时，必须在状态矩阵标记为未完成或需授权。
 8. 没有修改 one-person-lab upstream。
 9. 没有读取 secret，没有调用真实云，没有 build/push/kubectl/live-test，没有修改 deploy、`.sentrux` 或 adapters。
-10. `git diff --check -- docs/specs docs/recovery scripts` 通过。
+10. `git diff --check -- docs/specs docs tests scripts` 通过。
 
 ### spec:v22-real-opl-file-run-artifact-canary-boundary
 
@@ -7730,20 +7730,20 @@ Portal 已能进入 clean OPL WebUI、绑定 session，并已通过授权 provid
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
-- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
-- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
-- [../recovery/real-opl-file-run-artifact-validation-path.md](../recovery/real-opl-file-run-artifact-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 规范路径为：
 
-- `docs/recovery/status-matrix.md`
-- `docs/recovery/mvp-contract-acceptance.md`
-- `docs/recovery/real-opl-capability-canary-validation-path.md`
-- `docs/recovery/real-opl-provider-message-canary-validation-path.md`
-- `docs/recovery/real-opl-file-run-artifact-validation-path.md`
+- `docs/active/README.md`
+- `docs/active/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
 
 ## Product Truth
 
@@ -8151,7 +8151,7 @@ canary 发现的事实必须回写合同、status 和 validation path。后续 p
 9. file/run/artifact/trace/billing metadata 未完成 Runtime Agent API full-loop canary 时，不可吸收；真实云 runtime、COS 账单、Langfuse / `trace.medopl.cn` 未完成时，必须在状态矩阵标记为未上线或需单独授权。
 10. 没有修改 one-person-lab upstream。
 11. 没有读取 secret，没有调用真实云，没有 build/push/kubectl/live-test，没有修改 deploy、`.sentrux` 或 adapters。
-12. `git diff --check -- docs/specs docs/recovery scripts services/opl-runtime-bridge services/portal` 通过。
+12. `git diff --check -- docs/specs docs tests scripts services/opl-runtime-bridge services/portal` 通过。
 13. secret/path scan 不发现 raw key、token、本机 secret path、object key、signed URL 或 `.env` 内容。
 
 ### spec:v22-real-opl-provider-message-canary-boundary
@@ -8193,19 +8193,19 @@ Portal 已能进入 clean OPL WebUI 并绑定 session 后，如何验证一条�
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
-- [../recovery/status-matrix.md](../recovery/status-matrix.md)
-- [../recovery/mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)
-- [../recovery/portal-opl-context-backflow-validation-path.md](../recovery/portal-opl-context-backflow-validation-path.md)
-- [../recovery/real-opl-capability-canary-validation-path.md](../recovery/real-opl-capability-canary-validation-path.md)
-- [../recovery/real-opl-provider-message-canary-validation-path.md](../recovery/real-opl-provider-message-canary-validation-path.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
+- [../history/README.md](../history/README.md)
 
 规范路径为：
 
-- `docs/recovery/status-matrix.md`
-- `docs/recovery/mvp-contract-acceptance.md`
-- `docs/recovery/portal-opl-context-backflow-validation-path.md`
-- `docs/recovery/real-opl-capability-canary-validation-path.md`
-- `docs/recovery/real-opl-provider-message-canary-validation-path.md`
+- `docs/active/README.md`
+- `docs/active/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
+- `docs/delivery/README.md`
 
 ## Product Truth
 
@@ -8602,7 +8602,7 @@ canary evidence 只允许写入 `.runtime`，不得进入 git。
 
 canary 成功不自动等于 productionized Runtime Bridge。进入正式实现前必须：
 
-1. 把真实 provider message reply 发现回写本合同、[spec:v22-real-opl-capability-canary-boundary](#spec-v22-real-opl-capability-canary-boundary)、[status-matrix.md](../recovery/status-matrix.md) 和 [mvp-contract-acceptance.md](../recovery/mvp-contract-acceptance.md)。
+1. 把真实 provider message reply 发现回写本合同、[spec:v22-real-opl-capability-canary-boundary](#spec-v22-real-opl-capability-canary-boundary)、[status-matrix.md](../history/README.md) 和 [mvp-contract-acceptance.md](../history/README.md)。
 2. 明确 message reply capability 状态：`supported`、`mapped_to_webui_bridge`、`mapped_to_acp_runtime`、`supported_provider_boundary`、`provider_key_required`、`provider_authorization_required`、`deferred_authorization` 或 `capability_not_supported`。
 3. 把 canary-only evidence、临时脚本输出和 `.runtime` 数据留在本地，不进入 git。
 4. 如需 productionized Runtime Bridge 映射，另开实现分支，补正式 smoke，不依赖 `.runtime` 临时 evidence。
@@ -8620,7 +8620,7 @@ canary 成功不自动等于 productionized Runtime Bridge。进入正式实现�
 6. 合同索引、阶段状态和验证链路已更新。
 7. 默认合同 smoke 未使用 raw provider key，未调用真实 provider，未读取 secret，未调用真实云；授权 live canary 必须明确记录 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1` 和脱敏 evidence path。
 8. 未修改 one-person-lab upstream、deploy、`.sentrux` 或 adapters。
-9. `git diff --check -- docs/specs docs/recovery scripts` 通过。
+9. `git diff --check -- docs/specs docs tests scripts` 通过。
 
 ### spec:v22-release-stop-billing-audit-boundary
 
@@ -8693,7 +8693,7 @@ API response 和 canonical state 不得泄露：
 
 ## Non-goals
 
-- 不改 frontend。
+- 不在本合同内实现 frontend；Portal frontend 改动必须由对应 UI leaf、Figma source 和 frontend surface eval 授权。
 - 不改 OPL Gateway。
 - 不改 Runtime Bridge。
 - 不改 deploy、`.sentrux` 或 `adapters`。
@@ -10573,7 +10573,7 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 
 ## Non-goals
 
-- 不改 frontend。
+- 不在本合同内实现 frontend；Portal frontend 改动必须由对应 UI leaf、Figma source 和 frontend surface eval 授权。
 - 不改 OPL Gateway。
 - 不改 Runtime Bridge。
 - 不改 deploy、`.sentrux` 或 `adapters`。

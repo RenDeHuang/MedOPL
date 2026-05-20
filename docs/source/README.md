@@ -16,13 +16,20 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 Current docs / eval surface during migration：
 
 - `docs/active/README.md`
-- `docs/product.md`
-- `docs/architecture.md`
-- `docs/specs/v22-*`
-- `docs/recovery/*`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/public/README.md`
+- `docs/references/README.md`
+- `docs/history/README.md`
 - `tests/**/*.mjs`
+- `tests/fixtures/v22/{goal-current,agent-verify-manifest}.json`
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
+- `scripts/v22-workflow-gate.mjs`
 
 ## Forbidden Without Authorization
 
@@ -40,4 +47,4 @@ Current docs / eval surface during migration：
 
 ## Current Truth Pointer
 
-active surface、OPL entry、upstream clean、zero-compat、禁止恢复旧入口和当前 migration surface 统一见 `docs/active/README.md`。旧 `docs/recovery/active-surface.md` 已被吸收到 current truth，不得恢复为 current active-surface 入口。
+active surface、OPL entry、upstream clean、zero-compat、禁止恢复旧入口和当前 source surface 统一见 `docs/active/README.md`。旧分散 active-surface 文档不得恢复为 current active-surface 入口。

@@ -4,8 +4,7 @@ import { readFile } from "node:fs/promises";
 const contractPath = "docs/specs/README.md";
 const contractIndexPath = "docs/specs/README.md";
 const activeTruthPath = "docs/active/README.md";
-const gapMatrixPath = "docs/recovery/v22-current-vs-ideal-gap-matrix.md";
-const mvpAcceptancePath = "docs/recovery/mvp-contract-acceptance.md";
+const deliveryPath = "docs/delivery/README.md";
 
 const startMarker = "<!-- v22-saas-control-plane-user-experience-contract:start -->";
 const endMarker = "<!-- v22-saas-control-plane-user-experience-contract:end -->";
@@ -82,14 +81,12 @@ const [
   contractMarkdown,
   contractIndex,
   activeTruth,
-  gapMatrix,
-  mvpAcceptance,
+  deliveryTruth,
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
   source(activeTruthPath),
-  source(gapMatrixPath),
-  source(mvpAcceptancePath),
+  source(deliveryPath),
 ]);
 
 const contract = extractJson(contractMarkdown);
@@ -160,12 +157,10 @@ assertIncludes(activeTruth, "SaaS 控制面", "active_truth_must_name_saas_contr
 assertIncludes(activeTruth, "托管交付平台", "active_truth_must_name_managed_delivery_platform");
 assertIncludes(activeTruth, "Portal 不回答科研问题，不复制 OPL 的 chatbot", "active_truth_must_keep_opl_chatbot_boundary");
 assertIncludes(activeTruth, "OPL 负责科研执行", "active_truth_must_assign_opl_execution");
-assertIncludes(gapMatrix, "saas-control-plane-user-experience-truth", "gap_matrix_must_track_truth_layer_gap");
-assertIncludes(gapMatrix, uxContractRef, "gap_matrix_must_reference_contract");
-assertIncludes(gapMatrix, "status: completed", "gap_matrix_must_mark_truth_completed");
-assertIncludes(mvpAcceptance, "SaaS control plane user experience truth contract", "mvp_acceptance_must_list_ux_truth_contract");
-assertIncludes(mvpAcceptance, "十层 truth", "mvp_acceptance_must_record_truth_layer_index");
-assertIncludes(mvpAcceptance, "tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs", "mvp_acceptance_must_include_ux_truth_smoke");
+assertIncludes(activeTruth, "用户购买的是托管 OPL 科研工作台服务", "active_truth_must_hold_product_truth");
+assertIncludes(activeTruth, "当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`", "active_truth_must_track_current_cursor");
+assertIncludes(deliveryTruth, "leaf-portal-postgres-redis-local-production-data-closure", "delivery_truth_must_track_current_cursor");
+assertIncludes(deliveryTruth, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "delivery_truth_must_list_default_verify");
 
 for (const text of [
   contractMarkdown,
@@ -182,7 +177,6 @@ console.log(JSON.stringify({
     contractPath,
     contractIndexPath,
     activeTruthPath,
-    gapMatrixPath,
-    mvpAcceptancePath,
+    deliveryPath,
   ],
 }, null, 2));

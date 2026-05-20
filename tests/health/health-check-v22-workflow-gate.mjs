@@ -40,9 +40,10 @@ assertIncludesAll(startResult.stdout, [
   "分支意图",
   "当前必须读取的阶段文档",
   "AGENTS.md",
-  "docs/vibe-coding.md",
+  "docs/active/README.md",
   "docs/specs/README.md",
-  "docs/recovery/status-matrix.md",
+  "docs/policies/README.md",
+  "docs/delivery/README.md",
   "推荐合同包",
   "Portal / UI 合同包",
   "docs/specs/README.md",
@@ -129,6 +130,34 @@ const reviewWithSmoke = evaluateReview({
 });
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "services_changed_without_v22_smoke_update"), false, "review_must_accept_service_smoke_update");
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "contracts_changed_without_v22_smoke_update"), false, "review_must_accept_contract_smoke_update");
+
+const fullTaxonomyAuthorizedDeletes = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  branchName: "cleanup/v22-full-taxonomy-hard-retirement",
+  changedFiles: [
+    ["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"),
+    ["docs", "recovery", "status-matrix.md"].join("/"),
+    ["docs", "product.md"].join("/"),
+    ["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"),
+    "tests/contract/contract-test-v22-goal-state-consistency.mjs",
+  ],
+  changedStatuses: new Map([
+    [["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"), "D"],
+    [["docs", "recovery", "status-matrix.md"].join("/"), "D"],
+    [["docs", "product.md"].join("/"), "D"],
+    [["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"), "D"],
+    ["tests/contract/contract-test-v22-goal-state-consistency.mjs", "D"],
+  ]),
+});
+assert.equal(fullTaxonomyAuthorizedDeletes.ok, true, "full_taxonomy_authorized_deletes_must_be_ok");
+assert.deepEqual(fullTaxonomyAuthorizedDeletes.forbiddenPaths, [], "full_taxonomy_deletes_forbidden_paths_must_be_empty");
+assert.deepEqual(fullTaxonomyAuthorizedDeletes.authorizedCleanupDeletions, [
+  ["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"),
+  ["docs", "recovery", "status-matrix.md"].join("/"),
+  ["docs", "product.md"].join("/"),
+  ["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"),
+  "tests/contract/contract-test-v22-goal-state-consistency.mjs",
+], "full_taxonomy_delete_authorization_mismatch");
 
 const strictCleanupAuthorizedDeletes = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",

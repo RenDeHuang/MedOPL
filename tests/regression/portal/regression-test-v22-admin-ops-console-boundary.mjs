@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { DEFAULT_SMOKE_CATEGORIES, listClassifiedSmokeScripts } from "../../../scripts/v22-test-classification.mjs";
+import { smokeEvalMetadataOf } from "../../../scripts/v22-test-classification.mjs";
 
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
@@ -200,11 +200,9 @@ assertArrayIncludesAll(contract.forbiddenPaths, [
 ], "admin_ops_forbidden_paths");
 
 assertIncludes(readme, "spec:v22-admin-ops-console-boundary", "contracts_readme_must_index_admin_ops_contract");
-assertIncludes(suite, "listClassifiedSmokeScripts", "mvp_suite_must_use_classified_smoke_selector");
-assert(
-  listClassifiedSmokeScripts({ categories: DEFAULT_SMOKE_CATEGORIES }).includes(smokeScriptPath),
-  "mvp_suite_must_run_admin_ops_contract_smoke",
-);
+assertIncludes(suite, "listSmokeEvalScripts", "mvp_suite_must_use_eval_tier_selector");
+assertIncludes(suite, "mvpLocalTiers", "mvp_suite_must_name_local_tier_scope");
+assert.equal(smokeEvalMetadataOf(smokeScriptPath).tier, "local-regression", "admin_ops_boundary_must_be_local_regression");
 
 console.log(JSON.stringify({
   ok: true,

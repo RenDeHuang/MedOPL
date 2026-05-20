@@ -2,12 +2,14 @@
 
 Owner: `MedOPL`
 Purpose: `delivery_truth`
-State: `taxonomy_skeleton`
-Machine boundary: 本文是人读交付入口。当前执行 cursor、branch overrides 和 suite commands 仍以 `docs/recovery/v22-goal-current.json` 与 `docs/recovery/v22-agent-verify-manifest.json` 为准。
+State: `active`
+Machine boundary: 本文是人读交付入口。当前执行 cursor、branch overrides 和 suite commands 以 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json` 为准。
 
 ## Current Cursor
 
-当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。本 docs taxonomy skeleton 分支不实现 PostgreSQL/Redis，不推进业务 cursor。
+当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。它要求 PostgreSQL 成为 Portal local production data canonical truth，Redis 只用于 session/cache/queue/lock；`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
+
+本 taxonomy hard-retirement 分支不实现 PostgreSQL/Redis，不推进业务 cursor。
 
 ## Default Verification
 
@@ -16,6 +18,7 @@ node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk
+node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 ```
 
 ## Cloud / Deploy Sequence
@@ -34,17 +37,16 @@ mock/snapshot provider
 
 Readonly and mutation lanes must use separate authorization, secret allowlists, runners and evidence. Evidence with real secrets or live cloud responses stays in `.runtime` and does not enter git.
 
-## Current Sources
+## Step Record Discipline
 
-- `docs/status.md`
-- `docs/recovery/v22-goal-current.json`
-- `docs/recovery/v22-agent-verify-manifest.json`
-- `docs/recovery/mvp-contract-acceptance.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
+Each A branch records:
 
-## Migration Status
+- branch and base trunk HEAD
+- subscribed truth/spec/policy files
+- step commits
+- verification commands and results
+- subagent roles and models
+- B review recommendation
+- non-goals and forbidden operations not performed
 
-本 README 是 delivery skeleton。旧 recovery boards、program tables 和 cloud workflow contracts 本轮只索引不删除。
-
+The durable human summary is `docs/history/README.md`; detailed proof remains in git history and command output.

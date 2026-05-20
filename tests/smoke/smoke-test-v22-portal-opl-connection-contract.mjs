@@ -16,7 +16,7 @@ const files = {
   runtime: "docs/specs/README.md",
   oplWork: "docs/specs/README.md",
   portalFiles: "docs/specs/README.md",
-  statusMatrix: "docs/recovery/status-matrix.md",
+  active: "docs/active/README.md",
   suite: "tests/contract/contract-test-v22-mvp-contract-suite.mjs",
   stateStoreSmoke: "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
   adapterApiSmoke: "tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
@@ -279,7 +279,7 @@ assertIncludesAll([
   contents.runtime,
   contents.oplWork,
   contents.portalFiles,
-  contents.statusMatrix,
+  contents.active,
 ].join("\n"), [
   "workspace context is bound",
   "session 必须绑定 `tenantId`、`portalUserId`、`workspaceId`、`workspaceSessionId`、`runtimeSessionId` 和 `resourceBindingId`",
@@ -290,15 +290,17 @@ assertIncludesAll([
   "该逻辑必须保持 MedOPL 的 tenant、workspace、runtime availability、resource binding 和 token provider boundary",
 ], "existing_contract_alignment");
 
-assertIncludesAll(contents.statusMatrix, [
-  "2026-05-10 主仓 canary 确认 `opl web` retired",
-  "主仓未暴露 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
-  "独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Runtime Bridge session bridge 可接通",
-  "当前可验证公开边界是 `opl session runtime --acp`",
-  "独立 WebUI WebSocket bridge session 创建/DB 回读",
-  "授权 live canary 下的 WebUI bridge provider message reply 回流",
-  "未验证或不兼容能力必须显式 `capability_not_supported`",
-  "不能把 file/run/artifact 伪成功",
+assertIncludesAll([contents.connection, contents.active].join("\n"), [
+  "2026-05-10 的 `/home/dev/projects/one-person-lab` 主仓 canary 结论是",
+  "`opl web` 已 retired",
+  "主仓没有 `/api/opl/system`、`/api/opl/messages`、`/api/opl/sessions` HTTP Product API",
+  "独立 OPL/AionUI WebUI 可作为真实浏览器工作台进程启动",
+  "Gateway 指向该 WebUI 后可代理页面、注入 launch script、拒绝 secret query，并代理 WebSocket bridge",
+  "`opl session runtime --acp` 可作为 bootstrap/session bind 的公开映射面",
+  "WebUI 的真实业务协议是 browser WebSocket bridge",
+  "授权 provider message live canary 结论",
+  "未配置可用 provider/agent 登录，必须标记为 `capability_not_supported`",
+  "不能生成伪 run/artifact 成功",
 ], "status_matrix_real_opl_canary_alignment");
 
 assertExcludesAll(contents.connection, [

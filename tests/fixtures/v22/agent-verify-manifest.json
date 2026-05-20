@@ -1,0 +1,251 @@
+{
+  "schema_version": 2,
+  "canonical": true,
+  "last_updated_at": "2026-05-20",
+  "model": "gpt-5.4",
+  "runner": "scripts/v22-verify.mjs",
+  "default_agent_entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+  "allowlist_authority": "tests_fixtures_manifest_not_scattered_smoke",
+  "smoke_role": "health_and_golden_only",
+  "purpose": "Centralize v22 agent-facing verification after OPL-style hard retirement. docs/active/README.md is the only human current truth; docs/specs/README.md is the only contract/spec truth; tests/fixtures/v22/goal-current.json is the machine cursor.",
+  "risk_classes": [
+    "local_doc_eval",
+    "local_service_code",
+    "sensitive_boundary",
+    "live_external"
+  ],
+  "global_forbidden_files": [
+    "deploy/*",
+    ".sentrux/*",
+    "adapters/*",
+    "infra/*",
+    "one-person-lab/*",
+    "upstream/*",
+    "secret-like paths"
+  ],
+  "global_forbidden_ops": [
+    "secret",
+    "live-cloud",
+    "true-cloud-mutation",
+    "build-push-kubectl",
+    "deploy",
+    "live-test",
+    "upstream-write",
+    "dependency-upgrade",
+    "git-push"
+  ],
+  "control_plane_files": [
+    "docs/active/README.md",
+    "docs/specs/README.md",
+    "tests/fixtures/v22/goal-current.json",
+    "tests/fixtures/v22/agent-verify-manifest.json",
+    "scripts/v22-verify.mjs",
+    "scripts/v22-workflow-gate.mjs",
+    "scripts/v22-test-classification.mjs",
+    "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs"
+  ],
+  "leaves": [
+    {
+      "leaf_id": "leaf-portal-postgres-redis-local-production-data-closure",
+      "gap_id": "portal-postgres-redis-local-production-data-closure",
+      "stage": "S5 frontend/backend product completion",
+      "risk_class": "local_service_code",
+      "live_external_allowed": false,
+      "requires_step_local_auth_record": false,
+      "contracts": [
+        "AGENTS.md",
+        "docs/active/README.md",
+        "docs/specs/README.md",
+        "docs/policies/README.md",
+        "docs/source/README.md"
+      ],
+      "allowed_files": [
+        "services/portal/src/state/*",
+        "services/portal/src/domain/*",
+        "services/portal/src/app/*",
+        "services/portal/src/routes/*",
+        "services/portal/src/storage/*",
+        "services/portal/src/migrations/*",
+        "services/portal/src/config/*",
+        "docs/active/README.md",
+        "docs/history/README.md",
+        "tests/fixtures/v22/*",
+        "tests/**/*.mjs",
+        "scripts/v22-test-classification.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs"
+      ],
+      "forbidden_files": [
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        "real cloud/provider files",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign"
+      ],
+      "verification_commands": [
+        "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "npm --prefix services/portal run check",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts services/portal/src"
+      ],
+      "truth_writeback_target": [
+        "docs/active/README.md",
+        "docs/history/README.md",
+        "tests/fixtures/v22/goal-current.json",
+        "tests/fixtures/v22/agent-verify-manifest.json"
+      ]
+    }
+  ],
+  "suites": [
+    {
+      "id": "current",
+      "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "npm --prefix services/portal run check",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts services/portal/src"
+      ]
+    },
+    {
+      "id": "health",
+      "commands": [
+        "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/health/health-check-v22-workflow-gate.mjs",
+        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs"
+      ]
+    },
+    {
+      "id": "smoke",
+      "commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs"
+      ]
+    },
+    {
+      "id": "mvp",
+      "commands": [
+        "node tests/contract/contract-test-v22-mvp-contract-suite.mjs"
+      ]
+    },
+    {
+      "id": "local-contract",
+      "commands": [
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+        "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+        "node tests/health/health-check-v22-workflow-gate.mjs",
+        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+        "node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"
+      ]
+    },
+    {
+      "id": "local-regression",
+      "commands": [
+        "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all"
+      ]
+    },
+    {
+      "id": "cloud-future-authorized",
+      "commands": [
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs"
+      ]
+    },
+    {
+      "id": "review",
+      "commands": [
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
+      ]
+    }
+  ],
+  "package_suites": [],
+  "branch_override_suites": [
+    {
+      "id": "full-taxonomy-hard-retirement",
+      "branch": "cleanup/v22-full-taxonomy-hard-retirement",
+      "branches": [
+        "cleanup/v22-full-taxonomy-hard-retirement"
+      ],
+      "reason": "Full taxonomy hard retirement branch runs docs/tests/scripts taxonomy gates without changing the product cursor.",
+      "commands": [
+        "node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- AGENTS.md README.md DESIGN.md docs tests scripts"
+      ],
+      "allowed_files": [
+        "AGENTS.md",
+        "README.md",
+        "DESIGN.md",
+        "docs/**/*.md",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-test-classification.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/sync-workspace-file-to-minio.ps1"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        ".runtime/*",
+        "secret-like paths"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "git-push"
+      ],
+      "retired_groups": [
+        "distributed_contract_leaf_docs",
+        "recovery_stage_and_agent_run_docs",
+        "root_legacy_docs",
+        "legacy_workflow_and_cloud_helper_scripts",
+        "legacy_cloud_and_stage_eval_gates"
+      ]
+    }
+  ]
+}

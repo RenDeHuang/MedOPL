@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
-const manifestPath = "docs/recovery/v22-agent-verify-manifest.json";
-const currentStatePath = "docs/recovery/v22-goal-current.json";
+const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
+const currentStatePath = "tests/fixtures/v22/goal-current.json";
 
 function parseArgs(argv) {
   const [mode, maybeTarget, ...tail] = argv;

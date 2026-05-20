@@ -2,8 +2,8 @@
 
 Owner: `MedOPL`
 Purpose: `current_state_vs_ideal_gap`
-State: `hard_compacted_current_truth`
-Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、last absorbed commit、branch override 和 verification bundle 仍以 `docs/recovery/v22-goal-current.json` 与 `docs/recovery/v22-agent-verify-manifest.json` 为准。`docs/product/README.md`、`docs/runtime/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/delivery/README.md`、`docs/source/README.md`、`docs/references/README.md`、`docs/history/README.md` 只提供视角索引，不再承载第二份 current truth。
+State: `active_current_truth`
+Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、last absorbed commit、branch override 和 verification bundle 以 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json` 为准。`docs/product/README.md`、`docs/runtime/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/delivery/README.md`、`docs/source/README.md`、`docs/references/README.md`、`docs/history/README.md` 只提供视角索引，不再承载第二份 current truth。
 
 ## Ideal State
 
@@ -24,14 +24,14 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 - Portal、OPL Web Gateway、Runtime Bridge / Runtime Agent 是 v22 active product chain。
 - `scripts/v22-verify.mjs current/suite ...` 是默认 agent-facing verification 入口。
 - `tests/**/*.mjs` 当前是 repo-local eval 文件族，不全是 smoke。
-- `docs/recovery/agent-runs/*` 是 evidence，不是 product truth。
+- `docs/history/README.md` 是 evidence 摘要入口，不是 product truth。
 - 释放计算资源后的停止计费确认进入 `120min` 核对窗口，账单、资源、文件保留和异常处理进入 `T+1` 审计。
 
 当前未闭合的事实：
 
-- `docs/specs/**` 与 `docs/recovery/**` 中仍有 machine-boundary leaf、manifest、gap matrix、agent-run evidence 和历史 index；它们不是 current truth 的第二来源。
-- `tests/**/*.mjs` 已承载 v22 repo-local eval；剩余债务是部分文件名仍保留 `smoke-test-v22-*` 历史前缀，但分类和执行入口不再把全部 eval 写成 smoke。
 - PostgreSQL/Redis local production data closure 仍未实现。
+- 真实云、deploy、kubectl、live-test、真实资源 mutation、真实价格审批和 production release readiness 仍需单独授权。
+- `scripts/sync-workspace-file-to-minio.ps1` 因 `services/portal/src/config/portal-config.mjs` 仍引用，暂属服务实现债，不在 docs/eval 清退中删除。
 
 ## 产品真相
 
@@ -164,13 +164,20 @@ v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway 或 R
 Current docs / eval surface during migration：
 
 - `docs/active/README.md`
-- `docs/product.md`
-- `docs/architecture.md`
-- `docs/specs/v22-*`
-- `docs/recovery/*`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/public/README.md`
+- `docs/references/README.md`
+- `docs/history/README.md`
 - `tests/**/*.mjs`
+- `tests/fixtures/v22/{goal-current,agent-verify-manifest}.json`
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
+- `scripts/v22-workflow-gate.mjs`
 
 `user_owned`、`resource-order`、旧 `med-autoscience-runner`、旧 `resource-provisioner`、OpenCost 主叙事和 Langfuse 主产品叙事不得恢复为 active source、默认入口、fixture、compat alias 或文档默认上下文。
 
@@ -178,23 +185,23 @@ Current docs / eval surface during migration：
 
 | Area | Ideal | Current Evidence | Gap | Next Action | Done When | Verify |
 | --- | --- | --- | --- | --- | --- | --- |
-| Current truth | 一个 current truth 文件 | `docs/active/README.md` | 旧 recovery truth 文件仍有历史引用 | hard compaction | `product-truth.md` / `architecture-truth.md` / `active-surface.md` 物理清退，活跃引用迁移 | `node tests/contract/contract-test-v22-opl-style-taxonomy-hard-compaction.mjs` |
-| Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` 已承载 155 个 repo-local eval | 非 smoke eval 文件名仍保留 `smoke-test-v22-*` 历史前缀 | 后续 test filename hard-retirement | 文件名与分类语义一致，`scripts/` 只留 runner/classifier/workflow | tests taxonomy hard-retirement + verify |
-| Contracts compaction | human truth 吸收到 `docs/specs/README.md` 等目录 README | 42 个 `docs/specs/v22-*` 仍被 gate 引用 | README 与 leaf contract 混合 | 后续 contracts-to-specs | 旧合同引用迁移且 leaf boundary 保留策略明确 | local-contract suite |
-| Recovery retirement | recovery 不再是长期 docs taxonomy | recovery 根层仍有 manifest/gap/agent-run/history | 过程记录和机器状态混放 | 分批迁引用 | current truth / history / references 全部有替代入口 | local-contract suite |
+| Current truth | 一个 current truth 文件 | `docs/active/README.md` | 无第二份 current truth | maintain | 新 truth 直接改 active/specs/delivery/fixtures | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
+| Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` + dynamic classifier | 仅保真实 eval 分类，不保旧脚本目录 | maintain | `scripts/` 只留 runner/classifier/workflow 和服务引用的 sync helper | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` |
+| Contracts compaction | human truth 吸收到 `docs/specs/README.md` | `docs/specs/README.md` | 无分散合同叶子 | maintain | 合同新增直接写 specs anchor 和 eval | local-contract suite |
+| Recovery retirement | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | hard-retirement gate |
 
 ## Cannot Claim
 
 - 不能写成 `tests/**/*.mjs` 都是 smoke。
-- 不能写成 `docs/recovery/agent-runs/*` 是当前产品真相。
+- 不能写成 agent-run evidence 是当前产品真相。
 - 不能写成 `future-authorized` 等于真实云、deploy、kubectl 或 live-test 已授权。
 - 不能写成 PostgreSQL/Redis、本地 production data layer、admin 全业务闭环或真实云生产闭环已完成。
-- 不能把旧 `docs/recovery/product-truth.md`、`docs/recovery/architecture-truth.md`、`docs/recovery/active-surface.md` 恢复成 current truth。
+- 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
 
 ## Source Of Truth During Migration
 
 - 唯一人读 current truth：`docs/active/README.md`
-- 机器 cursor：`docs/recovery/v22-goal-current.json`
-- 验证 manifest：`docs/recovery/v22-agent-verify-manifest.json`
+- 机器 cursor：`tests/fixtures/v22/goal-current.json`
+- 验证 manifest：`tests/fixtures/v22/agent-verify-manifest.json`
 - smoke/eval 边界：`docs/specs/README.md`
-- agent-run evidence：`docs/recovery/agent-runs/*`
+- agent-run evidence 摘要：`docs/history/README.md`

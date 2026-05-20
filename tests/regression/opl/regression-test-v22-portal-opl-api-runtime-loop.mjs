@@ -303,7 +303,7 @@ try {
       PRODUCT_RUNTIME_MODE: "platform_provisioned",
     },
   });
-  await waitFor(`${runtimeBridgeUrl}/healthz`);
+  await waitForChildUrl(runtimeBridge, `${runtimeBridgeUrl}/healthz`, "runtime_bridge_healthz");
 
   gateway = spawnNode("services/opl-web-gateway/src/server.mjs", {
     port: gatewayPort,
@@ -314,7 +314,7 @@ try {
       PORTAL_PUBLIC_URL: portalUrl,
     },
   });
-  await waitFor(`${gatewayUrl}/healthz`);
+  await waitForChildUrl(gateway, `${gatewayUrl}/healthz`, "gateway_healthz");
 
   portal = spawnNode("services/portal/src/server.mjs", {
     port: portalPort,
@@ -331,7 +331,7 @@ try {
       PORTAL_OPL_PROVIDER_SECRET_ROOT: path.join(tempRoot, "provider-secrets"),
     },
   });
-  await waitFor(`${portalUrl}/healthz`);
+  await waitForChildUrl(portal, `${portalUrl}/healthz`, "portal_healthz");
 
   vite = spawnVite({ port: vitePort, backendUrl: portalUrl });
   await waitForChildUrl(vite, `http://127.0.0.1:${vitePort}/overview`, "vite_overview", { allowStatus: (status) => status === 200 });

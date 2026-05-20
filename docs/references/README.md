@@ -2,34 +2,28 @@
 
 Owner: `MedOPL`
 Purpose: `references_index`
-State: `taxonomy_skeleton`
+State: `active`
 Machine boundary: 本文是索引和参考入口，不是 current product truth、delivery cursor 或 machine gate。
 
 ## Scope
 
-`docs/references/README.md` 最终承接：
+`docs/references/README.md` 承接：
 
-- compaction indexes
-- classification indexes
-- gap / matrix 类索引
+- upstream OPL reference
 - 外部参考说明
-- upstream 参考
-- cleanup migration ledger
+- cleanup migration 摘要
+- 已清退 docs/eval/scripts 的历史索引指针
 
-## Current Reference Sources
+## Upstream Reference
 
-- `docs/recovery/v22-contract-smoke-eval-index-compaction-index.md`
-- `docs/recovery/v22-contract-eval-compaction-index.md`
-- `docs/recovery/v22-smoke-eval-physical-compaction-index.md`
-- `docs/recovery/v22-repo-governance-physical-compaction-index.md`
-- `docs/recovery/v22-monolith-agent-workflow-entrypoint-and-trace-normalization-index.md`
-- `docs/recovery/v22-truth-repo-narrative-reference-unification-index.md`
+One Person Lab upstream reference:
 
-## Rule
+```text
+https://github.com/gaofeng21cn/one-person-lab
+```
 
-Reference documents may explain why a decision happened, but they do not override active truth, specs, policies, delivery cursor or source behavior. If a reference contains a current rule, that rule must be lifted into the relevant directory README, contract, source or verify gate.
+MedOPL v22 不修改 upstream 源码，不 import upstream 内部模块，不在 upstream 目录写 Portal/Gateway/Runtime Bridge 代码。
 
-## Migration Status
+## Retired Reference Rule
 
-本 README 是 references skeleton。旧 recovery indexes 本轮不移动；后续分支迁移引用后再决定是否物理清退旧路径。
-
+旧分散 docs、旧合同叶子、旧 recovery 过程文档、旧 workflow/cloud helper 和旧 smoke 脚本只通过 git history 查证。若某条旧参考仍是当前规则，必须提升到 `docs/active/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/delivery/README.md`、source 或 verify gate。
