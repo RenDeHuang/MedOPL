@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。下一业务 leaf 必须让 PostgreSQL 成为 local production data 的 canonical truth，让 Redis 只用于 session/cache/queue/lock。`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
 
-本 hard compaction branch 只做 docs taxonomy truth 压缩和旧 recovery truth 文件物理清退，不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
+最近已吸收的治理闭环是 `cleanup/v22-retirement-lifecycle-system-closure`，absorbed commit 为 `3ca2ee48f55bb154776c60605a497d9a2e7e1752`。该 closeout 只建立 OPL-style 清退生命周期和 post-absorb truth 纪律，不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
 
 当前已收敛的事实：
 
@@ -209,7 +209,8 @@ Current docs / eval surface during migration：
 | Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` + dynamic classifier | 仅保真实 eval 分类，不保旧脚本目录 | maintain | `scripts/` 只留 runner/classifier/workflow 和服务引用的 sync helper | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` |
 | Contracts compaction | human truth 吸收到 `docs/specs/README.md` | `docs/specs/README.md` | 无分散合同叶子 | maintain | 合同新增直接写 specs anchor 和 eval | local-contract suite |
 | Recovery retirement | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | hard-retirement gate |
-| Retirement lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | hard retirement 已吸收后需要机器化生命周期 gate | retirement lifecycle gate | post-absorb truth closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs` |
+| Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-absorb truth 漂移 | current-state index loop gate | latest absorbed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
+| Retirement lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | retirement lifecycle gate | post-absorb truth closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs` |
 
 ## Cannot Claim
 

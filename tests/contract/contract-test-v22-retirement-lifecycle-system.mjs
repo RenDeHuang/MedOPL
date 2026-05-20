@@ -8,6 +8,7 @@ const repoRoot = path.resolve(__dirname, "../..");
 
 const lifecycleGate = "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs";
 const hardRetirementCommit = "2a4254915f43186e312f406e5de31629c1c6700b";
+const latestAbsorbedCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
 
 function repoPath(...parts) {
   return parts.join("/");
@@ -187,9 +188,19 @@ assertIncludesAll(history, [
 const hardRetirementSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-full-taxonomy-hard-retirement");
 assertNotIncludes(hardRetirementSection, "Status: `ready_for_b_review`", "history_absorbed_hard_retirement");
 
+const lifecycleClosureSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure");
+assertIncludesAll(lifecycleClosureSection, [
+  "Status: `absorbed / pushed / post-push verified`",
+  `absorbed_commit: \`${latestAbsorbedCommit}\``,
+  "b_review_result: `passed / ff-only absorbed / pushed`",
+  "post_absorb_truth_closeout: `completed`",
+  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
+], "history_lifecycle_closure_closeout");
+assertNotIncludes(lifecycleClosureSection, "Status: `ready_for_b_review`", "history_absorbed_lifecycle_closure");
+
 assert.equal(current.current_cursor, "leaf-portal-postgres-redis-local-production-data-closure", "current_cursor_must_remain_business_leaf");
 assert.equal(current.next_leaf, "leaf-portal-postgres-redis-local-production-data-closure", "next_leaf_must_remain_business_leaf");
-assert.equal(current.last_absorbed_commit, hardRetirementCommit, "current_last_absorbed_commit_must_match_hard_retirement");
+assert.equal(current.last_absorbed_commit, latestAbsorbedCommit, "current_last_absorbed_commit_must_match_latest_closeout");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 
 const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);

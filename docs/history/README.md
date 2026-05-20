@@ -49,11 +49,27 @@ History 承接：
 
 ### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure
 
-Status: `ready_for_b_review`
+Status: `absorbed / pushed / post-push verified`
 
 Branch: `cleanup/v22-retirement-lifecycle-system-closure`
 
 Base trunk HEAD: `2a4254915f43186e312f406e5de31629c1c6700b`
+
+absorbed_commit: `3ca2ee48f55bb154776c60605a497d9a2e7e1752`
+
+b_review_result: `passed / ff-only absorbed / pushed`
+
+post_push_verification:
+
+- `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs tests scripts`: pass.
+
+post_absorb_truth_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 
 Model:
 
@@ -96,7 +112,7 @@ Non-goals:
 
 Next recommendation:
 
-- After B absorbs this lifecycle closure, run the product cursor `leaf-portal-postgres-redis-local-production-data-closure`.
+- Run the product cursor `leaf-portal-postgres-redis-local-production-data-closure` after this index-loop normalization is reviewed.
 
 ### 2026-05-20 cleanup/v22-full-taxonomy-hard-retirement
 
