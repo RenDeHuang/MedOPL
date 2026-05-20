@@ -29,7 +29,11 @@
 
 ## commit_sha
 
-`pending_B_review`
+`d35d65ed94cef7fac0493c21643e36a690f57e4c`
+
+## absorbed_commit
+
+`d35d65ed94cef7fac0493c21643e36a690f57e4c`
 
 ## contract_subscription
 
@@ -126,7 +130,21 @@
 
 ## b_review_result
 
-`pending_B_review`
+`passed / ff-only absorbed / pushed`
+
+## post_absorb_verification
+
+post_absorb_verification:
+
+- B window verified `cleanup/v22-truth-repo-narrative-reference-unification` from base `49b99d6739fff6f033118b009c36b53d29c675a5`.
+- B window ff-only absorbed commit `d35d65ed94cef7fac0493c21643e36a690f57e4c` into `recovery/platform-v22-trunk`.
+- B window pushed `origin/recovery/platform-v22-trunk` to `d35d65ed94cef7fac0493c21643e36a690f57e4c`.
+- B window reran `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`.
+- B window reran `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`.
+- B window reran `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`.
+- B window reran `git diff --check`.
+- B window confirmed forbidden diff was empty.
+- B window confirmed added-lines secret scan found discipline text only and no secret values.
 
 ## runtime_notes
 
