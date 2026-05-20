@@ -229,6 +229,10 @@ function runGit(args) {
   return result.stdout.trim();
 }
 
+function isDetachedTargetTrunk({ runtimeBranch, localHead, originTrunkHead }) {
+  return runtimeBranch === "" && localHead === originTrunkHead;
+}
+
 function isAncestor(ancestor, descendant) {
   const result = spawnSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], {
     cwd: repoRoot,
@@ -318,9 +322,12 @@ function assertCurrentShape(current, verifyManifest = {}) {
   const manifestBranchOverrideBranches = new Set((verifyManifest.branch_override_suites || [])
     .flatMap((suite) => [suite.branch, ...(suite.branches || [])])
     .filter(Boolean));
+  const originTrunkHead = runGit(["rev-parse", "origin/recovery/platform-v22-trunk"]);
+  const localHead = runGit(["rev-parse", "HEAD"]);
   assert(
     runtimeBranch === current.authoring_branch ||
       runtimeBranch === current.target_branch ||
+      isDetachedTargetTrunk({ runtimeBranch, localHead, originTrunkHead }) ||
       additiveTruthBranches.has(runtimeBranch) ||
       manifestControlPlaneBranches.has(runtimeBranch) ||
       manifestBranchOverrideBranches.has(runtimeBranch),
@@ -359,8 +366,6 @@ function assertCurrentShape(current, verifyManifest = {}) {
   assertPlainObject(current.git_observation, "git_observation");
   assert(!Object.hasOwn(current.git_observation, "originTrunkHead"), "git_observation_legacy_originTrunkHead_forbidden");
   assert(!Object.hasOwn(current.git_observation, "branchBaseHead"), "git_observation_legacy_branchBaseHead_forbidden");
-  const originTrunkHead = runGit(["rev-parse", "origin/recovery/platform-v22-trunk"]);
-  const localHead = runGit(["rev-parse", "HEAD"]);
   const localHeadParent = runGit(["rev-parse", "HEAD^"]);
   assert.match(current.base_trunk_head, /^[0-9a-f]{40}$/u, "base_trunk_head_must_be_sha");
   assert.deepEqual(
@@ -398,6 +403,12 @@ function assertCurrentShape(current, verifyManifest = {}) {
     assert(
       localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
       "target_branch_head_must_descend_from_base_trunk_head",
+    );
+  } else if (isDetachedTargetTrunk({ runtimeBranch, localHead, originTrunkHead })) {
+    assert.notEqual(localHead, current.base_trunk_head, "detached_target_trunk_head_must_not_remain_at_base_trunk_head");
+    assert(
+      localHeadParent === current.base_trunk_head || isAncestor(current.base_trunk_head, localHead),
+      "detached_target_trunk_head_must_descend_from_base_trunk_head",
     );
   } else if (
     additiveTruthBranches.has(runtimeBranch) ||

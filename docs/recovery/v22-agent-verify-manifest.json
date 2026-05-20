@@ -715,6 +715,7 @@
         "node scripts/smoke-test-v22-repo-governance-physical-compaction.mjs",
         "node scripts/smoke-test-v22-smoke-eval-physical-compaction.mjs",
         "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
         "node scripts/smoke-test-v22-contract-conflict-boundary.mjs",
         "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
         "node scripts/smoke-test-v22-post-absorb-portal-opl-truth.mjs",
@@ -819,6 +820,64 @@
         "figma-visual-redesign",
         "postgres-redis-implementation",
         "admin-business-closure"
+      ]
+    },
+    {
+      "id": "post-20fe9ac-agent-workflow-truth-and-repo-classification",
+      "branch": "cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification",
+      "branches": [
+        "cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification"
+      ],
+      "description": "Verification bundle for the post-20fe9ac agent workflow truth and repo classification cleanup branch. This branch records the accepted 20fe9ac post-absorb fact, documents the A/B boundary deviation, confirms there are no delete-ready contract/recovery/eval files, and tightens detached trunk validation without implementing PostgreSQL/Redis, services code, cloud, deploy, upstream or UI changes.",
+      "reason": "The current product cursor remains leaf-portal-postgres-redis-local-production-data-closure, while this cleanup branch must run only scoped workflow-truth, repo-classification and gate verification and must not execute the future PostgreSQL/Redis implementation bundle.",
+      "risk_class": "local_doc_eval",
+      "commands": [
+        "node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs",
+        "node scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "node scripts/smoke-test-v22-agent-run-record-gate.mjs",
+        "node scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs/recovery scripts"
+      ],
+      "allowed_files": [
+        "docs/recovery/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification-index.md",
+        "docs/recovery/v22-agent-verify-manifest.json",
+        "docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md",
+        "docs/recovery/agent-runs/2026-05-20-cleanup-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.md",
+        "scripts/smoke-test-v22-goal-state-consistency.mjs",
+        "scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs",
+        "scripts/smoke-test-v22-agent-verify-entrypoint.mjs",
+        "scripts/v22-smoke-classification.mjs"
+      ],
+      "retired_files": [],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        ".runtime/*",
+        "Figma visual/layout/information-architecture redesign"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "figma-visual-redesign",
+        "postgres-redis-implementation",
+        "admin-business-closure",
+        "ff-only-absorb",
+        "git-push"
       ]
     },
     {

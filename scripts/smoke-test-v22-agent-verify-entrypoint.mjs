@@ -339,6 +339,40 @@ assert.deepEqual(contractSmokeEvalIndexCompactionPlanPayload.commands, contractS
 assert.deepEqual(contractSmokeEvalIndexCompactionPlanPayload.allowedFiles, contractSmokeEvalIndexCompactionOverride.allowed_files, "verify_current_contract_smoke_eval_index_compaction_allowed_files_mismatch");
 assert.equal(contractSmokeEvalIndexCompactionPlanPayload.dryRun, true, "verify_current_contract_smoke_eval_index_compaction_dry_run_flag_mismatch");
 
+const post20fe9acOverride = manifest.branch_override_suites.find((suite) => suite.id === "post-20fe9ac-agent-workflow-truth-and-repo-classification");
+assert(post20fe9acOverride, "post_20fe9ac_agent_workflow_truth_override_missing");
+assert.equal(post20fe9acOverride.branch, "cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification", "post_20fe9ac_branch_mismatch");
+assert.deepEqual(post20fe9acOverride.branches, [
+  "cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification",
+], "post_20fe9ac_branches_mismatch");
+assertIncludes(post20fe9acOverride.reason, `current product cursor remains ${current.current_cursor}`, "post_20fe9ac_reason_current_truth");
+assert(post20fe9acOverride.commands.includes("node scripts/smoke-test-v22-post-20fe9ac-agent-workflow-truth-and-repo-classification.mjs"), "post_20fe9ac_must_run_own_gate");
+assert(post20fe9acOverride.commands.includes("node scripts/smoke-test-v22-goal-state-consistency.mjs"), "post_20fe9ac_must_run_goal_state_gate");
+assert(post20fe9acOverride.commands.includes("node scripts/smoke-test-v22-agent-run-record-gate.mjs"), "post_20fe9ac_must_run_agent_record_gate");
+assert(post20fe9acOverride.allowed_files.includes("docs/recovery/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification-index.md"), "post_20fe9ac_must_allow_index");
+assert(post20fe9acOverride.allowed_files.includes("docs/recovery/agent-runs/2026-05-20-cleanup-v22-contract-smoke-eval-index-compaction.md"), "post_20fe9ac_must_allow_absorbed_run");
+assert(post20fe9acOverride.forbidden_files.includes("services/*"), "post_20fe9ac_must_forbid_services");
+assert(post20fe9acOverride.forbidden_ops.includes("ff-only-absorb"), "post_20fe9ac_must_forbid_absorb_in_a_window");
+assert(post20fe9acOverride.forbidden_ops.includes("git-push"), "post_20fe9ac_must_forbid_push_in_a_window");
+
+const post20fe9acPlanResult = runVerify([
+  "current",
+  "--base",
+  "origin/recovery/platform-v22-trunk",
+  "--branch",
+  "cleanup/v22-post-20fe9ac-agent-workflow-truth-and-repo-classification",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(post20fe9acPlanResult.status, 0, `verify_current_post_20fe9ac_dry_run_must_exit_zero:${post20fe9acPlanResult.stderr || post20fe9acPlanResult.stdout}`);
+const post20fe9acPlanPayload = JSON.parse(post20fe9acPlanResult.stdout);
+assert.equal(post20fe9acPlanPayload.ok, true, "verify_current_post_20fe9ac_dry_run_ok_mismatch");
+assert.equal(post20fe9acPlanPayload.leafId, current.current_cursor, "verify_current_post_20fe9ac_must_not_change_current_leaf");
+assert.equal(post20fe9acPlanPayload.branchOverride?.suiteId, "post-20fe9ac-agent-workflow-truth-and-repo-classification", "verify_current_post_20fe9ac_suite_id_mismatch");
+assert.deepEqual(post20fe9acPlanPayload.commands, post20fe9acOverride.commands, "verify_current_post_20fe9ac_commands_mismatch");
+assert.deepEqual(post20fe9acPlanPayload.allowedFiles, post20fe9acOverride.allowed_files, "verify_current_post_20fe9ac_allowed_files_mismatch");
+assert.equal(post20fe9acPlanPayload.dryRun, true, "verify_current_post_20fe9ac_dry_run_flag_mismatch");
+
 const mvpPlanResult = runVerify(["suite", "mvp", "--base", "origin/recovery/platform-v22-trunk", "--dry-run", "--json"]);
 assert.equal(mvpPlanResult.status, 0, `verify_mvp_dry_run_must_exit_zero:${mvpPlanResult.stderr || mvpPlanResult.stdout}`);
 const mvpPlanPayload = JSON.parse(mvpPlanResult.stdout);

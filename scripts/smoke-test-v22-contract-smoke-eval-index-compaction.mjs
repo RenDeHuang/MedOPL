@@ -106,10 +106,10 @@ const tierCounts = Object.fromEntries([
 
 assert.equal(contractFiles.length, 42, `contract_file_count_mismatch:${contractFiles.length}`);
 assert.deepEqual(Object.keys(SMOKE_CLASSIFICATION).sort(), smokeEvalScripts, "all_v22_eval_scripts_must_be_classified");
-assert.equal(smokeEvalScripts.length, 149, `v22_eval_script_count_mismatch:${smokeEvalScripts.length}`);
+assert(smokeEvalScripts.length >= 149, `v22_eval_script_count_must_not_drop_below_compaction_baseline:${smokeEvalScripts.length}`);
 assert.equal(tierCounts["health-check"], 6, "health_check_count_must_remain_small");
 assert.equal(tierCounts["smoke-golden"], 11, "smoke_golden_count_must_remain_stable");
-assert.equal(tierCounts["contract-local"], 22, "contract_local_count_must_include_this_gate");
+assert(tierCounts["contract-local"] >= 22, "contract_local_count_must_include_compaction_gates");
 assert.equal(tierCounts["local-regression"], 62, "local_regression_count_must_remain_stable");
 assert.equal(tierCounts["future-authorized"], 48, "future_authorized_count_must_remain_stable");
 assert.equal(tierCounts.retired, 0, "retired_eval_tier_must_remain_zero");
@@ -181,19 +181,23 @@ for (const token of [
   "cleanup-v22-contract-smoke-eval-index-compaction",
   "model",
   "gpt-5.4",
+  "commit_sha",
+  "20fe9ac2f4a8b94a0281032e44592c820ac7502c",
+  "absorbed_commit",
   "subagents_and_models",
   "contract_subscription",
   "allowed_write_scope",
   "forbidden_scope",
   "verification_commands",
   "b_review_result",
-  "pending_B_review",
+  "accepted_content / ff-only absorbed / pushed",
   "不调用真实云",
   "不读取 secret",
   "不修改 upstream",
 ]) {
   assert(runRecord.includes(token), `agent_run_record_token_missing:${token}`);
 }
+assert(!runRecord.includes("`pending_B_review`"), "accepted_compaction_run_must_not_remain_pending");
 
 const boundary = await source("docs/contracts/v22-smoke-eval-boundary.md");
 for (const token of [

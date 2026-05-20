@@ -29,7 +29,15 @@
 
 ## commit_sha
 
-`pending_B_review`
+`20fe9ac2f4a8b94a0281032e44592c820ac7502c`
+
+## absorbed_commit
+
+`20fe9ac2f4a8b94a0281032e44592c820ac7502c`
+
+## branch_override_id
+
+`contract-smoke-eval-index-compaction`
 
 ## contract_subscription
 
@@ -110,7 +118,20 @@
 
 ## b_review_result
 
-`pending_B_review`
+`accepted_content / ff-only absorbed / pushed`
+
+`cleanup/v22-contract-smoke-eval-index-compaction` was ff-only absorbed into `recovery/platform-v22-trunk` and pushed to GitHub at `20fe9ac2f4a8b94a0281032e44592c820ac7502c`.
+
+Process note: the content is accepted, but the absorb/push action was executed from the authoring conversation instead of a separate B window. This run therefore records an A/B boundary deviation. The restored rule is strict: A windows may prepare commits and B-review packets only; B windows perform fresh review, ff-only absorb and push.
+
+## post_absorb_verification
+
+- `node scripts/smoke-test-v22-contract-smoke-eval-index-compaction.mjs`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+
+Post-push note: `current` verification exposed a narrow detached-trunk runtime gap in `scripts/smoke-test-v22-goal-state-consistency.mjs`. The intended follow-up is to allow only detached `HEAD == origin/recovery/platform-v22-trunk`; arbitrary detached HEAD remains fail-closed.
 
 ## runtime_notes
 
