@@ -47,6 +47,83 @@ History 承接：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-current-state-index-loop-normalization
+
+Status: `ready_for_b_review`
+
+Branch: `cleanup/v22-current-state-index-loop-normalization`
+
+Base trunk HEAD: `3ca2ee48f55bb154776c60605a497d9a2e7e1752`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Rawls: `gpt-5.4`, read-only OPL-style docs taxonomy / index-loop audit
+- subagent Gauss: `gpt-5.4`, read-only goal-current / manifest / verify runner audit
+- subagent Dewey: `gpt-5.4`, read-only product/runtime/source/data-boundary audit
+
+Commits:
+
+- `82891db docs(v22): tighten autonomous taxonomy index loop`
+- `e14f055 docs(v22): close lifecycle absorb truth to latest trunk`
+- `2123791 test(v22): gate current state index loop`
+- final closeout commit: records this A handoff.
+
+Scope:
+
+- Normalize the OPL-style autonomous index loop: docs root -> active truth -> specs/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor.
+- Replace empty product/runtime contract placeholders with concrete spec-anchor indexes.
+- Close the absorbed `cleanup/v22-retirement-lifecycle-system-closure` truth to `3ca2ee48f55bb154776c60605a497d9a2e7e1752`.
+- Add `contract-test-v22-current-state-index-loop.mjs` and wire it into current, local-contract, and history-closeout verification.
+- Keep the business cursor on `leaf-portal-postgres-redis-local-production-data-closure`.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+
+Verification before handoff:
+
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
+- `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`: pass.
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- Final A handoff verification must re-run current, local-contract, workflow review, diff check and added-lines secret scan.
+
+Non-goals:
+
+- No PostgreSQL/Redis implementation.
+- No services business code change.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream modification.
+- No Figma UI visual/layout/information-architecture change.
+- No compatibility layer or old contracts/recovery/scripts resurrection.
+
+B review packet:
+
+- Review branch: `cleanup/v22-current-state-index-loop-normalization`.
+- Review base: `3ca2ee48f55bb154776c60605a497d9a2e7e1752`.
+- Review focus: docs root truth lookup, product/runtime spec-anchor indexes, latest absorbed commit closeout, new index-loop gate, manifest current/local-contract/history-closeout wiring, and no services/forbidden-surface changes.
+- Verify: run `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts`.
+- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, and run post-push verification.
+
+Next recommendation:
+
+- After B absorbs this index-loop normalization and post-absorb closeout is recorded, run `leaf-portal-postgres-redis-local-production-data-closure`.
+
 ### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure
 
 Status: `absorbed / pushed / post-push verified`

@@ -65,7 +65,9 @@ const oldLiteralFragments = [
 ];
 
 const allowedOldLiteralFiles = new Set([
+  "docs/README.md",
   "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+  "tests/contract/contract-test-v22-current-state-index-loop.mjs",
   "tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs",
   "tests/fixtures/v22/agent-verify-manifest.json",
   "tests/health/health-check-v22-workflow-gate.mjs",
