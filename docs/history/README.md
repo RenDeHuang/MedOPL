@@ -87,7 +87,9 @@ Commits:
 - `7516c29 cleanup(v22): retire eval smoke filename semantics`
 - `89b57cd cleanup(v22): absorb contracts into specs truth`
 - `78e4a7b cleanup(v22): retire recovery into taxonomy truth`
-- closeout commit: records final verification and B review packet in this history section.
+- `06f4d4e docs(v22): record full taxonomy hard retirement run`
+- `5508387 fix(v22): allow authorized taxonomy smoke-name deletions`
+- final closeout commit: records this post-fix trace update.
 
 Verification before closeout:
 
@@ -100,6 +102,8 @@ Verification before closeout:
 - `node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json`: pass.
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
 - `git diff --check -- AGENTS.md README.md DESIGN.md docs tests scripts`: pass.
+- Added-lines secret value scan over `origin/recovery/platform-v22-trunk...HEAD` and `AGENTS.md README.md DESIGN.md docs tests scripts`: pass, no matches.
+- Local-regression note: this isolated worktree has no installed `services/portal/frontend/node_modules/typescript`; final local-regression was re-run with temporary ignored symlinks to the main worktree's existing `services/portal/node_modules` and `services/portal/frontend/node_modules`, then those symlinks were removed before handoff.
 - Retired-path scan for old recovery/contracts/root-doc/helper-script literals: only the hard-retirement self-test retains constructed legacy literals as a regression guard.
 
 B review packet:
