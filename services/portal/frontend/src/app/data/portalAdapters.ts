@@ -115,6 +115,8 @@ export interface TaskItem {
   outputFiles: number;
   outputFileNames?: string[];
   resourceUsage: string;
+  runtimeTraceStatus?: string;
+  artifactTraceStatus?: string;
   artifactRef?: string;
   outputFileRef?: string;
   launchId?: string;
@@ -577,6 +579,8 @@ export async function loadTasksResultsModel() {
         outputFiles: item.linkedOutputFiles?.length || item.outputFiles?.length || item.files?.linkedOutputCount || 0,
         outputFileNames: (item.linkedOutputFiles || item.outputFiles || []).map((file) => file.name),
         resourceUsage: item.resourceUsage?.status || "运行记录",
+        runtimeTraceStatus: item.runtimeTrace?.runStatus,
+        artifactTraceStatus: item.runtimeTrace?.artifactStatus,
         artifactRef,
         outputFileRef: stringValue(outputFile?.fileRef, ""),
         launchId,

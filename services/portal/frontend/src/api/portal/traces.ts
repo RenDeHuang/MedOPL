@@ -55,6 +55,18 @@ export interface TraceBalanceLinkPayload {
   availableBalanceCents: number;
 }
 
+export interface RuntimeTracePayload {
+  source: string;
+  ownerScope: string;
+  taskRef: string;
+  workspaceId: string;
+  sessionId: string;
+  runStatus: string;
+  artifactStatus: string;
+  artifactCount: number;
+  linkedOutputCount: number;
+}
+
 export interface TracesPayload {
   filters: {
     userId: string;
@@ -89,6 +101,7 @@ export interface TracesPayload {
     resourceUsage?: TraceResourceUsagePayload;
     costEstimate?: TraceCostEstimatePayload;
     balanceLink?: TraceBalanceLinkPayload;
+    runtimeTrace?: RuntimeTracePayload;
     observability?: {
       source: string;
       label: string;

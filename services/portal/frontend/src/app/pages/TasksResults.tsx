@@ -481,6 +481,9 @@ export function TasksResults() {
                       <Zap className="w-4 h-4 text-neutral-400" />
                       <span className="text-sm text-neutral-900">{task.resourceUsage}</span>
                     </div>
+                    <div className="mt-1 text-xs text-neutral-500">
+                      运行 {task.runtimeTraceStatus || "未返回"} · 产物 {task.artifactTraceStatus || "未返回"}
+                    </div>
                   </TableCell>
                   <TableCell className="font-medium text-neutral-900">
                     {task.cost}

@@ -148,6 +148,17 @@ const item = payload.items[0];
 assert.ok(item.taskRef, "canonical_task_ref_required");
 assert.notEqual(item.taskRef, "run-v22-session-view", "canonical_task_ref_must_not_expose_run_id");
 assert.equal(item.source, "runtime_bridge_canonical_metadata", "item_source_must_be_runtime_bridge_canonical_metadata");
+assert.deepEqual(item.runtimeTrace, {
+  source: "runtime_bridge_canonical_metadata",
+  ownerScope: "portal_user_workspace",
+  taskRef: item.taskRef,
+  workspaceId: "workspace-v22-session-view",
+  sessionId: "runtime-session-v22-session-view",
+  runStatus: "succeeded",
+  artifactStatus: "recorded",
+  artifactCount: 1,
+  linkedOutputCount: 1,
+}, "runtime_artifact_trace_summary_mismatch");
 assert.equal(item.observability.source, "langfuse_sanitized_projection", "observability_source_mismatch");
 assert.equal(item.observability.label, "观测摘要", "observability_label_mismatch");
 assert.ok(item.observability.taskRef, "observability_task_ref_required");
@@ -171,11 +182,18 @@ assert(traceSurfaceSourceText.includes("任务与结果"), "trace_page_must_rend
 assert(traceSurfaceSourceText.includes("Table"), "trace_page_must_render_structured_task_table");
 assert(traceSurfaceSourceText.includes("task.resourceUsage"), "trace_surface_must_render_resource_usage");
 assert(traceSurfaceSourceText.includes("task.cost"), "trace_surface_must_render_cost_estimate");
+assert(traceSurfaceSourceText.includes("task.runtimeTraceStatus"), "trace_surface_must_render_runtime_trace_status");
+assert(traceSurfaceSourceText.includes("task.artifactTraceStatus"), "trace_surface_must_render_artifact_trace_status");
 assert(traceSurfaceSource.includes("fetchSessionTraces"), "trace_surface_must_load_session_traces");
 assert(traceSurfaceSource.includes("linkedOutputFiles"), "trace_adapter_must_consume_linked_output_files");
 assert(traceSurfaceSource.includes("costEstimate"), "trace_adapter_must_consume_cost_estimate");
+assert(traceSurfaceSource.includes("runtimeTrace"), "trace_adapter_must_consume_runtime_trace_summary");
+assert.equal(traceSurfaceSource.includes("runtimeTrace?.runStatus ||"), false, "trace_adapter_must_not_fallback_runtime_trace_status");
+assert.equal(traceSurfaceSource.includes("runtimeTrace?.artifactStatus ||"), false, "trace_adapter_must_not_fallback_artifact_trace_status");
+assert.equal(traceSurfaceSource.includes('artifactRef ? "recorded"'), false, "trace_adapter_must_not_infer_artifact_trace_from_artifact_ref");
 assert(traceTypesSource.includes("observability"), "trace_api_types_must_include_observability_attachment");
 assert(traceTypesSource.includes("businessFactSource"), "trace_api_types_must_include_business_fact_source");
+assert(traceTypesSource.includes("runtimeTrace"), "trace_api_types_must_include_runtime_trace_summary");
 assert(isSmokeClassifiedIn("tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs"), "mvp_suite_must_include_portal_session_trace_view_smoke");
 
 console.log(JSON.stringify({
@@ -185,6 +203,7 @@ console.log(JSON.stringify({
     "runtime_bridge_canonical_metadata_as_business_fact_source",
     "langfuse_sanitized_projection_as_observability_attachment",
     "portal_customer_default_trace_surface",
+    "runtime_artifact_trace_status_summary",
     "trace_view_user_language",
     "secret_token_storage_field_guard",
   ],

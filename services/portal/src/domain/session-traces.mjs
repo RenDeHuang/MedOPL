@@ -30,6 +30,31 @@ function text(value = "") {
   return String(value ?? "").trim();
 }
 
+function ownerValues(item = {}) {
+  return [
+    item.ownerId,
+    item.owner_id,
+    item.traceOwnerId,
+    item.trace_owner_id,
+    item.artifactOwnerId,
+    item.artifact_owner_id,
+    item.sessionOwnerId,
+    item.session_owner_id,
+    item.storageOwnerId,
+    item.storage_owner_id,
+    item.storageOwner,
+    item.storage_owner,
+    item.outputOwner,
+    item.output_owner,
+  ].map(text).filter(Boolean);
+}
+
+function visibleToOwner(item = {}, ownerId = "") {
+  const expectedOwner = text(ownerId);
+  const explicitOwners = ownerValues(item);
+  return !expectedOwner || explicitOwners.length === 0 || explicitOwners.every((value) => value === expectedOwner);
+}
+
 function publicTaskRef(...values) {
   const source = values.map(text).find(Boolean);
   if (!source) return "";
@@ -273,6 +298,7 @@ function publicOutputFileView(file = {}) {
     workspaceId: text(file.workspaceId || file.workspace_id),
     taskRef: publicTaskRef(fileRef, file.sessionId, file.session_id, file.oplSessionId, file.opl_session_id, file.runId, file.run_id),
     internalRunId: text(file.runId || file.run_id),
+    internalOwnerIds: ownerValues(file),
     sessionId: text(file.sessionId || file.session_id || file.oplSessionId || file.opl_session_id),
     kind: text(file.kind || "outputs"),
     sizeBytes: numberValue(file.sizeBytes || file.size_bytes || file.size),
@@ -293,10 +319,12 @@ function outputFilesFromStorage(storage = {}) {
 
 function outputFileMatchesTrace(file = {}, row = {}) {
   const artifactRefs = new Set((Array.isArray(row.artifactRefs) ? row.artifactRefs : []).map(text).filter(Boolean));
-  return (artifactRefs.size > 0 && artifactRefs.has(text(file.artifactRef || file.fileRef)))
+  const ownerIds = Array.isArray(file.internalOwnerIds) ? file.internalOwnerIds : [];
+  const ownerMatches = ownerIds.length === 0 || ownerIds.every((ownerId) => ownerId === text(row.userId));
+  return ownerMatches && ((artifactRefs.size > 0 && artifactRefs.has(text(file.artifactRef || file.fileRef)))
     || (text(row.internalRunId) && text(file.internalRunId) === text(row.internalRunId))
     || (text(row.sessionId) && text(file.sessionId) === text(row.sessionId))
-    || (text(row.runtimeSessionId) && text(file.sessionId) === text(row.runtimeSessionId));
+    || (text(row.runtimeSessionId) && text(file.sessionId) === text(row.runtimeSessionId)));
 }
 
 function linkedOutputFilesForTrace(row = {}, storage = {}) {
@@ -310,7 +338,23 @@ function linkedOutputFilesForTrace(row = {}, storage = {}) {
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).map(({ internalRunId: _internalRunId, ...file }) => file);
+  }).map(({ internalRunId: _internalRunId, internalOwnerIds: _internalOwnerIds, ...file }) => file);
+}
+
+function runtimeTraceProjection(row = {}, linkedOutputFiles = []) {
+  const artifactCount = Array.isArray(row.artifactRefs) ? row.artifactRefs.map(text).filter(Boolean).length : 0;
+  const linkedOutputCount = Array.isArray(linkedOutputFiles) ? linkedOutputFiles.length : 0;
+  return {
+    source: "runtime_bridge_canonical_metadata",
+    ownerScope: "portal_user_workspace",
+    taskRef: text(row.taskRef),
+    workspaceId: text(row.workspaceId),
+    sessionId: text(row.sessionId || row.runtimeSessionId || row.workspaceSessionId),
+    runStatus: text(row.status || "recorded"),
+    artifactStatus: artifactCount || linkedOutputCount ? "recorded" : "not_recorded",
+    artifactCount,
+    linkedOutputCount,
+  };
 }
 
 function artifactOutputFilesFromTrace(row = {}) {
@@ -387,7 +431,9 @@ async function fetchMergedTraceRowsForPortalUser(deps, user, options = {}) {
     .map((row) => observabilityProjection(row, langfuseRows.source || "langfuse_sanitized_projection"))
     .filter(Boolean);
   const projectionMap = observabilityByTraceKey(observabilityRows);
-  const canonicalRows = (runtimeBridgeRows.rows || []).map((row) => canonicalRuntimeTraceRow(row, projectionMap));
+  const canonicalRows = (runtimeBridgeRows.rows || [])
+    .filter((row) => visibleToOwner(row, requestOptions.userId))
+    .map((row) => canonicalRuntimeTraceRow(row, projectionMap));
   return {
     rows: filterMergedTraceRows(canonicalRows, requestOptions),
     filters: requestOptions,
@@ -430,6 +476,7 @@ async function enrichSessionTraceRow(deps, db, user, row = {}) {
     },
     outputFiles: linkedOutputFiles,
     linkedOutputFiles,
+    runtimeTrace: runtimeTraceProjection(row, linkedOutputFiles),
     usageMetadataRef: text(row.usageMetadataRef),
     billingMetadataRef: text(row.billingMetadataRef),
     runtimeMetadataRefs: {

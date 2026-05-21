@@ -24,6 +24,27 @@ function text(value = "") {
   return String(value ?? "").trim();
 }
 
+function ownerValues(item = {}) {
+  return [
+    item.ownerId,
+    item.owner_id,
+    item.artifactOwnerId,
+    item.artifact_owner_id,
+    item.storageOwnerId,
+    item.storage_owner_id,
+    item.storageOwner,
+    item.storage_owner,
+    item.outputOwner,
+    item.output_owner,
+  ].map(text).filter(Boolean);
+}
+
+function visibleToOwner(item = {}, ownerId = "") {
+  const expectedOwner = text(ownerId);
+  const explicitOwners = ownerValues(item);
+  return !expectedOwner || explicitOwners.length === 0 || explicitOwners.every((value) => value === expectedOwner);
+}
+
 function publicTaskRef(...values) {
   const source = values.map(text).find(Boolean);
   if (!source) return "";
@@ -43,6 +64,7 @@ function runtimeBridgeOutputFilesForWorkspace(db = {}, user = {}, workspaceId = 
   return (Array.isArray(db.workspaceFiles) ? db.workspaceFiles : [])
     .filter((item) => text(item.userId || item.user_id) === text(user.id))
     .filter((item) => !tenantId || text(item.tenantId || item.tenant_id) === tenantId)
+    .filter((item) => visibleToOwner(item, user.id))
     .filter((item) => text(item.workspaceId || item.workspace_id) === text(workspaceId))
     .filter((item) => text(item.kind) === "outputs")
     .filter(isVisibleWorkspaceFile)
