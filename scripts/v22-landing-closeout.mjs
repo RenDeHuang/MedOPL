@@ -324,6 +324,13 @@ function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary }) 
   ].join("\n");
 }
 
+function renderCurrentProblem({ branch, landedCommit }) {
+  return [
+    "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure.",
+    `The latest governance closeout branch ${branch} landed at ${landedCommit} and does not implement PostgreSQL/Redis.`,
+  ].join(" ");
+}
+
 function generateCloseout({
   branch,
   landedCommit,
@@ -355,7 +362,7 @@ function generateCloseout({
     last_landed_at: new Date().toISOString().slice(0, 10),
     history_latest_branch: branch,
     post_merge_closeout_completed: true,
-    current_problem: current.current_problem.replace(/[a-f0-9]{40}/u, landedCommit),
+    current_problem: renderCurrentProblem({ branch, landedCommit }),
   };
   const updatedActive = active
     .replace(
@@ -383,6 +390,7 @@ function generateCloseout({
     nextCursor,
     trunkRef: trunkRef || "",
     dryRun,
+    updatedCurrentProblem: updatedCurrent.current_problem,
     files: [files.history, files.current, files.active],
   };
 }

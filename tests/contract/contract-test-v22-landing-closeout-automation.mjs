@@ -183,6 +183,8 @@ assert.equal(generateDryRun.status, 0, `valid_landing_closeout_generate_dry_run_
 const generatePayload = JSON.parse(generateDryRun.stdout);
 assert.equal(generatePayload.ok, true, "valid_landing_closeout_generate_payload_must_be_ok");
 assert.equal(generatePayload.landedCommit, handoffCommit, "valid_landing_closeout_generate_commit_mismatch");
+assert(generatePayload.updatedCurrentProblem.includes(handoffBranch), "valid_landing_closeout_generate_must_update_problem_branch");
+assert(generatePayload.updatedCurrentProblem.includes(handoffCommit), "valid_landing_closeout_generate_must_update_problem_commit");
 assert.equal(generatePayload.dryRun, true, "valid_landing_closeout_generate_must_stay_dry_run");
 
 const result = runCloseout([

@@ -63,7 +63,7 @@ landed 后的记录还必须补齐：
 
 ### 2026-05-21 cleanup/v22-opl-framework-workflow-convergence
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/v22-opl-framework-workflow-convergence`
 
@@ -163,6 +163,23 @@ Next recommendation:
 
 - After landing gate and post-merge closeout, return to `leaf-portal-postgres-redis-local-production-data-closure`.
 
+landed_commit: `d473ca70a19f134303a1835580fa1d55b66f7679`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-verify.mjs current --branch cleanup/v22-opl-framework-workflow-convergence --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk passed
+- git diff --check -- AGENTS.md docs tests scripts package.json .github passed
+- forbidden path diff empty
+- added-lines secret value scan empty
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 ### 2026-05-21 cleanup/v22-opl-loop-event-automation-and-ci-closure
 
 Status: `landed / pushed / post-push verified`
