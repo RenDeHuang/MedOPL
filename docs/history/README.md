@@ -61,6 +61,73 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-agents-lifecycle-alignment
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `cleanup/v22-agents-lifecycle-alignment`
+
+Base trunk HEAD: `e501945474e68451f6a3824f2e6e8aae05bd746f`
+
+handoff_commit: `60761fffe1dd8ecc3ec3b123d48e5e747e9dc4df`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagents: none
+
+Scope:
+
+- Slim root `AGENTS.md` into stable agent collaboration constraints, docs lifecycle entrypoints, verification entrypoints, worktree/subagent model recording rules and authorization red lines.
+- Add root `TASTE.md` for long-lived MedOPL engineering taste: managed OPL SaaS, clean upstream, consumer-first contract, single truth, no false pass, and layered docs governance.
+- Move mutable project fact lookup back to docs reading order, source, tests, fixtures, manifest, runner and package scripts.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/history/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No product implementation.
+- No PostgreSQL/Redis closure claim.
+- No services, deploy, adapters, `.sentrux`, infra, upstream or `.runtime` edits.
+- No secret read, real cloud, build/push, kubectl, deploy or live-test.
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-framework-workflow-convergence.mjs`
+- `node tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Keep the business cursor on `leaf-portal-postgres-redis-local-production-data-closure`; future governance updates should keep `AGENTS.md` thin and write durable product facts to the relevant docs lifecycle owner or machine truth surface.
+
+landed_commit: `60761fffe1dd8ecc3ec3b123d48e5e747e9dc4df`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- framework workflow convergence gate passed
+- full taxonomy cleanup gate passed
+- workflow gate review passed
+- local-contract suite passed
+- current verify passed
+- diff check and added-lines secret scan passed
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 ### 2026-05-21 cleanup/v22-test-lifecycle-cleanup-gate
 
 Status: `landed / pushed / post-push verified`
