@@ -34,6 +34,7 @@ jobs:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:health
+      - run: npm run test:health
 
   smoke:
     runs-on: ubuntu-latest
@@ -46,6 +47,7 @@ jobs:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:smoke
+      - run: npm run test:smoke
 
   local-contract:
     runs-on: ubuntu-latest
@@ -58,6 +60,31 @@ jobs:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:contract
+      - run: npm run test:contract
+
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: npm run test:regression
+
+  contract-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: npm run gate:contract
 
   review-gate:
     runs-on: ubuntu-latest
@@ -71,6 +98,7 @@ jobs:
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:review
       - run: npm run gate:review
+      - run: npm run closeout:check
       - run: npm run check:diff
 
   docs-engineering-loop:
@@ -84,3 +112,4 @@ jobs:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:docs-engineering-loop
+      - run: npm run closeout:check
