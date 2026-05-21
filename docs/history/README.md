@@ -61,6 +61,89 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-slide-02-portal-api-real-data
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-slide-02-portal-api-real-data`
+
+Base trunk HEAD: `1c64d21e7233692f88c0e9c0ca4ff6abc0f89f0b`
+
+handoff_commit: `5c3f83585c78a5fdb48ed31741719658a4e8d1d6`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Hypatia: `gpt-5.4-mini`, read-only slide-02 owner surface and bloat risk review.
+
+Scope:
+
+- Close slide-02 Portal API real data wiring for RuntimeEnvironment.
+- Wire RuntimeEnvironment package catalog, subscription and entitlement state through typed Portal lab API clients.
+- Remove `active-missing-ui` adjudication for lab API clients after those APIs became active UI dependencies.
+- Add regression coverage for runtime real API data closure and register it in the portal regression lane and current verify bundle.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No slide-03 implementation.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No per-slide docs, `docs/slides/*`, shadow archive or unregistered tests.
+
+Verification before landing review:
+
+- `node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs`
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`
+- `node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs`
+- `npm --prefix services/portal run check`
+- `npm --prefix services/portal/frontend run typecheck`
+- `npm run test:fast`
+- `npm run test:lanes`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Continue with `slide-03-account-wallet-billing` on `leaf-account-wallet-billing-closure`; keep slide-01 storage regression and slide-02 runtime real API regression in the current verify bundle as guards.
+
+landed_commit: `5c3f83585c78a5fdb48ed31741719658a4e8d1d6`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run test:fast` passed
+- `npm run test:lanes` passed
+- `npm --prefix services/portal/frontend run typecheck` passed
+- `npm --prefix services/portal run check` passed
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json` passed
+- `node scripts/v22-repo-bloat-audit.mjs --json` passed
+- forbidden path diff empty
+- added-lines secret value scan empty
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-account-wallet-billing-closure`
+
 ### 2026-05-22 feat/v22-slide-01-data-truth
 
 Status: `landed / pushed / post-push verified`

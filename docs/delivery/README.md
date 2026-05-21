@@ -7,9 +7,9 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `leaf-portal-api-real-data-closure`。它要求 Portal 页面和组件使用 typed API client 或 server state 承载可见业务状态，不得保留 component-local fake business truth、hardcoded page demo payload 或绕过 typed API 的 UI adapter alias。
+当前 product cursor 是 `leaf-account-wallet-billing-closure`。它要求 account、wallet、balance、frozen amount、ledger 和 audit 语义 owner-scoped 且可本地查询，不得把 OpenCost/Langfuse 或无归属 amount state 写成当前账务主真相。
 
-最近 landed 的 `feat/v22-slide-01-data-truth` 已关闭 PostgreSQL/Redis local data truth；slide-02 必须继续保留该 storage regression 作为防回归命令。
+最近 landed 的 `feat/v22-slide-02-portal-api-real-data` 已关闭 Portal lab API real data wiring；slide-03 必须继续保留 slide-01 storage regression 和 slide-02 runtime real API regression 作为防回归命令。
 
 每个 product slide 仍按清退生命周期执行：先删除或吸收旧 fake/demo/alias surface，再由 eval、implementation、verify、landing gate 和 post-merge closeout 推进 cursor。
 

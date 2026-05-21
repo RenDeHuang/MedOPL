@@ -8,46 +8,47 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "de71ca446da703358dd998489fb555fba622ea68",
-  "current_branch": "feat/v22-slide-02-portal-api-real-data",
+  "base_trunk_head": "5c3f83585c78a5fdb48ed31741719658a4e8d1d6",
+  "current_branch": "feat/v22-slide-03-account-wallet-billing",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-02-portal-api-real-data",
+  "authoring_branch": "feat/v22-slide-03-account-wallet-billing",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "de71ca446da703358dd998489fb555fba622ea68",
-  "current_cursor": "leaf-portal-api-real-data-closure",
-  "next_leaf": "leaf-portal-api-real-data-closure",
+  "last_landed_commit": "5c3f83585c78a5fdb48ed31741719658a4e8d1d6",
+  "current_cursor": "leaf-account-wallet-billing-closure",
+  "next_leaf": "leaf-account-wallet-billing-closure",
   "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "portal_api_real_data_closure_requires_typed_api_and_server_state_wiring"
+    "account_wallet_billing_closure_requires_owner_scoped_ledger_balance_freeze_and_audit"
   ],
-  "current_problem": "slide-01 data truth landed at de71ca446da703358dd998489fb555fba622ea68. The active product baton is slide-02 Portal API real data wiring; Portal visible state must come from typed API clients or server state instead of component-local fake business truth.",
+  "current_problem": "slide-02 Portal API real data landed at 5c3f83585c78a5fdb48ed31741719658a4e8d1d6. The active product baton is slide-03 account/wallet/billing closure; account, wallet, balance, frozen amount, ledger and audit semantics must be owner-scoped and locally queryable.",
   "gaps": [
     {
-      "id": "portal-api-real-data-closure",
+      "id": "account-wallet-billing-closure",
       "stage": "S5 frontend/backend product completion",
-      "priority": 86,
+      "priority": 84,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-portal-api-real-data-closure",
+      "next_leaf_step": "leaf-account-wallet-billing-closure",
       "depends_on": [
         "portal-postgres-redis-local-production-data-closure",
-        "portal-local-api-action-closure",
-        "frontend-product-react-vite-figma-make"
+        "portal-api-real-data-closure",
+        "portal-local-api-action-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-portal-api-real-data-closure",
-    "gap_id": "portal-api-real-data-closure",
+    "step_id": "leaf-account-wallet-billing-closure",
+    "gap_id": "account-wallet-billing-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
-    "problem": "Portal visible state is not fully closed against typed API/server state yet.",
+    "problem": "Account wallet billing state is not fully closed against owner-scoped ledger, frozen amount and audit semantics yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+      "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
+      "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -71,11 +72,13 @@
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/portal/frontend/src/api/portal/*",
-      "services/portal/frontend/src/app/pages/*",
-      "services/portal/frontend/src/app/data/*",
-      "services/portal/src/routes/*",
-      "services/portal/src/app/*",
+      "services/portal/src/domain/*billing*",
+      "services/portal/src/domain/*balance*",
+      "services/portal/src/domain/wallet-ledger.mjs",
+      "services/portal/src/app/portal-page-billing-payloads.mjs",
+      "services/portal/src/routes/*billing*",
+      "services/portal/frontend/src/api/portal/billing.ts",
+      "services/portal/frontend/src/app/pages/BillingAudit.tsx",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
@@ -121,9 +124,10 @@
   },
   "verification_commands": [
     "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-    "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
     "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
-    "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+    "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
+    "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -161,9 +165,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-01-data-truth",
+  "last_landed_branch": "feat/v22-slide-02-portal-api-real-data",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-01-data-truth",
+  "history_latest_branch": "feat/v22-slide-02-portal-api-real-data",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -178,7 +182,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-02-portal-api-real-data",
+    "active_slide": "slide-03-account-wallet-billing",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -380,7 +384,7 @@
       },
       {
         "order": 2,
-        "status": "active",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -458,11 +462,16 @@
               "components do not construct business truth locally"
             ]
           }
-        ]
+        ],
+        "landed_commit": "5c3f83585c78a5fdb48ed31741719658a4e8d1d6",
+        "landed_branch": "feat/v22-slide-02-portal-api-real-data",
+        "closed_at": "2026-05-22",
+        "history_summary": "slide-02 wired RuntimeEnvironment visible package, subscription and entitlement state through typed Portal lab API clients and removed active-missing-ui adjudication for lab API surface.",
+        "next_cursor": "leaf-account-wallet-billing-closure"
       },
       {
         "order": 3,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",
