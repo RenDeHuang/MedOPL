@@ -13,11 +13,11 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 ### 当前阶段真相
 
-当前 trunk 已完成合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环、Portal-OPL file/run/artifact 本地闭环、slide-01 data truth 本地闭环、slide-02 Portal API real data wiring 本地闭环、slide-03 account/wallet/billing 本地闭环，以及 slide-04 workspace/files 本地闭环。当前不是真实云生产闭环，不是 resource lifecycle 全语义完成态，也不是 admin 全业务闭环完成态。
+当前 trunk 已完成合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环、Portal-OPL file/run/artifact 本地闭环、slide-01 data truth 本地闭环、slide-02 Portal API real data wiring 本地闭环、slide-03 account/wallet/billing 本地闭环、slide-04 workspace/files 本地闭环，以及 slide-05 resource lifecycle 本地闭环。当前不是真实云生产闭环，不是 OPL entry runtime 全语义完成态，也不是 admin 全业务闭环完成态。
 
-当前 product cursor 是 `leaf-resource-lifecycle-closure`。当前 active baton 是 `slide-05-resource-lifecycle`：compute resource lifecycle、release、stop-billing check 和 legacy resource route retirement 必须本地闭合，且不得恢复 `user_owned` / `resource-order` 为主产品路径。slide-01 已让 PostgreSQL 成为 local production data canonical truth；slide-02 已让 RuntimeEnvironment 可见套餐、订阅和权益状态来自 typed Portal lab API client；slide-03 已让账务 ledger、冻结净额、pending usage、T+1 settlement 和 BillingAudit 账户归属显示进入 owner-scoped 本地闭环；slide-04 已让 fileSpace folders、selected file refs、actions、delete policy 和 7 天保护语义进入 Workspace UI-safe 本地闭环。
+当前 product cursor 是 `leaf-opl-entry-runtime-closure`。当前 active baton 是 `slide-06-opl-entry-runtime`：Portal -> OPL preflight、providerKeyRef、launch、session 和 runtime state 必须本地闭合，且 upstream OPL 保持 clean，raw provider key / launch token / runtime token 不得跨过前端边界。slide-01 已让 PostgreSQL 成为 local production data canonical truth；slide-02 已让 RuntimeEnvironment 可见套餐、订阅和权益状态来自 typed Portal lab API client；slide-03 已让账务 ledger、冻结净额、pending usage、T+1 settlement 和 BillingAudit 账户归属显示进入 owner-scoped 本地闭环；slide-04 已让 fileSpace folders、selected file refs、actions、delete policy 和 7 天保护语义进入 Workspace UI-safe 本地闭环；slide-05 已让 releasePolicy、stopBilling 和 auditStatus 进入 managed environment UI-safe resource payload，并保持 compute release 与 file-space retention 分离。
 
-最近已通过 landing gate 的产品闭环是 `feat/v22-slide-04-workspace-files`，landed commit 为 `44c917fbd16952cb043d24d97a0211cc2d8fd9b2`。该分支把 fileSpace folders、selected file refs、actions、delete policy 和 7 天保护语义投影到 Workspace UI，并把 `objectKey`、`localPath`、`signedUrl` 和对象存储实现名挡在前端产品真相之外；当前 closeout 已把 active baton 推进到 slide-05。
+最近已通过 landing gate 的产品闭环是 `feat/v22-slide-05-resource-lifecycle`，landed commit 为 `b0ac1b31a85e2ab63827640544e04af6723a4122`。该分支把 managed environment `releasePolicy`、`stopBilling` 和 `auditStatus` 投影到 UI-safe resource payload 和 RuntimeEnvironment 展示，并把 compute release、停止计费核对、T+1 审计和文件空间独立保留拆清；当前 closeout 已把 active baton 推进到 slide-06。
 
 当前已收敛的事实：
 
@@ -217,27 +217,27 @@ Current docs / eval surface during migration：
 | Recovery cleanup | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | full-taxonomy cleanup gate |
 | Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-merge truth 漂移 | current-state index loop gate | latest landed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | Cleanup lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | cleanup lifecycle gate | post-merge closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
-| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` `precloud-product-slides-closure` + manifest `product-engineering-loop` suite | slide-01 到 slide-04 已 landed；当前 open baton 是 slide-05，open 明细只在 current machine fixture 临时存在 | run slide-05; then continue slide-06..slide-09 in order | 9 个产品 slide 全部闭合后 collapse to history summary and next cursor，active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
+| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` `precloud-product-slides-closure` + manifest `product-engineering-loop` suite | slide-01 到 slide-05 已 landed；当前 open baton 是 slide-06，open 明细只在 current machine fixture 临时存在 | run slide-06; then continue slide-07..slide-09 in order | 9 个产品 slide 全部闭合后 collapse to history summary and next cursor，active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
 
 ## Current Development Lines
 
 ### current-stage-current-cursor
 
-Current evidence: latest landed product closeout is `44c917fbd16952cb043d24d97a0211cc2d8fd9b2`; current machine cursor is `leaf-resource-lifecycle-closure`.
+Current evidence: latest landed product closeout is `b0ac1b31a85e2ab63827640544e04af6723a4122`; current machine cursor is `leaf-opl-entry-runtime-closure`.
 
-Gap: slide-01 data truth, slide-02 Portal API real data wiring, slide-03 account/wallet/billing closure and slide-04 workspace/files closure are complete, but slide-05 resource lifecycle closure is still gated and not implemented.
+Gap: slide-01 data truth, slide-02 Portal API real data wiring, slide-03 account/wallet/billing closure, slide-04 workspace/files closure and slide-05 resource lifecycle closure are complete, but slide-06 OPL entry runtime closure is still gated and not implemented.
 
-Next action: implement slide-05 so compute resource lifecycle, release, stop-billing check and legacy resource route retirement are locally queryable, while retaining slide-01/slide-02/slide-03/slide-04 regressions as guards.
+Next action: implement slide-06 so Portal -> OPL preflight, providerKeyRef, launch, session and runtime state are locally queryable, while retaining slide-01 through slide-05 regressions as guards.
 
-Done when: readers can distinguish landed slide-01/slide-02/slide-03/slide-04 facts from unfinished slide-05 resource lifecycle work.
+Done when: readers can distinguish landed slide-01 through slide-05 facts from unfinished slide-06 OPL entry runtime work.
 
 Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs`.
 
 ### portal-saas-control-plane-product-loop
 
-Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench. The active baton is `slide-05-resource-lifecycle`.
+Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench. The active baton is `slide-06-opl-entry-runtime`.
 
-Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language. slide-01 through slide-04 have landed; slide-05 still needs to close compute release, stop-billing and legacy resource route retirement semantics.
+Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language. slide-01 through slide-05 have landed; slide-06 still needs to close Portal -> OPL preflight, providerKeyRef, launch, session and runtime boundary semantics.
 
 Next action: run the product-engineering-loop through the machine fixture, keeping product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop. Every slide must use `inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit`.
 

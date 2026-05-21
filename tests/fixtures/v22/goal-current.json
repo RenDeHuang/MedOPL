@@ -8,42 +8,43 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "44c917fbd16952cb043d24d97a0211cc2d8fd9b2",
-  "current_branch": "feat/v22-slide-05-resource-lifecycle",
+  "base_trunk_head": "b0ac1b31a85e2ab63827640544e04af6723a4122",
+  "current_branch": "feat/v22-slide-06-opl-entry-runtime",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-05-resource-lifecycle",
+  "authoring_branch": "feat/v22-slide-06-opl-entry-runtime",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "44c917fbd16952cb043d24d97a0211cc2d8fd9b2",
-  "current_cursor": "leaf-resource-lifecycle-closure",
-  "next_leaf": "leaf-resource-lifecycle-closure",
+  "last_landed_commit": "b0ac1b31a85e2ab63827640544e04af6723a4122",
+  "current_cursor": "leaf-opl-entry-runtime-closure",
+  "next_leaf": "leaf-opl-entry-runtime-closure",
   "current_stage": "S5 frontend/backend product completion",
-  "current_risk_class": "local_service_code",
+  "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "resource_lifecycle_closure_requires_compute_release_stop_billing_and_file_space_lifecycle_separation"
+    "opl_entry_runtime_closure_requires_preflight_provider_keyref_launch_session_and_runtime_boundary"
   ],
-  "current_problem": "slide-04 workspace/files landed at 44c917fbd16952cb043d24d97a0211cc2d8fd9b2. The active product baton is slide-05 resource lifecycle closure; compute resource lifecycle, release, stop-billing checks and legacy resource route retirement must close locally without restoring user_owned/resource-order as primary product routes.",
+  "current_problem": "slide-05 resource lifecycle landed at b0ac1b31a85e2ab63827640544e04af6723a4122. The active product baton is slide-06 OPL entry runtime closure; Portal -> OPL preflight, providerKeyRef, launch, session and runtime state must close locally while upstream stays clean and raw keys/tokens never cross the frontend boundary.",
   "gaps": [
     {
-      "id": "resource-lifecycle-closure",
+      "id": "opl-entry-runtime-closure",
       "stage": "S5 frontend/backend product completion",
-      "priority": 82,
+      "priority": 78,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-resource-lifecycle-closure",
+      "next_leaf_step": "leaf-opl-entry-runtime-closure",
       "depends_on": [
         "portal-postgres-redis-local-production-data-closure",
         "portal-api-real-data-closure",
         "account-wallet-billing-closure",
-        "workspace-files-closure"
+        "workspace-files-closure",
+        "resource-lifecycle-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-resource-lifecycle-closure",
-    "gap_id": "resource-lifecycle-closure",
+    "step_id": "leaf-opl-entry-runtime-closure",
+    "gap_id": "opl-entry-runtime-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
-    "problem": "Compute resource lifecycle, release, stop-billing checks and legacy resource route retirement are not fully closed locally yet.",
+    "problem": "Portal -> OPL preflight, providerKeyRef, launch, session and runtime state are not fully closed locally yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
@@ -56,6 +57,12 @@
       "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
       "node tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
       "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+      "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+      "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
+      "node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs",
+      "node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+      "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+      "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -74,23 +81,19 @@
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "npm --prefix services/portal run check",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- docs tests scripts services/portal/src",
+      "git diff --check -- docs tests scripts services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src",
       "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/portal/src/domain/platform-provisioned-resources.mjs",
-      "services/portal/src/domain/managed-environment-open-flow.mjs",
-      "services/portal/src/domain/managed-environment-release-flow.mjs",
-      "services/portal/src/domain/managed-resource-binding-plan-view.mjs",
-      "services/portal/src/domain/portal-cloud-operation-production.mjs",
-      "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
-      "services/portal/src/routes/*resource*",
-      "services/portal/src/routes/*managed*",
-      "services/portal/frontend/src/api/portal/resources.ts",
-      "services/portal/frontend/src/app/data/portalAdapters.ts",
-      "services/portal/frontend/src/app/data/portalRuntimeEnvironmentLifecycle.ts",
-      "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
+      "services/opl-web-gateway/src/*",
+      "services/opl-runtime-bridge/src/*",
+      "services/portal/src/domain/provider-secret-store.mjs",
+      "services/portal/src/app/portal-runtime-clients.mjs",
+      "services/portal/src/app/portal-auth-runtime-handler.mjs",
+      "services/portal/src/routes/opl.routes.mjs",
+      "services/portal/src/services/opl-launch.service.mjs",
+      "services/portal/src/integrations/runtime-bridge-client.mjs",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
@@ -146,6 +149,12 @@
     "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
     "node tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
     "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+    "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+    "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
+    "node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs",
+    "node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+    "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+    "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -164,7 +173,7 @@
     "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "npm --prefix services/portal run check",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-    "git diff --check -- docs tests scripts services/portal/src",
+    "git diff --check -- docs tests scripts services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src",
     "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
     "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
   ],
@@ -172,6 +181,7 @@
     "docs/active/README.md",
     "docs/specs/README.md",
     "docs/product/README.md",
+    "docs/runtime/README.md",
     "docs/delivery/README.md",
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
@@ -183,9 +193,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-04-workspace-files",
+  "last_landed_branch": "feat/v22-slide-05-resource-lifecycle",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-04-workspace-files",
+  "history_latest_branch": "feat/v22-slide-05-resource-lifecycle",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -200,7 +210,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-05-resource-lifecycle",
+    "active_slide": "slide-06-opl-entry-runtime",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -664,7 +674,7 @@
       },
       {
         "order": 5,
-        "status": "active",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -742,11 +752,16 @@
               "legacy resource routes cannot return as primary product path"
             ]
           }
-        ]
+        ],
+        "landed_commit": "b0ac1b31a85e2ab63827640544e04af6723a4122",
+        "landed_branch": "feat/v22-slide-05-resource-lifecycle",
+        "closed_at": "2026-05-22",
+        "history_summary": "slide-05 projected managed environment releasePolicy, stopBilling and auditStatus into UI-safe resource payloads and RuntimeEnvironment display while keeping compute release separate from file-space retention and preventing user_owned/resource-order from returning as primary product routes.",
+        "next_cursor": "leaf-opl-entry-runtime-closure"
       },
       {
         "order": 6,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",
