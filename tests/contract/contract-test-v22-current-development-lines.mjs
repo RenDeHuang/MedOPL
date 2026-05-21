@@ -12,7 +12,7 @@ const expectedLines = [
   "optional-resource-lifecycle-and-pricing-boundary",
   "portal-opl-runtime-managed-chain",
   "portal-canonical-data-postgres-redis-closure",
-  "governance-verification-post-absorb-closeout",
+  "governance-verification-post-merge-closeout",
 ];
 
 async function readRepoFile(repoPath) {
@@ -46,7 +46,7 @@ for (const lineId of expectedLines) {
 
 const cursorSection = sectionForLine(active, "current-stage-current-cursor");
 assert(cursorSection.includes(current.current_cursor), "cursor_line_must_reference_machine_cursor");
-assert(cursorSection.includes(current.last_absorbed_commit), "cursor_line_must_reference_last_absorbed_commit");
+assert(cursorSection.includes(current.last_landed_commit), "cursor_line_must_reference_last_landed_commit");
 
 const dataSection = sectionForLine(active, "portal-canonical-data-postgres-redis-closure");
 assert(dataSection.includes("status: `gated`"), "data_line_must_remain_gated");
@@ -54,14 +54,14 @@ assert(dataSection.includes("PostgreSQL"), "data_line_must_name_postgres");
 assert(dataSection.includes("Redis"), "data_line_must_name_redis");
 assert(dataSection.includes("fail-closed"), "data_line_must_require_fail_closed");
 
-const governanceSection = sectionForLine(active, "governance-verification-post-absorb-closeout");
-assert(governanceSection.includes("post-absorb truth closeout"), "governance_line_must_require_post_absorb_closeout");
+const governanceSection = sectionForLine(active, "governance-verification-post-merge-closeout");
+assert(governanceSection.includes("post-merge closeout"), "governance_line_must_require_post_merge_closeout");
 assert(governanceSection.includes("node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk"), "governance_line_must_include_verify_entrypoint");
 
 for (const cannotClaim of [
   "不能宣称 PostgreSQL/Redis、本地 production data layer",
   "不能写成 `future-authorized` 等于真实云",
-  "不能跳过 post-absorb truth closeout",
+  "不能跳过 post-merge closeout",
 ]) {
   assert(active.includes(cannotClaim), `cannot_claim_must_remain:${cannotClaim}`);
 }

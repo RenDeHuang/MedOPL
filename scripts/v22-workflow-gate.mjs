@@ -169,14 +169,14 @@ const packageDefinitions = {
   },
   cleanup: {
     title: "Cleanup 合同包",
-    intent: "旧路线退役、入口收敛、文档归档和污染防护。",
+    intent: "旧路线清退、入口收敛、文档归档和污染防护。",
     contracts: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/active/README.md",
       "docs/policies/README.md",
       "docs/history/README.md",
-      "与被退役路径相关的分支合同",
+      "与被清退路径相关的分支合同",
     ],
     validationCommands: [
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -374,7 +374,7 @@ function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = 
         ].join("|")
       })\\.mjs$`, "u"),
       /^tests\/fixtures\/v22\/(?:autonomous-goal-runner-policy|cloud-harness-manifest|goal-leaf-manifest\.schema|product-completion-scoreboard)\.json$/u,
-      /^tests\/contract\/contract-test-v22-(?:agent-run-record-gate|autonomous-goal-runner|contract-eval-compaction|contract-smoke-eval-index-compaction|default-entry-narrative-gate|docs-taxonomy-skeleton|env-template-default-entry|goal-state-consistency|long-term-governance-surfaces|monolith-agent-workflow-entrypoint-and-trace-normalization|opl-style-taxonomy-hard-compaction|post-20fe9ac-agent-workflow-truth-and-repo-classification|post-absorb-portal-opl-truth|product-goal-execution-order|product-goal-harness|program-board|release-readiness-auth-boundary|repo-governance-physical-compaction|repo-zoning-boundary|smoke-eval-physical-compaction|tests-taxonomy-hard-retirement|truth-freeze-physical-retirement|truth-repo-narrative-reference-unification)\.mjs$/u,
+      /^tests\/contract\/contract-test-v22-(?:agent-run-record-gate|autonomous-goal-runner|contract-eval-compaction|contract-smoke-eval-index-compaction|default-entry-narrative-gate|docs-taxonomy-skeleton|env-template-default-entry|goal-state-consistency|long-term-governance-surfaces|monolith-agent-workflow-entrypoint-and-trace-normalization|opl-style-taxonomy-hard-compaction|post-20fe9ac-agent-workflow-truth-and-repo-classification|post-merge-portal-opl-truth|product-goal-execution-order|product-goal-harness|program-board|release-readiness-auth-boundary|repo-governance-physical-compaction|repo-zoning-boundary|smoke-eval-physical-compaction|tests-taxonomy-hard-retirement|truth-freeze-physical-retirement|truth-repo-narrative-reference-unification)\.mjs$/u,
       /^tests\/future-authorized\/cloud\/future-authorized-test-v22-(?:agent-workflow-cloud-onboarding|authorized-tencent-deploy-execution-contract|cloud-connection-runnable-path|cloud-harness-manifest-selector|cloud-onboarding-absorption-sequence|cloud-onboarding-board-status|cloud-onboarding-workflow-contract|cloud-resource-isolation-contract|discovery-governance-local-gate|opl-deployment-ownership-release-plan-contract|package-d-.+|portal-cloud-operation-async-worker-loop|portal-cloud-operation-runner-loop|portal-package-click-cloud-resource-loop|portal-production-cloud-operation-.+|real-resource-contract-alignment|tencent-readonly-inventory-.+|tencent-resource-lifecycle-.+)\.mjs$/u,
       /^tests\/future-authorized\/cloud\/smoke-test-v22-(?:agent-workflow-cloud-onboarding|authorized-tencent-deploy-execution-contract|cloud-connection-runnable-path|cloud-harness-manifest-selector|cloud-onboarding-absorption-sequence|cloud-onboarding-board-status|cloud-onboarding-workflow-contract|cloud-resource-isolation-contract|discovery-governance-local-gate|opl-deployment-ownership-release-plan-contract|package-d-.+|portal-cloud-operation-async-worker-loop|portal-cloud-operation-runner-loop|portal-package-click-cloud-resource-loop|portal-production-cloud-operation-.+|real-resource-contract-alignment|tencent-readonly-inventory-.+|tencent-resource-lifecycle-.+)\.mjs$/u,
       /^tests\/health\/health-check-v22-archive-smoke-contract-physical-retirement-gate\.mjs$/u,
@@ -581,7 +581,7 @@ export function evaluateCheckpoint({
     "确认没有 secret 被 tracked，包含 kubeconfig、token、SecretId、SecretKey、SSH private key、.env 和本地 github 配置。",
     "确认 remote 是 SSH，且 remote URL 不含 token/PAT。",
     "确认本地 trunk ahead origin/recovery/platform-v22-trunk。",
-    "只由 B 窗口执行 push；本 gate 不自动 push。",
+    "只由 landing operator 在 landing gate 通过后执行 push；本 gate 不自动 push。",
   ];
 
   return {

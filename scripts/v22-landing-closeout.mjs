@@ -15,11 +15,11 @@ const files = Object.freeze({
   manifest: "tests/fixtures/v22/agent-verify-manifest.json",
 });
 
-const defaultRequiredPostAbsorbFields = Object.freeze([
-  "absorbed_commit",
-  "b_review_result",
+const defaultRequiredPostMergeFields = Object.freeze([
+  "landed_commit",
+  "landing_gate_result",
   "post_push_verification",
-  "post_absorb_truth_closeout",
+  "post_merge_closeout",
   "next_cursor",
 ]);
 
@@ -127,9 +127,9 @@ function parseHistorySections(history) {
       headingBranch: extractHeadingBranch(heading),
       source,
       status: extractStatus(source),
-      absorbedCommit: extractInlineField(source, "absorbed_commit"),
+      landedCommit: extractInlineField(source, "landed_commit"),
       handoffCommit: extractInlineField(source, "handoff_commit"),
-      postAbsorbTruthCloseout: extractInlineField(source, "post_absorb_truth_closeout"),
+      postMergeCloseout: extractInlineField(source, "post_merge_closeout"),
       nextCursor: extractInlineField(source, "next_cursor"),
     };
   });
@@ -140,8 +140,8 @@ function sectionHasRequiredField(section, field) {
   return Boolean(extractInlineField(section.source, field));
 }
 
-function latestAbsorbedSection(sections) {
-  return sections.find((section) => section.status === "absorbed / pushed / post-push verified" && section.absorbedCommit);
+function latestLandedSection(sections) {
+  return sections.find((section) => section.status === "landed / pushed / post-push verified" && section.landedCommit);
 }
 
 function readySectionHasReachedTrunk(section, trunkRef) {
@@ -151,7 +151,7 @@ function readySectionHasReachedTrunk(section, trunkRef) {
 
 function staleReadySections(sections, trunkRef) {
   return sections
-    .filter((section) => section.status === "ready_for_b_review")
+    .filter((section) => section.status === "ready_for_landing_review")
     .filter((section) => readySectionHasReachedTrunk(section, trunkRef))
     .map((section) => ({
       heading: section.heading,
@@ -166,71 +166,71 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
   const current = readJson(files.current);
   const manifest = readJson(files.manifest);
   const sections = parseHistorySections(history);
-  const latest = latestAbsorbedSection(sections);
-  const requiredPostAbsorbFields = manifest.required_post_absorb_fields || defaultRequiredPostAbsorbFields;
-  const missingPostAbsorbFields = latest
-    ? requiredPostAbsorbFields.filter((field) => !sectionHasRequiredField(latest, field))
-    : [...requiredPostAbsorbFields];
+  const latest = latestLandedSection(sections);
+  const requiredPostMergeFields = manifest.required_post_merge_fields || defaultRequiredPostMergeFields;
+  const missingPostMergeFields = latest
+    ? requiredPostMergeFields.filter((field) => !sectionHasRequiredField(latest, field))
+    : [...requiredPostMergeFields];
   const trunkHead = revParse(trunkRef);
   const staleReady = staleReadySections(sections, trunkRef);
   const findings = [];
 
   if (!trunkHead) findings.push({ code: "trunk_ref_missing", trunkRef });
-  if (!latest) findings.push({ code: "history_latest_absorbed_run_missing" });
-  if (latest && !isAncestor(latest.absorbedCommit, trunkRef)) {
+  if (!latest) findings.push({ code: "history_latest_landed_run_missing" });
+  if (latest && !isAncestor(latest.landedCommit, trunkRef)) {
     findings.push({
-      code: "latest_absorbed_commit_not_on_trunk",
+      code: "latest_landed_commit_not_on_trunk",
       branch: latest.branch,
-      absorbedCommit: latest.absorbedCommit,
+      landedCommit: latest.landedCommit,
       trunkRef,
     });
   }
-  if (latest && current.last_absorbed_commit !== latest.absorbedCommit) {
+  if (latest && current.last_landed_commit !== latest.landedCommit) {
     findings.push({
-      code: "goal_current_last_absorbed_commit_mismatch",
-      expected: latest.absorbedCommit,
-      actual: current.last_absorbed_commit,
+      code: "goal_current_last_landed_commit_mismatch",
+      expected: latest.landedCommit,
+      actual: current.last_landed_commit,
     });
   }
-  if (latest && current.base_trunk_head !== latest.absorbedCommit) {
+  if (latest && current.base_trunk_head !== latest.landedCommit) {
     findings.push({
       code: "goal_current_base_trunk_head_mismatch",
-      expected: latest.absorbedCommit,
+      expected: latest.landedCommit,
       actual: current.base_trunk_head,
     });
   }
-  if (latest && current.last_absorbed_branch !== latest.branch) {
+  if (latest && current.last_landed_branch !== latest.branch) {
     findings.push({
-      code: "goal_current_last_absorbed_branch_mismatch",
+      code: "goal_current_last_landed_branch_mismatch",
       expected: latest.branch,
-      actual: current.last_absorbed_branch,
+      actual: current.last_landed_branch,
     });
   }
-  if (current.post_absorb_truth_closeout_completed !== true) {
-    findings.push({ code: "goal_current_post_absorb_closeout_not_completed" });
+  if (current.post_merge_closeout_completed !== true) {
+    findings.push({ code: "goal_current_post_merge_closeout_not_completed" });
   }
-  if (missingPostAbsorbFields.length > 0) {
+  if (missingPostMergeFields.length > 0) {
     findings.push({
-      code: "history_latest_absorbed_run_missing_fields",
-      fields: missingPostAbsorbFields,
+      code: "history_latest_landed_run_missing_fields",
+      fields: missingPostMergeFields,
     });
   }
   for (const section of staleReady) {
     findings.push({
-      code: "ready_for_b_review_reachable_from_trunk",
+      code: "ready_for_landing_review_reachable_from_trunk",
       branch: section.branch,
       handoffCommit: section.handoffCommit,
     });
   }
-  if (latest && !active.includes(latest.absorbedCommit)) {
+  if (latest && !active.includes(latest.landedCommit)) {
     findings.push({
-      code: "active_truth_missing_latest_absorbed_commit",
-      absorbedCommit: latest.absorbedCommit,
+      code: "active_truth_missing_latest_landed_commit",
+      landedCommit: latest.landedCommit,
     });
   }
   if (latest && !active.includes(latest.branch)) {
     findings.push({
-      code: "active_truth_missing_latest_absorbed_branch",
+      code: "active_truth_missing_latest_landed_branch",
       branch: latest.branch,
     });
   }
@@ -239,12 +239,12 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
     ok: findings.length === 0,
     trunkRef,
     trunkHead,
-    lastAbsorbedCommit: current.last_absorbed_commit,
-    lastAbsorbedBranch: current.last_absorbed_branch || "",
+    lastLandedCommit: current.last_landed_commit,
+    lastLandedBranch: current.last_landed_branch || "",
     latestHistoryBranch: latest?.branch || "",
-    latestHistoryAbsorbedCommit: latest?.absorbedCommit || "",
-    postAbsorbTruthCloseoutCompleted: current.post_absorb_truth_closeout_completed === true,
-    missingPostAbsorbFields,
+    latestHistoryLandedCommit: latest?.landedCommit || "",
+    postMergeCloseoutCompleted: current.post_merge_closeout_completed === true,
+    missingPostMergeFields,
     staleReadySections: staleReady,
     findings,
   };
@@ -263,14 +263,14 @@ function sectionForBranch(history, branch) {
   return sections.find((section) => section.branch === branch || section.headingBranch === branch) || null;
 }
 
-function validateGenerateInput({ history, branch, absorbedCommit, trunkRef }) {
-  if (!fullCommitPattern.test(absorbedCommit)) {
-    throw new Error(`invalid_absorbed_commit:${absorbedCommit}`);
+function validateGenerateInput({ history, branch, landedCommit, trunkRef }) {
+  if (!fullCommitPattern.test(landedCommit)) {
+    throw new Error(`invalid_landed_commit:${landedCommit}`);
   }
 
-  const resolvedAbsorbedCommit = revParseCommit(absorbedCommit);
-  if (resolvedAbsorbedCommit !== absorbedCommit) {
-    throw new Error(`absorbed_commit_not_found:${absorbedCommit}`);
+  const resolvedLandedCommit = revParseCommit(landedCommit);
+  if (resolvedLandedCommit !== landedCommit) {
+    throw new Error(`landed_commit_not_found:${landedCommit}`);
   }
 
   const section = sectionForBranch(history, branch);
@@ -286,22 +286,22 @@ function validateGenerateInput({ history, branch, absorbedCommit, trunkRef }) {
   if (branchHead !== expectedCommit) {
     throw new Error(`branch_head_handoff_mismatch:${branch}:${branchHead}:${expectedCommit}`);
   }
-  if (absorbedCommit !== expectedCommit) {
-    throw new Error(`absorbed_commit_mismatch:${absorbedCommit}:${expectedCommit}`);
+  if (landedCommit !== expectedCommit) {
+    throw new Error(`landed_commit_mismatch:${landedCommit}:${expectedCommit}`);
   }
 
   if (trunkRef) {
     const trunkHead = revParseCommit(trunkRef);
     if (!trunkHead) throw new Error(`trunk_ref_missing:${trunkRef}`);
-    if (!isAncestor(absorbedCommit, trunkRef)) {
-      throw new Error(`absorbed_commit_not_reachable_from_trunk:${absorbedCommit}:${trunkRef}`);
+    if (!isAncestor(landedCommit, trunkRef)) {
+      throw new Error(`landed_commit_not_reachable_from_trunk:${landedCommit}:${trunkRef}`);
     }
   }
 
   return { section, branchHead, expectedCommit };
 }
 
-function renderCloseoutBlock({ absorbedCommit, nextCursor, verificationSummary }) {
+function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary }) {
   const verificationLines = verificationSummary
     .split(";")
     .map((item) => item.trim())
@@ -309,15 +309,15 @@ function renderCloseoutBlock({ absorbedCommit, nextCursor, verificationSummary }
     .map((item) => `- ${item}`);
   return [
     "",
-    `absorbed_commit: \`${absorbedCommit}\``,
+    `landed_commit: \`${landedCommit}\``,
     "",
-    "b_review_result: `passed / ff-only absorbed / pushed`",
+    "landing_gate_result: `passed / ff-only landed / pushed`",
     "",
     "post_push_verification:",
     "",
     ...(verificationLines.length > 0 ? verificationLines : ["- post-push workflow gate and required verify commands passed."]),
     "",
-    "post_absorb_truth_closeout: `completed`",
+    "post_merge_closeout: `completed`",
     "",
     `next_cursor: \`${nextCursor}\``,
     "",
@@ -326,45 +326,45 @@ function renderCloseoutBlock({ absorbedCommit, nextCursor, verificationSummary }
 
 function generateCloseout({
   branch,
-  absorbedCommit,
+  landedCommit,
   nextCursor,
   trunkRef,
   verificationSummary,
   dryRun = false,
 } = {}) {
   if (!branch) throw new Error("missing_branch");
-  if (!absorbedCommit) throw new Error("missing_absorbed_commit");
+  if (!landedCommit) throw new Error("missing_landed_commit");
   if (!nextCursor) throw new Error("missing_next_cursor");
 
   const history = readRepoFile(files.history);
-  const validation = validateGenerateInput({ history, branch, absorbedCommit, trunkRef });
+  const validation = validateGenerateInput({ history, branch, landedCommit, trunkRef });
   const current = readJson(files.current);
   const active = readRepoFile(files.active);
   const updatedHistory = replaceSection(history, branch, (section) => {
-    let next = section.replace("Status: `ready_for_b_review`", "Status: `absorbed / pushed / post-push verified`");
-    if (!next.includes("absorbed_commit:")) {
-      next = `${next.trimEnd()}\n${renderCloseoutBlock({ absorbedCommit, nextCursor, verificationSummary })}`;
+    let next = section.replace("Status: `ready_for_landing_review`", "Status: `landed / pushed / post-push verified`");
+    if (!next.includes("landed_commit:")) {
+      next = `${next.trimEnd()}\n${renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary })}`;
     }
     return next;
   });
   const updatedCurrent = {
     ...current,
-    base_trunk_head: absorbedCommit,
-    last_absorbed_commit: absorbedCommit,
-    last_absorbed_branch: branch,
-    last_absorbed_at: new Date().toISOString().slice(0, 10),
+    base_trunk_head: landedCommit,
+    last_landed_commit: landedCommit,
+    last_landed_branch: branch,
+    last_landed_at: new Date().toISOString().slice(0, 10),
     history_latest_branch: branch,
-    post_absorb_truth_closeout_completed: true,
-    current_problem: current.current_problem.replace(/[a-f0-9]{40}/u, absorbedCommit),
+    post_merge_closeout_completed: true,
+    current_problem: current.current_problem.replace(/[a-f0-9]{40}/u, landedCommit),
   };
   const updatedActive = active
     .replace(
-      /最近已吸收的治理闭环是 `[^`]+`，absorbed commit 为 `[a-f0-9]{40}`。/u,
-      `最近已吸收的治理闭环是 \`${branch}\`，absorbed commit 为 \`${absorbedCommit}\`。`,
+      /最近已通过 landing gate 的治理闭环是 `[^`]+`，landed commit 为 `[a-f0-9]{40}`。/u,
+      `最近已通过 landing gate 的治理闭环是 \`${branch}\`，landed commit 为 \`${landedCommit}\`。`,
     )
     .replace(
-      /Current evidence: latest absorbed governance closeout is `[a-f0-9]{40}`;/u,
-      `Current evidence: latest absorbed governance closeout is \`${absorbedCommit}\`;`,
+      /Current evidence: latest landed governance closeout is `[a-f0-9]{40}`;/u,
+      `Current evidence: latest landed governance closeout is \`${landedCommit}\`;`,
     );
 
   if (!dryRun) {
@@ -377,7 +377,7 @@ function generateCloseout({
     ok: true,
     mode: "generate",
     branch,
-    absorbedCommit,
+    landedCommit,
     branchHead: validation.branchHead,
     expectedCommit: validation.expectedCommit,
     nextCursor,
@@ -390,8 +390,8 @@ function generateCloseout({
 function printUsage() {
   process.stderr.write([
     "Usage:",
-    "  node scripts/v22-absorb-closeout.mjs check [--trunk-ref origin/recovery/platform-v22-trunk] [--json]",
-    "  node scripts/v22-absorb-closeout.mjs generate --branch <branch> --absorbed-commit <sha> --next-cursor <leaf> [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
+    "  node scripts/v22-landing-closeout.mjs check [--trunk-ref origin/recovery/platform-v22-trunk] [--json]",
+    "  node scripts/v22-landing-closeout.mjs generate --branch <branch> --landed-commit <sha> --next-cursor <leaf> [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
     "",
   ].join("\n"));
 }
@@ -406,7 +406,7 @@ try {
   } else if (mode === "generate") {
     const payload = generateCloseout({
       branch: options.branch,
-      absorbedCommit: options["absorbed-commit"],
+      landedCommit: options["landed-commit"],
       nextCursor: options["next-cursor"],
       trunkRef: options["trunk-ref"] || "",
       verificationSummary: options["verification-summary"] || "",

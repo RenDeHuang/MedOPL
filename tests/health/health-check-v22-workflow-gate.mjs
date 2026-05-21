@@ -232,7 +232,8 @@ assert.equal(checkpointReady.checks.remoteNoToken.ok, true, "checkpoint_must_acc
 assertIncludesAll(checkpointReady.pushChecklist.join("\n"), [
   "确认工作区干净",
   "确认没有 secret 被 tracked",
-  "只由 B 窗口执行 push",
+  "landing operator",
+  "landing gate",
 ], "checkpoint_push_checklist");
 
 const checkpointBlocked = evaluateCheckpoint({

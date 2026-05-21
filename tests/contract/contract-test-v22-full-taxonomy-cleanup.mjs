@@ -42,7 +42,7 @@ const retiredPaths = [
 
 const allowedScripts = [
   "scripts/sync-workspace-file-to-minio.ps1",
-  "scripts/v22-absorb-closeout.mjs",
+  "scripts/v22-landing-closeout.mjs",
   "scripts/v22-line-budget.mjs",
   "scripts/v22-repo-hygiene.mjs",
   "scripts/v22-test-classification.mjs",
@@ -71,7 +71,7 @@ const allowedOldLiteralFiles = new Set([
   "docs/README.md",
   "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
   "tests/contract/contract-test-v22-current-state-index-loop.mjs",
-  "tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs",
+  "tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs",
   "tests/fixtures/v22/agent-verify-manifest.json",
   "tests/health/health-check-v22-workflow-gate.mjs",
   "tests/health/health-check-v22-smoke-eval-boundary.mjs",

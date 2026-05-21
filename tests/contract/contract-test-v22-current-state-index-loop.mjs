@@ -22,7 +22,7 @@ const files = {
 const previousIndexLoopCommit = "2e644fc774e567db9418e3d13942e1598434433e";
 const currentCursor = "leaf-portal-postgres-redis-local-production-data-closure";
 const indexLoopGate = "node tests/contract/contract-test-v22-current-state-index-loop.mjs";
-const absorbCloseoutGate = "node tests/contract/contract-test-v22-absorb-closeout-automation.mjs";
+const landingCloseoutGate = "node tests/contract/contract-test-v22-landing-closeout-automation.mjs";
 
 async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
@@ -51,21 +51,21 @@ function parseHistorySections(history) {
     const source = history.slice(start, end);
     const branch = source.match(/^Branch:\s*`([^`]+)`/mu)?.[1] || match[1].trim();
     const status = source.match(/^Status:\s*`([^`]+)`/mu)?.[1] || "";
-    const absorbedCommit = source.match(/^absorbed_commit:\s*`([a-f0-9]{40})`/mu)?.[1] || "";
+    const landedCommit = source.match(/^landed_commit:\s*`([a-f0-9]{40})`/mu)?.[1] || "";
     const nextCursor = source.match(/^next_cursor:\s*`([^`]+)`/mu)?.[1] || "";
-    return { branch, status, absorbedCommit, nextCursor, source };
+    return { branch, status, landedCommit, nextCursor, source };
   });
 }
 
-function latestAbsorbedHistorySection(history) {
-  const section = parseHistorySections(history).find((item) => item.status === "absorbed / pushed / post-push verified" && item.absorbedCommit);
-  assert(section, "latest_absorbed_history_section_missing");
+function latestLandedHistorySection(history) {
+  const section = parseHistorySections(history).find((item) => item.status === "landed / pushed / post-push verified" && item.landedCommit);
+  assert(section, "latest_landed_history_section_missing");
   return section;
 }
 
-function assertAbsorbCloseoutCheckPasses() {
+function assertLandingCloseoutCheckPasses() {
   const result = spawnSync("node", [
-    "scripts/v22-absorb-closeout.mjs",
+    "scripts/v22-landing-closeout.mjs",
     "check",
     "--trunk-ref",
     "origin/recovery/platform-v22-trunk",
@@ -75,7 +75,7 @@ function assertAbsorbCloseoutCheckPasses() {
     encoding: "utf8",
     stdio: "pipe",
   });
-  assert.equal(result.status, 0, `absorb_closeout_check_failed:${result.stderr || result.stdout}`);
+  assert.equal(result.status, 0, `landing_closeout_check_failed:${result.stderr || result.stdout}`);
   return JSON.parse(result.stdout);
 }
 
@@ -101,10 +101,10 @@ const [
   readJson(files.current),
 ]);
 
-const latestAbsorbed = latestAbsorbedHistorySection(history);
-const closeoutCheck = assertAbsorbCloseoutCheckPasses();
-const latestAbsorbedCommit = latestAbsorbed.absorbedCommit;
-const latestAbsorbedBranch = latestAbsorbed.branch;
+const latestLanded = latestLandedHistorySection(history);
+const closeoutCheck = assertLandingCloseoutCheckPasses();
+const latestLandedCommit = latestLanded.landedCommit;
+const latestLandedBranch = latestLanded.branch;
 
 assertIncludes(docsIndex, "../tests/README.md", "docs_index_must_link_tests_taxonomy");
 assertIncludes(docsIndex, "Truth Lookup", "docs_index_must_have_truth_lookup");
@@ -122,8 +122,8 @@ for (const retired of [
 
 assertIncludes(active, "Index loop", "active_gap_matrix_must_include_index_loop");
 assertIncludes(active, indexLoopGate, "active_must_point_to_index_loop_gate");
-assertIncludes(active, latestAbsorbedCommit, "active_must_record_latest_absorbed_commit");
-assertIncludes(active, latestAbsorbedBranch, "active_must_record_latest_absorbed_branch");
+assertIncludes(active, latestLandedCommit, "active_must_record_latest_landed_commit");
+assertIncludes(active, latestLandedBranch, "active_must_record_latest_landed_branch");
 assertIncludes(active, currentCursor, "active_must_record_current_cursor");
 assertIncludes(delivery, currentCursor, "delivery_must_record_current_cursor");
 
@@ -151,24 +151,24 @@ for (const anchor of [
 
 assertIncludes(testsReadme, "docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移", "tests_readme_must_close_loop");
 
-assert.equal(current.last_absorbed_commit, latestAbsorbedCommit, "current_last_absorbed_commit_mismatch");
-assert.equal(current.base_trunk_head, latestAbsorbedCommit, "current_base_trunk_head_mismatch");
-assert.equal(current.last_absorbed_branch, latestAbsorbedBranch, "current_last_absorbed_branch_mismatch");
-assert.equal(current.history_latest_branch, latestAbsorbedBranch, "current_history_latest_branch_mismatch");
-assert.equal(current.post_absorb_truth_closeout_completed, true, "current_post_absorb_closeout_must_be_completed");
+assert.equal(current.last_landed_commit, latestLandedCommit, "current_last_landed_commit_mismatch");
+assert.equal(current.base_trunk_head, latestLandedCommit, "current_base_trunk_head_mismatch");
+assert.equal(current.last_landed_branch, latestLandedBranch, "current_last_landed_branch_mismatch");
+assert.equal(current.history_latest_branch, latestLandedBranch, "current_history_latest_branch_mismatch");
+assert.equal(current.post_merge_closeout_completed, true, "current_post_merge_closeout_must_be_completed");
 assert.equal(current.current_cursor, currentCursor, "current_cursor_mismatch");
 assert.equal(current.next_leaf, currentCursor, "next_leaf_mismatch");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
-assert.equal(closeoutCheck.lastAbsorbedCommit, latestAbsorbedCommit, "closeout_check_commit_mismatch");
-assert.equal(closeoutCheck.lastAbsorbedBranch, latestAbsorbedBranch, "closeout_check_branch_mismatch");
+assert.equal(closeoutCheck.lastLandedCommit, latestLandedCommit, "closeout_check_commit_mismatch");
+assert.equal(closeoutCheck.lastLandedBranch, latestLandedBranch, "closeout_check_branch_mismatch");
 assert.deepEqual(closeoutCheck.staleReadySections, [], "closeout_check_must_have_no_stale_ready_sections");
 
 const leaf = manifest.leaves.find((item) => item.leaf_id === current.current_cursor);
 assert(leaf, `manifest_current_leaf_missing:${current.current_cursor}`);
 assert.deepEqual(leaf.verification_commands, current.current_leaf.verification_commands, "current_leaf_commands_mismatch");
 assert(leaf.verification_commands.includes(indexLoopGate), "current_leaf_must_run_index_loop_gate");
-assert(leaf.verification_commands.includes("node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs"), "current_leaf_must_run_lifecycle_gate");
-assert(leaf.verification_commands.includes(absorbCloseoutGate), "current_leaf_must_run_absorb_closeout_gate");
+assert(leaf.verification_commands.includes("node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs"), "current_leaf_must_run_lifecycle_gate");
+assert(leaf.verification_commands.includes(landingCloseoutGate), "current_leaf_must_run_landing_closeout_gate");
 
 const currentSuite = manifest.suites.find((suite) => suite.id === "current");
 const localContractSuite = manifest.suites.find((suite) => suite.id === "local-contract");
@@ -179,32 +179,32 @@ assert(historyCloseoutSuite, "history_closeout_suite_missing");
 assert.deepEqual(currentSuite.commands, leaf.verification_commands, "current_suite_must_match_leaf_commands");
 assert(currentSuite.commands.includes(indexLoopGate), "current_suite_must_run_index_loop_gate");
 assert(localContractSuite.commands.includes(indexLoopGate), "local_contract_must_run_index_loop_gate");
-assert(localContractSuite.commands.includes(absorbCloseoutGate), "local_contract_must_run_absorb_closeout_gate");
-assert.deepEqual(historyCloseoutSuite.commands, [absorbCloseoutGate, indexLoopGate], "history_closeout_suite_must_run_absorb_and_index_loop_gates");
+assert(localContractSuite.commands.includes(landingCloseoutGate), "local_contract_must_run_landing_closeout_gate");
+assert.deepEqual(historyCloseoutSuite.commands, [landingCloseoutGate, indexLoopGate], "history_closeout_suite_must_run_landing_and_index_loop_gates");
 
-const latestRunSection = latestAbsorbed.source;
+const latestRunSection = latestLanded.source;
 for (const expected of [
-  "Status: `absorbed / pushed / post-push verified`",
-  `absorbed_commit: \`${latestAbsorbedCommit}\``,
-  "b_review_result: `passed / ff-only absorbed / pushed`",
+  "Status: `landed / pushed / post-push verified`",
+  `landed_commit: \`${latestLandedCommit}\``,
+  "landing_gate_result: `passed / ff-only landed / pushed`",
   "post_push_verification:",
-  "post_absorb_truth_closeout: `completed`",
+  "post_merge_closeout: `completed`",
   `next_cursor: \`${currentCursor}\``,
 ]) {
   assertIncludes(latestRunSection, expected, "history_lifecycle_closeout");
 }
-assert.equal(latestRunSection.includes("Status: `ready_for_b_review`"), false, "absorbed_history_must_not_be_ready_for_b_review");
-assertIncludes(latestRunSection, "post_absorb_truth_closeout: `completed`", "history_latest_run_closeout");
-assert.equal(current.last_absorbed_commit, latestAbsorbedCommit, "history_current_commit_must_match_goal");
+assert.equal(latestRunSection.includes("Status: `ready_for_landing_review`"), false, "landed_history_must_not_be_ready_for_landing_review");
+assertIncludes(latestRunSection, "post_merge_closeout: `completed`", "history_latest_run_closeout");
+assert.equal(current.last_landed_commit, latestLandedCommit, "history_current_commit_must_match_goal");
 
 const previousRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
-assertIncludes(previousRunSection, `absorbed_commit: \`${previousIndexLoopCommit}\``, "previous_index_loop_commit_must_stay_true");
+assertIncludes(previousRunSection, `landed_commit: \`${previousIndexLoopCommit}\``, "previous_index_loop_commit_must_stay_true");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_current_state_index_loop",
   currentCursor,
-  latestAbsorbedCommit,
-  latestAbsorbedBranch,
+  latestLandedCommit,
+  latestLandedBranch,
   gate: indexLoopGate,
 }, null, 2));

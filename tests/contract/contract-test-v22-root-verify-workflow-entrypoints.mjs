@@ -25,7 +25,13 @@ const expectedScripts = {
   "verify:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
   "verify:repo-hygiene": "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk",
   "verify:review": "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk",
+  "test:health": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
+  "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
+  "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
+  "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
   "gate:review": "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+  "gate:contract": "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk",
+  "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
   "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
   "line:budget": "node scripts/v22-line-budget.mjs",
   "check:diff": "git diff --check -- docs tests scripts package.json .github",
@@ -59,8 +65,14 @@ for (const expected of [
   "npm run verify:health",
   "npm run verify:smoke",
   "npm run verify:contract",
+  "npm run test:health",
+  "npm run test:smoke",
+  "npm run test:contract",
+  "npm run test:regression",
   "npm run verify:review",
   "npm run gate:review",
+  "npm run gate:contract",
+  "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
 ]) {
@@ -97,7 +109,13 @@ for (const command of [
   "npm run verify",
   "npm run verify:repo-hygiene",
   "npm run verify:review",
+  "npm run test:health",
+  "npm run test:smoke",
+  "npm run test:contract",
+  "npm run test:regression",
   "npm run gate:review",
+  "npm run gate:contract",
+  "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
   "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
@@ -113,12 +131,25 @@ assert.deepEqual(docsEngineeringLoopSuite.commands, [
   "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json",
   "git diff --check -- docs tests scripts package.json .github",
 ], "docs_engineering_loop_package_suite_commands_mismatch");
 
+const contractGateSuite = manifest.package_suites.find((suite) => suite.id === "contract-gate");
+assert(contractGateSuite, "contract_gate_package_suite_missing");
+for (const command of [
+  "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-verify.mjs suite history-closeout --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+]) {
+  assert(contractGateSuite.commands.includes(command), `contract_gate_package_suite_command_missing:${command}`);
+}
+
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");
-assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-absorb-closeout-automation.mjs"), "review_suite_must_check_absorb_closeout");
+assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-landing-closeout-automation.mjs"), "review_suite_must_check_landing_closeout");
 assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs"), "review_suite_must_check_root_verify_workflow");
+assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"), "review_suite_must_check_framework_workflow");
 
 const localContractSuite = manifest.suites.find((suite) => suite.id === "local-contract");
 assert(localContractSuite?.commands.includes("node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs"), "local_contract_must_check_root_verify_workflow");

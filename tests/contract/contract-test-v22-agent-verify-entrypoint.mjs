@@ -93,15 +93,15 @@ const currentSuite = manifest.suites.find((suite) => suite.id === "current");
 assert(currentSuite, "current_suite_missing");
 assert.deepEqual(currentSuite.commands, currentLeaf.verification_commands, "current_suite_must_use_current_leaf_commands");
 
-const override = manifest.branch_override_suites.find((suite) => suite.id === "full-taxonomy-hard-retirement");
-assert(override, "full_taxonomy_branch_override_missing");
-assert(override.branches.includes("cleanup/v22-full-taxonomy-hard-retirement"), "full_taxonomy_branch_missing");
-assert(override.commands.includes("node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"), "full_taxonomy_override_must_run_gate");
+const override = manifest.branch_override_suites.find((suite) => suite.id === "opl-framework-workflow-convergence");
+assert(override, "framework_workflow_branch_override_missing");
+assert(override.branches.includes("cleanup/v22-opl-framework-workflow-convergence"), "framework_workflow_branch_missing");
+assert(override.commands.includes("node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"), "framework_workflow_override_must_run_gate");
 for (const forbidden of ["services/*", "deploy/*", "adapters/*", ".sentrux/*", "infra/*", "one-person-lab/*", "upstream/*", ".runtime/*"]) {
-  assert(override.forbidden_files.includes(forbidden), `full_taxonomy_forbidden_file_missing:${forbidden}`);
+  assert(override.forbidden_files.includes(forbidden), `framework_workflow_forbidden_file_missing:${forbidden}`);
 }
 for (const forbiddenOp of ["secret", "live-cloud", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test", "git-push"]) {
-  assert(override.forbidden_ops.includes(forbiddenOp), `full_taxonomy_forbidden_op_missing:${forbiddenOp}`);
+  assert(override.forbidden_ops.includes(forbiddenOp), `framework_workflow_forbidden_op_missing:${forbiddenOp}`);
 }
 
 const listResult = runVerify(["list", "--json"]);
@@ -118,12 +118,12 @@ assert.equal(currentPayload.ok, true, "verify_current_plan_ok");
 assert.equal(currentPayload.leafId, current.current_cursor, "verify_current_leaf_mismatch");
 assert.equal(currentPayload.branchOverride, undefined, "feature_branch_must_not_use_cleanup_override");
 
-const cleanupPlan = runVerify(["current", "--branch", "cleanup/v22-full-taxonomy-hard-retirement", "--dry-run", "--json"]);
+const cleanupPlan = runVerify(["current", "--branch", "cleanup/v22-opl-framework-workflow-convergence", "--dry-run", "--json"]);
 assert.equal(cleanupPlan.status, 0, `verify_cleanup_dry_run_must_exit_zero:${cleanupPlan.stderr || cleanupPlan.stdout}`);
 const cleanupPayload = JSON.parse(cleanupPlan.stdout);
 assert.equal(cleanupPayload.ok, true, "verify_cleanup_plan_ok");
-assert.equal(cleanupPayload.branchOverride?.suiteId, "full-taxonomy-hard-retirement", "cleanup_override_mismatch");
-assert(cleanupPayload.commands.includes("node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"), "cleanup_plan_must_run_gate");
+assert.equal(cleanupPayload.branchOverride?.suiteId, "opl-framework-workflow-convergence", "cleanup_override_mismatch");
+assert(cleanupPayload.commands.includes("node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"), "cleanup_plan_must_run_gate");
 
 console.log(JSON.stringify({
   ok: true,
