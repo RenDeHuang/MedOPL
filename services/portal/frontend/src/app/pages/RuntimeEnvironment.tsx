@@ -149,6 +149,21 @@ export function RuntimeEnvironment() {
         </div>
       </div>
       <Card className="border border-neutral-200 p-5 mb-8">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-semibold text-neutral-900">释放与停止计费</h2>
+            <p className="text-sm text-neutral-600 mt-1">停止计费核对在 120 分钟内完成，文件空间独立保留。</p>
+          </div>
+          <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">T+1 审计</Badge>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div><div className="text-xs text-neutral-600 mb-1">释放状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.releaseStatus}</div></div>
+          <div><div className="text-xs text-neutral-600 mb-1">停止计费核对</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.stopBillingStatus}</div><div className="text-xs text-neutral-500 mt-1">{model.releaseLifecycle.stopBillingWindow} / {model.releaseLifecycle.stopBillingConfirmBy}</div></div>
+          <div><div className="text-xs text-neutral-600 mb-1">审计状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.auditStatus}</div><div className="text-xs text-neutral-500 mt-1">{model.releaseLifecycle.auditPolicy} / {model.releaseLifecycle.auditReadyAt}</div></div>
+          <div><div className="text-xs text-neutral-600 mb-1">文件空间策略</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.fileSpacePolicy}</div></div>
+        </div>
+      </Card>
+      <Card className="border border-neutral-200 p-5 mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-4">
           <div><div className="text-xs text-neutral-600 mb-1">总容量</div><div className="text-xl font-semibold text-neutral-900">{model.storageTotal}</div></div>
           <div><div className="text-xs text-neutral-600 mb-1">已使用</div><div className="text-xl font-semibold text-neutral-900">{model.storageUsed}</div></div>

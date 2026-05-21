@@ -47,6 +47,14 @@ import {
   fileSpaceViewState,
   retentionProtected,
 } from "./portalWorkspaceFileSpace";
+import {
+  packageConcurrent,
+  packageCpu,
+  packageDisplayName,
+  packageMemory,
+  packageStorage,
+  runtimeReleaseLifecycle,
+} from "./portalRuntimeEnvironmentLifecycle";
 
 export type QueryState<T> =
   | { status: "loading"; data: null; error: null }
@@ -241,22 +249,6 @@ function activeWorkspaceId(resources: PlatformProvisionedResourcesPayload) {
   return stringValue(activeBinding?.workspaceId, "");
 }
 
-function packageCpu(plan: LabPackagePlan) {
-  return numberValue(plan.compute?.cores, numberValue(String(plan.computePower || "").match(/\d+/u)?.[0]));
-}
-
-function packageMemory(plan: LabPackagePlan) {
-  return numberValue(plan.memoryGb, numberValue(plan.compute?.memoryGb));
-}
-
-function packageConcurrent(plan: LabPackagePlan) {
-  return numberValue(plan.compute?.maxConcurrentRuns);
-}
-
-function packageStorage(plan: LabPackagePlan) {
-  return numberValue(plan.storageCapacityGb, numberValue(plan.storage?.includedGb));
-}
-
 export async function loadOverviewModel() {
   const [overview, resources] = await Promise.all([fetchOverview(), fetchMyResources()]);
   const activeBinding = resources.items.find((item) => item.status === "active") || null;
@@ -306,6 +298,7 @@ export async function loadRuntimeEnvironmentModel() {
   const storageCapacityGb = numberValue(fileSpace?.storageCapacityGb);
   const protection = activeBinding?.protection || resources.protections[0] || null;
   const workspaceId = activeWorkspaceId(resources) || stringValue(user.currentTaskSlug, "");
+  const releaseLifecycle = runtimeReleaseLifecycle(resources);
   const [packageCatalog, subscription, entitlement] = await Promise.all([
     fetchLabPackages(),
     fetchLabSubscription({ workspaceId }),
@@ -313,7 +306,7 @@ export async function loadRuntimeEnvironmentModel() {
   ]);
   const plans = packageCatalog.items.map((plan) => ({
     id: plan.id,
-    name: plan.name,
+    name: packageDisplayName(plan),
     description: plan.headline || plan.planSummary || "",
     cpu: packageCpu(plan),
     memory: packageMemory(plan),
@@ -335,6 +328,7 @@ export async function loadRuntimeEnvironmentModel() {
     storagePercent: storageCapacityGb > 0 ? Math.min(100, Math.round((numberValue(protection?.consumedAmount) / storageCapacityGb) * 100)) : 0,
     frozenAmount: money(protection?.frozenAmount),
     billingStatus: protection?.status || activeBinding?.status || "未返回",
+    releaseLifecycle,
     plans,
     subscription: subscription as LabSubscriptionPayload,
     entitlement: entitlement as LabEntitlementPayload,

@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 
 import { createWorkspacePayloadBuilder } from "../../../services/portal/src/app/portal-page-workspace-payloads.mjs";
+import { createPortalPlatformProvisionedResourceStore } from "../../../services/portal/src/state/portal-platform-provisioned-resource-store.mjs";
 import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
 
 const RAW_API_KEY = "gflabtoken_raw_key_managed_plan_view";
@@ -44,6 +45,8 @@ const user = {
 
 const workspaceId = "workspace-v22-managed-plan";
 const resourceBindingId = "rb-v22-managed-plan";
+const computeInstanceId = "compute-v22-managed-plan";
+const storageBucketId = "filespace-v22-managed-plan";
 
 const db = {
   users: [user],
@@ -59,6 +62,8 @@ const db = {
   workspaceResourceBindings: [{
     id: resourceBindingId,
     resourceBindingId,
+    computeInstanceId,
+    storageBucketId,
     ownerTenantId: user.tenantId,
     ownerUserId: user.id,
     tenantId: user.tenantId,
@@ -86,6 +91,34 @@ const db = {
     localPath: "/runtime/private/result.md",
     signedUrl: "https://signed.example.test/result.md",
     rawApiKey: RAW_API_KEY,
+    createdAt: "2026-05-08T08:00:00.000Z",
+    updatedAt: "2026-05-08T08:01:00.000Z",
+  }],
+  userComputeInstances: [{
+    id: computeInstanceId,
+    ownerTenantId: user.tenantId,
+    ownerUserId: user.id,
+    tenantId: user.tenantId,
+    userId: user.id,
+    region: "na-siliconvalley",
+    zone: "na-siliconvalley-1",
+    instanceType: "8核 / 16GB 内存",
+    healthStatus: "ready",
+    status: "active",
+    billingStartedAt: "2026-05-08T08:00:00.000Z",
+    createdAt: "2026-05-08T08:00:00.000Z",
+    updatedAt: "2026-05-08T08:01:00.000Z",
+  }],
+  userStorageBuckets: [{
+    id: storageBucketId,
+    ownerTenantId: user.tenantId,
+    ownerUserId: user.id,
+    tenantId: user.tenantId,
+    userId: user.id,
+    region: "na-siliconvalley",
+    storageCapacityGb: 100,
+    status: "active",
+    billingStartedAt: "2026-05-08T08:00:00.000Z",
     createdAt: "2026-05-08T08:00:00.000Z",
     updatedAt: "2026-05-08T08:01:00.000Z",
   }],
@@ -163,22 +196,43 @@ assert.equal(Object.hasOwn(planView.resourcePlan || {}, "resourcePlanId"), false
 assert.equal(Object.hasOwn(planView.resourcePlan || {}, "resourceBindingId"), false, "plan_view_resource_plan_must_not_expose_resource_binding_id");
 assertNoForbiddenLeak(workspacePayload, "workspace_payload");
 
+const resourceStore = createPortalPlatformProvisionedResourceStore({ writeDb: async () => {} });
+const publicResources = resourceStore.listOwnerScopedResources(db, user);
+const publicEnvironment = publicResources.items.find((item) => item.workspaceId === workspaceId);
+
+assert.ok(publicEnvironment, "platform_resources_public_environment_required");
+assert.ok(publicEnvironment.releasePolicy, "platform_resources_release_policy_required");
+assert.equal(publicEnvironment.releasePolicy.status, "not_released", "platform_resources_release_policy_status_mismatch");
+assert.equal(publicEnvironment.releasePolicy.stopBillingConfirmWithinMinutes, 120, "platform_resources_stop_billing_window_mismatch");
+assert.ok(publicEnvironment.auditStatus, "platform_resources_audit_status_required");
+assert.equal(publicEnvironment.auditStatus.status, "audit_pending", "platform_resources_audit_status_mismatch");
+assert.equal(publicEnvironment.auditStatus.policy, "T+1", "platform_resources_audit_policy_mismatch");
+assertNoForbiddenLeak(publicResources, "platform_resources_public_payload");
+
 const runtimeEnvironmentSource = await readFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx", "utf8");
 const workspaceViewSource = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
 const workspaceSurfaceSource = await readFile("services/portal/frontend/src/app/data/portalAdapters.ts", "utf8");
 const workspaceTypesSource = await readFile("services/portal/frontend/src/api/portal/workspace.ts", "utf8");
+const resourcesTypesSource = await readFile("services/portal/frontend/src/api/portal/resources.ts", "utf8");
 const contractSource = await readFile("docs/specs/README.md", "utf8");
 const suiteSource = await readFile("tests/contract/contract-test-v22-mvp-contract-suite.mjs", "utf8");
 
 assertUserCopy(runtimeEnvironmentSource, "runtime_environment_surface");
 assert(runtimeEnvironmentSource.includes("loadRuntimeEnvironmentModel"), "runtime_environment_page_must_use_zip_portal_adapter_loader");
 assert(runtimeEnvironmentSource.includes("审计模式"), "runtime_environment_surface_must_render_audit_mode");
+assert(runtimeEnvironmentSource.includes("停止计费核对"), "runtime_environment_surface_must_render_stop_billing_check");
+assert(runtimeEnvironmentSource.includes("120 分钟"), "runtime_environment_surface_must_render_120_minute_check");
+assert(runtimeEnvironmentSource.includes("T+1 审计"), "runtime_environment_surface_must_render_t_plus_1_audit");
+assert(runtimeEnvironmentSource.includes("文件空间独立保留"), "runtime_environment_surface_must_render_separate_file_space_lifecycle");
 assert(runtimeEnvironmentSource.includes("价格待审批"), "runtime_environment_surface_must_render_pending_price_approval");
 assert(runtimeEnvironmentSource.includes("正式售价未定价"), "runtime_environment_surface_must_render_unset_formal_price");
 assert(runtimeEnvironmentSource.includes("当前页面仅展示状态，不提供资源调整动作。"), "runtime_environment_surface_must_be_status_only");
 assert(workspaceViewSource.includes("文件空间"), "workspace_view_must_render_file_space_context");
+assert(workspaceSurfaceSource.includes("releaseLifecycle"), "portal_adapter_must_project_resource_release_lifecycle");
 assert(workspaceSurfaceSource.includes("loadRuntimeEnvironmentModel"), "portal_adapter_must_project_runtime_environment_model");
 assert(workspaceSurfaceSource.includes("loadWorkspaceModel"), "portal_adapter_must_project_workspace_model");
+assert(resourcesTypesSource.includes("releasePolicy"), "resources_types_must_include_release_policy");
+assert(resourcesTypesSource.includes("auditStatus"), "resources_types_must_include_audit_status");
 assert(workspaceTypesSource.includes("managedResourceBindingPlan"), "workspace_types_must_include_managed_resource_binding_plan");
 assert(contractSource.includes("本分支允许的最小 Portal frontend 展示范围"), "contract_must_allow_minimal_portal_frontend_display");
 assert(contractSource.includes("Portal 工作空间 payload 输出 `managedResourceBindingPlan`"), "contract_must_allow_managed_resource_binding_plan_payload");

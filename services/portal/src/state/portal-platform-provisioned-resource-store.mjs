@@ -187,6 +187,37 @@ function publicProtectionView(item = {}) {
   };
 }
 
+function publicReleasePolicyView(binding = {}) {
+  const releasedAt = text(binding.releasedAt);
+  return {
+    status: releasedAt ? "release_requested" : "not_released",
+    releasedAt,
+    billingStopConfirmBy: text(binding.billingStopConfirmBy),
+    stopBillingConfirmWithinMinutes: 120,
+    protection: "文件空间独立保留",
+  };
+}
+
+function publicStopBillingView(binding = {}) {
+  const releasedAt = text(binding.releasedAt);
+  const billingStoppedAt = text(binding.billingStoppedAt || releasedAt);
+  return {
+    status: releasedAt ? text(binding.stopBillingStatus || "billing_stopped") : "active_billing",
+    billingStoppedAt,
+    billingStopConfirmBy: text(binding.billingStopConfirmBy),
+    confirmWithinMinutes: 120,
+  };
+}
+
+function publicAuditStatusView(binding = {}) {
+  const releasedAt = text(binding.releasedAt);
+  return {
+    status: text(binding.auditStatus || (releasedAt ? "audit_pending" : "not_started")),
+    auditReadyAt: text(binding.auditReadyAt),
+    policy: "T+1",
+  };
+}
+
 function publicManagedEnvironmentResourceView(binding = {}) {
   const computeResource = binding.computeInstance ? publicComputeResourceView(binding.computeInstance) : null;
   const fileSpace = binding.storageBucket ? publicFileSpaceResourceView(binding.storageBucket) : null;
@@ -198,6 +229,9 @@ function publicManagedEnvironmentResourceView(binding = {}) {
     computeResource,
     fileSpace,
     protection,
+    releasePolicy: publicReleasePolicyView(binding),
+    stopBilling: publicStopBillingView(binding),
+    auditStatus: publicAuditStatusView(binding),
     createdAt: text(binding.createdAt),
     updatedAt: text(binding.updatedAt),
   };

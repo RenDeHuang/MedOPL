@@ -4,12 +4,14 @@ import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mj
 
 const resourcesViewPath = "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx";
 const resourcesSurfacePath = "services/portal/frontend/src/app/data/portalAdapters.ts";
+const resourcesLifecyclePath = "services/portal/frontend/src/app/data/portalRuntimeEnvironmentLifecycle.ts";
 
 const resourcesView = await readFile(resourcesViewPath, "utf8");
 const resourcesSurface = await readFile(resourcesSurfacePath, "utf8");
+const resourcesLifecycle = await readFile(resourcesLifecyclePath, "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
 const routesSource = await readFile("services/portal/frontend/src/app/routes.tsx", "utf8");
-const resourcesSurfaceSources = `${resourcesView}\n${resourcesSurface}\n${layoutSource}\n${routesSource}`;
+const resourcesSurfaceSources = `${resourcesView}\n${resourcesSurface}\n${resourcesLifecycle}\n${layoutSource}\n${routesSource}`;
 
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);

@@ -53,6 +53,27 @@ export interface WorkspaceBindingAccess {
   workspaceOutputs: WorkspaceBindingAccessGate;
 }
 
+export interface ManagedEnvironmentReleasePolicy {
+  status: string;
+  releasedAt?: string;
+  billingStopConfirmBy?: string;
+  stopBillingConfirmWithinMinutes: number;
+  protection: string;
+}
+
+export interface ManagedEnvironmentStopBilling {
+  status: string;
+  billingStoppedAt?: string;
+  billingStopConfirmBy?: string;
+  confirmWithinMinutes: number;
+}
+
+export interface ManagedEnvironmentAuditStatus {
+  status: string;
+  auditReadyAt?: string;
+  policy: string;
+}
+
 export interface ManagedEnvironmentResource {
   workspaceId: string;
   status: string;
@@ -60,6 +81,9 @@ export interface ManagedEnvironmentResource {
   computeResource?: ManagedComputeResource | null;
   fileSpace?: ManagedFileSpaceResource | null;
   protection?: ManagedEnvironmentProtection | null;
+  releasePolicy?: ManagedEnvironmentReleasePolicy | null;
+  stopBilling?: ManagedEnvironmentStopBilling | null;
+  auditStatus?: ManagedEnvironmentAuditStatus | null;
   createdAt?: string;
   updatedAt?: string;
 }
