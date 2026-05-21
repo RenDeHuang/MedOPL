@@ -63,7 +63,7 @@ landed 后的记录还必须补齐：
 
 ### 2026-05-21 cleanup/v22-engineering-flow-closure
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/v22-engineering-flow-closure`
 
@@ -145,6 +145,24 @@ Next recommendation:
 - B should fresh review this branch, rerun docs-engineering-loop and current entrypoint, then decide whether to ff-only land.
 - A later Portal refactor branch should split `services/portal/src/app/portal-runtime.mjs` fan-out before adding broad Portal surface files.
 
+landed_commit: `f1272a607589fe55fccf59c3dc7fa7574d62030f`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-verify.mjs current --branch cleanup/v22-engineering-flow-closure --base origin/recovery/platform-v22-trunk --json passed after npm --prefix services/portal ci
+- node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk passed
+- node scripts/v22-repo-bloat-audit.mjs --json passed
+- node tests/health/health-check-v22-workflow-command-reference-gate.mjs passed
+- git diff --check -- docs tests scripts package.json .github services/portal/src passed
+- forbidden path diff empty
+- added-lines secret value scan empty
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 ### 2026-05-21 cleanup/v22-opl-framework-workflow-convergence
 
 Status: `landed / pushed / post-push verified`
