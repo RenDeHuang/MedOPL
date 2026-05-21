@@ -176,14 +176,23 @@ assert(productSuite, "product_engineering_loop_suite_missing");
 assert(productSuite.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "product_loop_suite_must_run_index_gate");
 
 const branchOverride = manifest.branch_override_suites.find((suite) => suite.id === "product-engineering-loop-index");
-assert(branchOverride, "product_engineering_loop_branch_override_missing");
-assert(branchOverride.branches.includes("feat/v22-product-engineering-loop-index"), "product_engineering_loop_branch_override_branch_missing");
-assert(branchOverride.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "product_engineering_loop_branch_override_must_run_gate");
-for (const forbiddenFile of ["services/*", "deploy/*", "adapters/*", ".sentrux/*", "infra/*", "one-person-lab/*", "upstream/*", ".runtime/*"]) {
-  assert(branchOverride.forbidden_files.includes(forbiddenFile), `product_engineering_loop_branch_override_forbidden_file_missing:${forbiddenFile}`);
-}
-for (const forbiddenOp of [...requiredForbiddenOps, "services-implementation", "git-push"]) {
-  assert(branchOverride.forbidden_ops.includes(forbiddenOp), `product_engineering_loop_branch_override_forbidden_op_missing:${forbiddenOp}`);
+if (loop.status === "closed") {
+  assert.equal(branchOverride, undefined, "product_engineering_loop_branch_override_must_be_removed_after_closeout");
+  assert.equal(
+    manifest.branch_override_suites.some((suite) => suite.id === "product-engineering-loop-index"),
+    false,
+    "product_engineering_loop_closed_state_must_not_keep_branch_override",
+  );
+} else {
+  assert(branchOverride, "product_engineering_loop_branch_override_missing");
+  assert(branchOverride.branches.includes("feat/v22-product-engineering-loop-index"), "product_engineering_loop_branch_override_branch_missing");
+  assert(branchOverride.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "product_engineering_loop_branch_override_must_run_gate");
+  for (const forbiddenFile of ["services/*", "deploy/*", "adapters/*", ".sentrux/*", "infra/*", "one-person-lab/*", "upstream/*", ".runtime/*"]) {
+    assert(branchOverride.forbidden_files.includes(forbiddenFile), `product_engineering_loop_branch_override_forbidden_file_missing:${forbiddenFile}`);
+  }
+  for (const forbiddenOp of [...requiredForbiddenOps, "services-implementation", "git-push"]) {
+    assert(branchOverride.forbidden_ops.includes(forbiddenOp), `product_engineering_loop_branch_override_forbidden_op_missing:${forbiddenOp}`);
+  }
 }
 
 const currentSuite = manifest.suites.find((suite) => suite.id === "current");
@@ -203,6 +212,10 @@ assertIncludes(active, "precloud-product-slides-closure", "active_must_name_prec
 assertIncludes(active, "inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit", "active_must_define_product_lifecycle");
 assertIncludes(active, "active baton", "active_must_define_product_loop_as_baton");
 assertIncludes(active, "collapse to history summary and next cursor", "active_must_define_product_loop_collapse");
+if (loop.status === "closed") {
+  assertIncludes(history, "slide-09-precloud-readiness", "history_must_record_slide_09_closeout");
+  assertIncludes(history, "real-cloud-authorization-boundary", "history_must_record_precloud_next_cursor");
+}
 assertIncludes(history, "Product Engineering Loop", "history_must_record_product_loop_index");
 assertIncludes(history, "collapse policy", "history_must_record_product_loop_collapse_policy");
 
