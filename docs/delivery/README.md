@@ -7,9 +7,9 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `leaf-run-artifact-trace-closure`。它要求 run、artifact 和 trace metadata backflow 本地闭合，Portal 只能显示 owner-scoped real local state，不能泄漏 raw token、raw provider key 或后端存储细节。
+当前 product cursor 是 `leaf-admin-ops-closure`。它要求 admin views 显示 audit-backed local projection，disabled/future-authorized operations 不能表现为可执行能力，ops exceptions 必须本地可见且不触发真实云 mutation。
 
-最近 landed 的 `feat/v22-slide-06-opl-entry-runtime` 已关闭 Portal launch id、providerKeyRef、workspace session、runtime session 和 public launch payload 边界本地闭环；slide-07 必须继续保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression 和 slide-06 OPL entry runtime regression 作为防回归命令。
+最近 landed 的 `feat/v22-slide-07-run-artifact-trace` 已关闭 owner-scoped run/artifact/trace metadata backflow、runtimeTrace summary、trace owner filter 和 no frontend fallback truth 本地闭环；slide-08 必须继续保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression 和 slide-07 run/artifact/trace regression 作为防回归命令。
 
 每个 product slide 仍按清退生命周期执行：先删除或吸收旧 fake/demo/alias surface，再由 eval、implementation、verify、landing gate 和 post-merge closeout 推进 cursor。
 

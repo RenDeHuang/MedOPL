@@ -8,44 +8,45 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "abc1071eecd7d75f8b436e12502382098ace98d3",
-  "current_branch": "feat/v22-slide-07-run-artifact-trace",
+  "base_trunk_head": "eec977b4e654837df0ea02c13c48437e587aa548",
+  "current_branch": "feat/v22-slide-08-admin-ops",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-07-run-artifact-trace",
+  "authoring_branch": "feat/v22-slide-08-admin-ops",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "abc1071eecd7d75f8b436e12502382098ace98d3",
-  "current_cursor": "leaf-run-artifact-trace-closure",
-  "next_leaf": "leaf-run-artifact-trace-closure",
+  "last_landed_commit": "eec977b4e654837df0ea02c13c48437e587aa548",
+  "current_cursor": "leaf-admin-ops-closure",
+  "next_leaf": "leaf-admin-ops-closure",
   "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "run_artifact_trace_closure_requires_owner_scoped_runtime_records_and_portal_trace_projection"
+    "admin_ops_projection_requires_audit_backed_local_state_and_disabled_future_authorized_boundaries"
   ],
-  "current_problem": "slide-06 OPL entry runtime landed at abc1071eecd7d75f8b436e12502382098ace98d3. The active product baton is slide-07 run artifact trace closure; run, artifact and trace metadata backflow must close locally so Portal displays owner-scoped real local state without raw tokens or secrets.",
+  "current_problem": "slide-07 run artifact trace landed at eec977b4e654837df0ea02c13c48437e587aa548. The active product baton is slide-08 admin ops local projection closure; admin views must show audit-backed local projection, disabled/future-authorized operations cannot appear executable, and ops exceptions must remain locally visible without real cloud mutation.",
   "gaps": [
     {
-      "id": "run-artifact-trace-closure",
+      "id": "admin-ops-closure",
       "stage": "S5 frontend/backend product completion",
-      "priority": 74,
+      "priority": 75,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-run-artifact-trace-closure",
+      "next_leaf_step": "leaf-admin-ops-closure",
       "depends_on": [
         "portal-postgres-redis-local-production-data-closure",
         "portal-api-real-data-closure",
         "account-wallet-billing-closure",
         "workspace-files-closure",
         "resource-lifecycle-closure",
-        "opl-entry-runtime-closure"
+        "opl-entry-runtime-closure",
+        "run-artifact-trace-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-run-artifact-trace-closure",
-    "gap_id": "run-artifact-trace-closure",
+    "step_id": "leaf-admin-ops-closure",
+    "gap_id": "admin-ops-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
-    "problem": "Run, artifact and trace metadata backflow are not fully closed locally yet.",
+    "problem": "Admin and ops local projections are not fully closed with audit-backed state and disabled/future-authorized operation boundaries yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
@@ -68,6 +69,9 @@
       "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
       "node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
       "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
+      "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
+      "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -91,12 +95,9 @@
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/opl-runtime-bridge/src/state-store-*records.mjs",
-      "services/opl-runtime-bridge/src/state-store-record-field-groups.mjs",
-      "services/portal/src/domain/session-traces.mjs",
-      "services/portal/src/app/portal-session-trace-payloads.mjs",
-      "services/portal/src/routes/*sessions*",
-      "services/portal/frontend/src/api/portal/traces.ts",
+      "services/portal/src/app/portal-admin-api-payloads.mjs",
+      "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+      "services/portal/frontend/src/app/pages/admin/*",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
@@ -162,6 +163,9 @@
     "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
     "node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
     "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
+    "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
+    "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -200,9 +204,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-06-opl-entry-runtime",
+  "last_landed_branch": "feat/v22-slide-07-run-artifact-trace",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-06-opl-entry-runtime",
+  "history_latest_branch": "feat/v22-slide-07-run-artifact-trace",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -217,7 +221,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-07-run-artifact-trace",
+    "active_slide": "slide-08-admin-ops",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -856,7 +860,7 @@
       },
       {
         "order": 7,
-        "status": "active",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -935,11 +939,16 @@
               "Portal displays trace metadata from local API without secret leakage"
             ]
           }
-        ]
+        ],
+        "landed_commit": "eec977b4e654837df0ea02c13c48437e587aa548",
+        "landed_branch": "feat/v22-slide-07-run-artifact-trace",
+        "closed_at": "2026-05-22",
+        "history_summary": "slide-07 closed owner-scoped run/artifact/trace metadata backflow: Portal trace payloads now expose runtimeTrace summaries from runtime bridge canonical metadata, filter explicit non-owner artifact/trace records, and avoid exposing runId/token/storage/private owner fields or front-end fallback truth.",
+        "next_cursor": "leaf-admin-ops-closure"
       },
       {
         "order": 8,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",
