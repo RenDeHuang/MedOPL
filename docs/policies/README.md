@@ -59,6 +59,8 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post
 - `scripts/` 只保 runner、classifier、workflow gate，以及当前仍被 services 引用的 workspace-to-minio sync helper。
 - 已通过 landing gate 并 push 的 leaf 不能长期保持 `ready_for_landing_review`；必须执行 post-merge closeout。
 - current cursor 不能停在已完成 leaf，也不能把 `future-authorized`、真实云、deploy、live-test 或 release readiness 标成 cursor-eligible，除非用户单独授权。
+- slide 可以有组件、API、数据、UI 或测试子任务，但这些子任务只能存在于代码、tests、fixtures、manifest 或 history closeout 摘要中；不得新增 per-slide docs、subslide docs、shadow archive 或未注册测试。
+- slide authoring branch 提交前必须跑 `npm run test:fast` 和 `npm run test:lanes`，用 repo bloat、lane registry、product-loop preflight 和 health gate 防止 docs/tests/scripts 在产品实现中再次膨胀。
 
 ## Current Sources
 

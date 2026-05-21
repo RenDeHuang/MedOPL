@@ -251,6 +251,22 @@
           "product_engineering_loop exists in goal-current",
           "all slides have owner_surface cleanup_targets eval_commands done_when and lifecycle",
           "product loop gate is registered in current local-contract and review"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "machine-index",
+            "owner_surface": "tests/fixtures/v22/goal-current.json",
+            "allowed_files": [
+              "tests/fixtures/v22/goal-current.json"
+            ],
+            "eval_commands": [
+              "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"
+            ],
+            "done_when": [
+              "slide order lifecycle eval and closeout policy are machine-readable"
+            ]
+          }
         ]
       },
       {
@@ -300,6 +316,53 @@
           "missing connection or schema fails closed",
           "Redis is not used as a fact source",
           "JSON fallback is not used in postgres_redis"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "postgres-canonical-store",
+            "owner_surface": "services/portal/src/storage/*",
+            "allowed_files": [
+              "services/portal/src/storage/*",
+              "services/portal/src/migrations/*",
+              "services/portal/src/config/*"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
+            ],
+            "done_when": [
+              "postgres_redis mode fails closed without PostgreSQL connectivity and schema"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "redis-coordination-only",
+            "owner_surface": "services/portal/src/state/*",
+            "allowed_files": [
+              "services/portal/src/state/*",
+              "services/portal/src/config/*"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
+            ],
+            "done_when": [
+              "Redis is only session cache queue lock or coordination and never fact source"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "json-fallback-retirement",
+            "owner_surface": "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+            "allowed_files": [
+              "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
+            ],
+            "done_when": [
+              "JSON fallback is impossible under PORTAL_STORAGE_MODE=postgres_redis"
+            ]
+          }
         ]
       },
       {
@@ -349,6 +412,37 @@
           "Portal visible state comes from typed API clients or server state",
           "no product page constructs business truth locally",
           "local API action closure remains green"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "typed-api-clients",
+            "owner_surface": "services/portal/frontend/src/api/portal/*",
+            "allowed_files": [
+              "services/portal/frontend/src/api/portal/*"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs"
+            ],
+            "done_when": [
+              "page data comes from typed Portal API clients"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "component-real-state",
+            "owner_surface": "services/portal/frontend/src/app/pages/*",
+            "allowed_files": [
+              "services/portal/frontend/src/app/pages/*",
+              "services/portal/frontend/src/app/data/*"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs"
+            ],
+            "done_when": [
+              "components do not construct business truth locally"
+            ]
+          }
         ]
       },
       {
@@ -399,6 +493,38 @@
           "balance and frozen amount have owner-scoped ledger evidence",
           "billing payloads link to account workspace and resource context",
           "audit state is locally queryable"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "wallet-ledger",
+            "owner_surface": "services/portal/src/domain/wallet-ledger.mjs",
+            "allowed_files": [
+              "services/portal/src/domain/*",
+              "services/portal/src/app/portal-page-billing-payloads.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs"
+            ],
+            "done_when": [
+              "balance frozen amount and ledger are owner-scoped"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "billing-api-display",
+            "owner_surface": "services/portal/frontend/src/api/portal/billing.ts",
+            "allowed_files": [
+              "services/portal/frontend/src/api/portal/billing.ts",
+              "services/portal/frontend/src/app/pages/BillingAudit.tsx"
+            ],
+            "eval_commands": [
+              "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs"
+            ],
+            "done_when": [
+              "billing payloads connect account workspace resource and audit context"
+            ]
+          }
         ]
       },
       {
@@ -449,6 +575,37 @@
           "fileRef is the public product reference",
           "file space lifecycle is separate from compute lifecycle",
           "7 day protection semantics are preserved locally"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "file-ref-public-boundary",
+            "owner_surface": "services/portal/src/domain/portal-api-workspace-storage.mjs",
+            "allowed_files": [
+              "services/portal/src/domain/portal-api-workspace-storage.mjs",
+              "services/portal/frontend/src/api/portal/workspace.ts"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs"
+            ],
+            "done_when": [
+              "fileRef is public and objectKey localPath signedUrl stay backend only"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "file-space-lifecycle",
+            "owner_surface": "services/portal/src/domain/portal-file-space-management.mjs",
+            "allowed_files": [
+              "services/portal/src/domain/portal-file-space-management.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs"
+            ],
+            "done_when": [
+              "file space lifecycle remains separate from compute release lifecycle"
+            ]
+          }
         ]
       },
       {
@@ -500,6 +657,37 @@
           "compute release never deletes file space",
           "stop-billing check remains inside 120min window",
           "resource state has account workspace and governance owner"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "compute-release-semantics",
+            "owner_surface": "services/portal/src/domain/managed-environment-release-flow.mjs",
+            "allowed_files": [
+              "services/portal/src/domain/managed-environment-release-flow.mjs",
+              "services/portal/src/domain/platform-provisioned-resources.mjs"
+            ],
+            "eval_commands": [
+              "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs"
+            ],
+            "done_when": [
+              "compute release stops compute billing and never deletes file space"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "legacy-resource-route-retirement",
+            "owner_surface": "tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
+            "allowed_files": [
+              "tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
+            ],
+            "done_when": [
+              "legacy resource routes cannot return as primary product path"
+            ]
+          }
         ]
       },
       {
@@ -551,6 +739,38 @@
           "Portal entry or opl entry preflight is the visible path",
           "providerKeyRef not raw key is the frontend boundary",
           "runtime session state is local and auditable"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "entry-preflight",
+            "owner_surface": "services/opl-web-gateway/src/*",
+            "allowed_files": [
+              "services/opl-web-gateway/src/*",
+              "services/portal/src/app/portal-runtime-clients.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs"
+            ],
+            "done_when": [
+              "Portal entry and preflight are visible user paths"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "provider-keyref-boundary",
+            "owner_surface": "services/portal/src/domain/provider-secret-store.mjs",
+            "allowed_files": [
+              "services/portal/src/domain/provider-secret-store.mjs",
+              "services/opl-runtime-bridge/src/provider-secret-store.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs"
+            ],
+            "done_when": [
+              "providerKeyRef crosses frontend boundary without raw key exposure"
+            ]
+          }
         ]
       },
       {
@@ -602,6 +822,38 @@
           "run artifact and trace records are owner scoped",
           "Portal can display run and artifact metadata from local APIs",
           "trace metadata does not expose raw tokens or secrets"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "run-artifact-records",
+            "owner_surface": "services/opl-runtime-bridge/src/state-store-*records.mjs",
+            "allowed_files": [
+              "services/opl-runtime-bridge/src/state-store-*records.mjs"
+            ],
+            "eval_commands": [
+              "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs"
+            ],
+            "done_when": [
+              "run and artifact records are owner scoped"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "portal-trace-projection",
+            "owner_surface": "services/portal/src/domain/session-traces.mjs",
+            "allowed_files": [
+              "services/portal/src/domain/session-traces.mjs",
+              "services/portal/src/app/portal-session-trace-payloads.mjs",
+              "services/portal/frontend/src/api/portal/traces.ts"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs"
+            ],
+            "done_when": [
+              "Portal displays trace metadata from local API without secret leakage"
+            ]
+          }
         ]
       },
       {
@@ -651,6 +903,38 @@
           "admin views show local projection and audit state",
           "disabled or future-authorized operations are not presented as executable",
           "ops exceptions are locally visible"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "admin-local-projection",
+            "owner_surface": "services/portal/src/app/portal-admin-api-payloads.mjs",
+            "allowed_files": [
+              "services/portal/src/app/portal-admin-api-payloads.mjs",
+              "services/portal/frontend/src/app/pages/admin/*"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs"
+            ],
+            "done_when": [
+              "admin views show audit-backed local projection"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "disabled-operation-boundary",
+            "owner_surface": "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+            "allowed_files": [
+              "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+              "services/portal/frontend/src/app/pages/admin/*"
+            ],
+            "eval_commands": [
+              "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs"
+            ],
+            "done_when": [
+              "disabled or future-authorized operations are not shown as executable"
+            ]
+          }
         ]
       },
       {
@@ -706,9 +990,46 @@
           "slide details only remain in docs/history summary and git history",
           "current verify and product-loop suite pass",
           "next cursor is a separately authorized real-cloud boundary and cannot run by default"
+        ],
+        "subtask_surfaces": [
+          {
+            "permanent_doc_allowed": false,
+            "id": "loop-collapse",
+            "owner_surface": "tests/fixtures/v22/goal-current.json",
+            "allowed_files": [
+              "tests/fixtures/v22/goal-current.json",
+              "tests/fixtures/v22/agent-verify-manifest.json",
+              "docs/history/README.md"
+            ],
+            "eval_commands": [
+              "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json"
+            ],
+            "done_when": [
+              "open slide details collapse to closed summary and next cursor"
+            ]
+          },
+          {
+            "permanent_doc_allowed": false,
+            "id": "real-cloud-boundary-handoff",
+            "owner_surface": "docs/active/README.md",
+            "allowed_files": [
+              "docs/active/README.md",
+              "docs/history/README.md"
+            ],
+            "eval_commands": [
+              "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json"
+            ],
+            "done_when": [
+              "next cursor is real cloud authorization boundary and cannot run by default"
+            ]
+          }
         ]
       }
-    ]
+    ],
+    "no_per_slide_docs": true,
+    "no_slide_subtask_docs": true,
+    "no_unregistered_slide_tests": true,
+    "slide_subtasks_policy": "subtasks_may_exist_only_as_code_tests_fixture_tasks_or_history_closeout_summary"
   },
   "test_lifecycle_cleanup_gate": {
     "schema_version": 1,

@@ -29,6 +29,8 @@ const expectedScripts = {
   "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
+  "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
+  "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
   "gate:review": "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
   "gate:contract": "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk",
   "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
@@ -72,6 +74,8 @@ for (const expected of [
   "npm run test:smoke",
   "npm run test:contract",
   "npm run test:regression",
+  "npm run test:fast",
+  "npm run test:lanes",
   "npm run verify:review",
   "npm run gate:review",
   "npm run gate:contract",
@@ -122,16 +126,40 @@ for (const command of [
   "npm run test:smoke",
   "npm run test:contract",
   "npm run test:regression",
+  "npm run test:fast",
+  "npm run test:lanes",
   "npm run gate:review",
   "npm run gate:contract",
   "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
   "npm run verify:product-loop",
+  "npm run test:fast",
+  "npm run test:lanes",
   "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
 ]) {
   assert(packageSuite.commands.includes(command), `root_verify_package_suite_command_missing:${command}`);
 }
+
+const preSlideFastSuite = manifest.package_suites.find((suite) => suite.id === "pre-slide-fast");
+assert(preSlideFastSuite, "pre_slide_fast_package_suite_missing");
+assert.deepEqual(preSlideFastSuite.commands, [
+  "node scripts/v22-repo-hygiene.mjs",
+  "node scripts/v22-repo-bloat-audit.mjs --json",
+  "node scripts/v22-line-budget.mjs",
+  "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+  "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+  "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+], "pre_slide_fast_package_suite_commands_mismatch");
+
+const testLanesSuite = manifest.package_suites.find((suite) => suite.id === "test-lanes");
+assert(testLanesSuite, "test_lanes_package_suite_missing");
+assert.deepEqual(testLanesSuite.commands, [
+  "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+  "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+  "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+  "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+], "test_lanes_package_suite_commands_mismatch");
 
 const docsEngineeringLoopSuite = manifest.package_suites.find((suite) => suite.id === "docs-engineering-loop");
 assert(docsEngineeringLoopSuite, "docs_engineering_loop_package_suite_missing");

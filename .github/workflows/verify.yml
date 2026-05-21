@@ -35,6 +35,8 @@ jobs:
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:health
       - run: npm run test:health
+      - run: npm run test:lanes
+      - run: npm run test:fast
 
   smoke:
     runs-on: ubuntu-latest
@@ -127,3 +129,4 @@ jobs:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:product-loop
+      - run: npm run test:lanes

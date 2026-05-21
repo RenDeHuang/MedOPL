@@ -28,6 +28,9 @@ for (const expected of [
   "servicesPortalBytes",
   "largestAreas",
   "bloat_budget",
+  "slideBloatGuards",
+  "forbiddenSlideDocPatterns",
+  "allowedDocsMarkdownFiles",
 ]) {
   assert(scriptSource.includes(expected), `repo_bloat_audit_source_missing:${expected}`);
 }
@@ -46,6 +49,11 @@ assert(payload.largestAreas.some((area) => area.path === "tests/regression/porta
 assert(payload.largestAreas.some((area) => area.path === "services/portal"), "repo_bloat_audit_must_surface_largest_service_area");
 assert(payload.notes.includes("tests/regression/portal is the largest test area; split by product surface before adding broad regression files."), "repo_bloat_audit_must_report_regression_portal_pressure");
 assert(payload.notes.includes("services/portal is the largest source area; add broad portal surface files only with a dedicated product-surface split."), "repo_bloat_audit_must_report_services_portal_pressure");
+assert(payload.slideBloatGuards, "repo_bloat_audit_must_report_slide_bloat_guards");
+assert.equal(payload.slideBloatGuards.noPerSlideDocs, true, "repo_bloat_audit_must_forbid_per_slide_docs");
+assert.equal(payload.slideBloatGuards.noSlideSubtaskDocs, true, "repo_bloat_audit_must_forbid_slide_subtask_docs");
+assert.equal(payload.slideBloatGuards.noUnregisteredTests, true, "repo_bloat_audit_must_forbid_unregistered_tests");
+assert(Array.isArray(payload.slideBloatGuards.allowedDocsMarkdownFiles), "repo_bloat_audit_must_report_allowed_docs_markdown");
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");
 assert(suite, "repo_hygiene_suite_missing");

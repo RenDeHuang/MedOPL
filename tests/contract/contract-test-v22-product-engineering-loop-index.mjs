@@ -87,6 +87,10 @@ assert.equal(loop.verify_manifest_file, "tests/fixtures/v22/agent-verify-manifes
 assert.equal(loop.history_file, "docs/history/README.md", "product_engineering_loop_history_file_mismatch");
 assert.equal(loop.no_new_slide_docs, true, "product_engineering_loop_must_forbid_slide_docs");
 assert.equal(loop.no_compatibility_layers, true, "product_engineering_loop_must_forbid_compat_layers");
+assert.equal(loop.no_per_slide_docs, true, "product_engineering_loop_must_forbid_per_slide_docs");
+assert.equal(loop.no_slide_subtask_docs, true, "product_engineering_loop_must_forbid_slide_subtask_docs");
+assert.equal(loop.no_unregistered_slide_tests, true, "product_engineering_loop_must_forbid_unregistered_slide_tests");
+assert.equal(loop.slide_subtasks_policy, "subtasks_may_exist_only_as_code_tests_fixture_tasks_or_history_closeout_summary", "product_engineering_loop_subtasks_policy_mismatch");
 assert.deepEqual(loop.lifecycle, expectedLifecycle, "product_engineering_loop_lifecycle_mismatch");
 
 assert.equal(loop.active_detail_retention, "open_only", "product_engineering_loop_active_detail_retention_must_be_open_only");
@@ -128,11 +132,25 @@ if (loop.status === "closed") {
     assert(slide.goal, `slide_missing_goal:${slide.id}`);
     assert(Array.isArray(slide.owner_surface) && slide.owner_surface.length > 0, `slide_missing_owner_surface:${slide.id}`);
     assert(Array.isArray(slide.cleanup_targets) && slide.cleanup_targets.length > 0, `slide_missing_cleanup_targets:${slide.id}`);
+    assert(Array.isArray(slide.subtask_surfaces), `slide_missing_subtask_surfaces:${slide.id}`);
     assert(Array.isArray(slide.eval_commands) && slide.eval_commands.length > 0, `slide_missing_eval_commands:${slide.id}`);
     assert(Array.isArray(slide.done_when) && slide.done_when.length > 0, `slide_missing_done_when:${slide.id}`);
     assertArrayIncludesAll(slide.lifecycle, expectedLifecycle, `slide_lifecycle:${slide.id}`);
     assertArrayIncludesAll(slide.forbidden_ops, requiredForbiddenOps, `slide_forbidden_ops:${slide.id}`);
     assert.equal(slide.status, index === 0 ? "indexed" : "pending", `slide_status_mismatch:${slide.id}`);
+    for (const subtask of slide.subtask_surfaces) {
+      assert(subtask.id, `slide_subtask_missing_id:${slide.id}`);
+      assert(subtask.owner_surface, `slide_subtask_missing_owner_surface:${slide.id}:${subtask.id}`);
+      assert(Array.isArray(subtask.allowed_files), `slide_subtask_missing_allowed_files:${slide.id}:${subtask.id}`);
+      assert(Array.isArray(subtask.eval_commands), `slide_subtask_missing_eval_commands:${slide.id}:${subtask.id}`);
+      assert(Array.isArray(subtask.done_when), `slide_subtask_missing_done_when:${slide.id}:${subtask.id}`);
+      assert.equal(subtask.permanent_doc_allowed, false, `slide_subtask_must_not_allow_permanent_doc:${slide.id}:${subtask.id}`);
+      for (const command of subtask.eval_commands) {
+        assert(command.startsWith("node ") || command.startsWith("npm "), `slide_subtask_eval_command_must_be_local:${slide.id}:${subtask.id}:${command}`);
+        assert(!command.includes("kubectl"), `slide_subtask_eval_command_must_not_use_kubectl:${slide.id}:${subtask.id}:${command}`);
+        assert(!command.includes("git push"), `slide_subtask_eval_command_must_not_push:${slide.id}:${subtask.id}:${command}`);
+      }
+    }
     for (const command of slide.eval_commands) {
       assert(command.startsWith("node ") || command.startsWith("npm "), `slide_eval_command_must_be_local:${slide.id}:${command}`);
       assert(!command.includes("kubectl"), `slide_eval_command_must_not_use_kubectl:${slide.id}:${command}`);

@@ -34,6 +34,37 @@ const areaPrefixes = Object.freeze([
   "services/opl-runtime-bridge/",
 ]);
 
+const allowedDocsMarkdownFiles = Object.freeze([
+  "docs/README.md",
+  "docs/active/README.md",
+  "docs/product/README.md",
+  "docs/runtime/README.md",
+  "docs/specs/README.md",
+  "docs/policies/README.md",
+  "docs/delivery/README.md",
+  "docs/source/README.md",
+  "docs/public/README.md",
+  "docs/references/README.md",
+  "docs/history/README.md",
+]);
+
+const forbiddenSlideDocPatterns = Object.freeze([
+  /^docs\/slides\//u,
+  /^docs\/slide[-/]/u,
+  /^docs\/active\/slide[-/]/u,
+  /^docs\/product\/slide[-/]/u,
+  /^docs\/.*\/slide-\d+/u,
+  /^docs\/.*\/subslide[-/]/u,
+]);
+
+const slideBloatGuards = Object.freeze({
+  noPerSlideDocs: true,
+  noSlideSubtaskDocs: true,
+  noUnregisteredTests: true,
+  allowedDocsMarkdownFiles,
+  forbiddenSlideDocPatterns: forbiddenSlideDocPatterns.map((pattern) => pattern.source),
+});
+
 function runGit(args) {
   const result = spawnSync("git", args, {
     cwd: repoRoot,
@@ -90,6 +121,17 @@ function bloatBudgetFindings(counts) {
   return findings;
 }
 
+function slideDocFindings(files) {
+  return files
+    .filter((file) => file.startsWith("docs/") && file.endsWith(".md"))
+    .filter((file) => !allowedDocsMarkdownFiles.includes(file) || forbiddenSlideDocPatterns.some((pattern) => pattern.test(file)))
+    .map((file) => ({
+      code: "slide_doc_bloat_forbidden",
+      file,
+      reason: "slide subtasks must live in code/tests/fixtures or history closeout summary, not permanent per-slide docs",
+    }));
+}
+
 const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"]);
 const counts = {
   docsMarkdownFiles: countMatching(tracked, (file) => file.startsWith("docs/") && file.endsWith(".md")),
@@ -100,7 +142,10 @@ const counts = {
   servicesPortalFiles: countMatching(tracked, (file) => file.startsWith("services/portal/")),
   servicesPortalBytes: tracked.filter((file) => file.startsWith("services/portal/")).reduce((total, file) => total + fileSize(file), 0),
 };
-const findings = bloatBudgetFindings(counts);
+const findings = [
+  ...bloatBudgetFindings(counts),
+  ...slideDocFindings(tracked),
+];
 const notes = [];
 
 if (counts.testsRegressionPortalFiles >= 24) {
@@ -119,6 +164,7 @@ const payload = {
   bloat_budget: "hard budgets count git-tracked plus non-ignored untracked files; this audit reports pressure and blocks only when budgets are exceeded.",
   budgets,
   counts,
+  slideBloatGuards,
   largestAreas: largestAreas(tracked),
   findings,
   notes,

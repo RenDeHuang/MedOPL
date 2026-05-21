@@ -322,7 +322,29 @@
         "npm run test:regression",
         "npm run gate:contract",
         "npm run closeout:check",
+        "npm run test:fast",
+        "npm run test:lanes",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs"
+      ]
+    },
+    {
+      "id": "test-lanes",
+      "commands": [
+        "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs"
+      ]
+    },
+    {
+      "id": "pre-slide-fast",
+      "commands": [
+        "node scripts/v22-repo-hygiene.mjs",
+        "node scripts/v22-repo-bloat-audit.mjs --json",
+        "node scripts/v22-line-budget.mjs",
+        "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json"
       ]
     },
     {

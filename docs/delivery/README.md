@@ -24,6 +24,8 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 ## Framework Entry Commands
 
 ```bash
+npm run test:fast
+npm run test:lanes
 npm run test:health
 npm run test:smoke
 npm run test:contract
@@ -32,6 +34,8 @@ npm run gate:contract
 npm run gate:review
 npm run closeout:check
 ```
+
+`test:fast` 是 slide 开发前置防膨胀入口：repo hygiene、repo bloat、line budget、lane registry、product-loop preflight 和 health gate 必须同时通过。`test:lanes` 是测试生命周期入口，专门防止 repo-local eval 游离、重复 wrapper 和 smoke 命名污染。
 
 ## Cloud / Deploy Sequence
 
