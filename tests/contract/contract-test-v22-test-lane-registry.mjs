@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,7 +25,17 @@ async function listTestFiles(dir = path.join(repoRoot, "tests"), prefix = "tests
   return files.sort();
 }
 
+async function readJson(repoPath) {
+  return JSON.parse(await readFile(path.join(repoRoot, repoPath), "utf8"));
+}
+
+function normalizeCommandTestFile(command) {
+  const match = String(command || "").match(/^node\s+(tests\/.+\.mjs)(?:\s|$)/u);
+  return match?.[1] || "";
+}
+
 const actualTestFiles = (await listTestFiles()).filter((file) => !file.startsWith("tests/fixtures/"));
+const manifest = await readJson("tests/fixtures/v22/agent-verify-manifest.json");
 assert.deepEqual(listRegisteredTestFiles(), actualTestFiles, "test_lane_registry_must_cover_every_test_file_once");
 assert.equal(TEST_LANE_REGISTRY.length, actualTestFiles.length, "registry_count_must_match_test_files");
 
@@ -47,6 +57,17 @@ for (const entry of TEST_LANE_REGISTRY) {
 for (const suite of ["health", "smoke", "local-contract", "current", "review"]) {
   assert(TEST_LANE_SUITES[suite], `registry_suite_missing:${suite}`);
 }
+
+const manifestSuitesById = new Map(manifest.suites.map((suite) => [suite.id, suite]));
+for (const suite of ["health", "local-contract", "review"]) {
+  const manifestFiles = manifestSuitesById.get(suite).commands.map(normalizeCommandTestFile).filter(Boolean).sort();
+  assert.deepEqual(manifestFiles, TEST_LANE_SUITES[suite], `manifest_suite_must_match_test_lane_registry:${suite}`);
+}
+const currentManifestFiles = manifestSuitesById.get("current").commands.map(normalizeCommandTestFile).filter(Boolean).sort();
+for (const file of TEST_LANE_SUITES.current) {
+  assert(currentManifestFiles.includes(file), `manifest_current_suite_missing_registry_file:${file}`);
+}
+assert(manifestSuitesById.get("smoke").commands.includes("node tests/contract/contract-test-v22-golden-smoke-suite.mjs"), "smoke_suite_must_use_golden_smoke_wrapper");
 
 assert.equal(
   TEST_LANE_REGISTRY.some((entry) => /categoryOf|surfaceOf|entryKindOf/u.test(JSON.stringify(entry))),

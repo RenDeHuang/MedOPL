@@ -13,6 +13,6 @@
     "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
     "line:budget": "node scripts/v22-line-budget.mjs",
     "check:diff": "git diff --check -- docs tests scripts package.json .github",
-    "verify:docs-engineering-loop": "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk && node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk && node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk && node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk && node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk && git diff --check -- docs tests scripts package.json .github"
+    "verify:docs-engineering-loop": "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk"
   }
 }
