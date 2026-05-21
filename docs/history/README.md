@@ -61,6 +61,101 @@ History 承接：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-opl-docs-engineering-loop-closure
+
+Status: `ready_for_b_review`
+
+Branch: `cleanup/v22-opl-docs-engineering-loop-closure`
+
+Base trunk HEAD: `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Heisenberg: `gpt-5.4`, read-only docs portfolio/lifecycle audit
+- subagent Mencius: `gpt-5.4`, read-only tests/scripts/test-lane/secret/repo-hygiene audit
+- subagent Erdos: `gpt-5.4`, read-only current development lines audit
+- subagent Gibbs: `gpt-5.4`, read-only repo hygiene and line-budget audit
+- subagent Carson: `gpt-5.4`, read-only package scripts and GitHub verify workflow audit
+- subagent Socrates: `gpt-5.4`, read-only history handoff audit
+
+Commits:
+
+- `6c15846 docs(v22): close OPL docs portfolio lifecycle`
+- `a3737eb docs(v22): register current development lines`
+- `25bbfdd test(v22): add explicit test lane registry`
+- `146b2e1 test(v22): harden review secret hygiene gate`
+- `3ca9334 test(v22): add repo hygiene line budget gate`
+- `358a768 ci(v22): add root verification entrypoints`
+- final handoff commit: records this A branch summary and B review packet.
+
+Scope:
+
+- Close the OPL-style docs portfolio lifecycle with a machine-checked document ledger and one current truth path.
+- Register current development lines without advancing the business cursor.
+- Replace test classification inference with explicit test lane registry coverage.
+- Harden review secret hygiene so B review checks forbidden paths, secret-like paths and effective added lines.
+- Add repo hygiene and line-budget gates with an explicit baseline for existing oversized service files.
+- Add root `package.json` scripts and GitHub verify workflow as standard engineering entrypoints that wrap existing v22 verify/gate commands.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-test-classification.mjs`
+- `scripts/v22-workflow-gate.mjs`
+
+Verification before handoff:
+
+- `node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node scripts/v22-verify.mjs package root-verify --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify:repo-hygiene`: pass.
+- `node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs tests scripts package.json .github`: pass.
+
+Non-goals:
+
+- No PostgreSQL/Redis implementation.
+- No services business code change.
+- No product cursor advancement.
+- No secret read, real cloud, build/push, kubectl, deploy or live-test.
+- No upstream modification.
+- No resurrection of retired contract, recovery or legacy script entrypoints.
+- No compatibility alias or second current truth.
+
+B review packet:
+
+- Review branch: `cleanup/v22-opl-docs-engineering-loop-closure`.
+- Review base: `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`.
+- Review focus: docs portfolio lifecycle, current development lines, explicit test lane registry, review secret hygiene, repo hygiene/line budget, root package scripts, GitHub verify workflow, and no services/forbidden-surface changes.
+- Verify: run `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs package root-verify --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts package.json .github`.
+- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, and run post-push verification.
+
+Risk notes:
+
+- `tests/fixtures/v22/line-budget-baseline.json` intentionally locks three pre-existing oversized service files; future growth fails until those files are split or the baseline is explicitly reviewed.
+- Root `package.json` and `.github/workflows/verify.yml` are local verification entrypoints only. They do not add build, deploy, kubectl, live-test, future-authorized or true-cloud execution.
+- Business cursor remains `leaf-portal-postgres-redis-local-production-data-closure`; this branch only hardens the loop that will govern that implementation.
+
+Next recommendation:
+
+- After B absorbs and records post-push closeout, return to `leaf-portal-postgres-redis-local-production-data-closure` as the next product implementation leaf.
+
 ### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity
 
 Status: `absorbed / pushed / post-push verified`
