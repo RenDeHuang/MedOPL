@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -36,6 +37,22 @@ const secretLikePathPatterns = [
   /token/i,
   /(?:^|\/)github$/i,
 ];
+
+const secretLikeAddedLinePatterns = [
+  /\bsk-[A-Za-z0-9_-]{20,}\b/,
+  /\bOPENAI_API_KEY\s*=\s*['"]?[^'"\s]{12,}/i,
+  /\b(?:SECRET_ID|SECRET_KEY|SECRETID|SECRETKEY|TENCENT_SECRET_ID|TENCENT_SECRET_KEY)\s*=\s*['"]?[^'"\s]{8,}/i,
+  /\b(?:BEARER|TOKEN|API_KEY|PRIVATE_KEY)\b\s*[:=]\s*['"]?[^'"\s]{12,}/i,
+  new RegExp(`-----BEGIN (?:RSA |OPENSSH |EC |DSA )?${["PRIVATE", "KEY"].join(" ")}-----`),
+  /\bkubeconfig\b\s*[:=]\s*['"]?[^'"\s]{8,}/i,
+];
+
+const reviewRequiredCommands = Object.freeze([
+  "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+  "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
+  "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+  "git diff --check -- docs tests scripts services",
+]);
 
 const packageDefinitions = {
   "portal-ui": {
@@ -256,6 +273,26 @@ function originPushRemoteUrl() {
   return runGit(["remote", "get-url", "--push", "origin"], { fallback: "" });
 }
 
+function addedLinesSince(base) {
+  const effectiveDiff = runGit(["diff", "--unified=0", base], { fallback: "" });
+  const untrackedFiles = runGit(["ls-files", "--others", "--exclude-standard"], { fallback: "" })
+    .split("\n")
+    .map(normalizePath)
+    .filter(Boolean);
+  const untrackedLines = untrackedFiles.flatMap((filePath) => {
+    try {
+      return readFileSync(path.join(repoRoot, filePath), "utf8").split("\n");
+    } catch {
+      return [];
+    }
+  });
+  return effectiveDiff
+    .split("\n")
+    .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
+    .map((line) => line.slice(1))
+    .concat(untrackedLines);
+}
+
 function isForbiddenPath(filePath) {
   const normalized = normalizePath(filePath);
   return forbiddenPathPatterns.some((pattern) => pattern.test(normalized));
@@ -264,6 +301,16 @@ function isForbiddenPath(filePath) {
 function isSecretLikePath(filePath) {
   const normalized = normalizePath(filePath);
   return secretLikePathPatterns.some((pattern) => pattern.test(normalized));
+}
+
+function secretLikeAddedLinesFrom(lines) {
+  return lines
+    .map((line, index) => ({ index: index + 1, line }))
+    .filter(({ line }) => secretLikeAddedLinePatterns.some((pattern) => pattern.test(line)))
+    .map(({ index, line }) => ({
+      index,
+      sample: line.length > 160 ? `${line.slice(0, 160)}...` : line,
+    }));
 }
 
 function isV22EvalPath(filePath) {
@@ -419,6 +466,7 @@ export function evaluateReview({
   changedFiles = changedFilesSince(base),
   branchName = currentBranchName(),
   changedStatuses = changedFileStatusesSince(base),
+  addedLines = addedLinesSince(base),
 } = {}) {
   const normalizedFiles = changedFiles.map(normalizePath).filter(Boolean);
   const authorizedCleanupDeletions = normalizedFiles.filter((file) =>
@@ -427,6 +475,7 @@ export function evaluateReview({
     isForbiddenPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikePaths = normalizedFiles.filter((file) =>
     isSecretLikePath(file) && !isV22EvalPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
+  const secretLikeAddedLines = secretLikeAddedLinesFrom(addedLines);
   const servicesChanged = normalizedFiles.some(isServicesPath);
   const contractsChanged = normalizedFiles.some(isContractPath);
   const evalChanged = normalizedFiles.some(isV22EvalPath);
@@ -446,6 +495,13 @@ export function evaluateReview({
       files: secretLikePaths,
     });
   }
+  if (secretLikeAddedLines.length > 0) {
+    findings.push({
+      code: "secret_like_added_line",
+      severity: "blocker",
+      matches: secretLikeAddedLines,
+    });
+  }
   if (servicesChanged && !evalChanged) {
     findings.push({
       code: "services_changed_without_v22_smoke_update",
@@ -461,9 +517,7 @@ export function evaluateReview({
     });
   }
 
-  const recommendedCommands = [
-    "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
-  ];
+  const recommendedCommands = [...reviewRequiredCommands];
   if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) {
     recommendedCommands.push("npm --prefix services/portal run check");
   }
@@ -488,6 +542,7 @@ export function evaluateReview({
     authorizedCleanupDeletions,
     forbiddenPaths,
     secretLikePaths,
+    secretLikeAddedLines,
     findings,
     recommendedCommands: unique(recommendedCommands),
   };
@@ -545,6 +600,7 @@ function renderReviewReport(review) {
     authorizedCleanupDeletions: review.authorizedCleanupDeletions,
     forbiddenPaths: review.forbiddenPaths,
     secretLikePaths: review.secretLikePaths,
+    secretLikeAddedLines: review.secretLikeAddedLines,
     findings: review.findings,
     recommendedCommands: review.recommendedCommands,
   }, null, 2)}\n`;

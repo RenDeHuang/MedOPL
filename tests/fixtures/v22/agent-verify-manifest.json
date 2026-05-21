@@ -175,6 +175,7 @@
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"
@@ -202,7 +203,8 @@
     {
       "id": "review",
       "commands": [
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs"
       ]
     }
   ],
@@ -221,6 +223,7 @@
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
