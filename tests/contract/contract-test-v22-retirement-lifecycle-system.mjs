@@ -7,10 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
 const lifecycleGate = "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs";
+const absorbCloseoutGate = "node tests/contract/contract-test-v22-absorb-closeout-automation.mjs";
 const hardRetirementCommit = "2a4254915f43186e312f406e5de31629c1c6700b";
 const lifecycleClosureCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
 const currentStateIndexLoopCommit = "2e644fc774e567db9418e3d13942e1598434433e";
-const latestAbsorbedCommit = "c66d8d86b05d0673d320d6798d9b4192deb8d4cd";
 
 function repoPath(...parts) {
   return parts.join("/");
@@ -100,6 +100,25 @@ function sectionAfter(source, heading) {
   return next >= 0 ? source.slice(start, next) : source.slice(start);
 }
 
+function parseHistorySections(history) {
+  const matches = [...history.matchAll(/^###\s+\d{4}-\d{2}-\d{2}\s+(.+)$/gmu)];
+  return matches.map((match, index) => {
+    const start = match.index;
+    const end = index + 1 < matches.length ? matches[index + 1].index : history.length;
+    const source = history.slice(start, end);
+    const branch = source.match(/^Branch:\s*`([^`]+)`/mu)?.[1] || match[1].trim();
+    const status = source.match(/^Status:\s*`([^`]+)`/mu)?.[1] || "";
+    const absorbedCommit = source.match(/^absorbed_commit:\s*`([a-f0-9]{40})`/mu)?.[1] || "";
+    return { branch, status, absorbedCommit, source };
+  });
+}
+
+function latestAbsorbedHistorySection(history) {
+  const section = parseHistorySections(history).find((item) => item.status === "absorbed / pushed / post-push verified" && item.absorbedCommit);
+  assert(section, "latest_absorbed_history_section_missing");
+  return section;
+}
+
 for (const repoPath of forbiddenPaths) {
   assert.equal(await exists(repoPath), false, `retired_path_must_not_exist:${repoPath}`);
 }
@@ -117,6 +136,7 @@ for (const dir of testsTaxonomyDirs) {
 const scriptFiles = await listFiles("scripts");
 assert.deepEqual(scriptFiles, [
   "scripts/sync-workspace-file-to-minio.ps1",
+  "scripts/v22-absorb-closeout.mjs",
   "scripts/v22-line-budget.mjs",
   "scripts/v22-repo-hygiene.mjs",
   "scripts/v22-test-classification.mjs",
@@ -144,6 +164,8 @@ const [
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
+const latestAbsorbed = latestAbsorbedHistorySection(history);
+const latestAbsorbedCommit = latestAbsorbed.absorbedCommit;
 
 assertIncludesAll(active, [
   "OPL-style 清退生命周期真相",
@@ -215,26 +237,39 @@ assertNotIncludes(indexLoopSection, "Status: `ready_for_b_review`", "history_abs
 const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity");
 assertIncludesAll(latestRunSection, [
   "Status: `absorbed / pushed / post-push verified`",
-  `absorbed_commit: \`${latestAbsorbedCommit}\``,
+  "absorbed_commit: `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`",
   "b_review_result: `passed / ff-only absorbed / pushed`",
   "post_absorb_truth_closeout: `completed`",
   "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
 ], "history_latest_closeout");
 assertNotIncludes(latestRunSection, "Status: `ready_for_b_review`", "history_absorbed_latest_run");
 
+assertIncludesAll(latestAbsorbed.source, [
+  "Status: `absorbed / pushed / post-push verified`",
+  `absorbed_commit: \`${latestAbsorbedCommit}\``,
+  "b_review_result: `passed / ff-only absorbed / pushed`",
+  "post_absorb_truth_closeout: `completed`",
+  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
+], "history_dynamic_latest_closeout");
+assertNotIncludes(latestAbsorbed.source, "Status: `ready_for_b_review`", "history_absorbed_dynamic_latest_run");
+
 assert.equal(current.current_cursor, "leaf-portal-postgres-redis-local-production-data-closure", "current_cursor_must_remain_business_leaf");
 assert.equal(current.next_leaf, "leaf-portal-postgres-redis-local-production-data-closure", "next_leaf_must_remain_business_leaf");
 assert.equal(current.last_absorbed_commit, latestAbsorbedCommit, "current_last_absorbed_commit_must_match_latest_closeout");
+assert.equal(current.last_absorbed_branch, latestAbsorbed.branch, "current_last_absorbed_branch_must_match_latest_closeout");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 
 const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);
 assert(currentLeaf, `manifest_current_leaf_missing:${current.current_cursor}`);
 assert(currentLeaf.verification_commands.includes(lifecycleGate), "current_leaf_must_run_lifecycle_gate");
+assert(currentLeaf.verification_commands.includes(absorbCloseoutGate), "current_leaf_must_run_absorb_closeout_gate");
 
 const currentSuite = manifest.suites.find((suite) => suite.id === "current");
 const localContractSuite = manifest.suites.find((suite) => suite.id === "local-contract");
 assert(currentSuite?.commands.includes(lifecycleGate), "current_suite_must_run_lifecycle_gate");
+assert(currentSuite?.commands.includes(absorbCloseoutGate), "current_suite_must_run_absorb_closeout_gate");
 assert(localContractSuite?.commands.includes(lifecycleGate), "local_contract_suite_must_run_lifecycle_gate");
+assert(localContractSuite?.commands.includes(absorbCloseoutGate), "local_contract_must_run_absorb_closeout_gate");
 assert(verifySource.includes("tests/fixtures/v22/agent-verify-manifest.json"), "verify_must_read_manifest_fixture");
 assert(verifySource.includes("tests/fixtures/v22/goal-current.json"), "verify_must_read_current_fixture");
 

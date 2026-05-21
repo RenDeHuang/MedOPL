@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,10 +19,10 @@ const files = {
   current: "tests/fixtures/v22/goal-current.json",
 };
 
-const latestAbsorbedCommit = "c66d8d86b05d0673d320d6798d9b4192deb8d4cd";
 const previousIndexLoopCommit = "2e644fc774e567db9418e3d13942e1598434433e";
 const currentCursor = "leaf-portal-postgres-redis-local-production-data-closure";
 const indexLoopGate = "node tests/contract/contract-test-v22-current-state-index-loop.mjs";
+const absorbCloseoutGate = "node tests/contract/contract-test-v22-absorb-closeout-automation.mjs";
 
 async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
@@ -40,6 +41,42 @@ function sectionAfter(source, heading) {
   assert(start >= 0, `section_missing:${heading}`);
   const next = source.indexOf("\n### ", start + heading.length);
   return next >= 0 ? source.slice(start, next) : source.slice(start);
+}
+
+function parseHistorySections(history) {
+  const matches = [...history.matchAll(/^###\s+\d{4}-\d{2}-\d{2}\s+(.+)$/gmu)];
+  return matches.map((match, index) => {
+    const start = match.index;
+    const end = index + 1 < matches.length ? matches[index + 1].index : history.length;
+    const source = history.slice(start, end);
+    const branch = source.match(/^Branch:\s*`([^`]+)`/mu)?.[1] || match[1].trim();
+    const status = source.match(/^Status:\s*`([^`]+)`/mu)?.[1] || "";
+    const absorbedCommit = source.match(/^absorbed_commit:\s*`([a-f0-9]{40})`/mu)?.[1] || "";
+    const nextCursor = source.match(/^next_cursor:\s*`([^`]+)`/mu)?.[1] || "";
+    return { branch, status, absorbedCommit, nextCursor, source };
+  });
+}
+
+function latestAbsorbedHistorySection(history) {
+  const section = parseHistorySections(history).find((item) => item.status === "absorbed / pushed / post-push verified" && item.absorbedCommit);
+  assert(section, "latest_absorbed_history_section_missing");
+  return section;
+}
+
+function assertAbsorbCloseoutCheckPasses() {
+  const result = spawnSync("node", [
+    "scripts/v22-absorb-closeout.mjs",
+    "check",
+    "--trunk-ref",
+    "origin/recovery/platform-v22-trunk",
+    "--json",
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `absorb_closeout_check_failed:${result.stderr || result.stdout}`);
+  return JSON.parse(result.stdout);
 }
 
 const [
@@ -64,6 +101,11 @@ const [
   readJson(files.current),
 ]);
 
+const latestAbsorbed = latestAbsorbedHistorySection(history);
+const closeoutCheck = assertAbsorbCloseoutCheckPasses();
+const latestAbsorbedCommit = latestAbsorbed.absorbedCommit;
+const latestAbsorbedBranch = latestAbsorbed.branch;
+
 assertIncludes(docsIndex, "../tests/README.md", "docs_index_must_link_tests_taxonomy");
 assertIncludes(docsIndex, "Truth Lookup", "docs_index_must_have_truth_lookup");
 assertIncludes(docsIndex, "docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor", "docs_index_must_define_loop");
@@ -81,6 +123,7 @@ for (const retired of [
 assertIncludes(active, "Index loop", "active_gap_matrix_must_include_index_loop");
 assertIncludes(active, indexLoopGate, "active_must_point_to_index_loop_gate");
 assertIncludes(active, latestAbsorbedCommit, "active_must_record_latest_absorbed_commit");
+assertIncludes(active, latestAbsorbedBranch, "active_must_record_latest_absorbed_branch");
 assertIncludes(active, currentCursor, "active_must_record_current_cursor");
 assertIncludes(delivery, currentCursor, "delivery_must_record_current_cursor");
 
@@ -110,15 +153,22 @@ assertIncludes(testsReadme, "docs 负责解释 truth，tests/fixtures/manifest �
 
 assert.equal(current.last_absorbed_commit, latestAbsorbedCommit, "current_last_absorbed_commit_mismatch");
 assert.equal(current.base_trunk_head, latestAbsorbedCommit, "current_base_trunk_head_mismatch");
+assert.equal(current.last_absorbed_branch, latestAbsorbedBranch, "current_last_absorbed_branch_mismatch");
+assert.equal(current.history_latest_branch, latestAbsorbedBranch, "current_history_latest_branch_mismatch");
+assert.equal(current.post_absorb_truth_closeout_completed, true, "current_post_absorb_closeout_must_be_completed");
 assert.equal(current.current_cursor, currentCursor, "current_cursor_mismatch");
 assert.equal(current.next_leaf, currentCursor, "next_leaf_mismatch");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
+assert.equal(closeoutCheck.lastAbsorbedCommit, latestAbsorbedCommit, "closeout_check_commit_mismatch");
+assert.equal(closeoutCheck.lastAbsorbedBranch, latestAbsorbedBranch, "closeout_check_branch_mismatch");
+assert.deepEqual(closeoutCheck.staleReadySections, [], "closeout_check_must_have_no_stale_ready_sections");
 
 const leaf = manifest.leaves.find((item) => item.leaf_id === current.current_cursor);
 assert(leaf, `manifest_current_leaf_missing:${current.current_cursor}`);
 assert.deepEqual(leaf.verification_commands, current.current_leaf.verification_commands, "current_leaf_commands_mismatch");
 assert(leaf.verification_commands.includes(indexLoopGate), "current_leaf_must_run_index_loop_gate");
 assert(leaf.verification_commands.includes("node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs"), "current_leaf_must_run_lifecycle_gate");
+assert(leaf.verification_commands.includes(absorbCloseoutGate), "current_leaf_must_run_absorb_closeout_gate");
 
 const currentSuite = manifest.suites.find((suite) => suite.id === "current");
 const localContractSuite = manifest.suites.find((suite) => suite.id === "local-contract");
@@ -129,9 +179,10 @@ assert(historyCloseoutSuite, "history_closeout_suite_missing");
 assert.deepEqual(currentSuite.commands, leaf.verification_commands, "current_suite_must_match_leaf_commands");
 assert(currentSuite.commands.includes(indexLoopGate), "current_suite_must_run_index_loop_gate");
 assert(localContractSuite.commands.includes(indexLoopGate), "local_contract_must_run_index_loop_gate");
-assert.deepEqual(historyCloseoutSuite.commands, [indexLoopGate], "history_closeout_suite_must_only_run_index_loop_gate");
+assert(localContractSuite.commands.includes(absorbCloseoutGate), "local_contract_must_run_absorb_closeout_gate");
+assert.deepEqual(historyCloseoutSuite.commands, [absorbCloseoutGate, indexLoopGate], "history_closeout_suite_must_run_absorb_and_index_loop_gates");
 
-const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity");
+const latestRunSection = latestAbsorbed.source;
 for (const expected of [
   "Status: `absorbed / pushed / post-push verified`",
   `absorbed_commit: \`${latestAbsorbedCommit}\``,
@@ -154,5 +205,6 @@ console.log(JSON.stringify({
   contract: "v22_current_state_index_loop",
   currentCursor,
   latestAbsorbedCommit,
+  latestAbsorbedBranch,
   gate: indexLoopGate,
 }, null, 2));

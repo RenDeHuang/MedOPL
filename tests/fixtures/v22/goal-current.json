@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-21",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "c66d8d86b05d0673d320d6798d9b4192deb8d4cd",
+  "base_trunk_head": "583da292aa32bf021697171f5b5cea1cfc693baf",
   "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
   "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_absorbed_commit": "c66d8d86b05d0673d320d6798d9b4192deb8d4cd",
+  "last_absorbed_commit": "583da292aa32bf021697171f5b5cea1cfc693baf",
   "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
   "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
   "current_stage": "S5 frontend/backend product completion",
@@ -21,7 +21,7 @@
   "current_blockers": [
     "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
   ],
-  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL-style post-absorb closeout and gate integrity branch was absorbed at c66d8d86b05d0673d320d6798d9b4192deb8d4cd and does not implement PostgreSQL/Redis.",
+  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL-style post-absorb closeout and gate integrity branch was absorbed at 583da292aa32bf021697171f5b5cea1cfc693baf and does not implement PostgreSQL/Redis.",
   "gaps": [
     {
       "id": "portal-postgres-redis-local-production-data-closure",
@@ -46,10 +46,15 @@
     "problem": "Local durable data truth is not closed yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+      "node tests/contract/contract-test-v22-absorb-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
       "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
       "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+      "node tests/contract/contract-test-v22-current-development-lines.mjs",
+      "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
+      "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+      "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
@@ -108,10 +113,15 @@
   },
   "verification_commands": [
     "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+    "node tests/contract/contract-test-v22-absorb-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
     "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
     "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+    "node tests/contract/contract-test-v22-current-development-lines.mjs",
+    "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
+    "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+    "node tests/contract/contract-test-v22-test-lane-registry.mjs",
     "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
@@ -131,5 +141,9 @@
     "docs/history/README.md",
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
-  ]
+  ],
+  "last_absorbed_branch": "cleanup/v22-opl-docs-engineering-loop-closure",
+  "last_absorbed_at": "2026-05-21",
+  "history_latest_branch": "cleanup/v22-opl-docs-engineering-loop-closure",
+  "post_absorb_truth_closeout_completed": true
 }
