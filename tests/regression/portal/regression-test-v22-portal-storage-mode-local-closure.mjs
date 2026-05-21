@@ -4,7 +4,7 @@ import http from "node:http";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const repoRoot = process.cwd();
@@ -125,6 +125,107 @@ async function queryPostgres({ postgresUrl, sql, values = [] }) {
   }
 }
 
+function fakeClient() {
+  return {
+    async query() {},
+    release() {},
+  };
+}
+
+async function assertPostgresPersistenceDoesNotWriteJsonMirror() {
+  const { writePortalPostgresSnapshot } = await import(path.join(
+    repoRoot,
+    "services",
+    "portal",
+    "src",
+    "state",
+    "portal-store-postgres-persistence.mjs",
+  ));
+  let jsonWriteCount = 0;
+  const redisWrites = [];
+  await writePortalPostgresSnapshot({
+    pool: {
+      async connect() {
+        return fakeClient();
+      },
+    },
+    redis: {
+      async keys() {
+        return [];
+      },
+      async mGet() {
+        return [];
+      },
+      async set(key, value) {
+        redisWrites.push({ key: String(key), value: String(value || "") });
+      },
+    },
+    pgTableName: (name) => `"portal_${name}"`,
+    namespace: "portal",
+    db: {
+      users: [],
+      wallets: [],
+      ledger: [],
+      taskSpaces: [],
+      storageOrders: [],
+      userComputeInstances: [],
+      userStorageBuckets: [],
+      workspaceResourceBindings: [],
+      weeklyProtectionFreezes: [],
+      workspaceFiles: [],
+      cloudOperations: [],
+      cloudOperationJobs: [],
+      computeAllocations: [],
+      fileSpaceEntitlements: [],
+      cloudResourceProjections: [],
+      billingReconciliations: [],
+      labSubscriptions: [],
+      labPackageEvents: [],
+      labStorageAddons: [],
+      labDailyCharges: [],
+      userSandboxes: [],
+      groups: [],
+      settings: {},
+      sessions: [{
+        id: "session-storage-mode",
+        userId: "user-storage-mode",
+        createdAt: "2026-05-21T00:00:00.000Z",
+      }],
+      workspaceSessions: [{
+        id: "workspace-session-storage-mode",
+        userId: "user-storage-mode",
+        workspaceId: "workspace-storage-mode-local",
+        workspaceTitle: "Storage Mode",
+        sessionType: "opl_session",
+        status: "active",
+        source: "portal-workspace-entry",
+        createdAt: "2026-05-21T00:00:00.000Z",
+        lastUsedAt: "2026-05-21T00:00:00.000Z",
+        expiresAt: "2026-05-22T00:00:00.000Z",
+      }],
+    },
+    normalizeLedgerEntries: (rows) => rows,
+    normalizeServerPlanSelection: (value) => value || {},
+    atomicWriteJson: async () => {
+      jsonWriteCount += 1;
+    },
+    dataFile: path.join(os.tmpdir(), "portal-db-json-mirror-forbidden.json"),
+  });
+  assert.equal(jsonWriteCount, 0, "postgres_persistence_must_not_write_json_mirror");
+  assert.deepEqual(
+    redisWrites.map((entry) => entry.key).sort(),
+    [
+      "portal:session:session-storage-mode",
+      "portal:workspace_session:workspace-session-storage-mode",
+    ],
+    "redis_must_only_store_session_coordination_keys",
+  );
+  assert(
+    redisWrites.every((entry) => !/"wallets"|"ledger"|"users"|"workspaceFiles"|"settings"/.test(entry.value)),
+    "redis_must_not_store_business_fact_snapshot",
+  );
+}
+
 async function login(baseUrl, email, password) {
   const response = await postForm(`${baseUrl}/login`, { email, password });
   assert.equal(response.status, 302, `login_must_redirect:${email}`);
@@ -206,6 +307,15 @@ async function ensurePortReachable(port) {
     });
     socket.once("error", () => resolve(false));
   });
+}
+
+async function exists(file) {
+  try {
+    await access(file);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function canRunPostgresRedisPositiveClosure({ runtimeRoot, postgresUrl, redisUrl }) {
@@ -474,6 +584,7 @@ async function expectFailClosedWithoutConnections({ runtimeRoot }) {
 }
 
 await assertRepoStorageContracts();
+await assertPostgresPersistenceDoesNotWriteJsonMirror();
 
 const postgresReachable = await ensurePortReachable(5432);
 const redisReachable = await ensurePortReachable(6379);
@@ -538,6 +649,11 @@ await withRuntime(async (runtimeRoot) => {
       `,
     });
     assert.equal(indexResult.rows.length, 5, "postgres_idempotency_unique_indexes_required");
+    assert.equal(
+      await exists(path.join(runtimeRoot, "portal-db.json")),
+      false,
+      "postgres_redis_must_not_mirror_business_truth_to_json",
+    );
   }
 });
 
@@ -555,12 +671,15 @@ console.log(JSON.stringify({
     "json_mode_idempotency_replay",
     "json_mode_restart_persistence",
     "postgres_redis_missing_connection_fail_closed",
+    "postgres_redis_persistence_no_json_mirror",
+    "postgres_redis_redis_coordination_only",
     ...(postgresReachable && redisReachable ? [
       "postgres_redis_schema_fail_closed",
       "postgres_redis_local_admin_action_closure",
       "postgres_redis_idempotency_replay",
       "postgres_redis_idempotency_unique_indexes",
       "postgres_redis_restart_persistence",
+      "postgres_redis_no_json_business_truth_mirror",
     ] : []),
   ],
   localServices: {

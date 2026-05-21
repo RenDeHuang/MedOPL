@@ -407,8 +407,6 @@ export async function writePortalPostgresSnapshot({
   db,
   normalizeLedgerEntries,
   normalizeServerPlanSelection,
-  atomicWriteJson,
-  dataFile,
 }) {
   const client = await pool.connect();
   try {
@@ -447,13 +445,6 @@ export async function writePortalPostgresSnapshot({
     sessions: db.sessions || [],
     workspaceSessions: db.workspaceSessions || [],
   });
-  await atomicWriteJson(dataFile, {
-    ...db,
-    sessions: mergedSessions,
-    workspaceSessions: mergedWorkspaceSessions,
-    _storage: {
-      mode: "postgres_redis",
-      mirroredAt: new Date().toISOString(),
-    },
-  });
+  db.sessions = mergedSessions;
+  db.workspaceSessions = mergedWorkspaceSessions;
 }
