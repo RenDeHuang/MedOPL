@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。下一业务 leaf 必须让 PostgreSQL 成为 local production data 的 canonical truth，让 Redis 只用于 session/cache/queue/lock。`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
 
-最近已通过 landing gate 的治理闭环是 `cleanup/v22-agents-lifecycle-alignment`，landed commit 为 `60761fffe1dd8ecc3ec3b123d48e5e747e9dc4df`。该治理分支把根层 `AGENTS.md` 收薄为 agent 协作纪律，并新增 `TASTE.md` 承接长期工程 taste；不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
+最近已通过 landing gate 的治理闭环是 `cleanup/v22-pre-slide-bloat-guardrails`，landed commit 为 `ee27d378ea81d1d2629b65fe332bacb24a12acaf`。该治理分支新增 `test:fast` / `test:lanes`，并把 pre-slide 防膨胀规则写入 repo bloat、product-loop fixture、CI、delivery 和 policy；不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
 
 当前已收敛的事实：
 
@@ -223,7 +223,7 @@ Current docs / eval surface during migration：
 
 ### current-stage-current-cursor
 
-Current evidence: latest landed governance closeout is `60761fffe1dd8ecc3ec3b123d48e5e747e9dc4df`; current machine cursor remains `leaf-portal-postgres-redis-local-production-data-closure`.
+Current evidence: latest landed governance closeout is `ee27d378ea81d1d2629b65fe332bacb24a12acaf`; current machine cursor remains `leaf-portal-postgres-redis-local-production-data-closure`.
 
 Gap: governance closeout is complete, but PostgreSQL/Redis local production data closure is still gated and not implemented.
 

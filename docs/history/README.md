@@ -61,6 +61,74 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 cleanup/v22-pre-slide-bloat-guardrails
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `cleanup/v22-pre-slide-bloat-guardrails`
+
+Base trunk HEAD: `4d27cfab8545dc767749955231557e7d9b7ede16`
+
+handoff_commit: `ee27d378ea81d1d2629b65fe332bacb24a12acaf`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagents: none
+
+Scope:
+
+- Add root `test:fast` and `test:lanes` package entrypoints and CI wiring.
+- Extend repo bloat guardrails to forbid per-slide docs, subslide docs and unregistered tests while keeping docs truth on the existing README taxonomy.
+- Add `subtask_surfaces` to the product engineering loop machine fixture so slide subtasks can be tracked without creating permanent slide documentation trees.
+- Document the pre-slide requirement to run fast/lane gates before slide authoring commits.
+
+Contract subscription:
+
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-repo-bloat-audit.mjs`
+- `package.json`
+- `.github/workflows/verify.yml`
+
+Non-goals:
+
+- No product implementation.
+- No PostgreSQL/Redis closure claim.
+- No services, deploy, adapters, `.sentrux`, infra, upstream or `.runtime` edits.
+- No secret read, real cloud, build/push, kubectl, deploy or live-test.
+
+Verification before landing review:
+
+- `npm run test:fast`
+- `npm run test:lanes`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Continue `leaf-portal-postgres-redis-local-production-data-closure`; each product slide authoring branch should run `npm run test:fast` and `npm run test:lanes` before commit to keep docs/tests/scripts from expanding into per-slide archives.
+
+landed_commit: `ee27d378ea81d1d2629b65fe332bacb24a12acaf`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- test:fast passed
+- test:lanes passed
+- workflow gate review passed
+- local-contract suite passed
+- current verify passed
+- diff check and added-lines secret scan passed
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 ### 2026-05-21 cleanup/v22-agents-lifecycle-alignment
 
 Status: `landed / pushed / post-push verified`
