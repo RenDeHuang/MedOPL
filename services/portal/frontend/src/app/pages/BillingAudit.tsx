@@ -45,6 +45,7 @@ interface BillingRecord {
   description: string;
   amount: string;
   status: string;
+  ownerScope?: string;
 }
 
 interface WorkspaceCost {
@@ -110,6 +111,9 @@ export function BillingAudit() {
   const model = query.data;
   const pageState: PageState = model.billingRecords.length === 0 ? "empty-ledger" : "ready";
   const canExportBilling = model.billingRecords.length > 0;
+  const support = model.supportBoundary;
+  const billingStateLabel = support?.fundingStatus || support?.supportStatus || "local ledger";
+  const canStartPaidRun = support ? support.canStartPaidRun : model.billingRecords.length > 0;
 
   const exportBillingRecords = () => {
     if (!canExportBilling) {
@@ -247,7 +251,7 @@ export function BillingAudit() {
               <AlertCircle className="w-4 h-4 text-orange-600" />
             </div>
             <div className="text-2xl font-semibold text-orange-700">{model.frozenAmount}</div>
-            <div className="text-xs text-orange-600 mt-1">18 小时后解冻</div>
+            <div className="text-xs text-orange-600 mt-1">按账户归属和资源绑定计算</div>
           </Card>
 
           <Card className="p-4 border border-neutral-200">
@@ -274,7 +278,7 @@ export function BillingAudit() {
               <Wallet className="w-4 h-4 text-neutral-400" />
             </div>
             <div className="text-2xl font-semibold text-neutral-900">{model.billingRecords.length}</div>
-            <div className="text-xs text-neutral-500 mt-1">本月记录数</div>
+            <div className="text-xs text-neutral-500 mt-1">当前筛选窗口</div>
           </Card>
         </div>
       </div>
@@ -327,14 +331,27 @@ export function BillingAudit() {
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="w-4 h-4 text-neutral-400" />
-              <span className="text-sm text-neutral-600">核对状态</span>
+              <span className="text-sm text-neutral-600">审计状态</span>
             </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              已核对
+            <Badge variant="outline" className={canStartPaidRun ? "bg-green-50 text-green-700 border-green-200" : "bg-orange-50 text-orange-700 border-orange-200"}>
+              {billingStateLabel}
             </Badge>
-            <div className="text-xs text-neutral-500 mt-1">实时同步</div>
+            <div className="text-xs text-neutral-500 mt-1">T+1 精确账单核对</div>
           </Card>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <Card className="p-4 border border-neutral-200">
+          <div className="text-sm text-neutral-600 mb-1">待结算</div>
+          <div className="text-2xl font-semibold text-neutral-900">{model.pendingCost}</div>
+          <div className="text-xs text-neutral-500 mt-1">运行中预扣，等待 T+1 精确账单校准</div>
+        </Card>
+        <Card className="p-4 border border-neutral-200">
+          <div className="text-sm text-neutral-600 mb-1">精确账单</div>
+          <div className="text-2xl font-semibold text-neutral-900">{model.exactCost}</div>
+          <div className="text-xs text-neutral-500 mt-1">来自 Portal 账本投影和本地对账摘要</div>
+        </Card>
       </div>
 
       {/* Workspace and Task Costs */}
@@ -423,6 +440,7 @@ export function BillingAudit() {
                   <TableHead>说明</TableHead>
                   <TableHead>金额</TableHead>
                   <TableHead>状态</TableHead>
+                  <TableHead>账户归属</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -445,13 +463,16 @@ export function BillingAudit() {
                     <TableCell>
                       <span className="text-sm text-neutral-600">{record.status}</span>
                     </TableCell>
+                    <TableCell className="text-xs text-neutral-600">
+                      {record.ownerScope}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
           <div className="p-4 border-t border-neutral-200 text-sm text-neutral-600 text-center">
-            显示最近 100 条流水 · 保留 1 年
+            账户、工作空间、资源绑定和 billing attribution 使用同一 owner scope 查询
           </div>
         </Card>
 
@@ -467,34 +488,34 @@ export function BillingAudit() {
             <div>
               <div className="text-sm text-neutral-600 mb-2">审计模式</div>
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                标准审计
+                T+1 对账
               </Badge>
             </div>
 
             <div>
-              <div className="text-sm text-neutral-600 mb-2">操作日志</div>
-              <div className="font-semibold text-neutral-900">保留 90 天</div>
-              <div className="text-xs text-neutral-500 mt-1">最近操作 2 分钟前</div>
+              <div className="text-sm text-neutral-600 mb-2">待结算金额</div>
+              <div className="font-semibold text-neutral-900">{model.pendingCost}</div>
+              <div className="text-xs text-neutral-500 mt-1">pending usage 不作为最终扣费</div>
             </div>
 
             <div>
-              <div className="text-sm text-neutral-600 mb-2">账单记录</div>
-              <div className="font-semibold text-neutral-900">保留 1 年</div>
-              <div className="text-xs text-neutral-500 mt-1">156 条记录</div>
+              <div className="text-sm text-neutral-600 mb-2">精确账单金额</div>
+              <div className="font-semibold text-neutral-900">{model.exactCost}</div>
+              <div className="text-xs text-neutral-500 mt-1">T+1 后进入账本校准</div>
             </div>
 
             <div>
               <div className="text-sm text-neutral-600 mb-2">扣费状态</div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                正常扣费
+              <Badge variant="outline" className={canStartPaidRun ? "bg-green-50 text-green-700 border-green-200" : "bg-orange-50 text-orange-700 border-orange-200"}>
+                {billingStateLabel}
               </Badge>
-              <div className="text-xs text-neutral-500 mt-1">最近扣费 2 分钟前</div>
+              <div className="text-xs text-neutral-500 mt-1">{support?.billingCopy || "以本地 Portal 账本投影为准"}</div>
             </div>
 
             <div className="pt-4 border-t border-neutral-200">
               <div className="flex items-center gap-2 text-xs text-neutral-600">
                 <Clock className="w-3.5 h-3.5" />
-                <span>下次冻结 18 小时后</span>
+                <span>冻结金额和释放状态按账户归属、资源绑定和审计状态查询</span>
               </div>
             </div>
           </div>

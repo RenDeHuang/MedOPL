@@ -199,7 +199,7 @@ function evaluateWalletRisk(input) {
   return buildRisk(context);
 }
 
-function ledgerEntriesForUser(db, user) {
+export function ledgerEntriesForUser(db, user) {
   return normalizeLedgerEntries(db?.ledger || []).filter((entry) => ledgerBelongsToUser(entry, user));
 }
 
@@ -383,9 +383,10 @@ export function trialRemainingForUser(user) {
   return moneyAmount(entitlement.remainingCredit, 0);
 }
 
-export function activeFreezeByBinding(db, userId = "") {
+export function activeFreezeByBinding(db, owner = "") {
+  const ownerScope = owner && typeof owner === "object" ? owner : { id: String(owner || ""), tenantId: String(owner || "") };
   const entries = normalizeLedgerEntries(db?.ledger || [])
-    .filter((entry) => !userId || entry.userId === userId || entry.tenantId === userId);
+    .filter((entry) => !ownerScope.id || ledgerBelongsToUser(entry, ownerScope));
   const byBinding = new Map();
   for (const entry of entries) {
     if (!entry.resourceBindingId) continue;
@@ -402,8 +403,8 @@ export function activeFreezeByBinding(db, userId = "") {
   return byBinding;
 }
 
-export function activeFreezeAmount(db, userId = "") {
-  const byBinding = activeFreezeByBinding(db, userId);
+export function activeFreezeAmount(db, owner = "") {
+  const byBinding = activeFreezeByBinding(db, owner);
   let total = 0;
   for (const amount of byBinding.values()) total += amount;
   return moneyAmount(total);
@@ -411,7 +412,7 @@ export function activeFreezeAmount(db, userId = "") {
 
 export function walletCommercialSnapshot(db, user) {
   const wallet = ensureWallet(db, user.id);
-  const activeFreeze = activeFreezeAmount(db, user.id);
+  const activeFreeze = activeFreezeAmount(db, user);
   const trialRemaining = trialRemainingForUser(user);
   return {
     wallet,

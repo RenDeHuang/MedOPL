@@ -12,6 +12,7 @@ import {
   buildBillingTaskCosts,
   buildBillingTotals,
 } from "./portal-page-payload-helpers.mjs";
+import { ledgerEntriesForUser } from "../domain/wallet-ledger.mjs";
 
 function billingDateFilterOptions({ from = "", to = "" } = {}, formatDateOnly) {
   const fromValue = String(from || "").trim();
@@ -79,6 +80,30 @@ function todayCostFrom(items) {
     .toFixed(5));
 }
 
+function ledgerOwnerScopeLabel(entry = {}) {
+  const parts = [
+    entry.accountId ? "账户" : "",
+    entry.billingAccountId ? "账务账户" : "",
+    entry.workspaceId ? "工作空间" : "",
+    entry.resourceBindingId ? "资源绑定" : "",
+    entry.billingAttributionId ? "账务归因" : "",
+    entry.runId ? "任务" : "",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" / ") : "账户归属未返回";
+}
+
+function publicLedgerEntry(entry = {}) {
+  return {
+    id: entry.id,
+    type: entry.type,
+    amount: entry.amount,
+    currency: entry.currency,
+    reason: entry.reason,
+    createdAt: entry.createdAt,
+    ownerScope: ledgerOwnerScopeLabel(entry),
+  };
+}
+
 export function createBillingPayloadBuilders({
   buildCommercialProfile,
   collectRunsForUser,
@@ -103,8 +128,7 @@ export function createBillingPayloadBuilders({
     timing.mark("runs");
     const filteredItems = items.filter((item) => withinDateRange(item?.end || item?.start || item?.createdAt, range));
     const filteredRuns = runs.filter((run) => withinDateRange(run.createdAt || "", range));
-    const filteredLedger = db.ledger
-      .filter((item) => item.userId === user.id)
+    const filteredLedger = ledgerEntriesForUser(db, user)
       .filter((item) => withinDateRange(item.createdAt || "", range))
       .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
     const totals = buildBillingTotals(filteredItems);
@@ -141,7 +165,7 @@ export function createBillingPayloadBuilders({
         total: runPagination.total,
         totalPages: runPagination.totalPages,
       },
-      ledger: ledgerPagination.rows,
+      ledger: ledgerPagination.rows.map(publicLedgerEntry),
       ledgerPagination: {
         page: ledgerPagination.page,
         pageSize: ledgerPagination.pageSize,

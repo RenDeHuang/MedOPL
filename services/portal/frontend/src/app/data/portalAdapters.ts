@@ -131,6 +131,22 @@ export interface OplArtifactView {
   kind: string;
 }
 
+function ledgerStatus(type: string) {
+  if (type === "pending_usage") return "等待 T+1 精确账单";
+  if (type === "preauth_hold" || type === "subscription_weekly_freeze") return "冻结中";
+  if (type === "preauth_release" || type === "subscription_freeze_release") return "已释放冻结";
+  if (type === "exact_resource_charge" || type === "subscription_daily_charge") return "已入账";
+  if (type === "refund") return "已退款";
+  if (type === "makeup_charge") return "已补扣";
+  return "已记录";
+}
+
+function ledgerOwnerScope(item: {
+  ownerScope?: string;
+}) {
+  return stringValue(item.ownerScope, "账户归属未返回");
+}
+
 function numberValue(value: unknown, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -622,7 +638,8 @@ export async function loadBillingAuditModel() {
       type: item.type,
       description: item.reason || item.type,
       amount: money(item.amount),
-      status: "已核对",
+      status: ledgerStatus(item.type),
+      ownerScope: ledgerOwnerScope(item),
     })),
   };
 }

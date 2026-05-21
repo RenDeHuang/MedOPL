@@ -47,6 +47,7 @@
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+      "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
       "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
       "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
@@ -126,6 +127,7 @@
     "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+    "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
     "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
     "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
@@ -509,6 +511,7 @@
         ],
         "eval_commands": [
           "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+          "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
           "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
           "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
           "npm --prefix services/portal run check"
@@ -528,7 +531,8 @@
               "services/portal/src/app/portal-page-billing-payloads.mjs"
             ],
             "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs"
+              "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+              "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs"
             ],
             "done_when": [
               "balance frozen amount and ledger are owner-scoped"

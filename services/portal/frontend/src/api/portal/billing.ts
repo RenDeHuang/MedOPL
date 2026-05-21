@@ -87,6 +87,7 @@ export interface BillingPayload {
     type: string;
     amount: number;
     reason?: string;
+    ownerScope?: string;
     createdAt: string;
   }>;
   ledgerPagination: PortalPagination;
