@@ -298,6 +298,11 @@ assert(workspaceSurfaceSources.includes("loadWorkspaceModel"), "workspace_page_m
 assert(workspaceSurfaceSources.includes("TabsTrigger value=\"input\""), "workspace_page_must_render_input_file_tab");
 assert(workspaceSurfaceSources.includes("TabsTrigger value=\"output\""), "workspace_page_must_render_output_file_tab");
 assert(workspaceSurfaceSources.includes("model.fileSpaceUsed"), "workspace_page_must_render_file_space_usage");
+assert(workspaceSurfaceSources.includes("model.fileSpaceRetentionLabel"), "workspace_page_must_render_file_space_retention_policy");
+assert(workspaceSurfaceSources.includes("file.isRetentionProtected"), "workspace_page_must_distinguish_retention_protected_files");
+assert(workspaceSurfaceSources.includes("file.retentionUntilLabel"), "workspace_page_must_render_retention_until_label");
+assert(workspaceSurfaceSources.includes("model.fileSpaceBulkDeleteEnabled"), "workspace_page_must_bind_batch_delete_to_file_space_actions");
+assert(workspaceSurfaceSources.includes("model.fileSpaceSelectionLabel"), "workspace_page_must_render_selected_file_refs_state");
 assert(workspaceSurfaceSources.includes("file.taskName"), "workspace_page_must_render_output_task_linkage");
 assert(workspaceSurfaceSources.includes("handleUploadClick"), "workspace_page_upload_button_must_bind_file_action");
 assert(workspaceSurfaceSources.includes("handleDownloadFile"), "workspace_page_download_button_must_bind_file_action");
@@ -307,6 +312,12 @@ assert(workspaceSurfaceSources.includes("fetch(intent.url"), "workspace_page_upl
 assert.equal(workspaceSurfaceSources.includes("结果下载请在 OPL 工作台或任务详情中完成"), false, "workspace_page_must_not_keep_fake_download_disabled_copy");
 assert.equal(workspaceSurfaceSources.includes("文件下载请在 OPL 工作台或任务详情中完成"), false, "workspace_page_must_not_keep_fake_file_download_disabled_copy");
 assert(workspaceSurfaceSource.includes("workspace.fileSpace"), "workspace_adapter_must_read_file_space_payload");
+assert(workspaceSurfaceSource.includes("fileSpaceFolders"), "workspace_adapter_must_project_file_space_folders");
+assert(workspaceSurfaceSource.includes("selectedFileRefs"), "workspace_adapter_must_project_selected_file_refs");
+assert(workspaceSurfaceSource.includes("fileSpaceActions"), "workspace_adapter_must_project_file_space_actions");
+assert(workspaceSurfaceSource.includes("fileSpaceDeletePolicy"), "workspace_adapter_must_project_delete_policy");
+assert(workspaceSurfaceSource.includes("retentionUntilLabel"), "workspace_adapter_must_project_retention_until_label");
+assert(workspaceSurfaceSource.includes("isRetentionProtected"), "workspace_adapter_must_project_retention_protected_file_state");
 assert(workspaceSurfaceSource.includes("fileSpacePercent"), "workspace_adapter_must_project_file_space_usage");
 assert(workspaceSurfaceSource.includes("fetchWorkspaceStorage"), "workspace_adapter_must_read_workspace_storage_projection");
 assert(workspaceSurfaceSource.includes("fetchStorageEntitlement"), "workspace_adapter_must_read_storage_entitlement_projection");
@@ -314,6 +325,7 @@ assert(workspaceSurfaceSource.includes("createWorkspaceFileUploadUrl"), "workspa
 assert(workspaceSurfaceSource.includes("createWorkspaceFileDownloadUrl"), "workspace_adapter_must_issue_download_url");
 assert(workspaceTypesSource.includes("FileSpacePayload"), "workspace_types_must_define_file_space_payload");
 assert(workspaceTypesSource.includes("selectedFileRefs"), "workspace_types_must_include_selected_file_refs");
+assert.equal(workspaceTypesSource.includes("minio"), false, "workspace_storage_payload_type_must_not_expose_object_store_implementation");
 const storageEntitlementType = interfaceBody(workspaceTypesSource, "StorageEntitlementPayload");
 assert.equal(storageEntitlementType.includes("cosPrefix"), false, "workspace_storage_entitlement_type_must_not_expose_storage_prefix");
 assert.equal(storageEntitlementType.includes("storageBackend"), false, "workspace_storage_entitlement_type_must_not_expose_storage_backend");

@@ -39,6 +39,14 @@ import {
 } from "../../api/portal/workspace";
 import type { ManagedFileSpaceResource, PlatformProvisionedResourcesPayload } from "../../api/portal/resources";
 import type { SelectedServerPlan } from "../../api/portal/types";
+import {
+  type FileItem,
+  fileRetentionStatusLabel,
+  fileRetentionUntilLabel,
+  fileSpaceFileState,
+  fileSpaceViewState,
+  retentionProtected,
+} from "./portalWorkspaceFileSpace";
 
 export type QueryState<T> =
   | { status: "loading"; data: null; error: null }
@@ -86,24 +94,7 @@ export function usePortalQuery<T>(loader: () => Promise<T>, deps: unknown[] = []
   return state;
 }
 
-export interface FileItem {
-  id: string;
-  name: string;
-  size: string;
-  sizeBytes: number;
-  type: string;
-  contentType: string;
-  updated: string;
-  kind: "inputs" | "outputs";
-  relativePath: string;
-  canDownload: boolean;
-  downloadUnavailableReason?: string;
-  taskId?: string;
-  taskName?: string;
-  fileRef?: string;
-  artifactRef?: string;
-  sessionId?: string;
-}
+export type { FileItem };
 
 export interface TaskItem {
   id: string;
@@ -368,7 +359,17 @@ export async function loadWorkspaceModel() {
     arrayValue<NonNullable<typeof storageProjection.metadata>[number]>(storageProjection.metadata)
       .map((item) => [item.relativePath, item] as const),
   );
-  const fileSpaceFiles = arrayValue(workspace.fileSpace?.files);
+  const {
+    fileSpaceFiles,
+    fileSpaceFolders,
+    selectedFileRefs,
+    selectedFileRefSet,
+    fileSpaceActions,
+    fileSpaceDeletePolicy,
+    fileSpaceRetentionLabel,
+    fileSpaceSelectionLabel,
+    fileSpaceBulkDeleteEnabled,
+  } = fileSpaceViewState(workspace.fileSpace);
   const fileSpaceByRef = new Map(fileSpaceFiles.map((file) => [file.fileRef, file] as const));
   const canUseTransferActions = Boolean(entitlement?.enabled && sessionId);
   const downloadUnavailableReason = canUseTransferActions
@@ -396,6 +397,7 @@ export async function loadWorkspaceModel() {
       downloadUnavailableReason,
       fileRef: metadata?.fileRef || fileSpaceFile?.fileRef,
       sessionId,
+      ...fileSpaceFileState(fileSpaceFile, selectedFileRefSet),
     };
   });
   const outputs = workspace.outputs.map<FileItem>((file) => {
@@ -422,6 +424,11 @@ export async function loadWorkspaceModel() {
       fileRef: file.fileRef || metadata?.fileRef || fileSpaceFile?.fileRef,
       artifactRef: file.artifactRef,
       sessionId: outputSessionId,
+      folderRef: fileSpaceFile?.folderRef,
+      selected: selectedFileRefSet.has(file.fileRef || metadata?.fileRef || fileSpaceFile?.fileRef || ""),
+      isRetentionProtected: retentionProtected(fileSpaceFile?.status || file.status),
+      retentionUntilLabel: fileRetentionUntilLabel(fileSpaceFile || { status: file.status, retentionUntil: "" }),
+      retentionStatusLabel: fileRetentionStatusLabel(fileSpaceFile || { status: file.status, retentionUntil: "" }),
     };
   });
   const storageBytes = numberValue(storageProjection.storage.inputBytes) + numberValue(storageProjection.storage.outputBytes);
@@ -535,6 +542,13 @@ export async function loadWorkspaceModel() {
     fileSpaceTotal: gb(capacityGb),
     fileSpaceAvailable: gb(Math.max(0, capacityGb - usedGb)),
     fileSpacePercent: capacityGb > 0 ? Math.min(100, Math.round((usedGb / capacityGb) * 100)) : 0,
+    fileSpaceRetentionLabel,
+    fileSpaceSelectionLabel,
+    fileSpaceFolders,
+    selectedFileRefs,
+    fileSpaceActions,
+    fileSpaceDeletePolicy,
+    fileSpaceBulkDeleteEnabled,
     fileSpaceActionMessage: downloadUnavailableReason,
     uploadEnabled: Boolean(canUseTransferActions),
     inputFiles: files,

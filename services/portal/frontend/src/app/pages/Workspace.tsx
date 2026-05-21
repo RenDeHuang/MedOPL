@@ -437,6 +437,7 @@ export function Workspace() {
               <div className="text-sm text-neutral-600 mb-1">文件空间</div>
               <div className="font-semibold text-neutral-900">{model.fileSpaceUsed} / {model.fileSpaceTotal}</div>
               <Progress value={model.fileSpacePercent} className="h-1.5 mt-2" />
+              <div className="text-xs text-neutral-500 mt-1">{model.fileSpaceRetentionLabel}</div>
             </div>
             <div>
               <div className="text-sm text-neutral-600 mb-1">工作空间状态</div>
@@ -485,6 +486,14 @@ export function Workspace() {
                     <Upload className="w-4 h-4" />
                     上传文件
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!model.fileSpaceBulkDeleteEnabled}
+                    title={model.fileSpaceBulkDeleteEnabled ? "删除后进入文件空间保护期" : model.fileSpaceSelectionLabel}
+                  >
+                    批量删除
+                  </Button>
                 </div>
               </div>
             </div>
@@ -493,7 +502,7 @@ export function Workspace() {
           <TabsContent value="input" className="m-0">
             <div className="p-5">
               <div className="text-sm text-neutral-600 mb-4">
-                共 {model.inputFiles.length} 个文件，占用 {model.fileSpaceUsed}
+                共 {model.inputFiles.length} 个文件，占用 {model.fileSpaceUsed} · {model.fileSpaceSelectionLabel}
               </div>
               <div className="space-y-2">
                 {filteredInputFiles.map((file) => (
@@ -510,11 +519,16 @@ export function Workspace() {
                         <div className="truncate text-xs text-neutral-500">
                           {file.size} · 上传于 {file.updated}
                         </div>
+                        {file.isRetentionProtected && (
+                          <div className="truncate text-xs text-amber-700">
+                            {file.retentionStatusLabel} · {file.retentionUntilLabel}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {file.type.toUpperCase()}
+                        {file.selected ? "已选择" : file.type.toUpperCase()}
                       </Badge>
                       <Button
                         size="sm"
@@ -544,7 +558,7 @@ export function Workspace() {
           <TabsContent value="output" className="m-0">
             <div className="p-5">
               <div className="text-sm text-neutral-600 mb-4">
-                共 {model.outputFiles.length} 个结果文件
+                共 {model.outputFiles.length} 个结果文件 · {model.fileSpaceRetentionLabel}
               </div>
               <div className="space-y-2">
                 {filteredOutputFiles.map((file) => (
@@ -567,11 +581,16 @@ export function Workspace() {
                             </>
                           )}
                         </div>
+                        {file.isRetentionProtected && (
+                          <div className="truncate text-xs text-amber-700">
+                            {file.retentionStatusLabel} · {file.retentionUntilLabel}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {file.type.toUpperCase()}
+                        {file.isRetentionProtected ? "保护期" : file.type.toUpperCase()}
                       </Badge>
                       <Button
                         size="sm"

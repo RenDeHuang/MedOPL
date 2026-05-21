@@ -284,7 +284,7 @@ export interface WorkspaceStoragePayload {
     inputBytes: number;
     outputBytes: number;
   };
-  minio: {
+  userStorage: {
     available?: boolean;
     synced?: boolean;
     status?: string;
