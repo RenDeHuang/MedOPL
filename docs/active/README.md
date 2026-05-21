@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。下一业务 leaf 必须让 PostgreSQL 成为 local production data 的 canonical truth，让 Redis 只用于 session/cache/queue/lock。`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
 
-最近已吸收的治理闭环是 `cleanup/v22-current-state-index-loop-normalization`，absorbed commit 为 `2e644fc774e567db9418e3d13942e1598434433e`。该 closeout 建立 docs -> active truth -> specs/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor 的自治索引闭环，不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
+最近已吸收的治理闭环是 `cleanup/v22-post-absorb-closeout-and-gate-integrity`，absorbed commit 为 `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`。该 closeout 修正 post-absorb truth closeout 和 workflow command reference integrity，不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
 
 当前已收敛的事实：
 
@@ -52,6 +52,12 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-abs
 - post-absorb truth closeout：B 吸收后必须把 absorbed commit、post-push verification 和下一 cursor 写回 `docs/history/README.md` 与 `tests/fixtures/v22/*`。
 
 任何 leaf 完成后如果没有 post-absorb truth closeout，不能把下一 leaf 作为稳定当前事实推进。
+
+## Active Surface Rule
+
+`docs/active/README.md` 只承载 current facts, gap, cursor, cannot-claim, and next action。专题合同写入 `docs/specs/README.md`，稳定纪律写入 `docs/policies/README.md`，runtime 视角写入 `docs/runtime/README.md`，delivery 命令和授权顺序写入 `docs/delivery/README.md`，run evidence 和 B review 摘要写入 `docs/history/README.md`。
+
+本文件不得吸收长篇 provenance、逐步 closeout 过程、B review 细节、agent-run 证据、第二份合同真相或第二份 delivery manifest。新增事实必须能回答“当前是什么、差距是什么、下一步是什么、不能宣称什么”；否则必须写入对应 view 或 history。
 
 ## 产品真相
 
@@ -212,12 +218,86 @@ Current docs / eval surface during migration：
 | Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-absorb truth 漂移 | current-state index loop gate | latest absorbed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | Retirement lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | retirement lifecycle gate | post-absorb truth closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs` |
 
+## Current Development Lines
+
+### current-stage-current-cursor
+
+Current evidence: latest absorbed governance closeout is `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`; current machine cursor remains `leaf-portal-postgres-redis-local-production-data-closure`.
+
+Gap: governance closeout is complete, but PostgreSQL/Redis local production data closure is still gated and not implemented.
+
+Next action: keep the current cursor unchanged until the business leaf implements local production data closure with local services.
+
+Done when: readers can distinguish absorbed governance closeout from unfinished PostgreSQL/Redis closure.
+
+Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`.
+
+### portal-saas-control-plane-product-loop
+
+Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench.
+
+Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language.
+
+Next action: keep product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop.
+
+Done when: user-facing surfaces answer what the user buys, where they operate, what Portal manages and what OPL executes.
+
+Verify: `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`; product spec anchors in `docs/product/README.md`.
+
+### optional-resource-lifecycle-and-pricing-boundary
+
+Current evidence: compute resources and file space are optional capabilities; starter and Pro are the only current active MVP plans.
+
+Gap: resource language must not drift to default cloud provisioning, user self-managed CVM/COS/K8s or compute release deleting file space.
+
+Next action: preserve separate lifecycle language for workspace, compute resource, file space, balance, frozen amount, 7-day file-space protection, `120min` stop-billing check and `T+1` audit.
+
+Done when: release compute never implies file-space deletion, and future add-ons remain future-authorized.
+
+Verify: `node tests/smoke/smoke-test-v22-resource-plan-contract.mjs`; `node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs`.
+
+### portal-opl-runtime-managed-chain
+
+Current evidence: runtime chain is Portal -> OPL Web Gateway -> clean One Person Lab upstream -> Runtime Bridge / Runtime Agent -> platform-managed resource pools -> Billing/Quota/Audit/Admin.
+
+Gap: slides must not flatten the managed chain into direct upstream modification or direct OPL entry.
+
+Next action: keep Gateway and Runtime Bridge as canonical anti-corruption boundaries, and keep upstream clean.
+
+Done when: no reader can interpret v22 as modifying upstream or importing upstream internals for product implementation.
+
+Verify: `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs`; `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`.
+
+### portal-canonical-data-postgres-redis-closure
+
+Current evidence: Portal canonical truth production direction is PostgreSQL; Redis is not a fact source and is limited to session/cache/queue/lock.
+
+Gap: status: `gated`; local proof exists, but durable local production data truth is not closed.
+
+Next action: implement the current business leaf so `PORTAL_STORAGE_MODE=postgres_redis` requires PostgreSQL/Redis connectivity and schema, and missing dependencies fail-closed.
+
+Done when: PostgreSQL is the canonical local production data truth, Redis is only session/cache/queue/lock, JSON fallback is not used in `postgres_redis`, and missing connection/schema fails-closed.
+
+Verify: `node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs`; `npm --prefix services/portal run check`.
+
+### governance-verification-post-absorb-closeout
+
+Current evidence: OPL-style lifecycle is the default MedOPL v22 loop: truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-absorb truth closeout -> next cursor.
+
+Gap: without explicit engineering gates, docs lifecycle and software closure can drift back into manual discipline.
+
+Next action: keep review, secret, repo hygiene, test lane coverage, package scripts and CI as machine gates before the product cursor resumes.
+
+Done when: B review no longer depends on hand-composed checks, and post-absorb truth closeout remains required before any next cursor is stable.
+
+Verify: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`; `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`.
+
 ## Cannot Claim
 
 - 不能写成 `tests/**/*.mjs` 都是 smoke。
 - 不能写成 agent-run evidence 是当前产品真相。
 - 不能写成 `future-authorized` 等于真实云、deploy、kubectl 或 live-test 已授权。
-- 不能写成 PostgreSQL/Redis、本地 production data layer、admin 全业务闭环或真实云生产闭环已完成。
+- 不能宣称 PostgreSQL/Redis、本地 production data layer、admin 全业务闭环或真实云生产闭环已完成。
 - 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
 - 不能跳过 post-absorb truth closeout 直接把下一个 leaf 写成已完成或已吸收。
 

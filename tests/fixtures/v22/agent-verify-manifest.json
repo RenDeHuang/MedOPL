@@ -172,6 +172,8 @@
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
+        "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs"
@@ -205,6 +207,58 @@
   ],
   "package_suites": [],
   "branch_override_suites": [
+    {
+      "id": "opl-docs-engineering-loop-closure",
+      "branch": "cleanup/v22-opl-docs-engineering-loop-closure",
+      "branches": [
+        "cleanup/v22-opl-docs-engineering-loop-closure"
+      ],
+      "reason": "OPL-style docs lifecycle and software engineering loop closure updates docs portfolio, development lines, test lane registry, hygiene gates, package scripts, CI entrypoints, and history handoff without changing services or product implementation.",
+      "commands": [
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+        "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
+        "node tests/contract/contract-test-v22-current-development-lines.mjs",
+        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts package.json .github"
+      ],
+      "allowed_files": [
+        "docs/**/*.md",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-test-classification.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs",
+        "package.json",
+        ".github/workflows/*.yml"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        ".runtime/*",
+        "secret-like paths"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "git-push"
+      ]
+    },
     {
       "id": "post-absorb-closeout-and-gate-integrity",
       "branch": "cleanup/v22-post-absorb-closeout-and-gate-integrity",
