@@ -58,7 +58,8 @@
     "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
     "tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
-    "tests/contract/contract-test-v22-framework-workflow-convergence.mjs"
+    "tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
+    "tests/contract/contract-test-v22-product-engineering-loop-index.mjs"
   ],
   "leaves": [
     {
@@ -121,6 +122,7 @@
         "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -158,6 +160,7 @@
         "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -218,6 +221,7 @@
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-diff-scoped-sensitive-hygiene.mjs",
@@ -229,6 +233,12 @@
         "node tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs",
         "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"
+      ]
+    },
+    {
+      "id": "product-engineering-loop",
+      "commands": [
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"
       ]
     },
     {
@@ -271,6 +281,7 @@
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
@@ -289,6 +300,7 @@
         "npm run gate:review",
         "npm run check:diff",
         "npm run verify:docs-engineering-loop",
+        "npm run verify:product-loop",
         "npm run test:health",
         "npm run test:smoke",
         "npm run test:contract",
@@ -306,6 +318,7 @@
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json",
         "git diff --check -- docs tests scripts package.json .github"
@@ -323,6 +336,60 @@
     }
   ],
   "branch_override_suites": [
+    {
+      "id": "product-engineering-loop-index",
+      "branch": "feat/v22-product-engineering-loop-index",
+      "branches": [
+        "feat/v22-product-engineering-loop-index"
+      ],
+      "reason": "Product engineering loop index branch adds the OPL-style pre-cloud slide lifecycle machine index, product-loop suite, package script and CI wiring without implementing service code or advancing the business cursor.",
+      "commands": [
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+        "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+        "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+        "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+        "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts package.json .github"
+      ],
+      "allowed_files": [
+        "docs/**/*.md",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-test-classification.mjs",
+        "package.json",
+        ".github/workflows/*.yml"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        ".runtime/*",
+        "secret-like paths"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "git-push"
+      ],
+      "risk_class": "local_doc_eval"
+    },
     {
       "id": "opl-framework-workflow-convergence",
       "branch": "cleanup/v22-opl-framework-workflow-convergence",

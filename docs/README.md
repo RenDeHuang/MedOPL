@@ -5,7 +5,7 @@ Purpose: `docs_taxonomy_index`
 State: `active`
 Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-verify.mjs`；机器 cursor 和 verify manifest 在 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json`。
 
-本目录采用 OPL-style lifecycle taxonomy，并在 v22 严格版里执行“一目录一 README 真相”。`docs/active/README.md` 是唯一人读 current truth；`docs/specs/README.md` 是唯一合同/spec truth。
+本目录采用 OPL-style lifecycle taxonomy，并在 v22 严格版里执行“一目录一 README 真相”。`docs/active/README.md` 是唯一人读 current truth；`docs/specs/README.md` 是唯一合同/spec truth。和 one-person-lab 一样，`docs/**` 是人读生命周期面；机器真相归 source、tests、fixtures、manifest、runner 和 API/CLI 行为，不把 Markdown 长计划当稳定机器接口。
 
 ## Reading Order
 
@@ -42,6 +42,8 @@ docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/mani
 ```
 
 如果任一环节漂移，以 `docs/active/README.md`、`docs/specs/README.md`、`tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json` 和 `docs/history/README.md` 的一致性为裁定对象；不能用聊天记录或旧路径补事实。
+
+Active 文档只保当前 owner、当前状态、下一步 gate 和完成口径。product slide、cleanup tranche 或 framework run 这类执行序列只能作为 open baton 出现在 machine fixture / manifest 中；完成后必须折叠为 `docs/history/README.md` 摘要、closed summary 和 next cursor，不在 active truth 或 per-slide markdown 中永久保留。
 
 ## Directory Rule
 

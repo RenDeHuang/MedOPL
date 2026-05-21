@@ -20,6 +20,7 @@
     "repo:bloat": "node scripts/v22-repo-bloat-audit.mjs --json",
     "line:budget": "node scripts/v22-line-budget.mjs",
     "check:diff": "git diff --check -- docs tests scripts package.json .github",
-    "verify:docs-engineering-loop": "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk"
+    "verify:docs-engineering-loop": "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk",
+    "verify:product-loop": "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk"
   }
 }

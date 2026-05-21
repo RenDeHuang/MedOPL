@@ -61,6 +61,56 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 feat/v22-product-engineering-loop-index
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-product-engineering-loop-index`
+
+Base trunk HEAD: `f3d2cacb1724a52e50aff96109dca1841e1fc7b2`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagents: none
+
+Scope:
+
+- Add the Product Engineering Loop index for `precloud-product-slides-closure`.
+- Make the 10 pre-cloud product slides machine-readable in `tests/fixtures/v22/goal-current.json`.
+- Register the product-engineering-loop gate in current, local-contract, review, docs-engineering-loop, root package scripts and CI.
+- Keep product implementation untouched; this branch indexes the lifecycle and gates only.
+
+Product Engineering Loop:
+
+- The loop uses the existing OPL-style truth surfaces: `docs/active/README.md`, `tests/fixtures/v22/goal-current.json`, `tests/fixtures/v22/agent-verify-manifest.json`, and this history file.
+- It forbids per-slide markdown docs, compatibility layers, fallback paths and shadow archives.
+- Each future slide must run `inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit`.
+- The collapse policy is explicit: while open, the 10-slide list is only an active baton in `goal-current.json`; after all slides close, `product_engineering_loop.slides` and the temporary branch override must be removed from current truth, leaving only a closed summary, landed commit, history summary and next cursor.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/active/README.md`
+- `docs/history/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `package.json`
+- `.github/workflows/verify.yml`
+
+Non-goals:
+
+- No services implementation.
+- No PostgreSQL/Redis closure claim.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream modification.
+- No new slide markdown files.
+
+Next recommendation:
+
+- After landing, run slide-01-data-truth as the first product implementation commit on the same product-engineering lifecycle.
+
 ### 2026-05-21 cleanup/v22-engineering-flow-closure
 
 Status: `landed / pushed / post-push verified`

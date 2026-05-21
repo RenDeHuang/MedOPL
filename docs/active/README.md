@@ -217,6 +217,7 @@ Current docs / eval surface during migration：
 | Recovery cleanup | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | full-taxonomy cleanup gate |
 | Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-merge truth 漂移 | current-state index loop gate | latest landed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | Cleanup lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | cleanup lifecycle gate | post-merge closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
+| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` + manifest `product-engineering-loop` suite | 产品 slide 已索引，功能尚未完成；open 明细只在 current machine fixture 临时存在 | run slides in order; each slide must inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit | 10 个 slide 全部闭合后 collapse to history summary and next cursor，active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
 
 ## Current Development Lines
 
@@ -236,13 +237,13 @@ Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `n
 
 Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench.
 
-Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language.
+Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language. The `precloud-product-slides-closure` sequence is now the machine-indexed product-engineering-loop active baton, but slide implementation remains pending.
 
-Next action: keep product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop.
+Next action: run the product-engineering-loop through the machine fixture, keeping product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop. Every slide must use `inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit`.
 
-Done when: user-facing surfaces answer what the user buys, where they operate, what Portal manages and what OPL executes.
+Done when: user-facing surfaces answer what the user buys, where they operate, what Portal manages and what OPL executes, stale slide surfaces are physically cleared without compatibility layers, and the product loop details collapse to history summary and next cursor instead of staying in active truth.
 
-Verify: `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`; product spec anchors in `docs/product/README.md`.
+Verify: `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs`; `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`; product spec anchors in `docs/product/README.md`.
 
 ### optional-resource-lifecycle-and-pricing-boundary
 

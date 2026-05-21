@@ -85,6 +85,10 @@ assertIncludes(docsIndex, "## Document Portfolio Ledger", "docs_index_portfolio_
 assertIncludes(docsIndex, "allowed content", "docs_index_portfolio_allowed_content");
 assertIncludes(docsIndex, "forbidden content", "docs_index_portfolio_forbidden_content");
 assertIncludes(docsIndex, "history handoff", "docs_index_portfolio_history_handoff");
+assertIncludes(docsIndex, "docs/**` 是人读生命周期面", "docs_index_must_define_human_lifecycle_surface");
+assertIncludes(docsIndex, "机器真相归 source、tests、fixtures、manifest、runner 和 API/CLI 行为", "docs_index_must_define_machine_truth_surface");
+assertIncludes(docsIndex, "open baton", "docs_index_must_define_open_baton_lifecycle");
+assertIncludes(docsIndex, "完成后必须折叠为 `docs/history/README.md` 摘要、closed summary 和 next cursor", "docs_index_must_define_baton_closeout");
 for (const dir of docsDirs) {
   assertIncludes(docsIndex, `docs/${dir}/README.md`, `docs_index_must_register_dir:${dir}`);
 }

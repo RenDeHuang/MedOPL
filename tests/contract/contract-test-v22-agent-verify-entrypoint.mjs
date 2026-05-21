@@ -125,6 +125,19 @@ assert.equal(cleanupPayload.ok, true, "verify_cleanup_plan_ok");
 assert.equal(cleanupPayload.branchOverride?.suiteId, "opl-framework-workflow-convergence", "cleanup_override_mismatch");
 assert(cleanupPayload.commands.includes("node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"), "cleanup_plan_must_run_gate");
 
+const productLoopOverride = manifest.branch_override_suites.find((suite) => suite.id === "product-engineering-loop-index");
+assert(productLoopOverride, "product_engineering_loop_index_branch_override_missing");
+assert(productLoopOverride.branches.includes("feat/v22-product-engineering-loop-index"), "product_engineering_loop_index_branch_missing");
+assert(productLoopOverride.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "product_engineering_loop_index_override_must_run_gate");
+assert(productLoopOverride.forbidden_files.includes("services/*"), "product_engineering_loop_index_must_forbid_services");
+
+const productLoopPlan = runVerify(["current", "--branch", "feat/v22-product-engineering-loop-index", "--dry-run", "--json"]);
+assert.equal(productLoopPlan.status, 0, `verify_product_loop_dry_run_must_exit_zero:${productLoopPlan.stderr || productLoopPlan.stdout}`);
+const productLoopPayload = JSON.parse(productLoopPlan.stdout);
+assert.equal(productLoopPayload.ok, true, "verify_product_loop_plan_ok");
+assert.equal(productLoopPayload.branchOverride?.suiteId, "product-engineering-loop-index", "product_loop_override_mismatch");
+assert(productLoopPayload.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "product_loop_plan_must_run_gate");
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_agent_verify_entrypoint",

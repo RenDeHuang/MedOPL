@@ -113,4 +113,17 @@ jobs:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:docs-engineering-loop
+      - run: npm run verify:product-loop
       - run: npm run closeout:check
+
+  product-engineering-loop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: npm run verify:product-loop

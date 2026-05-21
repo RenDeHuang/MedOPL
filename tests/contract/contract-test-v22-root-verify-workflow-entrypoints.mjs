@@ -37,6 +37,7 @@ const expectedScripts = {
   "line:budget": "node scripts/v22-line-budget.mjs",
   "check:diff": "git diff --check -- docs tests scripts package.json .github",
   "verify:docs-engineering-loop": "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk",
+  "verify:product-loop": "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk",
 };
 
 assert.equal(packageJson.private, true, "root_package_must_be_private");
@@ -77,6 +78,7 @@ for (const expected of [
   "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
+  "npm run verify:product-loop",
 ]) {
 assert(workflowSource.includes(expected), `verify_workflow_missing:${expected}`);
 }
@@ -125,6 +127,7 @@ for (const command of [
   "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
+  "npm run verify:product-loop",
   "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
 ]) {
   assert(packageSuite.commands.includes(command), `root_verify_package_suite_command_missing:${command}`);
@@ -138,6 +141,7 @@ assert.deepEqual(docsEngineeringLoopSuite.commands, [
   "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json",
   "git diff --check -- docs tests scripts package.json .github",
@@ -158,9 +162,16 @@ const reviewSuite = manifest.suites.find((suite) => suite.id === "review");
 assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-landing-closeout-automation.mjs"), "review_suite_must_check_landing_closeout");
 assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs"), "review_suite_must_check_root_verify_workflow");
 assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"), "review_suite_must_check_framework_workflow");
+assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "review_suite_must_check_product_engineering_loop");
 
 const localContractSuite = manifest.suites.find((suite) => suite.id === "local-contract");
 assert(localContractSuite?.commands.includes("node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs"), "local_contract_must_check_root_verify_workflow");
+assert(localContractSuite?.commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "local_contract_must_check_product_engineering_loop");
+
+const productLoopSuite = manifest.suites.find((suite) => suite.id === "product-engineering-loop");
+assert.deepEqual(productLoopSuite?.commands, [
+  "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+], "product_engineering_loop_suite_commands_mismatch");
 
 console.log(JSON.stringify({
   ok: true,

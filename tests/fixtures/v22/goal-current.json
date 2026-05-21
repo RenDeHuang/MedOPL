@@ -49,6 +49,7 @@
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+      "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
       "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
       "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
       "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -120,6 +121,7 @@
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+    "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
     "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
     "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
     "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -152,5 +154,558 @@
   "last_landed_branch": "cleanup/v22-engineering-flow-closure",
   "last_landed_at": "2026-05-21",
   "history_latest_branch": "cleanup/v22-engineering-flow-closure",
-  "post_merge_closeout_completed": true
+  "post_merge_closeout_completed": true,
+  "product_engineering_loop": {
+    "schema_version": 1,
+    "id": "precloud-product-slides-closure",
+    "owner": "MedOPL",
+    "method": "OPL-style framework repo lifecycle",
+    "status": "indexed",
+    "truth_file": "docs/active/README.md",
+    "machine_cursor_file": "tests/fixtures/v22/goal-current.json",
+    "verify_manifest_file": "tests/fixtures/v22/agent-verify-manifest.json",
+    "history_file": "docs/history/README.md",
+    "no_new_slide_docs": true,
+    "no_compatibility_layers": true,
+    "active_detail_retention": "open_only",
+    "active_slide": "slide-01-data-truth",
+    "closeout_policy": {
+      "when": "all_slides_complete",
+      "action": "collapse_to_history_and_next_cursor",
+      "remove_from_current_truth": [
+        "product_engineering_loop.slides"
+      ],
+      "remove_from_verify_manifest": [
+        "branch_override_suites.product-engineering-loop-index"
+      ],
+      "keep_closed_summary_fields": [
+        "id",
+        "status",
+        "landed_commit",
+        "closed_at",
+        "history_summary",
+        "next_cursor"
+      ],
+      "history_file": "docs/history/README.md",
+      "next_cursor": "real-cloud-authorization-boundary",
+      "forbid_permanent_slide_details": true,
+      "forbid_shadow_archive": true
+    },
+    "lifecycle": [
+      "inventory",
+      "classify",
+      "absorb_truth",
+      "retire_stale_surface",
+      "eval",
+      "implementation",
+      "verify",
+      "commit"
+    ],
+    "slides": [
+      {
+        "order": 0,
+        "status": "indexed",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-00-product-goal-index",
+        "title": "Product engineering lifecycle index",
+        "goal": "Make the pre-cloud product slide sequence machine-readable without adding per-slide markdown documents.",
+        "owner_surface": [
+          "tests/fixtures/v22/goal-current.json",
+          "tests/fixtures/v22/agent-verify-manifest.json",
+          "docs/active/README.md",
+          "docs/history/README.md"
+        ],
+        "cleanup_targets": [
+          "scattered product goal notes",
+          "manual-only slide sequencing",
+          "unregistered product eval commands"
+        ],
+        "eval_commands": [
+          "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+          "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+          "node tests/contract/contract-test-v22-test-lane-registry.mjs"
+        ],
+        "done_when": [
+          "product_engineering_loop exists in goal-current",
+          "all slides have owner_surface cleanup_targets eval_commands done_when and lifecycle",
+          "product loop gate is registered in current local-contract and review"
+        ]
+      },
+      {
+        "order": 1,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-01-data-truth",
+        "title": "PostgreSQL Redis local production data truth",
+        "goal": "Close local durable data truth so PostgreSQL is canonical and Redis is coordination only.",
+        "owner_surface": [
+          "services/portal/src/storage/*",
+          "services/portal/src/migrations/*",
+          "services/portal/src/config/*",
+          "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
+        ],
+        "cleanup_targets": [
+          "JSON fallback under PORTAL_STORAGE_MODE=postgres_redis",
+          "implicit storage mode success",
+          "demo store treated as production truth"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "postgres_redis requires PostgreSQL and Redis connectivity",
+          "missing connection or schema fails closed",
+          "Redis is not used as a fact source",
+          "JSON fallback is not used in postgres_redis"
+        ]
+      },
+      {
+        "order": 2,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-02-portal-api-real-data",
+        "title": "Portal API real data wiring",
+        "goal": "Bind Portal pages and components to real local API/state surfaces instead of hardcoded demo data.",
+        "owner_surface": [
+          "services/portal/frontend/src/api/portal/*",
+          "services/portal/frontend/src/app/pages/*",
+          "services/portal/src/routes/*",
+          "services/portal/src/app/*"
+        ],
+        "cleanup_targets": [
+          "hardcoded page demo payloads",
+          "component-local fake status",
+          "UI adapter aliases that bypass typed API clients"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "Portal visible state comes from typed API clients or server state",
+          "no product page constructs business truth locally",
+          "local API action closure remains green"
+        ]
+      },
+      {
+        "order": 3,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-03-account-wallet-billing",
+        "title": "Account wallet billing local loop",
+        "goal": "Close account, recharge, balance, frozen amount, ledger and audit semantics locally.",
+        "owner_surface": [
+          "services/portal/src/domain/*billing*",
+          "services/portal/src/domain/*balance*",
+          "services/portal/src/app/portal-page-billing-payloads.mjs",
+          "services/portal/frontend/src/api/portal/billing.ts"
+        ],
+        "cleanup_targets": [
+          "legacy billing payload attribution",
+          "OpenCost or Langfuse as primary product billing narrative",
+          "amount state without account or workspace owner"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
+          "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
+          "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "balance and frozen amount have owner-scoped ledger evidence",
+          "billing payloads link to account workspace and resource context",
+          "audit state is locally queryable"
+        ]
+      },
+      {
+        "order": 4,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-04-workspace-files",
+        "title": "Workspace file space local loop",
+        "goal": "Close workspace, file space, fileRef, file list and protection semantics locally.",
+        "owner_surface": [
+          "services/portal/src/domain/portal-file-space-management.mjs",
+          "services/portal/src/domain/portal-api-workspace-storage.mjs",
+          "services/portal/src/app/portal-page-workspace-payloads.mjs",
+          "services/portal/frontend/src/api/portal/workspace.ts"
+        ],
+        "cleanup_targets": [
+          "localPath exposed as product truth",
+          "objectKey or signedUrl leakage into UI state",
+          "pseudo file availability without file space owner"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
+          "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
+          "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "fileRef is the public product reference",
+          "file space lifecycle is separate from compute lifecycle",
+          "7 day protection semantics are preserved locally"
+        ]
+      },
+      {
+        "order": 5,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-05-resource-lifecycle",
+        "title": "Managed resource lifecycle local loop",
+        "goal": "Close compute resource provisioning intent, resize semantics, release and stop-billing checks locally.",
+        "owner_surface": [
+          "services/portal/src/domain/platform-provisioned-resources.mjs",
+          "services/portal/src/domain/managed-environment-open-flow.mjs",
+          "services/portal/src/domain/managed-environment-release-flow.mjs",
+          "services/portal/src/domain/managed-resource-binding-plan-view.mjs"
+        ],
+        "cleanup_targets": [
+          "user_owned primary path",
+          "resource-order primary path",
+          "legacy runner or provisioner naming as current product route"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
+          "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
+          "node tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
+          "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "compute release never deletes file space",
+          "stop-billing check remains inside 120min window",
+          "resource state has account workspace and governance owner"
+        ]
+      },
+      {
+        "order": 6,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-06-opl-entry-runtime",
+        "title": "OPL entry runtime local loop",
+        "goal": "Close Portal to OPL preflight, providerKeyRef, launch, session and runtime state locally while keeping upstream clean.",
+        "owner_surface": [
+          "services/opl-web-gateway/src/*",
+          "services/opl-runtime-bridge/src/*",
+          "services/portal/src/domain/provider-secret-store.mjs",
+          "services/portal/src/app/portal-runtime-clients.mjs"
+        ],
+        "cleanup_targets": [
+          "direct upstream product entry",
+          "internal login path as user-facing entry",
+          "raw token or raw provider key in frontend state"
+        ],
+        "eval_commands": [
+          "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+          "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
+          "node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+          "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "Portal entry or opl entry preflight is the visible path",
+          "providerKeyRef not raw key is the frontend boundary",
+          "runtime session state is local and auditable"
+        ]
+      },
+      {
+        "order": 7,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-07-run-artifact-trace",
+        "title": "Run artifact trace local loop",
+        "goal": "Close run, artifact and trace metadata return path so Portal displays real local state.",
+        "owner_surface": [
+          "services/opl-runtime-bridge/src/state-store-*records.mjs",
+          "services/portal/src/domain/session-traces.mjs",
+          "services/portal/src/app/portal-session-trace-payloads.mjs",
+          "services/portal/frontend/src/api/portal/traces.ts"
+        ],
+        "cleanup_targets": [
+          "fake trace rows",
+          "orphan artifacts without run owner",
+          "status only visible in logs"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
+          "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
+          "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "run artifact and trace records are owner scoped",
+          "Portal can display run and artifact metadata from local APIs",
+          "trace metadata does not expose raw tokens or secrets"
+        ]
+      },
+      {
+        "order": 8,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-08-admin-ops",
+        "title": "Admin ops local projection loop",
+        "goal": "Close admin and ops local projections with audit-backed state and no unaudited control panel claims.",
+        "owner_surface": [
+          "services/portal/src/app/portal-admin-api-payloads.mjs",
+          "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+          "services/portal/frontend/src/app/pages/admin/*"
+        ],
+        "cleanup_targets": [
+          "admin display without audit source",
+          "disabled product state presented as active operation",
+          "ops control semantics without local projection owner"
+        ],
+        "eval_commands": [
+          "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
+          "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "admin views show local projection and audit state",
+          "disabled or future-authorized operations are not presented as executable",
+          "ops exceptions are locally visible"
+        ]
+      },
+      {
+        "order": 9,
+        "status": "pending",
+        "lifecycle": [
+          "inventory",
+          "classify",
+          "absorb_truth",
+          "retire_stale_surface",
+          "eval",
+          "implementation",
+          "verify",
+          "commit"
+        ],
+        "forbidden_ops": [
+          "secret",
+          "live-cloud",
+          "true-cloud-mutation",
+          "build-push-kubectl",
+          "deploy",
+          "live-test",
+          "upstream-write",
+          "dependency-upgrade",
+          "git-push"
+        ],
+        "id": "slide-09-precloud-readiness",
+        "title": "Pre-cloud readiness local gate",
+        "goal": "Close all local product gates before any separate real-cloud authorization lane.",
+        "owner_surface": [
+          "tests/fixtures/v22/goal-current.json",
+          "tests/fixtures/v22/agent-verify-manifest.json",
+          "scripts/v22-verify.mjs",
+          "docs/active/README.md",
+          "docs/history/README.md"
+        ],
+        "cleanup_targets": [
+          "temporary slide eval entries after absorption",
+          "product_engineering_loop.slides in current machine truth after all slides close",
+          "branch_override_suites.product-engineering-loop-index after landing",
+          "obsolete manifest commands replaced by product-loop suite",
+          "any claim that future-authorized means real cloud execution"
+        ],
+        "eval_commands": [
+          "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json",
+          "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
+          "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+          "npm --prefix services/portal run check"
+        ],
+        "done_when": [
+          "all pre-cloud slides are complete in machine fixture",
+          "product_engineering_loop collapses to closed summary and next cursor",
+          "slide details only remain in docs/history summary and git history",
+          "current verify and product-loop suite pass",
+          "next cursor is a separately authorized real-cloud boundary and cannot run by default"
+        ]
+      }
+    ]
+  }
 }
