@@ -63,7 +63,7 @@ landed 后的记录还必须补齐：
 
 ### 2026-05-21 cleanup/v22-opl-framework-workflow-convergence
 
-Status: `in_progress`
+Status: `ready_for_landing_review`
 
 Branch: `cleanup/v22-opl-framework-workflow-convergence`
 
@@ -77,7 +77,10 @@ Model:
 
 Commits:
 
-- pending: framework workflow convergence commits in this authoring branch; exact SHAs are recorded by git after commit.
+- `188c94a docs(v22): converge workflow on landing protocol`
+- `21ebebc test(v22): rename landing and cleanup gates`
+- `f3378ad ci(v22): expose framework repo verification gates`
+- final handoff commit: records this authoring branch summary and landing review packet.
 
 Scope:
 
