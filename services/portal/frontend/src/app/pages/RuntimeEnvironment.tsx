@@ -9,14 +9,14 @@ import { Progress } from "../components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { cn } from "../components/ui/utils";
 import { loadRuntimeEnvironmentModel, usePortalQuery } from "../data/portalAdapters";
-import { activateLabPackage } from "../../api/portal/lab";
+import { activateLabPackage, upgradeLabPackage } from "../../api/portal/lab";
 
 type ServiceStatus = "not_activated" | "active";
 
 export function RuntimeEnvironment() {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const query = usePortalQuery(loadRuntimeEnvironmentModel, [refreshVersion]);
-  const [selectedPlan, setSelectedPlan] = useState<"basic" | "standard">("standard");
+  const [selectedPlan, setSelectedPlan] = useState("pro_8c16g_100gb");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [activationPending, setActivationPending] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
@@ -26,22 +26,24 @@ export function RuntimeEnvironment() {
 
   const model = query.data;
   const serviceStatus: ServiceStatus = model.serviceStatus;
-  const plans = [
-    { id: "basic" as const, name: "基础版", cpu: 2, memory: 4, storage: 10, concurrent: 1, description: "适合轻量级科研任务" },
-    { id: "standard" as const, name: "标准版", cpu: 8, memory: 16, storage: 100, concurrent: 3, description: "适合常规科研工作", recommended: true },
-  ];
-  const current = plans.find((p) => p.id === selectedPlan)!;
+  const current = model.plans.find((p) => p.id === selectedPlan) || model.plans[0];
 
   const handleConfirmActivation = async () => {
     if (activationPending) return;
     setActivationPending(true);
     setActivationError(null);
-    const packageId = selectedPlan === "basic" ? "starter_2c4g_10gb" : "pro_8c16g_100gb";
     const workspaceId = typeof model.workspaceId === "string" ? model.workspaceId.trim() : "";
-    const idempotencyKey = `${selectedPlan}-${Date.now()}`;
+    const idempotencyKey = `${current.id}-${Date.now()}`;
     try {
-      const payload = workspaceId ? { packageId, workspaceId, idempotencyKey } : { packageId, idempotencyKey };
-      await activateLabPackage(payload);
+      const subscriptionId = model.subscription.subscription?.id || "";
+      const payload = workspaceId
+        ? { packageId: current.id, workspaceId, idempotencyKey, ...(subscriptionId ? { subscriptionId } : {}) }
+        : { packageId: current.id, idempotencyKey, ...(subscriptionId ? { subscriptionId } : {}) };
+      if (subscriptionId) {
+        await upgradeLabPackage(payload);
+      } else {
+        await activateLabPackage(payload);
+      }
       setShowConfirmDialog(false);
       setRefreshVersion((v) => v + 1);
     } catch {
@@ -59,7 +61,7 @@ export function RuntimeEnvironment() {
           <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 text-sm px-3 py-1">未开通</Badge>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {plans.map((plan) => (
+          {model.plans.map((plan) => (
             <Card key={plan.id} className={cn("border-2 cursor-pointer transition-all", selectedPlan === plan.id ? "border-neutral-900 shadow-md" : "border-neutral-200 hover:border-neutral-300")} onClick={() => setSelectedPlan(plan.id)}>
               {plan.recommended && <div className="px-5 py-2 bg-neutral-900 text-white text-xs font-medium">推荐套餐</div>}
               <div className="p-6">
@@ -72,7 +74,7 @@ export function RuntimeEnvironment() {
                 </div>
                 <div className="mb-4">
                   <div className="text-xl font-semibold text-neutral-900">价格待审批</div>
-                  <div className="text-xs text-neutral-500 mt-1">正式售价未定价</div>
+                  <div className="text-xs text-neutral-500 mt-1">{plan.priceLabel || "正式售价未定价"}</div>
                 </div>
                 <div className="space-y-2 text-sm text-neutral-700 mb-5">
                   <div className="flex justify-between"><span className="text-neutral-600">计算资源</span><span className="font-medium">{plan.cpu} 核 {plan.memory} GB</span></div>
@@ -83,6 +85,16 @@ export function RuntimeEnvironment() {
               </div>
             </Card>
           ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card className="border border-neutral-200 p-4">
+            <div className="text-xs text-neutral-600 mb-1">当前订阅状态</div>
+            <div className="font-semibold text-neutral-900">{model.subscription.status}</div>
+          </Card>
+          <Card className="border border-neutral-200 p-4">
+            <div className="text-xs text-neutral-600 mb-1">实验室权益</div>
+            <div className="font-semibold text-neutral-900">{model.entitlement.entitlement.message || "未返回"}</div>
+          </Card>
         </div>
         <Alert className="mt-6 border-blue-200 bg-blue-50"><AlertCircle className="h-4 w-4 text-blue-600" /><AlertDescription className="text-blue-900 text-sm">套餐价格尚待审批，开通后将按已审批合同计费。</AlertDescription></Alert>
         <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -116,6 +128,16 @@ export function RuntimeEnvironment() {
           </div>
         </div>
         <Button asChild variant="outline"><Link to="/billing">查看计费</Link></Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <Card className="border border-neutral-200 p-4">
+          <div className="text-xs text-neutral-600 mb-1">当前订阅状态</div>
+          <div className="font-semibold text-neutral-900">{model.subscription.status}</div>
+        </Card>
+        <Card className="border border-neutral-200 p-4">
+          <div className="text-xs text-neutral-600 mb-1">实验室权益</div>
+          <div className="font-semibold text-neutral-900">{model.entitlement.entitlement.message || "未返回"}</div>
+        </Card>
       </div>
       <div className="mb-8 p-6 bg-neutral-50 rounded-lg border border-neutral-200">
         <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><h2 className="font-semibold text-neutral-900">当前配置</h2><Badge variant="outline" className="bg-white text-blue-700 border-blue-200">{model.currentPlanName}</Badge></div><div className="text-sm text-neutral-600">{model.billingStatus}</div></div>

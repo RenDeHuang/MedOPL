@@ -46,6 +46,7 @@
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
@@ -121,6 +122,7 @@
   "verification_commands": [
     "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
@@ -416,6 +418,7 @@
         ],
         "eval_commands": [
           "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
           "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
           "npm --prefix services/portal run check"
         ],
@@ -433,7 +436,8 @@
               "services/portal/frontend/src/api/portal/*"
             ],
             "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs"
+              "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+              "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
             ],
             "done_when": [
               "page data comes from typed Portal API clients"

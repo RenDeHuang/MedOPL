@@ -1,11 +1,27 @@
 import { apiClient } from "../client";
 import { normalizePortalBusinessError } from "./common";
+import type { PortalQueryValue } from "./common";
 
 export interface LabPackagePlan {
   id: string;
   name: string;
   headline?: string;
   backingServerPlanId?: string;
+  compute?: {
+    cores?: number;
+    memoryGb?: number;
+    maxConcurrentRuns?: number;
+  };
+  storage?: {
+    includedGb?: number;
+    warningRatio?: number;
+  };
+  billing?: {
+    basePrice: null;
+    pendingProductApproval: boolean;
+    priceLabel?: string;
+    freezeDays?: number;
+  };
   computePower: string;
   storageCapacityGb: number;
   basePrice: null;
@@ -27,19 +43,71 @@ export interface LabPackagesPayload {
 }
 
 export interface LabSubscriptionPayload {
+  ok?: boolean;
   status: string;
   currentPackageId: string | null;
   currentPackageName: string | null;
   balance: number;
   frozenAmount: number;
   currency: string;
+  subscription?: {
+    id: string;
+    status: string;
+    packageId: string;
+    workspaceId: string;
+  } | null;
+  wallet?: {
+    balance: number;
+    activeFreeze: number;
+    availableBalance: number;
+    currency: string;
+  };
+  entitlement?: LabEntitlementDetails;
+}
+
+export interface LabEntitlementDetails {
+  enabled: boolean;
+  status: string;
+  subscriptionId?: string;
+  packageId?: string;
+  packageName?: string;
+  sourceType?: string;
+  compute?: {
+    tier?: string;
+    cores?: number;
+    maxConcurrentRuns?: number;
+    backingServerPlanId?: string;
+  };
+  storage?: {
+    includedGb?: number;
+    addonGb?: number;
+    totalGb?: number;
+    usedGb?: number;
+    availableGb?: number;
+    retentionDays?: number;
+    warningRatio?: number;
+    warning?: boolean;
+    blocked?: boolean;
+  };
+  gates?: {
+    canUpload?: boolean;
+    canRun?: boolean;
+    canDownload?: boolean;
+  };
+  actions?: {
+    canCreateWorkspace?: boolean;
+    canUploadFile?: boolean;
+    canStartPaidRun?: boolean;
+    canDownloadExistingOutputs?: boolean;
+  };
+  nextStepCopy?: string;
+  message?: string;
 }
 
 export interface LabEntitlementPayload {
-  canEnterLab: boolean;
-  canUpgrade: boolean;
-  canExpandStorage: boolean;
-  message?: string;
+  ok?: boolean;
+  workspaceId: string;
+  entitlement: LabEntitlementDetails;
 }
 
 export interface LabPackageMutationInput {
@@ -49,18 +117,22 @@ export interface LabPackageMutationInput {
   idempotencyKey?: string;
 }
 
+export interface LabWorkspaceQuery {
+  workspaceId: PortalQueryValue;
+}
+
 export async function fetchLabPackages() {
   const { data } = await apiClient.get<LabPackagesPayload>("/lab-packages");
   return data;
 }
 
-export async function fetchLabSubscription() {
-  const { data } = await apiClient.get<LabSubscriptionPayload>("/lab-subscription");
+export async function fetchLabSubscription(params: LabWorkspaceQuery) {
+  const { data } = await apiClient.get<LabSubscriptionPayload>("/lab-subscription", { params });
   return data;
 }
 
-export async function fetchLabEntitlement() {
-  const { data } = await apiClient.get<LabEntitlementPayload>("/lab-entitlement");
+export async function fetchLabEntitlement(params: LabWorkspaceQuery) {
+  const { data } = await apiClient.get<LabEntitlementPayload>("/lab-entitlement", { params });
   return data;
 }
 

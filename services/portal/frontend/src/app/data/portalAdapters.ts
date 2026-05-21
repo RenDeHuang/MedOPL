@@ -10,6 +10,14 @@ import {
 } from "../../api/portal/admin";
 import { fetchBillingDetails, fetchBillingSummary } from "../../api/portal/billing";
 import { fetchCurrentUser } from "../../api/portal/commercial";
+import {
+  fetchLabEntitlement,
+  fetchLabPackages,
+  fetchLabSubscription,
+  type LabEntitlementPayload,
+  type LabPackagePlan,
+  type LabSubscriptionPayload,
+} from "../../api/portal/lab";
 import { fetchOverview } from "../../api/portal/overview";
 import {
   bindOplSession,
@@ -221,6 +229,27 @@ function planSpec(plan: SelectedServerPlan | null | undefined) {
   return plan.instanceType || "";
 }
 
+function activeWorkspaceId(resources: PlatformProvisionedResourcesPayload) {
+  const activeBinding = resources.items.find((item) => item.status === "active") || resources.items[0] || null;
+  return stringValue(activeBinding?.workspaceId, "");
+}
+
+function packageCpu(plan: LabPackagePlan) {
+  return numberValue(plan.compute?.cores, numberValue(String(plan.computePower || "").match(/\d+/u)?.[0]));
+}
+
+function packageMemory(plan: LabPackagePlan) {
+  return numberValue(plan.memoryGb, numberValue(plan.compute?.memoryGb));
+}
+
+function packageConcurrent(plan: LabPackagePlan) {
+  return numberValue(plan.compute?.maxConcurrentRuns);
+}
+
+function packageStorage(plan: LabPackagePlan) {
+  return numberValue(plan.storageCapacityGb, numberValue(plan.storage?.includedGb));
+}
+
 export async function loadOverviewModel() {
   const [overview, resources] = await Promise.all([fetchOverview(), fetchMyResources()]);
   const activeBinding = resources.items.find((item) => item.status === "active") || null;
@@ -264,15 +293,34 @@ export async function loadOverviewModel() {
 }
 
 export async function loadRuntimeEnvironmentModel() {
-  const resources = await fetchMyResources();
+  const [resources, user] = await Promise.all([fetchMyResources(), fetchCurrentUser()]);
   const activeBinding = resources.items.find((item) => item.status === "active") || null;
   const fileSpace = firstFileSpace(resources);
   const storageCapacityGb = numberValue(fileSpace?.storageCapacityGb);
   const protection = activeBinding?.protection || resources.protections[0] || null;
+  const workspaceId = activeWorkspaceId(resources) || stringValue(user.currentTaskSlug, "");
+  const [packageCatalog, subscription, entitlement] = await Promise.all([
+    fetchLabPackages(),
+    fetchLabSubscription({ workspaceId }),
+    fetchLabEntitlement({ workspaceId }),
+  ]);
+  const plans = packageCatalog.items.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    description: plan.headline || plan.planSummary || "",
+    cpu: packageCpu(plan),
+    memory: packageMemory(plan),
+    storage: packageStorage(plan),
+    concurrent: packageConcurrent(plan),
+    recommended: plan.id === "pro_8c16g_100gb",
+    priceLabel: plan.priceLabel || plan.billing?.priceLabel || "正式售价未定价",
+    pendingProductApproval: plan.pendingProductApproval || Boolean(plan.billing?.pendingProductApproval),
+  }));
+  if (plans.length === 0) throw new PortalDisplayError(PORTAL_DATA_UNAVAILABLE_MESSAGE);
   return {
     serviceStatus: activeBinding ? "active" : "not_activated",
-    workspaceId: activeBinding?.workspaceId || "",
-    currentPlanName: "已开通托管套餐",
+    workspaceId,
+    currentPlanName: subscription.currentPackageName || entitlement.entitlement.packageName || "已开通托管套餐",
     computeSpec: activeBinding?.computeResource?.instanceType || "未返回",
     storageTotal: gb(storageCapacityGb),
     storageUsed: gb(Math.min(storageCapacityGb, numberValue(protection?.consumedAmount))),
@@ -280,6 +328,9 @@ export async function loadRuntimeEnvironmentModel() {
     storagePercent: storageCapacityGb > 0 ? Math.min(100, Math.round((numberValue(protection?.consumedAmount) / storageCapacityGb) * 100)) : 0,
     frozenAmount: money(protection?.frozenAmount),
     billingStatus: protection?.status || activeBinding?.status || "未返回",
+    plans,
+    subscription: subscription as LabSubscriptionPayload,
+    entitlement: entitlement as LabEntitlementPayload,
   } as const;
 }
 

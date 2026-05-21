@@ -36,7 +36,6 @@ const requiredUsedExports = [
 ];
 
 const allowedAdjudicationStatuses = new Set([
-  "active-missing-ui",
   "active-used",
   "backend-only",
   "future-reserved",
@@ -82,22 +81,6 @@ const unusedAdjudications = {
   "billing.ts:fetchRunCosts": {
     status: "future-reserved",
     reason: "Run cost projection is not shown by the current trace page.",
-  },
-  "lab.ts:fetchLabPackages": {
-    status: "active-missing-ui",
-    reason: "Runtime page still carries local package cards; current active UI should read the backend package catalog before this is closed.",
-  },
-  "lab.ts:fetchLabSubscription": {
-    status: "active-missing-ui",
-    reason: "Runtime page activates packages, but does not read back subscription state through this dedicated client.",
-  },
-  "lab.ts:fetchLabEntitlement": {
-    status: "active-missing-ui",
-    reason: "Runtime entry eligibility exists as an API client, but the current UI relies on resource status instead of entitlement.",
-  },
-  "lab.ts:upgradeLabPackage": {
-    status: "active-missing-ui",
-    reason: "Product direction allows package adjustment, but current runtime UI only wires activation/custom activation.",
   },
   "opl.ts:sendOplMessage": {
     status: "future-reserved",
