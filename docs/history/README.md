@@ -61,6 +61,85 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-slide-09-precloud-readiness
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-slide-09-precloud-readiness`
+
+Base trunk HEAD: `0037df7ac22f9fda158ecf75f611c88a88662aea`
+
+handoff_commit: `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Kuhn: `gpt-5.4`, read-only slide-09 diff and closeout boundary review.
+
+Scope:
+
+- Close slide-09 pre-cloud readiness gate.
+- Extend the product-engineering-loop gate so it validates both open and closed states.
+- Keep the final current verification bundle local-only; do not authorize real cloud execution.
+- Collapse the temporary product slide baton from active machine truth into a closed summary and this history summary.
+- Remove the temporary `product-engineering-loop-index` branch override after slide loop closeout.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No per-slide docs, `docs/slides/*`, shadow archive or unregistered tests.
+- No product service implementation in the closeout commit.
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `npm run test:lanes`
+- `npm run test:fast`
+- `npm --prefix services/portal run check`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+
+Next recommendation:
+
+- Start `real-cloud-authorization-boundary` only after explicit authorization for secret access, provider operations, deploy/build/kubectl/live-test boundaries and evidence handling.
+
+landed_commit: `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` passed before landing while the loop was still open.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed before landing.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed before landing while cursor still pointed to slide-09.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json` passed before landing.
+- repo bloat audit passed; no per-slide docs, shadow archive or unregistered tests were added.
+- forbidden path diff empty.
+- added-lines secret value scan empty.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-05-22 feat/v22-slide-08-admin-ops
 
 Status: `landed / pushed / post-push verified`

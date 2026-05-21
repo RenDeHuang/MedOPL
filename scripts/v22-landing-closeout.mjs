@@ -97,7 +97,7 @@ function closeoutCommitLooksLikeCloseout(commit) {
   const allowedPatterns = [
     /^docs\/(?:active|delivery|history)\/README\.md$/u,
     /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,
-    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|mvp-contract-suite)\.mjs$/u,
+    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|mvp-contract-suite)\.mjs$/u,
     /^tests\/smoke\/smoke-test-v22-saas-control-plane-user-experience-boundary\.mjs$/u,
     /^scripts\/v22-landing-closeout\.mjs$/u,
   ];

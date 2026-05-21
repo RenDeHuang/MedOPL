@@ -49,7 +49,12 @@ assert(cursorSection.includes(current.current_cursor), "cursor_line_must_referen
 assert(cursorSection.includes(current.last_landed_commit), "cursor_line_must_reference_last_landed_commit");
 
 const dataSection = sectionForLine(active, "portal-canonical-data-postgres-redis-closure");
-assert(dataSection.includes("status: `gated`"), "data_line_must_remain_gated");
+const productLoopClosed = current.product_engineering_loop?.status === "closed";
+if (productLoopClosed) {
+  assert(dataSection.includes("slide-01 closed local production data truth"), "data_line_must_record_closed_local_data_truth");
+} else {
+  assert(dataSection.includes("status: `gated`"), "data_line_must_remain_gated");
+}
 assert(dataSection.includes("PostgreSQL"), "data_line_must_name_postgres");
 assert(dataSection.includes("Redis"), "data_line_must_name_redis");
 assert(dataSection.includes("fail-closed"), "data_line_must_require_fail_closed");
@@ -58,11 +63,19 @@ const governanceSection = sectionForLine(active, "governance-verification-post-m
 assert(governanceSection.includes("post-merge closeout"), "governance_line_must_require_post_merge_closeout");
 assert(governanceSection.includes("node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk"), "governance_line_must_include_verify_entrypoint");
 
-for (const cannotClaim of [
-  "不能宣称 PostgreSQL/Redis、本地 production data layer",
-  "不能写成 `future-authorized` 等于真实云",
-  "不能跳过 post-merge closeout",
-]) {
+const expectedCannotClaims = productLoopClosed
+  ? [
+    "不能宣称真实云生产闭环已完成",
+    "不能写成 `future-authorized` 等于真实云",
+    "不能跳过 post-merge closeout",
+  ]
+  : [
+    "不能宣称 PostgreSQL/Redis、本地 production data layer",
+    "不能写成 `future-authorized` 等于真实云",
+    "不能跳过 post-merge closeout",
+  ];
+
+for (const cannotClaim of expectedCannotClaims) {
   assert(active.includes(cannotClaim), `cannot_claim_must_remain:${cannotClaim}`);
 }
 

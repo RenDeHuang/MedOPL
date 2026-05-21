@@ -8,46 +8,49 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900",
-  "current_branch": "feat/v22-slide-09-precloud-readiness",
-  "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-09-precloud-readiness",
+  "base_trunk_head": "97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73",
+  "current_branch": "real-cloud-authorization-boundary",
+  "current_branch_role": "authorization_boundary_not_runtime_git_branch",
+  "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900",
-  "current_cursor": "leaf-precloud-readiness-closure",
-  "next_leaf": "leaf-precloud-readiness-closure",
-  "current_stage": "S5 pre-cloud readiness",
+  "last_landed_commit": "97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73",
+  "current_cursor": "real-cloud-authorization-boundary",
+  "next_leaf": "real-cloud-authorization-boundary",
+  "current_stage": "S6 real cloud authorization boundary",
   "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "precloud_readiness_requires_all_local_gates_and_no_real_cloud_authorization"
+    "real_cloud_requires_explicit_authorization_before_secret_or_live_execution"
   ],
-  "current_problem": "slide-08 admin ops landed at 9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900. The active product baton is slide-09 precloud readiness: all local product gates must pass, product_engineering_loop must remain ready for final collapse after slide-09, and next cursor must stay a separately authorized real-cloud boundary.",
+  "current_problem": "The pre-cloud product slide loop is locally closed at slide-09. The next cursor is the separately authorized real-cloud boundary; default current verification remains local-only and must not read secrets, deploy, build/push, kubectl, live-test, or mutate cloud resources.",
   "gaps": [
     {
-      "id": "precloud-readiness-closure",
+      "id": "precloud-product-slides-closure",
       "stage": "S5 pre-cloud readiness",
       "priority": 70,
-      "cursor_eligible": true,
-      "status": "gated",
-      "next_leaf_step": "leaf-precloud-readiness-closure",
+      "cursor_eligible": false,
+      "status": "closed",
+      "next_leaf_step": "real-cloud-authorization-boundary",
+      "landed_commit": "97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73",
+      "closed_at": "2026-05-22"
+    },
+    {
+      "id": "real-cloud-authorization-boundary",
+      "stage": "S6 real cloud authorization boundary",
+      "priority": 80,
+      "cursor_eligible": false,
+      "status": "authorization_required",
+      "next_leaf_step": "real-cloud-authorization-boundary",
       "depends_on": [
-        "portal-postgres-redis-local-production-data-closure",
-        "portal-api-real-data-closure",
-        "account-wallet-billing-closure",
-        "workspace-files-closure",
-        "resource-lifecycle-closure",
-        "opl-entry-runtime-closure",
-        "run-artifact-trace-closure",
-        "admin-ops-closure"
+        "precloud-product-slides-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-precloud-readiness-closure",
-    "gap_id": "precloud-readiness-closure",
-    "stage": "S5 pre-cloud readiness",
-    "cursor_eligible": true,
-    "problem": "All pre-cloud product slides must be verified as a local closed loop before any separate real-cloud authorization boundary can become the next cursor.",
+    "step_id": "real-cloud-authorization-boundary",
+    "gap_id": "real-cloud-authorization-boundary",
+    "stage": "S6 real cloud authorization boundary",
+    "cursor_eligible": false,
+    "problem": "Real cloud execution is now the next product boundary, but it is not authorized by default. The only current executable proof is the local pre-cloud verification bundle plus closeout gates.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
@@ -100,15 +103,15 @@
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
+      "docs/policies/README.md",
       "tests/fixtures/v22/*",
       "tests/**/*.mjs",
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
+      "scripts/v22-landing-closeout.mjs",
       "scripts/v22-repo-hygiene.mjs",
       "scripts/v22-repo-bloat-audit.mjs",
-      "scripts/v22-line-budget.mjs",
-      "services/portal/frontend/src/app/data/*",
-      "services/portal/frontend/src/app/pages/admin/*"
+      "scripts/v22-line-budget.mjs"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -134,6 +137,14 @@
     "cursor_eligible": false,
     "blocked_before_risky_execution": true,
     "forbidden_until_executable": [
+      "secret read",
+      "true cloud call",
+      "build/push/kubectl",
+      "deploy",
+      "live-test"
+    ],
+    "next_cursor": "real-cloud-authorization-boundary",
+    "authorization_required_before": [
       "secret read",
       "true cloud call",
       "build/push/kubectl",
@@ -205,16 +216,16 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-08-admin-ops",
+  "last_landed_branch": "feat/v22-slide-09-precloud-readiness",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-08-admin-ops",
+  "history_latest_branch": "feat/v22-slide-09-precloud-readiness",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
     "id": "precloud-product-slides-closure",
     "owner": "MedOPL",
     "method": "OPL-style framework repo lifecycle",
-    "status": "active",
+    "status": "closed",
     "truth_file": "docs/active/README.md",
     "machine_cursor_file": "tests/fixtures/v22/goal-current.json",
     "verify_manifest_file": "tests/fixtures/v22/agent-verify-manifest.json",
@@ -222,7 +233,6 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-09-precloud-readiness",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -255,879 +265,15 @@
       "verify",
       "commit"
     ],
-    "slides": [
-      {
-        "order": 0,
-        "status": "indexed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-00-product-goal-index",
-        "title": "Product engineering lifecycle index",
-        "goal": "Make the pre-cloud product slide sequence machine-readable without adding per-slide markdown documents.",
-        "owner_surface": [
-          "tests/fixtures/v22/goal-current.json",
-          "tests/fixtures/v22/agent-verify-manifest.json",
-          "docs/active/README.md",
-          "docs/history/README.md"
-        ],
-        "cleanup_targets": [
-          "scattered product goal notes",
-          "manual-only slide sequencing",
-          "unregistered product eval commands"
-        ],
-        "eval_commands": [
-          "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
-          "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
-          "node tests/contract/contract-test-v22-test-lane-registry.mjs"
-        ],
-        "done_when": [
-          "product_engineering_loop exists in goal-current",
-          "all slides have owner_surface cleanup_targets eval_commands done_when and lifecycle",
-          "product loop gate is registered in current local-contract and review"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "machine-index",
-            "owner_surface": "tests/fixtures/v22/goal-current.json",
-            "allowed_files": [
-              "tests/fixtures/v22/goal-current.json"
-            ],
-            "eval_commands": [
-              "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"
-            ],
-            "done_when": [
-              "slide order lifecycle eval and closeout policy are machine-readable"
-            ]
-          }
-        ]
-      },
-      {
-        "order": 1,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-01-data-truth",
-        "title": "PostgreSQL Redis local production data truth",
-        "goal": "Close local durable data truth so PostgreSQL is canonical and Redis is coordination only.",
-        "owner_surface": [
-          "services/portal/src/storage/*",
-          "services/portal/src/migrations/*",
-          "services/portal/src/config/*",
-          "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
-        ],
-        "cleanup_targets": [
-          "JSON fallback under PORTAL_STORAGE_MODE=postgres_redis",
-          "implicit storage mode success",
-          "demo store treated as production truth"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "postgres_redis requires PostgreSQL and Redis connectivity",
-          "missing connection or schema fails closed",
-          "Redis is not used as a fact source",
-          "JSON fallback is not used in postgres_redis"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "postgres-canonical-store",
-            "owner_surface": "services/portal/src/storage/*",
-            "allowed_files": [
-              "services/portal/src/storage/*",
-              "services/portal/src/migrations/*",
-              "services/portal/src/config/*"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
-            ],
-            "done_when": [
-              "postgres_redis mode fails closed without PostgreSQL connectivity and schema"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "redis-coordination-only",
-            "owner_surface": "services/portal/src/state/*",
-            "allowed_files": [
-              "services/portal/src/state/*",
-              "services/portal/src/config/*"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
-            ],
-            "done_when": [
-              "Redis is only session cache queue lock or coordination and never fact source"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "json-fallback-retirement",
-            "owner_surface": "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-            "allowed_files": [
-              "tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs"
-            ],
-            "done_when": [
-              "JSON fallback is impossible under PORTAL_STORAGE_MODE=postgres_redis"
-            ]
-          }
-        ],
-        "landed_commit": "de71ca446da703358dd998489fb555fba622ea68",
-        "landed_branch": "feat/v22-slide-01-data-truth",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-01 made PostgreSQL the canonical local production data truth and kept Redis coordination-only; postgres_redis no longer writes JSON business snapshots.",
-        "next_cursor": "leaf-portal-api-real-data-closure"
-      },
-      {
-        "order": 2,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-02-portal-api-real-data",
-        "title": "Portal API real data wiring",
-        "goal": "Bind Portal pages and components to real local API/state surfaces instead of hardcoded demo data.",
-        "owner_surface": [
-          "services/portal/frontend/src/api/portal/*",
-          "services/portal/frontend/src/app/pages/*",
-          "services/portal/src/routes/*",
-          "services/portal/src/app/*"
-        ],
-        "cleanup_targets": [
-          "hardcoded page demo payloads",
-          "component-local fake status",
-          "UI adapter aliases that bypass typed API clients"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
-          "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
-          "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "Portal visible state comes from typed API clients or server state",
-          "no product page constructs business truth locally",
-          "local API action closure remains green"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "typed-api-clients",
-            "owner_surface": "services/portal/frontend/src/api/portal/*",
-            "allowed_files": [
-              "services/portal/frontend/src/api/portal/*"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
-              "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
-            ],
-            "done_when": [
-              "page data comes from typed Portal API clients"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "component-real-state",
-            "owner_surface": "services/portal/frontend/src/app/pages/*",
-            "allowed_files": [
-              "services/portal/frontend/src/app/pages/*",
-              "services/portal/frontend/src/app/data/*"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs"
-            ],
-            "done_when": [
-              "components do not construct business truth locally"
-            ]
-          }
-        ],
-        "landed_commit": "5c3f83585c78a5fdb48ed31741719658a4e8d1d6",
-        "landed_branch": "feat/v22-slide-02-portal-api-real-data",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-02 wired RuntimeEnvironment visible package, subscription and entitlement state through typed Portal lab API clients and removed active-missing-ui adjudication for lab API surface.",
-        "next_cursor": "leaf-account-wallet-billing-closure"
-      },
-      {
-        "order": 3,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-03-account-wallet-billing",
-        "title": "Account wallet billing local loop",
-        "goal": "Close account, recharge, balance, frozen amount, ledger and audit semantics locally.",
-        "owner_surface": [
-          "services/portal/src/domain/*billing*",
-          "services/portal/src/domain/*balance*",
-          "services/portal/src/app/portal-page-billing-payloads.mjs",
-          "services/portal/frontend/src/api/portal/billing.ts"
-        ],
-        "cleanup_targets": [
-          "legacy billing payload attribution",
-          "OpenCost or Langfuse as primary product billing narrative",
-          "amount state without account or workspace owner"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
-          "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
-          "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
-          "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "balance and frozen amount have owner-scoped ledger evidence",
-          "billing payloads link to account workspace and resource context",
-          "audit state is locally queryable"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "wallet-ledger",
-            "owner_surface": "services/portal/src/domain/wallet-ledger.mjs",
-            "allowed_files": [
-              "services/portal/src/domain/*",
-              "services/portal/src/app/portal-page-billing-payloads.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
-              "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs"
-            ],
-            "done_when": [
-              "balance frozen amount and ledger are owner-scoped"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "billing-api-display",
-            "owner_surface": "services/portal/frontend/src/api/portal/billing.ts",
-            "allowed_files": [
-              "services/portal/frontend/src/api/portal/billing.ts",
-              "services/portal/frontend/src/app/pages/BillingAudit.tsx"
-            ],
-            "eval_commands": [
-              "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs"
-            ],
-            "done_when": [
-              "billing payloads connect account workspace resource and audit context"
-            ]
-          }
-        ],
-        "landed_commit": "525546b7fb5c4483edeb3f21db4cd7a675996540",
-        "landed_branch": "feat/v22-slide-03-account-wallet-billing",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-03 unified owner-scoped wallet ledger, frozen amount, pending usage, T+1 settlement and BillingAudit UI-safe account scope display.",
-        "next_cursor": "leaf-workspace-files-closure"
-      },
-      {
-        "order": 4,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-04-workspace-files",
-        "title": "Workspace file space local loop",
-        "goal": "Close workspace, file space, fileRef, file list and protection semantics locally.",
-        "owner_surface": [
-          "services/portal/src/domain/portal-file-space-management.mjs",
-          "services/portal/src/domain/portal-api-workspace-storage.mjs",
-          "services/portal/src/app/portal-page-workspace-payloads.mjs",
-          "services/portal/frontend/src/api/portal/workspace.ts"
-        ],
-        "cleanup_targets": [
-          "localPath exposed as product truth",
-          "objectKey or signedUrl leakage into UI state",
-          "pseudo file availability without file space owner"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
-          "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
-          "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "fileRef is the public product reference",
-          "file space lifecycle is separate from compute lifecycle",
-          "7 day protection semantics are preserved locally"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "file-ref-public-boundary",
-            "owner_surface": "services/portal/src/domain/portal-api-workspace-storage.mjs",
-            "allowed_files": [
-              "services/portal/src/domain/portal-api-workspace-storage.mjs",
-              "services/portal/frontend/src/api/portal/workspace.ts"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs"
-            ],
-            "done_when": [
-              "fileRef is public and objectKey localPath signedUrl stay backend only"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "file-space-lifecycle",
-            "owner_surface": "services/portal/src/domain/portal-file-space-management.mjs",
-            "allowed_files": [
-              "services/portal/src/domain/portal-file-space-management.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs"
-            ],
-            "done_when": [
-              "file space lifecycle remains separate from compute release lifecycle"
-            ]
-          }
-        ],
-        "landed_commit": "44c917fbd16952cb043d24d97a0211cc2d8fd9b2",
-        "landed_branch": "feat/v22-slide-04-workspace-files",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-04 projected fileSpace folders, selected file refs, actions, delete policy and 7-day protection semantics into the Workspace UI while keeping objectKey/localPath/signedUrl and object-store implementation details out of frontend product truth.",
-        "next_cursor": "leaf-resource-lifecycle-closure"
-      },
-      {
-        "order": 5,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-05-resource-lifecycle",
-        "title": "Managed resource lifecycle local loop",
-        "goal": "Close compute resource provisioning intent, resize semantics, release and stop-billing checks locally.",
-        "owner_surface": [
-          "services/portal/src/domain/platform-provisioned-resources.mjs",
-          "services/portal/src/domain/managed-environment-open-flow.mjs",
-          "services/portal/src/domain/managed-environment-release-flow.mjs",
-          "services/portal/src/domain/managed-resource-binding-plan-view.mjs"
-        ],
-        "cleanup_targets": [
-          "user_owned primary path",
-          "resource-order primary path",
-          "legacy runner or provisioner naming as current product route"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
-          "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
-          "node tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
-          "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "compute release never deletes file space",
-          "stop-billing check remains inside 120min window",
-          "resource state has account workspace and governance owner"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "compute-release-semantics",
-            "owner_surface": "services/portal/src/domain/managed-environment-release-flow.mjs",
-            "allowed_files": [
-              "services/portal/src/domain/managed-environment-release-flow.mjs",
-              "services/portal/src/domain/platform-provisioned-resources.mjs"
-            ],
-            "eval_commands": [
-              "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs"
-            ],
-            "done_when": [
-              "compute release stops compute billing and never deletes file space"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "legacy-resource-route-retirement",
-            "owner_surface": "tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
-            "allowed_files": [
-              "tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
-            ],
-            "done_when": [
-              "legacy resource routes cannot return as primary product path"
-            ]
-          }
-        ],
-        "landed_commit": "b0ac1b31a85e2ab63827640544e04af6723a4122",
-        "landed_branch": "feat/v22-slide-05-resource-lifecycle",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-05 projected managed environment releasePolicy, stopBilling and auditStatus into UI-safe resource payloads and RuntimeEnvironment display while keeping compute release separate from file-space retention and preventing user_owned/resource-order from returning as primary product routes.",
-        "next_cursor": "leaf-opl-entry-runtime-closure"
-      },
-      {
-        "order": 6,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-06-opl-entry-runtime",
-        "title": "OPL entry runtime local loop",
-        "goal": "Close Portal to OPL preflight, providerKeyRef, launch, session and runtime state locally while keeping upstream clean.",
-        "owner_surface": [
-          "services/opl-web-gateway/src/*",
-          "services/opl-runtime-bridge/src/*",
-          "services/portal/src/domain/provider-secret-store.mjs",
-          "services/portal/src/app/portal-runtime-clients.mjs"
-        ],
-        "cleanup_targets": [
-          "direct upstream product entry",
-          "internal login path as user-facing entry",
-          "raw token or raw provider key in frontend state"
-        ],
-        "eval_commands": [
-          "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
-          "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
-          "node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
-          "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "Portal entry or opl entry preflight is the visible path",
-          "providerKeyRef not raw key is the frontend boundary",
-          "runtime session state is local and auditable"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "entry-preflight",
-            "owner_surface": "services/opl-web-gateway/src/*",
-            "allowed_files": [
-              "services/opl-web-gateway/src/*",
-              "services/portal/src/app/portal-runtime-clients.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs"
-            ],
-            "done_when": [
-              "Portal entry and preflight are visible user paths"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "provider-keyref-boundary",
-            "owner_surface": "services/portal/src/domain/provider-secret-store.mjs",
-            "allowed_files": [
-              "services/portal/src/domain/provider-secret-store.mjs",
-              "services/opl-runtime-bridge/src/provider-secret-store.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs"
-            ],
-            "done_when": [
-              "providerKeyRef crosses frontend boundary without raw key exposure"
-            ]
-          }
-        ],
-        "landed_commit": "abc1071eecd7d75f8b436e12502382098ace98d3",
-        "landed_branch": "feat/v22-slide-06-opl-entry-runtime",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-06 kept the Portal launch id as the only frontend proxy handle while removing nested launch id exposure from public launch payloads; runtime session, workspace session and providerKeyRef remain the visible boundary, and raw launch token/runtime token/raw provider key stay backend-only.",
-        "next_cursor": "leaf-run-artifact-trace-closure"
-      },
-      {
-        "order": 7,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-07-run-artifact-trace",
-        "title": "Run artifact trace local loop",
-        "goal": "Close run, artifact and trace metadata return path so Portal displays real local state.",
-        "owner_surface": [
-          "services/opl-runtime-bridge/src/state-store-*records.mjs",
-          "services/portal/src/domain/session-traces.mjs",
-          "services/portal/src/app/portal-session-trace-payloads.mjs",
-          "services/portal/frontend/src/api/portal/traces.ts"
-        ],
-        "cleanup_targets": [
-          "fake trace rows",
-          "orphan artifacts without run owner",
-          "status only visible in logs"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
-          "node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
-          "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
-          "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "run artifact and trace records are owner scoped",
-          "Portal can display run and artifact metadata from local APIs",
-          "trace metadata does not expose raw tokens or secrets"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "run-artifact-records",
-            "owner_surface": "services/opl-runtime-bridge/src/state-store-*records.mjs",
-            "allowed_files": [
-              "services/opl-runtime-bridge/src/state-store-*records.mjs"
-            ],
-            "eval_commands": [
-              "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs"
-            ],
-            "done_when": [
-              "run and artifact records are owner scoped"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "portal-trace-projection",
-            "owner_surface": "services/portal/src/domain/session-traces.mjs",
-            "allowed_files": [
-              "services/portal/src/domain/session-traces.mjs",
-              "services/portal/src/app/portal-session-trace-payloads.mjs",
-              "services/portal/frontend/src/api/portal/traces.ts"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs"
-            ],
-            "done_when": [
-              "Portal displays trace metadata from local API without secret leakage"
-            ]
-          }
-        ],
-        "landed_commit": "eec977b4e654837df0ea02c13c48437e587aa548",
-        "landed_branch": "feat/v22-slide-07-run-artifact-trace",
-        "closed_at": "2026-05-22",
-        "history_summary": "slide-07 closed owner-scoped run/artifact/trace metadata backflow: Portal trace payloads now expose runtimeTrace summaries from runtime bridge canonical metadata, filter explicit non-owner artifact/trace records, and avoid exposing runId/token/storage/private owner fields or front-end fallback truth.",
-        "next_cursor": "leaf-admin-ops-closure"
-      },
-      {
-        "order": 8,
-        "status": "landed",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-08-admin-ops",
-        "title": "Admin ops local projection loop",
-        "goal": "Close admin and ops local projections with audit-backed state and no unaudited control panel claims.",
-        "owner_surface": [
-          "services/portal/src/app/portal-admin-api-payloads.mjs",
-          "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
-          "services/portal/frontend/src/app/data/*",
-          "services/portal/frontend/src/app/pages/admin/*"
-        ],
-        "cleanup_targets": [
-          "admin display without audit source",
-          "disabled product state presented as active operation",
-          "ops control semantics without local projection owner"
-        ],
-        "eval_commands": [
-          "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
-          "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
-          "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
-          "node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "admin views show local projection and audit state",
-          "disabled or future-authorized operations are not presented as executable",
-          "ops exceptions are locally visible"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "admin-local-projection",
-            "owner_surface": "services/portal/src/app/portal-admin-api-payloads.mjs",
-            "allowed_files": [
-              "services/portal/src/app/portal-admin-api-payloads.mjs",
-              "services/portal/frontend/src/app/pages/admin/*"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs"
-            ],
-            "done_when": [
-              "admin views show audit-backed local projection"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "disabled-operation-boundary",
-            "owner_surface": "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
-            "allowed_files": [
-              "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
-              "services/portal/frontend/src/app/pages/admin/*"
-            ],
-            "eval_commands": [
-              "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs"
-            ],
-            "done_when": [
-              "disabled or future-authorized operations are not shown as executable"
-            ]
-          }
-        ],
-        "landed_commit": "9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900",
-        "landed_branch": "feat/v22-slide-08-admin-ops",
-        "closed_at": "2026-05-22",
-        "history_summary": "Closed admin ops local projection: Portal renders audit-backed local operation rows, ops exceptions, cost allocation tags and disabled/future-authorized boundaries from the admin ops API payload without real cloud mutation.",
-        "next_cursor": "leaf-precloud-readiness-closure"
-      },
-      {
-        "order": 9,
-        "status": "active",
-        "lifecycle": [
-          "inventory",
-          "classify",
-          "absorb_truth",
-          "retire_stale_surface",
-          "eval",
-          "implementation",
-          "verify",
-          "commit"
-        ],
-        "forbidden_ops": [
-          "secret",
-          "live-cloud",
-          "true-cloud-mutation",
-          "build-push-kubectl",
-          "deploy",
-          "live-test",
-          "upstream-write",
-          "dependency-upgrade",
-          "git-push"
-        ],
-        "id": "slide-09-precloud-readiness",
-        "title": "Pre-cloud readiness local gate",
-        "goal": "Close all local product gates before any separate real-cloud authorization lane.",
-        "owner_surface": [
-          "tests/fixtures/v22/goal-current.json",
-          "tests/fixtures/v22/agent-verify-manifest.json",
-          "scripts/v22-verify.mjs",
-          "docs/active/README.md",
-          "docs/history/README.md"
-        ],
-        "cleanup_targets": [
-          "temporary slide eval entries after absorption",
-          "product_engineering_loop.slides in current machine truth after all slides close",
-          "branch_override_suites.product-engineering-loop-index after landing",
-          "obsolete manifest commands replaced by product-loop suite",
-          "any claim that future-authorized means real cloud execution"
-        ],
-        "eval_commands": [
-          "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json",
-          "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
-          "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-          "npm --prefix services/portal run check"
-        ],
-        "done_when": [
-          "all pre-cloud slides are complete in machine fixture",
-          "product_engineering_loop collapses to closed summary and next cursor",
-          "slide details only remain in docs/history summary and git history",
-          "current verify and product-loop suite pass",
-          "next cursor is a separately authorized real-cloud boundary and cannot run by default"
-        ],
-        "subtask_surfaces": [
-          {
-            "permanent_doc_allowed": false,
-            "id": "loop-collapse",
-            "owner_surface": "tests/fixtures/v22/goal-current.json",
-            "allowed_files": [
-              "tests/fixtures/v22/goal-current.json",
-              "tests/fixtures/v22/agent-verify-manifest.json",
-              "docs/history/README.md"
-            ],
-            "eval_commands": [
-              "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json"
-            ],
-            "done_when": [
-              "open slide details collapse to closed summary and next cursor"
-            ]
-          },
-          {
-            "permanent_doc_allowed": false,
-            "id": "real-cloud-boundary-handoff",
-            "owner_surface": "docs/active/README.md",
-            "allowed_files": [
-              "docs/active/README.md",
-              "docs/history/README.md"
-            ],
-            "eval_commands": [
-              "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json"
-            ],
-            "done_when": [
-              "next cursor is real cloud authorization boundary and cannot run by default"
-            ]
-          }
-        ]
-      }
-    ],
     "no_per_slide_docs": true,
     "no_slide_subtask_docs": true,
     "no_unregistered_slide_tests": true,
-    "slide_subtasks_policy": "subtasks_may_exist_only_as_code_tests_fixture_tasks_or_history_closeout_summary"
+    "slide_subtasks_policy": "subtasks_may_exist_only_as_code_tests_fixture_tasks_or_history_closeout_summary",
+    "landed_commit": "97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73",
+    "landed_branch": "feat/v22-slide-09-precloud-readiness",
+    "closed_at": "2026-05-22",
+    "history_summary": "slide-01 through slide-09 are landed; the pre-cloud product engineering loop is closed locally, active slide details are folded into history, and the next cursor is the separately authorized real-cloud boundary.",
+    "next_cursor": "real-cloud-authorization-boundary"
   },
   "test_lifecycle_cleanup_gate": {
     "schema_version": 1,

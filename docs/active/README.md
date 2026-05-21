@@ -13,11 +13,11 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 ### 当前阶段真相
 
-当前 trunk 已完成合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环、Portal-OPL file/run/artifact 本地闭环、slide-01 data truth 本地闭环、slide-02 Portal API real data wiring 本地闭环、slide-03 account/wallet/billing 本地闭环、slide-04 workspace/files 本地闭环、slide-05 resource lifecycle 本地闭环、slide-06 OPL entry runtime 本地闭环、slide-07 run/artifact/trace metadata backflow 本地闭环，以及 slide-08 admin ops local projection 本地闭环。当前不是真实云生产闭环，也不是 pre-cloud release readiness 完成态。
+当前 trunk 已完成合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环、Portal-OPL file/run/artifact 本地闭环、slide-01 data truth 本地闭环、slide-02 Portal API real data wiring 本地闭环、slide-03 account/wallet/billing 本地闭环、slide-04 workspace/files 本地闭环、slide-05 resource lifecycle 本地闭环、slide-06 OPL entry runtime 本地闭环、slide-07 run/artifact/trace metadata backflow 本地闭环、slide-08 admin ops local projection 本地闭环，以及 slide-09 pre-cloud readiness 本地闭环。当前不是真实云生产闭环，也不是已授权真实云执行态。
 
-当前 product cursor 是 `leaf-precloud-readiness-closure`。当前 active baton 是 `slide-09-precloud-readiness`：全部本地 product gates 必须以 current/product-loop/workflow gate 验证闭合，`product_engineering_loop` 在 slide-09 landed 后才能折叠成 history summary，下一 cursor 必须保持为单独授权的 real-cloud boundary。slide-01 已让 PostgreSQL 成为 local production data canonical truth；slide-02 已让 RuntimeEnvironment 可见套餐、订阅和权益状态来自 typed Portal lab API client；slide-03 已让账务 ledger、冻结净额、pending usage、T+1 settlement 和 BillingAudit 账户归属显示进入 owner-scoped 本地闭环；slide-04 已让 fileSpace folders、selected file refs、actions、delete policy 和 7 天保护语义进入 Workspace UI-safe 本地闭环；slide-05 已让 releasePolicy、stopBilling 和 auditStatus 进入 managed environment UI-safe resource payload，并保持 compute release 与 file-space retention 分离；slide-06 已让 Portal launch id 成为唯一前端代理句柄，runtime session、workspace session 和 providerKeyRef 成为可见边界；slide-07 已让 owner-scoped run/artifact/trace metadata 通过 runtimeTrace summary 回流到 Portal，并禁止前端 fallback 伪造 trace 真相；slide-08 已让 admin views 展示 audit-backed local projection、ops exceptions、cost allocation tags 和 disabled/future-authorized boundaries，且不执行真实云 mutation。
+当前 product cursor 是 `real-cloud-authorization-boundary`。pre-cloud 9 个 product slides 已全部 landed；`product_engineering_loop` 已从 active machine detail 折叠为 closed summary 和 history summary，当前 active truth 不再保留 per-slide 明细、`docs/slides/*`、subslide docs 或 shadow archive。下一步不是执行真实云，而是先确认真实云授权边界、secret 读取边界、deploy/build/kubectl/live-test 边界和 evidence 落点。
 
-最近已通过 landing gate 的产品闭环是 `feat/v22-slide-08-admin-ops`，landed commit 为 `9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900`。该分支把 admin ops local projection 从 `/admin/ops` 后端 payload 保留到前端页面，展示本地 operation rows、ops exceptions、cost allocation tags 和 future-authorized disabled states，不把真实云、真实扣费或真实资源释放表现为可执行能力；当前 closeout 已把 active baton 推进到 slide-09。
+最近已通过 landing gate 的产品闭环是 `feat/v22-slide-09-precloud-readiness`，landed commit 为 `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`。该分支把 product-engineering-loop gate 扩展为 open/closed 双态，并在 closeout 中删除临时 product-loop branch override 和 active slide 明细，让 current verify、product-loop suite、workflow review 和 local-contract 继续作为本地 pre-cloud 防回归 bundle 运行；真实云、真实扣费、真实资源创建/释放、deploy、kubectl、build/push 和 live-test 仍未授权。
 
 当前已收敛的事实：
 
@@ -29,7 +29,6 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前未闭合的事实：
 
-- Compute resource lifecycle、release、stop-billing check 和 legacy resource route retirement 仍需本地闭环。
 - 真实云、deploy、kubectl、live-test、真实资源 mutation、真实价格审批和 production release readiness 仍需单独授权。
 - `scripts/sync-workspace-file-to-minio.ps1` 因 `services/portal/src/config/portal-config.mjs` 仍引用，暂属服务实现债，不在 docs/eval 清退中删除。
 
@@ -217,31 +216,31 @@ Current docs / eval surface during migration：
 | Recovery cleanup | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | full-taxonomy cleanup gate |
 | Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-merge truth 漂移 | current-state index loop gate | latest landed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | Cleanup lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | cleanup lifecycle gate | post-merge closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
-| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` `precloud-product-slides-closure` + manifest `product-engineering-loop` suite | slide-01 到 slide-08 已 landed；当前 open baton 是 slide-09，open 明细只在 current machine fixture 临时存在 | run slide-09, then collapse loop to history summary and real-cloud authorization boundary | 9 个产品 slide 全部闭合后 collapse to history summary and next cursor，active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
+| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` `precloud-product-slides-closure` + manifest `product-engineering-loop` suite | slide-01 到 slide-09 已 landed；open baton 已折叠成 closed summary | maintain closed summary and real-cloud authorization boundary; collapse to history summary and next cursor | active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
 
 ## Current Development Lines
 
 ### current-stage-current-cursor
 
-Current evidence: latest landed product closeout is `9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900`; current machine cursor is `leaf-precloud-readiness-closure`.
+Current evidence: latest landed product closeout is `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`; current machine cursor is `real-cloud-authorization-boundary`.
 
-Gap: slide-01 data truth, slide-02 Portal API real data wiring, slide-03 account/wallet/billing closure, slide-04 workspace/files closure, slide-05 resource lifecycle closure, slide-06 OPL entry runtime closure, slide-07 run artifact trace closure and slide-08 admin ops closure are complete, but slide-09 precloud readiness is still gated and not implemented.
+Gap: slide-01 data truth, slide-02 Portal API real data wiring, slide-03 account/wallet/billing closure, slide-04 workspace/files closure, slide-05 resource lifecycle closure, slide-06 OPL entry runtime closure, slide-07 run artifact trace closure, slide-08 admin ops closure and slide-09 precloud readiness are complete locally. The remaining gap is authorization: real cloud execution cannot start until the user explicitly authorizes secret access, provider operations, deploy/build/kubectl/live-test boundaries and evidence handling.
 
-Next action: implement slide-09 so current verify, product-loop suite, workflow review and local-contract all pass as one pre-cloud closed loop, then collapse active slide details into history summary and set next cursor to the separate real-cloud authorization boundary.
+Next action: define and review the real-cloud authorization boundary before any secret read, true cloud call, build/push, kubectl, deploy or live-test. Keep default current verification local-only.
 
-Done when: readers can distinguish landed slide-01 through slide-08 facts from unfinished slide-09 precloud readiness work.
+Done when: readers can distinguish closed pre-cloud product truth from separately authorized real-cloud execution work.
 
 Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs`.
 
 ### portal-saas-control-plane-product-loop
 
-Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench. The active baton is `slide-09-precloud-readiness`.
+Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench. The pre-cloud product slide baton is closed and folded into history summary.
 
-Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language. slide-01 through slide-08 have landed; slide-09 still needs to close the local pre-cloud gate bundle and prepare final loop collapse without authorizing real cloud execution.
+Gap: the product loop must stay visible while moving from local pre-cloud closure into a separately authorized real-cloud boundary. The next work must not collapse MedOPL into cloud-console language or imply live execution without authorization.
 
-Next action: run the product-engineering-loop through the machine fixture, keeping product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop. Every slide must use `inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit`.
+Next action: keep product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop while drafting the real-cloud authorization boundary. Any future execution work must still use `inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit`.
 
-Done when: user-facing surfaces answer what the user buys, where they operate, what Portal manages and what OPL executes, stale slide surfaces are physically cleared without compatibility layers, and the product loop details collapse to history summary and next cursor instead of staying in active truth.
+Done when: user-facing surfaces answer what the user buys, where they operate, what Portal manages and what OPL executes, and the next executable lane has explicit authorization instead of inheriting pre-cloud slide authority.
 
 Verify: `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs`; `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`; product spec anchors in `docs/product/README.md`.
 
@@ -271,11 +270,11 @@ Verify: `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs`; `n
 
 ### portal-canonical-data-postgres-redis-closure
 
-Current evidence: Portal canonical truth production direction is PostgreSQL; Redis is not a fact source and is limited to session/cache/queue/lock.
+Current evidence: Portal canonical truth production direction is PostgreSQL; Redis is not a fact source and is limited to session/cache/queue/lock. slide-01 closed local production data truth.
 
-Gap: status: `gated`; local proof exists, but durable local production data truth is not closed.
+Gap: real cloud production data operation is not authorized; local pre-cloud proof remains the executable boundary.
 
-Next action: implement the current business leaf so `PORTAL_STORAGE_MODE=postgres_redis` requires PostgreSQL/Redis connectivity and schema, and missing dependencies fail-closed.
+Next action: keep `PORTAL_STORAGE_MODE=postgres_redis` fail-closed behavior in regression gates while real-cloud authorization is reviewed.
 
 Done when: PostgreSQL is the canonical local production data truth, Redis is only session/cache/queue/lock, JSON fallback is not used in `postgres_redis`, and missing connection/schema fails-closed.
 
@@ -298,7 +297,7 @@ Verify: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22
 - 不能写成 `tests/**/*.mjs` 都是 smoke。
 - 不能写成 agent-run evidence 是当前产品真相。
 - 不能写成 `future-authorized` 等于真实云、deploy、kubectl 或 live-test 已授权。
-- 不能宣称 PostgreSQL/Redis、本地 production data layer、admin 全业务闭环或真实云生产闭环已完成。
+- 不能宣称真实云生产闭环已完成，或真实云、deploy、kubectl、build/push、live-test 已授权。
 - 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 
