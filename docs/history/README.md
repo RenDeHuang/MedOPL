@@ -61,6 +61,99 @@ History 承接：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-opl-loop-event-automation-and-ci-closure
+
+Status: `ready_for_b_review`
+
+Branch: `cleanup/v22-opl-loop-event-automation-and-ci-closure`
+
+Base trunk HEAD: `583da292aa32bf021697171f5b5cea1cfc693baf`
+
+Model:
+
+- controller: `gpt-5.4` declared for repository workflow policy
+- subagent Hume: `gpt-5.4`, read-only OPL docs/software engineering loop comparison
+- subagent Harvey: `gpt-5.4`, read-only post-absorb closeout / machine cursor / history drift audit
+- subagent Sartre: `gpt-5.4`, read-only package / CI / test lane / manifest consistency audit
+
+Commits:
+
+- `658cd1b test(v22): automate post-absorb loop closeout`
+- `ff0b15d ci(v22): harden engineering loop entrypoints`
+- final handoff commit: records this A branch summary and B review packet.
+
+Scope:
+
+- Close the absorbed `cleanup/v22-opl-docs-engineering-loop-closure` truth to `583da292aa32bf021697171f5b5cea1cfc693baf`.
+- Add `scripts/v22-absorb-closeout.mjs` so B can generate and check post-absorb truth closeout instead of hand-editing history and fixtures.
+- Add `contract-test-v22-absorb-closeout-automation.mjs` and wire it into current, local-contract, review and history-closeout gates.
+- Remove hardcoded latest absorbed commit assumptions from lifecycle/index-loop gates; the gates now parse the latest absorbed history section and check trunk reachability.
+- Harden package / CI / manifest / test-lane consistency so root scripts, package suites, workflow jobs and registry suites cannot drift independently.
+- Keep the business cursor on `leaf-portal-postgres-redis-local-production-data-closure`.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+- `scripts/v22-test-classification.mjs`
+- `scripts/v22-absorb-closeout.mjs`
+- `.github/workflows/verify.yml`
+- `package.json`
+
+Verification before handoff:
+
+- `node tests/contract/contract-test-v22-absorb-closeout-automation.mjs`: pass.
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
+- `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`: pass.
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
+- `node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-full-taxonomy-hard-retirement.mjs`: pass.
+- `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs tests scripts package.json .github`: pass.
+
+Non-goals:
+
+- No PostgreSQL/Redis implementation.
+- No services business code change.
+- No product cursor advancement.
+- No secret read, real cloud, build/push, kubectl, deploy or live-test.
+- No upstream modification.
+- No compatibility layer, old contracts/recovery tree or old `scripts/smoke-test-*` restoration.
+
+B review packet:
+
+- Review branch: `cleanup/v22-opl-loop-event-automation-and-ci-closure`.
+- Review base: `583da292aa32bf021697171f5b5cea1cfc693baf`.
+- Review focus: closeout automation, dynamic trunk/history/current consistency, package/CI/manifest/registry alignment, no services/forbidden-surface changes, and no business cursor advancement.
+- Verify: run `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts package.json .github`.
+- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, then run `node scripts/v22-absorb-closeout.mjs generate ...` or an equivalent closeout commit for this branch.
+
+Risk notes:
+
+- `scripts/v22-absorb-closeout.mjs generate` writes docs/history, docs/active and goal-current only; it does not push, merge, deploy, read secrets or call cloud.
+- `last_absorbed_commit` records the absorbed A branch commit. A later closeout commit cannot self-reference its own future SHA; the closeout gate therefore checks that the absorbed commit is reachable from trunk and that no reachable handoff remains `ready_for_b_review`.
+- `verify:docs-engineering-loop` is now a manifest-backed package suite instead of an unregistered shell chain.
+
+Next recommendation:
+
+- After B absorbs this branch and records post-push closeout, return to `leaf-portal-postgres-redis-local-production-data-closure`.
+
 ### 2026-05-21 cleanup/v22-opl-docs-engineering-loop-closure
 
 Status: `absorbed / pushed / post-push verified`
@@ -172,6 +265,7 @@ post_push_verification:
 post_absorb_truth_closeout: `completed`
 
 next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
+
 ### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity
 
 Status: `absorbed / pushed / post-push verified`
