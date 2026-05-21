@@ -53,7 +53,6 @@ function sendWorkspaceRequiredJson(res, deps) {
 
 function publicLaunchPayload(launch = {}) {
   return {
-    launchId: launch.launchId || "",
     workspaceId: launch.workspaceId || "",
     workspaceSessionId: launch.workspaceSessionId || "",
     runtimeSessionId: launch.runtimeSessionId || "",
@@ -66,7 +65,7 @@ function publicLaunchPayload(launch = {}) {
 
 function launchSuccessPayload(result) {
   const launch = publicLaunchPayload(result.launch || {});
-  const publicLaunchId = result.launchId || launch.launchId || "";
+  const publicLaunchId = result.launchId || "";
   return {
     ok: true,
     launchId: publicLaunchId,
@@ -83,10 +82,7 @@ function launchSuccessPayload(result) {
       runtimeSessionId: launch.runtimeSessionId || "",
       oplSessionId: launch.oplSessionId || "",
     },
-    launch: {
-      ...launch,
-      launchId: publicLaunchId,
-    },
+    launch,
   };
 }
 

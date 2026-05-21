@@ -452,7 +452,14 @@ async function assertPortalLaunchResponseIsPublicOnly() {
   assert.equal(handled, true, "portal_launch_api_must_handle_request");
   assert.equal(res.statusCode, 200, "portal_launch_api_must_return_200");
   assert.equal(res.payload?.launchId, "portal-public-launch-id", "portal_launch_response_must_use_portal_launch_id");
-  assert.equal(res.payload?.launch?.launchId, "portal-public-launch-id", "portal_launch_nested_response_must_use_portal_launch_id");
+  assert.equal(Object.hasOwn(res.payload?.launch || {}, "launchId"), false, "portal_launch_nested_response_must_not_expose_launch_id");
+  assert.equal(res.payload?.runtimeSession?.runtimeSessionId, "runtime-session-public-only", "portal_launch_response_must_expose_runtime_session_id");
+  assert.equal(res.payload?.runtimeSession?.oplSessionId, "opl-session-public-only", "portal_launch_response_must_expose_opl_session_id");
+  assert.equal(res.payload?.workspaceSession?.id, WORKSPACE_SESSION_ID, "portal_launch_response_must_expose_workspace_session_id");
+  assert.equal(res.payload?.providerKeyRef, PROVIDER_KEY_REF, "portal_launch_response_must_expose_provider_key_ref");
+  assert.equal(res.payload?.launch?.providerKeyRef, PROVIDER_KEY_REF, "portal_launch_nested_response_must_expose_provider_key_ref");
+  assert.equal(res.payload?.launch?.runtimeSessionId, "runtime-session-public-only", "portal_launch_nested_response_must_expose_runtime_session_id");
+  assert.equal(res.payload?.launch?.workspaceSessionId, WORKSPACE_SESSION_ID, "portal_launch_nested_response_must_expose_workspace_session_id");
   assertNoSecretLeak(res.payload, "portal_launch_public_response");
   const serialized = JSON.stringify(res.payload || {});
   assert.equal(serialized.includes("runtime-bridge-launch-id-must-not-be-public-primary"), false, "portal_launch_response_must_not_use_runtime_bridge_launch_id_as_primary");
