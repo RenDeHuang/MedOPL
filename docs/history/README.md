@@ -43,13 +43,27 @@ History 承接：
 
 `ready_for_b_review` 只能出现在未吸收 A 分支的临时 handoff 中。B 已 ff-only absorb 并 push 后，history 摘要必须改为 `absorbed / pushed / post-push verified`。历史细节不再展开成独立 `agent-runs/` 文件；详细证据以 git history 和 B review 输出为准。
 
+## Tombstone Map
+
+| Retired path or pattern | Retired reason | Current owner | Must not return as |
+| --- | --- | --- | --- |
+| distributed contract leaf docs | distributed contract leaves were absorbed into single specs truth | `docs/specs/README.md` | current contract leaf tree, compatibility alias, default verification input |
+| recovery process docs | recovery process docs were absorbed into active/history taxonomy | `docs/active/README.md`, `docs/history/README.md` | current truth tree, agent-run archive tree, stage board |
+| legacy root product doc | product truth moved into taxonomy views | `docs/product/README.md`, `docs/active/README.md` | second product truth or root entrypoint |
+| legacy root architecture doc | architecture truth moved into runtime/source/specs views | `docs/runtime/README.md`, `docs/source/README.md`, `docs/specs/README.md` | second architecture truth |
+| legacy root status doc | current status moved into active truth and machine cursor | `docs/active/README.md`, `tests/fixtures/v22/goal-current.json` | second current status board |
+| legacy root invariants doc | durable invariants moved into policies/specs | `docs/policies/README.md`, `docs/specs/README.md` | root governance doc |
+| legacy root decisions doc | decisions are now summarized by absorbed run history | `docs/history/README.md` | rolling decision log that overrides current truth |
+| legacy root vibe-coding doc | agent workflow discipline moved into policies and AGENTS | `AGENTS.md`, `docs/policies/README.md` | default workflow entrypoint |
+| `scripts/smoke-test-*` | eval files moved to `tests/**`, scripts reduced to runner/classifier/workflow | `tests/**`, `scripts/v22-verify.mjs` | repo-local eval location, compatibility script family |
+
 ## Current Run Summaries
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
 ### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity
 
-Status: `ready_for_b_review`
+Status: `absorbed / pushed / post-push verified`
 
 Branch: `cleanup/v22-post-absorb-closeout-and-gate-integrity`
 
@@ -97,6 +111,22 @@ Verification before handoff:
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
 - `git diff --check -- docs tests scripts`: pass.
 
+absorbed_commit: `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`
+
+b_review_result: `passed / ff-only absorbed / pushed`
+
+post_push_verification:
+
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass with temporary ignored `node_modules` symlink in the B worktree; symlink removed after verification.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass; post-push workflow gate `ok:true`.
+- `git diff --check -- docs tests scripts`: pass.
+- forbidden diff and secret scan: pass, no findings.
+
+post_absorb_truth_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
+
 Non-goals:
 
 - No PostgreSQL/Redis implementation.
@@ -105,17 +135,17 @@ Non-goals:
 - No upstream modification.
 - No compatibility layer or old contracts/recovery/scripts resurrection.
 
-B review packet:
+B review result:
 
 - Review branch: `cleanup/v22-post-absorb-closeout-and-gate-integrity`.
 - Review base: `2e644fc774e567db9418e3d13942e1598434433e`.
 - Review focus: latest absorbed commit closeout, workflow start-template test reference integrity, manifest branch override, no services/forbidden-surface changes, and no business cursor advancement.
 - Verify: run `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts`.
-- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, and run post-push verification.
+- Absorbed by B with ff-only merge, pushed to `origin/recovery/platform-v22-trunk`, post-push verification recorded above.
 
 Next recommendation:
 
-- After B absorbs this closeout/gate-integrity branch and post-absorb truth closeout is recorded, run the product cursor `leaf-portal-postgres-redis-local-production-data-closure`.
+- Continue OPL-style docs/software engineering loop closure before running the product cursor `leaf-portal-postgres-redis-local-production-data-closure`.
 
 ### 2026-05-21 cleanup/v22-current-state-index-loop-normalization
 

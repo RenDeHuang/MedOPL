@@ -31,6 +31,12 @@ State: `active`
 
 `docs/README.md` 必须把本文件作为 lifecycle taxonomy 的验证入口之一；docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移。
 
+## Docs Gate Boundary
+
+Docs gates must verify structure, owner boundaries, file existence, retired-path protection, manifest consistency and closeout state. They must not assert prose wording as machine truth beyond stable owner/purpose/state/machine-boundary markers that protect taxonomy drift.
+
+README-only taxonomy 是结构约束，不代表文档文本本身是机器接口。需要稳定机器判断时，必须新增 fixture schema、test lane registry、source contract 或 runner behavior；不能让 Markdown 章节标题成为默认 API。
+
 ## Runner Boundary
 
 默认验证入口：

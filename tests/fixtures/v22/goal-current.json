@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-21",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "2e644fc774e567db9418e3d13942e1598434433e",
+  "base_trunk_head": "c66d8d86b05d0673d320d6798d9b4192deb8d4cd",
   "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
   "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_absorbed_commit": "2e644fc774e567db9418e3d13942e1598434433e",
+  "last_absorbed_commit": "c66d8d86b05d0673d320d6798d9b4192deb8d4cd",
   "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
   "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
   "current_stage": "S5 frontend/backend product completion",
@@ -21,7 +21,7 @@
   "current_blockers": [
     "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
   ],
-  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL-style current-state index loop closeout was absorbed at 2e644fc774e567db9418e3d13942e1598434433e and does not implement PostgreSQL/Redis.",
+  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL-style post-absorb closeout and gate integrity branch was absorbed at c66d8d86b05d0673d320d6798d9b4192deb8d4cd and does not implement PostgreSQL/Redis.",
   "gaps": [
     {
       "id": "portal-postgres-redis-local-production-data-closure",

@@ -9,7 +9,8 @@ const repoRoot = path.resolve(__dirname, "../..");
 const lifecycleGate = "node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs";
 const hardRetirementCommit = "2a4254915f43186e312f406e5de31629c1c6700b";
 const lifecycleClosureCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
-const latestAbsorbedCommit = "2e644fc774e567db9418e3d13942e1598434433e";
+const currentStateIndexLoopCommit = "2e644fc774e567db9418e3d13942e1598434433e";
+const latestAbsorbedCommit = "c66d8d86b05d0673d320d6798d9b4192deb8d4cd";
 
 function repoPath(...parts) {
   return parts.join("/");
@@ -199,7 +200,17 @@ assertIncludesAll(lifecycleClosureSection, [
 ], "history_lifecycle_closure_closeout");
 assertNotIncludes(lifecycleClosureSection, "Status: `ready_for_b_review`", "history_absorbed_lifecycle_closure");
 
-const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
+const indexLoopSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
+assertIncludesAll(indexLoopSection, [
+  "Status: `absorbed / pushed / post-push verified`",
+  `absorbed_commit: \`${currentStateIndexLoopCommit}\``,
+  "b_review_result: `passed / ff-only absorbed / pushed`",
+  "post_absorb_truth_closeout: `completed`",
+  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
+], "history_index_loop_closeout");
+assertNotIncludes(indexLoopSection, "Status: `ready_for_b_review`", "history_absorbed_index_loop");
+
+const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-post-absorb-closeout-and-gate-integrity");
 assertIncludesAll(latestRunSection, [
   "Status: `absorbed / pushed / post-push verified`",
   `absorbed_commit: \`${latestAbsorbedCommit}\``,

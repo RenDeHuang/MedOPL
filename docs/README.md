@@ -47,6 +47,23 @@ docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/mani
 
 `docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/` 只允许一个 `README.md`。新增第二个 Markdown 文件必须先改本入口和 hard-retirement gate，并说明为什么不能吸收到该目录 README。
 
+## Document Portfolio Ledger
+
+每个 docs README 都必须有唯一任务、生命周期和明确的 machine boundary。新增文档不是默认动作；如果内容能吸收到现有 README，就必须吸收进现有 README。只有当信息有独立生命周期、独立 owner、独立 verify boundary，并且无法作为现有 README 的章节维护时，才允许先修改本 ledger 和 gate，再新增 Markdown。
+
+| File | owner purpose | state | allowed content | forbidden content | history handoff |
+| --- | --- | --- | --- | --- | --- |
+| `docs/active/README.md` | current truth / gap / cursor | active current truth | current facts, gap, current development lines, cannot-claim, next action | run evidence, B review detail, second specs, long provenance | absorbed run details move to `docs/history/README.md` |
+| `docs/product/README.md` | product view | hard compacted view | product language, user experience framing, product spec anchor index | current status, implementation proof, cloud execution claims | product line changes summarize in history only after absorb |
+| `docs/runtime/README.md` | runtime view | hard compacted view | Gateway / Runtime Bridge / clean upstream boundary and spec anchors | upstream implementation details, canary evidence, deploy proof | runtime discovery evidence stays in `.runtime` or history summary |
+| `docs/specs/README.md` | contract/spec truth | active spec truth | durable contracts, stable boundaries, spec anchors | agent-run logs, temporary plans, current cursor status | superseded spec rationale summarizes in history |
+| `docs/policies/README.md` | policy truth | active policy truth | stable workflow, authorization, docs lifecycle, smoke/eval, secret and retirement policy | current product truth, run proof, implementation detail | policy changes record the absorbed branch in history |
+| `docs/delivery/README.md` | delivery truth | active delivery view | current execution entrypoints, delivery order, cloud/deploy authorization sequence | release claims without authorization, B evidence detail | delivery closeout summarizes in history |
+| `docs/source/README.md` | source surface view | hard compacted view | active source surfaces, forbidden surfaces, retired source semantics | implementation details better owned by source code or tests | source cleanup record summarizes in history |
+| `docs/public/README.md` | public narrative view | hard compacted view | external-facing product wording and claim limits | internal secrets, cloud operations detail, current proof | public narrative updates summarize in history |
+| `docs/references/README.md` | reference index | active reference index | external references, upstream links, migration references | current truth, local evidence, implementation plans | retired reference notes summarize in history |
+| `docs/history/README.md` | evidence index | active history summary | absorbed runs, B review summaries, tombstone map, provenance summaries | product truth, second current state, new specs | no further handoff; detailed proof stays in git history |
+
 ## Retired Entrypoints
 
 以下旧路径和旧语义不得恢复为 current truth、默认入口、fixture、compat alias 或产品主叙事：

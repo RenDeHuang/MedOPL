@@ -32,6 +32,14 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 2. 活引用已迁移，旧路径不再作为 current truth、default verify 或 compatibility alias。
 3. gate 证明旧路径不能恢复为 current truth、default verify 或 compatibility alias。
 
+## Human / Machine Boundary
+
+README files are human truth, not machine APIs. Tests and workflow gates may verify document existence, taxonomy structure, manifest/schema consistency, command references, retired-path protection and closeout state, but they must not assert prose wording as machine truth or depend on Markdown titles as API.
+
+机器判断优先使用 `tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json`、`tests/**`、source code and runner behavior。Markdown 文档负责解释事实与边界；如果需要可执行判断，必须把判断下沉到 JSON fixture、test registry、source contract 或 explicit gate。
+
+History 中的旧路线只能作为 provenance，不得反向恢复 active owner、default verify、compat alias 或 product mainline。
+
 ## Retirement Lifecycle Policy
 
 每个 v22 leaf 必须按同一个生命周期运行：
