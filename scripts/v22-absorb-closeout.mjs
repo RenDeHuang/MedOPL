@@ -23,6 +23,8 @@ const defaultRequiredPostAbsorbFields = Object.freeze([
   "next_cursor",
 ]);
 
+const fullCommitPattern = /^[a-f0-9]{40}$/u;
+
 function parseArgs(argv) {
   const [mode, ...rest] = argv;
   const options = {};
@@ -71,6 +73,10 @@ function runGit(args, { fallback = "" } = {}) {
 
 function revParse(ref) {
   return runGit(["rev-parse", ref], { fallback: "" });
+}
+
+function revParseCommit(ref) {
+  return runGit(["rev-parse", "--verify", `${ref}^{commit}`], { fallback: "" });
 }
 
 function isAncestor(commit, ref) {
@@ -252,6 +258,49 @@ function replaceSection(history, branch, replacer) {
   return `${history.slice(0, history.indexOf(selected.source))}${replacer(selected.source)}${history.slice(nextStart)}`;
 }
 
+function sectionForBranch(history, branch) {
+  const sections = parseHistorySections(history);
+  return sections.find((section) => section.branch === branch || section.headingBranch === branch) || null;
+}
+
+function validateGenerateInput({ history, branch, absorbedCommit, trunkRef }) {
+  if (!fullCommitPattern.test(absorbedCommit)) {
+    throw new Error(`invalid_absorbed_commit:${absorbedCommit}`);
+  }
+
+  const resolvedAbsorbedCommit = revParseCommit(absorbedCommit);
+  if (resolvedAbsorbedCommit !== absorbedCommit) {
+    throw new Error(`absorbed_commit_not_found:${absorbedCommit}`);
+  }
+
+  const section = sectionForBranch(history, branch);
+  if (!section) throw new Error(`history_section_missing:${branch}`);
+
+  const branchHead = revParseCommit(branch);
+  if (!branchHead) throw new Error(`branch_ref_missing:${branch}`);
+
+  const expectedCommit = section.handoffCommit || branchHead;
+  if (!fullCommitPattern.test(expectedCommit) || revParseCommit(expectedCommit) !== expectedCommit) {
+    throw new Error(`history_handoff_commit_invalid:${expectedCommit || branch}`);
+  }
+  if (branchHead !== expectedCommit) {
+    throw new Error(`branch_head_handoff_mismatch:${branch}:${branchHead}:${expectedCommit}`);
+  }
+  if (absorbedCommit !== expectedCommit) {
+    throw new Error(`absorbed_commit_mismatch:${absorbedCommit}:${expectedCommit}`);
+  }
+
+  if (trunkRef) {
+    const trunkHead = revParseCommit(trunkRef);
+    if (!trunkHead) throw new Error(`trunk_ref_missing:${trunkRef}`);
+    if (!isAncestor(absorbedCommit, trunkRef)) {
+      throw new Error(`absorbed_commit_not_reachable_from_trunk:${absorbedCommit}:${trunkRef}`);
+    }
+  }
+
+  return { section, branchHead, expectedCommit };
+}
+
 function renderCloseoutBlock({ absorbedCommit, nextCursor, verificationSummary }) {
   const verificationLines = verificationSummary
     .split(";")
@@ -288,6 +337,7 @@ function generateCloseout({
   if (!nextCursor) throw new Error("missing_next_cursor");
 
   const history = readRepoFile(files.history);
+  const validation = validateGenerateInput({ history, branch, absorbedCommit, trunkRef });
   const current = readJson(files.current);
   const active = readRepoFile(files.active);
   const updatedHistory = replaceSection(history, branch, (section) => {
@@ -328,8 +378,10 @@ function generateCloseout({
     mode: "generate",
     branch,
     absorbedCommit,
+    branchHead: validation.branchHead,
+    expectedCommit: validation.expectedCommit,
     nextCursor,
-    trunkRef,
+    trunkRef: trunkRef || "",
     dryRun,
     files: [files.history, files.current, files.active],
   };
@@ -339,7 +391,7 @@ function printUsage() {
   process.stderr.write([
     "Usage:",
     "  node scripts/v22-absorb-closeout.mjs check [--trunk-ref origin/recovery/platform-v22-trunk] [--json]",
-    "  node scripts/v22-absorb-closeout.mjs generate --branch <branch> --absorbed-commit <sha> --next-cursor <leaf> [--verification-summary <a; b>] [--dry-run] [--json]",
+    "  node scripts/v22-absorb-closeout.mjs generate --branch <branch> --absorbed-commit <sha> --next-cursor <leaf> [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
     "",
   ].join("\n"));
 }
@@ -356,7 +408,7 @@ try {
       branch: options.branch,
       absorbedCommit: options["absorbed-commit"],
       nextCursor: options["next-cursor"],
-      trunkRef: options["trunk-ref"] || "origin/recovery/platform-v22-trunk",
+      trunkRef: options["trunk-ref"] || "",
       verificationSummary: options["verification-summary"] || "",
       dryRun: Boolean(options["dry-run"]),
     });

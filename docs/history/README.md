@@ -112,6 +112,7 @@ Contract subscription:
 Verification before handoff:
 
 - `node tests/contract/contract-test-v22-absorb-closeout-automation.mjs`: pass.
+  - Covers invalid SHA, unknown SHA, wrong old trunk commit, unknown branch, missing required field, pre-absorb trunk reachability failure and valid branch/handoff dry-run success.
 - `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
 - `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`: pass.
 - `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
@@ -142,11 +143,12 @@ B review packet:
 - Review base: `583da292aa32bf021697171f5b5cea1cfc693baf`.
 - Review focus: closeout automation, dynamic trunk/history/current consistency, package/CI/manifest/registry alignment, no services/forbidden-surface changes, and no business cursor advancement.
 - Verify: run `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`, `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`, and `git diff --check -- docs tests scripts package.json .github`.
-- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, then run `node scripts/v22-absorb-closeout.mjs generate ...` or an equivalent closeout commit for this branch.
+- Absorb rule: only B may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, then run `node scripts/v22-absorb-closeout.mjs generate --branch cleanup/v22-opl-loop-event-automation-and-ci-closure --absorbed-commit <absorbed_branch_head> --trunk-ref origin/recovery/platform-v22-trunk ...` or an equivalent closeout commit for this branch.
 
 Risk notes:
 
 - `scripts/v22-absorb-closeout.mjs generate` writes docs/history, docs/active and goal-current only; it does not push, merge, deploy, read secrets or call cloud.
+- `scripts/v22-absorb-closeout.mjs generate` rejects invalid / unknown absorbed commits, old trunk commits, unknown branches, branch/handoff mismatches and post-push trunk reachability failures when `--trunk-ref` is provided.
 - `last_absorbed_commit` records the absorbed A branch commit. A later closeout commit cannot self-reference its own future SHA; the closeout gate therefore checks that the absorbed commit is reachable from trunk and that no reachable handoff remains `ready_for_b_review`.
 - `verify:docs-engineering-loop` is now a manifest-backed package suite instead of an unregistered shell chain.
 

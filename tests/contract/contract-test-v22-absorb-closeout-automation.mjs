@@ -11,19 +11,163 @@ async function readJson(repoPath) {
   return JSON.parse(await readFile(path.join(repoRoot, repoPath), "utf8"));
 }
 
-const current = await readJson("tests/fixtures/v22/goal-current.json");
+async function readText(repoPath) {
+  return readFile(path.join(repoRoot, repoPath), "utf8");
+}
 
-const result = spawnSync("node", [
-  "scripts/v22-absorb-closeout.mjs",
+function runCloseout(args) {
+  return spawnSync("node", ["scripts/v22-absorb-closeout.mjs", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+}
+
+function runGit(args) {
+  const result = spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `git_command_failed:${args.join(" ")}:${result.stderr || result.stdout}`);
+  return result.stdout.trim();
+}
+
+function assertCloseoutFailure(args, expectedMessage) {
+  const result = runCloseout(args);
+  assert.notEqual(result.status, 0, `closeout_command_must_fail:${args.join(" ")}:${result.stdout}`);
+  assert.match(result.stderr || result.stdout, expectedMessage, `closeout_failure_message_mismatch:${args.join(" ")}`);
+}
+
+function extractHistorySection(history, branch) {
+  const headings = [...history.matchAll(/^###\s+\d{4}-\d{2}-\d{2}\s+(.+)$/gmu)];
+  const selectedIndex = headings.findIndex((match) => match[1].trim() === branch);
+  assert.notEqual(selectedIndex, -1, `history_section_missing:${branch}`);
+  const start = headings[selectedIndex].index;
+  const end = selectedIndex + 1 < headings.length ? headings[selectedIndex + 1].index : history.length;
+  return history.slice(start, end);
+}
+
+function extractField(section, field) {
+  const match = section.match(new RegExp(`^${field}:\\s+\`?([^\`\\n]+)\`?\\s*$`, "mu"));
+  return match ? match[1].trim() : "";
+}
+
+const current = await readJson("tests/fixtures/v22/goal-current.json");
+const history = await readText("docs/history/README.md");
+const handoffBranch = "cleanup/v22-opl-loop-event-automation-and-ci-closure";
+const handoffSection = extractHistorySection(history, handoffBranch);
+const handoffCommit = extractField(handoffSection, "handoff_commit") || runGit(["rev-parse", "HEAD"]);
+
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--absorbed-commit",
+  handoffCommit.slice(0, 12),
+  "--next-cursor",
+  "leaf-portal-postgres-redis-local-production-data-closure",
+  "--verification-summary",
+  "negative short commit dry run",
+  "--dry-run",
+  "--json",
+], /invalid_absorbed_commit/u);
+
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--absorbed-commit",
+  "1111111111111111111111111111111111111111",
+  "--next-cursor",
+  "leaf-portal-postgres-redis-local-production-data-closure",
+  "--verification-summary",
+  "negative unknown commit dry run",
+  "--dry-run",
+  "--json",
+], /absorbed_commit_not_found/u);
+
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--absorbed-commit",
+  current.last_absorbed_commit,
+  "--next-cursor",
+  "leaf-portal-postgres-redis-local-production-data-closure",
+  "--verification-summary",
+  "negative wrong old commit dry run",
+  "--dry-run",
+  "--json",
+], /absorbed_commit_mismatch/u);
+
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  "cleanup/v22-unknown-closeout-branch",
+  "--absorbed-commit",
+  handoffCommit,
+  "--next-cursor",
+  "leaf-portal-postgres-redis-local-production-data-closure",
+  "--verification-summary",
+  "negative unknown branch dry run",
+  "--dry-run",
+  "--json",
+], /history_section_missing/u);
+
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--absorbed-commit",
+  handoffCommit,
+  "--next-cursor",
+  "leaf-portal-postgres-redis-local-production-data-closure",
+  "--trunk-ref",
+  "origin/recovery/platform-v22-trunk",
+  "--verification-summary",
+  "negative pre-absorb trunk reachability dry run",
+  "--dry-run",
+  "--json",
+], /absorbed_commit_not_reachable_from_trunk/u);
+
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--absorbed-commit",
+  handoffCommit,
+  "--verification-summary",
+  "negative missing next cursor dry run",
+  "--dry-run",
+  "--json",
+], /missing_next_cursor/u);
+
+const generateDryRun = runCloseout([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--absorbed-commit",
+  handoffCommit,
+  "--next-cursor",
+  "leaf-portal-postgres-redis-local-production-data-closure",
+  "--verification-summary",
+  "positive branch handoff dry run",
+  "--dry-run",
+  "--json",
+]);
+assert.equal(generateDryRun.status, 0, `valid_absorb_closeout_generate_dry_run_failed:${generateDryRun.stderr || generateDryRun.stdout}`);
+const generatePayload = JSON.parse(generateDryRun.stdout);
+assert.equal(generatePayload.ok, true, "valid_absorb_closeout_generate_payload_must_be_ok");
+assert.equal(generatePayload.absorbedCommit, handoffCommit, "valid_absorb_closeout_generate_commit_mismatch");
+assert.equal(generatePayload.dryRun, true, "valid_absorb_closeout_generate_must_stay_dry_run");
+
+const result = runCloseout([
   "check",
   "--trunk-ref",
   "origin/recovery/platform-v22-trunk",
   "--json",
-], {
-  cwd: repoRoot,
-  encoding: "utf8",
-  stdio: "pipe",
-});
+]);
 
 assert.equal(result.status, 0, `absorb_closeout_check_failed:${result.stderr || result.stdout}`);
 
