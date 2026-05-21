@@ -1,70 +1,68 @@
-﻿# Workspace Instructions
+# MedOPL v22 仓库协作规范
+
+## 适用范围
+
+本文件适用于仓库根目录及其所有子目录；若更深层目录存在 `AGENTS.md`，以更近者为准。
+
+## 定位
 
 - Always respond in 中文。
-- 避免采用降级处理、兜底方案、临时补丁、启发式方法、局部稳定化手段，以及非严谨通用算法的后处理补救措施。
-- 对于不冲突、可以并行的任务，尽量使用 subagent 提高效率；不再需要的 subagent 要尽快关闭，避免占用 subagent 的席位。
-- 以后创建/使用 git worktree 或 Codex native subagent 时，必须显式选择并记录模型；允许使用的模型仅限 `gpt-5.4`、`gpt-5.3-codex`、`gpt-5.4-mini`。
-- 浏览网页时，优先使用 `agent-browser` skill。
-- 涉及 PDF、图片、Office、网页内容提取时，优先使用官方 `mineru-document-extractor` skill。
+- `AGENTS.md` 只约束 agent 工作方式、少量稳定身份边界和文档生命周期纪律，不承载项目知识细节、阶段完成判断、产品长叙事、分支 closeout 或临时执行明细。
+- `TASTE.md` 记录 MedOPL 维护开发 taste；做架构、代码、文档、测试、review、cleanup 和 closeout 判断时，先按 `TASTE.md` 校准长期偏好，再读取项目事实与更深层规范。
+- 项目知识默认从 `README*`、`docs/README.md` 和 docs reading order 读取。当前事实、产品视角、runtime、spec、policy、delivery、source、reference、history 分别归对应 `docs/*/README.md`。
+- 机器真相归 source、tests、test lane registry、fixtures、manifest、runner、CLI/API 行为和 runtime evidence；Markdown prose 不作为稳定机器接口。
+- 不能根据聊天记录、旧路径、旧分散文档或本文件判断当前阶段。
 
-## MedOPL v22 工作边界
+## 开发原则
 
-- `platform-v22` 是 canonical trunk；`recovery/platform-v22-trunk` 是 v22 收敛主线，所有新产品语义以 v22 为准。
-- `platform-v21` 是 legacy reference，只能作为历史参考或迁移输入；不得把 v21 的默认叙事、目录边界或旧运行路径扩散成 v22 主线。
-- v22 当前产品方向是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台；用户购买套餐、计算能力、存储容量和运行环境，平台负责开通、隔离、计费、审计和释放。
-- active surface 仅限：`services/portal`、`services/opl-web-gateway`、`services/opl-runtime-bridge`、`docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/README.md`、`tests/**/*.mjs`、`tests/fixtures/v22/{goal-current,agent-verify-manifest}.json`、`scripts/v22-verify.mjs`、`scripts/v22-test-classification.mjs`、`scripts/v22-workflow-gate.mjs`。
-- archive/reference surface 已从 active repo 物理清退：旧分散 docs、旧 smoke/live 脚本、旧 recovery 过程目录、旧合同叶子、旧云 helper 脚本和 legacy 商业化方案均不得作为当前文件入口恢复；历史证据只以 git history 或 `docs/history/README.md` 摘要存在。
-- delete/cleanup target 包括：`user_owned` primary path、`resource-order` primary path、旧 `med-autoscience-runner`、旧 `resource-provisioner`、OpenCost 主叙事、Langfuse 主产品叙事。它们进入 cleanup 分支处理，不在普通功能分支继续扩写。
-- forbidden without explicit authorization：`deploy/*`、`.sentrux/*`、`adapters/*`、one-person-lab upstream、build/push/kubectl/live-test/真实云资源操作。
-- `user_owned` 只能作为 legacy alias；新代码、新文档、新测试和默认产品叙事不得把它解释成用户自带 CVM/COS/K8s 或用户配置云资源。
-- upstream OPL 必须保持 clean，不修改 upstream 源码，不在 upstream 目录写 Portal/Gateway/Adapter 代码，不 import upstream 内部模块；只能通过 Gateway、Adapter、Runtime Agent、API/CLI 等公开边界适配。
-- raw provider API key 只能进入后端密钥边界；前端最多持有 `providerKeyRef`、bound status 和一次性输入态，不能把 raw key、bearer token、launchToken/runtimeToken 写入 sessionStorage/localStorage、全局 JS state、日志、evidence 或 git。
-- build/push、kubectl、live-test、真实云资源操作和 `.sentrux/*` 修改必须单独授权；不得在普通重构、文档收敛或本地 smoke 中顺手执行。
+- 维护开发判断默认遵循根层 `TASTE.md`；如果本仓事实、spec、runtime evidence 或更深层 `AGENTS.md` 需要局部偏离，必须写清偏离原因和适用范围。
+- MedOPL v22 的稳定产品边界是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。普通用户购买托管工作台、计算能力、文件空间、任务并发和运行环境；平台负责开通、隔离、计费、审计和释放。
+- MedOPL 不是云资源控制台，不把用户自配云资源、旧资源订单或旧 runner/provisioner 路线恢复为主线。
+- clean upstream OPL 保持干净。不得修改 upstream 源码，不得在 upstream 目录写 Portal/Gateway/Adapter/Runtime 代码，不得 import upstream 内部模块；只能通过 Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和明确 anti-corruption mapping 适配。
+- 不做降级处理、兜底方案、临时补丁、启发式修补或“先糊住再说”式实现。
+- 保持 diff 小、可审查、可回退；能删就别加，能复用现有模式就别新起抽象。
+- 新增能力或修改行为前，先确认 owner surface、machine truth、测试 lane 和验收命令。
 
-## 阶段状态
+## 文档分层与生命周期治理
 
-- v22 当前阶段以 `docs/active/README.md`、`docs/specs/README.md`、`docs/delivery/README.md`、`tests/fixtures/v22/goal-current.json` 和 `tests/fixtures/v22/agent-verify-manifest.json` 为准；不得根据过期聊天记忆判断当前阶段。
-- 新开发必须先读取当前阶段文档、合同索引和本次订阅合同，再声明分支意图、合同订阅包、授权边界和验收命令。
-- 阶段推进后优先更新 active / delivery / history / tests fixture；本文件只保留稳定纪律，不写死会随阶段变化的完成状态。
+- 本仓采用 OPL-style lifecycle taxonomy。`README*` 与 `docs/README.md` 是默认人读入口；docs reading order 是当前项目事实的入口索引。
+- `docs/**` 是人读生命周期面；source、tests、fixtures、manifest、runner、CLI/API 行为和 runtime evidence 是机器面。
+- 每份长期文档都必须能说明 owner、purpose、state 和 machine boundary；缺少任一信号时，先补入口或归位，再继续扩写。
+- current truth、active baton、spec、policy、delivery、source、history 各有唯一 owner。新增文档先判断 lifecycle role；能吸收到现有 README 的内容，不新增文件。
+- 临时执行 baton 只能作为当前推进载体存在；完成后折叠为 history summary、closed machine state 和 next cursor，不在 `AGENTS.md` 或新目录里变成长期 truth。
+- 机器可读合同必须 consumer-first：只有 source、tests、runner、CLI/API 或 runtime evidence 真实消费时才新增 machine-readable contract surface；不要为了目录外形新增空 contract。
 
-## 合同订阅制度
+## 文档规则
 
-- 任何正式开发开始前，必须先声明本分支订阅的合同包。合同包至少包含 `docs/specs/README.md` 主合同、本次相关边界 anchor、`docs/active/README.md` 当前真相和 `docs/delivery/README.md` 执行约束。
-- 新增合同、修改合同、合同冲突、主叙事变化、授权边界变化，必须先让用户审阅确认，再写 smoke 或实现。
-- 合同审阅必须确认：范围是否正确、边界是否正确、非目标是否完整、验收条件是否可验证、是否存在污染风险。
+- 文档先设理想态，再写当前差距和验收边界；不能把缺实现和缺证据混成同一类差距。
+- `README*`、`docs/**` 与参考文档是人读面。代码、测试、runner 或 workflow 不得把 Markdown 章节、文案或 prose path 当成稳定机器接口。
+- 退役定位只出现在 history、tombstone、provenance 或 docs cleanup 语境；active 文档提到旧路线时，必须同时指向当前 truth owner。
+- 如果某条规则需要长期冻结，应写入相应 specs、policies、source、tests 或 contract owner，而不是继续堆在 `AGENTS.md`。
 
-## Discovery/Canary 工作纪律
+## 变更与验证
 
-- 边界先行 -> 探索/canary -> 修正边界 -> 正式实现 -> landing gate。
-- 未知外部系统接入先走 Discovery/Canary lane。
-- canary 必须有用户授权边界。
-- canary 输出只进 .runtime，不进 git。
-- canary 可以验证真实 SDK/云/服务，但不得自动变成 production dependency。
-- canary 发现的事实必须回写 contracts/status/decisions。
-- production implementation 必须基于已验证事实。
-- landing gate 只接受 productionized 分支，不接受未清理 canary 临时代码。
-- Portal、Cloud、OPL sync 三条 program 都适用。
+- 默认工程入口走 `package.json` scripts；底层 runner 可以是 repo-local scripts，但 agent 不应绕过 package scripts 和 test lane registry 发明私有入口。
+- 标准闭环是 `authoring branch -> landing gate -> post-merge closeout -> next cursor`；功能开发和清退分支都走同一闭环，具体记录字段以 docs lifecycle owner 和 machine fixtures 为准。
+- 默认最小验证入口是 `npm run verify`。
+- 默认 test lane 入口是 `npm run test:health`、`npm run test:smoke`、`npm run test:contract` 和 `npm run test:regression`。
+- 默认 review gate 是 `npm run gate:review`。
+- repo hygiene、repo bloat、line budget、secret hygiene 和 test lane registry 是软件工程闭环的一部分，不得用手工记忆替代 gate。
+- 修改 machine-readable contracts、默认 docs 入口、文档骨架、产品边界、runtime 边界、test lane registry 或 source owner 时，必须同步更新相关 docs、tests、fixtures、manifest 和 runner。
+- 叙述性文档不作为测试断言对象；可以测试 schema、fixture、manifest、registry、CLI/API 行为、runner 行为、生成产物结构、路径存在性和 owner boundary。
+- 默认不得执行 build/push、kubectl、deploy、live-test 或真实云资源操作。
 
-## Framework Landing Protocol
+## 并行开发与工作树
 
-- authoring branch：从最新 `recovery/platform-v22-trunk` 新建 `feat/*` 或 `cleanup/*` 分支，只做一个明确意图，按“合同 -> eval -> 实现/清退 -> 验证 -> commit”推进。
-- landing gate：在 authoring branch 完成后执行 fresh review、workflow gate、secret hygiene、禁区 diff、verify manifest 和 CI/package 入口检查；无 blocker 时才 `ff-only` 合回 `recovery/platform-v22-trunk` 并 push。
-- post-merge closeout：landing gate push 后必须运行 `scripts/v22-landing-closeout.mjs check/generate` 或等效 closeout commit，把 landed commit、post-push verification 和 next cursor 写回 `docs/history/README.md`、`docs/active/README.md` 与 `tests/fixtures/v22/*`。
-- parallel lane：只做互不冲突的独立任务，例如文档清退、结构修复、合同梳理；合入前必须基于最新 trunk 重放或 rebase，并通过同一个 landing gate。
-- authoring branch 默认不 push、不 merge；只有被明确指定为 landing operator 时，才可以执行 landing gate 的 ff-only merge / push 动作。
+- 大改动、长链路工作、并行多 agent 开发，默认先从最新 `origin/recovery/platform-v22-trunk` 开独立 worktree，再在 worktree 内实现和验证。
+- authoring branch 默认不 push、不 merge；只有被明确指定为 landing operator 时，才可以执行 ff-only merge / push。
+- 需要多条 lane 时创建多个 worktree，不要把多条长线塞进同一工作目录。互不冲突才并行，完成后及时关闭 subagent、清理 worktree 和临时状态。
+- 创建/使用 git worktree 或 Codex native subagent 时，必须显式选择并记录模型；允许模型仅限 `gpt-5.4`、`gpt-5.3-codex`、`gpt-5.4-mini`。
+- subagent 只承接边界清晰、互不冲突、可独立验证的任务；不要让 subagent 持有唯一上下文或替代 landing review。
 
-## 污染防护
+## 授权与本地状态
 
-- 产品叙事污染：不得把 MedOPL 讲回云资源控制台、CVM/COS/K8s 用户自配。
-- 旧路线污染：不得恢复 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost/Langfuse 主叙事为主线。
-- upstream 污染：不得修改 one-person-lab upstream、import upstream 内部模块，或把 Portal/Gateway/Adapter/Runtime 代码写进 upstream。
-- secret 污染：不得让 raw API key、token、kubeconfig、SecretId/SecretKey、SSH private key、`.env` 进入日志、evidence、git 或 GitHub。
-- 合同污染：不得绕过合同实现；不得让 smoke 用默认值、隐式兜底或伪通过掩盖真实缺参。
-- trunk 污染：不得让 spike 半成品、未验证代码、真实云操作副作用或未 cleanup 的旧入口进入 `recovery/platform-v22-trunk`。
-
-## 必须先和用户讨论的情况
-
-- 产品方向不清、合同之间冲突、主叙事变化或授权边界变化。
-- 需要读取 secret、执行真实云操作、修改 upstream、触碰 `deploy/*` / `.sentrux/*` / `adapters/*`。
-- 需要 build/push、kubectl、live-test 或其他会影响真实外部系统的操作。
-- 需要清退旧路线，或实现范围超过当前分支意图。
+- 未授权不得读取 secret、raw provider key、token、kubeconfig、SSH private key 或云凭据。
+- 未授权不得执行真实云调用、build/push、kubectl、deploy、live-test，或修改 `deploy/*`、`.sentrux/*`、`adapters/*`、`infra/*`、one-person-lab upstream。
+- raw provider API key 只能进入后端密钥边界；前端最多持有 `providerKeyRef`、bound status 和一次性输入态，不能把 raw key、bearer token、launchToken/runtimeToken 写入 browser storage、全局 JS state、日志、evidence 或 git。
+- discovery/canary 需要用户明确授权边界；输出默认进入 `.runtime` 或外部临时状态，不进入 git，也不能自动变成 production dependency。
+- 项目临时状态、session、prompt、log、canary evidence 和本地运行副产物不成为 current truth。
