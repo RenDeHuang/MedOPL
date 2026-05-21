@@ -61,6 +61,87 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-slide-06-opl-entry-runtime
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-slide-06-opl-entry-runtime`
+
+Base trunk HEAD: `9a54215a729d857894e117c71beda9d548e3368b`
+
+handoff_commit: `abc1071eecd7d75f8b436e12502382098ace98d3`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Godel: `gpt-5.4`, read-only slide-06 OPL entry runtime owner surface review.
+
+Scope:
+
+- Close slide-06 OPL entry/runtime local loop.
+- Keep top-level Portal `launchId` as the only frontend proxy handle for `/portal/api/opl/*`.
+- Remove nested launch id exposure from public launch payloads while keeping workspaceSession, runtimeSession and providerKeyRef visible.
+- Keep raw provider key, launch token and runtime token backend-only.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No slide-07 implementation.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No per-slide docs, `docs/slides/*`, shadow archive or unregistered tests.
+
+Verification before landing review:
+
+- `node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs`
+- `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`
+- `node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs`
+- `node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs`
+- `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
+- `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs`
+- `npm run test:fast`
+- `npm run test:lanes`
+- `npm --prefix services/portal run check`
+- `npm --prefix services/portal run frontend:typecheck`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Continue with `slide-07-run-artifact-trace` on `leaf-run-artifact-trace-closure`; keep slide-01 through slide-06 regressions in the current verify bundle as guards.
+
+landed_commit: `abc1071eecd7d75f8b436e12502382098ace98d3`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed before closeout.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed before closeout while cursor still pointed to slide-06.
+- repo bloat audit passed; no per-slide docs, shadow archive or unregistered tests were added.
+- forbidden path diff empty.
+- added-lines secret value scan empty.
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-run-artifact-trace-closure`
+
 ### 2026-05-22 feat/v22-slide-05-resource-lifecycle
 
 Status: `landed / pushed / post-push verified`
