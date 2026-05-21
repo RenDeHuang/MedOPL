@@ -61,6 +61,86 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-slide-01-data-truth
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-slide-01-data-truth`
+
+Base trunk HEAD: `7fb7ab0e698a982d4604b13c48be22798e4f2cbb`
+
+handoff_commit: `de71ca446da703358dd998489fb555fba622ea68`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Hypatia: `gpt-5.4-mini`, read-only closeout gate impact review.
+
+Scope:
+
+- Close slide-01 data truth for local production storage.
+- Remove the `postgres_redis` JSON business snapshot mirror from Portal PostgreSQL persistence.
+- Keep Redis limited to coordination/session state and prove it does not hold business truth.
+- Add regression coverage that `portal-db.json` is not created in `postgres_redis` positive closure.
+- Harden landing closeout so latest landed history must match trunk head when manifest requires trunk-head sync.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No slide-02 implementation.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No per-slide docs, `docs/slides/*`, shadow archive or unregistered tests.
+
+Verification before landing review:
+
+- `node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs`
+- `npm --prefix services/portal run check`
+- `npm run test:fast`
+- `npm run test:lanes`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Continue with `slide-02-portal-api-real-data` on `leaf-portal-api-real-data-closure`; keep slide-01 storage regression in the current verify bundle as a guard.
+
+landed_commit: `de71ca446da703358dd998489fb555fba622ea68`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs` passed
+- `npm --prefix services/portal run check` passed
+- `npm run test:fast` passed
+- `npm run test:lanes` passed
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json` passed
+- forbidden path diff empty
+- added-lines secret value scan empty
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-api-real-data-closure`
+
 ### 2026-05-22 cleanup/v22-pre-slide-bloat-guardrails
 
 Status: `landed / pushed / post-push verified`

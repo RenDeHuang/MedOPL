@@ -20,7 +20,6 @@ const files = {
 };
 
 const previousIndexLoopCommit = "2e644fc774e567db9418e3d13942e1598434433e";
-const currentCursor = "leaf-portal-postgres-redis-local-production-data-closure";
 const indexLoopGate = "node tests/contract/contract-test-v22-current-state-index-loop.mjs";
 const landingCloseoutGate = "node tests/contract/contract-test-v22-landing-closeout-automation.mjs";
 
@@ -105,6 +104,10 @@ const latestLanded = latestLandedHistorySection(history);
 const closeoutCheck = assertLandingCloseoutCheckPasses();
 const latestLandedCommit = latestLanded.landedCommit;
 const latestLandedBranch = latestLanded.branch;
+const currentCursor = current.current_cursor;
+
+assert(currentCursor, "current_cursor_required");
+assert.equal(current.next_leaf, currentCursor, "next_leaf_mismatch");
 
 assertIncludes(docsIndex, "../tests/README.md", "docs_index_must_link_tests_taxonomy");
 assertIncludes(docsIndex, "Truth Lookup", "docs_index_must_have_truth_lookup");
@@ -156,8 +159,6 @@ assert.equal(current.base_trunk_head, latestLandedCommit, "current_base_trunk_he
 assert.equal(current.last_landed_branch, latestLandedBranch, "current_last_landed_branch_mismatch");
 assert.equal(current.history_latest_branch, latestLandedBranch, "current_history_latest_branch_mismatch");
 assert.equal(current.post_merge_closeout_completed, true, "current_post_merge_closeout_must_be_completed");
-assert.equal(current.current_cursor, currentCursor, "current_cursor_mismatch");
-assert.equal(current.next_leaf, currentCursor, "next_leaf_mismatch");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 assert.equal(closeoutCheck.lastLandedCommit, latestLandedCommit, "closeout_check_commit_mismatch");
 assert.equal(closeoutCheck.lastLandedBranch, latestLandedBranch, "closeout_check_branch_mismatch");

@@ -5,6 +5,7 @@ const contractPath = "docs/specs/README.md";
 const contractIndexPath = "docs/specs/README.md";
 const activeTruthPath = "docs/active/README.md";
 const deliveryPath = "docs/delivery/README.md";
+const currentPath = "tests/fixtures/v22/goal-current.json";
 
 const startMarker = "<!-- v22-saas-control-plane-user-experience-contract:start -->";
 const endMarker = "<!-- v22-saas-control-plane-user-experience-contract:end -->";
@@ -82,11 +83,13 @@ const [
   contractIndex,
   activeTruth,
   deliveryTruth,
+  current,
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
   source(activeTruthPath),
   source(deliveryPath),
+  source(currentPath).then((raw) => JSON.parse(raw)),
 ]);
 
 const contract = extractJson(contractMarkdown);
@@ -158,8 +161,8 @@ assertIncludes(activeTruth, "托管交付平台", "active_truth_must_name_manage
 assertIncludes(activeTruth, "Portal 不回答科研问题，不复制 OPL 的 chatbot", "active_truth_must_keep_opl_chatbot_boundary");
 assertIncludes(activeTruth, "OPL 负责科研执行", "active_truth_must_assign_opl_execution");
 assertIncludes(activeTruth, "用户购买的是托管 OPL 科研工作台服务", "active_truth_must_hold_product_truth");
-assertIncludes(activeTruth, "当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`", "active_truth_must_track_current_cursor");
-assertIncludes(deliveryTruth, "leaf-portal-postgres-redis-local-production-data-closure", "delivery_truth_must_track_current_cursor");
+assertIncludes(activeTruth, `当前 product cursor 是 \`${current.current_cursor}\``, "active_truth_must_track_current_cursor");
+assertIncludes(deliveryTruth, current.current_cursor, "delivery_truth_must_track_current_cursor");
 assertIncludes(deliveryTruth, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "delivery_truth_must_list_default_verify");
 
 for (const text of [

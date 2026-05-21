@@ -7,9 +7,11 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。它要求 PostgreSQL 成为 Portal local production data canonical truth，Redis 只用于 session/cache/queue/lock；`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
+当前 product cursor 是 `leaf-portal-api-real-data-closure`。它要求 Portal 页面和组件使用 typed API client 或 server state 承载可见业务状态，不得保留 component-local fake business truth、hardcoded page demo payload 或绕过 typed API 的 UI adapter alias。
 
-当前 framework workflow convergence 清退分支不实现 PostgreSQL/Redis，不推进业务 cursor。
+最近 landed 的 `feat/v22-slide-01-data-truth` 已关闭 PostgreSQL/Redis local data truth；slide-02 必须继续保留该 storage regression 作为防回归命令。
+
+每个 product slide 仍按清退生命周期执行：先删除或吸收旧 fake/demo/alias surface，再由 eval、implementation、verify、landing gate 和 post-merge closeout 推进 cursor。
 
 ## Default Verification
 

@@ -13,11 +13,11 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 ### 当前阶段真相
 
-当前 trunk 已完成合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环和 Portal-OPL file/run/artifact 本地闭环。当前不是真实云生产闭环，不是 PostgreSQL/Redis production data layer 完成态，也不是 admin 全业务闭环完成态。
+当前 trunk 已完成合同级闭环、本地 deterministic eval、本地 smoke/local proof、Portal Workspace 文件动作闭环、Portal-OPL file/run/artifact 本地闭环，以及 slide-01 data truth 本地闭环。当前不是真实云生产闭环，不是 Portal API real data wiring 完成态，也不是 admin 全业务闭环完成态。
 
-当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。下一业务 leaf 必须让 PostgreSQL 成为 local production data 的 canonical truth，让 Redis 只用于 session/cache/queue/lock。`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
+当前 product cursor 是 `leaf-portal-api-real-data-closure`。当前 active baton 是 `slide-02-portal-api-real-data`：Portal 页面和组件必须从 typed API client 或 server state 读取可见业务状态，不得保留 component-local fake business truth、hardcoded page demo payload 或绕过 typed API 的 UI adapter alias。slide-01 已让 PostgreSQL 成为 local production data canonical truth，并让 Redis 保持 coordination-only；`PORTAL_STORAGE_MODE=postgres_redis` 不得回退 JSON 文件或伪成功。
 
-最近已通过 landing gate 的治理闭环是 `cleanup/v22-pre-slide-bloat-guardrails`，landed commit 为 `ee27d378ea81d1d2629b65fe332bacb24a12acaf`。该治理分支新增 `test:fast` / `test:lanes`，并把 pre-slide 防膨胀规则写入 repo bloat、product-loop fixture、CI、delivery 和 policy；不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
+最近已通过 landing gate 的产品闭环是 `feat/v22-slide-01-data-truth`，landed commit 为 `de71ca446da703358dd998489fb555fba622ea68`。该分支移除 `postgres_redis` 下的 JSON business snapshot mirror，并用 regression 证明 Redis 只保留 session/workspace-session coordination keys；当前 closeout 已把 active baton 推进到 slide-02。
 
 当前已收敛的事实：
 
@@ -29,7 +29,8 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前未闭合的事实：
 
-- PostgreSQL/Redis local production data closure 仍未实现。
+- Portal API real data wiring 仍未实现。
+- Portal 页面/组件仍需证明可见业务状态来自 typed API client 或 server state。
 - 真实云、deploy、kubectl、live-test、真实资源 mutation、真实价格审批和 production release readiness 仍需单独授权。
 - `scripts/sync-workspace-file-to-minio.ps1` 因 `services/portal/src/config/portal-config.mjs` 仍引用，暂属服务实现债，不在 docs/eval 清退中删除。
 
@@ -217,27 +218,27 @@ Current docs / eval surface during migration：
 | Recovery cleanup | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | full-taxonomy cleanup gate |
 | Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-merge truth 漂移 | current-state index loop gate | latest landed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | Cleanup lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | cleanup lifecycle gate | post-merge closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
-| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` + manifest `product-engineering-loop` suite | 产品 slide 已索引，功能尚未完成；open 明细只在 current machine fixture 临时存在 | run slides in order; each slide must inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit | 10 个 slide 全部闭合后 collapse to history summary and next cursor，active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
+| Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` `precloud-product-slides-closure` + manifest `product-engineering-loop` suite | slide-01 已 landed；当前 open baton 是 slide-02，open 明细只在 current machine fixture 临时存在 | run slide-02; then continue slide-03..slide-09 in order | 9 个产品 slide 全部闭合后 collapse to history summary and next cursor，active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
 
 ## Current Development Lines
 
 ### current-stage-current-cursor
 
-Current evidence: latest landed governance closeout is `ee27d378ea81d1d2629b65fe332bacb24a12acaf`; current machine cursor remains `leaf-portal-postgres-redis-local-production-data-closure`.
+Current evidence: latest landed product closeout is `de71ca446da703358dd998489fb555fba622ea68`; current machine cursor is `leaf-portal-api-real-data-closure`.
 
-Gap: governance closeout is complete, but PostgreSQL/Redis local production data closure is still gated and not implemented.
+Gap: slide-01 data truth is complete, but slide-02 Portal API real data wiring is still gated and not implemented.
 
-Next action: keep the current cursor unchanged until the business leaf implements local production data closure with local services.
+Next action: implement slide-02 so Portal visible state is supplied by typed API clients or server state, while retaining slide-01 storage regression as a guard.
 
-Done when: readers can distinguish landed governance closeout from unfinished PostgreSQL/Redis closure.
+Done when: readers can distinguish landed slide-01 data truth from unfinished slide-02 Portal API wiring.
 
 Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs`.
 
 ### portal-saas-control-plane-product-loop
 
-Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench.
+Current evidence: MedOPL is the SaaS control plane and managed delivery platform for clean One Person Lab; Portal owns account, workspace, balance, files, billing and trace surfaces while OPL owns scientific execution inside the workbench. The active baton is `slide-02-portal-api-real-data`.
 
-Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language. The `precloud-product-slides-closure` sequence is now the machine-indexed product-engineering-loop active baton, but slide implementation remains pending.
+Gap: product slides must keep the user loop visible instead of collapsing the product back into architecture or cloud-console language. slide-01 has landed; slide-02 still needs to remove hardcoded page demo payloads and component-local fake status.
 
 Next action: run the product-engineering-loop through the machine fixture, keeping product work tied to the account -> recharge -> Portal -> OPL -> file/task/result -> billing/freeze/release/audit loop. Every slide must use `inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit`.
 

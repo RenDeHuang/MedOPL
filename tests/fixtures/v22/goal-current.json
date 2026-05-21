@@ -5,47 +5,48 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-05-21",
+  "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "ee27d378ea81d1d2629b65fe332bacb24a12acaf",
-  "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
+  "base_trunk_head": "de71ca446da703358dd998489fb555fba622ea68",
+  "current_branch": "feat/v22-slide-02-portal-api-real-data",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
+  "authoring_branch": "feat/v22-slide-02-portal-api-real-data",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "ee27d378ea81d1d2629b65fe332bacb24a12acaf",
-  "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
-  "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
+  "last_landed_commit": "de71ca446da703358dd998489fb555fba622ea68",
+  "current_cursor": "leaf-portal-api-real-data-closure",
+  "next_leaf": "leaf-portal-api-real-data-closure",
   "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
+    "portal_api_real_data_closure_requires_typed_api_and_server_state_wiring"
   ],
-  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The latest governance closeout branch cleanup/v22-pre-slide-bloat-guardrails landed at ee27d378ea81d1d2629b65fe332bacb24a12acaf and does not implement PostgreSQL/Redis.",
+  "current_problem": "slide-01 data truth landed at de71ca446da703358dd998489fb555fba622ea68. The active product baton is slide-02 Portal API real data wiring; Portal visible state must come from typed API clients or server state instead of component-local fake business truth.",
   "gaps": [
     {
-      "id": "portal-postgres-redis-local-production-data-closure",
+      "id": "portal-api-real-data-closure",
       "stage": "S5 frontend/backend product completion",
-      "priority": 87,
+      "priority": 86,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-portal-postgres-redis-local-production-data-closure",
+      "next_leaf_step": "leaf-portal-api-real-data-closure",
       "depends_on": [
-        "portal-workspace-file-action-closure",
+        "portal-postgres-redis-local-production-data-closure",
         "portal-local-api-action-closure",
-        "frontend-product-react-vite-figma-make",
-        "opl-connection-gateway-preflight-runtime-file-run-artifact-trace"
+        "frontend-product-react-vite-figma-make"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-portal-postgres-redis-local-production-data-closure",
-    "gap_id": "portal-postgres-redis-local-production-data-closure",
+    "step_id": "leaf-portal-api-real-data-closure",
+    "gap_id": "portal-api-real-data-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
-    "problem": "Local durable data truth is not closed yet.",
+    "problem": "Portal visible state is not fully closed against typed API/server state yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -69,15 +70,14 @@
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/portal/src/state/*",
-      "services/portal/src/domain/*",
-      "services/portal/src/app/*",
+      "services/portal/frontend/src/api/portal/*",
+      "services/portal/frontend/src/app/pages/*",
+      "services/portal/frontend/src/app/data/*",
       "services/portal/src/routes/*",
-      "services/portal/src/storage/*",
-      "services/portal/src/migrations/*",
-      "services/portal/src/config/*",
+      "services/portal/src/app/*",
       "docs/active/README.md",
       "docs/history/README.md",
+      "docs/delivery/README.md",
       "tests/fixtures/v22/*",
       "tests/**/*.mjs",
       "scripts/v22-test-classification.mjs",
@@ -101,6 +101,7 @@
     "truth_writeback_target": [
       "docs/active/README.md",
       "docs/history/README.md",
+      "docs/delivery/README.md",
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ]
@@ -119,6 +120,8 @@
   },
   "verification_commands": [
     "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -144,25 +147,28 @@
   "truth_source_files": [
     "docs/active/README.md",
     "docs/specs/README.md",
+    "docs/product/README.md",
+    "docs/delivery/README.md",
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
   "truth_writeback_target": [
     "docs/active/README.md",
     "docs/history/README.md",
+    "docs/delivery/README.md",
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "cleanup/v22-pre-slide-bloat-guardrails",
+  "last_landed_branch": "feat/v22-slide-01-data-truth",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "cleanup/v22-pre-slide-bloat-guardrails",
+  "history_latest_branch": "feat/v22-slide-01-data-truth",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
     "id": "precloud-product-slides-closure",
     "owner": "MedOPL",
     "method": "OPL-style framework repo lifecycle",
-    "status": "indexed",
+    "status": "active",
     "truth_file": "docs/active/README.md",
     "machine_cursor_file": "tests/fixtures/v22/goal-current.json",
     "verify_manifest_file": "tests/fixtures/v22/agent-verify-manifest.json",
@@ -170,7 +176,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-01-data-truth",
+    "active_slide": "slide-02-portal-api-real-data",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -271,7 +277,7 @@
       },
       {
         "order": 1,
-        "status": "pending",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -363,11 +369,16 @@
               "JSON fallback is impossible under PORTAL_STORAGE_MODE=postgres_redis"
             ]
           }
-        ]
+        ],
+        "landed_commit": "de71ca446da703358dd998489fb555fba622ea68",
+        "landed_branch": "feat/v22-slide-01-data-truth",
+        "closed_at": "2026-05-22",
+        "history_summary": "slide-01 made PostgreSQL the canonical local production data truth and kept Redis coordination-only; postgres_redis no longer writes JSON business snapshots.",
+        "next_cursor": "leaf-portal-api-real-data-closure"
       },
       {
         "order": 2,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",

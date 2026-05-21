@@ -79,6 +79,31 @@ function revParseCommit(ref) {
   return runGit(["rev-parse", "--verify", `${ref}^{commit}`], { fallback: "" });
 }
 
+function commitsAfter(commit, ref) {
+  if (!commit || !ref) return [];
+  const output = runGit(["rev-list", "--reverse", `${commit}..${ref}`], { fallback: "" });
+  return output ? output.split(/\r?\n/u).filter(Boolean) : [];
+}
+
+function changedFilesForCommit(commit) {
+  if (!commit) return [];
+  const output = runGit(["diff-tree", "--no-commit-id", "--name-only", "-r", commit], { fallback: "" });
+  return output ? output.split(/\r?\n/u).filter(Boolean) : [];
+}
+
+function closeoutCommitLooksLikeCloseout(commit) {
+  const files = changedFilesForCommit(commit);
+  if (files.length === 0) return false;
+  const allowedPatterns = [
+    /^docs\/(?:active|delivery|history)\/README\.md$/u,
+    /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,
+    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|mvp-contract-suite)\.mjs$/u,
+    /^tests\/smoke\/smoke-test-v22-saas-control-plane-user-experience-boundary\.mjs$/u,
+    /^scripts\/v22-landing-closeout\.mjs$/u,
+  ];
+  return files.every((file) => allowedPatterns.some((pattern) => pattern.test(file)));
+}
+
 function isAncestor(commit, ref) {
   if (!commit || !ref) return false;
   try {
@@ -168,6 +193,7 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
   const sections = parseHistorySections(history);
   const latest = latestLandedSection(sections);
   const requiredPostMergeFields = manifest.required_post_merge_fields || defaultRequiredPostMergeFields;
+  const requiresTrunkHeadSync = manifest.requires_trunk_head_sync === true;
   const missingPostMergeFields = latest
     ? requiredPostMergeFields.filter((field) => !sectionHasRequiredField(latest, field))
     : [...requiredPostMergeFields];
@@ -182,6 +208,28 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
       code: "latest_landed_commit_not_on_trunk",
       branch: latest.branch,
       landedCommit: latest.landedCommit,
+      trunkRef,
+    });
+  }
+  if (requiresTrunkHeadSync && latest && trunkHead) {
+    const afterLatest = commitsAfter(latest.landedCommit, trunkRef);
+    const nonCloseoutCommits = afterLatest.filter((commit) => !closeoutCommitLooksLikeCloseout(commit));
+    if (nonCloseoutCommits.length > 0) {
+      findings.push({
+        code: "non_closeout_commits_after_latest_landed",
+        branch: latest.branch,
+        landedCommit: latest.landedCommit,
+        commits: nonCloseoutCommits,
+        trunkRef,
+      });
+    }
+  }
+  if (requiresTrunkHeadSync && latest && trunkHead && latest.landedCommit !== trunkHead && latest.branch.startsWith("cleanup/")) {
+    findings.push({
+      code: "latest_cleanup_landed_commit_not_trunk_head",
+      branch: latest.branch,
+      expected: trunkHead,
+      actual: latest.landedCommit,
       trunkRef,
     });
   }

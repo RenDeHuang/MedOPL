@@ -21,7 +21,6 @@ for (const phrase of [
   "7 天保护期",
   "120min",
   "T+1",
-  "leaf-portal-postgres-redis-local-production-data-closure",
   "PostgreSQL",
   "Redis",
 ]) {
@@ -38,7 +37,8 @@ for (const phrase of [
   assert(specsSource.includes(phrase), `spec_truth_missing:${phrase}`);
 }
 
-assert.equal(current.current_cursor, "leaf-portal-postgres-redis-local-production-data-closure", "current_cursor_mismatch");
+assert(current.current_cursor, "current_cursor_required");
+assert(activeSource.includes(`当前 product cursor 是 \`${current.current_cursor}\``), "active_truth_must_track_current_cursor");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 
 const mvpLocalTiers = ["health-check", "smoke-golden", "contract-local"];

@@ -167,13 +167,15 @@ const [
 ]);
 const latestLanded = latestLandedHistorySection(history);
 const latestLandedCommit = latestLanded.landedCommit;
+const currentCursor = current.current_cursor;
 
 assertIncludesAll(active, [
   "OPL-style 清退生命周期真相",
   "truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor",
-  "leaf-portal-postgres-redis-local-production-data-closure",
   lifecycleGate,
 ], "active_lifecycle_truth");
+assert(currentCursor, "current_cursor_required");
+assert(active.includes(currentCursor), `active_lifecycle_truth_missing_current_cursor:${currentCursor}`);
 
 assertIncludesAll(specs, [
   "Purpose: `v22_contract_spec_single_truth`",
@@ -250,12 +252,11 @@ assertIncludesAll(latestLanded.source, [
   `landed_commit: \`${latestLandedCommit}\``,
   "landing_gate_result: `passed / ff-only landed / pushed`",
   "post_merge_closeout: `completed`",
-  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
+  `next_cursor: \`${currentCursor}\``,
 ], "history_dynamic_latest_closeout");
 assertNotIncludes(latestLanded.source, "Status: `ready_for_landing_review`", "history_landed_dynamic_latest_run");
 
-assert.equal(current.current_cursor, "leaf-portal-postgres-redis-local-production-data-closure", "current_cursor_must_remain_business_leaf");
-assert.equal(current.next_leaf, "leaf-portal-postgres-redis-local-production-data-closure", "next_leaf_must_remain_business_leaf");
+assert.equal(current.next_leaf, currentCursor, "next_leaf_must_match_current_cursor");
 assert.equal(current.last_landed_commit, latestLandedCommit, "current_last_landed_commit_must_match_latest_closeout");
 assert.equal(current.last_landed_branch, latestLanded.branch, "current_last_landed_branch_must_match_latest_closeout");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");

@@ -41,6 +41,7 @@ const requiredForbiddenOps = [
 ];
 
 const allowedOpenStatuses = ["indexed", "active"];
+const allowedSlideStatuses = ["indexed", "active", "pending", "landed"];
 const closedSummaryFields = [
   "id",
   "status",
@@ -80,7 +81,7 @@ assert.equal(loop.schema_version, 1, "product_engineering_loop_schema_version_mi
 assert.equal(loop.id, "precloud-product-slides-closure", "product_engineering_loop_id_mismatch");
 assert.equal(loop.owner, "MedOPL", "product_engineering_loop_owner_mismatch");
 assert.equal(loop.method, "OPL-style framework repo lifecycle", "product_engineering_loop_method_mismatch");
-assert.equal(loop.status, "indexed", "product_engineering_loop_status_mismatch");
+assert([...allowedOpenStatuses, "closed"].includes(loop.status), "product_engineering_loop_status_mismatch");
 assert.equal(loop.truth_file, "docs/active/README.md", "product_engineering_loop_truth_file_mismatch");
 assert.equal(loop.machine_cursor_file, "tests/fixtures/v22/goal-current.json", "product_engineering_loop_cursor_file_mismatch");
 assert.equal(loop.verify_manifest_file, "tests/fixtures/v22/agent-verify-manifest.json", "product_engineering_loop_manifest_file_mismatch");
@@ -94,7 +95,6 @@ assert.equal(loop.slide_subtasks_policy, "subtasks_may_exist_only_as_code_tests_
 assert.deepEqual(loop.lifecycle, expectedLifecycle, "product_engineering_loop_lifecycle_mismatch");
 
 assert.equal(loop.active_detail_retention, "open_only", "product_engineering_loop_active_detail_retention_must_be_open_only");
-assert.equal(loop.active_slide, "slide-01-data-truth", "product_engineering_loop_active_slide_mismatch");
 assert(loop.closeout_policy, "product_engineering_loop_closeout_policy_missing");
 assert.equal(loop.closeout_policy.when, "all_slides_complete", "product_engineering_loop_closeout_when_mismatch");
 assert.equal(loop.closeout_policy.action, "collapse_to_history_and_next_cursor", "product_engineering_loop_closeout_action_mismatch");
@@ -125,6 +125,9 @@ if (loop.status === "closed") {
   assert(allowedOpenStatuses.includes(loop.status), "product_engineering_loop_status_mismatch");
   assert.equal(loop.slides.length, expectedSlideIds.length, "product_engineering_loop_slide_count_mismatch");
   assert.deepEqual(loop.slides.map((slide) => slide.id), expectedSlideIds, "product_engineering_loop_slide_order_mismatch");
+  assert(expectedSlideIds.includes(loop.active_slide), `product_engineering_loop_active_slide_unknown:${loop.active_slide}`);
+  const activeSlideIndex = expectedSlideIds.indexOf(loop.active_slide);
+  assert(activeSlideIndex > 0, "product_engineering_loop_active_slide_must_be_product_slide");
 
   for (const [index, slide] of loop.slides.entries()) {
     assert.equal(slide.order, index, `slide_order_mismatch:${slide.id}`);
@@ -137,7 +140,16 @@ if (loop.status === "closed") {
     assert(Array.isArray(slide.done_when) && slide.done_when.length > 0, `slide_missing_done_when:${slide.id}`);
     assertArrayIncludesAll(slide.lifecycle, expectedLifecycle, `slide_lifecycle:${slide.id}`);
     assertArrayIncludesAll(slide.forbidden_ops, requiredForbiddenOps, `slide_forbidden_ops:${slide.id}`);
-    assert.equal(slide.status, index === 0 ? "indexed" : "pending", `slide_status_mismatch:${slide.id}`);
+    assert(allowedSlideStatuses.includes(slide.status), `slide_status_unknown:${slide.id}:${slide.status}`);
+    const expectedStatus = index === 0 ? "indexed" : index < activeSlideIndex ? "landed" : index === activeSlideIndex ? "active" : "pending";
+    assert.equal(slide.status, expectedStatus, `slide_status_mismatch:${slide.id}`);
+    if (index > 0 && index < activeSlideIndex) {
+      assert.match(slide.landed_commit || "", /^[a-f0-9]{40}$/u, `landed_slide_commit_missing:${slide.id}`);
+      assert(slide.landed_branch, `landed_slide_branch_missing:${slide.id}`);
+      assert(slide.closed_at, `landed_slide_closed_at_missing:${slide.id}`);
+      assert(slide.history_summary, `landed_slide_history_summary_missing:${slide.id}`);
+      assert(slide.next_cursor, `landed_slide_next_cursor_missing:${slide.id}`);
+    }
     for (const subtask of slide.subtask_surfaces) {
       assert(subtask.id, `slide_subtask_missing_id:${slide.id}`);
       assert(subtask.owner_surface, `slide_subtask_missing_owner_surface:${slide.id}:${subtask.id}`);
@@ -198,5 +210,6 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_product_engineering_loop_index",
   productLoop: loop.id,
-  slides: loop.slides.map((slide) => slide.id),
+  activeSlide: loop.active_slide,
+  slides: loop.slides?.map((slide) => slide.id) || [],
 }, null, 2));
