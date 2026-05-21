@@ -812,6 +812,7 @@
       "allowed_files": [
         "services/portal/src/app/portal-admin-api-payloads.mjs",
         "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+        "services/portal/frontend/src/app/data/*",
         "services/portal/frontend/src/app/pages/admin/*",
         "docs/active/README.md",
         "docs/history/README.md",
@@ -871,6 +872,7 @@
         "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
         "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
         "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
+        "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
         "node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
         "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
@@ -934,6 +936,7 @@
         "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
         "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
         "node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs",
+        "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
         "node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs",
         "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",

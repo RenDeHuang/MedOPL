@@ -3,7 +3,6 @@ import {
   fetchAdminAlerts,
   fetchAdminAudit,
   fetchAdminBillingOps,
-  fetchAdminOps,
   fetchAdminOverview,
   fetchAdminSystem,
   fetchAdminUsers,
@@ -55,6 +54,8 @@ import {
   packageStorage,
   runtimeReleaseLifecycle,
 } from "./portalRuntimeEnvironmentLifecycle";
+import { adminReadOnlyMessage, loadAdminOpsModel } from "./portalAdminOpsSurface";
+export { adminReadOnlyMessage, loadAdminOpsModel };
 
 export type QueryState<T> =
   | { status: "loading"; data: null; error: null }
@@ -64,7 +65,6 @@ export type QueryState<T> =
 const PORTAL_DATA_UNAVAILABLE_MESSAGE = "Portal 数据暂时不可用，请稍后重试。";
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
 export const adminLocalActionMessage = "已接入本地 Portal 用户启停、删除、充值、退款和公告管理动作。";
-export const adminReadOnlyMessage = "该管理面当前只展示已接入的只读数据；真实云资源、真实扣费或高风险设置仍需单独授权接口。";
 
 class PortalDisplayError extends Error {
   readonly userMessage: string;
@@ -950,47 +950,5 @@ export async function loadAdminSystemModel() {
         errorRate: numberValue(metrics.errorRate),
       },
     },
-  };
-}
-
-export async function loadAdminOpsModel() {
-  const ops = objectValue(await fetchAdminOps());
-  if (ops.error === "ops_surface_disabled" || ops.opsSurfaceEnabled === false) {
-    return {
-      opsSurfaceEnabled: false,
-      disabledTitle: "平台托管运维入口未启用",
-      disabledMessage: stringValue(ops.message, "未启用平台托管运维入口。"),
-      platformMetrics: {
-        totalRequests: 0,
-        avgResponseTime: 0,
-        activeConnections: 0,
-        errorRate: 0,
-      },
-      services: [],
-      adminReadOnlyMessage,
-    };
-  }
-  const systemMetrics = objectValue(ops.systemMetrics);
-  const services = arrayValue(ops.serviceStatuses || ops.upstreamStatuses || ops.alerts);
-  const summaries = objectValue(ops.summaries);
-  return {
-    opsSurfaceEnabled: true,
-    platformMetrics: {
-      totalRequests: numberValue(systemMetrics.totalRequests || systemMetrics.totalRuns || ops.summary?.runCount),
-      avgResponseTime: numberValue(systemMetrics.averageResponseMs || systemMetrics.masFirstReplyApproxMs),
-      activeConnections: numberValue(systemMetrics.activeWorkspaceSessions || systemMetrics.concurrentRuns),
-      errorRate: numberValue(systemMetrics.errorRate),
-    },
-    services: services.map((item, index) => {
-      const row = objectValue(item);
-      return {
-        rowKey: adminServiceRowKey("ops", row, index),
-        name: stringValue(row.name || row.title || row.category),
-        status: row.ok === false ? "down" : String(row.status || row.mode || "operational"),
-        uptime: row.responseMs ? `${row.responseMs}ms` : stringValue(row.mode || summaries.billing?.mode, "状态可见"),
-        lastCheck: dateText(row.occurredAt || row.updatedAt),
-      };
-    }),
-    adminReadOnlyMessage,
   };
 }
