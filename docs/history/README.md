@@ -61,6 +61,90 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-engineering-flow-closure
+
+Status: `ready_for_landing_review`
+
+Branch: `cleanup/v22-engineering-flow-closure`
+
+Base trunk HEAD: `c8e519e171403f3a5876c3e2a98795c020450234`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Aristotle: `gpt-5.4-mini`, read-only repo bloat / workflow command reference / registry risk review.
+
+Scope:
+
+- Add a repo bloat audit gate to keep OPL-style taxonomy from regrowing uncontrolled.
+- Add workflow local command reference integrity checking for current package/workflow/manifest/docs entrypoints.
+- Register both gates in health, local-contract, repo-hygiene and docs-engineering-loop verification surfaces.
+- Add `npm --prefix services/portal ci` before CI regression so clean runners can execute Portal local regression dependencies such as `pg`.
+- Keep scripts as control-plane runners only; no `scripts/smoke-test-*` returned.
+- Keep business cursor unchanged on `leaf-portal-postgres-redis-local-production-data-closure`.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/active/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/history/README.md`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `tests/fixtures/v22/goal-current.json`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+- `scripts/v22-test-classification.mjs`
+- `scripts/v22-repo-hygiene.mjs`
+- `scripts/v22-repo-bloat-audit.mjs`
+- `scripts/v22-line-budget.mjs`
+- `package.json`
+- `.github/workflows/verify.yml`
+
+Verification before handoff:
+
+- `node tests/health/health-check-v22-workflow-command-reference-gate.mjs`: pass.
+- `node tests/health/health-check-v22-repo-bloat-audit-gate.mjs`: pass.
+- `node scripts/v22-repo-bloat-audit.mjs --json`: pass.
+- `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs`: pass.
+- `node tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --branch cleanup/v22-engineering-flow-closure --base origin/recovery/platform-v22-trunk --json`: pass after `npm --prefix services/portal ci`.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json`: pass.
+- `git diff --check -- docs tests scripts package.json .github services/portal/src`: pass.
+
+Repo bloat audit snapshot:
+
+- docs markdown: `11 / 16`.
+- scripts files: `8 / 8`.
+- tests mjs: `99 / 110`.
+- tests/regression/portal: `29 / 32`.
+- tests/future-authorized/cloud: `20 / 24`.
+- services/portal: `243 / 260` files, `1846153 / 2000000` bytes.
+
+Structural health note:
+
+- `sentrux check .`: fail, quality signal `0.63` below required `0.69`.
+- Violations: modularity `0.7062 < 0.8000`, depth `0.5333 < 0.7000`, and `services/portal/src/app/portal-runtime.mjs` fan-out `16`.
+- This is a repo health risk for the next Portal closure branch, not a scope item for this control-plane gate branch.
+
+Non-goals:
+
+- No push, no merge, no ff-only absorb.
+- No services implementation changes.
+- No deploy, build/push, kubectl, live-test or real cloud operation.
+- No upstream, `deploy/*`, `.sentrux/*`, `adapters/*` or `infra/*` edits.
+
+Next recommendation:
+
+- B should fresh review this branch, rerun docs-engineering-loop and current entrypoint, then decide whether to ff-only land.
+- A later Portal refactor branch should split `services/portal/src/app/portal-runtime.mjs` fan-out before adding broad Portal surface files.
+
 ### 2026-05-21 cleanup/v22-opl-framework-workflow-convergence
 
 Status: `landed / pushed / post-push verified`

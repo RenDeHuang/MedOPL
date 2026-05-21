@@ -33,6 +33,7 @@ const expectedScripts = {
   "gate:contract": "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk",
   "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
   "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
+  "repo:bloat": "node scripts/v22-repo-bloat-audit.mjs --json",
   "line:budget": "node scripts/v22-line-budget.mjs",
   "check:diff": "git diff --check -- docs tests scripts package.json .github",
   "verify:docs-engineering-loop": "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk",
@@ -61,6 +62,7 @@ for (const command of [
 
 for (const expected of [
   "recovery/platform-v22-trunk",
+  "npm --prefix services/portal ci",
   "npm run verify:repo-hygiene",
   "npm run verify:health",
   "npm run verify:smoke",
@@ -76,8 +78,12 @@ for (const expected of [
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
 ]) {
-  assert(workflowSource.includes(expected), `verify_workflow_missing:${expected}`);
+assert(workflowSource.includes(expected), `verify_workflow_missing:${expected}`);
 }
+assert(
+  workflowSource.indexOf("npm --prefix services/portal ci") < workflowSource.indexOf("npm run test:regression"),
+  "verify_workflow_must_install_portal_dependencies_before_regression",
+);
 for (const expected of [
   "contents: read",
   "fetch-depth: 0",
@@ -108,6 +114,7 @@ assert(packageSuite, "root_verify_package_suite_missing");
 for (const command of [
   "npm run verify",
   "npm run verify:repo-hygiene",
+  "npm run repo:bloat",
   "npm run verify:review",
   "npm run test:health",
   "npm run test:smoke",
@@ -127,6 +134,7 @@ const docsEngineeringLoopSuite = manifest.package_suites.find((suite) => suite.i
 assert(docsEngineeringLoopSuite, "docs_engineering_loop_package_suite_missing");
 assert.deepEqual(docsEngineeringLoopSuite.commands, [
   "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-repo-bloat-audit.mjs --json",
   "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",

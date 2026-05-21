@@ -54,6 +54,7 @@
       "node tests/contract/contract-test-v22-current-development-lines.mjs",
       "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
       "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+      "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
       "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
@@ -62,7 +63,8 @@
       "npm --prefix services/portal run check",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
       "git diff --check -- docs tests scripts services/portal/src",
-      "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"
+      "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
+      "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
       "services/portal/src/state/*",
@@ -80,6 +82,7 @@
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
       "scripts/v22-repo-hygiene.mjs",
+      "scripts/v22-repo-bloat-audit.mjs",
       "scripts/v22-line-budget.mjs"
     ],
     "forbidden_files": [
@@ -122,6 +125,7 @@
     "node tests/contract/contract-test-v22-current-development-lines.mjs",
     "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
     "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+    "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
     "node tests/contract/contract-test-v22-test-lane-registry.mjs",
     "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
@@ -130,7 +134,8 @@
     "npm --prefix services/portal run check",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs tests scripts services/portal/src",
-    "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"
+    "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
+    "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
   ],
   "truth_source_files": [
     "docs/active/README.md",

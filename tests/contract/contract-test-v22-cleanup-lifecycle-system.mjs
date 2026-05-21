@@ -138,6 +138,7 @@ assert.deepEqual(scriptFiles, [
   "scripts/sync-workspace-file-to-minio.ps1",
   "scripts/v22-landing-closeout.mjs",
   "scripts/v22-line-budget.mjs",
+  "scripts/v22-repo-bloat-audit.mjs",
   "scripts/v22-repo-hygiene.mjs",
   "scripts/v22-test-classification.mjs",
   "scripts/v22-verify.mjs",
