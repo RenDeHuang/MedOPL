@@ -18,7 +18,7 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 7. [source](./source/README.md): active source surface、服务边界、禁止恢复的旧入口。
 8. [public](./public/README.md): 对外产品叙事。
 9. [references](./references/README.md): 外部参考、upstream 参考和迁移摘要。
-10. [history](./history/README.md): agent-run、B review、吸收记录、cleanup 记录和 provenance 摘要。
+10. [history](./history/README.md): agent-run、landing gate、landed 记录、cleanup 记录和 provenance 摘要。
 11. [tests](../tests/README.md): repo-local eval taxonomy、fixtures、manifest 和 lifecycle gate。
 
 ## Truth Lookup
@@ -29,10 +29,10 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 | 用户到底购买什么、Portal/OPL 分工是什么 | [product](./product/README.md) |
 | Gateway、clean upstream、Runtime Bridge 和数据回流边界 | [runtime](./runtime/README.md) |
 | 长期合同/spec anchor 和分支订阅包 | [specs](./specs/README.md) |
-| agent 怎么跑、A/B/C 窗口、secret/cloud/deploy 红线 | [policies](./policies/README.md) |
-| 本地怎么验收、怎么交 B、真实云顺序是什么 | [delivery](./delivery/README.md) |
+| agent 怎么跑、authoring branch / landing gate / parallel lane、secret/cloud/deploy 红线 | [policies](./policies/README.md) |
+| 本地怎么验收、怎么交 landing gate、真实云顺序是什么 | [delivery](./delivery/README.md) |
 | 哪些源码目录是 active surface、哪些旧语义不得恢复 | [source](./source/README.md) |
-| 哪些 run 已被吸收、post-absorb closeout 是否完成 | [history](./history/README.md) |
+| 哪些 run 已 landed、post-merge closeout 是否完成 | [history](./history/README.md) |
 | 机器 cursor、verify manifest、eval 分类和 lifecycle gate | [tests](../tests/README.md) |
 
 自治闭环按这个顺序运行：
@@ -45,7 +45,7 @@ docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/mani
 
 ## Directory Rule
 
-`docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/` 只允许一个 `README.md`。新增第二个 Markdown 文件必须先改本入口和 hard-retirement gate，并说明为什么不能吸收到该目录 README。
+`docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/` 只允许一个 `README.md`。新增第二个 Markdown 文件必须先改本入口和 full-taxonomy cleanup gate，并说明为什么不能吸收到该目录 README。
 
 ## Document Portfolio Ledger
 
@@ -53,18 +53,18 @@ docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/mani
 
 | File | owner purpose | state | allowed content | forbidden content | history handoff |
 | --- | --- | --- | --- | --- | --- |
-| `docs/active/README.md` | current truth / gap / cursor | active current truth | current facts, gap, current development lines, cannot-claim, next action | run evidence, B review detail, second specs, long provenance | absorbed run details move to `docs/history/README.md` |
-| `docs/product/README.md` | product view | hard compacted view | product language, user experience framing, product spec anchor index | current status, implementation proof, cloud execution claims | product line changes summarize in history only after absorb |
+| `docs/active/README.md` | current truth / gap / cursor | active current truth | current facts, gap, current development lines, cannot-claim, next action | run evidence, landing gate detail, second specs, long provenance | landed run details move to `docs/history/README.md` |
+| `docs/product/README.md` | product view | hard compacted view | product language, user experience framing, product spec anchor index | current status, implementation proof, cloud execution claims | product line changes summarize in history only after landing gate and post-merge closeout |
 | `docs/runtime/README.md` | runtime view | hard compacted view | Gateway / Runtime Bridge / clean upstream boundary and spec anchors | upstream implementation details, canary evidence, deploy proof | runtime discovery evidence stays in `.runtime` or history summary |
 | `docs/specs/README.md` | contract/spec truth | active spec truth | durable contracts, stable boundaries, spec anchors | agent-run logs, temporary plans, current cursor status | superseded spec rationale summarizes in history |
-| `docs/policies/README.md` | policy truth | active policy truth | stable workflow, authorization, docs lifecycle, smoke/eval, secret and retirement policy | current product truth, run proof, implementation detail | policy changes record the absorbed branch in history |
+| `docs/policies/README.md` | policy truth | active policy truth | stable workflow, authorization, docs lifecycle, smoke/eval, secret and cleanup policy | current product truth, run proof, implementation detail | policy changes record the landed branch in history |
 | `docs/delivery/README.md` | delivery truth | active delivery view | current execution entrypoints, delivery order, cloud/deploy authorization sequence | release claims without authorization, B evidence detail | delivery closeout summarizes in history |
-| `docs/source/README.md` | source surface view | hard compacted view | active source surfaces, forbidden surfaces, retired source semantics | implementation details better owned by source code or tests | source cleanup record summarizes in history |
+| `docs/source/README.md` | source surface view | hard compacted view | active source surfaces, forbidden surfaces, cleanup source semantics | implementation details better owned by source code or tests | source cleanup record summarizes in history |
 | `docs/public/README.md` | public narrative view | hard compacted view | external-facing product wording and claim limits | internal secrets, cloud operations detail, current proof | public narrative updates summarize in history |
-| `docs/references/README.md` | reference index | active reference index | external references, upstream links, migration references | current truth, local evidence, implementation plans | retired reference notes summarize in history |
-| `docs/history/README.md` | evidence index | active history summary | absorbed runs, B review summaries, tombstone map, provenance summaries | product truth, second current state, new specs | no further handoff; detailed proof stays in git history |
+| `docs/references/README.md` | reference index | active reference index | external references, upstream links, migration references | current truth, local evidence, implementation plans | cleanup reference notes summarize in history |
+| `docs/history/README.md` | evidence index | active history summary | landed runs, landing gate summaries, tombstone map, provenance summaries | product truth, second current state, new specs | no further handoff; detailed proof stays in git history |
 
-## Retired Entrypoints
+## Cleanup Entrypoints
 
 以下旧路径和旧语义不得恢复为 current truth、默认入口、fixture、compat alias 或产品主叙事：
 

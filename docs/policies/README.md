@@ -17,14 +17,15 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 
 `tests/**/*.mjs` 当前是 repo-local eval 文件族。只有 `health-check` 和 `smoke-golden` 可以被称为 smoke。`contract-local` 与 `local-regression` 是 eval；`future-authorized` 只表示未来授权边界可见性，不授权真实云。
 
-## Agent Workflow Policy
+## Framework Landing Protocol
 
-- A 窗口只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明订阅合同、边界和验收命令，按 step commit，最后交 B review。
-- B 窗口才做 fresh review、ff-only absorb 和 push。
+- authoring branch 只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明订阅合同、边界和验收命令，按 step commit，最后交 landing gate。
+- landing gate 执行 fresh review、ff-only merge、push、post-push verification 和 post-merge closeout；authoring branch 不自合入。
+- parallel lane 可以并行推进互不冲突的只读审计或清退分支，但合入前必须基于最新 trunk 重放并通过同一个 landing gate。
 - subagent 必须显式记录模型；允许模型为 `gpt-5.4`、`gpt-5.3-codex`、`gpt-5.4-mini`。
 - 真实云、secret、deploy、kubectl、live-test 和 build/push 必须单独授权。
 
-## Physical Retirement Policy
+## Physical Cleanup Policy
 
 文件可物理清退前必须同时满足：
 
@@ -34,29 +35,29 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 
 ## Human / Machine Boundary
 
-README files are human truth, not machine APIs. Tests and workflow gates may verify document existence, taxonomy structure, manifest/schema consistency, command references, retired-path protection and closeout state, but they must not assert prose wording as machine truth or depend on Markdown titles as API.
+README files are human truth, not machine APIs. Tests and workflow gates may verify document existence, taxonomy structure, manifest/schema consistency, command references, cleanup-path protection and closeout state, but they must not assert prose wording as machine truth or depend on Markdown titles as API.
 
 机器判断优先使用 `tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json`、`tests/**`、source code and runner behavior。Markdown 文档负责解释事实与边界；如果需要可执行判断，必须把判断下沉到 JSON fixture、test registry、source contract 或 explicit gate。
 
 History 中的旧路线只能作为 provenance，不得反向恢复 active owner、default verify、compat alias 或 product mainline。
 
-## Retirement Lifecycle Policy
+## Cleanup Lifecycle Policy
 
 每个 v22 leaf 必须按同一个生命周期运行：
 
 ```text
-truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-absorb truth closeout -> next cursor
+truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor
 ```
 
 稳定规则：
 
 - `docs/active/README.md` 是唯一人读 current truth；不得新建第二份 active truth 或阶段板。
 - `docs/specs/README.md` 是唯一合同/spec truth；不得恢复旧 contracts 目录。
-- `docs/history/README.md` 是唯一 agent-run / B absorb / cleanup closeout 摘要入口；不得恢复旧 recovery 目录或旧 agent-run 文件树。
+- `docs/history/README.md` 是唯一 agent-run / landing gate / cleanup closeout 摘要入口；不得恢复旧 recovery 目录或旧 agent-run 文件树。
 - `tests/fixtures/v22/goal-current.json` 是唯一机器 cursor；`tests/fixtures/v22/agent-verify-manifest.json` 是唯一 verify manifest。
 - 新增 repo-local eval 必须进入 `tests/{health,smoke,contract,regression,future-authorized}`；不得新增 `scripts/smoke-test-*`。
 - `scripts/` 只保 runner、classifier、workflow gate，以及当前仍被 services 引用的 workspace-to-minio sync helper。
-- B 已吸收并 push 的 leaf 不能长期保持 `ready_for_b_review`；必须执行 post-absorb truth closeout。
+- 已通过 landing gate 并 push 的 leaf 不能长期保持 `ready_for_landing_review`；必须执行 post-merge closeout。
 - current cursor 不能停在已完成 leaf，也不能把 `future-authorized`、真实云、deploy、live-test 或 release readiness 标成 cursor-eligible，除非用户单独授权。
 
 ## Current Sources

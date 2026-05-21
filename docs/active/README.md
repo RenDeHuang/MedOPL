@@ -3,7 +3,7 @@
 Owner: `MedOPL`
 Purpose: `current_state_vs_ideal_gap`
 State: `active_current_truth`
-Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、last absorbed commit、branch override 和 verification bundle 以 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json` 为准。`docs/product/README.md`、`docs/runtime/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/delivery/README.md`、`docs/source/README.md`、`docs/references/README.md`、`docs/history/README.md` 只提供视角索引，不再承载第二份 current truth。
+Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、last landed commit、branch override 和 verification bundle 以 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json` 为准。`docs/product/README.md`、`docs/runtime/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/delivery/README.md`、`docs/source/README.md`、`docs/references/README.md`、`docs/history/README.md` 只提供视角索引，不再承载第二份 current truth。
 
 ## Ideal State
 
@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前 product cursor 是 `leaf-portal-postgres-redis-local-production-data-closure`。下一业务 leaf 必须让 PostgreSQL 成为 local production data 的 canonical truth，让 Redis 只用于 session/cache/queue/lock。`PORTAL_STORAGE_MODE=postgres_redis` 缺连接或 schema 时必须 fail-closed，不得回退 JSON 文件或伪成功。
 
-最近已吸收的治理闭环是 `cleanup/v22-opl-loop-event-automation-and-ci-closure`，absorbed commit 为 `2fe61b26714b237bc323aa3245128d1b0140d332`。该治理分支补齐 post-absorb closeout 自动化、动态 trunk/history/current 一致性检查、review/docs-engineering-loop 入口和 closeout commit validation；不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
+最近已通过 landing gate 的治理闭环是 `cleanup/v22-opl-loop-event-automation-and-ci-closure`，landed commit 为 `2fe61b26714b237bc323aa3245128d1b0140d332`。该治理分支补齐 post-merge closeout 自动化、动态 trunk/history/current 一致性检查、review/docs-engineering-loop 入口和 closeout commit validation；不实现 PostgreSQL/Redis，不推进业务 cursor，不修改 services。
 
 当前已收敛的事实：
 
@@ -38,7 +38,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 MedOPL v22 的仓库治理采用 OPL-style lifecycle，但执行更严格的单页 truth 规则。每个 leaf 的推进顺序必须是：
 
 ```text
-truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-absorb truth closeout -> next cursor
+truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor
 ```
 
 该生命周期不是一次性清退动作，而是默认开发闭环：
@@ -46,18 +46,18 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-abs
 - truth：当前事实只写入本文；长期不变量只写入 `docs/specs/README.md`。
 - gap：本文 `Gap Matrix` 保持当前差距和下一步 cursor；机器 cursor 只写入 `tests/fixtures/v22/goal-current.json`。
 - eval：新增或修改行为前必须先确认或补 `tests/**` eval；不能把宽回归或 future-authorized gate 写成 smoke。
-- implementation/cleanup：A 分支按 step commit 推进；不新增 shadow archive、compat alias、旧 recovery 或旧 contracts 目录。
+- implementation/cleanup：authoring branch 按 step commit 推进；不新增 shadow archive、compat alias、旧 recovery 或旧 contracts 目录。
 - verify：默认入口是 `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`。
-- B absorb：只有 B 窗口可以 fresh review、ff-only absorb 和 push。
-- post-absorb truth closeout：B 吸收后必须把 absorbed commit、post-push verification 和下一 cursor 写回 `docs/history/README.md` 与 `tests/fixtures/v22/*`。
+- landing gate：只由 landing operator 执行 fresh review、ff-only merge 和 push；authoring branch 不自合入。
+- post-merge closeout：landing gate push 后必须把 landed commit、post-push verification 和下一 cursor 写回 `docs/history/README.md` 与 `tests/fixtures/v22/*`。
 
-任何 leaf 完成后如果没有 post-absorb truth closeout，不能把下一 leaf 作为稳定当前事实推进。
+任何 leaf 完成后如果没有 post-merge closeout，不能把下一 leaf 作为稳定当前事实推进。
 
 ## Active Surface Rule
 
-`docs/active/README.md` 只承载 current facts, gap, cursor, cannot-claim, and next action。专题合同写入 `docs/specs/README.md`，稳定纪律写入 `docs/policies/README.md`，runtime 视角写入 `docs/runtime/README.md`，delivery 命令和授权顺序写入 `docs/delivery/README.md`，run evidence 和 B review 摘要写入 `docs/history/README.md`。
+`docs/active/README.md` 只承载 current facts, gap, cursor, cannot-claim, and next action。专题合同写入 `docs/specs/README.md`，稳定纪律写入 `docs/policies/README.md`，runtime 视角写入 `docs/runtime/README.md`，delivery 命令和授权顺序写入 `docs/delivery/README.md`，run evidence 和 landing gate 摘要写入 `docs/history/README.md`。
 
-本文件不得吸收长篇 provenance、逐步 closeout 过程、B review 细节、agent-run 证据、第二份合同真相或第二份 delivery manifest。新增事实必须能回答“当前是什么、差距是什么、下一步是什么、不能宣称什么”；否则必须写入对应 view 或 history。
+本文件不得吸收长篇 provenance、逐步 closeout 过程、landing gate 细节、agent-run 证据、第二份合同真相或第二份 delivery manifest。新增事实必须能回答“当前是什么、差距是什么、下一步是什么、不能宣称什么”；否则必须写入对应 view 或 history。
 
 ## 产品真相
 
@@ -214,23 +214,23 @@ Current docs / eval surface during migration：
 | Current truth | 一个 current truth 文件 | `docs/active/README.md` | 无第二份 current truth | maintain | 新 truth 直接改 active/specs/delivery/fixtures | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | Tests taxonomy | `tests/**` 独立承载 health/smoke/contract/regression/future-authorized | `tests/**/*.mjs` + dynamic classifier | 仅保真实 eval 分类，不保旧脚本目录 | maintain | `scripts/` 只留 runner/classifier/workflow 和服务引用的 sync helper | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` |
 | Contracts compaction | human truth 吸收到 `docs/specs/README.md` | `docs/specs/README.md` | 无分散合同叶子 | maintain | 合同新增直接写 specs anchor 和 eval | local-contract suite |
-| Recovery retirement | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | hard-retirement gate |
-| Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-absorb truth 漂移 | current-state index loop gate | latest absorbed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
-| Retirement lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | retirement lifecycle gate | post-absorb truth closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs` |
+| Recovery cleanup | recovery 不再是长期 docs taxonomy | `docs/history/README.md` + git history + fixtures | 无 active recovery 目录 | maintain | history 摘要承接证据，不保 shadow archive | full-taxonomy cleanup gate |
+| Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-merge truth 漂移 | current-state index loop gate | latest landed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
+| Cleanup lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | cleanup lifecycle gate | post-merge closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
 
 ## Current Development Lines
 
 ### current-stage-current-cursor
 
-Current evidence: latest absorbed governance closeout is `2fe61b26714b237bc323aa3245128d1b0140d332`; current machine cursor remains `leaf-portal-postgres-redis-local-production-data-closure`.
+Current evidence: latest landed governance closeout is `2fe61b26714b237bc323aa3245128d1b0140d332`; current machine cursor remains `leaf-portal-postgres-redis-local-production-data-closure`.
 
 Gap: governance closeout is complete, but PostgreSQL/Redis local production data closure is still gated and not implemented.
 
 Next action: keep the current cursor unchanged until the business leaf implements local production data closure with local services.
 
-Done when: readers can distinguish absorbed governance closeout from unfinished PostgreSQL/Redis closure.
+Done when: readers can distinguish landed governance closeout from unfinished PostgreSQL/Redis closure.
 
-Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `node tests/contract/contract-test-v22-retirement-lifecycle-system.mjs`.
+Verify: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`; `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs`.
 
 ### portal-saas-control-plane-product-loop
 
@@ -280,15 +280,15 @@ Done when: PostgreSQL is the canonical local production data truth, Redis is onl
 
 Verify: `node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs`; `npm --prefix services/portal run check`.
 
-### governance-verification-post-absorb-closeout
+### governance-verification-post-merge-closeout
 
-Current evidence: OPL-style lifecycle is the default MedOPL v22 loop: truth -> gap -> eval -> implementation/cleanup -> verify -> B absorb -> post-absorb truth closeout -> next cursor.
+Current evidence: OPL-style lifecycle is the default MedOPL v22 loop: truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor.
 
 Gap: without explicit engineering gates, docs lifecycle and software closure can drift back into manual discipline.
 
 Next action: keep review, secret, repo hygiene, test lane coverage, package scripts and CI as machine gates before the product cursor resumes.
 
-Done when: B review no longer depends on hand-composed checks, and post-absorb truth closeout remains required before any next cursor is stable.
+Done when: landing gate no longer depends on hand-composed checks, and post-merge closeout remains required before any next cursor is stable.
 
 Verify: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`; `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`.
 
@@ -299,7 +299,7 @@ Verify: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22
 - 不能写成 `future-authorized` 等于真实云、deploy、kubectl 或 live-test 已授权。
 - 不能宣称 PostgreSQL/Redis、本地 production data layer、admin 全业务闭环或真实云生产闭环已完成。
 - 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
-- 不能跳过 post-absorb truth closeout 直接把下一个 leaf 写成已完成或已吸收。
+- 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 
 ## Source Of Truth During Migration
 

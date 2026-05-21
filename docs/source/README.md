@@ -3,7 +3,7 @@
 Owner: `MedOPL`
 Purpose: `source_surface_truth_view`
 State: `hard_compacted_view`
-Machine boundary: 本文是 source surface 视角入口，不是第二份 current truth。实际允许写入范围仍由 `AGENTS.md`、contracts、branch manifest 和 B review 裁定。
+Machine boundary: 本文是 source surface 视角入口，不是第二份 current truth。实际允许写入范围仍由 `AGENTS.md`、contracts、branch manifest 和 landing gate 裁定；authoring branch 必须先按当前 truth / gap / eval 声明写入范围。
 
 ## Active Source Surface
 
@@ -41,9 +41,9 @@ Current docs / eval surface during migration：
 - build/push/kubectl/live-test/真实云资源操作
 - secret-like paths
 
-## Retired Source Semantics
+## Cleanup Source Semantics
 
-| Retired item | Must not return as |
+| Cleanup item | Must not return as |
 | --- | --- |
 | `user_owned` primary path | product mainline, code default, fixture, compat alias |
 | `resource-order` primary path | product mainline, route, state model, fixture |
@@ -57,3 +57,5 @@ Current docs / eval surface during migration：
 ## Current Truth Pointer
 
 active surface、OPL entry、upstream clean、zero-compat、禁止恢复旧入口和当前 source surface 统一见 `docs/active/README.md`。旧分散 active-surface 文档不得恢复为 current active-surface 入口。
+
+source cleanup 完成后仍必须经过 landing gate 和 post-merge closeout，不能把清退分支直接写成稳定 current truth。

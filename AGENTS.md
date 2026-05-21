@@ -35,21 +35,23 @@
 
 ## Discovery/Canary 工作纪律
 
-- 边界先行 -> 探索/canary -> 修正边界 -> 正式实现 -> B 吸收。
+- 边界先行 -> 探索/canary -> 修正边界 -> 正式实现 -> landing gate。
 - 未知外部系统接入先走 Discovery/Canary lane。
 - canary 必须有用户授权边界。
 - canary 输出只进 .runtime，不进 git。
 - canary 可以验证真实 SDK/云/服务，但不得自动变成 production dependency。
 - canary 发现的事实必须回写 contracts/status/decisions。
 - production implementation 必须基于已验证事实。
-- B 只吸收 productionized 分支，不吸收未清理 canary 临时代码。
+- landing gate 只接受 productionized 分支，不接受未清理 canary 临时代码。
 - Portal、Cloud、OPL sync 三条 program 都适用。
 
-## A/B/C 窗口职责
+## Framework Landing Protocol
 
-- 窗口 A 是开发窗口：从最新 `recovery/platform-v22-trunk` 新建 `feat/*` 或 `cleanup/*` 分支，只做一个明确意图，按“合同 -> smoke -> 实现 -> 验证 -> commit”推进。
-- 窗口 B 是审计 / 合并 / push 窗口：复审 A 的分支，检查合同一致性、污染风险、secret hygiene、验证结果和工作区状态。B 不做大功能开发；无 blocker 时才 `ff-only` 合回 `recovery/platform-v22-trunk` 并 push GitHub。
-- 窗口 C 是并行工作窗口：只做互不冲突的独立任务，例如文档 cleanup、结构修复、合同梳理。C 合并前必须基于最新 trunk 重放或 rebase，并交给 B 审。
+- authoring branch：从最新 `recovery/platform-v22-trunk` 新建 `feat/*` 或 `cleanup/*` 分支，只做一个明确意图，按“合同 -> eval -> 实现/清退 -> 验证 -> commit”推进。
+- landing gate：在 authoring branch 完成后执行 fresh review、workflow gate、secret hygiene、禁区 diff、verify manifest 和 CI/package 入口检查；无 blocker 时才 `ff-only` 合回 `recovery/platform-v22-trunk` 并 push。
+- post-merge closeout：landing gate push 后必须运行 `scripts/v22-landing-closeout.mjs check/generate` 或等效 closeout commit，把 landed commit、post-push verification 和 next cursor 写回 `docs/history/README.md`、`docs/active/README.md` 与 `tests/fixtures/v22/*`。
+- parallel lane：只做互不冲突的独立任务，例如文档清退、结构修复、合同梳理；合入前必须基于最新 trunk 重放或 rebase，并通过同一个 landing gate。
+- authoring branch 默认不 push、不 merge；只有被明确指定为 landing operator 时，才可以执行 landing gate 的 ff-only merge / push 动作。
 
 ## 污染防护
 
@@ -65,4 +67,4 @@
 - 产品方向不清、合同之间冲突、主叙事变化或授权边界变化。
 - 需要读取 secret、执行真实云操作、修改 upstream、触碰 `deploy/*` / `.sentrux/*` / `adapters/*`。
 - 需要 build/push、kubectl、live-test 或其他会影响真实外部系统的操作。
-- 需要退役旧路线，或实现范围超过当前分支意图。
+- 需要清退旧路线，或实现范围超过当前分支意图。
