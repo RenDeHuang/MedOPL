@@ -52,6 +52,7 @@
       "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
       "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
       "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+      "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
       "node tests/contract/contract-test-v22-current-development-lines.mjs",
       "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
       "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
@@ -124,6 +125,7 @@
     "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
     "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
     "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+    "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
     "node tests/contract/contract-test-v22-current-development-lines.mjs",
     "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
     "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
@@ -707,5 +709,39 @@
         ]
       }
     ]
+  },
+  "test_lifecycle_cleanup_gate": {
+    "schema_version": 1,
+    "status": "indexed",
+    "branch": "cleanup/v22-test-lifecycle-cleanup-gate",
+    "model": "gpt-5.4",
+    "gate": "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+    "registry": "scripts/v22-test-classification.mjs",
+    "manifest_policy": "test_lifecycle_cleanup_policy",
+    "rules": [
+      "active test must have lane owner",
+      "active test must prove current owner surface",
+      "old alias wrapper facade compat-only test is deleted after callers migrate",
+      "historical proof and closeout evidence are not active tests",
+      "duplicate aggregate tests are merged or deleted",
+      "history keeps summary and git history keeps details"
+    ],
+    "lifecycle_roles_allowed": [
+      "current-owner",
+      "negative-retirement-guard",
+      "suite-wrapper",
+      "future-authorized-boundary"
+    ],
+    "forbidden_active_roles": [
+      "historical-proof",
+      "compat-only",
+      "alias-only",
+      "wrapper-only",
+      "closeout-evidence-only"
+    ],
+    "current_cursor_unchanged": true,
+    "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
+    "no_product_implementation": true,
+    "no_business_test_cleanup_claim": true
   }
 }

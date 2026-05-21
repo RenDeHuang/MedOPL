@@ -7,6 +7,16 @@
   "default_agent_entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "allowlist_authority": "tests_fixtures_manifest_not_scattered_smoke",
   "smoke_role": "health_and_golden_only",
+  "test_lifecycle_cleanup_policy": {
+    "active_test_requires_lane_owner": true,
+    "active_test_requires_current_owner_surface": true,
+    "direct_cleanup": true,
+    "forbid_compat_only_active_tests": true,
+    "forbid_historical_proof_as_active_test": true,
+    "duplicate_aggregate_action": "merge-or-delete",
+    "registry": "scripts/v22-test-classification.mjs",
+    "gate": "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs"
+  },
   "latest_landed_commit_source": "origin/recovery/platform-v22-trunk",
   "requires_trunk_head_sync": true,
   "required_post_merge_fields": [
@@ -59,7 +69,8 @@
     "tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
     "tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-    "tests/contract/contract-test-v22-product-engineering-loop-index.mjs"
+    "tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+    "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs"
   ],
   "leaves": [
     {
@@ -125,6 +136,7 @@
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
@@ -163,6 +175,7 @@
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
@@ -226,6 +239,7 @@
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-diff-scoped-sensitive-hygiene.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -283,6 +297,7 @@
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs"
@@ -445,6 +460,60 @@
         "dependency-upgrade",
         "git-push"
       ]
+    },
+    {
+      "id": "test-lifecycle-cleanup-gate",
+      "branch": "cleanup/v22-test-lifecycle-cleanup-gate",
+      "branches": [
+        "cleanup/v22-test-lifecycle-cleanup-gate"
+      ],
+      "reason": "Test lifecycle cleanup gate branch makes active tests require lane owner, current owner surface, explicit lifecycleRole and direct cleanup of compat-only or historical-proof tests without implementing services or advancing the business cursor.",
+      "commands": [
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+        "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+        "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
+        "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+        "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs tests scripts package.json .github"
+      ],
+      "allowed_files": [
+        "docs/**/*.md",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-test-classification.mjs",
+        "package.json",
+        ".github/workflows/*.yml"
+      ],
+      "forbidden_files": [
+        "services/*",
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        ".runtime/*",
+        "secret-like paths"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "services-implementation",
+        "upstream-write",
+        "dependency-upgrade",
+        "git-push"
+      ],
+      "risk_class": "local_doc_eval"
     }
   ]
 }

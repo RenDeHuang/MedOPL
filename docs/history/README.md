@@ -61,6 +61,76 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-21 cleanup/v22-test-lifecycle-cleanup-gate
+
+Status: `ready_for_landing_review`
+
+Branch: `cleanup/v22-test-lifecycle-cleanup-gate`
+
+Base trunk HEAD: `2f39cfac6f4c269e697b525b950f171d15fa1502`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagents: none
+
+Scope:
+
+- Add the active test lifecycle cleanup gate: `tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs`.
+- Extend `scripts/v22-test-classification.mjs` so each active test registry entry has `ownerSurface` and `lifecycleRole`.
+- Make `tests/README.md`, `tests/fixtures/v22/agent-verify-manifest.json` and `tests/fixtures/v22/goal-current.json` declare direct test cleanup: active tests require lane owner and current owner surface; compat-only, alias-only and historical-proof tests cannot remain active.
+- Register the gate in current, local-contract, review and the cleanup branch override.
+- Directly remove the stale future-authorized cloud resource aggregate wrapper that referenced missing old test paths instead of active registered tests.
+
+Test Lifecycle Rules:
+
+- Active tests must have a lane owner through `TEST_LANE_REGISTRY`.
+- Active tests must prove a current owner surface through `ownerSurface`.
+- `lifecycleRole` is limited to `current-owner`, `negative-retirement-guard`, `suite-wrapper` and `future-authorized-boundary`.
+- Old alias, wrapper, facade or compat-only tests are deleted after active callers migrate.
+- Historical proof and closeout evidence stay in history summary and git history, not active tests.
+- Duplicate aggregate tests must be merged or deleted.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+
+Non-goals:
+
+- No product implementation.
+- No PostgreSQL/Redis closure claim.
+- No concrete business test cleanup beyond the stale aggregate wrapper removed by this gate branch.
+- No services, deploy, adapters, `.sentrux`, infra, upstream or `.runtime` edits.
+- No secret read, real cloud, build/push, kubectl, deploy or live-test.
+- No git push or merge from the authoring branch.
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `node scripts/v22-verify.mjs current --branch cleanup/v22-test-lifecycle-cleanup-gate --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- docs tests scripts package.json .github`
+
+Landing review packet:
+
+- Review branch: `cleanup/v22-test-lifecycle-cleanup-gate`.
+- Review base: `2f39cfac6f4c269e697b525b950f171d15fa1502`.
+- Review focus: active test lifecycle owner metadata, direct cleanup policy, stale suite-wrapper deletion, branch override, no services/forbidden-surface changes and no business cursor advancement.
+- Landing rule: landing operator may fresh review, ff-only merge to `recovery/platform-v22-trunk`, push, then run `node scripts/v22-landing-closeout.mjs generate --branch cleanup/v22-test-lifecycle-cleanup-gate --landed-commit <landed_branch_head> --trunk-ref origin/recovery/platform-v22-trunk ...` or an equivalent closeout commit for this branch.
+
+Next recommendation:
+
+- After landing gate and post-merge closeout, continue `leaf-portal-postgres-redis-local-production-data-closure`; future product slide work must keep active tests owner-scoped and delete old compat-only tests instead of preserving historical proof as active eval.
+
 ### 2026-05-21 feat/v22-product-engineering-loop-index
 
 Status: `landed / pushed / post-push verified`

@@ -398,7 +398,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 
 readonly inventory 的 official Tencent SDK wrapper 是 future authorized provider candidate；当前 trunk 默认路径仍是合同级、本地 smoke 和 fail-closed gate，`defaultExecutable=false`、`readsSecretNow=false`、`implementsRealCloudCallNow=false`。TC3 仅作为 diagnostic/reference，不能作为默认 readonly live 主路径或 create/release provider。新增官方 SDK 依赖必须另开 feat/* 或 cloud-lane candidate，并经 package diff 审查；不得把 cloud-lane evidence 写成 trunk 当前已生效事实。
 
-Cloud resource isolation 分支的 scoped review entry 是 `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-resource-contract-suite.mjs`。它只聚合本分支相关合同 smoke，方便 B 审查 Package C resource isolation、Package D no-resource-lifecycle-mutation、workflow 和 recovery 状态是否一致；它不替代 `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`，也不读取 secret、不调用真实云、不 build/push/kubectl。
+Cloud resource isolation 不再保留旧 scoped aggregate wrapper。future-authorized cloud 边界必须以 `tests/future-authorized/cloud/*.mjs` active registered 原子 gate 表达，并由 `scripts/v22-test-classification.mjs` 的 `future-authorized` lane、`ownerSurface` 和 `lifecycleRole=future-authorized-boundary` 约束；任何旧 alias、compat-only wrapper 或只包装历史路径的 suite-wrapper 迁完 caller 后直接删除。该边界不替代 `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`，也不读取 secret、不调用真实云、不 build/push/kubectl。
 
 [spec:v22-tencent-tc3-diagnostic-cleanup-plan](#spec-v22-tencent-tc3-diagnostic-cleanup-plan) 是 TC3 diagnostic cleanup plan。它规定 official SDK wrapper 合并、official SDK 依赖合并、official SDK readonly live 成功生成脱敏 report、B 审查确认 future authorized provider candidate 不再依赖 TC3 之后，才能另开 cleanup 分支让 runner future authorized default candidate 不再使用 `tencent-tc3-readonly`，并将 TC3 smoke 改为 diagnostic fixture 或删除、让 TC3 live bridge 从生产路径退场。本计划当前不删除 TC3、不读 secret、不调用真实云、不改 official SDK implementation、不改 create/release。
 
@@ -10581,4 +10581,3 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 - 不读取 `/home/dev/.secrets/medopl/secrets.env.txt`。
 - 不调用真实云 API。
 - 不运行 build/push/kubectl/live-test。
-
