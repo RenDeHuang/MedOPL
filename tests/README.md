@@ -31,6 +31,17 @@ State: `active`
 
 `docs/README.md` 必须把本文件作为 lifecycle taxonomy 的验证入口之一；docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移。
 
+## Test Lane Registry
+
+`scripts/v22-test-classification.mjs` 是显式 test lane registry。每个 `tests/**/*.mjs` 文件必须登记 lane、tier、surface、entryKind、authorization、contract refs 和 verify suites；不得再靠文件名或目录启发式推断测试分类。
+
+Registry coverage gate 是 `node tests/contract/contract-test-v22-test-lane-registry.mjs`。该 gate 必须确认：
+
+- every `tests/**/*.mjs` file outside fixtures appears exactly once in `TEST_LANE_REGISTRY`;
+- every registered test has at least one verify suite;
+- every registry entry uses allowed lane/tier/surface/entryKind/authorization values;
+- every registry entry references the single specs truth `docs/specs/README.md`.
+
 ## Docs Gate Boundary
 
 Docs gates must verify structure, owner boundaries, file existence, retired-path protection, manifest consistency and closeout state. They must not assert prose wording as machine truth beyond stable owner/purpose/state/machine-boundary markers that protect taxonomy drift.
