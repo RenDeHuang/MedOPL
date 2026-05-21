@@ -7,9 +7,9 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `leaf-admin-ops-closure`。它要求 admin views 显示 audit-backed local projection，disabled/future-authorized operations 不能表现为可执行能力，ops exceptions 必须本地可见且不触发真实云 mutation。
+当前 product cursor 是 `leaf-precloud-readiness-closure`。它要求 current verify、product-engineering-loop suite、workflow review 和 local-contract 作为一个本地 pre-cloud gate bundle 闭合；真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界。
 
-最近 landed 的 `feat/v22-slide-07-run-artifact-trace` 已关闭 owner-scoped run/artifact/trace metadata backflow、runtimeTrace summary、trace owner filter 和 no frontend fallback truth 本地闭环；slide-08 必须继续保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression 和 slide-07 run/artifact/trace regression 作为防回归命令。
+最近 landed 的 `feat/v22-slide-08-admin-ops` 已关闭 admin ops local projection、audit-backed operation rows、ops exceptions、cost allocation tags 和 disabled/future-authorized operation boundaries 本地闭环；slide-09 必须继续保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
 每个 product slide 仍按清退生命周期执行：先删除或吸收旧 fake/demo/alias surface，再由 eval、implementation、verify、landing gate 和 post-merge closeout 推进 cursor。
 

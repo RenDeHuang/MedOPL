@@ -8,28 +8,28 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "eec977b4e654837df0ea02c13c48437e587aa548",
-  "current_branch": "feat/v22-slide-08-admin-ops",
+  "base_trunk_head": "9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900",
+  "current_branch": "feat/v22-slide-09-precloud-readiness",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-08-admin-ops",
+  "authoring_branch": "feat/v22-slide-09-precloud-readiness",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "eec977b4e654837df0ea02c13c48437e587aa548",
-  "current_cursor": "leaf-admin-ops-closure",
-  "next_leaf": "leaf-admin-ops-closure",
-  "current_stage": "S5 frontend/backend product completion",
+  "last_landed_commit": "9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900",
+  "current_cursor": "leaf-precloud-readiness-closure",
+  "next_leaf": "leaf-precloud-readiness-closure",
+  "current_stage": "S5 pre-cloud readiness",
   "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "admin_ops_projection_requires_audit_backed_local_state_and_disabled_future_authorized_boundaries"
+    "precloud_readiness_requires_all_local_gates_and_no_real_cloud_authorization"
   ],
-  "current_problem": "slide-07 run artifact trace landed at eec977b4e654837df0ea02c13c48437e587aa548. The active product baton is slide-08 admin ops local projection closure; admin views must show audit-backed local projection, disabled/future-authorized operations cannot appear executable, and ops exceptions must remain locally visible without real cloud mutation.",
+  "current_problem": "slide-08 admin ops landed at 9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900. The active product baton is slide-09 precloud readiness: all local product gates must pass, product_engineering_loop must remain ready for final collapse after slide-09, and next cursor must stay a separately authorized real-cloud boundary.",
   "gaps": [
     {
-      "id": "admin-ops-closure",
-      "stage": "S5 frontend/backend product completion",
-      "priority": 75,
+      "id": "precloud-readiness-closure",
+      "stage": "S5 pre-cloud readiness",
+      "priority": 70,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-admin-ops-closure",
+      "next_leaf_step": "leaf-precloud-readiness-closure",
       "depends_on": [
         "portal-postgres-redis-local-production-data-closure",
         "portal-api-real-data-closure",
@@ -37,16 +37,17 @@
         "workspace-files-closure",
         "resource-lifecycle-closure",
         "opl-entry-runtime-closure",
-        "run-artifact-trace-closure"
+        "run-artifact-trace-closure",
+        "admin-ops-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-admin-ops-closure",
-    "gap_id": "admin-ops-closure",
-    "stage": "S5 frontend/backend product completion",
+    "step_id": "leaf-precloud-readiness-closure",
+    "gap_id": "precloud-readiness-closure",
+    "stage": "S5 pre-cloud readiness",
     "cursor_eligible": true,
-    "problem": "Admin and ops local projections are not fully closed with audit-backed state and disabled/future-authorized operation boundaries yet.",
+    "problem": "All pre-cloud product slides must be verified as a local closed loop before any separate real-cloud authorization boundary can become the next cursor.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
@@ -96,21 +97,18 @@
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/portal/src/app/portal-admin-api-payloads.mjs",
-      "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
-      "services/portal/frontend/src/app/data/*",
-      "services/portal/frontend/src/app/pages/admin/*",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
       "tests/fixtures/v22/*",
       "tests/**/*.mjs",
-      "scripts/v22-test-classification.mjs",
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
       "scripts/v22-repo-hygiene.mjs",
       "scripts/v22-repo-bloat-audit.mjs",
-      "scripts/v22-line-budget.mjs"
+      "scripts/v22-line-budget.mjs",
+      "services/portal/frontend/src/app/data/*",
+      "services/portal/frontend/src/app/pages/admin/*"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -207,9 +205,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-07-run-artifact-trace",
+  "last_landed_branch": "feat/v22-slide-08-admin-ops",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-07-run-artifact-trace",
+  "history_latest_branch": "feat/v22-slide-08-admin-ops",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -224,7 +222,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-08-admin-ops",
+    "active_slide": "slide-09-precloud-readiness",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -951,7 +949,7 @@
       },
       {
         "order": 8,
-        "status": "active",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -1030,11 +1028,16 @@
               "disabled or future-authorized operations are not shown as executable"
             ]
           }
-        ]
+        ],
+        "landed_commit": "9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900",
+        "landed_branch": "feat/v22-slide-08-admin-ops",
+        "closed_at": "2026-05-22",
+        "history_summary": "Closed admin ops local projection: Portal renders audit-backed local operation rows, ops exceptions, cost allocation tags and disabled/future-authorized boundaries from the admin ops API payload without real cloud mutation.",
+        "next_cursor": "leaf-precloud-readiness-closure"
       },
       {
         "order": 9,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",

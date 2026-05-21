@@ -61,6 +61,88 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-slide-08-admin-ops
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-slide-08-admin-ops`
+
+Base trunk HEAD: `91fc4e85ea9f868af783e12150b86a9efb1506bb`
+
+handoff_commit: `9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Mencius: Codex explorer, read-only slide-08 diff and boundary review.
+
+Scope:
+
+- Close slide-08 admin ops local projection loop.
+- Split admin ops frontend data mapping into `portalAdminOpsSurface.ts` to keep `portalAdapters.ts` under line budget.
+- Preserve `/admin/ops` backend payload as the source of admin operation rows, ops exceptions, cost allocation tags and future-authorized states.
+- Render audit-backed local operation rows, ops exception summaries and disabled/future-authorized boundaries on the AdminOps page.
+- Register the new admin ops local projection regression in lane registry, current suite and product loop machine cursor.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No slide-09 implementation.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No per-slide docs, `docs/slides/*`, shadow archive or unregistered tests.
+
+Verification before landing review:
+
+- `node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs`
+- `node tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs`
+- `node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs`
+- `node tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs`
+- `npm --prefix services/portal run check`
+- `npm --prefix services/portal run frontend:typecheck`
+- `npm run test:fast`
+- `npm run test:lanes`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Continue with `slide-09-precloud-readiness` on `leaf-precloud-readiness-closure`; keep slide-01 through slide-08 regressions in the current verify bundle as guards, then collapse the product loop to history summary and `real-cloud-authorization-boundary`.
+
+landed_commit: `9b9e8e91e8aee7bf4f1c219b73b18c64b30bb900`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed before closeout.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed before closeout while cursor still pointed to slide-08.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json` passed before closeout.
+- `npm run test:fast`, `npm run test:lanes`, portal check and frontend typecheck passed before landing.
+- repo bloat audit passed; no per-slide docs, shadow archive or unregistered tests were added.
+- forbidden path diff empty.
+- added-lines secret value scan empty.
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-precloud-readiness-closure`
+
 ### 2026-05-22 feat/v22-slide-07-run-artifact-trace
 
 Status: `landed / pushed / post-push verified`
