@@ -63,7 +63,7 @@ landed 后的记录还必须补齐：
 
 ### 2026-05-21 feat/v22-product-engineering-loop-index
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `feat/v22-product-engineering-loop-index`
 
@@ -111,6 +111,23 @@ Next recommendation:
 
 - After landing, run slide-01-data-truth as the first product implementation commit on the same product-engineering lifecycle.
 
+landed_commit: `d8ba4a828f8ee4a9989c6b6ce0befd64a396fee3`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-verify.mjs current --branch feat/v22-product-engineering-loop-index --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk passed
+- git diff --check -- docs tests scripts package.json .github passed
+- forbidden path diff empty
+- added-lines secret value scan empty
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 ### 2026-05-21 cleanup/v22-engineering-flow-closure
 
 Status: `landed / pushed / post-push verified`
