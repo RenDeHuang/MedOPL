@@ -63,7 +63,7 @@ History 承接：
 
 ### 2026-05-21 cleanup/v22-opl-loop-event-automation-and-ci-closure
 
-Status: `ready_for_b_review`
+Status: `absorbed / pushed / post-push verified`
 
 Branch: `cleanup/v22-opl-loop-event-automation-and-ci-closure`
 
@@ -155,6 +155,21 @@ Risk notes:
 Next recommendation:
 
 - After B absorbs this branch and records post-push closeout, return to `leaf-portal-postgres-redis-local-production-data-closure`.
+
+absorbed_commit: `2fe61b26714b237bc323aa3245128d1b0140d332`
+
+b_review_result: `passed / ff-only absorbed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json: pass
+- node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json: pass
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk: pass
+- git diff --check -- docs tests scripts package.json .github: pass
+
+post_absorb_truth_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 
 ### 2026-05-21 cleanup/v22-opl-docs-engineering-loop-closure
 

@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-21",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "583da292aa32bf021697171f5b5cea1cfc693baf",
+  "base_trunk_head": "2fe61b26714b237bc323aa3245128d1b0140d332",
   "current_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
   "authoring_branch": "feat/v22-portal-postgres-redis-local-production-data-closure",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_absorbed_commit": "583da292aa32bf021697171f5b5cea1cfc693baf",
+  "last_absorbed_commit": "2fe61b26714b237bc323aa3245128d1b0140d332",
   "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
   "next_leaf": "leaf-portal-postgres-redis-local-production-data-closure",
   "current_stage": "S5 frontend/backend product completion",
@@ -21,7 +21,7 @@
   "current_blockers": [
     "postgres_redis_local_production_data_closure_requires_implementation_leaf_and_local_services"
   ],
-  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL-style post-absorb closeout and gate integrity branch was absorbed at 583da292aa32bf021697171f5b5cea1cfc693baf and does not implement PostgreSQL/Redis.",
+  "current_problem": "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure. The OPL loop event automation and CI closure branch was absorbed at 2fe61b26714b237bc323aa3245128d1b0140d332 and does not implement PostgreSQL/Redis.",
   "gaps": [
     {
       "id": "portal-postgres-redis-local-production-data-closure",
@@ -142,8 +142,8 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_absorbed_branch": "cleanup/v22-opl-docs-engineering-loop-closure",
+  "last_absorbed_branch": "cleanup/v22-opl-loop-event-automation-and-ci-closure",
   "last_absorbed_at": "2026-05-21",
-  "history_latest_branch": "cleanup/v22-opl-docs-engineering-loop-closure",
+  "history_latest_branch": "cleanup/v22-opl-loop-event-automation-and-ci-closure",
   "post_absorb_truth_closeout_completed": true
 }

@@ -53,11 +53,34 @@ function extractField(section, field) {
   return match ? match[1].trim() : "";
 }
 
+function previousAbsorbedCommit(history, branch) {
+  const headings = [...history.matchAll(/^###\s+\d{4}-\d{2}-\d{2}\s+(.+)$/gmu)];
+  const selectedIndex = headings.findIndex((match) => match[1].trim() === branch);
+  assert.notEqual(selectedIndex, -1, `history_section_missing:${branch}`);
+  for (let index = selectedIndex + 1; index < headings.length; index += 1) {
+    const start = headings[index].index;
+    const end = index + 1 < headings.length ? headings[index + 1].index : history.length;
+    const section = history.slice(start, end);
+    const status = extractField(section, "Status");
+    const absorbedCommit = extractField(section, "absorbed_commit");
+    if (status === "absorbed / pushed / post-push verified" && absorbedCommit) return absorbedCommit;
+  }
+  return "";
+}
+
 const current = await readJson("tests/fixtures/v22/goal-current.json");
 const history = await readText("docs/history/README.md");
 const handoffBranch = "cleanup/v22-opl-loop-event-automation-and-ci-closure";
 const handoffSection = extractHistorySection(history, handoffBranch);
-const handoffCommit = extractField(handoffSection, "handoff_commit") || runGit(["rev-parse", "HEAD"]);
+const handoffCommit = extractField(handoffSection, "handoff_commit")
+  || extractField(handoffSection, "absorbed_commit")
+  || runGit(["rev-parse", handoffBranch]);
+const baseTrunkHead = extractField(handoffSection, "Base trunk HEAD");
+const previousCommit = previousAbsorbedCommit(history, handoffBranch);
+
+assert(previousCommit, "previous_absorbed_commit_required");
+assert.notEqual(previousCommit, handoffCommit, "previous_absorbed_commit_must_not_equal_handoff");
+assert(baseTrunkHead, "base_trunk_head_required");
 
 assertCloseoutFailure([
   "generate",
@@ -92,7 +115,7 @@ assertCloseoutFailure([
   "--branch",
   handoffBranch,
   "--absorbed-commit",
-  current.last_absorbed_commit,
+  previousCommit,
   "--next-cursor",
   "leaf-portal-postgres-redis-local-production-data-closure",
   "--verification-summary",
@@ -124,9 +147,9 @@ assertCloseoutFailure([
   "--next-cursor",
   "leaf-portal-postgres-redis-local-production-data-closure",
   "--trunk-ref",
-  "origin/recovery/platform-v22-trunk",
+  baseTrunkHead,
   "--verification-summary",
-  "negative pre-absorb trunk reachability dry run",
+  "negative stale trunk reachability dry run",
   "--dry-run",
   "--json",
 ], /absorbed_commit_not_reachable_from_trunk/u);
