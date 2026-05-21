@@ -63,7 +63,7 @@ landed 后的记录还必须补齐：
 
 ### 2026-05-21 cleanup/v22-test-lifecycle-cleanup-gate
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/v22-test-lifecycle-cleanup-gate`
 
@@ -131,6 +131,23 @@ Next recommendation:
 
 - After landing gate and post-merge closeout, continue `leaf-portal-postgres-redis-local-production-data-closure`; future product slide work must keep active tests owner-scoped and delete old compat-only tests instead of preserving historical proof as active eval.
 
+landed_commit: `d26b8742882801a37d0f4be195ed60d5851c9aa4`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-verify.mjs current --branch cleanup/v22-test-lifecycle-cleanup-gate --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json passed
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk passed
+- git diff --check -- docs tests scripts package.json .github passed
+- forbidden path diff empty
+- added-lines secret value scan empty
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`
 ### 2026-05-21 feat/v22-product-engineering-loop-index
 
 Status: `landed / pushed / post-push verified`
