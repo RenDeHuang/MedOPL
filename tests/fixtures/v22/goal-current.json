@@ -8,48 +8,49 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "5c3f83585c78a5fdb48ed31741719658a4e8d1d6",
-  "current_branch": "feat/v22-slide-03-account-wallet-billing",
+  "base_trunk_head": "525546b7fb5c4483edeb3f21db4cd7a675996540",
+  "current_branch": "feat/v22-slide-04-workspace-files",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-03-account-wallet-billing",
+  "authoring_branch": "feat/v22-slide-04-workspace-files",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "5c3f83585c78a5fdb48ed31741719658a4e8d1d6",
-  "current_cursor": "leaf-account-wallet-billing-closure",
-  "next_leaf": "leaf-account-wallet-billing-closure",
+  "last_landed_commit": "525546b7fb5c4483edeb3f21db4cd7a675996540",
+  "current_cursor": "leaf-workspace-files-closure",
+  "next_leaf": "leaf-workspace-files-closure",
   "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "account_wallet_billing_closure_requires_owner_scoped_ledger_balance_freeze_and_audit"
+    "workspace_files_closure_requires_owner_scoped_file_space_fileref_list_and_protection_semantics"
   ],
-  "current_problem": "slide-02 Portal API real data landed at 5c3f83585c78a5fdb48ed31741719658a4e8d1d6. The active product baton is slide-03 account/wallet/billing closure; account, wallet, balance, frozen amount, ledger and audit semantics must be owner-scoped and locally queryable.",
+  "current_problem": "slide-03 account/wallet/billing landed at 525546b7fb5c4483edeb3f21db4cd7a675996540. The active product baton is slide-04 workspace files closure; workspace, file space, fileRef, file list and 7-day protection semantics must be owner-scoped and locally queryable without exposing objectKey, signedUrl or localPath to the frontend.",
   "gaps": [
     {
-      "id": "account-wallet-billing-closure",
+      "id": "workspace-files-closure",
       "stage": "S5 frontend/backend product completion",
-      "priority": 84,
+      "priority": 83,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-account-wallet-billing-closure",
+      "next_leaf_step": "leaf-workspace-files-closure",
       "depends_on": [
         "portal-postgres-redis-local-production-data-closure",
         "portal-api-real-data-closure",
-        "portal-local-api-action-closure"
+        "account-wallet-billing-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-account-wallet-billing-closure",
-    "gap_id": "account-wallet-billing-closure",
+    "step_id": "leaf-workspace-files-closure",
+    "gap_id": "workspace-files-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
-    "problem": "Account wallet billing state is not fully closed against owner-scoped ledger, frozen amount and audit semantics yet.",
+    "problem": "Workspace file space, fileRef, list and protection semantics are not fully closed against owner-scoped public file references yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
       "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
-      "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
-      "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
+      "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
+      "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -73,13 +74,12 @@
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/portal/src/domain/*billing*",
-      "services/portal/src/domain/*balance*",
-      "services/portal/src/domain/wallet-ledger.mjs",
-      "services/portal/src/app/portal-page-billing-payloads.mjs",
-      "services/portal/src/routes/*billing*",
-      "services/portal/frontend/src/api/portal/billing.ts",
-      "services/portal/frontend/src/app/pages/BillingAudit.tsx",
+      "services/portal/src/domain/portal-file-space-management.mjs",
+      "services/portal/src/domain/portal-api-workspace-storage.mjs",
+      "services/portal/src/app/portal-page-workspace-payloads.mjs",
+      "services/portal/src/routes/*workspace*",
+      "services/portal/frontend/src/api/portal/workspace.ts",
+      "services/portal/frontend/src/app/pages/Workspace.tsx",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
@@ -128,8 +128,9 @@
     "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
     "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
-    "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
-    "node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
+    "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
+    "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -167,9 +168,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-02-portal-api-real-data",
+  "last_landed_branch": "feat/v22-slide-03-account-wallet-billing",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-02-portal-api-real-data",
+  "history_latest_branch": "feat/v22-slide-03-account-wallet-billing",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -184,7 +185,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-03-account-wallet-billing",
+    "active_slide": "slide-04-workspace-files",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -473,7 +474,7 @@
       },
       {
         "order": 3,
-        "status": "active",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -553,11 +554,16 @@
               "billing payloads connect account workspace resource and audit context"
             ]
           }
-        ]
+        ],
+        "landed_commit": "525546b7fb5c4483edeb3f21db4cd7a675996540",
+        "landed_branch": "feat/v22-slide-03-account-wallet-billing",
+        "closed_at": "2026-05-22",
+        "history_summary": "slide-03 unified owner-scoped wallet ledger, frozen amount, pending usage, T+1 settlement and BillingAudit UI-safe account scope display.",
+        "next_cursor": "leaf-workspace-files-closure"
       },
       {
         "order": 4,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",
