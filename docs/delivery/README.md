@@ -7,9 +7,9 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `leaf-workspace-files-closure`。它要求 workspace、file space、fileRef、file list 和 7 天保护语义 owner-scoped 且可本地查询，不得把 localPath、objectKey、signedUrl 或无归属文件状态暴露为前端产品真相。
+当前 product cursor 是 `leaf-resource-lifecycle-closure`。它要求 compute resource lifecycle、release、stop-billing check 和 legacy resource route retirement 本地闭合，且不得恢复 `user_owned` / `resource-order` 为主产品路径。
 
-最近 landed 的 `feat/v22-slide-03-account-wallet-billing` 已关闭 owner-scoped account/wallet/billing 本地闭环；slide-04 必须继续保留 slide-01 storage regression、slide-02 runtime real API regression 和 slide-03 account/wallet/billing regression 作为防回归命令。
+最近 landed 的 `feat/v22-slide-04-workspace-files` 已关闭 Workspace fileSpace、public fileRef、selected refs、actions、delete policy 和 7 天保护语义本地闭环；slide-05 必须继续保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression 和 slide-04 workspace/files regression 作为防回归命令。
 
 每个 product slide 仍按清退生命周期执行：先删除或吸收旧 fake/demo/alias surface，再由 eval、implementation、verify、landing gate 和 post-merge closeout 推进 cursor。
 

@@ -8,41 +8,42 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "525546b7fb5c4483edeb3f21db4cd7a675996540",
-  "current_branch": "feat/v22-slide-04-workspace-files",
+  "base_trunk_head": "44c917fbd16952cb043d24d97a0211cc2d8fd9b2",
+  "current_branch": "feat/v22-slide-05-resource-lifecycle",
   "current_branch_role": "authoring_implementation_branch_not_runtime_git_branch",
-  "authoring_branch": "feat/v22-slide-04-workspace-files",
+  "authoring_branch": "feat/v22-slide-05-resource-lifecycle",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "525546b7fb5c4483edeb3f21db4cd7a675996540",
-  "current_cursor": "leaf-workspace-files-closure",
-  "next_leaf": "leaf-workspace-files-closure",
+  "last_landed_commit": "44c917fbd16952cb043d24d97a0211cc2d8fd9b2",
+  "current_cursor": "leaf-resource-lifecycle-closure",
+  "next_leaf": "leaf-resource-lifecycle-closure",
   "current_stage": "S5 frontend/backend product completion",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "workspace_files_closure_requires_owner_scoped_file_space_fileref_list_and_protection_semantics"
+    "resource_lifecycle_closure_requires_compute_release_stop_billing_and_file_space_lifecycle_separation"
   ],
-  "current_problem": "slide-03 account/wallet/billing landed at 525546b7fb5c4483edeb3f21db4cd7a675996540. The active product baton is slide-04 workspace files closure; workspace, file space, fileRef, file list and 7-day protection semantics must be owner-scoped and locally queryable without exposing objectKey, signedUrl or localPath to the frontend.",
+  "current_problem": "slide-04 workspace/files landed at 44c917fbd16952cb043d24d97a0211cc2d8fd9b2. The active product baton is slide-05 resource lifecycle closure; compute resource lifecycle, release, stop-billing checks and legacy resource route retirement must close locally without restoring user_owned/resource-order as primary product routes.",
   "gaps": [
     {
-      "id": "workspace-files-closure",
+      "id": "resource-lifecycle-closure",
       "stage": "S5 frontend/backend product completion",
-      "priority": 83,
+      "priority": 82,
       "cursor_eligible": true,
       "status": "gated",
-      "next_leaf_step": "leaf-workspace-files-closure",
+      "next_leaf_step": "leaf-resource-lifecycle-closure",
       "depends_on": [
         "portal-postgres-redis-local-production-data-closure",
         "portal-api-real-data-closure",
-        "account-wallet-billing-closure"
+        "account-wallet-billing-closure",
+        "workspace-files-closure"
       ]
     }
   ],
   "current_leaf": {
-    "step_id": "leaf-workspace-files-closure",
-    "gap_id": "workspace-files-closure",
+    "step_id": "leaf-resource-lifecycle-closure",
+    "gap_id": "resource-lifecycle-closure",
     "stage": "S5 frontend/backend product completion",
     "cursor_eligible": true,
-    "problem": "Workspace file space, fileRef, list and protection semantics are not fully closed against owner-scoped public file references yet.",
+    "problem": "Compute resource lifecycle, release, stop-billing checks and legacy resource route retirement are not fully closed locally yet.",
     "verification_commands": [
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
@@ -51,6 +52,9 @@
       "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
       "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
       "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+      "node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
+      "node tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
+      "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -74,12 +78,16 @@
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
-      "services/portal/src/domain/portal-file-space-management.mjs",
-      "services/portal/src/domain/portal-api-workspace-storage.mjs",
-      "services/portal/src/app/portal-page-workspace-payloads.mjs",
-      "services/portal/src/routes/*workspace*",
-      "services/portal/frontend/src/api/portal/workspace.ts",
-      "services/portal/frontend/src/app/pages/Workspace.tsx",
+      "services/portal/src/domain/platform-provisioned-resources.mjs",
+      "services/portal/src/domain/managed-environment-open-flow.mjs",
+      "services/portal/src/domain/managed-environment-release-flow.mjs",
+      "services/portal/src/domain/managed-resource-binding-plan-view.mjs",
+      "services/portal/src/domain/portal-cloud-operation-production.mjs",
+      "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+      "services/portal/src/routes/*resource*",
+      "services/portal/src/routes/*managed*",
+      "services/portal/frontend/src/api/portal/resources.ts",
+      "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
@@ -131,6 +139,9 @@
     "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
     "node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs",
     "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+    "node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
+    "node tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
+    "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
@@ -168,9 +179,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-03-account-wallet-billing",
+  "last_landed_branch": "feat/v22-slide-04-workspace-files",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-03-account-wallet-billing",
+  "history_latest_branch": "feat/v22-slide-04-workspace-files",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -185,7 +196,7 @@
     "no_new_slide_docs": true,
     "no_compatibility_layers": true,
     "active_detail_retention": "open_only",
-    "active_slide": "slide-04-workspace-files",
+    "active_slide": "slide-05-resource-lifecycle",
     "closeout_policy": {
       "when": "all_slides_complete",
       "action": "collapse_to_history_and_next_cursor",
@@ -563,7 +574,7 @@
       },
       {
         "order": 4,
-        "status": "active",
+        "status": "landed",
         "lifecycle": [
           "inventory",
           "classify",
@@ -640,11 +651,16 @@
               "file space lifecycle remains separate from compute release lifecycle"
             ]
           }
-        ]
+        ],
+        "landed_commit": "44c917fbd16952cb043d24d97a0211cc2d8fd9b2",
+        "landed_branch": "feat/v22-slide-04-workspace-files",
+        "closed_at": "2026-05-22",
+        "history_summary": "slide-04 projected fileSpace folders, selected file refs, actions, delete policy and 7-day protection semantics into the Workspace UI while keeping objectKey/localPath/signedUrl and object-store implementation details out of frontend product truth.",
+        "next_cursor": "leaf-resource-lifecycle-closure"
       },
       {
         "order": 5,
-        "status": "pending",
+        "status": "active",
         "lifecycle": [
           "inventory",
           "classify",

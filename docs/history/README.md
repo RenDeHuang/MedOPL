@@ -61,6 +61,84 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-slide-04-workspace-files
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-slide-04-workspace-files`
+
+Base trunk HEAD: `96ae303417e337468df125580312714dd9582c49`
+
+handoff_commit: `44c917fbd16952cb043d24d97a0211cc2d8fd9b2`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagent Hilbert: `gpt-5.4`, read-only slide-04 workspace/files owner surface review.
+
+Scope:
+
+- Close slide-04 workspace/files local loop.
+- Project fileSpace folders, selected file refs, actions, delete policy and 7-day protection semantics into the Workspace UI model.
+- Keep objectKey, localPath, signedUrl and object-store implementation details out of frontend product truth.
+- Keep line budget green by splitting file-space view helpers out of the already large Portal adapter file.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Non-goals:
+
+- No slide-05 implementation.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No per-slide docs, `docs/slides/*`, shadow archive or unregistered tests.
+
+Verification before landing review:
+
+- `node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs`
+- `node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs`
+- `npm run test:fast`
+- `npm run test:lanes`
+- `npm --prefix services/portal/frontend run typecheck`
+- `npm --prefix services/portal run check`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- AGENTS.md TASTE.md docs tests scripts services package.json .github`
+
+Next recommendation:
+
+- Continue with `slide-05-resource-lifecycle` on `leaf-resource-lifecycle-closure`; keep slide-01 storage, slide-02 runtime real API, slide-03 account/wallet/billing and slide-04 workspace/files regressions in the current verify bundle as guards.
+
+landed_commit: `44c917fbd16952cb043d24d97a0211cc2d8fd9b2`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed before closeout while cursor still pointed to slide-04.
+- `node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json` failed before closeout with `non_closeout_commits_after_latest_landed`, then this closeout commit reconciled history and cursor state.
+- repo bloat audit passed; no per-slide docs, shadow archive or unregistered tests were added.
+- forbidden path diff empty.
+- added-lines secret value scan empty.
+
+post_merge_closeout: `completed`
+
+next_cursor: `leaf-resource-lifecycle-closure`
+
 ### 2026-05-22 feat/v22-slide-03-account-wallet-billing
 
 Status: `landed / pushed / post-push verified`
