@@ -42,6 +42,8 @@ const retiredPaths = [
 
 const allowedScripts = [
   "scripts/sync-workspace-file-to-minio.ps1",
+  "scripts/v22-line-budget.mjs",
+  "scripts/v22-repo-hygiene.mjs",
   "scripts/v22-test-classification.mjs",
   "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",
@@ -123,6 +125,7 @@ const fixtureFiles = (await listFiles("tests/fixtures/v22")).sort();
 assert.deepEqual(fixtureFiles, [
   "tests/fixtures/v22/agent-verify-manifest.json",
   "tests/fixtures/v22/goal-current.json",
+  "tests/fixtures/v22/line-budget-baseline.json",
 ], "fixtures_must_only_keep_current_and_manifest");
 
 const verifySource = await readRepoFile("scripts/v22-verify.mjs");

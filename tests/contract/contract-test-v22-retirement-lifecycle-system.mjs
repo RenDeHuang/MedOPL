@@ -117,10 +117,12 @@ for (const dir of testsTaxonomyDirs) {
 const scriptFiles = await listFiles("scripts");
 assert.deepEqual(scriptFiles, [
   "scripts/sync-workspace-file-to-minio.ps1",
+  "scripts/v22-line-budget.mjs",
+  "scripts/v22-repo-hygiene.mjs",
   "scripts/v22-test-classification.mjs",
   "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",
-], "scripts_must_remain_runner_classifier_workflow_only_plus_service_sync_helper");
+], "scripts_must_remain_v22_control_plane_only_plus_service_sync_helper");
 assert.equal(scriptFiles.some((file) => /^scripts\/smoke-test-v22-.*\.mjs$/u.test(file)), false, "legacy_smoke_script_must_not_return");
 
 const [

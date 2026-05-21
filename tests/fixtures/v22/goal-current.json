@@ -52,6 +52,7 @@
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+      "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "npm --prefix services/portal run check",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
       "git diff --check -- docs tests scripts services/portal/src"
@@ -70,7 +71,9 @@
       "tests/**/*.mjs",
       "scripts/v22-test-classification.mjs",
       "scripts/v22-verify.mjs",
-      "scripts/v22-workflow-gate.mjs"
+      "scripts/v22-workflow-gate.mjs",
+      "scripts/v22-repo-hygiene.mjs",
+      "scripts/v22-line-budget.mjs"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -110,6 +113,7 @@
     "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+    "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "npm --prefix services/portal run check",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs tests scripts services/portal/src"

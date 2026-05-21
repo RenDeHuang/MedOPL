@@ -42,6 +42,8 @@
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
     "scripts/v22-test-classification.mjs",
+    "scripts/v22-repo-hygiene.mjs",
+    "scripts/v22-line-budget.mjs",
     "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
     "tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "tests/contract/contract-test-v22-retirement-lifecycle-system.mjs"
@@ -75,7 +77,9 @@
         "tests/**/*.mjs",
         "scripts/v22-test-classification.mjs",
         "scripts/v22-verify.mjs",
-        "scripts/v22-workflow-gate.mjs"
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/v22-repo-hygiene.mjs",
+        "scripts/v22-line-budget.mjs"
       ],
       "forbidden_files": [
         "deploy/*",
@@ -107,6 +111,7 @@
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal run check",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts services/portal/src"
@@ -134,6 +139,7 @@
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal run check",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts services/portal/src"
@@ -143,6 +149,8 @@
       "id": "health",
       "commands": [
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
+        "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-smoke-classification-gate.mjs",
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
@@ -167,6 +175,8 @@
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
         "node tests/health/health-check-v22-smoke-classification-gate.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
+        "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
@@ -185,6 +195,15 @@
       "id": "history-closeout",
       "commands": [
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs"
+      ]
+    },
+    {
+      "id": "repo-hygiene",
+      "commands": [
+        "node scripts/v22-repo-hygiene.mjs",
+        "node scripts/v22-line-budget.mjs",
+        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
+        "node tests/health/health-check-v22-line-budget-gate.mjs"
       ]
     },
     {
@@ -224,6 +243,7 @@
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
@@ -237,6 +257,8 @@
         "scripts/v22-test-classification.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
+        "scripts/v22-repo-hygiene.mjs",
+        "scripts/v22-line-budget.mjs",
         "package.json",
         ".github/workflows/*.yml"
       ],
