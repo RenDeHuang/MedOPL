@@ -2473,6 +2473,7 @@ Commits:
 
 - `1da6c78 docs: define commercial package model after structural convergence`
 - `2502443 docs: decide ui impact from commercial model`
+- final review fix: keep backend convergence gates out of the global `current` suite; they remain in local-contract, review, backend convergence package and branch override.
 
 Contract subscription:
 
@@ -2501,6 +2502,7 @@ Verification before landing review:
 - `node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs`: pass.
 - `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`: pass.
 - `node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json`: pass.
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`: pass after final review fix.
 - `git diff --check -- docs tests scripts package.json services/portal/src services/medopl-go-backend`: pass.
 
 B review pack:

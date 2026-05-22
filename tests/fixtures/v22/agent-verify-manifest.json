@@ -1188,21 +1188,7 @@
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts services/portal/src services/opl-runtime-bridge/src",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
-        "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
-        "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
-        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
-        "node tests/contract/contract-test-v22-go-backend-redis-volatile-boundary.mjs",
-        "node tests/contract/contract-test-v22-go-backend-run-file-artifact-domain.mjs",
-        "node tests/contract/contract-test-v22-go-backend-runtime-broker-interface.mjs",
-        "node tests/contract/contract-test-v22-go-backend-workflow-facade-command-model.mjs",
-        "node tests/contract/contract-test-v22-go-backend-workflow-routed-command-boundary.mjs",
-        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs",
-        "node tests/contract/contract-test-v22-commercial-package-model.mjs",
-        "node tests/contract/contract-test-v22-commercial-ui-impact-decision.mjs"
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
       ]
     },
     {
