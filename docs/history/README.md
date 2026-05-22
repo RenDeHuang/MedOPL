@@ -377,6 +377,95 @@ Next recommendation:
 
 - Proceed to Stage 5: implement Go run/file/artifact domain contracts and runtime broker interface without connecting to real OPL, without fake success and without moving Portal business truth into runtime integration.
 
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-5
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Leibniz: `gpt-5.4`, read-only Runtime Bridge / Portal run-file-artifact field and pollution-risk review for Step 11/12.
+- subagent Meitner: `gpt-5.4`, read-only Step 11 Go run/file/artifact domain contract review.
+- subagent Maxwell: `gpt-5.4`, read-only Step 12 Runtime Broker interface review; returned FAIL on runtime agent and mode gates.
+- subagent Chandrasekhar: `gpt-5.4`, read-only Step 12 re-review; returned FAIL on upstream domain/service endpoint consistency, then closed after controller fixed and verified the blocker.
+
+Scope:
+
+- Add Go `run_request`, `run_execution`, `run_artifact` and `file_ref` domain contracts with repository/service boundaries.
+- Keep run creation pending; `succeeded` requires observed artifact and cannot be fabricated.
+- Add `internal/integration/runtimebroker` interface and deterministic local adapter for session bind, run submit/status, artifact listing and public artifact projection.
+- Enforce `providerKeyRef`, `resourceBindingId`, `computeInstanceId`, `storageBucketId`, `runtimeAgentId`, `runtimeAgentEndpoint` and `mode=full_runtime` before managed run acceptance.
+- Register Stage 5 contract gates in test lane registry, current/local-contract/review suites and backend convergence package.
+
+Commits:
+
+- `a876412 feat(go): implement run file artifact domain contracts`
+- `0262f07 feat(go): add runtime broker integration interface`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/runtime/README.md`
+- `docs/source/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `services/medopl-go-backend/**`
+- `services/portal/src/integrations/runtime-bridge-client.mjs`
+- `services/opl-runtime-bridge/src/runtime-bridge-runs.mjs`
+- `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-go-backend-run-file-artifact-domain.mjs`
+- `node tests/contract/contract-test-v22-go-backend-runtime-broker-interface.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `GOROOT=/tmp/medopl-go-toolchain/root/usr/lib/go-1.22 PATH=/tmp/medopl-go-toolchain/root/usr/lib/go-1.22/bin:$PATH GOMODCACHE=/tmp/medopl-go-modcache GOCACHE=/tmp/medopl-go-buildcache go test ./...` from `services/medopl-go-backend`
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- docs tests scripts package.json services/portal/src services/medopl-go-backend`
+
+B review pack:
+
+- `git diff --stat`: Stage 5 adds Go domain/service/repository contracts for run/file/artifact, Runtime Broker interface/local adapter, Go tests, contract gates and manifest registrations.
+- `git show --name-only --oneline HEAD`: `0262f07 feat(go): add runtime broker integration interface`.
+- Contract review: Step 11/12 both used eval-first RED, then implementation, then package verification.
+- Secret hygiene: review gate reported no secret-like paths and no secret-like added lines.
+- Pollution check: no `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*`, upstream, `.runtime/*`, secret path, real cloud, build/push, kubectl, deploy or live-test operation.
+- Product narrative check: no restored `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary narrative.
+- Fake success check: run creation is pending, Runtime Broker missing runtime agent is gated, non-`full_runtime` mode is rejected and `succeeded` requires observed artifact.
+- Dependency check: no real HTTP, OPL, PostgreSQL, Redis or cloud client dependency was introduced.
+- Landing recommendation: Stage 5 is ff-only absorbable by B review if the full branch is selected for landing; authoring can continue to Stage 6 before final landing.
+
+Non-goals:
+
+- No real Runtime Bridge HTTP client.
+- No real OPL call.
+- No real PostgreSQL or Redis connection.
+- No workflow facade durable engine, Temporal or LangGraph dependency.
+- No commercial package or UI decision.
+- No production Go backend replacement claim.
+- No secret read, live cloud call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+
+Risk notes:
+
+- Runtime Broker local adapter is a deterministic contract adapter only; production bridge wiring must land behind the same interface in a later authorized step.
+- The Go backend remains future canonical target, not current production replacement.
+- Step 12 tightened Step 11 run request validation so Runtime Agent ID and endpoint are both required before managed run acceptance.
+
+Next recommendation:
+
+- Proceed to Stage 6: add Go workflow facade command/state/idempotency model, then route long-task entrypoints through workflow facade without changing Portal/Runtime/Cloud contracts.
+
 ### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
 
 Status: `landed / pushed / post-push verified`
