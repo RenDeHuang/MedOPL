@@ -119,6 +119,7 @@
       ],
       "paths": [
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
+        "services/portal/src/routes/lab-package.routes.mjs",
         "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs"
       ]
     },
@@ -197,7 +198,6 @@
         "services/portal/src/domain/portal-file-space-management.mjs",
         "services/portal/src/domain/portal-public-settings.mjs",
         "services/portal/src/domain/provider-config.mjs",
-        "services/portal/src/domain/provider-secret-store.mjs",
         "services/portal/src/domain/server-plans.mjs",
         "services/portal/src/domain/session-traces.mjs",
         "services/portal/src/domain/support-boundaries.mjs",
@@ -219,7 +219,6 @@
         "services/portal/src/routes/admin-api.routes.mjs",
         "services/portal/src/routes/admin-audit-helper.mjs",
         "services/portal/src/routes/admin-user.routes.mjs",
-        "services/portal/src/routes/lab-package.routes.mjs",
         "services/portal/src/routes/opl.routes.mjs",
         "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
         "services/portal/src/routes/portal-api-costs.routes.mjs",
@@ -247,6 +246,20 @@
         "services/portal/src/integrations/langfuse-trace-client.mjs",
         "services/portal/src/integrations/minio-storage-client.mjs",
         "services/portal/src/integrations/runtime-bridge-client.mjs"
+      ]
+    },
+    {
+      "id": "portal-secret-boundary",
+      "service": "portal",
+      "currentResponsibility": "Portal provider secret file store boundary",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/integration/secretstore",
+      "nodeBoundary": false,
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/portal/src/domain/provider-secret-store.mjs"
       ]
     },
     {
@@ -592,8 +605,10 @@
   "highRiskPaths": [
     "services/portal/src/services/opl-launch.service.mjs",
     "services/portal/src/domain/portal-cloud-operation-production.mjs",
+    "services/portal/src/routes/lab-package.routes.mjs",
     "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs",
     "services/portal/src/portal-cloud-operation-worker.mjs",
+    "services/portal/src/domain/provider-secret-store.mjs",
     "services/portal/src/domain/user-credit-provider-key-flow.mjs",
     "services/portal/src/app/portal-api-runtime-handlers.mjs",
     "services/portal/src/domain/cost-balance-trace-linkage.mjs",

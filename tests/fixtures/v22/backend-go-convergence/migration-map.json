@@ -57,6 +57,7 @@
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
         "services/portal/src/domain/portal-cloud-operation-test-bridge.mjs",
         "services/portal/src/portal-cloud-operation-worker.mjs",
+        "services/portal/src/routes/lab-package.routes.mjs",
         "services/portal/src/routes/portal-api-v22-cloud-operations-test.routes.mjs",
         "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs"
       ],
@@ -134,6 +135,7 @@
     {
       "id": "portal.account_provider_binding",
       "sourcePaths": [
+        "services/portal/src/domain/provider-secret-store.mjs",
         "services/portal/src/domain/user-credit-provider-key-flow.mjs",
         "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
       ],
@@ -539,7 +541,6 @@
         "services/portal/src/domain/portal-file-space-management.mjs",
         "services/portal/src/domain/portal-public-settings.mjs",
         "services/portal/src/domain/provider-config.mjs",
-        "services/portal/src/domain/provider-secret-store.mjs",
         "services/portal/src/domain/server-plans.mjs",
         "services/portal/src/domain/session-traces.mjs",
         "services/portal/src/domain/support-boundaries.mjs",
@@ -567,7 +568,6 @@
         "services/portal/src/routes/admin-api.routes.mjs",
         "services/portal/src/routes/admin-audit-helper.mjs",
         "services/portal/src/routes/admin-user.routes.mjs",
-        "services/portal/src/routes/lab-package.routes.mjs",
         "services/portal/src/routes/opl.routes.mjs",
         "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
         "services/portal/src/routes/portal-api-costs.routes.mjs",
