@@ -202,6 +202,89 @@ Next recommendation:
 
 - Proceed to stage 3: add contract/regression gates for Portal long task mutation boundaries, then introduce a workflow facade in Node Portal without changing user-visible API contracts.
 
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-3
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Carver: `gpt-5.4`, read-only Step 7 Node Portal workflow facade minimal-boundary review.
+
+Scope:
+
+- Gate the dangerous Node Portal responsibility drift before broad migration: Portal long task mutation, cloud operation mutation, in-memory OPL launch truth, billing/audit aggregation and Runtime Bridge token/secret boundaries.
+- Introduce `services/portal/src/services/portal-workflow-facade.service.mjs` as the migration-period command handoff facade.
+- Route OPL launch, OPL native login launch, lab package activate/upgrade cloud bridge calls and v22 cloud operation mutation routes through the workflow facade without changing user-visible API paths, DTOs or cookie semantics.
+- Update backend responsibility inventory and Node-to-Go migration map so the new facade is a tracked workflow boundary and future Go target maps to `internal/domain/workflow + internal/service/workflow`.
+
+Commits:
+
+- `5a883d9 docs(v22): align portal user provider status contract`
+- `3a68e60 test(v22): gate portal long task mutation boundaries`
+- `3ad6607 refactor(v22): introduce node portal workflow facade boundary`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/source/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `tests/fixtures/v22/backend-go-convergence/backend-inventory.json`
+- `tests/fixtures/v22/backend-go-convergence/migration-map.json`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs`
+- `node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs`
+- `node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs`
+- `node tests/contract/contract-test-v22-node-to-go-migration-map.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs`
+- `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`
+- `node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all`
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `npm --prefix services/portal run check`
+- `git diff --check -- docs tests scripts package.json services/portal/src`
+
+B review pack:
+
+- `git diff --stat`: 25 files changed from trunk at stage handoff, including Stage 1-3 docs/tests/fixtures and the Step 7 Portal facade implementation.
+- `git show --name-only --oneline HEAD`: `3ad6607 refactor(v22): introduce node portal workflow facade boundary`.
+- Secret hygiene: review gate reported no secret-like paths and no secret-like added lines.
+- Pollution check: no `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*`, upstream, `.runtime/*`, secret path, real cloud, build/push, kubectl, deploy or live-test operation.
+- Product narrative check: no restored `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary narrative.
+- Fake success check: workflow facade preserves executor result; business failure results mark command state failed without converting the public result to success.
+- Landing recommendation: continue authoring branch to Stage 4 before final branch landing; B can review Stage 3 as ff-only absorbable if asked.
+
+Non-goals:
+
+- No Temporal, LangGraph or durable engine dependency in Stage 3.
+- No Go backend scaffold yet.
+- No production backend claim.
+- No user-visible API contract change.
+- No secret read, live cloud call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+- No restored `docs/contracts/**`, `docs/recovery/**`, old stage board or `scripts/smoke-test-*`.
+
+Risk notes:
+
+- Node Portal still owns migration-period execution of the facade; durable semantics are intentionally behind the facade and not claimed by Stage 3.
+- Existing OPL launch in-memory status remains visible and gated as migration debt; the new facade prevents further route-level expansion before the Go workflow boundary lands.
+- Stage 4 must introduce the Go service as future canonical target without claiming production replacement and without connecting to real Postgres or Redis by default.
+
+Next recommendation:
+
+- Proceed to Stage 4: scaffold `services/medopl-go-backend`, add Ent/Postgres schema baseline and enforce Redis volatile-only boundaries with Go tests and manifest/package gates.
+
 ### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
 
 Status: `landed / pushed / post-push verified`
