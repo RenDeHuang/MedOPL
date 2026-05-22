@@ -61,6 +61,94 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 cleanup/framework-truth-layering baseline audit
+
+Status: `authoring / baseline-audit`
+
+Branch: `cleanup/framework-truth-layering`
+
+Base trunk HEAD: `d12ebb6`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Leibniz: `gpt-5.4-mini`, read-only current docs truth layering inventory.
+- subagent Darwin: `gpt-5.4-mini`, read-only one-person-lab framework discipline comparison.
+- subagent Helmholtz: `gpt-5.4-mini`, read-only test lane / governance gate pattern review.
+
+Scope:
+
+- Start the MedOPL Platform Framework truth-layering cleanup without restoring retired `docs/contracts/**`, `docs/recovery/**`, root `docs/status.md`, root `docs/invariants.md`, root `docs/product.md`, root `docs/architecture.md`, root `docs/decisions.md` or `scripts/smoke-test-*`.
+- Record that the current trunk has already collapsed legacy recovery and contract leaf trees into an OPL-style README taxonomy: `docs/active/README.md`, `docs/product/README.md`, `docs/runtime/README.md`, `docs/specs/README.md`, `docs/policies/README.md`, `docs/delivery/README.md`, `docs/source/README.md`, `docs/public/README.md`, `docs/references/README.md`, `docs/history/README.md` and `tests/**`.
+- Treat the original `/goal` paths as historical recovery inputs where absent, not as paths to recreate.
+- Build the new framework layer on the current taxonomy by adding explicit framework and evidence views, tightening docs index pointers, and adding registered local gates under `tests/**`.
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/references/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+
+Baseline truth-layer inventory:
+
+| Layer | Current owner | Baseline finding |
+| --- | --- | --- |
+| rules | `AGENTS.md`, `docs/policies/README.md`, durable anchors in `docs/specs/README.md` | Stable collaboration, authorization, lifecycle and non-negotiable product constraints already live outside recovery. |
+| contracts | `docs/specs/README.md`, plus product/runtime contract group pointers | Legacy `docs/contracts/**` is physically retired; current task must not recreate it. |
+| status | `docs/active/README.md`, `tests/fixtures/v22/goal-current.json`, delivery cursor view | Legacy root `docs/status.md` is retired; current status is active truth plus machine cursor. |
+| evidence | `docs/history/README.md`, `tests/fixtures/v22/agent-verify-manifest.json`, local eval output | Evidence currently shares history; this run will add an explicit evidence view that remains non-current truth. |
+| history | `docs/history/README.md`, git history | Legacy `docs/recovery/**` is retired; history remains summary-only. |
+| noise / drift risk | repeated current-truth pointers in product/runtime/history and long absorbed-contract prose in specs | Needs framework/evidence views and local gate to prevent status, evidence and contract prose from becoming one mixed truth surface again. |
+
+Framework mechanisms to import from one-person-lab discipline:
+
+- Rules precede status; current status cannot rewrite durable invariants.
+- Contracts/specs keep lower bounds: boundary, permission, receipt, blocker, audit and cannot-claim; they do not claim current completion.
+- Evidence-after-contract: smoke, proof, canary and live evidence only prove bounded claims and never upgrade themselves to production truth.
+- Surface budget: default human reading surface stays summary-first; drilldown and history carry detail.
+- Owner boundary: clean OPL upstream owns OPL framework/runtime/domain truth; MedOPL owns SaaS platform, Portal, Gateway, Runtime Bridge, resources, billing, audit and projection truth.
+
+Adjusted implementation decision:
+
+- Do not create `docs/project.md`, `docs/status.md`, `docs/invariants.md`, `docs/contracts/**`, `docs/recovery/**` or `scripts/smoke-test-v22-framework-truth-layering.mjs`, because current trunk gates explicitly forbid those retired entrypoints.
+- Add `docs/framework/README.md` and `docs/evidence/README.md` only after updating docs taxonomy and gates, because current docs rule is one README per lifecycle directory.
+- Add local eval under `tests/contract` or `tests/smoke` and register it in `scripts/v22-test-classification.mjs`; do not add new smoke bodies under `scripts/`.
+
+Verification before this baseline commit:
+
+- `git status --short --branch`: clean before authoring branch changes.
+- `git rev-parse --short recovery/platform-v22-trunk`: `d12ebb6`.
+- Read-only subagent review completed with no file edits and models recorded above.
+
+Non-goals:
+
+- No business service code changes.
+- No Portal UI changes.
+- No old root docs restoration.
+- No `docs/contracts/**` or `docs/recovery/**` restoration.
+- No `scripts/smoke-test-*` restoration.
+- No secret read, live cloud call, true OPL/provider call, Langfuse, COS, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+
+Next recommendation:
+
+- Add the framework and evidence lifecycle views, update docs taxonomy pointers, then register a local framework truth-layering gate that verifies the adjusted entrypoint model.
+
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-1
 
 Status: `ready_for_landing_review`
