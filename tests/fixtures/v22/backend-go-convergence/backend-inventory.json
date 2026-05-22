@@ -1,0 +1,604 @@
+{
+  "program": "backend_go_convergence_program",
+  "version": 1,
+  "generatedFrom": {
+    "services": [
+      "services/portal/src",
+      "services/opl-web-gateway/src",
+      "services/opl-runtime-bridge/src"
+    ],
+    "specAnchor": "spec:v22-backend-go-convergence-program-boundary"
+  },
+  "requiredRiskTags": [
+    "portal_long_task",
+    "cloud_mutation",
+    "memory_launch_truth",
+    "billing_audit_aggregation",
+    "runtime_bridge_token_secret_boundary"
+  ],
+  "groups": [
+    {
+      "id": "gateway-boundary",
+      "service": "opl-web-gateway",
+      "currentResponsibility": "Gateway anti-corruption and proxy boundary",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/server/gateway + internal/handler/http/proxy",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/opl-web-gateway/src/config.mjs",
+        "services/opl-web-gateway/src/http-utils.mjs",
+        "services/opl-web-gateway/src/proxy.mjs",
+        "services/opl-web-gateway/src/server.mjs"
+      ]
+    },
+    {
+      "id": "gateway-node-boundary",
+      "service": "opl-web-gateway",
+      "currentResponsibility": "Gateway browser/script/auth bridge Node boundary",
+      "targetClassification": "migrate-later",
+      "targetGoModule": "",
+      "nodeBoundary": true,
+      "riskTags": [],
+      "paths": [
+        "services/opl-web-gateway/src/html-injection.mjs",
+        "services/opl-web-gateway/src/launch-client-script.mjs",
+        "services/opl-web-gateway/src/portal-auth-bridge.mjs"
+      ]
+    },
+    {
+      "id": "portal-account-provider-binding",
+      "service": "portal",
+      "currentResponsibility": "Account credit and provider key binding flow",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/service/account + internal/service/providerbinding",
+      "nodeBoundary": false,
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary",
+        "billing_audit_aggregation"
+      ],
+      "paths": [
+        "services/portal/src/domain/user-credit-provider-key-flow.mjs",
+        "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
+      ]
+    },
+    {
+      "id": "portal-bff-viewmodel-node-boundary",
+      "service": "portal",
+      "currentResponsibility": "Portal BFF view model and page payload projection",
+      "targetClassification": "migrate-later",
+      "targetGoModule": "",
+      "nodeBoundary": true,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/app/portal-admin-api-payload-helpers.mjs",
+        "services/portal/src/app/portal-admin-api-payloads.mjs",
+        "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+        "services/portal/src/app/portal-admin-portrait-payloads.mjs",
+        "services/portal/src/app/portal-layout.mjs",
+        "services/portal/src/app/portal-module-source-payloads.mjs",
+        "services/portal/src/app/portal-page-billing-payloads.mjs",
+        "services/portal/src/app/portal-page-overview-payloads.mjs",
+        "services/portal/src/app/portal-page-payload-helpers.mjs",
+        "services/portal/src/app/portal-page-payload-primitives.mjs",
+        "services/portal/src/app/portal-page-payloads.mjs",
+        "services/portal/src/app/portal-page-runtime-payloads.mjs",
+        "services/portal/src/app/portal-page-workspace-payloads.mjs",
+        "services/portal/src/app/portal-public-home.mjs",
+        "services/portal/src/app/portal-session-trace-payloads.mjs",
+        "services/portal/src/app/portal-workspace-runtime.mjs"
+      ]
+    },
+    {
+      "id": "portal-billing-audit-aggregation",
+      "service": "portal",
+      "currentResponsibility": "Billing, ledger, audit and trace aggregation",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/service/billingtrace + internal/repository/billing",
+      "nodeBoundary": false,
+      "riskTags": [
+        "billing_audit_aggregation"
+      ],
+      "paths": [
+        "services/portal/src/domain/cost-balance-trace-linkage.mjs",
+        "services/portal/src/routes/portal-billing-export.routes.mjs",
+        "services/portal/src/state/portal-accounting-store.mjs",
+        "services/portal/src/state/portal-lab-billing-store.mjs"
+      ]
+    },
+    {
+      "id": "portal-cloud-mutation",
+      "service": "portal",
+      "currentResponsibility": "Portal cloud operation mutation and projection boundary",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/service/cloudoperation + internal/worker/cloudoperation",
+      "nodeBoundary": false,
+      "riskTags": [
+        "cloud_mutation",
+        "billing_audit_aggregation"
+      ],
+      "paths": [
+        "services/portal/src/domain/portal-cloud-operation-production.mjs",
+        "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs"
+      ]
+    },
+    {
+      "id": "portal-cloud-operation-test-residue",
+      "service": "portal",
+      "currentResponsibility": "Cloud operation test bridge or route residue",
+      "targetClassification": "delete-later",
+      "targetGoModule": "",
+      "nodeBoundary": true,
+      "riskTags": [
+        "cloud_mutation"
+      ],
+      "paths": [
+        "services/portal/src/domain/portal-cloud-operation-test-bridge.mjs",
+        "services/portal/src/routes/portal-api-v22-cloud-operations-test.routes.mjs"
+      ]
+    },
+    {
+      "id": "portal-cloud-worker",
+      "service": "portal",
+      "currentResponsibility": "Cloud operation queue worker",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/worker/cloudoperation",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/workers/portal-cloud-operation-worker.mjs"
+      ]
+    },
+    {
+      "id": "portal-cloud-worker-cli",
+      "service": "portal",
+      "currentResponsibility": "Cloud operation worker command wrapper and runtime glue",
+      "targetClassification": "misplaced",
+      "targetGoModule": "cmd/cloud-operation-worker + internal/worker/cloudoperation",
+      "nodeBoundary": false,
+      "riskTags": [
+        "cloud_mutation"
+      ],
+      "paths": [
+        "services/portal/src/portal-cloud-operation-worker.mjs"
+      ]
+    },
+    {
+      "id": "portal-config",
+      "service": "portal",
+      "currentResponsibility": "Portal config boundary",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/config",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/config/portal-config.mjs"
+      ]
+    },
+    {
+      "id": "portal-domain-service",
+      "service": "portal",
+      "currentResponsibility": "Portal domain or application service logic",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/domain + internal/service",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/domain/commercial-state.mjs",
+        "services/portal/src/domain/lab-billing-policy.mjs",
+        "services/portal/src/domain/lab-entitlements.mjs",
+        "services/portal/src/domain/lab-packages.mjs",
+        "services/portal/src/domain/lab-subscriptions.mjs",
+        "services/portal/src/domain/managed-environment-open-flow.mjs",
+        "services/portal/src/domain/managed-environment-release-flow.mjs",
+        "services/portal/src/domain/opl-work-flow.mjs",
+        "services/portal/src/domain/platform-provisioned-resources.mjs",
+        "services/portal/src/domain/portal-auth.mjs",
+        "services/portal/src/domain/portal-file-space-management.mjs",
+        "services/portal/src/domain/portal-public-settings.mjs",
+        "services/portal/src/domain/provider-config.mjs",
+        "services/portal/src/domain/provider-secret-store.mjs",
+        "services/portal/src/domain/server-plans.mjs",
+        "services/portal/src/domain/session-traces.mjs",
+        "services/portal/src/domain/support-boundaries.mjs",
+        "services/portal/src/domain/tenant-scope.mjs",
+        "services/portal/src/domain/user-resource-bindings.mjs",
+        "services/portal/src/domain/wallet-ledger.mjs",
+        "services/portal/src/domain/workspace-storage.mjs"
+      ]
+    },
+    {
+      "id": "portal-handler",
+      "service": "portal",
+      "currentResponsibility": "Portal HTTP handler boundary",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/handler/http",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/routes/admin-api.routes.mjs",
+        "services/portal/src/routes/admin-audit-helper.mjs",
+        "services/portal/src/routes/admin-user.routes.mjs",
+        "services/portal/src/routes/lab-package.routes.mjs",
+        "services/portal/src/routes/opl.routes.mjs",
+        "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
+        "services/portal/src/routes/portal-api-costs.routes.mjs",
+        "services/portal/src/routes/portal-api-runs.routes.mjs",
+        "services/portal/src/routes/portal-api-sessions.routes.mjs",
+        "services/portal/src/routes/portal-api-traces.routes.mjs",
+        "services/portal/src/routes/portal-api-v22-managed-environment-release.routes.mjs",
+        "services/portal/src/routes/portal-api-v22-opl-work.routes.mjs",
+        "services/portal/src/routes/portal-api.routes.mjs",
+        "services/portal/src/routes/workspace-storage-route-handlers.mjs",
+        "services/portal/src/routes/workspace-storage-upload-support.mjs",
+        "services/portal/src/routes/workspace-storage.routes.mjs"
+      ]
+    },
+    {
+      "id": "portal-integration",
+      "service": "portal",
+      "currentResponsibility": "Portal external integration client",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/integration",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/integrations/harbor-registry-client.mjs",
+        "services/portal/src/integrations/langfuse-trace-client.mjs",
+        "services/portal/src/integrations/minio-storage-client.mjs",
+        "services/portal/src/integrations/runtime-bridge-client.mjs"
+      ]
+    },
+    {
+      "id": "portal-layering-drift",
+      "service": "portal",
+      "currentResponsibility": "Portal handler/service/presenter responsibilities mixed in one layer",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/handler/http + internal/service",
+      "nodeBoundary": false,
+      "riskTags": [
+        "portal_long_task"
+      ],
+      "paths": [
+        "services/portal/src/app/portal-api-runtime-handlers.mjs",
+        "services/portal/src/app/portal-commercial-domain.mjs",
+        "services/portal/src/app/portal-lab-domain.mjs",
+        "services/portal/src/app/portal-presentation-domain.mjs",
+        "services/portal/src/app/portal-runtime-route-wiring.mjs",
+        "services/portal/src/app/portal-storage-domain.mjs",
+        "services/portal/src/app/portal-store-runtime.mjs",
+        "services/portal/src/domain/managed-resource-binding-plan-view.mjs",
+        "services/portal/src/domain/portal-api-payloads.mjs",
+        "services/portal/src/domain/portal-api-workspace-storage.mjs",
+        "services/portal/src/domain/portal-presenters.mjs",
+        "services/portal/src/routes/admin-ops.routes.mjs",
+        "services/portal/src/routes/portal-api-state.routes.mjs",
+        "services/portal/src/routes/workspace-files-internal.routes.mjs",
+        "services/portal/src/routes/workspace.routes.mjs",
+        "services/portal/src/state/portal-store-runtime-connections.mjs"
+      ]
+    },
+    {
+      "id": "portal-lib",
+      "service": "portal",
+      "currentResponsibility": "Shared HTTP or archive helper",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/handler/http/shared",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/lib/http-body-errors.mjs",
+        "services/portal/src/lib/http.mjs",
+        "services/portal/src/lib/zip-archive.mjs"
+      ]
+    },
+    {
+      "id": "portal-migration-command",
+      "service": "portal",
+      "currentResponsibility": "Portal migration command",
+      "targetClassification": "correct-place",
+      "targetGoModule": "cmd/migrate + internal/repository/migrations",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/migrate-schema.mjs"
+      ]
+    },
+    {
+      "id": "portal-opl-launch-memory-truth",
+      "service": "portal",
+      "currentResponsibility": "Portal OPL launch orchestration and in-memory status tracking",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/service/opllaunch",
+      "nodeBoundary": false,
+      "riskTags": [
+        "portal_long_task",
+        "memory_launch_truth",
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/portal/src/services/opl-launch.service.mjs"
+      ]
+    },
+    {
+      "id": "portal-repository",
+      "service": "portal",
+      "currentResponsibility": "Portal persistence and migration repository code",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/repository",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+        "services/portal/src/state/portal-schema-health.mjs",
+        "services/portal/src/state/portal-schema-migrator.mjs",
+        "services/portal/src/state/portal-store-db-auth.mjs",
+        "services/portal/src/state/portal-store-db-core.mjs",
+        "services/portal/src/state/portal-store-db-delegates.mjs",
+        "services/portal/src/state/portal-store-db-events.mjs",
+        "services/portal/src/state/portal-store-db-facade.mjs",
+        "services/portal/src/state/portal-store-health.mjs",
+        "services/portal/src/state/portal-store-migration-admin-seed.mjs",
+        "services/portal/src/state/portal-store-migration-collections.mjs",
+        "services/portal/src/state/portal-store-migration-taskspaces.mjs",
+        "services/portal/src/state/portal-store-migration-users-groups.mjs",
+        "services/portal/src/state/portal-store-migrations.mjs",
+        "services/portal/src/state/portal-store-postgres-lab-persistence.mjs",
+        "services/portal/src/state/portal-store-postgres-persistence.mjs",
+        "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
+        "services/portal/src/state/portal-store-redis-sessions.mjs",
+        "services/portal/src/state/portal-store-schema.mjs",
+        "services/portal/src/state/portal-store-storage-bootstrap.mjs",
+        "services/portal/src/state/portal-workspace-store.mjs"
+      ]
+    },
+    {
+      "id": "portal-server-assembly",
+      "service": "portal",
+      "currentResponsibility": "Portal server assembly and bootstrap",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/server",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/app/portal-auth-runtime-handler.mjs",
+        "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+        "services/portal/src/app/portal-http-dispatcher.mjs",
+        "services/portal/src/app/portal-identity-security-runtime.mjs",
+        "services/portal/src/app/portal-runtime-bootstrap.mjs",
+        "services/portal/src/app/portal-runtime-clients.mjs",
+        "services/portal/src/app/portal-runtime-config.mjs",
+        "services/portal/src/app/portal-runtime-http.mjs",
+        "services/portal/src/app/portal-runtime-observability.mjs",
+        "services/portal/src/app/portal-runtime.mjs",
+        "services/portal/src/app/portal-server-plan-runtime-handler.mjs"
+      ]
+    },
+    {
+      "id": "portal-store-facade-drift",
+      "service": "portal",
+      "currentResponsibility": "Portal store facade aggregating multiple truth surfaces",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/repository/portalstore",
+      "nodeBoundary": false,
+      "riskTags": [
+        "billing_audit_aggregation"
+      ],
+      "paths": [
+        "services/portal/src/state/portal-store.mjs"
+      ]
+    },
+    {
+      "id": "portal-tencent-integration",
+      "service": "portal",
+      "currentResponsibility": "Tencent readonly or dry-run integration boundary",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/integration/tencent",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/portal/src/domain/tencent-dry-run-resource-plan-provider.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-adapter.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-official-sdk-loader.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-official-sdk-modules.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-provider.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-tc3-modules.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs",
+        "services/portal/src/domain/tencent-readonly-quote-provider.mjs"
+      ]
+    },
+    {
+      "id": "portal-thin-entry-delete-later",
+      "service": "portal",
+      "currentResponsibility": "Thin Node entry wrapper to retire after Go entry exists",
+      "targetClassification": "delete-later",
+      "targetGoModule": "cmd/server",
+      "nodeBoundary": false,
+      "riskTags": [
+        "portal_long_task"
+      ],
+      "paths": [
+        "services/portal/src/app/portal-app.mjs",
+        "services/portal/src/server.mjs"
+      ]
+    },
+    {
+      "id": "runtime-delete-later",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime local fake or source-local test residue",
+      "targetClassification": "delete-later",
+      "targetGoModule": "",
+      "nodeBoundary": true,
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/opl-runtime-bridge/src/local-fake-runtime-agent-relay.mjs",
+        "services/opl-runtime-bridge/src/v22-retirement.test.mjs"
+      ]
+    },
+    {
+      "id": "runtime-domain-service",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime Bridge domain/service helper",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/domain/runtimebridge + internal/service/runtimebridge",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/opl-runtime-bridge/src/run-contract.mjs",
+        "services/opl-runtime-bridge/src/run-error-mapper.mjs",
+        "services/opl-runtime-bridge/src/run-observability.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-bootstrap.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-launch-issue-fields.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-launch-issue.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-managed-run-context.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-scope-identity.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-scope-primitives.mjs",
+        "services/opl-runtime-bridge/src/server-plan-ids.mjs",
+        "services/opl-runtime-bridge/src/server.mjs"
+      ]
+    },
+    {
+      "id": "runtime-integration",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime Bridge external integration client",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/integration",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/opl-runtime-bridge/src/langfuse-publisher.mjs",
+        "services/opl-runtime-bridge/src/opl-acp-runtime-client.mjs",
+        "services/opl-runtime-bridge/src/opl-client.mjs",
+        "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
+        "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs"
+      ]
+    },
+    {
+      "id": "runtime-launch-truth",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime launch token, bootstrap and provider binding truth",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/service/runtimebridge/launch",
+      "nodeBoundary": false,
+      "riskTags": [
+        "memory_launch_truth",
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs"
+      ]
+    },
+    {
+      "id": "runtime-repository",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime Bridge state record repository helpers",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/repository/runtimebridge",
+      "nodeBoundary": false,
+      "riskTags": [],
+      "paths": [
+        "services/opl-runtime-bridge/src/state-store-artifact-trace-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-cost-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-identity.mjs",
+        "services/opl-runtime-bridge/src/state-store-message-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-record-field-groups.mjs",
+        "services/opl-runtime-bridge/src/state-store-record-time.mjs",
+        "services/opl-runtime-bridge/src/state-store-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-run-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-runtime-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-workspace-records.mjs"
+      ]
+    },
+    {
+      "id": "runtime-runner-legacy",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Legacy runner adapter",
+      "targetClassification": "migrate-later",
+      "targetGoModule": "internal/integration/runner",
+      "nodeBoundary": false,
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/opl-runtime-bridge/src/runner-client.mjs"
+      ]
+    },
+    {
+      "id": "runtime-secret-boundary",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime provider secret store and credential materialization",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/integration/secretstore",
+      "nodeBoundary": false,
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/opl-runtime-bridge/src/provider-secret-store.mjs"
+      ]
+    },
+    {
+      "id": "runtime-service-drift",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime Bridge route/service responsibilities mixed together",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/service/runtimebridge",
+      "nodeBoundary": false,
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/opl-runtime-bridge/src/runtime-bridge-messages.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-runs.mjs"
+      ]
+    },
+    {
+      "id": "runtime-state-store-drift",
+      "service": "opl-runtime-bridge",
+      "currentResponsibility": "Runtime state.json aggregate truth",
+      "targetClassification": "misplaced",
+      "targetGoModule": "internal/repository/runtimebridge/state",
+      "nodeBoundary": false,
+      "riskTags": [
+        "memory_launch_truth",
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "paths": [
+        "services/opl-runtime-bridge/src/state-store.mjs"
+      ]
+    }
+  ],
+  "summary": {
+    "totalFiles": 180,
+    "byService": {
+      "portal": 136,
+      "opl-web-gateway": 7,
+      "opl-runtime-bridge": 37
+    },
+    "byClassification": {
+      "correct-place": 121,
+      "misplaced": 33,
+      "migrate-later": 20,
+      "delete-later": 6
+    }
+  },
+  "highRiskPaths": [
+    "services/portal/src/services/opl-launch.service.mjs",
+    "services/portal/src/domain/portal-cloud-operation-production.mjs",
+    "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs",
+    "services/portal/src/portal-cloud-operation-worker.mjs",
+    "services/portal/src/domain/user-credit-provider-key-flow.mjs",
+    "services/portal/src/app/portal-api-runtime-handlers.mjs",
+    "services/portal/src/domain/cost-balance-trace-linkage.mjs",
+    "services/opl-runtime-bridge/src/provider-secret-store.mjs",
+    "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs",
+    "services/opl-runtime-bridge/src/state-store.mjs"
+  ]
+}

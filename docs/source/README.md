@@ -25,6 +25,12 @@ Backend convergence target surface：
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
 
+Backend responsibility inventory：
+
+- `tests/fixtures/v22/backend-go-convergence/backend-inventory.json` 是 Step 4 机器盘点入口。
+- `tests/contract/contract-test-v22-backend-responsibility-inventory.mjs` 验证该盘点覆盖 `services/portal/src`、`services/opl-web-gateway/src` 和 `services/opl-runtime-bridge/src` 的全部 `.mjs` active backend 文件。
+- 盘点分类只允许 `correct-place`、`misplaced`、`migrate-later` 和 `delete-later`；高风险标签必须显式覆盖 Portal 长任务、cloud mutation、内存 launch truth、billing/audit 聚合和 runtime bridge token/secret 边界。
+
 Current docs / eval surface during migration：
 
 - `docs/active/README.md`

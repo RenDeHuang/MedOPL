@@ -1185,7 +1185,8 @@
         "git diff --check -- docs tests scripts services/portal/src services/opl-runtime-bridge/src",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs"
+        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
       ]
     },
     {
@@ -1243,13 +1244,15 @@
         "node tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs",
         "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs"
+        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
       ]
     },
     {
       "id": "backend-go-convergence",
       "commands": [
-        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs"
+        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
       ]
     },
     {
@@ -1304,7 +1307,8 @@
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs"
+        "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
       ]
     }
   ],
@@ -1379,6 +1383,7 @@
       "id": "backend-go-convergence",
       "commands": [
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
         "node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts package.json"
@@ -1395,6 +1400,7 @@
       "reason": "Backend convergence authoring branch registers and executes the Go canonical backend program without replacing the current real-cloud authorization cursor or restoring retired docs/tests topology.",
       "commands": [
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
@@ -1407,6 +1413,7 @@
         "docs/**/*.md",
         "tests/**/*.mjs",
         "tests/fixtures/v22/*.json",
+        "tests/fixtures/v22/backend-go-convergence/*.json",
         "scripts/v22-test-classification.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
