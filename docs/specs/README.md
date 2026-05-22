@@ -40,6 +40,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) | `v22-authorized-tencent-deploy-execution-boundary` |
 | [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary) | `v22-billing-freeze-boundary` |
 | [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary) | `v22-cloud-onboarding-workflow-boundary` |
+| [spec:v22-commercial-package-model](#spec-v22-commercial-package-model) | `v22-commercial-package-model` |
 | [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary) | `v22-langfuse-observability-metadata-boundary` |
 | [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary) | `v22-managed-environment-open-boundary` |
 | [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop) | `v22-mvp-managed-opl-loop` |
@@ -1384,6 +1385,95 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post
 - Step 2 必须能证明 Go backend 是 future canonical target、Node Portal 是迁移前 active implementation、Portal 不得继续扩张长任务和云 mutation 职责。
 - 每个 step 只能有一个 commit，并在 authoring record 中记录模型、subagent、订阅文件、验收命令、风险和 landing gate recommendation。
 - landed 后只在 `docs/history/README.md` 保留摘要，不新增 agent-run 文件树。
+
+### spec:v22-commercial-package-model
+
+Former leaf id: `v22-commercial-package-model`
+Former title: v22 Commercial Package Model
+
+本合同定义结构收敛后的商业化套餐模型。它不实现 UI，不修改服务代码，不读取 secret，不调用真实云，不授权 deploy/build/kubectl/live-test。
+
+商业化主链路从客户视角出发：谁都可以进入 OPL；需要平台托管计算、文件空间、隔离环境、计费和审计时，必须进入 MedOPL。MedOPL 销售的是托管 OPL 科研工作台服务和平台代管运行能力，不销售云控制台配置权。
+
+## 套餐层级
+
+- `api_only`: 面向只需要账号、工作空间、OPL 入口、用户自己的 gflabtoken providerKeyRef、文件/任务/结果索引的客户；不购买平台托管算力。
+- `full_runtime`: 面向需要上云计算、平台托管文件空间、任务并发、余额/冻结金额、run/artifact/trace 回流、释放和停止计费的客户。
+- `customer_dedicated`: 面向需要客户级隔离、专属运行边界、专属审计标签、人工审批和变更窗口的客户。
+
+## 客户选择规则
+
+- 只要进入 OPL 和保留工作空间上下文，走 `api_only`。
+- 要跑平台托管计算任务，必须走 `full_runtime` 或 `customer_dedicated`。
+- 需要客户级隔离、专属审计、审批窗口或更强资源边界，走 `customer_dedicated`。
+
+Portal 普通用户必须看到“托管 OPL 科研工作台”的能力层级，不得看到云资源控制台、底层节点、存储桶、K8s 配置或用户自配云资源路径。
+
+## Contract Data
+
+<!-- v22-commercial-package-model:start -->
+```json
+{
+  "contract": "v22_commercial_package_model",
+  "version": 1,
+  "customerRule": {
+    "anyoneCanEnterOpl": true,
+    "medoplRequiredForCloudCompute": true,
+    "portalIsCloudConsole": false,
+    "ordinaryUserSelfConfiguresCloud": false
+  },
+  "packages": [
+    {
+      "id": "api_only",
+      "label": "API / OPL entry only",
+      "includes": [
+        "账号",
+        "工作空间",
+        "OPL 入口",
+        "用户自己的 gflabtoken providerKeyRef",
+        "文件/任务/结果索引"
+      ],
+      "allowsPlatformManagedCompute": false,
+      "requiresBalanceFreeze": false,
+      "requiresFileSpace": false,
+      "medoplRequiredBecause": "需要账号、工作空间、入口治理和回流索引，但不购买平台托管算力。"
+    },
+    {
+      "id": "full_runtime",
+      "label": "Full managed runtime",
+      "includes": [
+        "平台托管计算",
+        "文件空间",
+        "任务并发",
+        "余额/冻结金额",
+        "run/artifact/trace 回流",
+        "释放和停止计费"
+      ],
+      "allowsPlatformManagedCompute": true,
+      "requiresBalanceFreeze": true,
+      "requiresFileSpace": true,
+      "medoplRequiredBecause": "需要平台代管计算、文件空间、计费、审计和释放。"
+    },
+    {
+      "id": "customer_dedicated",
+      "label": "Customer dedicated runtime",
+      "includes": [
+        "客户级隔离",
+        "专属运行边界",
+        "专属审计标签",
+        "人工审批",
+        "变更窗口"
+      ],
+      "allowsPlatformManagedCompute": true,
+      "requiresBalanceFreeze": true,
+      "requiresFileSpace": true,
+      "isolation": "dedicated_runtime_boundary",
+      "medoplRequiredBecause": "需要客户级隔离、专属运行边界、审批和审计。"
+    }
+  ]
+}
+```
+<!-- v22-commercial-package-model:end -->
 
 ### spec:v22-authorized-tencent-create-release-implementation-boundary
 
