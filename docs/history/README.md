@@ -134,6 +134,74 @@ Next recommendation:
 
 - Proceed to stage 2: classify current Portal, Gateway and Runtime Bridge responsibilities, then map Node files to Go target modules before touching service behavior.
 
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-2
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Kuhn: `gpt-5.4`, read-only Step 4/5 responsibility inventory and migration-map design.
+- subagent McClintock: `gpt-5.4`, read-only Step 8-10 Go scaffold, Ent/Postgres and Redis boundary design.
+
+Scope:
+
+- Classify all active backend `.mjs` files under `services/portal/src`, `services/opl-web-gateway/src` and `services/opl-runtime-bridge/src`.
+- Add a machine-readable backend inventory fixture covering 180 active backend source files.
+- Add a machine-readable Node-to-Go migration map covering risky `misplaced` and `delete-later` files.
+- Register both gates in the test lane registry, current/local-contract/review suites and backend convergence package.
+
+Commits:
+
+- `ad7d7ec docs(v22): classify backend responsibilities for go convergence`
+- `ee32f0d docs(v22): map node backend files to go target modules`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/source/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `tests/fixtures/v22/backend-go-convergence/backend-inventory.json`
+- `tests/fixtures/v22/backend-go-convergence/migration-map.json`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs`
+- `node tests/contract/contract-test-v22-node-to-go-migration-map.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- docs tests scripts package.json`
+
+Non-goals:
+
+- No service behavior change in stage 2.
+- No production Go backend claim.
+- No secret read, live cloud call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+- No restored `docs/contracts/**`, `docs/recovery/**`, old stage board or `scripts/smoke-test-*`.
+
+Risk notes:
+
+- Inventory and migration map expose current responsibility drift but do not fix it yet.
+- Stage 3 must turn the highest-risk drift into explicit gates before implementation: Portal long task truth, cloud mutation, memory launch status, billing/audit aggregation and runtime bridge token/secret boundaries.
+
+Landing gate recommendation:
+
+- Continue authoring branch to stage 3 before final landing so the inventory can immediately drive enforcement gates.
+
+Next recommendation:
+
+- Proceed to stage 3: add contract/regression gates for Portal long task mutation boundaries, then introduce a workflow facade in Node Portal without changing user-visible API contracts.
+
 ### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
 
 Status: `landed / pushed / post-push verified`
