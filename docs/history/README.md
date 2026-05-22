@@ -53,7 +53,7 @@ landed 后的记录还必须补齐：
 | legacy root architecture doc | architecture truth moved into runtime/source/specs views | `docs/runtime/README.md`, `docs/source/README.md`, `docs/specs/README.md` | second architecture truth |
 | legacy root status doc | current status moved into active truth and machine cursor | `docs/active/README.md`, `tests/fixtures/v22/goal-current.json` | second current status board |
 | legacy root invariants doc | durable invariants moved into policies/specs | `docs/policies/README.md`, `docs/specs/README.md` | root governance doc |
-| legacy root decisions doc | decisions are now summarized by landed run history | `docs/history/README.md` | rolling decision log that overrides current truth |
+| legacy root decisions doc | decisions are now summarized by landed run history | `docs/history/README.md` | rolling decision log, current-truth override, second decision authority |
 | legacy root vibe-coding doc | agent workflow discipline moved into policies and AGENTS | `AGENTS.md`, `docs/policies/README.md` | default workflow entrypoint |
 | `scripts/smoke-test-*` | eval files moved to `tests/**`, scripts reduced to runner/classifier/workflow | `tests/**`, `scripts/v22-verify.mjs` | repo-local eval location, compatibility script family |
 

@@ -45,7 +45,7 @@ const REGISTRY_OVERRIDES = Object.freeze(new Map([
   ["tests/contract/contract-test-v22-current-state-index-loop.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
   ["tests/contract/contract-test-v22-diff-scoped-sensitive-hygiene.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
   ["tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/contract/contract-test-v22-framework-truth-layering.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","review"]}],
+  ["tests/contract/contract-test-v22-framework-truth-layering.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
   ["tests/contract/contract-test-v22-framework-workflow-convergence.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
   ["tests/contract/contract-test-v22-product-engineering-loop-index.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
   ["tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
