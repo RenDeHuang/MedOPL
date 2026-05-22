@@ -82,6 +82,27 @@ assert.equal(program.no_legacy_docs_tree, true, "program_must_forbid_legacy_docs
 assert.equal(program.no_recovery_tree, true, "program_must_forbid_recovery_tree");
 assert.equal(program.no_scripts_smoke_test_family, true, "program_must_forbid_scripts_smoke_family");
 assert.equal(program.target_go_service, "services/medopl-go-backend", "program_target_service_mismatch");
+assert.deepEqual(program.canonical_backend_target, {
+  service: "services/medopl-go-backend",
+  status: "future_canonical_target",
+  current_active_implementation: "services/portal",
+  node_portal_role: "migration_period_active_implementation",
+  node_portal_must_not_expand: [
+    "long_task_orchestration",
+    "cloud_mutation",
+    "billing_mutation",
+    "audit_reconciliation",
+    "runtime_launch_truth",
+  ],
+  go_must_enter_active_surface_through: [
+    "manifest_allowlist",
+    "test_lane_registry",
+    "workflow_review_recommendation",
+    "package_verification",
+  ],
+  sub2api_reference_scope: "engineering_shape_only_not_business_semantics",
+  durable_engine_replacement_point: "behind_workflow_facade",
+}, "program_canonical_backend_boundary_mismatch");
 assertArrayIncludesAll(program.target_stack, ["Go", "Gin", "Ent", "PostgreSQL", "Redis"], "program_target_stack");
 assertArrayIncludesAll(program.target_layers, ["Portal Control Plane", "Workflow Boundary", "Runtime Broker / OPL Bridge", "Agent Runtime", "Cloud / Billing / Audit Workers"], "program_target_layers");
 assert.deepEqual(program.phases.map((phase) => phase.id), expectedPhaseIds, "program_phase_order_mismatch");
@@ -106,6 +127,11 @@ assertIncludes(specs, "Runtime Broker / OPL Bridge", "specs_must_define_runtime_
 assertIncludes(specs, "Cloud / Billing / Audit Workers", "specs_must_define_worker_boundary");
 assertIncludes(specs, "不得恢复 `docs/contracts/**`、`docs/recovery/**`", "specs_must_forbid_retired_docs_trees");
 assertIncludes(specs, "每个 step 只能有一个 commit", "specs_must_require_step_commit");
+assertIncludes(specs, "`services/medopl-go-backend` 是未来 canonical backend target", "specs_must_define_go_canonical_target");
+assertIncludes(specs, "当前 `services/portal` 是迁移前 active implementation", "specs_must_define_node_portal_migration_role");
+assertIncludes(specs, "不得继续扩张长任务编排、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth", "specs_must_forbid_node_portal_expansion");
+assertIncludes(specs, "只限工程形状", "specs_must_limit_sub2api_reference_scope");
+assertIncludes(specs, "只能替换 workflow facade 后面的实现", "specs_must_keep_durable_engine_behind_facade");
 
 assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_record_program_lane");
 assertIncludes(delivery, branchName, "delivery_must_record_authoring_branch");

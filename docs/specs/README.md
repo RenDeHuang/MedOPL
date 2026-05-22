@@ -1325,6 +1325,16 @@ Former title: v22 Backend Go Convergence Program Boundary
 
 目标 Go 后端结构参考 `sub2api` 的 Go 工程形状，但不得照搬其业务语义。允许的目标结构是 `cmd/server`、`internal/config`、`internal/domain`、`internal/handler`、`internal/repository`、`internal/service`、`internal/server`、`internal/integration`、`internal/worker`、`ent/schema`、`migrations` 和 `resources`。MedOPL 领域必须以 workspace、run、file、artifact、billing、workflow、tenant、runtime broker、OPL bridge、cloud worker、audit worker 为中心。
 
+Canonical backend boundary：
+
+- `services/medopl-go-backend` 是未来 canonical backend target；它必须承接 SaaS control-plane API、workflow facade、repository、worker 和 integration interfaces。
+- 当前 `services/portal` 是迁移前 active implementation。它可以继续服务现有本地闭环和用户可见 Portal API，但不得继续扩张长任务编排、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
+- Node Portal 迁移期只能保留 thin route、contract-compatible DTO、read projection 和 command handoff；新长任务状态必须进入 workflow boundary，新云资源变更必须进入 internal worker boundary。
+- Go backend 进入 active service surface 前，必须先补 manifest allowlist、test lane registry、workflow review recommendation 和 package verification；不能只新增目录就宣称 canonical backend 已经上线。
+- 后续如果接 Temporal、LangGraph 或其他 durable engine，只能替换 workflow facade 后面的实现，不得改变 Portal / Runtime Broker / Cloud Worker 合同。
+
+参考 `sub2api` 的范围只限工程形状：Go、Gin、Ent schema、repository/service/handler/server 分层、PostgreSQL 和 Redis 边界。不得吸收 `sub2api` 的订阅聚合、代理转换、套餐语义、用户路径或配置模型。
+
 后端职责边界：
 
 - Portal Control Plane 只处理用户、workspace、套餐、文件列表、run request、账单/审计查询和状态展示。
@@ -1371,6 +1381,7 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post
 
 - program 必须由 `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 验证。
 - branch override 必须只允许本 program 的 docs/tests/fixtures/scripts 和后续显式 Go service surface。
+- Step 2 必须能证明 Go backend 是 future canonical target、Node Portal 是迁移前 active implementation、Portal 不得继续扩张长任务和云 mutation 职责。
 - 每个 step 只能有一个 commit，并在 authoring record 中记录模型、subagent、订阅文件、验收命令、风险和 landing gate recommendation。
 - landed 后只在 `docs/history/README.md` 保留摘要，不新增 agent-run 文件树。
 

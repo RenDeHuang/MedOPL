@@ -330,6 +330,27 @@
     "no_recovery_tree": true,
     "no_scripts_smoke_test_family": true,
     "target_go_service": "services/medopl-go-backend",
+    "canonical_backend_target": {
+      "service": "services/medopl-go-backend",
+      "status": "future_canonical_target",
+      "current_active_implementation": "services/portal",
+      "node_portal_role": "migration_period_active_implementation",
+      "node_portal_must_not_expand": [
+        "long_task_orchestration",
+        "cloud_mutation",
+        "billing_mutation",
+        "audit_reconciliation",
+        "runtime_launch_truth"
+      ],
+      "go_must_enter_active_surface_through": [
+        "manifest_allowlist",
+        "test_lane_registry",
+        "workflow_review_recommendation",
+        "package_verification"
+      ],
+      "sub2api_reference_scope": "engineering_shape_only_not_business_semantics",
+      "durable_engine_replacement_point": "behind_workflow_facade"
+    },
     "target_stack": [
       "Go",
       "Gin",
