@@ -112,6 +112,19 @@ Portal 不回答科研问题，不复制 OPL 的 chatbot。OPL 负责科研执�
 
 Portal 必须把这三层讲成“托管 OPL 科研工作台服务”的能力层级，不得把普通用户路径写成云资源配置、用户自配资源或云控制台。
 
+## 商业化 UI 影响决策
+
+本阶段不修改 Portal UI 代码。现有 Portal UI surface 已经能回答商业化主链路的六个客户问题：买了什么、能不能用、缺什么、下一步点哪里、结果在哪里、费用是否正常。
+
+- overview 展示托管 OPL 科研工作台服务、工作台可用性和下一步动作。
+- resources 展示计算资源、文件空间、套餐规格和释放状态。
+- workspace 展示文件列表、任务入口和输出结果。
+- trace 展示任务运行轨迹、输出回流和费用关联。
+- billing 展示余额、冻结金额、运行费用和账本审计。
+- opl-launch 展示进入 OPL 工作台、启动阶段和 provider 绑定状态。
+
+`api_only` 只要求入口和上下文状态；`full_runtime` 继续使用现有运行环境、资源、文件空间、账单和 trace surface；`customer_dedicated` 对客户可见前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口状态。
+
 ## 核心用户 loop
 
 1. 平台创建 1 名用户。

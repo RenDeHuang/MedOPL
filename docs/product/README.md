@@ -27,6 +27,21 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 - 需要上云计算、托管文件空间、平台计费审计和释放：`full_runtime`。
 - 需要客户级隔离、合规审计、专属资源边界和变更审批：`customer_dedicated`。
 
+## Commercial UI Impact Decision
+
+本阶段不修改 Portal UI 代码。当前 Portal UI 已覆盖商业化主链路的六个客户问题：买了什么、能不能用、缺什么、下一步点哪里、结果在哪里、费用是否正常。
+
+现有 UI 覆盖关系：
+
+- overview：托管 OPL 科研工作台服务、工作台可用性、下一步动作。
+- resources：计算资源、文件空间、套餐规格、释放状态。
+- workspace：文件列表、任务入口、输出结果。
+- trace：任务运行轨迹、输出回流、费用关联。
+- billing：余额、冻结金额、运行费用、账本审计。
+- opl-launch：进入 OPL 工作台、启动阶段、provider 绑定状态。
+
+`api_only` 复用入口和上下文状态；`full_runtime` 复用运行环境、资源、文件空间、账单和 trace surface；`customer_dedicated` 对客户可见前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口状态。
+
 ## Product Contract Groups
 
 | Product question | Spec anchors |
@@ -35,6 +50,7 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 | Portal 是 SaaS 控制面，不是科研 chatbot 或云控制台 | [spec:v22-saas-control-plane-user-experience-boundary](../specs/README.md#spec-v22-saas-control-plane-user-experience-boundary), [spec:v22-saas-portal-opl-ops-surface-boundary](../specs/README.md#spec-v22-saas-portal-opl-ops-surface-boundary) |
 | 套餐、计算资源、文件空间、任务并发和用户可见语言 | [spec:v22-resource-plan-boundary](../specs/README.md#spec-v22-resource-plan-boundary), [spec:v22-managed-environment-open-boundary](../specs/README.md#spec-v22-managed-environment-open-boundary), [spec:v22-tenant-resource-binding-boundary](../specs/README.md#spec-v22-tenant-resource-binding-boundary) |
 | 商业化套餐分层、OPL 入口和 MedOPL 托管算力 gate | [spec:v22-commercial-package-model](../specs/README.md#spec-v22-commercial-package-model), [spec:v22-saas-control-plane-user-experience-boundary](../specs/README.md#spec-v22-saas-control-plane-user-experience-boundary) |
+| 商业化 UI 是否需要立即修改 | [spec:v22-commercial-ui-impact-decision](../specs/README.md#spec-v22-commercial-ui-impact-decision), [spec:v22-portal-ui-design-quality-audit-boundary](../specs/README.md#spec-v22-portal-ui-design-quality-audit-boundary) |
 | 余额、冻结金额、停止计费、`120min` 核对和 `T+1` 审计 | [spec:v22-billing-freeze-boundary](../specs/README.md#spec-v22-billing-freeze-boundary), [spec:v22-release-stop-billing-audit-boundary](../specs/README.md#spec-v22-release-stop-billing-audit-boundary), [spec:v22-pricing-snapshot-boundary](../specs/README.md#spec-v22-pricing-snapshot-boundary) |
 | OPL 入口、用户自带 gflabtoken provider key、providerKeyRef 和 raw key 禁泄露 | [spec:v22-token-provider-boundary](../specs/README.md#spec-v22-token-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](../specs/README.md#spec-v22-opl-entry-preflight-auth-boundary), [spec:v22-portal-opl-connection-boundary](../specs/README.md#spec-v22-portal-opl-connection-boundary) |
 | 文件、账单、session trace metadata、run/artifact 回流 | [spec:v22-portal-files-billing-trace-boundary](../specs/README.md#spec-v22-portal-files-billing-trace-boundary), [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](../specs/README.md#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary), [spec:v22-trace-metadata-boundary](../specs/README.md#spec-v22-trace-metadata-boundary) |

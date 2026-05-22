@@ -41,6 +41,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary) | `v22-billing-freeze-boundary` |
 | [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary) | `v22-cloud-onboarding-workflow-boundary` |
 | [spec:v22-commercial-package-model](#spec-v22-commercial-package-model) | `v22-commercial-package-model` |
+| [spec:v22-commercial-ui-impact-decision](#spec-v22-commercial-ui-impact-decision) | `v22-commercial-ui-impact-decision` |
 | [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary) | `v22-langfuse-observability-metadata-boundary` |
 | [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary) | `v22-managed-environment-open-boundary` |
 | [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop) | `v22-mvp-managed-opl-loop` |
@@ -1474,6 +1475,92 @@ Portal 普通用户必须看到“托管 OPL 科研工作台”的能力层级�
 }
 ```
 <!-- v22-commercial-package-model:end -->
+
+### spec:v22-commercial-ui-impact-decision
+
+Former leaf id: `v22-commercial-ui-impact-decision`
+Former title: v22 Commercial UI Impact Decision
+
+本合同定义商业化套餐模型对当前 Portal UI 的影响决策。它不实现 UI，不修改服务代码，不读取 secret，不调用真实云，不授权 deploy/build/kubectl/live-test。
+
+决策：本阶段不修改 Portal UI 代码。现有 Portal UI surface 已经覆盖商业化主链路必须回答的六个客户问题：买了什么、能不能用、缺什么、下一步点哪里、结果在哪里、费用是否正常。商业化模型在本阶段只改变产品分层 truth，不改变当前普通用户 route、API payload 或 UI 组件合同。
+
+现有 UI 覆盖关系：
+
+- `overview`: 承接“买了什么”“能不能用”“下一步点哪里”，展示托管 OPL 科研工作台服务、工作台可用性和下一步动作。
+- `resources`: 承接“买了什么”“缺什么”，展示计算资源、文件空间、套餐规格和释放状态。
+- `workspace`: 承接“结果在哪里”，展示文件列表、任务入口和输出结果。
+- `trace`: 承接“结果在哪里”“费用是否正常”，展示任务运行轨迹、输出回流和费用关联。
+- `billing`: 承接“费用是否正常”，展示余额、冻结金额、运行费用和账本审计。
+- `opl-launch`: 承接“能不能用”“缺什么”“下一步点哪里”，展示进入 OPL 工作台、启动阶段和 provider 绑定状态。
+
+商业化分层对 UI 的后续影响：
+
+- `api_only` 只需要入口、账号、工作空间、provider 绑定状态和文件/任务/结果索引；当前 UI 已覆盖为 OPL entry/context 状态。
+- `full_runtime` 使用当前运行环境、资源、文件空间、账单、trace 和释放 surface；当前 MVP 规格 `starter_2c4g_10gb` / `pro_8c16g_100gb` 仍属于该层。
+- `customer_dedicated` 在真正对客户展示前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口的可见状态；不得在本阶段用文案把它伪装成已上线能力。
+
+## Contract Data
+
+<!-- v22-commercial-ui-impact-decision:start -->
+```json
+{
+  "contract": "v22_commercial_ui_impact_decision",
+  "version": 1,
+  "decision": "no_immediate_ui_code_change",
+  "reason": "existing_portal_surface_already_answers_required_customer_questions",
+  "requiredCustomerQuestions": [
+    "买了什么",
+    "能不能用",
+    "缺什么",
+    "下一步点哪里",
+    "结果在哪里",
+    "费用是否正常"
+  ],
+  "existingUiCoverage": {
+    "overview": [
+      "托管 OPL 科研工作台服务",
+      "工作台可用性",
+      "下一步动作"
+    ],
+    "resources": [
+      "计算资源",
+      "文件空间",
+      "套餐规格",
+      "释放状态"
+    ],
+    "workspace": [
+      "文件列表",
+      "任务入口",
+      "输出结果"
+    ],
+    "trace": [
+      "任务运行轨迹",
+      "输出回流",
+      "费用关联"
+    ],
+    "billing": [
+      "余额",
+      "冻结金额",
+      "运行费用",
+      "账本审计"
+    ],
+    "oplLaunch": [
+      "进入 OPL 工作台",
+      "启动阶段",
+      "provider 绑定状态"
+    ]
+  },
+  "commercialModelImpacts": [
+    "api_only_needs_entry_and_context_state_only",
+    "full_runtime_uses_existing_runtime_resource_billing_surfaces",
+    "customer_dedicated_requires_future_ui_leaf_before_customer_visible_launch"
+  ],
+  "modifiesUiNow": false,
+  "requiresFutureUiLeafForCustomerDedicated": true
+}
+```
+<!-- v22-commercial-ui-impact-decision:end -->
 
 ### spec:v22-authorized-tencent-create-release-implementation-boundary
 
