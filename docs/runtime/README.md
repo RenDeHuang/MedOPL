@@ -20,6 +20,28 @@ One Person Lab upstream 必须保持 clean。Portal/Gateway/Runtime Bridge 不�
 
 Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerKeyRef/trace projection，不是 cloud inventory truth，也不是 billing ledger truth。Real OPL canary 是验证链路，不是 production completion claim。OPL workbench entry 与 managed run 是两道 gate；entry 负责账号、工作空间、Gateway/upstream entry 和用户自己的 gflabtoken provider binding，managed run 再检查托管 runtime、文件空间、余额、`providerKeyRef` 和 Runtime Bridge。
 
+## Backend Convergence Target View
+
+后端收敛目标链路是：
+
+```text
+Portal Control Plane
+  -> Workflow Boundary
+  -> Runtime Broker / OPL Bridge
+  -> Agent Runtime
+  -> Cloud / Billing / Audit Workers
+```
+
+这是一条目标结构边界，不是 production completion claim。当前 active implementation 仍是 Node Portal、OPL Web Gateway 和 Runtime Bridge；Go backend 进入 active service surface 前必须先经过 manifest allowlist、registered tests、workflow review recommendation 和 package verification。
+
+分层规则：
+
+- Portal Control Plane 只承接用户、workspace、套餐、文件列表、run request、账单/审计查询和状态展示。
+- Workflow Boundary 承接长任务 command、state transition、idempotency 和后续 durable engine 替换点。
+- Runtime Broker / OPL Bridge 只做 clean upstream OPL、Runtime Bridge / Runtime Agent 和 anti-corruption mapping。
+- Agent Runtime 只执行科研任务，不拥有 SaaS product truth、billing ledger、cloud inventory 或 resource lifecycle。
+- Cloud / Billing / Audit Workers 只作为内部 worker 边界承接资源计划、计费事件、审计事件和 reconciliation，不暴露为普通用户云控制台。
+
 ## Runtime Contract Groups
 
 | Runtime question | Spec anchors |

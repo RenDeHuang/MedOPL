@@ -13,6 +13,18 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 - `services/opl-web-gateway`
 - `services/opl-runtime-bridge`
 
+Backend convergence target surface：
+
+- `services/medopl-go-backend` is the future canonical backend target, not current production backend.
+
+`services/medopl-go-backend` 只能在 backend Go convergence authoring lane 和后续显式 landing gate 中进入 active surface。它进入前必须同时有 source、tests、fixtures、manifest、workflow review 和 package verification；不能只靠目录存在或 prose claim 成为 canonical truth。
+
+迁移期源码边界：
+
+- `services/portal` 是 Node Portal active implementation；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
+- `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
+- `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
+
 Current docs / eval surface during migration：
 
 - `docs/active/README.md`

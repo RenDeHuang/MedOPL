@@ -59,6 +59,10 @@ const [active, specs, delivery, current, manifest, classifierSource] = await Pro
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readRepoFile("scripts/v22-test-classification.mjs"),
 ]);
+const [runtime, source] = await Promise.all([
+  readRepoFile("docs/runtime/README.md"),
+  readRepoFile("docs/source/README.md"),
+]);
 
 const program = current.backend_go_convergence_program;
 assert(program, "backend_go_convergence_program_missing");
@@ -136,6 +140,19 @@ assertIncludes(specs, "只能替换 workflow facade 后面的实现", "specs_mus
 assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_record_program_lane");
 assertIncludes(delivery, branchName, "delivery_must_record_authoring_branch");
 assertIncludes(delivery, "不接管当前 `real-cloud-authorization-boundary` product cursor", "delivery_must_preserve_cursor");
+
+assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
+assertIncludes(runtime, "Portal Control Plane", "runtime_must_name_portal_control_plane");
+assertIncludes(runtime, "Workflow Boundary", "runtime_must_name_workflow_boundary");
+assertIncludes(runtime, "Runtime Broker / OPL Bridge", "runtime_must_name_runtime_broker");
+assertIncludes(runtime, "Cloud / Billing / Audit Workers", "runtime_must_name_workers");
+assertIncludes(runtime, "不是 production completion claim", "runtime_must_not_claim_completion");
+
+assertIncludes(source, "Backend convergence target surface", "source_must_record_backend_target_surface");
+assertIncludes(source, "`services/medopl-go-backend` is the future canonical backend target", "source_must_record_go_future_target");
+assertIncludes(source, "不能只靠目录存在或 prose claim 成为 canonical truth", "source_must_forbid_directory_only_claim");
+assertIncludes(source, "`services/portal` 是 Node Portal active implementation", "source_must_record_node_portal_role");
+assertIncludes(source, "不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth", "source_must_forbid_portal_expansion");
 
 const backendSuite = manifest.suites.find((suite) => suite.id === "backend-go-convergence");
 assert(backendSuite, "manifest_backend_suite_missing");
