@@ -2354,3 +2354,94 @@ Next recommendation:
 Use history to understand how a change was made. Use active/specs/policies/delivery/source and verify fixtures to decide what is currently true.
 
 When judging whether the current loop is closed, do not stop at one run summary. Check `docs/active/README.md`, `docs/delivery/README.md`, `tests/README.md`, `tests/fixtures/v22/goal-current.json`, and `tests/fixtures/v22/agent-verify-manifest.json` together.
+
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-6
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Volta: `gpt-5.4`, read-only Stage 6 Step 13/14 risk review before implementation.
+- subagent Euclid: `gpt-5.4`, read-only Step 13 spec compliance review; returned FAIL on locator-like command fields, then closed after fix.
+- subagent Harvey: `gpt-5.4`, read-only Step 13 code quality review; returned FAIL on idempotency, approval binding and store index invariants, then closed after fix.
+- subagent Mendel: `gpt-5.4`, read-only Step 13 re-review after fixes; returned PASS.
+- subagent Mill: `gpt-5.4`, read-only Step 14 review; returned FAIL because the first cut only added a parallel workflow command endpoint.
+- subagent Galileo: `gpt-5.4`, read-only Step 14 re-review after action routes were added; returned PASS.
+
+Scope:
+
+- Add a Go workflow facade command model with `Command`, `Execution`, `ApprovalTask`, idempotent command creation and explicit pending/running/succeeded/failed/cancelled transitions.
+- Keep workflow facade pure domain/service/repository: no Temporal, LangGraph, Redis client, Postgres client, HTTP client, runtime broker, cloud adapter, secret, token or object locator field.
+- Make command idempotency safe for replay and write-race cases; semantic conflicts fail closed instead of returning an unrelated execution.
+- Require approval tasks to bind the execution that belongs to the command, and keep memory workflow store command/idempotency indexes immutable on update.
+- Route Go backend long-task actions through workflow facade by adding `/workflow/commands`, `/runtime/launch`, `/runs`, `/billing/freeze` and `/resources/release` as thin command handoff endpoints.
+- Keep launch, run, billing freeze and release routes fixed to workflow command types and return `202/pending` only; they do not call `runfileartifact`, `runtimebroker`, cloud, billing or release implementations.
+- Register workflow facade and routed command gates in test lane registry, current/local-contract/review suites and backend convergence package.
+
+Commits:
+
+- `b0d5d0b feat(go): add workflow facade command model`
+- `8d3ba8c refactor: route launch run billing release through workflow facade`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/runtime/README.md`
+- `docs/source/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `services/medopl-go-backend/**`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-go-backend-workflow-facade-command-model.mjs`
+- `node tests/contract/contract-test-v22-go-backend-workflow-routed-command-boundary.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `GOROOT=/tmp/medopl-go-toolchain/root/usr/lib/go-1.22 PATH=/tmp/medopl-go-toolchain/root/usr/lib/go-1.22/bin:$PATH GOMODCACHE=/tmp/medopl-go-modcache GOCACHE=/tmp/medopl-go-buildcache go test ./...` from `services/medopl-go-backend`
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- docs tests scripts package.json services/portal/src services/medopl-go-backend`
+
+B review pack:
+
+- `git diff --stat origin/recovery/platform-v22-trunk...HEAD`: branch currently spans 83 files and 8523 insertions / 52 deletions across Stage 1-6 docs, tests, fixtures, Node facade gates and Go backend target code.
+- `git show --name-only --oneline HEAD`: `8d3ba8c refactor: route launch run billing release through workflow facade`.
+- Contract review: Step 13 and Step 14 both used RED contract tests before implementation and subagent re-review after required fixes.
+- Secret hygiene: review gate reported no secret-like paths and no secret-like added lines.
+- Pollution check: no `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*`, upstream, `.runtime/*`, secret path, real cloud, build/push, kubectl, deploy or live-test operation.
+- Product narrative check: no restored `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary narrative.
+- Fake success check: workflow action routes return only pending workflow executions; they do not call runtime, run, billing, cloud or release execution surfaces.
+- Durable engine check: Temporal/LangGraph remain absent; future durable execution can replace implementation behind `internal/service/workflow` without changing routes or runtime/cloud contracts.
+- Landing recommendation: Stage 6 is ff-only absorbable by B review if the full branch is selected for landing; authoring can continue to Stage 7 before final landing.
+
+Non-goals:
+
+- No Temporal, LangGraph or durable workflow engine.
+- No real Runtime Bridge HTTP client.
+- No real OPL call.
+- No real PostgreSQL or Redis connection.
+- No cloud resource mutation, billing mutation or release execution.
+- No commercial package or UI decision.
+- No production Go backend replacement claim.
+- No secret read, live cloud call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+
+Risk notes:
+
+- Go route wiring currently uses an in-memory workflow store for deterministic local proof; PostgreSQL-backed repository remains a later production implementation behind the same repository interface.
+- The workflow facade is structural convergence, not production durable execution. It creates a clean replacement point for Temporal or another durable engine later.
+- Node Portal remains migration-period active implementation; Stage 6 prevents new Go long-task entrypoints from bypassing workflow but does not claim full Node-to-Go production cutover.
+
+Next recommendation:
+
+- Proceed to Stage 7: define the commercial package model after structural convergence, then decide UI impact based on whether Portal already answers what the customer bought, whether it is usable, what is missing, where to click next, where results are and whether cost state is normal.
