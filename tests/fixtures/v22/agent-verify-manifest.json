@@ -1186,7 +1186,8 @@
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
+        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     },
     {
@@ -1245,14 +1246,16 @@
         "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
+        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     },
     {
       "id": "backend-go-convergence",
       "commands": [
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
+        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     },
     {
@@ -1308,7 +1311,8 @@
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs"
+        "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
+        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     }
   ],
@@ -1384,6 +1388,7 @@
       "commands": [
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
         "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
+        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs",
         "node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts package.json"
@@ -1401,6 +1406,7 @@
       "commands": [
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
         "node tests/contract/contract-test-v22-backend-responsibility-inventory.mjs",
+        "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",

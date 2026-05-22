@@ -1,0 +1,764 @@
+{
+  "program": "backend_go_convergence_program",
+  "version": 1,
+  "inventory": "tests/fixtures/v22/backend-go-convergence/backend-inventory.json",
+  "goLayerCoverage": [
+    "domain",
+    "service",
+    "repository",
+    "handler",
+    "server",
+    "integration",
+    "worker"
+  ],
+  "nodes": [
+    {
+      "id": "portal.opl_launch_service",
+      "sourcePaths": [
+        "services/portal/src/services/opl-launch.service.mjs"
+      ],
+      "responsibilities": [
+        "launch_intent",
+        "workspace_session_prepare",
+        "provider_binding_ref",
+        "runtime_bridge_launch_command"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/opllaunch"
+      },
+      "riskTags": [
+        "portal_long_task",
+        "memory_launch_truth",
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "truthBoundary": [
+        "launch_status_store",
+        "workspace_session_repository",
+        "provider_binding_service"
+      ],
+      "secretBoundary": {
+        "secretSource": "providerKeyRef only",
+        "secretConsumer": "runtimebridge.launch_service",
+        "redactedPublicFields": [
+          "providerBound",
+          "providerKeyRef"
+        ],
+        "nonPublicFields": [
+          "rawApiKey",
+          "launchToken",
+          "runtimeToken"
+        ]
+      }
+    },
+    {
+      "id": "portal.cloud_operation_service",
+      "sourcePaths": [
+        "services/portal/src/domain/portal-cloud-operation-production.mjs",
+        "services/portal/src/domain/portal-cloud-operation-test-bridge.mjs",
+        "services/portal/src/portal-cloud-operation-worker.mjs",
+        "services/portal/src/routes/portal-api-v22-cloud-operations-test.routes.mjs",
+        "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs"
+      ],
+      "responsibilities": [
+        "cloud_operation_command",
+        "resource_binding_intent",
+        "billing_freeze_handoff",
+        "operation_projection"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/cloudoperation"
+      },
+      "riskTags": [
+        "cloud_mutation",
+        "billing_audit_aggregation"
+      ],
+      "asyncBoundary": [
+        "command_handler",
+        "operation_repository",
+        "worker_executor",
+        "projection_reader"
+      ],
+      "ledgerOwner": "internal/repository/billing",
+      "retireChildren": [
+        "portal.cloud_operation_test_residue"
+      ]
+    },
+    {
+      "id": "portal.cloud_operation_worker",
+      "sourcePaths": [
+        "services/portal/src/workers/portal-cloud-operation-worker.mjs"
+      ],
+      "responsibilities": [
+        "cloud_operation_queue_drain",
+        "operation_execution_handoff"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/worker/cloudoperation"
+      },
+      "riskTags": [
+        "cloud_mutation"
+      ],
+      "asyncBoundary": [
+        "command_handler",
+        "operation_repository",
+        "worker_executor",
+        "projection_reader"
+      ]
+    },
+    {
+      "id": "portal.billing_trace_aggregation",
+      "sourcePaths": [
+        "services/portal/src/domain/cost-balance-trace-linkage.mjs",
+        "services/portal/src/routes/portal-billing-export.routes.mjs",
+        "services/portal/src/state/portal-accounting-store.mjs",
+        "services/portal/src/state/portal-lab-billing-store.mjs"
+      ],
+      "responsibilities": [
+        "billing_projection",
+        "audit_projection",
+        "trace_cost_linkage",
+        "ledger_export"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/billingtrace"
+      },
+      "riskTags": [
+        "billing_audit_aggregation"
+      ],
+      "ledgerOwner": "internal/repository/billing"
+    },
+    {
+      "id": "portal.account_provider_binding",
+      "sourcePaths": [
+        "services/portal/src/domain/user-credit-provider-key-flow.mjs",
+        "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
+      ],
+      "responsibilities": [
+        "account_credit_command",
+        "provider_key_ref_binding",
+        "provider_binding_status"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/providerbinding"
+      },
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary",
+        "billing_audit_aggregation"
+      ],
+      "ledgerOwner": "internal/repository/billing",
+      "secretBoundary": {
+        "secretSource": "backend secret boundary",
+        "secretConsumer": "providerbinding service",
+        "redactedPublicFields": [
+          "providerKeyRef",
+          "boundStatus"
+        ],
+        "nonPublicFields": [
+          "rawApiKey",
+          "bearerToken"
+        ]
+      }
+    },
+    {
+      "id": "portal.api_handler_split",
+      "sourcePaths": [
+        "services/portal/src/app/portal-api-runtime-handlers.mjs",
+        "services/portal/src/app/portal-commercial-domain.mjs",
+        "services/portal/src/app/portal-lab-domain.mjs",
+        "services/portal/src/app/portal-presentation-domain.mjs",
+        "services/portal/src/app/portal-runtime-route-wiring.mjs",
+        "services/portal/src/app/portal-storage-domain.mjs",
+        "services/portal/src/app/portal-store-runtime.mjs",
+        "services/portal/src/domain/managed-resource-binding-plan-view.mjs",
+        "services/portal/src/domain/portal-api-payloads.mjs",
+        "services/portal/src/domain/portal-api-workspace-storage.mjs",
+        "services/portal/src/domain/portal-presenters.mjs",
+        "services/portal/src/routes/admin-ops.routes.mjs",
+        "services/portal/src/routes/portal-api-state.routes.mjs",
+        "services/portal/src/routes/workspace-files-internal.routes.mjs",
+        "services/portal/src/routes/workspace.routes.mjs",
+        "services/portal/src/state/portal-store-runtime-connections.mjs"
+      ],
+      "responsibilities": [
+        "http_handler_split",
+        "dto_builder",
+        "command_handoff",
+        "read_projection"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/handler/http"
+      },
+      "riskTags": [
+        "portal_long_task"
+      ]
+    },
+    {
+      "id": "portal.store_facade_split",
+      "sourcePaths": [
+        "services/portal/src/state/portal-store.mjs"
+      ],
+      "responsibilities": [
+        "repository_facade_split",
+        "canonical_store_boundary"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/repository"
+      },
+      "riskTags": [
+        "billing_audit_aggregation"
+      ],
+      "ledgerOwner": "internal/repository/billing"
+    },
+    {
+      "id": "portal.node_entry_retirement",
+      "sourcePaths": [
+        "services/portal/src/app/portal-app.mjs",
+        "services/portal/src/server.mjs"
+      ],
+      "responsibilities": [
+        "retire_thin_node_entry_after_go_cmd_server"
+      ],
+      "retire": true,
+      "replacementNodeId": "portal.go_cmd_server",
+      "reason": "Go cmd/server becomes canonical backend entrypoint",
+      "riskTags": [
+        "portal_long_task"
+      ]
+    },
+    {
+      "id": "portal.bff_viewmodel",
+      "sourcePaths": [
+        "services/portal/src/app/portal-admin-api-payload-helpers.mjs",
+        "services/portal/src/app/portal-admin-api-payloads.mjs",
+        "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs",
+        "services/portal/src/app/portal-admin-portrait-payloads.mjs",
+        "services/portal/src/app/portal-layout.mjs",
+        "services/portal/src/app/portal-module-source-payloads.mjs",
+        "services/portal/src/app/portal-page-billing-payloads.mjs",
+        "services/portal/src/app/portal-page-overview-payloads.mjs",
+        "services/portal/src/app/portal-page-payload-helpers.mjs",
+        "services/portal/src/app/portal-page-payload-primitives.mjs",
+        "services/portal/src/app/portal-page-payloads.mjs",
+        "services/portal/src/app/portal-page-runtime-payloads.mjs",
+        "services/portal/src/app/portal-page-workspace-payloads.mjs",
+        "services/portal/src/app/portal-public-home.mjs",
+        "services/portal/src/app/portal-session-trace-payloads.mjs",
+        "services/portal/src/app/portal-workspace-runtime.mjs"
+      ],
+      "responsibilities": [
+        "portal_page_payload",
+        "admin_payload",
+        "view_model_projection"
+      ],
+      "target": {
+        "service": "portal-node-bff",
+        "module": "keep-node-boundary"
+      },
+      "nodeBoundary": "keep-node-boundary",
+      "riskTags": []
+    },
+    {
+      "id": "gateway.auth_bridge",
+      "sourcePaths": [
+        "services/opl-web-gateway/src/html-injection.mjs",
+        "services/opl-web-gateway/src/launch-client-script.mjs",
+        "services/opl-web-gateway/src/portal-auth-bridge.mjs"
+      ],
+      "responsibilities": [
+        "gateway_auth_bridge",
+        "browser_launch_script",
+        "html_injection"
+      ],
+      "target": {
+        "service": "opl-web-gateway-node",
+        "module": "keep-node-boundary"
+      },
+      "nodeBoundary": "keep-node-boundary",
+      "riskTags": []
+    },
+    {
+      "id": "runtimebridge.launch_service",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs",
+        "services/opl-runtime-bridge/src/state-store.mjs"
+      ],
+      "responsibilities": [
+        "launch_token_issue",
+        "bootstrap_context",
+        "workspace_session_bind",
+        "provider_scope_bind"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/runtimebroker/launch"
+      },
+      "riskTags": [
+        "memory_launch_truth",
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "truthBoundary": [
+        "launch_status_store",
+        "runtime_session_repository",
+        "provider_binding_ref"
+      ],
+      "secretBoundary": {
+        "secretSource": "providerKeyRef from portal provider binding",
+        "secretConsumer": "runtime broker launch materializer",
+        "redactedPublicFields": [
+          "launchStatus",
+          "providerBound",
+          "providerKeyRef"
+        ],
+        "nonPublicFields": [
+          "rawApiKey",
+          "launchToken",
+          "runtimeToken",
+          "codexHomePath"
+        ]
+      }
+    },
+    {
+      "id": "runtimebridge.message_service",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/runtime-bridge-messages.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs"
+      ],
+      "responsibilities": [
+        "message_submit",
+        "reply_projection",
+        "artifact_trace_projection"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/runtimebroker/messages"
+      },
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "secretBoundary": {
+        "secretSource": "runtime scoped credential ref",
+        "secretConsumer": "message bridge adapter",
+        "redactedPublicFields": [
+          "messageId",
+          "replyStatus"
+        ],
+        "nonPublicFields": [
+          "rawApiKey",
+          "runtimeToken",
+          "secretFilePath"
+        ]
+      }
+    },
+    {
+      "id": "runtimebridge.run_service",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-runs.mjs"
+      ],
+      "responsibilities": [
+        "run_submit",
+        "run_status",
+        "artifact_backflow",
+        "runtime_agent_scope_check"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/runtimebroker/runs"
+      },
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "secretBoundary": {
+        "secretSource": "providerKeyRef and runtime session scope",
+        "secretConsumer": "runtime agent relay",
+        "redactedPublicFields": [
+          "runId",
+          "runStatus",
+          "artifactRefs"
+        ],
+        "nonPublicFields": [
+          "rawApiKey",
+          "runtimeToken",
+          "objectKey",
+          "localPath"
+        ]
+      }
+    },
+    {
+      "id": "runtimebridge.secret_store",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/provider-secret-store.mjs"
+      ],
+      "responsibilities": [
+        "secret_ref_resolve",
+        "credential_materialization",
+        "secret_redaction"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/integration/secretstore"
+      },
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "secretBoundary": {
+        "secretSource": "backend secret store only",
+        "secretConsumer": "runtime broker and provider adapter",
+        "redactedPublicFields": [
+          "providerKeyRef",
+          "boundStatus"
+        ],
+        "nonPublicFields": [
+          "rawApiKey",
+          "bearerToken",
+          "secretFilePath",
+          "codexHomePath"
+        ]
+      }
+    },
+    {
+      "id": "runtimebridge.runner_adapter",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/runner-client.mjs"
+      ],
+      "responsibilities": [
+        "legacy_runner_adapter_until_replaced"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/integration/runner"
+      },
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "secretBoundary": {
+        "secretSource": "runtime broker scoped ref",
+        "secretConsumer": "legacy runner adapter",
+        "redactedPublicFields": [
+          "runnerStatus"
+        ],
+        "nonPublicFields": [
+          "runtimeToken",
+          "secretFilePath"
+        ]
+      }
+    },
+    {
+      "id": "runtimebridge.delete_later_residue",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/local-fake-runtime-agent-relay.mjs",
+        "services/opl-runtime-bridge/src/v22-retirement.test.mjs"
+      ],
+      "responsibilities": [
+        "retire_local_fake_runtime_and_source_local_test_residue"
+      ],
+      "retire": true,
+      "replacementNodeId": "runtimebridge.run_service",
+      "reason": "Production runtime broker interface replaces local fake/source-local test residue",
+      "riskTags": [
+        "runtime_bridge_token_secret_boundary"
+      ],
+      "secretBoundary": {
+        "secretSource": "none",
+        "secretConsumer": "none",
+        "redactedPublicFields": [],
+        "nonPublicFields": [
+          "runtimeToken"
+        ]
+      }
+    },
+    {
+      "id": "runtimebridge.integration_adapters",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/langfuse-publisher.mjs",
+        "services/opl-runtime-bridge/src/opl-acp-runtime-client.mjs",
+        "services/opl-runtime-bridge/src/opl-client.mjs",
+        "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
+        "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs"
+      ],
+      "responsibilities": [
+        "opl_client",
+        "runtime_agent_relay",
+        "langfuse_trace_adapter"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/integration"
+      },
+      "riskTags": []
+    },
+    {
+      "id": "portal.go_cmd_server",
+      "sourcePaths": [
+        "services/portal/src/app/portal-auth-runtime-handler.mjs",
+        "services/portal/src/app/portal-feature-runtime-handlers.mjs",
+        "services/portal/src/app/portal-http-dispatcher.mjs",
+        "services/portal/src/app/portal-identity-security-runtime.mjs",
+        "services/portal/src/app/portal-runtime-bootstrap.mjs",
+        "services/portal/src/app/portal-runtime-clients.mjs",
+        "services/portal/src/app/portal-runtime-config.mjs",
+        "services/portal/src/app/portal-runtime-http.mjs",
+        "services/portal/src/app/portal-runtime-observability.mjs",
+        "services/portal/src/app/portal-runtime.mjs",
+        "services/portal/src/app/portal-server-plan-runtime-handler.mjs",
+        "services/portal/src/config/portal-config.mjs",
+        "services/portal/src/migrate-schema.mjs"
+      ],
+      "responsibilities": [
+        "go_cmd_server_entry",
+        "config",
+        "server_bootstrap",
+        "migration_command_boundary"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "cmd/server + internal/server + internal/config"
+      },
+      "riskTags": []
+    },
+    {
+      "id": "portal.domain_repository_baseline",
+      "sourcePaths": [
+        "services/portal/src/domain/commercial-state.mjs",
+        "services/portal/src/domain/lab-billing-policy.mjs",
+        "services/portal/src/domain/lab-entitlements.mjs",
+        "services/portal/src/domain/lab-packages.mjs",
+        "services/portal/src/domain/lab-subscriptions.mjs",
+        "services/portal/src/domain/managed-environment-open-flow.mjs",
+        "services/portal/src/domain/managed-environment-release-flow.mjs",
+        "services/portal/src/domain/opl-work-flow.mjs",
+        "services/portal/src/domain/platform-provisioned-resources.mjs",
+        "services/portal/src/domain/portal-auth.mjs",
+        "services/portal/src/domain/portal-file-space-management.mjs",
+        "services/portal/src/domain/portal-public-settings.mjs",
+        "services/portal/src/domain/provider-config.mjs",
+        "services/portal/src/domain/provider-secret-store.mjs",
+        "services/portal/src/domain/server-plans.mjs",
+        "services/portal/src/domain/session-traces.mjs",
+        "services/portal/src/domain/support-boundaries.mjs",
+        "services/portal/src/domain/tenant-scope.mjs",
+        "services/portal/src/domain/tencent-dry-run-resource-plan-provider.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-adapter.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-official-sdk-loader.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-official-sdk-modules.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-provider.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-real-sdk-client.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-sdk-client.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-tc3-modules.mjs",
+        "services/portal/src/domain/tencent-readonly-inventory-tencent-sdk-factory.mjs",
+        "services/portal/src/domain/tencent-readonly-quote-provider.mjs",
+        "services/portal/src/domain/user-resource-bindings.mjs",
+        "services/portal/src/domain/wallet-ledger.mjs",
+        "services/portal/src/domain/workspace-storage.mjs",
+        "services/portal/src/integrations/harbor-registry-client.mjs",
+        "services/portal/src/integrations/langfuse-trace-client.mjs",
+        "services/portal/src/integrations/minio-storage-client.mjs",
+        "services/portal/src/integrations/runtime-bridge-client.mjs",
+        "services/portal/src/lib/http-body-errors.mjs",
+        "services/portal/src/lib/http.mjs",
+        "services/portal/src/lib/zip-archive.mjs",
+        "services/portal/src/routes/admin-api.routes.mjs",
+        "services/portal/src/routes/admin-audit-helper.mjs",
+        "services/portal/src/routes/admin-user.routes.mjs",
+        "services/portal/src/routes/lab-package.routes.mjs",
+        "services/portal/src/routes/opl.routes.mjs",
+        "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
+        "services/portal/src/routes/portal-api-costs.routes.mjs",
+        "services/portal/src/routes/portal-api-runs.routes.mjs",
+        "services/portal/src/routes/portal-api-sessions.routes.mjs",
+        "services/portal/src/routes/portal-api-traces.routes.mjs",
+        "services/portal/src/routes/portal-api-v22-managed-environment-release.routes.mjs",
+        "services/portal/src/routes/portal-api-v22-opl-work.routes.mjs",
+        "services/portal/src/routes/portal-api.routes.mjs",
+        "services/portal/src/routes/workspace-storage-route-handlers.mjs",
+        "services/portal/src/routes/workspace-storage-upload-support.mjs",
+        "services/portal/src/routes/workspace-storage.routes.mjs",
+        "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
+        "services/portal/src/state/portal-schema-health.mjs",
+        "services/portal/src/state/portal-schema-migrator.mjs",
+        "services/portal/src/state/portal-store-db-auth.mjs",
+        "services/portal/src/state/portal-store-db-core.mjs",
+        "services/portal/src/state/portal-store-db-delegates.mjs",
+        "services/portal/src/state/portal-store-db-events.mjs",
+        "services/portal/src/state/portal-store-db-facade.mjs",
+        "services/portal/src/state/portal-store-health.mjs",
+        "services/portal/src/state/portal-store-migration-admin-seed.mjs",
+        "services/portal/src/state/portal-store-migration-collections.mjs",
+        "services/portal/src/state/portal-store-migration-taskspaces.mjs",
+        "services/portal/src/state/portal-store-migration-users-groups.mjs",
+        "services/portal/src/state/portal-store-migrations.mjs",
+        "services/portal/src/state/portal-store-postgres-lab-persistence.mjs",
+        "services/portal/src/state/portal-store-postgres-persistence.mjs",
+        "services/portal/src/state/portal-store-postgres-write-snapshot-helpers.mjs",
+        "services/portal/src/state/portal-store-redis-sessions.mjs",
+        "services/portal/src/state/portal-store-schema.mjs",
+        "services/portal/src/state/portal-store-storage-bootstrap.mjs",
+        "services/portal/src/state/portal-workspace-store.mjs"
+      ],
+      "responsibilities": [
+        "domain_model",
+        "repository_split",
+        "integration_adapter",
+        "handler_baseline"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/domain + internal/repository + internal/integration + internal/handler"
+      },
+      "riskTags": []
+    },
+    {
+      "id": "runtimebridge.domain_repository_baseline",
+      "sourcePaths": [
+        "services/opl-runtime-bridge/src/run-contract.mjs",
+        "services/opl-runtime-bridge/src/run-error-mapper.mjs",
+        "services/opl-runtime-bridge/src/run-observability.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-bootstrap.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-launch-issue-fields.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-launch-issue.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-launch-scope.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-managed-run-context.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-routes-http.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-scope-identity.mjs",
+        "services/opl-runtime-bridge/src/runtime-bridge-scope-primitives.mjs",
+        "services/opl-runtime-bridge/src/server-plan-ids.mjs",
+        "services/opl-runtime-bridge/src/server.mjs",
+        "services/opl-runtime-bridge/src/state-store-artifact-trace-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-cost-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-identity.mjs",
+        "services/opl-runtime-bridge/src/state-store-message-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-record-field-groups.mjs",
+        "services/opl-runtime-bridge/src/state-store-record-time.mjs",
+        "services/opl-runtime-bridge/src/state-store-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-run-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-runtime-records.mjs",
+        "services/opl-runtime-bridge/src/state-store-workspace-records.mjs"
+      ],
+      "responsibilities": [
+        "runtimebridge_domain",
+        "runtimebridge_repository_helpers"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/domain/runtimebroker + internal/repository/runtimebroker"
+      },
+      "riskTags": []
+    },
+    {
+      "id": "gateway.proxy_boundary",
+      "sourcePaths": [
+        "services/opl-web-gateway/src/config.mjs",
+        "services/opl-web-gateway/src/http-utils.mjs",
+        "services/opl-web-gateway/src/proxy.mjs",
+        "services/opl-web-gateway/src/server.mjs"
+      ],
+      "responsibilities": [
+        "gateway_proxy",
+        "gateway_config",
+        "gateway_server_boundary"
+      ],
+      "target": {
+        "service": "opl-web-gateway-node",
+        "module": "keep-node-boundary"
+      },
+      "riskTags": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "portal.opl_launch_service",
+      "to": "runtimebridge.launch_service",
+      "contract": "portal_to_runtimebridge_launch_bootstrap",
+      "payloadFields": [
+        "portalUserId",
+        "workspaceId",
+        "workspaceSessionId",
+        "providerKeyRef",
+        "serverPlanId"
+      ],
+      "forbiddenFields": [
+        "rawApiKey",
+        "launchTokenInBrowserStorage",
+        "runtimeTokenInBrowserStorage",
+        "secretFilePathExposed",
+        "codexHomePathExposed"
+      ]
+    },
+    {
+      "from": "portal.api_handler_split",
+      "to": "runtimebridge.run_service",
+      "contract": "portal_to_runtimebridge_runs_query",
+      "payloadFields": [
+        "workspaceId",
+        "runId",
+        "providerKeyRef"
+      ],
+      "forbiddenFields": [
+        "rawApiKey",
+        "launchTokenInBrowserStorage",
+        "runtimeTokenInBrowserStorage",
+        "secretFilePathExposed",
+        "codexHomePathExposed"
+      ]
+    },
+    {
+      "from": "runtimebridge.message_service",
+      "to": "runtimebridge.integration_adapters",
+      "contract": "runtimebridge_to_opl_session_message",
+      "payloadFields": [
+        "workspaceSessionId",
+        "messageId",
+        "providerKeyRef"
+      ],
+      "forbiddenFields": [
+        "rawApiKey",
+        "launchTokenInBrowserStorage",
+        "runtimeTokenInBrowserStorage",
+        "secretFilePathExposed",
+        "codexHomePathExposed"
+      ]
+    },
+    {
+      "from": "runtimebridge.run_service",
+      "to": "runtimebridge.integration_adapters",
+      "contract": "runtimebridge_to_runtime_agent_full_runtime_run",
+      "payloadFields": [
+        "runId",
+        "runtimeSessionId",
+        "artifactRef"
+      ],
+      "forbiddenFields": [
+        "rawApiKey",
+        "launchTokenInBrowserStorage",
+        "runtimeTokenInBrowserStorage",
+        "secretFilePathExposed",
+        "codexHomePathExposed"
+      ]
+    },
+    {
+      "from": "portal.cloud_operation_service",
+      "to": "portal.billing_trace_aggregation",
+      "contract": "portal_to_billing_audit_repositories_cloud_operation",
+      "payloadFields": [
+        "operationId",
+        "resourceBindingId",
+        "billingEventRef",
+        "auditTag"
+      ],
+      "forbiddenFields": [
+        "rawApiKey",
+        "launchTokenInBrowserStorage",
+        "runtimeTokenInBrowserStorage",
+        "secretFilePathExposed",
+        "codexHomePathExposed"
+      ]
+    }
+  ]
+}

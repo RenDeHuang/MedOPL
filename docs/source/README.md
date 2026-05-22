@@ -31,6 +31,12 @@ Backend responsibility inventory：
 - `tests/contract/contract-test-v22-backend-responsibility-inventory.mjs` 验证该盘点覆盖 `services/portal/src`、`services/opl-web-gateway/src` 和 `services/opl-runtime-bridge/src` 的全部 `.mjs` active backend 文件。
 - 盘点分类只允许 `correct-place`、`misplaced`、`migrate-later` 和 `delete-later`；高风险标签必须显式覆盖 Portal 长任务、cloud mutation、内存 launch truth、billing/audit 聚合和 runtime bridge token/secret 边界。
 
+Node-to-Go migration map：
+
+- `tests/fixtures/v22/backend-go-convergence/migration-map.json` 是 Step 5 机器迁移映射入口。
+- `tests/contract/contract-test-v22-node-to-go-migration-map.mjs` 验证每个 `misplaced` / `delete-later` 文件至少有一个 migration node，关键 Portal -> Runtime Bridge、Runtime Bridge -> OPL / Runtime Agent、Portal -> Billing/Audit edge 都有 forbidden secret/token field。
+- migration map 只能映射到 Go canonical backend 分层或保留明确 Node boundary；不得把 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost 或 Langfuse 主叙事恢复为目标节点。
+
 Current docs / eval surface during migration：
 
 - `docs/active/README.md`
