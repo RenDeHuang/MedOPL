@@ -61,6 +61,79 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-1
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Sartre: `gpt-5.4`, read-only docs taxonomy and backend convergence program placement review.
+- subagent Poincare: `gpt-5.4`, read-only current backend responsibility drift review.
+- subagent Lagrange: `gpt-5.4`, read-only Go backend active-surface and gate design review.
+- subagent Kuhn: `gpt-5.4`, read-only Step 4/5 responsibility inventory and migration-map design.
+- subagent McClintock: `gpt-5.4`, read-only Step 8-10 Go scaffold, Ent/Postgres and Redis boundary design.
+
+Scope:
+
+- Register the backend Go convergence authoring lane without replacing the current `real-cloud-authorization-boundary` product cursor.
+- Define `services/medopl-go-backend` as the future canonical backend target while keeping `services/portal` as the migration-period active implementation.
+- Align runtime and source views on the target structure: Portal Control Plane -> Workflow Boundary -> Runtime Broker / OPL Bridge -> Agent Runtime -> Cloud / Billing / Audit Workers.
+- Keep the 7 phases as compact machine truth, spec anchor, registered tests and history summary; do not restore old contracts, recovery docs or smoke script families.
+
+Commits:
+
+- `6b0f6fc docs(v22): register backend go convergence program`
+- `6c384b6 docs(v22): define go backend convergence boundary`
+- `79fe703 docs(v22): align backend convergence runtime and source views`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-backend-go-convergence-program.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json`
+- `git diff --check -- docs tests scripts package.json`
+
+Non-goals:
+
+- No business service migration in stage 1.
+- No production Go backend claim.
+- No secret read, live cloud call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+- No restored `docs/contracts/**`, `docs/recovery/**`, old stage board or `scripts/smoke-test-*`.
+
+Risk notes:
+
+- Current Node Portal remains heavier than the target structure; stage 2 must make that drift machine-readable before implementation.
+- `services/medopl-go-backend` is still a future target and must enter active surface only through manifest, registered tests, workflow review and package verification.
+
+Landing gate recommendation:
+
+- Continue authoring branch to stage 2 before asking for final branch landing. If landing gate reviews stage 1 in isolation, the diff is local docs/tests/fixtures only and does not advance the product cursor.
+
+Next recommendation:
+
+- Proceed to stage 2: classify current Portal, Gateway and Runtime Bridge responsibilities, then map Node files to Go target modules before touching service behavior.
+
 ### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
 
 Status: `landed / pushed / post-push verified`
