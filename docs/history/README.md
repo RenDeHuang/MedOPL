@@ -149,9 +149,77 @@ Next recommendation:
 
 - Add the framework and evidence lifecycle views, update docs taxonomy pointers, then register a local framework truth-layering gate that verifies the adjusted entrypoint model.
 
+### 2026-05-22 cleanup/v22-backend-convergence-trunk-closeout
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `cleanup/v22-backend-convergence-trunk-closeout`
+
+Base trunk HEAD: `83dc7f669de0b109c4cc5b8f437d06d659aa5802`
+
+handoff_commit: `d12ebb6c886c4a1717abe8f9b3308ab74842ed57`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagents: none
+
+Scope:
+
+- Close the post-merge governance drift after `feat/v22-backend-go-convergence-program` became reachable from trunk.
+- Keep the backend convergence program as historical structural convergence evidence, not the current product cursor.
+- Record the two trunk follow-up commits after the backend program head: compact backend convergence gates and allow backend convergence fixtures in the taxonomy gate.
+- Preserve `real-cloud-authorization-boundary` as the current product cursor; this closeout does not authorize secret read, true cloud execution, deploy, kubectl, build/push or live-test.
+
+Contract subscription:
+
+- `docs/active/README.md`
+- `docs/history/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `scripts/v22-landing-closeout.mjs`
+- `tests/contract/contract-test-v22-current-state-index-loop.mjs`
+- `tests/contract/contract-test-v22-mvp-contract-suite.mjs`
+
+Verification before closeout:
+
+- `node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json` failed with stale reachable `ready_for_landing_review` backend convergence history sections and non-closeout commits after `83dc7f669de0b109c4cc5b8f437d06d659aa5802`.
+- `git merge-base --is-ancestor 8e2c9a0dfd006c8f9dc03c0265d2d064ab4ea342 origin/recovery/platform-v22-trunk` returned success.
+- `git rev-parse origin/recovery/platform-v22-trunk` returned `d12ebb6c886c4a1717abe8f9b3308ab74842ed57`.
+
+Non-goals:
+
+- No product cursor advancement beyond `real-cloud-authorization-boundary`.
+- No production Go backend replacement claim.
+- No service, Portal UI, Gateway, Runtime Bridge or upstream code change.
+- No secret read, live cloud call, true provider call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+
+Risk notes:
+
+- `feat/v22-backend-go-convergence-program` remains structural convergence history and local contract evidence only.
+- The latest trunk closeout commit is a governance closeout, not production evidence for PostgreSQL, Redis, Go backend replacement, real cloud execution or customer-visible dedicated runtime.
+- Backend convergence stage summaries below are retained as historical evidence and marked absorbed; they are not current entrypoints and not open landing requests.
+
+landed_commit: `d12ebb6c886c4a1717abe8f9b3308ab74842ed57`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- Backend convergence program head `8e2c9a0dfd006c8f9dc03c0265d2d064ab4ea342` is reachable from `origin/recovery/platform-v22-trunk`.
+- `262388cc8c6538bd253f70eb1992365af281f03b` compacted backend convergence gates after the program head.
+- `d12ebb6c886c4a1717abe8f9b3308ab74842ed57` allowed backend convergence fixtures in the taxonomy gate and is the current trunk head for this closeout.
+- This closeout reconciles history and machine cursor only; it performs no external operation.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-1
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 
@@ -224,7 +292,9 @@ Next recommendation:
 
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-2
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 
@@ -292,7 +362,9 @@ Next recommendation:
 
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-3
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 
@@ -375,7 +447,9 @@ Next recommendation:
 
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-4
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 
@@ -467,7 +541,9 @@ Next recommendation:
 
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-5
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 
@@ -2445,7 +2521,9 @@ When judging whether the current loop is closed, do not stop at one run summary.
 
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-6
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 
@@ -2536,7 +2614,9 @@ Next recommendation:
 
 ### 2026-05-22 feat/v22-backend-go-convergence-program stage-7
 
-Status: `ready_for_landing_review`
+Status: `absorbed_into_trunk_closeout`
+
+Absorbed by: `cleanup/v22-backend-convergence-trunk-closeout`
 
 Branch: `feat/v22-backend-go-convergence-program`
 

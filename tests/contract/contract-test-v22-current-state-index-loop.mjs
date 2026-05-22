@@ -111,7 +111,7 @@ assert.equal(current.next_leaf, currentCursor, "next_leaf_mismatch");
 
 assertIncludes(docsIndex, "../tests/README.md", "docs_index_must_link_tests_taxonomy");
 assertIncludes(docsIndex, "Truth Lookup", "docs_index_must_have_truth_lookup");
-assertIncludes(docsIndex, "docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor", "docs_index_must_define_loop");
+assertIncludes(docsIndex, "docs/README -> active truth -> product/runtime/framework -> specs/evidence/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor", "docs_index_must_define_loop");
 for (const retired of [
   "docs/contracts/**",
   "docs/recovery/**",
