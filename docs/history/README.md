@@ -2445,3 +2445,92 @@ Risk notes:
 Next recommendation:
 
 - Proceed to Stage 7: define the commercial package model after structural convergence, then decide UI impact based on whether Portal already answers what the customer bought, whether it is usable, what is missing, where to click next, where results are and whether cost state is normal.
+
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-7
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Nietzsche: `gpt-5.4-mini`, read-only Stage 7 commercial package and UI impact audit.
+
+Scope:
+
+- Define the commercial package model after structural convergence: `api_only`, `full_runtime` and `customer_dedicated`.
+- Preserve the customer-facing rule: anyone can enter OPL; MedOPL is required for platform-managed compute, file space, isolation, billing and audit.
+- Make `starter_2c4g_10gb` and `pro_8c16g_100gb` current MVP specs inside `full_runtime`, not a second commercial model.
+- Decide UI impact from the commercial model without changing Portal UI code in this stage.
+- Record that current Portal UI surfaces already answer: 买了什么, 能不能用, 缺什么, 下一步点哪里, 结果在哪里, 费用是否正常.
+- Require a future UI implementation leaf before `customer_dedicated` becomes customer-visible.
+- Register both Stage 7 contract tests in the test lane registry, manifest control-plane files, current/local-contract/review suites, backend convergence package and branch override.
+
+Commits:
+
+- `1da6c78 docs: define commercial package model after structural convergence`
+- `2502443 docs: decide ui impact from commercial model`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/specs/README.md`
+- `docs/runtime/README.md`
+- `docs/source/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `tests/contract/contract-test-v22-commercial-package-model.mjs`
+- `tests/contract/contract-test-v22-commercial-ui-impact-decision.mjs`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-commercial-package-model.mjs`: pass.
+- `node tests/contract/contract-test-v22-commercial-ui-impact-decision.mjs`: pass, after RED failure on missing `v22-commercial-ui-impact-decision` marker.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs`: pass.
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json`: pass.
+- `git diff --check -- docs tests scripts package.json services/portal/src services/medopl-go-backend`: pass.
+
+B review pack:
+
+- `git diff --stat origin/recovery/platform-v22-trunk...HEAD`: branch now includes Stage 1-7 backend convergence docs, tests, fixtures, Node facade gates and Go backend target code.
+- `git show --name-only --oneline 1da6c78`: commercial package truth and `contract-test-v22-commercial-package-model.mjs`.
+- `git show --name-only --oneline 2502443`: UI impact decision truth and `contract-test-v22-commercial-ui-impact-decision.mjs`.
+- Contract review: Stage 7 stayed in docs/tests/manifest/classifier only; no service code, UI code, runtime code or Go code changed in this stage.
+- Secret hygiene: no secret read; no raw provider key, bearer token, launchToken, runtimeToken, objectKey, localPath or signedUrl added.
+- Pollution check: no `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*`, upstream, `.runtime/*`, secret path, real cloud, build/push, kubectl, deploy or live-test operation.
+- Product narrative check: MedOPL remains a托管 OPL 科研工作台; ordinary users do not see cloud resource console, user self-managed cloud, `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary narrative.
+- Fake success check: `customer_dedicated` is only a commercial model and future UI handoff requirement, not a current customer-visible launched capability.
+- Landing recommendation: Stage 7 is ff-only absorbable by B as part of the backend convergence branch after full-branch review passes.
+
+Non-goals:
+
+- No Portal UI implementation change.
+- No package pricing change.
+- No customer-dedicated UI launch.
+- No Go service code change.
+- No Node route or service change.
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+
+Post-absorb truth recommendation:
+
+- Keep the commercial package model and UI impact decision in `docs/specs/README.md`, `docs/product/README.md` and `docs/active/README.md`.
+- Keep the current product cursor on `real-cloud-authorization-boundary`; Stage 7 does not authorize real cloud, secret, deploy or production release.
+- If product later makes `customer_dedicated` customer-visible, open a separate UI implementation leaf and subscribe to `spec:v22-commercial-ui-impact-decision`, `spec:v22-portal-ui-design-quality-audit-boundary` and role/surface contracts.
+
+Next recommendation:
+
+- Run final backend convergence package verification and B review pack for the full authoring branch.
