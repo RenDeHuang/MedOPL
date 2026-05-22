@@ -41,6 +41,15 @@ README files are human truth, not machine APIs. Tests and workflow gates may ver
 
 History 中的旧路线只能作为 provenance，不得反向恢复 active owner、default verify、compat alias 或 product mainline。
 
+## Framework Truth-Layer Policy
+
+- `docs/framework/README.md` 是 MedOPL Platform Framework 的 owner boundary、surface budget、admission 和 readiness 人读入口。
+- `docs/evidence/README.md` 是 evidence-after-contract、证据等级和 can-claim / cannot-claim 人读入口。
+- `docs/framework/README.md` 和 `docs/evidence/README.md` 都不是第二份 current truth；当前状态仍只归 `docs/active/README.md` 和 `tests/fixtures/v22/goal-current.json`。
+- Framework view 不得照抄 one-person-lab 的 AI runtime、executor、family runtime、MAS/MAG/RCA、App/operator 或专属命令语义。
+- Evidence view 不得保存 secret、raw provider payload、live cloud payload 或可还原敏感内容；真实外部 evidence 默认只进 `.runtime` 或外部授权 evidence store，git 只保脱敏摘要。
+- 新增 framework/evidence gate 必须进入 `tests/**` 和 `scripts/v22-test-classification.mjs`，不得恢复 `scripts/smoke-test-*`。
+
 ## Cleanup Lifecycle Policy
 
 每个 v22 leaf 必须按同一个生命周期运行：

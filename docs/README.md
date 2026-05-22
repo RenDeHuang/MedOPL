@@ -12,14 +12,16 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 1. [active](./active/README.md): 当前状态、理想目标差距、业务 cursor 和不可宣称事项。
 2. [product](./product/README.md): 用户购买什么、Portal/OPL 怎么解释服务、普通用户与管理员边界。
 3. [runtime](./runtime/README.md): Portal -> Gateway -> clean OPL upstream -> Runtime Bridge / Runtime Agent 的运行边界。
-4. [specs](./specs/README.md): v22 contract/spec 单一真相。
-5. [policies](./policies/README.md): 授权红线、secret hygiene、agent 证据、smoke/eval 和清退纪律。
-6. [delivery](./delivery/README.md): 当前 cursor、验证入口、cloud / deploy / release 授权顺序。
-7. [source](./source/README.md): active source surface、服务边界、禁止恢复的旧入口。
-8. [public](./public/README.md): 对外产品叙事。
-9. [references](./references/README.md): 外部参考、upstream 参考和迁移摘要。
-10. [history](./history/README.md): agent-run、landing gate、landed 记录、cleanup 记录和 provenance 摘要。
-11. [tests](../tests/README.md): repo-local eval taxonomy、fixtures、manifest 和 lifecycle gate。
+4. [framework](./framework/README.md): MedOPL Platform Framework 的 owner boundary、surface budget、admission、readiness 和四个 plane。
+5. [specs](./specs/README.md): v22 contract/spec 单一真相。
+6. [evidence](./evidence/README.md): evidence-after-contract、证据等级、can-claim / cannot-claim 和证据落点。
+7. [policies](./policies/README.md): 授权红线、secret hygiene、agent 证据、smoke/eval 和清退纪律。
+8. [delivery](./delivery/README.md): 当前 cursor、验证入口、cloud / deploy / release 授权顺序。
+9. [source](./source/README.md): active source surface、服务边界、禁止恢复的旧入口。
+10. [public](./public/README.md): 对外产品叙事。
+11. [references](./references/README.md): 外部参考、upstream 参考和迁移摘要。
+12. [history](./history/README.md): agent-run、landing gate、landed 记录、cleanup 记录和 provenance 摘要。
+13. [tests](../tests/README.md): repo-local eval taxonomy、fixtures、manifest 和 lifecycle gate。
 
 ## Truth Lookup
 
@@ -28,7 +30,9 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 | 当前真实状态、gap、cursor、不可宣称事项 | [active](./active/README.md) |
 | 用户到底购买什么、Portal/OPL 分工是什么 | [product](./product/README.md) |
 | Gateway、clean upstream、Runtime Bridge 和数据回流边界 | [runtime](./runtime/README.md) |
+| Platform Framework 的 owner、surface、admission、readiness 和 plane 模型 | [framework](./framework/README.md) |
 | 长期合同/spec anchor 和分支订阅包 | [specs](./specs/README.md) |
+| smoke/proof/canary/live/production evidence 各自能证明什么 | [evidence](./evidence/README.md) |
 | agent 怎么跑、authoring branch / landing gate / parallel lane、secret/cloud/deploy 红线 | [policies](./policies/README.md) |
 | 本地怎么验收、怎么交 landing gate、真实云顺序是什么 | [delivery](./delivery/README.md) |
 | 哪些源码目录是 active surface、哪些旧语义不得恢复 | [source](./source/README.md) |
@@ -38,7 +42,7 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 自治闭环按这个顺序运行：
 
 ```text
-docs/README -> active truth -> specs/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor
+docs/README -> active truth -> product/runtime/framework -> specs/evidence/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor
 ```
 
 如果任一环节漂移，以 `docs/active/README.md`、`docs/specs/README.md`、`tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json` 和 `docs/history/README.md` 的一致性为裁定对象；不能用聊天记录或旧路径补事实。
@@ -47,7 +51,7 @@ Active 文档只保当前 owner、当前状态、下一步 gate 和完成口径�
 
 ## Directory Rule
 
-`docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/` 只允许一个 `README.md`。新增第二个 Markdown 文件必须先改本入口和 full-taxonomy cleanup gate，并说明为什么不能吸收到该目录 README。
+`docs/{active,product,runtime,framework,specs,evidence,policies,delivery,source,public,references,history}/` 只允许一个 `README.md`。新增第二个 Markdown 文件必须先改本入口和 full-taxonomy cleanup gate，并说明为什么不能吸收到该目录 README。
 
 ## Document Portfolio Ledger
 
@@ -58,7 +62,9 @@ Active 文档只保当前 owner、当前状态、下一步 gate 和完成口径�
 | `docs/active/README.md` | current truth / gap / cursor | active current truth | current facts, gap, current development lines, cannot-claim, next action | run evidence, landing gate detail, second specs, long provenance | landed run details move to `docs/history/README.md` |
 | `docs/product/README.md` | product view | hard compacted view | product language, user experience framing, product spec anchor index | current status, implementation proof, cloud execution claims | product line changes summarize in history only after landing gate and post-merge closeout |
 | `docs/runtime/README.md` | runtime view | hard compacted view | Gateway / Runtime Bridge / clean upstream boundary and spec anchors | upstream implementation details, canary evidence, deploy proof | runtime discovery evidence stays in `.runtime` or history summary |
+| `docs/framework/README.md` | platform framework model | active framework view | owner boundary, surface budget, evidence/admission/readiness model, four-plane map | second current truth, production evidence claims, OPL AI runtime business semantics | framework model changes summarize in history after landing |
 | `docs/specs/README.md` | contract/spec truth | active spec truth | durable contracts, stable boundaries, spec anchors | agent-run logs, temporary plans, current cursor status | superseded spec rationale summarizes in history |
+| `docs/evidence/README.md` | evidence model | active evidence view | evidence levels, can-claim/cannot-claim, evidence storage and review routing | current truth, product truth, secret material, production claims without production evidence | evidence closeout summarizes in history |
 | `docs/policies/README.md` | policy truth | active policy truth | stable workflow, authorization, docs lifecycle, smoke/eval, secret and cleanup policy | current product truth, run proof, implementation detail | policy changes record the landed branch in history |
 | `docs/delivery/README.md` | delivery truth | active delivery view | current execution entrypoints, delivery order, cloud/deploy authorization sequence | release claims without authorization, B evidence detail | delivery closeout summarizes in history |
 | `docs/source/README.md` | source surface view | hard compacted view | active source surfaces, forbidden surfaces, cleanup source semantics | implementation details better owned by source code or tests | source cleanup record summarizes in history |

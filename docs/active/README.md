@@ -22,6 +22,8 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 当前已收敛的事实：
 
 - Portal、OPL Web Gateway、Runtime Bridge / Runtime Agent 是 v22 active product chain。
+- MedOPL Platform Framework 的 owner boundary、surface budget、admission、readiness 和 four-plane model 归 `docs/framework/README.md`，不再从 recovery/status matrix 推断。
+- Evidence-after-contract 的证据等级、can-claim / cannot-claim 和证据落点归 `docs/evidence/README.md`，history 只保摘要。
 - `scripts/v22-verify.mjs current/suite ...` 是默认 agent-facing verification 入口。
 - `tests/**/*.mjs` 当前是 repo-local eval 文件族，不全是 smoke。
 - `docs/history/README.md` 是 evidence 摘要入口，不是 product truth。
@@ -57,6 +59,8 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post
 `docs/active/README.md` 只承载 current facts, gap, cursor, cannot-claim, and next action。专题合同写入 `docs/specs/README.md`，稳定纪律写入 `docs/policies/README.md`，runtime 视角写入 `docs/runtime/README.md`，delivery 命令和授权顺序写入 `docs/delivery/README.md`，run evidence 和 landing gate 摘要写入 `docs/history/README.md`。
 
 本文件不得吸收长篇 provenance、逐步 closeout 过程、landing gate 细节、agent-run 证据、第二份合同真相或第二份 delivery manifest。新增事实必须能回答“当前是什么、差距是什么、下一步是什么、不能宣称什么”；否则必须写入对应 view 或 history。
+
+Framework 模型、surface budget、admission 和 readiness 归 `docs/framework/README.md`；evidence 等级和 can-claim / cannot-claim 归 `docs/evidence/README.md`。本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## 产品真相
 

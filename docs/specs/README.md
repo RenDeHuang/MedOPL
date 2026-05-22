@@ -15,6 +15,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 - 新增合同、修改合同、合同冲突、主叙事变化、授权边界变化，必须先让用户审阅确认，再写 eval 或实现。
 - 合同审阅必须确认范围、边界、非目标、验收条件和污染风险。
 - `future-authorized` 只能表示未来授权边界可见，不授权真实云、secret、deploy、kubectl、live-test 或外部 mutation。
+- Framework owner/readiness/surface impact 先读 `docs/framework/README.md`；evidence level 和 can-claim / cannot-claim 先读 `docs/evidence/README.md`。Specs 只保合同下限，不承载 evidence log、current cursor 或 production completion claim。
 
 ## Non-Negotiable Specs
 
