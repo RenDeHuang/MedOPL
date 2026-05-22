@@ -297,6 +297,7 @@ function readyContext(input = {}, state = {}) {
     workspaceId: workspace.workspaceId,
     resourceBindingId: resourceBindingIdFromState(state),
     providerKeyRef: text(state.providerKeyRef),
+    providerMode: "user_gflabtoken",
   };
 }
 

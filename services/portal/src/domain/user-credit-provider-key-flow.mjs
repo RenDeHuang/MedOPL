@@ -286,6 +286,7 @@ export function managedEnvironmentReadinessFromState(state = {}) {
     ok: true,
     status: 200,
     readyForManagedEnvironment: true,
+    providerMode: "user_gflabtoken",
     providerBound: true,
     providerKeyRef: text(state.providerKeyRef),
   };

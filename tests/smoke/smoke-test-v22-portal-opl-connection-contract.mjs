@@ -112,7 +112,8 @@ assertIncludesAll(contents.connection, [
 ], "connection_secret_boundary");
 
 assertIncludesAll(contents.connection, [
-  "未绑定 gflabtoken provider key 时，run 返回 `provider_key_required`",
+  "每个用户使用自己的 gflabtoken API Key 作为模型调用凭证",
+  "未绑定用户自己的 gflabtoken provider key 时，run 返回 `provider_key_required`",
   "未开通托管运行环境或缺少 active `resourceBindingId` 时，run 返回 `managed_environment_required`",
   "缺少 Runtime Agent identity 或 endpoint 时，run 返回 `platform_isolated_runtime_agent_required`",
   "Runtime Agent 只能接收 `providerKeyRef`，不得接收 raw API key",

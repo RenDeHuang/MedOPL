@@ -162,7 +162,7 @@ function oplEntryPreflightLoginBody({ providerBound = false } = {}) {
   const apiKeyRequired = providerBound ? "" : " required";
   const boundHint = providerBound
     ? "gflabtoken 模型调用密钥已绑定，可留空继续进入 OPL 工作台。"
-    : "gflabtoken API Key 只进入后端密钥边界，不会返回前端；已绑定用户可留空继续进入 OPL 工作台。";
+    : "请输入你自己的 gflabtoken API Key；它只进入后端密钥边界，不会返回前端。已绑定用户可留空继续进入 OPL 工作台。";
   return `<div class="hero"><h1>OPL 工作台登录</h1></div><div class="card"><form method="post" action="${OPL_ENTRY_PREFLIGHT_PATH}"><p><label>账号/邮箱<br /><input name="email" type="email" autocomplete="username" required /></label></p><p><label>密码<br /><input name="password" type="password" autocomplete="current-password" required /></label></p><p><label>gflabtoken API Key<br /><input name="apiKey" type="password" autocomplete="off"${apiKeyRequired} /></label></p><p class="hint">${boundHint}</p><p><button type="submit">进入 OPL 工作台</button></p></form></div>`;
 }
 
@@ -238,6 +238,7 @@ function upsertGflabProviderKeyBinding(db = {}, user = {}, workspaceId = "", pro
 }
 
 function providerKeyPublicPayload(binding = {}) {
+  binding = binding || {};
   const providerKeyRef = String(binding.providerKeyRef || binding.providerConfigSecretRef || "").trim();
   return {
     provider: "gflabtoken",
@@ -433,7 +434,7 @@ export function createPortalAuthRuntimeHandler({
         sendJson(res, {
           ok: false,
           error: "provider_api_key_required",
-          message: "请输入 gflabtoken API Key 后再进入 OPL。",
+          message: "请输入你自己的 gflabtoken API Key 后再进入 OPL。",
         }, 400);
         return true;
       }

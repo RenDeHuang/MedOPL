@@ -283,7 +283,7 @@ assert.equal(contract.portalBeginnerSurface.cloudConsoleShown, false, "portal_mu
 
 assertIncludesAll(contract.oplWebBeginnerSurface.mustDo, [
   "使用统一 MedOPL 账号登录",
-  "进入 OPL 工作台后输入或绑定 gflabtoken 模型调用密钥",
+  "绑定自己的 gflabtoken 模型调用密钥",
   "发消息",
   "上传文件",
   "用文件跑任务",
@@ -362,8 +362,10 @@ assertIncludesAll(contract.cloudResourceBoundary.forbiddenBeginnerConfiguration,
 
 assert.equal(contract.accountAndApiKeyBoundary.medoplAccountUnifiedWithOplWeb, true, "medopl_account_must_be_unified_with_opl_web");
 assert.equal(contract.accountAndApiKeyBoundary.identityPath, "MedOPL Gateway、SSO 和 Auth Bridge", "identity_path_mismatch");
-assert.equal(contract.accountAndApiKeyBoundary.gflabtokenInputLocation, "OPL 登录页密码下面", "gflabtoken_input_location_mismatch");
+assert.equal(contract.accountAndApiKeyBoundary.providerCredentialOwner, "user", "provider_credential_owner_mismatch");
+assert.equal(contract.accountAndApiKeyBoundary.gflabtokenInputLocation, "OPL entry/preflight 或工作台 provider 绑定面", "gflabtoken_input_location_mismatch");
 assert.equal(contract.accountAndApiKeyBoundary.apiKeyIsPortalLoginField, false, "api_key_must_not_be_portal_login_field");
+assert.equal(contract.accountAndApiKeyBoundary.managedRunRequiresApiKey, true, "managed_run_must_require_api_key");
 assert.equal(contract.accountAndApiKeyBoundary.rawApiKeyBackendOnly, true, "raw_api_key_must_be_backend_only");
 assert.deepEqual(contract.accountAndApiKeyBoundary.frontendPublicFields, ["providerKeyRef", "bound status"], "frontend_public_fields_mismatch");
 assert.equal(contract.accountAndApiKeyBoundary.beginnerVisibleName, "gflabtoken 模型调用密钥", "beginner_visible_key_name_mismatch");

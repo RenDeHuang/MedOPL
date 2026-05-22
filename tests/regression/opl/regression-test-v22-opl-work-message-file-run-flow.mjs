@@ -320,6 +320,7 @@ try {
   const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
     "provider_key_required",
+    "每个用户使用自己的 gflabtoken API Key 作为模型调用凭证",
     "managed_environment_required",
     "workspace file reference",
     "artifact reference",

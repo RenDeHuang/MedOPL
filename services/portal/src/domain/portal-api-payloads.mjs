@@ -74,6 +74,7 @@ function managedEnvironmentReadiness(provider = {}) {
   return {
     ready: true,
     reason: "ready",
+    providerMode: "user_gflabtoken",
     providerBound: true,
     providerKeyRef: text(provider.providerKeyRef),
   };

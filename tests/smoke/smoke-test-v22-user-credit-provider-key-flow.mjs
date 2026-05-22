@@ -139,8 +139,8 @@ try {
   assert.equal(missingState.res.statusCode, 200, "canonical_state_before_provider_status_mismatch");
   assert.equal(missingState.res.payload.providerBound, false, "provider_must_not_be_bound_before_binding");
   assert.equal(missingState.res.payload.providerKeyRef, "", "provider_ref_must_be_empty_before_binding");
-  assert.equal(missingState.res.payload.readyForManagedEnvironment, false, "managed_environment_must_not_be_ready_without_provider_key");
-  assert.equal(missingState.res.payload.readiness.reason, "provider_key_required", "readiness_reason_must_require_provider_key");
+  assert.equal(missingState.res.payload.readyForManagedEnvironment, false, "managed_environment_must_not_be_ready_without_user_provider_key");
+  assert.equal(missingState.res.payload.readiness.reason, "provider_key_required", "readiness_reason_must_require_user_provider_key");
   assertNoSecretLeak(missingState.res.payload, "canonical_state_before_provider");
 
   const blocked = await request({
@@ -215,8 +215,8 @@ try {
     "providerKeyRef",
     "bound status",
     "portal.medopl.cn 登录不需要 gflabtoken API Key",
-    "opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key",
-    "API Key 输入框放在 OPL 登录页密码下面",
+    "每个用户使用自己的 gflabtoken API Key 作为模型调用凭证",
+    "OPL preflight 可以绑定用户自己的 gflabtoken API Key；已绑定用户不要求重复输入",
     "API Key 不是 Portal 普通登录字段",
     "raw API Key 只能进入后端密钥边界",
   ]) {

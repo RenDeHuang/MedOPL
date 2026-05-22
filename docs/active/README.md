@@ -64,7 +64,7 @@ MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台。它不重做
 
 用户购买的是托管 OPL 科研工作台服务、计算能力、文件空间、任务并发和运行环境，不是云资源控制台对象。Portal 必须让用户知道自己买的是什么服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里，以及余额、预扣费、冻结金额和停止计费状态是否正常。
 
-用户在 Portal 主动开通托管计算资源和文件空间，平台代管底层云资源，普通用户不直接配置 CVM、COS、K8s。
+用户主路径是：登录 -> 工作空间 -> 上传文件 / 提任务 -> 进入 OPL / 工作台 -> 看结果 -> 看费用。用户在 Portal 可以主动开通托管计算资源和文件空间，平台代管底层云资源，普通用户不直接配置 CVM、COS、K8s。
 
 Portal 不回答科研问题，不复制 OPL 的 chatbot。OPL 负责科研执行：chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验。Portal 负责准备、管理、进入、回流、计费、审计和释放。
 
@@ -76,7 +76,8 @@ Portal 不回答科研问题，不复制 OPL 的 chatbot。OPL 负责科研执�
 
 - 工作空间是业务容器。
 - 用户在 Portal 主动开通托管计算资源和文件空间。
-- 未开通计算资源时，账号可以充值、查看 Portal 状态和 OPL entry/preflight provider key 绑定状态，但不能跑托管计算任务。
+- 未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 工作台或受限工作台，但不能跑平台托管计算任务。
+- 进入 OPL 工作台和运行平台托管任务是两道 gate：workbench entry 要求账号、工作空间、Gateway / upstream entry 可用，并要求用户输入或已有自己的 gflabtoken API Key；managed run 还要求托管计算资源、文件空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge 可用。
 - 账号在工作空间下开通计算资源且文件空间可用后，才能使用平台托管计算资源跑任务。
 - 计算资源可独立开通、扩容、缩容、释放。
 - 存储资源 / 文件空间可独立开通、扩容、删除。
@@ -104,33 +105,28 @@ Portal 不回答科研问题，不复制 OPL 的 chatbot。OPL 负责科研执�
 1. 平台创建 1 名用户。
 2. 给用户充值额度。
 3. 用户登录 `portal.medopl.cn`。
-4. 用户进入 `opl.medopl.cn`；OPL 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
-5. API Key 输入框放在 OPL 登录页密码下面；灰度说明来源于 gflabtoken；已绑定时显示“已绑定”，不要求重复输入。
-6. 用户选择是否开通计算资源和文件空间。
-7. 如开通，用户选择基础套餐、Pro 套餐、叠加资源或自定义规格。
-8. 平台在自己的 TKE/存储资源池里开通可组合资源，计算资源与文件空间可独立保留或释放。
-9. Portal 展示账号的计算资源、文件空间、工作空间和资源绑定状态。
-10. 开通资源后开始预扣费或冻结金额。
-11. 用户通过 clean upstream OPL Web 工作。
-12. 用户可以发送消息、上传文件、跑任务、下载输出文件。
-13. Portal 可以看到 workspace 文件、账单和 session trace metadata。
-14. 如果余额不足，Portal 提示将消耗冻结金额。
-15. 余额或冻结金额不足时，停止新任务和计算资源续用，但不得把释放计算资源自动写成删除文件空间。
-16. 释放计算资源只停止计算计费和任务续用；用户删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。
-17. 文件空间进入保护期或不可用时，新任务不能依赖该文件空间。
-18. 计算停止计费需要在 `120min` 内核对，账单与资源状态进入 `T+1` 审计。
+4. 用户进入工作空间，上传文件或提出任务意图。
+5. 用户在 OPL entry/preflight 或工作台 provider 绑定面输入自己的 gflabtoken API Key；已绑定用户不要求重复输入。
+6. 用户进入 OPL / 工作台，查看上下文、组织文件、准备任务和查看已有结果。
+7. 用户选择是否开通计算资源和文件空间。
+8. 如开通，用户选择基础套餐、Pro 套餐、叠加资源或自定义规格。
+9. 平台在自己的 TKE/存储资源池里开通可组合资源，计算资源与文件空间可独立保留或释放。
+10. Portal 展示账号的计算资源、文件空间、工作空间和资源绑定状态。
+11. 开通资源后开始预扣费或冻结金额。
+12. 用户通过 clean upstream OPL Web 工作。
+13. 用户可以发送消息、上传文件、跑托管任务、下载输出文件。
+14. Portal 可以看到 workspace 文件、账单和 session trace metadata。
+15. 如果余额不足，Portal 提示将消耗冻结金额。
+16. 余额或冻结金额不足时，停止新托管任务和计算资源续用，但不得把释放计算资源自动写成删除文件空间。
+17. 释放计算资源只停止计算计费和托管任务续用；用户删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。
+18. 文件空间进入保护期或不可用时，新托管任务不能依赖该文件空间。
+19. 计算停止计费需要在 `120min` 内核对，账单与资源状态进入 `T+1` 审计。
 
-## Token Provider Boundary
+## Provider Boundary
 
-MedOPL 的 OpenAI-compatible API 中转站 base URL 是：
+MedOPL 默认托管的是运行环境、文件空间、账单、审计和 Gateway / Runtime Bridge，不托管用户的模型 provider 凭证。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；`portal.medopl.cn` 登录不需要 gflabtoken API Key，但 `opl.medopl.cn` entry/preflight 或工作台 provider 绑定面必须能收用户自己的 gflabtoken API Key。已绑定用户可以显示“已绑定”，不要求重复输入。
 
-```text
-https://gflabtoken.cn/v1
-```
-
-portal.medopl.cn 登录不需要 gflabtoken API Key。opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
-
-Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。raw API Key 只能进入后端密钥边界；前端最多保留一次性输入态、`providerKeyRef` 和 bound status。raw API Key、bearer token、launchToken、runtimeToken 不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git，不能返回前端、不能写日志、不能进 git。
+raw API Key 只能进入后端密钥边界；前端最多保留一次性输入态、`providerKeyRef` 和 bound status。raw API Key、bearer token、launchToken、runtimeToken 不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git，不能返回前端、不能写日志、不能进 git。没有 `providerKeyRef` 时，managed run 和托管运行环境 readiness 必须返回 `provider_key_required`。
 
 ## 架构真相
 
@@ -166,7 +162,7 @@ Object/blob plane 当前仍属本地/过渡实现；后续对象存储只承载�
 
 ## OPL Entry / Upstream Boundary
 
-OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 `/opl/entry/preflight`。`/internal/opl/auth/login` 只能作为 internal implementation path。旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口。后续真实 proxy / upstream 运行接入单独 feat；旧入口删除如需要另开 `cleanup/*`。
+OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 `/opl/entry/preflight`。进入 OPL 工作台和运行平台托管任务必须分开判断：entry gate 验证账号、工作空间、Gateway、upstream entry 和用户自己的 gflabtoken provider binding；managed run gate 再验证托管计算资源、文件空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge。`/internal/opl/auth/login` 只能作为 internal implementation path。旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口。后续真实 proxy / upstream 运行接入单独 feat；旧入口删除如需要另开 `cleanup/*`。
 
 one-person-lab 是 clean upstream：
 

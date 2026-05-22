@@ -19,7 +19,8 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 ## Non-Negotiable Specs
 
 - MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。
-- Portal 登录不需要 provider key；OPL entry/preflight 需要 provider key gate。
+- Portal 登录不需要 provider key；每个用户使用自己的 gflabtoken API Key 作为模型调用凭证。
+- 进入 OPL 工作台和运行平台托管任务是两道 gate；OPL entry/preflight 或工作台 provider 绑定面负责收取或复用用户自己的 gflabtoken API Key，managed run 再要求托管计算资源、文件空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge 可用。
 - raw provider key、bearer token、launchToken、runtimeToken 只能进入后端密钥边界。
 - `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost、Langfuse 主叙事不得回流主线。
 - 所有资源必须绑定 tenant/user/workspace/resourceBinding/billingAccount/auditTag。
@@ -103,14 +104,14 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 
 ## v22 主合同
 
-- [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop): MVP 托管 OPL 用户闭环主合同，定义从平台创建用户、充值、登录 Portal、在 OPL entry/preflight 输入或确认 gflabtoken 模型调用密钥、开通托管运行环境、进入 OPL 科研工作台、产出文件到释放环境和审计的 contract-level 主路径。portal.medopl.cn 登录不需要 gflabtoken API Key；opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
+- [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop): MVP 托管 OPL 用户闭环主合同，定义从平台创建用户、充值、登录 Portal、进入工作空间、上传文件 / 提任务、绑定用户自己的 gflabtoken API Key、进入 OPL 工作台、按需开通托管运行环境、产出文件到释放环境和审计的 contract-level 主路径。Portal 登录不要求 gflabtoken API Key；模型调用和 managed run 使用用户自己的 gflabtoken `providerKeyRef`。
 - [spec:v22-saas-control-plane-user-experience-boundary](#spec-v22-saas-control-plane-user-experience-boundary): SaaS 控制面用户体验真相合同，固定 MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台。Portal 帮用户理解自己买的是什么托管 OPL 工作台服务、工作台是否可用、还缺哪一步、下一步点哪里、文件/任务/结果在哪里、费用状态是否正常；OPL 继续负责 chatbot、agent、科研任务执行、文件理解、结果生成和工作台内交互体验。
 - [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary): Portal 工作台、OPL Web 和管理台共享界面合同，固定普通用户中文产品语言、OPL 双入口、管理台可见边界、多租户后台边界和腾讯云分账标签边界。路径 1：从 Portal 工作台进入；路径 2：直接访问 OPL 工作台；两条路径最终进入同一套 Gateway、preflight 和 launch 逻辑。
 
 ## 用户闭环段合同
 
 - pricing snapshot: [spec:v22-pricing-snapshot-boundary](#spec-v22-pricing-snapshot-boundary)
-- user credit provider key: [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary)
+- user credit / user provider key: [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary)
 - managed environment open / managed resource binding plan view: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
 - Portal-OPL connection: [spec:v22-portal-opl-connection-boundary](#spec-v22-portal-opl-connection-boundary)
 - opl work message file run: [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)
@@ -122,7 +123,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 
 - smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - truth freeze: [../history/README.md](../history/README.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
-- token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。API Key 输入框放在 OPL 登录页密码下面；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
+- token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
 - managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider`，真实接入另开 feat/* 并单独授权。
@@ -156,7 +157,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 - 普通用户 Portal 中文产品语言: [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary), [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary)
 - Portal role surface 边界: [spec:v22-portal-user-surface-boundary](#spec-v22-portal-user-surface-boundary), [spec:v22-portal-admin-ops-surface-boundary](#spec-v22-portal-admin-ops-surface-boundary)。MedOPL 是同一个 Portal 应用、同一套登录、同一套 UI shell；普通用户 surface 和管理员 surface 严格分离，管理员页面/API 使用独立分区，普通用户不能看到 admin/ops 入口、全局数据或管理操作。这两份合同是 Portal 角色真相；[spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary) 是更宽的 Portal、OPL 和管理台共享界面总述，不替代 role surface 合同。
 - Portal 结构治理 / failure isolation: [spec:v22-portal-structure-failure-isolation-boundary](#spec-v22-portal-structure-failure-isolation-boundary)。这是 Portal 三级结构治理合同，只定义 Portal 后端 route/dispatcher、payload/DTO builder、frontend view/composable、frontend API module 和 smoke 分层边界；不定义新产品主叙事，不替代 role surface 合同，不调用真实云，不改 OPL Gateway / Runtime Bridge。
-- OPL Web entry/preflight: [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary), [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary), [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight；/internal/opl/auth/login 只能是 internal implementation path，不是用户入口。Gateway local proxy 只注入 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL；raw API Key、launchToken、runtimeToken、bearer token、objectKey、localPath、signedUrl 不进入 upstream、URL query 或浏览器持久化存储。
+- OPL Web entry/preflight: [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary), [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary), [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight；进入 OPL 工作台不等于开始平台托管任务。/internal/opl/auth/login 只能是 internal implementation path，不是用户入口。Gateway local proxy 只注入 `workspaceId`、`sessionId`/`launchStatus`、`providerBound`、`providerKeyRef` 和 Portal return URL；raw API Key、launchToken、runtimeToken、bearer token、objectKey、localPath、signedUrl 不进入 upstream、URL query 或浏览器持久化存储。
 - 管理台可见边界: [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary), [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-release-stop-billing-audit-boundary](#spec-v22-release-stop-billing-audit-boundary)
 - Admin / Ops Console 边界: [spec:v22-admin-ops-console-boundary](#spec-v22-admin-ops-console-boundary)。该合同只定义管理员/运维界面边界，不实现 UI，不调用真实云，不读取 secret；普通用户资源页不得恢复云控制台或运维语义。
 - 腾讯云分账标签后台边界: [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary), [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-pricing-snapshot-boundary](#spec-v22-pricing-snapshot-boundary)
@@ -170,7 +171,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | 服务商品真相 | [../active/README.md](../active/README.md), [spec:v22-saas-control-plane-user-experience-boundary](#spec-v22-saas-control-plane-user-experience-boundary), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | 用户购买的是托管 OPL 科研工作台服务，不是云资源控制台对象。 |
 | 用户体验真相 | [spec:v22-saas-control-plane-user-experience-boundary](#spec-v22-saas-control-plane-user-experience-boundary), [spec:v22-saas-portal-opl-ops-surface-boundary](#spec-v22-saas-portal-opl-ops-surface-boundary) | Portal 必须解释买了什么、能不能用、缺什么、下一步点哪里、结果和费用在哪里。 |
 | 信息架构真相 | [spec:v22-portal-workbench-management-ui-composition-boundary](#spec-v22-portal-workbench-management-ui-composition-boundary), [spec:v22-portal-figma-make-ui-implementation-boundary](#spec-v22-portal-figma-make-ui-implementation-boundary), [../../services/portal/frontend/src/app](../../services/portal/frontend/src/app) | Figma Make ZIP、active route、page composition、layout、API adapter 和旧 UI 物理清退。 |
-| 生命周期真相 | [../history/README.md](../history/README.md), [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | 开户、充值、绑定 key、开通资源、进入 OPL、回流、冻结、释放、审计。 |
+| 生命周期真相 | [../history/README.md](../history/README.md), [spec:v22-mvp-managed-opl-loop](#spec-v22-mvp-managed-opl-loop), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | 开户、充值、进入工作空间、上传文件 / 提任务、进入 OPL、按需开通资源、回流、冻结、释放、审计。 |
 | 权限/角色真相 | [spec:v22-portal-user-surface-boundary](#spec-v22-portal-user-surface-boundary), [spec:v22-portal-admin-ops-surface-boundary](#spec-v22-portal-admin-ops-surface-boundary), [spec:v22-admin-ops-console-boundary](#spec-v22-admin-ops-console-boundary) | 普通用户、管理员和运维的可见、不可见和可操作边界。 |
 | 状态/数据源真相 | [../active/README.md](../active/README.md), [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary), [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary) | workspace、resource binding、billing、run、artifact、trace 的 canonical source 和 projection。 |
 | 操作风险真相 | [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary), [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary) | 真实资源、真实扣费、release、rollback、审计队列和 fail-closed gate。 |
@@ -217,7 +218,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 
 ### OPL Entry / Gateway 合同包
 
-适用于 OPL entry/preflight、Portal 进入 OPL 工作台、直接访问 OPL 工作台和 gflabtoken API Key 输入边界。
+适用于 OPL entry/preflight、Portal 进入 OPL 工作台、直接访问 OPL 工作台和用户自己的 gflabtoken 输入边界。
 
 订阅：
 
@@ -3284,8 +3285,8 @@ Former title: v22 Managed Environment Open Boundary Contract
 
 ## Preconditions
 
-- 开通前必须检查 provider readiness。
-- 未绑定 gflabtoken provider key 时，开通接口必须返回 `provider_key_required`。
+- 开通前必须检查账号、工作空间、套餐、文件空间、余额 / 冻结金额、用户自己的 gflabtoken provider key 和资源授权边界。
+- 开通托管运行环境必须要求用户已绑定自己的 gflabtoken provider key；没有 `providerKeyRef` 时返回 `provider_key_required`。
 - 不读取 `/home/dev/.secrets/medopl/secrets.env.txt`。
 - 不调用真实云 API。
 - 不泄露 raw API key、`launchToken` 或 `runtimeToken`。
@@ -3311,7 +3312,7 @@ MVP 不暴露 `custom` active 套餐。普通用户开通与查询只允许 `sta
 
 1. 用户调用 Portal 后端开通“托管运行环境”。
 2. 请求必须显式包含 `workspaceId`、`planId` 和 `fileSpaceGb`。
-3. Portal 后端先检查 provider readiness；不满足时返回 `provider_key_required`。
+3. Portal 后端先检查账号、工作空间、套餐、文件空间、余额 / 冻结金额、用户自己的 gflabtoken provider key 和资源授权边界；缺少 `providerKeyRef` 时返回 `provider_key_required`。
 4. Portal 后端只生成平台内部合同状态，不调用真实云 API。
 5. 后台创建 platform-managed CVM / COS / runtime 表达的内部资源记录。
 6. 后台生成 `resourceBinding`。
@@ -3477,11 +3478,10 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
 
 - 默认套餐只引用 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
 - 本合同不扩展自定义套餐实现。
-- portal.medopl.cn 登录不需要 gflabtoken API Key。
-- opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
-- API Key 输入框放在 OPL 登录页密码下面；已绑定时显示“已绑定”，不要求重复输入。
+- Portal 登录不需要 gflabtoken API Key。
+- 每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；OPL entry/preflight 或工作台 provider 绑定面必须能收用户自己的 key，已绑定用户不要求重复输入。
 - gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
-- Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。
+- Portal 可以展示“gflabtoken 模型调用密钥是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。
 - raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git；用户侧只看到 `providerKeyRef` 和 bound status。
 - OPL Web 使用 clean upstream one-person-lab：`https://github.com/gaofeng21cn/one-person-lab`。
 - 不修改 upstream 源码，不 import upstream 内部模块。
@@ -3537,9 +3537,12 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
   ],
   "secretBoundary": {
     "provider": "gflabtoken",
+    "providerCredentialOwner": "user",
     "portalLoginRequiresProviderKey": false,
     "oplEntryRequiresProviderKey": true,
-    "inputLocation": "OPL 登录页密码下面",
+    "oplEntryAllowsBoundUserWithoutReentry": true,
+    "managedRunRequiresProviderKey": true,
+    "inputLocation": "OPL entry/preflight 或工作台 provider 绑定面",
     "gflabtokenSiteInUserMainFlow": false,
     "rawKeyBackendOnly": true,
     "publicFields": [
@@ -3596,24 +3599,25 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
     },
     {
       "id": 4,
-      "name": "用户进入 opl.medopl.cn",
+      "name": "用户进入工作空间并上传文件 / 提任务",
       "userFacing": true,
       "requiredEvidence": [
-        "OPL Web entry opens",
-        "OPL entry requires gflabtoken API Key",
+        "workspace opens",
+        "file upload or task intent is available",
         "workspace context is bound"
       ]
     },
     {
       "id": 5,
-      "name": "用户在 opl.medopl.cn 登录 / 进入 OPL 工作台时绑定 gflabtoken API Key",
+      "name": "用户进入 OPL 工作台，并在 OPL entry/preflight 绑定自己的 gflabtoken API Key",
       "userFacing": true,
       "requiredEvidence": [
-        "API Key input is below OPL login password field",
-        "bound users see 已绑定",
+        "OPL Web entry opens",
+        "Portal session or OPL entry session is accepted",
+        "workspace context is bound",
+        "provider key accepted by backend secret boundary",
         "providerKeyRef returned",
-        "boundStatus returned",
-        "raw key remains backend only"
+        "raw API key is not returned"
       ]
     },
     {
@@ -3969,25 +3973,28 @@ D1 验证路径：
 Former leaf id: `v22-opl-entry-preflight-auth-boundary`
 Former title: v22 OPL Entry Preflight Auth Boundary Contract
 
-本合同定义 MedOPL v22 的 OPL Web entry/preflight 最小认证闭环。它只覆盖 `opl.medopl.cn` 进入 OPL 工作台前的账号校验、gflabtoken API Key 输入/绑定和后端密钥边界，不修改 one-person-lab upstream，不 import upstream 内部模块。
+本合同定义 MedOPL v22 的 OPL Web entry/preflight 最小认证闭环。它覆盖 `opl.medopl.cn` 进入 OPL 工作台前的账号校验、Portal session / workspace launch、Gateway preflight 和用户自己的 gflabtoken 后端密钥边界。本合同不修改 one-person-lab upstream，不 import upstream 内部模块。
 
 ## Product Truth
 
 - MedOPL 有两种进入 OPL Web 的路径。
 - 路径 1：从 Portal SaaS 后台进入。
-- `portal.medopl.cn -> Portal 工作空间 / 托管运行环境 / “进入 OPL 工作台”按钮 -> Gateway launch / preflight -> clean upstream one-person-lab Web`
+- `portal.medopl.cn -> Portal 工作空间 / “进入 OPL 工作台”按钮 -> Gateway launch / preflight -> clean upstream one-person-lab Web`
 - 路径 2：直接访问 OPL 工作台。
-- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号/密码/gflabtoken API Key preflight -> clean upstream one-person-lab Web`
+- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号/密码 preflight -> clean upstream one-person-lab Web`
 - 两条路径最终进入同一套 Gateway / preflight / launch 逻辑。
 - portal.medopl.cn 登录不需要 gflabtoken API Key。
 - Portal 普通登录页不需要 API Key。
-- opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
+- opl.medopl.cn 登录 / 进入 OPL 工作台需要用户自己的 gflabtoken API Key。
 - OPL 登录页输入顺序：账号/邮箱、密码、gflabtoken API Key。
-- API Key 放在密码下面。
+- API Key 放在密码下面，只进入后端密钥边界。
 - API Key 只出现在 opl.medopl.cn entry/preflight 的密码下面。
+- OPL preflight 可以绑定用户自己的 gflabtoken API Key；已绑定用户不要求重复输入。
+- opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
+- 已绑定则显示“已绑定”，不要求重复输入。
 - 从 Portal 进入时可复用 Portal session / workspace / launch context。
 - 从 OPL 直接进入时需要 MedOPL 账号/密码/gflabtoken API Key，已绑定可显示“已绑定”。
-- 已绑定则显示“已绑定”，不要求重复输入。
+- 用户已绑定时，entry/preflight 可以显示“已绑定”，不要求重复输入；后端复用已有 `providerKeyRef`，不回放 raw API Key。
 - gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git。
 - raw API Key 只进入后端密钥边界。
@@ -4008,13 +4015,13 @@ Former title: v22 OPL Entry Preflight Auth Boundary Contract
 
 ## Preflight Form
 
-OPL entry/preflight 登录表单必须包含：
+OPL entry/preflight 登录表单默认必须包含：
 
 1. `email` 或 `account`
 2. `password`
-3. `apiKey`，用户可见名称为 `gflabtoken API Key`
+3. `apiKey`
 
-`apiKey` 字段必须在 `password` 字段之后。表单不得引导用户进入 `gflabtoken.cn` 网站主流程。
+未绑定用户的 `apiKey` 是必填字段；已绑定用户可以显示“已绑定”，不要求重复输入。用户可见名称为 `gflabtoken API Key`；表单不得引导用户进入 `gflabtoken.cn` 网站主流程。
 
 Gateway / preflight / launch 边界必须满足：
 
@@ -4029,11 +4036,11 @@ Gateway / preflight / launch 边界必须满足：
 
 ## Binding Flow
 
-1. 用户在 `opl.medopl.cn` entry/preflight 输入账号/邮箱、密码和 gflabtoken API Key。
+1. 用户在 `opl.medopl.cn` entry/preflight 输入账号/邮箱和密码，或从 Portal 复用 Portal session / workspace / launch context。
 2. 平台先校验 MedOPL 账号密码。
-3. 未提交 API Key 且没有已绑定记录时，返回 `provider_api_key_required`。
+3. 未提交 API Key 且没有已绑定记录时，workbench entry 返回 `provider_api_key_required`。
 4. 提交 API Key 成功后，raw API Key 只写入 `providerSecretStore`。
-5. 后端写入 provider key binding，用户侧只返回 `providerKeyRef`、`providerBound` 和 `boundStatus`。
+5. 后端写入 provider key binding 时，用户侧只返回 `providerKeyRef`、`providerBound` 和 `boundStatus`。
 6. 用户已绑定时，entry/preflight 可以显示“已绑定”，不要求重复输入；后端复用已有 `providerKeyRef`，不回放 raw API Key。
 7. OPL 启动 response 不得包含 raw API Key、`providerApiKey`、`apiKey`、`providerSecret` 或 `rawProviderKey` 字段。
 
@@ -4090,8 +4097,8 @@ https://github.com/gaofeng21cn/one-person-lab
 
 ## Preconditions
 
-- OPL run 必须先检查 provider readiness。
-- 未绑定 gflabtoken provider key 时，run 必须返回 `provider_key_required`。
+- OPL run 必须先检查 provider readiness；每个用户使用自己的 gflabtoken API Key 作为模型调用凭证。
+- 未绑定用户自己的 gflabtoken provider key 时，run 必须返回 `provider_key_required`。
 - OPL run 必须要求已开通托管运行环境，并存在 active `resourceBinding`。
 - 未开通托管运行环境时，run 必须返回 `managed_environment_required`。
 - 运行合同只使用 `providerKeyRef`，不得泄露 raw API key。
@@ -4101,8 +4108,8 @@ https://github.com/gaofeng21cn/one-person-lab
 
 ## Work Flow
 
-1. 用户从 `opl.medopl.cn` 进入 OPL 科研工作台；session 创建请求必须显式包含 `entrypoint=opl.medopl.cn`。
-2. 平台创建 OPL session contract，内部绑定 workspace、tenant、user、`resourceBinding` 和 `providerKeyRef`；普通用户 response 不返回 `resourceBindingId`、`tenantId`、`runId` 或后台审计标签原值。
+1. 用户从 `opl.medopl.cn` 或 Portal “进入 OPL 工作台”进入 OPL 科研工作台；session 创建请求必须显式包含 entrypoint 来源。
+2. 平台创建 OPL session contract，内部绑定 workspace、tenant、user、`resourceBinding` 和 `providerKeyRef`。普通用户 response 不返回 `resourceBindingId`、`tenantId`、`runId` 或后台审计标签原值。
 3. 用户上传文件后，平台生成 workspace file reference。
 4. 用户用 workspace file reference 发起 run contract。
 5. Runtime Agent 合同生成 artifact reference / output file reference。
@@ -4925,7 +4932,7 @@ workspace 绑定是必需项，不是可选装饰字段。原因是：
 
 ## Launch And Bootstrap
 
-`POST /portal/api/opl/launch` 由 Portal 发起。它必须检查 Portal session、workspace、provider binding、managed environment / resource binding 状态，并创建服务端 launch session。
+`POST /portal/api/opl/launch` 由 Portal 发起。它必须检查 Portal session、workspace、Gateway / upstream entry 状态和用户自己的 provider binding，并创建服务端 launch session。managed environment / resource binding 状态不得作为 workbench entry 的阻塞条件；它们只阻塞 managed run。
 
 Portal launch response 可以返回：
 
@@ -4978,7 +4985,7 @@ launchToken/runtimeToken 只能保存在 httpOnly cookie 或服务端 launch ses
 - `clientSessionState`
 - message / run capability hints
 
-请求不得要求 OPL 回传 raw API key。直接访问 `opl.medopl.cn` 时，账号密码和 gflabtoken API Key 只在 entry/preflight 边界处理；Portal 发起进入 OPL 时复用 Portal session / launch session。
+请求不得要求 OPL 回传 raw API key。直接访问 `opl.medopl.cn` 时处理 MedOPL 账号密码，并收取或复用用户自己的 gflabtoken provider key。Portal 发起进入 OPL 时复用 Portal session / launch session 和后端 provider binding。
 
 session bind 成功后，平台必须能得到以下关系：
 
@@ -5057,7 +5064,7 @@ OPL 工作流通过 Runtime Bridge / Runtime Agent 边界接入：
 
 run 必须执行以下 gate：
 
-- 未绑定 gflabtoken provider key 时，run 返回 `provider_key_required`。
+- 每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；未绑定用户自己的 gflabtoken provider key 时，run 返回 `provider_key_required`。
 - 未开通托管运行环境或缺少 active `resourceBindingId` 时，run 返回 `managed_environment_required`。
 - 缺少 Runtime Agent identity 或 endpoint 时，run 返回 `platform_isolated_runtime_agent_required`。
 - Runtime Agent 只能接收 `providerKeyRef`，不得接收 raw API key。
@@ -5108,7 +5115,7 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 2. bootstrap 不含 raw key、token 或内部存储路径。
 3. OPL session 绑定到 `portalUserId`、`tenantId`、`workspaceId`、`runtimeSessionId` 和 `resourceBindingId`。
 4. bootstrap、message、file、run、status、artifact API 都有真实访问和真实状态回流证据，不接受只返回 200/201/202。
-5. 未绑定 gflabtoken 时不能 start run，返回 `provider_key_required`。
+5. 没有用户自己的 gflabtoken `providerKeyRef` 时不能 start run，返回 `provider_key_required`。
 6. 未开通 runtime / resourceBinding 时不能 start run，返回 `managed_environment_required`。
 7. start run 后平台生成 `runId`。
 8. 输出文件只以 `artifactRef` 或 `outputFileRef` 回到 Portal。
@@ -6537,7 +6544,7 @@ MedOPL 是同一个 Portal 应用、同一套登录、同一套 UI shell。普�
 - 自己的套餐、CPU/内存/文件空间、并发/队列
 - 自己的任务、输出文件、运行轨迹
 - 自己的费用估算、余额、充值状态
-- gflabtoken 模型调用密钥已绑定/未绑定状态，但 Portal 不提供 raw API Key 输入
+- gflabtoken 模型调用密钥绑定状态；Portal 普通登录不提供 raw API Key 输入
 
 账号 / 工作空间 是 UI 主语言。租户 / 运行环境 不是 UI 主叙事；`tenantId`、`environmentId`、`resourceBindingId` 只能作为内部标签、对账标签或审计字段。
 
@@ -6607,7 +6614,7 @@ Cleanup 要清掉旧入口、旧文案、旧 API 暴露和权限绕过。清理�
     "费用估算",
     "余额",
     "充值状态",
-    "gflabtoken 模型调用密钥已绑定/未绑定状态"
+    "gflabtoken 模型调用密钥绑定状态"
   ],
   "invisibleContent": [
     "管理员/运维入口",
@@ -9098,22 +9105,22 @@ Portal 面向 AI 小白科研用户时不得把云厂商资源池、工程后台
 AI 小白科研用户在 OPL Web 必须能做：
 
 - 使用统一 MedOPL 账号登录
-- 进入 OPL 工作台后输入或绑定 gflabtoken 模型调用密钥
+- 绑定自己的 gflabtoken 模型调用密钥
 - 发消息
 - 上传文件
 - 用文件跑任务
 - 下载输出文件
 
-OPL Web 入口通过 MedOPL Gateway、SSO 和 Auth Bridge 完成统一身份。gflabtoken 模型调用密钥不是 Portal 普通登录字段，原始密钥只进入后端密钥边界。
+OPL Web 入口通过 MedOPL Gateway、SSO 和 Auth Bridge 完成统一身份。gflabtoken API Key 不是 Portal 普通登录字段；原始密钥只进入后端密钥边界，用户侧只看到 `providerKeyRef` 和 bound status。
 
 MedOPL 有两种进入 OPL Web 的路径：
 
 - 路径 1：从 Portal 工作台进入。
-- `portal.medopl.cn -> Portal 工作空间、托管运行环境、“进入 OPL 工作台”按钮 -> Gateway launch 和 preflight -> clean upstream one-person-lab Web`
+- `portal.medopl.cn -> Portal 工作空间、“进入 OPL 工作台”按钮 -> Gateway launch 和 preflight -> clean upstream one-person-lab Web`
 - 路径 2：直接访问 OPL 工作台。
-- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号、密码和 gflabtoken API Key preflight -> clean upstream one-person-lab Web`
+- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号、密码 preflight -> clean upstream one-person-lab Web`
 
-两条路径最终进入同一套 Gateway、preflight 和 launch 逻辑。从 Portal 进入时可复用 Portal session、workspace 和 launch context；从 OPL 直接进入时需要 MedOPL 账号、密码和 gflabtoken API Key，已绑定可显示“已绑定”。
+两条路径最终进入同一套 Gateway、preflight 和 launch 逻辑。从 Portal 进入时可复用 Portal session、workspace、launch context 和后端 provider binding；从 OPL 直接进入时需要 MedOPL 账号、密码和用户自己的 gflabtoken API Key，已绑定用户不要求重复输入。
 
 用户可见入口不是 /internal/opl/auth/login；/internal/opl/auth/login 只能是 internal implementation path。用户可见入口必须是 Portal “进入 OPL 工作台”或 /opl/entry/preflight。
 
@@ -9190,11 +9197,11 @@ launchToken/runtimeToken 不进 URL query，launchToken/runtimeToken 不进 loca
 
 普通用户不能被引导去配置 CVM、COS、K8s、TKE。
 
-## 账号和 gflabtoken 模型调用密钥边界
+## 账号和 provider 边界
 
 MedOPL 账号密码与 OPL Web 账号密码统一。用户从 `opl.medopl.cn` 进入时，通过 MedOPL Gateway、SSO 和 Auth Bridge 完成统一身份。
 
-gflabtoken 模型调用密钥放在 OPL 登录页密码下面。gflabtoken 模型调用密钥不是 Portal 普通登录字段。原始密钥只进入后端密钥边界；前端只展示 `providerKeyRef` 和 bound status。
+每个用户使用自己的 gflabtoken API Key 作为模型调用凭证。它不是 Portal 普通登录字段；原始密钥只进入后端密钥边界，前端只展示 `providerKeyRef` 和 bound status。
 
 ## upstream 边界
 
@@ -9302,7 +9309,7 @@ AI 小白用户进入 Portal 后能回答：
     "entrypoint": "opl.medopl.cn",
     "mustDo": [
       "使用统一 MedOPL 账号登录",
-      "进入 OPL 工作台后输入或绑定 gflabtoken 模型调用密钥",
+      "绑定自己的 gflabtoken 模型调用密钥",
       "发消息",
       "上传文件",
       "用文件跑任务",
@@ -9401,8 +9408,10 @@ AI 小白用户进入 Portal 后能回答：
   "accountAndApiKeyBoundary": {
     "medoplAccountUnifiedWithOplWeb": true,
     "identityPath": "MedOPL Gateway、SSO 和 Auth Bridge",
-    "gflabtokenInputLocation": "OPL 登录页密码下面",
+    "providerCredentialOwner": "user",
+    "gflabtokenInputLocation": "OPL entry/preflight 或工作台 provider 绑定面",
     "apiKeyIsPortalLoginField": false,
+    "managedRunRequiresApiKey": true,
     "rawApiKeyBackendOnly": true,
     "beginnerVisibleName": "gflabtoken 模型调用密钥",
     "frontendPublicFields": [
@@ -10300,13 +10309,12 @@ https://gflabtoken.cn/v1
 
 商业目标之一是销售 token/API 使用额度。
 
-## OPL Entry / Preflight Binding
+## OPL Entry / User Provider Binding
 
-gflabtoken API Key 的用户可见入口属于 OPL entry/preflight：
+MedOPL 托管运行环境、文件空间、账单、审计和 Gateway / Runtime Bridge；模型调用凭证由每个用户提供自己的 gflabtoken API Key：
 
 - portal.medopl.cn 登录不需要 gflabtoken API Key。
-- opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
-- API Key 输入框放在 OPL 登录页密码下面。
+- opl.medopl.cn entry/preflight 或工作台 provider 绑定面接收用户自己的 gflabtoken API Key。
 - 如果用户已绑定，可以显示“已绑定”，不要求重复输入。
 - gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - Portal 可以展示“是否已绑定”状态。
@@ -10330,7 +10338,7 @@ gflabtoken API Key 的用户可见入口属于 OPL entry/preflight：
 
 ## Runtime Use
 
-托管 runtime 任务使用 provider key reference 访问后端密钥边界。未开通 runtime 的租户可以绑定 API key，但不能因此获得托管 runtime 执行能力。
+托管 runtime 任务必须使用用户自己的 gflabtoken `providerKeyRef` 访问后端密钥边界。未开通 runtime 的租户可以绑定 API key，但不能因此获得托管 runtime 执行能力；没有 `providerKeyRef` 时必须返回 `provider_key_required`。
 
 ### spec:v22-trace-metadata-boundary
 
@@ -10476,9 +10484,9 @@ v22 本地最小代理链路必须满足：
 MedOPL 有两种进入 OPL Web 的路径：
 
 - 路径 1：从 Portal SaaS 后台进入。
-- `portal.medopl.cn -> Portal 工作空间 / 托管运行环境 / “进入 OPL 工作台”按钮 -> Gateway launch / preflight -> clean upstream one-person-lab Web`
+- `portal.medopl.cn -> Portal 工作空间 / “进入 OPL 工作台”按钮 -> Gateway launch / preflight -> clean upstream one-person-lab Web`
 - 路径 2：直接访问 OPL 工作台。
-- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号/密码/gflabtoken API Key preflight -> clean upstream one-person-lab Web`
+- `opl.medopl.cn -> OPL Gateway entry -> MedOPL 账号/密码 preflight -> clean upstream one-person-lab Web`
 
 两条路径最终进入同一套 Gateway / preflight / launch 逻辑。该逻辑必须保持 MedOPL 的 tenant、workspace、runtime availability、resource binding 和 token provider boundary，不绕过 Portal 控制面。
 
@@ -10489,17 +10497,16 @@ MedOPL 有两种进入 OPL Web 的路径：
 Former leaf id: `v22-user-credit-provider-key-boundary`
 Former title: v22 User Credit Provider Key Boundary Contract
 
-本合同定义 MedOPL v22 MVP 托管 OPL 闭环第一段：平台准备用户、给用户充值、确认 gflabtoken API Key 绑定状态，并输出 canonical state readiness。
+本合同定义 MedOPL v22 MVP 托管 OPL 闭环第一段：平台准备用户、给用户充值、绑定用户自己的 gflabtoken provider key，并输出 canonical state readiness。
 
 ## Product Boundary
 
-MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资源控制台。本合同只覆盖用户、余额、provider key readiness 和托管运行环境开通前置条件，不开通 CVM/COS/TKE，不调用真实云 API，不进入 OPL Gateway、Runtime Bridge、deploy 或 one-person-lab upstream。
+MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资源控制台。本合同只覆盖用户、余额、用户自己的 gflabtoken provider key readiness 和托管运行环境开通前置条件，不开通 CVM/COS/TKE，不调用真实云 API，不进入 OPL Gateway、Runtime Bridge、deploy 或 one-person-lab upstream。
 
 ## Entry Truth
 
 - portal.medopl.cn 登录不需要 gflabtoken API Key。
-- opl.medopl.cn 登录 / 进入 OPL 工作台需要 gflabtoken API Key。
-- API Key 输入框放在 OPL 登录页密码下面。
+- opl.medopl.cn entry/preflight 或工作台 provider 绑定面接收用户自己的 gflabtoken API Key。
 - 如果用户已绑定，可以显示“已绑定”，不要求重复输入。
 - gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段。
@@ -10510,11 +10517,11 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 1. 平台创建或准备 1 名用户。
 2. 平台给该用户充值额度。
 3. 用户登录 `portal.medopl.cn`；Portal 登录不要求 gflabtoken API Key。
-4. 用户进入 `opl.medopl.cn` 时，在 OPL 登录页密码下面输入或确认 gflabtoken API Key；已绑定时展示“已绑定”。
+4. 用户进入 `opl.medopl.cn` 时使用 MedOPL 账号密码，并提交或复用自己的 gflabtoken API Key；已绑定时展示“已绑定”。
 5. raw API Key 只能进入后端密钥边界，不能返回前端、不能写日志、不能进 git。
 6. API response / canonical state 只暴露 `providerKeyRef` 和 bound status。
 7. canonical state 输出 `identity`、`tenant`、`balance`、`providerBound`、`providerKeyRef`、`readyForManagedEnvironment`。
-8. 未绑定 provider key 时，不能进入后续托管运行环境开通，错误码使用 `provider_key_required`。
+8. 缺少用户自己的 gflabtoken `providerKeyRef` 时，托管运行环境 readiness / open 和 managed run 必须返回 `provider_key_required`。
 
 ## Secret Boundary
 
@@ -10538,7 +10545,7 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 }
 ```
 
-当 provider key 未绑定时：
+当用户自己的 provider key 未绑定时：
 
 ```json
 {
@@ -10563,13 +10570,12 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
   - 给用户充值额度，写入 wallet 和 `topup` ledger。
   - 响应只返回 public user、balance 和 ledger 摘要。
 - `POST /portal/api/v22/provider-key`
-  - 后端 provider key binding 能力，用于接收 OPL entry/preflight 提交的 gflabtoken API Key。
+  - 后端 provider key binding 能力，用于接收用户自己的 gflabtoken API Key。
   - 该能力不是 Portal 普通登录字段，也不改变 portal.medopl.cn 登录不需要 gflabtoken API Key 的规则。
   - raw API Key 只进入后端密钥边界。
   - 响应只返回 `providerKeyRef`、`providerBound` 和 bound status。
 - `POST /portal/api/v22/managed-environment/readiness`
-  - 未绑定 provider key 返回 409 和 `provider_key_required`。
-  - 已绑定 provider key 返回 `readyForManagedEnvironment=true`，允许进入下一段托管运行环境开通。
+  - 未绑定用户自己的 provider key 时返回 409 和 `provider_key_required`。
 
 ## Non-goals
 

@@ -154,11 +154,11 @@ try {
     },
   });
   assert.equal(blocked.handled, true, "managed_environment_open_route_must_be_handled");
-  assert.equal(blocked.res.statusCode, 409, "open_without_provider_must_return_409");
-  assert.equal(blocked.res.payload.ok, false, "open_without_provider_must_return_not_ok");
-  assert.equal(blocked.res.payload.error, "provider_key_required", "open_without_provider_error_mismatch");
-  assert.equal(blocked.res.payload.readyForManagedEnvironment, false, "open_without_provider_must_not_be_ready");
-  assertNoSecretLeak(blocked.res.payload, "open_without_provider");
+  assert.equal(blocked.res.statusCode, 409, "open_without_user_provider_key_must_return_409");
+  assert.equal(blocked.res.payload.ok, false, "open_without_user_provider_key_must_return_not_ok");
+  assert.equal(blocked.res.payload.error, "provider_key_required", "open_without_user_provider_key_error_mismatch");
+  assert.equal(blocked.res.payload.readyForManagedEnvironment, false, "open_without_user_provider_key_must_not_be_ready");
+  assertNoSecretLeak(blocked.res.payload, "open_without_user_provider_key");
 
   const bound = await request({
     method: "POST",
@@ -289,7 +289,7 @@ try {
 
   const contract = await readFile("docs/specs/README.md", "utf8");
   for (const required of [
-    "provider_key_required",
+    "开通托管运行环境必须要求用户已绑定自己的 gflabtoken provider key",
     "starter_2c4g_10gb",
     "pro_8c16g_100gb",
     "cos_standard_workspace_quota",

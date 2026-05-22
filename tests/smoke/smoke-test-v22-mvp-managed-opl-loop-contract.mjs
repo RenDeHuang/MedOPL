@@ -140,9 +140,12 @@ assert.equal(contract.defaultPlans.includes("custom"), false, "custom_plan_must_
 assert.equal(contract.defaultPlans.includes("custom_package"), false, "custom_package_must_not_be_implemented_in_mvp_contract");
 
 assert.equal(contract.secretBoundary.provider, "gflabtoken", "provider_must_be_gflabtoken");
+assert.equal(contract.secretBoundary.providerCredentialOwner, "user", "provider_credential_owner_must_be_user");
 assert.equal(contract.secretBoundary.portalLoginRequiresProviderKey, false, "portal_login_must_not_require_provider_key");
-assert.equal(contract.secretBoundary.oplEntryRequiresProviderKey, true, "opl_entry_must_require_provider_key");
-assert.equal(contract.secretBoundary.inputLocation, "OPL 登录页密码下面", "provider_key_input_location_mismatch");
+assert.equal(contract.secretBoundary.oplEntryRequiresProviderKey, true, "opl_entry_must_require_provider_key_when_user_is_not_bound");
+assert.equal(contract.secretBoundary.oplEntryAllowsBoundUserWithoutReentry, true, "opl_entry_must_allow_bound_user_without_reentry");
+assert.equal(contract.secretBoundary.managedRunRequiresProviderKey, true, "managed_run_must_require_user_provider_key");
+assert.equal(contract.secretBoundary.inputLocation, "OPL entry/preflight 或工作台 provider 绑定面", "provider_key_input_location_mismatch");
 assert.equal(contract.secretBoundary.gflabtokenSiteInUserMainFlow, false, "gflabtoken_site_must_not_enter_user_main_flow");
 assert.equal(contract.secretBoundary.rawKeyBackendOnly, true, "raw_key_must_be_backend_only");
 assert.deepEqual(contract.secretBoundary.publicFields, ["providerKeyRef", "boundStatus"], "public_secret_fields_mismatch");
@@ -199,8 +202,8 @@ for (const requiredPhrase of [
   "平台创建 1 名用户",
   "平台给用户充值额度",
   "用户登录 portal.medopl.cn",
-  "用户进入 opl.medopl.cn",
-  "用户在 opl.medopl.cn 登录 / 进入 OPL 工作台时绑定 gflabtoken API Key",
+  "用户进入工作空间并上传文件 / 提任务",
+  "用户进入 OPL 工作台，并在 OPL entry/preflight 绑定自己的 gflabtoken API Key",
   "开通托管运行环境",
   "平台后台代开通 CVM / 存储 / runtime",
   "Portal 展示托管运行环境、工作空间、文件空间、余额、预扣费/冻结金额",
