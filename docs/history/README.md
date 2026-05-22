@@ -61,6 +61,89 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `fix/v22-user-owned-gflabtoken-provider-keys`
+
+Base trunk HEAD: `98b7990706161ec10f3a6923bd880b31e866a5f5`
+
+handoff_commit: `83dc7f669de0b109c4cc5b8f437d06d659aa5802`
+
+Model:
+
+- controller: `gpt-5.4`
+- subagents: none
+
+Scope:
+
+- Correct provider truth: MedOPL does not provide a platform default model key or unified provider credential.
+- Require each user to provide their own gflabtoken API Key for OPL entry/preflight, workbench provider binding and managed run provider access.
+- Keep `portal.medopl.cn` login independent from gflabtoken API Key.
+- Keep raw API Key inside the backend secret boundary; public surfaces expose only `providerKeyRef`, bound status and `providerMode=user_gflabtoken`.
+- Preserve `provider_key_required` for managed readiness/open/run when the user has no provider key reference.
+
+Contract subscription:
+
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/specs/README.md`
+- `services/portal/src/app/portal-auth-runtime-handler.mjs`
+- `services/portal/src/domain/opl-work-flow.mjs`
+- `services/portal/src/domain/portal-api-payloads.mjs`
+- `services/portal/src/domain/user-credit-provider-key-flow.mjs`
+- `tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs`
+- `tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs`
+- `tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs`
+- `tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs`
+- `tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs`
+- `tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs`
+
+Non-goals:
+
+- No real cloud, secret read, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, adapters, `.sentrux`, infra or `.runtime` edits.
+- No new platform provider credential, fallback provider, compatibility alias or provider-key bypass.
+- No cursor advancement beyond `real-cloud-authorization-boundary`.
+
+Verification before landing review:
+
+- `npm run test:lanes`
+- `npm run test:fast`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `npm --prefix services/portal run check`
+- `npm run repo:bloat`
+- `git diff --check -- docs tests scripts services package.json .github AGENTS.md TASTE.md`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+
+Next recommendation:
+
+- Continue at `real-cloud-authorization-boundary`; before any real provider/cloud execution, explicitly authorize secret access, live provider calls, deploy/build/kubectl/live-test boundaries and evidence handling.
+
+landed_commit: `83dc7f669de0b109c4cc5b8f437d06d659aa5802`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run test:lanes` passed.
+- `npm run test:fast` passed.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk` passed with no findings.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json` passed.
+- `npm --prefix services/portal run check` passed.
+- `npm run repo:bloat` passed.
+- `git diff --check -- docs tests scripts services package.json .github AGENTS.md TASTE.md` passed.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json` passed.
+- forbidden path diff empty.
+- added-lines secret value scan empty.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-05-22 feat/v22-slide-09-precloud-readiness
 
 Status: `landed / pushed / post-push verified`

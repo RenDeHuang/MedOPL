@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 当前 product cursor 是 `real-cloud-authorization-boundary`。pre-cloud 9 个 product slides 已全部 landed；`product_engineering_loop` 已从 active machine detail 折叠为 closed summary 和 history summary，当前 active truth 不再保留 per-slide 明细、`docs/slides/*`、subslide docs 或 shadow archive。下一步不是执行真实云，而是先确认真实云授权边界、secret 读取边界、deploy/build/kubectl/live-test 边界和 evidence 落点。
 
-最近已通过 landing gate 的产品闭环是 `feat/v22-slide-09-precloud-readiness`，landed commit 为 `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`。该分支把 product-engineering-loop gate 扩展为 open/closed 双态，并在 closeout 中删除临时 product-loop branch override 和 active slide 明细，让 current verify、product-loop suite、workflow review 和 local-contract 继续作为本地 pre-cloud 防回归 bundle 运行；真实云、真实扣费、真实资源创建/释放、deploy、kubectl、build/push 和 live-test 仍未授权。
+最近已通过 landing gate 的产品闭环是 `feat/v22-slide-09-precloud-readiness`，landed commit 为 `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`。该分支把 product-engineering-loop gate 扩展为 open/closed 双态，并在 closeout 中删除临时 product-loop branch override 和 active slide 明细，让 current verify、product-loop suite、workflow review 和 local-contract 继续作为本地 pre-cloud 防回归 bundle 运行；真实云、真实扣费、真实资源创建/释放、deploy、kubectl、build/push 和 live-test 仍未授权。最新 trunk truth fix 是 `fix/v22-user-owned-gflabtoken-provider-keys`，landed commit 为 `83dc7f669de0b109c4cc5b8f437d06d659aa5802`，只修正用户自带 gflabtoken provider key 口径，不推进真实云 cursor。
 
 当前已收敛的事实：
 
@@ -218,7 +218,7 @@ Current docs / eval surface during migration：
 
 ### current-stage-current-cursor
 
-Current evidence: latest landed product closeout is `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`; current machine cursor is `real-cloud-authorization-boundary`.
+Current evidence: latest landed product closeout is `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73`; latest trunk truth fix is `83dc7f669de0b109c4cc5b8f437d06d659aa5802`; current machine cursor is `real-cloud-authorization-boundary`.
 
 Gap: slide-01 data truth, slide-02 Portal API real data wiring, slide-03 account/wallet/billing closure, slide-04 workspace/files closure, slide-05 resource lifecycle closure, slide-06 OPL entry runtime closure, slide-07 run artifact trace closure, slide-08 admin ops closure and slide-09 precloud readiness are complete locally. The remaining gap is authorization: real cloud execution cannot start until the user explicitly authorizes secret access, provider operations, deploy/build/kubectl/live-test boundaries and evidence handling.
 

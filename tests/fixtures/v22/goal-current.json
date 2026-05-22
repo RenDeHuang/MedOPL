@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-22",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73",
+  "base_trunk_head": "83dc7f669de0b109c4cc5b8f437d06d659aa5802",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_not_runtime_git_branch",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73",
+  "last_landed_commit": "83dc7f669de0b109c4cc5b8f437d06d659aa5802",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S6 real cloud authorization boundary",
@@ -21,7 +21,7 @@
   "current_blockers": [
     "real_cloud_requires_explicit_authorization_before_secret_or_live_execution"
   ],
-  "current_problem": "The pre-cloud product slide loop is locally closed at slide-09. The next cursor is the separately authorized real-cloud boundary; default current verification remains local-only and must not read secrets, deploy, build/push, kubectl, live-test, or mutate cloud resources.",
+  "current_problem": "The pre-cloud product slide loop is locally closed at slide-09. The latest trunk truth fix confirms each user must provide their own gflabtoken provider key; the next cursor remains the separately authorized real-cloud boundary. Default current verification remains local-only and must not read secrets, deploy, build/push, kubectl, live-test, or mutate cloud resources.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -216,9 +216,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-slide-09-precloud-readiness",
+  "last_landed_branch": "fix/v22-user-owned-gflabtoken-provider-keys",
   "last_landed_at": "2026-05-22",
-  "history_latest_branch": "feat/v22-slide-09-precloud-readiness",
+  "history_latest_branch": "fix/v22-user-owned-gflabtoken-provider-keys",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
