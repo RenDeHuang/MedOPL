@@ -69,3 +69,17 @@ Each authoring branch or cleanup branch records:
 - non-goals and forbidden operations not performed
 
 The durable human summary is `docs/history/README.md`; detailed proof remains in git history and command output.
+
+## Backend Go Convergence Authoring Lane
+
+`feat/v22-backend-go-convergence-program` 是后端收敛 authoring lane。它不接管当前 `real-cloud-authorization-boundary` product cursor，不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
+
+该 lane 的交付方式是每个 step 一个 commit，并且每个 step 都按 `truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor` 执行。7 阶段只作为 compact machine block、spec anchor、registered tests 和 landed history summary 存在，不恢复旧合同目录、旧 recovery 目录、root stage docs 或 `scripts/smoke-test-*`。
+
+Authoring verification:
+
+```bash
+node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json
+node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk
+node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
+```

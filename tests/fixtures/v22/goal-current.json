@@ -308,5 +308,99 @@
     "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
     "no_product_implementation": true,
     "no_business_test_cleanup_claim": true
+  },
+  "backend_go_convergence_program": {
+    "schema_version": 1,
+    "id": "backend-go-convergence-program",
+    "owner": "MedOPL",
+    "status": "registered",
+    "truth_file": "docs/active/README.md",
+    "spec_anchor": "docs/specs/README.md#spec-v22-backend-go-convergence-program-boundary",
+    "machine_cursor_file": "tests/fixtures/v22/goal-current.json",
+    "verify_manifest_file": "tests/fixtures/v22/agent-verify-manifest.json",
+    "history_file": "docs/history/README.md",
+    "authoring_branch": "feat/v22-backend-go-convergence-program",
+    "does_not_replace_current_cursor": true,
+    "current_product_cursor": "real-cloud-authorization-boundary",
+    "method": "truth-gap-eval-implementation-verify-landing-closeout",
+    "one_step_one_commit": true,
+    "review_gate": "landing gate",
+    "post_merge_closeout_required": true,
+    "no_legacy_docs_tree": true,
+    "no_recovery_tree": true,
+    "no_scripts_smoke_test_family": true,
+    "target_go_service": "services/medopl-go-backend",
+    "target_stack": [
+      "Go",
+      "Gin",
+      "Ent",
+      "PostgreSQL",
+      "Redis"
+    ],
+    "target_layers": [
+      "Portal Control Plane",
+      "Workflow Boundary",
+      "Runtime Broker / OPL Bridge",
+      "Agent Runtime",
+      "Cloud / Billing / Audit Workers"
+    ],
+    "phases": [
+      {
+        "id": "structure-truth-convergence",
+        "order": 1,
+        "status": "active",
+        "goal": "Define Portal / Workflow / Runtime Broker / Agent Runtime / Cloud Worker boundaries."
+      },
+      {
+        "id": "responsibility-inventory",
+        "order": 2,
+        "status": "pending",
+        "goal": "Classify current Portal, Gateway and Runtime Bridge files by target ownership."
+      },
+      {
+        "id": "docs-code-alignment-pass-1",
+        "order": 3,
+        "status": "pending",
+        "goal": "Gate the most dangerous responsibility drift before broad migration."
+      },
+      {
+        "id": "production-data-layer",
+        "order": 4,
+        "status": "pending",
+        "goal": "Keep PostgreSQL canonical and Redis volatile-only before Go data migration."
+      },
+      {
+        "id": "runtime-run-file-artifact-closure",
+        "order": 5,
+        "status": "pending",
+        "goal": "Align run, file, artifact and trace contracts with Runtime Bridge."
+      },
+      {
+        "id": "workflow-facade",
+        "order": 6,
+        "status": "pending",
+        "goal": "Route long tasks through workflow facade before durable engine replacement."
+      },
+      {
+        "id": "commercial-mainline",
+        "order": 7,
+        "status": "pending",
+        "goal": "Define api_only, full_runtime and customer_dedicated after structural convergence."
+      }
+    ],
+    "forbidden_ops": [
+      "secret",
+      "live-cloud",
+      "true-cloud-mutation",
+      "build-push-kubectl",
+      "deploy",
+      "live-test",
+      "upstream-write",
+      "git-push"
+    ],
+    "verification_commands": [
+      "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+      "node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json"
+    ]
   }
 }

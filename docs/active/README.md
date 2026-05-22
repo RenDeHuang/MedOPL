@@ -213,6 +213,7 @@ Current docs / eval surface during migration：
 | Index loop | docs taxonomy、machine cursor、verify manifest、history closeout 串成一个自治闭环 | `docs/README.md` + `docs/active/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 需要持续防止 post-merge truth 漂移 | current-state index loop gate | latest landed commit、history next cursor、current cursor 和 manifest commands 一致 | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | Cleanup lifecycle | 每个 leaf 都按 truth/gap/eval/verify/history/closeout 串联 | `docs/active/README.md` + `docs/policies/README.md` + `docs/history/README.md` + `tests/fixtures/v22/*` | 生命周期规则已写入，需要 gate 持续守住 | cleanup lifecycle gate | post-merge closeout 后才能稳定进入下一 cursor | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
 | Product engineering loop | pre-cloud product slides must run as an active baton, not permanent planning prose | `tests/fixtures/v22/goal-current.json` `product_engineering_loop` `precloud-product-slides-closure` + manifest `product-engineering-loop` suite | slide-01 到 slide-09 已 landed；open baton 已折叠成 closed summary | maintain closed summary and real-cloud authorization boundary; collapse to history summary and next cursor | active truth 不保 slide 明细、per-slide docs、compat layer 或 shadow archive | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
+| Backend Go convergence | 后端目标结构必须从 Portal-heavy 收敛为 Go canonical backend program | `tests/fixtures/v22/goal-current.json` `backend_go_convergence_program` + `docs/specs/README.md` `spec:v22-backend-go-convergence-program-boundary` | 当前只登记 program，不接管真实云 cursor，不声明 Go 后端已生产 | run branch override gates, then land by step commits | 7 阶段只作为 compact program block、spec anchor、registered tests 和 history summary 存在；不恢复旧合同/恢复目录 | `node tests/contract/contract-test-v22-backend-go-convergence-program.mjs` |
 
 ## Current Development Lines
 
@@ -288,6 +289,18 @@ Done when: landing gate no longer depends on hand-composed checks, and post-merg
 
 Verify: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk`; `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`.
 
+### backend-go-convergence-program
+
+Current evidence: the backend Go convergence program is registered as compact machine truth in `tests/fixtures/v22/goal-current.json` and as a single spec anchor in `docs/specs/README.md`; it does not replace the current `real-cloud-authorization-boundary` product cursor.
+
+Gap: Portal still carries too much backend responsibility, but this branch must first land the program boundary, verification bundle and review discipline before moving service code toward Go.
+
+Next action: run the backend Go convergence branch override, keep one step per commit, and use the sequence structure truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor.
+
+Done when: the 7 phases exist only as a compact program block, a single spec anchor, registered tests and landed history summary; no old contract tree, recovery process tree, smoke script family or second current truth returns.
+
+Verify: `node tests/contract/contract-test-v22-backend-go-convergence-program.mjs`; `node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json`.
+
 ## Cannot Claim
 
 - 不能写成 `tests/**/*.mjs` 都是 smoke。
@@ -295,6 +308,8 @@ Verify: `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22
 - 不能写成 `future-authorized` 等于真实云、deploy、kubectl 或 live-test 已授权。
 - 不能宣称真实云生产闭环已完成，或真实云、deploy、kubectl、build/push、live-test 已授权。
 - 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
+- 不能把 backend Go convergence program 写成第二份阶段板、旧式合同目录、旧式 recovery 目录或未注册测试。
+- 不能宣称 `services/medopl-go-backend` 已经是 production backend，除非对应 Go service、manifest、tests、landing gate 和 post-merge closeout 已完成。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 
 ## Source Of Truth During Migration

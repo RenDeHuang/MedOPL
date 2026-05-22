@@ -36,6 +36,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | `v22-authorized-tencent-create-release-boundary` |
 | [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary) | `v22-authorized-tencent-create-release-execution-boundary` |
 | [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary) | `v22-authorized-tencent-create-release-implementation-boundary` |
+| [spec:v22-backend-go-convergence-program-boundary](#spec-v22-backend-go-convergence-program-boundary) | `v22-backend-go-convergence-program-boundary` |
 | [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) | `v22-authorized-tencent-deploy-execution-boundary` |
 | [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary) | `v22-billing-freeze-boundary` |
 | [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary) | `v22-cloud-onboarding-workflow-boundary` |
@@ -1314,6 +1315,64 @@ release 分阶段执行：
 }
 ```
 <!-- v22-authorized-tencent-create-release-execution-contract:end -->
+
+### spec:v22-backend-go-convergence-program-boundary
+
+Former leaf id: `v22-backend-go-convergence-program-boundary`
+Former title: v22 Backend Go Convergence Program Boundary
+
+本合同定义 MedOPL v22 后端收敛 program 的结构边界。该 program 的目标是把后端从当前 Node/ESM Portal-heavy 形态收敛为 Go canonical backend，同时保留 MedOPL 的产品真相：Portal 是 SaaS 控制面和托管交付平台，OPL 负责科研执行，Gateway / Runtime Bridge 负责 clean upstream 适配，Cloud / Billing / Audit workers 负责内部资源、计费和审计。
+
+目标 Go 后端结构参考 `sub2api` 的 Go 工程形状，但不得照搬其业务语义。允许的目标结构是 `cmd/server`、`internal/config`、`internal/domain`、`internal/handler`、`internal/repository`、`internal/service`、`internal/server`、`internal/integration`、`internal/worker`、`ent/schema`、`migrations` 和 `resources`。MedOPL 领域必须以 workspace、run、file、artifact、billing、workflow、tenant、runtime broker、OPL bridge、cloud worker、audit worker 为中心。
+
+后端职责边界：
+
+- Portal Control Plane 只处理用户、workspace、套餐、文件列表、run request、账单/审计查询和状态展示。
+- Workflow Boundary 承接长任务 command/state；先 facade，后 durable engine。Portal route 不能继续直接承载长任务真相。
+- Runtime Broker / OPL Bridge 只适配 clean upstream OPL、Runtime Bridge / Runtime Agent 和 anti-corruption mapping；它不是 Portal product truth、billing ledger truth 或 cloud inventory truth。
+- Agent Runtime 只负责执行，不负责 SaaS 产品真相、计费、资源生命周期或审计归属。
+- Cloud / Billing / Audit Workers 是内部 worker 边界，负责资源计划、账单事件、审计事件和 reconciliation；普通用户不能把它们理解成云控制台。
+
+数据边界：
+
+- PostgreSQL 是 canonical truth。
+- Redis 只能用于 session、cache、queue、lock 或短期协调。
+- Object/blob plane 只承载文件正文和私有 locator，不成为账本、资源或审计事实源。
+- raw provider key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 不得进入前端持久化、普通用户 payload、日志、evidence 或 git。
+
+Program lifecycle：
+
+```text
+truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor
+```
+
+7 个阶段只能作为 compact machine program block 存在于 `tests/fixtures/v22/goal-current.json`，并由 registered tests、manifest branch override 和 landed history summary 承接。不得恢复 `docs/contracts/**`、`docs/recovery/**`、root stage docs、`scripts/smoke-test-*`、per-phase docs 或 shadow archive。
+
+当前 program 阶段：
+
+1. `structure-truth-convergence`: 明确 Portal / Workflow / Runtime Broker / Agent Runtime / Cloud Worker 边界。
+2. `responsibility-inventory`: 把现有 Portal、Gateway、Runtime Bridge 文件归类为正确位置、错位、待迁移和待删除。
+3. `docs-code-alignment-pass-1`: 先 gate 最危险错位：Portal 长任务、cloud operation 和内存 launch 状态。
+4. `production-data-layer`: PostgreSQL canonical，Redis volatile only，JSON 不再作为 production path。
+5. `runtime-run-file-artifact-closure`: run、file、artifact 和 trace 接口与 Runtime Bridge 合同一致。
+6. `workflow-facade`: 长任务统一进入 workflow facade；durable engine 在 facade 后面替换。
+7. `commercial-mainline`: 结构稳定后设计 `api_only`、`full_runtime`、`customer_dedicated`，再判断 UI 是否需要修改。
+
+非目标：
+
+- 不读取 secret。
+- 不调用真实云。
+- 不 build/push/kubectl/deploy/live-test。
+- 不修改 `deploy/*`、`.sentrux/*`、`adapters/*`、`infra/*`、one-person-lab upstream。
+- 不恢复 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost 或 Langfuse 主叙事。
+- 不把 Go scaffold 或 workflow facade 写成已生产后端，除非对应 source、tests、manifest、landing gate 和 post-merge closeout 完成。
+
+验收边界：
+
+- program 必须由 `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 验证。
+- branch override 必须只允许本 program 的 docs/tests/fixtures/scripts 和后续显式 Go service surface。
+- 每个 step 只能有一个 commit，并在 authoring record 中记录模型、subagent、订阅文件、验收命令、风险和 landing gate recommendation。
+- landed 后只在 `docs/history/README.md` 保留摘要，不新增 agent-run 文件树。
 
 ### spec:v22-authorized-tencent-create-release-implementation-boundary
 
