@@ -9,6 +9,7 @@ import { resolveLabEntitlement } from "../domain/lab-entitlements.mjs";
 import { ensureWallet } from "../domain/wallet-ledger.mjs";
 import { labActiveFreezeAmount } from "../domain/lab-billing-policy.mjs";
 import { executePortalProductionCloudOperation } from "../domain/portal-cloud-operation-production.mjs";
+import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
 
 const PACKAGE_CLOUD_PLANS = Object.freeze({
   starter: Object.freeze({
@@ -51,6 +52,7 @@ export function createLabPackageRoutes({
   cloudOperationComputeNodePoolRef = "",
   cloudOperationComputePoolBaselineCapacity = 2,
   repoRoot = "",
+  workflowFacade = createPortalWorkflowFacade(),
 }) {
   async function readJsonBody(req, res) {
     try {
@@ -170,7 +172,14 @@ export function createLabPackageRoutes({
   }
 
   function runCloudOperation(db, user, payload = {}, operationType = "") {
-    return executePortalProductionCloudOperation(db, user, payload, productionBridgeOptions(operationType));
+    return workflowFacade.runCloudOperationCommand({
+      payload: {
+        operationType,
+        workspaceId: payload.workspaceId || payload.workspace_id || "",
+        userId: user.id,
+      },
+      execute: () => executePortalProductionCloudOperation(db, user, payload, productionBridgeOptions(operationType)),
+    });
   }
 
   function existingBindingForWorkspace(db = {}, user = {}, workspaceId = "") {
@@ -184,21 +193,21 @@ export function createLabPackageRoutes({
       .sort((left, right) => String(right.updatedAt || right.createdAt || "").localeCompare(String(left.updatedAt || left.createdAt || "")))[0] || null;
   }
 
-  function runPackageOpenCloudOperations(db = {}, user = {}, { workspaceId = "", packageId = "" } = {}) {
+  async function runPackageOpenCloudOperations(db = {}, user = {}, { workspaceId = "", packageId = "" } = {}) {
     const plan = cloudPlanForPackage(packageId);
     if (!plan) return { ok: false, status: 422, error: "unsupported_package_cloud_plan" };
     const existing = existingBindingForWorkspace(db, user, workspaceId);
     if (existing) {
       return runPackageUpgradeCloudOperations(db, user, { workspaceId, packageId });
     }
-    const createStorage = runCloudOperation(db, user, {
+    const createStorage = await runCloudOperation(db, user, {
       workspaceId,
       fileSpaceGb: plan.fileSpaceGb,
       planId: plan.planId,
     }, "create_storage");
     if (!createStorage.ok) return cloudFailureResult(createStorage);
     const resourceBindingId = String(createStorage.resourceBindingId || "");
-    const createCompute = runCloudOperation(db, user, {
+    const createCompute = await runCloudOperation(db, user, {
       workspaceId,
       resourceBindingId,
       computeUnits: plan.computeUnits,
@@ -216,7 +225,7 @@ export function createLabPackageRoutes({
     };
   }
 
-  function runPackageUpgradeCloudOperations(db = {}, user = {}, { workspaceId = "", packageId = "" } = {}) {
+  async function runPackageUpgradeCloudOperations(db = {}, user = {}, { workspaceId = "", packageId = "" } = {}) {
     const plan = cloudPlanForPackage(packageId);
     if (!plan) return { ok: false, status: 422, error: "unsupported_package_cloud_plan" };
     const binding = existingBindingForWorkspace(db, user, workspaceId);
@@ -225,7 +234,7 @@ export function createLabPackageRoutes({
     const operations = [];
     const currentCapacityGb = currentFileSpaceGb(db, resourceBindingId) || Number(binding.fileSpaceGb || 0);
     if (currentCapacityGb < plan.fileSpaceGb) {
-      const expandStorage = runCloudOperation(db, user, {
+      const expandStorage = await runCloudOperation(db, user, {
         workspaceId,
         resourceBindingId,
         fileSpaceGb: plan.fileSpaceGb,
@@ -234,7 +243,7 @@ export function createLabPackageRoutes({
       if (!expandStorage.ok) return cloudFailureResult(expandStorage);
       operations.push(expandStorage);
     }
-    const expandCompute = runCloudOperation(db, user, {
+    const expandCompute = await runCloudOperation(db, user, {
       workspaceId,
       resourceBindingId,
       computeUnits: plan.computeUnits,
@@ -310,7 +319,7 @@ export function createLabPackageRoutes({
     }
     let packageCloud = null;
     if (enableCloudOperationProductionBridge) {
-      packageCloud = runPackageOpenCloudOperations(db, user, { workspaceId, packageId: normalizeLabPackageId(payload.packageId) });
+      packageCloud = await runPackageOpenCloudOperations(db, user, { workspaceId, packageId: normalizeLabPackageId(payload.packageId) });
       if (!packageCloud.ok) {
         rollbackLabBillingState(db, labStateBefore);
         sendJson(res, {
@@ -356,7 +365,7 @@ export function createLabPackageRoutes({
     }
     let packageCloud = null;
     if (enableCloudOperationProductionBridge) {
-      packageCloud = runPackageUpgradeCloudOperations(db, user, { workspaceId: result.subscription.workspaceId, packageId: normalizeLabPackageId(payload.packageId) });
+      packageCloud = await runPackageUpgradeCloudOperations(db, user, { workspaceId: result.subscription.workspaceId, packageId: normalizeLabPackageId(payload.packageId) });
       if (!packageCloud.ok) {
         rollbackLabBillingState(db, labStateBefore);
         sendJson(res, {

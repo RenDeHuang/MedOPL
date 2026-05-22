@@ -1,3 +1,5 @@
+import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
+
 function providerKeyCandidate(body = {}) {
   if (body.providerKeyPayload && typeof body.providerKeyPayload === "object") {
     return body.providerKeyPayload;
@@ -103,14 +105,22 @@ async function handleOplLaunchApi(context, deps) {
   }
   const { taskSlug } = taskResolution;
   const providerKeyPayload = normalizeProviderKeyPayload(body);
-  const result = await deps.oplLaunchService.prepareLaunchForIntent({
-    db,
-    user,
-    taskSlug,
-    requireRealOplWeb: true,
-    source: "portal-api",
-    sourceSurface: launchSourceSurface(providerKeyPayload),
-    providerKeyPayload,
+  const result = await deps.workflowFacade.runOplLaunchCommand({
+    payload: {
+      source: "portal-api",
+      taskSlug,
+      userId: user.id,
+      sourceSurface: launchSourceSurface(providerKeyPayload),
+    },
+    execute: () => deps.oplLaunchService.prepareLaunchForIntent({
+      db,
+      user,
+      taskSlug,
+      requireRealOplWeb: true,
+      source: "portal-api",
+      sourceSurface: launchSourceSurface(providerKeyPayload),
+      providerKeyPayload,
+    }),
   });
 
   if (!result.ok) {
@@ -342,13 +352,22 @@ async function handleOplPage(context, deps) {
   }
   const { taskSlug } = taskResolution;
   const intent = deps.oplLaunchService.createLaunchIntent({ user, taskSlug, source: "portal-page" });
-  deps.oplLaunchService.prepareLaunchIntent({
-    launchId: intent.launchId,
-    db,
-    user,
-    taskSlug,
-    requireRealOplWeb: true,
-    source: "portal-page",
+  deps.workflowFacade.runOplLaunchCommand({
+    commandId: intent.launchId,
+    payload: {
+      source: "portal-page",
+      launchId: intent.launchId,
+      taskSlug,
+      userId: user.id,
+    },
+    execute: () => deps.oplLaunchService.prepareLaunchIntent({
+      launchId: intent.launchId,
+      db,
+      user,
+      taskSlug,
+      requireRealOplWeb: true,
+      source: "portal-page",
+    }),
   }).then((result) => {
     if (result?.ok && result.workspaceSession?.id) {
       intent.workspaceSessionId = result.workspaceSession.id;
@@ -366,6 +385,7 @@ export function createOplRoutes({
   logPortalEvent,
   runtimeBridgeClient,
   oplLaunchService,
+  workflowFacade = createPortalWorkflowFacade(),
   readBody,
   sendHtml,
   sendJson,
@@ -378,6 +398,7 @@ export function createOplRoutes({
     logPortalEvent,
     runtimeBridgeClient,
     oplLaunchService,
+    workflowFacade,
     readBody,
     sendHtml,
     sendJson,

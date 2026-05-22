@@ -61,6 +61,7 @@ export function createPortalApiRuntimeHandlers({
   readBody,
   urls,
   visibleAnnouncementRows,
+  workflowFacade,
   writeDb,
   workspaceChatSessionsForUser,
 }) {
@@ -171,6 +172,7 @@ export function createPortalApiRuntimeHandlers({
     enableCloudOperationTestBridge: portalConfig?.PORTAL_ENABLE_CLOUD_OPERATION_TEST_BRIDGE,
     nodeEnv: process.env.NODE_ENV || "",
     visibleAnnouncementRows,
+    workflowFacade,
     writeDb,
     workspaceChatSessionsForUser,
   });

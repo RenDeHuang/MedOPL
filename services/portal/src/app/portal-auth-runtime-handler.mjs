@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { hashPassword, verifyPassword } from "../domain/portal-auth.mjs";
 import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
 import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
+import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
 
 const OPL_ENTRY_PREFLIGHT_PATH = "/opl/entry/preflight";
 const OPL_INTERNAL_AUTH_PATH = "/internal/opl/auth/login";
@@ -276,6 +277,7 @@ export function createPortalAuthRuntimeHandler({
   logPortalEvent,
   normalizeProviderApiKey,
   oplLaunchService,
+  workflowFacade = createPortalWorkflowFacade(),
   parseCookies,
   parseForm,
   portalInternalAuthAllowed,
@@ -459,21 +461,28 @@ export function createPortalAuthRuntimeHandler({
         }, 400);
         return true;
       }
-      const launchResult = await oplLaunchService.prepareLaunch({
-        db,
-        user,
-        taskSlug,
-        requireRealOplWeb: true,
-        source: "opl-native-login",
-        providerConfig: providerConfigResult.providerConfig,
-        providerConfigSecretRef: providerConfigResult.providerConfigSecretRef,
-        providerKeyPayload: providerApiKey
-          ? {
-            provider: "gflabtoken",
-            source: "user_input",
-            apiKey: providerApiKey,
-          }
-          : null,
+      const launchResult = await workflowFacade.runOplLaunchCommand({
+        payload: {
+          source: "opl-native-login",
+          taskSlug,
+          userId: user.id,
+        },
+        execute: () => oplLaunchService.prepareLaunch({
+          db,
+          user,
+          taskSlug,
+          requireRealOplWeb: true,
+          source: "opl-native-login",
+          providerConfig: providerConfigResult.providerConfig,
+          providerConfigSecretRef: providerConfigResult.providerConfigSecretRef,
+          providerKeyPayload: providerApiKey
+            ? {
+              provider: "gflabtoken",
+              source: "user_input",
+              apiKey: providerApiKey,
+            }
+            : null,
+        }),
       });
       if (!launchResult.ok) {
         sendJson(res, {

@@ -334,6 +334,21 @@
       ]
     },
     {
+      "id": "portal-workflow-facade-boundary",
+      "service": "portal",
+      "currentResponsibility": "Migration-period workflow command handoff facade",
+      "targetClassification": "correct-place",
+      "targetGoModule": "internal/domain/workflow + internal/service/workflow",
+      "nodeBoundary": false,
+      "riskTags": [
+        "portal_long_task",
+        "cloud_mutation"
+      ],
+      "paths": [
+        "services/portal/src/services/portal-workflow-facade.service.mjs"
+      ]
+    },
+    {
       "id": "portal-repository",
       "service": "portal",
       "currentResponsibility": "Portal persistence and migration repository code",
@@ -589,14 +604,14 @@
     }
   ],
   "summary": {
-    "totalFiles": 180,
+    "totalFiles": 181,
     "byService": {
-      "portal": 136,
+      "portal": 137,
       "opl-web-gateway": 7,
       "opl-runtime-bridge": 37
     },
     "byClassification": {
-      "correct-place": 121,
+      "correct-place": 122,
       "misplaced": 33,
       "migrate-later": 20,
       "delete-later": 6

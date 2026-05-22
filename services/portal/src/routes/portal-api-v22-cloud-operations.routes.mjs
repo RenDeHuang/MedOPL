@@ -2,6 +2,7 @@ import {
   buildPortalProductionCloudOperationProjection,
   executePortalProductionCloudOperation,
 } from "../domain/portal-cloud-operation-production.mjs";
+import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
 
 function parseJsonBodyOrEmpty(raw = Buffer.from("")) {
   const source = String(raw || "").trim();
@@ -29,6 +30,7 @@ export function createPortalApiV22CloudOperationsRoutes({
   computeNodePoolRef = "",
   computePoolBaselineCapacity = 2,
   repoRoot = "",
+  workflowFacade = createPortalWorkflowFacade(),
 }) {
   const operationRoutes = new Map([
     ["/portal/api/v22/cloud-operations/storage/create", "create_storage"],
@@ -42,14 +44,22 @@ export function createPortalApiV22CloudOperationsRoutes({
   async function handleMutation({ req, res, url, db, user }) {
     if (req.method !== "POST" || !operationRoutes.has(url.pathname)) return false;
     const payload = parseJsonBodyOrEmpty(await readBody(req));
-    const result = executePortalProductionCloudOperation(db, user, payload, {
-      repoRoot,
-      operationType: operationRoutes.get(url.pathname),
-      runnerMode,
-      runnerScript,
-      secretFile,
-      computeNodePoolRef,
-      computePoolBaselineCapacity,
+    const operationType = operationRoutes.get(url.pathname);
+    const result = await workflowFacade.runCloudOperationCommand({
+      payload: {
+        operationType,
+        workspaceId: payload.workspaceId || payload.workspace_id || "",
+        userId: user.id,
+      },
+      execute: () => executePortalProductionCloudOperation(db, user, payload, {
+        repoRoot,
+        operationType,
+        runnerMode,
+        runnerScript,
+        secretFile,
+        computeNodePoolRef,
+        computePoolBaselineCapacity,
+      }),
     });
     if (result.ok || result.persistDb) await writeDb(db);
     sendResult(sendJson, res, result, 202);

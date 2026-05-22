@@ -51,6 +51,7 @@ export function createPortalApiRoutes({
   enableCloudOperationTestBridge = false,
   nodeEnv = process.env.NODE_ENV || "",
   visibleAnnouncementRows,
+  workflowFacade,
   writeDb = async () => {},
   workspaceChatSessionsForUser,
 }) {
@@ -96,6 +97,7 @@ export function createPortalApiRoutes({
     computeNodePoolRef: cloudOperationComputeNodePoolRef,
     computePoolBaselineCapacity: cloudOperationComputePoolBaselineCapacity,
     sendJson,
+    workflowFacade,
     writeDb,
   });
   const handlePlatformProvisionedResources = createPlatformProvisionedResourceRoutes({

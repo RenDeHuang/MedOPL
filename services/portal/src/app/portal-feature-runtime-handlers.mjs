@@ -25,6 +25,7 @@ export function createPortalFeatureRuntimeHandlers({
   normalizeAuthEmail,
   runtimeBridgeClient,
   oplLaunchService,
+  workflowFacade,
   path,
   portalInternalAuthAllowed,
   portalConfig = {},
@@ -57,6 +58,7 @@ export function createPortalFeatureRuntimeHandlers({
     cloudOperationComputeNodePoolRef: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_NODE_POOL_REF,
     cloudOperationComputePoolBaselineCapacity: portalConfig?.PORTAL_CLOUD_OPERATION_COMPUTE_POOL_BASELINE_CAPACITY,
     repoRoot: process.cwd().endsWith("/services/portal") ? "../.." : ".",
+    workflowFacade,
   });
   const handleOplRoutes = createOplRoutes({
     appendCookie,
@@ -64,6 +66,7 @@ export function createPortalFeatureRuntimeHandlers({
     logPortalEvent,
     runtimeBridgeClient,
     oplLaunchService,
+    workflowFacade,
     readBody,
     sendHtml,
     sendJson,

@@ -136,6 +136,7 @@ import {
   setCookie,
 } from "./portal-runtime-http.mjs";
 import { createPortalRuntimeRouteWiring } from "./portal-runtime-route-wiring.mjs";
+import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
 
 const {
   layoutV2,
@@ -319,6 +320,7 @@ const {
 });
 
 const providerSecretStore = createProviderSecretStore({ secretsRoot: PORTAL_OPL_PROVIDER_SECRET_ROOT });
+const workflowFacade = createPortalWorkflowFacade();
 const oplLaunchService = createOplLaunchService({
   evaluateUserPolicy,
   findTaskSpace,
@@ -357,6 +359,7 @@ const {
   normalizeAuthEmail,
   runtimeBridgeClient,
   oplLaunchService,
+  workflowFacade,
   path,
   portalInternalAuthAllowed,
   portalConfig,
@@ -391,6 +394,7 @@ const handleAuthRoutes = createAuthRuntimeHandler({
   logPortalEvent,
   normalizeProviderApiKey,
   oplLaunchService,
+  workflowFacade,
   parseCookies,
   parseForm,
   portalInternalAuthAllowed,
@@ -617,6 +621,7 @@ const {
   providerSecretStore,
   readBody,
   visibleAnnouncementRows,
+  workflowFacade,
   writeDb,
   workspaceChatSessionsForUser,
 });

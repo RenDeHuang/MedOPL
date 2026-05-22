@@ -52,6 +52,36 @@
       }
     },
     {
+      "id": "portal.workflow_facade",
+      "sourcePaths": [
+        "services/portal/src/services/portal-workflow-facade.service.mjs"
+      ],
+      "responsibilities": [
+        "workflow_command_handoff",
+        "command_state_transition",
+        "durable_engine_replacement_boundary"
+      ],
+      "target": {
+        "service": "medopl-go-backend",
+        "module": "internal/service/workflow"
+      },
+      "riskTags": [
+        "portal_long_task",
+        "cloud_mutation"
+      ],
+      "asyncBoundary": [
+        "command_handler",
+        "operation_repository",
+        "worker_executor",
+        "projection_reader"
+      ],
+      "truthBoundary": [
+        "workflow_execution_repository",
+        "workflow_command_idempotency",
+        "durable_engine_behind_facade"
+      ]
+    },
+    {
       "id": "portal.cloud_operation_service",
       "sourcePaths": [
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
