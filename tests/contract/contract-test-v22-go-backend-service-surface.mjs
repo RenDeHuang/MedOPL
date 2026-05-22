@@ -62,7 +62,7 @@ const goMod = await readRepoFile(`${serviceRoot}/go.mod`);
 assertIncludes(goMod, "module github.com/rendehuang/medopl/services/medopl-go-backend", "go_mod_module");
 assertIncludes(goMod, "go 1.22", "go_mod_version");
 assertIncludes(goMod, "github.com/gin-gonic/gin", "go_mod_gin_dependency");
-assert.equal(/entgo\.io\/ent|github\.com\/redis\/go-redis|github\.com\/lib\/pq|pgx|postgres/u.test(goMod), false, "step8_go_mod_must_not_introduce_ent_postgres_or_redis");
+assert.equal(/github\.com\/redis\/go-redis|github\.com\/lib\/pq|pgx|postgres/u.test(goMod), false, "go_backend_service_surface_must_not_introduce_postgres_or_redis_client");
 
 const mainSource = await readRepoFile(`${serviceRoot}/cmd/server/main.go`);
 assertIncludes(mainSource, "internal/config", "server_main_must_use_config");
@@ -87,8 +87,6 @@ assert.equal(/time\.Now|Hostname|os\.Getpid|uuid|rand/u.test(healthSource), fals
 
 const allFiles = await listFiles(serviceRoot);
 const forbiddenStep8Patterns = [
-  "ent/schema",
-  "migrations/",
   "internal/repository/redis",
   "internal/integration/cloud",
   "internal/worker",

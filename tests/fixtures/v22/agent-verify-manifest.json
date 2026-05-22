@@ -1190,6 +1190,7 @@
         "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
         "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     },
@@ -1253,6 +1254,7 @@
         "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
         "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     },
@@ -1264,6 +1266,7 @@
         "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
         "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     },
@@ -1324,6 +1327,7 @@
         "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
         "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs"
       ]
     }
@@ -1403,6 +1407,7 @@
         "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
         "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs",
         "node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -1424,6 +1429,7 @@
         "node tests/contract/contract-test-v22-portal-long-task-mutation-boundaries.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs",
         "node tests/contract/contract-test-v22-node-to-go-migration-map.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
