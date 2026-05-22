@@ -285,6 +285,98 @@ Next recommendation:
 
 - Proceed to Stage 4: scaffold `services/medopl-go-backend`, add Ent/Postgres schema baseline and enforce Redis volatile-only boundaries with Go tests and manifest/package gates.
 
+### 2026-05-22 feat/v22-backend-go-convergence-program stage-4
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-backend-go-convergence-program`
+
+Base trunk HEAD: `82bbf09e3bdfd2d2f4f746353ec9b9fa3cc5eb7f`
+
+Model:
+
+- controller: `gpt-5 runtime`
+- subagent Bacon: `gpt-5.4`, read-only Stage 4 Step 8-10 Go scaffold, Ent/Postgres and Redis boundary review.
+- subagent Cicero: `gpt-5.4`, read-only Step 9 Ent/Postgres contract compliance review.
+- subagent Descartes: `gpt-5.4`, read-only Step 9 Go schema quality and pollution-risk review.
+- subagent Aquinas: `gpt-5.4`, read-only Step 9 schema/migration consistency re-review.
+- subagent Linnaeus: `gpt-5.4`, read-only Step 9 codegen and migration consistency re-review.
+- subagent Socrates: `gpt-5.4`, read-only Step 9 final review after Ent codegen gate was added.
+- subagent Sagan: `gpt-5.4`, read-only Step 10 Redis volatile-only boundary review.
+- subagent Feynman: `gpt-5.4`, read-only Step 10 TTL fail-closed re-review.
+
+Scope:
+
+- Scaffold `services/medopl-go-backend` as a future canonical backend target with Go 1.22, Gin, `cmd/server`, config loading, server/router wiring and deterministic `/health`, `/version` and `/config/check` handlers.
+- Add an Ent/PostgreSQL baseline for `tenant`, `user`, `workspace`, `run`, `artifact`, `file`, `billing_event` and `workflow_execution` without connecting to real PostgreSQL.
+- Keep PostgreSQL as canonical truth direction and keep SQL baseline deterministic/repeatable while avoiding empty-string absence encoding and secret/blob locator fields.
+- Add a volatile repository boundary for session/cache/queue/lock only, backed by a local memory implementation for tests; no real Redis client and no `internal/repository/redis` truth source.
+- Register Go service surface, Ent/Postgres and Redis volatile boundary gates in test classification, manifest suites, branch override and backend convergence package.
+
+Commits:
+
+- `13cd7e6 feat(go): scaffold medopl go backend`
+- `369f35d feat(go): add ent postgres schema baseline`
+- `1bb9869 feat(go): add redis volatile state boundary`
+
+Contract subscription:
+
+- `AGENTS.md`
+- `TASTE.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/source/README.md`
+- `docs/runtime/README.md`
+- `docs/delivery/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `services/medopl-go-backend/**`
+
+Verification before landing review:
+
+- `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`
+- `node tests/contract/contract-test-v22-go-backend-ent-postgres-boundary.mjs`
+- `node tests/contract/contract-test-v22-go-backend-redis-volatile-boundary.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `GOROOT=/tmp/medopl-go-toolchain/root/usr/lib/go-1.22 PATH=/tmp/medopl-go-toolchain/root/usr/lib/go-1.22/bin:$PATH GOMODCACHE=/tmp/medopl-go-modcache GOCACHE=/tmp/medopl-go-buildcache go test ./...` from `services/medopl-go-backend`
+- `node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`
+- `git diff --check -- docs tests scripts package.json services/medopl-go-backend`
+
+B review pack:
+
+- `git diff --stat`: Stage 4 adds Go backend scaffold, Ent schema baseline, deterministic SQL baseline, volatile session/cache/queue/lock boundary and registered contract gates.
+- `git show --name-only --oneline HEAD`: `1bb9869 feat(go): add redis volatile state boundary`.
+- Secret hygiene: review gate reported no secret-like paths and no secret-like added lines.
+- Pollution check: no `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*`, upstream, `.runtime/*`, secret path, real cloud, build/push, kubectl, deploy or live-test operation.
+- Product narrative check: no restored `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary narrative.
+- Fake success check: Ent contract now runs real `ent generate` in a temporary Go module; volatile store rejects non-positive TTL and missing keys instead of creating permanent short-state.
+- Dependency check: Ent generator dependencies are locked for codegen verification; no `github.com/redis/go-redis`, `pgx`, `lib/pq` or runtime Postgres client was introduced.
+- Landing recommendation: Stage 4 is ff-only absorbable by B review if the full branch is selected for landing; authoring can continue to Stage 5 before final landing.
+
+Non-goals:
+
+- No real PostgreSQL connection or migration execution.
+- No real Redis connection or Redis client dependency.
+- No production Go backend replacement claim.
+- No Temporal, LangGraph or durable engine dependency.
+- No user-visible API or UI change.
+- No secret read, live cloud call, build/push, kubectl, deploy or live-test.
+- No upstream, deploy, `.sentrux`, `adapters`, `infra` or `.runtime` edits.
+- No restored `docs/contracts/**`, `docs/recovery/**`, old stage board or `scripts/smoke-test-*`.
+
+Risk notes:
+
+- Go backend is still a future canonical target, not the active production backend.
+- SQL baseline and Ent schema are intentionally local contract surfaces until a real migration lane is authorized.
+- Volatile store is local deterministic boundary proof only; production Redis wiring remains a later explicit implementation behind the same session/cache/queue/lock interfaces.
+- Ent codegen verification uses `GOPROXY=https://goproxy.cn,direct` and `GOSUMDB=sum.golang.google.cn` in the contract test to keep dependency checksum verification reproducible in this environment.
+
+Next recommendation:
+
+- Proceed to Stage 5: implement Go run/file/artifact domain contracts and runtime broker interface without connecting to real OPL, without fake success and without moving Portal business truth into runtime integration.
+
 ### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
 
 Status: `landed / pushed / post-push verified`
