@@ -135,6 +135,9 @@ func ValidateRunRequest(request RunRequest) error {
 	if request.RuntimeAgentID == "" {
 		return ErrRuntimeAgentRequired
 	}
+	if request.RuntimeAgentEndpoint == "" {
+		return ErrRuntimeAgentRequired
+	}
 	if request.ProviderKeyRef == "" {
 		return ErrProviderKeyRequired
 	}

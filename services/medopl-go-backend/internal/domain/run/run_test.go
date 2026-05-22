@@ -10,27 +10,28 @@ import (
 
 func validRunRequest() RunRequest {
 	return RunRequest{
-		RequestID:          "run-v22",
-		TenantID:           "tenant-v22",
-		PortalUserID:       "user-v22",
-		WorkspaceID:        "workspace-v22",
-		WorkspaceSessionID: "workspace-session-v22",
-		RuntimeSessionID:   "runtime-session-v22",
-		ResourceBindingID:  "binding-v22",
-		ComputeInstanceID:  "compute-v22",
-		StorageBucketID:    "storage-v22",
-		ProviderKeyRef:     "provider-key-ref-v22",
-		TraceID:            "trace-v22",
-		Message:            "summarize file",
-		ToolName:           "opl-workbench",
-		Kind:               "opl-workbench-run",
-		Model:              "gflabtoken-user-model",
-		FileRefs:           []string{"workspace-file-ref-v22"},
-		Mode:               ModeFullRuntime,
-		RuntimeAgentID:     "runtime-agent-v22",
-		IdempotencyKey:     "run-v22-once",
-		SourceSurface:      "portal_control_plane",
-		CreatedAt:          time.Date(2026, 5, 22, 12, 0, 0, 0, time.UTC),
+		RequestID:            "run-v22",
+		TenantID:             "tenant-v22",
+		PortalUserID:         "user-v22",
+		WorkspaceID:          "workspace-v22",
+		WorkspaceSessionID:   "workspace-session-v22",
+		RuntimeSessionID:     "runtime-session-v22",
+		ResourceBindingID:    "binding-v22",
+		ComputeInstanceID:    "compute-v22",
+		StorageBucketID:      "storage-v22",
+		ProviderKeyRef:       "provider-key-ref-v22",
+		TraceID:              "trace-v22",
+		Message:              "summarize file",
+		ToolName:             "opl-workbench",
+		Kind:                 "opl-workbench-run",
+		Model:                "gflabtoken-user-model",
+		FileRefs:             []string{"workspace-file-ref-v22"},
+		Mode:                 ModeFullRuntime,
+		RuntimeAgentID:       "runtime-agent-v22",
+		RuntimeAgentEndpoint: "http://runtime-agent.local",
+		IdempotencyKey:       "run-v22-once",
+		SourceSurface:        "portal_control_plane",
+		CreatedAt:            time.Date(2026, 5, 22, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -56,6 +57,15 @@ func TestValidateRunRequestRejectsApiOnlyRun(t *testing.T) {
 	request.Mode = "api_only"
 
 	if err := ValidateRunRequest(request); !errors.Is(err, ErrInvalidRunMode) {
+		t.Fatalf("ValidateRunRequest() error = %v", err)
+	}
+}
+
+func TestValidateRunRequestRequiresRuntimeAgentEndpoint(t *testing.T) {
+	request := validRunRequest()
+	request.RuntimeAgentEndpoint = ""
+
+	if err := ValidateRunRequest(request); !errors.Is(err, ErrRuntimeAgentRequired) {
 		t.Fatalf("ValidateRunRequest() error = %v", err)
 	}
 }

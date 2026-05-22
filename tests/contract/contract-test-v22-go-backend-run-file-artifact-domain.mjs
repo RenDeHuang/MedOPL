@@ -31,6 +31,7 @@ const requiredMarkers = new Map([
     "RunStatusFailed",
     "RunStatusCancelled",
     "RunStatusGated",
+    "ErrRuntimeAgentRequired",
     "ErrProviderKeyRequired",
     "ErrFileRefRequired",
     "ErrInvalidRunStatus",
@@ -70,7 +71,11 @@ const requiredMarkers = new Map([
   ["internal/service/runfileartifact/service_test.go", [
     "TestServiceCreatesPendingRunWithoutFakeSuccess",
     "TestServiceRequiresProviderKeyAndFileRefs",
+    "TestServiceRequiresRuntimeAgentEndpoint",
     "TestServiceRequiresObservedArtifactBeforeSucceededRun",
+  ]],
+  ["internal/domain/run/run_test.go", [
+    "TestValidateRunRequestRequiresRuntimeAgentEndpoint",
   ]],
 ]);
 

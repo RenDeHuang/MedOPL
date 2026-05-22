@@ -14,25 +14,26 @@ import (
 
 func validRequest() run.RunRequest {
 	return run.RunRequest{
-		RequestID:          "run-v22",
-		TenantID:           "tenant-v22",
-		PortalUserID:       "user-v22",
-		WorkspaceID:        "workspace-v22",
-		WorkspaceSessionID: "workspace-session-v22",
-		RuntimeSessionID:   "runtime-session-v22",
-		ResourceBindingID:  "binding-v22",
-		ComputeInstanceID:  "compute-v22",
-		StorageBucketID:    "storage-v22",
-		ProviderKeyRef:     "provider-key-ref-v22",
-		TraceID:            "trace-v22",
-		ToolName:           "opl-workbench",
-		Kind:               "opl-workbench-run",
-		FileRefs:           []string{"workspace-file-ref-v22"},
-		Mode:               run.ModeFullRuntime,
-		RuntimeAgentID:     "runtime-agent-v22",
-		IdempotencyKey:     "run-v22-once",
-		SourceSurface:      "portal_control_plane",
-		CreatedAt:          time.Date(2026, 5, 22, 12, 0, 0, 0, time.UTC),
+		RequestID:            "run-v22",
+		TenantID:             "tenant-v22",
+		PortalUserID:         "user-v22",
+		WorkspaceID:          "workspace-v22",
+		WorkspaceSessionID:   "workspace-session-v22",
+		RuntimeSessionID:     "runtime-session-v22",
+		ResourceBindingID:    "binding-v22",
+		ComputeInstanceID:    "compute-v22",
+		StorageBucketID:      "storage-v22",
+		ProviderKeyRef:       "provider-key-ref-v22",
+		TraceID:              "trace-v22",
+		ToolName:             "opl-workbench",
+		Kind:                 "opl-workbench-run",
+		FileRefs:             []string{"workspace-file-ref-v22"},
+		Mode:                 run.ModeFullRuntime,
+		RuntimeAgentID:       "runtime-agent-v22",
+		RuntimeAgentEndpoint: "http://runtime-agent.local",
+		IdempotencyKey:       "run-v22-once",
+		SourceSurface:        "portal_control_plane",
+		CreatedAt:            time.Date(2026, 5, 22, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -66,6 +67,17 @@ func TestServiceRequiresProviderKeyAndFileRefs(t *testing.T) {
 	request.FileRefs = nil
 	if _, err := service.CreateRunRequest(ctx, request); !errors.Is(err, run.ErrFileRefRequired) {
 		t.Fatalf("CreateRunRequest() file ref error = %v", err)
+	}
+}
+
+func TestServiceRequiresRuntimeAgentEndpoint(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewRunFileArtifactStore())
+	request := validRequest()
+	request.RuntimeAgentEndpoint = ""
+
+	if _, err := service.CreateRunRequest(ctx, request); !errors.Is(err, run.ErrRuntimeAgentRequired) {
+		t.Fatalf("CreateRunRequest() error = %v", err)
 	}
 }
 
