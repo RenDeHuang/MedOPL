@@ -1,6 +1,6 @@
 # local-golden-path-release-candidate Closeout
 
-Status: local-rc-eval-complete
+Status: archived
 
 ## Commits
 
@@ -8,6 +8,8 @@ Status: local-rc-eval-complete
 - `f628cb7 test(rc): add provider-key-bound local rc eval`
 - `22ed6fb docs(rc): record local rc eval closeout`
 - `d311cd5 test(rc): satisfy workflow secret hygiene gate`
+- `7deaaa2 docs(rc): close local rc verification review`
+- pending archive commit: archive local RC package and history handoff
 
 ## Verification
 

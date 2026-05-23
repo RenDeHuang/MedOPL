@@ -61,6 +61,74 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
+
+Status: `archived / local-rc-gated`
+
+Branch: `cleanup/golden-path-first-class`
+
+Archived change package: `changes/archive/2026-05-23-local-golden-path-release-candidate`
+
+Scope:
+
+- Added a local RC provider-bound message backflow eval for the product golden path.
+- Verified Portal login, credit, provider key backend secret boundary, managed environment open, OPL Gateway launch/bootstrap against local OPL WebUI, Runtime Bridge ACP message reply, file/run/artifact projection, Portal trace projection and release/stop billing audit shape.
+- Registered the eval only in `local-rc-authorized`; default `golden-path`, `current`, `contract` and `review` remain deterministic and non-secret.
+- Kept local RC evidence below production truth and recorded remaining gaps.
+
+Commits:
+
+- `d642f43` opens the local golden path release candidate package.
+- `f628cb7` adds the provider-bound local RC eval and lane metadata.
+- `22ed6fb` records local RC eval closeout.
+- `d311cd5` satisfies workflow secret hygiene and renames the eval to provider-bound wording.
+- `7deaaa2` closes verification and review evidence.
+- Archive commit records package archival and this history handoff.
+
+Verification result:
+
+- `node tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs` with authorized provider credential env: pass.
+- `npm run verify:golden-path`: pass.
+- `npm run verify:current`: pass.
+- `npm run verify:contract`: pass.
+- `npm run verify:review`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs`: pass.
+- `node tests/health/health-check-v22-smoke-classification-gate.mjs`: pass.
+- `node tests/health/health-check-v22-smoke-eval-boundary.mjs`: pass.
+- `node tests/health/health-check-v22-workflow-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk --dry-run --json`: pass.
+- `npm run gate:change`: pass.
+- `git diff --check -- changes docs specs scripts tests`: pass.
+
+Independent review:
+
+- Reviewer: Codex native explorer subagent.
+- Model: `gpt-5.4-mini`.
+- Result: read-only review found one archive-closeout blocker; archive and history handoff fixed it. No blocker remained for lane placement, secret hygiene, false production claim, or spec/eval registry consistency.
+
+Can-claim:
+
+- A user-owned gflabtoken can be provided to Portal through the backend secret boundary and projected publicly only as `providerKeyRef` in this local RC path.
+- Local Portal -> OPL Web Gateway -> local clean OPL WebUI -> Runtime Bridge can complete provider-bound bootstrap and ACP message reply projection.
+- Local RC covers login, credit, provider key, managed environment open, launch, file, message, run, artifact, trace and release/stop billing shape.
+- Missing provider config remains fail-closed with `provider_config_required`.
+- Raw provider key is not exposed in public responses, child stdout/stderr, Runtime Bridge state or git-tracked evidence.
+
+Cannot-claim:
+
+- Production provider readiness.
+- Real WebUI provider message reply evidence.
+- Real cloud resource lifecycle, deploy, kubectl rollout, build/push, production billing or production trace evidence.
+- Portal launch automatically reuses an already bound provider key without inline `providerKeyPayload`.
+- Future secret reads beyond the single local RC provider credential run.
+
+Next owner:
+
+- `MedOPL Platform` owns the remaining local RC gap: Portal launch API should reuse an already bound provider key without inline `providerKeyPayload`.
+- `MedOPL Operations` owns the later real-cloud authorization package when explicitly authorized.
+
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`

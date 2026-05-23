@@ -28,3 +28,11 @@
 - default eval placement: pass. The provider-bound RC test is registered only in `local-rc-authorized`; default `golden-path`, `current`, `contract` and `review` suites stay deterministic and non-secret.
 - workflow gate: pass. `tests/local-rc` is now recognized as a v22 eval path, and change package command examples avoid secret extraction snippets.
 - gap handling: pass. The local RC keeps Portal provider binding reuse, real WebUI provider reply and production cloud/live evidence as explicit gaps.
+
+## Archive Review
+
+- reviewer: Cicero
+- model: gpt-5.4-mini
+- mode: read-only
+- blocker: archive closeout was incomplete while Step 8 remained active-only.
+- resolution: package moved to `changes/archive/2026-05-23-local-golden-path-release-candidate`, Step 8 completed, closeout status changed to `archived`, and history handoff added.

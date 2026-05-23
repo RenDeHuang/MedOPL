@@ -8,7 +8,7 @@
 - [x] Step 5: run authorized local RC with the user-authorized local provider credential
 - [x] Step 6: run golden/current/contract/review/Portal checks
 - [x] Step 7: self-review, independent review notes and closeout
-- [ ] Step 8: archive change package and write history handoff
+- [x] Step 8: archive change package and write history handoff
 
 ## Step Notes
 
@@ -17,3 +17,4 @@
 - Step 5 ran with the user-authorized local provider credential without printing the value.
 - Step 6 ran `npm run verify:golden-path`, `npm run verify:current`, `npm run verify:contract`, `npm run verify:review` and `npm --prefix services/portal run check`; all passed.
 - Step 7 self-review and independent review found no blocker for the local RC closeout. Remaining gaps stay explicit in closeout.
+- Step 8 archived the package to `changes/archive/2026-05-23-local-golden-path-release-candidate` and wrote the history handoff.

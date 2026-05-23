@@ -1,6 +1,6 @@
 # local-golden-path-release-candidate Proposal
 
-Status: local-rc-eval-complete
+Status: archived
 Branch: cleanup/golden-path-first-class
 Base trunk: origin/recovery/platform-v22-trunk
 Owner: MedOPL Platform

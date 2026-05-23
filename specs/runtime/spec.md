@@ -14,3 +14,5 @@ Runtime specs define Portal -> Gateway -> clean OPL upstream -> Runtime Bridge /
 | `runtime:clean-upstream-boundary` | Integration | `services/opl-web-gateway`, `docs/runtime/README.md` | `node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs` | local integration proof | MedOPL owns or modifies upstream OPL internals. |
 | `runtime:bridge-projection` | Runtime | `services/opl-runtime-bridge` | `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs` | local smoke evidence | Local bridge proof is production runtime readiness. |
 | `runtime:local-rc-provider-bound-message-backflow` | Integration + Runtime | `services/portal`, `services/opl-web-gateway`, `services/opl-runtime-bridge` | `node tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs` with authorized `GFLABTOKEN` env | local RC authorized proof | Local RC evidence is production provider, real WebUI provider reply, real cloud, deploy or billing readiness. |
+
+Related evidence anchor: `evidence:local-provider-bound-message-proof`.
