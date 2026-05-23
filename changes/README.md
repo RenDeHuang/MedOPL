@@ -287,4 +287,10 @@ Durable specs sync rules:
 - accepted requirement ids from `spec-delta.md` must appear in the target durable spec;
 - if a delta is intentionally not accepted, `closeout.md` must record blocker and next owner instead of claiming landed/archive completion.
 
+History sync rules:
+
+- every archived change must have a compact summary in `docs/history/README.md`;
+- history summary must reference the archived change id, commits, verification result and can-claim / cannot-claim;
+- history must stay summary-only and must not duplicate full proposal, design, task or eval-plan content.
+
 History keeps summary only. Full proposal, design, tasks, spec delta, eval plan and review context belong in the archived change package.

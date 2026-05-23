@@ -151,6 +151,11 @@ assertIncludes(specsReadme, "durable behavior specs", "root_specs_readme");
 assertIncludes(specsReadme, "docs/specs/README.md remains the human contract index", "root_specs_readme");
 assertIncludes(specsReadme, "changes/active/<change-id>/spec-delta.md", "root_specs_readme");
 
+const history = await readRepoFile("docs/history/README.md");
+for (const changeId of archivedChanges) {
+  assertIncludes(history, changeId, `history_must_reference_archived_change:${changeId}`);
+}
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_change_package_lifecycle",
