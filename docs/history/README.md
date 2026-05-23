@@ -3191,6 +3191,7 @@ Scope:
 Commits:
 
 - `d7b9877` docs(truth): close portal typed api cursor.
+- `4f5df61` docs(truth): sync typed api closeout head.
 
 Verification result:
 
@@ -3222,14 +3223,14 @@ Cannot-claim:
 - Go backend has replaced the current Node Portal backend.
 - Real cloud, deploy, kubectl, build/push, live-test, live provider evidence or production billing is authorized.
 
-landed_commit: `d7b9877cd6c6b87cd0a292f647149fc511cc842c`
+landed_commit: `4f5df610b44ba512e0888c0d60436e7ce02fc52b`
 
-landing_gate_result: `passed / ff-only landed`
+landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `d7b9877cd6c6b87cd0a292f647149fc511cc842c` is merged into local `recovery/platform-v22-trunk` by ff-only.
-- Remote push verification is pending until the next push step.
+- `4f5df610b44ba512e0888c0d60436e7ce02fc52b` reached `origin/recovery/platform-v22-trunk` after push.
+- The pushed head includes typed API closeout, active cursor handoff and workflow review support for active-to-archive package moves.
 
 post_merge_closeout: `completed`
 

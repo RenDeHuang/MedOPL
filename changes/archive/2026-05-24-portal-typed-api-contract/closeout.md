@@ -5,6 +5,7 @@ Status: archived
 ## Commits
 
 - `d7b9877` docs(truth): close portal typed api cursor
+- `4f5df61` docs(truth): sync typed api closeout head
 
 ## Verification
 

@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-24",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "d7b9877cd6c6b87cd0a292f647149fc511cc842c",
+  "base_trunk_head": "4f5df610b44ba512e0888c0d60436e7ce02fc52b",
   "current_branch": "opl-entry-real-preflight-launch",
   "current_branch_role": "productization_cursor",
   "authoring_branch": "opl-entry-real-preflight-launch",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "d7b9877cd6c6b87cd0a292f647149fc511cc842c",
+  "last_landed_commit": "4f5df610b44ba512e0888c0d60436e7ce02fc52b",
   "current_cursor": "opl-entry-real-preflight-launch",
   "next_leaf": "opl-entry-real-preflight-launch",
   "current_stage": "S6 productization package 4 - OPL entry real preflight launch",
@@ -58,7 +58,7 @@
       ],
       "closed_at": "2026-05-24",
       "history_summary": "Typed API contract package archived; current cursor advanced to OPL entry real preflight / launch.",
-      "landed_commit": "d7b9877cd6c6b87cd0a292f647149fc511cc842c"
+      "landed_commit": "4f5df610b44ba512e0888c0d60436e7ce02fc52b"
     },
     {
       "id": "provider-key-reuse",
