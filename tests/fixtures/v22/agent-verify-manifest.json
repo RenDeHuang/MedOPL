@@ -1331,7 +1331,7 @@
     {
       "id": "local-rc-authorized",
       "commands": [
-        "node tests/local-rc/local-rc-test-v22-provider-key-message-backflow.mjs"
+        "node tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs"
       ]
     },
     {

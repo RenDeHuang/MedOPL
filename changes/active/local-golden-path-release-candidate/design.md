@@ -16,7 +16,7 @@ The gflabtoken provider key enters only at the local RC test process boundary an
 
 ## Data Flow
 
-1. Local test reads `GFLABTOKEN` from process environment or the explicitly authorized `~/.secrets/medopl/secrets.env.txt`.
+1. Local test reads the user-authorized local provider credential from process environment.
 2. Test logs in to local Portal with the local dev account.
 3. Test creates or switches to a local workspace.
 4. Test calls `/portal/api/opl/launch` with `providerKeyPayload`.
@@ -27,7 +27,7 @@ The gflabtoken provider key enters only at the local RC test process boundary an
 
 ## Failure Modes
 
-- Missing `GFLABTOKEN`: skip/fail the local RC live-provider eval with `GFLABTOKEN_REQUIRED`, not a production claim.
+- Missing authorized provider credential: skip/fail the local RC live-provider eval with `GFLABTOKEN_REQUIRED`, not a production claim.
 - Missing workspace: return `workspace_id_required`.
 - Missing provider config: return `provider_config_required`.
 - OPL WebUI unavailable: return `opl_upstream_url_required` or Gateway failure.
@@ -38,4 +38,4 @@ The gflabtoken provider key enters only at the local RC test process boundary an
 - source: no production source change expected unless the eval exposes a bug.
 - docs: change package and history closeout only.
 - specs: accepted delta is recorded in this package; durable spec sync occurs only if review accepts it.
-- tests: add `tests/local-rc/local-rc-test-v22-provider-key-message-backflow.mjs`.
+- tests: add `tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs`.

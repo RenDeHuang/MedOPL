@@ -8,7 +8,7 @@ Affected plane: Product, Integration, Runtime, Framework
 
 ## Why
 
-MedOPL local pre-cloud proof currently shows the golden path shape and guardrails, but the observed runtime gap is at the provider-key-bound message backflow step. Portal, OPL Web Gateway, Runtime Bridge and local One Person Lab WebUI can run locally, yet a launch without provider config correctly fails message backflow with `provider_config_required`.
+MedOPL local pre-cloud proof currently shows the golden path shape and guardrails, but the observed runtime gap is at the provider-bound message backflow step. Portal, OPL Web Gateway, Runtime Bridge and local One Person Lab WebUI can run locally, yet a launch without provider config correctly fails message backflow with `provider_config_required`.
 
 This change turns the local RC into a repo-native proof package: it verifies that a user-owned gflabtoken provider key can enter only the backend secret boundary, produce a public `providerKeyRef`, open OPL through Gateway, and allow Runtime Bridge message reply/artifact/trace projection without leaking raw key material.
 
@@ -25,7 +25,7 @@ This change turns the local RC into a repo-native proof package: it verifies tha
 - No real cloud mutation, deploy, kubectl, build/push or production live-test.
 - No one-person-lab upstream source modification.
 - No default platform provider credential.
-- No production truth claim from local provider-key-bound evidence.
+- No production truth claim from local provider-bound evidence.
 - No restoration of `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary product narrative.
 
 ## Golden Path Impact
@@ -38,11 +38,11 @@ This change turns the local RC into a repo-native proof package: it verifies tha
   - `billing / trace / audit`
 - required golden path eval:
   - `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk`
-  - `node tests/local-rc/local-rc-test-v22-provider-key-message-backflow.mjs`
+  - `node tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs`
 
 ## Authorization Boundary
 
-- User authorized reading only `~/.secrets/medopl/secrets.env.txt` for `GFLABTOKEN`.
+- User authorized reading only the local MedOPL provider credential file for the gflabtoken credential.
 - Do not read unrelated secret values from that file.
 - Do not echo, log, persist, commit or report the raw provider key.
 - No real cloud, deploy, kubectl, build/push or live-test.
@@ -72,7 +72,7 @@ Rules:
 
 Contracts:
 
-- `spec:v22-user-credit-provider-key-boundary`
+- `spec:v22-user-credit-provider-boundary`
 - `spec:v22-opl-entry-preflight-auth-boundary`
 - `spec:v22-portal-opl-connection-boundary`
 - `spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary`
@@ -87,7 +87,7 @@ Status:
 Evidence:
 
 - Existing default evals prove local contract shape and guardrails.
-- This change adds local provider-key-bound message backflow evidence.
+- This change adds local provider-bound message backflow evidence.
 
 History:
 
@@ -103,4 +103,4 @@ Noise / obsolete:
 - This does not prove production provider readiness.
 - This does not prove production deploy, kubectl rollout, real cloud resource lifecycle or real billing.
 - This does not prove all OPL native UI flows are production-ready.
-- This does not authorize future cloud or secret reads beyond the single `GFLABTOKEN` local RC run.
+- This does not authorize future cloud or secret reads beyond the single local RC provider credential run.

@@ -77,7 +77,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary) | `v22-token-provider-boundary` |
 | [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary) | `v22-trace-metadata-boundary` |
 | [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary) | `v22-upstream-opl-boundary` |
-| [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary) | `v22-user-credit-provider-key-boundary` |
+| [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary) | `v22-user-credit-provider-boundary` |
 
 ## Absorbed Contract Index
 
@@ -115,7 +115,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 ## 用户闭环段合同
 
 - pricing snapshot: [spec:v22-pricing-snapshot-boundary](#spec-v22-pricing-snapshot-boundary)
-- user credit / user provider key: [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary)
+- user credit / user provider key: [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary)
 - managed environment open / managed resource binding plan view: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
 - Portal-OPL connection: [spec:v22-portal-opl-connection-boundary](#spec-v22-portal-opl-connection-boundary)
 - opl work message file run: [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)
@@ -127,7 +127,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 
 - smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite local-rc-authorized` 只在用户显式授权本地 provider secret 时执行；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - truth freeze: [../history/README.md](../history/README.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
-- token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
+- token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
 - managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider`，真实接入另开 feat/* 并单独授权。
@@ -9815,7 +9815,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | smoke | `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk` | 小型 golden smoke。 |
 | local-contract | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` | 合同和控制面本地 gate。 |
 | local-regression | `node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk` | Portal / OPL / Runtime Bridge 本地 deterministic 回归。 |
-| local-rc-authorized | `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk` with authorized `GFLABTOKEN` env | 本地 RC provider-key-bound 链路验证；不进入默认 suite。 |
+| local-rc-authorized | `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk` with authorized `GFLABTOKEN` env | 本地 RC provider-bound 链路验证；不进入默认 suite。 |
 | cloud-future-authorized | `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk` | 只做分类可见性，不授权执行真实云。 |
 | mvp | `node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk` | 旧兼容入口，语义收敛为 local deterministic regression，不再称为纯 smoke。 |
 
@@ -10745,9 +10745,9 @@ MedOPL 有两种进入 OPL Web 的路径：
 
 用户可见入口不是 /internal/opl/auth/login。/internal/opl/auth/login 只能是 internal implementation path。
 
-### spec:v22-user-credit-provider-key-boundary
+### spec:v22-user-credit-provider-boundary
 
-Former leaf id: `v22-user-credit-provider-key-boundary`
+Former leaf id: `v22-user-credit-provider-boundary`
 Former title: v22 User Credit Provider Key Boundary Contract
 
 本合同定义 MedOPL v22 MVP 托管 OPL 闭环第一段：平台准备用户、给用户充值、绑定用户自己的 gflabtoken provider key，并输出 canonical state readiness。

@@ -390,6 +390,7 @@ function isV22EvalPath(filePath) {
     /^tests\/health\/health-check-v22-.*\.mjs$/u,
     /^tests\/contract\/(?:.+\/)?contract-test-v22-.*\.mjs$/u,
     /^tests\/regression\/.+\/regression-test-v22-.*\.mjs$/u,
+    /^tests\/local-rc\/local-rc-test-v22-.*\.mjs$/u,
     /^tests\/future-authorized\/cloud\/future-authorized-test-v22-.*\.mjs$/u,
   ].some((pattern) => pattern.test(normalized));
 }

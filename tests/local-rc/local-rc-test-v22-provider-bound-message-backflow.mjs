@@ -45,9 +45,9 @@ readline.createInterface({ input: process.stdin, crlfDelay: Infinity }).on("line
     return;
   }
   if (request.command === "prompt") {
-    const token = process.env.GFLABTOKEN || "";
+    const providerCredential = process.env.GFLABTOKEN || "";
     const expected = process.env.OPL_RC_EXPECTED_PROVIDER_KEY_HASH || "";
-    const injected = token && expected && secretHash(token) === expected && process.env.OPENAI_API_KEY === token && process.env.OPL_CODEX_API_KEY === token;
+    const injected = providerCredential && expected && secretHash(providerCredential) === expected && process.env.OPENAI_API_KEY === providerCredential && process.env.OPL_CODEX_API_KEY === providerCredential;
     if (!injected) {
       write({ id: request.id, ok: false, error: { code: "provider_secret_runtime_env_missing", message: "provider_secret_runtime_env_missing" } });
       return;
@@ -236,7 +236,7 @@ async function readRuntimeBridgeState(stateRoot) {
   return JSON.parse(await readFile(path.join(stateRoot, "state.json"), "utf8"));
 }
 
-const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-local-rc-provider-key-backflow-"));
+const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-local-rc-provider-bound-backflow-"));
 const runtimeRoot = path.join(tempRoot, "portal-runtime");
 const runtimeBridgeStateRoot = path.join(tempRoot, "runtime-bridge-state");
 const providerSecretRoot = path.join(tempRoot, "provider-secrets");
@@ -437,7 +437,7 @@ try {
 
   const bind = await postJson(`${portalUrl}/portal/api/opl/sessions/bind?launchId=${encodeURIComponent(launchId)}`, {
     oplSessionId: bootstrap.json.identity.oplSessionId || "local-rc-opl-session",
-    clientSessionState: { source: "local-rc-provider-key-message-backflow" },
+    clientSessionState: { source: "local-rc-provider-bound-message-backflow" },
   }, { cookie: portalCookie });
   assert.equal(bind.response.status, 200, "portal_opl_session_bind_must_return_200");
   assert.equal(bind.json.runtimeSession.providerBound, true, "portal_opl_session_bind_provider_bound_mismatch");
@@ -454,7 +454,7 @@ try {
   assertNoSecretLeak(file.json, "portal_opl_file");
 
   const message = await postJson(`${portalUrl}/portal/api/opl/messages?launchId=${encodeURIComponent(launchId)}`, {
-    message: "local RC provider-key-bound message backflow",
+    message: "local RC provider-bound message backflow",
     waitForCompletion: true,
   }, { cookie: portalCookie });
   assert.equal(message.response.status, 200, "portal_opl_message_must_return_200");
@@ -522,7 +522,7 @@ try {
 
   console.log(JSON.stringify({
     ok: true,
-    contract: "v22_local_rc_provider_key_message_backflow",
+    contract: "v22_local_rc_provider_bound_message_backflow",
     urls: {
       portalUrl,
       gatewayUrl,
@@ -535,7 +535,7 @@ try {
       "provider_key_backend_secret_boundary",
       "managed_environment_open",
       "gateway_launch_bootstrap_against_local_opl_webui",
-      "provider_key_bound_message_backflow",
+      "provider_bound_message_backflow",
       "file_run_artifact_projection",
       "portal_trace_projection",
       "release_stop_billing_audit_pending",
