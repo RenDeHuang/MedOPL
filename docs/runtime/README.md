@@ -22,6 +22,8 @@ Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerK
 
 Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL。Redis 不是事实源，只能用于 session、cache、queue、lock 或短期协调。Portal 保存账号、用户、工作空间、钱包、冻结金额、账本、审计、resource binding、fileRef/logical index、session/run/artifact/trace metadata 的业务事实。
 
+Runtime / data readiness 必须 fail closed：缺 PostgreSQL/Redis production-mode 连接、schema、Gateway upstream URL、provider binding、Runtime Bridge capability 或明确授权时，返回稳定 gate，不允许 JSON fallback、fake 200 或隐式旧路径。
+
 数据与云控制面真相采用 Portal 内部 operation/job/projection/reconciliation 模型：
 
 - desired state：Portal 中形成的资源、文件空间、计费和释放意图。

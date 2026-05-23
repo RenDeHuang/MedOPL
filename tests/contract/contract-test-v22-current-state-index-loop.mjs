@@ -123,11 +123,13 @@ for (const retired of [
   assertIncludes(docsIndex, retired, "docs_index_retired_entrypoint");
 }
 
-assertIncludes(active, "Index loop", "active_gap_matrix_must_include_index_loop");
+assertIncludes(docsIndex, "自治闭环按这个顺序运行", "docs_index_must_own_index_loop");
 assertIncludes(active, indexLoopGate, "active_must_point_to_index_loop_gate");
 assertIncludes(active, latestLandedCommit, "active_must_record_latest_landed_commit");
 assertIncludes(active, latestLandedBranch, "active_must_record_latest_landed_branch");
 assertIncludes(active, currentCursor, "active_must_record_current_cursor");
+assertIncludes(active, "| current phase |", "active_must_record_current_phase_field");
+assertIncludes(active, "| current blocker |", "active_must_record_current_blocker_field");
 assertIncludes(delivery, currentCursor, "delivery_must_record_current_cursor");
 
 assertIncludes(product, "Product Contract Groups", "product_contract_groups");

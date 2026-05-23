@@ -207,10 +207,10 @@ const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.curr
 assert(currentLeaf, `current_leaf_missing:${current.current_cursor}`);
 assert(currentLeaf.verification_commands.includes("node tests/contract/contract-test-v22-product-engineering-loop-index.mjs"), "current_leaf_must_run_product_loop_gate");
 
-assertIncludes(active, "product-engineering-loop", "active_must_name_product_engineering_loop");
-assertIncludes(active, "precloud-product-slides-closure", "active_must_name_precloud_slide_goal");
-assertIncludes(active, "closed summary", "active_must_reference_product_loop_closed_summary");
-assertIncludes(active, "real-cloud authorization boundary", "active_must_reference_product_loop_next_cursor");
+assertIncludes(active, current.current_cursor, "active_must_reference_product_loop_next_cursor");
+assertIncludes(active, loop.landed_commit, "active_must_reference_product_loop_landed_commit");
+assertIncludes(history, "precloud-product-slides-closure", "history_must_name_precloud_slide_goal");
+assertIncludes(history, "Product Engineering Loop", "history_must_name_product_engineering_loop");
 assertIncludes(history, "collapse policy", "history_must_define_product_loop_collapse");
 assertIncludes(history, "active baton", "history_must_record_product_loop_as_baton");
 if (loop.status === "closed") {

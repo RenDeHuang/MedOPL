@@ -98,7 +98,8 @@ for (const dir of docsDirs) {
 assertIncludes(docsIndex, "`docs/active/README.md` | current truth / gap / cursor", "docs_index_active_surface_rule");
 assertIncludes(docsIndex, "current facts, gap, current development lines, cannot-claim, next action", "docs_index_active_allowed_content");
 assertIncludes(active, "唯一人读 current truth", "active_current_truth_boundary");
-assertIncludes(active, "current truth、spec、manifest、history 和 verify gate 一致", "active_surface_current_scope");
+assertIncludes(active, "| current cursor |", "active_surface_current_cursor_field");
+assertIncludes(active, "## Verification Entry", "active_surface_verification_entry");
 assertSectionHas(policies, "## Human / Machine Boundary", "README files are human truth, not machine APIs", "policies_human_machine_boundary");
 assertSectionHas(testsReadme, "## Docs Gate Boundary", "must not assert prose wording as machine truth", "tests_docs_gate_boundary");
 

@@ -56,15 +56,8 @@ function assertActiveHeadingsAreNarrowCurrentTruth(activeSource) {
   const allowedHeadings = new Set([
     "## Ideal State",
     "## Current State",
-    "## Gap Matrix",
-    "## Current Development Lines",
-    "### current-stage-current-cursor",
-    "### portal-saas-control-plane-product-loop",
-    "### optional-resource-lifecycle-and-pricing-boundary",
-    "### portal-opl-runtime-managed-chain",
-    "### portal-canonical-data-postgres-redis-closure",
-    "### governance-verification-post-merge-closeout",
-    "### backend-go-convergence-program",
+    "## Open Blockers",
+    "## Verification Entry",
     "## Cannot Claim",
     "## Source Of Truth During Migration",
   ]);
@@ -72,17 +65,18 @@ function assertActiveHeadingsAreNarrowCurrentTruth(activeSource) {
     assert(allowedHeadings.has(heading), `active_heading_not_allowed:${heading}`);
   }
   assert(headings.length <= allowedHeadings.size, `active_heading_count_exceeded:${headings.length}`);
-  assert(activeSource.split("\n").length <= 180, `active_line_budget_exceeded:${activeSource.split("\n").length}`);
+  assert(activeSource.split("\n").length <= 90, `active_line_budget_exceeded:${activeSource.split("\n").length}`);
 }
 
 function assertActiveKeepsOnlyCurrentState(activeSource) {
   assertIncludesAll(activeSource, [
-    "当前 product cursor 是 `real-cloud-authorization-boundary`",
-    "当前 phase：",
-    "当前 blocker：",
-    "Next owner：",
-    "当前默认 verification entry",
-    "## Gap Matrix",
+    "| current phase |",
+    "| current cursor | `real-cloud-authorization-boundary` |",
+    "| current blocker |",
+    "| next owner |",
+    "default verification",
+    "## Open Blockers",
+    "## Verification Entry",
     "## Cannot Claim",
     "## Source Of Truth During Migration",
   ], "active_current_state_minimum");
@@ -98,7 +92,10 @@ function assertActiveKeepsOnlyCurrentState(activeSource) {
     "## OPL Entry / Upstream Boundary",
     "## Active Source Surface",
     "## Active Surface Rule",
+    "## Current Development Lines",
     "### OPL-style 清退生命周期真相",
+    "Current evidence:",
+    "Done when:",
     "Product Contract Groups",
     "Runtime Contract Groups",
     "Evidence Levels",

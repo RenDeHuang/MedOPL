@@ -6,15 +6,6 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
-const expectedLines = [
-  "current-stage-current-cursor",
-  "portal-saas-control-plane-product-loop",
-  "optional-resource-lifecycle-and-pricing-boundary",
-  "portal-opl-runtime-managed-chain",
-  "portal-canonical-data-postgres-redis-closure",
-  "governance-verification-post-merge-closeout",
-];
-
 async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
 }
@@ -23,65 +14,67 @@ async function readJson(repoPath) {
   return JSON.parse(await readRepoFile(repoPath));
 }
 
-function sectionForLine(source, lineId) {
-  const heading = `### ${lineId}`;
-  const start = source.indexOf(heading);
-  assert(start >= 0, `development_line_missing:${lineId}`);
-  const next = source.indexOf("\n### ", start + heading.length);
-  return next >= 0 ? source.slice(start, next) : source.slice(start);
+function assertIncludes(source, expected, label) {
+  assert(source.includes(expected), `${label}_missing:${expected}`);
 }
 
-const [active, current] = await Promise.all([
+function assertExcludes(source, forbidden, label) {
+  assert.equal(source.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
+}
+
+const [active, product, runtime, delivery, history, current] = await Promise.all([
   readRepoFile("docs/active/README.md"),
+  readRepoFile("docs/product/README.md"),
+  readRepoFile("docs/runtime/README.md"),
+  readRepoFile("docs/delivery/README.md"),
+  readRepoFile("docs/history/README.md"),
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
 
-assert(active.includes("## Current Development Lines"), "active_must_have_current_development_lines");
-for (const lineId of expectedLines) {
-  const section = sectionForLine(active, lineId);
-  for (const label of ["Current evidence:", "Gap:", "Next action:", "Done when:", "Verify:"]) {
-    assert(section.includes(label), `development_line_missing_field:${lineId}:${label}`);
-  }
+assertIncludes(active, "current phase", "active_must_have_phase_field");
+assertIncludes(active, current.current_cursor, "active_must_reference_machine_cursor");
+assertIncludes(active, current.last_landed_commit, "active_must_reference_last_landed_commit");
+assertIncludes(active, "current blocker", "active_must_have_blocker_field");
+assertIncludes(active, "next owner", "active_must_have_next_owner_field");
+assertIncludes(active, "default verification", "active_must_have_default_verification_field");
+assertIncludes(active, "## Open Blockers", "active_must_have_open_blockers");
+assertIncludes(active, "## Verification Entry", "active_must_have_verification_entry");
+assertIncludes(active, "## Cannot Claim", "active_must_have_cannot_claim");
+
+for (const forbidden of [
+  "## Current Development Lines",
+  "### portal-saas-control-plane-product-loop",
+  "### optional-resource-lifecycle-and-pricing-boundary",
+  "### portal-opl-runtime-managed-chain",
+  "### portal-canonical-data-postgres-redis-closure",
+  "### governance-verification-post-merge-closeout",
+]) {
+  assertExcludes(active, forbidden, "active_must_not_carry_development_line_sections");
 }
 
-const cursorSection = sectionForLine(active, "current-stage-current-cursor");
-assert(cursorSection.includes(current.current_cursor), "cursor_line_must_reference_machine_cursor");
-assert(cursorSection.includes(current.last_landed_commit), "cursor_line_must_reference_last_landed_commit");
+assertIncludes(product, "Core User Loop", "product_must_own_user_loop");
+assertIncludes(product, "Optional Resource Lifecycle", "product_must_own_resource_lifecycle");
+assertIncludes(product, "120min", "product_must_own_stop_billing_window");
+assertIncludes(product, "T+1", "product_must_own_audit_window");
+assertIncludes(runtime, "PostgreSQL", "runtime_must_own_postgres_truth");
+assertIncludes(runtime, "Redis", "runtime_must_own_redis_truth");
+assertIncludes(runtime, "fail closed", "runtime_must_keep_fail_closed_language");
+assertIncludes(delivery, current.current_cursor, "delivery_must_reference_current_cursor");
+assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_own_backend_go_authoring_lane");
+assertIncludes(history, current.last_landed_commit, "history_must_reference_latest_landed_commit");
+assertIncludes(history, "post_merge_closeout", "history_must_own_closeout_schema");
 
-const dataSection = sectionForLine(active, "portal-canonical-data-postgres-redis-closure");
-const productLoopClosed = current.product_engineering_loop?.status === "closed";
-if (productLoopClosed) {
-  assert(dataSection.includes("slide-01 closed local production data truth"), "data_line_must_record_closed_local_data_truth");
-} else {
-  assert(dataSection.includes("status: `gated`"), "data_line_must_remain_gated");
-}
-assert(dataSection.includes("PostgreSQL"), "data_line_must_name_postgres");
-assert(dataSection.includes("Redis"), "data_line_must_name_redis");
-assert(dataSection.includes("fail-closed"), "data_line_must_require_fail_closed");
-
-const governanceSection = sectionForLine(active, "governance-verification-post-merge-closeout");
-assert(governanceSection.includes("post-merge closeout"), "governance_line_must_require_post_merge_closeout");
-assert(governanceSection.includes("node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk"), "governance_line_must_include_verify_entrypoint");
-
-const expectedCannotClaims = productLoopClosed
-  ? [
-    "不能宣称真实云生产闭环已完成",
-    "不能写成 `future-authorized` 等于真实云",
-    "不能跳过 post-merge closeout",
-  ]
-  : [
-    "不能宣称 PostgreSQL/Redis、本地 production data layer",
-    "不能写成 `future-authorized` 等于真实云",
-    "不能跳过 post-merge closeout",
-  ];
-
-for (const cannotClaim of expectedCannotClaims) {
-  assert(active.includes(cannotClaim), `cannot_claim_must_remain:${cannotClaim}`);
+for (const cannotClaim of [
+  "不能宣称真实云生产闭环已完成",
+  "不能写成 `future-authorized` 等于真实云",
+  "不能跳过 post-merge closeout",
+]) {
+  assertIncludes(active, cannotClaim, `cannot_claim_must_remain:${cannotClaim}`);
 }
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_current_development_lines",
-  lines: expectedLines,
   currentCursor: current.current_cursor,
+  activeRole: "narrow_current_state_control_surface",
 }, null, 2));

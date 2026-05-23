@@ -67,8 +67,8 @@ for (const [label, sourceText] of Object.entries({
 }
 
 assertIncludesAll(active, [
-  "governance-verification-post-merge-closeout",
   "不能跳过 post-merge closeout",
+  "## Verification Entry",
 ], "active_framework_loop");
 
 assertIncludesAll(policies, [

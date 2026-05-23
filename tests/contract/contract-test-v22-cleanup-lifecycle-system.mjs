@@ -172,7 +172,6 @@ const latestLandedCommit = latestLanded.landedCommit;
 const currentCursor = current.current_cursor;
 
 assertIncludesAll(active, [
-  "Cleanup lifecycle",
   lifecycleGate,
 ], "active_lifecycle_current_pointer");
 assertIncludesAll(policies, [

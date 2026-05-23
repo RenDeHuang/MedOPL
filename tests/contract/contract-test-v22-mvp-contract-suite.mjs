@@ -45,9 +45,9 @@ for (const phrase of [
 }
 
 assert(current.current_cursor, "current_cursor_required");
-assert(activeSource.includes(`当前 product cursor 是 \`${current.current_cursor}\``), "active_truth_must_track_current_cursor");
-assert(activeSource.includes("当前 phase："), "active_truth_must_track_current_phase");
-assert(activeSource.includes("当前 blocker："), "active_truth_must_track_current_blocker");
+assert(activeSource.includes(`| current cursor | \`${current.current_cursor}\` |`), "active_truth_must_track_current_cursor");
+assert(activeSource.includes("| current phase |"), "active_truth_must_track_current_phase");
+assert(activeSource.includes("| current blocker |"), "active_truth_must_track_current_blocker");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 
 const mvpLocalTiers = ["health-check", "smoke-golden", "contract-local"];

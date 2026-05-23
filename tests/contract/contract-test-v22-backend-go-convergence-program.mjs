@@ -187,8 +187,9 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, current,
   assertArrayIncludesAll(program.target_layers, ["Portal Control Plane", "Workflow Boundary", "Runtime Broker / OPL Bridge", "Agent Runtime", "Cloud / Billing / Audit Workers"], "program_target_layers");
   assertArrayIncludesAll(program.forbidden_ops, ["secret", "live-cloud", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test", "upstream-write", "git-push"], "program_forbidden_ops");
 
-  assertIncludes(active, "backend-go-convergence-program", "active_must_name_program");
-  assertIncludes(active, "does not replace the current `real-cloud-authorization-boundary` product cursor", "active_must_preserve_product_cursor");
+  assertIncludes(active, current.current_cursor, "active_must_preserve_product_cursor");
+  assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_name_program");
+  assertIncludes(delivery, "不接管当前 `real-cloud-authorization-boundary` product cursor", "delivery_must_preserve_product_cursor");
   assertIncludes(active, "不能把 backend Go convergence program 写成第二份阶段板", "active_must_forbid_second_program_board");
   assertIncludes(specs, "spec:v22-backend-go-convergence-program-boundary", "specs_must_define_program_anchor");
   assertIncludes(specs, "Portal Control Plane", "specs_must_define_portal_control_plane");

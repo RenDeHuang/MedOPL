@@ -164,7 +164,7 @@ assertIncludes(productTruth, "托管交付平台", "product_truth_must_name_mana
 assertIncludes(productTruth, "Portal 不回答科研问题，不复制 OPL chatbot", "product_truth_must_keep_opl_chatbot_boundary");
 assertIncludes(productTruth, "OPL 负责 chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验", "product_truth_must_assign_opl_execution");
 assertIncludes(productTruth, "用户购买托管 OPL 科研工作台服务", "product_truth_must_hold_product_truth");
-assertIncludes(activeTruth, `当前 product cursor 是 \`${current.current_cursor}\``, "active_truth_must_track_current_cursor");
+assertIncludes(activeTruth, `| current cursor | \`${current.current_cursor}\` |`, "active_truth_must_track_current_cursor");
 assertIncludes(deliveryTruth, current.current_cursor, "delivery_truth_must_track_current_cursor");
 assertIncludes(deliveryTruth, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "delivery_truth_must_list_default_verify");
 
