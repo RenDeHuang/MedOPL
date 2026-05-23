@@ -44,6 +44,72 @@ function assertExcludesAll(source, phrases, label) {
   }
 }
 
+function markdownHeadings(source) {
+  return source
+    .split("\n")
+    .filter((line) => /^#{2,3}\s+/u.test(line))
+    .map((line) => line.trim());
+}
+
+function assertActiveHeadingsAreNarrowCurrentTruth(activeSource) {
+  const headings = markdownHeadings(activeSource);
+  const allowedHeadings = new Set([
+    "## Ideal State",
+    "## Current State",
+    "## Gap Matrix",
+    "## Current Development Lines",
+    "### current-stage-current-cursor",
+    "### portal-saas-control-plane-product-loop",
+    "### optional-resource-lifecycle-and-pricing-boundary",
+    "### portal-opl-runtime-managed-chain",
+    "### portal-canonical-data-postgres-redis-closure",
+    "### governance-verification-post-merge-closeout",
+    "### backend-go-convergence-program",
+    "## Cannot Claim",
+    "## Source Of Truth During Migration",
+  ]);
+  for (const heading of headings) {
+    assert(allowedHeadings.has(heading), `active_heading_not_allowed:${heading}`);
+  }
+  assert(headings.length <= allowedHeadings.size, `active_heading_count_exceeded:${headings.length}`);
+  assert(activeSource.split("\n").length <= 180, `active_line_budget_exceeded:${activeSource.split("\n").length}`);
+}
+
+function assertActiveKeepsOnlyCurrentState(activeSource) {
+  assertIncludesAll(activeSource, [
+    "当前 product cursor 是 `real-cloud-authorization-boundary`",
+    "当前 phase：",
+    "当前 blocker：",
+    "Next owner：",
+    "当前默认 verification entry",
+    "## Gap Matrix",
+    "## Cannot Claim",
+    "## Source Of Truth During Migration",
+  ], "active_current_state_minimum");
+
+  assertExcludesAll(activeSource, [
+    "## 产品真相",
+    "## 工作台资源是可选能力",
+    "## 商业化主链路",
+    "## 商业化 UI 影响决策",
+    "## 核心用户 loop",
+    "## Provider Boundary",
+    "## 架构真相",
+    "## OPL Entry / Upstream Boundary",
+    "## Active Source Surface",
+    "## Active Surface Rule",
+    "### OPL-style 清退生命周期真相",
+    "Product Contract Groups",
+    "Runtime Contract Groups",
+    "Evidence Levels",
+    "Framework Identity",
+    "Four Platform Planes",
+    "Spec Anchor Index",
+    "Absorbed Contract Index",
+    "Evidence-After-Contract Rule",
+  ], "active_must_not_recreate_durable_truth_sections");
+}
+
 const [
   docsIndex,
   active,
@@ -91,6 +157,8 @@ assertIncludesAll(active, [
   "不再从 recovery/status matrix 推断",
   "本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth",
 ], "active_framework_pointer");
+assertActiveHeadingsAreNarrowCurrentTruth(active);
+assertActiveKeepsOnlyCurrentState(active);
 
 assertIncludesAll(framework, [
   "Purpose: `platform_framework_view`",
