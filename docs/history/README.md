@@ -3005,7 +3005,7 @@ Next recommendation:
 
 ### 2026-05-23 cleanup/golden-path-first-class
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/golden-path-first-class`
 
@@ -3024,7 +3024,7 @@ Commits:
 - `9611925` test(framework): make current verify start with golden path
 - `90ccadd` test(framework): require golden path impact in change packages
 - `238d2a6` refactor(portal): extract runtime app dependencies
-- final closeout commit: pending
+- `7d4ddc5` docs(framework): close golden path review loop
 
 Verification:
 
@@ -3047,3 +3047,69 @@ Cannot claim:
 - No production runtime, production billing, real cloud execution, deploy, kubectl, build/push or live-test.
 - No Sentrux Pro diagnostics used.
 - First Portal runtime fan-out extraction does not complete all source debt.
+
+landed_commit: `7d4ddc59343dc327603f8e968e8cdcf6d6e54002`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` later reached golden path productization roadmap commit `c7df83bd829bac9bbf6ed6501cff616ee7b7a81f`.
+- The package is archived at `changes/archive/2026-05-23-golden-path-first-class`.
+
+post_merge_closeout: `completed`
+
+next_cursor: `figma-portal-ui-absorption`
+
+### 2026-05-23 feat/golden-path-productization-roadmap
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/golden-path-productization-roadmap`
+
+Archived change package: `changes/archive/2026-05-23-golden-path-productization-roadmap`
+
+Scope:
+
+- Defined the post-local-RC productization order: Figma UI absorption -> typed API contract -> provider key reuse -> OPL entry real preflight / launch state -> Go control-plane takeover -> real-cloud authorization.
+- Clarified that Figma Make is external prototype input until absorbed into repo-native frontend source and typed API boundaries.
+- Clarified Go as the canonical MedOPL control-plane backend target without claiming current production backend has already moved to Go.
+- Moved current product cursor to `figma-portal-ui-absorption`; real cloud remains separately authorized and not the default next implementation package.
+
+Commits:
+
+- `9603768` syncs local RC closeout cursor.
+- `c7df83bd829bac9bbf6ed6501cff616ee7b7a81f` lands the golden path productization roadmap.
+
+Verification result:
+
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass.
+- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `npm --prefix services/portal/frontend run typecheck`: pass.
+
+Can-claim:
+
+- The productization roadmap is repo-native and subscribable.
+- The next executable product cursor is `figma-portal-ui-absorption`.
+- Real cloud authorization remains blocked until explicit authorization.
+
+Cannot-claim:
+
+- Figma UI absorption, provider key reuse, OPL entry real launch state, Go backend takeover or real-cloud authorization has landed.
+- Real cloud, deploy, kubectl, build/push, live-test or production billing is authorized.
+
+landed_commit: `c7df83bd829bac9bbf6ed6501cff616ee7b7a81f`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `c7df83bd829bac9bbf6ed6501cff616ee7b7a81f`.
+- The package is archived at `changes/archive/2026-05-23-golden-path-productization-roadmap`.
+
+post_merge_closeout: `completed`
+
+next_cursor: `figma-portal-ui-absorption`

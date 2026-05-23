@@ -96,8 +96,12 @@ function closeoutCommitLooksLikeCloseout(commit) {
   if (files.length === 0) return false;
   const allowedPatterns = [
     /^docs\/(?:active|delivery|history)\/README\.md$/u,
+    /^docs\/(?:product|source|specs)\/README\.md$/u,
+    /^specs\/(?:product|source|framework)\/spec\.md$/u,
+    /^changes\/archive\/\d{4}-\d{2}-\d{2}-[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
+    /^changes\/active\/[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,
-    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|mvp-contract-suite)\.mjs$/u,
+    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|framework-truth-layering|backend-go-convergence-program|mvp-contract-suite)\.mjs$/u,
     /^tests\/smoke\/smoke-test-v22-saas-control-plane-user-experience-boundary\.mjs$/u,
     /^scripts\/v22-landing-closeout\.mjs$/u,
   ];
@@ -166,7 +170,7 @@ function sectionHasRequiredField(section, field) {
 }
 
 function latestLandedSection(sections) {
-  return sections.find((section) => section.status === "landed / pushed / post-push verified" && section.landedCommit);
+  return sections.findLast((section) => section.status === "landed / pushed / post-push verified" && section.landedCommit);
 }
 
 function readySectionHasReachedTrunk(section, trunkRef) {

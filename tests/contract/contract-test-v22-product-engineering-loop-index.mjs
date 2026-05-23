@@ -114,7 +114,7 @@ assertArrayIncludesAll(
   "product_engineering_loop_closeout_keep_closed_summary_fields",
 );
 assert.equal(loop.closeout_policy.history_file, "docs/history/README.md", "product_engineering_loop_closeout_history_file_mismatch");
-assert.equal(loop.closeout_policy.next_cursor, "real-cloud-authorization-boundary", "product_engineering_loop_closeout_next_cursor_mismatch");
+assert.equal(loop.closeout_policy.next_cursor, "figma-portal-ui-absorption", "product_engineering_loop_closeout_next_cursor_mismatch");
 assert.equal(loop.closeout_policy.forbid_permanent_slide_details, true, "product_engineering_loop_must_forbid_permanent_slide_details");
 assert.equal(loop.closeout_policy.forbid_shadow_archive, true, "product_engineering_loop_must_forbid_shadow_archive");
 
@@ -215,7 +215,8 @@ assertIncludes(history, "collapse policy", "history_must_define_product_loop_col
 assertIncludes(history, "active baton", "history_must_record_product_loop_as_baton");
 if (loop.status === "closed") {
   assertIncludes(history, "slide-09-precloud-readiness", "history_must_record_slide_09_closeout");
-  assertIncludes(history, "real-cloud-authorization-boundary", "history_must_record_precloud_next_cursor");
+  assertIncludes(history, "figma-portal-ui-absorption", "history_must_record_precloud_next_cursor");
+  assertIncludes(history, "real-cloud-authorization-boundary", "history_must_record_deferred_real_cloud_boundary");
 }
 assertIncludes(history, "Product Engineering Loop", "history_must_record_product_loop_index");
 assertIncludes(history, "collapse policy", "history_must_record_product_loop_collapse_policy");

@@ -1,6 +1,6 @@
 # golden-path-first-class Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
@@ -9,7 +9,7 @@ Status: ready_for_landing_review
 - `9611925` test(framework): make current verify start with golden path
 - `90ccadd` test(framework): require golden path impact in change packages
 - `238d2a6` refactor(portal): extract runtime app dependencies
-- final closeout commit: pending
+- `7d4ddc5` docs(framework): close golden path review loop
 
 ## Verification
 
@@ -44,7 +44,7 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- `changes/archive/2026-05-23-golden-path-first-class`
+- changes/archive/2026-05-23-golden-path-first-class
 
 ## History Handoff
 

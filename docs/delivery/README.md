@@ -7,11 +7,11 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`。pre-cloud 9 个 product slides 已完成本地闭环；current verify、product-engineering-loop suite、review gate 和 local-contract 继续作为本地 pre-cloud 防回归 bundle 运行。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界。
+当前 product cursor 是 `figma-portal-ui-absorption`。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class 和 golden-path-productization-roadmap 已完成本地闭环；current verify 现在指向产品化第一包，并继续把 golden path health 放在治理护栏之前。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界。
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
-后续真实云工作不得继承 slide authority；必须先单独确认授权边界，再按清退生命周期由 eval、implementation、verify、landing gate 和 post-merge closeout 推进 cursor。
+后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；必须先完成或显式调整 Figma UI、typed API、provider reuse、OPL entry real state 和 Go control-plane takeover 的 repo-native package，再单独确认真实云授权边界。
 
 ## Default Verification
 
@@ -72,7 +72,7 @@ Local RC 之后，默认 delivery 不直接跳到真实云。先按下列 packag
 | 5 | `go-control-plane-takeover` | Go 接管 MedOPL control-plane business truth；Node Portal/Gateway/Bridge 收窄为 UI/API shell 与 integration relay。 | Go tests, backend convergence package, Portal contract regression |
 | 6 | `real-cloud-authorization` | 只在显式授权后执行 secret/cloud/provider/deploy work。 | cloud future-authorized dry-run first, then authorized live package |
 
-每个 package 必须遵守 `truth/gap -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> history closeout`。治理 gate 保留为护栏，但 default verify 先展示 golden path health。
+每个 package 必须遵守 `truth/gap -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> history closeout`。这仍属于清退生命周期的一部分：旧临时 truth 只进 history，active 只保当前 cursor。治理 gate 保留为护栏，但 default verify 先展示 golden path health。
 
 ## Authoring Record Discipline
 
@@ -97,7 +97,7 @@ Delivery closeout must move completed packages to `changes/archive/YYYY-MM-DD-<c
 
 ## Backend Go Convergence Authoring Lane
 
-`feat/v22-backend-go-convergence-program` 是后端收敛 authoring lane。它不接管当前 `real-cloud-authorization-boundary` product cursor，不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
+`feat/v22-backend-go-convergence-program` 是后端收敛 authoring lane。它不接管当前 `figma-portal-ui-absorption` product cursor，不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
 
 该 lane 的交付方式是每个 step 一个 commit，并且每个 step 都按 `truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor` 执行。7 阶段只作为 compact machine block、spec anchor、registered tests 和 landed history summary 存在，不恢复旧合同目录、旧 recovery 目录、root stage docs 或 `scripts/smoke-test-*`。
 

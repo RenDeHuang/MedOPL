@@ -2,9 +2,9 @@
 
 Target specs:
 
-- `specs/product/spec.md`
-- `specs/framework/spec.md`
-- `specs/source/spec.md`
+- specs/product/spec.md
+- specs/framework/spec.md
+- specs/source/spec.md
 
 ## ADDED
 

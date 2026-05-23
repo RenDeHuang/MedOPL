@@ -57,7 +57,7 @@ function parseHistorySections(history) {
 }
 
 function latestLandedHistorySection(history) {
-  const section = parseHistorySections(history).find((item) => item.status === "landed / pushed / post-push verified" && item.landedCommit);
+  const section = parseHistorySections(history).findLast((item) => item.status === "landed / pushed / post-push verified" && item.landedCommit);
   assert(section, "latest_landed_history_section_missing");
   return section;
 }

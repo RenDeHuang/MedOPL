@@ -15,20 +15,21 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 | Field | Value |
 | --- | --- |
-| current phase | `pre-cloud local closure complete / real-cloud authorization boundary pending` |
-| current cursor | `real-cloud-authorization-boundary` |
-| current blocker | real cloud / secret / provider operation / deploy / kubectl / build-push / live-test require explicit authorization |
-| next owner | `MedOPL Operations` for authorization boundary; `MedOPL Platform` for truth/spec/manifest/history/verify consistency |
-| open change package | `changes/active/real-cloud-authorization-boundary` |
+| current phase | `post-local-RC productization / Figma Portal UI absorption active` |
+| current cursor | `figma-portal-ui-absorption` |
+| current blocker | Figma Make UI is external prototype input until absorbed into repo-native frontend source; real cloud / secret / provider operation / deploy / kubectl / build-push / live-test still require explicit authorization |
+| next owner | `MedOPL Platform` for Figma Portal UI repo absorption; `MedOPL Operations` for later real-cloud authorization boundary |
+| open change package | `changes/active/figma-portal-ui-absorption` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `cleanup/golden-path-first-class` / `d5f65d132f9f190286caf66230509839778cbdcd` |
+| latest repo closeout | `feat/golden-path-productization-roadmap` / `c7df83bd829bac9bbf6ed6501cff616ee7b7a81f` |
 
-Current summary: pre-cloud local product proof and local RC archive are closed; the next cursor remains authorization only. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class and golden-path-productization-roadmap are closed. The next executable cursor is Figma Portal UI absorption; real cloud remains a separately authorized blocker, not the default next implementation package. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 
+- `figma-portal-ui-absorption`: Figma Make is external prototype input until it is absorbed into repo-native Portal frontend source, typed API wiring and local eval evidence.
 - `real-cloud-authorization-boundary`: secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence are not authorized by default.
 - `service-sync-helper-retention`: `scripts/sync-workspace-file-to-minio.ps1` remains because `services/portal/src/config/portal-config.mjs` still references it; it is an implementation debt, not a docs/eval truth source.
 

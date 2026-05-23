@@ -71,7 +71,7 @@ function assertActiveHeadingsAreNarrowCurrentTruth(activeSource) {
 function assertActiveKeepsOnlyCurrentState(activeSource) {
   assertIncludesAll(activeSource, [
     "| current phase |",
-    "| current cursor | `real-cloud-authorization-boundary` |",
+    "| current cursor | `figma-portal-ui-absorption` |",
     "| current blocker |",
     "| next owner |",
     "default verification",

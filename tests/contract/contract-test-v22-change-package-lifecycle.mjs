@@ -77,10 +77,13 @@ async function assertChangePackage({ root, changeId, archived }) {
     assertIncludes(closeout, changePath, `archived_closeout_must_reference_own_archive_target:${changePath}`);
     const targetSpecs = [...specDelta.matchAll(/specs\/[a-z-]+\/spec\.md/gu)].map((match) => match[0]);
     assert(targetSpecs.length > 0, `archived_change_must_target_specs:${changePath}`);
+    const requirementIds = [...specDelta.matchAll(/`([a-z]+:[a-z0-9-]+)`/gu)].map((match) => match[1]);
     for (const targetSpec of targetSpecs) {
       const targetSource = await readRepoFile(targetSpec);
-      const requirementIds = [...specDelta.matchAll(/`([a-z]+:[a-z0-9-]+)`/gu)].map((match) => match[1]);
-      for (const requirementId of requirementIds) {
+      const domain = targetSpec.match(/^specs\/([a-z-]+)\/spec\.md$/u)?.[1] || "";
+      const domainRequirementIds = requirementIds.filter((requirementId) => requirementId.startsWith(`${domain}:`));
+      assert(domainRequirementIds.length > 0, `archived_delta_target_spec_has_no_matching_requirement:${changePath}:${targetSpec}`);
+      for (const requirementId of domainRequirementIds) {
         assertIncludes(targetSource, requirementId, `archived_delta_must_sync_requirement:${changePath}:${requirementId}`);
       }
     }
