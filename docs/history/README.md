@@ -61,6 +61,94 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-23 cleanup/repo-native-change-lifecycle baseline
+
+Status: `authoring / baseline-audit`
+
+Branch: `cleanup/repo-native-change-lifecycle`
+
+Base branch state: starts from `cleanup/framework-truth-layering` after active truth slimming review.
+
+Scope:
+
+- Introduce repo-native change lifecycle without weakening the existing one-person-lab-style truth taxonomy.
+- Keep `docs/active/README.md` as the only human current truth control surface.
+- Add OpenSpec-style change package governance for proposed work: proposal, spec delta, design, tasks, eval plan, review, closeout and archive.
+- Add durable domain specs as a structured behavior layer without restoring retired `docs/contracts/**`, `docs/recovery/**`, root stage docs or `scripts/smoke-test-*`.
+- Connect change lifecycle to existing local deterministic evals under `tests/**` and `scripts/v22-verify.mjs`.
+
+Inventory:
+
+| Layer | Current owner | Baseline finding |
+| --- | --- | --- |
+| current truth | `docs/active/README.md`, `tests/fixtures/v22/goal-current.json` | Already narrow: current phase, cursor, blockers, next owner, verification entry and cannot-claim. |
+| durable human truth | `docs/{product,runtime,framework,evidence,policies,delivery,source,public,references,history}/README.md` | Already OPL-style one README per lifecycle surface. |
+| contract/spec truth | `docs/specs/README.md` | Still monolithic; needs domain specs and spec-delta routing before it becomes maintainable as the repo grows. |
+| eval truth | `tests/**`, `scripts/v22-test-classification.mjs`, `scripts/v22-verify.mjs` | Strong local eval registry exists, but spec-to-eval traceability is not yet attached to repo-native change packages. |
+| history truth | `docs/history/README.md`, git history | Keeps landed summaries; does not retain full proposal/design/task/spec-delta context. |
+| missing lifecycle layer | none | No `changes/active/<id>` or `changes/archive/<id>` layer exists for proposal, spec delta, eval plan and closeout. |
+
+Subscribed truth/spec/policy files:
+
+- `AGENTS.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/specs/README.md`
+- `docs/framework/README.md`
+- `docs/evidence/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/history/README.md`
+- `tests/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `scripts/v22-test-classification.mjs`
+- `scripts/v22-verify.mjs`
+- `scripts/v22-workflow-gate.mjs`
+
+Planned lifecycle:
+
+```text
+active current cursor
+-> changes/active/<change-id>
+-> spec delta
+-> design
+-> tasks
+-> eval plan
+-> implementation
+-> local verify
+-> review
+-> changes/archive/<date-change-id>
+-> durable specs sync
+-> docs/history closeout
+-> next active cursor
+```
+
+Authorization boundary:
+
+- No secret read.
+- No real cloud, true provider, COS, Langfuse, production API or upstream call.
+- No build/push, kubectl, deploy, live-test, git push or merge.
+- No modification to `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*` or one-person-lab upstream.
+- No restoration of retired `docs/contracts/**`, `docs/recovery/**`, root stage docs, old `scripts/smoke-test-*`, `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary narrative.
+
+Planned verification:
+
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
+- `node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs`
+- `node tests/contract/contract-test-v22-framework-truth-layering.mjs`
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`
+- `git diff --check -- docs specs changes tests scripts`
+
+Non-goals:
+
+- Do not turn `docs/active/README.md` into an open-change plan board.
+- Do not use OpenSpec CLI as a runtime dependency in this pass.
+- Do not split source services or change Portal/Gateway/Runtime behavior.
+- Do not expand `scripts/`; the existing scripts file budget is already full.
+
 ### 2026-05-23 cleanup/framework-truth-layering active slimming baseline
 
 Status: `authoring / baseline-audit`
