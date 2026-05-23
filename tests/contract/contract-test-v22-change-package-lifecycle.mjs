@@ -72,6 +72,15 @@ async function assertChangePackage({ root, changeId, archived }) {
   if (archived) {
     assert(/Status:\s*(?:landed|archived)/iu.test(closeout), `archived_closeout_status_must_be_landed_or_archived:${changePath}`);
     assertIncludes(closeout, changePath, `archived_closeout_must_reference_own_archive_target:${changePath}`);
+    const targetSpecs = [...specDelta.matchAll(/specs\/[a-z-]+\/spec\.md/gu)].map((match) => match[0]);
+    assert(targetSpecs.length > 0, `archived_change_must_target_specs:${changePath}`);
+    for (const targetSpec of targetSpecs) {
+      const targetSource = await readRepoFile(targetSpec);
+      const requirementIds = [...specDelta.matchAll(/`([a-z]+:[a-z0-9-]+)`/gu)].map((match) => match[1]);
+      for (const requirementId of requirementIds) {
+        assertIncludes(targetSource, requirementId, `archived_delta_must_sync_requirement:${changePath}:${requirementId}`);
+      }
+    }
   } else {
     assert(!/Status:\s*archived/iu.test(closeout), `active_closeout_must_not_be_archived:${changePath}`);
   }

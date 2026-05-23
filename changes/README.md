@@ -281,4 +281,10 @@ Archive rules:
 - archived `closeout.md` must point its Archive Target to its own `changes/archive/YYYY-MM-DD-<change-id>` directory;
 - a landed change must not remain in `changes/active/<change-id>`.
 
+Durable specs sync rules:
+
+- every archived `spec-delta.md` must target at least one `specs/<domain>/spec.md`;
+- accepted requirement ids from `spec-delta.md` must appear in the target durable spec;
+- if a delta is intentionally not accepted, `closeout.md` must record blocker and next owner instead of claiming landed/archive completion.
+
 History keeps summary only. Full proposal, design, tasks, spec delta, eval plan and review context belong in the archived change package.
