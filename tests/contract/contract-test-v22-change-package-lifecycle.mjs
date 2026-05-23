@@ -33,6 +33,10 @@ function assertIncludes(source, expected, label) {
 assert.equal(await exists("changes/README.md"), true, "changes_readme_required");
 assert.equal(await exists("changes/active"), true, "changes_active_dir_required");
 assert.equal(await exists("changes/archive"), true, "changes_archive_dir_required");
+assert.equal(await exists("specs/README.md"), true, "root_specs_readme_required");
+for (const domain of ["product", "runtime", "framework", "operations", "evidence", "policies", "source"]) {
+  assert.equal(await exists(`specs/${domain}/spec.md`), true, `domain_spec_required:${domain}`);
+}
 
 const changesReadme = await readRepoFile("changes/README.md");
 for (const phrase of [
@@ -71,6 +75,11 @@ const activeChanges = await listDirs("changes/active");
 for (const changeId of activeChanges) {
   assert(!/^template$/iu.test(changeId), "active_changes_must_not_use_template_id");
 }
+
+const specsReadme = await readRepoFile("specs/README.md");
+assertIncludes(specsReadme, "durable behavior specs", "root_specs_readme");
+assertIncludes(specsReadme, "docs/specs/README.md remains the human contract index", "root_specs_readme");
+assertIncludes(specsReadme, "changes/active/<change-id>/spec-delta.md", "root_specs_readme");
 
 console.log(JSON.stringify({
   ok: true,

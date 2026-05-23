@@ -1,0 +1,16 @@
+# Product Spec
+
+Owner: `MedOPL Portal`
+Purpose: `product_behavior_spec`
+State: `active`
+Human index: `docs/product/README.md`, `docs/specs/README.md`
+
+## Scope
+
+Product specs define what users buy and what Portal may claim about accounts, workspaces, packages, file space, managed compute, billing, audit and OPL entry.
+
+| Requirement | Owner plane | Source surface | Required evals | Evidence level | Cannot claim |
+| --- | --- | --- | --- | --- | --- |
+| `product:managed-opl-service` | Product | `docs/product/README.md`, `services/portal` | `node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs` | local smoke evidence | Real cloud resources, production billing or deploy are complete. |
+| `product:no-cloud-console-language` | Product | `docs/product/README.md`, Portal user routes | `node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs` | local regression proof | Users self-manage CVM/COS/K8s through MedOPL. |
+
