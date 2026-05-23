@@ -63,7 +63,7 @@ landed 后的记录还必须补齐：
 
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 
-Status: `archived / local-rc-gated`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/golden-path-first-class`
 
@@ -83,7 +83,7 @@ Commits:
 - `22ed6fb` records local RC eval closeout.
 - `d311cd5` satisfies workflow secret hygiene and renames the eval to provider-bound wording.
 - `7deaaa2` closes verification and review evidence.
-- Archive commit records package archival and this history handoff.
+- `d5f65d132f9f190286caf66230509839778cbdcd` archives the package and records this history handoff.
 
 Verification result:
 
@@ -128,6 +128,20 @@ Next owner:
 
 - `MedOPL Platform` owns the remaining local RC gap: Portal launch API should reuse an already bound provider key without inline `providerKeyPayload`.
 - `MedOPL Operations` owns the later real-cloud authorization package when explicitly authorized.
+
+landed_commit: `d5f65d132f9f190286caf66230509839778cbdcd`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `d5f65d132f9f190286caf66230509839778cbdcd`.
+- The archived local RC package is tracked at `changes/archive/2026-05-23-local-golden-path-release-candidate`.
+- This closeout remains local/pre-cloud evidence and does not authorize secret read, real cloud, deploy, kubectl, build/push or live-test.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 

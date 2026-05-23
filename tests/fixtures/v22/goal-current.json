@@ -5,15 +5,15 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-05-22",
+  "last_updated_at": "2026-05-23",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "d12ebb6c886c4a1717abe8f9b3308ab74842ed57",
+  "base_trunk_head": "d5f65d132f9f190286caf66230509839778cbdcd",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_not_runtime_git_branch",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "d12ebb6c886c4a1717abe8f9b3308ab74842ed57",
+  "last_landed_commit": "d5f65d132f9f190286caf66230509839778cbdcd",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S6 real cloud authorization boundary",
@@ -21,7 +21,7 @@
   "current_blockers": [
     "real_cloud_requires_explicit_authorization_before_secret_or_live_execution"
   ],
-  "current_problem": "The pre-cloud product slide loop is locally closed at slide-09. The backend Go convergence program is now absorbed into trunk and closed as governance/history evidence at d12ebb6c886c4a1717abe8f9b3308ab74842ed57. The next cursor remains the separately authorized real-cloud boundary. Default current verification remains local-only and must not read secrets, deploy, build/push, kubectl, live-test, or mutate cloud resources.",
+  "current_problem": "The pre-cloud product slide loop is locally closed at slide-09, and the local golden path release candidate archive is landed at d5f65d132f9f190286caf66230509839778cbdcd. The next cursor remains the separately authorized real-cloud boundary. Default current verification remains local-only and must not read secrets, deploy, build/push, kubectl, live-test, or mutate cloud resources.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -222,9 +222,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "cleanup/v22-backend-convergence-trunk-closeout",
-  "last_landed_at": "2026-05-22",
-  "history_latest_branch": "cleanup/v22-backend-convergence-trunk-closeout",
+  "last_landed_branch": "cleanup/golden-path-first-class",
+  "last_landed_at": "2026-05-23",
+  "history_latest_branch": "cleanup/golden-path-first-class",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
