@@ -88,6 +88,8 @@
       "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
       "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
       "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
+      "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+      "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
       "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
       "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",

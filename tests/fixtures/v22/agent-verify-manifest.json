@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "canonical": true,
-  "last_updated_at": "2026-05-22",
+  "last_updated_at": "2026-05-23",
   "model": "gpt-5.4",
   "runner": "scripts/v22-verify.mjs",
   "default_agent_entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
@@ -74,7 +74,16 @@
     "tests/contract/contract-test-v22-commercial-package-model.mjs",
     "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
     "tests/contract/contract-test-v22-change-package-lifecycle.mjs",
-    "tests/contract/contract-test-v22-spec-eval-traceability.mjs"
+    "tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+    "changes/README.md",
+    "specs/README.md",
+    "specs/product/spec.md",
+    "specs/runtime/spec.md",
+    "specs/framework/spec.md",
+    "specs/operations/spec.md",
+    "specs/evidence/spec.md",
+    "specs/policies/spec.md",
+    "specs/source/spec.md"
   ],
   "leaves": [
     {
@@ -1116,6 +1125,8 @@
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
+        "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+        "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -1578,5 +1589,23 @@
       ],
       "risk_class": "local_doc_eval"
     }
-  ]
+  ],
+  "change_lifecycle_policy": {
+    "root": "changes/README.md",
+    "active_dir": "changes/active",
+    "archive_dir": "changes/archive",
+    "formal_engineering_requires_change_package": true,
+    "trunk_allows_empty_active_changes": true,
+    "required_files": [
+      "proposal.md",
+      "spec-delta.md",
+      "design.md",
+      "tasks.md",
+      "eval-plan.md",
+      "review.md",
+      "closeout.md"
+    ],
+    "gate": "tests/contract/contract-test-v22-change-package-lifecycle.mjs",
+    "spec_eval_gate": "tests/contract/contract-test-v22-spec-eval-traceability.mjs"
+  }
 }
