@@ -130,6 +130,10 @@ assertIncludes(oplEntrySource, "query.data.providerBound", "opl_entry_page_must_
 assertIncludes(oplEntrySource, "query.data.providerKeyRef", "opl_entry_page_must_render_backend_provider_key_ref");
 assertIncludes(oplEntrySource, "query.data.gatewayReady", "opl_entry_page_must_render_backend_gateway_ready");
 assertIncludes(oplEntrySource, "query.data.gatewayState", "opl_entry_page_must_render_backend_gateway_state");
+assertIncludes(oplEntrySource, "query.data.currentStage", "opl_entry_page_must_render_backend_current_stage");
+assertIncludes(oplEntrySource, "query.data.blockingUser", "opl_entry_page_must_render_backend_blocking_user");
+assertIncludes(oplEntrySource, "currentStage ===", "opl_entry_steps_must_consume_backend_current_stage");
+assertIncludes(oplEntrySource, "blockingUser", "opl_entry_steps_must_consume_backend_blocking_state");
 
 assertIncludes(userMenuSource, "Dialog", "user_menu_account_info_must_open_dialog");
 assertIncludes(userMenuSource, "setAccountDialogOpen(true)", "user_menu_account_info_must_have_visible_product_action");

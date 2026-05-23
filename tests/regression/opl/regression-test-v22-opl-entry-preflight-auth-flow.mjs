@@ -468,6 +468,30 @@ try {
   assert.equal(statusRes.payload.providerKeyRef, launchBound.providerKeyRef, "portal_launch_status_must_project_provider_key_ref");
   assert.equal(statusRes.payload.gatewayReady, true, "portal_launch_status_must_project_gateway_ready");
   assert.equal(statusRes.payload.gatewayState, "OPL 网关已准备", "portal_launch_status_gateway_state_mismatch");
+  assert.deepEqual(
+    Object.keys(statusRes.payload).sort(),
+    [
+      "blockingUser",
+      "currentStage",
+      "error",
+      "gatewayReady",
+      "gatewayState",
+      "launchId",
+      "message",
+      "ok",
+      "openUrl",
+      "oplWebUrl",
+      "providerBound",
+      "providerKeyRef",
+      "stages",
+      "status",
+      "userVisibleState",
+    ].sort(),
+    "portal_launch_status_public_payload_must_be_whitelisted",
+  );
+  for (const forbidden of ["userId", "taskSlug", "source", "createdAt", "updatedAt", "latencyMs", "launch", "workspace", "workspaceSession"]) {
+    assert.equal(Object.hasOwn(statusRes.payload, forbidden), false, `portal_launch_status_must_not_expose_internal_field:${forbidden}`);
+  }
   assertNoRawKey(statusRes.payload, "portal_launch_status_projection");
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

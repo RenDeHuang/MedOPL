@@ -168,13 +168,21 @@ function publicLaunchStatus(status = {}) {
     : null;
   const gatewayReady = Boolean(gatewayStage?.ok && !gatewayStage?.blockingUser);
   return {
-    ...status,
+    ok: Boolean(status.ok ?? true),
+    launchId: status.launchId || "",
+    status: status.status || "preparing",
+    currentStage: status.currentStage || "",
+    userVisibleState: status.userVisibleState || "",
+    blockingUser: Boolean(status.blockingUser),
+    oplWebUrl: status.oplWebUrl || launch.oplWebUrl || "",
+    error: status.error || "",
+    message: status.message || "",
+    stages: Array.isArray(status.stages) ? status.stages : [],
     openUrl: status.oplWebUrl || launch.oplWebUrl || "",
     providerBound: Boolean(launch.providerKeyRef),
     providerKeyRef: launch.providerKeyRef || "",
     gatewayReady,
     gatewayState: gatewayStage?.userVisibleState || (gatewayReady ? "OPL 网关已准备" : "OPL 网关等待中"),
-    launch,
   };
 }
 

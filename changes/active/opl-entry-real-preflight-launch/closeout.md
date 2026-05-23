@@ -5,6 +5,7 @@ Status: ready-for-landing
 ## Commits
 
 - `ae57463` feat(opl): bind entry to backend launch projections
+- review-fix pending commit: whitelist launch-status payload and consume backend currentStage / blockingUser
 
 ## Verification
 
@@ -12,6 +13,7 @@ Status: ready-for-landing
 - `node tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs`: pass.
 - `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: pass.
 - `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`: pass after launch-status provider / Gateway projection guard.
+- `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`: pass after review-fix public launch-status whitelist guard.
 - `node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs`: pass.
 - `node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs`: pass.
 - `npm --prefix services/portal/frontend run typecheck`: pass.
@@ -24,8 +26,9 @@ Status: ready-for-landing
 ## Can Claim
 
 - OPLEntry local UI now consumes backend launch-status projection for provider binding and Gateway readiness.
+- OPLEntry local UI now also consumes backend `currentStage` and `blockingUser` when deciding launch step status.
 - The frontend typed API exposes safe OPL launch-status fields: `providerBound`, `providerKeyRef`, `gatewayReady`, `gatewayState`.
-- `/portal/api/opl/launch-status/:launchId` projects provider and Gateway readiness without exposing raw provider key, launch token, runtime token or secret ref.
+- `/portal/api/opl/launch-status/:launchId` projects provider and Gateway readiness through an explicit top-level whitelist without exposing internal launch status, raw provider key, launch token, runtime token or secret ref.
 - This package closes the local OPL entry projection gap only.
 
 ## Cannot Claim

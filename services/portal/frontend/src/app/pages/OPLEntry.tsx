@@ -49,17 +49,25 @@ export function OPLEntry() {
   const providerKeyRef = query.status === "ready" ? query.data.providerKeyRef : "";
   const gatewayReady = query.status === "ready" ? query.data.gatewayReady : false;
   const gatewayState = query.status === "ready" ? query.data.gatewayState : "";
+  const currentStage = query.status === "ready" ? query.data.currentStage : "";
+  const blockingUser = query.status === "ready" ? query.data.blockingUser : false;
   const providerStepDetail = providerBound
     ? `已绑定${providerKeyRef ? `：${providerKeyRef}` : ""}`
     : "未绑定";
-  const providerStepStatus = providerBound ? "completed" : pageState === "blocked_by_provider_key" ? "failed" : "waiting";
+  const providerStepStatus = providerBound
+    ? "completed"
+    : blockingUser || pageState === "blocked_by_provider_key"
+    ? "failed"
+    : currentStage === "provider_key_bound"
+    ? "in_progress"
+    : "waiting";
   const gatewayStepDetail = gatewayState || (gatewayReady ? "OPL 网关已准备" : "等待后端网关投影");
-  const gatewayCompleted = gatewayReady || pageState === "ready";
+  const gatewayCompleted = gatewayReady || currentStage === "opl_opening";
   const gatewayStepStatus = gatewayCompleted
     ? "completed"
-    : ["service_unavailable", "capability_not_supported", "opl_upstream_url_required", "failed"].includes(pageState)
+    : blockingUser || ["service_unavailable", "capability_not_supported", "opl_upstream_url_required", "failed"].includes(pageState)
     ? "failed"
-    : pageState === "retrying"
+    : currentStage === "gateway_ready" || pageState === "retrying"
     ? "in_progress"
     : "waiting";
 
@@ -82,7 +90,7 @@ export function OPLEntry() {
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
           { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
-          { id: "session", label: "创建 OPL 会话", status: "completed" },
+          { id: "session", label: "创建 OPL 会话", status: currentStage === "provider_key_bound" ? "in_progress" : "completed" },
           { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "in_progress" },
         ];

@@ -13,6 +13,7 @@ Status: passed-local
 
 - Anscombe, Codex native explorer subagent, model `gpt-5.4-mini`: OPL entry gap is frontend projection consumption; typed payload, adapter and page must consume backend `providerBound` / `providerKeyRef` / `currentStage` / `blockingUser`, and must not expose raw key, launch token or runtime token.
 - Lagrange, Codex native explorer subagent, model `gpt-5.4-mini`: `portal-runtime` fan-out and workspace-to-minio helper are not direct dependencies of this OPL entry package; keep this package scoped to OPLEntry, adapters, launch routes and provider secret boundary to avoid repo bloat.
+- Chandrasekhar, Codex native explorer subagent, model `gpt-5.4-mini`: found two Important issues after initial implementation: launch-status public payload spread internal `status`, and OPLEntry fetched but did not consume `currentStage` / `blockingUser`. Both were fixed by explicit public payload whitelist and stage/blocking-driven step status guards.
 
 ## Blockers
 
