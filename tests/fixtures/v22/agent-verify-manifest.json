@@ -1329,6 +1329,12 @@
       ]
     },
     {
+      "id": "local-rc-authorized",
+      "commands": [
+        "node tests/local-rc/local-rc-test-v22-provider-key-message-backflow.mjs"
+      ]
+    },
+    {
       "id": "cloud-future-authorized",
       "commands": [
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs",

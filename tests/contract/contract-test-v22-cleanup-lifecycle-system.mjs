@@ -36,6 +36,7 @@ const testsTaxonomyDirs = [
   "smoke",
   "contract",
   "regression",
+  "local-rc",
   "future-authorized",
   "fixtures",
 ];

@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
-export const SMOKE_CATEGORIES = Object.freeze(["default/local-contract", "portal-local", "opl-local", "cloud-future-authorized"]);
-export const SMOKE_EVAL_TIERS = Object.freeze(["health-check", "smoke-golden", "contract-local", "local-regression", "future-authorized"]);
+export const SMOKE_CATEGORIES = Object.freeze(["default/local-contract", "portal-local", "opl-local", "cloud-future-authorized", "local-rc-authorized"]);
+export const SMOKE_EVAL_TIERS = Object.freeze(["health-check", "smoke-golden", "contract-local", "local-regression", "future-authorized", "local-rc-authorized"]);
 export const SMOKE_EVAL_SURFACES = Object.freeze(["control-plane", "portal", "opl", "runtime-bridge", "cloud"]);
 export const SMOKE_EVAL_ENTRY_KINDS = Object.freeze(["atomic", "suite-wrapper", "gate-self-test"]);
-export const SMOKE_EVAL_AUTHORIZATIONS = Object.freeze(["none", "future-authorized"]);
-export const SMOKE_EVAL_LIFECYCLE_ROLES = Object.freeze(["current-owner", "negative-retirement-guard", "suite-wrapper", "future-authorized-boundary"]);
-export const TEST_LANES = Object.freeze(["health", "smoke", "contract", "regression-portal", "regression-opl", "regression-runtime-bridge", "future-authorized"]);
+export const SMOKE_EVAL_AUTHORIZATIONS = Object.freeze(["none", "future-authorized", "local-provider-secret-authorized"]);
+export const SMOKE_EVAL_LIFECYCLE_ROLES = Object.freeze(["current-owner", "negative-retirement-guard", "suite-wrapper", "future-authorized-boundary", "local-rc-authorized-boundary"]);
+export const TEST_LANES = Object.freeze(["health", "smoke", "contract", "regression-portal", "regression-opl", "regression-runtime-bridge", "future-authorized", "local-rc"]);
 export const DEFAULT_SMOKE_CATEGORIES = Object.freeze(["default/local-contract", "portal-local", "opl-local"]);
 export const HEALTH_CHECK_MAX = 10;
 export const SMOKE_GOLDEN_MIN = 8;
@@ -33,6 +33,7 @@ const FUTURE_AUTHORIZED_FILES = Object.freeze(["tests/future-authorized/cloud/fu
 const REGRESSION_PORTAL_FILES = Object.freeze(["tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs","tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs","tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs","tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs","tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs","tests/regression/portal/regression-test-v22-portal-admin-shared-helper-structure.mjs","tests/regression/portal/regression-test-v22-portal-api-auth-boundary.mjs","tests/regression/portal/regression-test-v22-portal-auth-landing-route.mjs","tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs","tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs","tests/regression/portal/regression-test-v22-portal-dev-server-auth-proxy.mjs","tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs","tests/regression/portal/regression-test-v22-portal-file-space-management.mjs","tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs","tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs","tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs","tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs","tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs","tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs","tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs","tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs","tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs","tests/regression/portal/regression-test-v22-portal-runtime-startup-config.mjs","tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs","tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs","tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs","tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs","tests/regression/portal/regression-test-v22-portal-workbench-management-ui-api.mjs","tests/regression/portal/regression-test-v22-portal-workbench-management-ui-browser.mjs","tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs","tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs","tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs"]);
 const REGRESSION_OPL_FILES = Object.freeze(["tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs","tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs","tests/regression/opl/regression-test-v22-opl-runtime-e2e-local-flow.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-direct-entry.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-native-login.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-websocket-reset-contract.mjs","tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs","tests/regression/opl/regression-test-v22-portal-opl-api-runtime-loop.mjs","tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs","tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs"]);
 const REGRESSION_RUNTIME_BRIDGE_FILES = Object.freeze(["tests/regression/runtime-bridge/regression-test-v22-opl-acp-runtime-bridge.mjs","tests/regression/runtime-bridge/regression-test-v22-opl-runtime-bridge-bootstrap.mjs","tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs","tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs"]);
+const LOCAL_RC_FILES = Object.freeze(["tests/local-rc/local-rc-test-v22-provider-key-message-backflow.mjs"]);
 
 const REGISTRY_OVERRIDES = Object.freeze(new Map([
   ["tests/contract/contract-test-v22-landing-closeout-automation.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
@@ -99,6 +100,7 @@ const REGISTRY_OVERRIDES = Object.freeze(new Map([
   ["tests/regression/opl/regression-test-v22-portal-opl-api-runtime-loop.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
+  ["tests/local-rc/local-rc-test-v22-provider-key-message-backflow.mjs", {"surface":"opl","category":"local-rc-authorized","entryKind":"atomic","verifySuites":["local-rc-authorized"],"ownerSurface":"surface:opl+runtime-bridge"}],
   ["tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/portal/regression-test-v22-admin-ops-disabled-product-state.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression","current"]}],
@@ -155,6 +157,7 @@ const LANE_DEFS = Object.freeze([
   { lane: "regression-opl", files: REGRESSION_OPL_FILES, tier: "local-regression", authorization: "none" },
   { lane: "regression-runtime-bridge", files: REGRESSION_RUNTIME_BRIDGE_FILES, tier: "local-regression", authorization: "none" },
   { lane: "future-authorized", files: FUTURE_AUTHORIZED_FILES, tier: "future-authorized", authorization: "future-authorized" },
+  { lane: "local-rc", files: LOCAL_RC_FILES, tier: "local-rc-authorized", authorization: "local-provider-secret-authorized" },
 ]);
 
 function normalizeSmokeScriptPath(scriptPath) {
@@ -209,6 +212,7 @@ function entryForFile(file, laneDef) {
 
 function lifecycleRoleForEntry({ authorization, entryKind }) {
   if (authorization === "future-authorized") return "future-authorized-boundary";
+  if (authorization === "local-provider-secret-authorized") return "local-rc-authorized-boundary";
   if (entryKind === "suite-wrapper") return "suite-wrapper";
   if (entryKind === "gate-self-test") return "negative-retirement-guard";
   return "current-owner";
@@ -224,6 +228,7 @@ export const TEST_LANE_SUITES = Object.freeze({
   smoke: Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("smoke")).map((entry) => entry.file).sort()),
   "local-contract": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("local-contract")).map((entry) => entry.file).sort()),
   "local-regression": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("local-regression")).map((entry) => entry.file).sort()),
+  "local-rc-authorized": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("local-rc-authorized")).map((entry) => entry.file).sort()),
   "cloud-future-authorized": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("cloud-future-authorized")).map((entry) => entry.file).sort()),
   review: Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("review")).map((entry) => entry.file).sort()),
 });

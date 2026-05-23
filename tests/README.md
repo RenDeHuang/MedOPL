@@ -14,6 +14,7 @@ State: `active`
 - `tests/regression/portal/`: Portal regression eval。
 - `tests/regression/opl/`: OPL / Gateway regression eval。
 - `tests/regression/runtime-bridge/`: Runtime Bridge regression eval。
+- `tests/local-rc/`: 用户显式授权的 local release-candidate eval；可读取本次授权的本地 provider secret env，但不进入默认 smoke/current/local-contract。
 - `tests/future-authorized/cloud/`: future-authorized cloud boundary eval；不授权真实云。
 - `tests/fixtures/v22/`: 机器 cursor 和 verify manifest。
 
@@ -58,6 +59,7 @@ active test 必须有 lane owner。每个 `tests/**/*.mjs` 都必须通过 regis
 - `negative-retirement-guard`: 防止旧入口、旧兼容语义、secret/cloud/deploy 越界或 taxonomy 漂移复活。
 - `suite-wrapper`: 只包装 active registered tests，不能包装不存在的旧路径。
 - `future-authorized-boundary`: 只表达 future-authorized 边界，不授权真实云执行。
+- `local-rc-authorized-boundary`: 只表达本地 RC 授权边界；必须有用户 step-local 授权和显式 env，不能进入默认 suite。
 
 旧 alias / wrapper / facade / compat-only test 迁完 caller 后直接删除。historical proof / closeout evidence 不作为 active test 保留。duplicate aggregate test 必须合并或删除。history 只保摘要，git history 保细节。
 

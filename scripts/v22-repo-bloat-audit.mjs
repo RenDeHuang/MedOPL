@@ -11,7 +11,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const budgets = Object.freeze({
   docsMarkdownFiles: 16,
   scriptsFiles: 8,
-  testsMjsFiles: 110,
+  testsMjsFiles: 111,
   testsRegressionPortalFiles: 32,
   testsFutureAuthorizedCloudFiles: 24,
   servicesPortalFiles: 260,
@@ -27,6 +27,7 @@ const areaPrefixes = Object.freeze([
   "tests/regression/portal/",
   "tests/regression/opl/",
   "tests/regression/runtime-bridge/",
+  "tests/local-rc/",
   "tests/future-authorized/cloud/",
   "tests/fixtures/",
   "services/portal/",

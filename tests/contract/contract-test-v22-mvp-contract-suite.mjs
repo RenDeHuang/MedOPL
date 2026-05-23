@@ -61,6 +61,7 @@ for (const scriptPath of smokeScripts) {
   const metadata = smokeEvalMetadataOf(scriptPath);
   assert.notEqual(metadata.tier, "local-regression", `mvp_suite_must_not_run_local_regression:${scriptPath}`);
   assert.notEqual(metadata.tier, "future-authorized", `mvp_suite_must_not_run_future_authorized:${scriptPath}`);
+  assert.notEqual(metadata.tier, "local-rc-authorized", `mvp_suite_must_not_run_local_rc_authorized:${scriptPath}`);
   assert.equal(metadata.authorization, "none", `mvp_suite_must_not_require_authorization:${scriptPath}`);
   const result = spawnSync(process.execPath, [scriptPath], {
     cwd: repoRoot,

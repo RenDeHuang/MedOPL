@@ -125,7 +125,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 
 ## 共享边界合同
 
-- smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
+- smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite local-rc-authorized` 只在用户显式授权本地 provider secret 时执行；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - truth freeze: [../history/README.md](../history/README.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-key-boundary](#spec-v22-user-credit-provider-key-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
@@ -9755,6 +9755,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | `smoke-golden` | 小型关键用户路径。覆盖托管 OPL SaaS 最核心 loop，但不做全量回归。 | 可以作为 PR/B review 阻断信号，数量必须受限。 |
 | `contract-local` | 合同、DTO、禁词、状态矩阵、workflow、manifest 和边界断言。 | 本地确定性 gate，不等于 smoke。 |
 | `local-regression` | Portal / OPL / Runtime Bridge 本地闭环和更宽功能回归。 | 可默认进入 local deterministic regression，但不叫 smoke。 |
+| `local-rc-authorized` | 本地 release-candidate 授权验证，可使用用户显式授权的本地 provider secret env。 | 默认不跑；需要 step-local authorization，证据只写脱敏摘要。 |
 | `future-authorized` | Cloud / live / deploy / canary / Package D / Tencent 等后续授权验证。 | 默认不跑；需要 step-local authorization。 |
 | `retired` | 已退役或历史入口。 | 必须为 0。 |
 
@@ -9782,6 +9783,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | Authorization | 语义 |
 | --- | --- |
 | `none` | 本地 deterministic eval，不授权 secret、真实云、deploy、kubectl、live-test 或真实外部 canary。 |
+| `local-provider-secret-authorized` | 用户显式授权的本地 RC provider secret 边界；只允许读取本次授权的本地 provider secret env，不授权真实云、deploy、kubectl、build/push 或 broader secret 读取。 |
 | `future-authorized` | 仅代表未来授权 lane 的本地边界可见性；默认 suite 不执行真实云、secret、deploy、kubectl、live-test。 |
 
 ## Golden Smoke 收录条件
@@ -9813,6 +9815,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | smoke | `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk` | 小型 golden smoke。 |
 | local-contract | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` | 合同和控制面本地 gate。 |
 | local-regression | `node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk` | Portal / OPL / Runtime Bridge 本地 deterministic 回归。 |
+| local-rc-authorized | `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk` with authorized `GFLABTOKEN` env | 本地 RC provider-key-bound 链路验证；不进入默认 suite。 |
 | cloud-future-authorized | `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk` | 只做分类可见性，不授权执行真实云。 |
 | mvp | `node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk` | 旧兼容入口，语义收敛为 local deterministic regression，不再称为纯 smoke。 |
 
@@ -9823,6 +9826,8 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 - `smoke-golden` 数量必须在 `SMOKE_GOLDEN_MIN` 和 `SMOKE_GOLDEN_MAX` 之间。
 - `future-authorized` 不得进入默认 local deterministic suite。
 - `future-authorized` 必须显式标记 authorization，不能只靠文件名里的 local/readonly/dry-run 推断授权状态。
+- `local-rc-authorized` 不得进入默认 local deterministic suite，必须显式标记 `authorization=local-provider-secret-authorized`。
+- `local-rc-authorized` 只能读取本次用户授权的本地 provider secret env；raw provider key、launchToken、runtimeToken、bearer token、stdout/stderr 原始日志不得进入 git、evidence 或 final report。
 - `suite-wrapper` 和 `gate-self-test` 必须显式列出，不能混入 atomic 业务 eval 统计。
 - `retired` 必须为空。
 - `smoke-golden` 和 `health-check` 不得包含 cloud/tencent/authorized/deploy/package-d/live/canary 语义。
