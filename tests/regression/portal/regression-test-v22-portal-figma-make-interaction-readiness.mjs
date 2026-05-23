@@ -52,6 +52,7 @@ const [
   adminOpsSource,
   dialogSource,
   adminApiSource,
+  resourceApiSource,
   adapterSource,
 ] = await Promise.all([
   source(`${appRoot}/components/ui/button.tsx`),
@@ -73,6 +74,7 @@ const [
   source(`${appRoot}/pages/admin/AdminOps.tsx`),
   source(`${appRoot}/components/ui/dialog.tsx`),
   source("services/portal/frontend/src/api/portal/admin.ts"),
+  source("services/portal/frontend/src/api/portal/resources.ts"),
   source(`${appRoot}/data/portalAdapters.ts`),
 ]);
 
@@ -114,6 +116,20 @@ for (const [label, pageSource, routes] of [
 assertIncludes(oplEntrySource, "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。", "opl_entry_product_error_copy");
 assertIncludes(oplEntrySource, "<a href={query.data.oplWebUrl}", "opl_entry_ready_cta_must_open_opl_url");
 assertIncludes(oplEntrySource, "<Button asChild", "opl_entry_primary_ctas_must_bind_children");
+assertIncludes(resourceApiSource, "providerBound: boolean;", "opl_launch_status_payload_must_include_provider_bound_projection");
+assertIncludes(resourceApiSource, "providerKeyRef: string;", "opl_launch_status_payload_must_include_provider_key_ref_projection");
+assertIncludes(resourceApiSource, "gatewayReady: boolean;", "opl_launch_status_payload_must_include_gateway_ready_projection");
+assertIncludes(resourceApiSource, "gatewayState: string;", "opl_launch_status_payload_must_include_gateway_state_projection");
+assertIncludes(adapterSource, "providerBound: status.providerBound", "opl_entry_adapter_must_forward_backend_provider_bound");
+assertIncludes(adapterSource, "providerKeyRef: status.providerKeyRef", "opl_entry_adapter_must_forward_backend_provider_key_ref");
+assertIncludes(adapterSource, "gatewayReady: status.gatewayReady", "opl_entry_adapter_must_forward_backend_gateway_ready");
+assertIncludes(adapterSource, "gatewayState: status.gatewayState", "opl_entry_adapter_must_forward_backend_gateway_state");
+assertIncludes(adapterSource, "blockingUser: status.blockingUser", "opl_entry_adapter_must_forward_backend_blocking_state");
+assertExcludes(adapterSource, 'providerBound: false, providerKeyRef: ""', "opl_entry_adapter_must_not_synthesize_missing_provider_projection");
+assertIncludes(oplEntrySource, "query.data.providerBound", "opl_entry_page_must_render_backend_provider_bound");
+assertIncludes(oplEntrySource, "query.data.providerKeyRef", "opl_entry_page_must_render_backend_provider_key_ref");
+assertIncludes(oplEntrySource, "query.data.gatewayReady", "opl_entry_page_must_render_backend_gateway_ready");
+assertIncludes(oplEntrySource, "query.data.gatewayState", "opl_entry_page_must_render_backend_gateway_state");
 
 assertIncludes(userMenuSource, "Dialog", "user_menu_account_info_must_open_dialog");
 assertIncludes(userMenuSource, "setAccountDialogOpen(true)", "user_menu_account_info_must_have_visible_product_action");

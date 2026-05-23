@@ -386,29 +386,46 @@ try {
   assert.ok(launchBound.providerKeyRef, "portal_launch_provider_key_ref_required");
 
   const portalLaunchCalls = [];
+  const portalLaunchStatuses = new Map();
   const portalOplRoute = createOplRoutes({
     appendCookie,
     oplLaunchService: {
       async prepareLaunchForIntent({ providerConfig, providerConfigSecretRef, providerKeyPayload, taskSlug }) {
         portalLaunchCalls.push({ providerConfig, providerConfigSecretRef, providerKeyPayload, taskSlug });
+        const launch = {
+          launchId: "launch-reuse-local",
+          launchToken: "launch-token-must-stay-cookie-only",
+          oplWebUrl: "https://opl.medopl.cn/session/reuse",
+          runtimeUrl: "",
+          runtimeSessionId: "runtime-session-reuse",
+          oplSessionId: "opl-session-reuse",
+          providerKeyRef: providerConfig?.providerKeyRef || "",
+        };
+        portalLaunchStatuses.set("launch-reuse-local", {
+          ok: true,
+          launchId: "launch-reuse-local",
+          status: "ready",
+          currentStage: "opl_opening",
+          userId: portalLaunchUser.id,
+          userVisibleState: "OPL 已准备好，正在打开",
+          blockingUser: false,
+          oplWebUrl: launch.oplWebUrl,
+          launch,
+          stages: [
+            { stage: "provider_key_bound", ok: true, blockingUser: false, userVisibleState: "正在绑定 OPL 访问凭证" },
+            { stage: "gateway_ready", ok: true, blockingUser: false, userVisibleState: "OPL 网关已准备" },
+          ],
+        });
         return {
           ok: true,
           launchId: "launch-reuse-local",
           taskSpace: portalLaunchDb.taskSpaces[0],
           workspaceSession: { id: "workspace-session-reuse", status: "active" },
-          launch: {
-            launchId: "launch-reuse-local",
-            launchToken: "launch-token-must-stay-cookie-only",
-            oplWebUrl: "https://opl.medopl.cn/session/reuse",
-            runtimeUrl: "",
-            runtimeSessionId: "runtime-session-reuse",
-            oplSessionId: "opl-session-reuse",
-            providerKeyRef: providerConfig?.providerKeyRef || "",
-          },
+          launch,
         };
       },
-      getLaunchStatus() {
-        return null;
+      getLaunchStatus(launchId) {
+        return portalLaunchStatuses.get(launchId) || null;
       },
     },
     readBody,
@@ -436,6 +453,22 @@ try {
   assert.equal(portalLaunchCalls[0].providerKeyPayload, null, "portal_launch_service_must_not_replay_raw_provider_payload");
   assertNoRawKey(reusedLaunch.res.payload, "portal_launch_reuse_response");
   assertNoRawKey(portalLaunchCalls, "portal_launch_reuse_service_call");
+
+  const statusRes = createResponseRecorder();
+  const statusHandled = await portalOplRoute({
+    req: { method: "GET", body: "", headers: {} },
+    res: statusRes,
+    url: new URL(`/portal/api/opl/launch-status/${encodeURIComponent(reusedLaunch.res.payload.launchId)}`, "https://portal.medopl.cn"),
+    db: portalLaunchDb,
+    user: portalLaunchUser,
+  });
+  assert.equal(statusHandled, true, "portal_launch_status_must_handle_reused_launch");
+  assert.equal(statusRes.statusCode, 200, "portal_launch_status_reused_launch_status_mismatch");
+  assert.equal(statusRes.payload.providerBound, true, "portal_launch_status_must_project_provider_bound");
+  assert.equal(statusRes.payload.providerKeyRef, launchBound.providerKeyRef, "portal_launch_status_must_project_provider_key_ref");
+  assert.equal(statusRes.payload.gatewayReady, true, "portal_launch_status_must_project_gateway_ready");
+  assert.equal(statusRes.payload.gatewayState, "OPL 网关已准备", "portal_launch_status_gateway_state_mismatch");
+  assertNoRawKey(statusRes.payload, "portal_launch_status_projection");
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }

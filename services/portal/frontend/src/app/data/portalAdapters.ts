@@ -661,7 +661,7 @@ export async function loadOplEntryModel() {
     const params = new URLSearchParams(window.location.search);
     const existingLaunchId = params.get("launchId");
     const launch = existingLaunchId
-      ? { launchId: existingLaunchId, openUrl: "", oplWebUrl: "", launchStatus: "preparing", ok: true, workspaceId: "", providerBound: false, providerKeyRef: "" }
+      ? { launchId: existingLaunchId, openUrl: "", oplWebUrl: "", launchStatus: "preparing", ok: true, workspaceId: "" }
       : await createOplLaunch({});
     const [status, bootstrap] = await Promise.all([
       fetchOplLaunchStatus(launch.launchId),
@@ -677,6 +677,14 @@ export async function loadOplEntryModel() {
       pageState: status.status === "ready" ? "ready" : status.status === "failed" ? "failed" : "preparing",
       userVisibleState: status.userVisibleState,
       oplWebUrl: status.oplWebUrl || launch.oplWebUrl || launch.openUrl,
+      currentStage: status.currentStage,
+      blockingUser: status.blockingUser,
+      providerBound: status.providerBound,
+      providerKeyRef: status.providerKeyRef,
+      gatewayReady: status.gatewayReady,
+      gatewayState: status.gatewayState,
+      runtimeSessionId: bootstrap.identity.runtimeSessionId,
+      oplSessionId: bootstrap.identity.oplSessionId,
       stages: status.stages,
     } as const;
   } catch {

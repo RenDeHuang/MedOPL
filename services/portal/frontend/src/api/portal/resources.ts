@@ -121,6 +121,10 @@ export interface OplLaunchStatusPayload {
   currentStage: string;
   userVisibleState: string;
   blockingUser: boolean;
+  providerBound: boolean;
+  providerKeyRef: string;
+  gatewayReady: boolean;
+  gatewayState: string;
   oplWebUrl: string;
   error?: string;
   message?: string;

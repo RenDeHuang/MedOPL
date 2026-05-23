@@ -163,9 +163,17 @@ async function handleOplLaunchApi(context, deps) {
 
 function publicLaunchStatus(status = {}) {
   const launch = publicLaunchPayload(status.launch || {});
+  const gatewayStage = Array.isArray(status.stages)
+    ? status.stages.find((item) => item.stage === "gateway_ready")
+    : null;
+  const gatewayReady = Boolean(gatewayStage?.ok && !gatewayStage?.blockingUser);
   return {
     ...status,
     openUrl: status.oplWebUrl || launch.oplWebUrl || "",
+    providerBound: Boolean(launch.providerKeyRef),
+    providerKeyRef: launch.providerKeyRef || "",
+    gatewayReady,
+    gatewayState: gatewayStage?.userVisibleState || (gatewayReady ? "OPL 网关已准备" : "OPL 网关等待中"),
     launch,
   };
 }

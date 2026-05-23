@@ -45,6 +45,23 @@ export function OPLEntry() {
   const query = usePortalQuery(loadOplEntryModel, []);
   const [countdown, setCountdown] = useState(3);
   const pageState = query.status === "ready" ? query.data.pageState as PageState : "preparing";
+  const providerBound = query.status === "ready" ? query.data.providerBound : false;
+  const providerKeyRef = query.status === "ready" ? query.data.providerKeyRef : "";
+  const gatewayReady = query.status === "ready" ? query.data.gatewayReady : false;
+  const gatewayState = query.status === "ready" ? query.data.gatewayState : "";
+  const providerStepDetail = providerBound
+    ? `已绑定${providerKeyRef ? `：${providerKeyRef}` : ""}`
+    : "未绑定";
+  const providerStepStatus = providerBound ? "completed" : pageState === "blocked_by_provider_key" ? "failed" : "waiting";
+  const gatewayStepDetail = gatewayState || (gatewayReady ? "OPL 网关已准备" : "等待后端网关投影");
+  const gatewayCompleted = gatewayReady || pageState === "ready";
+  const gatewayStepStatus = gatewayCompleted
+    ? "completed"
+    : ["service_unavailable", "capability_not_supported", "opl_upstream_url_required", "failed"].includes(pageState)
+    ? "failed"
+    : pageState === "retrying"
+    ? "in_progress"
+    : "waiting";
 
   // Ready 状态自动倒计时跳转
   useEffect(() => {
@@ -64,36 +81,36 @@ export function OPLEntry() {
       case "ready":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "completed" },
-          { id: "gateway", label: "确认 OPL 网关", status: "completed" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "in_progress" },
         ];
 
       case "preparing":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "in_progress" },
-          { id: "gateway", label: "确认 OPL 网关", status: "waiting" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
 
       case "retrying":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "completed" },
-          { id: "gateway", label: "确认 OPL 网关", status: "in_progress" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
 
       case "blocked_by_provider_key":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "failed", detail: "未绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "waiting" },
-          { id: "gateway", label: "确认 OPL 网关", status: "waiting" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
 
@@ -127,27 +144,27 @@ export function OPLEntry() {
       case "service_unavailable":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "completed" },
-          { id: "gateway", label: "确认 OPL 网关", status: "failed", detail: "服务暂时不可用" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
 
       case "capability_not_supported":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "completed" },
-          { id: "gateway", label: "确认 OPL 网关", status: "failed", detail: "当前能力暂不可用" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
 
       case "opl_upstream_url_required":
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "completed" },
-          { id: "gateway", label: "确认 OPL 网关", status: "failed", detail: "服务入口暂不可用" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
 
@@ -155,9 +172,9 @@ export function OPLEntry() {
       default:
         return [
           { id: "workspace", label: "准备工作空间", status: "completed" },
-          { id: "key", label: "确认密钥绑定状态", status: "completed", detail: "已绑定" },
+          { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
           { id: "session", label: "创建 OPL 会话", status: "failed", detail: "会话创建失败" },
-          { id: "gateway", label: "确认 OPL 网关", status: "waiting" },
+          { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
           { id: "open", label: "打开 OPL", status: "waiting" },
         ];
     }
