@@ -75,30 +75,45 @@ Scope:
 - Added durable domain specs under root `specs/`.
 - Kept `docs/active/README.md` as current truth only.
 - Added local gates for change package lifecycle, spec/eval traceability, registry, manifest and workflow review.
+- Opened `changes/active/real-cloud-authorization-boundary` for the current sensitive boundary without authorizing real cloud operations.
+- Renamed the formal gate from contract-gate to change-package-gate while keeping `local-contract` as a lower-bound eval suite.
+- Strengthened workflow review so formal changes must include a diff-local valid change package with target specs and local eval commands.
 
 Commits:
 
-- `63f5e8a` through `84550ae` establish baseline, change model, templates, active boundary, docs wiring, root specs, delta rules, traceability gates, registry/manifest integration, workflow gate, archive rules, durable spec sync and history sync.
+- `63f5e8a` through `b67a8e4` establish baseline, change model, templates, active boundary, docs wiring, root specs, delta rules, traceability gates, registry/manifest integration, workflow gate, archive rules, durable spec sync, history sync, active real-cloud package, formal gate rename and deterministic eval closeout.
+- Review-fix commit strengthens change-package gate binding and closeout evidence.
 
 Verification result:
 
-- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass before archived package creation; rerun required after this closeout.
-- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass.
-- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
-- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass.
+- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass; 15 durable requirement rows checked.
 - `node tests/health/health-check-v22-workflow-gate.mjs`: pass.
-- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs specs changes tests scripts package.json .github`: pass.
+
+Independent review:
+
+- Reviewer: Codex native explorer subagent.
+- Model: `gpt-5.4-mini`.
+- Result: one workflow-gate blocker, one spec traceability important finding and one closeout minor finding; all fixed before closeout.
 
 Can-claim:
 
 - Formal engineering changes now have a repo-native change package lifecycle.
 - Durable domain specs and spec-to-eval traceability exist and are locally gated.
+- Formal review requires a diff-local change package with target spec and eval command binding.
 
 Cannot-claim:
 
 - OpenSpec CLI is installed or required.
 - Real cloud, deploy, kubectl, build/push, live-test or production release is authorized.
 - Product, Portal, Gateway or Runtime Bridge runtime behavior changed.
+- Open active package means secret or real-cloud authorization has been granted.
 
 Next owner:
 

@@ -130,8 +130,11 @@ assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
 
 const reviewWithTokenNamedSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
-  activeChangePackageNames: ["example-change"],
   changedFiles: [
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/spec-delta.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     "tests/regression/opl/regression-test-v22-gflabtoken-entry-contract.mjs",
   ],
 });
@@ -142,7 +145,10 @@ assert.deepEqual(reviewWithTokenNamedSmoke.secretLikePaths, [], "v22_smoke_file_
 const reviewWithSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [
-    "changes/archive/2026-05-23-example-change/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/spec-delta.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     "services/portal/src/domain/example.mjs",
     "docs/specs/README.md",
     "tests/contract/contract-test-v22-example-boundary.mjs",
@@ -151,11 +157,25 @@ const reviewWithSmoke = evaluateReview({
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "services_changed_without_eval_plan_update"), false, "review_must_accept_service_eval_plan_update");
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "specs_changed_without_eval_plan_update"), false, "review_must_accept_spec_eval_plan_update");
 
+const reviewWithUnboundChangePackage = evaluateReview({
+  base: "recovery/platform-v22-trunk",
+  changedFiles: [
+    "changes/archive/2026-05-23-unbound-change/proposal.md",
+    "services/portal/src/domain/example.mjs",
+  ],
+});
+assert.equal(reviewWithUnboundChangePackage.ok, false, "review_must_block_unbound_change_package");
+assert(reviewWithUnboundChangePackage.findings.some((finding) => finding.code === "formal_change_package_missing_spec_or_eval_plan"), "review_must_require_change_package_spec_and_eval_binding");
+
 const fullTaxonomyAuthorizedDeletes = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   branchName: "cleanup/v22-full-taxonomy-hard-retirement",
   activeChangePackageNames: ["full-taxonomy-hard-retirement"],
   changedFiles: [
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/spec-delta.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     ["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"),
     ["docs", "recovery", "status-matrix.md"].join("/"),
     ["docs", "product.md"].join("/"),
@@ -189,6 +209,10 @@ const strictCleanupAuthorizedDeletes = evaluateReview({
   branchName: "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   activeChangePackageNames: ["strict-monolith-ideal-gap-and-legacy-retirement"],
   changedFiles: [
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/spec-delta.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     "adapters/resource-provisioner/package.json",
     "deploy/tke-package/README.md",
   ],
@@ -208,6 +232,10 @@ const strictCleanupModifiedZone4 = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   branchName: "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
   changedFiles: [
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/spec-delta.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     "adapters/resource-provisioner/package.json",
     "deploy/tke-package/README.md",
   ],

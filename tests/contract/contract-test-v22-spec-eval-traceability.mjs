@@ -34,6 +34,7 @@ assertIncludes(rootSpecs, "## Traceability Invariants", "root_specs_traceability
 assertIncludes(rootSpecs, "Every durable requirement must map to at least one local deterministic eval or an explicit future-authorized boundary eval.", "root_specs_traceability");
 
 const allSpecs = [];
+let requirementRows = 0;
 for (const domain of domains) {
   const repoPath = `specs/${domain}/spec.md`;
   assert.equal(await exists(repoPath), true, `domain_spec_missing:${domain}`);
@@ -44,6 +45,22 @@ for (const domain of domains) {
   }
   assert(source.includes(`\`${domain}:`) || source.includes("operations:") || source.includes("runtime:") || source.includes("product:") || source.includes("framework:") || source.includes("evidence:") || source.includes("policies:") || source.includes("source:"), `domain_spec_must_define_requirement_id:${domain}`);
   assert(/node (?:tests|scripts)\//u.test(source), `domain_spec_must_reference_eval_command:${domain}`);
+  const rows = source.split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^\| `(?:product|runtime|framework|operations|evidence|policies|source):[a-z0-9-]+` \|/u.test(line));
+  assert(rows.length > 0, `domain_spec_must_define_requirement_rows:${domain}`);
+  requirementRows += rows.length;
+  for (const row of rows) {
+    const cells = row.split("|").slice(1, -1).map((cell) => cell.trim());
+    assert.equal(cells.length, 6, `requirement_row_must_have_six_cells:${domain}:${row}`);
+    const [requirement, ownerPlane, sourceSurface, requiredEvals, evidenceLevel, cannotClaim] = cells;
+    assert(/^`[a-z]+:[a-z0-9-]+`$/u.test(requirement), `requirement_row_missing_requirement_id:${domain}:${row}`);
+    assert(ownerPlane.length > 0 && ownerPlane !== "-", `requirement_row_missing_owner:${domain}:${requirement}`);
+    assert(sourceSurface.length > 0 && sourceSurface !== "-", `requirement_row_missing_source_surface:${domain}:${requirement}`);
+    assert(/node (?:tests|scripts)\//u.test(requiredEvals), `requirement_row_missing_eval_command:${domain}:${requirement}`);
+    assert(evidenceLevel.length > 0 && evidenceLevel !== "-", `requirement_row_missing_evidence_level:${domain}:${requirement}`);
+    assert(cannotClaim.length > 0 && cannotClaim !== "-", `requirement_row_missing_cannot_claim:${domain}:${requirement}`);
+  }
 }
 
 const joinedSpecs = allSpecs.join("\n");
@@ -61,4 +78,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_spec_eval_traceability",
   domains,
+  requirementRows,
 }, null, 2));

@@ -429,11 +429,62 @@ function activeChangePackages() {
     .sort();
 }
 
+function changedActivePackages(changedFiles) {
+  return unique(changedFiles
+    .map(normalizePath)
+    .map((file) => file.match(/^changes\/active\/([^/]+)\//u)?.[1])
+    .filter(Boolean));
+}
+
 function changedArchivePackages(changedFiles) {
   return unique(changedFiles
     .map(normalizePath)
     .map((file) => file.match(/^changes\/archive\/([^/]+)\//u)?.[1])
     .filter(Boolean));
+}
+
+function reviewChangePackageRecords(changedFiles) {
+  const active = changedActivePackages(changedFiles)
+    .map((id) => ({ id, root: "changes/active", path: `changes/active/${id}` }));
+  const archive = changedArchivePackages(changedFiles)
+    .map((id) => ({ id, root: "changes/archive", path: `changes/archive/${id}` }));
+  return [...active, ...archive].sort((left, right) => left.path.localeCompare(right.path));
+}
+
+function readOptionalRepoFile(repoPath) {
+  const absolutePath = path.join(repoRoot, repoPath);
+  if (!existsSync(absolutePath)) return "";
+  return readFileSync(absolutePath, "utf8");
+}
+
+function validateReviewChangePackage(record) {
+  const proposal = readOptionalRepoFile(`${record.path}/proposal.md`);
+  const specDelta = readOptionalRepoFile(`${record.path}/spec-delta.md`);
+  const evalPlan = readOptionalRepoFile(`${record.path}/eval-plan.md`);
+  const closeout = readOptionalRepoFile(`${record.path}/closeout.md`);
+  const missingFiles = [
+    "proposal.md",
+    "spec-delta.md",
+    "eval-plan.md",
+    "closeout.md",
+  ].filter((fileName) => !existsSync(path.join(repoRoot, record.path, fileName)));
+  const targetSpecs = unique([...specDelta.matchAll(/specs\/[a-z-]+\/spec\.md/gu)].map((match) => match[0])).sort();
+  const evalCommands = unique([...evalPlan.matchAll(/\b(?:node\s+(?:tests|scripts)\/[^\s`'"]+\.mjs|npm\s+(?:run|--prefix)\s+[^\n`]+)/gu)]
+    .map((match) => match[0].trim())).sort();
+  return {
+    ...record,
+    missingFiles,
+    hasOwner: /Owner:/u.test(proposal),
+    hasAuthorizationBoundary: /## Authorization Boundary/u.test(proposal),
+    hasCannotClaim: /## CANNOT-CLAIM/u.test(specDelta) || /## Cannot Claim/u.test(closeout),
+    targetSpecs,
+    evalCommands,
+    ok: missingFiles.length === 0
+      && /Owner:/u.test(proposal)
+      && /## Authorization Boundary/u.test(proposal)
+      && targetSpecs.length > 0
+      && evalCommands.length > 0,
+  };
 }
 
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
@@ -587,6 +638,8 @@ export function evaluateReview({
   const specsChanged = normalizedFiles.some(isSpecPath);
   const evalChanged = normalizedFiles.some(isV22EvalPath);
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
+  const reviewPackages = reviewChangePackageRecords(normalizedFiles).map(validateReviewChangePackage);
+  const validReviewPackages = reviewPackages.filter((record) => record.ok);
   const activeChanges = [...activeChangePackageNames, ...changedArchivePackages(normalizedFiles)].sort();
   const findings = [];
 
@@ -618,25 +671,40 @@ export function evaluateReview({
       references: missingLocalCommandReferences,
     });
   }
-  if (servicesChanged && !evalChanged) {
+  if (servicesChanged && !evalChanged && validReviewPackages.length === 0) {
     findings.push({
       code: "services_changed_without_eval_plan_update",
-      severity: "warning",
-      message: "services/* 改动需要对应 eval plan 更新、已注册 eval 覆盖，或在 review 中说明无需新增 eval。",
+      severity: "blocker",
+      message: "services/* 改动需要本次 change package 的 eval-plan.md 绑定本地 eval，或同时修改/新增已注册 eval。",
     });
   }
-  if (specsChanged && !evalChanged) {
+  if (specsChanged && !evalChanged && validReviewPackages.length === 0) {
     findings.push({
       code: "specs_changed_without_eval_plan_update",
-      severity: "warning",
-      message: "docs/specs 改动需要对应 spec subscription / eval plan 更新，或在 review 中说明已有 eval 覆盖。",
+      severity: "blocker",
+      message: "docs/specs 改动需要本次 change package 的 spec-delta.md 与 eval-plan.md 绑定 target spec 和本地 eval，或同时修改/新增已注册 eval。",
     });
   }
-  if (formalEngineeringChanged && activeChanges.length === 0) {
+  if (formalEngineeringChanged && reviewPackages.length === 0) {
     findings.push({
       code: "formal_change_without_active_change_package",
       severity: "blocker",
-      message: "正式工程变更必须先有 repo-native changes/active/<change-id>，记录 proposal、spec delta、design、tasks、eval plan、review 和 closeout。",
+      message: "正式工程变更必须在本次 diff 中包含 repo-native changes/active/<change-id> 或 changes/archive/<date-change-id>，记录 proposal、spec delta、design、tasks、eval plan、review 和 closeout。",
+    });
+  }
+  if (formalEngineeringChanged && reviewPackages.some((record) => !record.ok)) {
+    findings.push({
+      code: "formal_change_package_missing_spec_or_eval_plan",
+      severity: "blocker",
+      packages: reviewPackages.filter((record) => !record.ok).map((record) => ({
+        path: record.path,
+        missingFiles: record.missingFiles,
+        hasOwner: record.hasOwner,
+        hasAuthorizationBoundary: record.hasAuthorizationBoundary,
+        targetSpecs: record.targetSpecs,
+        evalCommands: record.evalCommands,
+      })),
+      message: "本次 formal change 的 change package 必须声明 owner、authorization boundary、target specs 和本地 eval commands。",
     });
   }
 
@@ -669,6 +737,7 @@ export function evaluateReview({
     missingLocalCommandReferences,
     missingLocalTestCommandReferences: missingLocalCommandReferences,
     activeChanges,
+    reviewPackages,
     findings,
     recommendedCommands: unique(recommendedCommands),
   };
@@ -728,6 +797,7 @@ function renderReviewReport(review) {
     secretLikePaths: review.secretLikePaths,
     secretLikeAddedLines: review.secretLikeAddedLines,
     missingLocalCommandReferences: review.missingLocalCommandReferences,
+    reviewPackages: review.reviewPackages,
     findings: review.findings,
     recommendedCommands: review.recommendedCommands,
   }, null, 2)}\n`;
