@@ -429,6 +429,13 @@ function activeChangePackages() {
     .sort();
 }
 
+function changedArchivePackages(changedFiles) {
+  return unique(changedFiles
+    .map(normalizePath)
+    .map((file) => file.match(/^changes\/archive\/([^/]+)\//u)?.[1])
+    .filter(Boolean));
+}
+
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
   if (!String(status || "").startsWith("D")) return false;
   const normalized = normalizePath(filePath);
@@ -579,7 +586,7 @@ export function evaluateReview({
   const contractsChanged = normalizedFiles.some(isContractPath);
   const evalChanged = normalizedFiles.some(isV22EvalPath);
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
-  const activeChanges = activeChangePackageNames;
+  const activeChanges = [...activeChangePackageNames, ...changedArchivePackages(normalizedFiles)].sort();
   const findings = [];
 
   if (forbiddenPaths.length > 0) {

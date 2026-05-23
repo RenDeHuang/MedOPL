@@ -13,4 +13,4 @@ Framework specs define owner boundary, surface budget, admission, readiness and 
 | --- | --- | --- | --- | --- | --- |
 | `framework:rules-before-status` | Framework | `docs/framework/README.md`, `docs/policies/README.md` | `node tests/contract/contract-test-v22-framework-truth-layering.mjs` | local contract proof | Current status can rewrite durable rules. |
 | `framework:change-package-required` | Framework | `changes/README.md` | `node tests/contract/contract-test-v22-change-package-lifecycle.mjs` | local contract proof | Chat prompt alone is durable change context. |
-
+| `framework:repo-native-change-lifecycle` | Framework | `changes/README.md`, `specs/README.md`, `scripts/v22-workflow-gate.mjs` | `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`; `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`; `node tests/health/health-check-v22-workflow-gate.mjs` | local contract proof | OpenSpec CLI is installed or production operations are authorized. |

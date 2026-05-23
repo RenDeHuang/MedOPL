@@ -140,8 +140,8 @@ assert.deepEqual(reviewWithTokenNamedSmoke.secretLikePaths, [], "v22_smoke_file_
 
 const reviewWithSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
-  activeChangePackageNames: ["example-change"],
   changedFiles: [
+    "changes/archive/2026-05-23-example-change/proposal.md",
     "services/portal/src/domain/example.mjs",
     "docs/specs/README.md",
     "tests/contract/contract-test-v22-example-boundary.mjs",

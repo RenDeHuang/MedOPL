@@ -61,6 +61,49 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
+
+Status: `archived / local-gated`
+
+Branch: `cleanup/repo-native-change-lifecycle`
+
+Archived change package: `changes/archive/2026-05-23-repo-native-change-lifecycle`
+
+Scope:
+
+- Added repo-native change lifecycle under `changes/`.
+- Added durable domain specs under root `specs/`.
+- Kept `docs/active/README.md` as current truth only.
+- Added local gates for change package lifecycle, spec/eval traceability, registry, manifest and workflow review.
+
+Commits:
+
+- `63f5e8a` through `84550ae` establish baseline, change model, templates, active boundary, docs wiring, root specs, delta rules, traceability gates, registry/manifest integration, workflow gate, archive rules, durable spec sync and history sync.
+
+Verification result:
+
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass before archived package creation; rerun required after this closeout.
+- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass.
+- `node tests/health/health-check-v22-workflow-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --dry-run --json`: pass.
+
+Can-claim:
+
+- Formal engineering changes now have a repo-native change package lifecycle.
+- Durable domain specs and spec-to-eval traceability exist and are locally gated.
+
+Cannot-claim:
+
+- OpenSpec CLI is installed or required.
+- Real cloud, deploy, kubectl, build/push, live-test or production release is authorized.
+- Product, Portal, Gateway or Runtime Bridge runtime behavior changed.
+
+Next owner:
+
+- `MedOPL Platform` maintains lifecycle gates; future product/cloud work must open `changes/active/<change-id>` before implementation.
+
 ### 2026-05-23 cleanup/repo-native-change-lifecycle baseline
 
 Status: `authoring / baseline-audit`
