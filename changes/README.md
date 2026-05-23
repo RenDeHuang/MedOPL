@@ -274,4 +274,11 @@ Change packages must not restore retired surfaces:
 4. add a compact summary to `docs/history/README.md`;
 5. update `docs/active/README.md` and `tests/fixtures/v22/goal-current.json` only when current cursor or blocker changes.
 
+Archive rules:
+
+- archived directory names must use `YYYY-MM-DD-<change-id>`;
+- archived `closeout.md` status must be `landed` or `archived`;
+- archived `closeout.md` must point its Archive Target to its own `changes/archive/YYYY-MM-DD-<change-id>` directory;
+- a landed change must not remain in `changes/active/<change-id>`.
+
 History keeps summary only. Full proposal, design, tasks, spec delta, eval plan and review context belong in the archived change package.

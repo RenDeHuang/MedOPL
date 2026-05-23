@@ -69,6 +69,12 @@ async function assertChangePackage({ root, changeId, archived }) {
   assertIncludes(closeout, "## Can Claim", `closeout_required_section:${changePath}`);
   assertIncludes(closeout, "## Cannot Claim", `closeout_required_section:${changePath}`);
   assertIncludes(closeout, "## Archive Target", `closeout_required_section:${changePath}`);
+  if (archived) {
+    assert(/Status:\s*(?:landed|archived)/iu.test(closeout), `archived_closeout_status_must_be_landed_or_archived:${changePath}`);
+    assertIncludes(closeout, changePath, `archived_closeout_must_reference_own_archive_target:${changePath}`);
+  } else {
+    assert(!/Status:\s*archived/iu.test(closeout), `active_closeout_must_not_be_archived:${changePath}`);
+  }
   assert(!/\b(?:sk-[A-Za-z0-9_-]{20,}|SECRET_KEY\s*=|SECRET_ID\s*=|PRIVATE KEY|kubeconfig\s*[:=])/u.test(joined), `change_package_must_not_store_secret:${changePath}`);
   assert(!/\bproduction (?:deploy|runtime|cloud|billing) (?:is )?(?:complete|ready|live)\b/iu.test(joined), `change_package_must_not_claim_production_truth:${changePath}`);
 }
