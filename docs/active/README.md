@@ -21,7 +21,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | next owner | `MedOPL Operations` for authorization boundary; `MedOPL Platform` for truth/spec/manifest/history/verify consistency |
 | open change package | `changes/active/real-cloud-authorization-boundary` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
-| default first proof | golden path health from `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk` |
+| default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
 | latest governance closeout | `cleanup/v22-backend-convergence-trunk-closeout` / `d12ebb6c886c4a1717abe8f9b3308ab74842ed57` |
 

@@ -2920,3 +2920,48 @@ Post-absorb truth recommendation:
 Next recommendation:
 
 - Run final backend convergence package verification and B review pack for the full authoring branch.
+
+### 2026-05-23 cleanup/golden-path-first-class
+
+Status: `ready_for_landing_review`
+
+Branch: `cleanup/golden-path-first-class`
+
+Scope:
+
+- Made the MedOPL golden path the default product spine: login / credit / provider key -> managed environment -> OPL launch -> file/task -> run/artifact -> billing/trace/audit -> release/stop billing.
+- Added `golden-path` verification suite and made `current` start with golden path health before governance guardrails.
+- Required every change package to declare `Golden Path Impact`.
+- Kept governance gates as guardrails: local-contract, review, repo-hygiene, history-closeout and change-package-gate remain active.
+- Extracted Portal runtime domain/presentation dependency assembly into `services/portal/src/app/portal-runtime-app-deps.mjs`, reducing `portal-runtime.mjs` unique import fan-out from 23 to 18.
+
+Commits:
+
+- `f9efdff` chore(framework): open golden path baseline package
+- `9b4090e` docs(framework): make golden path first class
+- `9611925` test(framework): make current verify start with golden path
+- `90ccadd` test(framework): require golden path impact in change packages
+- `238d2a6` refactor(portal): extract runtime app dependencies
+- final closeout commit: pending
+
+Verification:
+
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all`: pass.
+
+Independent review:
+
+- reviewer: Codex native subagent `Confucius`
+- model: `gpt-5.4-mini`
+- result: no blocker; one Important active-doc command mismatch fixed.
+
+Cannot claim:
+
+- No production runtime, production billing, real cloud execution, deploy, kubectl, build/push or live-test.
+- No Sentrux Pro diagnostics used.
+- First Portal runtime fan-out extraction does not complete all source debt.
