@@ -172,10 +172,13 @@ const latestLandedCommit = latestLanded.landedCommit;
 const currentCursor = current.current_cursor;
 
 assertIncludesAll(active, [
-  "OPL-style 清退生命周期真相",
-  "truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor",
+  "Cleanup lifecycle",
   lifecycleGate,
-], "active_lifecycle_truth");
+], "active_lifecycle_current_pointer");
+assertIncludesAll(policies, [
+  "Cleanup Lifecycle Policy",
+  "truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor",
+], "policies_lifecycle_truth");
 assert(currentCursor, "current_cursor_required");
 assert(active.includes(currentCursor), `active_lifecycle_truth_missing_current_cursor:${currentCursor}`);
 

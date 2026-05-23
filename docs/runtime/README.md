@@ -20,6 +20,26 @@ One Person Lab upstream 必须保持 clean。Portal/Gateway/Runtime Bridge 不�
 
 Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerKeyRef/trace projection，不是 cloud inventory truth，也不是 billing ledger truth。Real OPL canary 是验证链路，不是 production completion claim。OPL workbench entry 与 managed run 是两道 gate；entry 负责账号、工作空间、Gateway/upstream entry 和用户自己的 gflabtoken provider binding，managed run 再检查托管 runtime、文件空间、余额、`providerKeyRef` 和 Runtime Bridge。
 
+Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL。Redis 不是事实源，只能用于 session、cache、queue、lock 或短期协调。Portal 保存账号、用户、工作空间、钱包、冻结金额、账本、审计、resource binding、fileRef/logical index、session/run/artifact/trace metadata 的业务事实。
+
+数据与云控制面真相采用 Portal 内部 operation/job/projection/reconciliation 模型：
+
+- desired state：Portal 中形成的资源、文件空间、计费和释放意图。
+- actual state：云资源、runtime、文件空间、账单和审计的实际观测事实。
+- reconciled state：Portal 对 desired state 和 actual state 的核对结果、异常、补偿和审计记录。
+
+Object/blob plane 当前仍属本地/过渡实现；后续对象存储只承载文件正文和私有 locator，不成为账本、资源或审计事实源。secret plane、object/blob plane、runtime state plane 仍属本地/过渡实现，不能写成 productionized truth。
+
+OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 `/opl/entry/preflight`。`/internal/opl/auth/login` 只能作为 internal implementation path。旧 v19/v20/v21 OPL direct path、direct upstream path、internal path 不能成为 v22 产品入口。
+
+One Person Lab upstream 只作为 clean upstream reference：
+
+```text
+https://github.com/gaofeng21cn/one-person-lab
+```
+
+v22 不修改 upstream 源码，不在 upstream 目录写 Portal、Gateway 或 Runtime Bridge 代码，不 import upstream 内部模块。upstream 更新后，平台拉取更新，并通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的 anti-corruption mapping 适配。
+
 ## Backend Convergence Target View
 
 后端收敛目标链路是：
@@ -56,4 +76,4 @@ Portal Control Plane
 
 ## Current Truth Pointer
 
-Runtime 当前事实、Portal canonical data truth、PostgreSQL/Redis 方向、object/blob plane、clean upstream 和 no-fake-success 边界统一见 `docs/active/README.md`。旧分散 architecture truth 不得恢复为当前架构真相入口。
+Runtime、Gateway、Portal canonical data truth、PostgreSQL/Redis 方向、object/blob plane、clean upstream 和 no-fake-success 边界由本文、`docs/specs/README.md` 和 source/eval 持有。当前阶段、cursor、blocker 和 verification entry 才看 `docs/active/README.md`。旧分散 architecture truth 不得恢复为当前架构真相入口。

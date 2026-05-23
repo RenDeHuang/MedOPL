@@ -3,8 +3,6 @@ import { readFile } from "node:fs/promises";
 
 const specsPath = "docs/specs/README.md";
 const productPath = "docs/product/README.md";
-const activePath = "docs/active/README.md";
-
 const packageStartMarker = "<!-- v22-commercial-package-model:start -->";
 const packageEndMarker = "<!-- v22-commercial-package-model:end -->";
 const uiStartMarker = "<!-- v22-commercial-ui-impact-decision:start -->";
@@ -38,11 +36,10 @@ function extractSection(markdown, heading) {
   return match.groups.section;
 }
 
-function assertCommercialPackageModel({ specs, product, active }) {
+function assertCommercialPackageModel({ specs, product }) {
   const model = extractJson(specs, packageStartMarker, packageEndMarker, "commercial_package_model");
   const packageIds = model.packages.map((item) => item.id);
   const productCommercialSection = extractSection(product, "Commercial Package Model");
-  const activeCommercialSection = extractSection(active, "商业化主链路");
 
   assert.equal(model.contract, "v22_commercial_package_model", "commercial_package_model_contract_mismatch");
   assert.equal(model.version, 1, "commercial_package_model_version_mismatch");
@@ -76,10 +73,10 @@ function assertCommercialPackageModel({ specs, product, active }) {
   assertIncludes(specs, "### spec:v22-commercial-package-model", "specs_anchor");
   assertIncludes(productCommercialSection, "谁都可以进入 OPL", "product_anyone_can_enter_opl");
   assertIncludes(productCommercialSection, "需要平台托管计算、文件空间、隔离环境、计费和审计时，必须进入 MedOPL", "product_medopl_cloud_gate");
-  assertIncludes(activeCommercialSection, "api_only", "active_api_only");
-  assertIncludes(activeCommercialSection, "full_runtime", "active_full_runtime");
-  assertIncludes(activeCommercialSection, "customer_dedicated", "active_customer_dedicated");
-  for (const text of [productCommercialSection, activeCommercialSection]) {
+  assertIncludes(productCommercialSection, "api_only", "product_api_only");
+  assertIncludes(productCommercialSection, "full_runtime", "product_full_runtime");
+  assertIncludes(productCommercialSection, "customer_dedicated", "product_customer_dedicated");
+  for (const text of [productCommercialSection]) {
     assertNotIncludes(text, "允许用户自配", "commercial_truth");
     assertNotIncludes(text, "普通用户配置 CVM", "commercial_truth");
     assertNotIncludes(text, "普通用户配置 COS", "commercial_truth");
@@ -88,10 +85,9 @@ function assertCommercialPackageModel({ specs, product, active }) {
   }
 }
 
-function assertCommercialUiImpactDecision({ specs, product, active }) {
+function assertCommercialUiImpactDecision({ specs, product }) {
   const decision = extractJson(specs, uiStartMarker, uiEndMarker, "commercial_ui_impact");
   const productSection = extractSection(product, "Commercial UI Impact Decision");
-  const activeSection = extractSection(active, "商业化 UI 影响决策");
 
   assert.equal(decision.contract, "v22_commercial_ui_impact_decision", "commercial_ui_impact_contract_mismatch");
   assert.equal(decision.version, 1, "commercial_ui_impact_version_mismatch");
@@ -121,7 +117,7 @@ function assertCommercialUiImpactDecision({ specs, product, active }) {
   assert.equal(decision.modifiesUiNow, false, "commercial_ui_must_not_modify_ui_now");
   assert.equal(decision.requiresFutureUiLeafForCustomerDedicated, true, "customer_dedicated_future_ui_leaf_required");
 
-  for (const section of [productSection, activeSection]) {
+  for (const section of [productSection]) {
     assertIncludes(section, "本阶段不修改 Portal UI 代码", "ui_decision_section");
     for (const question of decision.requiredCustomerQuestions) assertIncludes(section, question, `ui_decision_question:${question}`);
     assertIncludes(section, "customer_dedicated", "ui_decision_customer_dedicated_handoff");
@@ -130,14 +126,13 @@ function assertCommercialUiImpactDecision({ specs, product, active }) {
   }
 }
 
-const [specs, product, active] = await Promise.all([
+const [specs, product] = await Promise.all([
   readFile(specsPath, "utf8"),
   readFile(productPath, "utf8"),
-  readFile(activePath, "utf8"),
 ]);
 
-assertCommercialPackageModel({ specs, product, active });
-assertCommercialUiImpactDecision({ specs, product, active });
+assertCommercialPackageModel({ specs, product });
+assertCommercialUiImpactDecision({ specs, product });
 
 console.log(JSON.stringify({
   ok: true,

@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 const contractPath = "docs/specs/README.md";
 const contractIndexPath = "docs/specs/README.md";
 const activeTruthPath = "docs/active/README.md";
+const productTruthPath = "docs/product/README.md";
 const deliveryPath = "docs/delivery/README.md";
 const currentPath = "tests/fixtures/v22/goal-current.json";
 
@@ -82,12 +83,14 @@ const [
   contractMarkdown,
   contractIndex,
   activeTruth,
+  productTruth,
   deliveryTruth,
   current,
 ] = await Promise.all([
   source(contractPath),
   source(contractIndexPath),
   source(activeTruthPath),
+  source(productTruthPath),
   source(deliveryPath),
   source(currentPath).then((raw) => JSON.parse(raw)),
 ]);
@@ -156,18 +159,18 @@ for (const packageName of userVisiblePackageNames) {
   const section = extractContractPackageSection(contractIndex, packageName);
   assertIncludes(section, uxContractRef, `contract_package_must_subscribe_ux_truth:${packageName}`);
 }
-assertIncludes(activeTruth, "SaaS 控制面", "active_truth_must_name_saas_control_plane");
-assertIncludes(activeTruth, "托管交付平台", "active_truth_must_name_managed_delivery_platform");
-assertIncludes(activeTruth, "Portal 不回答科研问题，不复制 OPL 的 chatbot", "active_truth_must_keep_opl_chatbot_boundary");
-assertIncludes(activeTruth, "OPL 负责科研执行", "active_truth_must_assign_opl_execution");
-assertIncludes(activeTruth, "用户购买的是托管 OPL 科研工作台服务", "active_truth_must_hold_product_truth");
+assertIncludes(productTruth, "SaaS 控制面", "product_truth_must_name_saas_control_plane");
+assertIncludes(productTruth, "托管交付平台", "product_truth_must_name_managed_delivery_platform");
+assertIncludes(productTruth, "Portal 不回答科研问题，不复制 OPL chatbot", "product_truth_must_keep_opl_chatbot_boundary");
+assertIncludes(productTruth, "OPL 负责 chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验", "product_truth_must_assign_opl_execution");
+assertIncludes(productTruth, "用户购买托管 OPL 科研工作台服务", "product_truth_must_hold_product_truth");
 assertIncludes(activeTruth, `当前 product cursor 是 \`${current.current_cursor}\``, "active_truth_must_track_current_cursor");
 assertIncludes(deliveryTruth, current.current_cursor, "delivery_truth_must_track_current_cursor");
 assertIncludes(deliveryTruth, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "delivery_truth_must_list_default_verify");
 
 for (const text of [
   contractMarkdown,
-  activeTruth,
+  productTruth,
 ]) {
   assertExcludes(text, "Portal 是科研聊天界面", "truth_must_not_make_portal_chat_ui");
   assertExcludes(text, "Portal 是云资源控制台", "truth_must_not_make_portal_cloud_console");

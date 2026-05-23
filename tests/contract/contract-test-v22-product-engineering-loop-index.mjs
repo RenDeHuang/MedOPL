@@ -209,9 +209,10 @@ assert(currentLeaf.verification_commands.includes("node tests/contract/contract-
 
 assertIncludes(active, "product-engineering-loop", "active_must_name_product_engineering_loop");
 assertIncludes(active, "precloud-product-slides-closure", "active_must_name_precloud_slide_goal");
-assertIncludes(active, "inventory -> classify -> absorb truth -> retire stale surface -> eval -> implementation -> verify -> commit", "active_must_define_product_lifecycle");
-assertIncludes(active, "active baton", "active_must_define_product_loop_as_baton");
-assertIncludes(active, "collapse to history summary and next cursor", "active_must_define_product_loop_collapse");
+assertIncludes(active, "closed summary", "active_must_reference_product_loop_closed_summary");
+assertIncludes(active, "real-cloud authorization boundary", "active_must_reference_product_loop_next_cursor");
+assertIncludes(history, "collapse policy", "history_must_define_product_loop_collapse");
+assertIncludes(history, "active baton", "history_must_record_product_loop_as_baton");
 if (loop.status === "closed") {
   assertIncludes(history, "slide-09-precloud-readiness", "history_must_record_slide_09_closeout");
   assertIncludes(history, "real-cloud-authorization-boundary", "history_must_record_precloud_next_cursor");

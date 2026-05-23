@@ -7,9 +7,62 @@ Machine boundary: 本文是产品视角入口，不是第二份 current truth。
 
 ## Product View
 
-MedOPL v22 是 One Person Lab 的 SaaS 控制面和托管交付平台：用户购买托管 OPL 科研工作台服务、计算能力、文件空间、任务并发和运行环境。Portal 解释服务、状态、余额、文件、账单和轨迹；OPL 继续负责科研执行和工作台内交互。
+MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 One Person Lab SaaS 控制面和托管交付平台：用户购买托管 OPL 科研工作台服务、计算能力、文件空间、任务并发和运行环境。Portal 解释服务、状态、余额、文件、账单和轨迹；OPL 继续负责科研执行和工作台内交互。
 
 MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、K8s、节点池或云控制台配置。管理员 / ops 是后台视角，不进入普通用户产品主叙事。
+
+用户主路径是：登录 `portal.medopl.cn` -> 工作空间 -> 上传文件 / 提任务 -> 进入 OPL / 工作台 -> 看结果 -> 看费用。`opl.medopl.cn` 入口、Portal “进入 OPL 工作台”按钮和 Gateway preflight 最终进入同一套 Gateway / launch / provider binding 逻辑。
+
+Portal 不回答科研问题，不复制 OPL chatbot。Portal 负责准备、管理、进入、回流、计费、审计和释放；OPL 负责 chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验。
+
+普通用户主语言优先使用：账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额。租户、runtime、运行环境、environmentId 只能作为内部标签、对账标签或审计字段。
+
+## Optional Resource Lifecycle
+
+计算资源和文件空间不是默认强制能力。未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 工作台或受限工作台，但不能跑平台托管计算任务。
+
+进入 OPL 工作台和运行平台托管任务是两道 gate：workbench entry 要求账号、工作空间、Gateway / upstream entry 可用，并要求用户输入或已有自己的 gflabtoken API Key；managed run 还要求托管计算资源、文件空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge 可用。
+
+当前 MVP active 规格只落在 `full_runtime` 层：`starter_2c4g_10gb` 和 `pro_8c16g_100gb`。它们是托管运行能力的规格映射，不是第二套商业模型。
+
+| 套餐 | 计算资源 | 文件空间 | 任务并发 |
+| --- | --- | --- | --- |
+| 基础套餐 | 2c / 4GB | 10GB 文件空间 | 1 个任务并发 |
+| Pro 套餐 | 8c / 16GB | 100GB 文件空间 | 2 个任务并发 |
+
+资源生命周期边界：
+
+- 计算资源可独立开通、扩容、缩容、释放。
+- 存储资源 / 文件空间可独立开通、扩容、删除。
+- 释放托管运行环境不等于删除文件空间。
+- 释放计算资源不删除文件空间。
+- 删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。
+- 文件空间进入保护期或不可用时，新任务不能依赖该文件空间。
+- 计算资源已释放但文件空间仍保留，是合法状态。
+- 释放计算资源后的停止计费确认进入 `120min` 核对窗口，账单、资源、文件保留和异常处理进入 `T+1` 审计。
+- 叠加计算、叠加存储和自定义规格属于 future-authorized，不能写成当前已授权真实云执行能力。
+
+## Core User Loop
+
+1. 平台创建 1 名用户。
+2. 给用户充值额度。
+3. 用户登录 `portal.medopl.cn`。
+4. 用户进入工作空间，上传文件或提出任务意图。
+5. 用户在 OPL entry/preflight 或工作台 provider 绑定面输入自己的 gflabtoken API Key；已绑定用户不要求重复输入。
+6. 用户进入 OPL / 工作台，查看上下文、组织文件、准备任务和查看已有结果。
+7. 用户选择是否开通计算资源和文件空间。
+8. 如开通，用户选择基础套餐、Pro 套餐、叠加资源或自定义规格。
+9. 平台在自己的 TKE/存储资源池里开通可组合资源，计算资源与文件空间可独立保留或释放。
+10. Portal 展示账号的计算资源、文件空间、工作空间和资源绑定状态。
+11. 开通资源后开始预扣费或冻结金额。
+12. 用户通过 clean upstream OPL Web 工作。
+13. 用户可以发送消息、上传文件、跑托管任务、下载输出文件。
+14. Portal 可以看到 workspace 文件、账单和 session trace metadata。
+15. 如果余额不足，Portal 提示将消耗冻结金额。
+16. 余额或冻结金额不足时，停止新托管任务和计算资源续用，但不得把释放计算资源自动写成删除文件空间。
+17. 释放计算资源只停止计算计费和托管任务续用；用户删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期。
+18. 文件空间进入保护期或不可用时，新托管任务不能依赖该文件空间。
+19. 计算停止计费需要在 `120min` 内核对，账单与资源状态进入 `T+1` 审计。
 
 ## Commercial Package Model
 
@@ -58,4 +111,4 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 ## Current Truth Pointer
 
-产品当前事实、资源生命周期、套餐、用户自带 gflabtoken provider key、7 天保护期、`120min` 和 `T+1` 审计口径统一见 `docs/active/README.md`。旧分散 product truth 不得恢复为当前产品真相入口。
+产品语义、资源生命周期、套餐、用户自带 gflabtoken provider key、7 天保护期、`120min` 和 `T+1` 审计口径由本文和 `docs/specs/README.md` 持有。当前阶段、cursor、blocker 和 verification entry 才看 `docs/active/README.md`。旧分散 product truth 不得恢复为当前产品真相入口。

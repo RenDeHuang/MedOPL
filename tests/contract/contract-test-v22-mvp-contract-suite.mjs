@@ -10,6 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
 const activeSource = await readFile(path.join(repoRoot, "docs/active/README.md"), "utf8");
+const productSource = await readFile(path.join(repoRoot, "docs/product/README.md"), "utf8");
+const runtimeSource = await readFile(path.join(repoRoot, "docs/runtime/README.md"), "utf8");
 const specsSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
 const current = JSON.parse(await readFile(path.join(repoRoot, "tests/fixtures/v22/goal-current.json"), "utf8"));
 
@@ -21,10 +23,15 @@ for (const phrase of [
   "7 天保护期",
   "120min",
   "T+1",
+]) {
+  assert(productSource.includes(phrase), `product_truth_missing:${phrase}`);
+}
+
+for (const phrase of [
   "PostgreSQL",
   "Redis",
 ]) {
-  assert(activeSource.includes(phrase), `active_truth_missing:${phrase}`);
+  assert(runtimeSource.includes(phrase), `runtime_truth_missing:${phrase}`);
 }
 
 for (const phrase of [
@@ -39,6 +46,8 @@ for (const phrase of [
 
 assert(current.current_cursor, "current_cursor_required");
 assert(activeSource.includes(`当前 product cursor 是 \`${current.current_cursor}\``), "active_truth_must_track_current_cursor");
+assert(activeSource.includes("当前 phase："), "active_truth_must_track_current_phase");
+assert(activeSource.includes("当前 blocker："), "active_truth_must_track_current_blocker");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 
 const mvpLocalTiers = ["health-check", "smoke-golden", "contract-local"];

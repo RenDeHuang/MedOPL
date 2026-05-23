@@ -53,7 +53,6 @@ const [
 for (const [label, sourceText] of Object.entries({
   agents,
   docsIndex,
-  active,
   policies,
   delivery,
   source,
@@ -68,7 +67,6 @@ for (const [label, sourceText] of Object.entries({
 }
 
 assertIncludesAll(active, [
-  "truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor",
   "governance-verification-post-merge-closeout",
   "不能跳过 post-merge closeout",
 ], "active_framework_loop");
