@@ -9,20 +9,20 @@
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "base_trunk_head": "9f703f0c858bb5cc93f4c7cca6606823d215c71f",
-  "current_branch": "portal-typed-api-contract",
+  "current_branch": "opl-entry-real-preflight-launch",
   "current_branch_role": "productization_cursor",
-  "authoring_branch": "portal-typed-api-contract",
+  "authoring_branch": "opl-entry-real-preflight-launch",
   "target_branch": "recovery/platform-v22-trunk",
   "last_landed_commit": "9f703f0c858bb5cc93f4c7cca6606823d215c71f",
-  "current_cursor": "portal-typed-api-contract",
-  "next_leaf": "portal-typed-api-contract",
-  "current_stage": "S6 productization package 2 - Portal typed API contract",
-  "current_risk_class": "local_service_code",
+  "current_cursor": "opl-entry-real-preflight-launch",
+  "next_leaf": "opl-entry-real-preflight-launch",
+  "current_stage": "S6 productization package 4 - OPL entry real preflight launch",
+  "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "portal_typed_api_contract_must_finish_before_opl_entry_real_preflight_launch_and_go_control_plane_takeover",
+    "opl_entry_ui_must_consume_backend_preflight_launch_providerkeyref_and_gateway_readiness_projection",
     "real_cloud_requires_explicit_authorization_before_secret_or_live_execution"
   ],
-  "current_problem": "Provider key reuse landed at 816f7431ad3b5c8c0524b058d11eb08e851b055e and Figma Portal UI absorption is archived as repo-native frontend truth. The next executable cursor is portal-typed-api-contract: keep Portal frontend pages on typed API modules and backend projections before OPL entry real preflight/launch and Go control-plane takeover. Real cloud remains separately authorized.",
+  "current_problem": "Portal typed API contract is archived locally and provider key reuse has landed. The next executable cursor is opl-entry-real-preflight-launch: OPLEntry UI must consume backend preflight, launch, providerKeyRef, Gateway readiness and fail-closed reason projections instead of page-local temporary launch truth. Real cloud remains separately authorized.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -49,13 +49,15 @@
       "id": "portal-typed-api-contract",
       "stage": "S6 productization package 2 - Portal typed API contract",
       "priority": 84,
-      "cursor_eligible": true,
-      "status": "active",
-      "next_leaf_step": "portal-typed-api-contract",
+      "cursor_eligible": false,
+      "status": "ready_for_landing_review",
+      "next_leaf_step": "opl-entry-real-preflight-launch",
       "depends_on": [
         "figma-portal-ui-absorption",
         "provider-key-reuse"
-      ]
+      ],
+      "closed_at": "2026-05-24",
+      "history_summary": "Typed API contract local evals passed; package archived and ready for landing closeout."
     },
     {
       "id": "provider-key-reuse",
@@ -68,6 +70,18 @@
       "next_leaf_step": "opl-entry-real-preflight-launch",
       "depends_on": [
         "portal-typed-api-contract"
+      ]
+    },
+    {
+      "id": "opl-entry-real-preflight-launch",
+      "stage": "S6 productization package 4 - OPL entry real preflight launch",
+      "priority": 82,
+      "cursor_eligible": true,
+      "status": "active",
+      "next_leaf_step": "opl-entry-real-preflight-launch",
+      "depends_on": [
+        "portal-typed-api-contract",
+        "provider-key-reuse"
       ]
     },
     {
@@ -85,18 +99,25 @@
     }
   ],
   "current_leaf": {
-    "step_id": "portal-typed-api-contract",
-    "gap_id": "portal-typed-api-contract",
-    "stage": "S6 productization package 2 - Portal typed API contract",
+    "step_id": "opl-entry-real-preflight-launch",
+    "gap_id": "opl-entry-real-preflight-launch",
+    "stage": "S6 productization package 4 - OPL entry real preflight launch",
     "cursor_eligible": true,
-    "problem": "Portal frontend pages must use typed API modules and normalized backend projections instead of page-local temporary truth before OPL entry and Go backend takeover proceed.",
+    "problem": "OPLEntry UI must render backend preflight, launch, providerKeyRef, Gateway readiness and fail-closed reasons rather than page-local temporary launch truth.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "npm --prefix services/portal/frontend run typecheck",
-      "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
+      "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+      "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
+      "node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs",
+      "node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+      "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+      "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
+      "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
+      "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
       "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
       "node tests/contract/contract-test-v22-current-development-lines.mjs",
       "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
@@ -111,15 +132,13 @@
       "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
       "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
-      "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
-      "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
       "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
       "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "npm --prefix services/portal run check",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src",
+      "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src",
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
@@ -127,10 +146,22 @@
       "services/portal/frontend/src/app/pages/*",
       "services/portal/frontend/src/app/data/*",
       "services/portal/src/routes/*",
+      "services/portal/src/services/*",
       "services/portal/src/app/*",
+      "services/portal/src/domain/provider-key-bindings.mjs",
+      "services/portal/src/domain/provider-secret-store.mjs",
+      "services/portal/src/integrations/runtime-bridge-client.mjs",
+      "services/opl-web-gateway/src/*",
+      "services/opl-runtime-bridge/src/*",
       "docs/active/README.md",
       "docs/history/README.md",
       "docs/delivery/README.md",
+      "docs/product/README.md",
+      "docs/runtime/README.md",
+      "docs/source/README.md",
+      "docs/specs/README.md",
+      "specs/runtime/spec.md",
+      "specs/source/spec.md",
       "tests/fixtures/v22/*",
       "tests/**/*.mjs",
       "scripts/v22-test-classification.mjs",
@@ -139,12 +170,8 @@
       "scripts/v22-repo-hygiene.mjs",
       "scripts/v22-repo-bloat-audit.mjs",
       "scripts/v22-line-budget.mjs",
-      "changes/active/portal-typed-api-contract/**",
-      "changes/archive/**",
-      "docs/product/README.md",
-      "docs/source/README.md",
-      "docs/specs/README.md",
-      "specs/source/spec.md"
+      "changes/active/opl-entry-real-preflight-launch/**",
+      "changes/archive/**"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -160,11 +187,13 @@
     "truth_writeback_target": [
       "docs/active/README.md",
       "docs/history/README.md",
-      "tests/fixtures/v22/goal-current.json",
-      "tests/fixtures/v22/agent-verify-manifest.json",
       "docs/delivery/README.md",
+      "docs/product/README.md",
+      "docs/runtime/README.md",
       "docs/source/README.md",
-      "specs/source/spec.md"
+      "docs/specs/README.md",
+      "tests/fixtures/v22/goal-current.json",
+      "tests/fixtures/v22/agent-verify-manifest.json"
     ]
   },
   "release_readiness_state": {
@@ -190,10 +219,17 @@
   "verification_commands": [
     "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
     "npm --prefix services/portal/frontend run typecheck",
-    "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
-    "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
-    "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
+    "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+    "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
+    "node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs",
+    "node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+    "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+    "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
+    "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
+    "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
     "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-current-development-lines.mjs",
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
@@ -208,15 +244,13 @@
     "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
     "node tests/contract/contract-test-v22-test-lane-registry.mjs",
     "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
-    "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
-    "node tests/regression/portal/regression-test-v22-admin-ops-local-projection-view.mjs",
     "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
     "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "npm --prefix services/portal run check",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-    "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src",
+    "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src",
     "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
   ],
   "truth_source_files": [
@@ -233,7 +267,9 @@
     "docs/history/README.md",
     "docs/delivery/README.md",
     "docs/product/README.md",
+    "docs/runtime/README.md",
     "docs/source/README.md",
+    "docs/specs/README.md",
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
@@ -342,7 +378,7 @@
     "history_file": "docs/history/README.md",
     "authoring_branch": "feat/v22-backend-go-convergence-program",
     "does_not_replace_current_cursor": true,
-    "current_product_cursor": "portal-typed-api-contract",
+    "current_product_cursor": "opl-entry-real-preflight-launch",
     "method": "truth-gap-eval-implementation-verify-landing-closeout",
     "one_step_one_commit": true,
     "review_gate": "landing gate",

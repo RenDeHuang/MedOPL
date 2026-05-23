@@ -3167,3 +3167,60 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `portal-typed-api-contract`
+
+### 2026-05-24 feat/medopl-gap-typed-api-closeout
+
+Status: `authoring / ready_for_landing_review`
+
+Branch: `feat/medopl-gap-typed-api-closeout`
+
+Archived change package: `changes/archive/2026-05-24-portal-typed-api-contract`
+
+Scope:
+
+- Closed `portal-typed-api-contract` as the typed API boundary between Portal frontend pages and backend control-plane projections.
+- Archived the typed API package after local deterministic regressions, frontend typecheck, Portal check, golden path and current verification passed.
+- Opened `changes/active/opl-entry-real-preflight-launch` as the next productization package.
+- Advanced the current local productization cursor to `opl-entry-real-preflight-launch` without claiming that OPL entry real state is complete.
+
+Commits:
+
+- pending landing commit for `docs(truth): close portal typed api cursor`.
+
+Verification result:
+
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs`: pass.
+- `npm --prefix services/portal/frontend run typecheck`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass before cursor handoff.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src`: pass.
+
+Independent review:
+
+- Reviewer: Raman, Codex native explorer subagent.
+- Model: `gpt-5.4-mini`.
+- Result: closeout sync requirements confirmed; next cursor should be `opl-entry-real-preflight-launch`.
+
+Can-claim:
+
+- Portal typed API modules and normalized adapters are the frontend-owned boundary for backend control-plane projections.
+- The typed API contract package is archived and no longer the active cursor.
+- The next local productization cursor is `opl-entry-real-preflight-launch`.
+
+Cannot-claim:
+
+- OPL entry real preflight / launch UI state is fully closed.
+- Go backend has replaced the current Node Portal backend.
+- Real cloud, deploy, kubectl, build/push, live-test, live provider evidence or production billing is authorized.
+
+handoff_commit: `pending`
+
+landing_gate_result: `pending`
+
+post_merge_closeout: `pending`
+
+next_cursor: `opl-entry-real-preflight-launch`

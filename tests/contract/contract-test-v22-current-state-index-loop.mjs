@@ -62,6 +62,12 @@ function latestLandedHistorySection(history) {
   return section;
 }
 
+function latestHistorySectionForCursor(history, cursor) {
+  const section = parseHistorySections(history).findLast((item) => item.nextCursor === cursor);
+  assert(section, `history_current_cursor_handoff_missing:${cursor}`);
+  return section;
+}
+
 function assertLandingCloseoutCheckPasses() {
   const result = spawnSync("node", [
     "scripts/v22-landing-closeout.mjs",
@@ -101,6 +107,7 @@ const [
 ]);
 
 const latestLanded = latestLandedHistorySection(history);
+const currentCursorSection = latestHistorySectionForCursor(history, current.current_cursor);
 const closeoutCheck = assertLandingCloseoutCheckPasses();
 const latestLandedCommit = latestLanded.landedCommit;
 const latestLandedBranch = latestLanded.branch;
@@ -192,13 +199,19 @@ for (const expected of [
   "landing_gate_result: `passed / ff-only landed / pushed`",
   "post_push_verification:",
   "post_merge_closeout: `completed`",
-  `next_cursor: \`${currentCursor}\``,
+  `next_cursor: \`${latestLanded.nextCursor}\``,
 ]) {
   assertIncludes(latestRunSection, expected, "history_lifecycle_closeout");
 }
 assert.equal(latestRunSection.includes("Status: `ready_for_landing_review`"), false, "landed_history_must_not_be_ready_for_landing_review");
 assertIncludes(latestRunSection, "post_merge_closeout: `completed`", "history_latest_run_closeout");
 assert.equal(current.last_landed_commit, latestLandedCommit, "history_current_commit_must_match_goal");
+assertIncludes(currentCursorSection.source, `next_cursor: \`${currentCursor}\``, "history_current_cursor_handoff");
+assert(
+  currentCursorSection.status === "landed / pushed / post-push verified" ||
+    currentCursorSection.status.startsWith("authoring"),
+  `history_current_cursor_handoff_status_invalid:${currentCursorSection.status}`,
+);
 
 const previousRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
 assertIncludes(previousRunSection, `landed_commit: \`${previousIndexLoopCommit}\``, "previous_index_loop_commit_must_stay_true");

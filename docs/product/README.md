@@ -68,7 +68,7 @@ Figma UI repo-native absorption
 
 这六个 package 是黄金链路的后续交付顺序。每个 package 都必须单独开 `changes/active/<change-id>`，声明 Golden Path Impact、spec delta、eval plan、cannot-claim、review 和 archive closeout。
 
-Figma Make 只提供视觉和信息架构输入；Figma absorption 已归档为 repo-native frontend truth。当前产品化 cursor 是 typed API boundary：Portal UI 必须通过 typed API modules 和 backend projections 读取状态。OPL entry 不能继续展示 mock readiness；它必须读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态。
+Figma Make 只提供视觉和信息架构输入；Figma absorption 和 typed API boundary 已归档为 repo-native frontend truth。当前产品化 cursor 是 OPL entry real preflight / launch：Portal UI 必须通过 typed API modules 和 backend projections 读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态，不能继续展示 page-local launch readiness。
 
 Go backend 是 MedOPL control-plane business truth 的目标承载面。它应该先接管用户、workspace、provider key ref、managed environment intent、billing/audit projection 和 workflow command；OPL Web Gateway 与 Runtime Bridge 可以在迁移期继续作为薄 Node anti-corruption / relay 边界。`services/medopl-go-backend` 目录存在不等于 Go 已经是 current production backend。
 

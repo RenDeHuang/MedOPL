@@ -112,13 +112,20 @@ function parseHistorySections(history) {
     const branch = source.match(/^Branch:\s*`([^`]+)`/mu)?.[1] || match[1].trim();
     const status = source.match(/^Status:\s*`([^`]+)`/mu)?.[1] || "";
     const landedCommit = source.match(/^landed_commit:\s*`([a-f0-9]{40})`/mu)?.[1] || "";
-    return { branch, status, landedCommit, source };
+    const nextCursor = source.match(/^next_cursor:\s*`([^`]+)`/mu)?.[1] || "";
+    return { branch, status, landedCommit, nextCursor, source };
   });
 }
 
 function latestLandedHistorySection(history) {
   const section = parseHistorySections(history).findLast((item) => item.status === "landed / pushed / post-push verified" && item.landedCommit);
   assert(section, "latest_landed_history_section_missing");
+  return section;
+}
+
+function latestHistorySectionForCursor(history, cursor) {
+  const section = parseHistorySections(history).findLast((item) => item.nextCursor === cursor);
+  assert(section, `history_current_cursor_handoff_missing:${cursor}`);
   return section;
 }
 
@@ -171,6 +178,7 @@ const [
 const latestLanded = latestLandedHistorySection(history);
 const latestLandedCommit = latestLanded.landedCommit;
 const currentCursor = current.current_cursor;
+const currentCursorSection = latestHistorySectionForCursor(history, currentCursor);
 
 assertIncludesAll(active, [
   lifecycleGate,
@@ -257,9 +265,17 @@ assertIncludesAll(latestLanded.source, [
   `landed_commit: \`${latestLandedCommit}\``,
   "landing_gate_result: `passed / ff-only landed / pushed`",
   "post_merge_closeout: `completed`",
-  `next_cursor: \`${currentCursor}\``,
+  `next_cursor: \`${latestLanded.nextCursor}\``,
 ], "history_dynamic_latest_closeout");
 assertNotIncludes(latestLanded.source, "Status: `ready_for_landing_review`", "history_landed_dynamic_latest_run");
+assertIncludesAll(currentCursorSection.source, [
+  `next_cursor: \`${currentCursor}\``,
+], "history_dynamic_current_cursor_handoff");
+assert(
+  currentCursorSection.status === "landed / pushed / post-push verified" ||
+    currentCursorSection.status.startsWith("authoring"),
+  `history_current_cursor_handoff_status_invalid:${currentCursorSection.status}`,
+);
 
 assert.equal(current.next_leaf, currentCursor, "next_leaf_must_match_current_cursor");
 assert.equal(current.last_landed_commit, latestLandedCommit, "current_last_landed_commit_must_match_latest_closeout");
