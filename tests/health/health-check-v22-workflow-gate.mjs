@@ -121,6 +121,7 @@ assert.deepEqual(reviewWithBlockers.secretLikePaths, [
 ], "review_secret_like_paths_mismatch");
 assert(reviewWithBlockers.findings.some((finding) => finding.code === "services_changed_without_v22_smoke_update"), "review_must_require_service_smoke_update");
 assert(reviewWithBlockers.findings.some((finding) => finding.code === "contracts_changed_without_v22_smoke_update"), "review_must_require_contract_smoke_update");
+assert(reviewWithBlockers.findings.some((finding) => finding.code === "formal_change_without_active_change_package"), "review_must_require_active_change_package");
 assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
   "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "npm --prefix services/portal run check",
@@ -128,6 +129,7 @@ assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
 
 const reviewWithTokenNamedSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
+  activeChangePackageNames: ["example-change"],
   changedFiles: [
     "tests/regression/opl/regression-test-v22-gflabtoken-entry-contract.mjs",
   ],
@@ -138,6 +140,7 @@ assert.deepEqual(reviewWithTokenNamedSmoke.secretLikePaths, [], "v22_smoke_file_
 
 const reviewWithSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
+  activeChangePackageNames: ["example-change"],
   changedFiles: [
     "services/portal/src/domain/example.mjs",
     "docs/specs/README.md",
@@ -150,6 +153,7 @@ assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "contra
 const fullTaxonomyAuthorizedDeletes = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   branchName: "cleanup/v22-full-taxonomy-hard-retirement",
+  activeChangePackageNames: ["full-taxonomy-hard-retirement"],
   changedFiles: [
     ["docs", "contracts", "v22-smoke-eval-boundary.md"].join("/"),
     ["docs", "recovery", "status-matrix.md"].join("/"),
@@ -182,6 +186,7 @@ assert.deepEqual(fullTaxonomyAuthorizedDeletes.authorizedCleanupDeletions, [
 const strictCleanupAuthorizedDeletes = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   branchName: "cleanup/v22-strict-monolith-ideal-gap-and-legacy-retirement",
+  activeChangePackageNames: ["strict-monolith-ideal-gap-and-legacy-retirement"],
   changedFiles: [
     "adapters/resource-provisioner/package.json",
     "deploy/tke-package/README.md",

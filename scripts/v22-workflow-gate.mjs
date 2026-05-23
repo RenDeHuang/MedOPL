@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -402,6 +402,33 @@ function isContractPath(filePath) {
   return normalizePath(filePath).startsWith("docs/specs/");
 }
 
+function isChangePackagePath(filePath) {
+  const normalized = normalizePath(filePath);
+  return normalized.startsWith("changes/active/") || normalized.startsWith("changes/archive/") || normalized === "changes/README.md";
+}
+
+function isFormalEngineeringChange(filePath) {
+  const normalized = normalizePath(filePath);
+  return (
+    normalized.startsWith("services/")
+    || normalized.startsWith("tests/")
+    || normalized.startsWith("specs/")
+    || normalized.startsWith("docs/active/")
+    || normalized === "docs/specs/README.md"
+    || normalized.startsWith("scripts/")
+  );
+}
+
+function activeChangePackages() {
+  const activeDir = path.join(repoRoot, "changes", "active");
+  if (!existsSync(activeDir)) return [];
+  return readdirSync(activeDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => !/^(?:template|tmp|misc|wip)$/iu.test(name))
+    .sort();
+}
+
 function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = currentBranchName()) {
   if (!String(status || "").startsWith("D")) return false;
   const normalized = normalizePath(filePath);
@@ -538,6 +565,7 @@ export function evaluateReview({
   changedStatuses = changedFileStatusesSince(base),
   addedLines = addedLinesSince(base),
   missingLocalCommandReferences = findMissingLocalCommandReferences(),
+  activeChangePackageNames = activeChangePackages(),
 } = {}) {
   const normalizedFiles = changedFiles.map(normalizePath).filter(Boolean);
   const authorizedCleanupDeletions = normalizedFiles.filter((file) =>
@@ -550,6 +578,8 @@ export function evaluateReview({
   const servicesChanged = normalizedFiles.some(isServicesPath);
   const contractsChanged = normalizedFiles.some(isContractPath);
   const evalChanged = normalizedFiles.some(isV22EvalPath);
+  const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
+  const activeChanges = activeChangePackageNames;
   const findings = [];
 
   if (forbiddenPaths.length > 0) {
@@ -594,6 +624,13 @@ export function evaluateReview({
       message: "docs/specs 改动需要对应 v22 smoke 更新或在审计中说明已有 smoke 覆盖。",
     });
   }
+  if (formalEngineeringChanged && activeChanges.length === 0) {
+    findings.push({
+      code: "formal_change_without_active_change_package",
+      severity: "blocker",
+      message: "正式工程变更必须先有 changes/active/<change-id>，记录 proposal、spec delta、design、tasks、eval plan、review 和 closeout。",
+    });
+  }
 
   const recommendedCommands = [...reviewRequiredCommands];
   if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) {
@@ -623,6 +660,7 @@ export function evaluateReview({
     secretLikeAddedLines,
     missingLocalCommandReferences,
     missingLocalTestCommandReferences: missingLocalCommandReferences,
+    activeChanges,
     findings,
     recommendedCommands: unique(recommendedCommands),
   };
