@@ -58,6 +58,13 @@ assertIncludes(changesReadme, "tasks.md", "changes_required_file");
 assertIncludes(changesReadme, "eval-plan.md", "changes_required_file");
 assertIncludes(changesReadme, "review.md", "changes_required_file");
 assertIncludes(changesReadme, "closeout.md", "changes_required_file");
+for (const phrase of [
+  "ADDED / MODIFIED / REMOVED / CANNOT-CLAIM / EVALS",
+  "Every delta entry must reference a target `specs/<domain>/spec.md` file",
+  "Accepted deltas must be synced into durable specs during closeout",
+]) {
+  assertIncludes(changesReadme, phrase, "changes_spec_delta_rules");
+}
 assertIncludes(changesReadme, "## File Templates", "changes_template_section");
 for (const heading of [
   "### proposal.md",

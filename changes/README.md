@@ -240,6 +240,16 @@ Status: ready_for_landing_review | landed | archived
 
 缺少 owner、授权边界、spec delta、eval plan、cannot-claim 或 archive target 时，必须 fail closed。
 
+## Spec Delta Rules
+
+`spec-delta.md` 使用固定段落：`ADDED / MODIFIED / REMOVED / CANNOT-CLAIM / EVALS`。
+
+Every delta entry must reference a target `specs/<domain>/spec.md` file. Delta 不能只写“更新文档”或“同步实现”；必须明确新增、修改或移除的 requirement id、owner plane、source surface、required evals、evidence level 和 cannot-claim。
+
+Accepted deltas must be synced into durable specs during closeout. 如果 delta 只完成了 proposal 或 eval RED，不能 archive 为 landed；必须在 `closeout.md` 中记录未同步原因、blocker 和下一棒 owner。
+
+Delta 不是 current truth。只有 closeout 接受并同步到 `specs/**` 后，durable specs 才改变。若 current cursor 或 blocker 因此变化，再更新 `docs/active/README.md` 和 `tests/fixtures/v22/goal-current.json`。
+
 ## Boundaries
 
 Change packages must not store secrets. 禁止写入 raw provider key、bearer token、launchToken、runtimeToken、kubeconfig、SecretId/SecretKey、SSH private key、object key、local path、signed URL 或任何可还原敏感内容。
