@@ -26,7 +26,7 @@ Backend convergence target surface：
 1. Figma Make UI 已归档为外部 design input；repo-native Portal frontend source 和本地 eval 才是实现 truth。
 2. Portal typed API contract 已归档：Portal frontend 只能通过 typed API modules 读取 backend projection；不能让页面直接复制 mock readiness、mock billing、mock resource 或 mock OPL launch truth。
 3. Provider key reuse 必须在后端 secret boundary 内完成；frontend 只持有 `providerKeyRef`、bound status 和一次性输入态。
-4. 当前 cursor 是 OPL entry real preflight / launch：OPL entry UI 必须接真实 preflight / launch / providerKeyRef / Gateway readiness API，不得把 Figma prototype state 或 page-local fallback 写成 readiness truth。
+4. OPL entry real preflight / launch 已归档为本地 projection truth：OPL entry UI 必须接真实 preflight / launch / providerKeyRef / Gateway readiness API，不得把 Figma prototype state 或 page-local fallback 写成 readiness truth。
 5. Go backend 目标是接管 MedOPL control-plane business truth；Node Gateway / Runtime Bridge 在迁移期可以继续作为薄边界，但不能扩张成 billing ledger、cloud inventory 或 product truth。
 
 迁移期源码边界：

@@ -1,11 +1,12 @@
 # opl-entry-real-preflight-launch Closeout
 
-Status: ready-for-landing
+Status: landed
 
 ## Commits
 
 - `ae57463` feat(opl): bind entry to backend launch projections
-- review-fix pending commit: whitelist launch-status payload and consume backend currentStage / blockingUser
+- `043601f` docs(opl): record entry projection closeout
+- `11fee40` fix(opl): narrow launch status projection
 
 ## Verification
 
@@ -40,7 +41,7 @@ Status: ready-for-landing
 
 ## Archive Target
 
-- changes/archive/YYYY-MM-DD-opl-entry-real-preflight-launch
+- changes/archive/2026-05-24-opl-entry-real-preflight-launch
 
 ## History Handoff
 

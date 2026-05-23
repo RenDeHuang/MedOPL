@@ -96,8 +96,8 @@ function closeoutCommitLooksLikeCloseout(commit) {
   if (files.length === 0) return false;
   const allowedPatterns = [
     /^docs\/(?:active|delivery|history)\/README\.md$/u,
-    /^docs\/(?:product|source|specs)\/README\.md$/u,
-    /^specs\/(?:product|source|framework)\/spec\.md$/u,
+    /^docs\/(?:product|runtime|source|specs)\/README\.md$/u,
+    /^specs\/(?:product|runtime|source|framework|operations|evidence|policies)\/spec\.md$/u,
     /^changes\/archive\/\d{4}-\d{2}-\d{2}-[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^changes\/active\/[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,

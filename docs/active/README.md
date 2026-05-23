@@ -15,22 +15,22 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 | Field | Value |
 | --- | --- |
-| current phase | `post-local-RC productization / OPL entry real preflight launch active` |
-| current cursor | `opl-entry-real-preflight-launch` |
-| current blocker | OPLEntry UI must consume backend preflight / launch / providerKeyRef / Gateway readiness projections instead of page-local temporary launch truth; real cloud / secret / provider operation / deploy / kubectl / build-push / live-test still require explicit authorization |
-| next owner | `MedOPL Platform` for OPL entry real preflight / launch; `MedOPL Operations` for later real-cloud authorization boundary |
-| open change package | `changes/active/opl-entry-real-preflight-launch` |
+| current phase | `post-local-RC productization / real cloud authorization boundary blocked` |
+| current cursor | `real-cloud-authorization-boundary` |
+| current blocker | OPL entry real preflight / launch projection has landed locally; any secret read, provider operation, true cloud mutation, deploy, kubectl, build/push or live-test still requires explicit authorization and a separately scoped evidence sink |
+| next owner | `MedOPL Operations` for authorization boundary; `MedOPL Platform` for later Go control-plane convergence and code structure debt packages |
+| open change package | `changes/active/real-cloud-authorization-boundary` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `feat/medopl-gap-typed-api-closeout` / `4f5df610b44ba512e0888c0d60436e7ce02fc52b` |
+| latest repo closeout | `feat/medopl-gap-opl-entry-real-launch` / `11fee408eabb8e6c34961373ee11eb8607f5816e` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse and Portal typed API contract are closed locally. The next executable cursor is OPL entry real preflight / launch; real cloud remains a separately authorized blocker, not the default next implementation package. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract and OPL entry real preflight / launch projection are closed locally. The current cursor is a blocked authorization boundary, not a cloud execution package; real cloud remains separately authorized. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 
-- `opl-entry-real-preflight-launch`: OPLEntry UI must use backend preflight / launch / providerKeyRef / Gateway readiness and fail-closed reason projections instead of page-local temporary launch truth.
 - `real-cloud-authorization-boundary`: secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence are not authorized by default.
+- `go-control-plane-takeover`: Go backend convergence remains a local engineering package before production backend takeover; current Node Portal backend is still active.
 - `service-sync-helper-retention`: `scripts/sync-workspace-file-to-minio.ps1` remains because `services/portal/src/config/portal-config.mjs` still references it; it is an implementation debt, not a docs/eval truth source.
 
 ## Verification Entry

@@ -73,6 +73,20 @@ assert(manifest.control_plane_files.includes("specs/README.md"), "manifest_contr
 assert.equal(current.human_truth, "docs/active/README.md", "current_human_truth_mismatch");
 assert.equal(current.spec_truth, "docs/specs/README.md", "current_spec_truth_mismatch");
 assert.equal(current.verify_manifest, files.manifest, "current_manifest_path_mismatch");
+const allowedCurrentBranchRoles = new Set([
+  "productization_cursor",
+  "authorization_boundary_cursor",
+  "cleanup_cursor",
+]);
+assert(
+  allowedCurrentBranchRoles.has(current.current_branch_role),
+  `current_branch_role_unknown:${current.current_branch_role}`,
+);
+if (current.current_branch_role === "authorization_boundary_cursor") {
+  assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "authorization_cursor_must_block_risky_execution");
+  assert.equal(current.release_readiness_state?.status, "authorization_required", "authorization_cursor_status_mismatch");
+  assert.equal(current.current_leaf?.cursor_eligible, false, "authorization_cursor_leaf_must_not_be_cursor_eligible");
+}
 
 assertIncludes(runnerSource, files.manifest, "runner_must_read_fixture_manifest");
 assertIncludes(runnerSource, files.current, "runner_must_read_fixture_current");
@@ -148,9 +162,17 @@ assert(productLoop, "product_engineering_loop_missing");
 const productLoopOverride = manifest.branch_override_suites.find((suite) => suite.id === "product-engineering-loop-index");
 if (productLoop.status === "closed") {
   assert.equal(productLoopOverride, undefined, "product_engineering_loop_index_branch_override_must_be_removed_after_closeout");
+  const currentGap = current.gaps?.find((gap) => gap.id === current.current_cursor);
+  assert(currentGap, "closed_product_loop_cursor_must_follow_known_productization_roadmap_gap");
+  const isActiveProductizationGap = currentGap.cursor_eligible === true && currentGap.status === "active";
+  const isBlockedAuthorizationBoundary =
+    current.current_cursor === current.release_readiness_state?.next_cursor &&
+    current.release_readiness_state?.blocked_before_risky_execution === true &&
+    currentGap.cursor_eligible === false &&
+    currentGap.status === "authorization_required";
   assert(
-    current.gaps?.some((gap) => gap.id === current.current_cursor && gap.cursor_eligible === true && gap.status === "active"),
-    "closed_product_loop_cursor_must_follow_active_productization_roadmap_gap",
+    isActiveProductizationGap || isBlockedAuthorizationBoundary,
+    "closed_product_loop_cursor_must_follow_active_gap_or_blocked_authorization_boundary",
   );
   assert.equal(current.release_readiness_state?.next_cursor, "real-cloud-authorization-boundary", "real_cloud_boundary_must_remain_deferred_authorized_stage");
 } else {

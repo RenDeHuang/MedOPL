@@ -3235,3 +3235,73 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `opl-entry-real-preflight-launch`
+
+### 2026-05-24 feat/medopl-gap-opl-entry-real-launch
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/medopl-gap-opl-entry-real-launch`
+
+Archived change package: `changes/archive/2026-05-24-opl-entry-real-preflight-launch`
+
+Scope:
+
+- Closed `opl-entry-real-preflight-launch` as the local OPL entry projection package.
+- Bound OPLEntry frontend state to backend launch-status projection for provider binding, providerKeyRef, Gateway readiness, current stage and blocking user reason.
+- Narrowed `/portal/api/opl/launch-status/:launchId` to an explicit public payload whitelist so internal launch/workspace/session fields do not leak into frontend truth.
+- Advanced the current cursor to `real-cloud-authorization-boundary` as authorization-required / local boundary only.
+
+Commits:
+
+- `ae57463` feat(opl): bind entry to backend launch projections.
+- `043601f` docs(opl): record entry projection closeout.
+- `11fee40` fix(opl): narrow launch status projection.
+
+Verification result:
+
+- `node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs`: pass.
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: pass.
+- `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`: pass.
+- `node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs`: pass.
+- `node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs`: pass.
+- `npm --prefix services/portal/frontend run typecheck`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
+- `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/opl-web-gateway/src services/opl-runtime-bridge/src`: pass.
+
+Independent review:
+
+- Reviewer: Chandrasekhar, Codex native explorer subagent.
+- Model: `gpt-5.4-mini`.
+- Result: found two Important issues after initial implementation: launch-status public payload spread internal status fields, and OPLEntry fetched but did not consume `currentStage` / `blockingUser`. Both were fixed by explicit public payload whitelist and stage/blocking-driven step status guards before landing.
+
+Can-claim:
+
+- OPLEntry local UI consumes backend launch-status projection for provider binding, providerKeyRef, Gateway readiness, current stage and blocking user reason.
+- The frontend typed API exposes only safe OPL launch-status fields needed by the entry UI.
+- The local golden path and contract gates cover this OPL entry projection boundary.
+
+Cannot-claim:
+
+- Live provider reply evidence, real cloud, deploy, kubectl, build/push, live-test or production billing is authorized.
+- Go backend has replaced the current Node Portal backend.
+- `portal-runtime` fan-out or workspace-to-minio helper debt is retired.
+- OPL entry local projection is production WebUI provider reply or real cloud launch evidence.
+
+landed_commit: `11fee408eabb8e6c34961373ee11eb8607f5816e`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `11fee408eabb8e6c34961373ee11eb8607f5816e`.
+- Post-merge closeout sync updates only docs, durable specs, changes archive, tests fixtures and closeout automation allowlist.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
