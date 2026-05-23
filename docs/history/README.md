@@ -61,6 +61,76 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-23 cleanup/framework-truth-layering active slimming baseline
+
+Status: `authoring / baseline-audit`
+
+Branch: `cleanup/framework-truth-layering`
+
+Base trunk HEAD: `d12ebb6c886c4a1717abe8f9b3308ab74842ed57`
+
+Starting HEAD: `ca36a3477c4714aafe2128f23edebbc6c5c68dd4`
+
+Model:
+
+- controller: `gpt-5`
+- subagent Feynman: `gpt-5.4-mini`, read-only active slimming classification review.
+
+Scope:
+
+- Renew the framework truth-layering cleanup by making `docs/active/README.md` a narrow current-state control surface.
+- Keep temporary/current truth only in `docs/active/README.md`.
+- Keep durable product truth in `docs/product/README.md`, runtime/upstream truth in `docs/runtime/README.md`, framework rules in `docs/framework/README.md`, contract lower bounds in `docs/specs/README.md`, evidence claims in `docs/evidence/README.md`, stable policy in `docs/policies/README.md`, and landed provenance in this file.
+- Preserve the existing README taxonomy and do not restore retired `docs/contracts/**`, `docs/recovery/**`, root `docs/status.md`, root `docs/invariants.md`, root `docs/product.md`, root `docs/architecture.md`, root `docs/decisions.md` or `scripts/smoke-test-*`.
+
+Subscribed truth/spec/policy files:
+
+- `AGENTS.md`
+- `docs/README.md`
+- `docs/active/README.md`
+- `docs/product/README.md`
+- `docs/runtime/README.md`
+- `docs/framework/README.md`
+- `docs/specs/README.md`
+- `docs/evidence/README.md`
+- `docs/policies/README.md`
+- `docs/delivery/README.md`
+- `docs/source/README.md`
+- `docs/history/README.md`
+- `tests/fixtures/v22/goal-current.json`
+- `tests/fixtures/v22/agent-verify-manifest.json`
+- `tests/contract/contract-test-v22-framework-truth-layering.mjs`
+
+Inventory:
+
+| Current active content | Target layer |
+| --- | --- |
+| current phase, current cursor, open blockers, next owner, cannot-claim, verification entry | `docs/active/README.md` |
+| product narrative, optional resource lifecycle, commercial model, UI impact and user loop | `docs/product/README.md` plus specs anchors |
+| Gateway, Runtime Bridge, clean upstream and backend convergence target | `docs/runtime/README.md` |
+| owner boundary, surface budget, admission, readiness and four planes | `docs/framework/README.md` |
+| provider key, secret, cloud authorization, no-fake-success and hard forbidden surfaces | `docs/specs/README.md`, `docs/policies/README.md` |
+| smoke/proof/canary/live/production can-claim and cannot-claim | `docs/evidence/README.md` |
+| landed commits, closeout summaries and provenance | `docs/history/README.md` |
+
+Planned verification:
+
+- `node tests/contract/contract-test-v22-framework-truth-layering.mjs`
+- `node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs`
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`
+- `node tests/contract/contract-test-v22-current-development-lines.mjs`
+- `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`
+- `node tests/contract/contract-test-v22-commercial-package-model.mjs`
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
+
+Non-goals:
+
+- No secret read.
+- No real cloud, live provider, COS, Langfuse or production API call.
+- No build/push, kubectl, deploy, live-test, push or merge.
+- No modification to `deploy/*`, `.sentrux/*`, `adapters/*`, `infra/*` or one-person-lab upstream.
+- No restoration of retired recovery/contracts/root-doc/smoke-script surfaces.
+
 ### 2026-05-22 cleanup/framework-truth-layering baseline audit
 
 Status: `authoring / baseline-audit`
