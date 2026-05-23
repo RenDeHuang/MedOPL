@@ -3131,6 +3131,7 @@ Scope:
 Commits:
 
 - `816f7431ad3b5c8c0524b058d11eb08e851b055e` feat(opl): reuse bound provider key for portal launch
+- `9f703f0c858bb5cc93f4c7cca6606823d215c71f` docs(truth): close figma absorption cursor
 
 Verification result:
 
@@ -3154,14 +3155,14 @@ Cannot-claim:
 - Go backend has replaced the current Node Portal backend.
 - Real cloud, deploy, kubectl, build/push, live-test, live provider evidence or production billing is authorized.
 
-landed_commit: `816f7431ad3b5c8c0524b058d11eb08e851b055e`
+landed_commit: `9f703f0c858bb5cc93f4c7cca6606823d215c71f`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `origin/recovery/platform-v22-trunk` reached `816f7431ad3b5c8c0524b058d11eb08e851b055e`.
-- Current closeout branch updates only docs/specs/changes/fixtures/tests lifecycle state; no secret, cloud, deploy, kubectl, build/push or live-test was run.
+- `origin/recovery/platform-v22-trunk` reached `9f703f0c858bb5cc93f4c7cca6606823d215c71f`.
+- `9f703f0c858bb5cc93f4c7cca6606823d215c71f` updates only docs/specs/changes/fixtures/tests lifecycle state; no secret, cloud, deploy, kubectl, build/push or live-test was run.
 
 post_merge_closeout: `completed`
 

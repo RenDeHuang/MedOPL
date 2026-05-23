@@ -23,7 +23,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `feat/medopl-gap-provider-reuse` / `816f7431ad3b5c8c0524b058d11eb08e851b055e` |
+| latest repo closeout | `feat/medopl-gap-provider-reuse` / `9f703f0c858bb5cc93f4c7cca6606823d215c71f` |
 
 Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption and provider key reuse are closed locally. The next executable cursor is Portal typed API contract; real cloud remains a separately authorized blocker, not the default next implementation package. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
