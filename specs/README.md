@@ -32,3 +32,8 @@ Each durable requirement should expose:
 - evidence level
 - cannot-claim boundary
 
+## Traceability Invariants
+
+Every durable requirement must map to at least one local deterministic eval or an explicit future-authorized boundary eval.
+
+Specs without evals are design notes, not accepted durable requirements. Evals without spec anchors are regression checks, not contract evidence. If a requirement cannot be verified locally, it must explicitly declare its future-authorized boundary and cannot-claim list.
