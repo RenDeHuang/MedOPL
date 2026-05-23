@@ -376,17 +376,20 @@ try {
   const unboundLaunch = await postJson(`${portalUrl}/portal/api/opl/launch`, {
     workspaceId: WORKSPACE_ID,
   }, { cookie: portalCookie });
-  assert.equal(unboundLaunch.response.status, 200, "launch_without_inline_provider_key_still_returns_launch");
-  assert.equal(unboundLaunch.json.providerBound, false, "launch_without_inline_provider_key_does_not_reuse_existing_binding_yet");
-  assertNoSecretLeak(unboundLaunch.json, "unbound_launch");
+  assert.equal(unboundLaunch.response.status, 200, "launch_without_inline_provider_key_must_return_200");
+  assert.equal(unboundLaunch.json.ok, true, "launch_without_inline_provider_key_must_return_ok");
+  assert.equal(unboundLaunch.json.providerBound, true, "launch_without_inline_provider_key_must_reuse_existing_binding");
+  assert.equal(unboundLaunch.json.providerKeyRef, bound.json.providerKeyRef, "launch_without_inline_provider_key_ref_must_match_existing_binding");
+  assertNoSecretLeak(unboundLaunch.json, "reused_provider_launch");
 
-  const unboundMessage = await postJson(`${portalUrl}/portal/api/opl/messages?launchId=${encodeURIComponent(unboundLaunch.json.launchId)}`, {
-    message: "this must fail without provider config",
+  const reusedMessage = await postJson(`${portalUrl}/portal/api/opl/messages?launchId=${encodeURIComponent(unboundLaunch.json.launchId)}`, {
+    message: "this must use the existing provider binding",
     waitForCompletion: true,
   }, { cookie: portalCookie });
-  assert.equal(unboundMessage.response.status, 502, "message_without_launch_provider_config_must_fail_closed");
-  assert.equal(unboundMessage.json.error, "provider_config_required", "message_without_launch_provider_config_error_mismatch");
-  assertNoSecretLeak(unboundMessage.json, "unbound_message");
+  assert.equal(reusedMessage.response.status, 200, "message_with_reused_provider_config_must_return_200");
+  assert.equal(reusedMessage.json.ok, true, "message_with_reused_provider_config_must_return_ok");
+  assert.equal(reusedMessage.json.message.providerKeyRef, bound.json.providerKeyRef, "message_with_reused_provider_config_ref_mismatch");
+  assertNoSecretLeak(reusedMessage.json, "reused_provider_message");
 
   const launch = await postJson(`${portalUrl}/portal/api/opl/launch`, {
     workspaceId: WORKSPACE_ID,
@@ -533,6 +536,7 @@ try {
       "login",
       "credit",
       "provider_key_backend_secret_boundary",
+      "portal_launch_api_reuses_existing_provider_key_binding_without_inline_providerKeyPayload",
       "managed_environment_open",
       "gateway_launch_bootstrap_against_local_opl_webui",
       "provider_bound_message_backflow",
@@ -542,7 +546,6 @@ try {
       "secret_hygiene",
     ],
     gaps: [
-      "portal_launch_api_does_not_reuse_existing_provider_key_binding_without_inline_providerKeyPayload",
       "real_webui_provider_message_reply_is_not_claimed_by_this_local_rc_eval",
       "production_cloud_deploy_and_live_provider_evidence_not_claimed",
     ],

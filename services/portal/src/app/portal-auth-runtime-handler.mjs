@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { hashPassword, verifyPassword } from "../domain/portal-auth.mjs";
 import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
+import {
+  findBoundGflabProviderKeyBinding,
+  providerKeyPublicPayload,
+  providerKeyRefFromBinding,
+} from "../domain/provider-key-bindings.mjs";
 import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
 
@@ -191,23 +196,6 @@ function oplEntryProviderApiKey(payload = {}, normalizeProviderApiKey) {
   );
 }
 
-function boundStatusText(value = "") {
-  const status = String(value || "").trim();
-  return status || "bound";
-}
-
-function findBoundGflabProviderKeyBinding(db = {}, user = {}, workspaceId = "") {
-  const bindings = Array.isArray(db.providerKeyBindings) ? db.providerKeyBindings : [];
-  return [...bindings].reverse().find((binding) => {
-    if (String(binding.provider || "gflabtoken") !== "gflabtoken") return false;
-    if (String(binding.userId || "") !== String(user.id || "")) return false;
-    if (workspaceId && String(binding.workspaceId || "") && String(binding.workspaceId) !== workspaceId) return false;
-    if (!String(binding.providerKeyRef || binding.providerConfigSecretRef || "")) return false;
-    const status = boundStatusText(binding.boundStatus || binding.status || binding.providerConfigStatus);
-    return status === "bound" || status === "configured";
-  }) || null;
-}
-
 function upsertGflabProviderKeyBinding(db = {}, user = {}, workspaceId = "", providerConfigResult = {}) {
   if (!Array.isArray(db.providerKeyBindings)) db.providerKeyBindings = [];
   const providerKeyRef = String(providerConfigResult.providerKeyRef || providerConfigResult.providerConfigSecretRef || "").trim();
@@ -236,17 +224,6 @@ function upsertGflabProviderKeyBinding(db = {}, user = {}, workspaceId = "", pro
   };
   db.providerKeyBindings.push(binding);
   return binding;
-}
-
-function providerKeyPublicPayload(binding = {}) {
-  binding = binding || {};
-  const providerKeyRef = String(binding.providerKeyRef || binding.providerConfigSecretRef || "").trim();
-  return {
-    provider: "gflabtoken",
-    providerBound: Boolean(providerKeyRef),
-    providerKeyRef,
-    boundStatus: boundStatusText(binding.boundStatus || binding.providerConfigStatus),
-  };
 }
 
 function oidcStateCookie() {
@@ -450,8 +427,8 @@ export function createPortalAuthRuntimeHandler({
         : createGflabBoundProviderConfig({
           userId: user.id,
           workspaceId: taskSlug,
-          providerKeyRef: existingBinding.providerKeyRef || existingBinding.providerConfigSecretRef,
-          providerConfigSecretRef: existingBinding.providerConfigSecretRef || existingBinding.providerKeyRef,
+          providerKeyRef: providerKeyRefFromBinding(existingBinding),
+          providerConfigSecretRef: providerKeyRefFromBinding(existingBinding),
         });
       if (!providerConfigResult.ok) {
         sendJson(res, {

@@ -1,4 +1,9 @@
 import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
+import { createGflabBoundProviderConfig } from "../domain/provider-config.mjs";
+import {
+  findBoundGflabProviderKeyBinding,
+  providerKeyRefFromBinding,
+} from "../domain/provider-key-bindings.mjs";
 
 function providerKeyCandidate(body = {}) {
   if (body.providerKeyPayload && typeof body.providerKeyPayload === "object") {
@@ -22,6 +27,24 @@ function normalizeProviderKeyPayload(body = {}) {
 
 function launchSourceSurface(providerKeyPayload) {
   return providerKeyPayload ? "opl-web-native-message-reply" : "portal-control-plane";
+}
+
+function boundProviderConfigForLaunch(db = {}, user = {}, taskSlug = "", providerKeyPayload = null) {
+  if (providerKeyPayload) return {};
+  const binding = findBoundGflabProviderKeyBinding(db, user, taskSlug);
+  if (!binding) return {};
+  const providerKeyRef = providerKeyRefFromBinding(binding);
+  const created = createGflabBoundProviderConfig({
+    userId: user.id,
+    workspaceId: taskSlug,
+    providerKeyRef,
+    providerConfigSecretRef: providerKeyRef,
+  });
+  if (!created.ok) return {};
+  return {
+    providerConfig: created.providerConfig,
+    providerConfigSecretRef: created.providerConfigSecretRef,
+  };
 }
 
 function launchErrorStatus(result) {
@@ -105,6 +128,7 @@ async function handleOplLaunchApi(context, deps) {
   }
   const { taskSlug } = taskResolution;
   const providerKeyPayload = normalizeProviderKeyPayload(body);
+  const boundProvider = boundProviderConfigForLaunch(db, user, taskSlug, providerKeyPayload);
   const result = await deps.workflowFacade.runOplLaunchCommand({
     payload: {
       source: "portal-api",
@@ -119,6 +143,8 @@ async function handleOplLaunchApi(context, deps) {
       requireRealOplWeb: true,
       source: "portal-api",
       sourceSurface: launchSourceSurface(providerKeyPayload),
+      providerConfig: boundProvider.providerConfig,
+      providerConfigSecretRef: boundProvider.providerConfigSecretRef,
       providerKeyPayload,
     }),
   });

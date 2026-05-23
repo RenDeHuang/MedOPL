@@ -18,9 +18,11 @@ const {
   normalizeProviderApiKey,
   redactProviderConfig,
 } = await import("../../../services/portal/src/domain/provider-config.mjs");
+const { bindV22GflabProviderKey } = await import("../../../services/portal/src/domain/user-credit-provider-key-flow.mjs");
 const { createProviderSecretStore } = await import("../../../services/portal/src/domain/provider-secret-store.mjs");
 const { hashPassword } = await import("../../../services/portal/src/domain/portal-auth.mjs");
 const { createOplLaunchService } = await import("../../../services/portal/src/services/opl-launch.service.mjs");
+const { createOplRoutes } = await import("../../../services/portal/src/routes/opl.routes.mjs");
 
 function assertNoRawKey(value, label) {
   const serialized = JSON.stringify(value);
@@ -58,8 +60,24 @@ function sendJson(res, payload, status = 200) {
   res.payload = payload;
 }
 
+function appendCookie(res, cookie) {
+  res.headers["set-cookie"] = [...(res.headers["set-cookie"] || []), cookie];
+}
+
 async function readBody(req) {
   return Buffer.from(req.body || "");
+}
+
+async function requestPortalOplLaunch(route, db, user, body = {}) {
+  const res = createResponseRecorder();
+  const handled = await route({
+    req: { method: "POST", body: JSON.stringify(body), headers: {} },
+    res,
+    url: new URL("/portal/api/opl/launch", "https://portal.medopl.cn"),
+    db,
+    user,
+  });
+  return { handled, res };
 }
 
 function parseForm(bodyText = "") {
@@ -333,6 +351,91 @@ try {
   assertNoRawKey(alreadyBound.res.payload, "opl_preflight_already_bound_response");
   assert.equal(launchCalls.length, 2, "opl_preflight_success_and_already_bound_must_create_launches");
   assert.equal(launchCalls[1].providerKeyPayload, null, "opl_preflight_already_bound_must_not_replay_raw_key_payload");
+
+  const portalLaunchDb = {
+    users: [],
+    wallets: [],
+    taskSpaces: [],
+    workspaceSessions: [],
+    providerKeyBindings: [],
+  };
+  const portalLaunchUser = {
+    id: "user-v22-launch-reuse",
+    tenantId: "tenant-v22-launch-reuse",
+    email: "launch-reuse@example.test",
+    name: "Launch Reuse",
+    role: "user",
+    status: "active",
+    currentTaskSlug: "workspace-v22-launch-reuse",
+  };
+  portalLaunchDb.users.push(portalLaunchUser);
+  portalLaunchDb.wallets.push({ userId: portalLaunchUser.id, balance: 12000 });
+  portalLaunchDb.taskSpaces.push({
+    id: "workspace-v22-launch-reuse",
+    slug: "workspace-v22-launch-reuse",
+    userId: portalLaunchUser.id,
+    status: "active",
+  });
+
+  const launchBound = await bindV22GflabProviderKey(portalLaunchDb, portalLaunchUser, {
+    workspaceId: "workspace-v22-launch-reuse",
+    provider: "gflabtoken",
+    apiKey: RAW_PROVIDER_KEY,
+  }, { providerSecretStore });
+  assert.equal(launchBound.ok, true, "portal_launch_provider_key_binding_must_succeed");
+  assert.ok(launchBound.providerKeyRef, "portal_launch_provider_key_ref_required");
+
+  const portalLaunchCalls = [];
+  const portalOplRoute = createOplRoutes({
+    appendCookie,
+    oplLaunchService: {
+      async prepareLaunchForIntent({ providerConfig, providerConfigSecretRef, providerKeyPayload, taskSlug }) {
+        portalLaunchCalls.push({ providerConfig, providerConfigSecretRef, providerKeyPayload, taskSlug });
+        return {
+          ok: true,
+          launchId: "launch-reuse-local",
+          taskSpace: portalLaunchDb.taskSpaces[0],
+          workspaceSession: { id: "workspace-session-reuse", status: "active" },
+          launch: {
+            launchId: "launch-reuse-local",
+            launchToken: "launch-token-must-stay-cookie-only",
+            oplWebUrl: "https://opl.medopl.cn/session/reuse",
+            runtimeUrl: "",
+            runtimeSessionId: "runtime-session-reuse",
+            oplSessionId: "opl-session-reuse",
+            providerKeyRef: providerConfig?.providerKeyRef || "",
+          },
+        };
+      },
+      getLaunchStatus() {
+        return null;
+      },
+    },
+    readBody,
+    runtimeBridgeClient: {
+      async requestRuntimeBridgeApi() {
+        throw new Error("runtime_bridge_not_used_by_launch_test");
+      },
+    },
+    sendJson,
+    slugify: (value) => String(value || "").trim(),
+    workspaceSessionCookie: () => "workspace_session",
+  });
+  const reusedLaunch = await requestPortalOplLaunch(portalOplRoute, portalLaunchDb, portalLaunchUser, {
+    workspaceId: "workspace-v22-launch-reuse",
+  });
+  assert.equal(reusedLaunch.handled, true, "portal_launch_reuse_route_must_handle_request");
+  assert.equal(reusedLaunch.res.statusCode, 200, "portal_launch_without_inline_key_must_return_200");
+  assert.equal(reusedLaunch.res.payload.ok, true, "portal_launch_without_inline_key_must_return_ok");
+  assert.equal(reusedLaunch.res.payload.providerBound, true, "portal_launch_without_inline_key_must_mark_provider_bound");
+  assert.equal(reusedLaunch.res.payload.providerKeyRef, launchBound.providerKeyRef, "portal_launch_provider_key_ref_must_reuse_existing_binding");
+  assert.equal(portalLaunchCalls.length, 1, "portal_launch_service_must_be_called_once");
+  assert.equal(portalLaunchCalls[0].taskSlug, "workspace-v22-launch-reuse", "portal_launch_task_slug_mismatch");
+  assert.equal(portalLaunchCalls[0].providerConfigSecretRef, launchBound.providerKeyRef, "portal_launch_service_must_receive_provider_secret_ref");
+  assert.equal(portalLaunchCalls[0].providerConfig?.providerKeyRef, launchBound.providerKeyRef, "portal_launch_service_must_receive_provider_config");
+  assert.equal(portalLaunchCalls[0].providerKeyPayload, null, "portal_launch_service_must_not_replay_raw_provider_payload");
+  assertNoRawKey(reusedLaunch.res.payload, "portal_launch_reuse_response");
+  assertNoRawKey(portalLaunchCalls, "portal_launch_reuse_service_call");
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }
