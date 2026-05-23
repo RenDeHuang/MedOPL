@@ -77,7 +77,7 @@ jobs:
       - run: npm --prefix services/portal ci
       - run: npm run test:regression
 
-  contract-gate:
+  change-package-gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         with:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
-      - run: npm run gate:contract
+      - run: npm run gate:change
 
   review-gate:
     runs-on: ubuntu-latest

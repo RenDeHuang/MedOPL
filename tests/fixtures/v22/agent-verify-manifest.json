@@ -1358,7 +1358,7 @@
         "npm run test:smoke",
         "npm run test:contract",
         "npm run test:regression",
-        "npm run gate:contract",
+        "npm run gate:change",
         "npm run closeout:check",
         "npm run test:fast",
         "npm run test:lanes",
@@ -1400,7 +1400,7 @@
       ]
     },
     {
-      "id": "contract-gate",
+      "id": "change-package-gate",
       "commands": [
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
@@ -1495,7 +1495,7 @@
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- AGENTS.md docs tests scripts package.json .github"
       ],
@@ -1552,7 +1552,7 @@
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs tests scripts package.json .github"
       ],

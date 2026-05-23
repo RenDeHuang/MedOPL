@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  contractPackageTypes,
+  changePackageTypes,
   evaluateCheckpoint,
   evaluateReview,
   renderStartTemplate,
@@ -44,8 +44,8 @@ assertIncludesAll(startResult.stdout, [
   "docs/specs/README.md",
   "docs/policies/README.md",
   "docs/delivery/README.md",
-  "推荐合同包",
-  "Portal / UI 合同包",
+  "推荐 change package",
+  "Portal / UI change package",
   "docs/specs/README.md",
   "本次不修改项",
   "污染防护",
@@ -56,7 +56,7 @@ assertIncludesAll(startResult.stdout, [
 
 const startTemplate = renderStartTemplate({ type: "tencent-quote" });
 assertIncludesAll(startTemplate, [
-  "Tencent Quote Provider 合同包",
+  "Tencent Quote Provider change package",
   "docs/specs/README.md",
   "docs/specs/README.md",
   "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-quote-provider-boundary.mjs",
@@ -76,7 +76,7 @@ async function assertLocalTestFilesExist(template, label) {
   }
 }
 
-for (const type of contractPackageTypes) {
+for (const type of changePackageTypes) {
   const template = renderStartTemplate({ type });
   assertIncludesAll(template, [
     "docs/specs/README.md",
@@ -84,7 +84,7 @@ for (const type of contractPackageTypes) {
   await assertLocalTestFilesExist(template, `workflow_start_template_${type}`);
 }
 
-assert.deepEqual(contractPackageTypes, [
+assert.deepEqual(changePackageTypes, [
   "portal-ui",
   "gateway",
   "runtime",
@@ -92,10 +92,11 @@ assert.deepEqual(contractPackageTypes, [
   "resource-billing",
   "tencent-quote",
   "cleanup",
-], "contract_package_types_mismatch");
+], "change_package_types_mismatch");
 
 const reviewWithBlockers = evaluateReview({
   base: "recovery/platform-v22-trunk",
+  activeChangePackageNames: [],
   changedFiles: [
     "deploy/manual/values.yaml",
     ".sentrux/rules.toml",
@@ -119,8 +120,8 @@ assert.deepEqual(reviewWithBlockers.secretLikePaths, [
   ".env.production",
   "local/github",
 ], "review_secret_like_paths_mismatch");
-assert(reviewWithBlockers.findings.some((finding) => finding.code === "services_changed_without_v22_smoke_update"), "review_must_require_service_smoke_update");
-assert(reviewWithBlockers.findings.some((finding) => finding.code === "contracts_changed_without_v22_smoke_update"), "review_must_require_contract_smoke_update");
+assert(reviewWithBlockers.findings.some((finding) => finding.code === "services_changed_without_eval_plan_update"), "review_must_require_service_eval_plan_update");
+assert(reviewWithBlockers.findings.some((finding) => finding.code === "specs_changed_without_eval_plan_update"), "review_must_require_spec_eval_plan_update");
 assert(reviewWithBlockers.findings.some((finding) => finding.code === "formal_change_without_active_change_package"), "review_must_require_active_change_package");
 assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
   "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
@@ -147,8 +148,8 @@ const reviewWithSmoke = evaluateReview({
     "tests/contract/contract-test-v22-example-boundary.mjs",
   ],
 });
-assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "services_changed_without_v22_smoke_update"), false, "review_must_accept_service_smoke_update");
-assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "contracts_changed_without_v22_smoke_update"), false, "review_must_accept_contract_smoke_update");
+assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "services_changed_without_eval_plan_update"), false, "review_must_accept_service_eval_plan_update");
+assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "specs_changed_without_eval_plan_update"), false, "review_must_accept_spec_eval_plan_update");
 
 const fullTaxonomyAuthorizedDeletes = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
@@ -273,10 +274,10 @@ assertNotIncludesAny(gateSource, [
 
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_contract_first_workflow_gate",
+  contract: "v22_change_package_workflow_gate",
   covered: [
-    "start_template_stage_docs_contract_package_validation_commands",
-    "review_forbidden_paths_secret_like_paths_service_and_contract_smoke_updates",
+    "start_template_stage_docs_change_package_eval_commands",
+    "review_forbidden_paths_secret_like_paths_service_and_spec_eval_updates",
     "checkpoint_trunk_clean_ahead_ssh_token_free_remote",
     "no_secret_file_read_no_push_build_kubectl_live_test",
   ],

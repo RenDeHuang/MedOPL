@@ -95,7 +95,7 @@ const expectedScripts = {
   "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
-  "gate:contract": "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk",
+  "gate:change": "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk",
   "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
 };
 
@@ -108,15 +108,15 @@ assert.equal(manifest.required_post_merge_fields?.includes("landing_gate_result"
 assert.equal(manifest.required_post_merge_fields?.includes("post_merge_closeout"), true, "manifest_must_require_post_merge_closeout");
 assert.equal(manifest.required_post_absorb_fields, undefined, "manifest_must_remove_post_absorb_schema");
 
-const contractGate = manifest.package_suites.find((suite) => suite.id === "contract-gate");
-assert(contractGate, "contract_gate_package_suite_missing");
+const changePackageGate = manifest.package_suites.find((suite) => suite.id === "change-package-gate");
+assert(changePackageGate, "change_package_gate_package_suite_missing");
 for (const command of [
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite history-closeout --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
 ]) {
-  assert(contractGate.commands.includes(command), `contract_gate_command_missing:${command}`);
+  assert(changePackageGate.commands.includes(command), `change_package_gate_command_missing:${command}`);
 }
 
 assert.equal(closeoutSource.includes("required_post_absorb_fields"), false, "closeout_script_must_remove_post_absorb_schema");

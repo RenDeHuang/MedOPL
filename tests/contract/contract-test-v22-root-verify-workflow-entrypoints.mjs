@@ -32,7 +32,7 @@ const expectedScripts = {
   "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
   "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
   "gate:review": "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-  "gate:contract": "node scripts/v22-verify.mjs package contract-gate --base origin/recovery/platform-v22-trunk",
+  "gate:change": "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk",
   "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
   "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
   "repo:bloat": "node scripts/v22-repo-bloat-audit.mjs --json",
@@ -78,7 +78,7 @@ for (const expected of [
   "npm run test:lanes",
   "npm run verify:review",
   "npm run gate:review",
-  "npm run gate:contract",
+  "npm run gate:change",
   "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
@@ -129,7 +129,7 @@ for (const command of [
   "npm run test:fast",
   "npm run test:lanes",
   "npm run gate:review",
-  "npm run gate:contract",
+  "npm run gate:change",
   "npm run closeout:check",
   "npm run check:diff",
   "npm run verify:docs-engineering-loop",
@@ -175,15 +175,15 @@ assert.deepEqual(docsEngineeringLoopSuite.commands, [
   "git diff --check -- docs tests scripts package.json .github",
 ], "docs_engineering_loop_package_suite_commands_mismatch");
 
-const contractGateSuite = manifest.package_suites.find((suite) => suite.id === "contract-gate");
-assert(contractGateSuite, "contract_gate_package_suite_missing");
+const changePackageGateSuite = manifest.package_suites.find((suite) => suite.id === "change-package-gate");
+assert(changePackageGateSuite, "change_package_gate_package_suite_missing");
 for (const command of [
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite history-closeout --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
 ]) {
-  assert(contractGateSuite.commands.includes(command), `contract_gate_package_suite_command_missing:${command}`);
+  assert(changePackageGateSuite.commands.includes(command), `change_package_gate_package_suite_command_missing:${command}`);
 }
 
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");

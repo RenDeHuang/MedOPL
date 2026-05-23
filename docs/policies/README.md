@@ -19,7 +19,7 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 
 ## Framework Landing Protocol
 
-- authoring branch 只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明订阅合同、边界和验收命令，按 step commit，最后交 landing gate。
+- authoring branch 只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明 change package、spec subscription、边界和 eval plan / 验收命令，按 step commit，最后交 landing gate。
 - 正式工程变更必须先有 `changes/active/<change-id>`，把 proposal、spec delta、design、tasks、eval plan、review 和 closeout 作为 repo-native artifact 管理。
 - landing gate 执行 fresh review、ff-only merge、push、post-push verification 和 post-merge closeout；authoring branch 不自合入。
 - parallel lane 可以并行推进互不冲突的只读审计或清退分支，但合入前必须基于最新 trunk 重放并通过同一个 landing gate。

@@ -65,11 +65,11 @@ const currentCommandReferenceSources = Object.freeze([
   "docs/delivery/README.md",
 ]);
 
-const packageDefinitions = {
+const changeStartDefinitions = {
   "portal-ui": {
-    title: "Portal / UI 合同包",
+    title: "Portal / UI change package",
     intent: "Portal 普通用户界面、工作空间、托管运行环境、文件、账单和会话轨迹。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -86,9 +86,9 @@ const packageDefinitions = {
     ],
   },
   gateway: {
-    title: "OPL Entry / Gateway 合同包",
+    title: "OPL Entry / Gateway change package",
     intent: "OPL entry/preflight、Gateway launch/proxy、Portal 进入 OPL 工作台和 direct OPL 入口。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -105,9 +105,9 @@ const packageDefinitions = {
     ],
   },
   runtime: {
-    title: "Runtime Bridge 合同包",
+    title: "Runtime Bridge change package",
     intent: "Runtime Bridge session/run/file/providerKeyRef、artifact reference 和 Runtime Agent relay；当前实现目录是 services/opl-runtime-bridge，不是旧 adapters/* 兼容层。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -123,9 +123,9 @@ const packageDefinitions = {
     ],
   },
   "langfuse-trace": {
-    title: "Langfuse / Trace 合同包",
+    title: "Langfuse / Trace change package",
     intent: "Langfuse sanitized projection、Portal 会话轨迹和非 canonical source 边界。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -140,9 +140,9 @@ const packageDefinitions = {
     ],
   },
   "resource-billing": {
-    title: "Resource / Billing / Audit 合同包",
+    title: "Resource / Billing / Audit change package",
     intent: "托管运行环境、资源绑定、预扣费、冻结金额、释放停止计费和审计状态。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -161,9 +161,9 @@ const packageDefinitions = {
     ],
   },
   "tencent-quote": {
-    title: "Tencent Quote Provider 合同包",
+    title: "Tencent Quote Provider change package",
     intent: "readonly/tencent quote provider、mock adapter、套餐估算和 quote snapshot。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -179,15 +179,15 @@ const packageDefinitions = {
     ],
   },
   cleanup: {
-    title: "Cleanup 合同包",
+    title: "Cleanup change package",
     intent: "旧路线清退、入口收敛、文档归档和污染防护。",
-    contracts: [
+    specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
       "docs/active/README.md",
       "docs/policies/README.md",
       "docs/history/README.md",
-      "与被清退路径相关的分支合同",
+      "与被清退路径相关的 durable spec / policy",
     ],
     validationCommands: [
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -196,7 +196,7 @@ const packageDefinitions = {
   },
 };
 
-export const contractPackageTypes = Object.freeze(Object.keys(packageDefinitions));
+export const changePackageTypes = Object.freeze(Object.keys(changeStartDefinitions));
 
 function normalizePath(filePath) {
   return String(filePath || "").replaceAll("\\", "/").replace(/^\.\//, "");
@@ -398,7 +398,7 @@ function isServicesPath(filePath) {
   return normalizePath(filePath).startsWith("services/");
 }
 
-function isContractPath(filePath) {
+function isSpecPath(filePath) {
   return normalizePath(filePath).startsWith("docs/specs/");
 }
 
@@ -521,9 +521,9 @@ function remoteLooksTokenFree(remoteUrl) {
 }
 
 function packageForType(type) {
-  const selected = packageDefinitions[type];
+  const selected = changeStartDefinitions[type];
   if (!selected) {
-    throw new Error(`unknown_workflow_type:${type || "(missing)"}`);
+    throw new Error(`unknown_change_package_type:${type || "(missing)"}`);
   }
   return selected;
 }
@@ -531,7 +531,7 @@ function packageForType(type) {
 export function renderStartTemplate({ type = "portal-ui" } = {}) {
   const selected = packageForType(type);
   const lines = [
-    `# v22 workflow gate start: ${type}`,
+    `# v22 change package gate start: ${type}`,
     "",
     "## 分支意图",
     `本分支类型：${type}`,
@@ -539,11 +539,12 @@ export function renderStartTemplate({ type = "portal-ui" } = {}) {
     "",
     "## 当前必须读取的阶段文档",
     ...stageDocuments.map((doc) => `- ${doc}`),
-    "- 本次订阅合同",
+    "- 本次 change package",
+    "- 本次 spec subscription / truth subscription",
     "",
-    "## 推荐合同包",
-    `合同包：${selected.title}`,
-    ...selected.contracts.map((doc) => `- ${doc}`),
+    "## 推荐 change package",
+    `change package：${selected.title}`,
+    ...selected.specSubscriptions.map((doc) => `- ${doc}`),
     "",
     "## 本次不修改项",
     "- 不修改未授权的 deploy/*",
@@ -583,7 +584,7 @@ export function evaluateReview({
     isSecretLikePath(file) && !isV22EvalPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikeAddedLines = secretLikeAddedLinesFrom(addedLines);
   const servicesChanged = normalizedFiles.some(isServicesPath);
-  const contractsChanged = normalizedFiles.some(isContractPath);
+  const specsChanged = normalizedFiles.some(isSpecPath);
   const evalChanged = normalizedFiles.some(isV22EvalPath);
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
   const activeChanges = [...activeChangePackageNames, ...changedArchivePackages(normalizedFiles)].sort();
@@ -619,23 +620,23 @@ export function evaluateReview({
   }
   if (servicesChanged && !evalChanged) {
     findings.push({
-      code: "services_changed_without_v22_smoke_update",
+      code: "services_changed_without_eval_plan_update",
       severity: "warning",
-      message: "services/* 改动需要对应 v22 smoke 覆盖或在审计中说明无需新增 smoke。",
+      message: "services/* 改动需要对应 eval plan 更新、已注册 eval 覆盖，或在 review 中说明无需新增 eval。",
     });
   }
-  if (contractsChanged && !evalChanged) {
+  if (specsChanged && !evalChanged) {
     findings.push({
-      code: "contracts_changed_without_v22_smoke_update",
+      code: "specs_changed_without_eval_plan_update",
       severity: "warning",
-      message: "docs/specs 改动需要对应 v22 smoke 更新或在审计中说明已有 smoke 覆盖。",
+      message: "docs/specs 改动需要对应 spec subscription / eval plan 更新，或在 review 中说明已有 eval 覆盖。",
     });
   }
   if (formalEngineeringChanged && activeChanges.length === 0) {
     findings.push({
       code: "formal_change_without_active_change_package",
       severity: "blocker",
-      message: "正式工程变更必须先有 changes/active/<change-id>，记录 proposal、spec delta、design、tasks、eval plan、review 和 closeout。",
+      message: "正式工程变更必须先有 repo-native changes/active/<change-id>，记录 proposal、spec delta、design、tasks、eval plan、review 和 closeout。",
     });
   }
 
@@ -653,7 +654,7 @@ export function evaluateReview({
   if (normalizedFiles.some((file) => file.startsWith("services/opl-runtime-bridge/"))) {
     recommendedCommands.push("node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs");
   }
-  if (contractsChanged) {
+  if (specsChanged) {
     recommendedCommands.push("git diff --check -- docs/specs tests scripts");
   }
 

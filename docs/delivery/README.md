@@ -7,7 +7,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`。pre-cloud 9 个 product slides 已完成本地闭环；current verify、product-engineering-loop suite、workflow review 和 local-contract 继续作为本地 pre-cloud 防回归 bundle 运行。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界。
+当前 product cursor 是 `real-cloud-authorization-boundary`。pre-cloud 9 个 product slides 已完成本地闭环；current verify、product-engineering-loop suite、review gate 和 local-contract 继续作为本地 pre-cloud 防回归 bundle 运行。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界。
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
@@ -32,7 +32,7 @@ npm run test:health
 npm run test:smoke
 npm run test:contract
 npm run test:regression
-npm run gate:contract
+npm run gate:change
 npm run gate:review
 npm run closeout:check
 ```
