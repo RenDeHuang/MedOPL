@@ -1,0 +1,79 @@
+# MedOPL Change Packages
+
+Owner: `MedOPL`
+Purpose: `repo_native_change_lifecycle`
+State: `active_change_governance`
+Machine boundary: 本目录描述 repo-native change lifecycle。机器 gate 在 `tests/contract/contract-test-v22-change-package-lifecycle.mjs`、`scripts/v22-test-classification.mjs`、`tests/fixtures/v22/agent-verify-manifest.json` 和 `scripts/v22-workflow-gate.mjs` 中执行。本文不是 current truth、不是 durable spec 本体、不是 evidence store。
+
+`changes/` 承接 OpenSpec-style change governance，但使用 MedOPL v22 语义。`docs/active/README.md remains the only human current truth`；open change 不能把 active 写成计划板，也不能替代 `docs/specs/README.md`、root `specs/**`、`tests/**` 或 `docs/history/README.md`。
+
+## Lifecycle
+
+每个正式工程变更必须遵守 repo-native change lifecycle：
+
+```text
+proposal -> spec delta -> design -> tasks -> eval plan -> implementation -> verify -> review -> archive -> durable specs sync -> history closeout
+```
+
+目录语义：
+
+- `changes/active/<change-id>`: 当前正在 authoring / review / closeout 的 change package。
+- `changes/archive/YYYY-MM-DD-<change-id>`: 已完成、已归档、已同步 durable specs 并写入 history closeout 的 change package。
+
+`change-id` 必须是 kebab-case，必须表达业务或治理意图，不能使用 `template`、`tmp`、`misc`、`wip` 或聊天轮次名。
+
+## Required Files
+
+每个 `changes/active/<change-id>` 和 `changes/archive/YYYY-MM-DD-<change-id>` 必须包含：
+
+| File | Purpose |
+| --- | --- |
+| `proposal.md` | 为什么做、目标、非目标、owner、授权边界、affected plane。 |
+| `spec-delta.md` | 对 durable specs 的 `ADDED` / `MODIFIED` / `REMOVED` / `CANNOT-CLAIM` / `EVALS` delta。 |
+| `design.md` | 实现设计、边界、数据流、失败模式、surface impact。 |
+| `tasks.md` | 可单独 commit、可验证的任务列表。 |
+| `eval-plan.md` | 新增或复用哪些 eval、verify 命令、evidence level 和不能宣称什么。 |
+| `review.md` | 自审、独立 review、blocker 处理和剩余风险。 |
+| `closeout.md` | commits、验证结果、can-claim、cannot-claim、archive target、history handoff 和 next owner。 |
+
+## Admission Rules
+
+正式开发开始前，change package 必须声明：
+
+- branch name and base trunk
+- owner and affected platform plane
+- subscribed docs/spec/policy/evidence files
+- impacted source surfaces
+- authorization boundary
+- spec delta target
+- eval plan and expected evidence level
+- cannot-claim list
+- archive and history closeout target
+
+缺少 owner、授权边界、spec delta、eval plan、cannot-claim 或 archive target 时，必须 fail closed。
+
+## Boundaries
+
+Change packages must not store secrets. 禁止写入 raw provider key、bearer token、launchToken、runtimeToken、kubeconfig、SecretId/SecretKey、SSH private key、object key、local path、signed URL 或任何可还原敏感内容。
+
+Change packages must not claim production truth. smoke、proof、canary、future-authorized 或 local regression 只能证明限定 scope；不能自动升级为真实云、真实扣费、kubectl rollout、production deploy、live provider 或 production runtime 已完成。
+
+Change packages must not restore retired surfaces:
+
+- `docs/contracts/**`
+- `docs/recovery/**`
+- root stage docs such as `docs/status.md`, `docs/invariants.md`, `docs/product.md`, `docs/architecture.md`, `docs/decisions.md`
+- old `scripts/smoke-test-*`
+- `user_owned`, `resource-order`, old runner/provisioner, OpenCost or Langfuse primary product narrative
+
+## Closeout
+
+完成一个 change 时必须：
+
+1. run the eval plan and record exact commands in `closeout.md`;
+2. sync accepted deltas into root `specs/**` or the current durable spec owner;
+3. move the package from `changes/active/<change-id>` to `changes/archive/YYYY-MM-DD-<change-id>`;
+4. add a compact summary to `docs/history/README.md`;
+5. update `docs/active/README.md` and `tests/fixtures/v22/goal-current.json` only when current cursor or blocker changes.
+
+History keeps summary only. Full proposal, design, tasks, spec delta, eval plan and review context belong in the archived change package.
