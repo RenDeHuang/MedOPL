@@ -5,6 +5,8 @@ Purpose: `current_state_control_surface`
 State: `active_current_truth`
 Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、last landed commit、branch override 和 verification bundle 以 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json` 为准。稳定产品、runtime、framework、spec、evidence、policy、delivery、source 和 history truth 只看各自 README，不在本文展开第二份 truth。
 
+Open change detail belongs in `changes/active/<change-id>`. 本文只允许指向 open change，不承载 proposal、spec delta、design、tasks、eval plan、review 或 closeout 正文。
+
 ## Ideal State
 
 MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。用户购买托管 OPL 服务和平台代管运行能力；平台负责开通、隔离、计费、审计和释放。产品细节见 `docs/product/README.md`，runtime 边界见 `docs/runtime/README.md`，contract lower bound 见 `docs/specs/README.md`。
@@ -17,6 +19,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | current cursor | `real-cloud-authorization-boundary` |
 | current blocker | real cloud / secret / provider operation / deploy / kubectl / build-push / live-test require explicit authorization |
 | next owner | `MedOPL Operations` for authorization boundary; `MedOPL Platform` for truth/spec/manifest/history/verify consistency |
+| open change package | none on trunk; authoring branches must use `changes/active/<change-id>` before implementation |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
 | latest governance closeout | `cleanup/v22-backend-convergence-trunk-closeout` / `d12ebb6c886c4a1717abe8f9b3308ab74842ed57` |

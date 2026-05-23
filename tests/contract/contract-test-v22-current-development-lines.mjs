@@ -48,9 +48,18 @@ for (const forbidden of [
   "### portal-opl-runtime-managed-chain",
   "### portal-canonical-data-postgres-redis-closure",
   "### governance-verification-post-merge-closeout",
+  "proposal.md",
+  "spec-delta.md",
+  "design.md",
+  "tasks.md",
+  "eval-plan.md",
+  "review.md",
+  "closeout.md",
 ]) {
   assertExcludes(active, forbidden, "active_must_not_carry_development_line_sections");
 }
+
+assertIncludes(active, "Open change detail belongs in `changes/active/<change-id>`", "active_must_delegate_open_change_detail");
 
 assertIncludes(product, "Core User Loop", "product_must_own_user_loop");
 assertIncludes(product, "Optional Resource Lifecycle", "product_must_own_resource_lifecycle");
