@@ -25,10 +25,14 @@ const helperPath = "services/portal/src/app/portal-admin-api-payload-helpers.mjs
 const apiPayloadPath = "services/portal/src/app/portal-admin-api-payloads.mjs";
 const runtimeOverviewPath = "services/portal/src/app/portal-admin-overview-runtime-payloads.mjs";
 const retiredOverviewViewPath = "services/portal/src/app/portal-admin-overview-payloads.mjs";
+const portalRuntimePath = "services/portal/src/app/portal-runtime.mjs";
+const portalRuntimeAppDepsPath = "services/portal/src/app/portal-runtime-app-deps.mjs";
 
 const helperSource = await readProjectFile(helperPath);
 const apiPayloadSource = await readProjectFile(apiPayloadPath);
 const runtimeOverviewSource = await readProjectFile(runtimeOverviewPath);
+const portalRuntimeSource = await readProjectFile(portalRuntimePath);
+const portalRuntimeAppDepsSource = await readProjectFile(portalRuntimeAppDepsPath);
 
 const sharedFunctionNames = [
   "userTenantId",
@@ -96,8 +100,30 @@ for (const path of await listProjectFiles("services/portal/frontend/src")) {
   );
 }
 
+function uniqueImportSources(source) {
+  return [...source.matchAll(/^import\s+(?:[\s\S]*?)\s+from\s+["']([^"']+)["'];/gm)]
+    .map((match) => match[1])
+    .filter((value, index, values) => values.indexOf(value) === index);
+}
+
+const runtimeImports = uniqueImportSources(portalRuntimeSource);
+const appDepsImports = uniqueImportSources(portalRuntimeAppDepsSource);
+assert(runtimeImports.length <= 18, `${portalRuntimePath}:fanout_must_not_regrow:${runtimeImports.length}`);
+assert(portalRuntimeSource.includes("portalRuntimeAppDeps"), `${portalRuntimePath}:must_use_app_deps_assembly`);
+for (const forbidden of [
+  "./portal-commercial-domain.mjs",
+  "./portal-storage-domain.mjs",
+  "./portal-lab-domain.mjs",
+  "./portal-presentation-domain.mjs",
+  "../domain/portal-public-settings.mjs",
+]) {
+  assert.equal(runtimeImports.includes(forbidden), false, `${portalRuntimePath}:must_not_directly_import_domain_dependency:${forbidden}`);
+  assert(appDepsImports.includes(forbidden), `${portalRuntimeAppDepsPath}:must_own_domain_dependency:${forbidden}`);
+}
+
 console.log(JSON.stringify({
   ok: true,
-  checked: [helperPath, apiPayloadPath, runtimeOverviewPath],
+  checked: [helperPath, apiPayloadPath, runtimeOverviewPath, portalRuntimePath, portalRuntimeAppDepsPath],
   sharedFunctionCount: sharedFunctionNames.length,
+  portalRuntimeFanout: runtimeImports.length,
 }, null, 2));

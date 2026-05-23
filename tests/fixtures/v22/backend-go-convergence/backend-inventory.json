@@ -393,6 +393,7 @@
         "services/portal/src/app/portal-feature-runtime-handlers.mjs",
         "services/portal/src/app/portal-http-dispatcher.mjs",
         "services/portal/src/app/portal-identity-security-runtime.mjs",
+        "services/portal/src/app/portal-runtime-app-deps.mjs",
         "services/portal/src/app/portal-runtime-bootstrap.mjs",
         "services/portal/src/app/portal-runtime-clients.mjs",
         "services/portal/src/app/portal-runtime-config.mjs",

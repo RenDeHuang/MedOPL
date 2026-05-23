@@ -22,6 +22,7 @@ Backend convergence target surface：
 迁移期源码边界：
 
 - `services/portal` 是 Node Portal active implementation；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
+- `services/portal/src/app/portal-runtime.mjs` 是 Portal runtime entry assembly；它不得重新直接 fan-out 到 product domain / presentation helpers，domain/presentation dependency assembly 归 `services/portal/src/app/portal-runtime-app-deps.mjs`。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
 

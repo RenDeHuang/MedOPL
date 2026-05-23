@@ -64,60 +64,11 @@ import {
   validateProductionConfig,
   ZITADEL_ADMIN_USER_SCRIPT,
 } from "./portal-runtime-config.mjs";
-import {
-  findUserByEmail,
-  normalizeAuthEmail,
-  sanitizePortalUser,
-} from "./portal-auth-runtime-handler.mjs";
-import {
-  activeUserStatus,
-  adminScopeResult,
-  appendLedgerEntry,
-  buildCommercialProfile,
-  buildOverviewOnboarding,
-  buildServerPlansFallback,
-  buildServerPlansSummary,
-  currentServerPlanSelection,
-  ensureUserCommercialState,
-  ensureWallet,
-  isBlockedUserStatus,
-  moneyAmount,
-} from "./portal-commercial-domain.mjs";
-import {
-  buildWorkspaceFileChecksum,
-  buildWorkspaceStorageKey,
-  createOrUpdateStorageOrder,
-  issueWorkspaceTransferToken,
-  listWorkspaceFiles,
-  markWorkspaceStorageDeleting,
-  readWorkspaceTransferToken,
-  recordWorkspaceFile,
-  resolveWorkspaceStorageEntitlement,
-} from "./portal-storage-domain.mjs";
-import {
-  createGflabProviderConfig,
-  normalizeProviderApiKey,
-  redactProviderConfig,
-} from "./portal-lab-domain.mjs";
 import { createProviderSecretStore } from "../domain/provider-secret-store.mjs";
-import {
-  announcementRows,
-  defaultTaskTitle,
-  formatDateOnly,
-  formatDateTime,
-  humanizeStatus,
-  sandboxStatusLabel,
-  sanitizeTaskTitle,
-  slugify,
-  taskStatusClass,
-  taskStatusLabel,
-  userTheme,
-  visibleAnnouncementRows,
-} from "./portal-presentation-domain.mjs";
+import { portalRuntimeAppDeps } from "./portal-runtime-app-deps.mjs";
 import { createPortalRuntimeBootstrap } from "./portal-runtime-bootstrap.mjs";
 import { createPortalHttpDispatcher } from "./portal-http-dispatcher.mjs";
 import { renderPortalPublicHome } from "./portal-public-home.mjs";
-import { ensurePublicSiteSettings } from "../domain/portal-public-settings.mjs";
 import { createPortalIdentitySecurityRuntime } from "./portal-identity-security-runtime.mjs";
 import { createPortalRuntimeObservability } from "./portal-runtime-observability.mjs";
 import { createPortalWorkspaceRuntime } from "./portal-workspace-runtime.mjs";
@@ -137,6 +88,43 @@ import {
 } from "./portal-runtime-http.mjs";
 import { createPortalRuntimeRouteWiring } from "./portal-runtime-route-wiring.mjs";
 import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
+
+const {
+  activeUserStatus,
+  adminScopeResult,
+  announcementRows,
+  appendLedgerEntry,
+  buildCommercialProfile,
+  buildOverviewOnboarding,
+  buildServerPlansFallback,
+  buildServerPlansSummary,
+  buildWorkspaceFileChecksum,
+  buildWorkspaceStorageKey,
+  createGflabProviderConfig,
+  createOrUpdateStorageOrder,
+  currentServerPlanSelection,
+  defaultTaskTitle,
+  ensurePublicSiteSettings,
+  ensureUserCommercialState,
+  ensureWallet,
+  formatDateOnly,
+  formatDateTime,
+  humanizeStatus,
+  isBlockedUserStatus,
+  issueWorkspaceTransferToken,
+  listWorkspaceFiles,
+  markWorkspaceStorageDeleting,
+  normalizeAuthEmail,
+  normalizeProviderApiKey,
+  readWorkspaceTransferToken,
+  recordWorkspaceFile,
+  redactProviderConfig,
+  resolveWorkspaceStorageEntitlement,
+  sanitizeTaskTitle,
+  slugify,
+  userTheme,
+  visibleAnnouncementRows,
+} = portalRuntimeAppDeps;
 
 const {
   layoutV2,
