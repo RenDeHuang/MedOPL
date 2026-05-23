@@ -36,6 +36,194 @@ proposal -> spec delta -> design -> tasks -> eval plan -> implementation -> veri
 | `review.md` | 自审、独立 review、blocker 处理和剩余风险。 |
 | `closeout.md` | commits、验证结果、can-claim、cannot-claim、archive target、history handoff 和 next owner。 |
 
+## File Templates
+
+Do not create a `template` change directory. Copy these sections into the target `changes/active/<change-id>/` files and fill every field.
+
+### proposal.md
+
+````markdown
+# <change-id> Proposal
+
+Status: authoring
+Branch: <branch>
+Base trunk: origin/recovery/platform-v22-trunk
+Owner: <MedOPL plane owner>
+Affected plane: Product | Integration | Runtime | Operations | Framework
+
+## Why
+
+<problem or opportunity>
+
+## Goals
+
+- <goal>
+
+## Non-Goals
+
+- <explicit non-goal>
+
+## Authorization Boundary
+
+- No secret read unless explicitly authorized.
+- No real cloud, deploy, kubectl, build/push or live-test unless explicitly authorized.
+
+## Subscribed Truth
+
+- docs/active/README.md
+- docs/specs/README.md or specs/<domain>/spec.md
+- docs/evidence/README.md
+- docs/policies/README.md
+````
+
+### spec-delta.md
+
+````markdown
+# <change-id> Spec Delta
+
+Target specs:
+
+- specs/<domain>/spec.md
+
+## ADDED
+
+- <new requirement id and behavior>
+
+## MODIFIED
+
+- <existing requirement id and exact behavior change>
+
+## REMOVED
+
+- <retired requirement id and tombstone>
+
+## CANNOT-CLAIM
+
+- <unsupported adjacent claim>
+
+## EVALS
+
+- <eval command or planned eval file>
+````
+
+### design.md
+
+````markdown
+# <change-id> Design
+
+## Architecture
+
+<components and boundaries>
+
+## Data Flow
+
+<source, projection, state, evidence>
+
+## Failure Modes
+
+- <fail-closed condition>
+
+## Surface Impact
+
+- source:
+- docs:
+- specs:
+- tests:
+````
+
+### tasks.md
+
+````markdown
+# <change-id> Tasks
+
+- [ ] Step 0: baseline audit
+- [ ] Step 1: spec delta and eval RED
+- [ ] Step 2: implementation
+- [ ] Step 3: verification
+- [ ] Step 4: review
+- [ ] Step 5: archive and closeout
+````
+
+### eval-plan.md
+
+````markdown
+# <change-id> Eval Plan
+
+## Required Commands
+
+```bash
+node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json
+```
+
+## Evidence Level
+
+- local contract proof
+
+## Can Claim
+
+- <bounded conclusion>
+
+## Cannot Claim
+
+- <unsupported conclusion>
+````
+
+### review.md
+
+````markdown
+# <change-id> Review
+
+## Self Review
+
+- rules/status/evidence separation:
+- spec-to-eval traceability:
+- secret hygiene:
+- false production claim check:
+
+## Independent Review
+
+- reviewer:
+- model:
+- result:
+- blockers:
+````
+
+### closeout.md
+
+````markdown
+# <change-id> Closeout
+
+Status: ready_for_landing_review | landed | archived
+
+## Commits
+
+- <sha> <message>
+
+## Verification
+
+- `<command>`: pass/fail
+
+## Can Claim
+
+- <bounded claim>
+
+## Cannot Claim
+
+- <unsupported claim>
+
+## Archive Target
+
+- changes/archive/YYYY-MM-DD-<change-id>
+
+## History Handoff
+
+- docs/history/README.md
+
+## Next Owner
+
+- <owner>
+````
+
 ## Admission Rules
 
 正式开发开始前，change package 必须声明：

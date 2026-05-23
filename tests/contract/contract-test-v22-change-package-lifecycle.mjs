@@ -54,6 +54,18 @@ assertIncludes(changesReadme, "tasks.md", "changes_required_file");
 assertIncludes(changesReadme, "eval-plan.md", "changes_required_file");
 assertIncludes(changesReadme, "review.md", "changes_required_file");
 assertIncludes(changesReadme, "closeout.md", "changes_required_file");
+assertIncludes(changesReadme, "## File Templates", "changes_template_section");
+for (const heading of [
+  "### proposal.md",
+  "### spec-delta.md",
+  "### design.md",
+  "### tasks.md",
+  "### eval-plan.md",
+  "### review.md",
+  "### closeout.md",
+]) {
+  assertIncludes(changesReadme, heading, `changes_template_heading:${heading}`);
+}
 
 const activeChanges = await listDirs("changes/active");
 for (const changeId of activeChanges) {
