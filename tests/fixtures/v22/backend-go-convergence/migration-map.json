@@ -166,6 +166,7 @@
       "id": "portal.account_provider_binding",
       "sourcePaths": [
         "services/portal/src/domain/provider-secret-store.mjs",
+        "services/portal/src/domain/provider-key-bindings.mjs",
         "services/portal/src/domain/user-credit-provider-key-flow.mjs",
         "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
       ],

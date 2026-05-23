@@ -14,7 +14,7 @@ Status: authoring
 
 ## Can Claim
 
-- The current real-cloud authorization cursor is represented as an active change package.
+- The future real-cloud authorization boundary is represented as an active change package.
 
 ## Cannot Claim
 

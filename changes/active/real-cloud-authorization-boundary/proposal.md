@@ -8,11 +8,11 @@ Affected plane: Operations
 
 ## Why
 
-The current cursor is the real-cloud authorization boundary. Pre-cloud local proof is closed, but any secret access, provider operation, deploy, kubectl, build/push, live-test or true cloud mutation remains outside default authorization. This change package makes that boundary repo-native so future agents do not rely on chat memory.
+The current local productization cursor is not the real-cloud authorization boundary. Pre-cloud local proof is closed, but any secret access, provider operation, deploy, kubectl, build/push, live-test or true cloud mutation remains outside default authorization. This future-authorized change package keeps that boundary repo-native so future agents do not rely on chat memory.
 
 ## Goals
 
-- Record the current authorization cursor as a repo-native change package.
+- Record the future real-cloud authorization boundary as a repo-native change package.
 - Define the subscribed truth, spec delta target and eval plan before any real-cloud work.
 - Keep active truth limited to the current phase, cursor, blockers, next owner, cannot-claim and verification entry.
 - Fail closed until explicit user authorization is provided for each sensitive operation class.

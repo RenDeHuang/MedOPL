@@ -169,7 +169,7 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, current,
   assert.equal(program.authoring_branch, branchName, "program_authoring_branch_mismatch");
   assert.equal(program.does_not_replace_current_cursor, true, "program_must_not_replace_current_cursor");
   assert.equal(program.current_product_cursor, current.current_cursor, "program_current_cursor_pointer_mismatch");
-  assert.equal(current.current_cursor, "figma-portal-ui-absorption", "backend_program_must_not_replace_productization_cursor");
+  assert.notEqual(current.current_cursor, programId, "backend_program_must_not_replace_productization_cursor");
   assert.equal(program.one_step_one_commit, true, "program_must_require_one_step_one_commit");
   assert.equal(program.review_gate, "landing gate", "program_review_gate_mismatch");
   assert.equal(program.post_merge_closeout_required, true, "program_must_require_post_merge_closeout");
@@ -189,7 +189,7 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, current,
 
   assertIncludes(active, current.current_cursor, "active_must_preserve_product_cursor");
   assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_name_program");
-  assertIncludes(delivery, "不接管当前 `figma-portal-ui-absorption` product cursor", "delivery_must_preserve_product_cursor");
+  assertIncludes(delivery, `不接管当前 \`${current.current_cursor}\` product cursor`, "delivery_must_preserve_product_cursor");
   assertIncludes(active, "不能把 backend Go convergence program 写成第二份阶段板", "active_must_forbid_second_program_board");
   assertIncludes(specs, "spec:v22-backend-go-convergence-program-boundary", "specs_must_define_program_anchor");
   assertIncludes(specs, "Portal Control Plane", "specs_must_define_portal_control_plane");

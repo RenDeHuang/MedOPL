@@ -3113,3 +3113,56 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `figma-portal-ui-absorption`
+
+### 2026-05-24 feat/medopl-gap-provider-reuse
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/medopl-gap-provider-reuse`
+
+Archived change package: `changes/archive/2026-05-24-figma-portal-ui-absorption`
+
+Scope:
+
+- Closed `figma-portal-ui-absorption` as repo-native frontend truth and archived the change package.
+- Landed provider key reuse for Portal OPL launch: when a user already has a backend-bound `providerKeyRef`, `/portal/api/opl/launch` reuses it without replaying raw `providerKeyPayload`.
+- Advanced the current local productization cursor to `portal-typed-api-contract` so Portal pages stay on typed API modules and backend projections before OPL entry real state and Go control-plane takeover.
+
+Commits:
+
+- `816f7431ad3b5c8c0524b058d11eb08e851b055e` feat(opl): reuse bound provider key for portal launch
+
+Verification result:
+
+- `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`: pass.
+- `node tests/regression/opl/regression-test-v22-provider-secret-boundary-contract.mjs`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs`: pass.
+- `node tests/health/health-check-v22-repo-bloat-audit-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass.
+
+Can-claim:
+
+- Existing backend-bound `gflabtoken` provider key refs can be reused by Portal OPL launch without raw key replay.
+- Figma Portal UI absorption is no longer the active cursor; its local repo-native evidence is archived.
+- The next local productization cursor is `portal-typed-api-contract`.
+
+Cannot-claim:
+
+- OPL entry real preflight / launch UI state is fully closed.
+- Go backend has replaced the current Node Portal backend.
+- Real cloud, deploy, kubectl, build/push, live-test, live provider evidence or production billing is authorized.
+
+landed_commit: `816f7431ad3b5c8c0524b058d11eb08e851b055e`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `816f7431ad3b5c8c0524b058d11eb08e851b055e`.
+- Current closeout branch updates only docs/specs/changes/fixtures/tests lifecycle state; no secret, cloud, deploy, kubectl, build/push or live-test was run.
+
+post_merge_closeout: `completed`
+
+next_cursor: `portal-typed-api-contract`

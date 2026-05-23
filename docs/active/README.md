@@ -15,21 +15,21 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 | Field | Value |
 | --- | --- |
-| current phase | `post-local-RC productization / Figma Portal UI absorption active` |
-| current cursor | `figma-portal-ui-absorption` |
-| current blocker | Figma Make UI is external prototype input until absorbed into repo-native frontend source; real cloud / secret / provider operation / deploy / kubectl / build-push / live-test still require explicit authorization |
-| next owner | `MedOPL Platform` for Figma Portal UI repo absorption; `MedOPL Operations` for later real-cloud authorization boundary |
-| open change package | `changes/active/figma-portal-ui-absorption` |
+| current phase | `post-local-RC productization / Portal typed API contract active` |
+| current cursor | `portal-typed-api-contract` |
+| current blocker | Portal frontend pages must stay on typed API modules and backend projections before OPL entry real state and Go control-plane takeover; real cloud / secret / provider operation / deploy / kubectl / build-push / live-test still require explicit authorization |
+| next owner | `MedOPL Platform` for Portal typed API contract; `MedOPL Operations` for later real-cloud authorization boundary |
+| open change package | `changes/active/portal-typed-api-contract` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `feat/golden-path-productization-roadmap` / `c7df83bd829bac9bbf6ed6501cff616ee7b7a81f` |
+| latest repo closeout | `feat/medopl-gap-provider-reuse` / `816f7431ad3b5c8c0524b058d11eb08e851b055e` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class and golden-path-productization-roadmap are closed. The next executable cursor is Figma Portal UI absorption; real cloud remains a separately authorized blocker, not the default next implementation package. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption and provider key reuse are closed locally. The next executable cursor is Portal typed API contract; real cloud remains a separately authorized blocker, not the default next implementation package. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 
-- `figma-portal-ui-absorption`: Figma Make is external prototype input until it is absorbed into repo-native Portal frontend source, typed API wiring and local eval evidence.
+- `portal-typed-api-contract`: Portal frontend pages must use typed API modules and backend projections instead of page-local temporary readiness, billing, resource or OPL launch truth.
 - `real-cloud-authorization-boundary`: secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence are not authorized by default.
 - `service-sync-helper-retention`: `scripts/sync-workspace-file-to-minio.ps1` remains because `services/portal/src/config/portal-config.mjs` still references it; it is an implementation debt, not a docs/eval truth source.
 

@@ -58,6 +58,7 @@
         "billing_audit_aggregation"
       ],
       "paths": [
+        "services/portal/src/domain/provider-key-bindings.mjs",
         "services/portal/src/domain/user-credit-provider-key-flow.mjs",
         "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
       ]

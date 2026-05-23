@@ -148,7 +148,10 @@ assert(productLoop, "product_engineering_loop_missing");
 const productLoopOverride = manifest.branch_override_suites.find((suite) => suite.id === "product-engineering-loop-index");
 if (productLoop.status === "closed") {
   assert.equal(productLoopOverride, undefined, "product_engineering_loop_index_branch_override_must_be_removed_after_closeout");
-  assert.equal(current.current_cursor, "figma-portal-ui-absorption", "closed_product_loop_cursor_must_follow_productization_roadmap");
+  assert(
+    current.gaps?.some((gap) => gap.id === current.current_cursor && gap.cursor_eligible === true && gap.status === "active"),
+    "closed_product_loop_cursor_must_follow_active_productization_roadmap_gap",
+  );
   assert.equal(current.release_readiness_state?.next_cursor, "real-cloud-authorization-boundary", "real_cloud_boundary_must_remain_deferred_authorized_stage");
 } else {
   assert(productLoopOverride, "product_engineering_loop_index_branch_override_missing");
