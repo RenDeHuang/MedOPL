@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-24",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "9f703f0c858bb5cc93f4c7cca6606823d215c71f",
+  "base_trunk_head": "d7b9877cd6c6b87cd0a292f647149fc511cc842c",
   "current_branch": "opl-entry-real-preflight-launch",
   "current_branch_role": "productization_cursor",
   "authoring_branch": "opl-entry-real-preflight-launch",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "9f703f0c858bb5cc93f4c7cca6606823d215c71f",
+  "last_landed_commit": "d7b9877cd6c6b87cd0a292f647149fc511cc842c",
   "current_cursor": "opl-entry-real-preflight-launch",
   "next_leaf": "opl-entry-real-preflight-launch",
   "current_stage": "S6 productization package 4 - OPL entry real preflight launch",
@@ -50,14 +50,15 @@
       "stage": "S6 productization package 2 - Portal typed API contract",
       "priority": 84,
       "cursor_eligible": false,
-      "status": "ready_for_landing_review",
+      "status": "closed",
       "next_leaf_step": "opl-entry-real-preflight-launch",
       "depends_on": [
         "figma-portal-ui-absorption",
         "provider-key-reuse"
       ],
       "closed_at": "2026-05-24",
-      "history_summary": "Typed API contract local evals passed; package archived and ready for landing closeout."
+      "history_summary": "Typed API contract package archived; current cursor advanced to OPL entry real preflight / launch.",
+      "landed_commit": "d7b9877cd6c6b87cd0a292f647149fc511cc842c"
     },
     {
       "id": "provider-key-reuse",
@@ -273,9 +274,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/medopl-gap-provider-reuse",
+  "last_landed_branch": "feat/medopl-gap-typed-api-closeout",
   "last_landed_at": "2026-05-24",
-  "history_latest_branch": "feat/medopl-gap-provider-reuse",
+  "history_latest_branch": "feat/medopl-gap-typed-api-closeout",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

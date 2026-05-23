@@ -139,6 +139,11 @@ post_push_verification:
 - The archived local RC package is tracked at `changes/archive/2026-05-23-local-golden-path-release-candidate`.
 - This closeout remains local/pre-cloud evidence and does not authorize secret read, real cloud, deploy, kubectl, build/push or live-test.
 
+post_push_verification:
+
+- `d7b9877cd6c6b87cd0a292f647149fc511cc842c` is merged into local recovery/platform-v22-trunk by ff-only.
+- Remote push verification is pending until the next push step.
+
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
@@ -3170,7 +3175,7 @@ next_cursor: `portal-typed-api-contract`
 
 ### 2026-05-24 feat/medopl-gap-typed-api-closeout
 
-Status: `authoring / ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `feat/medopl-gap-typed-api-closeout`
 
@@ -3185,7 +3190,7 @@ Scope:
 
 Commits:
 
-- pending landing commit for `docs(truth): close portal typed api cursor`.
+- `d7b9877` docs(truth): close portal typed api cursor.
 
 Verification result:
 
@@ -3217,10 +3222,15 @@ Cannot-claim:
 - Go backend has replaced the current Node Portal backend.
 - Real cloud, deploy, kubectl, build/push, live-test, live provider evidence or production billing is authorized.
 
-handoff_commit: `pending`
+landed_commit: `d7b9877cd6c6b87cd0a292f647149fc511cc842c`
 
-landing_gate_result: `pending`
+landing_gate_result: `passed / ff-only landed`
 
-post_merge_closeout: `pending`
+post_push_verification:
+
+- `d7b9877cd6c6b87cd0a292f647149fc511cc842c` is merged into local `recovery/platform-v22-trunk` by ff-only.
+- Remote push verification is pending until the next push step.
+
+post_merge_closeout: `completed`
 
 next_cursor: `opl-entry-real-preflight-launch`

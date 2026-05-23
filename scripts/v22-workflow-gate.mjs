@@ -444,10 +444,26 @@ function changedArchivePackages(changedFiles) {
     .filter(Boolean));
 }
 
-function reviewChangePackageRecords(changedFiles) {
+function archivePackageMatchesActiveId(archiveId, activeId) {
+  return archiveId === activeId || archiveId.endsWith(`-${activeId}`);
+}
+
+function activePackageWasArchived({ id, changedFiles, changedStatuses, archivePackageIds }) {
+  if (!archivePackageIds.some((archiveId) => archivePackageMatchesActiveId(archiveId, id))) return false;
+  const activeFiles = changedFiles.map(normalizePath).filter((file) => file.startsWith(`changes/active/${id}/`));
+  if (activeFiles.length === 0) return false;
+  return activeFiles.every((file) => {
+    const status = String(changedStatuses.get(file) || "");
+    return status.startsWith("D") || status.startsWith("R");
+  });
+}
+
+function reviewChangePackageRecords(changedFiles, changedStatuses = new Map()) {
+  const archivePackageIds = changedArchivePackages(changedFiles);
   const active = changedActivePackages(changedFiles)
+    .filter((id) => !activePackageWasArchived({ id, changedFiles, changedStatuses, archivePackageIds }))
     .map((id) => ({ id, root: "changes/active", path: `changes/active/${id}` }));
-  const archive = changedArchivePackages(changedFiles)
+  const archive = archivePackageIds
     .map((id) => ({ id, root: "changes/archive", path: `changes/archive/${id}` }));
   return [...active, ...archive].sort((left, right) => left.path.localeCompare(right.path));
 }
@@ -639,7 +655,7 @@ export function evaluateReview({
   const specsChanged = normalizedFiles.some(isSpecPath);
   const evalChanged = normalizedFiles.some(isV22EvalPath);
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
-  const reviewPackages = reviewChangePackageRecords(normalizedFiles).map(validateReviewChangePackage);
+  const reviewPackages = reviewChangePackageRecords(normalizedFiles, changedStatuses).map(validateReviewChangePackage);
   const validReviewPackages = reviewPackages.filter((record) => record.ok);
   const activeChanges = [...activeChangePackageNames, ...changedArchivePackages(normalizedFiles)].sort();
   const findings = [];

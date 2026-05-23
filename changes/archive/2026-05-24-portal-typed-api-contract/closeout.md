@@ -4,7 +4,7 @@ Status: archived
 
 ## Commits
 
-- `TBD before landing`: docs(truth): close portal typed api cursor
+- `d7b9877` docs(truth): close portal typed api cursor
 
 ## Verification
 
