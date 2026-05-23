@@ -30,9 +30,11 @@ This change makes the golden path the first default proof: user readiness, credi
 
 ## Golden Path Impact
 
+- improves: this package makes golden path health the first default verification surface.
 - Default product spine becomes: login / credit / provider key -> open managed environment -> launch OPL -> upload file / task -> run / artifact -> billing / trace / audit -> release / stop billing.
 - Changes that touch product, runtime, framework, source, tests or delivery must declare whether they preserve, improve, narrow, defer or intentionally do not affect this spine.
 - Governance gates remain required, but they follow golden path health in default verification.
+- required golden path eval: `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`.
 
 ## Authorization Boundary
 

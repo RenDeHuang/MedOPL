@@ -25,6 +25,12 @@ The repo already had one-person-lab-style truth taxonomy: active current truth, 
 - Do not read secrets, call real cloud, deploy, kubectl, build/push or live-test.
 - Do not restore retired `docs/contracts/**`, `docs/recovery/**`, root stage docs or `scripts/smoke-test-*`.
 
+## Golden Path Impact
+
+- preserves: this archived package created repo-native lifecycle gates without changing the product golden path implementation.
+- affected steps: no direct product step changed.
+- required golden path eval: `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json` remained the product smoke entry at closeout time.
+
 ## Authorization Boundary
 
 - No secret read unless explicitly authorized.
@@ -42,4 +48,3 @@ The repo already had one-person-lab-style truth taxonomy: active current truth, 
 - docs/delivery/README.md
 - docs/history/README.md
 - tests/fixtures/v22/agent-verify-manifest.json
-

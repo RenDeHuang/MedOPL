@@ -28,7 +28,7 @@ proposal -> spec delta -> design -> tasks -> eval plan -> implementation -> veri
 
 | File | Purpose |
 | --- | --- |
-| `proposal.md` | 为什么做、目标、非目标、owner、授权边界、affected plane。 |
+| `proposal.md` | 为什么做、目标、非目标、owner、affected plane、Golden Path Impact、授权边界。 |
 | `spec-delta.md` | 对 durable specs 的 `ADDED` / `MODIFIED` / `REMOVED` / `CANNOT-CLAIM` / `EVALS` delta。 |
 | `design.md` | 实现设计、边界、数据流、失败模式、surface impact。 |
 | `tasks.md` | 可单独 commit、可验证的任务列表。 |
@@ -62,6 +62,12 @@ Affected plane: Product | Integration | Runtime | Operations | Framework
 ## Non-Goals
 
 - <explicit non-goal>
+
+## Golden Path Impact
+
+- preserves | improves | narrows | defers | no-impact:
+- affected steps:
+- required golden path eval:
 
 ## Authorization Boundary
 
@@ -230,6 +236,7 @@ Status: ready_for_landing_review | landed | archived
 
 - branch name and base trunk
 - owner and affected platform plane
+- Golden Path Impact
 - subscribed docs/spec/policy/evidence files
 - impacted source surfaces
 - authorization boundary
@@ -238,7 +245,7 @@ Status: ready_for_landing_review | landed | archived
 - cannot-claim list
 - archive and history closeout target
 
-缺少 owner、授权边界、spec delta、eval plan、cannot-claim 或 archive target 时，必须 fail closed。
+缺少 owner、Golden Path Impact、授权边界、spec delta、eval plan、cannot-claim 或 archive target 时，必须 fail closed。
 
 ## Spec Delta Rules
 

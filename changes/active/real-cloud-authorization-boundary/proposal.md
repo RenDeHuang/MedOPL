@@ -24,6 +24,12 @@ The current cursor is the real-cloud authorization boundary. Pre-cloud local pro
 - Do not run build/push, kubectl, deploy or live-test.
 - Do not change Portal, Gateway, Runtime Bridge or cloud runtime behavior.
 
+## Golden Path Impact
+
+- defers: this package does not change the local golden path implementation.
+- affected steps: real cloud authorization remains the blocker after local golden path health.
+- required golden path eval: `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`.
+
 ## Authorization Boundary
 
 - No secret read unless explicitly authorized.

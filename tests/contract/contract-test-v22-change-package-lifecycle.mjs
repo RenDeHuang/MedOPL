@@ -61,6 +61,9 @@ async function assertChangePackage({ root, changeId, archived }) {
   for (const phrase of ["Owner:", "Affected plane:", "## Authorization Boundary", "## Non-Goals"]) {
     assertIncludes(proposal, phrase, `proposal_required_section:${changePath}`);
   }
+  assertIncludes(proposal, "## Golden Path Impact", `proposal_required_section:${changePath}`);
+  assert(/(?:preserves|improves|narrows|defers|no-impact)/iu.test(proposal), `proposal_golden_path_impact_must_classify:${changePath}`);
+  assert(/golden path eval|node scripts\/v22-verify\.mjs suite (?:golden-path|smoke)/iu.test(proposal), `proposal_golden_path_impact_must_reference_eval:${changePath}`);
   for (const heading of ["## ADDED", "## MODIFIED", "## REMOVED", "## CANNOT-CLAIM", "## EVALS"]) {
     assertIncludes(specDelta, heading, `spec_delta_required_section:${changePath}`);
   }
@@ -110,6 +113,7 @@ for (const phrase of [
 }
 
 assertIncludes(changesReadme, "proposal.md", "changes_required_file");
+assertIncludes(changesReadme, "Golden Path Impact", "changes_required_file");
 assertIncludes(changesReadme, "spec-delta.md", "changes_required_file");
 assertIncludes(changesReadme, "design.md", "changes_required_file");
 assertIncludes(changesReadme, "tasks.md", "changes_required_file");
