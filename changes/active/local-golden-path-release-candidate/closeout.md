@@ -5,7 +5,9 @@ Status: local-rc-eval-complete
 ## Commits
 
 - `d642f43 chore(rc): open local golden path release candidate`
-- `f628cb7 test(rc): add provider-bound local rc eval`
+- `f628cb7 test(rc): add provider-key-bound local rc eval`
+- `22ed6fb docs(rc): record local rc eval closeout`
+- `d311cd5 test(rc): satisfy workflow secret hygiene gate`
 
 ## Verification
 
@@ -17,6 +19,11 @@ Status: local-rc-eval-complete
 - `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk --dry-run --json`: pass.
 - `git diff --check -- docs specs scripts tests`: pass.
 - `node tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs` with authorized provider credential env: pass.
+- `npm run verify:golden-path`: pass.
+- `npm run verify:current`: pass.
+- `npm run verify:contract`: pass.
+- `npm run verify:review`: pass.
+- `npm --prefix services/portal run check`: pass.
 
 ## Can Claim
 
