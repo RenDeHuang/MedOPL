@@ -59,6 +59,21 @@ mock/snapshot provider
 
 Readonly and mutation lanes must use separate authorization, secret allowlists, runners and evidence. Evidence with real secrets or live cloud responses stays in `.runtime` and does not enter git.
 
+## Productization Delivery Sequence
+
+Local RC 之后，默认 delivery 不直接跳到真实云。先按下列 package 顺序让用户体验和工程边界闭合：
+
+| Order | Package | Purpose | Default eval boundary |
+| --- | --- | --- | --- |
+| 1 | `figma-portal-ui-absorption` | 把 Figma Make 的视觉/信息架构吸收到 repo-native Portal frontend。 | frontend typecheck, route/surface smoke, golden path suite |
+| 2 | `portal-typed-api-contract` | 固定 Portal frontend 与 backend control plane 的 typed JSON/API contract。 | API contract tests, frontend typecheck, Portal check |
+| 3 | `provider-key-reuse` | 已绑定用户 `providerKeyRef` 可被 OPL launch/preflight 复用，不要求重复输入 raw key。 | provider secret boundary tests, OPL preflight/launch regression |
+| 4 | `opl-entry-real-preflight-launch` | OPL entry UI 读取真实 preflight、launch、providerKeyRef、Gateway readiness 和 fail-closed reason。 | OPL entry runtime regression, golden path suite |
+| 5 | `go-control-plane-takeover` | Go 接管 MedOPL control-plane business truth；Node Portal/Gateway/Bridge 收窄为 UI/API shell 与 integration relay。 | Go tests, backend convergence package, Portal contract regression |
+| 6 | `real-cloud-authorization` | 只在显式授权后执行 secret/cloud/provider/deploy work。 | cloud future-authorized dry-run first, then authorized live package |
+
+每个 package 必须遵守 `truth/gap -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> history closeout`。治理 gate 保留为护栏，但 default verify 先展示 golden path health。
+
 ## Authoring Record Discipline
 
 Each authoring branch or cleanup branch records:

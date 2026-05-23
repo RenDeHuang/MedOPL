@@ -53,6 +53,25 @@ Cannot claim:
 - local golden smoke 不证明真实云开通、真实扣费、production deploy、kubectl rollout、live provider 或 production runtime。
 - governance gate 通过不等于黄金链路健康；如果黄金链路 fail，默认 verify 必须先暴露 product failure。
 
+## Productization Roadmap
+
+Local RC 之后的产品化顺序以用户体验为中心，不以治理面完整性为中心：
+
+```text
+Figma UI repo-native absorption
+-> typed Portal API contract
+-> provider key reuse
+-> OPL entry real preflight / launch state
+-> Go control-plane takeover
+-> real-cloud authorization
+```
+
+这六个 package 是黄金链路的后续交付顺序。每个 package 都必须单独开 `changes/active/<change-id>`，声明 Golden Path Impact、spec delta、eval plan、cannot-claim、review 和 archive closeout。
+
+Figma Make 只提供视觉和信息架构输入；只有吸收到 `services/portal/frontend`、接入 typed API boundary、通过 frontend check / route smoke / golden path eval 后，才成为 repo-native frontend truth。OPL entry 不能继续展示 mock readiness；它必须读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态。
+
+Go backend 是 MedOPL control-plane business truth 的目标承载面。它应该先接管用户、workspace、provider key ref、managed environment intent、billing/audit projection 和 workflow command；OPL Web Gateway 与 Runtime Bridge 可以在迁移期继续作为薄 Node anti-corruption / relay 边界。`services/medopl-go-backend` 目录存在不等于 Go 已经是 current production backend。
+
 ## Optional Resource Lifecycle
 
 计算资源和文件空间不是默认强制能力。未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 工作台或受限工作台，但不能跑平台托管计算任务。
