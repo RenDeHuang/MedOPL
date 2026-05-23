@@ -22,6 +22,7 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 11. [references](./references/README.md): 外部参考、upstream 参考和迁移摘要。
 12. [history](./history/README.md): agent-run、landing gate、landed 记录、cleanup 记录和 provenance 摘要。
 13. [tests](../tests/README.md): repo-local eval taxonomy、fixtures、manifest 和 lifecycle gate。
+14. [changes](../changes/README.md): repo-native change lifecycle、proposal、spec delta、eval plan、review、archive 和 closeout。
 
 ## Truth Lookup
 
@@ -45,7 +46,15 @@ Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-ver
 docs/README -> active truth -> product/runtime/framework -> specs/evidence/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor
 ```
 
+正式工程变更使用更严格的 change lifecycle：
+
+```text
+active truth -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> durable specs sync -> history closeout -> next cursor
+```
+
 如果任一环节漂移，以 `docs/active/README.md`、`docs/specs/README.md`、`tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json` 和 `docs/history/README.md` 的一致性为裁定对象；不能用聊天记录或旧路径补事实。
+
+`changes/README.md` 是 open change 和 archive change 的 repo-native 生命周期入口。它不是 docs taxonomy 的第二套 truth，也不改变 `docs/{active,product,runtime,framework,specs,evidence,policies,delivery,source,public,references,history}/` 一目录一 README 规则。`docs/active/README.md` 可以指向 open change，但不得承载 change package 正文。
 
 Active 文档只保当前 owner、当前状态、下一步 gate 和完成口径。product slide、cleanup tranche 或 framework run 这类执行序列只能作为 open baton 出现在 machine fixture / manifest 中；完成后必须折叠为 `docs/history/README.md` 摘要、closed summary 和 next cursor，不在 active truth 或 per-slide markdown 中永久保留。
 

@@ -27,6 +27,12 @@ State: `active`
 - 当前业务 cursor 仍由 `tests/fixtures/v22/goal-current.json` 表达。
 - verify manifest 必须把 cleanup lifecycle gate 纳入 `current` 和 `local-contract`。
 
+## Change Package Lifecycle
+
+`changes/README.md` 是 repo-native change lifecycle 入口。正式工程变更必须把 proposal、spec delta、design、tasks、eval plan、review 和 closeout 写入 `changes/active/<change-id>`；完成后归档到 `changes/archive/YYYY-MM-DD-<change-id>`，再同步 durable specs 和 `docs/history/README.md` 摘要。
+
+Change lifecycle gate 是 `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`。该 gate 必须确认 `changes/` 存在、required files 和 file templates 被定义，并且 active change 不使用 template id。
+
 新增测试必须先选定 taxonomy 目录；不能为了便利新增 `scripts/smoke-test-*` 或把所有 repo-local eval 叫 smoke。
 
 `docs/README.md` 必须把本文件作为 lifecycle taxonomy 的验证入口之一；docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移。

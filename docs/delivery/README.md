@@ -70,6 +70,12 @@ Each authoring branch or cleanup branch records:
 
 The durable human summary is `docs/history/README.md`; detailed proof remains in git history and command output.
 
+## Change Package Delivery
+
+Formal engineering work must create or update `changes/active/<change-id>` before implementation. The package owns proposal, spec delta, design, tasks, eval plan, review and closeout for that branch. `docs/active/README.md` may only point to the open change package; it must not duplicate change details.
+
+Delivery closeout must move completed packages to `changes/archive/YYYY-MM-DD-<change-id>`, sync accepted deltas into durable specs, and add a compact summary to `docs/history/README.md`. If the change updates the current cursor, update both `docs/active/README.md` and `tests/fixtures/v22/goal-current.json`.
+
 ## Backend Go Convergence Authoring Lane
 
 `feat/v22-backend-go-convergence-program` 是后端收敛 authoring lane。它不接管当前 `real-cloud-authorization-boundary` product cursor，不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。

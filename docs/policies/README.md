@@ -20,6 +20,7 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 ## Framework Landing Protocol
 
 - authoring branch 只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明订阅合同、边界和验收命令，按 step commit，最后交 landing gate。
+- 正式工程变更必须先有 `changes/active/<change-id>`，把 proposal、spec delta、design、tasks、eval plan、review 和 closeout 作为 repo-native artifact 管理。
 - landing gate 执行 fresh review、ff-only merge、push、post-push verification 和 post-merge closeout；authoring branch 不自合入。
 - parallel lane 可以并行推进互不冲突的只读审计或清退分支，但合入前必须基于最新 trunk 重放并通过同一个 landing gate。
 - subagent 必须显式记录模型；允许模型为 `gpt-5.4`、`gpt-5.3-codex`、`gpt-5.4-mini`。
@@ -41,6 +42,14 @@ README files are human truth, not machine APIs. Tests and workflow gates may ver
 
 History 中的旧路线只能作为 provenance，不得反向恢复 active owner、default verify、compat alias 或 product mainline。
 
+## Repo-Native Change Package Policy
+
+`changes/README.md` 定义 change package 生命周期。`docs/active/README.md` 只保 current truth；proposal、spec delta、design、tasks、eval plan、review 和 closeout 必须进入 `changes/active/<change-id>`，完成后进入 `changes/archive/YYYY-MM-DD-<change-id>`。
+
+Change package 是正式工程变更的准入面，不是第二份 current truth、不是 secret store、不是 production evidence。缺少 owner、授权边界、spec delta、eval plan、cannot-claim 或 archive target 时，必须 fail closed。
+
+聊天 prompt 可以启动工作，但不能替代 repo-native change package。后续 agent 必须能够只读 repo 就知道 open change、spec delta、eval plan、closeout 状态和 archive target。
+
 ## Framework Truth-Layer Policy
 
 - `docs/framework/README.md` 是 MedOPL Platform Framework 的 owner boundary、surface budget、admission 和 readiness 人读入口。
@@ -56,6 +65,12 @@ History 中的旧路线只能作为 provenance，不得反向恢复 active owner
 
 ```text
 truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor
+```
+
+正式工程变更的扩展生命周期为：
+
+```text
+truth -> changes/active/<change-id> -> spec delta -> eval plan -> implementation/cleanup -> verify -> review -> changes/archive/<date-change-id> -> durable specs sync -> history closeout -> next cursor
 ```
 
 稳定规则：

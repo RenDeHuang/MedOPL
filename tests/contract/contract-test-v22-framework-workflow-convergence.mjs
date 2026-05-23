@@ -74,12 +74,14 @@ assertIncludesAll(active, [
 assertIncludesAll(policies, [
   "Framework Landing Protocol",
   "Cleanup Lifecycle Policy",
+  "Repo-Native Change Package Policy",
   "ready_for_landing_review",
 ], "policies_framework_loop");
 
 assertIncludesAll(delivery, [
   "Framework Entry Commands",
   "Authoring Record Discipline",
+  "Change Package Delivery",
   "landing gate recommendation",
 ], "delivery_framework_loop");
 

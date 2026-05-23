@@ -89,6 +89,8 @@ assertIncludes(docsIndex, "forbidden content", "docs_index_portfolio_forbidden_c
 assertIncludes(docsIndex, "history handoff", "docs_index_portfolio_history_handoff");
 assertIncludes(docsIndex, "docs/**` 是人读生命周期面", "docs_index_must_define_human_lifecycle_surface");
 assertIncludes(docsIndex, "机器真相归 source、tests、fixtures、manifest、runner 和 API/CLI 行为", "docs_index_must_define_machine_truth_surface");
+assertIncludes(docsIndex, "changes/README.md", "docs_index_must_register_change_lifecycle_surface");
+assertIncludes(docsIndex, "active truth -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> durable specs sync -> history closeout -> next cursor", "docs_index_must_define_change_lifecycle_loop");
 assertIncludes(docsIndex, "open baton", "docs_index_must_define_open_baton_lifecycle");
 assertIncludes(docsIndex, "完成后必须折叠为 `docs/history/README.md` 摘要、closed summary 和 next cursor", "docs_index_must_define_baton_closeout");
 for (const dir of docsDirs) {
