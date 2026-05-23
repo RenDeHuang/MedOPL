@@ -16,6 +16,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 ## Default Verification
 
 ```bash
+node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk
@@ -23,11 +24,14 @@ node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 ```
 
+`golden-path` 是 default verify 的第一产品健康面；`health`、`local-contract`、`review` 和 change package gates 是后续治理护栏。
+
 ## Framework Entry Commands
 
 ```bash
 npm run test:fast
 npm run test:lanes
+npm run verify:golden-path
 npm run test:health
 npm run test:smoke
 npm run test:contract

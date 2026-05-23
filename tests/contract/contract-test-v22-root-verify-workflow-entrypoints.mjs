@@ -20,6 +20,7 @@ const [packageJson, workflowSource, manifest, delivery] = await Promise.all([
 const expectedScripts = {
   verify: "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "verify:current": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+  "verify:golden-path": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
   "verify:health": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
   "verify:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "verify:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
@@ -55,6 +56,7 @@ assert.deepEqual(
 
 for (const command of [
   "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+  "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
   "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
   "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
@@ -66,6 +68,7 @@ for (const command of [
 for (const expected of [
   "recovery/platform-v22-trunk",
   "npm --prefix services/portal ci",
+  "npm run verify:golden-path",
   "npm run verify:repo-hygiene",
   "npm run verify:health",
   "npm run verify:smoke",
@@ -117,8 +120,11 @@ for (const forbiddenPattern of [
 
 const packageSuite = manifest.package_suites.find((suite) => suite.id === "root-verify");
 assert(packageSuite, "root_verify_package_suite_missing");
+assert(packageSuite.commands.indexOf("npm run verify:golden-path") > packageSuite.commands.indexOf("npm run verify"), "root_verify_must_run_golden_path_after_current_verify");
+assert(packageSuite.commands.indexOf("npm run verify:golden-path") < packageSuite.commands.indexOf("npm run verify:repo-hygiene"), "root_verify_must_show_golden_path_before_governance");
 for (const command of [
   "npm run verify",
+  "npm run verify:golden-path",
   "npm run verify:repo-hygiene",
   "npm run repo:bloat",
   "npm run verify:review",
@@ -167,6 +173,7 @@ assert.deepEqual(docsEngineeringLoopSuite.commands, [
   "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-repo-bloat-audit.mjs --json",
   "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
@@ -177,7 +184,9 @@ assert.deepEqual(docsEngineeringLoopSuite.commands, [
 
 const changePackageGateSuite = manifest.package_suites.find((suite) => suite.id === "change-package-gate");
 assert(changePackageGateSuite, "change_package_gate_package_suite_missing");
+assert.equal(changePackageGateSuite.commands[0], "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json", "change_package_gate_must_start_with_golden_path");
 for (const command of [
+  "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite history-closeout --base origin/recovery/platform-v22-trunk --json",

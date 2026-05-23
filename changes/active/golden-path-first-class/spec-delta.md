@@ -32,6 +32,7 @@ Target specs:
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
 - `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`
 - `node tests/contract/contract-test-v22-golden-smoke-suite.mjs`
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json`
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `npm --prefix services/portal run check`

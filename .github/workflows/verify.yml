@@ -48,6 +48,7 @@ jobs:
         with:
           node-version: "22"
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: npm run verify:golden-path
       - run: npm run verify:smoke
       - run: npm run test:smoke
 

@@ -142,6 +142,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
@@ -234,6 +235,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
@@ -330,6 +332,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -429,6 +432,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -535,6 +539,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -641,6 +646,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -751,6 +757,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -863,6 +870,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -976,6 +984,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -1089,6 +1098,7 @@
         "figma-visual-redesign"
       ],
       "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -1156,6 +1166,7 @@
       "id": "current",
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -1219,6 +1230,13 @@
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs"
+      ]
+    },
+    {
+      "id": "golden-path",
+      "entrypoint": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
+      "commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs"
       ]
     },
     {
@@ -1347,6 +1365,7 @@
       "id": "root-verify",
       "commands": [
         "npm run verify",
+        "npm run verify:golden-path",
         "npm run verify:repo-hygiene",
         "npm run repo:bloat",
         "npm run verify:review",
@@ -1391,6 +1410,7 @@
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-repo-bloat-audit.mjs --json",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
@@ -1402,6 +1422,7 @@
     {
       "id": "change-package-gate",
       "commands": [
+        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite history-closeout --base origin/recovery/platform-v22-trunk --json",

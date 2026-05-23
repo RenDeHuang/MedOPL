@@ -100,6 +100,17 @@ const currentSuite = manifest.suites.find((suite) => suite.id === "current");
 assert(currentSuite, "current_suite_missing");
 assert.deepEqual(currentSuite.commands, currentLeaf.verification_commands, "current_suite_must_use_current_leaf_commands");
 
+const goldenPathSuite = manifest.suites.find((suite) => suite.id === "golden-path");
+assert(goldenPathSuite, "golden_path_suite_missing");
+assert.equal(goldenPathSuite.entrypoint, "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk", "golden_path_entrypoint_mismatch");
+assert.deepEqual(goldenPathSuite.commands, [
+  "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+], "golden_path_suite_commands_mismatch");
+assert.equal(currentLeaf.verification_commands[0], "node tests/contract/contract-test-v22-golden-smoke-suite.mjs", "current_leaf_must_start_with_golden_path_health");
+assert.equal(current.current_leaf.verification_commands[0], "node tests/contract/contract-test-v22-golden-smoke-suite.mjs", "current_fixture_must_start_with_golden_path_health");
+assert.equal(current.golden_path?.suite, "golden-path", "current_fixture_golden_path_suite_mismatch");
+assert.equal(current.golden_path?.role, "default_first_product_health", "current_fixture_golden_path_role_mismatch");
+
 const override = manifest.branch_override_suites.find((suite) => suite.id === "opl-framework-workflow-convergence");
 assert(override, "framework_workflow_branch_override_missing");
 assert(override.branches.includes("cleanup/v22-opl-framework-workflow-convergence"), "framework_workflow_branch_missing");

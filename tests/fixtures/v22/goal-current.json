@@ -52,6 +52,7 @@
     "cursor_eligible": false,
     "problem": "Real cloud execution is now the next product boundary, but it is not authorized by default. The only current executable proof is the local pre-cloud verification bundle plus closeout gates.",
     "verification_commands": [
+      "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
       "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -156,6 +157,7 @@
     ]
   },
   "verification_commands": [
+    "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
     "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
     "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
@@ -427,5 +429,15 @@
       "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
       "node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json"
     ]
+  },
+  "golden_path": {
+    "schema_version": 1,
+    "role": "default_first_product_health",
+    "suite": "golden-path",
+    "entrypoint": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
+    "smoke_entrypoint": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
+    "first_command": "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+    "can_claim": "repo-local golden path contract shape and fail-closed projection are covered before governance guardrails",
+    "cannot_claim": "production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   }
 }

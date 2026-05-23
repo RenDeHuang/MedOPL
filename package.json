@@ -4,6 +4,7 @@
   "scripts": {
     "verify": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
     "verify:current": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+    "verify:golden-path": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
     "verify:health": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
     "verify:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
     "verify:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",

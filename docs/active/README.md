@@ -36,7 +36,7 @@ Current summary: pre-cloud local product proof is closed; the next cursor remain
 
 | Check | Command |
 | --- | --- |
-| golden path health | `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk` |
+| golden path health | `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | current bundle | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | index loop | `node tests/contract/contract-test-v22-current-state-index-loop.mjs` |
 | cleanup lifecycle | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
