@@ -72,7 +72,9 @@
     "tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
     "tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
     "tests/contract/contract-test-v22-commercial-package-model.mjs",
-    "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs"
+    "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+    "tests/contract/contract-test-v22-change-package-lifecycle.mjs",
+    "tests/contract/contract-test-v22-spec-eval-traceability.mjs"
   ],
   "leaves": [
     {
@@ -1179,6 +1181,8 @@
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
+        "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+        "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -1247,6 +1251,8 @@
         "node tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs",
         "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
+        "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+        "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
@@ -1315,6 +1321,8 @@
         "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
+        "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+        "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
