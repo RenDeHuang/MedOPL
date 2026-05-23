@@ -88,6 +88,7 @@ Evidence requirement:
 
 - local smoke/regression proves Portal sanitized projection and product loop.
 - production claim requires authorized production evidence, not local smoke.
+- default verification starts with golden path health before governance guardrails.
 
 Cannot claim:
 
@@ -297,6 +298,7 @@ Promotion rule:
 Every authoring branch must declare:
 
 - branch intent and base trunk HEAD
+- golden path impact
 - subscribed docs/spec/policy/runtime/source files
 - affected plane(s)
 - owner boundary
@@ -308,7 +310,21 @@ Every authoring branch must declare:
 - verification commands
 - expected history closeout target
 
-Missing subscription, missing owner, missing authorization or missing evidence must fail closed as blocker or human gate.
+Missing golden path impact, missing subscription, missing owner, missing authorization or missing evidence must fail closed as blocker or human gate.
+
+Golden Path Impact must state whether the change preserves, improves, narrows, defers or does not affect the default product spine:
+
+```text
+login / credit / provider key
+-> open managed environment
+-> launch OPL
+-> upload file / task
+-> run / artifact
+-> billing / trace / audit
+-> release / stop billing
+```
+
+Governance gates remain mandatory guardrails, but they must not become the default narrative center. A branch cannot use contract, cleanup or closeout success to mask a golden path regression.
 
 ## Readiness Model
 

@@ -11,6 +11,6 @@ Product specs define what users buy and what Portal may claim about accounts, wo
 
 | Requirement | Owner plane | Source surface | Required evals | Evidence level | Cannot claim |
 | --- | --- | --- | --- | --- | --- |
+| `product:golden-path-default-spine` | Product | `docs/product/README.md`, `tests/fixtures/v22/agent-verify-manifest.json` | `node tests/contract/contract-test-v22-golden-smoke-suite.mjs`; `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json` | local smoke evidence | Local golden smoke proves production runtime, real cloud, real billing or live provider. |
 | `product:managed-opl-service` | Product | `docs/product/README.md`, `services/portal` | `node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs` | local smoke evidence | Real cloud resources, production billing or deploy are complete. |
 | `product:no-cloud-console-language` | Product | `docs/product/README.md`, Portal user routes | `node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs` | local regression proof | Users self-manage CVM/COS/K8s through MedOPL. |
-

@@ -17,6 +17,42 @@ Portal 不回答科研问题，不复制 OPL chatbot。Portal 负责准备、管
 
 普通用户主语言优先使用：账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额。租户、runtime、运行环境、environmentId 只能作为内部标签、对账标签或审计字段。
 
+## Golden Path
+
+MedOPL 默认产品主线是唯一黄金链路：
+
+```text
+login / credit / provider key
+-> open managed environment
+-> launch OPL
+-> upload file / task
+-> run / artifact
+-> billing / trace / audit
+-> release / stop billing
+```
+
+这条链路是 default verify 的第一公民。所有治理、合同、source debt、closeout 和 guardrail 都服务这条路径，不替代这条路径成为默认叙事中心。
+
+黄金链路的最小本地健康证明由 smoke-golden lane 持有，覆盖：
+
+- Portal SaaS 控制面用户体验边界。
+- 用户充值、provider key 绑定和 `providerKeyRef` 投影。
+- 托管环境开通和套餐 / 资源计划边界。
+- OPL entry / Gateway preflight / launch 边界。
+- Runtime Bridge session、message、fileRef、run、artifact 和 trace projection。
+- Portal 文件、账单、trace 回流。
+- release / stop billing / audit closure。
+
+Can claim:
+
+- local golden smoke 证明默认产品 spine 的 repo-local 合同形状、投影和 fail-closed 行为仍然存在。
+- default current verification 必须先展示 golden path health，再展示 governance guardrails。
+
+Cannot claim:
+
+- local golden smoke 不证明真实云开通、真实扣费、production deploy、kubectl rollout、live provider 或 production runtime。
+- governance gate 通过不等于黄金链路健康；如果黄金链路 fail，默认 verify 必须先暴露 product failure。
+
 ## Optional Resource Lifecycle
 
 计算资源和文件空间不是默认强制能力。未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 工作台或受限工作台，但不能跑平台托管计算任务。
