@@ -26,8 +26,51 @@ async function listDirs(repoPath) {
   return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
 }
 
+const requiredChangeFiles = Object.freeze([
+  "proposal.md",
+  "spec-delta.md",
+  "design.md",
+  "tasks.md",
+  "eval-plan.md",
+  "review.md",
+  "closeout.md",
+]);
+
 function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
+}
+
+async function assertChangePackage({ root, changeId, archived }) {
+  const changePath = `${root}/${changeId}`;
+  for (const file of requiredChangeFiles) {
+    assert.equal(await exists(`${changePath}/${file}`), true, `change_required_file_missing:${changePath}/${file}`);
+  }
+  if (archived) {
+    assert(/^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*$/u.test(changeId), `archived_change_id_must_include_date:${changeId}`);
+  } else {
+    assert(/^[a-z0-9][a-z0-9-]*$/u.test(changeId), `active_change_id_must_be_kebab:${changeId}`);
+    assert(!/^(?:template|tmp|misc|wip)$/iu.test(changeId), `active_change_id_forbidden:${changeId}`);
+  }
+
+  const proposal = await readRepoFile(`${changePath}/proposal.md`);
+  const specDelta = await readRepoFile(`${changePath}/spec-delta.md`);
+  const evalPlan = await readRepoFile(`${changePath}/eval-plan.md`);
+  const closeout = await readRepoFile(`${changePath}/closeout.md`);
+  const joined = [proposal, specDelta, evalPlan, closeout].join("\n");
+
+  for (const phrase of ["Owner:", "Affected plane:", "## Authorization Boundary", "## Non-Goals"]) {
+    assertIncludes(proposal, phrase, `proposal_required_section:${changePath}`);
+  }
+  for (const heading of ["## ADDED", "## MODIFIED", "## REMOVED", "## CANNOT-CLAIM", "## EVALS"]) {
+    assertIncludes(specDelta, heading, `spec_delta_required_section:${changePath}`);
+  }
+  assert(/specs\/[a-z-]+\/spec\.md/u.test(specDelta), `spec_delta_must_target_domain_spec:${changePath}`);
+  assert(/node (?:tests|scripts)\//u.test(evalPlan), `eval_plan_must_reference_eval_command:${changePath}`);
+  assertIncludes(closeout, "## Can Claim", `closeout_required_section:${changePath}`);
+  assertIncludes(closeout, "## Cannot Claim", `closeout_required_section:${changePath}`);
+  assertIncludes(closeout, "## Archive Target", `closeout_required_section:${changePath}`);
+  assert(!/\b(?:sk-[A-Za-z0-9_-]{20,}|SECRET_KEY\s*=|SECRET_ID\s*=|PRIVATE KEY|kubeconfig\s*[:=])/u.test(joined), `change_package_must_not_store_secret:${changePath}`);
+  assert(!/\bproduction (?:deploy|runtime|cloud|billing) (?:is )?(?:complete|ready|live)\b/iu.test(joined), `change_package_must_not_claim_production_truth:${changePath}`);
 }
 
 assert.equal(await exists("changes/README.md"), true, "changes_readme_required");
@@ -78,9 +121,14 @@ for (const heading of [
   assertIncludes(changesReadme, heading, `changes_template_heading:${heading}`);
 }
 
-const activeChanges = await listDirs("changes/active");
+const activeChanges = (await listDirs("changes/active")).filter((name) => name !== ".gitkeep");
 for (const changeId of activeChanges) {
   assert(!/^template$/iu.test(changeId), "active_changes_must_not_use_template_id");
+  await assertChangePackage({ root: "changes/active", changeId, archived: false });
+}
+const archivedChanges = (await listDirs("changes/archive")).filter((name) => name !== ".gitkeep");
+for (const changeId of archivedChanges) {
+  await assertChangePackage({ root: "changes/archive", changeId, archived: true });
 }
 
 const specsReadme = await readRepoFile("specs/README.md");
@@ -92,4 +140,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_change_package_lifecycle",
   activeChanges,
+  archivedChanges,
 }, null, 2));
