@@ -121,7 +121,7 @@ const REGISTRY_OVERRIDES = Object.freeze(new Map([
   ["tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
+  ["tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression","current","review"]}],
   ["tests/regression/portal/regression-test-v22-portal-runtime-startup-config.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
   ["tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs", {"surface":"portal","category":"portal-local","entryKind":"suite-wrapper","verifySuites":["local-regression"]}],
   ["tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],

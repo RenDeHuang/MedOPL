@@ -108,6 +108,7 @@ const labTypedApiFiles = [
   "internal/server/router.go",
   "internal/server/router_test.go",
 ];
+const localRCProviderKeyFixture = "local-rc-provider-key-material-that-must-stay-private";
 
 async function exists(repoPath) {
   try {
@@ -329,6 +330,81 @@ async function assertLabTypedPortalAPI() {
   assertNotMatches(labSource, /rawApiKey|providerSecret|apiKey|bearerToken|launchToken|runtimeToken|SecretId|SecretKey|kubeconfig|signedUrl|objectKey|localPath|http\.Client|redis\.NewClient|sql\.Open|pgx|lib\/pq|tencent|cloud\.|kubectl/u, "lab_typed_api_must_not_read_secret_or_call_cloud");
 }
 
+function runGoPackageTest(packagePath, testName, label) {
+  const result = spawnSync("go", ["test", packagePath, "-run", testName, "-count=1"], {
+    cwd: path.join(repoRoot, serviceRoot),
+    env: goEnv(),
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `${label}_failed:${result.stderr || result.stdout}`);
+  const output = `${result.stdout}\n${result.stderr}`;
+  assert.equal(output.includes(localRCProviderKeyFixture), false, `${label}_must_not_print_raw_provider_key`);
+  return output;
+}
+
+async function assertLocalRCControlPlaneParity() {
+  const serviceSource = await readRepoFile(`${serviceRoot}/internal/service/controlplane/service.go`);
+  const handlerSource = await readRepoFile(`${serviceRoot}/internal/server/handlers/controlplane.go`);
+  const billingApiSource = await readRepoFile("services/portal/frontend/src/api/portal/billing.ts");
+  const resourcesApiSource = await readRepoFile("services/portal/frontend/src/api/portal/resources.ts");
+  const oplApiSource = await readRepoFile("services/portal/frontend/src/api/portal/opl.ts");
+
+  for (const marker of [
+    "BillingSummary(ctx",
+    "BillingDetails(ctx",
+    "SaveAuditEvent",
+    "ledgerFromEvents",
+    "OwnerScope: \"go-control-plane\"",
+    "Resources(ctx",
+    "Release(ctx",
+    "ReleaseManagedResource",
+    "BillingStopped",
+    "ResourceStatusActive",
+  ]) {
+    assertIncludes(serviceSource, marker, `go_local_rc_control_plane_service:${marker}`);
+  }
+  for (const marker of [
+    'api.GET("/billing/summary"',
+    'api.GET("/billing/details"',
+    'api.GET("/costs/summary"',
+    'api.GET("/costs/workspace"',
+    'api.GET("/costs/run"',
+    'api.GET("/platform-provisioned-resources"',
+    'api.POST("/v22/managed-environment/release"',
+  ]) {
+    assertIncludes(handlerSource, marker, `go_local_rc_control_plane_handler:${marker}`);
+  }
+  for (const [label, source] of [
+    ["billing_api", billingApiSource],
+    ["resources_api", resourcesApiSource],
+    ["opl_api", oplApiSource],
+  ]) {
+    assertIncludes(source, "goControlPlaneClient", `portal_${label}_must_use_go_control_plane_client`);
+  }
+  assert.equal(billingApiSource.includes("apiClient.get"), false, "portal_billing_api_must_not_use_node_portal_client");
+  assert.equal(resourcesApiSource.includes("apiClient.get"), false, "portal_resources_api_must_not_use_node_portal_client");
+  assertIncludes(oplApiSource, "bindProviderKeyForOplEntry", "opl_api_must_expose_provider_key_binding_action");
+  assertIncludes(oplApiSource, '"/v22/provider-key"', "opl_api_provider_key_binding_must_call_go_v22_provider_key");
+
+  const providerLaunchOutput = runGoPackageTest(
+    "./internal/server/handlers",
+    "TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC",
+    "go_provider_launch_local_rc_parity",
+  );
+  assert(providerLaunchOutput.includes("ok"), "go_provider_launch_local_rc_parity_must_report_ok");
+  runGoPackageTest(
+    "./internal/service/controlplane",
+    "TestServiceRecordsFileRunArtifactBillingAuditAndRelease",
+    "go_billing_audit_local_rc_parity",
+  );
+  runGoPackageTest(
+    "./internal/domain/controlplane",
+    "TestReleaseStopsBillingAndKeepsHistoryAuditable",
+    "go_resource_release_local_rc_parity",
+  );
+}
+
 await assertServiceSurface();
 await assertEntPostgresBoundary();
 await assertVolatileBoundary();
@@ -336,6 +412,7 @@ await assertRunFileArtifactDomain();
 await assertRuntimeBrokerInterface();
 await assertWorkflowFacadeAndRoutes();
 await assertLabTypedPortalAPI();
+await assertLocalRCControlPlaneParity();
 
 console.log(JSON.stringify({
   ok: true,
@@ -345,4 +422,5 @@ console.log(JSON.stringify({
   canonicalTruth: "postgres_ent_schema",
   workflowFacade: "command_boundary",
   labTypedAPI: "go_control_plane_mvp",
+  localRCParity: "provider_launch_billing_audit_resource_release",
 }, null, 2));

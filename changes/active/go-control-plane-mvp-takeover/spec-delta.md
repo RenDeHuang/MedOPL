@@ -9,6 +9,7 @@ Target specs:
 
 - `source:go-control-plane-mvp-takeover` defines `services/medopl-go-backend` as the local MVP takeover target before any real-cloud readiness package.
 - `runtime:go-control-plane-mvp-api` requires Portal typed API to be served by the Go control-plane backend during local RC.
+- `runtime:go-local-rc-parity` requires provider/preflight/launch, billing/audit, resource projection and release/stop-billing local RC evals to be registered before real-cloud readiness.
 
 ## MODIFIED
 
@@ -27,12 +28,15 @@ Target specs:
 - This package does not claim real cloud readiness, production backend replacement, deploy, kubectl, build/push, live-test or live provider evidence.
 - This package does not authorize secret reads or provider/cloud mutation.
 - Local Go API proof does not prove production persistence, real billing reconciliation or real cloud lifecycle.
+- Local deterministic RC parity does not prove live provider, real OPL upstream, production secret storage, deploy, kubectl or production runtime evidence.
 
 ## EVALS
 
 - `node tests/contract/contract-test-v22-backend-go-convergence-program.mjs`
 - `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`
 - `node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs`
+- `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`
+- `node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs`
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
 - `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."`
 - `npm --prefix services/portal/frontend run typecheck`

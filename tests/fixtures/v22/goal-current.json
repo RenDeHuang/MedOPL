@@ -19,11 +19,11 @@
   "current_stage": "S6 Go control-plane MVP takeover before real-cloud readiness",
   "current_risk_class": "local_service_code",
   "current_blockers": [
-    "go_control_plane_mvp_must_cover_portal_typed_api_provider_launch_billing_audit_release_before_real_cloud_readiness",
-    "node_portal_business_truth_must_be_migrated_or_retired_without_compatibility_layer",
+    "go_control_plane_mvp_local_rc_parity_must_pass_for_provider_launch_billing_audit_resource_release_before_real_cloud_readiness",
+    "node_portal_business_truth_must_remain_retired_without_compatibility_layer",
     "real_cloud_secret_provider_deploy_kubectl_build_push_live_test_remain_deferred_until_go_local_rc_passes_and_user_authorizes_separate_package"
   ],
-  "current_problem": "The first Go control-plane MVP takeover slice landed: services/medopl-go-backend owns the local lab typed API surface and Node /portal/api/lab-* is a 410 retired shell. The current cursor remains go-control-plane-mvp-takeover because provider launch, billing/audit, resource workflow and release still need Go local RC parity before any real-cloud readiness package. Real cloud remains deferred and unauthorized.",
+  "current_problem": "The Go control-plane local RC parity slice is now implemented in the authoring branch for provider launch, billing/audit, resource workflow and release, with Portal typed APIs reading Go projections. The current cursor remains go-control-plane-mvp-takeover until the local RC eval bundle, review gate and landing closeout pass. Real cloud remains deferred and unauthorized.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -106,13 +106,13 @@
       "priority": 90,
       "cursor_eligible": true,
       "status": "active",
-      "next_leaf_step": "go-control-plane-local-rc-parity",
+      "next_leaf_step": "go-control-plane-local-rc-verify-and-closeout",
       "depends_on": [
         "portal-typed-api-contract",
         "provider-key-reuse",
         "opl-entry-real-preflight-launch"
       ],
-      "history_summary": "First Go takeover slice landed: Go owns local lab typed API under /api/lab-* and Node lab API business routes are retired as 410 shells. Remaining provider launch, billing/audit, resource workflow and release parity stays active under the same cursor.",
+      "history_summary": "First Go takeover slice landed; current authoring branch adds local RC parity for provider launch, billing/audit, resource workflow and release. It remains active until eval/review/landing closeout completes; it is not real-cloud readiness evidence.",
       "landed_commit": "116b649ed7ad1ee9955ebff11e86a4b2b8a6579e",
       "closed_at": "2026-05-24"
     }
@@ -122,7 +122,7 @@
     "gap_id": "go-control-plane-mvp-takeover",
     "stage": "S6 Go control-plane MVP takeover before real-cloud readiness",
     "cursor_eligible": true,
-    "problem": "Go must become the local control-plane MVP before any real-cloud readiness work. Node Portal backend business truth must be migrated or retired without a compatibility layer; real cloud stays deferred.",
+    "problem": "Go must pass local RC parity for provider launch, billing/audit, resource workflow and release before any real-cloud readiness work. Node Portal backend business truth stays retired without a compatibility layer; real cloud stays deferred.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
@@ -153,7 +153,8 @@
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
       "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend",
       "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-      "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
+      "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
     ],
     "allowed_files": [
       "docs/**/*.md",
@@ -238,6 +239,7 @@
     "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
     "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+    "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
     "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
     "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
     "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
@@ -255,7 +257,8 @@
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend",
     "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-    "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
+    "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
   ],
   "truth_source_files": [
     "docs/active/README.md",
@@ -483,10 +486,22 @@
     ],
     "verification_commands": [
       "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+      "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
       "node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json",
-      "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\""
+      "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+      "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
     ],
-    "does_replace_current_cursor": true
+    "does_replace_current_cursor": true,
+    "local_rc_parity": {
+      "status": "folded_into_existing_registered_gates_pending_full_eval",
+      "evidence_level": "local_go_deterministic_rc_parity",
+      "commands": [
+        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
+      ],
+      "can_claim": "Go-owned local RC projections cover provider/preflight/launch, billing/audit, resources and release/stop-billing through deterministic local evals.",
+      "cannot_claim": "live provider, production secret storage, real OPL upstream, real cloud, deploy, kubectl, build/push, production billing or production runtime evidence"
+    }
   },
   "golden_path": {
     "schema_version": 1,

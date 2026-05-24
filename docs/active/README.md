@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | --- | --- |
 | current phase | `Go control-plane MVP takeover before real-cloud readiness` |
 | current cursor | `go-control-plane-mvp-takeover` |
-| current blocker | Go must become the local control-plane MVP for Portal typed API, provider launch, billing/audit, resource workflow and release before any real-cloud readiness package; secret read, provider operation, true cloud mutation, deploy, kubectl, build/push and live-test remain deferred |
+| current blocker | Go local RC parity for provider launch, billing/audit, resource workflow and release must pass current/review eval before any real-cloud readiness package; secret read, provider operation, true cloud mutation, deploy, kubectl, build/push and live-test remain deferred |
 | next owner | `MedOPL Platform` for Go MVP takeover and Node Portal backend business truth retirement; `MedOPL Operations` only after Go local RC passes and a separate real-cloud readiness package is authorized |
 | open change package | `changes/active/go-control-plane-mvp-takeover` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
@@ -25,11 +25,11 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
 | latest repo closeout | `feat/v22-go-control-plane-mvp-takeover` / `116b649ed7ad1ee9955ebff11e86a4b2b8a6579e` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening and the first Go lab typed API takeover slice are closed locally. Go control-plane MVP takeover is the current local program; it remains active because provider launch, billing/audit, resource workflow and release still need Go local RC parity before real-cloud readiness. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening and the first Go lab typed API takeover slice are closed locally. Go control-plane MVP takeover is the current local program; this authoring branch adds local RC parity for provider launch, billing/audit, resource workflow and release, and it remains active until the repo-native eval/review/landing closeout passes. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 
-- `go-control-plane-mvp-takeover`: Portal typed API, provider launch, billing/audit, resource workflow and release must move to Go local MVP before real-cloud readiness.
+- `go-control-plane-mvp-takeover`: provider launch, billing/audit, resource workflow and release local RC parity must pass current/review eval before real-cloud readiness.
 - `node-portal-business-truth-retirement`: Node Portal backend business truth must be migrated or deleted without a compatibility layer; temporary shell/relay code must not own control-plane truth.
 - `real-cloud-authorization-boundary`: real cloud, secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence are deferred until Go local RC passes and a separate authorization package is opened.
 
@@ -43,6 +43,7 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 | cleanup lifecycle | `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs` |
 | product loop closeout | `node tests/contract/contract-test-v22-product-engineering-loop-index.mjs` |
 | framework truth layering | `node tests/contract/contract-test-v22-framework-truth-layering.mjs` |
+| Go local RC parity | `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`; `node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs` |
 
 ## Cannot Claim
 
@@ -55,6 +56,7 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 - 不能把 backend Go convergence program 写成第二份阶段板、旧式合同目录、旧式 recovery 目录或未注册测试。
 - 不能把 real-cloud authorization 写成当前执行包；当前执行包是 Go control-plane MVP takeover。
 - 不能宣称 `services/medopl-go-backend` 已经是 production backend，除非 Go local RC、manifest、tests、landing gate 和 post-merge closeout 已完成。
+- 不能把 Go local RC deterministic parity 写成 live provider、真实 OPL upstream、real-cloud、production billing 或 production runtime evidence。
 - 不能把 Node Portal backend 写成长期 active backend、兼容层或第二控制面；它只能作为清退对象或非业务 shell/relay。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 - 不能把 governance gate 通过写成黄金链路健康；default verify 必须先暴露 golden path health。

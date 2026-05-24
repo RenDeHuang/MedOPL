@@ -7,6 +7,8 @@ node tests/contract/contract-test-v22-backend-go-convergence-program.mjs
 node tests/contract/contract-test-v22-go-backend-service-surface.mjs
 node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs
 node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs
+node tests/contract/contract-test-v22-go-backend-service-surface.mjs
+node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs
 node tests/contract/contract-test-v22-change-package-lifecycle.mjs
 node tests/contract/contract-test-v22-current-state-index-loop.mjs
 bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."
@@ -20,11 +22,13 @@ git diff --check -- docs specs changes tests scripts package.json services/porta
 
 - local contract proof
 - local service proof
+- local Go deterministic RC parity proof
 - local golden path proof
 
 ## Can Claim
 
 - Go control-plane MVP takeover is represented as the current local package.
+- Provider launch, billing/audit, resource workflow and release projections are covered by local deterministic Go RC parity evals.
 - The default path to real-cloud readiness is blocked until Go local RC passes.
 - Node Portal backend business truth is a retirement target, not the long-term backend.
 

@@ -18,7 +18,7 @@ Go control-plane MVP takeover surface：
 
 - `services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness.
 
-`services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 Go local RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。
+`services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 Go local RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。当前 authoring branch 的 Go local RC parity 只覆盖 provider/preflight/launch、billing/audit、resource projection 和 release/stop-billing 的 deterministic local proof，不证明 live provider、真实 upstream OPL、real cloud 或 production billing。
 
 Retirement surface：
 
@@ -39,7 +39,7 @@ Retirement surface：
 迁移期源码边界：
 
 - `services/portal/frontend` 是 active frontend implementation；它必须通过 typed API 读取 Go control-plane projection。
-- `services/medopl-go-backend` 是 local MVP control-plane implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow 和 release/stop billing。
+- `services/medopl-go-backend` 是 local MVP control-plane implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow 和 release/stop billing，相关 local RC parity eval 必须在 manifest/test lane registry 中可追踪。
 - `services/portal/src` 是 Node Portal backend retirement surface；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
 - `services/portal/src/app/portal-runtime.mjs` 只能作为迁移期 shell/eval dependency；不得重新直接 fan-out 到 product domain / presentation helpers，domain/presentation dependency assembly 归 `services/portal/src/app/portal-runtime-app-deps.mjs`，并在 Go parity 后清退。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。

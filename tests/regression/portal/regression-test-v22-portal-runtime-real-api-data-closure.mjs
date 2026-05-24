@@ -10,6 +10,8 @@ const repoRoot = process.cwd();
 const runtimePagePath = path.join(repoRoot, "services", "portal", "frontend", "src", "app", "pages", "RuntimeEnvironment.tsx");
 const adapterPath = path.join(repoRoot, "services", "portal", "frontend", "src", "app", "data", "portalAdapters.ts");
 const apiPath = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "portal", "lab.ts");
+const oplEntryPath = path.join(repoRoot, "services", "portal", "frontend", "src", "app", "pages", "OPLEntry.tsx");
+const oplApiPath = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "portal", "opl.ts");
 const clientPath = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "client.ts");
 const viteConfigPath = path.join(repoRoot, "services", "portal", "frontend", "vite.config.ts");
 const sourceTruthPath = path.join(repoRoot, "docs", "source", "README.md");
@@ -63,6 +65,8 @@ function assertNotIncludes(source, phrase, label) {
 const runtimeSource = readSource(runtimePagePath);
 const adapterSource = readSource(adapterPath);
 const apiSource = readSource(apiPath);
+const oplEntrySource = readSource(oplEntryPath);
+const oplApiSource = readSource(oplApiPath);
 const clientSource = readSource(clientPath);
 const viteConfigSource = readSource(viteConfigPath);
 const sourceTruth = readSource(sourceTruthPath);
@@ -112,6 +116,28 @@ assertNotIncludes(apiSource, "apiClient.get<LabPackagesPayload>", "lab_packages_
 assertNotIncludes(apiSource, "apiClient.get<LabSubscriptionPayload>", "lab_subscription_must_not_use_node_portal_client");
 assertNotIncludes(apiSource, "apiClient.get<LabEntitlementPayload>", "lab_entitlement_must_not_use_node_portal_client");
 assertNotIncludes(apiSource, "apiClient.post", "lab_mutations_must_not_use_node_portal_client");
+assertIncludes(oplApiSource, "bindProviderKeyForOplEntry", "opl_api_must_expose_go_provider_key_binding_action");
+assertIncludes(oplApiSource, "goControlPlaneClient.post", "opl_api_provider_key_binding_must_use_go_control_plane_client");
+assertIncludes(oplApiSource, '"/v22/provider-key"', "opl_api_provider_key_binding_must_call_go_v22_provider_key");
+assertIncludes(oplEntrySource, "bindProviderKeyForOplEntry", "opl_entry_must_import_provider_key_binding_action");
+assertIncludes(oplEntrySource, "providerKeyInput", "opl_entry_must_keep_provider_key_as_one_time_input_state");
+assertIncludes(oplEntrySource, "handleProviderKeyBind", "opl_entry_must_have_explicit_provider_key_bind_handler");
+assertIncludes(oplEntrySource, "type=\"password\"", "opl_entry_provider_key_input_must_be_password_field");
+assertIncludes(oplEntrySource, "绑定后进入 OPL", "opl_entry_provider_key_cta_must_be_visible");
+assertIncludes(oplEntrySource, "window.location.reload()", "opl_entry_must_reload_projection_after_provider_key_bind");
+assertIncludes(adapterSource, "providerBound: status.providerBound", "opl_entry_adapter_must_still_forward_go_provider_bound");
+
+for (const forbidden of [
+  "localStorage",
+  "sessionStorage",
+  "document.cookie",
+  "URLSearchParams(providerKeyInput",
+  "launchToken",
+  "runtimeToken",
+  "bearerToken",
+]) {
+  assertNotIncludes(oplEntrySource, forbidden, "opl_entry_provider_key_ui_must_not_persist_or_expose_secret");
+}
 
 for (const filePath of listFrontendSourceFiles(path.join(repoRoot, "services", "portal", "frontend", "src"))) {
   const source = readSource(filePath);
@@ -136,6 +162,7 @@ console.log(JSON.stringify({
     "runtime_adapter_reads_lab_package_subscription_entitlement_api",
     "runtime_page_uses_upgrade_api",
     "lab_typed_api_uses_go_control_plane_client",
+    "opl_entry_provider_key_binding_uses_go_control_plane_client",
     "node_lab_route_demoted_to_retirement_shell",
     "active_missing_ui_adjudications_removed",
   ],
