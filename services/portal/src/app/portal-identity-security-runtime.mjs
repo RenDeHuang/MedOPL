@@ -1,3 +1,8 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const defaultExecFileAsync = promisify(execFile);
+
 export function createPortalIdentitySecurityRuntime({
   env = {},
   deps = {},
@@ -16,7 +21,7 @@ export function createPortalIdentitySecurityRuntime({
   } = env;
   const {
     access,
-    execFileAsync,
+    execFileAsync = defaultExecFileAsync,
     repoRoot,
   } = deps;
 

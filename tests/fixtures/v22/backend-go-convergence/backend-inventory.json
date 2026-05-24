@@ -398,7 +398,6 @@
         "services/portal/src/app/portal-runtime-bootstrap.mjs",
         "services/portal/src/app/portal-runtime-clients.mjs",
         "services/portal/src/app/portal-runtime-config.mjs",
-        "services/portal/src/app/portal-runtime-http.mjs",
         "services/portal/src/app/portal-runtime-observability.mjs",
         "services/portal/src/app/portal-runtime.mjs",
         "services/portal/src/app/portal-server-plan-runtime-handler.mjs"

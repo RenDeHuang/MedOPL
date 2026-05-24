@@ -2,9 +2,7 @@
 import path from "node:path";
 import { mkdir, readFile, writeFile, access, readdir, stat, rename } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
-import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { promisify } from "node:util";
 import * as portalConfig from "./portal-runtime-config.mjs";
 import {
   adminSeed,
@@ -84,7 +82,7 @@ import {
   sendJson,
   sendStaticAsset,
   setCookie,
-} from "./portal-runtime-http.mjs";
+} from "../lib/http.mjs";
 import { createPortalRuntimeRouteWiring } from "./portal-runtime-route-wiring.mjs";
 import { createPortalWorkflowFacade } from "../services/portal-workflow-facade.service.mjs";
 
@@ -178,8 +176,6 @@ const {
   },
 });
 
-const execFileAsync = promisify(execFile);
-
 const {
   buildAdminSecuritySummary,
   exchangeOidcCode,
@@ -200,7 +196,6 @@ const {
   },
   deps: {
     access: (file) => access(file, fsConstants.R_OK),
-    execFileAsync,
     repoRoot,
   },
 });

@@ -108,7 +108,7 @@ function uniqueImportSources(source) {
 
 const runtimeImports = uniqueImportSources(portalRuntimeSource);
 const appDepsImports = uniqueImportSources(portalRuntimeAppDepsSource);
-assert(runtimeImports.length <= 18, `${portalRuntimePath}:fanout_must_not_regrow:${runtimeImports.length}`);
+assert(runtimeImports.length <= 16, `${portalRuntimePath}:fanout_must_not_regrow:${runtimeImports.length}`);
 assert(portalRuntimeSource.includes("portalRuntimeAppDeps"), `${portalRuntimePath}:must_use_app_deps_assembly`);
 for (const forbidden of [
   "./portal-commercial-domain.mjs",
