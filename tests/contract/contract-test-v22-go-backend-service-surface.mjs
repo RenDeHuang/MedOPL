@@ -95,6 +95,19 @@ const workflowRouteFiles = [
   "internal/server/router.go",
   "internal/server/router_test.go",
 ];
+const labTypedApiFiles = [
+  "internal/domain/lab/lab.go",
+  "internal/domain/lab/lab_test.go",
+  "internal/repository/lab/store.go",
+  "internal/repository/memory/lab_store.go",
+  "internal/repository/memory/lab_store_test.go",
+  "internal/service/lab/service.go",
+  "internal/service/lab/service_test.go",
+  "internal/server/handlers/lab.go",
+  "internal/server/handlers/lab_test.go",
+  "internal/server/router.go",
+  "internal/server/router_test.go",
+];
 
 async function exists(repoPath) {
   try {
@@ -298,18 +311,38 @@ async function assertWorkflowFacadeAndRoutes() {
   }
 }
 
+async function assertLabTypedPortalAPI() {
+  const labMarkers = new Map([
+    ["internal/domain/lab/lab.go", ["type PackagePlan struct", "type Subscription struct", "type Entitlement struct", "Catalog()", "PackageByID", "ValidateWorkspaceID", "ValidatePackageID", "BuildEntitlement", "ErrWorkspaceRequired", "ErrPackageRequired", "ErrPackageNotFound"]],
+    ["internal/repository/lab/store.go", ["type Store interface", "ListPackages", "SubscriptionByWorkspace", "ActivateSubscription", "UpgradeSubscription"]],
+    ["internal/repository/memory/lab_store.go", ["type LabStore struct", "NewLabStore", "ListPackages", "SubscriptionByWorkspace", "ActivateSubscription", "UpgradeSubscription"]],
+    ["internal/service/lab/service.go", ["type Service struct", "ListLabPackages", "GetLabSubscription", "GetLabEntitlement", "ActivateLabPackage", "UpgradeLabPackage"]],
+    ["internal/server/handlers/lab.go", ["func LabPackages", "func LabSubscription", "func LabEntitlement", "func ActivateLabPackage", "func UpgradeLabPackage", "workspace_id_required", "package_id_required", "package_not_found"]],
+    ["internal/server/router.go", ["api := router.Group(\"/api\")", "GET(\"/lab-packages\"", "GET(\"/lab-subscription\"", "GET(\"/lab-entitlement\"", "POST(\"/lab-packages/activate\"", "POST(\"/lab-packages/upgrade\""]],
+  ]);
+  for (const file of labTypedApiFiles) assert.equal(await exists(`${serviceRoot}/${file}`), true, `go_backend_lab_typed_api_required_file_missing:${file}`);
+  for (const [file, markers] of labMarkers) {
+    const source = await readRepoFile(`${serviceRoot}/${file}`);
+    for (const marker of markers) assertIncludes(source, marker, `go_backend_lab_typed_api_marker_missing:${file}:${marker}`);
+  }
+  const labSource = (await Promise.all(labTypedApiFiles.filter((file) => file.endsWith(".go")).map((file) => readRepoFile(`${serviceRoot}/${file}`)))).join("\n");
+  assertNotMatches(labSource, /rawApiKey|providerSecret|apiKey|bearerToken|launchToken|runtimeToken|SecretId|SecretKey|kubeconfig|signedUrl|objectKey|localPath|http\.Client|redis\.NewClient|sql\.Open|pgx|lib\/pq|tencent|cloud\.|kubectl/u, "lab_typed_api_must_not_read_secret_or_call_cloud");
+}
+
 await assertServiceSurface();
 await assertEntPostgresBoundary();
 await assertVolatileBoundary();
 await assertRunFileArtifactDomain();
 await assertRuntimeBrokerInterface();
 await assertWorkflowFacadeAndRoutes();
+await assertLabTypedPortalAPI();
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_go_backend_service_surface",
   service: serviceRoot,
-  endpoints: ["/health", "/version", "/config/check"],
+  endpoints: ["/health", "/version", "/config/check", "/api/lab-packages", "/api/lab-subscription", "/api/lab-entitlement", "/api/lab-packages/activate", "/api/lab-packages/upgrade"],
   canonicalTruth: "postgres_ent_schema",
   workflowFacade: "command_boundary",
+  labTypedAPI: "go_control_plane_mvp",
 }, null, 2));

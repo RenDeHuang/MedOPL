@@ -20,6 +20,25 @@ func TestRouterServesExpectedEndpoints(t *testing.T) {
 		}
 	}
 	for _, item := range []struct {
+		method string
+		path   string
+		body   string
+	}{
+		{method: http.MethodGet, path: "/api/lab-packages"},
+		{method: http.MethodGet, path: "/api/lab-entitlement?workspaceId=workspace-v22"},
+		{method: http.MethodPost, path: "/api/lab-packages/activate", body: `{"workspaceId":"workspace-v22","packageId":"starter","idempotencyKey":"idem-lab"}`},
+		{method: http.MethodGet, path: "/api/lab-subscription?workspaceId=workspace-v22"},
+		{method: http.MethodPost, path: "/api/lab-packages/upgrade", body: `{"workspaceId":"workspace-v22","packageId":"pro","idempotencyKey":"idem-lab-upgrade"}`},
+	} {
+		req := httptest.NewRequest(item.method, item.path, bytes.NewBufferString(item.body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s %s status = %d body = %s", item.method, item.path, rec.Code, rec.Body.String())
+		}
+	}
+	for _, item := range []struct {
 		path string
 		body string
 	}{
