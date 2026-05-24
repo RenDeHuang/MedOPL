@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -188,6 +189,37 @@ func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
 	assertJSONContains(t, secretPayload, `"apiKey":"`+rawProviderKey+`"`)
 }
 
+func TestControlPlaneHandlersDoNotExposeProviderSecretWriteErrors(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	service := controlplaneservice.NewService(
+		memory.NewControlPlaneStore(),
+		controlplaneservice.WithProviderSecretStore(leakingProviderSecretSink{}),
+	)
+	api := router.Group("/api")
+	RegisterControlPlaneRoutes(api, service)
+
+	rec := postRaw(router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"apiKey":         "local-rc-provider-key-material-that-must-stay-private",
+		"idempotencyKey": "v22-provider-key-secret-error-once",
+	})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("provider secret write failure status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, marker := range []string{"/tmp/provider-secrets/private-ref.json", "provider secret write failed", "local-rc-provider-key-material-that-must-stay-private"} {
+		if strings.Contains(body, marker) {
+			t.Fatalf("provider secret write error leaked %q: %s", marker, body)
+		}
+	}
+	if !strings.Contains(body, "control_plane_operation_failed") {
+		t.Fatalf("provider secret write failure must use public generic error: %s", body)
+	}
+}
+
 func TestControlPlaneHandlersScopeResourcesAndFailClosedOnMissingRelease(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 
@@ -310,4 +342,10 @@ func assertJSONContains(t *testing.T, payload []byte, marker string) {
 	if !strings.Contains(string(payload), marker) {
 		t.Fatalf("json payload missing %s: %s", marker, string(payload))
 	}
+}
+
+type leakingProviderSecretSink struct{}
+
+func (leakingProviderSecretSink) WriteProviderSecret(string, providersecret.Secret) error {
+	return errors.New("provider secret write failed: /tmp/provider-secrets/private-ref.json")
 }

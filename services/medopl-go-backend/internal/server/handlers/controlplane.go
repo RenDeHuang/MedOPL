@@ -389,7 +389,7 @@ func writeControlPlaneError(ctx *gin.Context, err error) {
 	case errors.Is(err, cpd.ErrIdempotencyKeyRequired):
 		ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "idempotency_key_required"})
 	default:
-		ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "control_plane_operation_failed"})
 	}
 }
 

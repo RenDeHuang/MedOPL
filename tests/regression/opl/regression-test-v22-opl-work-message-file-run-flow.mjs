@@ -1,346 +1,282 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { spawn, spawnSync } from "node:child_process";
+import net from "node:net";
+import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
-const RAW_PROVIDER_KEY = "gflabtoken_raw_key_opl_work_must_remain_backend_only";
-const RAW_PROMPT = "please analyze uploaded measurement data raw prompt must stay out of trace metadata";
+const RAW_PROVIDER_KEY = "test-only-go-control-plane-provider-key-material";
+const WORKSPACE_ID = "workspace-v22-opl-work-go";
+const TENANT_ID = "tenant-v22-opl-work-go";
+const USER_ID = "user-v22-opl-work-go";
+const PROVIDER_REF_PATTERN = /^gflab:/u;
+const PUBLIC_FORBIDDEN_PATTERN = /rawProviderKey|providerApiKey|apiKey|launchToken|runtimeToken|bearerToken|providerSecret|SecretId|SecretKey|objectKey|storageKey|localPath|signedUrl|presignedUrl/i;
 
-const { createPortalApiRoutes } = await import("../../../services/portal/src/routes/portal-api.routes.mjs");
-const { createProviderSecretStore } = await import("../../../services/portal/src/domain/provider-secret-store.mjs");
+function scrubbedEnv(overrides = {}) {
+  const env = { ...process.env, ...overrides };
+  for (const key of [
+    "GFLABTOKEN",
+    "OPENAI_API_KEY",
+    "OPL_CODEX_API_KEY",
+    "TENCENTCLOUD_SECRET_ID",
+    "TENCENTCLOUD_SECRET_KEY",
+    "COS_SECRET_ID",
+    "COS_SECRET_KEY",
+  ]) {
+    delete env[key];
+  }
+  return env;
+}
 
-function assertNoSecretLeak(value, label) {
+async function freePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      server.close(() => resolve(address.port));
+    });
+    server.on("error", reject);
+  });
+}
+
+function buildGoBackendBinary(outputPath) {
+  const result = spawnSync("go", ["build", "-o", outputPath, "./cmd/server"], {
+    cwd: "services/medopl-go-backend",
+    env: scrubbedEnv({
+      GOPROXY: process.env.GOPROXY || "https://goproxy.cn,direct",
+      GOSUMDB: process.env.GOSUMDB || "sum.golang.google.cn",
+    }),
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, `go_backend_build_failed:${result.stderr || result.stdout}`);
+}
+
+function spawnGoBackend({ binaryPath, port, providerSecretRoot }) {
+  const child = spawn(binaryPath, [], {
+    env: scrubbedEnv({
+      MEDOPL_BACKEND_MODE: "local",
+      MEDOPL_BACKEND_PORT: String(port),
+      PORTAL_OPL_PROVIDER_SECRET_ROOT: providerSecretRoot,
+    }),
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  return child;
+}
+
+async function stopChild(child) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  child.kill();
+  await Promise.race([
+    new Promise((resolve) => child.once("exit", resolve)),
+    sleep(1500).then(() => child.kill("SIGKILL")),
+  ]);
+}
+
+async function waitFor(url, { timeoutMs = 5000 } = {}) {
+  const started = Date.now();
+  let lastError = null;
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.status >= 200 && response.status < 500) return response;
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(100);
+  }
+  throw new Error(`wait_for_url_failed:${url}:${lastError?.message || "timeout"}`);
+}
+
+async function waitForChildUrl(child, url, label) {
+  try {
+    return await waitFor(url);
+  } catch (error) {
+    throw new Error(`${label}:${error.message}:stdout=${child.stdout.read() || ""}:stderr=${child.stderr.read() || ""}`);
+  }
+}
+
+async function postJson(url, body) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await response.json();
+  return { response, json };
+}
+
+async function getJson(url) {
+  const response = await fetch(url);
+  const json = await response.json();
+  return { response, json };
+}
+
+function assertNoPublicSecretLeak(value, label) {
   const serialized = JSON.stringify(value);
   assert.equal(serialized.includes(RAW_PROVIDER_KEY), false, `${label}_must_not_leak_raw_provider_key`);
-  assert.equal(serialized.includes(RAW_PROMPT), false, `${label}_must_not_leak_raw_prompt`);
-  assert.equal(/launchToken|runtimeToken|bearerToken|providerSecret|rawProviderKey|providerApiKey|apiKey/i.test(serialized), false, `${label}_must_not_expose_secret_fields`);
+  assert.equal(PUBLIC_FORBIDDEN_PATTERN.test(serialized), false, `${label}_must_not_expose_secret_or_storage_fields`);
 }
 
-function assertNoInternalStorageLeak(value, label) {
+function assertLocalSource(value, label) {
   const serialized = JSON.stringify(value);
-  assert.equal(/storageKey|objectKey|secret|credential|signedUrl|presignedUrl|localPath/i.test(serialized), false, `${label}_must_not_expose_internal_storage_key`);
+  assert.equal(/production evidence|production truth|live provider|real cloud|deploy|kubectl/i.test(serialized), false, `${label}_must_not_claim_production_truth`);
 }
 
-function assertNoOrdinaryInternalIds(value, label) {
-  const serialized = JSON.stringify(value);
-  assert.equal(/resourceBindingId|tenantId|runId|auditTag/i.test(serialized), false, `${label}_must_not_expose_internal_ids`);
+function normalizeRef(value) {
+  return String(value || "").trim().replace(/[^a-zA-Z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
 }
 
-function assertTraceMetadataShape(metadata, label, expectedProviderKeyRef) {
-  assert.deepEqual(Object.keys(metadata).sort(), [
-    "artifactRefs",
-    "providerKeyRef",
-    "sessionId",
-    "status",
-    "timestamps",
-    "workspaceId",
-  ], `${label}_trace_metadata_keys_mismatch`);
-  assert.ok(metadata.sessionId, `${label}_trace_session_id_required`);
-  assert.equal(metadata.workspaceId, "workspace-v22-opl-work", `${label}_trace_workspace_mismatch`);
-  assert.equal(metadata.providerKeyRef, expectedProviderKeyRef, `${label}_trace_provider_key_ref_mismatch`);
-  assert.equal(metadata.status, "succeeded", `${label}_trace_status_mismatch`);
-  assert.equal(Array.isArray(metadata.artifactRefs), true, `${label}_trace_artifact_refs_must_be_array`);
-  assert.equal(typeof metadata.timestamps.createdAt, "string", `${label}_trace_created_at_required`);
-  assert.equal(typeof metadata.timestamps.updatedAt, "string", `${label}_trace_updated_at_required`);
-  assertNoSecretLeak(metadata, `${label}_trace_metadata`);
-  assertNoInternalStorageLeak(metadata, `${label}_trace_metadata`);
-  assertNoOrdinaryInternalIds(metadata, `${label}_trace_metadata`);
+async function assertBackendOnlySecret(secretRoot, providerKeyRef) {
+  const secretFile = path.join(secretRoot, `${normalizeRef(providerKeyRef)}.json`);
+  const payload = JSON.parse(await readFile(secretFile, "utf8"));
+  assert.equal(payload.provider, "gflabtoken", "backend_secret_provider_mismatch");
+  assert.equal(payload.source, "user_input", "backend_secret_source_mismatch");
+  assert.equal(payload.apiKey, RAW_PROVIDER_KEY, "backend_secret_must_hold_raw_key_inside_backend_boundary");
+  const mode = (await stat(secretFile)).mode & 0o777;
+  assert.equal(mode, 0o600, "backend_secret_file_mode_must_be_0600");
+  assert.deepEqual(await readdir(secretRoot), [path.basename(secretFile)], "backend_secret_root_must_only_contain_provider_ref_file");
 }
 
-function responseRecorder() {
-  return { statusCode: 0, payload: null };
-}
+const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-go-opl-work-regression-"));
+const providerSecretRoot = path.join(tempRoot, "provider-secrets");
+const binaryPath = path.join(tempRoot, "medopl-go-backend-regression");
+let goBackend;
 
-function sendJson(res, payload, status = 200) {
-  res.statusCode = status;
-  res.payload = payload;
-}
-
-async function readBody(req) {
-  return Buffer.from(req.body || "");
-}
-
-function createRoute({ db, providerSecretStore, writes }) {
-  return createPortalApiRoutes({
-    activeUserStatus: (status) => status || "active",
-    adminScopeResult: () => ({ ok: false, status: 403, error: "forbidden" }),
-    announcementRows: () => [],
-    buildCommercialProfile: () => ({ accountStatus: "active", billingStatus: "funded", entitlementStatus: "active" }),
-    buildSessionTraceDetailPayload: async () => null,
-    buildSessionTracesApiPayload: async () => ({ items: [] }),
-    collectRunsForUser: async () => [],
-    currentServerPlanSelection: (taskSpace) => ({ id: taskSpace?.serverPlanId || "starter_2c4g_10gb" }),
-    currentTaskSpaceForUser: (targetDb, targetUser) => targetDb.taskSpaces.find((item) => item.userId === targetUser.id) || null,
-    evaluateUserPolicy: async () => ({ ok: true }),
-    fetchBillingSummary: async () => ({ totals: { totalCost: 0 }, items: [] }),
-    fetchHarborSummary: async () => ({ available: false }),
-    fetchRuntimeBridgeCosts: async () => [],
-    fetchRuntimeBridgeRuns: async () => [],
-    fetchRuntimeBridgeTraceRows: async () => ({ rows: [] }),
-    fetchOpsRegistryImageRows: async () => ({ items: [] }),
-    fetchTraceRows: async () => ({ rows: [] }),
-    formatDateTime: (value) => String(value || ""),
-    isRunTerminal: () => true,
-    normalizePageSize: (value) => Number(value || 20),
-    paginateRows: (rows) => ({ rows, page: 1, pageSize: rows.length, total: rows.length, totalPages: 1 }),
-    parsePositiveInt: (value, fallback) => Number(value || fallback),
-    providerSecretStore,
-    readBody,
-    readSessionsRequestOptions: () => ({}),
-    readTracesRequestOptions: () => ({}),
-    sendJson,
-    visibleAnnouncementRows: () => [],
-    workspaceChatSessionsForUser: () => [],
-    writeDb: async (targetDb) => {
-      writes.push(JSON.parse(JSON.stringify(targetDb)));
-    },
-  });
-}
-
-async function request(route, db, { method = "GET", urlPath = "/", body = null, user = null } = {}) {
-  const res = responseRecorder();
-  const handled = await route({
-    req: { method, body: body ? JSON.stringify(body) : "" },
-    res,
-    url: new URL(urlPath, "http://portal.local"),
-    db,
-    user,
-  });
-  return { handled, res };
-}
-
-const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-opl-work-message-file-run-flow-"));
 try {
-  const providerSecretStore = createProviderSecretStore({ secretsRoot: tempRoot });
-  const db = {
-    users: [],
-    tenants: [],
-    wallets: [],
-    ledger: [],
-    taskSpaces: [],
-    providerKeyBindings: [],
-    userComputeInstances: [],
-    userStorageBuckets: [],
-    workspaceResourceBindings: [],
-    weeklyProtectionFreezes: [],
-    workspaceFiles: [],
-    oplWorkSessions: [],
-    oplWorkRuns: [],
-    oplWorkTraceMetadata: [],
-    announcements: [],
-  };
-  const writes = [];
-  const route = createRoute({ db, providerSecretStore, writes });
+  const port = await freePort();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  buildGoBackendBinary(binaryPath);
+  goBackend = spawnGoBackend({ binaryPath, port, providerSecretRoot });
+  await waitForChildUrl(goBackend, `${baseUrl}/health`, "go_backend_health");
 
-  await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/users/prepare",
-    body: {
-      tenantId: "tenant-v22-opl-work",
-      userId: "user-v22-opl-work",
-      email: "opl-work@example.test",
-      name: "OPL Work User",
-      workspaceId: "workspace-v22-opl-work",
-    },
+  const prepared = await postJson(`${baseUrl}/api/v22/users/prepare`, {
+    tenantId: TENANT_ID,
+    userId: USER_ID,
+    workspaceId: WORKSPACE_ID,
   });
-  const user = db.users.find((item) => item.id === "user-v22-opl-work");
-  assert.ok(user, "prepared_user_must_exist");
+  assert.equal(prepared.response.status, 200, "prepare_user_must_return_200");
+  assert.equal(prepared.json.source, "go-control-plane", "prepare_user_source_mismatch");
+  assertNoPublicSecretLeak(prepared.json, "prepare_user");
 
-  await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/users/credit",
-    user,
-    body: {
-      userId: user.id,
-      amount: 500,
-      idempotencyKey: "v22-opl-work-topup",
-    },
+  const credited = await postJson(`${baseUrl}/api/v22/users/credit`, {
+    userId: USER_ID,
+    amount: 500,
+    idempotencyKey: "go-opl-work-credit-once",
   });
+  assert.equal(credited.response.status, 200, "credit_must_return_200");
+  assert.equal(credited.json.source, "go-control-plane", "credit_source_mismatch");
+  assertNoPublicSecretLeak(credited.json, "credit");
 
-  const runWithoutProvider = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/opl-work/runs",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      sessionId: "session-without-provider",
-      message: RAW_PROMPT,
-      fileRefs: ["workspace-file-ref"],
-    },
+  const blockedReadiness = await postJson(`${baseUrl}/api/v22/managed-environment/readiness`, {
+    workspaceId: WORKSPACE_ID,
   });
-  assert.equal(runWithoutProvider.handled, true, "run_without_provider_route_must_be_handled");
-  assert.equal(runWithoutProvider.res.statusCode, 409, "run_without_provider_must_return_409");
-  assert.equal(runWithoutProvider.res.payload.ok, false, "run_without_provider_must_return_not_ok");
-  assert.equal(runWithoutProvider.res.payload.error, "provider_key_required", "run_without_provider_error_mismatch");
-  assertNoSecretLeak(runWithoutProvider.res.payload, "run_without_provider");
+  assert.equal(blockedReadiness.response.status, 428, "readiness_without_provider_must_fail_closed");
+  assert.equal(blockedReadiness.json.error, "provider_key_required", "readiness_without_provider_error_mismatch");
+  assertNoPublicSecretLeak(blockedReadiness.json, "readiness_without_provider");
 
-  const bound = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/provider-key",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      provider: "gflabtoken",
-      apiKey: RAW_PROVIDER_KEY,
-    },
+  const bound = await postJson(`${baseUrl}/api/v22/provider-key`, {
+    tenantId: TENANT_ID,
+    portalUserId: USER_ID,
+    workspaceId: WORKSPACE_ID,
+    apiKey: RAW_PROVIDER_KEY,
+    idempotencyKey: "go-opl-work-provider-key-once",
   });
-  assert.equal(bound.res.statusCode, 200, "provider_key_binding_must_return_200");
-  const providerKeyRef = bound.res.payload.providerKeyRef;
-  assert.ok(providerKeyRef, "provider_key_ref_required");
+  assert.equal(bound.response.status, 200, "provider_key_must_return_200");
+  assert.equal(bound.json.providerBound, true, "provider_key_must_mark_bound");
+  assert.match(bound.json.providerKeyRef, PROVIDER_REF_PATTERN, "provider_key_ref_shape_mismatch");
+  assertNoPublicSecretLeak(bound.json, "provider_key_binding");
+  await assertBackendOnlySecret(providerSecretRoot, bound.json.providerKeyRef);
 
-  const runWithoutEnvironment = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/opl-work/runs",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      sessionId: "session-without-environment",
-      message: RAW_PROMPT,
-      fileRefs: ["workspace-file-ref"],
-    },
+  const readiness = await postJson(`${baseUrl}/api/v22/managed-environment/readiness`, {
+    workspaceId: WORKSPACE_ID,
   });
-  assert.equal(runWithoutEnvironment.handled, true, "run_without_environment_route_must_be_handled");
-  assert.equal(runWithoutEnvironment.res.statusCode, 409, "run_without_environment_must_return_409");
-  assert.equal(runWithoutEnvironment.res.payload.ok, false, "run_without_environment_must_return_not_ok");
-  assert.equal(runWithoutEnvironment.res.payload.error, "managed_environment_required", "run_without_environment_error_mismatch");
-  assertNoSecretLeak(runWithoutEnvironment.res.payload, "run_without_environment");
+  assert.equal(readiness.response.status, 200, "readiness_after_provider_must_return_200");
+  assert.equal(readiness.json.readyForManagedEnvironment, true, "readiness_after_provider_must_be_ready");
+  assert.equal(readiness.json.providerKeyRef, bound.json.providerKeyRef, "readiness_provider_ref_mismatch");
+  assertNoPublicSecretLeak(readiness.json, "readiness_after_provider");
 
-  const opened = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/managed-environment/open",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      planId: "starter_2c4g_10gb",
-      fileSpaceGb: 10,
-      idempotencyKey: "v22-opl-work-open",
-    },
+  const opened = await postJson(`${baseUrl}/api/v22/managed-environment/open`, {
+    tenantId: TENANT_ID,
+    portalUserId: USER_ID,
+    workspaceId: WORKSPACE_ID,
+    idempotencyKey: "go-opl-work-open-once",
   });
-  assert.equal(opened.res.statusCode, 201, "managed_environment_open_must_create");
-  assert.equal(opened.res.payload.resourceBinding, undefined, "managed_environment_open_must_not_expose_resource_binding");
-  const resourceBindingId = db.workspaceResourceBindings.find((item) => item.workspaceId === "workspace-v22-opl-work")?.resourceBindingId || "";
-  assert.ok(resourceBindingId, "resource_binding_id_required");
+  assert.equal(opened.response.status, 200, "managed_environment_open_must_return_200");
+  assert.equal(opened.json.launchStatus, "ready", "managed_environment_open_status_mismatch");
+  assert.equal(opened.json.providerKeyRef, bound.json.providerKeyRef, "open_provider_ref_mismatch");
+  assertNoPublicSecretLeak(opened.json, "managed_environment_open");
+  const launchId = opened.json.launchId;
 
-  const session = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/opl-work/sessions",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      entrypoint: "opl.medopl.cn",
-    },
+  const bootstrap = await getJson(`${baseUrl}/api/opl/bootstrap?launchId=${encodeURIComponent(launchId)}`);
+  assert.equal(bootstrap.response.status, 200, "bootstrap_must_return_200");
+  assert.equal(bootstrap.json.runtimeBridgeContractVersion, "v22-local-rc", "bootstrap_contract_version_mismatch");
+  assertNoPublicSecretLeak(bootstrap.json, "bootstrap");
+
+  const file = await postJson(`${baseUrl}/api/opl/files?launchId=${encodeURIComponent(launchId)}`, {
+    fileName: "measurements.csv",
+    relativePath: "inputs/measurements.csv",
+    contentType: "text/csv",
+    sizeBytes: 128,
   });
-  assert.equal(session.handled, true, "opl_work_session_route_must_be_handled");
-  assert.equal(session.res.statusCode, 201, "opl_work_session_must_return_201");
-  assert.equal(session.res.payload.ok, true, "opl_work_session_must_return_ok");
-  assert.equal(session.res.payload.oplSession.workspaceId, "workspace-v22-opl-work", "opl_session_workspace_mismatch");
-  assert.equal(session.res.payload.oplSession.providerKeyRef, providerKeyRef, "opl_session_provider_key_ref_mismatch");
-  assert.equal(session.res.payload.upstream.repository, "https://github.com/gaofeng21cn/one-person-lab", "upstream_repository_mismatch");
-  assert.equal(session.res.payload.upstream.sourceModified, false, "upstream_source_modified_must_be_false");
-  assert.equal(session.res.payload.upstream.internalModuleImports, false, "upstream_internal_import_must_be_false");
-  assertNoSecretLeak(session.res.payload, "opl_work_session");
-  assertNoOrdinaryInternalIds(session.res.payload, "opl_work_session");
+  assert.equal(file.response.status, 200, "file_record_must_return_200");
+  assert.equal(file.json.ok, true, "file_record_must_return_ok");
+  assert.equal(file.json.providerKeyRef, bound.json.providerKeyRef, "file_provider_ref_mismatch");
+  assertNoPublicSecretLeak(file.json, "file_record");
 
-  const uploaded = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/opl-work/files",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      sessionId: session.res.payload.oplSession.sessionId,
-      fileName: "inputs/measurements.csv",
-      contentType: "text/csv",
-      sizeBytes: 42,
-    },
+  const run = await postJson(`${baseUrl}/api/opl/runs?launchId=${encodeURIComponent(launchId)}`, {
+    message: "analyze uploaded measurement data",
+    fileRefs: [file.json.fileRef],
+    toolName: "opl-workbench",
+    requestId: "go-opl-work-run-once",
   });
-  assert.equal(uploaded.handled, true, "opl_work_file_upload_route_must_be_handled");
-  assert.equal(uploaded.res.statusCode, 201, "opl_work_file_upload_must_return_201");
-  assert.equal(uploaded.res.payload.ok, true, "opl_work_file_upload_must_return_ok");
-  assert.equal(uploaded.res.payload.fileRef.kind, "inputs", "uploaded_file_kind_mismatch");
-  assert.equal(uploaded.res.payload.fileRef.relativePath, "inputs/measurements.csv", "uploaded_file_relative_path_mismatch");
-  assert.equal(uploaded.res.payload.fileRef.workspaceId, "workspace-v22-opl-work", "uploaded_file_workspace_mismatch");
-  assertNoSecretLeak(uploaded.res.payload, "opl_work_file_upload");
-  assertNoInternalStorageLeak(uploaded.res.payload, "opl_work_file_upload");
-  assertNoOrdinaryInternalIds(uploaded.res.payload, "opl_work_file_upload");
+  assert.equal(run.response.status, 200, "run_must_return_200");
+  assert.equal(run.json.ok, true, "run_must_return_ok");
+  assert.equal(run.json.status, "succeeded", "run_status_mismatch");
+  assert.equal(run.json.artifacts.length, 1, "run_must_create_artifact");
+  assert.equal(run.json.artifacts[0].providerKeyRef, bound.json.providerKeyRef, "artifact_provider_ref_mismatch");
+  assertNoPublicSecretLeak(run.json, "run");
 
-  const run = await request(route, db, {
-    method: "POST",
-    urlPath: "/portal/api/v22/opl-work/runs",
-    user,
-    body: {
-      workspaceId: "workspace-v22-opl-work",
-      sessionId: session.res.payload.oplSession.sessionId,
-      message: RAW_PROMPT,
-      fileRefs: [uploaded.res.payload.fileRef.fileRef],
-      idempotencyKey: "v22-opl-work-run-once",
-    },
+  const artifact = await getJson(`${baseUrl}/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}?launchId=${encodeURIComponent(launchId)}`);
+  assert.equal(artifact.response.status, 200, "artifact_must_return_200");
+  assert.equal(artifact.json.artifact.providerKeyRef, bound.json.providerKeyRef, "artifact_detail_provider_ref_mismatch");
+  assertNoPublicSecretLeak(artifact.json, "artifact");
+
+  const billing = await getJson(`${baseUrl}/api/billing/summary?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`);
+  assert.equal(billing.response.status, 200, "billing_must_return_200");
+  assert.equal(billing.json.source, "go-control-plane", "billing_source_mismatch");
+  assert.equal(Number(billing.json.totals.totalCost) > 0, true, "billing_total_cost_required");
+  assertNoPublicSecretLeak(billing.json, "billing");
+
+  const release = await postJson(`${baseUrl}/api/v22/managed-environment/release`, {
+    workspaceId: WORKSPACE_ID,
+    resourceBindingId: opened.json.resourceBindingId,
+    stopBilling: true,
+    idempotencyKey: "go-opl-work-release-once",
   });
-  assert.equal(run.handled, true, "opl_work_run_route_must_be_handled");
-  assert.equal(run.res.statusCode, 201, "opl_work_run_must_return_201");
-  assert.equal(run.res.payload.ok, true, "opl_work_run_must_return_ok");
-  assert.ok(run.res.payload.message.messageId, "opl_work_message_id_required");
-  assert.equal(run.res.payload.message.status, "accepted", "opl_work_message_status_mismatch");
-  assert.equal(run.res.payload.run.status, "succeeded", "opl_work_run_status_mismatch");
-  assert.equal(run.res.payload.run.messageId, run.res.payload.message.messageId, "opl_work_run_message_ref_mismatch");
-  assert.equal(run.res.payload.run.workspaceId, "workspace-v22-opl-work", "opl_work_run_workspace_mismatch");
-  assert.ok(run.res.payload.run.runRef, "opl_work_run_ref_required");
-  assert.equal(run.res.payload.run.providerKeyRef, providerKeyRef, "opl_work_run_provider_key_ref_mismatch");
-  assert.equal(run.res.payload.artifacts.length, 1, "opl_work_run_must_create_artifact");
-  assert.equal(run.res.payload.artifacts[0].kind, "outputs", "opl_work_artifact_kind_mismatch");
-  assert.equal(run.res.payload.upstream.sourceModified, false, "run_upstream_source_modified_must_be_false");
-  assertTraceMetadataShape(run.res.payload.traceMetadata, "opl_work_run", providerKeyRef);
-  assert.equal(run.res.payload.traceMetadata.artifactRefs[0], run.res.payload.artifacts[0].fileRef, "trace_artifact_ref_mismatch");
-  assertNoSecretLeak(run.res.payload, "opl_work_run");
-  assertNoInternalStorageLeak(run.res.payload, "opl_work_run");
-  assertNoOrdinaryInternalIds(run.res.payload, "opl_work_run");
+  assert.equal(release.response.status, 200, "release_must_return_200");
+  assert.equal(release.json.billingStopped, true, "release_must_stop_billing");
+  assert.equal(release.json.auditEvent.status, "recorded", "release_must_record_audit");
+  assertNoPublicSecretLeak(release.json, "release");
 
-  const download = await request(route, db, {
-    method: "GET",
-    urlPath: `/portal/api/v22/opl-work/artifacts/${encodeURIComponent(run.res.payload.artifacts[0].fileRef)}/download?workspaceId=workspace-v22-opl-work`,
-    user,
-  });
-  assert.equal(download.handled, true, "opl_work_download_route_must_be_handled");
-  assert.equal(download.res.statusCode, 200, "opl_work_download_must_return_200");
-  assert.equal(download.res.payload.ok, true, "opl_work_download_must_return_ok");
-  assert.equal(download.res.payload.download.fileRef, run.res.payload.artifacts[0].fileRef, "download_file_ref_mismatch");
-  assert.equal(download.res.payload.download.kind, "outputs", "download_kind_mismatch");
-  assertNoSecretLeak(download.res.payload, "opl_work_download");
-  assertNoInternalStorageLeak(download.res.payload, "opl_work_download");
-  assertNoOrdinaryInternalIds(download.res.payload, "opl_work_download");
-
-  assert.equal(db.oplWorkSessions.length, 1, "db_session_must_be_recorded");
-  assert.equal(db.oplWorkRuns.length, 1, "db_run_must_be_recorded");
-  assert.equal(db.workspaceFiles.filter((item) => item.kind === "inputs").length, 1, "db_input_file_must_be_recorded");
-  assert.equal(db.workspaceFiles.filter((item) => item.kind === "outputs").length, 1, "db_output_file_must_be_recorded");
-  assert.equal(db.oplWorkTraceMetadata.length, 1, "trace_metadata_must_be_recorded");
-  assertNoSecretLeak(db.oplWorkTraceMetadata, "db_trace_metadata");
-  assertNoInternalStorageLeak(db.oplWorkTraceMetadata, "db_trace_metadata");
-  assert.ok(db.oplWorkTraceMetadata[0].resourceBindingId, "db_trace_metadata_keeps_internal_resource_binding");
-
-  const contract = await readFile("docs/specs/README.md", "utf8");
-  for (const required of [
-    "provider_key_required",
-    "每个用户使用自己的 gflabtoken API Key 作为模型调用凭证",
-    "managed_environment_required",
-    "workspace file reference",
-    "artifact reference",
-    "sourceModified=false",
-    "providerKeyRef",
-    "raw API key",
-    "launchToken",
-    "runtimeToken",
-    "one-person-lab",
-  ]) {
-    assert(contract.includes(required), `contract_missing:${required}`);
-  }
+  const resources = await getJson(`${baseUrl}/api/platform-provisioned-resources?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`);
+  assert.equal(resources.response.status, 200, "resources_must_return_200");
+  assert.equal(resources.json.items.some((item) => item.resourceBindingId === opened.json.resourceBindingId && item.status === "released"), true, "resources_must_project_released_environment");
+  assertNoPublicSecretLeak(resources.json, "resources");
+  assertLocalSource({ prepared: prepared.json, opened: opened.json, billing: billing.json, release: release.json }, "go_opl_work_regression");
 
   console.log(JSON.stringify({
     ok: true,
-    contract: "v22_opl_work_message_file_run_flow",
-    sessionId: session.res.payload.oplSession.sessionId,
-    runId: run.res.payload.run.runId,
-    artifactRef: run.res.payload.artifacts[0].fileRef,
+    contract: "v22_go_control_plane_opl_file_run_artifact_billing_release_flow",
+    goControlPlaneUrl: baseUrl,
+    launchId,
+    artifactRef: run.json.artifacts[0].artifactRef,
+    evidenceBoundary: "local-regression-only",
   }, null, 2));
 } finally {
+  await stopChild(goBackend);
   await rm(tempRoot, { recursive: true, force: true });
 }
