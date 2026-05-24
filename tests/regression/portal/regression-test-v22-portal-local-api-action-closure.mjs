@@ -545,14 +545,14 @@ try {
       workspaceId: "workspace-local-api",
       idempotencyKey: "local-api-closure-starter",
     }, { cookie: userCookie });
-    assert.equal(activatePackage.status, 201, "lab_package_activate_must_create_subscription");
+    assert.equal(activatePackage.status, 410, "node_lab_package_activate_must_be_retired");
     const activatedPayload = await activatePackage.json();
-    assert.equal(activatedPayload.ok, true, "lab_package_activate_payload_ok");
-    assert.equal(activatedPayload.currentPackageId, "starter_2c4g_10gb", "lab_package_activate_package_id_mismatch");
+    assert.equal(activatedPayload.ok, false, "node_lab_package_activate_retired_payload_must_not_succeed");
+    assert.equal(activatedPayload.error, "node_lab_api_retired", "node_lab_package_activate_retired_error_mismatch");
 
     const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=workspace-local-api`, { cookie: userCookie });
-    assert.equal(subscription.response.status, 200, "lab_subscription_must_return_200");
-    assert.equal(subscription.json.currentPackageId, "starter_2c4g_10gb", "lab_subscription_must_reflect_activation");
+    assert.equal(subscription.response.status, 410, "node_lab_subscription_must_be_retired");
+    assert.equal(subscription.json.error, "node_lab_api_retired", "node_lab_subscription_retired_error_mismatch");
 
     const logout = await fetch(`${baseUrl}/logout`, { headers: { cookie: userCookie }, redirect: "manual" });
     assert.equal(logout.status, 302, "logout_must_redirect");
@@ -593,7 +593,7 @@ try {
       "admin_billing_ops_warning_event_status_note_anomaly",
       "admin_billing_ops_unknown_item_fail_closed",
       "audit_event_shape",
-      "user_lab_package_activation",
+      "node_lab_api_retired",
       "logout_route",
     ],
   }, null, 2));

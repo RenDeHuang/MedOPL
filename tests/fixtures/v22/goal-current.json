@@ -366,9 +366,9 @@
       "closeout-evidence-only"
     ],
     "current_cursor_unchanged": true,
-    "current_cursor": "leaf-portal-postgres-redis-local-production-data-closure",
     "no_product_implementation": true,
-    "no_business_test_cleanup_claim": true
+    "no_business_test_cleanup_claim": true,
+    "historical_business_cursor_at_closeout": "leaf-portal-postgres-redis-local-production-data-closure"
   },
   "backend_go_convergence_program": {
     "schema_version": 1,

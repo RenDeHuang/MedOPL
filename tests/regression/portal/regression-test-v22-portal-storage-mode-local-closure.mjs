@@ -454,18 +454,18 @@ async function runClosureSuite({
       workspaceId,
       idempotencyKey: `${storageMode}-lab-package-activate`,
     }, { cookie: userCookie });
-    assert.equal(activatePackage.status, 201, "lab_package_activate_must_create_subscription");
+    assert.equal(activatePackage.status, 410, "node_lab_package_activate_must_be_retired");
 
     const replayActivatePackage = await postJson(`${baseUrl}/portal/api/lab-packages/activate`, {
       packageId: "starter_2c4g_10gb",
       workspaceId,
       idempotencyKey: `${storageMode}-lab-package-activate`,
     }, { cookie: userCookie });
-    assert.ok([200, 201].includes(replayActivatePackage.status), "lab_package_activate_replay_must_return_success");
+    assert.equal(replayActivatePackage.status, 410, "node_lab_package_activate_replay_must_be_retired");
 
     const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=${encodeURIComponent(workspaceId)}`, { cookie: userCookie });
-    assert.equal(subscription.response.status, 200, "lab_subscription_must_return_200");
-    assert.equal(subscription.json.currentPackageId, "starter_2c4g_10gb", "lab_subscription_must_reflect_activation");
+    assert.equal(subscription.response.status, 410, "node_lab_subscription_must_be_retired");
+    assert.equal(subscription.json.error, "node_lab_api_retired", "node_lab_subscription_retired_error_mismatch");
 
     const audit = await getJson(`${baseUrl}/portal/api/admin/audit`, { cookie: adminCookie });
     assert.equal(audit.response.status, 200, "admin_audit_must_return_200");
@@ -528,7 +528,8 @@ async function verifyPersistedState({
     assert.equal(announcement.status, "active", "persisted_announcement_status_mismatch");
 
     const subscription = await getJson(`${baseUrl}/portal/api/lab-subscription?workspaceId=${encodeURIComponent(workspaceId)}`, { cookie: userCookie });
-    assert.equal(subscription.json.currentPackageId, "starter_2c4g_10gb", "persisted_subscription_must_survive_restart");
+    assert.equal(subscription.response.status, 410, "node_lab_subscription_must_remain_retired_after_restart");
+    assert.equal(subscription.json.error, "node_lab_api_retired", "node_lab_subscription_restart_retired_error_mismatch");
 
     const audit = await getJson(`${baseUrl}/portal/api/admin/audit`, { cookie: adminCookie });
     assert(auditContains(audit.json, "ledger_adjusted"), "persisted_audit_must_survive_restart");

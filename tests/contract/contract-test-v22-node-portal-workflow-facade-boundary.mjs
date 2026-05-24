@@ -222,9 +222,13 @@ async function assertNodePortalFacadeBoundary() {
     assertIncludes(source, "workflowFacade", `${name}_must_accept_workflow_facade`);
     assertIncludes(source, "runOplLaunchCommand", `${name}_must_route_opl_launch_through_facade`);
   }
-  for (const [name, source] of [["lab_package_routes", labPackageRoutesSource], ["cloud_operations_routes", cloudOperationsRoutesSource]]) {
-    assertIncludes(source, "workflowFacade", `${name}_must_accept_workflow_facade`);
-    assertIncludes(source, "runCloudOperationCommand", `${name}_must_route_cloud_mutation_through_facade`);
+  assertIncludes(cloudOperationsRoutesSource, "workflowFacade", "cloud_operations_routes_must_accept_workflow_facade");
+  assertIncludes(cloudOperationsRoutesSource, "runCloudOperationCommand", "cloud_operations_routes_must_route_cloud_mutation_through_facade");
+  for (const marker of ["node_lab_api_retired", "sendRetiredNodeLabApi", "410"]) {
+    assertIncludes(labPackageRoutesSource, marker, `node_lab_routes_must_fail_closed_retired:${marker}`);
+  }
+  for (const marker of ["workflowFacade", "runCloudOperationCommand", "source: \"lab_packages\"", "currentPackageId: subscription?.packageId", "...subscriptionPayload(db, user, result.subscription"]) {
+    assertNotIncludes(labPackageRoutesSource, marker, `node_lab_routes_must_not_serve_business_truth:${marker}`);
   }
   for (const [name, source] of [["portal_runtime", portalRuntimeSource], ["feature_runtime_handlers", featureRuntimeHandlersSource], ["api_runtime_handlers", apiRuntimeHandlersSource], ["portal_api_routes", portalApiRoutesSource]]) {
     assertIncludes(source, "workflowFacade", `${name}_must_wire_single_workflow_facade`);
