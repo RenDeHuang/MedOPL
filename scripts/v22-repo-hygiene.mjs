@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const forbiddenTrackedPathGlobs = Object.freeze([
   "tmp",
@@ -28,6 +29,13 @@ const forbiddenUntrackedPathGlobs = Object.freeze([
   ":(glob)**/.next/**",
 ]);
 
+const fixedLocalServiceTruthClaimPattern = /(?:http:\/\/(?:127\.0\.0\.1|localhost):(?:17080|17081|17082|17180|18130|18789|8788|5173)\b|\b(?:17080|17081|17082|17180|18130|18789|8788|5173)\b)/u;
+const currentTruthLocalServiceClaimFiles = Object.freeze([
+  "docs/active/README.md",
+  "docs/delivery/README.md",
+  ...runGit(["ls-files", "--", "changes/active/**/*.md"]),
+]);
+
 function runGit(args) {
   const result = spawnSync("git", args, {
     encoding: "utf8",
@@ -44,8 +52,16 @@ function matches(paths, globs) {
   return runGit(["ls-files", ...paths, "--", ...globs]);
 }
 
+function readTrackedFile(repoPath) {
+  return readFileSync(repoPath, "utf8");
+}
+
 const trackedForbidden = matches([], forbiddenTrackedPathGlobs);
 const untrackedGenerated = runGit(["ls-files", "--others", "--exclude-standard", "--", ...forbiddenUntrackedPathGlobs]);
+const fixedLocalServiceTruthClaims = currentTruthLocalServiceClaimFiles.filter((repoPath) => {
+  const source = readTrackedFile(repoPath);
+  return fixedLocalServiceTruthClaimPattern.test(source);
+});
 const failures = [];
 
 if (trackedForbidden.length > 0) {
@@ -62,6 +78,13 @@ if (untrackedGenerated.length > 0) {
   });
 }
 
+if (fixedLocalServiceTruthClaims.length > 0) {
+  failures.push({
+    code: "fixed_local_service_endpoint_in_current_truth",
+    files: fixedLocalServiceTruthClaims,
+  });
+}
+
 if (failures.length > 0) {
   process.stderr.write(`${JSON.stringify({ ok: false, contract: "v22_repo_hygiene", failures }, null, 2)}\n`);
   process.exit(1);
@@ -73,5 +96,7 @@ process.stdout.write(`${JSON.stringify({
   checked: {
     forbiddenTrackedPathGlobs,
     forbiddenUntrackedPathGlobs,
+    fixedLocalServiceTruthClaimPattern: String(fixedLocalServiceTruthClaimPattern),
+    currentTruthLocalServiceClaimFiles,
   },
 }, null, 2)}\n`);
