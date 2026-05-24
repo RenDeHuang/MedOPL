@@ -23,9 +23,9 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `feat/v22-local-control-plane-hardening` / `c36526a4afe49cc56f25ec2d2988b5dc32feb9a2` |
+| latest repo closeout | `feat/v22-go-control-plane-mvp-takeover` / `116b649ed7ad1ee9955ebff11e86a4b2b8a6579e` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection and local control-plane hardening are closed locally. Go control-plane MVP takeover is the current local program because real-cloud readiness must not start until Node Portal backend business truth has been migrated or retired into shell/relay/local eval dependency. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening and the first Go lab typed API takeover slice are closed locally. Go control-plane MVP takeover is the current local program; it remains active because provider launch, billing/audit, resource workflow and release still need Go local RC parity before real-cloud readiness. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 

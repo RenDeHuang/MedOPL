@@ -148,46 +148,6 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
-### 2026-05-24 feat/v22-go-control-plane-mvp-takeover
-
-Status: `authoring / ready_for_landing_review`
-
-Branch: `feat/v22-go-control-plane-mvp-takeover`
-
-Active change package: `changes/active/go-control-plane-mvp-takeover`
-
-Scope:
-
-- Handoff from `real-cloud-authorization-boundary` to `go-control-plane-mvp-takeover` because user chose to delay cloud migration and require Go control-plane MVP first.
-- `services/medopl-go-backend` is the local MVP takeover target for control-plane API truth.
-- `services/portal/frontend` remains the separated frontend package.
-- `services/portal/src` enters business truth retirement and must not remain a long-term active backend or compatibility control plane.
-- Go now owns the local lab typed API surface under `/api/lab-*`.
-- Node `/portal/api/lab-*` is retired as a 410 fail-closed shell and no longer writes lab package/subscription business truth.
-
-Can-claim:
-
-- Current cursor is authoring the Go control-plane MVP takeover package.
-- Real-cloud readiness remains deferred until Go local RC passes.
-- Local current/review bundles pass on this branch.
-
-Cannot-claim:
-
-- Production backend replacement, real cloud, deploy, kubectl, build/push, live-test or provider operation is complete or authorized.
-- Full provider launch, billing/audit, resource workflow and release takeover is complete beyond the local lab typed API slice.
-
-Verification:
-
-- `node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json`: pass.
-- `node scripts/v22-verify.mjs review --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json`: pass.
-
-Review:
-
-- independent reviewer model: `gpt-5.4-mini`
-- result: blocker=0 after Node lab API retirement and machine cursor cleanup.
-
-next_cursor: `go-control-plane-mvp-takeover`
-
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`
@@ -3420,3 +3380,59 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-05-24 feat/v22-go-control-plane-mvp-takeover
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-go-control-plane-mvp-takeover`
+
+Active change package: `changes/active/go-control-plane-mvp-takeover`
+
+Scope:
+
+- Handoff from `real-cloud-authorization-boundary` to `go-control-plane-mvp-takeover` because user chose to delay cloud migration and require Go control-plane MVP first.
+- `services/medopl-go-backend` is the local MVP takeover target for control-plane API truth.
+- `services/portal/frontend` remains the separated frontend package.
+- `services/portal/src` enters business truth retirement and must not remain a long-term active backend or compatibility control plane.
+- Go now owns the local lab typed API surface under `/api/lab-*`.
+- Node `/portal/api/lab-*` is retired as a 410 fail-closed shell and no longer writes lab package/subscription business truth.
+
+Can-claim:
+
+- The first Go control-plane MVP takeover slice landed and was pushed.
+- Go serves the local lab typed API surface under `/api/lab-*`.
+- Portal frontend lab typed API uses the Go control-plane client.
+- Node `/portal/api/lab-*` is retired as a 410 fail-closed shell and no longer writes lab package/subscription business truth.
+- Real-cloud readiness remains deferred until Go local RC passes.
+- Local current/review bundles pass on this branch.
+
+Cannot-claim:
+
+- Production backend replacement, real cloud, deploy, kubectl, build/push, live-test or provider operation is complete or authorized.
+- Full provider launch, billing/audit, resource workflow and release takeover is complete beyond the local lab typed API slice.
+
+Verification:
+
+- `node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json`: pass.
+
+Review:
+
+- independent reviewer model: `gpt-5.4-mini`
+- result: blocker=0 after Node lab API retirement and machine cursor cleanup.
+
+landed_commit: `116b649ed7ad1ee9955ebff11e86a4b2b8a6579e`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `116b649ed7ad1ee9955ebff11e86a4b2b8a6579e`.
+- Branch-level `current` and `review` bundles passed before ff-only merge.
+- Main trunk `current` and `review` bundles passed after ff-only merge.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `go-control-plane-mvp-takeover`

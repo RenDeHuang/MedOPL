@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-24",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "c36526a4afe49cc56f25ec2d2988b5dc32feb9a2",
+  "base_trunk_head": "116b649ed7ad1ee9955ebff11e86a4b2b8a6579e",
   "current_branch": "go-control-plane-mvp-takeover",
   "current_branch_role": "productization_cursor",
   "authoring_branch": "feat/v22-go-control-plane-mvp-takeover",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "c36526a4afe49cc56f25ec2d2988b5dc32feb9a2",
+  "last_landed_commit": "116b649ed7ad1ee9955ebff11e86a4b2b8a6579e",
   "current_cursor": "go-control-plane-mvp-takeover",
   "next_leaf": "go-control-plane-mvp-takeover",
   "current_stage": "S6 Go control-plane MVP takeover before real-cloud readiness",
@@ -23,7 +23,7 @@
     "node_portal_business_truth_must_be_migrated_or_retired_without_compatibility_layer",
     "real_cloud_secret_provider_deploy_kubectl_build_push_live_test_remain_deferred_until_go_local_rc_passes_and_user_authorizes_separate_package"
   ],
-  "current_problem": "User chose to delay cloud migration and require Go control-plane MVP takeover first. The current cursor is go-control-plane-mvp-takeover: make services/medopl-go-backend the local MVP takeover target, move Portal typed API / provider launch / billing audit / resource workflow authority into Go, and retire Node Portal backend business truth before real-cloud-readiness. Real cloud remains deferred and unauthorized.",
+  "current_problem": "The first Go control-plane MVP takeover slice landed: services/medopl-go-backend owns the local lab typed API surface and Node /portal/api/lab-* is a 410 retired shell. The current cursor remains go-control-plane-mvp-takeover because provider launch, billing/audit, resource workflow and release still need Go local RC parity before any real-cloud readiness package. Real cloud remains deferred and unauthorized.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -106,13 +106,15 @@
       "priority": 90,
       "cursor_eligible": true,
       "status": "active",
-      "next_leaf_step": "go-control-plane-contract-and-evals",
+      "next_leaf_step": "go-control-plane-local-rc-parity",
       "depends_on": [
         "portal-typed-api-contract",
         "provider-key-reuse",
         "opl-entry-real-preflight-launch"
       ],
-      "history_summary": "Promote Go from future target to local MVP takeover target; Node Portal backend business truth enters retirement with no compatibility layer."
+      "history_summary": "First Go takeover slice landed: Go owns local lab typed API under /api/lab-* and Node lab API business routes are retired as 410 shells. Remaining provider launch, billing/audit, resource workflow and release parity stays active under the same cursor.",
+      "landed_commit": "116b649ed7ad1ee9955ebff11e86a4b2b8a6579e",
+      "closed_at": "2026-05-24"
     }
   ],
   "current_leaf": {
@@ -277,9 +279,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-local-control-plane-hardening",
+  "last_landed_branch": "feat/v22-go-control-plane-mvp-takeover",
   "last_landed_at": "2026-05-24",
-  "history_latest_branch": "feat/v22-local-control-plane-hardening",
+  "history_latest_branch": "feat/v22-go-control-plane-mvp-takeover",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
