@@ -23,6 +23,7 @@ Go control-plane MVP takeover surface：
 Retirement surface：
 
 - `services/portal/src` is a retirement surface for business truth. It may only remain as a temporary shell, local eval dependency or integration relay while Go MVP parity is being implemented. It must not retain Portal control-plane business truth, canonical store, provider binding, launch status, billing/audit, resource workflow or cloud operation authority.
+- `services/portal/src/routes/lab-package.routes.mjs` lab package routes remain a retirement shell/local eval dependency for Node workflow-facade boundary checks only. Portal frontend lab typed API ownership is Go-only through `services/medopl-go-backend` and `/api/lab-*`; the Node route must not be treated as frontend typed API truth, current backend truth, compatibility control plane or real-cloud readiness evidence.
 
 ## Productization Source Order
 

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
@@ -10,6 +10,10 @@ const repoRoot = process.cwd();
 const runtimePagePath = path.join(repoRoot, "services", "portal", "frontend", "src", "app", "pages", "RuntimeEnvironment.tsx");
 const adapterPath = path.join(repoRoot, "services", "portal", "frontend", "src", "app", "data", "portalAdapters.ts");
 const apiPath = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "portal", "lab.ts");
+const clientPath = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "client.ts");
+const viteConfigPath = path.join(repoRoot, "services", "portal", "frontend", "vite.config.ts");
+const sourceTruthPath = path.join(repoRoot, "docs", "source", "README.md");
+const runtimeTruthPath = path.join(repoRoot, "docs", "runtime", "README.md");
 const apiAlignmentPath = path.join(repoRoot, "tests", "regression", "portal", "regression-test-v22-portal-frontend-api-surface-alignment.mjs");
 
 function readSource(filePath) {
@@ -18,6 +22,16 @@ function readSource(filePath) {
 
 function sourceFile(filePath) {
   return ts.createSourceFile(filePath, readSource(filePath), ts.ScriptTarget.Latest, true, filePath.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+}
+
+function listFrontendSourceFiles(dirPath) {
+  const entries = readdirSync(dirPath, { withFileTypes: true });
+  return entries.flatMap((entry) => {
+    const childPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) return listFrontendSourceFiles(childPath);
+    if (entry.isFile() && /\.(ts|tsx)$/u.test(entry.name)) return [childPath];
+    return [];
+  });
 }
 
 function collectImportsFrom(filePath, expectedModuleSuffix) {
@@ -49,6 +63,10 @@ function assertNotIncludes(source, phrase, label) {
 const runtimeSource = readSource(runtimePagePath);
 const adapterSource = readSource(adapterPath);
 const apiSource = readSource(apiPath);
+const clientSource = readSource(clientPath);
+const viteConfigSource = readSource(viteConfigPath);
+const sourceTruth = readSource(sourceTruthPath);
+const runtimeTruth = readSource(runtimeTruthPath);
 const alignmentSource = readSource(apiAlignmentPath);
 
 assertImports(adapterPath, "../../api/portal/lab", [
@@ -81,9 +99,26 @@ assertIncludes(apiSource, "LabPackagesPayload", "lab_api_contract_must_keep_pack
 assertIncludes(apiSource, "LabSubscriptionPayload", "lab_api_contract_must_keep_subscription_payload");
 assertIncludes(apiSource, "LabEntitlementPayload", "lab_api_contract_must_keep_entitlement_payload");
 assertIncludes(apiSource, "goControlPlaneClient", "lab_api_must_use_go_control_plane_client");
+assertNotIncludes(apiSource, "apiClient", "lab_api_must_not_import_node_portal_client");
+assertNotIncludes(apiSource, "/portal/api", "lab_api_must_not_name_node_portal_base");
+assertIncludes(clientSource, 'baseURL: "/api"', "go_control_plane_client_must_use_api_base");
+assert.match(clientSource, /export const goControlPlaneClient = axios\.create\(\{\s*baseURL: "\/api"/u, "go_control_plane_client_base_must_be_api");
+assert.match(clientSource, /export const apiClient = axios\.create\(\{\s*baseURL: "\/portal\/api"/u, "portal_api_client_base_must_remain_portal_api");
+assertIncludes(viteConfigSource, '"/api": goControlPlaneTarget', "vite_must_proxy_go_control_plane_api");
+assertIncludes(sourceTruth, "services/portal/src/routes/lab-package.routes.mjs", "source_truth_must_name_node_lab_route_retirement_shell");
+assertIncludes(sourceTruth, "lab package routes remain a retirement shell/local eval dependency", "source_truth_must_demote_node_lab_route");
+assertIncludes(runtimeTruth, "local control-plane implementation is Go-owned for lab typed APIs", "runtime_truth_must_name_go_lab_api_ownership");
 assertNotIncludes(apiSource, "apiClient.get<LabPackagesPayload>", "lab_packages_must_not_use_node_portal_client");
 assertNotIncludes(apiSource, "apiClient.get<LabSubscriptionPayload>", "lab_subscription_must_not_use_node_portal_client");
 assertNotIncludes(apiSource, "apiClient.get<LabEntitlementPayload>", "lab_entitlement_must_not_use_node_portal_client");
+assertNotIncludes(apiSource, "apiClient.post", "lab_mutations_must_not_use_node_portal_client");
+
+for (const filePath of listFrontendSourceFiles(path.join(repoRoot, "services", "portal", "frontend", "src"))) {
+  const source = readSource(filePath);
+  const label = path.relative(repoRoot, filePath);
+  assertNotIncludes(source, "/portal/api/lab-", `frontend_must_not_call_node_lab_api_directly:${label}`);
+  assertNotIncludes(source, "/portal/api/lab_", `frontend_must_not_call_node_lab_api_directly:${label}`);
+}
 
 for (const hardcodedPlan of [
   "const plans = [",
@@ -100,6 +135,8 @@ console.log(JSON.stringify({
     "runtime_page_uses_model_plans_subscription_entitlement",
     "runtime_adapter_reads_lab_package_subscription_entitlement_api",
     "runtime_page_uses_upgrade_api",
+    "lab_typed_api_uses_go_control_plane_client",
+    "node_lab_route_demoted_to_retirement_shell",
     "active_missing_ui_adjudications_removed",
   ],
 }, null, 2));

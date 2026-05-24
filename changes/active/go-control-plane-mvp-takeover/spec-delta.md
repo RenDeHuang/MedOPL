@@ -15,6 +15,7 @@ Target specs:
 - `spec:v22-go-control-plane-mvp-takeover-boundary` supersedes the previous backend Go convergence wording for the current cursor.
 - Node Portal backend business truth must be migrated or retired; it must not remain a long-term active backend, compatibility layer or second control plane.
 - The frontend/backend split must be explicit: `services/portal/frontend` is the UI package; `services/medopl-go-backend` owns control-plane API truth.
+- `services/portal/src/routes/lab-package.routes.mjs` is demoted to a retirement shell/local eval dependency for workflow-facade boundary checks. It cannot be frontend lab typed API truth, current backend truth or real-cloud readiness evidence.
 
 ## REMOVED
 

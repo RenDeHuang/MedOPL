@@ -6,6 +6,7 @@
 node tests/contract/contract-test-v22-backend-go-convergence-program.mjs
 node tests/contract/contract-test-v22-go-backend-service-surface.mjs
 node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs
+node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs
 node tests/contract/contract-test-v22-change-package-lifecycle.mjs
 node tests/contract/contract-test-v22-current-state-index-loop.mjs
 go test ./...

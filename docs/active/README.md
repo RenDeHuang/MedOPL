@@ -25,7 +25,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
 | latest repo closeout | `feat/v22-local-control-plane-hardening` / `c36526a4afe49cc56f25ec2d2988b5dc32feb9a2` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection and local control-plane hardening are closed locally. Go control-plane MVP takeover is the current local program because real-cloud readiness must not start while Node Portal backend still holds business truth. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection and local control-plane hardening are closed locally. Go control-plane MVP takeover is the current local program because real-cloud readiness must not start until Node Portal backend business truth has been migrated or retired into shell/relay/local eval dependency. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 

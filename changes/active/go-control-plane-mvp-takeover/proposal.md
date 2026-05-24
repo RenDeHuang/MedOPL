@@ -8,13 +8,13 @@ Affected plane: Product | Integration | Runtime | Operations
 
 ## Why
 
-The local golden path is blocked from moving into real-cloud readiness while Node Portal backend still owns control-plane business truth. MedOPL now chooses to delay cloud migration and make `services/medopl-go-backend` the local MVP control-plane backend first.
+The local golden path is blocked from moving into real-cloud readiness until Node Portal backend business truth has been migrated or retired into shell/relay/local eval dependency. MedOPL now chooses to delay cloud migration and make `services/medopl-go-backend` the local MVP control-plane backend first.
 
 ## Goals
 
 - Make Go the local MVP takeover target for Portal typed API, package/subscription/entitlement, OPL launch projection, billing/audit/resource workflow and release.
 - Make `services/portal/frontend` a modern separated frontend that talks to Go-owned typed API.
-- Retire `services/portal/src` business truth without keeping a long-term Node compatibility control plane.
+- Retire legacy `services/portal/src` business truth without keeping a long-term Node compatibility control plane.
 - Keep real cloud, provider operation, deploy, kubectl, build/push and live-test out of this package.
 
 ## Non-Goals
