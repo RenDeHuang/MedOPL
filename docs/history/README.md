@@ -3305,3 +3305,76 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-05-24 feat/v22-local-control-plane-hardening
+
+Status: `authoring / local-gated`
+
+Branch: `feat/v22-local-control-plane-hardening`
+
+Archived change package: `changes/archive/2026-05-24-local-control-plane-hardening`
+
+Scope:
+
+- Retired the active PowerShell workspace-to-MinIO sync helper and removed `scripts/sync-workspace-file-to-minio.ps1` from the active scripts surface.
+- Kept workspace storage sync in Node runtime code with direct `mc` calls and shared encoded object-prefix construction for write and read paths.
+- Reduced `services/portal/src/app/portal-runtime.mjs` import fan-out from 18 to 16 by deleting the redundant HTTP re-export layer and moving default process wiring into narrower runtime code.
+- Added repo hygiene protection so fixed local service endpoint / port claims cannot become current truth.
+- Tightened Go control-plane takeover readiness gates without promoting Go to current production backend.
+- Kept current cursor on `real-cloud-authorization-boundary`; this package does not authorize real cloud.
+
+Commits:
+
+- `5d2860f` docs(change): open local control plane hardening package.
+- `c00c480` test(hygiene): guard current truth localhost claims.
+- `4318782` refactor(portal): retire powershell minio sync helper.
+- `0886c23` refactor(portal): reduce runtime assembly fanout.
+- `85ccb23` test(go): tighten control plane takeover readiness.
+- `54e6dad` fix(portal): close local hardening review gaps.
+
+Verification result:
+
+- `node tests/regression/portal/regression-test-v22-workspace-storage-public-response.mjs`: pass after RED on unencoded MinIO read prefix.
+- `node tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs`: pass.
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass.
+- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass.
+- `node tests/contract/contract-test-v22-backend-go-convergence-program.mjs`: pass.
+- `node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs`: pass.
+- `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`: pass.
+- `npm run verify:repo-hygiene`: pass.
+- `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify:review`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `go version`: unavailable; `go test ./...` was not run.
+
+Independent review:
+
+- Reviewer: Heisenberg, Codex native explorer subagent.
+- Model requested: `gpt-5.4-mini`; returned report identified itself as GPT-5.
+- Result: accepted the direction on MinIO helper retirement, Go future-target boundary and Portal runtime fan-out reduction. The claimed local-port self-blocker did not reproduce under `npm run verify:repo-hygiene`; the MinIO read/write encoding mismatch was valid and fixed.
+
+Can-claim:
+
+- Active runtime code no longer depends on `scripts/sync-workspace-file-to-minio.ps1`.
+- Workspace MinIO write and read paths share encoded object prefix construction.
+- Portal runtime fan-out is reduced, but not fully retired.
+- Go takeover readiness gates preserve future-target semantics and the current Node Portal backend boundary.
+
+Cannot-claim:
+
+- Real cloud authorization, live provider evidence, deploy, kubectl, build/push, live-test, production billing or production evidence is authorized.
+- Go backend has replaced the current Node Portal backend.
+- `go test ./...` evidence exists in this environment.
+- All Portal structure debt is closed.
+
+handoff_commit: `54e6dad`
+
+landing_gate_result: `pending ff-only merge / push eval`
+
+post_push_verification:
+
+- pending; must run after ff-only merge and push.
+
+post_merge_closeout: `pending`
+
+next_cursor: `real-cloud-authorization-boundary`
