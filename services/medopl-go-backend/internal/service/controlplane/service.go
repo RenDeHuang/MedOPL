@@ -9,12 +9,20 @@ import (
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
 	cprepo "github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/controlplane"
+	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/secret/providersecret"
 )
 
 type Service struct {
-	store cprepo.Store
-	now   func() time.Time
+	store              cprepo.Store
+	now                func() time.Time
+	providerSecretSink ProviderSecretSink
 }
+
+type ProviderSecretSink interface {
+	WriteProviderSecret(ref string, secret providersecret.Secret) error
+}
+
+type Option func(*Service)
 
 type BindProviderKeyInput struct {
 	TenantID       string
@@ -260,8 +268,20 @@ type ReleaseResult struct {
 	AuditEvent     cpd.AuditEvent      `json:"auditEvent"`
 }
 
-func NewService(store cprepo.Store) *Service {
-	return &Service{store: store, now: time.Now}
+func WithProviderSecretStore(sink ProviderSecretSink) Option {
+	return func(service *Service) {
+		service.providerSecretSink = sink
+	}
+}
+
+func NewService(store cprepo.Store, options ...Option) *Service {
+	service := &Service{store: store, now: time.Now}
+	for _, option := range options {
+		if option != nil {
+			option(service)
+		}
+	}
+	return service
 }
 
 func (service *Service) BindProviderKey(ctx context.Context, input BindProviderKeyInput) (cpd.ProviderBinding, error) {
@@ -278,6 +298,15 @@ func (service *Service) BindProviderKey(ctx context.Context, input BindProviderK
 	}
 	if err := service.store.SaveProviderBinding(ctx, binding); err != nil {
 		return cpd.ProviderBinding{}, err
+	}
+	if service.providerSecretSink != nil {
+		if err := service.providerSecretSink.WriteProviderSecret(binding.ProviderKeyRef, providersecret.Secret{
+			Provider: "gflabtoken",
+			Source:   "user_input",
+			APIKey:   input.RawProviderKey,
+		}); err != nil {
+			return cpd.ProviderBinding{}, err
+		}
 	}
 	return binding, nil
 }

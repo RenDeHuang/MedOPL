@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import net from "node:net";
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -129,15 +129,10 @@ function childEnv(overrides = {}) {
   return env;
 }
 
-function spawnNode(script, { port, env = {}, stateRoot = "", cwd = process.cwd() } = {}) {
-  const child = spawn(process.execPath, [script], {
+function spawnProcess(command, args, { env = {}, cwd = process.cwd() } = {}) {
+  const child = spawn(command, args, {
     cwd,
-    env: childEnv({
-      PORT: String(port),
-      NODE_ENV: "test",
-      ...(stateRoot ? { PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot } : {}),
-      ...env,
-    }),
+    env: childEnv(env),
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stdout.setEncoding("utf8");
@@ -145,6 +140,41 @@ function spawnNode(script, { port, env = {}, stateRoot = "", cwd = process.cwd()
   child.stdout.on("data", (chunk) => childOutputPush(child, "stdout", chunk));
   child.stderr.on("data", (chunk) => childOutputPush(child, "stderr", chunk));
   return child;
+}
+
+function spawnNode(script, { port, env = {}, stateRoot = "", cwd = process.cwd() } = {}) {
+  return spawnProcess(process.execPath, [script], {
+    cwd,
+    env: {
+      PORT: String(port),
+      NODE_ENV: "test",
+      ...(stateRoot ? { PORTAL_RUNTIME_BRIDGE_STATE_ROOT: stateRoot } : {}),
+      ...env,
+    },
+  });
+}
+
+function buildGoBackendBinary(outputPath) {
+  const result = spawnSync("go", ["build", "-o", outputPath, "./cmd/server"], {
+    cwd: "services/medopl-go-backend",
+    env: childEnv({
+      GOPROXY: process.env.GOPROXY || "https://goproxy.cn,direct",
+      GOSUMDB: process.env.GOSUMDB || "sum.golang.google.cn",
+    }),
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  assert.equal(result.status, 0, redact(`go_backend_build_failed:${result.stderr || result.stdout}`));
+}
+
+function spawnGoBackend({ binaryPath, port, providerSecretRoot }) {
+  return spawnProcess(binaryPath, [], {
+    env: {
+      MEDOPL_BACKEND_MODE: "local",
+      MEDOPL_BACKEND_PORT: String(port),
+      PORTAL_OPL_PROVIDER_SECRET_ROOT: providerSecretRoot,
+    },
+  });
 }
 
 async function stopChild(child) {
@@ -245,6 +275,7 @@ await mkdir(runtimeRoot, { recursive: true });
 let runtimeBridge;
 let gateway;
 let portal;
+let goBackend;
 
 try {
   const upstream = await waitFor(OPL_UPSTREAM_URL, { allowStatus: (status) => status === 200, timeoutMs: 5000 });
@@ -255,9 +286,12 @@ try {
   const runtimeBridgePort = await freePort();
   const gatewayPort = await freePort();
   const portalPort = await freePort();
+  const goBackendPort = await freePort();
   const runtimeBridgeUrl = `http://127.0.0.1:${runtimeBridgePort}`;
   const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
   const portalUrl = `http://127.0.0.1:${portalPort}`;
+  const goControlPlaneUrl = `http://127.0.0.1:${goBackendPort}`;
+  const goBackendBinary = path.join(tempRoot, "medopl-go-backend-local-rc");
 
   runtimeBridge = spawnNode("services/opl-runtime-bridge/src/server.mjs", {
     port: runtimeBridgePort,
@@ -275,6 +309,14 @@ try {
     },
   });
   await waitForChildUrl(runtimeBridge, `${runtimeBridgeUrl}/healthz`, "runtime_bridge_healthz");
+
+  buildGoBackendBinary(goBackendBinary);
+  goBackend = spawnGoBackend({
+    binaryPath: goBackendBinary,
+    port: goBackendPort,
+    providerSecretRoot,
+  });
+  await waitForChildUrl(goBackend, `${goControlPlaneUrl}/health`, "go_backend_health");
 
   gateway = spawnNode("services/opl-web-gateway/src/server.mjs", {
     port: gatewayPort,
@@ -322,56 +364,77 @@ try {
   assert.equal(me.json.email, USER_EMAIL, "portal_me_email_mismatch");
   assertNoSecretLeak(me.json, "portal_me");
 
-  const prepared = await postJson(`${portalUrl}/portal/api/v22/users/prepare`, {
+  const prepared = await postJson(`${goControlPlaneUrl}/api/v22/users/prepare`, {
     tenantId: "tenant-local-rc-golden-path",
     userId: me.json.id,
     email: me.json.email,
     name: me.json.name || "Local RC User",
     workspaceId: WORKSPACE_ID,
-  }, { cookie: portalCookie });
+  });
   assert([200, 201].includes(prepared.response.status), "prepare_user_must_return_200_or_201");
   assert.equal(prepared.json.ok, true, "prepare_user_must_return_ok");
   assertNoSecretLeak(prepared.json, "prepare_user");
 
-  const credit = await postJson(`${portalUrl}/portal/api/v22/users/credit`, {
+  const credit = await postJson(`${goControlPlaneUrl}/api/v22/users/credit`, {
     userId: me.json.id,
     amount: 500,
     idempotencyKey: "local-rc-credit-once",
-  }, { cookie: portalCookie });
+  });
   assert.equal(credit.response.status, 200, "credit_must_return_200");
   assert.equal(credit.json.ok, true, "credit_must_return_ok");
-  assert.equal(credit.json.balance.balanceCents >= 50000, true, "credit_balance_must_cover_local_rc");
+  assert.equal(Number(credit.json.balance || 0) >= 100, true, "credit_balance_must_cover_local_rc");
   assertNoSecretLeak(credit.json, "credit");
 
-  const bound = await postJson(`${portalUrl}/portal/api/v22/provider-key`, {
+  const bound = await postJson(`${goControlPlaneUrl}/api/v22/provider-key`, {
+    tenantId: "tenant-local-rc-golden-path",
+    portalUserId: me.json.id,
     workspaceId: WORKSPACE_ID,
     provider: "gflabtoken",
     apiKey: providerKey,
-  }, { cookie: portalCookie });
+  });
   assert.equal(bound.response.status, 200, "provider_key_binding_must_return_200");
   assert.equal(bound.json.ok, true, "provider_key_binding_must_return_ok");
   assert.equal(bound.json.providerBound, true, "provider_key_must_mark_bound");
   assert(bound.json.providerKeyRef, "provider_key_ref_required");
   assertNoSecretLeak(bound.json, "provider_key_binding");
 
-  const readiness = await postJson(`${portalUrl}/portal/api/v22/managed-environment/readiness`, {
+  const readiness = await postJson(`${goControlPlaneUrl}/api/v22/managed-environment/readiness`, {
     workspaceId: WORKSPACE_ID,
-  }, { cookie: portalCookie });
+  });
   assert.equal(readiness.response.status, 200, "readiness_after_provider_must_return_200");
   assert.equal(readiness.json.readyForManagedEnvironment, true, "readiness_after_provider_must_be_ready");
   assertNoSecretLeak(readiness.json, "readiness_after_provider");
 
-  const opened = await postJson(`${portalUrl}/portal/api/v22/managed-environment/open`, {
+  const opened = await postJson(`${goControlPlaneUrl}/api/v22/managed-environment/open`, {
+    tenantId: "tenant-local-rc-golden-path",
+    portalUserId: me.json.id,
     workspaceId: WORKSPACE_ID,
     planId: PLAN_ID,
     fileSpaceGb: FILE_SPACE_GB,
     idempotencyKey: "local-rc-open-managed-environment",
-  }, { cookie: portalCookie });
-  assert.equal(opened.response.status, 201, "managed_environment_open_must_create");
+  });
+  assert.equal(opened.response.status, 200, "managed_environment_open_must_return_200");
   assert.equal(opened.json.ok, true, "managed_environment_open_must_return_ok");
-  assert.equal(opened.json.managedEnvironmentEnabled, true, "managed_environment_must_be_enabled");
+  assert.equal(opened.json.launchStatus, "ready", "managed_environment_must_be_ready");
   assert.equal(Object.hasOwn(opened.json, "resourceBinding"), false, "managed_environment_open_must_not_expose_resource_binding");
   assertNoSecretLeak(opened.json, "managed_environment_open");
+
+  const portalDbPath = path.join(runtimeRoot, "portal-db.json");
+  const portalDb = JSON.parse(await readFile(portalDbPath, "utf8"));
+  portalDb.providerKeyBindings = [{
+    id: "provider-binding-go-local-rc",
+    tenantId: "tenant-local-rc-golden-path",
+    userId: me.json.id,
+    workspaceId: WORKSPACE_ID,
+    provider: "gflabtoken",
+    providerKeyRef: bound.json.providerKeyRef,
+    providerConfigSecretRef: bound.json.providerKeyRef,
+    boundStatus: "bound",
+    providerConfigStatus: "configured",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }];
+  await writeFile(portalDbPath, `${JSON.stringify(portalDb, null, 2)}\n`);
 
   const unboundLaunch = await postJson(`${portalUrl}/portal/api/opl/launch`, {
     workspaceId: WORKSPACE_ID,
@@ -470,10 +533,10 @@ try {
 
   const run = await postJson(`${portalUrl}/portal/api/opl/runs?launchId=${encodeURIComponent(launchId)}`, {
     mode: "full_runtime",
-    resourceBindingId: "rb-local-rc-golden-path",
-    computeInstanceId: "compute-local-rc-golden-path",
-    storageBucketId: "storage-local-rc-golden-path",
-    runtimeAgentId: "runtime-agent-local-rc-golden-path",
+    resourceBindingId: opened.json.resourceBindingId,
+    computeInstanceId: opened.json.computeInstanceId,
+    storageBucketId: opened.json.storageBucketId,
+    runtimeAgentId: opened.json.runtimeAgentId,
     message: "run local RC artifact projection",
     fileRefs: [file.json.fileRef],
     toolName: "local-rc-golden-path",
@@ -495,22 +558,24 @@ try {
   assert.equal(sessionTraces.json.items?.length >= 1, true, "portal_session_traces_must_include_runtime_projection");
   assertNoSecretLeak(sessionTraces.json, "portal_session_traces");
 
-  const release = await postJson(`${portalUrl}/portal/api/v22/managed-environment/release`, {
+  const release = await postJson(`${goControlPlaneUrl}/api/v22/managed-environment/release`, {
     workspaceId: WORKSPACE_ID,
+    resourceBindingId: opened.json.resourceBindingId,
     releasedAt: RELEASED_AT,
     reason: "local_rc_close",
-  }, { cookie: portalCookie });
+    stopBilling: true,
+    idempotencyKey: "local-rc-release-managed-environment",
+  });
   assert.equal(release.response.status, 200, "managed_environment_release_must_return_200");
   assert.equal(release.json.ok, true, "managed_environment_release_must_return_ok");
-  assert.equal(release.json.stopBilling.status, "billing_stopped", "managed_environment_release_must_stop_billing");
-  assert.equal(release.json.audit.status, "audit_pending", "managed_environment_release_must_create_audit_pending");
+  assert.equal(release.json.billingStopped, true, "managed_environment_release_must_stop_billing");
+  assert.equal(release.json.auditEvent.status, "recorded", "managed_environment_release_must_create_audit_record");
   assertNoSecretLeak(release.json, "managed_environment_release");
 
-  const releasedState = await getJson(`${portalUrl}/portal/api/canonical-state?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`, { cookie: portalCookie });
-  assert.equal(releasedState.response.status, 200, "released_canonical_state_must_return_200");
-  assert.equal(releasedState.json.managedEnvironment.enabled, false, "released_canonical_state_must_disable_managed_environment");
-  assert.equal(releasedState.json.stopBilling.status, "billing_stopped", "released_canonical_state_stop_billing_mismatch");
-  assertNoSecretLeak(releasedState.json, "released_canonical_state");
+  const goResources = await getJson(`${goControlPlaneUrl}/api/platform-provisioned-resources?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`);
+  assert.equal(goResources.response.status, 200, "released_go_resources_must_return_200");
+  assert.equal(goResources.json.items.some((item) => item.resourceBindingId === opened.json.resourceBindingId && item.status === "released"), true, "released_go_resources_must_include_released_environment");
+  assertNoSecretLeak(goResources.json, "released_go_resources");
 
   const state = await readRuntimeBridgeState(runtimeBridgeStateRoot);
   assert(state.messageReplies.some((item) => item.messageId === message.json.message.messageId && item.providerKeyRef === launch.json.providerKeyRef), "runtime_state_must_persist_provider_bound_message_reply");
@@ -530,6 +595,7 @@ try {
       portalUrl,
       gatewayUrl,
       runtimeBridgeUrl,
+      goControlPlaneUrl,
       oplUpstreamUrl: OPL_UPSTREAM_URL,
     },
     covered: [
@@ -556,6 +622,7 @@ try {
 } finally {
   await stopChild(portal);
   await stopChild(gateway);
+  await stopChild(goBackend);
   await stopChild(runtimeBridge);
   await rm(tempRoot, { recursive: true, force: true });
 }

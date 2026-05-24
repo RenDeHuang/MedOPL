@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/memory"
+	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/secret/providersecret"
 	controlplaneservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
 )
 
@@ -157,6 +160,34 @@ func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) 
 	}
 }
 
+func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
+	secretRoot := t.TempDir()
+	router := controlPlaneHandlerTestRouterWithSecretRoot(secretRoot)
+	rawProviderKey := "local-rc-provider-key-material-that-must-stay-private"
+
+	bindResponse := postMap(t, router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"apiKey":         rawProviderKey,
+		"idempotencyKey": "v22-provider-key-secret-boundary-once",
+	})
+	assertPublicPayload(t, bindResponse, rawProviderKey)
+	providerKeyRef, ok := bindResponse["providerKeyRef"].(string)
+	if !ok || providerKeyRef == "" {
+		t.Fatalf("providerKeyRef missing from bind response: %+v", bindResponse)
+	}
+
+	secretPath := filepath.Join(secretRoot, providersecret.NormalizeRef(providerKeyRef)+".json")
+	secretPayload, err := os.ReadFile(secretPath)
+	if err != nil {
+		t.Fatalf("provider secret file missing: %v", err)
+	}
+	assertJSONContains(t, secretPayload, `"provider":"gflabtoken"`)
+	assertJSONContains(t, secretPayload, `"source":"user_input"`)
+	assertJSONContains(t, secretPayload, `"apiKey":"`+rawProviderKey+`"`)
+}
+
 func TestControlPlaneHandlersScopeResourcesAndFailClosedOnMissingRelease(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 
@@ -213,9 +244,17 @@ func TestControlPlaneHandlersFailClosedWithoutProviderKey(t *testing.T) {
 }
 
 func controlPlaneHandlerTestRouter() *gin.Engine {
+	return controlPlaneHandlerTestRouterWithSecretRoot("")
+}
+
+func controlPlaneHandlerTestRouterWithSecretRoot(secretRoot string) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	service := controlplaneservice.NewService(memory.NewControlPlaneStore())
+	options := []controlplaneservice.Option{}
+	if strings.TrimSpace(secretRoot) != "" {
+		options = append(options, controlplaneservice.WithProviderSecretStore(providersecret.NewFileStore(secretRoot)))
+	}
+	service := controlplaneservice.NewService(memory.NewControlPlaneStore(), options...)
 	api := router.Group("/api")
 	RegisterControlPlaneRoutes(api, service)
 	return router
@@ -263,5 +302,12 @@ func assertPublicPayload(t *testing.T, payload map[string]any, rawProviderKey st
 		if strings.Contains(text, marker) {
 			t.Fatalf("public payload leaked %q: %s", marker, text)
 		}
+	}
+}
+
+func assertJSONContains(t *testing.T, payload []byte, marker string) {
+	t.Helper()
+	if !strings.Contains(string(payload), marker) {
+		t.Fatalf("json payload missing %s: %s", marker, string(payload))
 	}
 }

@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -13,16 +15,18 @@ const (
 )
 
 type Config struct {
-	Service string
-	Mode    string
-	Port    int
+	Service            string
+	Mode               string
+	Port               int
+	ProviderSecretRoot string
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		Service: serviceName,
-		Mode:    valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), defaultMode),
-		Port:    defaultPort,
+		Service:            serviceName,
+		Mode:               valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), defaultMode),
+		Port:               defaultPort,
+		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), filepath.Join(".runtime", "runtime-bridge", "provider-secrets")),
 	}
 	rawPort := valueOrDefault(os.Getenv("MEDOPL_BACKEND_PORT"), strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(rawPort)
@@ -46,6 +50,9 @@ func (cfg Config) Validate() error {
 	}
 	if cfg.Port <= 0 || cfg.Port > 65535 {
 		return fmt.Errorf("MEDOPL_BACKEND_PORT out of range: %d", cfg.Port)
+	}
+	if cfg.ProviderSecretRoot = strings.TrimSpace(cfg.ProviderSecretRoot); cfg.ProviderSecretRoot == "" {
+		return fmt.Errorf("PORTAL_OPL_PROVIDER_SECRET_ROOT required")
 	}
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func TestRouterServesExpectedEndpoints(t *testing.T) {
-	router := Router(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789})
+	router := Router(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir()})
 	for _, path := range []string{"/health", "/version", "/config/check"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()

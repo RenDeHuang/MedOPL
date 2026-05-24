@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/config"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/memory"
+	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/secret/providersecret"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/server/handlers"
 	controlplaneservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
 	labservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/lab"
@@ -23,7 +24,10 @@ func Router(cfg config.Config) *gin.Engine {
 	api.GET("/lab-entitlement", handlers.LabEntitlement(labControlPlane))
 	api.POST("/lab-packages/activate", handlers.ActivateLabPackage(labControlPlane))
 	api.POST("/lab-packages/upgrade", handlers.UpgradeLabPackage(labControlPlane))
-	controlPlane := controlplaneservice.NewService(memory.NewControlPlaneStore())
+	controlPlane := controlplaneservice.NewService(
+		memory.NewControlPlaneStore(),
+		controlplaneservice.WithProviderSecretStore(providersecret.NewFileStore(cfg.ProviderSecretRoot)),
+	)
 	handlers.RegisterControlPlaneRoutes(api, controlPlane)
 	workflowFacade := workflowservice.NewFacade(memory.NewWorkflowStore())
 	router.POST("/workflow/commands", handlers.WorkflowCommands(workflowFacade))

@@ -13,7 +13,7 @@ import (
 func TestConfigCheckReturnsOkForValidConfig(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	router.GET("/config/check", ConfigCheck(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789}))
+	router.GET("/config/check", ConfigCheck(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir()}))
 	req := httptest.NewRequest(http.MethodGet, "/config/check", nil)
 	rec := httptest.NewRecorder()
 

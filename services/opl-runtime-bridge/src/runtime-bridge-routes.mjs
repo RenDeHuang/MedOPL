@@ -207,6 +207,7 @@ function publicMessageReplyPayload(message = {}, record = {}) {
     messageId: emptyText(message.messageId || record.messageId),
     runId: emptyText(message.runId || record.runId || message.messageId || record.messageId),
     traceId: emptyText(message.messageTraceId || message.traceId || record.messageTraceId || record.traceId),
+    providerKeyRef: emptyText(message.providerKeyRef || record.providerKeyRef),
     replyMessageId: emptyText(message.replyMessageId || record.replyMessageId),
     messageTraceId: emptyText(message.messageTraceId || record.messageTraceId || message.traceId || record.traceId),
     providerInvocationRef: emptyText(message.providerInvocationRef || record.providerInvocationRef),
