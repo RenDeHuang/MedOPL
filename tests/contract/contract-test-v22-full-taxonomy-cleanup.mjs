@@ -125,7 +125,7 @@ for (const dir of taxonomyDirs) {
 }
 
 const scripts = (await listFiles("scripts")).sort();
-assert.deepEqual(scripts, allowedScripts, "scripts_root_must_only_keep_runner_classifier_workflow_and_service_sync_helper");
+assert.deepEqual(scripts, allowedScripts, "scripts_root_must_only_keep_runner_classifier_and_workflow_gate");
 
 const fixtureFiles = (await listFiles("tests/fixtures/v22")).sort();
 assert.deepEqual(fixtureFiles, [

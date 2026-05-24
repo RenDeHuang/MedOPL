@@ -45,15 +45,21 @@ export function createMinioStorageClient({
     );
   }
 
+  function workspaceObjectPrefix(userId, taskSlug) {
+    return [
+      "localminio/workspaces",
+      encodeURIComponent(String(userId || "")),
+      encodeURIComponent(String(taskSlug || "")),
+    ].join("/");
+  }
+
   function workspaceObjectTarget(userId, taskSlug, kind, relativePath = "") {
     const normalizedRelativePath = String(relativePath || "").replace(/\\/g, "/").replace(/^\/+/, "");
     if (normalizedRelativePath.split("/").includes("..")) {
       throw new Error("minio_sync_invalid_relative_path");
     }
     return [
-      "localminio/workspaces",
-      encodeURIComponent(String(userId || "")),
-      encodeURIComponent(String(taskSlug || "")),
+      workspaceObjectPrefix(userId, taskSlug),
       encodeURIComponent(String(kind || "")),
       ...normalizedRelativePath.split("/").filter(Boolean).map((item) => encodeURIComponent(item)),
     ].join("/");
@@ -125,7 +131,7 @@ export function createMinioStorageClient({
       }
       try {
         await configureAlias();
-        const target = `localminio/workspaces/${userId}/${taskSlug}`;
+        const target = workspaceObjectPrefix(userId, taskSlug);
         const { stdout } = await runExecFile(
           mcBinary,
           ["ls", "--json", "--recursive", target],

@@ -55,15 +55,17 @@ const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-workspace-storage-pub
 try {
   const minioCalls = [];
   const minioFilePath = path.join(tempRoot, "minio-sync", "inputs", "dataset.csv");
+  const fakeMcBinary = path.join(tempRoot, "mc");
   await mkdir(path.dirname(minioFilePath), { recursive: true });
   await writeFile(minioFilePath, "a,b\n1,2\n", "utf8");
+  await writeFile(fakeMcBinary, "", "utf8");
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => ({ ok: true });
   try {
     const minioClient = createMinioStorageClient({
       repoRoot: tempRoot,
       portalWorkdir: tempRoot,
-      mcBinary: "/opt/medopl/bin/mc",
+      mcBinary: fakeMcBinary,
       minioApiUrl: "http://127.0.0.1:9000",
       formatDateTime: (value) => value,
       execFileAsync: async (bin, args, options) => {
@@ -76,10 +78,25 @@ try {
     globalThis.fetch = originalFetch;
   }
   assert.equal(minioCalls.some((call) => call.bin === "powershell.exe"), false, "minio_sync_must_not_call_powershell");
-  assert.deepEqual(minioCalls.map((call) => call.bin), ["/opt/medopl/bin/mc", "/opt/medopl/bin/mc", "/opt/medopl/bin/mc"], "minio_sync_must_use_mc_directly");
+  assert.deepEqual(minioCalls.map((call) => call.bin), [fakeMcBinary, fakeMcBinary, fakeMcBinary], "minio_sync_must_use_mc_directly");
   assert.deepEqual(minioCalls[0].args.slice(0, 3), ["alias", "set", "localminio"], "minio_sync_must_configure_alias");
   assert.deepEqual(minioCalls[1].args, ["mb", "--ignore-existing", "localminio/workspaces"], "minio_sync_must_ensure_bucket");
   assert.deepEqual(minioCalls[2].args, ["cp", minioFilePath, "localminio/workspaces/user-public-response/workspace-public-response/inputs/nested/dataset.csv"], "minio_sync_must_copy_to_workspace_object_path");
+
+  const minioReadCalls = [];
+  const minioReadClient = createMinioStorageClient({
+    repoRoot: tempRoot,
+    portalWorkdir: tempRoot,
+    mcBinary: fakeMcBinary,
+    minioApiUrl: "http://127.0.0.1:9000",
+    formatDateTime: (value) => value,
+    execFileAsync: async (bin, args, options) => {
+      minioReadCalls.push({ bin, args, options });
+      return { stdout: "", stderr: "" };
+    },
+  });
+  await minioReadClient.fetchWorkspaceState("user with/slash", "workspace with/slash");
+  assert.deepEqual(minioReadCalls[1].args, ["ls", "--json", "--recursive", "localminio/workspaces/user%20with%2Fslash/workspace%20with%2Fslash"], "minio_fetch_must_use_encoded_workspace_object_prefix");
 
   const user = { id: "user-public-response", tenantId: "tenant-public-response" };
   const taskSpace = {

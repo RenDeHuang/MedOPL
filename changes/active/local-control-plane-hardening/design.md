@@ -22,5 +22,5 @@ This package keeps the active local topology intact: Node Portal backend, React/
 
 - source: `services/portal/src/**`, `services/medopl-go-backend/**`, targeted scripts/tests only.
 - docs: only this change package, plus existing truth README/history closeout if accepted.
-- specs: existing `docs/specs/README.md` anchors only if the implementation creates durable deltas.
+- specs: `specs/source/spec.md` and `specs/framework/spec.md` durable requirement rows only; no new spec directory.
 - tests: local deterministic tests and gates only.

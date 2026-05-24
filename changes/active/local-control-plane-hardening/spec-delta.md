@@ -2,24 +2,23 @@
 
 Target specs:
 
-- `specs/source/spec.md`
-- `specs/runtime/spec.md`
-- `specs/framework/spec.md`
+- specs/source/spec.md
+- specs/framework/spec.md
 
 ## ADDED
 
-- Local service readiness must identify the current repo root for Portal, Gateway, Runtime Bridge, OPL upstream and Portal frontend checks before a local RC is treated as inspectable.
-- Portal storage sync must not require a PowerShell helper script in active runtime code.
-- Portal runtime assembly must keep broad dependency wiring out of `portal-runtime.mjs`; structural checks must fail when fan-out regresses.
+- `framework:current-truth-localhost-claim-hygiene` requires active/change truth surfaces to avoid treating fixed localhost ports or stale local processes as current trunk evidence.
+- `source:portal-minio-sync-helper-retired` requires Portal workspace file projection to run through Node runtime code without a PowerShell helper script, shell helper path or script-level MinIO sync wrapper.
 
 ## MODIFIED
 
-- Go backend takeover remains a repo-native convergence program. This package may add readiness gates and Node-to-Go handoff checks, but it cannot promote Go to active production backend.
-- Default verification remains golden-path first, followed by governance and structure gates.
+- `source:portal-runtime-fanout-debt` tightens the current Portal runtime structure gate by lowering the allowed `portal-runtime.mjs` fan-out and deleting a redundant HTTP re-export layer.
+- `source:go-control-plane-takeover-order` remains a repo-native convergence program: this package tightens readiness gates and Node-to-Go handoff checks, but it cannot promote Go to active production backend.
+- `framework:golden-path-impact-required` remains golden-path first; governance and structure gates are guardrails after product health.
 
 ## REMOVED
 
-- Current Portal runtime code must stop depending on `scripts/sync-workspace-file-to-minio.ps1`.
+- `source:portal-minio-sync-helper-retired` removes the active runtime dependency on `scripts/sync-workspace-file-to-minio.ps1` and removes that script from the allowed root `scripts/` surface.
 
 ## CANNOT-CLAIM
 

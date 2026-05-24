@@ -87,4 +87,4 @@ node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trun
 node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk
 ```
 
-`scripts/` 只保 runner/classifier/workflow gate，以及仍被 services 引用的 workspace-to-minio sync helper；新增 repo-local eval 必须放到 `tests/**`。
+`scripts/` 只保 runner/classifier/workflow gate；新增 repo-local eval 必须放到 `tests/**`。
