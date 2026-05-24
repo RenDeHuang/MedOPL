@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import { normalizePortalBusinessError } from "./common";
 import type { PortalQueryValue } from "./common";
 
@@ -122,17 +122,17 @@ export interface LabWorkspaceQuery {
 }
 
 export async function fetchLabPackages() {
-  const { data } = await apiClient.get<LabPackagesPayload>("/lab-packages");
+  const { data } = await goControlPlaneClient.get<LabPackagesPayload>("/lab-packages");
   return data;
 }
 
 export async function fetchLabSubscription(params: LabWorkspaceQuery) {
-  const { data } = await apiClient.get<LabSubscriptionPayload>("/lab-subscription", { params });
+  const { data } = await goControlPlaneClient.get<LabSubscriptionPayload>("/lab-subscription", { params });
   return data;
 }
 
 export async function fetchLabEntitlement(params: LabWorkspaceQuery) {
-  const { data } = await apiClient.get<LabEntitlementPayload>("/lab-entitlement", { params });
+  const { data } = await goControlPlaneClient.get<LabEntitlementPayload>("/lab-entitlement", { params });
   return data;
 }
 
@@ -150,7 +150,7 @@ async function postLabMutation(
   fallback: string,
 ) {
   try {
-    const { data } = await apiClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>(path, input);
+    const { data } = await goControlPlaneClient.post<{ ok: boolean; subscription?: LabSubscriptionPayload }>(path, input);
     return data;
   } catch (error) {
     throw normalizePortalBusinessError(error, fallback);

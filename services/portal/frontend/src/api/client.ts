@@ -6,6 +6,12 @@ export const apiClient = axios.create({
   withCredentials: true
 });
 
+export const goControlPlaneClient = axios.create({
+  baseURL: "/api",
+  timeout: 30000,
+  withCredentials: true
+});
+
 let authRedirectStarted = false;
 
 apiClient.interceptors.response.use(

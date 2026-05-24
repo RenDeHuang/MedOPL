@@ -80,6 +80,10 @@ assertIncludes(runtimeSource, "model.subscription", "runtime_page_must_render_su
 assertIncludes(apiSource, "LabPackagesPayload", "lab_api_contract_must_keep_packages_payload");
 assertIncludes(apiSource, "LabSubscriptionPayload", "lab_api_contract_must_keep_subscription_payload");
 assertIncludes(apiSource, "LabEntitlementPayload", "lab_api_contract_must_keep_entitlement_payload");
+assertIncludes(apiSource, "goControlPlaneClient", "lab_api_must_use_go_control_plane_client");
+assertNotIncludes(apiSource, "apiClient.get<LabPackagesPayload>", "lab_packages_must_not_use_node_portal_client");
+assertNotIncludes(apiSource, "apiClient.get<LabSubscriptionPayload>", "lab_subscription_must_not_use_node_portal_client");
+assertNotIncludes(apiSource, "apiClient.get<LabEntitlementPayload>", "lab_entitlement_must_not_use_node_portal_client");
 
 for (const hardcodedPlan of [
   "const plans = [",
