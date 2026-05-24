@@ -148,6 +148,32 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-05-24 feat/v22-go-control-plane-mvp-takeover
+
+Status: `authoring`
+
+Branch: `feat/v22-go-control-plane-mvp-takeover`
+
+Active change package: `changes/active/go-control-plane-mvp-takeover`
+
+Scope:
+
+- Handoff from `real-cloud-authorization-boundary` to `go-control-plane-mvp-takeover` because user chose to delay cloud migration and require Go control-plane MVP first.
+- `services/medopl-go-backend` is the local MVP takeover target for control-plane API truth.
+- `services/portal/frontend` remains the separated frontend package.
+- `services/portal/src` enters business truth retirement and must not remain a long-term active backend or compatibility control plane.
+
+Can-claim:
+
+- Current cursor is authoring the Go control-plane MVP takeover package.
+- Real-cloud readiness remains deferred until Go local RC passes.
+
+Cannot-claim:
+
+- Production backend replacement, real cloud, deploy, kubectl, build/push, live-test or provider operation is complete or authorized.
+
+next_cursor: `go-control-plane-mvp-takeover`
+
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`

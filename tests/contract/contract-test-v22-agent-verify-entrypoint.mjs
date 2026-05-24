@@ -174,7 +174,10 @@ if (productLoop.status === "closed") {
     isActiveProductizationGap || isBlockedAuthorizationBoundary,
     "closed_product_loop_cursor_must_follow_active_gap_or_blocked_authorization_boundary",
   );
-  assert.equal(current.release_readiness_state?.next_cursor, "real-cloud-authorization-boundary", "real_cloud_boundary_must_remain_deferred_authorized_stage");
+  assert(
+    ["real-cloud-readiness", "real-cloud-authorization-boundary"].includes(current.release_readiness_state?.next_cursor),
+    "real_cloud_boundary_must_remain_deferred_after_go_local_rc",
+  );
 } else {
   assert(productLoopOverride, "product_engineering_loop_index_branch_override_missing");
   assert(productLoopOverride.branches.includes("feat/v22-product-engineering-loop-index"), "product_engineering_loop_index_branch_missing");

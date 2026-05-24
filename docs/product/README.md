@@ -70,7 +70,7 @@ Figma UI repo-native absorption
 
 Figma Make 只提供视觉和信息架构输入；Figma absorption、typed API boundary 和 OPL entry real preflight / launch projection 已归档为 repo-native frontend/runtime truth。Portal UI 必须通过 typed API modules 和 backend projections 读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态，不能继续展示 page-local launch readiness。当前阻塞是 real-cloud authorization boundary；它不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
 
-Go backend 是 MedOPL control-plane business truth 的目标承载面。它应该先接管用户、workspace、provider key ref、managed environment intent、billing/audit projection 和 workflow command；OPL Web Gateway 与 Runtime Bridge 可以在迁移期继续作为薄 Node anti-corruption / relay 边界。`services/medopl-go-backend` 目录存在不等于 Go 已经是 current production backend。
+Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载面。它必须先接管用户、workspace、provider key ref、managed environment intent、billing/audit projection 和 workflow command；OPL Web Gateway 与 Runtime Bridge 可以在迁移期继续作为薄 Node anti-corruption / relay 边界。`services/medopl-go-backend` 只有在 Go local RC eval 通过后才能进入 real-cloud-readiness；目录存在不等于 production backend 已完成。
 
 ## Optional Resource Lifecycle
 

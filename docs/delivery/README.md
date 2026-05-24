@@ -7,11 +7,11 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / local boundary only。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract 和 OPL entry real preflight / launch projection 已完成本地闭环；current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界。
+当前 product cursor 是 `go-control-plane-mvp-takeover`，状态是 local service code / before real-cloud readiness。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection 和 local control-plane hardening 已完成本地闭环；current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界，但要等 Go local RC 通过后才进入 readiness package。
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
-后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；必须先完成或显式调整 Go control-plane takeover 的 repo-native package，再单独确认真实云授权边界。当前 authorization boundary cursor 只记录阻塞和授权要求，不授权 secret 或真实云执行。
+后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；必须先完成 Go control-plane MVP takeover 的 repo-native package，再单独确认 real-cloud readiness / authorization boundary。当前 Go cursor 不授权 secret 或真实云执行。
 
 ## Default Verification
 
@@ -69,8 +69,10 @@ Local RC 之后，默认 delivery 不直接跳到真实云。先按下列 packag
 | 2 | `portal-typed-api-contract` | 固定 Portal frontend 与 backend control plane 的 typed JSON/API contract。 | closed locally; archived at `changes/archive/2026-05-24-portal-typed-api-contract` |
 | 3 | `provider-key-reuse` | 已绑定用户 `providerKeyRef` 可被 OPL launch/preflight 复用，不要求重复输入 raw key。 | landed locally at `816f7431ad3b5c8c0524b058d11eb08e851b055e` |
 | 4 | `opl-entry-real-preflight-launch` | OPL entry UI 读取真实 preflight、launch、providerKeyRef、Gateway readiness 和 fail-closed reason。 | closed locally; archived at `changes/archive/2026-05-24-opl-entry-real-preflight-launch` |
-| 5 | `go-control-plane-takeover` | Go 接管 MedOPL control-plane business truth；Node Portal/Gateway/Bridge 收窄为 UI/API shell 与 integration relay。 | Go tests, backend convergence package, Portal contract regression |
-| 6 | `real-cloud-authorization` | 只在显式授权后执行 secret/cloud/provider/deploy work。 | cloud future-authorized dry-run first, then authorized live package |
+| 5 | `go-control-plane-mvp-takeover` | Go 接管 MedOPL control-plane business truth；Portal frontend 通过 typed API 调 Go；Node Portal backend 业务 truth 清退，不保兼容层。 | Go tests, backend convergence package, Portal frontend typecheck, current bundle |
+| 6 | `go-local-rc` | 用 Go backend 跑完整本地 golden path，并归档 Node backend business truth 清退结果。 | Go local RC, golden path, current, contract, review |
+| 7 | `real-cloud-readiness` | 只在 Go local RC 通过后开启 mock/snapshot、readonly quote、dry-run plan、readonly inventory。 | cloud future-authorized dry-run first |
+| 8 | `real-cloud-authorization` | 只在显式授权后执行 secret/cloud/provider/deploy work。 | authorized live package |
 
 每个 package 必须遵守 `truth/gap -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> history closeout`。这仍属于清退生命周期的一部分：旧临时 truth 只进 history，active 只保当前 cursor。治理 gate 保留为护栏，但 default verify 先展示 golden path health。
 
@@ -95,16 +97,17 @@ Formal engineering work must create or update `changes/active/<change-id>` befor
 
 Delivery closeout must move completed packages to `changes/archive/YYYY-MM-DD-<change-id>`, sync accepted deltas into durable specs, and add a compact summary to `docs/history/README.md`. If the change updates the current cursor, update both `docs/active/README.md` and `tests/fixtures/v22/goal-current.json`.
 
-## Backend Go Convergence Authoring Lane
+## Go Control Plane MVP Takeover Lane
 
-`feat/v22-backend-go-convergence-program` 是后端收敛 authoring lane。它不接管当前 `real-cloud-authorization-boundary` product cursor；该 cursor 仍是 authorization-required / local boundary only，不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
+`feat/v22-go-control-plane-mvp-takeover` 是当前 Go control-plane MVP takeover lane。它接管当前 product cursor，并把 `real-cloud-authorization-boundary` 降为后续授权边界；真实云、deploy、kubectl、build/push 或 live-test 仍不授权。
 
-该 lane 的交付方式是每个 step 一个 commit，并且每个 step 都按 `truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor` 执行。7 阶段只作为 compact machine block、spec anchor、registered tests 和 landed history summary 存在，不恢复旧合同目录、旧 recovery 目录、root stage docs 或 `scripts/smoke-test-*`。
+先 Go control-plane MVP，再 real-cloud-readiness。该 lane 的交付方式是每个 step 一个 commit，并且每个 step 都按 `truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor` 执行。7 阶段只作为 compact machine block、spec anchor、registered tests 和 landed history summary 存在，不恢复旧合同目录、旧 recovery 目录、root stage docs 或 `scripts/smoke-test-*`。
 
 Authoring verification:
 
 ```bash
-node scripts/v22-verify.mjs current --branch feat/v22-backend-go-convergence-program --base origin/recovery/platform-v22-trunk --dry-run --json
+node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json
 node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk
+go test ./...
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 ```

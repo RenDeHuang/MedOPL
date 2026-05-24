@@ -9,30 +9,38 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 
 当前 v22 active service surface：
 
-- `services/portal`
+- `services/portal/frontend`
+- `services/medopl-go-backend`
 - `services/opl-web-gateway`
 - `services/opl-runtime-bridge`
 
-Backend convergence target surface：
+Go control-plane MVP takeover surface：
 
-- `services/medopl-go-backend` is the future canonical backend target, not current production backend.
+- `services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness.
 
-`services/medopl-go-backend` 只能在 backend Go convergence authoring lane 和后续显式 landing gate 中进入 active surface。它进入前必须同时有 source、tests、fixtures、manifest、workflow review 和 package verification；不能只靠目录存在或 prose claim 成为 canonical truth。
+`services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 Go local RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。
+
+Retirement surface：
+
+- `services/portal/src` is a retirement surface for business truth. It may only remain as a temporary shell, local eval dependency or integration relay while Go MVP parity is being implemented. It must not retain Portal control-plane business truth, canonical store, provider binding, launch status, billing/audit, resource workflow or cloud operation authority.
 
 ## Productization Source Order
 
-当前代码已前后端目录分离，但不是完全现代化前后端分离。`services/portal/frontend` 是 React/Vite/TypeScript frontend；`services/portal/src` 仍是当前 Node Portal backend/API/server。后续 source order 是：
+当前目标是完全现代化前后端分离。`services/portal/frontend` 是 React/Vite/TypeScript frontend；`services/medopl-go-backend` 是 Go control-plane MVP takeover target；`services/portal/src` 是 Node Portal backend 清退对象，不是长期 active backend/API/server。后续 source order 是：
 
 1. Figma Make UI 已归档为外部 design input；repo-native Portal frontend source 和本地 eval 才是实现 truth。
 2. Portal typed API contract 已归档：Portal frontend 只能通过 typed API modules 读取 backend projection；不能让页面直接复制 mock readiness、mock billing、mock resource 或 mock OPL launch truth。
 3. Provider key reuse 必须在后端 secret boundary 内完成；frontend 只持有 `providerKeyRef`、bound status 和一次性输入态。
 4. OPL entry real preflight / launch 已归档为本地 projection truth：OPL entry UI 必须接真实 preflight / launch / providerKeyRef / Gateway readiness API，不得把 Figma prototype state 或 page-local fallback 写成 readiness truth。
-5. Go backend 目标是接管 MedOPL control-plane business truth；Node Gateway / Runtime Bridge 在迁移期可以继续作为薄边界，但不能扩张成 billing ledger、cloud inventory 或 product truth。
+5. Go backend 必须接管 MedOPL control-plane business truth；Node Gateway / Runtime Bridge 在迁移期可以继续作为薄边界，但不能扩张成 billing ledger、cloud inventory 或 product truth。
+6. Real-cloud readiness 只能在 Go local RC 通过后开启，不能让 Node Portal backend 作为 first-cloud control plane。
 
 迁移期源码边界：
 
-- `services/portal` 是 Node Portal active implementation；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
-- `services/portal/src/app/portal-runtime.mjs` 是 Portal runtime entry assembly；它不得重新直接 fan-out 到 product domain / presentation helpers，domain/presentation dependency assembly 归 `services/portal/src/app/portal-runtime-app-deps.mjs`。
+- `services/portal/frontend` 是 active frontend implementation；它必须通过 typed API 读取 Go control-plane projection。
+- `services/medopl-go-backend` 是 local MVP control-plane implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow 和 release/stop billing。
+- `services/portal/src` 是 Node Portal backend retirement surface；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
+- `services/portal/src/app/portal-runtime.mjs` 只能作为迁移期 shell/eval dependency；不得重新直接 fan-out 到 product domain / presentation helpers，domain/presentation dependency assembly 归 `services/portal/src/app/portal-runtime-app-deps.mjs`，并在 Go parity 后清退。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
 

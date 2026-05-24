@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
-const programId = "backend-go-convergence-program";
-const branchName = "feat/v22-backend-go-convergence-program";
+const programId = "go-control-plane-mvp-takeover";
+const branchName = "feat/v22-go-control-plane-mvp-takeover";
 const inventoryPath = "tests/fixtures/v22/backend-go-convergence/backend-inventory.json";
 const migrationMapPath = "tests/fixtures/v22/backend-go-convergence/migration-map.json";
 const groupGateCommands = [
@@ -164,6 +164,7 @@ function inventoryFilesByClassification(inventory, targetClassifications) {
 }
 
 function assertCommandListContains(commands, expectedCommands, label) {
+  assert(Array.isArray(commands), `${label}_commands_must_be_array`);
   for (const command of expectedCommands) assert(commands.includes(command), `${label}_missing:${command}`);
 }
 
@@ -173,16 +174,16 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assert.equal(program.schema_version, 1, "program_schema_version_mismatch");
   assert.equal(program.id, programId, "program_id_mismatch");
   assert.equal(program.owner, "MedOPL", "program_owner_mismatch");
-  assert.equal(program.status, "registered", "program_status_mismatch");
+  assert.equal(program.status, "active", "program_status_mismatch");
   assert.equal(program.truth_file, "docs/active/README.md", "program_truth_file_mismatch");
-  assert.equal(program.spec_anchor, "docs/specs/README.md#spec-v22-backend-go-convergence-program-boundary", "program_spec_anchor_mismatch");
+  assert.equal(program.spec_anchor, "docs/specs/README.md#spec-v22-go-control-plane-mvp-takeover-boundary", "program_spec_anchor_mismatch");
   assert.equal(program.machine_cursor_file, "tests/fixtures/v22/goal-current.json", "program_cursor_file_mismatch");
   assert.equal(program.verify_manifest_file, "tests/fixtures/v22/agent-verify-manifest.json", "program_manifest_file_mismatch");
   assert.equal(program.history_file, "docs/history/README.md", "program_history_file_mismatch");
   assert.equal(program.authoring_branch, branchName, "program_authoring_branch_mismatch");
-  assert.equal(program.does_not_replace_current_cursor, true, "program_must_not_replace_current_cursor");
+  assert.equal(program.does_replace_current_cursor, true, "program_must_replace_current_cursor");
   assert.equal(program.current_product_cursor, current.current_cursor, "program_current_cursor_pointer_mismatch");
-  assert.notEqual(current.current_cursor, programId, "backend_program_must_not_replace_productization_cursor");
+  assert.equal(current.current_cursor, programId, "go_mvp_takeover_must_be_current_product_cursor_before_real_cloud");
   assert.equal(program.one_step_one_commit, true, "program_must_require_one_step_one_commit");
   assert.equal(program.review_gate, "landing gate", "program_review_gate_mismatch");
   assert.equal(program.post_merge_closeout_required, true, "program_must_require_post_merge_closeout");
@@ -201,49 +202,52 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assertArrayIncludesAll(program.forbidden_ops, ["secret", "live-cloud", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test", "upstream-write", "git-push"], "program_forbidden_ops");
   assert.deepEqual(program.canonical_backend_target, {
     service: "services/medopl-go-backend",
-    status: "future_canonical_target",
-    current_active_implementation: "services/portal",
-    node_portal_role: "migration_period_active_implementation",
+    status: "local_mvp_takeover_target",
+    current_active_implementation: "services/medopl-go-backend",
+    node_portal_role: "retirement_candidate_not_business_truth",
     node_portal_must_not_expand: requiredNodePortalMustNotExpand,
     go_must_enter_active_surface_through: requiredGoActiveSurfaceGates,
     sub2api_reference_scope: "engineering_shape_only_not_business_semantics",
     durable_engine_replacement_point: "behind_workflow_facade",
-  }, "program_canonical_backend_target_must_stay_future_readiness_boundary");
+  }, "program_canonical_backend_target_must_be_go_local_mvp_takeover_boundary");
 
   assertIncludes(active, current.current_cursor, "active_must_preserve_product_cursor");
-  assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_name_program");
-  assertIncludes(delivery, `不接管当前 \`${current.current_cursor}\` product cursor`, "delivery_must_preserve_product_cursor");
-  assertIncludes(active, "不能把 backend Go convergence program 写成第二份阶段板", "active_must_forbid_second_program_board");
-  assertIncludes(specs, "spec:v22-backend-go-convergence-program-boundary", "specs_must_define_program_anchor");
+  assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_name_program");
+  assertIncludes(delivery, "先 Go control-plane MVP，再 real-cloud-readiness", "delivery_must_gate_real_cloud_after_go_mvp");
+  assertIncludes(active, "不能把 real-cloud authorization 写成当前执行包", "active_must_defer_real_cloud");
+  assertIncludes(specs, "spec:v22-go-control-plane-mvp-takeover-boundary", "specs_must_define_program_anchor");
   assertIncludes(specs, "Portal Control Plane", "specs_must_define_portal_control_plane");
   assertIncludes(specs, "Workflow Boundary", "specs_must_define_workflow_boundary");
   assertIncludes(specs, "Runtime Broker / OPL Bridge", "specs_must_define_runtime_broker_boundary");
   assertIncludes(specs, "Cloud / Billing / Audit Workers", "specs_must_define_worker_boundary");
-  assertIncludes(specs, "`services/medopl-go-backend` 是未来 canonical backend target", "specs_must_define_go_canonical_target");
-  assertIncludes(specs, "当前 `services/portal` 是迁移前 active implementation", "specs_must_define_node_portal_migration_role");
-  assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_record_program_lane");
+  assertIncludes(specs, "`services/medopl-go-backend` 是本地 MVP takeover target", "specs_must_define_go_canonical_target");
+  assertIncludes(specs, "`services/portal/src` 是清退对象，不是长期 active backend", "specs_must_define_node_portal_retirement_role");
+  assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_record_program_lane");
   assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
-  assertIncludes(source, "Backend convergence target surface", "source_must_record_backend_target_surface");
-  assertIncludes(active, "current Node Portal backend is still active", "active_must_preserve_node_backend_active_claim");
-  assertIncludes(source, "`services/medopl-go-backend` is the future canonical backend target, not current production backend", "source_must_keep_go_as_future_target");
-  assertIncludes(source, "`services/portal/src` 仍是当前 Node Portal backend/API/server", "source_must_keep_node_portal_as_current_backend");
-  assertIncludes(runtime, "不是 production completion claim", "runtime_must_not_upgrade_target_view_to_completion");
-  assertIncludes(product, "`services/medopl-go-backend` 目录存在不等于 Go 已经是 current production backend", "product_must_not_claim_go_backend_takeover_by_directory");
+  assertIncludes(source, "Go control-plane MVP takeover surface", "source_must_record_backend_target_surface");
+  assertIncludes(active, "Go control-plane MVP takeover is the current local program", "active_must_record_go_backend_active_program");
+  assertIncludes(source, "`services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness", "source_must_promote_go_to_local_takeover_target");
+  assertIncludes(source, "`services/portal/src` is a retirement surface for business truth", "source_must_mark_node_portal_for_retirement");
+  assertIncludes(runtime, "不是 real-cloud readiness 或 production completion claim", "runtime_must_not_upgrade_target_view_to_completion");
+  assertIncludes(product, "`services/medopl-go-backend` 只有在 Go local RC eval 通过后才能进入 real-cloud-readiness", "product_must_not_claim_go_backend_takeover_by_directory");
 
   const backendSuite = manifest.suites.find((suite) => suite.id === "backend-go-convergence");
   const backendPackage = manifest.package_suites.find((suite) => suite.id === "backend-go-convergence");
+  const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === programId);
   const override = manifest.branch_override_suites.find((suite) => suite.id === programId);
   assert(backendSuite, "manifest_backend_suite_missing");
   assert(backendPackage, "manifest_backend_package_missing");
-  assert(override, "manifest_backend_branch_override_missing");
-  assert(override.branches.includes(branchName), "manifest_backend_branch_override_branch_missing");
-  for (const [label, suite] of [["backend_suite", backendSuite], ["backend_package", backendPackage], ["backend_override", override]]) {
+  assert(currentLeaf, "manifest_backend_current_leaf_missing");
+  assert.equal(override, undefined, "manifest_backend_feature_branch_must_not_use_branch_override");
+  assert.equal(current.authoring_branch, branchName, "manifest_backend_authoring_branch_mismatch");
+  for (const [label, suite] of [["backend_suite", backendSuite], ["backend_package", backendPackage]]) {
     assertCommandListContains(suite.commands, groupGateCommands, `manifest_${label}`);
   }
+  assertCommandListContains(currentLeaf.verification_commands, groupGateCommands, "manifest_current_leaf");
   assert(backendPackage.commands.includes("node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"), "manifest_backend_package_must_run_workflow_review");
-  assert(override.allowed_files.includes("services/medopl-go-backend/**"), "manifest_backend_branch_override_must_allow_go_service");
-  assertArrayIncludesAll(override.forbidden_files, ["deploy/*", "adapters/*", ".sentrux/*", "infra/*", "one-person-lab/*", "upstream/*", ".runtime/*", "secret-like paths"], "manifest_backend_branch_override_forbidden_files");
-  assertArrayIncludesAll(override.forbidden_ops, program.forbidden_ops, "manifest_backend_branch_override_forbidden_ops");
+  assert(currentLeaf.allowed_files.includes("services/medopl-go-backend/**"), "manifest_backend_current_leaf_must_allow_go_service");
+  assertArrayIncludesAll(currentLeaf.forbidden_files, ["deploy/*", "adapters/*", ".sentrux/*", "infra/*", "one-person-lab/*", "upstream/*", "secret-like paths"], "manifest_backend_current_leaf_forbidden_files");
+  assertArrayIncludesAll(currentLeaf.forbidden_ops, program.forbidden_ops.filter((op) => op !== "git-push"), "manifest_backend_current_leaf_forbidden_ops");
 
   assertIncludes(classifierSource, "\"tests/contract/contract-test-v22-backend-go-convergence-program.mjs\"", "test_registry_must_register_program_gate");
   assertIncludes(classifierSource, "\"tests/contract/contract-test-v22-go-backend-service-surface.mjs\"", "test_registry_must_register_go_backend_gate");

@@ -37,6 +37,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | `v22-authorized-tencent-create-release-boundary` |
 | [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary) | `v22-authorized-tencent-create-release-execution-boundary` |
 | [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary) | `v22-authorized-tencent-create-release-implementation-boundary` |
+| [spec:v22-go-control-plane-mvp-takeover-boundary](#spec-v22-go-control-plane-mvp-takeover-boundary) | `v22-go-control-plane-mvp-takeover-boundary` |
 | [spec:v22-backend-go-convergence-program-boundary](#spec-v22-backend-go-convergence-program-boundary) | `v22-backend-go-convergence-program-boundary` |
 | [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) | `v22-authorized-tencent-deploy-execution-boundary` |
 | [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary) | `v22-billing-freeze-boundary` |
@@ -1318,6 +1319,42 @@ release 分阶段执行：
 }
 ```
 <!-- v22-authorized-tencent-create-release-execution-contract:end -->
+
+### spec:v22-go-control-plane-mvp-takeover-boundary
+
+Former leaf id: `v22-backend-go-convergence-program-boundary`
+Former title: v22 Backend Go Convergence Program Boundary
+
+本合同定义 MedOPL v22 当前 Go control-plane MVP takeover 边界。用户已选择把上云时间后推，先让 `services/medopl-go-backend` 接管本地 control-plane MVP，再开启 `real-cloud-readiness`。该 takeover 不保留 Node/Go 长期兼容层，不把 Node Portal backend 写成第二控制面，也不把 local proof 写成 production truth。
+
+Canonical backend boundary：
+
+- `services/medopl-go-backend` 是本地 MVP takeover target；它必须承接 Portal Control Plane、Workflow Boundary、Runtime Broker / OPL Bridge、Agent Runtime coordination boundary 和 Cloud / Billing / Audit Workers 的本地 control-plane API truth。
+- `services/portal/frontend` 是现代前后端分离下的 repo-native frontend package；它只能通过 typed API 读取 Go-owned projection，不持有 package、provider key、launch、billing、audit、resource 或 release truth。
+- `services/portal/src` 是清退对象，不是长期 active backend；保留代码只能是迁移期 shell、auth、dispatch、serialization 或 relay，不得继续承载 long task orchestration、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
+- 真实云、secret、provider operation、deploy、kubectl、build/push 和 live-test 均推迟到 Go local RC 之后的独立 authorization/readiness package。
+
+必须先 Go control-plane MVP，再 real-cloud-readiness。当前 program 只能声明 local MVP takeover target 和本地 deterministic eval；不能声明 production backend replacement、真实云 readiness、真实 provider capability、真实账单 reconciliation 或 deploy 完成。
+
+后端职责边界：
+
+- Portal Control Plane 处理用户、workspace、套餐、订阅、entitlement、文件列表、run request、账单 / 审计查询和状态展示。
+- Workflow Boundary 承接长任务 command/state；durable engine 只能在 facade 后替换。
+- Runtime Broker / OPL Bridge 只适配 clean upstream OPL、Runtime Bridge / Runtime Agent 和 anti-corruption mapping。
+- Cloud / Billing / Audit Workers 是内部 worker 边界，负责资源计划、账单事件、审计事件和 reconciliation；普通用户不能把它们理解成云控制台。
+
+数据和安全边界：
+
+- raw provider key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 不得进入前端持久化、普通用户 payload、日志、evidence 或 git。
+- local memory store 只能证明 local MVP shape；PostgreSQL/Redis production data layer 需要后续 eval 明确接管。
+- Node Portal backend retirement 必须按 inventory / migration map / eval 推进，不允许 ad hoc 删除导致黄金链路断裂。
+
+验收边界：
+
+- program 必须由 `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 验证。
+- Go service surface 必须由 `tests/contract/contract-test-v22-go-backend-service-surface.mjs` 和 `go test ./...` 验证。
+- frontend/backend split 必须由 `npm --prefix services/portal/frontend run typecheck` 和 Portal typed API regression 验证。
+- branch override 必须只允许本 program 的 docs/specs/changes/tests/scripts、Portal frontend、Portal retirement surface 和 Go service surface。
 
 ### spec:v22-backend-go-convergence-program-boundary
 
