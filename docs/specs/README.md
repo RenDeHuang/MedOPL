@@ -1352,7 +1352,7 @@ Canonical backend boundary：
 验收边界：
 
 - program 必须由 `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 验证。
-- Go service surface 必须由 `tests/contract/contract-test-v22-go-backend-service-surface.mjs` 和 `go test ./...` 验证。
+- Go service surface 必须由 `tests/contract/contract-test-v22-go-backend-service-surface.mjs` 和 `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."` 验证。
 - frontend/backend split 必须由 `npm --prefix services/portal/frontend run typecheck` 和 Portal typed API regression 验证。
 - branch override 必须只允许本 program 的 docs/specs/changes/tests/scripts、Portal frontend、Portal retirement surface 和 Go service surface。
 

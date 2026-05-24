@@ -9,7 +9,7 @@ node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs
 node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs
 node tests/contract/contract-test-v22-change-package-lifecycle.mjs
 node tests/contract/contract-test-v22-current-state-index-loop.mjs
-go test ./...
+bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."
 npm --prefix services/portal/frontend run typecheck
 node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk

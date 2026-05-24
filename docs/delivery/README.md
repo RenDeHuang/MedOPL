@@ -108,6 +108,6 @@ Authoring verification:
 ```bash
 node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json
 node scripts/v22-verify.mjs package backend-go-convergence --base origin/recovery/platform-v22-trunk
-go test ./...
+bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 ```

@@ -34,6 +34,6 @@ Target specs:
 - `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`
 - `node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs`
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
-- `go test ./...`
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."`
 - `npm --prefix services/portal/frontend run typecheck`
 - `node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json`
