@@ -31,7 +31,6 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 
 - `real-cloud-authorization-boundary`: secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence are not authorized by default.
 - `go-control-plane-takeover`: Go backend convergence remains a local engineering package before production backend takeover; current Node Portal backend is still active.
-- `service-sync-helper-retention`: `scripts/sync-workspace-file-to-minio.ps1` remains because `services/portal/src/config/portal-config.mjs` still references it; it is an implementation debt, not a docs/eval truth source.
 
 ## Verification Entry
 

@@ -23,18 +23,40 @@ export function createMinioStorageClient({
   portalWorkdir,
   mcBinary,
   minioApiUrl,
-  syncWorkspaceToMinioScriptRelative,
   formatDateTime,
+  execFileAsync: runExecFile = execFileAsync,
 }) {
   let availability = { checkedAt: 0, ok: false };
   const normalizedMinioApiUrl = String(minioApiUrl || "").replace(/\/$/, "");
 
   async function configureAlias(timeout = 15000) {
-    await execFileAsync(
+    await runExecFile(
       mcBinary,
       ["alias", "set", "localminio", normalizedMinioApiUrl, "minioadmin", "MinioAdmin123!"],
       { cwd: repoRoot, timeout },
     );
+  }
+
+  async function ensureWorkspaceBucket(timeout = 15000) {
+    await runExecFile(
+      mcBinary,
+      ["mb", "--ignore-existing", "localminio/workspaces"],
+      { cwd: repoRoot, timeout },
+    );
+  }
+
+  function workspaceObjectTarget(userId, taskSlug, kind, relativePath = "") {
+    const normalizedRelativePath = String(relativePath || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    if (normalizedRelativePath.split("/").includes("..")) {
+      throw new Error("minio_sync_invalid_relative_path");
+    }
+    return [
+      "localminio/workspaces",
+      encodeURIComponent(String(userId || "")),
+      encodeURIComponent(String(taskSlug || "")),
+      encodeURIComponent(String(kind || "")),
+      ...normalizedRelativePath.split("/").filter(Boolean).map((item) => encodeURIComponent(item)),
+    ].join("/");
   }
 
   return {
@@ -61,7 +83,7 @@ export function createMinioStorageClient({
       }
       try {
         await configureAlias();
-        const { stdout } = await execFileAsync(
+        const { stdout } = await runExecFile(
           mcBinary,
           ["ls", "--json", "--recursive", "localminio/workspaces"],
           { cwd: repoRoot, timeout: 30000, maxBuffer: 1024 * 1024 * 16 },
@@ -104,7 +126,7 @@ export function createMinioStorageClient({
       try {
         await configureAlias();
         const target = `localminio/workspaces/${userId}/${taskSlug}`;
-        const { stdout } = await execFileAsync(
+        const { stdout } = await runExecFile(
           mcBinary,
           ["ls", "--json", "--recursive", target],
           { cwd: repoRoot, timeout: 30000, maxBuffer: 1024 * 1024 * 8 },
@@ -146,15 +168,13 @@ export function createMinioStorageClient({
       }
       if (!availability.ok) return;
       try {
-        await execFileAsync("powershell.exe", [
-          "-ExecutionPolicy", "Bypass",
-          "-File", syncWorkspaceToMinioScriptRelative,
-          "-UserId", userId,
-          "-TaskSlug", taskSlug,
-          "-Kind", kind,
-          "-FilePath", filePath,
-          "-RelativePath", relativePath,
-        ], { timeout: 120000, maxBuffer: 1024 * 1024, cwd: portalWorkdir });
+        await configureAlias();
+        await ensureWorkspaceBucket();
+        await runExecFile(
+          mcBinary,
+          ["cp", filePath, workspaceObjectTarget(userId, taskSlug, kind, relativePath)],
+          { timeout: 120000, maxBuffer: 1024 * 1024, cwd: portalWorkdir },
+        );
       } catch (error) {
         console.error("MinIO sync failed", error);
       }

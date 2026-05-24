@@ -19,7 +19,6 @@ export const medWorkspaceRoot = path.join(repoRoot, ".runtime", "med-autoscience
 export const medRunsRoot = path.join(repoRoot, ".runtime", "med-autoscience", "runs");
 export const codexRuntimeRoot = path.join(repoRoot, ".runtime", "codex-runtime-gateway");
 export const codexRuntimeEventsFile = path.join(codexRuntimeRoot, "events.jsonl");
-export const syncWorkspaceToMinioScriptRelative = path.join("..", "..", "scripts", "sync-workspace-file-to-minio.ps1");
 export const mcBinary = path.join(repoRoot, ".runtime", "tools", "mc.exe");
 export const ZITADEL_ADMIN_USER_SCRIPT = path.join(repoRoot, "scripts", "zitadel-admin-user.mjs");
 

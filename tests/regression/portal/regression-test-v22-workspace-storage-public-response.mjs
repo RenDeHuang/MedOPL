@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 import { buildWorkspaceFileChecksum, buildWorkspaceStorageKey, createOrUpdateStorageOrder, issueWorkspaceTransferToken, listWorkspaceFiles, readWorkspaceTransferToken, recordWorkspaceFile, resolveWorkspaceStorageEntitlement } from "../../../services/portal/src/domain/workspace-storage.mjs";
+import { createMinioStorageClient } from "../../../services/portal/src/integrations/minio-storage-client.mjs";
 import { createWorkspaceStorageRoutes } from "../../../services/portal/src/routes/workspace-storage.routes.mjs";
 
 function assertNoInternalStorageFields(value, label) {
@@ -52,6 +53,34 @@ function multipartBody({ name, contentType, content }) {
 
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), "v22-workspace-storage-public-response-"));
 try {
+  const minioCalls = [];
+  const minioFilePath = path.join(tempRoot, "minio-sync", "inputs", "dataset.csv");
+  await mkdir(path.dirname(minioFilePath), { recursive: true });
+  await writeFile(minioFilePath, "a,b\n1,2\n", "utf8");
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true });
+  try {
+    const minioClient = createMinioStorageClient({
+      repoRoot: tempRoot,
+      portalWorkdir: tempRoot,
+      mcBinary: "/opt/medopl/bin/mc",
+      minioApiUrl: "http://127.0.0.1:9000",
+      formatDateTime: (value) => value,
+      execFileAsync: async (bin, args, options) => {
+        minioCalls.push({ bin, args, options });
+        return { stdout: "", stderr: "" };
+      },
+    });
+    await minioClient.syncWorkspaceFile("user-public-response", "workspace-public-response", "inputs", minioFilePath, "nested/dataset.csv");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(minioCalls.some((call) => call.bin === "powershell.exe"), false, "minio_sync_must_not_call_powershell");
+  assert.deepEqual(minioCalls.map((call) => call.bin), ["/opt/medopl/bin/mc", "/opt/medopl/bin/mc", "/opt/medopl/bin/mc"], "minio_sync_must_use_mc_directly");
+  assert.deepEqual(minioCalls[0].args.slice(0, 3), ["alias", "set", "localminio"], "minio_sync_must_configure_alias");
+  assert.deepEqual(minioCalls[1].args, ["mb", "--ignore-existing", "localminio/workspaces"], "minio_sync_must_ensure_bucket");
+  assert.deepEqual(minioCalls[2].args, ["cp", minioFilePath, "localminio/workspaces/user-public-response/workspace-public-response/inputs/nested/dataset.csv"], "minio_sync_must_copy_to_workspace_object_path");
+
   const user = { id: "user-public-response", tenantId: "tenant-public-response" };
   const taskSpace = {
     userId: user.id,

@@ -43,7 +43,6 @@ const retiredPaths = [
 ];
 
 const allowedScripts = [
-  "scripts/sync-workspace-file-to-minio.ps1",
   "scripts/v22-landing-closeout.mjs",
   "scripts/v22-line-budget.mjs",
   "scripts/v22-repo-bloat-audit.mjs",

@@ -20,7 +20,6 @@ export function createPortalRuntimeClients({
   portalRuntimeBridgeUrl,
   portalWorkdir,
   repoRoot,
-  syncWorkspaceToMinioScriptRelative,
 }) {
   return {
     minioStorageClient: createMinioStorageClient({
@@ -28,7 +27,6 @@ export function createPortalRuntimeClients({
       portalWorkdir,
       mcBinary,
       minioApiUrl,
-      syncWorkspaceToMinioScriptRelative,
       formatDateTime,
     }),
     harborRegistryClient: createHarborRegistryClient({

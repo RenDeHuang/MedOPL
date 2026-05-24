@@ -58,7 +58,6 @@ import {
   repoRoot,
   runtimeRoot,
   SHOW_LEGACY_KUBESPHERE,
-  syncWorkspaceToMinioScriptRelative,
   TENCENT_BILLING_ENABLED,
   TENCENT_BILLING_REQUIRED,
   validateProductionConfig,
@@ -176,7 +175,6 @@ const {
     portalRuntimeBridgeUrl: PORTAL_RUNTIME_BRIDGE_URL,
     portalWorkdir,
     repoRoot,
-    syncWorkspaceToMinioScriptRelative,
   },
 });
 
