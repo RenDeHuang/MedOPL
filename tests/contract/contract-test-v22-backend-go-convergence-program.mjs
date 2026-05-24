@@ -64,6 +64,19 @@ const forbiddenEdgeFields = [
   "codexHomePathExposed",
 ];
 const requiredGoLayers = ["domain", "service", "repository", "handler", "server", "integration", "worker"];
+const requiredNodePortalMustNotExpand = [
+  "long_task_orchestration",
+  "cloud_mutation",
+  "billing_mutation",
+  "audit_reconciliation",
+  "runtime_launch_truth",
+];
+const requiredGoActiveSurfaceGates = [
+  "manifest_allowlist",
+  "test_lane_registry",
+  "workflow_review_recommendation",
+  "package_verification",
+];
 
 async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
@@ -154,7 +167,7 @@ function assertCommandListContains(commands, expectedCommands, label) {
   for (const command of expectedCommands) assert(commands.includes(command), `${label}_missing:${command}`);
 }
 
-function assertProgramBoard({ active, specs, delivery, runtime, source, current, manifest, classifierSource }) {
+function assertProgramBoard({ active, specs, delivery, runtime, source, product, current, manifest, classifierSource }) {
   const program = current.backend_go_convergence_program;
   assert(program, "backend_go_convergence_program_missing");
   assert.equal(program.schema_version, 1, "program_schema_version_mismatch");
@@ -186,6 +199,16 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, current,
   assertArrayIncludesAll(program.target_stack, ["Go", "Gin", "Ent", "PostgreSQL", "Redis"], "program_target_stack");
   assertArrayIncludesAll(program.target_layers, ["Portal Control Plane", "Workflow Boundary", "Runtime Broker / OPL Bridge", "Agent Runtime", "Cloud / Billing / Audit Workers"], "program_target_layers");
   assertArrayIncludesAll(program.forbidden_ops, ["secret", "live-cloud", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test", "upstream-write", "git-push"], "program_forbidden_ops");
+  assert.deepEqual(program.canonical_backend_target, {
+    service: "services/medopl-go-backend",
+    status: "future_canonical_target",
+    current_active_implementation: "services/portal",
+    node_portal_role: "migration_period_active_implementation",
+    node_portal_must_not_expand: requiredNodePortalMustNotExpand,
+    go_must_enter_active_surface_through: requiredGoActiveSurfaceGates,
+    sub2api_reference_scope: "engineering_shape_only_not_business_semantics",
+    durable_engine_replacement_point: "behind_workflow_facade",
+  }, "program_canonical_backend_target_must_stay_future_readiness_boundary");
 
   assertIncludes(active, current.current_cursor, "active_must_preserve_product_cursor");
   assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_name_program");
@@ -201,6 +224,11 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, current,
   assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_record_program_lane");
   assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
   assertIncludes(source, "Backend convergence target surface", "source_must_record_backend_target_surface");
+  assertIncludes(active, "current Node Portal backend is still active", "active_must_preserve_node_backend_active_claim");
+  assertIncludes(source, "`services/medopl-go-backend` is the future canonical backend target, not current production backend", "source_must_keep_go_as_future_target");
+  assertIncludes(source, "`services/portal/src` 仍是当前 Node Portal backend/API/server", "source_must_keep_node_portal_as_current_backend");
+  assertIncludes(runtime, "不是 production completion claim", "runtime_must_not_upgrade_target_view_to_completion");
+  assertIncludes(product, "`services/medopl-go-backend` 目录存在不等于 Go 已经是 current production backend", "product_must_not_claim_go_backend_takeover_by_directory");
 
   const backendSuite = manifest.suites.find((suite) => suite.id === "backend-go-convergence");
   const backendPackage = manifest.package_suites.find((suite) => suite.id === "backend-go-convergence");
@@ -318,12 +346,13 @@ async function assertMigrationMap(inventory, migrationMap) {
   }
 }
 
-const [active, specs, delivery, runtime, source, current, manifest, classifierSource, inventory, migrationMap] = await Promise.all([
+const [active, specs, delivery, runtime, source, product, current, manifest, classifierSource, inventory, migrationMap] = await Promise.all([
   readRepoFile("docs/active/README.md"),
   readRepoFile("docs/specs/README.md"),
   readRepoFile("docs/delivery/README.md"),
   readRepoFile("docs/runtime/README.md"),
   readRepoFile("docs/source/README.md"),
+  readRepoFile("docs/product/README.md"),
   readJson("tests/fixtures/v22/goal-current.json"),
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readRepoFile("scripts/v22-test-classification.mjs"),
@@ -331,7 +360,7 @@ const [active, specs, delivery, runtime, source, current, manifest, classifierSo
   readJson(migrationMapPath),
 ]);
 
-assertProgramBoard({ active, specs, delivery, runtime, source, current, manifest, classifierSource });
+assertProgramBoard({ active, specs, delivery, runtime, source, product, current, manifest, classifierSource });
 await assertResponsibilityInventory(inventory);
 await assertMigrationMap(inventory, migrationMap);
 
