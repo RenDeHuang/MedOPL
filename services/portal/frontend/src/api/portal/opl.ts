@@ -5,6 +5,19 @@ export interface OplLaunchInput {
   task?: string;
 }
 
+export interface OplProviderKeyInput {
+  workspaceId?: string;
+  apiKey: string;
+}
+
+export interface OplProviderKeyPayload {
+  ok: boolean;
+  workspaceId: string;
+  providerBound: boolean;
+  providerKeyRef: string;
+  boundStatus: string;
+}
+
 export interface OplLaunchPayload {
   ok: boolean;
   launchId: string;
@@ -120,6 +133,15 @@ function launchParams(launchId: string) {
 
 export async function createOplLaunch(input: OplLaunchInput) {
   const { data } = await goControlPlaneClient.post<OplLaunchPayload>("/opl/launch", input);
+  return data;
+}
+
+export async function bindProviderKeyForOplEntry(input: OplProviderKeyInput) {
+  const { data } = await goControlPlaneClient.post<OplProviderKeyPayload>("/v22/provider-key", {
+    workspaceId: input.workspaceId,
+    apiKey: input.apiKey,
+    idempotencyKey: `opl-entry-provider-key:${input.workspaceId || "workspace-local-rc"}`,
+  });
   return data;
 }
 

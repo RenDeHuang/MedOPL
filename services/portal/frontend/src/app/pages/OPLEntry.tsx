@@ -15,7 +15,9 @@ import {
   RotateCw,
   FolderOpen
 } from "lucide-react";
+import { bindProviderKeyForOplEntry } from "../../api/portal/opl";
 import { loadOplEntryModel, usePortalQuery } from "../data/portalAdapters";
+import { Input } from "../components/ui/input";
 
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
 
@@ -44,6 +46,9 @@ type LaunchStep = {
 export function OPLEntry() {
   const query = usePortalQuery(loadOplEntryModel, []);
   const [countdown, setCountdown] = useState(3);
+  const [providerKeyInput, setProviderKeyInput] = useState("");
+  const [providerKeySubmitting, setProviderKeySubmitting] = useState(false);
+  const [providerKeyError, setProviderKeyError] = useState("");
   const pageState = query.status === "ready" ? query.data.pageState as PageState : "preparing";
   const providerBound = query.status === "ready" ? query.data.providerBound : false;
   const providerKeyRef = query.status === "ready" ? query.data.providerKeyRef : "";
@@ -70,6 +75,28 @@ export function OPLEntry() {
     : currentStage === "gateway_ready" || pageState === "retrying"
     ? "in_progress"
     : "waiting";
+
+  const handleProviderKeyBind = async () => {
+    const apiKey = providerKeyInput.trim();
+    if (!apiKey) {
+      setProviderKeyError("请输入 gflabtoken 模型调用密钥。");
+      return;
+    }
+    setProviderKeySubmitting(true);
+    setProviderKeyError("");
+    try {
+      await bindProviderKeyForOplEntry({
+        workspaceId: query.status === "ready" ? query.data.workspaceId : undefined,
+        apiKey,
+      });
+      setProviderKeyInput("");
+      window.location.reload();
+    } catch {
+      setProviderKeyError("绑定失败，请确认密钥后重试。");
+    } finally {
+      setProviderKeySubmitting(false);
+    }
+  };
 
   // Ready 状态自动倒计时跳转
   useEffect(() => {
@@ -324,6 +351,30 @@ export function OPLEntry() {
           <p className="text-neutral-600 mb-4">
             当前模型调用密钥状态未满足进入条件
           </p>
+          <div className="mb-4 max-w-xl">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                type="password"
+                autoComplete="off"
+                value={providerKeyInput}
+                onChange={(event) => setProviderKeyInput(event.target.value)}
+                placeholder="输入 gflabtoken 模型调用密钥"
+                aria-label="gflabtoken 模型调用密钥"
+              />
+              <Button
+                type="button"
+                className="gap-2 sm:w-40"
+                onClick={handleProviderKeyBind}
+                disabled={providerKeySubmitting}
+              >
+                {providerKeySubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                绑定后进入 OPL
+              </Button>
+            </div>
+            {providerKeyError && (
+              <p className="mt-2 text-sm text-red-700">{providerKeyError}</p>
+            )}
+          </div>
           <div className="flex gap-3">
             <Button asChild variant="outline" className="gap-2">
               <Link to="/overview">

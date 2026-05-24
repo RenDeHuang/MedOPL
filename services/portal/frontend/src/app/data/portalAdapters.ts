@@ -687,7 +687,26 @@ export async function loadOplEntryModel() {
       oplSessionId: bootstrap.identity.oplSessionId,
       stages: status.stages,
     } as const;
-  } catch {
+  } catch (error: unknown) {
+    const response = (error as { response?: { status?: number; data?: { error?: string } } })?.response;
+    if (response?.status === 428 && response.data?.error === "provider_key_required") {
+      return {
+        launchId: "",
+        pageState: "blocked_by_provider_key",
+        userVisibleState: "provider_key_required",
+        oplWebUrl: "",
+        currentStage: "provider_key_required",
+        blockingUser: true,
+        providerBound: false,
+        providerKeyRef: "",
+        gatewayReady: false,
+        gatewayState: "等待模型调用密钥绑定",
+        runtimeSessionId: "",
+        oplSessionId: "",
+        stages: [],
+        workspaceId: "workspace-local-rc",
+      } as const;
+    }
     throw new PortalDisplayError(OPL_GATEWAY_UNAVAILABLE_MESSAGE);
   }
 }
