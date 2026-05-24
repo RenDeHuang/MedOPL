@@ -69,7 +69,7 @@ assertIncludes(runtime, "PostgreSQL", "runtime_must_own_postgres_truth");
 assertIncludes(runtime, "Redis", "runtime_must_own_redis_truth");
 assertIncludes(runtime, "fail closed", "runtime_must_keep_fail_closed_language");
 assertIncludes(delivery, current.current_cursor, "delivery_must_reference_current_cursor");
-assertIncludes(delivery, "Backend Go Convergence Authoring Lane", "delivery_must_own_backend_go_authoring_lane");
+assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_own_go_control_plane_takeover_lane");
 assertIncludes(history, current.last_landed_commit, "history_must_reference_latest_landed_commit");
 assertIncludes(history, "post_merge_closeout", "history_must_own_closeout_schema");
 
