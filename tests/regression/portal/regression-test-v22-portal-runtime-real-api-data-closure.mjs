@@ -17,6 +17,8 @@ const viteConfigPath = path.join(repoRoot, "services", "portal", "frontend", "vi
 const sourceTruthPath = path.join(repoRoot, "docs", "source", "README.md");
 const runtimeTruthPath = path.join(repoRoot, "docs", "runtime", "README.md");
 const apiAlignmentPath = path.join(repoRoot, "tests", "regression", "portal", "regression-test-v22-portal-frontend-api-surface-alignment.mjs");
+const portalApiRoutesPath = path.join(repoRoot, "services", "portal", "src", "routes", "portal-api.routes.mjs");
+const nodeProviderOpenRoutePath = path.join(repoRoot, "services", "portal", "src", "routes", "portal-api-v22-user-credit-provider-key.routes.mjs");
 
 function readSource(filePath) {
   return readFileSync(filePath, "utf8");
@@ -72,6 +74,8 @@ const viteConfigSource = readSource(viteConfigPath);
 const sourceTruth = readSource(sourceTruthPath);
 const runtimeTruth = readSource(runtimeTruthPath);
 const alignmentSource = readSource(apiAlignmentPath);
+const portalApiRoutesSource = readSource(portalApiRoutesPath);
+const nodeProviderOpenRouteSource = readSource(nodeProviderOpenRoutePath);
 
 assertImports(adapterPath, "../../api/portal/lab", [
   "fetchLabEntitlement",
@@ -112,6 +116,20 @@ assertIncludes(viteConfigSource, '"/api": goControlPlaneTarget', "vite_must_prox
 assertIncludes(sourceTruth, "services/portal/src/routes/lab-package.routes.mjs", "source_truth_must_name_node_lab_route_retirement_shell");
 assertIncludes(sourceTruth, "lab package routes remain a retirement shell/local eval dependency", "source_truth_must_demote_node_lab_route");
 assertIncludes(runtimeTruth, "local control-plane implementation is Go-owned for lab typed APIs", "runtime_truth_must_name_go_lab_api_ownership");
+assertIncludes(nodeProviderOpenRouteSource, "node_v22_provider_open_retired", "node_provider_open_route_must_be_retired_shell");
+assertIncludes(nodeProviderOpenRouteSource, "retired_go_control_plane", "node_provider_open_route_must_point_to_go_control_plane");
+assertIncludes(nodeProviderOpenRouteSource, "410", "node_provider_open_route_must_fail_closed");
+assertNotIncludes(portalApiRoutesSource, "createPortalApiV22UserCreditProviderKeyRoutes", "portal_api_routes_must_not_register_node_provider_open_route");
+for (const forbidden of [
+  "openManagedEnvironment",
+  "bindV22GflabProviderKey",
+  "creditV22PortalUser",
+  "ensureV22PortalUser",
+  "managedEnvironmentReadinessFromState",
+  "buildCanonicalPortalStatePayload",
+]) {
+  assertNotIncludes(nodeProviderOpenRouteSource, forbidden, `node_provider_open_route_must_not_hold_business_truth:${forbidden}`);
+}
 assertNotIncludes(apiSource, "apiClient.get<LabPackagesPayload>", "lab_packages_must_not_use_node_portal_client");
 assertNotIncludes(apiSource, "apiClient.get<LabSubscriptionPayload>", "lab_subscription_must_not_use_node_portal_client");
 assertNotIncludes(apiSource, "apiClient.get<LabEntitlementPayload>", "lab_entitlement_must_not_use_node_portal_client");
@@ -163,6 +181,7 @@ console.log(JSON.stringify({
     "runtime_page_uses_upgrade_api",
     "lab_typed_api_uses_go_control_plane_client",
     "opl_entry_provider_key_binding_uses_go_control_plane_client",
+    "node_provider_open_route_demoted_to_retirement_shell",
     "node_lab_route_demoted_to_retirement_shell",
     "active_missing_ui_adjudications_removed",
   ],

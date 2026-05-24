@@ -41,6 +41,7 @@ Retirement surface：
 - `services/portal/frontend` 是 active frontend implementation；它必须通过 typed API 读取 Go control-plane projection。
 - `services/medopl-go-backend` 是 local MVP control-plane implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow 和 release/stop billing，相关 local RC parity eval 必须在 manifest/test lane registry 中可追踪。
 - `services/portal/src` 是 Node Portal backend retirement surface；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
+- `services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs` 只保留 `410 node_v22_provider_open_retired` shell；`/portal/api/v22/users/*`、`/portal/api/v22/provider-key`、`/portal/api/v22/managed-environment/readiness` 和 `/portal/api/v22/managed-environment/open` 不再是当前 control-plane API truth。当前 owner 是 `services/medopl-go-backend` 的 `/api/v22/*`。
 - `services/portal/src/app/portal-runtime.mjs` 只能作为迁移期 shell/eval dependency；不得重新直接 fan-out 到 product domain / presentation helpers，domain/presentation dependency assembly 归 `services/portal/src/app/portal-runtime-app-deps.mjs`，并在 Go parity 后清退。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。

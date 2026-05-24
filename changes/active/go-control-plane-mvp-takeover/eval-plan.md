@@ -11,9 +11,13 @@ node tests/contract/contract-test-v22-go-backend-service-surface.mjs
 node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs
 node tests/contract/contract-test-v22-change-package-lifecycle.mjs
 node tests/contract/contract-test-v22-current-state-index-loop.mjs
+node tests/contract/contract-test-v22-golden-smoke-suite.mjs
+node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json
+node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json
 bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."
 npm --prefix services/portal/frontend run typecheck
-node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json
+node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json
+node scripts/v22-verify.mjs review --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend
 ```
@@ -29,8 +33,10 @@ git diff --check -- docs specs changes tests scripts package.json services/porta
 
 - Go control-plane MVP takeover is represented as the current local package.
 - Provider launch, billing/audit, resource workflow and release projections are covered by local deterministic Go RC parity evals.
+- Default golden smoke and health now run Go-owned local RC parity guards instead of Node provider/open business routes.
+- `golden-path` also runs the Node route retirement guard, so provider/open route rollback is visible before governance-only gates.
 - The default path to real-cloud readiness is blocked until Go local RC passes.
-- Node Portal backend business truth is a retirement target, not the long-term backend.
+- Node Portal provider/open/readiness business route is retired to a 410 shell and is not the long-term backend.
 
 ## Cannot Claim
 

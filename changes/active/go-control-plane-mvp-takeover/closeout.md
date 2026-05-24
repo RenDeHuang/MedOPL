@@ -13,7 +13,9 @@ Status: ready_for_landing_review
 - `4dca989` fix(portal): retire node lab api business routes
 - `a6f55ab` feat(go): add local rc control plane parity slice
 - `39d5242` feat(portal): add go local rc provider key entry
-- pending: local RC parity folded-eval/truth registration commit
+- `156e2d4` test(go): fold local rc parity into current gates
+- `2716e95` fix(go): scope local rc resource lifecycle
+- current commit: fix(go): retire node provider open route from local rc truth
 
 ## Verification
 
@@ -25,6 +27,11 @@ Status: ready_for_landing_review
 - `npm --prefix services/portal/frontend run typecheck`: pass.
 - `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`: pass with folded Go local RC parity checks.
 - `node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs`: pass with folded OPL entry provider-key UI checks.
+- `node tests/contract/contract-test-v22-golden-smoke-suite.mjs`: pass with Go-owned provider/open/file/run/billing/release smoke wrappers.
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`: pass with golden smoke plus Node route retirement guard.
+- `node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json`: pass with Go local RC parity guards registered in health.
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass with `golden-path` guard command registered.
+- `node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs`: pass with malformed JSON ignored by the retired Node provider/open shell.
 - `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/service/controlplane -run \"TestService(ResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing|RecordsFileRunArtifactBillingAuditAndRelease)\" -count=1"`: pass.
 - `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/server/handlers -run \"TestControlPlaneHandlers(ExposeProviderLaunchBillingResourceLocalRC|ScopeResourcesAndFailClosedOnMissingRelease)\" -count=1"`: pass.
 - `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend`: pass.
@@ -37,6 +44,7 @@ Status: ready_for_landing_review
 - Node `/portal/api/lab-*` is retired as a fail-closed 410 shell and no longer owns lab package/subscription business truth.
 - Local deterministic Go RC parity covers provider/preflight/launch, billing/audit, resource projection and release/stop-billing after the eval bundle passes.
 - Go resource projection is workspace-scoped, and release fails closed for missing or wrong-workspace resources in local RC.
+- Node `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness` and `/portal/api/v22/managed-environment/open` are retired to a 410 shell that does not parse request body; current local control-plane API owner is Go `/api/v22/*`.
 
 ## Cannot Claim
 
@@ -55,5 +63,5 @@ Status: ready_for_landing_review
 
 ## Next Owner
 
-- MedOPL Platform for remaining Go local RC parity.
+- MedOPL Platform for final landing review and post-merge closeout.
 - MedOPL Operations only after a separate real-cloud-readiness package is opened and authorized.

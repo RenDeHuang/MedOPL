@@ -98,6 +98,65 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 	}
 }
 
+func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "local-rc-provider-key-material-that-must-stay-private"
+
+	prepareResponse := postMap(t, router, "/api/v22/users/prepare", map[string]any{
+		"tenantId":    "tenant-v22",
+		"userId":      "user-v22",
+		"workspaceId": "workspace-v22",
+	})
+	if prepareResponse["source"] != "go-control-plane" || prepareResponse["status"] != "prepared" {
+		t.Fatalf("prepare response = %+v", prepareResponse)
+	}
+
+	creditResponse := postMap(t, router, "/api/v22/users/credit", map[string]any{
+		"workspaceId": "workspace-v22",
+		"amount":      100,
+	})
+	if creditResponse["source"] != "go-control-plane" || creditResponse["balance"] == nil {
+		t.Fatalf("credit response = %+v", creditResponse)
+	}
+
+	blocked := postRaw(router, "/api/v22/managed-environment/readiness", map[string]any{
+		"workspaceId": "workspace-v22",
+	})
+	if blocked.Code != http.StatusPreconditionRequired || !strings.Contains(blocked.Body.String(), "provider_key_required") {
+		t.Fatalf("readiness without provider status = %d body = %s", blocked.Code, blocked.Body.String())
+	}
+
+	bindResponse := postMap(t, router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"apiKey":         rawProviderKey,
+		"idempotencyKey": "v22-provider-key-once",
+	})
+	assertPublicPayload(t, bindResponse, rawProviderKey)
+	if bindResponse["providerBound"] != true || bindResponse["providerKeyRef"] == "" {
+		t.Fatalf("bind response = %+v", bindResponse)
+	}
+
+	readinessResponse := postMap(t, router, "/api/v22/managed-environment/readiness", map[string]any{
+		"workspaceId": "workspace-v22",
+	})
+	if readinessResponse["readyForManagedEnvironment"] != true || readinessResponse["providerKeyRef"] != bindResponse["providerKeyRef"] {
+		t.Fatalf("readiness response = %+v", readinessResponse)
+	}
+
+	openResponse := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"idempotencyKey": "v22-open-once",
+	})
+	assertPublicPayload(t, openResponse, rawProviderKey)
+	if openResponse["launchStatus"] != "ready" || openResponse["providerBound"] != true || openResponse["resourceBindingId"] == "" {
+		t.Fatalf("open response = %+v", openResponse)
+	}
+}
+
 func TestControlPlaneHandlersScopeResourcesAndFailClosedOnMissingRelease(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 

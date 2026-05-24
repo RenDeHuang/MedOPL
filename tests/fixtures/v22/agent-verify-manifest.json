@@ -1448,14 +1448,17 @@
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
-        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs"
+        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
       ]
     },
     {
       "id": "golden-path",
       "entrypoint": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs"
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+        "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs"
       ]
     },
     {

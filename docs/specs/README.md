@@ -10851,21 +10851,25 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 
 ## API Surface
 
-本轮最小 Portal API 小闭包：
+本轮最小 Go control-plane API 小闭包：
 
-- `POST /portal/api/v22/users/prepare`
-  - 创建或准备用户、tenant、默认 workspace 和 wallet。
-  - 响应只返回 public user、tenant、workspace、balance。
-- `POST /portal/api/v22/users/credit`
-  - 给用户充值额度，写入 wallet 和 `topup` ledger。
-  - 响应只返回 public user、balance 和 ledger 摘要。
-- `POST /portal/api/v22/provider-key`
-  - 后端 provider key binding 能力，用于接收用户自己的 gflabtoken API Key。
+- `POST /api/v22/users/prepare`
+  - Go control-plane local RC 准备用户、tenant、默认 workspace 和 wallet projection。
+  - 响应只返回 public projection，不返回 raw provider key、token 或 provider secret。
+- `POST /api/v22/users/credit`
+  - Go control-plane local RC 给用户充值额度 projection，并保留账务 owner 语义。
+  - 响应只返回 public balance / ledger projection。
+- `POST /api/v22/provider-key`
+  - Go control-plane provider key binding 能力，用于接收用户自己的 gflabtoken API Key。
   - 该能力不是 Portal 普通登录字段，也不改变 portal.medopl.cn 登录不需要 gflabtoken API Key 的规则。
   - raw API Key 只进入后端密钥边界。
   - 响应只返回 `providerKeyRef`、`providerBound` 和 bound status。
-- `POST /portal/api/v22/managed-environment/readiness`
-  - 未绑定用户自己的 provider key 时返回 409 和 `provider_key_required`。
+- `POST /api/v22/managed-environment/readiness`
+  - 未绑定用户自己的 provider key 时返回 428 和 `provider_key_required`。
+- `POST /api/v22/managed-environment/open`
+  - Go control-plane local RC 打开托管环境 projection，返回 launch、Gateway、resourceBinding 和 providerKeyRef 的 public projection。
+
+Legacy Node Portal paths `POST /portal/api/v22/users/prepare`、`POST /portal/api/v22/users/credit`、`POST /portal/api/v22/provider-key`、`POST /portal/api/v22/managed-environment/readiness` 和 `POST /portal/api/v22/managed-environment/open` 已退役为 `410 node_v22_provider_open_retired` shell。它们不能作为当前 Portal control-plane truth、兼容层、real-cloud readiness evidence 或 production API 入口。
 
 ## Non-goals
 

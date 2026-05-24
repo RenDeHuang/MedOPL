@@ -58,6 +58,13 @@ for (const suite of ["health", "smoke", "local-contract", "current", "review"]) 
   assert(TEST_LANE_SUITES[suite], `registry_suite_missing:${suite}`);
 }
 
+for (const file of [
+  "tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+  "tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+]) {
+  assert(TEST_LANE_SUITES.health.includes(file), `health_suite_must_run_go_local_rc_parity_guard:${file}`);
+}
+
 const manifestSuitesById = new Map(manifest.suites.map((suite) => [suite.id, suite]));
 for (const suite of ["health", "local-contract", "review"]) {
   const manifestFiles = manifestSuitesById.get(suite).commands.map(normalizeCommandTestFile).filter(Boolean).sort();

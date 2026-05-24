@@ -82,7 +82,7 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
-	api.POST("/v22/managed-environment/readiness", providerPreflight(service))
+	api.POST("/v22/managed-environment/readiness", managedEnvironmentReadiness(service))
 	api.POST("/v22/managed-environment/open", openManagedEnvironment(service))
 	api.POST("/v22/managed-environment/release", releaseManagedEnvironment(service))
 	api.POST("/opl/launch", openManagedEnvironment(service))
@@ -142,6 +142,23 @@ func providerPreflight(service ControlPlaneService) gin.HandlerFunc {
 		result, err := service.Preflight(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: defaultString(request.WorkspaceID, workspaceIDFromQuery(ctx), "workspace-local-rc")})
 		if err != nil {
 			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, result)
+	}
+}
+
+func managedEnvironmentReadiness(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request workspaceRequest
+		_ = ctx.ShouldBindJSON(&request)
+		result, err := service.Preflight(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: defaultString(request.WorkspaceID, workspaceIDFromQuery(ctx), "workspace-local-rc")})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		if !result.Ok {
+			ctx.JSON(http.StatusPreconditionRequired, result)
 			return
 		}
 		ctx.JSON(http.StatusOK, result)
