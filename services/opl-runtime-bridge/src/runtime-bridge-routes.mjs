@@ -201,8 +201,7 @@ function publicTracePayload(trace = {}) {
   };
 }
 
-function publicMessageReplyPayload(message = {}, record = {}) {
-  if (!message) return pendingMessagePayload(record);
+function publicMessageReplyPayload(message = {}, record = {}) { if (!message) return pendingMessagePayload(record);
   return {
     messageId: emptyText(message.messageId || record.messageId),
     runId: emptyText(message.runId || record.runId || message.messageId || record.messageId),
