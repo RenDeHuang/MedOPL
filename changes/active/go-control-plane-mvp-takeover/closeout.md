@@ -44,7 +44,7 @@ Status: ready_for_landing_review
 - Node `/portal/api/lab-*` is retired as a fail-closed 410 shell and no longer owns lab package/subscription business truth.
 - Local deterministic Go RC parity covers provider/preflight/launch, billing/audit, resource projection and release/stop-billing after the eval bundle passes.
 - Go resource projection is workspace-scoped, and release fails closed for missing or wrong-workspace resources in local RC.
-- Node `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness` and `/portal/api/v22/managed-environment/open` are retired to a 410 shell that does not parse request body; current local control-plane API owner is Go `/api/v22/*`.
+- Node `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness`, `/portal/api/v22/managed-environment/open`, `/portal/api/v22/managed-environment/release` and `/portal/api/v22/opl-work/*` routes and business domains are physically retired from active code; current local control-plane API owner is Go `/api/v22/*` and `/api/opl/*`.
 
 ## Cannot Claim
 

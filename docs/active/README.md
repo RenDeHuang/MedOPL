@@ -30,7 +30,7 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 ## Open Blockers
 
 - `go-control-plane-mvp-takeover`: provider launch, billing/audit, resource workflow and release local RC parity must pass current/review eval before real-cloud readiness.
-- `node-portal-business-truth-retirement`: Node Portal provider/open/readiness business route is retired to a 410 shell; remaining Node Portal shell/relay code must not own control-plane truth.
+- `node-portal-business-truth-retirement`: Node Portal v22 provider/open/readiness/work/release business routes and domains are physically retired; remaining Node Portal auth/page/shell/relay code must not own control-plane truth.
 - `real-cloud-authorization-boundary`: real cloud, secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence are deferred until Go local RC passes and a separate authorization package is opened.
 
 ## Verification Entry
