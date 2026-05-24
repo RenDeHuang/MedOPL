@@ -3308,7 +3308,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-05-24 feat/v22-local-control-plane-hardening
 
-Status: `authoring / local-gated`
+Status: `landed / pushed / post-push verified`
 
 Branch: `feat/v22-local-control-plane-hardening`
 
@@ -3367,14 +3367,16 @@ Cannot-claim:
 - `go test ./...` evidence exists in this environment.
 - All Portal structure debt is closed.
 
-handoff_commit: `54e6dad`
+landed_commit: `c36526a4afe49cc56f25ec2d2988b5dc32feb9a2`
 
-landing_gate_result: `pending ff-only merge / push eval`
+landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- pending; must run after ff-only merge and push.
+- `origin/recovery/platform-v22-trunk` reached `c36526a4afe49cc56f25ec2d2988b5dc32feb9a2`.
+- Post-push closeout sync updates only docs/active, docs/history and tests/fixtures/v22/goal-current.json.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
 
-post_merge_closeout: `pending`
+post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`

@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-24",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "11fee408eabb8e6c34961373ee11eb8607f5816e",
+  "base_trunk_head": "c36526a4afe49cc56f25ec2d2988b5dc32feb9a2",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "11fee408eabb8e6c34961373ee11eb8607f5816e",
+  "last_landed_commit": "c36526a4afe49cc56f25ec2d2988b5dc32feb9a2",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S6 real cloud authorization boundary",
@@ -23,7 +23,7 @@
     "real_cloud_evidence_sink_rollback_owner_and_operation_class_must_be_named_before_execution",
     "go_control_plane_takeover_and_code_structure_debt_remain_local_engineering_packages_not_cloud_authorization"
   ],
-  "current_problem": "OPL entry real preflight / launch projection landed locally at 11fee408eabb8e6c34961373ee11eb8607f5816e. The current cursor is real-cloud-authorization-boundary: secret access, provider operations, true cloud mutation, deploy, kubectl, build/push and live-test remain blocked until the user separately authorizes operation class, target environment, evidence sink and rollback owner.",
+  "current_problem": "Local control-plane hardening landed at c36526a4afe49cc56f25ec2d2988b5dc32feb9a2: PowerShell MinIO sync helper retired, Portal runtime fan-out reduced, current truth local endpoint hygiene gated, and Go takeover readiness preserved as future-target only. The current cursor remains real-cloud-authorization-boundary: secret access, provider operations, true cloud mutation, deploy, kubectl, build/push and live-test remain blocked until the user separately authorizes operation class, target environment, evidence sink and rollback owner.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -272,9 +272,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/medopl-gap-opl-entry-real-launch",
+  "last_landed_branch": "feat/v22-local-control-plane-hardening",
   "last_landed_at": "2026-05-24",
-  "history_latest_branch": "feat/medopl-gap-opl-entry-real-launch",
+  "history_latest_branch": "feat/v22-local-control-plane-hardening",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
