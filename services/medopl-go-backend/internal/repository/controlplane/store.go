@@ -16,7 +16,7 @@ type Store interface {
 	LaunchByID(ctx context.Context, launchID string) (cpd.LaunchProjection, error)
 	SaveResource(ctx context.Context, resource cpd.ManagedResource) error
 	ResourceByBinding(ctx context.Context, resourceBindingID string) (cpd.ManagedResource, error)
-	ListResources(ctx context.Context) ([]cpd.ManagedResource, error)
+	ListResources(ctx context.Context, workspaceID string) ([]cpd.ManagedResource, error)
 	SaveAuditEvent(ctx context.Context, event cpd.AuditEvent) error
 	ListAuditEvents(ctx context.Context, workspaceID string) ([]cpd.AuditEvent, error)
 }

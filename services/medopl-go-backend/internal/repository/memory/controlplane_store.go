@@ -95,7 +95,7 @@ func (store *ControlPlaneStore) ResourceByBinding(ctx context.Context, resourceB
 	return resource, nil
 }
 
-func (store *ControlPlaneStore) ListResources(ctx context.Context) ([]cpd.ManagedResource, error) {
+func (store *ControlPlaneStore) ListResources(ctx context.Context, workspaceID string) ([]cpd.ManagedResource, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -103,7 +103,9 @@ func (store *ControlPlaneStore) ListResources(ctx context.Context) ([]cpd.Manage
 	defer store.mu.Unlock()
 	items := make([]cpd.ManagedResource, 0, len(store.resourcesByBinding))
 	for _, item := range store.resourcesByBinding {
-		items = append(items, item)
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			items = append(items, item)
+		}
 	}
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].ResourceBindingID < items[j].ResourceBindingID

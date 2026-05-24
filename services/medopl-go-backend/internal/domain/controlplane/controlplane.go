@@ -28,6 +28,7 @@ var (
 	ErrIdempotencyKeyRequired  = errors.New("idempotency_key_required")
 	ErrLaunchRequired          = errors.New("launch_required")
 	ErrLaunchNotFound          = errors.New("launch_not_found")
+	ErrResourceNotFound        = errors.New("resource_not_found")
 	ErrResourceBindingRequired = errors.New("resource_binding_required")
 	ErrFileNameRequired        = errors.New("file_name_required")
 	ErrFileRefRequired         = errors.New("file_ref_required")

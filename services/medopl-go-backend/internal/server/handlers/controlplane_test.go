@@ -82,7 +82,7 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 		t.Fatalf("billing response = %+v", billingResponse)
 	}
 
-	resourcesResponse := getMap(t, router, "/api/platform-provisioned-resources")
+	resourcesResponse := getMap(t, router, "/api/platform-provisioned-resources?workspaceId=workspace-v22")
 	if resourcesResponse["source"] != "go-control-plane" || resourcesResponse["ok"] != true {
 		t.Fatalf("resources response = %+v", resourcesResponse)
 	}
@@ -95,6 +95,42 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 	})
 	if releaseResponse["billingStopped"] != true || releaseResponse["status"] != "released" {
 		t.Fatalf("release response = %+v", releaseResponse)
+	}
+}
+
+func TestControlPlaneHandlersScopeResourcesAndFailClosedOnMissingRelease(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+
+	for _, workspaceID := range []string{"workspace-v22", "workspace-other"} {
+		postMap(t, router, "/api/provider/bind", map[string]any{
+			"tenantId":       "tenant-v22",
+			"portalUserId":   "user-v22",
+			"workspaceId":    workspaceID,
+			"apiKey":         "local-rc-provider-key-material-that-must-stay-private",
+			"idempotencyKey": "bind-provider-" + workspaceID,
+		})
+		postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+			"tenantId":       "tenant-v22",
+			"portalUserId":   "user-v22",
+			"workspaceId":    workspaceID,
+			"idempotencyKey": "open-" + workspaceID,
+		})
+	}
+
+	resourcesResponse := getMap(t, router, "/api/platform-provisioned-resources?workspaceId=workspace-v22")
+	items := resourcesResponse["items"].([]any)
+	if len(items) != 1 || items[0].(map[string]any)["workspaceId"] != "workspace-v22" {
+		t.Fatalf("resources response = %+v", resourcesResponse)
+	}
+
+	rec := postRaw(router, "/api/v22/managed-environment/release", map[string]any{
+		"workspaceId":       "workspace-v22",
+		"resourceBindingId": "missing-binding",
+		"stopBilling":       true,
+		"idempotencyKey":    "release-missing-once",
+	})
+	if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "resource_not_found") {
+		t.Fatalf("release missing status = %d body = %s", rec.Code, rec.Body.String())
 	}
 }
 

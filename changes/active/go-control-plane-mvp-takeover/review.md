@@ -16,3 +16,12 @@
 - blockers: 0
 - reviewed scope: `origin/recovery/platform-v22-trunk..HEAD`
 - residual risk: static review only; runtime assurance comes from the actual `current` bundle recorded in closeout.
+
+### 2026-05-24 local RC parity review
+
+- reviewer: Codex native explorer subagent `Dirac`
+- model: `gpt-5.4-mini`
+- result: blocker=0.
+- reviewed scope: `origin/recovery/platform-v22-trunk..HEAD`
+- residual risks found: `Resources()` had global memory projection risk; `Release()` could synthesize a released projection for a missing resource in deterministic local proof.
+- action: fixed in Go control-plane code. Resources are workspace-scoped, and release now fails closed with `resource_not_found` for missing or wrong-workspace resources.

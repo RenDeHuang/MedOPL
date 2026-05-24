@@ -531,8 +531,12 @@ func (service *Service) BillingDetails(ctx context.Context, input WorkspaceInput
 	}, nil
 }
 
-func (service *Service) Resources(ctx context.Context) (ResourcesProjection, error) {
-	items, err := service.store.ListResources(ctx)
+func (service *Service) Resources(ctx context.Context, input WorkspaceInput) (ResourcesProjection, error) {
+	workspaceID := strings.TrimSpace(input.WorkspaceID)
+	if workspaceID == "" {
+		return ResourcesProjection{}, cpd.ErrWorkspaceRequired
+	}
+	items, err := service.store.ListResources(ctx, workspaceID)
 	if err != nil {
 		return ResourcesProjection{}, err
 	}
@@ -568,9 +572,12 @@ func (service *Service) Resources(ctx context.Context) (ResourcesProjection, err
 func (service *Service) Release(ctx context.Context, input ReleaseInput) (ReleaseResult, error) {
 	resource, err := service.store.ResourceByBinding(ctx, strings.TrimSpace(input.ResourceBindingID))
 	if errors.Is(err, cprepo.ErrNotFound) {
-		resource = cpd.NewManagedResource(cpd.ResourceInput{WorkspaceID: input.WorkspaceID, ResourceBindingID: input.ResourceBindingID})
+		return ReleaseResult{}, cpd.ErrResourceNotFound
 	} else if err != nil {
 		return ReleaseResult{}, err
+	}
+	if resource.WorkspaceID != strings.TrimSpace(input.WorkspaceID) {
+		return ReleaseResult{}, cpd.ErrResourceNotFound
 	}
 	released, audit, err := cpd.ReleaseManagedResource(resource, cpd.ReleaseInput{
 		WorkspaceID:       input.WorkspaceID,

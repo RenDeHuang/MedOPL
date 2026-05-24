@@ -25,7 +25,7 @@ type ControlPlaneService interface {
 	Artifact(ctx context.Context, launchID string, artifactRef string) (map[string]any, error)
 	BillingSummary(ctx context.Context, input cps.WorkspaceInput) (cps.BillingSummary, error)
 	BillingDetails(ctx context.Context, input cps.WorkspaceInput) (cps.BillingDetails, error)
-	Resources(ctx context.Context) (cps.ResourcesProjection, error)
+	Resources(ctx context.Context, input cps.WorkspaceInput) (cps.ResourcesProjection, error)
 	Release(ctx context.Context, input cps.ReleaseInput) (cps.ReleaseResult, error)
 }
 
@@ -329,7 +329,7 @@ func runCost() gin.HandlerFunc {
 
 func resources(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		payload, err := service.Resources(ctx.Request.Context())
+		payload, err := service.Resources(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
 		if err != nil {
 			writeControlPlaneError(ctx, err)
 			return
@@ -365,6 +365,8 @@ func writeControlPlaneError(ctx *gin.Context, err error) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"ok": false, "error": "provider_key_required"})
 	case errors.Is(err, cpd.ErrLaunchNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "launch_not_found"})
+	case errors.Is(err, cpd.ErrResourceNotFound):
+		ctx.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "resource_not_found"})
 	case errors.Is(err, cpd.ErrWorkspaceRequired):
 		ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "workspace_required"})
 	case errors.Is(err, cpd.ErrIdempotencyKeyRequired):

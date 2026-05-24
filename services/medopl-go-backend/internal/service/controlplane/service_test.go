@@ -120,7 +120,7 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 		t.Fatalf("billing = %+v", billing)
 	}
 
-	resources, err := service.Resources(ctx)
+	resources, err := service.Resources(ctx, WorkspaceInput{WorkspaceID: "workspace-v22"})
 	if err != nil {
 		t.Fatalf("Resources() error = %v", err)
 	}
@@ -139,6 +139,55 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	}
 	if !release.BillingStopped || release.Resource.StopBilling.Status != cpd.BillingStatusStopped {
 		t.Fatalf("release = %+v", release)
+	}
+}
+
+func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	workspaceLaunch := bindAndOpen(t, ctx, service)
+	if _, err := service.BindProviderKey(ctx, BindProviderKeyInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-other",
+		RawProviderKey: "local-rc-provider-key-material-that-must-stay-private",
+		IdempotencyKey: "bind-provider-other-once",
+	}); err != nil {
+		t.Fatalf("BindProviderKey(other) error = %v", err)
+	}
+	if _, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-other",
+		IdempotencyKey: "open-other-once",
+	}); err != nil {
+		t.Fatalf("OpenManagedEnvironment(other) error = %v", err)
+	}
+
+	resources, err := service.Resources(ctx, WorkspaceInput{WorkspaceID: "workspace-v22"})
+	if err != nil {
+		t.Fatalf("Resources() error = %v", err)
+	}
+	if len(resources.Items) != 1 || resources.Items[0].WorkspaceID != "workspace-v22" || resources.Items[0].ResourceBindingID != workspaceLaunch.ResourceBindingID {
+		t.Fatalf("workspace scoped resources = %+v", resources.Items)
+	}
+
+	if _, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       "workspace-v22",
+		ResourceBindingID: "missing-binding",
+		StopBilling:       true,
+		IdempotencyKey:    "release-missing-once",
+	}); !errors.Is(err, cpd.ErrResourceNotFound) {
+		t.Fatalf("Release(missing) error = %v", err)
+	}
+
+	if _, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       "workspace-other",
+		ResourceBindingID: workspaceLaunch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-wrong-workspace-once",
+	}); !errors.Is(err, cpd.ErrResourceNotFound) {
+		t.Fatalf("Release(wrong workspace) error = %v", err)
 	}
 }
 

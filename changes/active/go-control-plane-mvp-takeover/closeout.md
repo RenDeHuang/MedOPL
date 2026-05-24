@@ -25,6 +25,8 @@ Status: ready_for_landing_review
 - `npm --prefix services/portal/frontend run typecheck`: pass.
 - `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`: pass with folded Go local RC parity checks.
 - `node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs`: pass with folded OPL entry provider-key UI checks.
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/service/controlplane -run \"TestService(ResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing|RecordsFileRunArtifactBillingAuditAndRelease)\" -count=1"`: pass.
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/server/handlers -run \"TestControlPlaneHandlers(ExposeProviderLaunchBillingResourceLocalRC|ScopeResourcesAndFailClosedOnMissingRelease)\" -count=1"`: pass.
 - `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend`: pass.
 
 ## Can Claim
@@ -34,6 +36,7 @@ Status: ready_for_landing_review
 - Portal frontend lab typed API uses the Go control-plane client.
 - Node `/portal/api/lab-*` is retired as a fail-closed 410 shell and no longer owns lab package/subscription business truth.
 - Local deterministic Go RC parity covers provider/preflight/launch, billing/audit, resource projection and release/stop-billing after the eval bundle passes.
+- Go resource projection is workspace-scoped, and release fails closed for missing or wrong-workspace resources in local RC.
 
 ## Cannot Claim
 
