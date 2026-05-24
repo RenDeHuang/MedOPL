@@ -34,7 +34,7 @@
 - blockers found:
   - health suite did not include the Go local RC parity guards.
   - Node Portal `provider-key` / `managed-environment/open` / `managed-environment/readiness` route still held control-plane business logic.
-- action: health now runs `contract-test-v22-go-backend-service-surface.mjs` and `regression-test-v22-portal-runtime-real-api-data-closure.mjs`; Node provider/open route is a `410 node_v22_provider_open_retired` shell and is no longer registered by `portal-api.routes.mjs`.
+- action: health now runs `contract-test-v22-go-backend-service-surface.mjs` and `regression-test-v22-portal-runtime-real-api-data-closure.mjs`; Node v22 provider/open/work/release routes and business domains are physically retired from active code and are no longer registered by `portal-api.routes.mjs`.
 
 ### 2026-05-24 final route retirement review
 

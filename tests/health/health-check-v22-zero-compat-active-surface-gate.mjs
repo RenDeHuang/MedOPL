@@ -348,7 +348,7 @@ async function assertNoImplicitDefaultWorkspacePositivePath(findings) {
     "services/portal/src/state/portal-store-postgres-lab-persistence.mjs",
     "services/portal/src/migrate-schema.mjs",
     "services/portal/src/portal-cloud-operation-worker.mjs",
-    "services/portal/src/domain/user-credit-provider-key-flow.mjs",
+    "services/portal/src/domain/provider-key-bindings.mjs",
     "services/portal/src/domain/lab-billing-policy.mjs",
     "services/portal/src/domain/portal-cloud-operation-production.mjs",
     "services/opl-runtime-bridge/src/state-store.mjs",
@@ -412,8 +412,7 @@ async function assertNoImplicitDefaultWorkspacePositivePath(findings) {
 
 async function assertNoOrdinaryUserInternalPayloadHelpers(findings) {
   const scopedFiles = [
-    "services/portal/src/domain/managed-environment-open-flow.mjs",
-    "services/portal/src/domain/opl-work-flow.mjs",
+    "services/portal/src/domain/managed-environment-projection.mjs",
     "services/portal/src/domain/portal-api-payloads.mjs",
     "services/portal/src/app/portal-page-overview-payloads.mjs",
     "services/portal/src/app/portal-page-workspace-payloads.mjs",

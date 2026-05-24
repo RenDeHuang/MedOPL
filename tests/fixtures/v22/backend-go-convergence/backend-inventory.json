@@ -58,9 +58,7 @@
         "billing_audit_aggregation"
       ],
       "paths": [
-        "services/portal/src/domain/provider-key-bindings.mjs",
-        "services/portal/src/domain/user-credit-provider-key-flow.mjs",
-        "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
+        "services/portal/src/domain/provider-key-bindings.mjs"
       ]
     },
     {
@@ -87,7 +85,8 @@
         "services/portal/src/app/portal-page-workspace-payloads.mjs",
         "services/portal/src/app/portal-public-home.mjs",
         "services/portal/src/app/portal-session-trace-payloads.mjs",
-        "services/portal/src/app/portal-workspace-runtime.mjs"
+        "services/portal/src/app/portal-workspace-runtime.mjs",
+        "services/portal/src/domain/managed-environment-projection.mjs"
       ]
     },
     {
@@ -191,9 +190,6 @@
         "services/portal/src/domain/lab-entitlements.mjs",
         "services/portal/src/domain/lab-packages.mjs",
         "services/portal/src/domain/lab-subscriptions.mjs",
-        "services/portal/src/domain/managed-environment-open-flow.mjs",
-        "services/portal/src/domain/managed-environment-release-flow.mjs",
-        "services/portal/src/domain/opl-work-flow.mjs",
         "services/portal/src/domain/platform-provisioned-resources.mjs",
         "services/portal/src/domain/portal-auth.mjs",
         "services/portal/src/domain/portal-file-space-management.mjs",
@@ -226,8 +222,6 @@
         "services/portal/src/routes/portal-api-runs.routes.mjs",
         "services/portal/src/routes/portal-api-sessions.routes.mjs",
         "services/portal/src/routes/portal-api-traces.routes.mjs",
-        "services/portal/src/routes/portal-api-v22-managed-environment-release.routes.mjs",
-        "services/portal/src/routes/portal-api-v22-opl-work.routes.mjs",
         "services/portal/src/routes/portal-api.routes.mjs",
         "services/portal/src/routes/workspace-storage-route-handlers.mjs",
         "services/portal/src/routes/workspace-storage-upload-support.mjs",
@@ -605,16 +599,16 @@
     }
   ],
   "summary": {
-    "totalFiles": 181,
+    "totalFiles": 176,
     "byService": {
-      "portal": 137,
+      "portal": 132,
       "opl-web-gateway": 7,
       "opl-runtime-bridge": 37
     },
     "byClassification": {
-      "correct-place": 122,
-      "misplaced": 33,
-      "migrate-later": 20,
+      "correct-place": 115,
+      "migrate-later": 21,
+      "misplaced": 34,
       "delete-later": 6
     }
   },
@@ -625,7 +619,6 @@
     "services/portal/src/routes/portal-api-v22-cloud-operations.routes.mjs",
     "services/portal/src/portal-cloud-operation-worker.mjs",
     "services/portal/src/domain/provider-secret-store.mjs",
-    "services/portal/src/domain/user-credit-provider-key-flow.mjs",
     "services/portal/src/app/portal-api-runtime-handlers.mjs",
     "services/portal/src/domain/cost-balance-trace-linkage.mjs",
     "services/opl-runtime-bridge/src/provider-secret-store.mjs",

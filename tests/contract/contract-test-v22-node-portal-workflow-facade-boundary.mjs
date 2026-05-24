@@ -3,10 +3,6 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  createPortalApiV22UserCreditProviderKeyRoutes,
-} from "../../services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs";
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const inventoryPath = "tests/fixtures/v22/backend-go-convergence/backend-inventory.json";
@@ -22,6 +18,15 @@ const requiredRiskTags = [
   "memory_launch_truth",
   "billing_audit_aggregation",
   "runtime_bridge_token_secret_boundary",
+];
+const retiredNodeControlPlaneFiles = [
+  "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs",
+  "services/portal/src/routes/portal-api-v22-managed-environment-release.routes.mjs",
+  "services/portal/src/routes/portal-api-v22-opl-work.routes.mjs",
+  "services/portal/src/domain/user-credit-provider-key-flow.mjs",
+  "services/portal/src/domain/managed-environment-open-flow.mjs",
+  "services/portal/src/domain/managed-environment-release-flow.mjs",
+  "services/portal/src/domain/opl-work-flow.mjs",
 ];
 
 async function exists(repoPath) {
@@ -191,6 +196,9 @@ async function assertPortalLongTaskBoundaries(inventory, migrationMap) {
 async function assertNodePortalFacadeBoundary() {
   const facadePath = "services/portal/src/services/portal-workflow-facade.service.mjs";
   assert.equal(await exists(facadePath), true, "portal_workflow_facade_service_missing");
+  for (const repoPath of retiredNodeControlPlaneFiles) {
+    assert.equal(await exists(repoPath), false, `node_control_plane_code_must_be_physically_retired:${repoPath}`);
+  }
 
   const [
     facadeSource,
@@ -202,7 +210,6 @@ async function assertNodePortalFacadeBoundary() {
     apiRuntimeHandlersSource,
     portalApiRoutesSource,
     authRuntimeHandlerSource,
-    providerOpenRouteSource,
   ] = await Promise.all([
     readRepoFile(facadePath),
     readRepoFile("services/portal/src/routes/opl.routes.mjs"),
@@ -213,7 +220,6 @@ async function assertNodePortalFacadeBoundary() {
     readRepoFile("services/portal/src/app/portal-api-runtime-handlers.mjs"),
     readRepoFile("services/portal/src/routes/portal-api.routes.mjs"),
     readRepoFile("services/portal/src/app/portal-auth-runtime-handler.mjs"),
-    readRepoFile("services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"),
   ]);
 
   for (const marker of ["createPortalWorkflowFacade", "submitCommand", "runOplLaunchCommand", "runCloudOperationCommand", "pending", "running", "succeeded", "failed"]) {
@@ -242,11 +248,15 @@ async function assertNodePortalFacadeBoundary() {
   for (const marker of ["createPortalApiV22UserCreditProviderKeyRoutes", "handleV22UserCreditProviderKey"]) {
     assertNotIncludes(portalApiRoutesSource, marker, `portal_api_routes_must_not_register_node_v22_provider_open_business_route:${marker}`);
   }
-  for (const marker of ["node_v22_provider_open_retired", "410", "retired_go_control_plane"]) {
-    assertIncludes(providerOpenRouteSource, marker, `node_v22_provider_open_route_must_be_retired_shell:${marker}`);
-  }
-  for (const marker of ["openManagedEnvironment", "bindV22GflabProviderKey", "creditV22PortalUser", "ensureV22PortalUser", "managedEnvironmentReadinessFromState", "buildCanonicalPortalStatePayload"]) {
-    assertNotIncludes(providerOpenRouteSource, marker, `node_v22_provider_open_route_must_not_hold_business_truth:${marker}`);
+  for (const marker of [
+    "createPortalApiV22ManagedEnvironmentReleaseRoutes",
+    "createPortalApiV22OplWorkRoutes",
+    "handleV22ManagedEnvironmentRelease",
+    "handleV22OplWork",
+    "node_v22_provider_open_retired",
+    "node_v22_provider_open_retired",
+  ]) {
+    assertNotIncludes(portalApiRoutesSource, marker, `portal_api_routes_must_not_register_node_v22_control_plane_route:${marker}`);
   }
   assertIncludes(portalRuntimeSource, "createPortalWorkflowFacade", "portal_runtime_must_create_facade_once");
   assert.match(portalRuntimeSource, /const\s+workflowFacade\s*=\s*createPortalWorkflowFacade/u, "portal_runtime_must_have_single_facade_instance");
@@ -258,33 +268,6 @@ async function assertNodePortalFacadeBoundary() {
   }
 }
 
-async function assertRetiredNodeProviderOpenShellIgnoresRequestBody() {
-  let readBodyCalled = false;
-  const sends = [];
-  const handler = createPortalApiV22UserCreditProviderKeyRoutes({
-    readBody: async () => {
-      readBodyCalled = true;
-      return Buffer.from("{malformed-json");
-    },
-    sendJson: (_res, payload, status) => {
-      sends.push({ payload, status });
-    },
-  });
-
-  const handled = await handler({
-    req: { method: "POST" },
-    res: {},
-    url: new URL("http://medopl.local/portal/api/v22/provider-key"),
-  });
-
-  assert.equal(handled, true, "retired_node_provider_open_shell_must_handle_provider_key_route");
-  assert.equal(readBodyCalled, false, "retired_node_provider_open_shell_must_ignore_request_body");
-  assert.equal(sends.length, 1, "retired_node_provider_open_shell_must_send_one_response");
-  assert.equal(sends[0].status, 410, "retired_node_provider_open_shell_must_return_410");
-  assert.equal(sends[0].payload?.error, "node_v22_provider_open_retired", "retired_node_provider_open_shell_error_mismatch");
-  assert.equal(sends[0].payload?.owner, "services/medopl-go-backend", "retired_node_provider_open_shell_owner_mismatch");
-}
-
 const [inventory, migrationMap] = await Promise.all([
   readJson(inventoryPath),
   readJson(migrationMapPath),
@@ -293,11 +276,11 @@ const [inventory, migrationMap] = await Promise.all([
 await assertPortalRiskInventory(inventory, migrationMap);
 await assertPortalLongTaskBoundaries(inventory, migrationMap);
 await assertNodePortalFacadeBoundary();
-await assertRetiredNodeProviderOpenShellIgnoresRequestBody();
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_node_portal_workflow_facade_boundary",
   facade: "services/portal/src/services/portal-workflow-facade.service.mjs",
   durableEngine: "behind_facade_future_replacement",
+  retiredNodeControlPlaneFiles,
 }, null, 2));

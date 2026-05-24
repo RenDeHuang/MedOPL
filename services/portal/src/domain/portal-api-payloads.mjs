@@ -7,7 +7,7 @@ import {
   fileSpacePublicView,
   managedEnvironmentUserNarrative,
   workspacePublicView,
-} from "./managed-environment-open-flow.mjs";
+} from "./managed-environment-projection.mjs";
 import {
   canonicalResourcePlanPublicView,
   getCanonicalResourcePlan,

@@ -6323,10 +6323,7 @@ Portal 必须按低耦合目标治理：
     "backendRoutesDispatcher": {
       "dispatcherFile": "services/portal/src/routes/portal-api.routes.mjs",
       "dispatcherMustReference": [
-        "createPortalApiV22UserCreditProviderKeyRoutes",
-        "createPortalApiV22OplWorkRoutes",
         "createPortalApiV22CloudOperationsRoutes",
-        "createPortalApiV22ManagedEnvironmentReleaseRoutes",
         "createPlatformProvisionedResourceRoutes"
       ],
       "currentRouteFiles": [
@@ -6368,8 +6365,7 @@ Portal 必须按低耦合目标治理：
         "services/portal/src/domain/wallet-ledger.mjs",
         "services/portal/src/domain/platform-provisioned-resources.mjs",
         "services/portal/src/domain/user-resource-bindings.mjs",
-        "services/portal/src/domain/managed-environment-open-flow.mjs",
-        "services/portal/src/domain/managed-environment-release-flow.mjs",
+        "services/portal/src/domain/managed-environment-projection.mjs",
         "services/portal/src/domain/workspace-storage.mjs"
       ]
     },
@@ -10869,7 +10865,7 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 - `POST /api/v22/managed-environment/open`
   - Go control-plane local RC 打开托管环境 projection，返回 launch、Gateway、resourceBinding 和 providerKeyRef 的 public projection。
 
-Legacy Node Portal paths `POST /portal/api/v22/users/prepare`、`POST /portal/api/v22/users/credit`、`POST /portal/api/v22/provider-key`、`POST /portal/api/v22/managed-environment/readiness` 和 `POST /portal/api/v22/managed-environment/open` 已退役为 `410 node_v22_provider_open_retired` shell。它们不能作为当前 Portal control-plane truth、兼容层、real-cloud readiness evidence 或 production API 入口。
+Legacy Node Portal paths `POST /portal/api/v22/users/prepare`、`POST /portal/api/v22/users/credit`、`POST /portal/api/v22/provider-key`、`POST /portal/api/v22/managed-environment/readiness`、`POST /portal/api/v22/managed-environment/open`、`POST /portal/api/v22/managed-environment/release` 和 `/portal/api/v22/opl-work/*` 已从 active Node code surface 物理清退。它们不能作为当前 Portal control-plane truth、兼容层、real-cloud readiness evidence 或 production API 入口。
 
 ## Non-goals
 

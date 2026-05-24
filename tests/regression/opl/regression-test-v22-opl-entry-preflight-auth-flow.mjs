@@ -18,7 +18,6 @@ const {
   normalizeProviderApiKey,
   redactProviderConfig,
 } = await import("../../../services/portal/src/domain/provider-config.mjs");
-const { bindV22GflabProviderKey } = await import("../../../services/portal/src/domain/user-credit-provider-key-flow.mjs");
 const { createProviderSecretStore } = await import("../../../services/portal/src/domain/provider-secret-store.mjs");
 const { hashPassword } = await import("../../../services/portal/src/domain/portal-auth.mjs");
 const { createOplLaunchService } = await import("../../../services/portal/src/services/opl-launch.service.mjs");
@@ -376,14 +375,23 @@ try {
     userId: portalLaunchUser.id,
     status: "active",
   });
-
-  const launchBound = await bindV22GflabProviderKey(portalLaunchDb, portalLaunchUser, {
+  const launchProviderKeyRef = "provider-key-ref-go-control-plane-local-rc";
+  await providerSecretStore.writeProviderSecret(launchProviderKeyRef, {
+    provider: "gflabtoken",
+    source: "user_input",
+    apiKey: RAW_PROVIDER_KEY,
+  });
+  portalLaunchDb.providerKeyBindings.push({
+    id: "provider-binding-go-control-plane-local-rc",
+    tenantId: portalLaunchUser.tenantId,
+    userId: portalLaunchUser.id,
     workspaceId: "workspace-v22-launch-reuse",
     provider: "gflabtoken",
-    apiKey: RAW_PROVIDER_KEY,
-  }, { providerSecretStore });
-  assert.equal(launchBound.ok, true, "portal_launch_provider_key_binding_must_succeed");
-  assert.ok(launchBound.providerKeyRef, "portal_launch_provider_key_ref_required");
+    providerKeyRef: launchProviderKeyRef,
+    providerConfigSecretRef: launchProviderKeyRef,
+    boundStatus: "bound",
+    providerConfigStatus: "configured",
+  });
 
   const portalLaunchCalls = [];
   const portalLaunchStatuses = new Map();
@@ -445,11 +453,11 @@ try {
   assert.equal(reusedLaunch.res.statusCode, 200, "portal_launch_without_inline_key_must_return_200");
   assert.equal(reusedLaunch.res.payload.ok, true, "portal_launch_without_inline_key_must_return_ok");
   assert.equal(reusedLaunch.res.payload.providerBound, true, "portal_launch_without_inline_key_must_mark_provider_bound");
-  assert.equal(reusedLaunch.res.payload.providerKeyRef, launchBound.providerKeyRef, "portal_launch_provider_key_ref_must_reuse_existing_binding");
+  assert.equal(reusedLaunch.res.payload.providerKeyRef, launchProviderKeyRef, "portal_launch_provider_key_ref_must_reuse_existing_binding");
   assert.equal(portalLaunchCalls.length, 1, "portal_launch_service_must_be_called_once");
   assert.equal(portalLaunchCalls[0].taskSlug, "workspace-v22-launch-reuse", "portal_launch_task_slug_mismatch");
-  assert.equal(portalLaunchCalls[0].providerConfigSecretRef, launchBound.providerKeyRef, "portal_launch_service_must_receive_provider_secret_ref");
-  assert.equal(portalLaunchCalls[0].providerConfig?.providerKeyRef, launchBound.providerKeyRef, "portal_launch_service_must_receive_provider_config");
+  assert.equal(portalLaunchCalls[0].providerConfigSecretRef, launchProviderKeyRef, "portal_launch_service_must_receive_provider_secret_ref");
+  assert.equal(portalLaunchCalls[0].providerConfig?.providerKeyRef, launchProviderKeyRef, "portal_launch_service_must_receive_provider_config");
   assert.equal(portalLaunchCalls[0].providerKeyPayload, null, "portal_launch_service_must_not_replay_raw_provider_payload");
   assertNoRawKey(reusedLaunch.res.payload, "portal_launch_reuse_response");
   assertNoRawKey(portalLaunchCalls, "portal_launch_reuse_service_call");
@@ -465,7 +473,7 @@ try {
   assert.equal(statusHandled, true, "portal_launch_status_must_handle_reused_launch");
   assert.equal(statusRes.statusCode, 200, "portal_launch_status_reused_launch_status_mismatch");
   assert.equal(statusRes.payload.providerBound, true, "portal_launch_status_must_project_provider_bound");
-  assert.equal(statusRes.payload.providerKeyRef, launchBound.providerKeyRef, "portal_launch_status_must_project_provider_key_ref");
+  assert.equal(statusRes.payload.providerKeyRef, launchProviderKeyRef, "portal_launch_status_must_project_provider_key_ref");
   assert.equal(statusRes.payload.gatewayReady, true, "portal_launch_status_must_project_gateway_ready");
   assert.equal(statusRes.payload.gatewayState, "OPL 网关已准备", "portal_launch_status_gateway_state_mismatch");
   assert.deepEqual(

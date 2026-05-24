@@ -166,9 +166,7 @@
       "id": "portal.account_provider_binding",
       "sourcePaths": [
         "services/portal/src/domain/provider-secret-store.mjs",
-        "services/portal/src/domain/provider-key-bindings.mjs",
-        "services/portal/src/domain/user-credit-provider-key-flow.mjs",
-        "services/portal/src/routes/portal-api-v22-user-credit-provider-key.routes.mjs"
+        "services/portal/src/domain/provider-key-bindings.mjs"
       ],
       "responsibilities": [
         "account_credit_command",
@@ -564,9 +562,7 @@
         "services/portal/src/domain/lab-entitlements.mjs",
         "services/portal/src/domain/lab-packages.mjs",
         "services/portal/src/domain/lab-subscriptions.mjs",
-        "services/portal/src/domain/managed-environment-open-flow.mjs",
-        "services/portal/src/domain/managed-environment-release-flow.mjs",
-        "services/portal/src/domain/opl-work-flow.mjs",
+        "services/portal/src/domain/managed-environment-projection.mjs",
         "services/portal/src/domain/platform-provisioned-resources.mjs",
         "services/portal/src/domain/portal-auth.mjs",
         "services/portal/src/domain/portal-file-space-management.mjs",
@@ -605,8 +601,6 @@
         "services/portal/src/routes/portal-api-runs.routes.mjs",
         "services/portal/src/routes/portal-api-sessions.routes.mjs",
         "services/portal/src/routes/portal-api-traces.routes.mjs",
-        "services/portal/src/routes/portal-api-v22-managed-environment-release.routes.mjs",
-        "services/portal/src/routes/portal-api-v22-opl-work.routes.mjs",
         "services/portal/src/routes/portal-api.routes.mjs",
         "services/portal/src/routes/workspace-storage-route-handlers.mjs",
         "services/portal/src/routes/workspace-storage-upload-support.mjs",

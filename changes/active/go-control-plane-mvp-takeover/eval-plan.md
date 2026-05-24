@@ -34,9 +34,9 @@ git diff --check -- docs specs changes tests scripts package.json services/porta
 - Go control-plane MVP takeover is represented as the current local package.
 - Provider launch, billing/audit, resource workflow and release projections are covered by local deterministic Go RC parity evals.
 - Default golden smoke and health now run Go-owned local RC parity guards instead of Node provider/open business routes.
-- `golden-path` also runs the Node route retirement guard, so provider/open route rollback is visible before governance-only gates.
+- `golden-path` also runs the Node code retirement guard, so provider/open/work/release route rollback is visible before governance-only gates.
 - The default path to real-cloud readiness is blocked until Go local RC passes.
-- Node Portal provider/open/readiness business route is retired to a 410 shell and is not the long-term backend.
+- Node Portal provider/open/readiness/work/release business routes and domains are physically retired from active code and are not the long-term backend.
 
 ## Cannot Claim
 

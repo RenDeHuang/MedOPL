@@ -634,8 +634,7 @@
       ],
       "allowed_files": [
         "services/portal/src/domain/platform-provisioned-resources.mjs",
-        "services/portal/src/domain/managed-environment-open-flow.mjs",
-        "services/portal/src/domain/managed-environment-release-flow.mjs",
+        "services/portal/src/domain/managed-environment-projection.mjs",
         "services/portal/src/domain/managed-resource-binding-plan-view.mjs",
         "services/portal/src/domain/portal-cloud-operation-production.mjs",
         "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
