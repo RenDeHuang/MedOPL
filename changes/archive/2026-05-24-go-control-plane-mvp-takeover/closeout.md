@@ -1,6 +1,6 @@
 # go-control-plane-mvp-takeover Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
@@ -15,7 +15,12 @@ Status: ready_for_landing_review
 - `39d5242` feat(portal): add go local rc provider key entry
 - `156e2d4` test(go): fold local rc parity into current gates
 - `2716e95` fix(go): scope local rc resource lifecycle
-- current commit: fix(go): retire node provider open route from local rc truth
+- `cdcff8e` fix(go): retire node provider open route from local rc truth
+- `338ee38` fix(go): physically retire node v22 control plane code
+- `20e97a9` docs(go): sync node control plane code retirement truth
+- `104d12c` fix(go): route local rc provider boundary through go control plane
+- `2ca3526` fix(runtime): keep provider reply projection within line budget
+- `0112813` test(go): retire node opl work regression onto go control plane
 
 ## Verification
 
@@ -35,6 +40,9 @@ Status: ready_for_landing_review
 - `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/service/controlplane -run \"TestService(ResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing|RecordsFileRunArtifactBillingAuditAndRelease)\" -count=1"`: pass.
 - `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/server/handlers -run \"TestControlPlaneHandlers(ExposeProviderLaunchBillingResourceLocalRC|ScopeResourcesAndFailClosedOnMissingRelease)\" -count=1"`: pass.
 - `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend`: pass.
+- `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`: pass after post-merge closeout sync.
+- `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`: pass after post-merge closeout sync.
+- `node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json`: pass after post-merge closeout sync.
 
 ## Can Claim
 
@@ -55,7 +63,7 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- changes/archive/YYYY-MM-DD-go-control-plane-mvp-takeover
+- changes/archive/2026-05-24-go-control-plane-mvp-takeover
 
 ## History Handoff
 
@@ -63,5 +71,5 @@ Status: ready_for_landing_review
 
 ## Next Owner
 
-- MedOPL Platform for final landing review and post-merge closeout.
-- MedOPL Operations only after a separate real-cloud-readiness package is opened and authorized.
+- MedOPL Operations owns `real-cloud-authorization-boundary` as the next blocked cursor.
+- Real-cloud readiness still requires a separate explicit authorization package before any secret, provider, cloud, deploy, kubectl, build/push or live-test operation.

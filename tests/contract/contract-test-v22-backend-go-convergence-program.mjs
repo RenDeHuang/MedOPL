@@ -174,7 +174,7 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assert.equal(program.schema_version, 1, "program_schema_version_mismatch");
   assert.equal(program.id, programId, "program_id_mismatch");
   assert.equal(program.owner, "MedOPL", "program_owner_mismatch");
-  assert.equal(program.status, "active", "program_status_mismatch");
+  assert(["active", "closed"].includes(program.status), `program_status_mismatch:${program.status}`);
   assert.equal(program.truth_file, "docs/active/README.md", "program_truth_file_mismatch");
   assert.equal(program.spec_anchor, "docs/specs/README.md#spec-v22-go-control-plane-mvp-takeover-boundary", "program_spec_anchor_mismatch");
   assert.equal(program.machine_cursor_file, "tests/fixtures/v22/goal-current.json", "program_cursor_file_mismatch");
@@ -182,8 +182,15 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assert.equal(program.history_file, "docs/history/README.md", "program_history_file_mismatch");
   assert.equal(program.authoring_branch, branchName, "program_authoring_branch_mismatch");
   assert.equal(program.does_replace_current_cursor, true, "program_must_replace_current_cursor");
-  assert.equal(program.current_product_cursor, current.current_cursor, "program_current_cursor_pointer_mismatch");
-  assert.equal(current.current_cursor, programId, "go_mvp_takeover_must_be_current_product_cursor_before_real_cloud");
+  if (program.status === "active") {
+    assert.equal(program.current_product_cursor, current.current_cursor, "program_current_cursor_pointer_mismatch");
+    assert.equal(current.current_cursor, programId, "go_mvp_takeover_must_be_current_product_cursor_before_real_cloud");
+  } else {
+    assert.equal(program.current_product_cursor, "real-cloud-authorization-boundary", "closed_program_must_handoff_to_real_cloud_authorization_boundary");
+    assert.equal(current.current_cursor, "real-cloud-authorization-boundary", "closed_program_current_cursor_must_be_authorization_boundary");
+    assert.equal(current.release_readiness_state?.status, "authorization_required", "closed_program_must_require_authorization");
+    assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "closed_program_must_block_risky_execution");
+  }
   assert.equal(program.one_step_one_commit, true, "program_must_require_one_step_one_commit");
   assert.equal(program.review_gate, "landing gate", "program_review_gate_mismatch");
   assert.equal(program.post_merge_closeout_required, true, "program_must_require_post_merge_closeout");
@@ -192,7 +199,11 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assert.equal(program.no_scripts_smoke_test_family, true, "program_must_forbid_scripts_smoke_family");
   assert.equal(program.target_go_service, "services/medopl-go-backend", "program_target_service_mismatch");
   assert.deepEqual(program.phases.map((phase) => phase.id), expectedPhaseIds, "program_phase_order_mismatch");
-  assert.equal(program.phases[0].status, "active", "program_first_phase_must_be_active");
+  if (program.status === "active") {
+    assert.equal(program.phases[0].status, "active", "program_first_phase_must_be_active");
+  } else {
+    assert(program.phases.every((phase) => phase.status === "closed"), "closed_program_all_phases_must_be_closed");
+  }
   for (const [index, phase] of program.phases.entries()) {
     assert.equal(phase.order, index + 1, `program_phase_order_field_mismatch:${phase.id}`);
     assert(phase.goal, `program_phase_goal_missing:${phase.id}`);
@@ -214,7 +225,7 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assertIncludes(active, current.current_cursor, "active_must_preserve_product_cursor");
   assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_name_program");
   assertIncludes(delivery, "先 Go control-plane MVP，再 real-cloud-readiness", "delivery_must_gate_real_cloud_after_go_mvp");
-  assertIncludes(active, "不能把 real-cloud authorization 写成当前执行包", "active_must_defer_real_cloud");
+  assertIncludes(active, "不能把 `real-cloud-authorization-boundary` 写成 secret", "active_must_defer_real_cloud");
   assertIncludes(specs, "spec:v22-go-control-plane-mvp-takeover-boundary", "specs_must_define_program_anchor");
   assertIncludes(specs, "Portal Control Plane", "specs_must_define_portal_control_plane");
   assertIncludes(specs, "Workflow Boundary", "specs_must_define_workflow_boundary");
@@ -225,7 +236,11 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_record_program_lane");
   assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
   assertIncludes(source, "Go control-plane MVP takeover surface", "source_must_record_backend_target_surface");
-  assertIncludes(active, "Go control-plane MVP takeover is the current local program", "active_must_record_go_backend_active_program");
+  if (program.status === "active") {
+    assertIncludes(active, "Go control-plane MVP takeover is the current local program", "active_must_record_go_backend_active_program");
+  } else {
+    assertIncludes(active, "Go control-plane MVP takeover are closed locally", "active_must_record_go_backend_closed_program");
+  }
   assertIncludes(source, "`services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness", "source_must_promote_go_to_local_takeover_target");
   assertIncludes(source, "`services/portal/src` is a retirement surface for business truth", "source_must_mark_node_portal_for_retirement");
   assertIncludes(runtime, "不是 real-cloud readiness 或 production completion claim", "runtime_must_not_upgrade_target_view_to_completion");
@@ -239,7 +254,7 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assert(backendPackage, "manifest_backend_package_missing");
   assert(currentLeaf, "manifest_backend_current_leaf_missing");
   assert.equal(override, undefined, "manifest_backend_feature_branch_must_not_use_branch_override");
-  assert.equal(current.authoring_branch, branchName, "manifest_backend_authoring_branch_mismatch");
+  assert.equal(program.authoring_branch, branchName, "manifest_backend_authoring_branch_mismatch");
   for (const [label, suite] of [["backend_suite", backendSuite], ["backend_package", backendPackage]]) {
     assertCommandListContains(suite.commands, groupGateCommands, `manifest_${label}`);
   }

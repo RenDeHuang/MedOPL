@@ -3387,7 +3387,7 @@ Status: `landed / pushed / post-push verified`
 
 Branch: `feat/v22-go-control-plane-mvp-takeover`
 
-Active change package: `changes/active/go-control-plane-mvp-takeover`
+Archived change package: `changes/archive/2026-05-24-go-control-plane-mvp-takeover`
 
 Scope:
 
@@ -3397,6 +3397,7 @@ Scope:
 - `services/portal/src` enters business truth retirement and must not remain a long-term active backend or compatibility control plane.
 - Go now owns the local lab typed API surface under `/api/lab-*`.
 - Node `/portal/api/lab-*` is retired as a 410 fail-closed shell and no longer writes lab package/subscription business truth.
+- Local RC parity later folded into the same landed line: provider/preflight/launch, billing/audit, resource projection and release/stop-billing are Go-owned local deterministic proof; Node Portal v22 provider/open/readiness/work/release routes and business domains are physically retired.
 
 Can-claim:
 
@@ -3406,11 +3407,12 @@ Can-claim:
 - Node `/portal/api/lab-*` is retired as a 410 fail-closed shell and no longer writes lab package/subscription business truth.
 - Real-cloud readiness remains deferred until Go local RC passes.
 - Local current/review bundles pass on this branch.
+- The full local Go RC closeout has been post-push verified at trunk HEAD `0112813998456d879e9ea10782f224c29f3a166f`.
 
 Cannot-claim:
 
 - Production backend replacement, real cloud, deploy, kubectl, build/push, live-test or provider operation is complete or authorized.
-- Full provider launch, billing/audit, resource workflow and release takeover is complete beyond the local lab typed API slice.
+- Local Go proof does not authorize or prove production backend replacement, real-cloud readiness, live provider, real OPL upstream, production billing or production runtime.
 
 Verification:
 
@@ -3422,17 +3424,18 @@ Review:
 - independent reviewer model: `gpt-5.4-mini`
 - result: blocker=0 after Node lab API retirement and machine cursor cleanup.
 
-landed_commit: `116b649ed7ad1ee9955ebff11e86a4b2b8a6579e`
+landed_commit: `0112813998456d879e9ea10782f224c29f3a166f`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `origin/recovery/platform-v22-trunk` reached `116b649ed7ad1ee9955ebff11e86a4b2b8a6579e`.
+- `origin/recovery/platform-v22-trunk` reached `0112813998456d879e9ea10782f224c29f3a166f`.
 - Branch-level `current` and `review` bundles passed before ff-only merge.
-- Main trunk `current` and `review` bundles passed after ff-only merge.
+- Main trunk `golden-path`, `current` and `review` bundles pass after post-merge closeout sync.
+- The completed change package is archived at `changes/archive/2026-05-24-go-control-plane-mvp-takeover`.
 - No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
 
 post_merge_closeout: `completed`
 
-next_cursor: `go-control-plane-mvp-takeover`
+next_cursor: `real-cloud-authorization-boundary`
