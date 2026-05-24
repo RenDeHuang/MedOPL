@@ -6,5 +6,5 @@
 - [x] Step 3: implement Go lab package/subscription/entitlement MVP API.
 - [x] Step 4: point Portal frontend typed API at Go-owned API surface.
 - [x] Step 5: retire Node Portal backend business truth references without a compatibility control plane.
-- [ ] Step 6: run local RC eval bundle and fix blockers.
-- [ ] Step 7: review, close out, archive or hand off to real-cloud readiness.
+- [x] Step 6: run local RC eval bundle and fix blockers.
+- [x] Step 7: review, close out, archive or hand off to real-cloud readiness.

@@ -150,7 +150,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-05-24 feat/v22-go-control-plane-mvp-takeover
 
-Status: `authoring`
+Status: `authoring / ready_for_landing_review`
 
 Branch: `feat/v22-go-control-plane-mvp-takeover`
 
@@ -162,15 +162,29 @@ Scope:
 - `services/medopl-go-backend` is the local MVP takeover target for control-plane API truth.
 - `services/portal/frontend` remains the separated frontend package.
 - `services/portal/src` enters business truth retirement and must not remain a long-term active backend or compatibility control plane.
+- Go now owns the local lab typed API surface under `/api/lab-*`.
+- Node `/portal/api/lab-*` is retired as a 410 fail-closed shell and no longer writes lab package/subscription business truth.
 
 Can-claim:
 
 - Current cursor is authoring the Go control-plane MVP takeover package.
 - Real-cloud readiness remains deferred until Go local RC passes.
+- Local current/review bundles pass on this branch.
 
 Cannot-claim:
 
 - Production backend replacement, real cloud, deploy, kubectl, build/push, live-test or provider operation is complete or authorized.
+- Full provider launch, billing/audit, resource workflow and release takeover is complete beyond the local lab typed API slice.
+
+Verification:
+
+- `node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --json`: pass.
+
+Review:
+
+- independent reviewer model: `gpt-5.4-mini`
+- result: blocker=0 after Node lab API retirement and machine cursor cleanup.
 
 next_cursor: `go-control-plane-mvp-takeover`
 
