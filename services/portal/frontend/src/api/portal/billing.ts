@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { PortalPagination, PortalQueryValue } from "./common";
 
 export interface BillingQuery {
@@ -154,26 +154,26 @@ export interface RunCostPayload {
 }
 
 export async function fetchBillingSummary(params: BillingQuery = {}) {
-  const { data } = await apiClient.get<BillingSummaryPayload>("/billing/summary", { params });
+  const { data } = await goControlPlaneClient.get<BillingSummaryPayload>("/billing/summary", { params });
   return data;
 }
 
 export async function fetchBillingDetails(params: BillingQuery = {}) {
-  const { data } = await apiClient.get<BillingDetailsPayload>("/billing/details", { params });
+  const { data } = await goControlPlaneClient.get<BillingDetailsPayload>("/billing/details", { params });
   return data;
 }
 
 export async function fetchCostsSummary(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<CostsSummaryPayload>("/costs/summary", { params });
+  const { data } = await goControlPlaneClient.get<CostsSummaryPayload>("/costs/summary", { params });
   return data;
 }
 
 export async function fetchWorkspaceCosts(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<CostsSummaryPayload>("/costs/workspace", { params });
+  const { data } = await goControlPlaneClient.get<CostsSummaryPayload>("/costs/workspace", { params });
   return data;
 }
 
 export async function fetchRunCosts(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<RunCostPayload>("/costs/run", { params });
+  const { data } = await goControlPlaneClient.get<RunCostPayload>("/costs/run", { params });
   return data;
 }

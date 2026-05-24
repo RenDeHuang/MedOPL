@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 
 export interface ManagedComputeResource {
   region: string;
@@ -147,7 +147,7 @@ function numberValue(value: unknown, fallback = 0) {
 }
 
 export async function fetchMyResources(): Promise<PlatformProvisionedResourcesPayload> {
-  const { data } = await apiClient.get<{
+  const { data } = await goControlPlaneClient.get<{
     ok: boolean;
     source: string;
     computeResources?: ManagedComputeResource[];
@@ -190,6 +190,6 @@ export async function fetchMyResources(): Promise<PlatformProvisionedResourcesPa
 }
 
 export async function fetchOplLaunchStatus(launchId: string) {
-  const { data } = await apiClient.get<OplLaunchStatusPayload>(`/opl/launch-status/${encodeURIComponent(launchId)}`);
+  const { data } = await goControlPlaneClient.get<OplLaunchStatusPayload>(`/opl/launch-status/${encodeURIComponent(launchId)}`);
   return data;
 }

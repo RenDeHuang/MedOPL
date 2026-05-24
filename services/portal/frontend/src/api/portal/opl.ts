@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 
 export interface OplLaunchInput {
   workspaceId?: string;
@@ -119,12 +119,12 @@ function launchParams(launchId: string) {
 }
 
 export async function createOplLaunch(input: OplLaunchInput) {
-  const { data } = await apiClient.post<OplLaunchPayload>("/opl/launch", input);
+  const { data } = await goControlPlaneClient.post<OplLaunchPayload>("/opl/launch", input);
   return data;
 }
 
 export async function fetchOplBootstrap(launchId: string) {
-  const { data } = await apiClient.get<OplBootstrapPayload>("/opl/bootstrap", {
+  const { data } = await goControlPlaneClient.get<OplBootstrapPayload>("/opl/bootstrap", {
     params: launchParams(launchId),
   });
   return data;
@@ -132,7 +132,7 @@ export async function fetchOplBootstrap(launchId: string) {
 
 export async function bindOplSession(input: OplSessionBindInput) {
   const { launchId, ...body } = input;
-  const { data } = await apiClient.post("/opl/sessions/bind", body, {
+  const { data } = await goControlPlaneClient.post("/opl/sessions/bind", body, {
     params: launchParams(launchId),
   });
   return data;
@@ -140,14 +140,14 @@ export async function bindOplSession(input: OplSessionBindInput) {
 
 export async function sendOplMessage(input: OplMessageInput) {
   const { launchId, ...body } = input;
-  const { data } = await apiClient.post("/opl/messages", body, {
+  const { data } = await goControlPlaneClient.post("/opl/messages", body, {
     params: launchParams(launchId),
   });
   return data;
 }
 
 export async function fetchOplMessageStatus(launchId: string, messageId: string) {
-  const { data } = await apiClient.get(`/opl/messages/${encodeURIComponent(messageId)}/status`, {
+  const { data } = await goControlPlaneClient.get(`/opl/messages/${encodeURIComponent(messageId)}/status`, {
     params: launchParams(launchId),
   });
   return data;
@@ -155,7 +155,7 @@ export async function fetchOplMessageStatus(launchId: string, messageId: string)
 
 export async function createOplFileRef(input: OplFileInput) {
   const { launchId, ...body } = input;
-  const { data } = await apiClient.post<OplFileRefPayload>("/opl/files", body, {
+  const { data } = await goControlPlaneClient.post<OplFileRefPayload>("/opl/files", body, {
     params: launchParams(launchId),
   });
   return data;
@@ -163,14 +163,14 @@ export async function createOplFileRef(input: OplFileInput) {
 
 export async function startOplRun(input: OplRunInput) {
   const { launchId, ...body } = input;
-  const { data } = await apiClient.post<OplRunPayload>("/opl/runs", body, {
+  const { data } = await goControlPlaneClient.post<OplRunPayload>("/opl/runs", body, {
     params: launchParams(launchId),
   });
   return data;
 }
 
 export async function fetchOplArtifact(launchId: string, artifactRef: string) {
-  const { data } = await apiClient.get<OplArtifactPayload>(`/opl/artifacts/${encodeURIComponent(artifactRef)}`, {
+  const { data } = await goControlPlaneClient.get<OplArtifactPayload>(`/opl/artifacts/${encodeURIComponent(artifactRef)}`, {
     params: launchParams(launchId),
   });
   return data;

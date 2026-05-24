@@ -5,6 +5,7 @@ import (
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/config"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/memory"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/server/handlers"
+	controlplaneservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
 	labservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/lab"
 	workflowservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/workflow"
 )
@@ -22,6 +23,8 @@ func Router(cfg config.Config) *gin.Engine {
 	api.GET("/lab-entitlement", handlers.LabEntitlement(labControlPlane))
 	api.POST("/lab-packages/activate", handlers.ActivateLabPackage(labControlPlane))
 	api.POST("/lab-packages/upgrade", handlers.UpgradeLabPackage(labControlPlane))
+	controlPlane := controlplaneservice.NewService(memory.NewControlPlaneStore())
+	handlers.RegisterControlPlaneRoutes(api, controlPlane)
 	workflowFacade := workflowservice.NewFacade(memory.NewWorkflowStore())
 	router.POST("/workflow/commands", handlers.WorkflowCommands(workflowFacade))
 	router.POST("/runtime/launch", handlers.WorkflowCommandAction(workflowFacade, handlers.CommandTypeRuntimeLaunch))
