@@ -137,11 +137,11 @@ assertIncludes(oplEntrySource, "blockingUser", "opl_entry_steps_must_consume_bac
 
 assertIncludes(userMenuSource, "Dialog", "user_menu_account_info_must_open_dialog");
 assertIncludes(userMenuSource, "setAccountDialogOpen(true)", "user_menu_account_info_must_have_visible_product_action");
-assertIncludes(userMenuSource, 'window.location.assign("/logout")', "user_menu_logout_must_call_backend_logout_route");
+assertIncludes(userMenuSource, 'window.location.assign("/api/logout")', "user_menu_logout_must_call_backend_logout_route");
 assertIncludes(userMenuSource, "hidden sm:flex", "user_menu_must_not_overflow_mobile_header");
 
 assertIncludes(billingSource, "exportBillingRecords", "billing_export_must_have_handler");
-assertIncludes(billingSource, "/portal/billing/export.csv", "billing_export_must_call_backend_export_api");
+assertIncludes(billingSource, "/api/billing/export.csv", "billing_export_must_call_backend_export_api");
 assertIncludes(billingSource, "triggerCsvDownload", "billing_export_must_trigger_browser_download");
 assertExcludes(billingSource, "URL.createObjectURL", "billing_export_must_not_use_frontend_blob_export");
 assertIncludes(billingSource, "onClick={exportBillingRecords}", "billing_export_button_must_bind_handler");

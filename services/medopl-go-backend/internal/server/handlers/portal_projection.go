@@ -1,14 +1,93 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
 const localWorkspaceID = "workspace-local-rc"
 const localTimestamp = "2026-05-24T00:00:00Z"
+
+type localPortalUser struct {
+	ID        string
+	Name      string
+	Email     string
+	Role      string
+	Status    string
+	Balance   float64
+	CreatedAt string
+}
+
+type localPortalFinanceRow struct {
+	ID        string
+	UserID    string
+	UserName  string
+	Type      string
+	Amount    float64
+	Reason    string
+	CreatedAt string
+}
+
+type localPortalAnnouncement struct {
+	ID        string
+	Title     string
+	Content   string
+	Status    string
+	Pinned    bool
+	CreatedAt string
+	UpdatedAt string
+}
+
+type localPortalProjectionState struct {
+	mu                  sync.Mutex
+	users               []localPortalUser
+	financeRows         []localPortalFinanceRow
+	announcements       []localPortalAnnouncement
+	nextUserSequence    int
+	nextFinanceSequence int
+	nextAnnouncementSeq int
+}
+
+var portalProjectionState = newLocalPortalProjectionState()
+
+func newLocalPortalProjectionState() *localPortalProjectionState {
+	return &localPortalProjectionState{
+		users: []localPortalUser{{
+			ID:        "user-local-rc",
+			Name:      "MedOPL Local User",
+			Email:     "local@medopl.test",
+			Role:      "admin",
+			Status:    "active",
+			Balance:   100,
+			CreatedAt: localTimestamp,
+		}},
+		financeRows: []localPortalFinanceRow{{
+			ID:        "finance-local-rc",
+			UserID:    "user-local-rc",
+			UserName:  "MedOPL Local User",
+			Type:      "credit",
+			Amount:    100,
+			Reason:    "local_rc",
+			CreatedAt: localTimestamp,
+		}},
+		announcements: []localPortalAnnouncement{{
+			ID:        "announcement-local-rc",
+			Title:     "Local RC",
+			Content:   "Pre-cloud local RC is active.",
+			Status:    "active",
+			Pinned:    true,
+			CreatedAt: localTimestamp,
+			UpdatedAt: localTimestamp,
+		}},
+		nextUserSequence:    1,
+		nextFinanceSequence: 1,
+		nextAnnouncementSeq: 1,
+	}
+}
 
 func CurrentUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -157,7 +236,7 @@ func SessionTraces() gin.HandlerFunc {
 func Announcements() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
-			"items":  []gin.H{{"id": "announcement-local-rc", "title": "Local RC", "content": "Pre-cloud local RC is active.", "scope": "all", "status": "active", "pinned": true, "createdAt": localTimestamp, "updatedAt": localTimestamp, "operatorId": "admin-local-rc"}},
+			"items":  portalProjectionState.announcementPayloads(),
 			"source": "go-control-plane",
 			"type":   "local_projection",
 		})
@@ -223,12 +302,12 @@ func AdminOverview() gin.HandlerFunc {
 func AdminUsers() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
-			"items":             []gin.H{{"id": "user-local-rc", "name": "MedOPL Local User", "email": "local@medopl.test", "role": "admin", "status": "active", "balance": 100, "lastActiveAt": localTimestamp, "createdAt": localTimestamp}},
-			"pagination":        pagination(1),
+			"items":             portalProjectionState.userPayloads(),
+			"pagination":        pagination(portalProjectionState.userCount()),
 			"allowRegistration": true,
-			"financeRows":       []gin.H{{"id": "finance-local-rc", "userId": "user-local-rc", "userName": "MedOPL Local User", "type": "credit", "amount": 100, "createdAt": localTimestamp, "reason": "local_rc"}},
+			"financeRows":       portalProjectionState.financePayloads(),
 			"groups":            []gin.H{{"id": "group-local-rc", "name": "Local RC"}},
-			"kpis":              gin.H{"activeUsers": 1},
+			"kpis":              gin.H{"activeUsers": portalProjectionState.activeUserCount()},
 		})
 	}
 }
@@ -287,7 +366,26 @@ func AdminPortrait() gin.HandlerFunc {
 
 func AdminAction() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{"ok": true, "source": "go-control-plane", "action": ctx.Param("action"), "status": "accepted"})
+		var payload map[string]any
+		if ctx.Request.ContentLength != 0 {
+			if err := ctx.ShouldBindJSON(&payload); err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "source": "go-control-plane", "error": "invalid_admin_action_payload"})
+				return
+			}
+		}
+		if payload == nil {
+			payload = map[string]any{}
+		}
+		action := ctx.Param("action")
+		if err := portalProjectionState.applyAdminAction(action, payload); err != nil {
+			status := http.StatusBadRequest
+			if strings.Contains(err.Error(), "not_found") {
+				status = http.StatusNotFound
+			}
+			ctx.JSON(status, gin.H{"ok": false, "source": "go-control-plane", "action": action, "error": err.Error(), "businessMessage": "Portal 管理动作未完成，请稍后重试；如持续失败，请联系管理员。"})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"ok": true, "source": "go-control-plane", "action": action, "status": "accepted"})
 	}
 }
 
@@ -295,7 +393,7 @@ func BillingExportCSV() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Header("content-type", "text/csv; charset=utf-8")
 		ctx.Header("content-disposition", `attachment; filename="medopl-local-rc-billing.csv"`)
-		ctx.String(http.StatusOK, "id,type,amount,reason,created_at\nledger-local-rc-open,hold,10,local_rc_environment_open,2026-05-24T00:00:00Z\n")
+		ctx.String(http.StatusOK, portalProjectionState.billingCSV())
 	}
 }
 
@@ -418,4 +516,308 @@ func firstNonEmptyString(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func (state *localPortalProjectionState) userPayloads() []gin.H {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	items := make([]gin.H, 0, len(state.users))
+	for _, user := range state.users {
+		if user.Status == "deleted" {
+			continue
+		}
+		items = append(items, gin.H{"id": user.ID, "name": user.Name, "email": user.Email, "role": user.Role, "status": user.Status, "balance": user.Balance, "lastActiveAt": localTimestamp, "createdAt": user.CreatedAt})
+	}
+	return items
+}
+
+func (state *localPortalProjectionState) financePayloads() []gin.H {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	items := make([]gin.H, 0, len(state.financeRows))
+	for _, row := range state.financeRows {
+		items = append(items, gin.H{"id": row.ID, "userId": row.UserID, "userName": row.UserName, "type": row.Type, "amount": row.Amount, "createdAt": row.CreatedAt, "reason": row.Reason})
+	}
+	return items
+}
+
+func (state *localPortalProjectionState) announcementPayloads() []gin.H {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	items := make([]gin.H, 0, len(state.announcements))
+	for _, item := range state.announcements {
+		if item.Status == "deleted" {
+			continue
+		}
+		items = append(items, gin.H{"id": item.ID, "title": item.Title, "content": item.Content, "scope": "all", "status": item.Status, "pinned": item.Pinned, "createdAt": item.CreatedAt, "updatedAt": item.UpdatedAt, "operatorId": "admin-local-rc"})
+	}
+	return items
+}
+
+func (state *localPortalProjectionState) userCount() int {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	count := 0
+	for _, user := range state.users {
+		if user.Status != "deleted" {
+			count++
+		}
+	}
+	return count
+}
+
+func (state *localPortalProjectionState) activeUserCount() int {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	count := 0
+	for _, user := range state.users {
+		if user.Status == "active" {
+			count++
+		}
+	}
+	return count
+}
+
+func (state *localPortalProjectionState) applyAdminAction(action string, payload map[string]any) error {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	switch action {
+	case "create-user":
+		return state.createUser(payload)
+	case "update-user":
+		return state.updateUser(payload)
+	case "toggle-user":
+		return state.toggleUser(payload)
+	case "delete-user":
+		return state.deleteUser(payload)
+	case "recharge":
+		return state.adjustUserBalance(payload, "topup", "admin_recharge")
+	case "ledger-adjust":
+		actionType := firstNonEmptyString(actionString(payload, "actionType"), "adjustment")
+		reason := firstNonEmptyString(actionString(payload, "reason"), "admin_ledger_adjust")
+		return state.adjustUserBalance(payload, actionType, reason)
+	case "announcements-save":
+		return state.saveAnnouncement(payload)
+	case "announcements-toggle":
+		return state.toggleAnnouncement(payload)
+	case "announcements-delete":
+		return state.deleteAnnouncement(payload)
+	case "settings", "billing-ops-mark":
+		return nil
+	default:
+		return fmt.Errorf("admin_action_not_supported")
+	}
+}
+
+func (state *localPortalProjectionState) createUser(payload map[string]any) error {
+	name := actionString(payload, "name")
+	email := strings.ToLower(actionString(payload, "email"))
+	if name == "" || email == "" {
+		return fmt.Errorf("admin_user_name_email_required")
+	}
+	for _, user := range state.users {
+		if strings.EqualFold(user.Email, email) && user.Status != "deleted" {
+			return fmt.Errorf("admin_user_duplicate_email")
+		}
+	}
+	userID := fmt.Sprintf("user-local-rc-extra-%d", state.nextUserSequence)
+	state.nextUserSequence++
+	state.users = append(state.users, localPortalUser{ID: userID, Name: name, Email: email, Role: "user", Status: "active", Balance: 0, CreatedAt: localTimestamp})
+	return nil
+}
+
+func (state *localPortalProjectionState) updateUser(payload map[string]any) error {
+	user := state.findUser(actionString(payload, "userId"))
+	if user == nil {
+		return fmt.Errorf("admin_user_not_found")
+	}
+	if name := actionString(payload, "name"); name != "" {
+		user.Name = name
+	}
+	if email := strings.ToLower(actionString(payload, "email")); email != "" {
+		user.Email = email
+	}
+	return nil
+}
+
+func (state *localPortalProjectionState) toggleUser(payload map[string]any) error {
+	user := state.findUser(actionString(payload, "userId"))
+	if user == nil {
+		return fmt.Errorf("admin_user_not_found")
+	}
+	if user.Status == "disabled" {
+		user.Status = "active"
+	} else {
+		user.Status = "disabled"
+	}
+	return nil
+}
+
+func (state *localPortalProjectionState) deleteUser(payload map[string]any) error {
+	user := state.findUser(actionString(payload, "userId"))
+	if user == nil {
+		return fmt.Errorf("admin_user_not_found")
+	}
+	user.Status = "deleted"
+	return nil
+}
+
+func (state *localPortalProjectionState) adjustUserBalance(payload map[string]any, entryType string, reason string) error {
+	user := state.findUser(actionString(payload, "userId"))
+	if user == nil {
+		return fmt.Errorf("admin_user_not_found")
+	}
+	amount := actionFloat(payload, "amount")
+	if amount <= 0 {
+		return fmt.Errorf("admin_amount_required")
+	}
+	if entryType == "charge" || entryType == "debit" {
+		user.Balance -= amount
+	} else {
+		user.Balance += amount
+	}
+	state.financeRows = append(state.financeRows, localPortalFinanceRow{
+		ID:        fmt.Sprintf("finance-local-rc-extra-%d", state.nextFinanceSequence),
+		UserID:    user.ID,
+		UserName:  user.Name,
+		Type:      entryType,
+		Amount:    amount,
+		Reason:    reason,
+		CreatedAt: localTimestamp,
+	})
+	state.nextFinanceSequence++
+	return nil
+}
+
+func (state *localPortalProjectionState) saveAnnouncement(payload map[string]any) error {
+	title := actionString(payload, "title")
+	content := actionString(payload, "content")
+	if title == "" || content == "" {
+		return fmt.Errorf("announcement_title_content_required")
+	}
+	status := firstNonEmptyString(actionString(payload, "status"), "active")
+	pinned := actionBool(payload, "pinned")
+	if pinned {
+		for index := range state.announcements {
+			state.announcements[index].Pinned = false
+		}
+	}
+	if id := actionString(payload, "id"); id != "" {
+		for index := range state.announcements {
+			if state.announcements[index].ID == id {
+				state.announcements[index].Title = title
+				state.announcements[index].Content = content
+				state.announcements[index].Status = status
+				state.announcements[index].Pinned = pinned
+				state.announcements[index].UpdatedAt = localTimestamp
+				return nil
+			}
+		}
+		return fmt.Errorf("announcement_not_found")
+	}
+	state.announcements = append(state.announcements, localPortalAnnouncement{
+		ID:        fmt.Sprintf("announcement-local-rc-extra-%d", state.nextAnnouncementSeq),
+		Title:     title,
+		Content:   content,
+		Status:    status,
+		Pinned:    pinned,
+		CreatedAt: localTimestamp,
+		UpdatedAt: localTimestamp,
+	})
+	state.nextAnnouncementSeq++
+	return nil
+}
+
+func (state *localPortalProjectionState) toggleAnnouncement(payload map[string]any) error {
+	announcement := state.findAnnouncement(actionString(payload, "id"))
+	if announcement == nil {
+		return fmt.Errorf("announcement_not_found")
+	}
+	switch actionString(payload, "actionType") {
+	case "pin":
+		for index := range state.announcements {
+			state.announcements[index].Pinned = false
+		}
+		announcement.Pinned = true
+	case "deactivate":
+		announcement.Status = "inactive"
+	case "activate":
+		announcement.Status = "active"
+	}
+	announcement.UpdatedAt = localTimestamp
+	return nil
+}
+
+func (state *localPortalProjectionState) deleteAnnouncement(payload map[string]any) error {
+	announcement := state.findAnnouncement(actionString(payload, "id"))
+	if announcement == nil {
+		return fmt.Errorf("announcement_not_found")
+	}
+	announcement.Status = "deleted"
+	announcement.Pinned = false
+	announcement.UpdatedAt = localTimestamp
+	return nil
+}
+
+func (state *localPortalProjectionState) findUser(userID string) *localPortalUser {
+	for index := range state.users {
+		if state.users[index].ID == userID && state.users[index].Status != "deleted" {
+			return &state.users[index]
+		}
+	}
+	return nil
+}
+
+func (state *localPortalProjectionState) findAnnouncement(id string) *localPortalAnnouncement {
+	for index := range state.announcements {
+		if state.announcements[index].ID == id && state.announcements[index].Status != "deleted" {
+			return &state.announcements[index]
+		}
+	}
+	return nil
+}
+
+func (state *localPortalProjectionState) billingCSV() string {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	var builder strings.Builder
+	builder.WriteString("id,type,amount,reason,created_at\n")
+	builder.WriteString("ledger-local-rc-open,hold,10,local_rc_environment_open,2026-05-24T00:00:00Z\n")
+	for _, row := range state.financeRows {
+		builder.WriteString(fmt.Sprintf("%s,%s,%.2f,%s,%s\n", row.ID, row.Type, row.Amount, row.Reason, row.CreatedAt))
+	}
+	return builder.String()
+}
+
+func actionString(payload map[string]any, key string) string {
+	if value, ok := payload[key].(string); ok {
+		return strings.TrimSpace(value)
+	}
+	return ""
+}
+
+func actionFloat(payload map[string]any, key string) float64 {
+	switch value := payload[key].(type) {
+	case float64:
+		return value
+	case float32:
+		return float64(value)
+	case int:
+		return float64(value)
+	case int64:
+		return float64(value)
+	case string:
+		var parsed float64
+		_, _ = fmt.Sscanf(strings.TrimSpace(value), "%f", &parsed)
+		return parsed
+	default:
+		return 0
+	}
+}
+
+func actionBool(payload map[string]any, key string) bool {
+	if value, ok := payload[key].(bool); ok {
+		return value
+	}
+	return false
 }
