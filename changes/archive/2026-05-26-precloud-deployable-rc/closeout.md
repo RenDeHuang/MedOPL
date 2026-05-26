@@ -7,6 +7,7 @@ Status: archived
 - `0bfc857` docs(precloud): open deployable rc package
 - `ede2a4a` feat(precloud): make go backend the local deployable rc surface
 - `b2d6e39` fix(precloud): close local workspace file transfer route
+- `5f11a0e` fix(precloud): keep go portal action regression closed
 
 ## Verification
 
@@ -18,6 +19,7 @@ Status: archived
 - `node scripts/v22-verify.mjs review --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass
 - `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend`: pass
 - independent review after `b2d6e39`: pass, no blocker
+- Go Portal local action regression closeout after `5f11a0e`: pass; action browser regression remains a real Go backend + Portal frontend browser flow, not a projection-only smoke.
 
 ## Can Claim
 

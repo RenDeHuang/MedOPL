@@ -17,20 +17,20 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | --- | --- |
 | current phase | `Real-cloud authorization boundary before readiness` |
 | current cursor | `real-cloud-authorization-boundary` |
-| current blocker | Pre-cloud deployable RC is ready for landing review, but secret read, provider operation, true cloud mutation, deploy, kubectl, build/push and live-test remain blocked until a separate explicit authorization package names operation class, target environment, evidence sink and rollback owner |
+| current blocker | Pre-cloud deployable RC has landed locally and the Go Portal action regression closeout is recorded, but secret read, provider operation, true cloud mutation, deploy, kubectl, build/push and live-test remain blocked until a separate explicit authorization package names operation class, target environment, evidence sink and rollback owner |
 | next owner | `MedOPL Operations` for real-cloud authorization package; `MedOPL Platform` keeps pre-cloud local RC / Node retirement evidence as local guardrail |
 | open change package | `changes/active/real-cloud-authorization-boundary` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `feat/v22-precloud-deployable-rc` / `78262f9223f549e65539b78d69dac5395774fe04` |
+| latest repo closeout | `fix/v22-portal-logout-api-regression` / `5f11a0e89d5642de65b0b0abb6cd3eefa8067675` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening, Go control-plane MVP takeover and pre-cloud deployable RC are closed locally / ready for landing review. Portal frontend defaults to Go `/api`; `services/medopl-go-backend` owns the local pre-cloud SaaS backend deployment surface; Node Portal backend is no longer deployment/proxy/API owner. The current cursor is the blocked `real-cloud-authorization-boundary`, which is an authorization package only and not real-cloud readiness. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening, Go control-plane MVP takeover and pre-cloud deployable RC are closed locally / post-push verified. Portal frontend defaults to Go `/api`; `services/medopl-go-backend` owns the local pre-cloud SaaS backend deployment surface; Node Portal backend is no longer deployment/proxy/API owner. The current cursor is the blocked `real-cloud-authorization-boundary`, which is an authorization package only and not real-cloud readiness. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 
 - `real-cloud-authorization-boundary`: real cloud, secret access, provider operation, deploy, kubectl, build/push, live-test, true cloud mutation, real pricing approval and production release evidence require a separate explicit authorization package.
-- `precloud-deployable-rc`: ready for landing review as local proof only; it cannot be upgraded into production backend replacement, real-cloud readiness or live provider evidence.
+- `precloud-deployable-rc`: landed as local proof only; it cannot be upgraded into production backend replacement, real-cloud readiness or live provider evidence.
 - `node-portal-business-truth-retirement`: Node Portal backend must not be deployment surface, frontend proxy target, typed API owner or current verification owner.
 
 ## Verification Entry

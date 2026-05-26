@@ -3483,3 +3483,47 @@ post_push_verification:
 - Post-closeout push verification must confirm `origin/recovery/platform-v22-trunk` reaches this landed commit and the follow-up closeout commit.
 
 post_merge_closeout: `completed`
+
+### 2026-05-26 fix/v22-portal-logout-api-regression
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `fix/v22-portal-logout-api-regression`
+
+Archived change package: `changes/archive/2026-05-26-precloud-deployable-rc`
+
+Scope:
+
+- Keep the Go Portal local action regression closed after pre-cloud deployable RC landing.
+- Preserve `/api/logout`, billing CSV download, admin create user, recharge/refund, announcement create/delete, desktop overflow and mobile overflow as browser regression coverage against Go backend + Portal frontend.
+- Add local Go backend mutable projection state for users, finance rows and announcements.
+- Keep Node Portal `/portal/api` and `/logout` out of current backend truth.
+- Keep real cloud, secret, deploy, kubectl, build/push and live-test unauthorized.
+
+Verification:
+
+- `npm run verify:golden-path -- --json`: pass.
+- `npm run verify:smoke -- --json`: pass.
+- `cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `npm run verify:current -- --json`, `npm run verify:contract -- --json` and `npm run verify:review -- --json` initially failed only because this post-merge closeout had not yet recorded `5f11a0e`.
+
+Review:
+
+- Independent review model `gpt-5.4-mini` found that an earlier browser regression rewrite had reduced action coverage to projection smoke.
+- `5f11a0e` restored the action browser regression and added Go backend action tests.
+- Follow-up closeout keeps this as local pre-cloud evidence only, not production readiness.
+
+landed_commit: `5f11a0e89d5642de65b0b0abb6cd3eefa8067675`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reaches `5f11a0e89d5642de65b0b0abb6cd3eefa8067675`.
+- Fresh closeout verification must confirm current, contract and review bundles pass after this closeout-only sync.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
