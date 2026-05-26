@@ -45,10 +45,19 @@ assert(payload.counts.scriptsFiles <= payload.budgets.scriptsFiles, "scripts_fil
 assert(payload.counts.testsMjsFiles <= payload.budgets.testsMjsFiles, "tests_mjs_budget_exceeded");
 assert(payload.counts.servicesPortalFiles <= payload.budgets.servicesPortalFiles, "services_portal_file_budget_exceeded");
 assert(payload.counts.servicesPortalBytes <= payload.budgets.servicesPortalBytes, "services_portal_byte_budget_exceeded");
-assert(payload.largestAreas.some((area) => area.path === "tests/regression/portal"), "repo_bloat_audit_must_surface_largest_test_area");
+assert(payload.largestAreas.some((area) => area.path === "tests/contract"), "repo_bloat_audit_must_surface_largest_contract_area");
+assert(payload.largestAreas.some((area) => area.path === "tests/regression/portal"), "repo_bloat_audit_must_surface_portal_regression_area");
 assert(payload.largestAreas.some((area) => area.path === "services/portal"), "repo_bloat_audit_must_surface_largest_service_area");
-assert(payload.notes.includes("tests/regression/portal is the largest test area; split by product surface before adding broad regression files."), "repo_bloat_audit_must_report_regression_portal_pressure");
-assert(payload.notes.includes("services/portal is the largest source area; add broad portal surface files only with a dedicated product-surface split."), "repo_bloat_audit_must_report_services_portal_pressure");
+assert.equal(
+  payload.notes.includes("tests/regression/portal is the largest test area; split by product surface before adding broad regression files."),
+  payload.counts.testsRegressionPortalFiles >= 24,
+  "repo_bloat_audit_must_report_regression_portal_pressure_only_when_threshold_hit",
+);
+assert.equal(
+  payload.notes.includes("services/portal is the largest source area; add broad portal surface files only with a dedicated product-surface split."),
+  payload.counts.servicesPortalFiles >= 230,
+  "repo_bloat_audit_must_report_services_portal_pressure_only_when_threshold_hit",
+);
 assert(payload.slideBloatGuards, "repo_bloat_audit_must_report_slide_bloat_guards");
 assert.equal(payload.slideBloatGuards.noPerSlideDocs, true, "repo_bloat_audit_must_forbid_per_slide_docs");
 assert.equal(payload.slideBloatGuards.noSlideSubtaskDocs, true, "repo_bloat_audit_must_forbid_slide_subtask_docs");

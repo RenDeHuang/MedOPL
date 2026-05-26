@@ -32,7 +32,7 @@ assertIncludes(shared, "Portal 可运行 UI、组件组合、路由入口和验�
 assertIncludes(userRole, "role surface 合同，不实现新 UI", "user_role_contract_role");
 assertIncludes(adminRole, "role surface 合同，不实现新 UI", "admin_role_contract_role");
 assertIncludes(structure, "Portal 结构治理 / failure isolation 三级合同，不实现 UI，不改业务代码", "structure_contract_role");
-assertIncludes(composition, "ZIP surface gate 入口：`node tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs`", "composition_contract_role");
+assertIncludes(composition, "统一验证入口：`node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`", "composition_contract_role");
 assertIncludes(composition, "具体页面、组件、API shape 和缺口必须进入 ZIP source、Portal adapter 或后续专门 UI leaf", "composition_surface_gate_owns_details");
 
 for (const [label, markdown] of Object.entries({ shared, userRole, adminRole, structure })) {

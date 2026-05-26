@@ -10,7 +10,7 @@ Target specs:
 
 - `product:golden-path-default-spine` defines the default MedOPL product spine and requires golden path health to be the first default verification section.
 - `framework:golden-path-impact-required` requires every change package to declare Golden Path Impact before implementation.
-- `source:portal-runtime-fanout-debt` records `services/portal/src/app/portal-runtime.mjs` as an active source debt surface and requires local structure metrics before and after extraction.
+- `source:node-portal-backend-physical-removal` records Node Portal backend removal as the active source boundary and requires local physical-removal and zero-compat gates before Go-owned control-plane work advances.
 
 ## MODIFIED
 
@@ -25,7 +25,7 @@ Target specs:
 
 - Cannot claim production runtime, production billing, real cloud execution or deploy readiness from local golden path smoke.
 - Cannot claim Sentrux Pro root-cause diagnostics are available in this repo.
-- Cannot claim the first fan-out extraction fully resolves all Portal source debt.
+- Cannot claim Node Portal backend removal proves real-cloud readiness or production deployment.
 
 ## EVALS
 
@@ -37,4 +37,6 @@ Target specs:
 - `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk --json`
 - `npm --prefix services/portal run check`
 - `node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all`
-- `git diff --check -- docs specs changes tests scripts services/portal/src package.json`
+- `node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`
+- `node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs`
+- `git diff --check -- docs specs changes tests scripts services/portal/frontend services/medopl-go-backend package.json`

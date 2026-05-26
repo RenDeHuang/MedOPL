@@ -44,9 +44,9 @@ for (const expected of [
 }
 
 for (const expected of [
-  "tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
-  "tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
-  "tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+  "tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
+  "tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+  "tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
   "tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
   "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",

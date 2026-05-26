@@ -4,7 +4,6 @@
   "purpose": "Lock existing oversized tracked code files so no file can grow silently while future new oversized files fail closed.",
   "files": {
     "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs": 1281,
-    "services/opl-web-gateway/src/launch-client-script.mjs": 1063,
-    "services/portal/src/domain/portal-cloud-operation-production.mjs": 1030
+    "services/opl-web-gateway/src/launch-client-script.mjs": 1063
   }
 }

@@ -54,9 +54,9 @@ Portal Control Plane
   -> Cloud / Billing / Audit Workers
 ```
 
-这是一条目标结构边界，不是 production completion claim。当前 local control-plane implementation is Go-owned for lab typed APIs, while OPL Web Gateway 和 Runtime Bridge 仍是 active integration/runtime boundary；`services/portal/src` 只保留尚未迁移的 shell / relay / local eval dependency，不再作为当前 control-plane business truth、长期 backend 或兼容控制面。
+这是一条目标结构边界，不是 production completion claim。当前 local control-plane implementation is Go-owned for Portal typed APIs, while OPL Web Gateway 和 Runtime Bridge 仍是 active integration/runtime boundary；`services/portal/src` 已物理清退，不再作为当前 control-plane business truth、长期 backend 或兼容控制面。
 
-当前本地 program 已切到 Go control-plane MVP takeover：`services/medopl-go-backend` 是本地控制面接管目标，`services/portal/src` 是业务 truth 清退对象。这个切换不是 real-cloud readiness 或 production completion claim；它只表示本地 golden path 和 control-plane truth 必须先由 Go 证明，再进入真实云准备。
+当前本地 program 已切到 Go control-plane MVP takeover 并完成 Node backend physical removal：`services/medopl-go-backend` 是本地控制面 owner，Portal frontend -> Go backend `/api` 是当前边界。这个切换不是 real-cloud readiness 或 production completion claim；它只表示本地 golden path 和 control-plane truth 必须先由 Go 证明，再进入真实云准备。
 
 分层规则：
 

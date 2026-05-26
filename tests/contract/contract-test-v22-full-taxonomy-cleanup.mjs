@@ -74,7 +74,6 @@ const allowedOldLiteralFiles = new Set([
   "docs/history/README.md",
   "docs/specs/README.md",
   "tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
-  "tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
   "tests/contract/contract-test-v22-current-state-index-loop.mjs",
   "tests/contract/contract-test-v22-full-taxonomy-cleanup.mjs",
   "tests/fixtures/v22/agent-verify-manifest.json",
@@ -130,11 +129,9 @@ assert.deepEqual(scripts, allowedScripts, "scripts_root_must_only_keep_runner_cl
 const fixtureFiles = (await listFiles("tests/fixtures/v22")).sort();
 assert.deepEqual(fixtureFiles, [
   "tests/fixtures/v22/agent-verify-manifest.json",
-  "tests/fixtures/v22/backend-go-convergence/backend-inventory.json",
-  "tests/fixtures/v22/backend-go-convergence/migration-map.json",
   "tests/fixtures/v22/goal-current.json",
   "tests/fixtures/v22/line-budget-baseline.json",
-], "fixtures_must_only_keep_current_manifest_line_budget_and_registered_backend_program_fixtures");
+], "fixtures_must_only_keep_current_manifest_goal_and_line_budget");
 
 const verifySource = await readRepoFile("scripts/v22-verify.mjs");
 assert(verifySource.includes("tests/fixtures/v22/agent-verify-manifest.json"), "verify_must_read_fixture_manifest");

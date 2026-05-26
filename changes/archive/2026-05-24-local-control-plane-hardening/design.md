@@ -2,7 +2,7 @@
 
 ## Architecture
 
-This package keeps the active local topology intact: Node Portal backend, React/Vite Portal frontend, OPL Web Gateway, Runtime Bridge, OPL upstream and the future Go backend target. It does not replace the topology in one step. Instead it adds narrow gates and source changes that make the current local topology reliable before cloud authorization.
+This historical package kept the then-active local topology intact: Node Portal backend, React/Vite Portal frontend, OPL Web Gateway, Runtime Bridge, OPL upstream and the future Go backend target. Current trunk later supersedes that Node backend state through physical removal; read current backend ownership from `docs/source/README.md` / `specs/source/spec.md`.
 
 ## Data Flow
 
@@ -20,7 +20,7 @@ This package keeps the active local topology intact: Node Portal backend, React/
 
 ## Surface Impact
 
-- source: `services/portal/src/**`, `services/medopl-go-backend/**`, targeted scripts/tests only.
+- source at original landing time: Node Portal runtime files, `services/medopl-go-backend/**`, targeted scripts/tests only. Current trunk has physically removed the Node Portal backend tree.
 - docs: only this change package, plus existing truth README/history closeout if accepted.
 - specs: `specs/source/spec.md` and `specs/framework/spec.md` durable requirement rows only; no new spec directory.
 - tests: local deterministic tests and gates only.

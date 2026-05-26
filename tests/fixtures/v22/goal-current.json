@@ -407,7 +407,7 @@
       "service": "services/medopl-go-backend",
       "status": "local_mvp_takeover_target",
       "current_active_implementation": "services/medopl-go-backend",
-      "node_portal_role": "retirement_candidate_not_business_truth",
+      "node_portal_role": "physically_removed_not_business_truth",
       "node_portal_must_not_expand": [
         "long_task_orchestration",
         "cloud_mutation",
@@ -494,6 +494,7 @@
     ],
     "verification_commands": [
       "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
+      "node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
       "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
       "node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json",
       "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
@@ -507,7 +508,7 @@
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
       ],
-      "can_claim": "Go-owned local RC projections cover provider/preflight/launch, billing/audit, resources and release/stop-billing through deterministic local evals.",
+      "can_claim": "Go-owned local RC projections cover provider/preflight/launch, billing/audit, resources and release/stop-billing through deterministic local evals; Node Portal backend is physically absent.",
       "cannot_claim": "live provider, production secret storage, real OPL upstream, real cloud, deploy, kubectl, build/push, production billing or production runtime evidence",
       "closed_at": "2026-05-25"
     },

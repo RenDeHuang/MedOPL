@@ -23,12 +23,12 @@ Go / pre-cloud deployment surface：
 
 Retirement surface：
 
-- `services/portal/src` is a retired Node backend business surface. Node Portal backend is not a deployable control plane, not a Portal frontend proxy target, not a typed API owner and not a current verification owner. Remaining files are historical source for retirement gates only until physically deleted by a later cleanup package.
-- `services/portal/src/routes/lab-package.routes.mjs` lab package routes are historical retirement input only. Portal frontend lab typed API ownership is Go-only through `services/medopl-go-backend` and `/api/lab-*`; the Node route must not be treated as frontend typed API truth, current backend truth, compatibility control plane or real-cloud readiness evidence.
+- `services/portal/src` 已物理清退。Node Portal backend is not a deployable control plane, not a Portal frontend proxy target, not a typed API owner and not a current verification owner. It may appear only as a negative guard or historical path in docs/history/git history.
+- Portal frontend lab typed API ownership is Go-only through `services/medopl-go-backend` and `/api/lab-*`; deleted Node lab routes must not be treated as frontend typed API truth, current backend truth, compatibility control plane or real-cloud readiness evidence.
 
 ## Productization Source Order
 
-当前目标是完全现代化前后端分离。`services/portal/frontend` 是 React/Vite/TypeScript frontend；`services/medopl-go-backend` 是 Go control-plane / pre-cloud SaaS backend；`services/portal/src` 是 Node Portal backend 清退对象，不是 active backend/API/server。后续 source order 是：
+当前目标是完全现代化前后端分离。`services/portal/frontend` 是 React/Vite/TypeScript frontend；`services/medopl-go-backend` 是 Go control-plane / pre-cloud SaaS backend；`services/portal/src` 已物理清退，不是 active backend/API/server。后续 source order 是：
 
 1. Figma Make UI 已归档为外部 design input；repo-native Portal frontend source 和本地 eval 才是实现 truth。
 2. Portal typed API contract 已归档：Portal frontend 只能通过 typed API modules 读取 backend projection；不能让页面直接复制 mock readiness、mock billing、mock resource 或 mock OPL launch truth。
@@ -41,23 +41,16 @@ Retirement surface：
 
 - `services/portal/frontend` 是 active frontend implementation；它必须通过 typed API 读取 Go control-plane projection。
 - `services/medopl-go-backend` 是 pre-cloud SaaS backend implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow、release/stop billing、Go `/healthz`/`/readyz` 和 cloud connector fail-closed API，相关 pre-cloud eval 必须在 manifest/test lane registry 中可追踪。
-- `services/portal/src` 是 retired Node backend surface；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
-- Node Portal v22 control-plane routes and domains for `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness`, `/portal/api/v22/managed-environment/open`, `/portal/api/v22/managed-environment/release` and `/portal/api/v22/opl-work/*` are physically retired from active code. 当前 owner 是 `services/medopl-go-backend` 的 `/api/v22/*` 和 `/api/opl/*`。
-- `services/portal/src/app/portal-runtime.mjs` 不得作为部署入口、typed API owner 或当前 verify owner；后续只允许被 retirement gate 引用，直到物理清退。
+- `services/portal/src` 已物理清退；它不得恢复为长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
+- Node Portal v22 control-plane routes and domains for `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness`, `/portal/api/v22/managed-environment/open`, `/portal/api/v22/managed-environment/release` and `/portal/api/v22/opl-work/*` are physically retired from active code. 当前 owner 是 `services/medopl-go-backend` 的 `/api/v22/*`、`/api/provider/*` 和 `/api/opl/*`。
+- `services/portal/src/app/portal-runtime.mjs` 已物理删除，不得作为部署入口、typed API owner 或当前 verify owner。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
 
-Backend responsibility inventory：
+Backend physical removal gate：
 
-- `tests/fixtures/v22/backend-go-convergence/backend-inventory.json` 是 Step 4 机器盘点入口。
-- `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 验证该盘点覆盖 `services/portal/src`、`services/opl-web-gateway/src` 和 `services/opl-runtime-bridge/src` 的全部 `.mjs` active backend 文件。
-- 盘点分类只允许 `correct-place`、`misplaced`、`migrate-later` 和 `delete-later`；高风险标签必须显式覆盖 Portal 长任务、cloud mutation、内存 launch truth、billing/audit 聚合和 runtime bridge token/secret 边界。
-
-Node-to-Go migration map：
-
-- `tests/fixtures/v22/backend-go-convergence/migration-map.json` 是 Step 5 机器迁移映射入口。
-- `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 验证每个 `misplaced` / `delete-later` 文件至少有一个 migration node，关键 Portal -> Runtime Bridge、Runtime Bridge -> OPL / Runtime Agent、Portal -> Billing/Audit edge 都有 forbidden secret/token field。
-- migration map 只能映射到 Go canonical backend 分层或保留明确 Node boundary；不得把 `user_owned`、`resource-order`、旧 runner/provisioner、OpenCost 或 Langfuse 主叙事恢复为目标节点。
+- `tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs` 是当前机器入口，验证 `services/portal/src` 不存在、Portal frontend 只走 Go `/api`、旧 Node facade/gate/fixture 不回到 manifest。
+- `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 只验证 Go takeover 已关闭、本地控制面 owner 是 `services/medopl-go-backend`、real-cloud 仍停在授权边界；不再依赖 backend inventory 或 migration-map fixture。
 
 Current docs / eval surface during migration：
 

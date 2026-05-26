@@ -9,6 +9,8 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 
 `docs/specs/README.md` 回答 v22 的长期不变量、产品边界、接口/状态/字段、失败码、验收边界、授权红线和合同订阅包。它不替代 source code、runtime evidence、verify manifest、agent run evidence 或真实云授权记录。
 
+Node Portal backend physical removal: `services/portal/src` 已物理清退；当前 Portal frontend 只通过 Go backend `/api` 通信，旧 Node backend 不能作为 shell、facade、compatibility layer、deployable backend、frontend proxy target、typed API owner 或 current verification owner。
+
 ## Contract Subscription Discipline
 
 - 正式开发开始前必须声明本分支订阅的 specs anchors、active truth、policy/delivery/source/runtime 边界和验收命令。
@@ -127,7 +129,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 
 ## 共享边界合同
 
-- smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite local-rc-authorized` 只在用户显式授权本地 provider secret 时执行；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
+- smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite local-rc-authorized` 当前为空授权 lane，未来恢复 local provider secret eval 必须另开授权 package；`suite cloud-future-authorized` 只标记未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - truth freeze: [../history/README.md](../history/README.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
@@ -205,7 +207,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 - [spec:v22-portal-structure-failure-isolation-boundary](#spec-v22-portal-structure-failure-isolation-boundary)
 - [spec:v22-portal-workbench-management-ui-composition-boundary](#spec-v22-portal-workbench-management-ui-composition-boundary): Portal UI composition 合同只管产品边界、UI 分层、禁词、Figma Make ZIP source、Portal API adapter 和统一验证入口；具体 route、surface、layout 和 API wiring 由 `services/portal/frontend/src/app/**`、`services/portal/frontend/src/app/data/portalAdapters.ts` 和 surface smoke 承接。
 - [spec:v22-portal-ui-design-quality-audit-boundary](#spec-v22-portal-ui-design-quality-audit-boundary): UI design quality audit 合同只管边界、评价标准、audit evidence schema 和后续 UI implementation leaf handoff，不替代 UI composition 合同，不冻结具体布局、配色、字体、圆角或组件库；它审计 Portal 是否回答用户买了什么、能不能用、缺什么、下一步点哪里、结果在哪里和费用是否正常。审计证据路径固定为 `.runtime/portal-ui-design-quality/report.json` 且不进 git；当前 React/Figma Make implementation leaf 已在 `services/portal/frontend/**` 落地普通用户 6 个路由、服务摘要、状态驱动下一步、Portal/OPL runtime 职责边界、环境/套餐/算力/存储/释放状态和文件/任务/结果链路，并同步 React route/surface eval、typecheck 和 build 验证。
-- [spec:v22-portal-figma-make-ui-implementation-boundary](#spec-v22-portal-figma-make-ui-implementation-boundary): 当前 Portal frontend implementation leaf，授权 Portal 全体前端栈收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide，并以 Figma Make ZIP 作为唯一 Portal UI source-of-truth，吸收普通用户路由 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和管理员路由 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`；retired frontend surface gate 已证明旧管理员 console residue 物理清退，管理员导航显示由后端角色投影控制，真实权限仍由 `/portal/api/admin/*` 后端校验；`/admin/ops` 默认后端可返回 `404 ops_surface_disabled`，前端必须展示“平台托管运维入口未启用”的产品态。
+- [spec:v22-portal-figma-make-ui-implementation-boundary](#spec-v22-portal-figma-make-ui-implementation-boundary): 当前 Portal frontend implementation leaf，授权 Portal 全体前端栈收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide，并以 Figma Make ZIP 作为唯一 Portal UI source-of-truth，吸收普通用户路由 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和管理员路由 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`；retired frontend surface gate 已证明旧管理员 console residue 物理清退，管理员导航显示由后端角色投影控制，真实权限仍由 `/api/admin/*` 后端校验；`/admin/ops` 默认后端可返回 `404 ops_surface_disabled`，前端必须展示“平台托管运维入口未启用”的产品态。
 - [../../DESIGN.md](../../DESIGN.md): Portal UI 重构设计执行源，用于指导当前 React implementation 的产品气质、信息架构、组件使用、文案、视觉规则和 Figma Make ZIP 吸收流程；它不替代本合同包、不替代 Figma Make ZIP source-of-truth、不替代 smoke，也不授权修改后端、真实云、deploy、upstream 或 secret 边界。
 - [../history/README.md](../history/README.md)
 - [../active/README.md](../active/README.md)
@@ -213,13 +215,13 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 统一验证入口：
 
 ```bash
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all
+node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs
 ```
 
 Portal frontend surface 可执行验证入口：
 
 ```bash
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs
 ```
 
 ### OPL Entry / Gateway 合同包
@@ -239,7 +241,7 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 
 ### Runtime Bridge 合同包
 
-适用于 OPL session bind、run、message、file reference、artifact reference、providerKeyRef 透传和 Runtime Agent relay。当前实现目录是 services/opl-runtime-bridge；这是 v22 active Runtime Bridge 主线服务，不是旧 adapters/* 兼容层。
+适用于 OPL session bind、run、message、file reference、artifact reference、providerKeyRef 透传和 Runtime Agent relay。当前实现目录是 services/opl-runtime-bridge；这是 v22 active Runtime Bridge 主线服务，不是旧 adapters/* 路线。
 
 订阅：
 
@@ -1326,13 +1328,13 @@ release 分阶段执行：
 Former leaf id: `v22-backend-go-convergence-program-boundary`
 Former title: v22 Backend Go Convergence Program Boundary
 
-本合同定义 MedOPL v22 当前 Go control-plane MVP takeover 边界。用户已选择把上云时间后推，先让 `services/medopl-go-backend` 接管本地 control-plane MVP，再开启 `real-cloud-readiness`。该 takeover 不保留 Node/Go 长期兼容层，不把 Node Portal backend 写成第二控制面，也不把 local proof 写成 production truth。
+本合同定义 MedOPL v22 当前 Go control-plane MVP takeover 边界。用户已选择把上云时间后推，先让 `services/medopl-go-backend` 接管本地 control-plane MVP，再开启 `real-cloud-readiness`。该 takeover 不保留 Node/Go 长期双控制面，不把 Node Portal backend 写成第二控制面，也不把 local proof 写成 production truth。
 
 Canonical backend boundary：
 
 - `services/medopl-go-backend` 是本地 MVP takeover target；它必须承接 Portal Control Plane、Workflow Boundary、Runtime Broker / OPL Bridge、Agent Runtime coordination boundary 和 Cloud / Billing / Audit Workers 的本地 control-plane API truth。
 - `services/portal/frontend` 是现代前后端分离下的 repo-native frontend package；它只能通过 typed API 读取 Go-owned projection，不持有 package、provider key、launch、billing、audit、resource 或 release truth。
-- `services/portal/src` 是清退对象，不是长期 active backend；保留代码只能是迁移期 shell、auth、dispatch、serialization 或 relay，不得继续承载 long task orchestration、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
+- `services/portal/src` 已物理清退；它不是 active backend、shell、facade、relay 或 compatibility control plane，不得继续承载 long task orchestration、cloud mutation、billing mutation、audit reconciliation 或 runtime launch truth。
 - 真实云、secret、provider operation、deploy、kubectl、build/push 和 live-test 均推迟到 Go local RC 之后的独立 authorization/readiness package。
 
 必须先 Go control-plane MVP，再 real-cloud-readiness。当前 program 只能声明 local MVP takeover target 和本地 deterministic eval；不能声明 production backend replacement、真实云 readiness、真实 provider capability、真实账单 reconciliation 或 deploy 完成。
@@ -1368,7 +1370,7 @@ Canonical deployment boundary：
 
 - `services/portal/frontend` 是 Portal frontend deployment surface；Vite dev proxy 和 typed API modules 必须默认走 Go `/api`。
 - `services/medopl-go-backend` 是 pre-cloud SaaS backend deployment surface；它必须提供 `/healthz`、`/readyz`、Portal projection API、provider/preflight/launch、file/run/artifact、billing/audit/resource/release 和 cloud connector fail-closed API。
-- `services/portal/src` 不得作为 deployable backend、frontend proxy target、typed API owner 或 current verification owner；后续只允许被 retirement gate 引用，直到物理清退。
+- `services/portal/src` 已物理清退，不得作为 deployable backend、frontend proxy target、typed API owner 或 current verification owner；后续只允许被 negative physical-removal gate 或 history 引用。
 - Cloud connector 在 real-cloud authorization package 打开前必须返回 `authorization_required` / `fail_closed`，不得创建 plan 副作用或访问真实 provider。
 
 验收边界：
@@ -2529,7 +2531,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-readonly-inventory-boundary`, `spec:v22-cloud-onboarding-workflow-boundary`
-- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-local-guard.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
 - success status: check-config blocks missing RUN gate, mutation API, read-all secret, and non-redacted output
 - blocker 回流到谁: A 修 check-config，B 审查 gate
 - 什么时候必须停下来问用户: 静态检查需要读取真实 secret 文件、source env、调用真实云或修改 deploy
@@ -2604,7 +2606,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-dry-run-resource-plan-provider-boundary`, `spec:v22-authorized-tencent-create-release-boundary`, `spec:v22-production-cloud-topology-boundary`
-- required smoke: `future-authorized-test-v22-tencent-dry-run-resource-plan-provider.mjs`, `future-authorized-test-v22-authorized-tencent-create-release-contract.mjs`
+- required smoke: `future-authorized-test-v22-authorized-tencent-create-release-contract.mjs`, `future-authorized-test-v22-authorized-tencent-create-release-contract.mjs`
 - success status: dry-run create/release plan produces no mutation and no charge
 - blocker 回流到谁: A fixes plan, B reviews mutation leakage
 - 什么时候必须停下来问用户: dry-run plan wants to call real cloud, read mutation secret, alter ledger, or expose cloud console language to ordinary users
@@ -2679,8 +2681,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
 
 测试路径：
 
-- `POST /portal/api/v22/cloud-operations/test/local`
-- `GET /portal/api/v22/cloud-operations/test/projection?workspaceId=<workspace-id>`
+- `POST /api/v22/cloud-operations/test/local`
+- `GET /api/v22/cloud-operations/test/projection?workspaceId=<workspace-id>`
 
 边界：
 
@@ -2864,8 +2866,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     "requiresEnableEnvValue": "1",
     "forbidsProductionRouteRegistration": true,
     "apiPaths": [
-      "POST /portal/api/v22/cloud-operations/test/local",
-      "GET /portal/api/v22/cloud-operations/test/projection"
+      "POST /api/v22/cloud-operations/test/local",
+      "GET /api/v22/cloud-operations/test/projection"
     ],
     "operations": [
       "create_storage",
@@ -3054,7 +3056,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/specs/README.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-local-guard.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs",
         "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs"
       ],
       "successStatus": "check-config blocks missing gate, mutation API, read-all secret, and non-redacted output",
@@ -3170,7 +3172,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
         "docs/specs/README.md"
       ],
       "requiredSmoke": [
-        "tests/future-authorized/cloud/future-authorized-test-v22-tencent-dry-run-resource-plan-provider.mjs",
+        "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-contract.mjs",
         "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-contract.mjs"
       ],
       "successStatus": "dry-run create/release plan produces no mutation and no charge",
@@ -4365,7 +4367,7 @@ Gateway / preflight / launch 边界必须满足：
 
 ## Smoke
 
-`tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs` 是本地合同 smoke。它只使用本地 fixture 和临时 provider secret store，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不执行 build、push、kubectl 或 live-test。
+`tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs` 和 `tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs` 是当前本地合同 gate。它们只检查 Go-owned preflight/launch/API surface、Runtime Bridge public surface 和 Node backend physical removal，不读取 `/home/dev/.secrets/medopl/secrets.env.txt`，不调用真实云 API，不执行 build、push、kubectl 或 live-test。
 
 ### spec:v22-opl-work-message-file-run-boundary
 
@@ -4739,7 +4741,7 @@ Former title: v22 Portal Figma Make UI Implementation Boundary
 - `/admin/system`
 - `/admin/ops`
 
-上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `tests/health/health-check-v22-archive-smoke-contract-physical-retirement-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/portal/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/portal/api/admin/*` 后端校验和 403 裁定。
+上一轮 ZIP residue 不再进入 active frontend，具体 retired path 由 `tests/health/health-check-v22-archive-smoke-contract-physical-retirement-gate.mjs` 统一列出。当前管理员 UI 以新 ZIP 的 `src/app/pages/admin/*` 为准，必须挂载 active route、进入管理员导航，并通过 `RoleContext` 读取后端 `/api/me` 的角色投影控制导航显示。RoleContext 不是安全边界；真实 admin 权限继续由 `/api/admin/*` 后端校验和 403 裁定。
 
 ## 清退边界
 
@@ -4758,24 +4760,24 @@ Former title: v22 Portal Figma Make UI Implementation Boundary
 
 Figma Make UI 不能停留在静态 mock。普通用户 6 个页面必须接现有 Portal API adapter：
 
-- `/overview`: `fetchOverview()` 与 `fetchMyResources()`，对应 `/portal/api/overview` 和 `/portal/api/platform-provisioned-resources`。
-- `/resources`: `fetchMyResources()`，对应 `/portal/api/platform-provisioned-resources`。
-- `/workspace`: `fetchWorkspacePage()`，对应 `/portal/api/workspace`。
-- `/trace`: `fetchSessionTraces()`，对应 `/portal/api/session-traces`。
-- `/billing`: `fetchBillingSummary()` 与 `fetchBillingDetails()`，对应 `/portal/api/billing/summary` 和 `/portal/api/billing/details`。
-- `/opl-launch`: `fetchOplLaunchStatus()`、`fetchOplBootstrap()`、`bindOplSession()`，对应 `/portal/api/opl/launch-status/{launchId}`、`/portal/api/opl/bootstrap` 和 `/portal/api/opl/sessions/bind`。
+- `/overview`: `fetchOverview()` 与 `fetchMyResources()`，对应 `/api/overview` 和 `/api/platform-provisioned-resources`。
+- `/resources`: `fetchMyResources()`，对应 `/api/platform-provisioned-resources`。
+- `/workspace`: `fetchWorkspacePage()`，对应 `/api/workspace`。
+- `/trace`: `fetchSessionTraces()`，对应 `/api/session-traces`。
+- `/billing`: `fetchBillingSummary()` 与 `fetchBillingDetails()`，对应 `/api/billing/summary` 和 `/api/billing/details`。
+- `/opl-launch`: `fetchOplLaunchStatus()`、`fetchOplBootstrap()`、`bindOplSession()`，对应 `/api/opl/launch-status/{launchId}`、`/api/opl/bootstrap` 和 `/api/opl/sessions/bind`。
 
-管理员页面必须接现有 `/portal/api/admin/*` adapter：
+管理员页面必须接现有 `/api/admin/*` adapter：
 
-- `/admin/dashboard`: `fetchAdminOverview()`，对应 `/portal/api/admin/overview`。
-- `/admin/users`: `fetchAdminUsers()`，对应 `/portal/api/admin/users`；用户查看、Portal 本地账户充值、Portal 本地账本退款、启用/禁用和软删除必须接现有本地 Portal admin action。
-- `/admin/alerts`: `fetchAdminAlerts()` 与 `fetchAnnouncements()`，对应 `/portal/api/admin/alerts` 和 `/portal/api/announcements`；公告新建、编辑、发布/下线、置顶和删除必须接现有本地 Portal admin action。
-- `/admin/billing-ops`: `fetchAdminBillingOps()`，对应 `/portal/api/admin/billing-ops`。
-- `/admin/audit`: `fetchAdminAudit()`，对应 `/portal/api/admin/audit`。
-- `/admin/system`: `fetchAdminSystem()`，对应 `/portal/api/admin/system`。
-- `/admin/ops`: `fetchAdminOps()`，对应 `/portal/api/admin/ops`；该后端 API 在默认未启用运维 surface 时允许返回 `404 ops_surface_disabled`，前端必须把它映射成“平台托管运维入口未启用”的产品态，而不是 generic error 或伪成功。
+- `/admin/dashboard`: `fetchAdminOverview()`，对应 `/api/admin/overview`。
+- `/admin/users`: `fetchAdminUsers()`，对应 `/api/admin/users`；用户查看、Portal 本地账户充值、Portal 本地账本退款、启用/禁用和软删除必须接现有本地 Portal admin action。
+- `/admin/alerts`: `fetchAdminAlerts()` 与 `fetchAnnouncements()`，对应 `/api/admin/alerts` 和 `/api/announcements`；公告新建、编辑、发布/下线、置顶和删除必须接现有本地 Portal admin action。
+- `/admin/billing-ops`: `fetchAdminBillingOps()`，对应 `/api/admin/billing-ops`。
+- `/admin/audit`: `fetchAdminAudit()`，对应 `/api/admin/audit`。
+- `/admin/system`: `fetchAdminSystem()`，对应 `/api/admin/system`。
+- `/admin/ops`: `fetchAdminOps()`，对应 `/api/admin/ops`；该后端 API 在默认未启用运维 surface 时允许返回 `404 ops_surface_disabled`，前端必须把它映射成“平台托管运维入口未启用”的产品态，而不是 generic error 或伪成功。
 
-API 接入只允许走 `services/portal/frontend/src/api/portal/*.ts` 和 `apiClient` 的 `/portal/api` baseURL，或走已有 `/portal/admin/*` HTML form action 的本地 Portal 管理端点；本轮不改 Portal 后端服务语义，不伪造成功态，不把 raw key、runtime token、objectKey、localPath 或 signedUrl 渲染到页面。
+API 接入只允许走 `services/portal/frontend/src/api/portal/*.ts` 和 `goControlPlaneClient` 的 `/api` baseURL，或走已有 `/portal/admin/*` HTML form action 的本地 Portal 管理端点；本轮不改 Portal 后端服务语义，不伪造成功态，不把 raw key、runtime token、objectKey、localPath 或 signedUrl 渲染到页面。
 
 ## 生命周期与文案边界
 
@@ -4921,7 +4923,7 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
   },
   "apiIntegration": {
     "staticMockOnlyUiAllowed": false,
-    "baseUrl": "/portal/api",
+    "baseUrl": "/api",
     "adapterDirectory": "services/portal/frontend/src/api/portal",
     "requiredAdapters": [
       "overview",
@@ -4936,49 +4938,49 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     ],
     "userRouteApiCoverage": {
       "/overview": [
-        "/portal/api/overview",
-        "/portal/api/platform-provisioned-resources"
+        "/api/overview",
+        "/api/platform-provisioned-resources"
       ],
       "/resources": [
-        "/portal/api/platform-provisioned-resources"
+        "/api/platform-provisioned-resources"
       ],
       "/workspace": [
-        "/portal/api/workspace"
+        "/api/workspace"
       ],
       "/trace": [
-        "/portal/api/session-traces"
+        "/api/session-traces"
       ],
       "/billing": [
-        "/portal/api/billing/summary",
-        "/portal/api/billing/details"
+        "/api/billing/summary",
+        "/api/billing/details"
       ],
       "/opl-launch": [
-        "/portal/api/opl/launch-status/{launchId}",
-        "/portal/api/opl/bootstrap",
-        "/portal/api/opl/sessions/bind"
+        "/api/opl/launch-status/{launchId}",
+        "/api/opl/bootstrap",
+        "/api/opl/sessions/bind"
       ]
     },
     "adminRouteApiCoverage": {
       "/admin/dashboard": [
-        "/portal/api/admin/overview"
+        "/api/admin/overview"
       ],
       "/admin/users": [
-        "/portal/api/admin/users"
+        "/api/admin/users"
       ],
       "/admin/alerts": [
-        "/portal/api/admin/alerts"
+        "/api/admin/alerts"
       ],
       "/admin/billing-ops": [
-        "/portal/api/admin/billing-ops"
+        "/api/admin/billing-ops"
       ],
       "/admin/audit": [
-        "/portal/api/admin/audit"
+        "/api/admin/audit"
       ],
       "/admin/system": [
-        "/portal/api/admin/system"
+        "/api/admin/system"
       ],
       "/admin/ops": [
-        "/portal/api/admin/ops"
+        "/api/admin/ops"
       ]
     },
     "adminRouteActionCoverage": {
@@ -5030,8 +5032,8 @@ Portal 普通用户页面最多展示 `providerKeyRef`、绑定状态和一次�
     "trueProductionDeployRequiresSeparateAuthorization": true
   },
   "verificationCommands": [
-    "node tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
-    "node tests/regression/portal/regression-test-v22-portal-figma-make-admin-readiness.mjs",
+    "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
+    "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
     "git diff --check",
     "npm --prefix services/portal/frontend run typecheck",
     "npm --prefix services/portal/frontend run build"
@@ -5178,7 +5180,7 @@ one-person-lab upstream 只能作为 clean upstream 工作台。Portal 账号、
 Portal-OPL 连接闭环至少需要以下接口。路径名称表达合同角色；实现必须按 Runtime Bridge / Runtime Agent 边界收敛。已退役路径不得作为兼容解释、内部保留理由、用户入口、合同入口或后续新实现入口。
 
 ```text
-POST /portal/api/opl/launch
+POST /api/opl/launch
 GET /runtime-bridge/api/opl/bootstrap
 POST /runtime-bridge/api/opl/sessions/bind
 POST /runtime-bridge/api/opl/messages
@@ -5193,15 +5195,15 @@ GET /runtime-bridge/api/opl/artifacts/{artifactRef}
 Portal 对 Runtime Bridge 的代理面必须与 Runtime Bridge 稳定接口对齐，至少包含：
 
 ```text
-GET /portal/api/opl/bootstrap
-POST /portal/api/opl/sessions/bind
-POST /portal/api/opl/messages
-GET /portal/api/opl/messages/{messageId}/status
-POST /portal/api/opl/files
-POST /portal/api/opl/runs
-GET /portal/api/opl/runs/{runId}/status
-GET /portal/api/opl/runs/{runId}/artifacts
-GET /portal/api/opl/artifacts/{artifactRef}
+GET /api/opl/bootstrap
+POST /api/opl/sessions/bind
+POST /api/opl/messages
+GET /api/opl/messages/{messageId}/status
+POST /api/opl/files
+POST /api/opl/runs
+GET /api/opl/runs/{runId}/status
+GET /api/opl/runs/{runId}/artifacts
+GET /api/opl/artifacts/{artifactRef}
 ```
 
 现有 Runtime Bridge `/api/opl-launch/*` 可以作为当前实现路径，但它必须语义映射到 Runtime Bridge / Runtime Agent 边界。旧 `/api/runtime-sessions` 和 `/api/runtime-sessions/{id}/runs` 不得成为 v22 新主路径。
@@ -5239,7 +5241,7 @@ workspace 绑定是必需项，不是可选装饰字段。原因是：
 
 ## Launch And Bootstrap
 
-`POST /portal/api/opl/launch` 由 Portal 发起。它必须检查 Portal session、workspace、Gateway / upstream entry 状态和用户自己的 provider binding，并创建服务端 launch session。managed environment / resource binding 状态不得作为 workbench entry 的阻塞条件；它们只阻塞 managed run。
+`POST /api/opl/launch` 由 Portal 发起。它必须检查 Portal session、workspace、Gateway / upstream entry 状态和用户自己的 provider binding，并创建服务端 launch session。managed environment / resource binding 状态不得作为 workbench entry 的阻塞条件；它们只阻塞 managed run。
 
 Portal launch response 可以返回：
 
@@ -5348,7 +5350,8 @@ bootstrap 和 Runtime Bridge status 必须能表达：
 - `POST /runtime-bridge/api/opl/files` 必须新增 workspace-scoped input artifact record，并返回该 record 的 public `fileRef`。
 - `POST /runtime-bridge/api/opl/runs` 必须调用 Runtime Agent relay/API 边界，并把 run record、runtime artifact、session ledger entry 和 trace 写回 Runtime Bridge state。
 - `GET /runtime-bridge/api/opl/runs/{runId}/status`、`GET /runtime-bridge/api/opl/runs/{runId}/artifacts` 和 `GET /runtime-bridge/api/opl/artifacts/{artifactRef}` 必须读取前序 run/file 产生的 state record，且按 launch/session/workspace 鉴权。
-- Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token，跨用户 `launchId` 必须拒绝，成功响应必须来自 Runtime Bridge 回流而不是 Portal 本地伪造。
+- Portal frontend 只能通过 Go backend `/api/opl/*` 读取 OPL launch/bootstrap/session/message/file/run/artifact projection；Node Portal backend 不得作为代理、shell、facade、typed API owner 或 current verification owner。
+- Go backend `/api/opl/*` 必须用当前用户的 `launchId` 换取后端 launch token，跨用户 `launchId` 必须拒绝，成功响应必须来自 Runtime Bridge 回流而不是 Portal 本地伪造。
 - Runtime Bridge state 写入必须能保留并发 message/file/run 回流，不得因为异步写入互相覆盖、读到半写 JSON 或用最后写入覆盖前序状态。
 
 禁止事项：
@@ -5447,7 +5450,7 @@ run 成功后必须生成 `runId`，并把 `traceId`、`workspaceId`、`runtimeS
 ```text
 node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
 node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs
-node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs
+node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs
 ```
 
 这些 smoke 只检查 repo-tracked 合同、索引、本地 Portal/Gateway/Runtime Bridge contract shape 和本地 MVP suite，不读取 secret，不调用真实云，不运行 live-test，不修改 upstream。
@@ -5537,7 +5540,7 @@ Portal 不理解 OPL 内部协议。Gateway 不成为业务真相源。Runtime B
 Portal 与 Runtime Bridge 的核心稳定接口固定为：
 
 ```text
-POST /portal/api/opl/launch
+POST /api/opl/launch
 GET /runtime-bridge/api/opl/bootstrap
 GET /runtime-bridge/api/opl/status
 POST /runtime-bridge/api/opl/sessions/bind
@@ -5580,7 +5583,7 @@ Portal 输出：
 - `launchId`。
 - `openUrl`。
 - public launch status。
-- 通过 `/portal/api/opl/*` 代理返回的 Runtime Bridge projection。
+- 通过 `/api/opl/*` 代理返回的 Runtime Bridge projection。
 
 Portal 禁止：
 
@@ -5922,7 +5925,7 @@ B 窗口吸收实现分支前必须确认：
 本合同由以下 smoke 固化：
 
 ```text
-node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs
+node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs
 ```
 
 ### spec:v22-portal-structure-failure-isolation-boundary
@@ -6181,7 +6184,7 @@ Portal 必须按低耦合目标治理：
     "requiredVerificationCommands": [
       "node tests/regression/portal/regression-test-v22-portal-structure-failure-isolation-contract.mjs",
       "npm --prefix services/portal run check",
-      "node tests/contract/contract-test-v22-product-goal-harness.mjs",
+      "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk"
     ],
     "routeLayer": {
@@ -6193,8 +6196,6 @@ Portal 必须按低耦合目标治理：
         "dto_response"
       ],
       "forbiddenDirectImports": [
-        "services/portal/src/state/**",
-        "services/portal/src/state/*"
       ],
       "forbiddenMissingFieldBehaviors": [
         "implicit_default",
@@ -6343,65 +6344,30 @@ Portal 必须按低耦合目标治理：
     "runsLiveTest": false,
     "readsSecrets": false,
     "backendRoutesDispatcher": {
-      "dispatcherFile": "services/portal/src/routes/portal-api.routes.mjs",
+      "dispatcherFile": "services/medopl-go-backend/internal/server/router.go",
       "dispatcherMustReference": [
         "createPortalApiV22CloudOperationsRoutes",
         "createPlatformProvisionedResourceRoutes"
       ],
       "currentRouteFiles": [
-        "services/portal/src/routes/portal-api.routes.mjs",
-        "services/portal/src/routes/admin-api.routes.mjs",
-        "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
-        "services/portal/src/routes/portal-api-state.routes.mjs",
-        "services/portal/src/routes/portal-api-runs.routes.mjs",
-        "services/portal/src/routes/portal-api-sessions.routes.mjs",
-        "services/portal/src/routes/portal-api-traces.routes.mjs",
-        "services/portal/src/routes/platform-provisioned-resource.routes.mjs",
-        "services/portal/src/routes/workspace-storage.routes.mjs"
       ]
     },
     "backendAppPayloadBuilders": {
-      "payloadEntryFile": "services/portal/src/app/portal-page-payloads.mjs",
+      "payloadEntryFile": "services/medopl-go-backend/internal/server/handlers/portal_projection.go",
       "payloadEntryMustReference": [
         "createBillingPayloadBuilders",
         "createOverviewPayloadBuilder",
         "createWorkspacePayloadBuilder"
       ],
       "currentAppPayloadFiles": [
-        "services/portal/src/app/portal-app.mjs",
-        "services/portal/src/app/portal-runtime.mjs",
-        "services/portal/src/app/portal-runtime-bootstrap.mjs",
-        "services/portal/src/app/portal-http-dispatcher.mjs",
-        "services/portal/src/app/portal-api-runtime-handlers.mjs",
-        "services/portal/src/app/portal-feature-runtime-handlers.mjs",
-        "services/portal/src/app/portal-store-runtime.mjs",
-        "services/portal/src/app/portal-page-payloads.mjs",
-        "services/portal/src/app/portal-page-runtime-payloads.mjs",
-        "services/portal/src/app/portal-admin-api-payloads.mjs"
       ]
     },
     "backendDomainModules": {
       "currentDomainFiles": [
-        "services/portal/src/domain/portal-api-payloads.mjs",
-        "services/portal/src/domain/commercial-state.mjs",
-        "services/portal/src/domain/wallet-ledger.mjs",
-        "services/portal/src/domain/platform-provisioned-resources.mjs",
-        "services/portal/src/domain/user-resource-bindings.mjs",
-        "services/portal/src/domain/managed-environment-projection.mjs",
-        "services/portal/src/domain/workspace-storage.mjs"
       ]
     },
     "backendStatePersistence": {
       "currentStateFiles": [
-        "services/portal/src/state/portal-store.mjs",
-        "services/portal/src/state/portal-store-db-facade.mjs",
-        "services/portal/src/state/portal-store-runtime-connections.mjs",
-        "services/portal/src/state/portal-store-schema.mjs",
-        "services/portal/src/state/portal-store-migrations.mjs",
-        "services/portal/src/state/portal-platform-provisioned-resource-store.mjs",
-        "services/portal/src/state/portal-workspace-store.mjs",
-        "services/portal/src/state/portal-accounting-store.mjs",
-        "services/portal/src/state/portal-lab-billing-store.mjs"
       ]
     },
     "frontendViewsComposables": {
@@ -6468,7 +6434,7 @@ Portal 必须按低耦合目标治理：
       "currentSmokeFiles": [
         "tests/regression/portal/regression-test-v22-portal-structure-failure-isolation-contract.mjs",
         "tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
-        "tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
+        "tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
         "tests/regression/portal/regression-test-v22-portal-web-route-alignment.mjs",
         "tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
         "tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs"
@@ -6589,7 +6555,7 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 - `trace`: 展示任务运行轨迹、输出回流和费用关联，不暴露外部 trace 直链。
 - `billing`: 展示余额、冻结金额、运行费用和账本审计。
 - `opl-launch`: 展示 OPL 启动阶段，不暴露 providerKeyRef、runtime token 或 raw key。
-- `services/portal/frontend/src/app/**` 已按 Figma Make ZIP 复制为 React user Portal route 和 surface source；`services/portal/frontend/src/app/data/portalAdapters.ts` 已接现有 `/portal/api/*`。
+- `services/portal/frontend/src/app/**` 已按 Figma Make ZIP 复制为 React user Portal route 和 surface source；`services/portal/frontend/src/app/data/portalAdapters.ts` 已接现有 `/api/*`。
 
 仍不属于本 leaf 的后续事项：Portal backend services、Node 22 ESM layering、billing preauth/ledger/release T+1 后端闭环、真实云、release readiness、deploy、build/push/kubectl、live-test、secret-backed canary 和 upstream OPL 修改。B 吸收本分支后，cursor 是否推进到 `backend-product-node22-esm-layering` 必须继续由 `tests/fixtures/v22/goal-current.json`、gap matrix 和 B review 规则决定；本实现分支不提前声明全局 cursor 完成。
 
@@ -6604,7 +6570,7 @@ node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.
 Portal UI design quality audit 的现有执行证据由 Figma Make ZIP surface 组、React typecheck 和 build 承接：
 
 ```bash
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
+node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs
 npm --prefix services/portal/frontend run typecheck
 npm --prefix services/portal/frontend run build
 ```
@@ -6717,7 +6683,7 @@ npm --prefix services/portal/frontend run build
     ],
     "evidenceSources": [
       "node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface",
+      "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
       "npm --prefix services/portal/frontend run typecheck",
       "npm --prefix services/portal/frontend run build"
     ],
@@ -6742,21 +6708,21 @@ npm --prefix services/portal/frontend run build
       "tests/fixtures/v22/agent-verify-manifest.json",
       "docs/active/README.md",
       "tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
-      "tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
       "tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
       "services/portal/frontend/package.json",
       "services/portal/frontend/package-lock.json"
     ],
     "verificationCommands": [
-      "node tests/regression/portal/regression-test-v22-portal-figma-make-ui-implementation-contract.mjs",
+      "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
       "node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface",
+      "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
       "npm --prefix services/portal/frontend run typecheck",
       "npm --prefix services/portal/frontend run build",
       "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
-      "node tests/contract/contract-test-v22-goal-state-consistency.mjs",
+      "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
       "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
-      "node tests/contract/contract-test-v22-product-goal-harness.mjs",
+      "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
       "git diff --check -- docs/specs docs tests scripts services/portal/frontend"
     ],
     "truthWritebackTarget": [
@@ -6798,7 +6764,7 @@ npm --prefix services/portal/frontend run build
   },
   "validationCommands": [
     "node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs",
-    "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface",
+    "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
     "npm --prefix services/portal/frontend run typecheck",
     "npm --prefix services/portal/frontend run build"
   ]
@@ -7025,8 +6991,8 @@ Former title: v22 Portal Workbench Management UI Composition Boundary
 - UI 分层规则：route entry、page shell、layout、ZIP page component、Portal API adapter、API module、ZIP surface smoke。
 - 禁词和主叙事：工作台、管理台、账单、余额、冻结金额、累计消费、今日消费、计算资源、文件空间、任务执行、运行轨迹。
 - Figma Make ZIP app root：`services/portal/frontend/src/app`。
-- 统一验证入口：`node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all`。
-- ZIP surface gate 入口：`node tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs`。
+- 统一验证入口：`node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`。
+- ZIP surface gate 入口：`node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`。
 
 本合同不再负责：
 
@@ -7057,7 +7023,7 @@ Portal UI 必须按以下层级落到代码和 eval：
 - shared UI component：`src/app/components/ui/*` 保持 Figma Make / shadcn-Radix primitives。
 - Portal API adapter：`src/app/data/portalAdapters.ts` 承担 loader、query、formatter 和 API payload 到页面 model 的映射。
 - API module：`src/api/portal/*` 只承担 HTTP 和类型映射。
-- ZIP surface smoke：`tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs` 固定 ZIP 文件树、route、layout、API adapter、禁词、secret hygiene 和旧文件清退。
+- ZIP surface smoke：`tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs` 固定 ZIP 文件树、route、layout、API adapter、禁词、secret hygiene 和旧文件清退。
 
 ## 可执行 Surface Gate
 
@@ -7077,7 +7043,7 @@ surface smoke 必须检查：
 - active routes 包含 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`。
 - 已退役管理员 console residue 不得存在于 active frontend。
 - 每个 active page 通过 `usePortalQuery` 调用对应 `load*Model`。
-- `portalAdapters.ts` 调用现有 `/portal/api/*` adapter。
+- `portalAdapters.ts` 调用现有 `/api/*` adapter。
 - `/admin/ops` 对 `ops_surface_disabled` 有明确产品态映射。
 - retired frontend surface gate 证明历史 UI 路径、旧 harness 入口和上一轮根级 React shell 物理不存在。
 - 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；Playwright 默认预览入口必须指向当前 React route；任何截图类回归重新启用都必须另开 leaf 并写明 design quality audit evidence。
@@ -7141,15 +7107,15 @@ UI 不使用斜杠组合词表达一个字段；需要两个含义时拆成两�
 正式验收入口统一为：
 
 ```bash
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group all
+node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs
 ```
 
 关键分组：
 
 ```bash
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group api
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group browser
+node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs
+node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs
+node tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs
 ```
 
 `surface` 分组必须读取 ZIP source、React app 和 Portal adapter 并检查：
@@ -7157,8 +7123,8 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 - route 是否存在。
 - ZIP 文件树是否一致。
 - 禁词是否出现在可见文案中。
-- API adapter 是否调用现有 `/portal/api/*`。
-- 管理员 route 存在且导航展示由 `/portal/api/me` 角色投影控制；RoleContext 不是安全边界。
+- API adapter 是否调用现有 `/api/*`。
+- 管理员 route 存在且导航展示由 `/api/me` 角色投影控制；RoleContext 不是安全边界。
 - `/admin/ops` route 存在，但默认后端 `404 ops_surface_disabled` 必须显示为“平台托管运维入口未启用”产品态。
 - 浏览器能真实打开首页、登录页、当前 6 个普通用户 Portal 路由和当前 7 个管理员 Portal 路由，并能看到关键 DOM 锚点。
 - `.runtime/portal-surface-eval/report.json` 能生成结构化报告；该报告不进 git。
@@ -7167,8 +7133,8 @@ node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --grou
 
 `leaf-frontend-product-evalset-gap` 曾把 Vue 时代的 Portal UI evalset characterization 写成前端产品事实源；本轮 `leaf-portal-figma-make-react-ui-implementation` 将当前可执行事实源收敛为 React/Figma Make ZIP 普通用户和管理员 Portal。
 
-- `node tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs`
-- `node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface`
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`
 
 The current surface smoke proves 6 ordinary user routes, 7 admin routes, ZIP file-tree parity, layout navigation, Portal API adapter ownership, forbidden copy, browser secret hygiene, retired file physical checks and runtime report generation. Retired UI evidence is no longer current Portal completion evidence.
 
@@ -7232,7 +7198,7 @@ This characterization does not change Portal UI implementation, does not upgrade
     }
   },
   "surfaceSmoke": {
-    "smoke": "tests/regression/portal/regression-test-v22-portal-frontend-surface-eval.mjs",
+    "smoke": "tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
     "runtimeReportPath": ".runtime/portal-surface-eval/report.json",
     "runtimeReportCommitted": false
   },
@@ -7947,7 +7913,7 @@ Langfuse 未配置时必须返回 `trace_sink_not_configured` 或 `deferred_auth
 
 Portal projection canary 的目标是证明 Portal 能按 workspace/session/run 查询状态、文件、trace 和 billing metadata。
 
-Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Runtime Bridge projection。Portal 禁止直接依赖：
+Portal 只能通过稳定 `/api/opl/*` 或已定义 Portal API 查询 Runtime Bridge projection。Portal 禁止直接依赖：
 
 - one-person-lab route。
 - WebSocket event shape。
@@ -7992,7 +7958,7 @@ HTTP status 必须表达业务失败类别。若网关或 Runtime Bridge 使用 
 
 1. 明确声明订阅本合同包和模型记录。当前 lane 分支名为 `feat/v22-real-opl-capability-canary`，模型记录为 `gpt-5.4`。
 2. `node tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs` 通过。
-3. `node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
+3. `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
 4. `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
 5. `node tests/contract/contract-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
 6. canary 事实已回写合同、status 和 validation path。
@@ -8309,7 +8275,7 @@ Langfuse 未配置时必须返回 `trace_sink_not_configured` 或 `deferred_auth
 
 Portal projection gate 的目标是证明 Portal 能按 workspace/session/run 查询状态、文件、trace 和 billing metadata。
 
-Portal 只能通过稳定 `/portal/api/opl/*` 或已定义 Portal API 查询 Runtime Bridge projection。Portal 禁止直接依赖：
+Portal 只能通过稳定 `/api/opl/*` 或已定义 Portal API 查询 Runtime Bridge projection。Portal 禁止直接依赖：
 
 - one-person-lab route。
 - WebSocket event shape。
@@ -8547,7 +8513,7 @@ one-person-lab upstream remains clean.
 - canary 观测到 provider invocation evidence 或明确 gate。
 - canary 观测到同一 conversation/message 的 assistant reply，或明确 timeout/not-supported gate。
 - Runtime Bridge 生成稳定 `messageId/status/replyMessageId/messageTraceId`。
-- Portal 可以通过 `/portal/api/opl/messages/{messageId}/status` 和 `/portal/api/session-traces` 查询。
+- Portal 可以通过 `/api/opl/messages/{messageId}/status` 和 `/api/session-traces` 查询。
 
 任何无法证明真实 provider/reply 的情况，必须返回明确 gate，不得使用 fake Product API、fixture reply、placeholder 200 或本地假 message 当成真实 provider 成功。
 
@@ -8758,11 +8724,11 @@ Runtime Bridge 必须把 upstream/WebUI/ACP/provider 的 shape 归一化成稳�
 
 Portal projection 必须通过以下稳定入口查询：
 
-- `POST /portal/api/opl/messages`
-- `GET /portal/api/opl/messages/{messageId}/status`
-- `GET /portal/api/session-traces?workspaceId=...&sessionId=...`
-- `GET /portal/api/session-traces?workspaceId=...&messageId=...`
-- `GET /portal/api/session-traces/{traceId}`
+- `POST /api/opl/messages`
+- `GET /api/opl/messages/{messageId}/status`
+- `GET /api/session-traces?workspaceId=...&sessionId=...`
+- `GET /api/session-traces?workspaceId=...&messageId=...`
+- `GET /api/session-traces/{traceId}`
 
 Portal message status 必须能表达：
 
@@ -8828,15 +8794,15 @@ Langfuse is an optional sanitized observability attachment。
 live canary 必须走真实 Portal -> Gateway -> Runtime Bridge -> WebUI bridge 路径：
 
 ```text
-Portal /portal/api/opl/launch
+Portal /api/opl/launch
   -> Portal backend secret store writes raw key and exposes providerKeyRef only
   -> Gateway opens clean WebUI
   -> Runtime Bridge creates/binds OPL conversation
-  -> POST /portal/api/opl/messages
+  -> POST /api/opl/messages
   -> Runtime Bridge maps to WebUI bridge chat.send.message
   -> Runtime Bridge observes assistant reply by same conversation readback/event
-  -> GET /portal/api/opl/messages/{messageId}/status
-  -> GET /portal/api/session-traces?workspaceId=...&messageId=...
+  -> GET /api/opl/messages/{messageId}/status
+  -> GET /api/session-traces?workspaceId=...&messageId=...
 ```
 
 live canary success evidence 必须包含 `messageId`、`replyMessageId`、`messageTraceId`、`providerInvocationRef`、`capabilitySource=mapped_to_webui_bridge` 和 Portal session trace projection。evidence 只写 `.runtime/real-opl-provider-message-live-canary/evidence.json`，只允许记录 key fingerprint、prompt/reply 长度、hash prefix、ID、状态和 timing metadata。
@@ -8925,7 +8891,7 @@ canary 成功不自动等于 productionized Runtime Bridge。进入正式实现�
 1. 明确声明订阅本合同包和模型记录。当前 lane 分支名为 `feat/v22-real-opl-provider-message-canary-contract`，模型记录为 `gpt-5.4`。
 2. `node tests/regression/opl/regression-test-v22-real-opl-provider-message-contract-gate.mjs` 通过。
 3. `node tests/regression/opl/regression-test-v22-real-opl-capability-contract-gate.mjs` 通过。
-4. `node tests/regression/opl/regression-test-v22-portal-opl-context-backflow-contract.mjs` 通过。
+4. `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs` 通过。
 5. `node tests/contract/contract-test-v22-mvp-contract-suite.mjs` 通过，或明确记录未运行原因。
 6. 合同索引、阶段状态和验证链路已更新。
 7. 默认合同 smoke 未使用 raw provider key，未调用真实 provider，未读取 secret，未调用真实云；授权 live canary 必须明确记录 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1` 和脱敏 evidence path。
@@ -9810,7 +9776,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | `smoke-golden` | 小型关键用户路径。覆盖托管 OPL SaaS 最核心 loop，但不做全量回归。 | 可以作为 PR/B review 阻断信号，数量必须受限。 |
 | `contract-local` | 合同、DTO、禁词、状态矩阵、workflow、manifest 和边界断言。 | 本地确定性 gate，不等于 smoke。 |
 | `local-regression` | Portal / OPL / Runtime Bridge 本地闭环和更宽功能回归。 | 可默认进入 local deterministic regression，但不叫 smoke。 |
-| `local-rc-authorized` | 本地 release-candidate 授权验证，可使用用户显式授权的本地 provider secret env。 | 默认不跑；需要 step-local authorization，证据只写脱敏摘要。 |
+| `local-rc-authorized` | 本地 release-candidate 授权 lane；当前 active eval 数量为 0。未来恢复时才可使用用户显式授权的本地 provider secret env。 | 默认不跑；需要新授权 package 和 step-local authorization，证据只写脱敏摘要。 |
 | `future-authorized` | Cloud / live / deploy / canary / Package D / Tencent 等后续授权验证。 | 默认不跑；需要 step-local authorization。 |
 | `retired` | 已退役或历史入口。 | 必须为 0。 |
 
@@ -9870,7 +9836,7 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 | smoke | `node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk` | 小型 golden smoke。 |
 | local-contract | `node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk` | 合同和控制面本地 gate。 |
 | local-regression | `node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk` | Portal / OPL / Runtime Bridge 本地 deterministic 回归。 |
-| local-rc-authorized | `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk` with authorized `GFLABTOKEN` env | 本地 RC provider-bound 链路验证；不进入默认 suite。 |
+| local-rc-authorized | `node scripts/v22-verify.mjs suite local-rc-authorized --base origin/recovery/platform-v22-trunk --dry-run --json` | 当前为空授权 lane；历史 provider-bound 证据只看 `docs/history/README.md`，未来恢复必须另开授权 package。 |
 | cloud-future-authorized | `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk` | 只做分类可见性，不授权执行真实云。 |
 | mvp | `node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk` | 旧兼容入口，语义收敛为 local deterministic regression，不再称为纯 smoke。 |
 
@@ -9881,8 +9847,8 @@ Smoke 只代表极小关键路径，不等于所有 v22 eval。v22 仓库里所�
 - `smoke-golden` 数量必须在 `SMOKE_GOLDEN_MIN` 和 `SMOKE_GOLDEN_MAX` 之间。
 - `future-authorized` 不得进入默认 local deterministic suite。
 - `future-authorized` 必须显式标记 authorization，不能只靠文件名里的 local/readonly/dry-run 推断授权状态。
-- `local-rc-authorized` 不得进入默认 local deterministic suite，必须显式标记 `authorization=local-provider-secret-authorized`。
-- `local-rc-authorized` 只能读取本次用户授权的本地 provider secret env；raw provider key、launchToken、runtimeToken、bearer token、stdout/stderr 原始日志不得进入 git、evidence 或 final report。
+- `local-rc-authorized` 不得进入默认 local deterministic suite；当前 active registry 中数量为 0。
+- 未来新增 `local-rc-authorized` eval 时必须显式标记 `authorization=local-provider-secret-authorized`，只能读取本次用户授权的本地 provider secret env；raw provider key、launchToken、runtimeToken、bearer token、stdout/stderr 原始日志不得进入 git、evidence 或 final report。
 - `suite-wrapper` 和 `gate-self-test` 必须显式列出，不能混入 atomic 业务 eval 统计。
 - `retired` 必须为空。
 - `smoke-golden` 和 `health-check` 不得包含 cloud/tencent/authorized/deploy/package-d/live/canary 语义。
@@ -10840,7 +10806,7 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 
 ## Canonical State Contract
 
-`/portal/api/canonical-state` 和 `/portal/api/state` 必须返回：
+`/api/canonical-state` 和 `/api/state` 必须返回：
 
 ```json
 {
@@ -10887,7 +10853,7 @@ MedOPL 是面向 AI 小白科研用户的 OPL 科研托管平台，不是云资�
 - `POST /api/v22/managed-environment/open`
   - Go control-plane local RC 打开托管环境 projection，返回 launch、Gateway、resourceBinding 和 providerKeyRef 的 public projection。
 
-Legacy Node Portal paths `POST /portal/api/v22/users/prepare`、`POST /portal/api/v22/users/credit`、`POST /portal/api/v22/provider-key`、`POST /portal/api/v22/managed-environment/readiness`、`POST /portal/api/v22/managed-environment/open`、`POST /portal/api/v22/managed-environment/release` 和 `/portal/api/v22/opl-work/*` 已从 active Node code surface 物理清退。它们不能作为当前 Portal control-plane truth、兼容层、real-cloud readiness evidence 或 production API 入口。
+Legacy Node Portal paths `POST /api/v22/users/prepare`、`POST /api/v22/users/credit`、`POST /api/v22/provider-key`、`POST /api/v22/managed-environment/readiness`、`POST /api/v22/managed-environment/open`、`POST /api/v22/managed-environment/release` 和 `/api/v22/opl-work/*` 已从 active Node code surface 物理清退。它们不能作为当前 Portal control-plane truth、Node/Go 双控制面、real-cloud readiness evidence 或 production API 入口。
 
 ## Non-goals
 

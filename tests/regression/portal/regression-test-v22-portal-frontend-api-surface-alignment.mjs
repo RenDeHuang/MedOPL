@@ -10,7 +10,8 @@ const repoRoot = process.cwd();
 const apiRoot = path.join(repoRoot, "services", "portal", "frontend", "src", "api", "portal");
 const appRoot = path.join(repoRoot, "services", "portal", "frontend", "src", "app");
 const routesPath = path.join(appRoot, "routes.tsx");
-const portalShellPath = path.join(repoRoot, "services", "portal", "src", "app", "portal-http-dispatcher.mjs");
+const goRouterPath = path.join(repoRoot, "services", "medopl-go-backend", "internal", "server", "router.go");
+const goControlPlanePath = path.join(repoRoot, "services", "medopl-go-backend", "internal", "server", "handlers", "controlplane.go");
 
 const retiredShellPaths = [
   "/__portal-harness/components",
@@ -296,6 +297,58 @@ function statusSummary(rows) {
   }, {});
 }
 
+function normalizeFrontendApiRoute(route) {
+  return String(route || "")
+    .replace(/\$\{encodeURIComponent\([^)]*\)\}/gu, ":param")
+    .replace(/\/:param\/status$/u, "/:param/status")
+    .replace(/\/:param$/u, "/:param");
+}
+
+function collectFrontendApiRoutes() {
+  const routes = [];
+  for (const filePath of listFiles(apiRoot, [".ts"])) {
+    const source = readSource(filePath);
+    const file = apiRelative(filePath);
+    for (const match of source.matchAll(/goControlPlaneClient\.(get|post|put|patch|delete)<[^>]*>\(\s*`([^`]+)`|goControlPlaneClient\.(get|post|put|patch|delete)\(\s*`([^`]+)`|goControlPlaneClient\.(get|post|put|patch|delete)<[^>]*>\(\s*"([^"]+)"|goControlPlaneClient\.(get|post|put|patch|delete)\(\s*"([^"]+)"/gu)) {
+      const method = (match[1] || match[3] || match[5] || match[7] || "").toUpperCase();
+      const route = match[2] || match[4] || match[6] || match[8] || "";
+      routes.push({
+        file,
+        method,
+        route: normalizeFrontendApiRoute(route),
+      });
+    }
+    for (const match of source.matchAll(/postLabMutation\("([^"]+)"/gu)) {
+      routes.push({
+        file,
+        method: "POST",
+        route: normalizeFrontendApiRoute(match[1]),
+      });
+    }
+  }
+  return routes.sort((a, b) => `${a.file}:${a.method}:${a.route}`.localeCompare(`${b.file}:${b.method}:${b.route}`));
+}
+
+function normalizeGoRoute(route) {
+  return String(route || "").replace(/:([A-Za-z0-9_]+)/gu, ":param");
+}
+
+function collectGoBackendRoutes() {
+  const routerSource = readSource(goRouterPath);
+  const controlPlaneSource = readSource(goControlPlanePath);
+  const routes = [];
+  for (const match of routerSource.matchAll(/router\.(GET|POST|PUT|PATCH|DELETE)\("([^"]+)"/gu)) {
+    routes.push({ method: match[1], route: normalizeGoRoute(match[2]) });
+  }
+  for (const match of routerSource.matchAll(/api\.(GET|POST|PUT|PATCH|DELETE)\("([^"]+)"/gu)) {
+    routes.push({ method: match[1], route: normalizeGoRoute(`/api${match[2]}`) });
+  }
+  for (const match of controlPlaneSource.matchAll(/api\.(GET|POST|PUT|PATCH|DELETE)\("([^"]+)"/gu)) {
+    routes.push({ method: match[1], route: normalizeGoRoute(`/api${match[2]}`) });
+  }
+  return routes.sort((a, b) => `${a.method}:${a.route}`.localeCompare(`${b.method}:${b.route}`));
+}
+
 function collectRouteAlignmentReport() {
   const routeSource = readSource(routesPath);
   const routePaths = [...routeSource.matchAll(/path:\s*"([^"]+)"/g)]
@@ -303,17 +356,17 @@ function collectRouteAlignmentReport() {
     .map((route) => (route === "/" ? route : `/${route}`))
     .sort();
 
-  const shellSource = readSource(portalShellPath);
-  const shellBlockMatch = shellSource.match(/const spaShellPaths = new Set\(\[([\s\S]*?)\]\);/);
-  const shellPaths = shellBlockMatch
-    ? [...shellBlockMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]).sort()
-    : [];
+  const frontendApiRoutes = collectFrontendApiRoutes();
+  const goRoutes = collectGoBackendRoutes();
+  const goRouteKeys = new Set(goRoutes.map((item) => `${item.method} ${item.route}`));
+  const missingGoRoutes = frontendApiRoutes.filter((item) => !goRouteKeys.has(`${item.method} /api${item.route}`));
 
   return {
-    status: "enforced",
+    status: "go-backend-enforced",
     reactRoutes: routePaths,
-    shellOnlyPaths: shellPaths.filter((shellPath) => !routePaths.includes(shellPath)),
-    reactOnlyPaths: routePaths.filter((routePath) => !shellPaths.includes(routePath)),
+    frontendApiRoutes,
+    goRoutes,
+    missingGoRoutes,
   };
 }
 
@@ -366,13 +419,8 @@ const leakedRetiredExports = retiredFrontendApiExports.filter((key) => exportKey
 assert.deepEqual(leakedRetiredExports, [], `frontend_api_retired_exports_must_be_removed:${JSON.stringify(leakedRetiredExports)}`);
 
 const routeAlignment = collectRouteAlignmentReport();
-const unexpectedShellOnlyPaths = routeAlignment.shellOnlyPaths.filter(
-  (routePath) => !routePath.startsWith("/__never_allow_shell_only__"),
-);
-const leakedRetiredShellPaths = retiredShellPaths.filter((routePath) =>
-  routeAlignment.shellOnlyPaths.includes(routePath) || routeAlignment.reactRoutes.includes(routePath),
-);
-assert.deepEqual(unexpectedShellOnlyPaths, [], `portal_shell_only_paths_must_be_explicitly_allowed:${JSON.stringify(unexpectedShellOnlyPaths)}`);
+assert.deepEqual(routeAlignment.missingGoRoutes, [], `frontend_api_routes_must_exist_in_go_backend:${JSON.stringify(routeAlignment.missingGoRoutes, null, 2)}`);
+const leakedRetiredShellPaths = retiredShellPaths.filter((routePath) => routeAlignment.reactRoutes.includes(routePath));
 assert.deepEqual(leakedRetiredShellPaths, [], `portal_retired_shell_paths_must_be_removed:${JSON.stringify(leakedRetiredShellPaths)}`);
 
 console.log(JSON.stringify({

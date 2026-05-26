@@ -120,7 +120,7 @@ assert(goldenPathSuite, "golden_path_suite_missing");
 assert.equal(goldenPathSuite.entrypoint, "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk", "golden_path_entrypoint_mismatch");
 assert.deepEqual(goldenPathSuite.commands, [
   "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
-  "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
+  "node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
 ], "golden_path_suite_commands_mismatch");
 assert.equal(currentLeaf.verification_commands[0], "node tests/contract/contract-test-v22-golden-smoke-suite.mjs", "current_leaf_must_start_with_golden_path_health");
 assert.equal(current.current_leaf.verification_commands[0], "node tests/contract/contract-test-v22-golden-smoke-suite.mjs", "current_fixture_must_start_with_golden_path_health");

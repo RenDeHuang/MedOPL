@@ -19,7 +19,9 @@ const files = {
   active: "docs/active/README.md",
   suite: "tests/contract/contract-test-v22-mvp-contract-suite.mjs",
   stateStoreSmoke: "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  adapterApiSmoke: "tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+  runtimeGate: "tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+  runtimeRoutes: "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
+  runtimeLaunch: "services/opl-runtime-bridge/src/runtime-bridge-launch.mjs",
   realOplWebuiAdapterSmoke: "tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs",
   webuiBridgeClient: "services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs",
 };
@@ -57,7 +59,7 @@ assertIncludesAll(contents.connection, [
 ], "connection_closed_loop_summary");
 
 assertIncludesAll(contents.connection, [
-  "POST /portal/api/opl/launch",
+  "POST /api/opl/launch",
   "GET /runtime-bridge/api/opl/bootstrap",
   "POST /runtime-bridge/api/opl/sessions/bind",
   "POST /runtime-bridge/api/opl/messages",
@@ -67,15 +69,15 @@ assertIncludesAll(contents.connection, [
   "GET /runtime-bridge/api/opl/runs/{runId}/status",
   "GET /runtime-bridge/api/opl/runs/{runId}/artifacts",
   "GET /runtime-bridge/api/opl/artifacts/{artifactRef}",
-  "GET /portal/api/opl/bootstrap",
-  "POST /portal/api/opl/sessions/bind",
-  "POST /portal/api/opl/messages",
-  "GET /portal/api/opl/messages/{messageId}/status",
-  "POST /portal/api/opl/files",
-  "POST /portal/api/opl/runs",
-  "GET /portal/api/opl/runs/{runId}/status",
-  "GET /portal/api/opl/runs/{runId}/artifacts",
-  "GET /portal/api/opl/artifacts/{artifactRef}",
+  "GET /api/opl/bootstrap",
+  "POST /api/opl/sessions/bind",
+  "POST /api/opl/messages",
+  "GET /api/opl/messages/{messageId}/status",
+  "POST /api/opl/files",
+  "POST /api/opl/runs",
+  "GET /api/opl/runs/{runId}/status",
+  "GET /api/opl/runs/{runId}/artifacts",
+  "GET /api/opl/artifacts/{artifactRef}",
 ], "connection_required_interfaces");
 
 assertIncludesAll(contents.connection, [
@@ -163,7 +165,7 @@ assertIncludesAll(contents.connection, [
   "message request、reply、message artifact 和 trace 写回 Runtime Bridge state",
   "调用 Runtime Agent relay/API 边界",
   "run record、runtime artifact、session ledger entry 和 trace 写回 Runtime Bridge state",
-  "Portal `/portal/api/opl/*` 代理必须用当前用户的 `launchId` 换取后端 launch token",
+  "Portal frontend 只能通过 Go backend `/api/opl/*`",
   "Runtime Bridge state 写入必须能保留并发 message/file/run 回流",
 ], "connection_adapter_decoupling_boundary");
 
@@ -196,28 +198,28 @@ assertIncludesAll(contents.readme, [
 for (const scriptPath of [
   "tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
   "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  "tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs",
+  "tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
 ]) {
   assert(isSmokeClassifiedIn(scriptPath), `mvp_suite_includes_connection_contract_missing:${scriptPath}`);
 }
 
-assertIncludesAll(contents.adapterApiSmoke, [
+assertIncludesAll(`${contents.runtimeGate}\n${contents.runtimeRoutes}\n${contents.runtimeLaunch}`, [
   "/runtime-bridge/api/opl/status",
   "/runtime-bridge/api/opl/bootstrap",
   "/runtime-bridge/api/opl/sessions/bind",
   "/runtime-bridge/api/opl/messages",
-  "/runtime-bridge/api/opl/messages/",
   "/runtime-bridge/api/opl/files",
   "/runtime-bridge/api/opl/runs",
-  "/runtime-bridge/api/opl/runs/",
   "/runtime-bridge/api/opl/artifacts/",
-  "opl_web_url_must_not_include_launch_token_query",
-  "launch_cookie_must_be_http_only",
-  "bootstrap_product_api_access_observed",
-  "session_message_file_run_state_backflow",
-  "portal_proxy_backflow",
-  "stable_run_artifacts_must_read_persisted_run_artifact",
-], "runtime_bridge_api_local_flow_smoke");
+  "/runtime-bridge/api/opl/artifacts/{artifactRef}",
+  "GET /api/opl/bootstrap",
+  "POST /api/opl/sessions/bind",
+  "POST /api/opl/messages",
+  "POST /api/opl/files",
+  "POST /api/opl/runs",
+  "GET /api/opl/status",
+  "runtime_gate_must_not_restore_node_backend_or_token_projection",
+], "runtime_bridge_current_surface_contract");
 
 assertIncludesAll(contents.connection, [
   "真实 upstream capability classification 的历史 evidence",

@@ -16,12 +16,12 @@ const review = evaluateReview({
   changedFiles: [
     "docs/active/README.md",
     "tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
-    "services/portal/src/server.mjs",
+    "services/medopl-go-backend/internal/server/router.go",
   ],
   changedStatuses: new Map([
     ["docs/active/README.md", "M"],
     ["tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs", "A"],
-    ["services/portal/src/server.mjs", "M"],
+    ["services/medopl-go-backend/internal/server/router.go", "M"],
   ]),
   branchName: "cleanup/v22-opl-docs-engineering-loop-closure",
   addedLines: [

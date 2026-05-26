@@ -98,7 +98,8 @@ const changeStartDefinitions = {
       "docs/delivery/README.md",
     ],
     validationCommands: [
-      "node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs",
+      "node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
+      "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
       "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
       "node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
@@ -106,7 +107,7 @@ const changeStartDefinitions = {
   },
   runtime: {
     title: "Runtime Bridge change package",
-    intent: "Runtime Bridge session/run/file/providerKeyRef、artifact reference 和 Runtime Agent relay；当前实现目录是 services/opl-runtime-bridge，不是旧 adapters/* 兼容层。",
+    intent: "Runtime Bridge session/run/file/providerKeyRef、artifact reference 和 Runtime Agent relay；当前实现目录是 services/opl-runtime-bridge，不是旧 adapters/* 路线。",
     specSubscriptions: [
       "docs/specs/README.md",
       "docs/specs/README.md",
@@ -118,7 +119,7 @@ const changeStartDefinitions = {
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-      "node tests/regression/opl/regression-test-v22-opl-runtime-e2e-local-flow.mjs",
+      "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     ],
   },
@@ -134,8 +135,8 @@ const changeStartDefinitions = {
       "docs/delivery/README.md",
     ],
     validationCommands: [
-      "node tests/regression/portal/regression-test-v22-portal-session-trace-view.mjs",
-      "node tests/regression/portal/regression-test-v22-portal-trace-file-linkage.mjs",
+      "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     ],
   },
@@ -155,7 +156,7 @@ const changeStartDefinitions = {
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
-      "node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
+      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
       "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     ],
@@ -173,8 +174,8 @@ const changeStartDefinitions = {
       "docs/delivery/README.md",
     ],
     validationCommands: [
-      "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-quote-provider-boundary.mjs",
-      "node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs",
+      "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
+      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     ],
   },
@@ -390,7 +391,6 @@ function isV22EvalPath(filePath) {
     /^tests\/health\/health-check-v22-.*\.mjs$/u,
     /^tests\/contract\/(?:.+\/)?contract-test-v22-.*\.mjs$/u,
     /^tests\/regression\/.+\/regression-test-v22-.*\.mjs$/u,
-    /^tests\/local-rc\/local-rc-test-v22-.*\.mjs$/u,
     /^tests\/future-authorized\/cloud\/future-authorized-test-v22-.*\.mjs$/u,
   ].some((pattern) => pattern.test(normalized));
 }
@@ -528,6 +528,17 @@ function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branchName = 
       /^configs(?:\/|$)/u,
       /^scripts\/(?:check-production-entry-health|check-production-entry-performance|update-dnspod-records|smoke-test-root-dockerignore)\.mjs$/u,
       /^scripts\/fixtures\/fake-kubectl-success\.cmd$/u,
+    ].some((pattern) => pattern.test(normalized));
+  }
+  if (branchName === "cleanup/v22-node-backend-physical-removal") {
+    return [
+      /^services\/portal\/src(?:\/|$)/u,
+      /^tests\/fixtures\/v22\/backend-go-convergence(?:\/|$)/u,
+      /^tests\/local-rc\/local-rc-test-v22-provider-bound-message-backflow\.mjs$/u,
+      /^tests\/future-authorized\/cloud\/future-authorized-test-v22-(?:portal-cloud-operation-(?:postgres-canonical-store|test-api-local-gate|worker-entrypoint)|tencent-(?:dry-run-resource-plan-provider|readonly-inventory-(?:adapter-local-gate|local-guard|sdk-client)|readonly-quote-provider-boundary))\.mjs$/u,
+      /^tests\/regression\/opl\/regression-test-v22-(?:opl-entry-preflight-auth-flow|opl-runtime-e2e-local-flow|portal-opl-api-runtime-loop|provider-secret-boundary-contract)\.mjs$/u,
+      /^tests\/regression\/portal\/regression-test-v22-(?:account-wallet-billing-closure|admin-ops-disabled-product-state|admin-ops-local-projection-view|managed-resource-binding-plan-view|portal-admin-shared-helper-structure|portal-api-auth-boundary|portal-auth-landing-route|portal-cost-balance-trace-linkage|portal-file-space-management|portal-local-api-action-closure|portal-runtime-startup-config|portal-session-trace-view|portal-storage-mode-local-closure|portal-trace-file-linkage|portal-workbench-management-ui-api|workspace-storage-public-response)\.mjs$/u,
+      /^tests\/regression\/runtime-bridge\/regression-test-v22-portal-runtime-bridge-api-local-flow\.mjs$/u,
     ].some((pattern) => pattern.test(normalized));
   }
   if (branchName === "cleanup/v22-full-taxonomy-hard-retirement") {

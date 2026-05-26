@@ -39,6 +39,12 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 	if preflightResponse["readyForManagedEnvironment"] != true || preflightResponse["launchStatus"] != "ready_for_launch" {
 		t.Fatalf("preflight response = %+v", preflightResponse)
 	}
+	oplEntryPreflightResponse := postMap(t, router, "/api/opl/entry/preflight", map[string]any{
+		"workspaceId": "workspace-v22",
+	})
+	if oplEntryPreflightResponse["readyForManagedEnvironment"] != true || oplEntryPreflightResponse["launchStatus"] != "ready_for_launch" {
+		t.Fatalf("opl entry preflight response = %+v", oplEntryPreflightResponse)
+	}
 
 	launchResponse := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
 		"tenantId":       "tenant-v22",

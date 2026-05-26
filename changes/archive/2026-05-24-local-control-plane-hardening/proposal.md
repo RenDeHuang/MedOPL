@@ -14,7 +14,7 @@ Real cloud work is intentionally blocked at the authorization boundary. Before o
 
 - Make the current local service surface self-checking so Portal, Gateway, Runtime Bridge, OPL upstream and Portal frontend cannot be mistaken for old worktree processes.
 - Remove the `scripts/sync-workspace-file-to-minio.ps1` dependency from current Portal runtime code and retire it through a gate.
-- Reduce `services/portal/src/app/portal-runtime.mjs` fan-out by moving cohesive runtime assembly into narrower files.
+- Reduce the then-active Portal runtime fan-out by moving cohesive runtime assembly into narrower files. Current trunk later supersedes this narrowed Node runtime state through Node backend physical removal.
 - Advance Go control-plane takeover readiness through repo-native API / facade gates without claiming production replacement.
 - Keep all work under the three loops: documentation cleanup, code cleanup and software engineering verification.
 

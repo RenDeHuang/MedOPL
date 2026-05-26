@@ -58,7 +58,7 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 - 不能把 `real-cloud-authorization-boundary` 写成 secret、provider、cloud、deploy、kubectl、build/push 或 live-test 已授权；当前执行包只允许本地 dry-run / contract proof。
 - 不能宣称 `services/medopl-go-backend` 已经是 production backend，除非 Go local RC、manifest、tests、landing gate 和 post-merge closeout 已完成。
 - 不能把 Go local RC deterministic parity 写成 live provider、真实 OPL upstream、real-cloud、production billing 或 production runtime evidence。
-- 不能把 Node Portal backend 写成长期 active backend、兼容层或第二控制面；它只能作为清退对象或非业务 shell/relay。
+- 不能把 Node Portal backend 写成长期 active backend、过渡控制面、shell、facade、relay 或第二控制面；`services/portal/src` 已物理清退。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 - 不能把 governance gate 通过写成黄金链路健康；default verify 必须先暴露 golden path health。
 

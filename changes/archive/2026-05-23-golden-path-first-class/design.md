@@ -8,7 +8,7 @@ This change keeps the existing framework taxonomy and makes the product golden p
 - Framework docs make Golden Path Impact part of admission.
 - Change package docs and gate require Golden Path Impact in every active/archive package.
 - Verify manifest and current cursor show golden path health before governance guardrails.
-- Portal runtime source debt is handled by extracting local helper glue from the entrypoint into an adjacent app module.
+- Source boundary debt is handled by keeping Node Portal backend out of the active control-plane surface and verifying Go-owned API boundaries.
 
 ## Data Flow
 
@@ -33,13 +33,13 @@ proposal Golden Path Impact
 -> closeout / archive
 ```
 
-Source debt flow:
+Source boundary flow:
 
 ```text
-baseline fan-out metric
--> narrow helper extraction
--> portal check / runtime regression
--> structure metric comparison
+Node backend physical absence
+-> Portal frontend uses Go /api
+-> Go control-plane owns typed local API
+-> physical-removal and zero-compat gates
 ```
 
 ## Failure Modes
@@ -47,11 +47,11 @@ baseline fan-out metric
 - Missing Golden Path Impact fails change-package lifecycle.
 - Default current verification missing golden smoke first fails agent verify entrypoint / framework gate.
 - Governance commands remain required; moving them after product health must not remove them from local contract or review suites.
-- Portal runtime extraction must not introduce new dependencies, circular imports, secret reads or fallback behavior.
+- Node backend physical removal must not reintroduce a shell, facade, compatibility control plane, secret read or fallback behavior.
 
 ## Surface Impact
 
-- source: `services/portal/src/app/portal-runtime.mjs`, adjacent Portal app helper module.
+- source: `services/portal/frontend`, `services/medopl-go-backend`, and Node backend physical-removal guardrails.
 - docs: `docs/product/README.md`, `docs/active/README.md`, `docs/framework/README.md`, `changes/README.md`.
 - specs: `specs/product/spec.md`, `specs/framework/spec.md`, `specs/source/spec.md`.
 - tests: change-package lifecycle, agent verify entrypoint, manifest/current verification tests.

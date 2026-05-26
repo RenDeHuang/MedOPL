@@ -1,42 +1,51 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const {
-  canonicalResourcePlanPublicView,
-  getCanonicalResourcePlan,
-  listCanonicalResourcePlans,
-} = await import("../../services/portal/src/domain/lab-packages.mjs");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "../..");
+const goLabDomainSource = await readFile(path.join(repoRoot, "services/medopl-go-backend/internal/domain/lab/lab.go"), "utf8");
+const goLabTestSource = await readFile(path.join(repoRoot, "services/medopl-go-backend/internal/domain/lab/lab_test.go"), "utf8");
 
-const plans = listCanonicalResourcePlans();
-assert.equal(plans.length, 2, "v22_canonical_plan_count_must_be_2");
+for (const marker of [
+  "ID:                  \"starter_2c4g_10gb\"",
+  "Cores: 2",
+  "MemoryGB: 4",
+  "IncludedGB: 10",
+  "ID:                  \"pro_8c16g_100gb\"",
+  "Cores: 8",
+  "MemoryGB: 16",
+  "IncludedGB: 100",
+  "PendingProductApproval: true",
+  "BasePrice: nil",
+]) {
+  assert(goLabDomainSource.includes(marker), `go_lab_resource_plan_marker_missing:${marker}`);
+}
 
-const starter = canonicalResourcePlanPublicView(getCanonicalResourcePlan("starter_2c4g_10gb"));
-const pro = canonicalResourcePlanPublicView(getCanonicalResourcePlan("pro_8c16g_100gb"));
+for (const marker of [
+  "TestCatalogDefinesStarterAndProWithoutProductionPriceClaim",
+  "starter_2c4g_10gb",
+  "pro_8c16g_100gb",
+  "item.Billing.BasePrice != nil",
+  "!item.Billing.PendingProductApproval",
+]) {
+  assert(goLabTestSource.includes(marker), `go_lab_resource_plan_test_marker_missing:${marker}`);
+}
 
-assert.equal(starter.id, "starter_2c4g_10gb", "starter_plan_id_mismatch");
-assert.equal(starter.compute.cpuCores, 2, "starter_plan_cpu_mismatch");
-assert.equal(starter.compute.memoryGb, 4, "starter_plan_memory_mismatch");
-assert.equal(starter.storage.capacityGb, 10, "starter_plan_storage_mismatch");
-assert.equal(starter.storageBackend, "cos_standard_workspace_quota", "starter_plan_storage_backend_mismatch");
-
-assert.equal(pro.id, "pro_8c16g_100gb", "pro_plan_id_mismatch");
-assert.equal(pro.compute.cpuCores, 8, "pro_plan_cpu_mismatch");
-assert.equal(pro.compute.memoryGb, 16, "pro_plan_memory_mismatch");
-assert.equal(pro.storage.capacityGb, 100, "pro_plan_storage_mismatch");
-assert.equal(pro.storageBackend, "cos_standard_workspace_quota", "pro_plan_storage_backend_mismatch");
-
-for (const plan of [starter, pro]) {
-  assert.equal(plan.region, "na-siliconvalley", `${plan.id}_region_mismatch`);
-  assert.equal(plan.zone, "na-siliconvalley-1", `${plan.id}_zone_mismatch`);
-  assert.equal(plan.os, "ubuntu_22_04", `${plan.id}_os_mismatch`);
-  assert.equal(plan.cloudBillingMode, "pay_as_you_go", `${plan.id}_billing_mode_mismatch`);
-  assert.equal(plan.basePrice, null, `${plan.id}_base_price_must_wait_for_product_approval`);
-  assert.equal(plan.pendingProductApproval, true, `${plan.id}_must_mark_pending_product_approval`);
-  assert.equal("dailyPrice" in plan, false, `${plan.id}_must_not_publish_formal_daily_price`);
-  assert.equal("weeklyFreezeAmount" in plan, false, `${plan.id}_must_not_publish_formal_weekly_price`);
+for (const forbidden of [
+  "dailyPrice",
+  "weeklyFreezeAmount",
+  "formal hourly",
+  "¥/小时",
+  "腾讯云 CVM 实时报价",
+]) {
+  assert.equal(goLabDomainSource.includes(forbidden), false, `go_lab_resource_plan_must_not_publish:${forbidden}`);
 }
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_resource_plan",
-  planIds: plans.map((item) => item.id),
+  source: "services/medopl-go-backend/internal/domain/lab/lab.go",
+  planIds: ["starter_2c4g_10gb", "pro_8c16g_100gb"],
 }, null, 2));

@@ -26,7 +26,6 @@ assert.equal(baseline.default_limit, 1000, "line_budget_default_limit_mismatch")
 for (const expected of [
   "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
   "services/opl-web-gateway/src/launch-client-script.mjs",
-  "services/portal/src/domain/portal-cloud-operation-production.mjs",
 ]) {
   assert(Number.isInteger(baseline.files[expected]), `line_budget_baseline_missing:${expected}`);
 }
@@ -42,7 +41,17 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 const payload = JSON.parse(result.stdout);
 assert.equal(payload.ok, true, "line_budget_payload_ok");
 assert.equal(payload.contract, "v22_line_budget", "line_budget_contract_mismatch");
-assert(payload.oversize.length >= 3, "line_budget_must_report_existing_oversize_files");
+assert.equal(
+  payload.oversize.length,
+  Object.keys(baseline.files).length,
+  "line_budget_must_report_current_baseline_oversize_files",
+);
+for (const expected of Object.keys(baseline.files)) {
+  assert(
+    payload.oversize.some((entry) => entry.file === expected),
+    `line_budget_must_report_baseline_file:${expected}`,
+  );
+}
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");
 assert(suite, "repo_hygiene_suite_missing");

@@ -5,9 +5,9 @@ Status: passed-local
 ## Self Review
 
 - rules/status/evidence separation: pass. Active cursor remains `real-cloud-authorization-boundary`; this package only adds durable source/framework requirements and archived change context.
-- spec-to-eval traceability: pass. `source:portal-minio-sync-helper-retired` and `framework:current-truth-localhost-claim-hygiene` are synced into durable specs with local eval commands.
+- spec-to-eval traceability: pass for the historical package at landing time. In current trunk, the source cleanup part is superseded by `source:node-portal-backend-physical-removal`; `framework:current-truth-localhost-claim-hygiene` remains synced into durable specs with local eval commands.
 - secret hygiene: pass. No secret, `.env`, kubeconfig, token, provider key or SSH private key was read or written.
-- false production claim check: pass. Go remains future canonical target; current Node Portal backend remains active; no real cloud / deploy / kubectl / build-push / live-test claim is made.
+- false production claim check: pass. At original landing time this package kept Go as future canonical target and did not claim real cloud / deploy / kubectl / build-push / live-test evidence. Current trunk later superseded the Node backend state through physical removal.
 - repo bloat check: pass. No new test file or script was added after package open; helper retirement was folded into existing tests and specs.
 - code cleanup check: pass. The PowerShell MinIO helper was removed, Portal runtime fan-out was reduced, and MinIO read/write object prefixes now share the same encoding path.
 
@@ -28,5 +28,5 @@ Status: passed-local
 ## Remaining Risk
 
 - `go test ./...` could not be run because `go` is not available in this environment.
-- `go-control-plane-takeover` remains open: Go has not replaced the current Node Portal backend.
+- This package is superseded for backend ownership by the later Node backend physical-removal cleanup; read current backend ownership from `docs/source/README.md` and `specs/source/spec.md`.
 - real cloud authorization remains blocked and outside this package.

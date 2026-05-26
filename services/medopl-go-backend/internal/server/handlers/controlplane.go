@@ -79,6 +79,7 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.GET("/provider/binding", getProviderBinding(service))
 	api.POST("/provider/bind", bindProviderKey(service))
 	api.POST("/provider/preflight", providerPreflight(service))
+	api.POST("/opl/entry/preflight", providerPreflight(service))
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))

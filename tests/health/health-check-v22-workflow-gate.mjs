@@ -59,7 +59,7 @@ assertIncludesAll(startTemplate, [
   "Tencent Quote Provider change package",
   "docs/specs/README.md",
   "docs/specs/README.md",
-  "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-quote-provider-boundary.mjs",
+  "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
 ], "tencent_quote_start_template");
 
 function localTestFilesFromTemplate(template) {
@@ -180,7 +180,6 @@ const fullTaxonomyAuthorizedDeletes = evaluateReview({
     ["docs", "recovery", "status-matrix.md"].join("/"),
     ["docs", "product.md"].join("/"),
     ["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"),
-    "tests/contract/contract-test-v22-goal-state-consistency.mjs",
     "tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs",
   ],
   changedStatuses: new Map([
@@ -188,7 +187,6 @@ const fullTaxonomyAuthorizedDeletes = evaluateReview({
     [["docs", "recovery", "status-matrix.md"].join("/"), "D"],
     [["docs", "product.md"].join("/"), "D"],
     [["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"), "D"],
-    ["tests/contract/contract-test-v22-goal-state-consistency.mjs", "D"],
     ["tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs", "D"],
   ]),
 });
@@ -200,7 +198,6 @@ assert.deepEqual(fullTaxonomyAuthorizedDeletes.authorizedCleanupDeletions, [
   ["docs", "recovery", "status-matrix.md"].join("/"),
   ["docs", "product.md"].join("/"),
   ["scripts", ["v22", "agent", "workflow"].join("-") + ".mjs"].join("/"),
-  "tests/contract/contract-test-v22-goal-state-consistency.mjs",
   "tests/regression/opl/smoke-test-v22-gflabtoken-entry-contract.mjs",
 ], "full_taxonomy_delete_authorization_mismatch");
 
@@ -250,6 +247,50 @@ assert.deepEqual(strictCleanupModifiedZone4.forbiddenPaths, [
   "adapters/resource-provisioner/package.json",
   "deploy/tke-package/README.md",
 ], "strict_cleanup_modified_zone4_forbidden_paths_mismatch");
+
+const nodeBackendPhysicalRemovalDeletes = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  branchName: "cleanup/v22-node-backend-physical-removal",
+  activeChangePackageNames: ["node-backend-physical-removal"],
+  changedFiles: [
+    "changes/archive/2026-05-23-golden-path-first-class/proposal.md",
+    "changes/archive/2026-05-23-golden-path-first-class/spec-delta.md",
+    "changes/archive/2026-05-23-golden-path-first-class/eval-plan.md",
+    "changes/archive/2026-05-23-golden-path-first-class/closeout.md",
+    "services/portal/src/domain/provider-secret-store.mjs",
+    "tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs",
+  ],
+  changedStatuses: new Map([
+    ["services/portal/src/domain/provider-secret-store.mjs", "D"],
+    ["tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs", "D"],
+  ]),
+});
+assert.equal(nodeBackendPhysicalRemovalDeletes.ok, true, "node_backend_physical_removal_authorized_deletes_must_be_ok");
+assert.deepEqual(nodeBackendPhysicalRemovalDeletes.secretLikePaths, [], "node_backend_physical_removal_deletes_secret_like_paths_must_be_empty");
+assert.deepEqual(nodeBackendPhysicalRemovalDeletes.authorizedCleanupDeletions, [
+  "services/portal/src/domain/provider-secret-store.mjs",
+  "tests/local-rc/local-rc-test-v22-provider-bound-message-backflow.mjs",
+], "node_backend_physical_removal_delete_authorization_mismatch");
+
+const nodeBackendPhysicalRemovalModifiedSecretLike = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  branchName: "cleanup/v22-node-backend-physical-removal",
+  changedFiles: [
+    "changes/archive/2026-05-23-golden-path-first-class/proposal.md",
+    "changes/archive/2026-05-23-golden-path-first-class/spec-delta.md",
+    "changes/archive/2026-05-23-golden-path-first-class/eval-plan.md",
+    "changes/archive/2026-05-23-golden-path-first-class/closeout.md",
+    "services/portal/src/domain/provider-secret-store.mjs",
+  ],
+  changedStatuses: new Map([
+    ["services/portal/src/domain/provider-secret-store.mjs", "M"],
+  ]),
+});
+assert.equal(nodeBackendPhysicalRemovalModifiedSecretLike.ok, false, "node_backend_physical_removal_modified_secret_like_must_block");
+assert.deepEqual(nodeBackendPhysicalRemovalModifiedSecretLike.authorizedCleanupDeletions, [], "node_backend_physical_removal_modified_secret_like_must_not_be_authorized");
+assert.deepEqual(nodeBackendPhysicalRemovalModifiedSecretLike.secretLikePaths, [
+  "services/portal/src/domain/provider-secret-store.mjs",
+], "node_backend_physical_removal_modified_secret_like_mismatch");
 
 const checkpointReady = evaluateCheckpoint({
   branchName: "recovery/platform-v22-trunk",

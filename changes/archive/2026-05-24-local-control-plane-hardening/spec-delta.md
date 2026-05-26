@@ -8,17 +8,16 @@ Target specs:
 ## ADDED
 
 - `framework:current-truth-localhost-claim-hygiene` requires active/change truth surfaces to avoid treating fixed localhost ports or stale local processes as current trunk evidence.
-- `source:portal-minio-sync-helper-retired` requires Portal workspace file projection to run through Node runtime code without a PowerShell helper script, shell helper path or script-level MinIO sync wrapper.
+- `source:node-portal-backend-physical-removal` supersedes the historical Portal MinIO helper retirement and Portal runtime fan-out cleanup rows. The current durable source requirement is physical removal of the Node Portal backend, not retention of a narrowed Node runtime.
 
 ## MODIFIED
 
-- `source:portal-runtime-fanout-debt` tightens the current Portal runtime structure gate by lowering the allowed `portal-runtime.mjs` fan-out and deleting a redundant HTTP re-export layer.
 - `source:go-control-plane-takeover-order` remains a repo-native convergence program: this package tightens readiness gates and Node-to-Go handoff checks, but it cannot promote Go to active production backend.
 - `framework:golden-path-impact-required` remains golden-path first; governance and structure gates are guardrails after product health.
 
 ## REMOVED
 
-- `source:portal-minio-sync-helper-retired` removes the active runtime dependency on `scripts/sync-workspace-file-to-minio.ps1` and removes that script from the allowed root `scripts/` surface.
+- `source:node-portal-backend-physical-removal` removes the active `services/portal/src` backend surface after this package's narrower historical cleanup was superseded.
 
 ## CANNOT-CLAIM
 

@@ -100,8 +100,8 @@ Smoke/eval gate:
 
 - `node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
 - `node tests/smoke/smoke-test-v22-resource-plan-contract.mjs`
-- `node tests/regression/portal/regression-test-v22-managed-resource-binding-plan-view.mjs`
-- `node tests/regression/portal/regression-test-v22-portal-files-billing-trace-flow.mjs` when present via suite wrappers.
+- `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`
+- `node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs`
 
 History boundary:
 
@@ -150,7 +150,7 @@ Cannot claim:
 Smoke/eval gate:
 
 - `node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs`
-- `node tests/regression/opl/regression-test-v22-opl-entry-preflight-auth-flow.mjs`
+- `node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`
 - `node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs`
 
 History boundary:
@@ -202,7 +202,7 @@ Cannot claim:
 Smoke/eval gate:
 
 - `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
-- `node tests/regression/runtime-bridge/regression-test-v22-portal-runtime-bridge-api-local-flow.mjs`
+- `node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs`
 - `node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs`
 - `node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs`
 
