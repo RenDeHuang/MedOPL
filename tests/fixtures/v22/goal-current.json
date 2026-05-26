@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-26",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "0112813998456d879e9ea10782f224c29f3a166f",
+  "base_trunk_head": "78262f9223f549e65539b78d69dac5395774fe04",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "0112813998456d879e9ea10782f224c29f3a166f",
+  "last_landed_commit": "78262f9223f549e65539b78d69dac5395774fe04",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -23,7 +23,7 @@
     "precloud_deployable_rc_is_ready_for_landing_review_but_not_production_backend_or_real_cloud_evidence",
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation"
   ],
-  "current_problem": "Precloud-deployable RC is ready for landing review: Portal frontend defaults to Go /api, Go owns the local pre-cloud SaaS backend deployment surface, Node Portal backend is not a deploy/proxy/API owner, and cloud connector fails closed. The current cursor is now real-cloud-authorization-boundary, which is a blocked authorization package: it keeps secret/provider/cloud/deploy/kubectl/build-push/live-test forbidden until the user opens a separately authorized real-cloud readiness or execution package.",
+  "current_problem": "Precloud-deployable RC landed locally: Portal frontend defaults to Go /api, Go owns the local pre-cloud SaaS backend deployment surface, Node Portal backend is not a deploy/proxy/API owner, and cloud connector fails closed. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package: it keeps secret/provider/cloud/deploy/kubectl/build-push/live-test forbidden until the user opens a separately authorized real-cloud readiness or execution package.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -123,14 +123,15 @@
       "stage": "S6 pre-cloud deployable RC before real-cloud authorization",
       "priority": 92,
       "cursor_eligible": false,
-      "status": "ready_for_landing_review",
+      "status": "landed",
       "next_leaf_step": "real-cloud-authorization-boundary",
       "depends_on": [
         "go-control-plane-mvp-takeover"
       ],
       "history_summary": "Portal frontend defaults to Go /api, Go backend owns local pre-cloud SaaS projections and file transfer, Node Portal backend is not deploy/proxy/API owner, and cloud connector fails closed before real-cloud authorization.",
       "closed_at": "2026-05-26",
-      "archive": "changes/archive/2026-05-26-precloud-deployable-rc"
+      "archive": "changes/archive/2026-05-26-precloud-deployable-rc",
+      "landed_commit": "78262f9223f549e65539b78d69dac5395774fe04"
     }
   ],
   "current_leaf": {
@@ -289,9 +290,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-go-control-plane-mvp-takeover",
-  "last_landed_at": "2026-05-25",
-  "history_latest_branch": "feat/v22-go-control-plane-mvp-takeover",
+  "last_landed_branch": "feat/v22-precloud-deployable-rc",
+  "last_landed_at": "2026-05-26",
+  "history_latest_branch": "feat/v22-precloud-deployable-rc",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

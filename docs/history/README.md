@@ -148,39 +148,6 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
-### 2026-05-26 feat/v22-precloud-deployable-rc
-
-Status: `ready_for_landing_review`
-
-Branch: `feat/v22-precloud-deployable-rc`
-
-Archived change package: `changes/archive/2026-05-26-precloud-deployable-rc`
-
-Scope:
-
-- Insert a local pre-cloud deployable RC before any real-cloud authorization package.
-- Make `services/portal/frontend` talk to the Go backend through `/api` only.
-- Make `services/medopl-go-backend` the pre-cloud SaaS backend deployment surface for Portal projection APIs, readiness, billing/export/logout, OPL launch/session/file/run/artifact, and cloud connector fail-closed state.
-- Keep `services/portal/src` out of deployment, proxy, typed API ownership and current verification ownership.
-- Keep real cloud, secret, deploy, kubectl, build/push and live-test unauthorized.
-
-Verification:
-
-- `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`: pass.
-- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."`: pass.
-- `npm --prefix services/portal run check`: pass.
-- `node scripts/v22-verify.mjs current --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass.
-- `node scripts/v22-verify.mjs review --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass.
-- `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend`: pass.
-
-Review:
-
-- Independent review model `gpt-5.4-mini` found a local workspace file-transfer blocker: Go returned `/api/workspace/files/local-transfer` but did not mount the route.
-- `b2d6e39` added GET/POST local-transfer handlers and router/contract coverage.
-- Second independent review model `gpt-5.4-mini` reported no blocker after the fix.
-
-next_cursor: `real-cloud-authorization-boundary`
-
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`
@@ -3472,3 +3439,47 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-05-26 feat/v22-precloud-deployable-rc
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-precloud-deployable-rc`
+
+Archived change package: `changes/archive/2026-05-26-precloud-deployable-rc`
+
+Scope:
+
+- Insert a local pre-cloud deployable RC before any real-cloud authorization package.
+- Make `services/portal/frontend` talk to the Go backend through `/api` only.
+- Make `services/medopl-go-backend` the pre-cloud SaaS backend deployment surface for Portal projection APIs, readiness, billing/export/logout, OPL launch/session/file/run/artifact, and cloud connector fail-closed state.
+- Keep `services/portal/src` out of deployment, proxy, typed API ownership and current verification ownership.
+- Keep real cloud, secret, deploy, kubectl, build/push and live-test unauthorized.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`: pass.
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node scripts/v22-verify.mjs current --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass.
+- `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend`: pass.
+
+Review:
+
+- Independent review model `gpt-5.4-mini` found a local workspace file-transfer blocker: Go returned `/api/workspace/files/local-transfer` but did not mount the route.
+- `b2d6e39` added GET/POST local-transfer handlers and router/contract coverage.
+- Second independent review model `gpt-5.4-mini` reported no blocker after the fix.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `78262f9223f549e65539b78d69dac5395774fe04`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `feat/v22-precloud-deployable-rc` was ff-only merged into local `recovery/platform-v22-trunk` at `78262f9223f549e65539b78d69dac5395774fe04`.
+- Post-closeout push verification must confirm `origin/recovery/platform-v22-trunk` reaches this landed commit and the follow-up closeout commit.
+
+post_merge_closeout: `completed`
