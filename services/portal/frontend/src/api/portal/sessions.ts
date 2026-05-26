@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { PortalPagination } from "./common";
 
 export interface AnnouncementPayload {
@@ -59,16 +59,16 @@ export interface RunsPayload {
 }
 
 export async function fetchAnnouncements(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<AnnouncementPayload>("/announcements", { params });
+  const { data } = await goControlPlaneClient.get<AnnouncementPayload>("/announcements", { params });
   return data;
 }
 
 export async function fetchSessions(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<SessionsPayload>("/sessions", { params });
+  const { data } = await goControlPlaneClient.get<SessionsPayload>("/sessions", { params });
   return data;
 }
 
 export async function fetchRuns(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<RunsPayload>("/runs", { params });
+  const { data } = await goControlPlaneClient.get<RunsPayload>("/runs", { params });
   return data;
 }

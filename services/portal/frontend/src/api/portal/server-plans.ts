@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { CommercialProfile, SelectedServerPlan } from "./types";
 
 export type { SelectedServerPlan } from "./types";
@@ -108,6 +108,6 @@ export interface ServerPlansPayload {
 }
 
 export async function fetchServerPlans() {
-  const { data } = await apiClient.get<ServerPlansPayload>("/server-plans");
+  const { data } = await goControlPlaneClient.get<ServerPlansPayload>("/server-plans");
   return data;
 }

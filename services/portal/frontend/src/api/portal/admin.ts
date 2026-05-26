@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import axios from "axios";
 import type { PortalPagination, PortalAdminActionValue, PortalActionErrorShape } from "./common";
 import type { SessionTracesPayload } from "./traces";
@@ -48,31 +48,21 @@ export interface AdminSystemPayload {
 }
 
 export async function fetchAdminAgentTraces(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<SessionTracesPayload>("/admin/agent-traces", { params });
+  const { data } = await goControlPlaneClient.get<SessionTracesPayload>("/admin/agent-traces", { params });
   return data;
 }
 
 export async function fetchAdminOverview() {
-  const { data } = await apiClient.get("/admin/overview");
+  const { data } = await goControlPlaneClient.get("/admin/overview");
   return data;
 }
 
 export async function fetchAdminUsers(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<AdminUsersPayload>("/admin/users", { params });
+  const { data } = await goControlPlaneClient.get<AdminUsersPayload>("/admin/users", { params });
   return data;
 }
 
-function buildPortalAdminFormPayload(fields: Record<string, PortalAdminActionValue>) {
-  const body = new URLSearchParams();
-  for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined || value === null) continue;
-    body.set(key, typeof value === "boolean" ? (value ? "1" : "0") : String(value));
-  }
-  return body;
-}
-
 const PORTAL_ADMIN_ACTION_FAILED_MESSAGE = "Portal 管理动作未完成，请稍后重试；如持续失败，请联系管理员。";
-const PORTAL_ADMIN_AUTH_EXPIRED_MESSAGE = "登录状态已失效，请重新登录后再操作。";
 
 export function normalizePortalAdminActionError(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
@@ -95,33 +85,12 @@ export function normalizePortalAdminActionError(error: unknown, fallback: string
   return fallback;
 }
 
-function portalAdminActionError(message: string, status?: number) {
-  const error = new Error(message) as Error & PortalActionErrorShape;
-  error.businessMessage = message;
-  if (status) (error as Error & PortalActionErrorShape & { status: number }).status = status;
-  return error;
-}
-
-async function postPortalAdminAction(path: string, fields: Record<string, PortalAdminActionValue>) {
-  const response = await fetch(path, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-    body: buildPortalAdminFormPayload(fields),
-  });
-
-  const responseUrl = new URL(response.url || path, window.location.origin);
-  if (response.redirected && responseUrl.pathname === "/login") {
-    throw portalAdminActionError(PORTAL_ADMIN_AUTH_EXPIRED_MESSAGE, 401);
+async function postPortalAdminAction(action: string, fields: Record<string, PortalAdminActionValue>) {
+  try {
+    await goControlPlaneClient.post(`/admin/actions/${encodeURIComponent(action)}`, fields);
+  } catch (error) {
+    throw normalizePortalAdminActionError(error, PORTAL_ADMIN_ACTION_FAILED_MESSAGE);
   }
-
-  if (response.ok) {
-    return;
-  }
-
-  throw portalAdminActionError(PORTAL_ADMIN_ACTION_FAILED_MESSAGE, response.status);
 }
 
 export async function createAdminUser(input: {
@@ -130,7 +99,7 @@ export async function createAdminUser(input: {
   password: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/create-user", {
+  await postPortalAdminAction("create-user", {
     name: input.name,
     email: input.email,
     password: input.password,
@@ -142,7 +111,7 @@ export async function updateAdminSiteSettings(input: PublicSettingsPayload & {
   allowRegistration: boolean;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/settings", {
+  await postPortalAdminAction("settings", {
     allowRegistration: input.allowRegistration,
     siteName: input.siteName,
     siteLogo: input.siteLogo,
@@ -159,7 +128,7 @@ export async function updateAdminUser(input: {
   password?: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/update-user", {
+  await postPortalAdminAction("update-user", {
     userId: input.userId,
     name: input.name,
     email: input.email,
@@ -172,7 +141,7 @@ export async function toggleAdminUser(input: {
   userId: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/toggle-user", {
+  await postPortalAdminAction("toggle-user", {
     userId: input.userId,
     redirectTo: input.redirectTo || "/admin/users",
   });
@@ -183,7 +152,7 @@ export async function rechargeAdminUser(input: {
   amount: number;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/recharge", {
+  await postPortalAdminAction("recharge", {
     userId: input.userId,
     amount: input.amount,
     redirectTo: input.redirectTo || "/admin/users",
@@ -197,7 +166,7 @@ export async function refundAdminUser(input: {
   idempotencyKey?: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/ledger-adjust", {
+  await postPortalAdminAction("ledger-adjust", {
     userId: input.userId,
     amount: input.amount,
     reason: input.reason,
@@ -216,7 +185,7 @@ export async function markAdminBillingOp(input: {
   idempotencyKey?: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/billing-ops/mark", {
+  await postPortalAdminAction("billing-ops-mark", {
     itemId: input.itemId,
     status: input.status,
     anomaly: input.anomaly,
@@ -231,7 +200,7 @@ export async function deleteAdminUser(input: {
   userId: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/delete-user", {
+  await postPortalAdminAction("delete-user", {
     userId: input.userId,
     redirectTo: input.redirectTo || "/admin/users",
   });
@@ -245,7 +214,7 @@ export async function saveAdminAnnouncement(input: {
   pinned: boolean;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/announcements/save", {
+  await postPortalAdminAction("announcements-save", {
     id: input.id || "",
     title: input.title,
     content: input.content,
@@ -261,7 +230,7 @@ export async function toggleAdminAnnouncement(input: {
   actionType: "pin" | "activate" | "deactivate";
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/announcements/toggle", {
+  await postPortalAdminAction("announcements-toggle", {
     id: input.id,
     actionType: input.actionType,
     redirectTo: input.redirectTo || "/admin/alerts",
@@ -272,35 +241,35 @@ export async function deleteAdminAnnouncement(input: {
   id: string;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("/portal/admin/announcements/delete", {
+  await postPortalAdminAction("announcements-delete", {
     id: input.id,
     redirectTo: input.redirectTo || "/admin/alerts",
   });
 }
 
 export async function fetchAdminGroups() {
-  const { data } = await apiClient.get("/admin/groups");
+  const { data } = await goControlPlaneClient.get("/admin/groups");
   return data;
 }
 
 export async function fetchAdminBillingOps() {
-  const { data } = await apiClient.get("/admin/billing-ops");
+  const { data } = await goControlPlaneClient.get("/admin/billing-ops");
   return data;
 }
 
 export async function fetchAdminUsage(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get("/admin/usage", { params });
+  const { data } = await goControlPlaneClient.get("/admin/usage", { params });
   return data;
 }
 
 export async function fetchAdminSystem() {
-  const { data } = await apiClient.get<AdminSystemPayload>("/admin/system");
+  const { data } = await goControlPlaneClient.get<AdminSystemPayload>("/admin/system");
   return data;
 }
 
 export async function fetchAdminOps() {
   try {
-    const { data } = await apiClient.get("/admin/ops");
+    const { data } = await goControlPlaneClient.get("/admin/ops");
     return data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404 && error.response.data?.error === "ops_surface_disabled") {
@@ -314,31 +283,31 @@ export async function fetchAdminOps() {
 }
 
 export async function fetchAdminSandboxes() {
-  const { data } = await apiClient.get("/admin/sandboxes");
+  const { data } = await goControlPlaneClient.get("/admin/sandboxes");
   return data;
 }
 
 export async function fetchAdminAudit(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get("/admin/audit", { params });
+  const { data } = await goControlPlaneClient.get("/admin/audit", { params });
   return data;
 }
 
 export async function fetchAdminAlerts() {
-  const { data } = await apiClient.get("/admin/alerts");
+  const { data } = await goControlPlaneClient.get("/admin/alerts");
   return data;
 }
 
 export async function fetchAdminUserPortrait(userId: string) {
-  const { data } = await apiClient.get("/admin/user", { params: { userId } });
+  const { data } = await goControlPlaneClient.get("/admin/user", { params: { userId } });
   return data;
 }
 
 export async function fetchAdminWorkspacePortrait(userId: string, workspaceId: string) {
-  const { data } = await apiClient.get("/admin/workspace", { params: { userId, workspaceId } });
+  const { data } = await goControlPlaneClient.get("/admin/workspace", { params: { userId, workspaceId } });
   return data;
 }
 
 export async function fetchAdminRunPortrait(runId: string) {
-  const { data } = await apiClient.get("/admin/run", { params: { runId } });
+  const { data } = await goControlPlaneClient.get("/admin/run", { params: { runId } });
   return data;
 }

@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { PortalPagination, PortalQueryValue } from "./common";
 import type { SelectedServerPlan } from "./server-plans";
 
@@ -342,27 +342,27 @@ export interface WorkspaceFileDownloadUrlParams {
 }
 
 export async function fetchWorkspace(params: WorkspaceQuery = {}) {
-  const { data } = await apiClient.get<WorkspacePayload>("/workspace", { params });
+  const { data } = await goControlPlaneClient.get<WorkspacePayload>("/workspace", { params });
   return data;
 }
 
 export async function fetchWorkspaceStorage(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<WorkspaceStoragePayload>("/workspace/storage", { params });
+  const { data } = await goControlPlaneClient.get<WorkspaceStoragePayload>("/workspace/storage", { params });
   return data;
 }
 
 export async function fetchStorageEntitlement(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<{ workspaceId: string; entitlement: StorageEntitlementPayload }>("/storage/entitlement", { params });
+  const { data } = await goControlPlaneClient.get<{ workspaceId: string; entitlement: StorageEntitlementPayload }>("/storage/entitlement", { params });
   return data;
 }
 
 export async function createWorkspaceFileUploadUrl(input: WorkspaceFileUploadUrlInput) {
-  const { data } = await apiClient.post<WorkspaceFileTransferPayload>("/workspace/files/upload-url", input);
+  const { data } = await goControlPlaneClient.post<WorkspaceFileTransferPayload>("/workspace/files/upload-url", input);
   return data;
 }
 
 export async function createWorkspaceFileDownloadUrl(params: WorkspaceFileDownloadUrlParams) {
-  const { data } = await apiClient.get<WorkspaceFileTransferPayload>("/workspace/files/download-url", {
+  const { data } = await goControlPlaneClient.get<WorkspaceFileTransferPayload>("/workspace/files/download-url", {
     params: {
       ...params,
       relativePath: params.relativePath || params.file,

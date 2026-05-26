@@ -3,16 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "dependencies": {
-    "cos-nodejs-sdk-v5": "^2.15.4",
-    "pg": "^8.13.1",
-    "redis": "^4.7.0",
-    "tencentcloud-sdk-nodejs": "^4.1.227"
-  },
   "scripts": {
-    "start": "node src/server.mjs",
-    "migrate:schema": "node src/migrate-schema.mjs",
-    "check": "node --check src/server.mjs",
+    "start": "npm --prefix frontend run dev -- --host 127.0.0.1",
+    "check": "npm --prefix frontend run typecheck",
     "frontend:install": "npm --prefix frontend install",
     "frontend:typecheck": "npm --prefix frontend run typecheck",
     "frontend:test": "npm --prefix frontend run test",

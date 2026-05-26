@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { PortalPagination } from "./common";
 
 export interface TraceSummaryPayload {
@@ -183,11 +183,11 @@ export interface TracesPayload {
 export type SessionTracesPayload = TracesPayload;
 
 export async function fetchTraces(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<TracesPayload>("/traces", { params });
+  const { data } = await goControlPlaneClient.get<TracesPayload>("/traces", { params });
   return data;
 }
 
 export async function fetchSessionTraces(params?: Record<string, string | number | undefined>) {
-  const { data } = await apiClient.get<SessionTracesPayload>("/session-traces", { params });
+  const { data } = await goControlPlaneClient.get<SessionTracesPayload>("/session-traces", { params });
   return data;
 }

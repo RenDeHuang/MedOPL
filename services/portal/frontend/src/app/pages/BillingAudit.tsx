@@ -121,7 +121,7 @@ export function BillingAudit() {
       return;
     }
     setExportNotice("");
-    triggerCsvDownload("/portal/billing/export.csv");
+    triggerCsvDownload("/api/billing/export.csv");
   };
 
   // Empty Ledger State

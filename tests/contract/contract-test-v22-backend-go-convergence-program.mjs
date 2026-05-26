@@ -187,9 +187,20 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
     assert.equal(current.current_cursor, programId, "go_mvp_takeover_must_be_current_product_cursor_before_real_cloud");
   } else {
     assert.equal(program.current_product_cursor, "real-cloud-authorization-boundary", "closed_program_must_handoff_to_real_cloud_authorization_boundary");
-    assert.equal(current.current_cursor, "real-cloud-authorization-boundary", "closed_program_current_cursor_must_be_authorization_boundary");
+    assert(
+      ["precloud-deployable-rc", "real-cloud-authorization-boundary"].includes(current.current_cursor),
+      `closed_program_current_cursor_must_be_precloud_rc_or_authorization_boundary:${current.current_cursor}`,
+    );
+    if (current.current_cursor === "precloud-deployable-rc") {
+      const precloudGap = current.gaps.find((gap) => gap.id === "precloud-deployable-rc");
+      assert(precloudGap, "closed_program_precloud_gap_missing");
+      assert.equal(precloudGap.status, "active", "closed_program_precloud_gap_must_be_active");
+      assert.equal(precloudGap.next_leaf_step, "real-cloud-authorization-boundary", "closed_program_precloud_gap_must_handoff_to_authorization_boundary");
+      assert.equal(current.current_leaf?.step_id, "precloud-deployable-rc", "closed_program_current_leaf_must_be_precloud_rc");
+    }
     assert.equal(current.release_readiness_state?.status, "authorization_required", "closed_program_must_require_authorization");
     assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "closed_program_must_block_risky_execution");
+    assert.equal(current.release_readiness_state?.next_cursor, "real-cloud-authorization-boundary", "closed_program_release_readiness_must_keep_authorization_boundary");
   }
   assert.equal(program.one_step_one_commit, true, "program_must_require_one_step_one_commit");
   assert.equal(program.review_gate, "landing gate", "program_review_gate_mismatch");
@@ -235,14 +246,23 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assertIncludes(specs, "`services/portal/src` 是清退对象，不是长期 active backend", "specs_must_define_node_portal_retirement_role");
   assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_record_program_lane");
   assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
-  assertIncludes(source, "Go control-plane MVP takeover surface", "source_must_record_backend_target_surface");
+  if (current.current_cursor === "precloud-deployable-rc") {
+    assertIncludes(source, "Go / pre-cloud deployment surface", "source_must_record_precloud_backend_surface");
+  } else {
+    assertIncludes(source, "Go control-plane MVP takeover surface", "source_must_record_backend_target_surface");
+  }
   if (program.status === "active") {
     assertIncludes(active, "Go control-plane MVP takeover is the current local program", "active_must_record_go_backend_active_program");
   } else {
     assertIncludes(active, "Go control-plane MVP takeover are closed locally", "active_must_record_go_backend_closed_program");
   }
-  assertIncludes(source, "`services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness", "source_must_promote_go_to_local_takeover_target");
-  assertIncludes(source, "`services/portal/src` is a retirement surface for business truth", "source_must_mark_node_portal_for_retirement");
+  if (current.current_cursor === "precloud-deployable-rc") {
+    assertIncludes(source, "`services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface before real-cloud readiness", "source_must_promote_go_to_precloud_deployment_surface");
+    assertIncludes(source, "`services/portal/src` is a retired Node backend business surface", "source_must_mark_node_portal_retired_backend_surface");
+  } else {
+    assertIncludes(source, "`services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness", "source_must_promote_go_to_local_takeover_target");
+    assertIncludes(source, "`services/portal/src` is a retirement surface for business truth", "source_must_mark_node_portal_for_retirement");
+  }
   assertIncludes(runtime, "不是 real-cloud readiness 或 production completion claim", "runtime_must_not_upgrade_target_view_to_completion");
   assertIncludes(product, "`services/medopl-go-backend` 只有在 Go local RC eval 通过后才能进入 real-cloud-readiness", "product_must_not_claim_go_backend_takeover_by_directory");
 

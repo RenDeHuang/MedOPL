@@ -246,7 +246,7 @@
         "npm --prefix services/portal/frontend run typecheck",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-local-api-action-closure.mjs",
         "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -473,7 +473,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
@@ -482,7 +482,6 @@
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
-        "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
@@ -574,7 +573,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
@@ -584,7 +583,6 @@
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
-        "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
@@ -681,7 +679,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
@@ -695,7 +693,6 @@
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
-        "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
@@ -789,7 +786,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
@@ -900,7 +897,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
@@ -1013,7 +1010,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
@@ -1127,7 +1124,7 @@
       "verification_commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-storage-mode-local-closure.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/regression/portal/regression-test-v22-portal-cost-balance-trace-linkage.mjs",
         "node tests/regression/portal/regression-test-v22-account-wallet-billing-closure.mjs",
         "node tests/regression/portal/regression-test-v22-portal-file-space-management.mjs",
@@ -1378,7 +1375,7 @@
         "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend",
         "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
       ],
       "truth_writeback_target": [
         "docs/active/README.md",
@@ -1390,6 +1387,108 @@
         "docs/specs/README.md",
         "specs/source/spec.md",
         "specs/runtime/spec.md",
+        "tests/fixtures/v22/goal-current.json",
+        "tests/fixtures/v22/agent-verify-manifest.json"
+      ],
+      "requires_post_merge_closeout": true,
+      "history_truth_file": "docs/history/README.md",
+      "machine_truth_commit_field": "last_landed_commit"
+    },
+    {
+      "leaf_id": "precloud-deployable-rc",
+      "gap_id": "precloud-deployable-rc",
+      "stage": "S6 pre-cloud deployable RC before real-cloud authorization",
+      "risk_class": "local_service_code",
+      "live_external_allowed": false,
+      "requires_step_local_auth_record": false,
+      "contracts": [
+        "AGENTS.md",
+        "docs/active/README.md",
+        "docs/product/README.md",
+        "docs/runtime/README.md",
+        "docs/specs/README.md",
+        "docs/policies/README.md",
+        "docs/source/README.md",
+        "docs/delivery/README.md",
+        "changes/active/precloud-deployable-rc"
+      ],
+      "allowed_files": [
+        "docs/**/*.md",
+        "specs/**/*.md",
+        "changes/active/precloud-deployable-rc/**",
+        "changes/active/real-cloud-authorization-boundary/**",
+        "changes/archive/**",
+        "tests/**/*.mjs",
+        "tests/fixtures/v22/*.json",
+        "scripts/v22-test-classification.mjs",
+        "scripts/v22-verify.mjs",
+        "scripts/v22-workflow-gate.mjs",
+        "scripts/v22-landing-closeout.mjs",
+        "package.json",
+        "services/portal/package.json",
+        "services/portal/frontend/src/**",
+        "services/portal/frontend/vite.config.ts",
+        "services/medopl-go-backend/**"
+      ],
+      "forbidden_files": [
+        "deploy/*",
+        "adapters/*",
+        ".sentrux/*",
+        "infra/*",
+        "one-person-lab/*",
+        "upstream/*",
+        "secret-like paths",
+        "real cloud/provider files"
+      ],
+      "forbidden_ops": [
+        "secret",
+        "live-cloud",
+        "true-cloud-mutation",
+        "build-push-kubectl",
+        "deploy",
+        "live-test",
+        "upstream-write",
+        "dependency-upgrade"
+      ],
+      "verification_commands": [
+        "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+        "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+        "npm --prefix services/portal/frontend run typecheck",
+        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
+        "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-current-development-lines.mjs",
+        "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
+        "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
+        "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
+        "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
+        "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
+        "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+        "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+        "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
+        "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
+        "node tests/contract/contract-test-v22-test-lane-registry.mjs",
+        "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+        "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
+        "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend",
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
+      ],
+      "truth_writeback_target": [
+        "docs/active/README.md",
+        "docs/history/README.md",
+        "docs/delivery/README.md",
+        "docs/source/README.md",
+        "docs/runtime/README.md",
+        "docs/product/README.md",
+        "docs/specs/README.md",
+        "specs/source/spec.md",
+        "specs/runtime/spec.md",
+        "specs/operations/spec.md",
         "tests/fixtures/v22/goal-current.json",
         "tests/fixtures/v22/agent-verify-manifest.json"
       ],
@@ -1463,7 +1562,7 @@
         "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
@@ -1496,6 +1595,10 @@
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+        "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+        "npm --prefix services/portal/frontend run typecheck",
+        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -1510,14 +1613,12 @@
         "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
+        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs specs changes tests scripts package.json",
-        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
+        "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
       ]
     },
@@ -1534,7 +1635,7 @@
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
       ]
     },
     {
@@ -1573,6 +1674,7 @@
         "node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs",
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -1603,7 +1705,7 @@
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contract/contract-test-v22-commercial-package-model.mjs",
         "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
       ]
     },
     {
@@ -1658,6 +1760,7 @@
         "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
@@ -1670,8 +1773,7 @@
         "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
         "node tests/contract/contract-test-v22-node-portal-workflow-facade-boundary.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/contract/contract-test-v22-commercial-package-model.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
+        "node tests/contract/contract-test-v22-commercial-package-model.mjs"
       ]
     }
   ],
@@ -1756,7 +1858,7 @@
         "node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/src services/medopl-go-backend",
-        "node tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs"
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
       ]
     }
   ],

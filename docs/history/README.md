@@ -148,6 +148,28 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-05-26 feat/v22-precloud-deployable-rc
+
+Status: `authoring / local pre-cloud RC`
+
+Branch: `feat/v22-precloud-deployable-rc`
+
+Active change package: `changes/active/precloud-deployable-rc`
+
+Scope:
+
+- Insert a local pre-cloud deployable RC before any real-cloud authorization package.
+- Make `services/portal/frontend` talk to the Go backend through `/api` only.
+- Make `services/medopl-go-backend` the pre-cloud SaaS backend deployment surface for Portal projection APIs, readiness, billing/export/logout, OPL launch/session/file/run/artifact, and cloud connector fail-closed state.
+- Keep `services/portal/src` out of deployment, proxy, typed API ownership and current verification ownership.
+- Keep real cloud, secret, deploy, kubectl, build/push and live-test unauthorized.
+
+Verification:
+
+- Pending until `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`, Go tests, frontend typecheck and current/review bundles pass.
+
+next_cursor: `precloud-deployable-rc`
+
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`

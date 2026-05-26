@@ -60,7 +60,7 @@ for (const suite of ["health", "smoke", "local-contract", "current", "review"]) 
 
 for (const file of [
   "tests/contract/contract-test-v22-go-backend-service-surface.mjs",
-  "tests/regression/portal/regression-test-v22-portal-runtime-real-api-data-closure.mjs",
+  "tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
 ]) {
   assert(TEST_LANE_SUITES.health.includes(file), `health_suite_must_run_go_local_rc_parity_guard:${file}`);
 }

@@ -90,7 +90,7 @@ export function Layout() {
             })}
           </div>
 
-          {/* RoleContext 不是安全边界；真实 admin 权限由 /portal/api/admin/* 后端校验。 */}
+          {/* RoleContext 不是安全边界；真实 admin 权限由 Go /api/admin/* 后端校验。 */}
           {isAdmin && (
             <>
               <Separator className="my-3" />

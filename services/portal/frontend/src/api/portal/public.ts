@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 
 export interface PublicSettingsPayload {
   siteName: string;
@@ -8,6 +8,6 @@ export interface PublicSettingsPayload {
 }
 
 export async function fetchPublicSettings() {
-  const { data } = await apiClient.get<PublicSettingsPayload>("/public/settings");
+  const { data } = await goControlPlaneClient.get<PublicSettingsPayload>("/public/settings");
   return data;
 }

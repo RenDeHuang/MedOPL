@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { PortalPagination, PortalQueryValue } from "./common";
 import type { CommercialProfile, OnboardingPayload } from "./commercial";
 import type { SelectedServerPlan, ServerPlansSummary } from "./server-plans";
@@ -56,6 +56,6 @@ export interface OverviewPayload {
 }
 
 export async function fetchOverview(params: OverviewQuery = {}) {
-  const { data } = await apiClient.get<OverviewPayload>("/overview", { params });
+  const { data } = await goControlPlaneClient.get<OverviewPayload>("/overview", { params });
   return data;
 }

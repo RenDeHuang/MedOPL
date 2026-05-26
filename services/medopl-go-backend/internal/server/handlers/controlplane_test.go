@@ -275,6 +275,36 @@ func TestControlPlaneHandlersFailClosedWithoutProviderKey(t *testing.T) {
 	}
 }
 
+func TestCloudConnectorFailsClosedBeforeRealCloudAuthorization(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.GET("/api/cloud/connector/status", CloudConnectorStatus())
+	router.POST("/api/cloud/connector/plan", CloudConnectorPlan())
+
+	status := getMap(t, router, "/api/cloud/connector/status")
+	if status["ok"] != false || status["status"] != "authorization_required" || status["mode"] != "fail_closed" {
+		t.Fatalf("cloud connector status = %+v", status)
+	}
+
+	rec := postRaw(router, "/api/cloud/connector/plan", map[string]any{
+		"workspaceId": "workspace-v22",
+	})
+	if rec.Code != http.StatusPreconditionRequired {
+		t.Fatalf("cloud connector plan status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, marker := range []string{"authorization_required", "fail_closed", "real-cloud authorization package"} {
+		if !strings.Contains(body, marker) {
+			t.Fatalf("cloud connector plan missing %q: %s", marker, body)
+		}
+	}
+	for _, forbidden := range []string{"SecretId", "SecretKey", "kubeconfig", "AKID", "tencentcloud"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("cloud connector plan leaked forbidden marker %q: %s", forbidden, body)
+		}
+	}
+}
+
 func controlPlaneHandlerTestRouter() *gin.Engine {
 	return controlPlaneHandlerTestRouterWithSecretRoot("")
 }

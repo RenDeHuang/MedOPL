@@ -38,6 +38,7 @@ Machine boundary: 本文是 v22 合同/spec 的唯一 repo-tracked authority。�
 | [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary) | `v22-authorized-tencent-create-release-execution-boundary` |
 | [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary) | `v22-authorized-tencent-create-release-implementation-boundary` |
 | [spec:v22-go-control-plane-mvp-takeover-boundary](#spec-v22-go-control-plane-mvp-takeover-boundary) | `v22-go-control-plane-mvp-takeover-boundary` |
+| [spec:v22-precloud-deployable-rc-boundary](#spec-v22-precloud-deployable-rc-boundary) | `precloud-deployable-rc` |
 | [spec:v22-backend-go-convergence-program-boundary](#spec-v22-backend-go-convergence-program-boundary) | `v22-backend-go-convergence-program-boundary` |
 | [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) | `v22-authorized-tencent-deploy-execution-boundary` |
 | [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary) | `v22-billing-freeze-boundary` |
@@ -1355,6 +1356,27 @@ Canonical backend boundary：
 - Go service surface 必须由 `tests/contract/contract-test-v22-go-backend-service-surface.mjs` 和 `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."` 验证。
 - frontend/backend split 必须由 `npm --prefix services/portal/frontend run typecheck` 和 Portal typed API regression 验证。
 - branch override 必须只允许本 program 的 docs/specs/changes/tests/scripts、Portal frontend、Portal retirement surface 和 Go service surface。
+
+### spec:v22-precloud-deployable-rc-boundary
+
+Former leaf id: `precloud-deployable-rc`
+Former title: Pre-cloud Deployable RC Boundary
+
+本合同定义 MedOPL v22 上云前的本地可部署边界。目标是让 OPL Workbench、Portal frontend、Go SaaS backend 和 cloud connector fail-closed API 通过本地 deterministic eval 闭合；它不是 real-cloud readiness，也不授权 secret、provider、cloud、deploy、kubectl、build/push 或 live-test。
+
+Canonical deployment boundary：
+
+- `services/portal/frontend` 是 Portal frontend deployment surface；Vite dev proxy 和 typed API modules 必须默认走 Go `/api`。
+- `services/medopl-go-backend` 是 pre-cloud SaaS backend deployment surface；它必须提供 `/healthz`、`/readyz`、Portal projection API、provider/preflight/launch、file/run/artifact、billing/audit/resource/release 和 cloud connector fail-closed API。
+- `services/portal/src` 不得作为 deployable backend、frontend proxy target、typed API owner 或 current verification owner；后续只允许被 retirement gate 引用，直到物理清退。
+- Cloud connector 在 real-cloud authorization package 打开前必须返回 `authorization_required` / `fail_closed`，不得创建 plan 副作用或访问真实 provider。
+
+验收边界：
+
+- package gate：`node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`
+- Go backend：`bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."`
+- frontend：`npm --prefix services/portal/frontend run typecheck`
+- repo verify：`node scripts/v22-verify.mjs current --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`
 
 ### spec:v22-backend-go-convergence-program-boundary
 

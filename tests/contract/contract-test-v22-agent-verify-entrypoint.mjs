@@ -76,6 +76,7 @@ assert.equal(current.verify_manifest, files.manifest, "current_manifest_path_mis
 const allowedCurrentBranchRoles = new Set([
   "productization_cursor",
   "authorization_boundary_cursor",
+  "local_precloud_deployable_rc_cursor",
   "cleanup_cursor",
 ]);
 assert(

@@ -56,7 +56,7 @@ export function UserMenu({
   };
 
   const handleLogout = () => {
-    window.location.assign("/logout");
+    window.location.assign("/api/logout");
   };
 
   return (

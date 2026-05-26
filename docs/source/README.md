@@ -14,35 +14,36 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 - `services/opl-web-gateway`
 - `services/opl-runtime-bridge`
 
-Go control-plane MVP takeover surface：
+Go / pre-cloud deployment surface：
 
-- `services/medopl-go-backend` is the local MVP takeover target before real-cloud readiness.
+- `services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface before real-cloud readiness.
+- `services/portal/frontend` is the Portal frontend deployment surface.
 
-`services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 Go local RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。当前 authoring branch 的 Go local RC parity 只覆盖 provider/preflight/launch、billing/audit、resource projection 和 release/stop-billing 的 deterministic local proof，不证明 live provider、真实 upstream OPL、real cloud 或 production billing。
+`services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 pre-cloud deployable RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。当前 authoring branch 的 pre-cloud deployable RC 只覆盖 Portal frontend -> Go `/api`、provider/preflight/launch、workspace/file/run/artifact、billing/audit、resource projection、release/stop-billing 和 cloud connector fail-closed 的 deterministic local proof，不证明 live provider、真实 upstream OPL、real cloud 或 production billing。
 
 Retirement surface：
 
-- `services/portal/src` is a retirement surface for business truth. It may only remain as a temporary shell, local eval dependency or integration relay while Go MVP parity is being implemented. It must not retain Portal control-plane business truth, canonical store, provider binding, launch status, billing/audit, resource workflow or cloud operation authority.
-- `services/portal/src/routes/lab-package.routes.mjs` lab package routes remain a retirement shell/local eval dependency for Node workflow-facade boundary checks only. Portal frontend lab typed API ownership is Go-only through `services/medopl-go-backend` and `/api/lab-*`; the Node route must not be treated as frontend typed API truth, current backend truth, compatibility control plane or real-cloud readiness evidence.
+- `services/portal/src` is a retired Node backend business surface. Node Portal backend is not a deployable control plane, not a Portal frontend proxy target, not a typed API owner and not a current verification owner. Remaining files are historical source for retirement gates only until physically deleted by a later cleanup package.
+- `services/portal/src/routes/lab-package.routes.mjs` lab package routes are historical retirement input only. Portal frontend lab typed API ownership is Go-only through `services/medopl-go-backend` and `/api/lab-*`; the Node route must not be treated as frontend typed API truth, current backend truth, compatibility control plane or real-cloud readiness evidence.
 
 ## Productization Source Order
 
-当前目标是完全现代化前后端分离。`services/portal/frontend` 是 React/Vite/TypeScript frontend；`services/medopl-go-backend` 是 Go control-plane MVP takeover target；`services/portal/src` 是 Node Portal backend 清退对象，不是长期 active backend/API/server。后续 source order 是：
+当前目标是完全现代化前后端分离。`services/portal/frontend` 是 React/Vite/TypeScript frontend；`services/medopl-go-backend` 是 Go control-plane / pre-cloud SaaS backend；`services/portal/src` 是 Node Portal backend 清退对象，不是 active backend/API/server。后续 source order 是：
 
 1. Figma Make UI 已归档为外部 design input；repo-native Portal frontend source 和本地 eval 才是实现 truth。
 2. Portal typed API contract 已归档：Portal frontend 只能通过 typed API modules 读取 backend projection；不能让页面直接复制 mock readiness、mock billing、mock resource 或 mock OPL launch truth。
 3. Provider key reuse 必须在后端 secret boundary 内完成；frontend 只持有 `providerKeyRef`、bound status 和一次性输入态。
 4. OPL entry real preflight / launch 已归档为本地 projection truth：OPL entry UI 必须接真实 preflight / launch / providerKeyRef / Gateway readiness API，不得把 Figma prototype state 或 page-local fallback 写成 readiness truth。
-5. Go backend 必须接管 MedOPL control-plane business truth；Node Gateway / Runtime Bridge 在迁移期可以继续作为薄边界，但不能扩张成 billing ledger、cloud inventory 或 product truth。
-6. Real-cloud readiness 只能在 Go local RC 通过后开启，不能让 Node Portal backend 作为 first-cloud control plane。
+5. Go backend 接管 MedOPL control-plane business truth；Node Gateway / Runtime Bridge 继续作为薄边界，但不能扩张成 billing ledger、cloud inventory 或 product truth。
+6. Real-cloud readiness 只能在 pre-cloud deployable RC 通过后开启，不能让 Node Portal backend 作为 first-cloud control plane。
 
 迁移期源码边界：
 
 - `services/portal/frontend` 是 active frontend implementation；它必须通过 typed API 读取 Go control-plane projection。
-- `services/medopl-go-backend` 是 local MVP control-plane implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow 和 release/stop billing，相关 local RC parity eval 必须在 manifest/test lane registry 中可追踪。
-- `services/portal/src` 是 Node Portal backend retirement surface；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
+- `services/medopl-go-backend` 是 pre-cloud SaaS backend implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow、release/stop billing、Go `/healthz`/`/readyz` 和 cloud connector fail-closed API，相关 pre-cloud eval 必须在 manifest/test lane registry 中可追踪。
+- `services/portal/src` 是 retired Node backend surface；它不再扩张长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
 - Node Portal v22 control-plane routes and domains for `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness`, `/portal/api/v22/managed-environment/open`, `/portal/api/v22/managed-environment/release` and `/portal/api/v22/opl-work/*` are physically retired from active code. 当前 owner 是 `services/medopl-go-backend` 的 `/api/v22/*` 和 `/api/opl/*`。
-- `services/portal/src/app/portal-runtime.mjs` 只能作为迁移期 shell/eval dependency；不得重新直接 fan-out 到 product domain / presentation helpers，domain/presentation dependency assembly 归 `services/portal/src/app/portal-runtime-app-deps.mjs`，并在 Go parity 后清退。
+- `services/portal/src/app/portal-runtime.mjs` 不得作为部署入口、typed API owner 或当前 verify owner；后续只允许被 retirement gate 引用，直到物理清退。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
 

@@ -1,4 +1,4 @@
-import { apiClient } from "../client";
+import { goControlPlaneClient } from "../client";
 import type { CommercialProfile, SelectedServerPlan } from "./types";
 
 export type { CommercialProfile, TrialEntitlement } from "./types";
@@ -35,6 +35,6 @@ export interface OnboardingPayload {
 }
 
 export async function fetchCurrentUser() {
-  const { data } = await apiClient.get<CurrentUserPayload>("/me");
+  const { data } = await goControlPlaneClient.get<CurrentUserPayload>("/me");
   return data;
 }

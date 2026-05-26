@@ -16,7 +16,6 @@ function figmaAssetResolver() {
   };
 }
 
-const portalBackendTarget = process.env.VITE_PORTAL_BACKEND_URL || "http://127.0.0.1:17080";
 const goControlPlaneTarget = process.env.VITE_MEDOPL_GO_BACKEND_URL || "http://127.0.0.1:8789";
 
 export default defineConfig({
@@ -33,17 +32,7 @@ export default defineConfig({
   server: {
     port: 17180,
     proxy: {
-      "/api": goControlPlaneTarget,
-      "/portal/api": portalBackendTarget,
-      "/portal/billing": portalBackendTarget,
-      "/portal/workspace-session": portalBackendTarget,
-      "/portal/workspaces": portalBackendTarget,
-      "/portal/admin": portalBackendTarget,
-      "/login": portalBackendTarget,
-      "/register": portalBackendTarget,
-      "/logout": portalBackendTarget,
-      "/auth": portalBackendTarget,
-      "/opl/entry/preflight": portalBackendTarget
+      "/api": goControlPlaneTarget
     }
   },
   build: {
