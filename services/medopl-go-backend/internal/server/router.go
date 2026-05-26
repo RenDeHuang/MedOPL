@@ -33,6 +33,8 @@ func Router(cfg config.Config) *gin.Engine {
 	router.GET("/api/storage/entitlement", handlers.StorageEntitlement())
 	router.POST("/api/workspace/files/upload-url", handlers.WorkspaceFileUploadURL())
 	router.GET("/api/workspace/files/download-url", handlers.WorkspaceFileDownloadURL())
+	router.POST("/api/workspace/files/local-transfer", handlers.WorkspaceFileLocalTransfer())
+	router.GET("/api/workspace/files/local-transfer", handlers.WorkspaceFileLocalTransfer())
 	router.GET("/api/session-traces", handlers.SessionTraces())
 	router.GET("/api/traces", handlers.SessionTraces())
 	router.GET("/api/announcements", handlers.Announcements())

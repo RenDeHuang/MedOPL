@@ -128,6 +128,25 @@ func WorkspaceFileDownloadURL() gin.HandlerFunc {
 	return workspaceFileTransfer(http.MethodGet)
 }
 
+func WorkspaceFileLocalTransfer() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		workspaceID := workspaceIDFromRequest(ctx)
+		fileName := firstNonEmptyString(ctx.Query("file"), ctx.Query("relativePath"), ctx.PostForm("fileName"), "input.csv")
+		if ctx.Request.Method == http.MethodGet {
+			ctx.Header("content-disposition", `attachment; filename="`+fileName+`"`)
+			ctx.String(http.StatusOK, "medopl precloud local transfer\nworkspace=%s\nfile=%s\n", workspaceID, fileName)
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{
+			"ok":          true,
+			"workspaceId": workspaceID,
+			"file":        gin.H{"name": fileName, "relativePath": fileName, "status": "accepted", "source": "go-control-plane"},
+			"source":      "go-control-plane",
+			"mode":        "precloud_local_rc",
+		})
+	}
+}
+
 func SessionTraces() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		workspaceID := workspaceIDFromRequest(ctx)

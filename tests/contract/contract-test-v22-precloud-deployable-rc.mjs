@@ -102,6 +102,10 @@ async function assertGoPrecloudSurface() {
     'GET("/api/me"',
     'GET("/api/overview"',
     'GET("/api/workspace"',
+    'POST("/api/workspace/files/upload-url"',
+    'GET("/api/workspace/files/download-url"',
+    'POST("/api/workspace/files/local-transfer"',
+    'GET("/api/workspace/files/local-transfer"',
     'GET("/api/session-traces"',
     'GET("/api/announcements"',
   ]) {
