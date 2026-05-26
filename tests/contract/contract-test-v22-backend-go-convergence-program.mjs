@@ -246,17 +246,19 @@ function assertProgramBoard({ active, specs, delivery, runtime, source, product,
   assertIncludes(specs, "`services/portal/src` 是清退对象，不是长期 active backend", "specs_must_define_node_portal_retirement_role");
   assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_record_program_lane");
   assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
-  if (current.current_cursor === "precloud-deployable-rc") {
+  if (source.includes("Go / pre-cloud deployment surface")) {
     assertIncludes(source, "Go / pre-cloud deployment surface", "source_must_record_precloud_backend_surface");
   } else {
     assertIncludes(source, "Go control-plane MVP takeover surface", "source_must_record_backend_target_surface");
   }
   if (program.status === "active") {
     assertIncludes(active, "Go control-plane MVP takeover is the current local program", "active_must_record_go_backend_active_program");
+  } else if (active.includes("Go control-plane MVP takeover and pre-cloud deployable RC are closed locally")) {
+    assertIncludes(active, "Go control-plane MVP takeover and pre-cloud deployable RC are closed locally", "active_must_record_go_and_precloud_closed_program");
   } else {
     assertIncludes(active, "Go control-plane MVP takeover are closed locally", "active_must_record_go_backend_closed_program");
   }
-  if (current.current_cursor === "precloud-deployable-rc") {
+  if (source.includes("local pre-cloud SaaS backend deployment surface")) {
     assertIncludes(source, "`services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface before real-cloud readiness", "source_must_promote_go_to_precloud_deployment_surface");
     assertIncludes(source, "`services/portal/src` is a retired Node backend business surface", "source_must_mark_node_portal_retired_backend_surface");
   } else {

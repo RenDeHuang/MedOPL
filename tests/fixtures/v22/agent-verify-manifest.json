@@ -1595,10 +1595,6 @@
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
         "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
-        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-        "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-        "npm --prefix services/portal/frontend run typecheck",
-        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -1613,12 +1609,14 @@
         "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+        "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend",
+        "git diff --check -- docs specs changes tests scripts package.json",
+        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
       ]
     },

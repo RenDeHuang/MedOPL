@@ -15,7 +15,7 @@ Target specs:
 ## MODIFIED
 
 - `runtime:go-local-rc-parity` is narrowed into pre-cloud deployable evidence only; it does not claim production backend replacement, real-cloud readiness or live provider evidence.
-- `source:go-control-plane-mvp-api` is extended from local proof to pre-cloud deployable RC surface, still below production truth.
+- `source:go-control-plane-mvp-takeover` is extended from local proof to pre-cloud deployable RC surface, still below production truth.
 
 ## REMOVED
 

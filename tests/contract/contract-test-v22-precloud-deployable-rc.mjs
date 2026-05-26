@@ -33,7 +33,7 @@ function assertNotMatches(source, pattern, label) {
 }
 
 async function assertChangePackage() {
-  const root = "changes/active/precloud-deployable-rc";
+  const root = "changes/archive/2026-05-26-precloud-deployable-rc";
   for (const file of ["proposal.md", "spec-delta.md", "design.md", "tasks.md", "eval-plan.md", "review.md", "closeout.md"]) {
     assert.equal(await exists(`${root}/${file}`), true, `precloud_change_package_missing:${file}`);
   }

@@ -7,11 +7,11 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `precloud-deployable-rc`，状态是 local pre-cloud deployable RC / before real-cloud authorization。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection、local control-plane hardening 和 Go control-plane MVP takeover 已完成本地闭环；current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界，当前 cursor 只允许本地 deterministic proof。
+当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection、local control-plane hardening、Go control-plane MVP takeover 和 precloud-deployable-rc 已完成本地闭环或 ready for landing review；current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界，当前 cursor 只允许本地 deterministic proof。
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
-后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；Go control-plane MVP takeover 已归档为本地 RC evidence，下一步先关闭 `precloud-deployable-rc`，再回到 `real-cloud-authorization-boundary` 确认授权边界。当前 pre-cloud cursor 不授权 secret 或真实云执行。
+后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；Go control-plane MVP takeover 和 precloud-deployable-rc 均只提供本地 RC evidence。下一步必须留在 `real-cloud-authorization-boundary` 确认授权边界；当前 cursor 不授权 secret 或真实云执行。
 
 ## Default Verification
 
@@ -70,7 +70,7 @@ Local RC 之后，默认 delivery 不直接跳到真实云。先按下列 packag
 | 3 | `provider-key-reuse` | 已绑定用户 `providerKeyRef` 可被 OPL launch/preflight 复用，不要求重复输入 raw key。 | landed locally at `816f7431ad3b5c8c0524b058d11eb08e851b055e` |
 | 4 | `opl-entry-real-preflight-launch` | OPL entry UI 读取真实 preflight、launch、providerKeyRef、Gateway readiness 和 fail-closed reason。 | closed locally; archived at `changes/archive/2026-05-24-opl-entry-real-preflight-launch` |
 | 5 | `go-control-plane-mvp-takeover` | Go 接管 MedOPL control-plane business truth；Portal frontend 通过 typed API 调 Go；Node Portal backend 业务 truth 清退，不保兼容层。 | closed locally; archived at `changes/archive/2026-05-24-go-control-plane-mvp-takeover` |
-| 6 | `precloud-deployable-rc` | 把 OPL Workbench、Portal frontend、Go SaaS backend 和 cloud connector fail-closed API 变成本地可部署形态。 | current local deterministic proof only |
+| 6 | `precloud-deployable-rc` | 把 OPL Workbench、Portal frontend、Go SaaS backend 和 cloud connector fail-closed API 变成本地可部署形态。 | local deterministic proof only / ready for landing review |
 | 7 | `real-cloud-authorization-boundary` | 先把 secret/provider/cloud/deploy/kubectl/build-push/live-test 授权边界作为 repo-native blocked cursor 固定下来。 | local dry-run / contract proof only |
 | 8 | `real-cloud-readiness` | 只在显式授权后开启 mock/snapshot、readonly quote、dry-run plan、readonly inventory。 | cloud future-authorized dry-run first |
 | 9 | `real-cloud-authorization` | 只在显式授权后执行 secret/cloud/provider/deploy work。 | authorized live package |
@@ -100,7 +100,7 @@ Delivery closeout must move completed packages to `changes/archive/YYYY-MM-DD-<c
 
 ## Go Control Plane MVP Takeover Lane
 
-`feat/v22-go-control-plane-mvp-takeover` 已归档为本地 Go control-plane MVP takeover lane。它不再是当前 open cursor；当前 open cursor 是 `precloud-deployable-rc`，用于关闭 Portal frontend + Go SaaS backend 的本地可部署 RC。`real-cloud-authorization-boundary` 仍是下一步 blocked cursor；真实云、deploy、kubectl、build/push 或 live-test 仍不授权。
+`feat/v22-go-control-plane-mvp-takeover` 已归档为本地 Go control-plane MVP takeover lane。它不再是当前 open cursor；`precloud-deployable-rc` 已把 Portal frontend + Go SaaS backend 的本地可部署 RC 收口到 landing review。当前 open cursor 是 blocked `real-cloud-authorization-boundary`；真实云、deploy、kubectl、build/push 或 live-test 仍不授权。
 
 先 Go control-plane MVP，再 real-cloud-readiness。该 lane 的交付方式是每个 step 一个 commit，并且每个 step 都按 `truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor` 执行。7 阶段只作为 compact machine block、spec anchor、registered tests 和 landed history summary 存在，不恢复旧合同目录、旧 recovery 目录、root stage docs 或 `scripts/smoke-test-*`。
 

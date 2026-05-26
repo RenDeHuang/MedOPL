@@ -150,11 +150,11 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-05-26 feat/v22-precloud-deployable-rc
 
-Status: `authoring / local pre-cloud RC`
+Status: `ready_for_landing_review`
 
 Branch: `feat/v22-precloud-deployable-rc`
 
-Active change package: `changes/active/precloud-deployable-rc`
+Archived change package: `changes/archive/2026-05-26-precloud-deployable-rc`
 
 Scope:
 
@@ -166,9 +166,20 @@ Scope:
 
 Verification:
 
-- Pending until `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`, Go tests, frontend typecheck and current/review bundles pass.
+- `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`: pass.
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./..."`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `node scripts/v22-verify.mjs current --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs review --branch feat/v22-precloud-deployable-rc --base origin/recovery/platform-v22-trunk --json`: pass.
+- `git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend`: pass.
 
-next_cursor: `precloud-deployable-rc`
+Review:
+
+- Independent review model `gpt-5.4-mini` found a local workspace file-transfer blocker: Go returned `/api/workspace/files/local-transfer` but did not mount the route.
+- `b2d6e39` added GET/POST local-transfer handlers and router/contract coverage.
+- Second independent review model `gpt-5.4-mini` reported no blocker after the fix.
+
+next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 

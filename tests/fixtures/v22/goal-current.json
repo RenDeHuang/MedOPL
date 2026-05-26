@@ -9,21 +9,21 @@
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "base_trunk_head": "0112813998456d879e9ea10782f224c29f3a166f",
-  "current_branch": "precloud-deployable-rc",
-  "current_branch_role": "local_precloud_deployable_rc_cursor",
-  "authoring_branch": "feat/v22-precloud-deployable-rc",
+  "current_branch": "real-cloud-authorization-boundary",
+  "current_branch_role": "authorization_boundary_cursor",
+  "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
   "last_landed_commit": "0112813998456d879e9ea10782f224c29f3a166f",
-  "current_cursor": "precloud-deployable-rc",
-  "next_leaf": "precloud-deployable-rc",
-  "current_stage": "S6 pre-cloud deployable RC before real-cloud authorization",
-  "current_risk_class": "local_service_code",
+  "current_cursor": "real-cloud-authorization-boundary",
+  "next_leaf": "real-cloud-authorization-boundary",
+  "current_stage": "S7 real-cloud authorization boundary before readiness",
+  "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "precloud_deployable_rc_must_keep_portal_frontend_on_go_api_and_retire_node_backend_deployment_surface",
-    "cloud_connector_must_fail_closed_until_explicit_real_cloud_authorization",
-    "real_cloud_secret_provider_deploy_kubectl_build_push_live_test_remain_forbidden"
+    "real_cloud_authorization_boundary_requires_explicit_user_authorization_before_secret_provider_cloud_deploy_kubectl_build_push_or_live_test",
+    "precloud_deployable_rc_is_ready_for_landing_review_but_not_production_backend_or_real_cloud_evidence",
+    "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation"
   ],
-  "current_problem": "Before real-cloud work, MedOPL must close a local pre-cloud deployable RC: Portal frontend talks to Go /api, Go backend owns SaaS control-plane projections, Node Portal backend is not a deployable control plane, and cloud connector endpoints fail closed until a separate real-cloud authorization package.",
+  "current_problem": "Precloud-deployable RC is ready for landing review: Portal frontend defaults to Go /api, Go owns the local pre-cloud SaaS backend deployment surface, Node Portal backend is not a deploy/proxy/API owner, and cloud connector fails closed. The current cursor is now real-cloud-authorization-boundary, which is a blocked authorization package: it keeps secret/provider/cloud/deploy/kubectl/build-push/live-test forbidden until the user opens a separately authorized real-cloud readiness or execution package.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -91,15 +91,15 @@
     },
     {
       "id": "real-cloud-authorization-boundary",
-      "stage": "S6 real cloud authorization boundary",
+      "stage": "S7 real-cloud authorization boundary before readiness",
       "priority": 60,
       "cursor_eligible": false,
       "status": "authorization_required",
       "next_leaf_step": "real-cloud-readiness",
       "depends_on": [
-        "go-control-plane-mvp-takeover"
+        "precloud-deployable-rc"
       ],
-      "history_summary": "Go local RC is closed; this cursor is a blocked authorization boundary and does not authorize any secret, provider, cloud, deploy, kubectl, build/push or live-test operation."
+      "history_summary": "Precloud deployable RC is ready for landing review; this cursor is a blocked authorization boundary and does not authorize any secret, provider, cloud, deploy, kubectl, build/push or live-test operation."
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -122,27 +122,25 @@
       "id": "precloud-deployable-rc",
       "stage": "S6 pre-cloud deployable RC before real-cloud authorization",
       "priority": 92,
-      "cursor_eligible": true,
-      "status": "active",
+      "cursor_eligible": false,
+      "status": "ready_for_landing_review",
       "next_leaf_step": "real-cloud-authorization-boundary",
       "depends_on": [
         "go-control-plane-mvp-takeover"
       ],
-      "history_summary": "Local pre-cloud deployable RC keeps Portal frontend and Go backend deployable while cloud connector fails closed before real-cloud authorization."
+      "history_summary": "Portal frontend defaults to Go /api, Go backend owns local pre-cloud SaaS projections and file transfer, Node Portal backend is not deploy/proxy/API owner, and cloud connector fails closed before real-cloud authorization.",
+      "closed_at": "2026-05-26",
+      "archive": "changes/archive/2026-05-26-precloud-deployable-rc"
     }
   ],
   "current_leaf": {
-    "step_id": "precloud-deployable-rc",
-    "gap_id": "precloud-deployable-rc",
-    "stage": "S6 pre-cloud deployable RC before real-cloud authorization",
-    "cursor_eligible": true,
-    "problem": "Before real-cloud work, MedOPL must close a local pre-cloud deployable RC: Portal frontend talks to Go /api, Go backend owns SaaS control-plane projections, Node Portal backend is not a deployable control plane, and cloud connector endpoints fail closed until a separate real-cloud authorization package.",
+    "step_id": "real-cloud-authorization-boundary",
+    "gap_id": "real-cloud-authorization-boundary",
+    "stage": "S7 real-cloud authorization boundary before readiness",
+    "cursor_eligible": false,
+    "problem": "Real-cloud work is blocked until explicit authorization names operation class, target environment, evidence sink and rollback owner. This leaf only verifies repo-native authorization boundary and local golden-path health.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
-      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-      "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-      "npm --prefix services/portal/frontend run typecheck",
-      "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
       "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
       "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -157,18 +155,19 @@
       "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
       "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-      "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+      "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-      "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend",
+      "git diff --check -- docs specs changes tests scripts package.json",
+      "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
     ],
     "allowed_files": [
       "docs/**/*.md",
       "specs/**/*.md",
-      "changes/active/precloud-deployable-rc/**",
       "changes/active/real-cloud-authorization-boundary/**",
       "changes/archive/**",
       "tests/**/*.mjs",
@@ -177,11 +176,7 @@
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
       "scripts/v22-landing-closeout.mjs",
-      "package.json",
-      "services/portal/package.json",
-      "services/portal/frontend/src/**",
-      "services/portal/frontend/vite.config.ts",
-      "services/medopl-go-backend/**"
+      "package.json"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -211,8 +206,6 @@
       "docs/runtime/README.md",
       "docs/product/README.md",
       "docs/specs/README.md",
-      "specs/source/spec.md",
-      "specs/runtime/spec.md",
       "specs/operations/spec.md",
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
@@ -239,7 +232,6 @@
     ],
     "go_local_rc_closed_at": "0112813998456d879e9ea10782f224c29f3a166f",
     "required_sequence": [
-      "precloud deployable RC",
       "real-cloud authorization boundary",
       "mock/snapshot provider",
       "readonly quote",
@@ -252,10 +244,6 @@
   },
   "verification_commands": [
     "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
-    "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-    "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-    "npm --prefix services/portal/frontend run typecheck",
-    "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
     "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
     "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -270,12 +258,14 @@
     "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
     "node tests/contract/contract-test-v22-test-lane-registry.mjs",
     "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+    "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
     "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-    "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+    "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
     "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-    "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/portal/frontend/vite.config.ts services/portal/package.json services/medopl-go-backend",
+    "git diff --check -- docs specs changes tests scripts package.json",
+    "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
     "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
   ],
   "truth_source_files": [
@@ -295,8 +285,6 @@
     "docs/runtime/README.md",
     "docs/product/README.md",
     "docs/specs/README.md",
-    "specs/source/spec.md",
-    "specs/runtime/spec.md",
     "specs/operations/spec.md",
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
