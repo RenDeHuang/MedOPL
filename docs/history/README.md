@@ -61,6 +61,57 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-27 feat/v22-local-saas-backend-closure
+
+Status: `authoring / local verified / pending landing`
+
+Branch: `feat/v22-local-saas-backend-closure`
+
+Base trunk HEAD: `b2b9cef82c744a5a18b1465f2350667ec9dbcfa3`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `gpt-5.4-mini`: Runtime Bridge live probe codebase survey.
+- `gpt-5.4-mini`: Gateway live probe package review.
+- `gpt-5.4-mini`: Runtime Bridge live probe package review.
+
+Packages:
+
+- `governance-closeout-sync`: synced Node backend physical removal closeout into active/history/current machine truth.
+- `local-service-orchestration`: added repo-native local service plan and dry-run health probe for Portal frontend, Go backend, OPL Web Gateway, Runtime Bridge and external clean OPL WebUI.
+- `gateway-live-probe`: added Gateway local live probe with clean upstream stub and Runtime Bridge stub.
+- `runtime-bridge-live-probe`: added Runtime Bridge local fake runtime probe for launch, bootstrap, session bind, dummy provider config public projection, message, run, artifact, trace and ledger projection.
+- `local-saas-backend-rc`: added aggregate local SaaS backend RC guard.
+
+Verification summary:
+
+- `node tests/contract/contract-test-v22-local-service-orchestration.mjs`: pass.
+- `node tests/regression/opl/regression-test-v22-gateway-live-probe.mjs`: pass.
+- `node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs`: pass.
+- `npm run test:regression -- --json`: pass after installing local frontend dependencies in the isolated worktree.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs`: pass.
+- `npm --prefix services/opl-runtime-bridge run check`: pass.
+
+Can-claim:
+
+- Local service orchestration, Gateway local live probe, Runtime Bridge local fake probe and aggregate local SaaS backend RC evidence are repo-native and registered.
+- Gateway local probe verifies local health, clean upstream stub proxy, launch script injection, same-origin Runtime Bridge proxy and query-secret rejection.
+- Runtime Bridge local fake probe verifies local launch, bootstrap, session bind, dummy provider config public projection, message reply artifact trace, runtime run artifact and ledger projection.
+
+Cannot-claim:
+
+- 不能声明真实云、live provider、production runtime、production billing 或 production deploy 已完成。
+- 不能声明真实 upstream OPL 已被验证；clean upstream remains external and unchanged.
+- 不能声明 secret read、provider operation、kubectl、build/push、deploy 或 live-test 已授权。
+
+Next owner:
+
+- `MedOPL Platform` owns landing review, final eval and post-merge closeout for this local backend RC branch.
+- `MedOPL Operations` still owns the separate future real-cloud authorization package.
+
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 
 Status: `landed / pushed / post-push verified`
