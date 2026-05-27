@@ -157,6 +157,7 @@
       "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
       "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+      "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",

@@ -41,6 +41,9 @@ const expectedScripts = {
   "check:diff": "git diff --check -- docs tests scripts package.json .github",
   "verify:docs-engineering-loop": "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk",
   "verify:product-loop": "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk",
+  "local:services:plan": "node scripts/v22-local-services.mjs plan --json",
+  "local:services:check": "node scripts/v22-local-services.mjs check --json",
+  "local:services:check:dry-run": "node scripts/v22-local-services.mjs check --dry-run --json",
 };
 
 assert.equal(packageJson.private, true, "root_package_must_be_private");

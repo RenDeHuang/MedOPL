@@ -31,6 +31,8 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 ```bash
 npm run test:fast
 npm run test:lanes
+npm run local:services:plan
+npm run local:services:check:dry-run
 npm run verify:golden-path
 npm run test:health
 npm run test:smoke
@@ -42,6 +44,8 @@ npm run closeout:check
 ```
 
 `test:fast` 是 slide 开发前置防膨胀入口：repo hygiene、repo bloat、line budget、lane registry、product-loop preflight 和 health gate 必须同时通过。`test:lanes` 是测试生命周期入口，专门防止 repo-local eval 游离、重复 wrapper 和 smoke 命名污染。
+
+`local:services:plan` 是本地 SaaS 后台服务编排入口，只列出 Portal frontend、Go backend、OPL Web Gateway、Runtime Bridge 和外部 clean OPL WebUI 的本地命令与 health URL。`local:services:check:dry-run` 只验证编排计划注册，不启动服务、不读取 secret、不调用云；`local:services:check` 只探测本机 URL，可证明本地服务可达，不能升级为 production deploy、real-cloud、live provider 或 upstream ownership evidence。
 
 ## Cloud / Deploy Sequence
 

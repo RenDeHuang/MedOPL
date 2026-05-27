@@ -147,6 +147,7 @@ const scriptFiles = await listFiles("scripts");
 assert.deepEqual(scriptFiles, [
   "scripts/v22-landing-closeout.mjs",
   "scripts/v22-line-budget.mjs",
+  "scripts/v22-local-services.mjs",
   "scripts/v22-repo-bloat-audit.mjs",
   "scripts/v22-repo-hygiene.mjs",
   "scripts/v22-test-classification.mjs",
