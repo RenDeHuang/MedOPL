@@ -71,6 +71,7 @@ func Router(cfg config.Config) *gin.Engine {
 	controlPlane := controlplaneservice.NewService(
 		memory.NewControlPlaneStore(),
 		controlplaneservice.WithProviderSecretStore(providersecret.NewFileStore(cfg.ProviderSecretRoot)),
+		controlplaneservice.WithGatewayURLs(cfg.OPLGatewayURL, cfg.RuntimeBridgeURL),
 	)
 	handlers.RegisterControlPlaneRoutes(api, controlPlane)
 	workflowFacade := workflowservice.NewFacade(memory.NewWorkflowStore())

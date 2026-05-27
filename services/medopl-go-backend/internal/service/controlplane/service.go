@@ -16,6 +16,8 @@ type Service struct {
 	store              cprepo.Store
 	now                func() time.Time
 	providerSecretSink ProviderSecretSink
+	oplGatewayURL      string
+	runtimeBridgeURL   string
 }
 
 type ProviderSecretSink interface {
@@ -274,6 +276,13 @@ func WithProviderSecretStore(sink ProviderSecretSink) Option {
 	}
 }
 
+func WithGatewayURLs(oplGatewayURL string, runtimeBridgeURL string) Option {
+	return func(service *Service) {
+		service.oplGatewayURL = strings.TrimRight(strings.TrimSpace(oplGatewayURL), "/")
+		service.runtimeBridgeURL = strings.TrimRight(strings.TrimSpace(runtimeBridgeURL), "/")
+	}
+}
+
 func NewService(store cprepo.Store, options ...Option) *Service {
 	service := &Service{store: store, now: time.Now}
 	for _, option := range options {
@@ -350,6 +359,13 @@ func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenMa
 	})
 	if err != nil {
 		return cpd.LaunchProjection{}, err
+	}
+	if service.oplGatewayURL != "" {
+		launch.OpenURL = service.oplGatewayURL + "?launchId=" + launch.LaunchID
+		launch.OPLWebURL = launch.OpenURL
+	}
+	if service.runtimeBridgeURL != "" {
+		launch.RuntimeURL = service.runtimeBridgeURL
 	}
 	if err := service.store.SaveLaunch(ctx, launch); err != nil {
 		return cpd.LaunchProjection{}, err

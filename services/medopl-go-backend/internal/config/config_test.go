@@ -25,6 +25,12 @@ func TestLoadUsesDeterministicLocalDefaults(t *testing.T) {
 	if cfg.PortalStateRoot != ".runtime/local-services/portal-state" {
 		t.Fatalf("portal state root = %q", cfg.PortalStateRoot)
 	}
+	if cfg.OPLGatewayURL != "http://127.0.0.1:18789" {
+		t.Fatalf("opl gateway url = %q", cfg.OPLGatewayURL)
+	}
+	if cfg.RuntimeBridgeURL != "http://127.0.0.1:8788" {
+		t.Fatalf("runtime bridge url = %q", cfg.RuntimeBridgeURL)
+	}
 }
 
 func TestLoadRejectsInvalidPort(t *testing.T) {

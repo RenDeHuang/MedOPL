@@ -196,6 +196,7 @@ try {
         MEDOPL_BACKEND_MODE: "local",
         MEDOPL_BACKEND_PORT: String(backendPort),
         PORTAL_OPL_PROVIDER_SECRET_ROOT: path.join(runtimeRoot, "provider-secrets"),
+        MEDOPL_PORTAL_STATE_ROOT: path.join(runtimeRoot, "portal-state"),
         GOPROXY: process.env.GOPROXY || "https://goproxy.cn,direct",
         GOSUMDB: process.env.GOSUMDB || "sum.golang.google.cn",
       },
