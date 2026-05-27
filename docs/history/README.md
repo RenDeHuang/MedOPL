@@ -3527,3 +3527,66 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-05-27 cleanup/v22-node-backend-physical-removal
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `cleanup/v22-node-backend-physical-removal`
+
+Archived change package: `changes/archive/2026-05-26-precloud-deployable-rc`
+
+Scope:
+
+- Physically removed `services/portal/src/**` so Node Portal backend is no longer a deployable control plane, frontend proxy target, typed API owner or current verification owner.
+- Kept `services/portal` as a frontend-only package whose check/start commands delegate to `services/portal/frontend`.
+- Preserved Portal frontend -> Go backend `/api` as the local pre-cloud SaaS backend boundary.
+- Added Go OPL entry preflight surface coverage and removed stale local RC/provider-bound references to deleted Node backend tests.
+- Strengthened zero-compat / physical-removal gates so Node Portal backend and deleted local RC tests cannot return as current truth.
+- Kept OPL Web Gateway and Runtime Bridge as separate active integration/runtime services; they are not the retired Portal backend.
+- Kept real cloud, secret, deploy, kubectl, build/push and live-test unauthorized.
+
+Verification:
+
+- `npm run verify:golden-path -- --json`: pass.
+- `npm run verify:current -- --json`: pass before this closeout landed; post-merge gap was the missing `b2b9cef` closeout record.
+- `npm run verify:contract -- --json`: pass.
+- `npm run verify:review -- --json`: pass.
+- `npm --prefix services/portal run check`: pass.
+- `GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...` from `services/medopl-go-backend`: pass.
+- `npm run test:regression -- --json`: pass.
+- `git diff --check HEAD~1..HEAD`: pass.
+
+Review:
+
+- Independent review model `gpt-5.4-mini` found that `local-rc` still looked like a current entry and zero-compat did not cover enough truth surface.
+- The branch fixed both findings by emptying the current authorized local RC lane and expanding physical-removal/zero-compat gates over active truth, specs and manifest.
+
+Can-claim:
+
+- Node Portal backend has been physically removed from active source.
+- Go backend owns the local pre-cloud Portal control-plane API surface.
+- Portal frontend no longer has a Node backend proxy/API owner in `services/portal/src`.
+- This is local pre-cloud evidence and a source cleanup closeout.
+
+Cannot-claim:
+
+- Production backend replacement.
+- Real cloud readiness.
+- Gateway + Runtime Bridge live chain completion.
+- Live provider, deploy, kubectl, build/push, production billing or production runtime evidence.
+- Permission to read secrets or perform provider/cloud operations.
+
+landed_commit: `b2b9cef82c744a5a18b1465f2350667ec9dbcfa3`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reaches `b2b9cef82c744a5a18b1465f2350667ec9dbcfa3`.
+- Fresh governance-closeout sync must confirm current, contract and review bundles pass after recording this history handoff.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
