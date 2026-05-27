@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-27",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "b2b9cef82c744a5a18b1465f2350667ec9dbcfa3",
+  "base_trunk_head": "c230ecaba724d7d3ee6caaced17314b05750cc25",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "b2b9cef82c744a5a18b1465f2350667ec9dbcfa3",
+  "last_landed_commit": "c230ecaba724d7d3ee6caaced17314b05750cc25",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -23,7 +23,7 @@
     "precloud_deployable_rc_and_node_backend_physical_removal_are_local_precloud_evidence_not_production_or_real_cloud_evidence",
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation"
   ],
-  "current_problem": "Precloud-deployable RC, Go Portal action regression, and Node Portal backend physical removal are recorded: Portal frontend defaults to Go /api, Go owns the local pre-cloud SaaS backend deployment surface, services/portal/src is physically absent, Node Portal backend is not a deploy/proxy/API owner, and cloud connector fails closed. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package: it keeps secret/provider/cloud/deploy/kubectl/build-push/live-test forbidden until the user opens a separately authorized real-cloud readiness or execution package.",
+  "current_problem": "Local SaaS backend RC closeout is landed and pushed at c230ecaba724d7d3ee6caaced17314b05750cc25: service orchestration, Gateway local probe, Runtime Bridge local fake probe and aggregate local RC guard are repo-native evidence. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package; local Portal/OPL delivery RC is the next non-cloud implementation package and must not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -293,9 +293,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "cleanup/v22-node-backend-physical-removal",
+  "last_landed_branch": "feat/v22-local-saas-backend-closure",
   "last_landed_at": "2026-05-27",
-  "history_latest_branch": "cleanup/v22-node-backend-physical-removal",
+  "history_latest_branch": "feat/v22-local-saas-backend-closure",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
