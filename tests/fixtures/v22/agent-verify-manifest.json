@@ -1456,7 +1456,8 @@
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs specs changes tests scripts package.json",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+        "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs"
       ],
       "truth_writeback_target": [
         "docs/active/README.md",
@@ -1505,7 +1506,8 @@
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs specs changes tests scripts package.json",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs"
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+        "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs"
       ]
     },
     {
@@ -1582,7 +1584,8 @@
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
-        "node tests/contract/contract-test-v22-commercial-package-model.mjs"
+        "node tests/contract/contract-test-v22-commercial-package-model.mjs",
+        "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs"
       ]
     },
     {
@@ -1668,7 +1671,8 @@
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
-        "node tests/contract/contract-test-v22-commercial-package-model.mjs"
+        "node tests/contract/contract-test-v22-commercial-package-model.mjs",
+        "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs"
       ]
     }
   ],

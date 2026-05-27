@@ -47,6 +47,7 @@ Retirement surface：
 - `services/portal/src/app/portal-runtime.mjs` 已物理删除，不得作为部署入口、typed API owner 或当前 verify owner。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。
+- `real-cloud-authorization-boundary` 仍是单独 Operations cursor；本地 Portal/OPL delivery source 不能授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
 
 Backend physical removal gate：
 
