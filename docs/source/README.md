@@ -42,6 +42,7 @@ Retirement surface：
 
 - `services/portal/frontend` 是 active frontend implementation；它必须通过 typed API 读取 Go control-plane projection。
 - `services/medopl-go-backend` 是 pre-cloud SaaS backend implementation；它承接 Portal typed API、providerKeyRef 边界、launch/preflight decision、billing/audit/resource workflow、release/stop billing、Go `/healthz`/`/readyz` 和 cloud connector fail-closed API，相关 pre-cloud eval 必须在 manifest/test lane registry 中可追踪。
+- Portal admin projection 的本地 RC 可变面（users、finance ledger、announcements）由 Go backend 的 `MEDOPL_PORTAL_STATE_ROOT` 持久化到 `.runtime/local-services/portal-state`。该状态只证明本地 Portal delivery 可抗 Router 重建；它不是真实云账本、production billing 或外部 provider truth。
 - `services/portal/src` 已物理清退；它不得恢复为长任务编排、cloud mutation、billing mutation、audit reconciliation、canonical store 或 runtime launch truth。
 - Node Portal v22 control-plane routes and domains for `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness`, `/portal/api/v22/managed-environment/open`, `/portal/api/v22/managed-environment/release` and `/portal/api/v22/opl-work/*` are physically retired from active code. 当前 owner 是 `services/medopl-go-backend` 的 `/api/v22/*`、`/api/provider/*` 和 `/api/opl/*`。
 - `services/portal/src/app/portal-runtime.mjs` 已物理删除，不得作为部署入口、typed API owner 或当前 verify owner。

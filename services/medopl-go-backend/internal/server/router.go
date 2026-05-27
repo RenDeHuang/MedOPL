@@ -14,6 +14,13 @@ import (
 func Router(cfg config.Config) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
+	portalState, err := handlers.NewLocalPortalProjectionStateChecked(cfg.PortalStateRoot)
+	if err != nil {
+		cfg.PortalStateStatus = "MEDOPL_PORTAL_STATE_ROOT invalid: " + err.Error()
+	} else {
+		cfg.PortalStateStatus = "ok"
+	}
+	handlers.UseLocalPortalProjectionState(portalState)
 	router.GET("/health", handlers.Health(cfg))
 	router.GET("/healthz", handlers.Health(cfg))
 	router.GET("/readyz", handlers.Health(cfg))

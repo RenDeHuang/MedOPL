@@ -27,6 +27,16 @@ func ConfigCheck(cfg config.Config) gin.HandlerFunc {
 			})
 			return
 		}
+		if cfg.PortalStateStatus != "" && cfg.PortalStateStatus != "ok" {
+			ctx.JSON(http.StatusInternalServerError, ConfigCheckPayload{
+				Ok:      false,
+				Service: cfg.Service,
+				Mode:    cfg.Mode,
+				Status:  "failed",
+				Error:   cfg.PortalStateStatus,
+			})
+			return
+		}
 		ctx.JSON(http.StatusOK, ConfigCheckPayload{
 			Ok:      true,
 			Service: cfg.Service,

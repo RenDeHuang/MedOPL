@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -12,7 +14,9 @@ import (
 )
 
 func TestGoPortalProjectionAdminActionsPersistLocalState(t *testing.T) {
-	router := Router(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir()})
+	stateRoot := t.TempDir()
+	cfg := config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir(), PortalStateRoot: stateRoot}
+	router := Router(cfg)
 	email := "go-action-user@example.test"
 
 	postAction(t, router, "create-user", map[string]any{
@@ -46,11 +50,56 @@ func TestGoPortalProjectionAdminActionsPersistLocalState(t *testing.T) {
 		t.Fatalf("announcement not visible after save: %+v", announcements)
 	}
 
+	restartedRouter := Router(cfg)
+	restartedUsers := getJSONMap(t, restartedRouter, "/api/admin/users")
+	restartedUser := findUserByEmail(t, restartedUsers, email)
+	if numberFrom(restartedUser["balance"]) != 150 {
+		t.Fatalf("balance after router restart = %+v", restartedUser)
+	}
+	restartedAnnouncements := getJSONMap(t, restartedRouter, "/api/announcements")
+	if !jsonContains(restartedAnnouncements, "Go Action Announcement") {
+		t.Fatalf("announcement not visible after router restart: %+v", restartedAnnouncements)
+	}
+	export := getText(t, restartedRouter, "/api/billing/export.csv")
+	if !strings.Contains(export, "finance-local-rc-extra-1") || !strings.Contains(export, "finance-local-rc-extra-2") {
+		t.Fatalf("billing export did not include persisted finance rows: %s", export)
+	}
+
 	postAction(t, router, "announcements-delete", map[string]any{"id": "announcement-local-rc-extra-1"})
 	announcements = getJSONMap(t, router, "/api/announcements")
 	if jsonContains(announcements, "Go Action Announcement") {
 		t.Fatalf("announcement still visible after delete: %+v", announcements)
 	}
+}
+
+func TestGoPortalProjectionStateFailsClosedOnInvalidStateFile(t *testing.T) {
+	stateRoot := t.TempDir()
+	if err := os.WriteFile(filepath.Join(stateRoot, "portal-projection-state.json"), []byte("{invalid-json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	router := Router(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir(), PortalStateRoot: stateRoot})
+	req := httptest.NewRequest(http.MethodGet, "/config/check", nil)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("config check status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "MEDOPL_PORTAL_STATE_ROOT") {
+		t.Fatalf("config check did not report portal state root failure: %s", rec.Body.String())
+	}
+}
+
+func getText(t *testing.T, router http.Handler, path string) string {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("%s status = %d body = %s", path, rec.Code, rec.Body.String())
+	}
+	return rec.Body.String()
 }
 
 func postAction(t *testing.T, router http.Handler, action string, payload map[string]any) {

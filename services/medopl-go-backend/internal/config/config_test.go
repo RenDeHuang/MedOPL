@@ -22,6 +22,9 @@ func TestLoadUsesDeterministicLocalDefaults(t *testing.T) {
 	if cfg.Addr() != ":8789" {
 		t.Fatalf("addr = %q", cfg.Addr())
 	}
+	if cfg.PortalStateRoot != ".runtime/local-services/portal-state" {
+		t.Fatalf("portal state root = %q", cfg.PortalStateRoot)
+	}
 }
 
 func TestLoadRejectsInvalidPort(t *testing.T) {

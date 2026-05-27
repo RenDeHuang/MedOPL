@@ -19,6 +19,8 @@ type Config struct {
 	Mode               string
 	Port               int
 	ProviderSecretRoot string
+	PortalStateRoot    string
+	PortalStateStatus  string
 }
 
 func Load() (Config, error) {
@@ -27,6 +29,7 @@ func Load() (Config, error) {
 		Mode:               valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), defaultMode),
 		Port:               defaultPort,
 		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), filepath.Join(".runtime", "runtime-bridge", "provider-secrets")),
+		PortalStateRoot:    valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
 	}
 	rawPort := valueOrDefault(os.Getenv("MEDOPL_BACKEND_PORT"), strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(rawPort)

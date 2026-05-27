@@ -40,6 +40,7 @@ const LOCAL_SERVICE_PLAN = Object.freeze([
     command: "go run ./cmd/server",
     env: {
       MEDOPL_BACKEND_PORT: "8789",
+      MEDOPL_PORTAL_STATE_ROOT: ".runtime/local-services/portal-state",
       PORTAL_OPL_PROVIDER_SECRET_ROOT: ".runtime/local-services/provider-secret-boundary",
     },
     url: "http://127.0.0.1:8789/",

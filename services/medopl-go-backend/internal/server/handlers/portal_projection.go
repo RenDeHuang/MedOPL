@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -50,11 +53,49 @@ type localPortalProjectionState struct {
 	nextUserSequence    int
 	nextFinanceSequence int
 	nextAnnouncementSeq int
+	stateFile           string
+}
+
+type localPortalProjectionSnapshot struct {
+	Users               []localPortalUser         `json:"users"`
+	FinanceRows         []localPortalFinanceRow   `json:"financeRows"`
+	Announcements       []localPortalAnnouncement `json:"announcements"`
+	NextUserSequence    int                       `json:"nextUserSequence"`
+	NextFinanceSequence int                       `json:"nextFinanceSequence"`
+	NextAnnouncementSeq int                       `json:"nextAnnouncementSeq"`
 }
 
 var portalProjectionState = newLocalPortalProjectionState()
 
 func newLocalPortalProjectionState() *localPortalProjectionState {
+	return newSeededLocalPortalProjectionState("")
+}
+
+func NewLocalPortalProjectionState(root string) *localPortalProjectionState {
+	state := newSeededLocalPortalProjectionState(root)
+	if root == "" {
+		return state
+	}
+	_ = state.load()
+	return state
+}
+
+func NewLocalPortalProjectionStateChecked(root string) (*localPortalProjectionState, error) {
+	state := newSeededLocalPortalProjectionState(root)
+	if root == "" {
+		return state, nil
+	}
+	if err := state.load(); err != nil {
+		return state, err
+	}
+	return state, nil
+}
+
+func newSeededLocalPortalProjectionState(root string) *localPortalProjectionState {
+	stateFile := ""
+	if strings.TrimSpace(root) != "" {
+		stateFile = filepath.Join(root, "portal-projection-state.json")
+	}
 	return &localPortalProjectionState{
 		users: []localPortalUser{{
 			ID:        "user-local-rc",
@@ -86,7 +127,76 @@ func newLocalPortalProjectionState() *localPortalProjectionState {
 		nextUserSequence:    1,
 		nextFinanceSequence: 1,
 		nextAnnouncementSeq: 1,
+		stateFile:           stateFile,
 	}
+}
+
+func UseLocalPortalProjectionState(state *localPortalProjectionState) func() {
+	previous := portalProjectionState
+	portalProjectionState = state
+	return func() {
+		portalProjectionState = previous
+	}
+}
+
+func (state *localPortalProjectionState) load() error {
+	state.mu.Lock()
+	defer state.mu.Unlock()
+	if state.stateFile == "" {
+		return nil
+	}
+	raw, err := os.ReadFile(state.stateFile)
+	if os.IsNotExist(err) {
+		return state.persistLocked()
+	}
+	if err != nil {
+		return err
+	}
+	var snapshot localPortalProjectionSnapshot
+	if err := json.Unmarshal(raw, &snapshot); err != nil {
+		return err
+	}
+	if len(snapshot.Users) > 0 {
+		state.users = snapshot.Users
+	}
+	if len(snapshot.FinanceRows) > 0 {
+		state.financeRows = snapshot.FinanceRows
+	}
+	if len(snapshot.Announcements) > 0 {
+		state.announcements = snapshot.Announcements
+	}
+	if snapshot.NextUserSequence > 0 {
+		state.nextUserSequence = snapshot.NextUserSequence
+	}
+	if snapshot.NextFinanceSequence > 0 {
+		state.nextFinanceSequence = snapshot.NextFinanceSequence
+	}
+	if snapshot.NextAnnouncementSeq > 0 {
+		state.nextAnnouncementSeq = snapshot.NextAnnouncementSeq
+	}
+	return nil
+}
+
+func (state *localPortalProjectionState) persistLocked() error {
+	if state.stateFile == "" {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(state.stateFile), 0o700); err != nil {
+		return err
+	}
+	snapshot := localPortalProjectionSnapshot{
+		Users:               state.users,
+		FinanceRows:         state.financeRows,
+		Announcements:       state.announcements,
+		NextUserSequence:    state.nextUserSequence,
+		NextFinanceSequence: state.nextFinanceSequence,
+		NextAnnouncementSeq: state.nextAnnouncementSeq,
+	}
+	raw, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(state.stateFile, append(raw, '\n'), 0o600)
 }
 
 func CurrentUser() gin.HandlerFunc {
@@ -581,32 +691,40 @@ func (state *localPortalProjectionState) activeUserCount() int {
 func (state *localPortalProjectionState) applyAdminAction(action string, payload map[string]any) error {
 	state.mu.Lock()
 	defer state.mu.Unlock()
+	var err error
 	switch action {
 	case "create-user":
-		return state.createUser(payload)
+		err = state.createUser(payload)
 	case "update-user":
-		return state.updateUser(payload)
+		err = state.updateUser(payload)
 	case "toggle-user":
-		return state.toggleUser(payload)
+		err = state.toggleUser(payload)
 	case "delete-user":
-		return state.deleteUser(payload)
+		err = state.deleteUser(payload)
 	case "recharge":
-		return state.adjustUserBalance(payload, "topup", "admin_recharge")
+		err = state.adjustUserBalance(payload, "topup", "admin_recharge")
 	case "ledger-adjust":
 		actionType := firstNonEmptyString(actionString(payload, "actionType"), "adjustment")
 		reason := firstNonEmptyString(actionString(payload, "reason"), "admin_ledger_adjust")
-		return state.adjustUserBalance(payload, actionType, reason)
+		err = state.adjustUserBalance(payload, actionType, reason)
 	case "announcements-save":
-		return state.saveAnnouncement(payload)
+		err = state.saveAnnouncement(payload)
 	case "announcements-toggle":
-		return state.toggleAnnouncement(payload)
+		err = state.toggleAnnouncement(payload)
 	case "announcements-delete":
-		return state.deleteAnnouncement(payload)
+		err = state.deleteAnnouncement(payload)
 	case "settings", "billing-ops-mark":
-		return nil
+		err = nil
 	default:
-		return fmt.Errorf("admin_action_not_supported")
+		err = fmt.Errorf("admin_action_not_supported")
 	}
+	if err != nil {
+		return err
+	}
+	if err := state.persistLocked(); err != nil {
+		return fmt.Errorf("admin_state_persist_failed")
+	}
+	return nil
 }
 
 func (state *localPortalProjectionState) createUser(payload map[string]any) error {
