@@ -5,6 +5,8 @@
 ```bash
 node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs
 node scripts/v22-local-services.mjs check --dry-run --json
+node scripts/v22-local-services.mjs verify --dry-run --json
+npm run verify:local-release-candidate -- --dry-run --json
 npm run verify:golden-path -- --json
 npm run verify:current -- --json
 npm run verify:contract -- --json

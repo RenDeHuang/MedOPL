@@ -82,6 +82,58 @@ const packageJson = JSON.parse(await readRepoFile("package.json"));
 assert.equal(packageJson.scripts["local:services:plan"], "node scripts/v22-local-services.mjs plan --json", "package_must_expose_plan");
 assert.equal(packageJson.scripts["local:services:check"], "node scripts/v22-local-services.mjs check --json", "package_must_expose_check");
 assert.equal(packageJson.scripts["local:services:check:dry-run"], "node scripts/v22-local-services.mjs check --dry-run --json", "package_must_expose_dry_run_check");
+assert.equal(packageJson.scripts["local:services:start"], "node scripts/v22-local-services.mjs start --json", "package_must_expose_start");
+assert.equal(packageJson.scripts["local:services:stop"], "node scripts/v22-local-services.mjs stop --json", "package_must_expose_stop");
+assert.equal(packageJson.scripts["local:services:status"], "node scripts/v22-local-services.mjs status --json", "package_must_expose_status");
+assert.equal(packageJson.scripts["local:services:logs"], "node scripts/v22-local-services.mjs logs --json", "package_must_expose_logs");
+assert.equal(packageJson.scripts["local:services:verify"], "node scripts/v22-local-services.mjs verify --dry-run --json", "package_must_expose_local_service_verify");
+assert.equal(packageJson.scripts["verify:local-release-candidate"], "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk", "package_must_expose_local_release_candidate_verify");
+
+const status = jsonFrom(runLocalServices(["status", "--json"]));
+assert.equal(status.ok, true, "status_must_be_deterministic_when_services_are_stopped");
+assert.equal(status.mode, "status", "status_mode");
+assert.equal(status.runtimeDir, ".runtime/local-services", "status_runtime_dir");
+assert.equal(status.results.length, plan.services.length, "status_must_cover_all_services");
+for (const result of status.results) {
+  assert(["stopped", "external"].includes(result.status), `status_must_not_probe_or_spawn:${result.id}`);
+  assert.equal(Boolean(result.pid), false, `status_must_not_fabricate_pid:${result.id}`);
+}
+
+const startDryRun = jsonFrom(runLocalServices(["start", "--dry-run", "--json"]));
+assert.equal(startDryRun.ok, true, "start_dry_run_must_pass");
+assert.equal(startDryRun.mode, "start", "start_dry_run_mode");
+assert.equal(startDryRun.dryRun, true, "start_dry_run_flag");
+assert.equal(startDryRun.results.length, plan.services.length, "start_dry_run_must_cover_all_services");
+assert.equal(startDryRun.results.find((result) => result.id === "clean-opl-webui").status, "external_not_started", "clean_opl_must_not_be_started_by_medopl");
+for (const result of startDryRun.results.filter((item) => item.id !== "clean-opl-webui")) {
+  assert.equal(result.status, "would_start", `start_dry_run_status:${result.id}`);
+  assert(result.command, `start_dry_run_must_show_command:${result.id}`);
+  assert(result.logFile?.startsWith(".runtime/local-services/"), `start_dry_run_must_use_runtime_logs:${result.id}`);
+}
+
+const stopDryRun = jsonFrom(runLocalServices(["stop", "--dry-run", "--json"]));
+assert.equal(stopDryRun.ok, true, "stop_dry_run_must_pass");
+assert.equal(stopDryRun.mode, "stop", "stop_dry_run_mode");
+assert.equal(stopDryRun.dryRun, true, "stop_dry_run_flag");
+for (const result of stopDryRun.results) {
+  assert(["would_stop_if_running", "external_not_stopped"].includes(result.status), `stop_dry_run_status:${result.id}`);
+}
+
+const logsDryRun = jsonFrom(runLocalServices(["logs", "--dry-run", "--json"]));
+assert.equal(logsDryRun.ok, true, "logs_dry_run_must_pass");
+assert.equal(logsDryRun.mode, "logs", "logs_mode");
+assert.equal(logsDryRun.dryRun, true, "logs_dry_run_flag");
+for (const result of logsDryRun.results) {
+  assert(["log_plan", "external_no_log"].includes(result.status), `logs_dry_run_status:${result.id}`);
+  if (result.id !== "clean-opl-webui") assert(result.logFile?.startsWith(".runtime/local-services/"), `logs_must_use_runtime_dir:${result.id}`);
+}
+
+const verifyDryRun = jsonFrom(runLocalServices(["verify", "--dry-run", "--json"]));
+assert.equal(verifyDryRun.ok, true, "verify_dry_run_must_pass");
+assert.equal(verifyDryRun.mode, "verify", "verify_mode");
+assert.equal(verifyDryRun.dryRun, true, "verify_dry_run_flag");
+assert.deepEqual(verifyDryRun.steps, ["plan", "check", "status"], "verify_must_collect_plan_check_status");
+assert.equal(verifyDryRun.check?.dryRun, true, "verify_must_use_dry_run_check_when_requested");
 
 const gatewayPackage = JSON.parse(await readRepoFile("services/opl-web-gateway/package.json"));
 assert.equal(gatewayPackage.scripts.start, "node src/server.mjs", "gateway_package_must_have_start_script");

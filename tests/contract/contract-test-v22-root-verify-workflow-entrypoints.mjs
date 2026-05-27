@@ -32,6 +32,7 @@ const expectedScripts = {
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
   "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
   "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
+  "verify:local-release-candidate": "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk",
   "gate:review": "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
   "gate:change": "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk",
   "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
@@ -44,6 +45,11 @@ const expectedScripts = {
   "local:services:plan": "node scripts/v22-local-services.mjs plan --json",
   "local:services:check": "node scripts/v22-local-services.mjs check --json",
   "local:services:check:dry-run": "node scripts/v22-local-services.mjs check --dry-run --json",
+  "local:services:start": "node scripts/v22-local-services.mjs start --json",
+  "local:services:stop": "node scripts/v22-local-services.mjs stop --json",
+  "local:services:status": "node scripts/v22-local-services.mjs status --json",
+  "local:services:logs": "node scripts/v22-local-services.mjs logs --json",
+  "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json",
 };
 
 assert.equal(packageJson.private, true, "root_package_must_be_private");
@@ -197,6 +203,20 @@ for (const command of [
 ]) {
   assert(changePackageGateSuite.commands.includes(command), `change_package_gate_package_suite_command_missing:${command}`);
 }
+
+const localReleaseCandidateSuite = manifest.package_suites.find((suite) => suite.id === "local-release-candidate");
+assert(localReleaseCandidateSuite, "local_release_candidate_package_suite_missing");
+assert.deepEqual(localReleaseCandidateSuite.commands, [
+  "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs",
+  "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
+  "node scripts/v22-local-services.mjs verify --dry-run --json",
+  "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
+  "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json",
+  "npm --prefix services/portal run check",
+  "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+  "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge",
+], "local_release_candidate_package_suite_commands_mismatch");
 
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");
 assert(reviewSuite?.commands.includes("node tests/contract/contract-test-v22-landing-closeout-automation.mjs"), "review_suite_must_check_landing_closeout");

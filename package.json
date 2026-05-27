@@ -25,8 +25,14 @@
     "verify:product-loop": "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk",
     "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
     "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
+    "verify:local-release-candidate": "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk",
     "local:services:plan": "node scripts/v22-local-services.mjs plan --json",
     "local:services:check": "node scripts/v22-local-services.mjs check --json",
-    "local:services:check:dry-run": "node scripts/v22-local-services.mjs check --dry-run --json"
+    "local:services:check:dry-run": "node scripts/v22-local-services.mjs check --dry-run --json",
+    "local:services:start": "node scripts/v22-local-services.mjs start --json",
+    "local:services:stop": "node scripts/v22-local-services.mjs stop --json",
+    "local:services:status": "node scripts/v22-local-services.mjs status --json",
+    "local:services:logs": "node scripts/v22-local-services.mjs logs --json",
+    "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json"
   }
 }
