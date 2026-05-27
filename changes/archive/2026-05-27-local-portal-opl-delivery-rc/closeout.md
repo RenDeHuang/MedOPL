@@ -1,10 +1,11 @@
 # local-portal-opl-delivery-rc Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
-- pending final commit on `feat/v22-local-portal-opl-delivery-rc`
+- `6e26a63` test(local): close portal opl delivery rc
+- Post-merge closeout sync archives this package and records durable spec, active, machine cursor and history handoff.
 
 ## Verification
 
@@ -28,13 +29,13 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- changes/archive/YYYY-MM-DD-local-portal-opl-delivery-rc
+- changes/archive/2026-05-27-local-portal-opl-delivery-rc
 
 ## History Handoff
 
-- After landing to trunk, archive this package and add a compact `docs/history/README.md` summary with landed commit and verification results.
+- `docs/history/README.md` records the compact landed summary.
 
 ## Next Owner
 
-- MedOPL Platform for landing review and trunk absorption.
+- MedOPL Platform for local pre-cloud guardrail maintenance.
 - MedOPL Operations for later real-cloud authorization.

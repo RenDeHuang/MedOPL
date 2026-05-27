@@ -3661,3 +3661,62 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-05-27 feat/v22-local-portal-opl-delivery-rc
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-local-portal-opl-delivery-rc`
+
+Base trunk HEAD: `c230ecaba724d7d3ee6caaced17314b05750cc25`
+
+Model: `gpt-5.4`
+
+Archived change package: `changes/archive/2026-05-27-local-portal-opl-delivery-rc`
+
+Scope:
+
+- Closed the local Portal/OPL delivery RC after the local SaaS backend RC.
+- Made Go Portal launch projection use configured local OPL Gateway and Runtime Bridge public URLs.
+- Added deterministic Portal Go backend -> Gateway -> clean upstream fixture -> Runtime Bridge -> fake ACP message/run/artifact projection coverage.
+- Kept `local-rc-authorized` empty because this proof does not read real provider secrets.
+- Kept OPL upstream clean and external; the proof uses fixture/stub boundaries only.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs`: pass.
+- `node tests/regression/opl/regression-test-v22-local-portal-gateway-runtime-rc.mjs`: pass.
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/config ./internal/service/controlplane ./internal/server -count=1"`: pass.
+- `npm run verify:local-release-candidate -- --json`: pass.
+- Post-merge closeout sync verification is recorded by the follow-up governance closeout commit.
+
+Can-claim:
+
+- Local Go Portal launch projection can route to configured local OPL Gateway and Runtime Bridge URLs.
+- Local deterministic Gateway/Runtime Bridge integration proof is registered under local regression and local release-candidate verification.
+- The proof covers clean upstream fixture routing plus fake ACP message/run/artifact projection.
+
+Cannot-claim:
+
+- Real cloud, deploy, kubectl, build/push, live-test, production billing, live provider readiness or upstream production ownership.
+- Real upstream OPL behavior, production runtime behavior or production billing behavior.
+- Secret read, provider operation or true cloud mutation authorization.
+
+landed_commit: `6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67`.
+- `npm run verify:local-release-candidate -- --json`: pass on trunk after feature absorption.
+- `npm run test:regression -- --json`: pass on trunk after feature absorption.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass on trunk after feature absorption.
+- `node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs`: pass on trunk after feature absorption.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

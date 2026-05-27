@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
-const changeRoot = "changes/active/local-portal-opl-delivery-rc";
+const changeRoot = "changes/archive/2026-05-27-local-portal-opl-delivery-rc";
 
 async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");

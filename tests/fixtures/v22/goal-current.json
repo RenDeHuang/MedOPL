@@ -8,12 +8,12 @@
   "last_updated_at": "2026-05-27",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "c230ecaba724d7d3ee6caaced17314b05750cc25",
+  "base_trunk_head": "6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "c230ecaba724d7d3ee6caaced17314b05750cc25",
+  "last_landed_commit": "6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -23,7 +23,7 @@
     "precloud_deployable_rc_and_node_backend_physical_removal_are_local_precloud_evidence_not_production_or_real_cloud_evidence",
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation"
   ],
-  "current_problem": "Local SaaS backend RC closeout is landed and pushed at c230ecaba724d7d3ee6caaced17314b05750cc25: service orchestration, Gateway local probe, Runtime Bridge local fake probe and aggregate local RC guard are repo-native evidence. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package; local Portal/OPL delivery RC is the next non-cloud implementation package and must not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
+  "current_problem": "Local Portal/OPL delivery RC is landed and pushed at 6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67: Go Portal launch projection now routes through configured local OPL Gateway and Runtime Bridge URLs and the deterministic clean upstream fixture -> Runtime Bridge fake ACP projection is repo-native evidence. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -132,6 +132,21 @@
       "closed_at": "2026-05-26",
       "archive": "changes/archive/2026-05-26-precloud-deployable-rc",
       "landed_commit": "b2b9cef82c744a5a18b1465f2350667ec9dbcfa3"
+    },
+    {
+      "id": "local-portal-opl-delivery-rc",
+      "stage": "S6 local Portal/OPL delivery RC before real-cloud authorization",
+      "priority": 91,
+      "cursor_eligible": false,
+      "status": "landed",
+      "next_leaf_step": "real-cloud-authorization-boundary",
+      "depends_on": [
+        "precloud-deployable-rc"
+      ],
+      "history_summary": "Go Portal launch projection routes through configured local OPL Gateway and Runtime Bridge URLs; deterministic clean upstream fixture to Runtime Bridge fake ACP message/run/artifact projection is registered as local evidence only.",
+      "closed_at": "2026-05-27",
+      "archive": "changes/archive/2026-05-27-local-portal-opl-delivery-rc",
+      "landed_commit": "6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67"
     }
   ],
   "current_leaf": {
@@ -297,9 +312,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-local-saas-backend-closure",
+  "last_landed_branch": "feat/v22-local-portal-opl-delivery-rc",
   "last_landed_at": "2026-05-27",
-  "history_latest_branch": "feat/v22-local-saas-backend-closure",
+  "history_latest_branch": "feat/v22-local-portal-opl-delivery-rc",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
