@@ -1623,6 +1623,7 @@
         "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
         "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
         "node tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs",
+        "node tests/regression/opl/regression-test-v22-gateway-live-probe.mjs",
         "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
         "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
         "node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs"
