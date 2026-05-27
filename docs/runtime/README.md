@@ -58,6 +58,8 @@ Portal Control Plane
 
 当前本地 program 已切到 Go control-plane MVP takeover 并完成 Node backend physical removal：`services/medopl-go-backend` 是本地控制面 owner，Portal frontend -> Go backend `/api` 是当前边界。这个切换不是 real-cloud readiness 或 production completion claim；它只表示本地 golden path 和 control-plane truth 必须先由 Go 证明，再进入真实云准备。
 
+`tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs` 是 Runtime Bridge 的本地 fake runtime probe：它验证 launch、bootstrap、session bind、dummy provider config public projection、message reply、run、artifact、trace 和 ledger projection 的本地闭环。该 evidence 不证明真实 upstream OPL、live provider、production runtime、real cloud 或 production billing。
+
 分层规则：
 
 - Portal Control Plane 只承接用户、workspace、套餐、文件列表、run request、账单/审计查询和状态展示。

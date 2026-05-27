@@ -85,6 +85,7 @@ async function bindProviderConfig(runtimeSession, input = {}) {
   runtimeSession.providerConfigured = true;
   runtimeSession.providerConfigStatus = "configured";
   runtimeSession.providerConfigSecretRef = ref;
+  runtimeSession.providerKeyRef = ref;
   runtimeSession.providerName = "gflab";
   runtimeSession.providerBaseUrl = "https://gflabtoken.cn/v1";
   runtimeSession.modelProvider = "gflab";
