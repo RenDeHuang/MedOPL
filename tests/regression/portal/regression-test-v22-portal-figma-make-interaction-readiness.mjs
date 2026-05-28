@@ -54,6 +54,8 @@ const [
   adminApiSource,
   resourceApiSource,
   adapterSource,
+  oplEntryModelSource,
+  displayErrorsSource,
 ] = await Promise.all([
   source(`${appRoot}/components/ui/button.tsx`),
   source(`${appRoot}/components/ui/sheet.tsx`),
@@ -76,6 +78,8 @@ const [
   source("services/portal/frontend/src/api/portal/admin.ts"),
   source("services/portal/frontend/src/api/portal/resources.ts"),
   source(`${appRoot}/data/portalAdapters.ts`),
+  source(`${appRoot}/data/portalOplEntryModel.ts`),
+  source(`${appRoot}/data/portalDisplayErrors.ts`),
 ]);
 
 assertRefForwarded(buttonSource, "Button");
@@ -120,12 +124,12 @@ assertIncludes(resourceApiSource, "providerBound: boolean;", "opl_launch_status_
 assertIncludes(resourceApiSource, "providerKeyRef: string;", "opl_launch_status_payload_must_include_provider_key_ref_projection");
 assertIncludes(resourceApiSource, "gatewayReady: boolean;", "opl_launch_status_payload_must_include_gateway_ready_projection");
 assertIncludes(resourceApiSource, "gatewayState: string;", "opl_launch_status_payload_must_include_gateway_state_projection");
-assertIncludes(adapterSource, "providerBound: status.providerBound", "opl_entry_adapter_must_forward_backend_provider_bound");
-assertIncludes(adapterSource, "providerKeyRef: status.providerKeyRef", "opl_entry_adapter_must_forward_backend_provider_key_ref");
-assertIncludes(adapterSource, "gatewayReady: status.gatewayReady", "opl_entry_adapter_must_forward_backend_gateway_ready");
-assertIncludes(adapterSource, "gatewayState: status.gatewayState", "opl_entry_adapter_must_forward_backend_gateway_state");
-assertIncludes(adapterSource, "blockingUser: status.blockingUser", "opl_entry_adapter_must_forward_backend_blocking_state");
-assertExcludes(adapterSource, 'providerBound: false, providerKeyRef: ""', "opl_entry_adapter_must_not_synthesize_missing_provider_projection");
+assertIncludes(oplEntryModelSource, "providerBound: status.providerBound", "opl_entry_adapter_must_forward_backend_provider_bound");
+assertIncludes(oplEntryModelSource, "providerKeyRef: status.providerKeyRef", "opl_entry_adapter_must_forward_backend_provider_key_ref");
+assertIncludes(oplEntryModelSource, "gatewayReady: status.gatewayReady", "opl_entry_adapter_must_forward_backend_gateway_ready");
+assertIncludes(oplEntryModelSource, "gatewayState: status.gatewayState", "opl_entry_adapter_must_forward_backend_gateway_state");
+assertIncludes(oplEntryModelSource, "blockingUser: status.blockingUser", "opl_entry_adapter_must_forward_backend_blocking_state");
+assertExcludes(oplEntryModelSource, 'providerBound: false, providerKeyRef: ""', "opl_entry_adapter_must_not_synthesize_missing_provider_projection");
 assertIncludes(oplEntrySource, "query.data.providerBound", "opl_entry_page_must_render_backend_provider_bound");
 assertIncludes(oplEntrySource, "query.data.providerKeyRef", "opl_entry_page_must_render_backend_provider_key_ref");
 assertIncludes(oplEntrySource, "query.data.gatewayReady", "opl_entry_page_must_render_backend_gateway_ready");
@@ -285,8 +289,8 @@ for (const sourceText of [overviewSource, tasksSource, workspaceSource, runtimeS
 }
 assertExcludes(adapterSource, "error instanceof Error ? error.message", "portal_query_error_must_not_directly_expose_error_message");
 assertIncludes(adapterSource, "PortalDisplayError", "portal_query_must_use_display_error_boundary");
-assertIncludes(adapterSource, "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。", "opl_launch_error_must_have_product_message");
-assertIncludes(adapterSource, "Portal 数据暂时不可用，请稍后重试。", "portal_data_error_must_have_product_message");
+assertIncludes(displayErrorsSource, "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。", "opl_launch_error_must_have_product_message");
+assertIncludes(displayErrorsSource, "Portal 数据暂时不可用，请稍后重试。", "portal_data_error_must_have_product_message");
 
 console.log(JSON.stringify({
   ok: true,

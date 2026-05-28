@@ -61,6 +61,37 @@ landed 后的记录还必须补齐：
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
 
+### 2026-05-28 changes/archive/2026-05-28-portal-opl-refund-api-fix
+
+Status: `archived / local-gated`
+
+Branch: `fix/v22-portal-opl-refund-api`
+
+Archived change package: `changes/archive/2026-05-28-portal-opl-refund-api-fix`
+
+Scope:
+
+- Fixed local Portal `/portal/opl` entry alias so Gateway direct-entry return does not render React Router default 404.
+- Made OPL entry run provider preflight before launch creation, so missing provider binding renders the binding UI without a launch 428 console error.
+- Fixed Go local Portal refund ledger semantics so refund decreases balance and records a negative ledger amount.
+
+Verification result:
+
+- Focused RED was observed for refund: balance went from 120 to 150 before the fix.
+- Full verification result is recorded in the package closeout and commit message.
+
+Can-claim:
+
+- Local Portal refund and OPL entry route/preflight semantics are covered by local deterministic regression proof.
+
+Cannot-claim:
+
+- Production billing, real payment refund, real upstream OPL production behavior, live provider, real cloud, deploy or production runtime readiness.
+
+Next owner:
+
+- `MedOPL Platform` keeps local Portal/OPL delivery regression green.
+
 
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 

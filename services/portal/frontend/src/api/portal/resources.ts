@@ -117,6 +117,7 @@ export interface PlatformProvisionedResourcesPayload {
 export interface OplLaunchStatusPayload {
   ok: boolean;
   launchId: string;
+  workspaceId: string;
   status: "preparing" | "ready" | "failed" | string;
   currentStage: string;
   userVisibleState: string;

@@ -29,6 +29,7 @@ export const router = createBrowserRouter([
       { path: "trace", Component: TasksResults },
       { path: "billing", Component: BillingAudit },
       { path: "opl-launch", Component: OPLEntry },
+      { path: "portal/opl", loader: () => redirect("/opl-launch") },
 
       // 管理台路由
       { path: "admin/dashboard", Component: AdminDashboard },

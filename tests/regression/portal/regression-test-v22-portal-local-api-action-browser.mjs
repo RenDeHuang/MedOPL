@@ -287,8 +287,8 @@ try {
     await page.locator("#refundAmount").fill("30");
     await page.locator("#refundReason").fill("browser go action closure");
     await page.getByRole("button", { name: "确认退款" }).click();
-    await page.getByText("¥150.00").waitFor({ timeout: 30000 });
-    await assertUserBalance(backendBaseUrl, actionUserEmail, 150);
+    await page.getByText("¥90.00").waitFor({ timeout: 30000 });
+    await assertUserBalance(backendBaseUrl, actionUserEmail, 90);
 
     await page.goto(`${frontendBaseUrl}/billing`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取账单与审计数据");
@@ -335,16 +335,23 @@ try {
     for (const [urlPath, label] of [
       ["/overview", "desktop_overview"],
       ["/billing", "desktop_billing"],
+      ["/portal/opl", "desktop_portal_opl_entry_alias"],
       ["/admin/users", "desktop_admin_users"],
       ["/admin/alerts", "desktop_admin_alerts"],
     ]) {
       await page.setViewportSize({ width: 1440, height: 920 });
       await page.goto(`${frontendBaseUrl}${urlPath}`, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("domcontentloaded");
+      lastBodyText = await page.locator("body").innerText();
+      assert(!lastBodyText.includes("Unexpected Application Error!"), `${label}_must_not_render_react_router_default_error`);
+      assert(!lastBodyText.includes("404 Not Found"), `${label}_must_not_render_react_router_404`);
       await assertNoGlobalHorizontalOverflow(page, label);
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`${frontendBaseUrl}${urlPath}`, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("domcontentloaded");
+      lastBodyText = await page.locator("body").innerText();
+      assert(!lastBodyText.includes("Unexpected Application Error!"), `mobile_${label}_must_not_render_react_router_default_error`);
+      assert(!lastBodyText.includes("404 Not Found"), `mobile_${label}_must_not_render_react_router_404`);
       await assertNoGlobalHorizontalOverflow(page, `mobile_${label}`);
     }
 

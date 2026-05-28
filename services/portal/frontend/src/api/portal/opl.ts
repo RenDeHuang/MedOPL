@@ -18,6 +18,19 @@ export interface OplProviderKeyPayload {
   boundStatus: string;
 }
 
+export interface OplEntryPreflightPayload {
+  ok: boolean;
+  error?: string;
+  workspaceId: string;
+  providerBound: boolean;
+  providerKeyRef: string;
+  boundStatus: string;
+  launchStatus: string;
+  readyForManagedEnvironment: boolean;
+  nextAction: string;
+  reason?: string;
+}
+
 export interface OplLaunchPayload {
   ok: boolean;
   launchId: string;
@@ -133,6 +146,11 @@ function launchParams(launchId: string) {
 
 export async function createOplLaunch(input: OplLaunchInput) {
   const { data } = await goControlPlaneClient.post<OplLaunchPayload>("/opl/launch", input);
+  return data;
+}
+
+export async function fetchOplEntryPreflight(input: OplLaunchInput = {}) {
+  const { data } = await goControlPlaneClient.post<OplEntryPreflightPayload>("/opl/entry/preflight", input);
   return data;
 }
 

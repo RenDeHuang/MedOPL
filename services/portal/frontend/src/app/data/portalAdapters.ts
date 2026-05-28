@@ -19,14 +19,11 @@ import {
 } from "../../api/portal/lab";
 import { fetchOverview } from "../../api/portal/overview";
 import {
-  bindOplSession,
   createOplFileRef,
-  createOplLaunch,
   fetchOplArtifact,
-  fetchOplBootstrap,
   startOplRun,
 } from "../../api/portal/opl";
-import { fetchMyResources, fetchOplLaunchStatus } from "../../api/portal/resources";
+import { fetchMyResources } from "../../api/portal/resources";
 import { fetchAnnouncements } from "../../api/portal/sessions";
 import { fetchSessionTraces } from "../../api/portal/traces";
 import {
@@ -55,6 +52,13 @@ import {
   runtimeReleaseLifecycle,
 } from "./portalRuntimeEnvironmentLifecycle";
 import { adminReadOnlyMessage, loadAdminOpsModel } from "./portalAdminOpsSurface";
+import {
+  OPL_GATEWAY_UNAVAILABLE_MESSAGE,
+  PORTAL_DATA_UNAVAILABLE_MESSAGE,
+  PortalDisplayError,
+  portalDisplayMessage,
+} from "./portalDisplayErrors";
+export { loadOplEntryModel } from "./portalOplEntryModel";
 export { adminReadOnlyMessage, loadAdminOpsModel };
 
 export type QueryState<T> =
@@ -62,24 +66,7 @@ export type QueryState<T> =
   | { status: "ready"; data: T; error: null }
   | { status: "error"; data: null; error: string };
 
-const PORTAL_DATA_UNAVAILABLE_MESSAGE = "Portal 数据暂时不可用，请稍后重试。";
-const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
 export const adminLocalActionMessage = "已接入本地 Portal 用户启停、删除、充值、退款和公告管理动作。";
-
-class PortalDisplayError extends Error {
-  readonly userMessage: string;
-
-  constructor(userMessage: string) {
-    super(userMessage);
-    this.name = "PortalDisplayError";
-    this.userMessage = userMessage;
-  }
-}
-
-function portalDisplayMessage(error: unknown) {
-  if (error instanceof PortalDisplayError) return error.userMessage;
-  return PORTAL_DATA_UNAVAILABLE_MESSAGE;
-}
 
 export function usePortalQuery<T>(loader: () => Promise<T>, deps: unknown[] = []): QueryState<T> {
   const [state, setState] = useState<QueryState<T>>({ status: "loading", data: null, error: null });
@@ -654,61 +641,6 @@ export async function loadBillingAuditModel() {
       ownerScope: ledgerOwnerScope(item),
     })),
   };
-}
-
-export async function loadOplEntryModel() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const existingLaunchId = params.get("launchId");
-    const launch = existingLaunchId
-      ? { launchId: existingLaunchId, openUrl: "", oplWebUrl: "", launchStatus: "preparing", ok: true, workspaceId: "" }
-      : await createOplLaunch({});
-    const [status, bootstrap] = await Promise.all([
-      fetchOplLaunchStatus(launch.launchId),
-      fetchOplBootstrap(launch.launchId),
-    ]);
-    await bindOplSession({
-      launchId: launch.launchId,
-      oplSessionId: bootstrap.identity.oplSessionId,
-      clientSessionState: { source: "figma_make_zip_portal_ui" },
-    });
-    return {
-      launchId: launch.launchId,
-      pageState: status.status === "ready" ? "ready" : status.status === "failed" ? "failed" : "preparing",
-      userVisibleState: status.userVisibleState,
-      oplWebUrl: status.oplWebUrl || launch.oplWebUrl || launch.openUrl,
-      currentStage: status.currentStage,
-      blockingUser: status.blockingUser,
-      providerBound: status.providerBound,
-      providerKeyRef: status.providerKeyRef,
-      gatewayReady: status.gatewayReady,
-      gatewayState: status.gatewayState,
-      runtimeSessionId: bootstrap.identity.runtimeSessionId,
-      oplSessionId: bootstrap.identity.oplSessionId,
-      stages: status.stages,
-    } as const;
-  } catch (error: unknown) {
-    const response = (error as { response?: { status?: number; data?: { error?: string } } })?.response;
-    if (response?.status === 428 && response.data?.error === "provider_key_required") {
-      return {
-        launchId: "",
-        pageState: "blocked_by_provider_key",
-        userVisibleState: "provider_key_required",
-        oplWebUrl: "",
-        currentStage: "provider_key_required",
-        blockingUser: true,
-        providerBound: false,
-        providerKeyRef: "",
-        gatewayReady: false,
-        gatewayState: "等待模型调用密钥绑定",
-        runtimeSessionId: "",
-        oplSessionId: "",
-        stages: [],
-        workspaceId: "workspace-local-rc",
-      } as const;
-    }
-    throw new PortalDisplayError(OPL_GATEWAY_UNAVAILABLE_MESSAGE);
-  }
 }
 
 export async function loadCurrentUserModel() {

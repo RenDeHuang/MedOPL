@@ -789,22 +789,28 @@ func (state *localPortalProjectionState) adjustUserBalance(payload map[string]an
 	if amount <= 0 {
 		return fmt.Errorf("admin_amount_required")
 	}
-	if entryType == "charge" || entryType == "debit" {
-		user.Balance -= amount
-	} else {
-		user.Balance += amount
-	}
+	signedAmount := ledgerSignedAmount(entryType, amount)
+	user.Balance += signedAmount
 	state.financeRows = append(state.financeRows, localPortalFinanceRow{
 		ID:        fmt.Sprintf("finance-local-rc-extra-%d", state.nextFinanceSequence),
 		UserID:    user.ID,
 		UserName:  user.Name,
 		Type:      entryType,
-		Amount:    amount,
+		Amount:    signedAmount,
 		Reason:    reason,
 		CreatedAt: localTimestamp,
 	})
 	state.nextFinanceSequence++
 	return nil
+}
+
+func ledgerSignedAmount(entryType string, amount float64) float64 {
+	switch strings.ToLower(strings.TrimSpace(entryType)) {
+	case "charge", "debit", "refund", "makeup_charge":
+		return -amount
+	default:
+		return amount
+	}
 }
 
 func (state *localPortalProjectionState) saveAnnouncement(payload map[string]any) error {

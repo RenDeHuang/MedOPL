@@ -35,8 +35,13 @@ func TestGoPortalProjectionAdminActionsPersistLocalState(t *testing.T) {
 	postAction(t, router, "ledger-adjust", map[string]any{"userId": userID, "amount": 30, "actionType": "refund", "reason": "unit test"})
 	users = getJSONMap(t, router, "/api/admin/users")
 	user = findUserByEmail(t, users, email)
-	if numberFrom(user["balance"]) != 150 {
+	if numberFrom(user["balance"]) != 90 {
 		t.Fatalf("balance after local actions = %+v", user)
+	}
+	financeRows, _ := users["financeRows"].([]any)
+	refundRow := findFinanceRowByType(t, financeRows, "refund")
+	if numberFrom(refundRow["amount"]) != -30 {
+		t.Fatalf("refund ledger amount must be negative: %+v", refundRow)
 	}
 
 	postAction(t, router, "announcements-save", map[string]any{
@@ -53,7 +58,7 @@ func TestGoPortalProjectionAdminActionsPersistLocalState(t *testing.T) {
 	restartedRouter := Router(cfg)
 	restartedUsers := getJSONMap(t, restartedRouter, "/api/admin/users")
 	restartedUser := findUserByEmail(t, restartedUsers, email)
-	if numberFrom(restartedUser["balance"]) != 150 {
+	if numberFrom(restartedUser["balance"]) != 90 {
 		t.Fatalf("balance after router restart = %+v", restartedUser)
 	}
 	restartedAnnouncements := getJSONMap(t, restartedRouter, "/api/announcements")
@@ -145,6 +150,18 @@ func findUserByEmail(t *testing.T, payload map[string]any, email string) map[str
 		}
 	}
 	t.Fatalf("user %s not found in %+v", email, payload)
+	return nil
+}
+
+func findFinanceRowByType(t *testing.T, rows []any, rowType string) map[string]any {
+	t.Helper()
+	for _, item := range rows {
+		row, ok := item.(map[string]any)
+		if ok && row["type"] == rowType {
+			return row
+		}
+	}
+	t.Fatalf("finance row type %s not found in %+v", rowType, rows)
 	return nil
 }
 
