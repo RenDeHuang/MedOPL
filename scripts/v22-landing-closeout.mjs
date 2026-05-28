@@ -101,7 +101,7 @@ function closeoutCommitLooksLikeCloseout(commit) {
     /^changes\/archive\/\d{4}-\d{2}-\d{2}-[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^changes\/active\/[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,
-    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|framework-truth-layering|backend-go-convergence-program|change-package-lifecycle|mvp-contract-suite)\.mjs$/u,
+    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|framework-truth-layering|backend-go-convergence-program|change-package-lifecycle|mvp-contract-suite|local-portal-opl-delivery-rc)\.mjs$/u,
     /^tests\/smoke\/smoke-test-v22-saas-control-plane-user-experience-boundary\.mjs$/u,
     /^scripts\/v22-landing-closeout\.mjs$/u,
   ];

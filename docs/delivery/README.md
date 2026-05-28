@@ -7,11 +7,11 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection、local control-plane hardening、Go control-plane MVP takeover 和 precloud-deployable-rc 已完成本地闭环或 ready for landing review；current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界，当前 cursor 只允许本地 deterministic proof。
+当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection、local control-plane hardening、Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 已完成本地闭环。最新 landed repo closeout 是 `feat/v22-local-portal-opl-delivery-rc` / `6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67`；follow-up closeout commit `f13ff6707d2ee8d3b802dd13ba09aa82a594c905` 只归档 change package、同步 durable specs / active / history / machine cursor，并修正归档后的 contract gate 读取 archive package。current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界，当前 cursor 只允许本地 deterministic proof。
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
-后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；Go control-plane MVP takeover 和 precloud-deployable-rc 均只提供本地 RC evidence。下一步必须留在 `real-cloud-authorization-boundary` 确认授权边界；当前 cursor 不授权 secret 或真实云执行。
+后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 均只提供本地 RC evidence。下一步必须留在 `real-cloud-authorization-boundary` 确认授权边界；当前 cursor 不授权 secret 或真实云执行。
 
 ## Default Verification
 

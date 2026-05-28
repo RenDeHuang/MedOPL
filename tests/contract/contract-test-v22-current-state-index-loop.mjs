@@ -138,6 +138,8 @@ assertIncludes(active, currentCursor, "active_must_record_current_cursor");
 assertIncludes(active, "| current phase |", "active_must_record_current_phase_field");
 assertIncludes(active, "| current blocker |", "active_must_record_current_blocker_field");
 assertIncludes(delivery, currentCursor, "delivery_must_record_current_cursor");
+assertIncludes(delivery, latestLandedBranch, "delivery_must_record_latest_landed_branch");
+assertIncludes(delivery, latestLandedCommit, "delivery_must_record_latest_landed_commit");
 
 assertIncludes(product, "Product Contract Groups", "product_contract_groups");
 for (const anchor of [
