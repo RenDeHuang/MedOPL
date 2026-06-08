@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
-const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-contract.mjs";
 
 const contract = await readFile(contractPath, "utf8");
 const readme = await readFile(readmePath, "utf8");
-const suite = await readFile(suitePath, "utf8");
 
 const requiredPhrases = [
   "authorized Tencent create/release",
@@ -102,7 +103,7 @@ for (const forbidden of [
 
 assert(readme.includes("spec:v22-authorized-tencent-create-release-boundary"), "contracts_readme_missing_authorized_tencent_contract");
 assert(readme.includes("authorized/tencent create/release"), "contracts_readme_missing_authorized_tencent_route");
-assert(suite.includes("smoke-test-v22-authorized-tencent-create-release-contract"), "mvp_suite_missing_authorized_tencent_smoke");
+assert(TEST_LANE_SUITES["cloud-future-authorized"].includes(selfFile), "future_authorized_suite_missing_authorized_tencent_create_release_contract");
 
 console.log(JSON.stringify({
   ok: true,
@@ -110,6 +111,6 @@ console.log(JSON.stringify({
   checked: {
     contractPath,
     readmePath,
-    suitePath,
+    registrySuite: "cloud-future-authorized",
   },
 }, null, 2));

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
-const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 const smokePath = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 
 function assertIncludesAll(source, phrases, label) {
@@ -20,7 +22,6 @@ function assertNotIncludesAny(source, phrases, label) {
 
 const contract = await readFile(contractPath, "utf8");
 const readme = await readFile(readmePath, "utf8");
-const suite = await readFile(suitePath, "utf8");
 const smoke = await readFile(smokePath, "utf8");
 
 assertIncludesAll(contract, [
@@ -76,7 +77,7 @@ assertIncludesAll(readme, [
   "official SDK readonly live 成功生成脱敏 report",
 ], "tc3_cleanup_readme");
 
-assert(suite.includes("future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"), "mvp_suite_must_include_tc3_cleanup_plan_smoke");
+assert(TEST_LANE_SUITES["real-cloud-readiness"].includes(selfFile), "real_cloud_readiness_suite_must_include_tc3_cleanup_plan_contract");
 
 assertNotIncludesAny(contract, [
   "\"deleteTc3Now\": true",

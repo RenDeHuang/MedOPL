@@ -53,10 +53,10 @@ function hasFunction(value, methodName) {
 
 const portalPackage = JSON.parse(await readFile(portalPackagePath, "utf8"));
 const lock = JSON.parse(await readFile(portalLockPath, "utf8"));
-assert(portalPackage.dependencies?.[tencentSdkPackageName], "portal_package_must_declare_tencentcloud_sdk_nodejs");
-assert(lock.packages?.[`node_modules/${tencentSdkPackageName}`], "portal_lock_must_pin_tencentcloud_sdk_nodejs");
-assert(portalPackage.dependencies?.[cosSdkPackageName], "portal_package_must_declare_cos_nodejs_sdk_v5");
-assert(lock.packages?.[`node_modules/${cosSdkPackageName}`], "portal_lock_must_pin_cos_nodejs_sdk_v5");
+assert.equal(portalPackage.dependencies?.[tencentSdkPackageName], undefined, "portal_package_must_not_own_tencentcloud_sdk_nodejs");
+assert.equal(portalPackage.devDependencies?.[tencentSdkPackageName], undefined, "portal_dev_package_must_not_own_tencentcloud_sdk_nodejs");
+assert.equal(portalPackage.dependencies?.[cosSdkPackageName], undefined, "portal_package_must_not_own_cos_nodejs_sdk_v5");
+assert.equal(portalPackage.devDependencies?.[cosSdkPackageName], undefined, "portal_dev_package_must_not_own_cos_nodejs_sdk_v5");
 
 let tencentSdkRoot;
 let cosSdkRoot;
@@ -127,10 +127,10 @@ const result = {
     },
   },
   checked: [
-    "package_json_declares_tencentcloud_sdk_nodejs",
-    "package_lock_pins_tencentcloud_sdk_nodejs",
-    "package_json_declares_cos_nodejs_sdk_v5",
-    "package_lock_pins_cos_nodejs_sdk_v5",
+    "portal_package_does_not_own_tencentcloud_sdk_nodejs",
+    "portal_package_does_not_own_cos_nodejs_sdk_v5",
+    lock.packages?.[`node_modules/${tencentSdkPackageName}`] ? "portal_lock_still_has_tencentcloud_sdk_shape_for_cleanup_lane" : "portal_lock_has_no_tencentcloud_sdk_shape",
+    lock.packages?.[`node_modules/${cosSdkPackageName}`] ? "portal_lock_still_has_cos_sdk_shape_for_cleanup_lane" : "portal_lock_has_no_cos_sdk_shape",
     "does_not_read_secret_or_call_cloud",
     tencentInstalled ? "sts_cvm_tke_billing_tag_client_shape_present" : "tencent_sdk_package_not_installed_in_this_worktree",
     tencentInstalled ? "tag_v20180813_get_resources_present" : "tag_method_shape_deferred_until_local_dependency_install",

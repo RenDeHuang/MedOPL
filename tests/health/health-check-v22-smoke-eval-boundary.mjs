@@ -50,7 +50,7 @@ for (const requiredPhrase of [
   "smoke-golden",
   "contract-local",
   "local-regression",
-  "local-rc-authorized",
+  "real-cloud-readiness",
   "future-authorized",
   "tier + surface + entryKind + authorization + contractRefs",
   "suite-wrapper",
@@ -67,8 +67,8 @@ for (const requiredRef of [
   "suite smoke",
   "suite local-contract",
   "suite local-regression",
+  "suite real-cloud-readiness",
   "suite cloud-future-authorized",
-  "suite local-rc-authorized",
 ]) {
   assert(specsSource.includes(requiredRef), `spec_index_missing_smoke_eval_reference:${requiredRef}`);
 }
@@ -89,17 +89,12 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
   assert(SMOKE_EVAL_TIERS.includes(metadata.tier), `unknown_eval_tier:${scriptPath}:${metadata.tier}`);
   assert(SMOKE_EVAL_SURFACES.includes(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
   assert(["atomic", "suite-wrapper", "gate-self-test"].includes(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
-  assert(["none", "future-authorized", "local-provider-secret-authorized"].includes(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
+  assert(["none", "future-authorized"].includes(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
   assert.deepEqual(metadata.contractRefs, ["docs/specs/README.md"], `eval_contract_refs_must_use_single_specs_truth:${scriptPath}`);
   if (metadata.authorization === "future-authorized") {
     assert.equal(metadata.tier, "future-authorized", `future_authorized_must_use_future_tier:${scriptPath}`);
     assert.equal(metadata.surface, "cloud", `future_authorized_must_use_cloud_surface:${scriptPath}`);
     assert(!defaultScripts.includes(scriptPath), `future_authorized_must_not_be_default:${scriptPath}`);
-  }
-  if (metadata.authorization === "local-provider-secret-authorized") {
-    assert.equal(metadata.tier, "local-rc-authorized", `local_rc_authorized_must_use_local_rc_tier:${scriptPath}`);
-    assert.equal(metadata.category, "local-rc-authorized", `local_rc_authorized_must_use_local_rc_category:${scriptPath}`);
-    assert(!defaultScripts.includes(scriptPath), `local_rc_authorized_must_not_be_default:${scriptPath}`);
   }
 }
 

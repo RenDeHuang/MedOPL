@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
-const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs";
 
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
@@ -19,7 +21,6 @@ function assertNotIncludesAny(source, phrases, label) {
 
 const contract = await readFile(contractPath, "utf8");
 const readme = await readFile(readmePath, "utf8");
-const suite = await readFile(suitePath, "utf8");
 
 assertIncludesAll(contract, [
   "Official SDK Provider Strategy",
@@ -101,7 +102,7 @@ assertIncludesAll(readme, [
   "TC3 仅作为 diagnostic/reference",
 ], "readme_official_sdk_strategy");
 
-assert(suite.includes("future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs"), "mvp_suite_must_include_official_sdk_strategy_smoke");
+assert(TEST_LANE_SUITES["real-cloud-readiness"].includes(selfFile), "real_cloud_readiness_suite_must_include_official_sdk_strategy_contract");
 
 assertNotIncludesAny(contract, [
   "\"tc3AllowedAsCreateReleaseProvider\": true",

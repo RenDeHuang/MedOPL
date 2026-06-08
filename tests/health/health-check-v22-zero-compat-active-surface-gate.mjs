@@ -127,9 +127,14 @@ assert.equal(viteConfig.includes('"/api": goControlPlaneTarget'), true, "fronten
 assert.equal(frontendClient.includes("goControlPlaneClient"), true, "frontend_client_must_export_go_client");
 assert.equal(router.includes('router.GET("/api/me"'), true, "go_router_must_own_portal_projection");
 assert.deepEqual(
-  manifest.suites.find((suite) => suite.id === "local-rc-authorized")?.commands ?? null,
-  [],
-  "local_rc_authorized_suite_must_be_empty_until_new_authorized_package",
+  manifest.suites.find((suite) => suite.id === "local-rc-authorized"),
+  undefined,
+  "empty_local_rc_authorized_suite_must_not_remain_active",
+);
+assert.equal(
+  manifest.suites.some((suite) => JSON.stringify(suite).includes("local-provider-secret-authorized")),
+  false,
+  "local_provider_secret_authorized_eval_must_not_remain_active",
 );
 
 console.log(JSON.stringify({

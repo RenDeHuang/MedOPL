@@ -1450,6 +1450,7 @@
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
+        "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
         "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
         "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
@@ -1457,7 +1458,7 @@
         "npm run verify:local-release-candidate -- --dry-run --json",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
+        "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs specs changes tests scripts package.json",
@@ -1505,6 +1506,7 @@
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
+        "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
         "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
         "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
@@ -1512,7 +1514,7 @@
         "npm run verify:local-release-candidate -- --dry-run --json",
         "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json",
+        "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "git diff --check -- docs specs changes tests scripts package.json",
@@ -1534,7 +1536,8 @@
         "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
+        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+        "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs"
       ]
     },
     {
@@ -1576,6 +1579,7 @@
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
+        "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
         "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
@@ -1654,14 +1658,24 @@
       ]
     },
     {
-      "id": "local-rc-authorized",
-      "commands": []
+      "id": "real-cloud-readiness",
+      "commands": [
+        "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
+      ]
     },
     {
       "id": "cloud-future-authorized",
       "commands": [
-        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
-        "node tests/health/health-check-v22-smoke-classification-gate.mjs"
+        "node tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-contract.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-execution-contract.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-implementation-contract.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs"
       ]
     },
     {
@@ -1676,6 +1690,7 @@
         "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
+        "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
         "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",

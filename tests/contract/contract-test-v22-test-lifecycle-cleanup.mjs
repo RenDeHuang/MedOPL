@@ -26,8 +26,8 @@ const allowedLifecycleRoles = [
   "current-owner",
   "negative-retirement-guard",
   "suite-wrapper",
+  "real-cloud-readiness-boundary",
   "future-authorized-boundary",
-  "local-rc-authorized-boundary",
 ];
 
 async function readRepoFile(repoPath) {

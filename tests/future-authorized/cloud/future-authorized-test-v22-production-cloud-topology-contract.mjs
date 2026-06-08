@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
-const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs";
 
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
@@ -20,7 +22,7 @@ function assertNotIncludesAny(source, phrases, label) {
 const [contract, readme, suite] = await Promise.all([
   readFile(contractPath, "utf8"),
   readFile(readmePath, "utf8"),
-  readFile(suitePath, "utf8"),
+  Promise.resolve(""),
 ]);
 
 assertIncludesAll(contract, [
@@ -109,7 +111,8 @@ assertIncludesAll(readme, [
   "当前只是合同",
 ], "contracts_readme_production_cloud_topology");
 
-assert(suite.includes("future-authorized-test-v22-production-cloud-topology-contract.mjs"), "mvp_suite_must_include_production_cloud_topology_smoke");
+assert.equal(suite, "", "production_topology_must_not_read_legacy_suite_source");
+assert(TEST_LANE_SUITES["cloud-future-authorized"].includes(selfFile), "future_authorized_suite_must_include_production_cloud_topology_contract");
 
 console.log(JSON.stringify({
   ok: true,
