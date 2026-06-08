@@ -8,7 +8,7 @@ Affected plane: Operations
 
 ## Why
 
-The current local productization cursor is not the real-cloud authorization boundary. Pre-cloud local proof is closed, but any secret access, provider operation, deploy, kubectl, build/push, live-test or true cloud mutation remains outside default authorization. This future-authorized change package keeps that boundary repo-native so future agents do not rely on chat memory.
+The current cursor is the real-cloud authorization boundary. Pre-cloud local proof is closed, but any secret access, provider operation, deploy, kubectl, build/push, live-test or true cloud mutation remains outside default authorization. This boundary is not real-cloud readiness; it keeps the authorization contract repo-native so future agents do not rely on chat memory.
 
 ## Goals
 

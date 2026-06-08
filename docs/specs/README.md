@@ -135,7 +135,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
-- managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider`，真实接入另开 feat/* 并单独授权。
+- managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`，真实接入另开 feat/* 并单独授权。
 - readonly/tencent quote provider: [spec:v22-tencent-readonly-quote-provider-boundary](#spec-v22-tencent-readonly-quote-provider-boundary)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
 - dry-run/tencent resource plan provider: [spec:v22-tencent-dry-run-resource-plan-provider-boundary](#spec-v22-tencent-dry-run-resource-plan-provider-boundary)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段；`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段。
 - readonly/tencent inventory: [spec:v22-tencent-readonly-inventory-boundary](#spec-v22-tencent-readonly-inventory-boundary)。当前只定义真实云只读盘点合同，用来验证云上事实和 Portal 账本是否一致；未来 secret 文件只能 allowlist_only 读取 readonly inventory keys，不允许“一读全读”；仅允许 Describe/List/Get/Head 类只读 API，不读取 COS 对象正文，不调用 mutation API，不创建、删除、释放、扩缩容或改标签。
@@ -156,10 +156,10 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - runtime bridge session/run/file/providerKeyRef: [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary)
 - Portal-OPL connection: [spec:v22-portal-opl-connection-boundary](#spec-v22-portal-opl-connection-boundary)。Portal 发起进入 OPL、Gateway bootstrap、OPL session bind、message/file/run、artifact projection、workspace/session/run 归属、token 不进 URL/browser state 和 clean upstream 边界由该合同统一固定。它不修改 one-person-lab upstream，不读取 secret，不调用真实云。
 - Portal-OPL context/backflow: [spec:v22-portal-opl-context-backflow-boundary](#spec-v22-portal-opl-context-backflow-boundary)。该三级执行合同把 Portal 工作台控制面、Gateway entry/proxy、OPL context bootstrap、Runtime Bridge capability/backflow projection、downstream Runtime gate 和 downstream Langfuse `trace.medopl.cn` session trace boundary 拆开；它不修改 one-person-lab upstream，不实现真实云 runtime，不部署 Langfuse，不允许 200 假成功。
-- Real OPL capability canary: [spec:v22-real-opl-capability-canary-boundary](#spec-v22-real-opl-capability-canary-boundary)。该三级执行合同把真实 OPL WebUI/ACP/Runtime 能力发现、message reply、file、run、artifact、observability 和 Portal projection 的 canary 验证拆开；它只定义真实能力裁定、错误 gate、canary evidence 和 productionization handoff。当前 provider message reply 子链路已通过授权 live canary，但不代表真实文件上传、真实 Runtime Agent、真实云 runtime 或 Langfuse 已上线。
-- Real OPL provider message canary: [spec:v22-real-opl-provider-message-canary-boundary](#spec-v22-real-opl-provider-message-canary-boundary)。该四级细分执行合同只定义真实 provider message reply canary 的 provider key gate、message send、reply observation、Runtime Bridge normalization、Portal message status、Portal session trace、Langfuse attachment boundary 和 no fake 200；默认 smoke 不读取 raw provider key、不调用真实 provider；授权 live canary 已证明真实 assistant reply 可按 `mapped_to_webui_bridge` 回流 Portal。
+- Real OPL capability canary: [spec:v22-real-opl-capability-canary-boundary](#spec-v22-real-opl-capability-canary-boundary)。该三级执行合同把真实 OPL WebUI/ACP/Runtime 能力发现、message reply、file、run、artifact、observability 和 Portal projection 的 canary 验证拆开；它只定义真实能力裁定、错误 gate、canary evidence 和 productionization handoff。历史授权 provider message live canary 脱敏 evidence 曾观察到 message reply 子链路，但不代表真实文件上传、真实 Runtime Agent、真实云 runtime 或 Langfuse 已上线；后续再次执行必须重新授权。
+- Real OPL provider message canary: [spec:v22-real-opl-provider-message-canary-boundary](#spec-v22-real-opl-provider-message-canary-boundary)。该四级细分执行合同只定义真实 provider message reply canary 的 provider key gate、message send、reply observation、Runtime Bridge normalization、Portal message status、Portal session trace、Langfuse attachment boundary 和 no fake 200；默认 smoke 不读取 raw provider key、不调用真实 provider；历史授权 live canary 脱敏 evidence 曾观察到真实 assistant reply 可按 `mapped_to_webui_bridge` 回流 Portal；后续再次执行必须重新授权。
 - Real OPL file/run/artifact canary: [spec:v22-real-opl-file-run-artifact-canary-boundary](#spec-v22-real-opl-file-run-artifact-canary-boundary)。该三级执行合同细化真实 file upload 或 file intent、workspace-scoped fileRef、run intent、Runtime Agent gate、artifact/output backflow、Portal projection、billing metadata handoff、Production Runtime Agent binding、Langfuse optional attachment 和 no fake 200。它不部署 Langfuse，不调用真实云 mutation，不实现 COS 真实账单结算，不把 `/api/opl/*` placeholder 当 Product API；每个 step 必须 gate，不能用 200 假成功。当前本地 Runtime Agent HTTP API relay full-loop canary 已证明 file/run/artifact 可通过独立 Runtime Agent API 回流 Portal projection，并明确 OPL lane 只提供 `resourceBindingId/workspace runtime identity`、`billingMetadataRef`、`usageMetadataRef`、run/artifact projection；OPL lane 不决定 `ownerRef`、`operationId` 或 K8s labels，不代表真实云 runtime、COS 账单或 Langfuse 已上线。
-- upstream one-person-lab clean boundary: [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary), [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)。upstream 目录只读/clean；Portal / Gateway / Runtime Bridge / Runtime Agent / Langfuse / 腾讯云逻辑不得写进 upstream；只能通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI、WebSocket bridge 或反向代理边界接入。OPL Gateway 本地 proxy 通过 `OPL_UPSTREAM_URL` 显式接入 clean upstream；未配置时返回 `opl_upstream_url_required`，不兜底到旧 v19/v20/v21 direct path 或硬编码 upstream。真实 WebUI canary 已确认独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Runtime Bridge session bridge 可接通，但 `/api/opl/*` 是 catch-all placeholder，不是 Product API；授权 provider message live canary 已确认 message AI reply 可回流；file upload 和 run/artifact 回流仍需单独 agent/runtime canary。
+- upstream one-person-lab clean boundary: [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary), [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)。upstream 目录只读/clean；Portal / Gateway / Runtime Bridge / Runtime Agent / Langfuse / 腾讯云逻辑不得写进 upstream；只能通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI、WebSocket bridge 或反向代理边界接入。OPL Gateway 本地 proxy 通过 `OPL_UPSTREAM_URL` 显式接入 clean upstream；未配置时返回 `opl_upstream_url_required`，不兜底到旧 v19/v20/v21 direct path 或硬编码 upstream。历史真实 WebUI canary 脱敏 evidence 曾确认独立 WebUI 页面、auth context、Gateway proxy、WebSocket session bridge 和 Runtime Bridge session bridge 可接通，但 `/api/opl/*` 是 catch-all placeholder，不是 Product API；历史授权 provider message live canary evidence 曾确认 message AI reply 可回流；file upload 和 run/artifact 回流仍需单独 agent/runtime canary。
 - pricing snapshot: [spec:v22-pricing-snapshot-boundary](#spec-v22-pricing-snapshot-boundary)
 
 ## 界面/运维合同
@@ -322,7 +322,7 @@ six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_rea
 
 ### Real OPL Provider Message Canary 合同包
 
-适用于真实 OPL provider message reply canary 的 provider key gate、真实 message intent、provider invocation evidence、assistant reply observation、Runtime Bridge normalized message state、Portal message status、Portal session trace projection、Langfuse optional attachment boundary 和 no fake 200。该合同包是 Real OPL Capability Canary 的四级细分执行合同；默认合同 smoke 不修改 one-person-lab upstream、不读取 secret、不调用真实 provider、不调用真实云、不部署 Langfuse。真实 provider key 和真实模型调用必须通过 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE`、`OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 单独授权，并且 live canary 不进入默认 MVP suite。当前授权 live canary 已通过，message reply capability 为 `mapped_to_webui_bridge`；这不代表 file/run/artifact、真实云 runtime 或 Langfuse 已上线。
+适用于真实 OPL provider message reply canary 的 provider key gate、真实 message intent、provider invocation evidence、assistant reply observation、Runtime Bridge normalized message state、Portal message status、Portal session trace projection、Langfuse optional attachment boundary 和 no fake 200。该合同包是 Real OPL Capability Canary 的四级细分执行合同；默认合同 smoke 不修改 one-person-lab upstream、不读取 secret、不调用真实 provider、不调用真实云、不部署 Langfuse。真实 provider key 和真实模型调用必须通过 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE`、`OPL_REAL_WEBUI_DIR` 或 `OPL_REAL_WEBUI_URL` 单独授权，并且 live canary 不进入默认 MVP suite。历史授权 live canary 脱敏 evidence 曾观察到 message reply capability 为 `mapped_to_webui_bridge`；这不代表 file/run/artifact、真实云 runtime 或 Langfuse 已上线，后续再次执行必须重新授权。
 
 订阅：
 
@@ -403,7 +403,7 @@ six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_rea
 
 ### Tencent Provider 合同包
 
-适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、readonly/tencent inventory、authorized/tencent create/release boundary、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划、真实云只读盘点和后续真实腾讯云接入前的授权边界。阶段路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release`。Package C 负责计算/存储生命周期；Package D 不授权 Package C 的资源生命周期动作。
+适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、readonly/tencent inventory、authorized/tencent create/release boundary、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划、真实云只读盘点和后续真实腾讯云接入前的授权边界。阶段路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。Package C 负责计算/存储生命周期；Package D 不授权 Package C 的资源生命周期动作。
 
 订阅：
 
@@ -3756,9 +3756,9 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 
 后续真实腾讯云接入路线必须按阶段推进：
 
-`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider`
+`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
 
-等价 provider 路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release`。
+等价 provider 路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。
 
 真实接入另开 feat/* 并单独授权。替换点是 provider adapter，不重做 Portal 用户闭环；真实创建、释放、报价、Ingress/TLS、kubeconfig、SecretId/SecretKey、token 和真实云资源操作均不属于当前合同层级。
 
@@ -5356,7 +5356,7 @@ bootstrap 和 Runtime Bridge status 必须能表达：
 
 2026-05-10 的真实 WebUI canary 结论是：独立 OPL/AionUI WebUI 可作为真实浏览器工作台进程启动，`GET /`、`GET /api/auth/status`、`GET /api/auth/user` 可真实访问；Gateway 指向该 WebUI 后可代理页面、注入 launch script、拒绝 secret query，并代理 WebSocket bridge。该 WebUI 的真实 session 协议是 WebSocket bridge，`create-conversation`、`database.get-user-conversations`、`database.get-conversation-messages` 已完成真实 session 创建和数据库回读。`/api/opl/system`、`/api/opl/sessions`、`/api/opl/messages` 在该 WebUI 上只是通用 `/api` catch-all 的 200 placeholder，不是 Product API；discovery 当时只能证明 `chat.send.message` 进入 WebUI/ACP 启动路径，不能证明 AI reply，因此必须标为 `capability_not_supported`。
 
-后续授权 provider message live canary 结论是：在用户显式授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和真实 WebUI 来源后，Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> provider message 可观测到真实 assistant reply，并以 `capabilitySource=mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该事实只证明真实 provider message/reply，不证明 `/api/opl/*` HTTP Product API、真实 WebUI file upload、run/artifact、真实云 runtime 或 Langfuse 已上线。
+历史授权 provider message live canary 脱敏 evidence 结论是：在用户显式授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和真实 WebUI 来源后，Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> provider message 曾观测到真实 assistant reply，并以 `capabilitySource=mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该 evidence 只证明当次授权路径的 provider message/reply，不证明 `/api/opl/*` HTTP Product API、真实 WebUI file upload、run/artifact、真实云 runtime 或 Langfuse 已上线；后续再次执行必须重新授权。
 
 2026-05-10 的真实 WebUI Runtime Bridge flow 结论是：Runtime Bridge 可以在 `OPL_RUNTIME_MODE=webui` 下通过 `OPL_WEBUI_BRIDGE_URL`/`OPL_WEB_URL` 连接真实 OPL/AionUI WebUI WebSocket bridge；launch 阶段创建真实 WebUI conversation，bootstrap 从 WebUI database 回读 session，并在 Runtime Bridge state 写入 `opl_webui_bridge_session_created` 和 `opl_session_bound`。该模式仍必须把 `/api/opl/*` HTTP Product API 分类为 `capability_not_supported`；message reply 在未授权真实 provider canary 时返回 `provider_authorization_required`、`deferred_authorization` 或 `capability_not_supported`，run 在没有真实 Runtime Agent relay 时返回明确失败，不能生成伪 run/artifact 成功。
 
@@ -8520,10 +8520,10 @@ one-person-lab upstream remains clean.
 
 真实 provider message canary 只证明 message/reply 这一段。它不证明 file、run、artifact、真实云 runtime、生产部署或 Langfuse 已上线。
 
-当前授权 live canary 事实：
+历史授权 live canary 脱敏 evidence：
 
-- 用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> gflab provider message 链路已观测到真实 assistant reply。
-- 当前 message reply capability 状态为 `mapped_to_webui_bridge`。
+- 在当次用户授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和 `OPL_REAL_WEBUI_DIR` 后，Portal -> Gateway -> Runtime Bridge -> clean OPL WebUI bridge -> gflab provider message 链路曾观测到真实 assistant reply。
+- 当次 message reply capability 状态为 `mapped_to_webui_bridge`。
 - Portal message status 和 Portal session trace 已能回流同一组 `messageId`、`replyMessageId`、`messageTraceId`、`providerInvocationRef` 和 `capabilitySource=mapped_to_webui_bridge`。
 - 脱敏 evidence 只写 `.runtime/real-opl-provider-message-live-canary/evidence.json`，不得进入 git。
 - 该事实仍不代表真实 file upload、workspace-scoped fileRef、run、artifact/output、真实云 runtime、生产部署或 Langfuse 已上线。
@@ -8831,7 +8831,7 @@ live canary success evidence 必须包含 `messageId`、`replyMessageId`、`mess
 
 live canary 不进入默认 `tests/contract/contract-test-v22-mvp-contract-suite.mjs`，因为它需要真实 provider key、真实 provider 调用授权和真实 WebUI canary 来源。
 
-最近一次授权 live canary 脱敏结果：
+历史授权 live canary 脱敏结果：
 
 ```json
 {
@@ -10030,7 +10030,7 @@ Provider response 和 Portal payload 不得包含：
 
 后续真实腾讯云接入路线保持：
 
-`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
 真实腾讯云 SDK、真实 SecretId/SecretKey、真实报价、真实创建、真实绑定、真实释放、真实扣费、真实账单核对、deploy、build/push、kubectl 和 live-test 必须另开 feat/* 并单独授权。
 
@@ -10043,7 +10043,7 @@ Former title: v22 Tencent Readonly Inventory Boundary
 
 该合同属于 Tencent Provider 合同包，阶段位置是：
 
-`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
 ## 阶段边界
 
@@ -10487,9 +10487,9 @@ Provider response 不得包含：
 
 后续真实腾讯云接入路线保持：
 
-`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
-等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider`
+等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
 
 真实腾讯云 readonly 接入、SDK 选择、API 凭据读取、限流、重试、审计日志和真实 quote source 均必须另开 feat/* 并单独授权。
 
@@ -10755,9 +10755,9 @@ upstream 更新后，平台拉取更新，并通过以下公开边界适配：
 - OPL Web Gateway 指向真实 WebUI 后可代理 HTML、注入 launch script、拒绝 secret query，并可代理 WebSocket bridge 完成 session 创建和数据库回读。
 - Runtime Bridge 在 `OPL_RUNTIME_MODE=webui` 下可通过 WebSocket bridge 创建真实 WebUI conversation，并把 session 创建和 database 回读投影到 MedOPL bootstrap/state；该映射属于 Gateway/Runtime Bridge anti-corruption layer，不修改 WebUI/upstream 源码。
 - 2026-05-10 discovery 阶段只证明 `chat.send.message` 能进入 WebUI WebSocket bridge 并触发后端 agent 启动路径；当时未配置可用 provider/agent 登录，必须标记为 `capability_not_supported`。
-- 后续授权 provider message live canary 已证明，在用户显式授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和真实 WebUI 来源后，message reply 可按 `mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该事实只证明 message/reply，不证明 HTTP Product API、真实 WebUI file upload、run/artifact、真实云 runtime、生产部署或 Langfuse 已上线。
+- 历史授权 provider message live canary 脱敏 evidence 曾观察到，在用户显式授权 `REAL_OPL_PROVIDER_MESSAGE_CANARY=1`、`OPL_PROVIDER_SECRET_FILE` 和真实 WebUI 来源后，message reply 可按 `mapped_to_webui_bridge` 回流 Portal message status 与 Portal session trace。该 evidence 只证明当次授权路径的 message/reply，不证明 HTTP Product API、真实 WebUI file upload、run/artifact、真实云 runtime、生产部署或 Langfuse 已上线；后续再次执行必须重新授权。
 
-上述结论只证明真实 WebUI 进程、页面、认证上下文、WebSocket session bridge、Gateway proxy、Runtime Bridge session bridge，以及授权 canary 下的 provider message reply 可接通；不证明 HTTP Product API、真实 WebUI 文件上传、run/artifact、真实云 runtime、生产部署或 Langfuse 已上线。
+上述结论只证明真实 WebUI 进程、页面、认证上下文、WebSocket session bridge、Gateway proxy、Runtime Bridge session bridge，以及历史授权 canary 下的 provider message reply 曾可接通；不证明 HTTP Product API、真实 WebUI 文件上传、run/artifact、真实云 runtime、生产部署或 Langfuse 已上线；后续再次执行必须重新授权。
 
 ## Local Gateway Proxy
 
